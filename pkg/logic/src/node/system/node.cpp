@@ -21,6 +21,7 @@
 #include "util/network_utils.h"
 #include "node/comp/node_comp.h"
 #include "node/system/node_system.h"
+#include "network/process_info.h"
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
     : loop_(loop),
@@ -131,7 +132,7 @@ void Node::InitializeGrpcServices() {
 
 void Node::InitializeIpPort()
 {
-    GetNodeInfo().mutable_endpoint()->set_ip(get_local_ip());
+    GetNodeInfo().mutable_endpoint()->set_ip(localip());
     GetNodeInfo().mutable_endpoint()->set_port(get_available_port());
 }
 
