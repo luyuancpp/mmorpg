@@ -2,14 +2,13 @@
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "proto/common/centre_service.grpc.pb.h"
 
 
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcCentreServiceStubPtr = std::unique_ptr<CentreService::Stub>;
+using GrpcStubPtr = std::unique_ptr<::Stub>;
 class AsyncCentreServiceRegisterGameNodeGrpcClientCall
 {
 public:
@@ -206,8 +205,8 @@ using AsyncCentreServiceUnRegisterGameNodeHandlerFunctionType = std::function<vo
 
 extern AsyncCentreServiceUnRegisterGameNodeHandlerFunctionType  AsyncCentreServiceUnRegisterGameNodeHandler;;
 
-void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
+void HandleCompletedQueueMessage(entt::registry& registry	); 
 
-void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 

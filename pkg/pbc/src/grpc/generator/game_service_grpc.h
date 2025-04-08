@@ -2,14 +2,13 @@
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "proto/common/game_service.grpc.pb.h"
 
 
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcGameServiceStubPtr = std::unique_ptr<GameService::Stub>;
+using GrpcStubPtr = std::unique_ptr<::Stub>;
 class AsyncGameServicePlayerEnterGameNodeGrpcClientCall
 {
 public:
@@ -176,8 +175,8 @@ using AsyncGameServiceCreateSceneHandlerFunctionType = std::function<void(const 
 
 extern AsyncGameServiceCreateSceneHandlerFunctionType  AsyncGameServiceCreateSceneHandler;;
 
-void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
+void HandleCompletedQueueMessage(entt::registry& registry	); 
 
-void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 

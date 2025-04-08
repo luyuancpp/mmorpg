@@ -2,14 +2,43 @@
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "proto/common/db_service.grpc.pb.h"
 
 
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcAccountDBServiceStubPtr = std::unique_ptr<AccountDBService::Stub>;
+using GrpcStubPtr = std::unique_ptr<::Stub>;
+class AsyncPlayerDBServiceLoad2RedisGrpcClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+    LoadPlayerResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  LoadPlayerResponse>> response_reader;
+};
+
+class LoadPlayerRequest;
+void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const  LoadPlayerRequest& request);
+
+using AsyncPlayerDBServiceLoad2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncPlayerDBServiceLoad2RedisGrpcClientCall>&)>;
+
+extern AsyncPlayerDBServiceLoad2RedisHandlerFunctionType  AsyncPlayerDBServiceLoad2RedisHandler;;
+class AsyncPlayerDBServiceSave2RedisGrpcClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+    SavePlayerResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  SavePlayerResponse>> response_reader;
+};
+
+class SavePlayerRequest;
+void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const  SavePlayerRequest& request);
+
+using AsyncPlayerDBServiceSave2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncPlayerDBServiceSave2RedisGrpcClientCall>&)>;
+
+extern AsyncPlayerDBServiceSave2RedisHandlerFunctionType  AsyncPlayerDBServiceSave2RedisHandler;;
 class AsyncAccountDBServiceLoad2RedisGrpcClientCall
 {
 public:
@@ -41,8 +70,8 @@ using AsyncAccountDBServiceSave2RedisHandlerFunctionType = std::function<void(co
 
 extern AsyncAccountDBServiceSave2RedisHandlerFunctionType  AsyncAccountDBServiceSave2RedisHandler;;
 
-void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry	); 
+void HandleCompletedQueueMessage(entt::registry& registry	); 
 
-void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
