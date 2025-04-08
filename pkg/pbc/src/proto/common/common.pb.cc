@@ -158,6 +158,31 @@ struct NodeInfoDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeInfoDefaultTypeInternal _NodeInfo_default_instance_;
+
+inline constexpr NodeInfoListPBComponent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : node_list_{},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR NodeInfoListPBComponent::NodeInfoListPBComponent(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct NodeInfoListPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NodeInfoListPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NodeInfoListPBComponentDefaultTypeInternal() {}
+  union {
+    NodeInfoListPBComponent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeInfoListPBComponentDefaultTypeInternal _NodeInfoListPBComponent_default_instance_;
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_proto_2fcommon_2fcommon_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -197,6 +222,15 @@ const ::uint32_t
         ~0u,
         0,
         ~0u,
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::NodeInfoListPBComponent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::NodeInfoListPBComponent, _impl_.node_list_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::NetworkAddress, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -238,13 +272,15 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::EndpointPBComponent)},
         {10, 25, -1, sizeof(::NodeInfo)},
-        {32, -1, -1, sizeof(::NetworkAddress)},
-        {42, 52, -1, sizeof(::SceneInfoPBComponent_CreatorsEntry_DoNotUse)},
-        {54, -1, -1, sizeof(::SceneInfoPBComponent)},
+        {32, -1, -1, sizeof(::NodeInfoListPBComponent)},
+        {41, -1, -1, sizeof(::NetworkAddress)},
+        {51, 61, -1, sizeof(::SceneInfoPBComponent_CreatorsEntry_DoNotUse)},
+        {63, -1, -1, sizeof(::SceneInfoPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_EndpointPBComponent_default_instance_._instance,
     &::_NodeInfo_default_instance_._instance,
+    &::_NodeInfoListPBComponent_default_instance_._instance,
     &::_NetworkAddress_default_instance_._instance,
     &::_SceneInfoPBComponent_CreatorsEntry_DoNotUse_default_instance_._instance,
     &::_SceneInfoPBComponent_default_instance_._instance,
@@ -257,14 +293,16 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_2eproto[] ABSL_ATTR
     "e_id\030\001 \001(\r\022\021\n\tnode_type\030\002 \001(\r\022\023\n\013launch_"
     "time\030\003 \001(\004\022\027\n\017scene_node_type\030\004 \001(\r\022\020\n\010l"
     "ease_id\030\005 \001(\004\022&\n\010endpoint\030\006 \001(\0132\024.Endpoi"
-    "ntPBComponent\022\017\n\007zone_id\030\007 \001(\r\"*\n\016Networ"
-    "kAddress\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\320\001\n\024S"
-    "ceneInfoPBComponent\022\024\n\014scene_confid\030\001 \001("
-    "\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rmirror_confid\030\003 \001(\r\022\025"
-    "\n\rdungen_confid\030\004 \001(\r\0225\n\010creators\030\005 \003(\0132"
-    "#.SceneInfoPBComponent.CreatorsEntry\032/\n\r"
-    "CreatorsEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001("
-    "\010:\0028\001B\tZ\007pb/gameb\006proto3"
+    "ntPBComponent\022\017\n\007zone_id\030\007 \001(\r\"7\n\027NodeIn"
+    "foListPBComponent\022\034\n\tnode_list\030\001 \003(\0132\t.N"
+    "odeInfo\"*\n\016NetworkAddress\022\n\n\002ip\030\001 \001(\t\022\014\n"
+    "\004port\030\002 \001(\r\"\320\001\n\024SceneInfoPBComponent\022\024\n\014"
+    "scene_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rmirr"
+    "or_confid\030\003 \001(\r\022\025\n\rdungen_confid\030\004 \001(\r\0225"
+    "\n\010creators\030\005 \003(\0132#.SceneInfoPBComponent."
+    "CreatorsEntry\032/\n\rCreatorsEntry\022\013\n\003key\030\001 "
+    "\001(\004\022\r\n\005value\030\002 \001(\010:\0028\001B\tZ\007pb/gameb\006proto"
+    "3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_2eproto_deps[1] =
     {
@@ -274,13 +312,13 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_2eproto = {
     false,
     false,
-    544,
+    601,
     descriptor_table_protodef_proto_2fcommon_2fcommon_2eproto,
     "proto/common/common.proto",
     &descriptor_table_proto_2fcommon_2fcommon_2eproto_once,
     descriptor_table_proto_2fcommon_2fcommon_2eproto_deps,
     1,
-    5,
+    6,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fcommon_2eproto::offsets,
@@ -942,6 +980,248 @@ void NodeInfo::InternalSwap(NodeInfo* PROTOBUF_RESTRICT other) {
 }
 
 ::google::protobuf::Metadata NodeInfo::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class NodeInfoListPBComponent::_Internal {
+ public:
+};
+
+NodeInfoListPBComponent::NodeInfoListPBComponent(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:NodeInfoListPBComponent)
+}
+inline PROTOBUF_NDEBUG_INLINE NodeInfoListPBComponent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::NodeInfoListPBComponent& from_msg)
+      : node_list_{visibility, arena, from.node_list_},
+        _cached_size_{0} {}
+
+NodeInfoListPBComponent::NodeInfoListPBComponent(
+    ::google::protobuf::Arena* arena,
+    const NodeInfoListPBComponent& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  NodeInfoListPBComponent* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:NodeInfoListPBComponent)
+}
+inline PROTOBUF_NDEBUG_INLINE NodeInfoListPBComponent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : node_list_{visibility, arena},
+        _cached_size_{0} {}
+
+inline void NodeInfoListPBComponent::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+NodeInfoListPBComponent::~NodeInfoListPBComponent() {
+  // @@protoc_insertion_point(destructor:NodeInfoListPBComponent)
+  SharedDtor(*this);
+}
+inline void NodeInfoListPBComponent::SharedDtor(MessageLite& self) {
+  NodeInfoListPBComponent& this_ = static_cast<NodeInfoListPBComponent&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* NodeInfoListPBComponent::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) NodeInfoListPBComponent(arena);
+}
+constexpr auto NodeInfoListPBComponent::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(NodeInfoListPBComponent, _impl_.node_list_) +
+          decltype(NodeInfoListPBComponent::_impl_.node_list_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(NodeInfoListPBComponent), alignof(NodeInfoListPBComponent), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&NodeInfoListPBComponent::PlacementNew_,
+                                 sizeof(NodeInfoListPBComponent),
+                                 alignof(NodeInfoListPBComponent));
+  }
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull NodeInfoListPBComponent::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_NodeInfoListPBComponent_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &NodeInfoListPBComponent::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<NodeInfoListPBComponent>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &NodeInfoListPBComponent::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<NodeInfoListPBComponent>(), &NodeInfoListPBComponent::ByteSizeLong,
+            &NodeInfoListPBComponent::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(NodeInfoListPBComponent, _impl_._cached_size_),
+        false,
+    },
+    &NodeInfoListPBComponent::kDescriptorMethods,
+    &descriptor_table_proto_2fcommon_2fcommon_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* NodeInfoListPBComponent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2> NodeInfoListPBComponent::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::NodeInfoListPBComponent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // repeated .NodeInfo node_list = 1;
+    {::_pbi::TcParser::FastMtR1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfoListPBComponent, _impl_.node_list_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // repeated .NodeInfo node_list = 1;
+    {PROTOBUF_FIELD_OFFSET(NodeInfoListPBComponent, _impl_.node_list_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::NodeInfo>()},
+  }}, {{
+  }},
+};
+
+PROTOBUF_NOINLINE void NodeInfoListPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:NodeInfoListPBComponent)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.node_list_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* NodeInfoListPBComponent::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const NodeInfoListPBComponent& this_ = static_cast<const NodeInfoListPBComponent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* NodeInfoListPBComponent::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const NodeInfoListPBComponent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:NodeInfoListPBComponent)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // repeated .NodeInfo node_list = 1;
+          for (unsigned i = 0, n = static_cast<unsigned>(
+                                   this_._internal_node_list_size());
+               i < n; i++) {
+            const auto& repfield = this_._internal_node_list().Get(i);
+            target =
+                ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                    1, repfield, repfield.GetCachedSize(),
+                    target, stream);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:NodeInfoListPBComponent)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t NodeInfoListPBComponent::ByteSizeLong(const MessageLite& base) {
+          const NodeInfoListPBComponent& this_ = static_cast<const NodeInfoListPBComponent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t NodeInfoListPBComponent::ByteSizeLong() const {
+          const NodeInfoListPBComponent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:NodeInfoListPBComponent)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // repeated .NodeInfo node_list = 1;
+            {
+              total_size += 1UL * this_._internal_node_list_size();
+              for (const auto& msg : this_._internal_node_list()) {
+                total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+              }
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void NodeInfoListPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<NodeInfoListPBComponent*>(&to_msg);
+  auto& from = static_cast<const NodeInfoListPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:NodeInfoListPBComponent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_node_list()->MergeFrom(
+      from._internal_node_list());
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void NodeInfoListPBComponent::CopyFrom(const NodeInfoListPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:NodeInfoListPBComponent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void NodeInfoListPBComponent::InternalSwap(NodeInfoListPBComponent* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.node_list_.InternalSwap(&other->_impl_.node_list_);
+}
+
+::google::protobuf::Metadata NodeInfoListPBComponent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

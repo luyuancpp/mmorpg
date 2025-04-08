@@ -134,7 +134,7 @@ void GateNode::Connect2Login()
 {
 	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
-    for (auto& loginNodeInfo : serviceNodeList[kLoginNode])
+    for (auto& loginNodeInfo : serviceNodeList[kLoginNode].node_list())
     {
         entt::entity id{ loginNodeInfo.lease_id() };
         auto loginNodeId = tls_gate.loginNodeRegistry.create(id);

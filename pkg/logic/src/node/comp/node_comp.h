@@ -1,3 +1,3 @@
 #pragma once
 
-using ServiceNodeList = std::array<std::vector<NodeInfo>, eNodeType_ARRAYSIZE>;
+using ServiceNodeList = std::array<NodeInfoListPBComponent, eNodeType_ARRAYSIZE>;
