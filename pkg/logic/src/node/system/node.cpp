@@ -163,26 +163,28 @@ void Node::InitializeNodeFromRequestInfo() {
 }
 
 void Node::ConnectToCentreHelper(::google::protobuf::Service* service) {
-    //for (auto& centre_node_info : nodesInfo.centre_info().centre_info()) {
-    //    entt::entity id{ centre_node_info.id() };
-    //    const auto centre_node_id = tls.centreNodeRegistry.create(id);
-    //    if (centre_node_id != id) {
-    //        continue;  // 如果创建失败，则跳过该中心节点
-    //    }
+    auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
-    //    InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
-    //    auto& centre_node = tls.centreNodeRegistry.emplace<RpcClientPtr>(centre_node_id,
-    //        std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
+    for (auto& centreNodeInfo : serviceNodeList[kCentreNode].node_list()) {
+        entt::entity id{ centreNodeInfo.lease_id() };
+        const auto centre_node_id = tls.centreNodeRegistry.create(id);
+        if (centre_node_id != id) {
+            continue;  // 如果创建失败，则跳过该中心节点
+        }
 
-    //    // 注册服务并连接
-    //    centre_node->registerService(service);
-    //    centre_node->connect();
+        InetAddress centre_addr(centreNodeInfo.endpoint().ip(), centreNodeInfo.endpoint().port());
+        auto& centre_node = tls.centreNodeRegistry.emplace<RpcClientPtr>(centre_node_id,
+            std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
 
-    //    // 判断是否为当前区域的中心节点
-    //    if (centre_node_info.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
-    //        zoneCentreNode = centre_node;
-    //    }
-    //}
+        // 注册服务并连接
+        centre_node->registerService(service);
+        centre_node->connect();
+
+        // 判断是否为当前区域的中心节点
+        if (centreNodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
+            zoneCentreNode = centre_node;
+        }
+    }
 }
 
 void Node::ReleaseNodeId() {
@@ -255,4 +257,26 @@ std::string Node::GetIp() const
 uint32_t Node::GetPort() const
 {
 	return nodeInfo.endpoint().port();
+}
+
+bool Node::ParseJsonToServiceNode(const std::string& jsonValue, uint32_t serviceNodeType) {
+	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+
+	// 检查 serviceNodeType 是否有效
+	if (!eNodeType_IsValid(serviceNodeType)) {
+		return false;
+	}
+
+	// 调用 JsonStringToMessage 函数将 JSON 字符串解析到 protobuf 消息
+	auto result = google::protobuf::util::JsonStringToMessage(jsonValue, &serviceNodeList[serviceNodeType]);
+
+	if (!result.ok()) {
+		// 解析失败时记录错误日志
+		LOG_ERROR << "Failed to parse JSON to message for serviceNodeType: " << serviceNodeType
+			<< ", JSON: " << jsonValue
+			<< ", Error: " << result.message().data();
+		return false;
+	}
+
+	return true;  // 解析成功
 }
