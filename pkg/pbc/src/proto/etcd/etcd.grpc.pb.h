@@ -905,6 +905,1035 @@ class KV final {
   typedef WithStreamedUnaryMethod_Range<WithStreamedUnaryMethod_Put<WithStreamedUnaryMethod_DeleteRange<WithStreamedUnaryMethod_Txn<WithStreamedUnaryMethod_Compact<Service > > > > > StreamedService;
 };
 
+class Watch final {
+ public:
+  static constexpr char const* service_full_name() {
+    return "etcdserverpb.Watch";
+  }
+  class StubInterface {
+   public:
+    virtual ~StubInterface() {}
+    // Watch watches for events happening or that have happened. Both input and output
+    // are streams; the input stream is for creating and canceling watchers and the output
+    // stream sends events. One watch RPC can watch on multiple key ranges, streaming events
+    // for several watches at once. The entire event history can be watched starting from the
+    // last compaction revision.
+    std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>> Watch(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>>(WatchRaw(context));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>> AsyncWatch(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>>(AsyncWatchRaw(context, cq, tag));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>> PrepareAsyncWatch(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>>(PrepareAsyncWatchRaw(context, cq));
+    }
+    class async_interface {
+     public:
+      virtual ~async_interface() {}
+      // Watch watches for events happening or that have happened. Both input and output
+      // are streams; the input stream is for creating and canceling watchers and the output
+      // stream sends events. One watch RPC can watch on multiple key ranges, streaming events
+      // for several watches at once. The entire event history can be watched starting from the
+      // last compaction revision.
+      virtual void Watch(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::etcdserverpb::WatchRequest,::etcdserverpb::WatchResponse>* reactor) = 0;
+    };
+    typedef class async_interface experimental_async_interface;
+    virtual class async_interface* async() { return nullptr; }
+    class async_interface* experimental_async() { return async(); }
+   private:
+    virtual ::grpc::ClientReaderWriterInterface< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>* WatchRaw(::grpc::ClientContext* context) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>* AsyncWatchRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>* PrepareAsyncWatchRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) = 0;
+  };
+  class Stub final : public StubInterface {
+   public:
+    Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
+    std::unique_ptr< ::grpc::ClientReaderWriter< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>> Watch(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriter< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>>(WatchRaw(context));
+    }
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>> AsyncWatch(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>>(AsyncWatchRaw(context, cq, tag));
+    }
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>> PrepareAsyncWatch(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>>(PrepareAsyncWatchRaw(context, cq));
+    }
+    class async final :
+      public StubInterface::async_interface {
+     public:
+      void Watch(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::etcdserverpb::WatchRequest,::etcdserverpb::WatchResponse>* reactor) override;
+     private:
+      friend class Stub;
+      explicit async(Stub* stub): stub_(stub) { }
+      Stub* stub() { return stub_; }
+      Stub* stub_;
+    };
+    class async* async() override { return &async_stub_; }
+
+   private:
+    std::shared_ptr< ::grpc::ChannelInterface> channel_;
+    class async async_stub_{this};
+    ::grpc::ClientReaderWriter< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>* WatchRaw(::grpc::ClientContext* context) override;
+    ::grpc::ClientAsyncReaderWriter< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>* AsyncWatchRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) override;
+    ::grpc::ClientAsyncReaderWriter< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>* PrepareAsyncWatchRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) override;
+    const ::grpc::internal::RpcMethod rpcmethod_Watch_;
+  };
+  static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
+
+  class Service : public ::grpc::Service {
+   public:
+    Service();
+    virtual ~Service();
+    // Watch watches for events happening or that have happened. Both input and output
+    // are streams; the input stream is for creating and canceling watchers and the output
+    // stream sends events. One watch RPC can watch on multiple key ranges, streaming events
+    // for several watches at once. The entire event history can be watched starting from the
+    // last compaction revision.
+    virtual ::grpc::Status Watch(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::etcdserverpb::WatchResponse, ::etcdserverpb::WatchRequest>* stream);
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_Watch : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_Watch() {
+      ::grpc::Service::MarkMethodAsync(0);
+    }
+    ~WithAsyncMethod_Watch() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Watch(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::etcdserverpb::WatchResponse, ::etcdserverpb::WatchRequest>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestWatch(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::etcdserverpb::WatchResponse, ::etcdserverpb::WatchRequest>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncBidiStreaming(0, context, stream, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_Watch<Service > AsyncService;
+  template <class BaseClass>
+  class WithCallbackMethod_Watch : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_Watch() {
+      ::grpc::Service::MarkMethodCallback(0,
+          new ::grpc::internal::CallbackBidiHandler< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context) { return this->Watch(context); }));
+    }
+    ~WithCallbackMethod_Watch() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Watch(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::etcdserverpb::WatchResponse, ::etcdserverpb::WatchRequest>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerBidiReactor< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>* Watch(
+      ::grpc::CallbackServerContext* /*context*/)
+      { return nullptr; }
+  };
+  typedef WithCallbackMethod_Watch<Service > CallbackService;
+  typedef CallbackService ExperimentalCallbackService;
+  template <class BaseClass>
+  class WithGenericMethod_Watch : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_Watch() {
+      ::grpc::Service::MarkMethodGeneric(0);
+    }
+    ~WithGenericMethod_Watch() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Watch(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::etcdserverpb::WatchResponse, ::etcdserverpb::WatchRequest>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_Watch : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_Watch() {
+      ::grpc::Service::MarkMethodRaw(0);
+    }
+    ~WithRawMethod_Watch() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Watch(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::etcdserverpb::WatchResponse, ::etcdserverpb::WatchRequest>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestWatch(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncBidiStreaming(0, context, stream, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_Watch : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_Watch() {
+      ::grpc::Service::MarkMethodRawCallback(0,
+          new ::grpc::internal::CallbackBidiHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context) { return this->Watch(context); }));
+    }
+    ~WithRawCallbackMethod_Watch() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Watch(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::etcdserverpb::WatchResponse, ::etcdserverpb::WatchRequest>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerBidiReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* Watch(
+      ::grpc::CallbackServerContext* /*context*/)
+      { return nullptr; }
+  };
+  typedef Service StreamedUnaryService;
+  typedef Service SplitStreamedService;
+  typedef Service StreamedService;
+};
+
+class Lease final {
+ public:
+  static constexpr char const* service_full_name() {
+    return "etcdserverpb.Lease";
+  }
+  class StubInterface {
+   public:
+    virtual ~StubInterface() {}
+    // LeaseGrant creates a lease which expires if the server does not receive a keepAlive
+    // within a given time to live period. All keys attached to the lease will be expired and
+    // deleted if the lease expires. Each expired key generates a delete event in the event history.
+    virtual ::grpc::Status LeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::etcdserverpb::LeaseGrantResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseGrantResponse>> AsyncLeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseGrantResponse>>(AsyncLeaseGrantRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseGrantResponse>> PrepareAsyncLeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseGrantResponse>>(PrepareAsyncLeaseGrantRaw(context, request, cq));
+    }
+    // LeaseRevoke revokes a lease. All keys attached to the lease will expire and be deleted.
+    virtual ::grpc::Status LeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::etcdserverpb::LeaseRevokeResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseRevokeResponse>> AsyncLeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseRevokeResponse>>(AsyncLeaseRevokeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseRevokeResponse>> PrepareAsyncLeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseRevokeResponse>>(PrepareAsyncLeaseRevokeRaw(context, request, cq));
+    }
+    // LeaseKeepAlive keeps the lease alive by streaming keep alive requests from the client
+    // to the server and streaming keep alive responses from the server to the client.
+    std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>> LeaseKeepAlive(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>>(LeaseKeepAliveRaw(context));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>> AsyncLeaseKeepAlive(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>>(AsyncLeaseKeepAliveRaw(context, cq, tag));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>> PrepareAsyncLeaseKeepAlive(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>>(PrepareAsyncLeaseKeepAliveRaw(context, cq));
+    }
+    // LeaseTimeToLive retrieves lease information.
+    virtual ::grpc::Status LeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::etcdserverpb::LeaseTimeToLiveResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseTimeToLiveResponse>> AsyncLeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseTimeToLiveResponse>>(AsyncLeaseTimeToLiveRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseTimeToLiveResponse>> PrepareAsyncLeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseTimeToLiveResponse>>(PrepareAsyncLeaseTimeToLiveRaw(context, request, cq));
+    }
+    // LeaseLeases lists all existing leases.
+    virtual ::grpc::Status LeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::etcdserverpb::LeaseLeasesResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseLeasesResponse>> AsyncLeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseLeasesResponse>>(AsyncLeaseLeasesRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseLeasesResponse>> PrepareAsyncLeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseLeasesResponse>>(PrepareAsyncLeaseLeasesRaw(context, request, cq));
+    }
+    class async_interface {
+     public:
+      virtual ~async_interface() {}
+      // LeaseGrant creates a lease which expires if the server does not receive a keepAlive
+      // within a given time to live period. All keys attached to the lease will be expired and
+      // deleted if the lease expires. Each expired key generates a delete event in the event history.
+      virtual void LeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest* request, ::etcdserverpb::LeaseGrantResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void LeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest* request, ::etcdserverpb::LeaseGrantResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // LeaseRevoke revokes a lease. All keys attached to the lease will expire and be deleted.
+      virtual void LeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest* request, ::etcdserverpb::LeaseRevokeResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void LeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest* request, ::etcdserverpb::LeaseRevokeResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // LeaseKeepAlive keeps the lease alive by streaming keep alive requests from the client
+      // to the server and streaming keep alive responses from the server to the client.
+      virtual void LeaseKeepAlive(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::etcdserverpb::LeaseKeepAliveRequest,::etcdserverpb::LeaseKeepAliveResponse>* reactor) = 0;
+      // LeaseTimeToLive retrieves lease information.
+      virtual void LeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest* request, ::etcdserverpb::LeaseTimeToLiveResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void LeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest* request, ::etcdserverpb::LeaseTimeToLiveResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // LeaseLeases lists all existing leases.
+      virtual void LeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest* request, ::etcdserverpb::LeaseLeasesResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void LeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest* request, ::etcdserverpb::LeaseLeasesResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+    };
+    typedef class async_interface experimental_async_interface;
+    virtual class async_interface* async() { return nullptr; }
+    class async_interface* experimental_async() { return async(); }
+   private:
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseGrantResponse>* AsyncLeaseGrantRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseGrantResponse>* PrepareAsyncLeaseGrantRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseRevokeResponse>* AsyncLeaseRevokeRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseRevokeResponse>* PrepareAsyncLeaseRevokeRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientReaderWriterInterface< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>* LeaseKeepAliveRaw(::grpc::ClientContext* context) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>* AsyncLeaseKeepAliveRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>* PrepareAsyncLeaseKeepAliveRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseTimeToLiveResponse>* AsyncLeaseTimeToLiveRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseTimeToLiveResponse>* PrepareAsyncLeaseTimeToLiveRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseLeasesResponse>* AsyncLeaseLeasesRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::etcdserverpb::LeaseLeasesResponse>* PrepareAsyncLeaseLeasesRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::grpc::CompletionQueue* cq) = 0;
+  };
+  class Stub final : public StubInterface {
+   public:
+    Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
+    ::grpc::Status LeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::etcdserverpb::LeaseGrantResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseGrantResponse>> AsyncLeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseGrantResponse>>(AsyncLeaseGrantRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseGrantResponse>> PrepareAsyncLeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseGrantResponse>>(PrepareAsyncLeaseGrantRaw(context, request, cq));
+    }
+    ::grpc::Status LeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::etcdserverpb::LeaseRevokeResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseRevokeResponse>> AsyncLeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseRevokeResponse>>(AsyncLeaseRevokeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseRevokeResponse>> PrepareAsyncLeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseRevokeResponse>>(PrepareAsyncLeaseRevokeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientReaderWriter< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>> LeaseKeepAlive(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriter< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>>(LeaseKeepAliveRaw(context));
+    }
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>> AsyncLeaseKeepAlive(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>>(AsyncLeaseKeepAliveRaw(context, cq, tag));
+    }
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>> PrepareAsyncLeaseKeepAlive(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>>(PrepareAsyncLeaseKeepAliveRaw(context, cq));
+    }
+    ::grpc::Status LeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::etcdserverpb::LeaseTimeToLiveResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseTimeToLiveResponse>> AsyncLeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseTimeToLiveResponse>>(AsyncLeaseTimeToLiveRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseTimeToLiveResponse>> PrepareAsyncLeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseTimeToLiveResponse>>(PrepareAsyncLeaseTimeToLiveRaw(context, request, cq));
+    }
+    ::grpc::Status LeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::etcdserverpb::LeaseLeasesResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseLeasesResponse>> AsyncLeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseLeasesResponse>>(AsyncLeaseLeasesRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseLeasesResponse>> PrepareAsyncLeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseLeasesResponse>>(PrepareAsyncLeaseLeasesRaw(context, request, cq));
+    }
+    class async final :
+      public StubInterface::async_interface {
+     public:
+      void LeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest* request, ::etcdserverpb::LeaseGrantResponse* response, std::function<void(::grpc::Status)>) override;
+      void LeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest* request, ::etcdserverpb::LeaseGrantResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void LeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest* request, ::etcdserverpb::LeaseRevokeResponse* response, std::function<void(::grpc::Status)>) override;
+      void LeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest* request, ::etcdserverpb::LeaseRevokeResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void LeaseKeepAlive(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::etcdserverpb::LeaseKeepAliveRequest,::etcdserverpb::LeaseKeepAliveResponse>* reactor) override;
+      void LeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest* request, ::etcdserverpb::LeaseTimeToLiveResponse* response, std::function<void(::grpc::Status)>) override;
+      void LeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest* request, ::etcdserverpb::LeaseTimeToLiveResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void LeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest* request, ::etcdserverpb::LeaseLeasesResponse* response, std::function<void(::grpc::Status)>) override;
+      void LeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest* request, ::etcdserverpb::LeaseLeasesResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+     private:
+      friend class Stub;
+      explicit async(Stub* stub): stub_(stub) { }
+      Stub* stub() { return stub_; }
+      Stub* stub_;
+    };
+    class async* async() override { return &async_stub_; }
+
+   private:
+    std::shared_ptr< ::grpc::ChannelInterface> channel_;
+    class async async_stub_{this};
+    ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseGrantResponse>* AsyncLeaseGrantRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseGrantResponse>* PrepareAsyncLeaseGrantRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseRevokeResponse>* AsyncLeaseRevokeRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseRevokeResponse>* PrepareAsyncLeaseRevokeRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientReaderWriter< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>* LeaseKeepAliveRaw(::grpc::ClientContext* context) override;
+    ::grpc::ClientAsyncReaderWriter< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>* AsyncLeaseKeepAliveRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) override;
+    ::grpc::ClientAsyncReaderWriter< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>* PrepareAsyncLeaseKeepAliveRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseTimeToLiveResponse>* AsyncLeaseTimeToLiveRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseTimeToLiveResponse>* PrepareAsyncLeaseTimeToLiveRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseLeasesResponse>* AsyncLeaseLeasesRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseLeasesResponse>* PrepareAsyncLeaseLeasesRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::grpc::CompletionQueue* cq) override;
+    const ::grpc::internal::RpcMethod rpcmethod_LeaseGrant_;
+    const ::grpc::internal::RpcMethod rpcmethod_LeaseRevoke_;
+    const ::grpc::internal::RpcMethod rpcmethod_LeaseKeepAlive_;
+    const ::grpc::internal::RpcMethod rpcmethod_LeaseTimeToLive_;
+    const ::grpc::internal::RpcMethod rpcmethod_LeaseLeases_;
+  };
+  static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
+
+  class Service : public ::grpc::Service {
+   public:
+    Service();
+    virtual ~Service();
+    // LeaseGrant creates a lease which expires if the server does not receive a keepAlive
+    // within a given time to live period. All keys attached to the lease will be expired and
+    // deleted if the lease expires. Each expired key generates a delete event in the event history.
+    virtual ::grpc::Status LeaseGrant(::grpc::ServerContext* context, const ::etcdserverpb::LeaseGrantRequest* request, ::etcdserverpb::LeaseGrantResponse* response);
+    // LeaseRevoke revokes a lease. All keys attached to the lease will expire and be deleted.
+    virtual ::grpc::Status LeaseRevoke(::grpc::ServerContext* context, const ::etcdserverpb::LeaseRevokeRequest* request, ::etcdserverpb::LeaseRevokeResponse* response);
+    // LeaseKeepAlive keeps the lease alive by streaming keep alive requests from the client
+    // to the server and streaming keep alive responses from the server to the client.
+    virtual ::grpc::Status LeaseKeepAlive(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::etcdserverpb::LeaseKeepAliveResponse, ::etcdserverpb::LeaseKeepAliveRequest>* stream);
+    // LeaseTimeToLive retrieves lease information.
+    virtual ::grpc::Status LeaseTimeToLive(::grpc::ServerContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest* request, ::etcdserverpb::LeaseTimeToLiveResponse* response);
+    // LeaseLeases lists all existing leases.
+    virtual ::grpc::Status LeaseLeases(::grpc::ServerContext* context, const ::etcdserverpb::LeaseLeasesRequest* request, ::etcdserverpb::LeaseLeasesResponse* response);
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_LeaseGrant : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_LeaseGrant() {
+      ::grpc::Service::MarkMethodAsync(0);
+    }
+    ~WithAsyncMethod_LeaseGrant() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseGrant(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseGrantRequest* /*request*/, ::etcdserverpb::LeaseGrantResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLeaseGrant(::grpc::ServerContext* context, ::etcdserverpb::LeaseGrantRequest* request, ::grpc::ServerAsyncResponseWriter< ::etcdserverpb::LeaseGrantResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_LeaseRevoke : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_LeaseRevoke() {
+      ::grpc::Service::MarkMethodAsync(1);
+    }
+    ~WithAsyncMethod_LeaseRevoke() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseRevoke(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseRevokeRequest* /*request*/, ::etcdserverpb::LeaseRevokeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLeaseRevoke(::grpc::ServerContext* context, ::etcdserverpb::LeaseRevokeRequest* request, ::grpc::ServerAsyncResponseWriter< ::etcdserverpb::LeaseRevokeResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_LeaseKeepAlive : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_LeaseKeepAlive() {
+      ::grpc::Service::MarkMethodAsync(2);
+    }
+    ~WithAsyncMethod_LeaseKeepAlive() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseKeepAlive(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::etcdserverpb::LeaseKeepAliveResponse, ::etcdserverpb::LeaseKeepAliveRequest>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLeaseKeepAlive(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::etcdserverpb::LeaseKeepAliveResponse, ::etcdserverpb::LeaseKeepAliveRequest>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncBidiStreaming(2, context, stream, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_LeaseTimeToLive : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_LeaseTimeToLive() {
+      ::grpc::Service::MarkMethodAsync(3);
+    }
+    ~WithAsyncMethod_LeaseTimeToLive() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseTimeToLive(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseTimeToLiveRequest* /*request*/, ::etcdserverpb::LeaseTimeToLiveResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLeaseTimeToLive(::grpc::ServerContext* context, ::etcdserverpb::LeaseTimeToLiveRequest* request, ::grpc::ServerAsyncResponseWriter< ::etcdserverpb::LeaseTimeToLiveResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_LeaseLeases : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_LeaseLeases() {
+      ::grpc::Service::MarkMethodAsync(4);
+    }
+    ~WithAsyncMethod_LeaseLeases() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseLeases(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseLeasesRequest* /*request*/, ::etcdserverpb::LeaseLeasesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLeaseLeases(::grpc::ServerContext* context, ::etcdserverpb::LeaseLeasesRequest* request, ::grpc::ServerAsyncResponseWriter< ::etcdserverpb::LeaseLeasesResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_LeaseGrant<WithAsyncMethod_LeaseRevoke<WithAsyncMethod_LeaseKeepAlive<WithAsyncMethod_LeaseTimeToLive<WithAsyncMethod_LeaseLeases<Service > > > > > AsyncService;
+  template <class BaseClass>
+  class WithCallbackMethod_LeaseGrant : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_LeaseGrant() {
+      ::grpc::Service::MarkMethodCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::etcdserverpb::LeaseGrantRequest, ::etcdserverpb::LeaseGrantResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::etcdserverpb::LeaseGrantRequest* request, ::etcdserverpb::LeaseGrantResponse* response) { return this->LeaseGrant(context, request, response); }));}
+    void SetMessageAllocatorFor_LeaseGrant(
+        ::grpc::MessageAllocator< ::etcdserverpb::LeaseGrantRequest, ::etcdserverpb::LeaseGrantResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::etcdserverpb::LeaseGrantRequest, ::etcdserverpb::LeaseGrantResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_LeaseGrant() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseGrant(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseGrantRequest* /*request*/, ::etcdserverpb::LeaseGrantResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* LeaseGrant(
+      ::grpc::CallbackServerContext* /*context*/, const ::etcdserverpb::LeaseGrantRequest* /*request*/, ::etcdserverpb::LeaseGrantResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_LeaseRevoke : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_LeaseRevoke() {
+      ::grpc::Service::MarkMethodCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::etcdserverpb::LeaseRevokeRequest, ::etcdserverpb::LeaseRevokeResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::etcdserverpb::LeaseRevokeRequest* request, ::etcdserverpb::LeaseRevokeResponse* response) { return this->LeaseRevoke(context, request, response); }));}
+    void SetMessageAllocatorFor_LeaseRevoke(
+        ::grpc::MessageAllocator< ::etcdserverpb::LeaseRevokeRequest, ::etcdserverpb::LeaseRevokeResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::etcdserverpb::LeaseRevokeRequest, ::etcdserverpb::LeaseRevokeResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_LeaseRevoke() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseRevoke(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseRevokeRequest* /*request*/, ::etcdserverpb::LeaseRevokeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* LeaseRevoke(
+      ::grpc::CallbackServerContext* /*context*/, const ::etcdserverpb::LeaseRevokeRequest* /*request*/, ::etcdserverpb::LeaseRevokeResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_LeaseKeepAlive : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_LeaseKeepAlive() {
+      ::grpc::Service::MarkMethodCallback(2,
+          new ::grpc::internal::CallbackBidiHandler< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context) { return this->LeaseKeepAlive(context); }));
+    }
+    ~WithCallbackMethod_LeaseKeepAlive() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseKeepAlive(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::etcdserverpb::LeaseKeepAliveResponse, ::etcdserverpb::LeaseKeepAliveRequest>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerBidiReactor< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>* LeaseKeepAlive(
+      ::grpc::CallbackServerContext* /*context*/)
+      { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_LeaseTimeToLive : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_LeaseTimeToLive() {
+      ::grpc::Service::MarkMethodCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::etcdserverpb::LeaseTimeToLiveRequest, ::etcdserverpb::LeaseTimeToLiveResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest* request, ::etcdserverpb::LeaseTimeToLiveResponse* response) { return this->LeaseTimeToLive(context, request, response); }));}
+    void SetMessageAllocatorFor_LeaseTimeToLive(
+        ::grpc::MessageAllocator< ::etcdserverpb::LeaseTimeToLiveRequest, ::etcdserverpb::LeaseTimeToLiveResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::etcdserverpb::LeaseTimeToLiveRequest, ::etcdserverpb::LeaseTimeToLiveResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_LeaseTimeToLive() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseTimeToLive(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseTimeToLiveRequest* /*request*/, ::etcdserverpb::LeaseTimeToLiveResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* LeaseTimeToLive(
+      ::grpc::CallbackServerContext* /*context*/, const ::etcdserverpb::LeaseTimeToLiveRequest* /*request*/, ::etcdserverpb::LeaseTimeToLiveResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_LeaseLeases : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_LeaseLeases() {
+      ::grpc::Service::MarkMethodCallback(4,
+          new ::grpc::internal::CallbackUnaryHandler< ::etcdserverpb::LeaseLeasesRequest, ::etcdserverpb::LeaseLeasesResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::etcdserverpb::LeaseLeasesRequest* request, ::etcdserverpb::LeaseLeasesResponse* response) { return this->LeaseLeases(context, request, response); }));}
+    void SetMessageAllocatorFor_LeaseLeases(
+        ::grpc::MessageAllocator< ::etcdserverpb::LeaseLeasesRequest, ::etcdserverpb::LeaseLeasesResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(4);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::etcdserverpb::LeaseLeasesRequest, ::etcdserverpb::LeaseLeasesResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_LeaseLeases() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseLeases(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseLeasesRequest* /*request*/, ::etcdserverpb::LeaseLeasesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* LeaseLeases(
+      ::grpc::CallbackServerContext* /*context*/, const ::etcdserverpb::LeaseLeasesRequest* /*request*/, ::etcdserverpb::LeaseLeasesResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_LeaseGrant<WithCallbackMethod_LeaseRevoke<WithCallbackMethod_LeaseKeepAlive<WithCallbackMethod_LeaseTimeToLive<WithCallbackMethod_LeaseLeases<Service > > > > > CallbackService;
+  typedef CallbackService ExperimentalCallbackService;
+  template <class BaseClass>
+  class WithGenericMethod_LeaseGrant : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_LeaseGrant() {
+      ::grpc::Service::MarkMethodGeneric(0);
+    }
+    ~WithGenericMethod_LeaseGrant() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseGrant(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseGrantRequest* /*request*/, ::etcdserverpb::LeaseGrantResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_LeaseRevoke : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_LeaseRevoke() {
+      ::grpc::Service::MarkMethodGeneric(1);
+    }
+    ~WithGenericMethod_LeaseRevoke() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseRevoke(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseRevokeRequest* /*request*/, ::etcdserverpb::LeaseRevokeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_LeaseKeepAlive : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_LeaseKeepAlive() {
+      ::grpc::Service::MarkMethodGeneric(2);
+    }
+    ~WithGenericMethod_LeaseKeepAlive() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseKeepAlive(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::etcdserverpb::LeaseKeepAliveResponse, ::etcdserverpb::LeaseKeepAliveRequest>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_LeaseTimeToLive : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_LeaseTimeToLive() {
+      ::grpc::Service::MarkMethodGeneric(3);
+    }
+    ~WithGenericMethod_LeaseTimeToLive() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseTimeToLive(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseTimeToLiveRequest* /*request*/, ::etcdserverpb::LeaseTimeToLiveResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_LeaseLeases : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_LeaseLeases() {
+      ::grpc::Service::MarkMethodGeneric(4);
+    }
+    ~WithGenericMethod_LeaseLeases() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseLeases(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseLeasesRequest* /*request*/, ::etcdserverpb::LeaseLeasesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_LeaseGrant : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_LeaseGrant() {
+      ::grpc::Service::MarkMethodRaw(0);
+    }
+    ~WithRawMethod_LeaseGrant() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseGrant(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseGrantRequest* /*request*/, ::etcdserverpb::LeaseGrantResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLeaseGrant(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_LeaseRevoke : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_LeaseRevoke() {
+      ::grpc::Service::MarkMethodRaw(1);
+    }
+    ~WithRawMethod_LeaseRevoke() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseRevoke(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseRevokeRequest* /*request*/, ::etcdserverpb::LeaseRevokeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLeaseRevoke(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_LeaseKeepAlive : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_LeaseKeepAlive() {
+      ::grpc::Service::MarkMethodRaw(2);
+    }
+    ~WithRawMethod_LeaseKeepAlive() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseKeepAlive(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::etcdserverpb::LeaseKeepAliveResponse, ::etcdserverpb::LeaseKeepAliveRequest>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLeaseKeepAlive(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncBidiStreaming(2, context, stream, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_LeaseTimeToLive : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_LeaseTimeToLive() {
+      ::grpc::Service::MarkMethodRaw(3);
+    }
+    ~WithRawMethod_LeaseTimeToLive() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseTimeToLive(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseTimeToLiveRequest* /*request*/, ::etcdserverpb::LeaseTimeToLiveResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLeaseTimeToLive(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_LeaseLeases : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_LeaseLeases() {
+      ::grpc::Service::MarkMethodRaw(4);
+    }
+    ~WithRawMethod_LeaseLeases() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseLeases(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseLeasesRequest* /*request*/, ::etcdserverpb::LeaseLeasesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLeaseLeases(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_LeaseGrant : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_LeaseGrant() {
+      ::grpc::Service::MarkMethodRawCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->LeaseGrant(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_LeaseGrant() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseGrant(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseGrantRequest* /*request*/, ::etcdserverpb::LeaseGrantResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* LeaseGrant(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_LeaseRevoke : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_LeaseRevoke() {
+      ::grpc::Service::MarkMethodRawCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->LeaseRevoke(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_LeaseRevoke() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseRevoke(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseRevokeRequest* /*request*/, ::etcdserverpb::LeaseRevokeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* LeaseRevoke(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_LeaseKeepAlive : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_LeaseKeepAlive() {
+      ::grpc::Service::MarkMethodRawCallback(2,
+          new ::grpc::internal::CallbackBidiHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context) { return this->LeaseKeepAlive(context); }));
+    }
+    ~WithRawCallbackMethod_LeaseKeepAlive() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseKeepAlive(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::etcdserverpb::LeaseKeepAliveResponse, ::etcdserverpb::LeaseKeepAliveRequest>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerBidiReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* LeaseKeepAlive(
+      ::grpc::CallbackServerContext* /*context*/)
+      { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_LeaseTimeToLive : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_LeaseTimeToLive() {
+      ::grpc::Service::MarkMethodRawCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->LeaseTimeToLive(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_LeaseTimeToLive() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseTimeToLive(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseTimeToLiveRequest* /*request*/, ::etcdserverpb::LeaseTimeToLiveResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* LeaseTimeToLive(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_LeaseLeases : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_LeaseLeases() {
+      ::grpc::Service::MarkMethodRawCallback(4,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->LeaseLeases(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_LeaseLeases() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LeaseLeases(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseLeasesRequest* /*request*/, ::etcdserverpb::LeaseLeasesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* LeaseLeases(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_LeaseGrant : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_LeaseGrant() {
+      ::grpc::Service::MarkMethodStreamed(0,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::etcdserverpb::LeaseGrantRequest, ::etcdserverpb::LeaseGrantResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::etcdserverpb::LeaseGrantRequest, ::etcdserverpb::LeaseGrantResponse>* streamer) {
+                       return this->StreamedLeaseGrant(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_LeaseGrant() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status LeaseGrant(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseGrantRequest* /*request*/, ::etcdserverpb::LeaseGrantResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedLeaseGrant(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::etcdserverpb::LeaseGrantRequest,::etcdserverpb::LeaseGrantResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_LeaseRevoke : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_LeaseRevoke() {
+      ::grpc::Service::MarkMethodStreamed(1,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::etcdserverpb::LeaseRevokeRequest, ::etcdserverpb::LeaseRevokeResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::etcdserverpb::LeaseRevokeRequest, ::etcdserverpb::LeaseRevokeResponse>* streamer) {
+                       return this->StreamedLeaseRevoke(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_LeaseRevoke() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status LeaseRevoke(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseRevokeRequest* /*request*/, ::etcdserverpb::LeaseRevokeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedLeaseRevoke(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::etcdserverpb::LeaseRevokeRequest,::etcdserverpb::LeaseRevokeResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_LeaseTimeToLive : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_LeaseTimeToLive() {
+      ::grpc::Service::MarkMethodStreamed(3,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::etcdserverpb::LeaseTimeToLiveRequest, ::etcdserverpb::LeaseTimeToLiveResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::etcdserverpb::LeaseTimeToLiveRequest, ::etcdserverpb::LeaseTimeToLiveResponse>* streamer) {
+                       return this->StreamedLeaseTimeToLive(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_LeaseTimeToLive() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status LeaseTimeToLive(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseTimeToLiveRequest* /*request*/, ::etcdserverpb::LeaseTimeToLiveResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedLeaseTimeToLive(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::etcdserverpb::LeaseTimeToLiveRequest,::etcdserverpb::LeaseTimeToLiveResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_LeaseLeases : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_LeaseLeases() {
+      ::grpc::Service::MarkMethodStreamed(4,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::etcdserverpb::LeaseLeasesRequest, ::etcdserverpb::LeaseLeasesResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::etcdserverpb::LeaseLeasesRequest, ::etcdserverpb::LeaseLeasesResponse>* streamer) {
+                       return this->StreamedLeaseLeases(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_LeaseLeases() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status LeaseLeases(::grpc::ServerContext* /*context*/, const ::etcdserverpb::LeaseLeasesRequest* /*request*/, ::etcdserverpb::LeaseLeasesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedLeaseLeases(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::etcdserverpb::LeaseLeasesRequest,::etcdserverpb::LeaseLeasesResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_LeaseGrant<WithStreamedUnaryMethod_LeaseRevoke<WithStreamedUnaryMethod_LeaseTimeToLive<WithStreamedUnaryMethod_LeaseLeases<Service > > > > StreamedUnaryService;
+  typedef Service SplitStreamedService;
+  typedef WithStreamedUnaryMethod_LeaseGrant<WithStreamedUnaryMethod_LeaseRevoke<WithStreamedUnaryMethod_LeaseTimeToLive<WithStreamedUnaryMethod_LeaseLeases<Service > > > > StreamedService;
+};
+
 }  // namespace etcdserverpb
 
 

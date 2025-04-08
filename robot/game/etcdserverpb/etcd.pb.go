@@ -232,6 +232,54 @@ func (Compare_CompareTarget) EnumDescriptor() ([]byte, []int) {
 	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{9, 1}
 }
 
+type WatchCreateRequest_FilterType int32
+
+const (
+	// filter out put event.
+	WatchCreateRequest_NOPUT WatchCreateRequest_FilterType = 0
+	// filter out delete event.
+	WatchCreateRequest_NODELETE WatchCreateRequest_FilterType = 1
+)
+
+// Enum value maps for WatchCreateRequest_FilterType.
+var (
+	WatchCreateRequest_FilterType_name = map[int32]string{
+		0: "NOPUT",
+		1: "NODELETE",
+	}
+	WatchCreateRequest_FilterType_value = map[string]int32{
+		"NOPUT":    0,
+		"NODELETE": 1,
+	}
+)
+
+func (x WatchCreateRequest_FilterType) Enum() *WatchCreateRequest_FilterType {
+	p := new(WatchCreateRequest_FilterType)
+	*p = x
+	return p
+}
+
+func (x WatchCreateRequest_FilterType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (WatchCreateRequest_FilterType) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_etcd_etcd_proto_enumTypes[4].Descriptor()
+}
+
+func (WatchCreateRequest_FilterType) Type() protoreflect.EnumType {
+	return &file_proto_etcd_etcd_proto_enumTypes[4]
+}
+
+func (x WatchCreateRequest_FilterType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use WatchCreateRequest_FilterType.Descriptor instead.
+func (WatchCreateRequest_FilterType) EnumDescriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{15, 0}
+}
+
 type ResponseHeader struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1493,6 +1541,1203 @@ func (x *CompactionResponse) GetHeader() *ResponseHeader {
 	return nil
 }
 
+type WatchRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// request_union is a request to either create a new watcher or cancel an existing watcher.
+	//
+	// Types that are assignable to RequestUnion:
+	//
+	//	*WatchRequest_CreateRequest
+	//	*WatchRequest_CancelRequest
+	//	*WatchRequest_ProgressRequest
+	RequestUnion isWatchRequest_RequestUnion `protobuf_oneof:"request_union"`
+}
+
+func (x *WatchRequest) Reset() {
+	*x = WatchRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *WatchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WatchRequest) ProtoMessage() {}
+
+func (x *WatchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WatchRequest.ProtoReflect.Descriptor instead.
+func (*WatchRequest) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{14}
+}
+
+func (m *WatchRequest) GetRequestUnion() isWatchRequest_RequestUnion {
+	if m != nil {
+		return m.RequestUnion
+	}
+	return nil
+}
+
+func (x *WatchRequest) GetCreateRequest() *WatchCreateRequest {
+	if x, ok := x.GetRequestUnion().(*WatchRequest_CreateRequest); ok {
+		return x.CreateRequest
+	}
+	return nil
+}
+
+func (x *WatchRequest) GetCancelRequest() *WatchCancelRequest {
+	if x, ok := x.GetRequestUnion().(*WatchRequest_CancelRequest); ok {
+		return x.CancelRequest
+	}
+	return nil
+}
+
+func (x *WatchRequest) GetProgressRequest() *WatchProgressRequest {
+	if x, ok := x.GetRequestUnion().(*WatchRequest_ProgressRequest); ok {
+		return x.ProgressRequest
+	}
+	return nil
+}
+
+type isWatchRequest_RequestUnion interface {
+	isWatchRequest_RequestUnion()
+}
+
+type WatchRequest_CreateRequest struct {
+	CreateRequest *WatchCreateRequest `protobuf:"bytes,1,opt,name=create_request,json=createRequest,proto3,oneof"`
+}
+
+type WatchRequest_CancelRequest struct {
+	CancelRequest *WatchCancelRequest `protobuf:"bytes,2,opt,name=cancel_request,json=cancelRequest,proto3,oneof"`
+}
+
+type WatchRequest_ProgressRequest struct {
+	ProgressRequest *WatchProgressRequest `protobuf:"bytes,3,opt,name=progress_request,json=progressRequest,proto3,oneof"`
+}
+
+func (*WatchRequest_CreateRequest) isWatchRequest_RequestUnion() {}
+
+func (*WatchRequest_CancelRequest) isWatchRequest_RequestUnion() {}
+
+func (*WatchRequest_ProgressRequest) isWatchRequest_RequestUnion() {}
+
+type WatchCreateRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// key is the key to register for watching.
+	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// range_end is the end of the range [key, range_end) to watch. If range_end is not given,
+	// only the key argument is watched. If range_end is equal to '\0', all keys greater than
+	// or equal to the key argument are watched.
+	// If the range_end is one bit larger than the given key,
+	// then all keys with the prefix (the given key) will be watched.
+	RangeEnd []byte `protobuf:"bytes,2,opt,name=range_end,json=rangeEnd,proto3" json:"range_end,omitempty"`
+	// start_revision is an optional revision to watch from (inclusive). No start_revision is "now".
+	StartRevision int64 `protobuf:"varint,3,opt,name=start_revision,json=startRevision,proto3" json:"start_revision,omitempty"`
+	// progress_notify is set so that the etcd server will periodically send a WatchResponse with
+	// no events to the new watcher if there are no recent events. It is useful when clients
+	// wish to recover a disconnected watcher starting from a recent known revision.
+	// The etcd server may decide how often it will send notifications based on current load.
+	ProgressNotify bool `protobuf:"varint,4,opt,name=progress_notify,json=progressNotify,proto3" json:"progress_notify,omitempty"`
+	// filters filter the events at server side before it sends back to the watcher.
+	Filters []WatchCreateRequest_FilterType `protobuf:"varint,5,rep,packed,name=filters,proto3,enum=etcdserverpb.WatchCreateRequest_FilterType" json:"filters,omitempty"`
+	// If prev_kv is set, created watcher gets the previous KV before the event happens.
+	// If the previous KV is already compacted, nothing will be returned.
+	PrevKv bool `protobuf:"varint,6,opt,name=prev_kv,json=prevKv,proto3" json:"prev_kv,omitempty"`
+	// If watch_id is provided and non-zero, it will be assigned to this watcher.
+	// Since creating a watcher in etcd is not a synchronous operation,
+	// this can be used ensure that ordering is correct when creating multiple
+	// watchers on the same stream. Creating a watcher with an ID already in
+	// use on the stream will cause an error to be returned.
+	WatchId int64 `protobuf:"varint,7,opt,name=watch_id,json=watchId,proto3" json:"watch_id,omitempty"`
+	// fragment enables splitting large revisions into multiple watch responses.
+	Fragment bool `protobuf:"varint,8,opt,name=fragment,proto3" json:"fragment,omitempty"`
+}
+
+func (x *WatchCreateRequest) Reset() {
+	*x = WatchCreateRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *WatchCreateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WatchCreateRequest) ProtoMessage() {}
+
+func (x *WatchCreateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WatchCreateRequest.ProtoReflect.Descriptor instead.
+func (*WatchCreateRequest) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *WatchCreateRequest) GetKey() []byte {
+	if x != nil {
+		return x.Key
+	}
+	return nil
+}
+
+func (x *WatchCreateRequest) GetRangeEnd() []byte {
+	if x != nil {
+		return x.RangeEnd
+	}
+	return nil
+}
+
+func (x *WatchCreateRequest) GetStartRevision() int64 {
+	if x != nil {
+		return x.StartRevision
+	}
+	return 0
+}
+
+func (x *WatchCreateRequest) GetProgressNotify() bool {
+	if x != nil {
+		return x.ProgressNotify
+	}
+	return false
+}
+
+func (x *WatchCreateRequest) GetFilters() []WatchCreateRequest_FilterType {
+	if x != nil {
+		return x.Filters
+	}
+	return nil
+}
+
+func (x *WatchCreateRequest) GetPrevKv() bool {
+	if x != nil {
+		return x.PrevKv
+	}
+	return false
+}
+
+func (x *WatchCreateRequest) GetWatchId() int64 {
+	if x != nil {
+		return x.WatchId
+	}
+	return 0
+}
+
+func (x *WatchCreateRequest) GetFragment() bool {
+	if x != nil {
+		return x.Fragment
+	}
+	return false
+}
+
+type WatchCancelRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// watch_id is the watcher id to cancel so that no more events are transmitted.
+	WatchId int64 `protobuf:"varint,1,opt,name=watch_id,json=watchId,proto3" json:"watch_id,omitempty"`
+}
+
+func (x *WatchCancelRequest) Reset() {
+	*x = WatchCancelRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *WatchCancelRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WatchCancelRequest) ProtoMessage() {}
+
+func (x *WatchCancelRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WatchCancelRequest.ProtoReflect.Descriptor instead.
+func (*WatchCancelRequest) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *WatchCancelRequest) GetWatchId() int64 {
+	if x != nil {
+		return x.WatchId
+	}
+	return 0
+}
+
+// Requests the a watch stream progress status be sent in the watch response stream as soon as
+// possible.
+type WatchProgressRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *WatchProgressRequest) Reset() {
+	*x = WatchProgressRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *WatchProgressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WatchProgressRequest) ProtoMessage() {}
+
+func (x *WatchProgressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WatchProgressRequest.ProtoReflect.Descriptor instead.
+func (*WatchProgressRequest) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{17}
+}
+
+type WatchResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Header *ResponseHeader `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	// watch_id is the ID of the watcher that corresponds to the response.
+	WatchId int64 `protobuf:"varint,2,opt,name=watch_id,json=watchId,proto3" json:"watch_id,omitempty"`
+	// created is set to true if the response is for a create watch request.
+	// The client should record the watch_id and expect to receive events for
+	// the created watcher from the same stream.
+	// All events sent to the created watcher will attach with the same watch_id.
+	Created bool `protobuf:"varint,3,opt,name=created,proto3" json:"created,omitempty"`
+	// canceled is set to true if the response is for a cancel watch request.
+	// No further events will be sent to the canceled watcher.
+	Canceled bool `protobuf:"varint,4,opt,name=canceled,proto3" json:"canceled,omitempty"`
+	// compact_revision is set to the minimum index if a watcher tries to watch
+	// at a compacted index.
+	//
+	// This happens when creating a watcher at a compacted revision or the watcher cannot
+	// catch up with the progress of the key-value store.
+	//
+	// The client should treat the watcher as canceled and should not try to create any
+	// watcher with the same start_revision again.
+	CompactRevision int64 `protobuf:"varint,5,opt,name=compact_revision,json=compactRevision,proto3" json:"compact_revision,omitempty"`
+	// cancel_reason indicates the reason for canceling the watcher.
+	CancelReason string `protobuf:"bytes,6,opt,name=cancel_reason,json=cancelReason,proto3" json:"cancel_reason,omitempty"`
+	// framgment is true if large watch response was split over multiple responses.
+	Fragment bool     `protobuf:"varint,7,opt,name=fragment,proto3" json:"fragment,omitempty"`
+	Events   []*Event `protobuf:"bytes,11,rep,name=events,proto3" json:"events,omitempty"`
+}
+
+func (x *WatchResponse) Reset() {
+	*x = WatchResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *WatchResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WatchResponse) ProtoMessage() {}
+
+func (x *WatchResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WatchResponse.ProtoReflect.Descriptor instead.
+func (*WatchResponse) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *WatchResponse) GetHeader() *ResponseHeader {
+	if x != nil {
+		return x.Header
+	}
+	return nil
+}
+
+func (x *WatchResponse) GetWatchId() int64 {
+	if x != nil {
+		return x.WatchId
+	}
+	return 0
+}
+
+func (x *WatchResponse) GetCreated() bool {
+	if x != nil {
+		return x.Created
+	}
+	return false
+}
+
+func (x *WatchResponse) GetCanceled() bool {
+	if x != nil {
+		return x.Canceled
+	}
+	return false
+}
+
+func (x *WatchResponse) GetCompactRevision() int64 {
+	if x != nil {
+		return x.CompactRevision
+	}
+	return 0
+}
+
+func (x *WatchResponse) GetCancelReason() string {
+	if x != nil {
+		return x.CancelReason
+	}
+	return ""
+}
+
+func (x *WatchResponse) GetFragment() bool {
+	if x != nil {
+		return x.Fragment
+	}
+	return false
+}
+
+func (x *WatchResponse) GetEvents() []*Event {
+	if x != nil {
+		return x.Events
+	}
+	return nil
+}
+
+type LeaseGrantRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// TTL is the advisory time-to-live in seconds. Expired lease will return -1.
+	TTL int64 `protobuf:"varint,1,opt,name=TTL,proto3" json:"TTL,omitempty"`
+	// ID is the requested ID for the lease. If ID is set to 0, the lessor chooses an ID.
+	ID int64 `protobuf:"varint,2,opt,name=ID,proto3" json:"ID,omitempty"`
+}
+
+func (x *LeaseGrantRequest) Reset() {
+	*x = LeaseGrantRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseGrantRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseGrantRequest) ProtoMessage() {}
+
+func (x *LeaseGrantRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[19]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseGrantRequest.ProtoReflect.Descriptor instead.
+func (*LeaseGrantRequest) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *LeaseGrantRequest) GetTTL() int64 {
+	if x != nil {
+		return x.TTL
+	}
+	return 0
+}
+
+func (x *LeaseGrantRequest) GetID() int64 {
+	if x != nil {
+		return x.ID
+	}
+	return 0
+}
+
+type LeaseGrantResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Header *ResponseHeader `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	// ID is the lease ID for the granted lease.
+	ID int64 `protobuf:"varint,2,opt,name=ID,proto3" json:"ID,omitempty"`
+	// TTL is the server chosen lease time-to-live in seconds.
+	TTL   int64  `protobuf:"varint,3,opt,name=TTL,proto3" json:"TTL,omitempty"`
+	Error string `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *LeaseGrantResponse) Reset() {
+	*x = LeaseGrantResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[20]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseGrantResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseGrantResponse) ProtoMessage() {}
+
+func (x *LeaseGrantResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[20]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseGrantResponse.ProtoReflect.Descriptor instead.
+func (*LeaseGrantResponse) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *LeaseGrantResponse) GetHeader() *ResponseHeader {
+	if x != nil {
+		return x.Header
+	}
+	return nil
+}
+
+func (x *LeaseGrantResponse) GetID() int64 {
+	if x != nil {
+		return x.ID
+	}
+	return 0
+}
+
+func (x *LeaseGrantResponse) GetTTL() int64 {
+	if x != nil {
+		return x.TTL
+	}
+	return 0
+}
+
+func (x *LeaseGrantResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+type LeaseRevokeRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// ID is the lease ID to revoke. When the ID is revoked, all associated keys will be deleted.
+	ID int64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+}
+
+func (x *LeaseRevokeRequest) Reset() {
+	*x = LeaseRevokeRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[21]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseRevokeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseRevokeRequest) ProtoMessage() {}
+
+func (x *LeaseRevokeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[21]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseRevokeRequest.ProtoReflect.Descriptor instead.
+func (*LeaseRevokeRequest) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *LeaseRevokeRequest) GetID() int64 {
+	if x != nil {
+		return x.ID
+	}
+	return 0
+}
+
+type LeaseRevokeResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Header *ResponseHeader `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+}
+
+func (x *LeaseRevokeResponse) Reset() {
+	*x = LeaseRevokeResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[22]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseRevokeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseRevokeResponse) ProtoMessage() {}
+
+func (x *LeaseRevokeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[22]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseRevokeResponse.ProtoReflect.Descriptor instead.
+func (*LeaseRevokeResponse) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *LeaseRevokeResponse) GetHeader() *ResponseHeader {
+	if x != nil {
+		return x.Header
+	}
+	return nil
+}
+
+type LeaseCheckpoint struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// ID is the lease ID to checkpoint.
+	ID int64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	// Remaining_TTL is the remaining time until expiry of the lease.
+	Remaining_TTL int64 `protobuf:"varint,2,opt,name=remaining_TTL,json=remainingTTL,proto3" json:"remaining_TTL,omitempty"`
+}
+
+func (x *LeaseCheckpoint) Reset() {
+	*x = LeaseCheckpoint{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[23]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseCheckpoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseCheckpoint) ProtoMessage() {}
+
+func (x *LeaseCheckpoint) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[23]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseCheckpoint.ProtoReflect.Descriptor instead.
+func (*LeaseCheckpoint) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *LeaseCheckpoint) GetID() int64 {
+	if x != nil {
+		return x.ID
+	}
+	return 0
+}
+
+func (x *LeaseCheckpoint) GetRemaining_TTL() int64 {
+	if x != nil {
+		return x.Remaining_TTL
+	}
+	return 0
+}
+
+type LeaseCheckpointRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Checkpoints []*LeaseCheckpoint `protobuf:"bytes,1,rep,name=checkpoints,proto3" json:"checkpoints,omitempty"`
+}
+
+func (x *LeaseCheckpointRequest) Reset() {
+	*x = LeaseCheckpointRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[24]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseCheckpointRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseCheckpointRequest) ProtoMessage() {}
+
+func (x *LeaseCheckpointRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[24]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseCheckpointRequest.ProtoReflect.Descriptor instead.
+func (*LeaseCheckpointRequest) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *LeaseCheckpointRequest) GetCheckpoints() []*LeaseCheckpoint {
+	if x != nil {
+		return x.Checkpoints
+	}
+	return nil
+}
+
+type LeaseCheckpointResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Header *ResponseHeader `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+}
+
+func (x *LeaseCheckpointResponse) Reset() {
+	*x = LeaseCheckpointResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[25]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseCheckpointResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseCheckpointResponse) ProtoMessage() {}
+
+func (x *LeaseCheckpointResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[25]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseCheckpointResponse.ProtoReflect.Descriptor instead.
+func (*LeaseCheckpointResponse) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *LeaseCheckpointResponse) GetHeader() *ResponseHeader {
+	if x != nil {
+		return x.Header
+	}
+	return nil
+}
+
+type LeaseKeepAliveRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// ID is the lease ID for the lease to keep alive.
+	ID int64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+}
+
+func (x *LeaseKeepAliveRequest) Reset() {
+	*x = LeaseKeepAliveRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[26]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseKeepAliveRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseKeepAliveRequest) ProtoMessage() {}
+
+func (x *LeaseKeepAliveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[26]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseKeepAliveRequest.ProtoReflect.Descriptor instead.
+func (*LeaseKeepAliveRequest) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *LeaseKeepAliveRequest) GetID() int64 {
+	if x != nil {
+		return x.ID
+	}
+	return 0
+}
+
+type LeaseKeepAliveResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Header *ResponseHeader `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	// ID is the lease ID from the keep alive request.
+	ID int64 `protobuf:"varint,2,opt,name=ID,proto3" json:"ID,omitempty"`
+	// TTL is the new time-to-live for the lease.
+	TTL int64 `protobuf:"varint,3,opt,name=TTL,proto3" json:"TTL,omitempty"`
+}
+
+func (x *LeaseKeepAliveResponse) Reset() {
+	*x = LeaseKeepAliveResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[27]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseKeepAliveResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseKeepAliveResponse) ProtoMessage() {}
+
+func (x *LeaseKeepAliveResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[27]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseKeepAliveResponse.ProtoReflect.Descriptor instead.
+func (*LeaseKeepAliveResponse) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *LeaseKeepAliveResponse) GetHeader() *ResponseHeader {
+	if x != nil {
+		return x.Header
+	}
+	return nil
+}
+
+func (x *LeaseKeepAliveResponse) GetID() int64 {
+	if x != nil {
+		return x.ID
+	}
+	return 0
+}
+
+func (x *LeaseKeepAliveResponse) GetTTL() int64 {
+	if x != nil {
+		return x.TTL
+	}
+	return 0
+}
+
+type LeaseTimeToLiveRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// ID is the lease ID for the lease.
+	ID int64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	// keys is true to query all the keys attached to this lease.
+	Keys bool `protobuf:"varint,2,opt,name=keys,proto3" json:"keys,omitempty"`
+}
+
+func (x *LeaseTimeToLiveRequest) Reset() {
+	*x = LeaseTimeToLiveRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[28]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseTimeToLiveRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseTimeToLiveRequest) ProtoMessage() {}
+
+func (x *LeaseTimeToLiveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[28]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseTimeToLiveRequest.ProtoReflect.Descriptor instead.
+func (*LeaseTimeToLiveRequest) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *LeaseTimeToLiveRequest) GetID() int64 {
+	if x != nil {
+		return x.ID
+	}
+	return 0
+}
+
+func (x *LeaseTimeToLiveRequest) GetKeys() bool {
+	if x != nil {
+		return x.Keys
+	}
+	return false
+}
+
+type LeaseTimeToLiveResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Header *ResponseHeader `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	// ID is the lease ID from the keep alive request.
+	ID int64 `protobuf:"varint,2,opt,name=ID,proto3" json:"ID,omitempty"`
+	// TTL is the remaining TTL in seconds for the lease; the lease will expire in under TTL+1 seconds.
+	TTL int64 `protobuf:"varint,3,opt,name=TTL,proto3" json:"TTL,omitempty"`
+	// GrantedTTL is the initial granted time in seconds upon lease creation/renewal.
+	GrantedTTL int64 `protobuf:"varint,4,opt,name=grantedTTL,proto3" json:"grantedTTL,omitempty"`
+	// Keys is the list of keys attached to this lease.
+	Keys [][]byte `protobuf:"bytes,5,rep,name=keys,proto3" json:"keys,omitempty"`
+}
+
+func (x *LeaseTimeToLiveResponse) Reset() {
+	*x = LeaseTimeToLiveResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[29]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseTimeToLiveResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseTimeToLiveResponse) ProtoMessage() {}
+
+func (x *LeaseTimeToLiveResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[29]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseTimeToLiveResponse.ProtoReflect.Descriptor instead.
+func (*LeaseTimeToLiveResponse) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *LeaseTimeToLiveResponse) GetHeader() *ResponseHeader {
+	if x != nil {
+		return x.Header
+	}
+	return nil
+}
+
+func (x *LeaseTimeToLiveResponse) GetID() int64 {
+	if x != nil {
+		return x.ID
+	}
+	return 0
+}
+
+func (x *LeaseTimeToLiveResponse) GetTTL() int64 {
+	if x != nil {
+		return x.TTL
+	}
+	return 0
+}
+
+func (x *LeaseTimeToLiveResponse) GetGrantedTTL() int64 {
+	if x != nil {
+		return x.GrantedTTL
+	}
+	return 0
+}
+
+func (x *LeaseTimeToLiveResponse) GetKeys() [][]byte {
+	if x != nil {
+		return x.Keys
+	}
+	return nil
+}
+
+type LeaseLeasesRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *LeaseLeasesRequest) Reset() {
+	*x = LeaseLeasesRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[30]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseLeasesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseLeasesRequest) ProtoMessage() {}
+
+func (x *LeaseLeasesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[30]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseLeasesRequest.ProtoReflect.Descriptor instead.
+func (*LeaseLeasesRequest) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{30}
+}
+
+type LeaseStatus struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ID int64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"` // TODO: int64 TTL = 2;
+}
+
+func (x *LeaseStatus) Reset() {
+	*x = LeaseStatus{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[31]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseStatus) ProtoMessage() {}
+
+func (x *LeaseStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[31]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseStatus.ProtoReflect.Descriptor instead.
+func (*LeaseStatus) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *LeaseStatus) GetID() int64 {
+	if x != nil {
+		return x.ID
+	}
+	return 0
+}
+
+type LeaseLeasesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Header *ResponseHeader `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	Leases []*LeaseStatus  `protobuf:"bytes,2,rep,name=leases,proto3" json:"leases,omitempty"`
+}
+
+func (x *LeaseLeasesResponse) Reset() {
+	*x = LeaseLeasesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_etcd_etcd_proto_msgTypes[32]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LeaseLeasesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaseLeasesResponse) ProtoMessage() {}
+
+func (x *LeaseLeasesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_etcd_etcd_proto_msgTypes[32]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaseLeasesResponse.ProtoReflect.Descriptor instead.
+func (*LeaseLeasesResponse) Descriptor() ([]byte, []int) {
+	return file_proto_etcd_etcd_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *LeaseLeasesResponse) GetHeader() *ResponseHeader {
+	if x != nil {
+		return x.Header
+	}
+	return nil
+}
+
+func (x *LeaseLeasesResponse) GetLeases() []*LeaseStatus {
+	if x != nil {
+		return x.Leases
+	}
+	return nil
+}
+
 var File_proto_etcd_etcd_proto protoreflect.FileDescriptor
 
 var file_proto_etcd_etcd_proto_rawDesc = []byte{
@@ -1710,31 +2955,211 @@ var file_proto_etcd_etcd_proto_rawDesc = []byte{
 	0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x65, 0x74, 0x63, 0x64,
 	0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
 	0x65, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x06, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x3a,
-	0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x30, 0x32, 0xe0, 0x02, 0x0a, 0x02, 0x4b, 0x56, 0x12,
-	0x40, 0x0a, 0x05, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x1a, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73,
-	0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65,
-	0x72, 0x70, 0x62, 0x2e, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x3a, 0x0a, 0x03, 0x50, 0x75, 0x74, 0x12, 0x18, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73,
-	0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x50, 0x75, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x19, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70,
-	0x62, 0x2e, 0x50, 0x75, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x52, 0x0a,
-	0x0b, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x20, 0x2e, 0x65,
-	0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x44, 0x65, 0x6c, 0x65,
-	0x74, 0x65, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21,
-	0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x44, 0x65,
-	0x6c, 0x65, 0x74, 0x65, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x3a, 0x0a, 0x03, 0x54, 0x78, 0x6e, 0x12, 0x18, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73,
-	0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x54, 0x78, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x19, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70,
-	0x62, 0x2e, 0x54, 0x78, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4c, 0x0a,
-	0x07, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x63, 0x74, 0x12, 0x1f, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73,
-	0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x63, 0x74, 0x69,
-	0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x65, 0x74, 0x63, 0x64,
-	0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x63, 0x74,
-	0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x13, 0x5a, 0x11, 0x67,
-	0x61, 0x6d, 0x65, 0x2f, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x30, 0x22, 0x98, 0x02, 0x0a, 0x0c, 0x57, 0x61, 0x74,
+	0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x49, 0x0a, 0x0e, 0x63, 0x72, 0x65,
+	0x61, 0x74, 0x65, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x20, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62,
+	0x2e, 0x57, 0x61, 0x74, 0x63, 0x68, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x48, 0x00, 0x52, 0x0d, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x12, 0x49, 0x0a, 0x0e, 0x63, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x5f, 0x72,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x65,
+	0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x57, 0x61, 0x74, 0x63,
+	0x68, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x48, 0x00,
+	0x52, 0x0d, 0x63, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x58, 0x0a, 0x10, 0x70, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x5f, 0x72, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x65, 0x74, 0x63, 0x64,
+	0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x57, 0x61, 0x74, 0x63, 0x68, 0x50, 0x72,
+	0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x42, 0x07, 0x8a,
+	0xb5, 0x18, 0x03, 0x33, 0x2e, 0x34, 0x48, 0x00, 0x52, 0x0f, 0x70, 0x72, 0x6f, 0x67, 0x72, 0x65,
+	0x73, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33,
+	0x2e, 0x30, 0x42, 0x0f, 0x0a, 0x0d, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x75, 0x6e,
+	0x69, 0x6f, 0x6e, 0x22, 0x87, 0x03, 0x0a, 0x12, 0x57, 0x61, 0x74, 0x63, 0x68, 0x43, 0x72, 0x65,
+	0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65,
+	0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x1b, 0x0a, 0x09,
+	0x72, 0x61, 0x6e, 0x67, 0x65, 0x5f, 0x65, 0x6e, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52,
+	0x08, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x45, 0x6e, 0x64, 0x12, 0x25, 0x0a, 0x0e, 0x73, 0x74, 0x61,
+	0x72, 0x74, 0x5f, 0x72, 0x65, 0x76, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x03, 0x52, 0x0d, 0x73, 0x74, 0x61, 0x72, 0x74, 0x52, 0x65, 0x76, 0x69, 0x73, 0x69, 0x6f, 0x6e,
+	0x12, 0x27, 0x0a, 0x0f, 0x70, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x5f, 0x6e, 0x6f, 0x74,
+	0x69, 0x66, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0e, 0x70, 0x72, 0x6f, 0x67, 0x72,
+	0x65, 0x73, 0x73, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x12, 0x4e, 0x0a, 0x07, 0x66, 0x69, 0x6c,
+	0x74, 0x65, 0x72, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0e, 0x32, 0x2b, 0x2e, 0x65, 0x74, 0x63,
+	0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x57, 0x61, 0x74, 0x63, 0x68, 0x43,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x46, 0x69, 0x6c,
+	0x74, 0x65, 0x72, 0x54, 0x79, 0x70, 0x65, 0x42, 0x07, 0x8a, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x31,
+	0x52, 0x07, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x73, 0x12, 0x20, 0x0a, 0x07, 0x70, 0x72, 0x65,
+	0x76, 0x5f, 0x6b, 0x76, 0x18, 0x06, 0x20, 0x01, 0x28, 0x08, 0x42, 0x07, 0x8a, 0xb5, 0x18, 0x03,
+	0x33, 0x2e, 0x31, 0x52, 0x06, 0x70, 0x72, 0x65, 0x76, 0x4b, 0x76, 0x12, 0x22, 0x0a, 0x08, 0x77,
+	0x61, 0x74, 0x63, 0x68, 0x5f, 0x69, 0x64, 0x18, 0x07, 0x20, 0x01, 0x28, 0x03, 0x42, 0x07, 0x8a,
+	0xb5, 0x18, 0x03, 0x33, 0x2e, 0x34, 0x52, 0x07, 0x77, 0x61, 0x74, 0x63, 0x68, 0x49, 0x64, 0x12,
+	0x23, 0x0a, 0x08, 0x66, 0x72, 0x61, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x18, 0x08, 0x20, 0x01, 0x28,
+	0x08, 0x42, 0x07, 0x8a, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x34, 0x52, 0x08, 0x66, 0x72, 0x61, 0x67,
+	0x6d, 0x65, 0x6e, 0x74, 0x22, 0x2e, 0x0a, 0x0a, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x54, 0x79,
+	0x70, 0x65, 0x12, 0x09, 0x0a, 0x05, 0x4e, 0x4f, 0x50, 0x55, 0x54, 0x10, 0x00, 0x12, 0x0c, 0x0a,
+	0x08, 0x4e, 0x4f, 0x44, 0x45, 0x4c, 0x45, 0x54, 0x45, 0x10, 0x01, 0x1a, 0x07, 0x92, 0xb5, 0x18,
+	0x03, 0x33, 0x2e, 0x31, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x30, 0x22, 0x41, 0x0a,
+	0x12, 0x57, 0x61, 0x74, 0x63, 0x68, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x22, 0x0a, 0x08, 0x77, 0x61, 0x74, 0x63, 0x68, 0x5f, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x03, 0x42, 0x07, 0x8a, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x31, 0x52, 0x07,
+	0x77, 0x61, 0x74, 0x63, 0x68, 0x49, 0x64, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x31,
+	0x22, 0x1f, 0x0a, 0x14, 0x57, 0x61, 0x74, 0x63, 0x68, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73,
+	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e,
+	0x34, 0x22, 0xc4, 0x02, 0x0a, 0x0d, 0x57, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72,
+	0x70, 0x62, 0x2e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x48, 0x65, 0x61, 0x64, 0x65,
+	0x72, 0x52, 0x06, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x19, 0x0a, 0x08, 0x77, 0x61, 0x74,
+	0x63, 0x68, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x77, 0x61, 0x74,
+	0x63, 0x68, 0x49, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x12, 0x1a,
+	0x0a, 0x08, 0x63, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x65, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08,
+	0x52, 0x08, 0x63, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x65, 0x64, 0x12, 0x29, 0x0a, 0x10, 0x63, 0x6f,
+	0x6d, 0x70, 0x61, 0x63, 0x74, 0x5f, 0x72, 0x65, 0x76, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x05,
+	0x20, 0x01, 0x28, 0x03, 0x52, 0x0f, 0x63, 0x6f, 0x6d, 0x70, 0x61, 0x63, 0x74, 0x52, 0x65, 0x76,
+	0x69, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x2c, 0x0a, 0x0d, 0x63, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x5f,
+	0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x42, 0x07, 0x8a, 0xb5,
+	0x18, 0x03, 0x33, 0x2e, 0x34, 0x52, 0x0c, 0x63, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x52, 0x65, 0x61,
+	0x73, 0x6f, 0x6e, 0x12, 0x23, 0x0a, 0x08, 0x66, 0x72, 0x61, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x18,
+	0x07, 0x20, 0x01, 0x28, 0x08, 0x42, 0x07, 0x8a, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x34, 0x52, 0x08,
+	0x66, 0x72, 0x61, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x25, 0x0a, 0x06, 0x65, 0x76, 0x65, 0x6e,
+	0x74, 0x73, 0x18, 0x0b, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x6d, 0x76, 0x63, 0x63, 0x70,
+	0x62, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x06, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x3a,
+	0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x30, 0x22, 0x3e, 0x0a, 0x11, 0x4c, 0x65, 0x61, 0x73,
+	0x65, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a,
+	0x03, 0x54, 0x54, 0x4c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x03, 0x54, 0x54, 0x4c, 0x12,
+	0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x49, 0x44, 0x3a,
+	0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x30, 0x22, 0x8b, 0x01, 0x0a, 0x12, 0x4c, 0x65, 0x61,
+	0x73, 0x65, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x34, 0x0a, 0x06, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1c, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x06, 0x68,
+	0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x03, 0x52, 0x02, 0x49, 0x44, 0x12, 0x10, 0x0a, 0x03, 0x54, 0x54, 0x4c, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x03, 0x52, 0x03, 0x54, 0x54, 0x4c, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x3a, 0x07, 0x82,
+	0xb5, 0x18, 0x03, 0x33, 0x2e, 0x30, 0x22, 0x2d, 0x0a, 0x12, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x52,
+	0x65, 0x76, 0x6f, 0x6b, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02,
+	0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x49, 0x44, 0x3a, 0x07, 0x82, 0xb5,
+	0x18, 0x03, 0x33, 0x2e, 0x30, 0x22, 0x54, 0x0a, 0x13, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x52, 0x65,
+	0x76, 0x6f, 0x6b, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x34, 0x0a, 0x06,
+	0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x65,
+	0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x06, 0x68, 0x65, 0x61, 0x64,
+	0x65, 0x72, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x30, 0x22, 0x4f, 0x0a, 0x0f, 0x4c,
+	0x65, 0x61, 0x73, 0x65, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x12, 0x0e,
+	0x0a, 0x02, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x49, 0x44, 0x12, 0x23,
+	0x0a, 0x0d, 0x72, 0x65, 0x6d, 0x61, 0x69, 0x6e, 0x69, 0x6e, 0x67, 0x5f, 0x54, 0x54, 0x4c, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0c, 0x72, 0x65, 0x6d, 0x61, 0x69, 0x6e, 0x69, 0x6e, 0x67,
+	0x54, 0x54, 0x4c, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x34, 0x22, 0x62, 0x0a, 0x16,
+	0x4c, 0x65, 0x61, 0x73, 0x65, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x3f, 0x0a, 0x0b, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x70,
+	0x6f, 0x69, 0x6e, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x65, 0x74,
+	0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x4c, 0x65, 0x61, 0x73, 0x65,
+	0x43, 0x68, 0x65, 0x63, 0x6b, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x52, 0x0b, 0x63, 0x68, 0x65, 0x63,
+	0x6b, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x73, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x34,
+	0x22, 0x58, 0x0a, 0x17, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x70, 0x6f,
+	0x69, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x68,
+	0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x65, 0x74,
+	0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x06, 0x68, 0x65, 0x61, 0x64, 0x65,
+	0x72, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x34, 0x22, 0x30, 0x0a, 0x15, 0x4c, 0x65,
+	0x61, 0x73, 0x65, 0x4b, 0x65, 0x65, 0x70, 0x41, 0x6c, 0x69, 0x76, 0x65, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52,
+	0x02, 0x49, 0x44, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x30, 0x22, 0x79, 0x0a, 0x16,
+	0x4c, 0x65, 0x61, 0x73, 0x65, 0x4b, 0x65, 0x65, 0x70, 0x41, 0x6c, 0x69, 0x76, 0x65, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72,
+	0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x48, 0x65,
+	0x61, 0x64, 0x65, 0x72, 0x52, 0x06, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x0e, 0x0a, 0x02,
+	0x49, 0x44, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x49, 0x44, 0x12, 0x10, 0x0a, 0x03,
+	0x54, 0x54, 0x4c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x03, 0x54, 0x54, 0x4c, 0x3a, 0x07,
+	0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x30, 0x22, 0x45, 0x0a, 0x16, 0x4c, 0x65, 0x61, 0x73, 0x65,
+	0x54, 0x69, 0x6d, 0x65, 0x54, 0x6f, 0x4c, 0x69, 0x76, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x49,
+	0x44, 0x12, 0x12, 0x0a, 0x04, 0x6b, 0x65, 0x79, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52,
+	0x04, 0x6b, 0x65, 0x79, 0x73, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x31, 0x22, 0xae,
+	0x01, 0x0a, 0x17, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x54, 0x6f, 0x4c, 0x69,
+	0x76, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x68, 0x65,
+	0x61, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x65, 0x74, 0x63,
+	0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x06, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72,
+	0x12, 0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x49, 0x44,
+	0x12, 0x10, 0x0a, 0x03, 0x54, 0x54, 0x4c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x03, 0x54,
+	0x54, 0x4c, 0x12, 0x1e, 0x0a, 0x0a, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x65, 0x64, 0x54, 0x54, 0x4c,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x65, 0x64, 0x54,
+	0x54, 0x4c, 0x12, 0x12, 0x0a, 0x04, 0x6b, 0x65, 0x79, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0c,
+	0x52, 0x04, 0x6b, 0x65, 0x79, 0x73, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x31, 0x22,
+	0x1d, 0x0a, 0x12, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x73, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x33, 0x22, 0x26,
+	0x0a, 0x0b, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x0e, 0x0a,
+	0x02, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x49, 0x44, 0x3a, 0x07, 0x82,
+	0xb5, 0x18, 0x03, 0x33, 0x2e, 0x33, 0x22, 0x87, 0x01, 0x0a, 0x13, 0x4c, 0x65, 0x61, 0x73, 0x65,
+	0x4c, 0x65, 0x61, 0x73, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x34,
+	0x0a, 0x06, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c,
+	0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x06, 0x68, 0x65,
+	0x61, 0x64, 0x65, 0x72, 0x12, 0x31, 0x0a, 0x06, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x73, 0x18, 0x02,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65,
+	0x72, 0x70, 0x62, 0x2e, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52,
+	0x06, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x73, 0x3a, 0x07, 0x82, 0xb5, 0x18, 0x03, 0x33, 0x2e, 0x33,
+	0x32, 0xe0, 0x02, 0x0a, 0x02, 0x4b, 0x56, 0x12, 0x40, 0x0a, 0x05, 0x52, 0x61, 0x6e, 0x67, 0x65,
+	0x12, 0x1a, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e,
+	0x52, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x65,
+	0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x52, 0x61, 0x6e, 0x67,
+	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3a, 0x0a, 0x03, 0x50, 0x75, 0x74,
+	0x12, 0x18, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e,
+	0x50, 0x75, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x65, 0x74, 0x63,
+	0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x50, 0x75, 0x74, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x52, 0x0a, 0x0b, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52,
+	0x61, 0x6e, 0x67, 0x65, 0x12, 0x20, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65,
+	0x72, 0x70, 0x62, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72,
+	0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x61, 0x6e, 0x67,
+	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3a, 0x0a, 0x03, 0x54, 0x78, 0x6e,
+	0x12, 0x18, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e,
+	0x54, 0x78, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x65, 0x74, 0x63,
+	0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x54, 0x78, 0x6e, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4c, 0x0a, 0x07, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x63, 0x74,
+	0x12, 0x1f, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e,
+	0x43, 0x6f, 0x6d, 0x70, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x20, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62,
+	0x2e, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x32, 0x4d, 0x0a, 0x05, 0x57, 0x61, 0x74, 0x63, 0x68, 0x12, 0x44, 0x0a, 0x05,
+	0x57, 0x61, 0x74, 0x63, 0x68, 0x12, 0x1a, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76,
+	0x65, 0x72, 0x70, 0x62, 0x2e, 0x57, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x1b, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62,
+	0x2e, 0x57, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x28, 0x01,
+	0x30, 0x01, 0x32, 0xc1, 0x03, 0x0a, 0x05, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x12, 0x4f, 0x0a, 0x0a,
+	0x4c, 0x65, 0x61, 0x73, 0x65, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x12, 0x1f, 0x2e, 0x65, 0x74, 0x63,
+	0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x47,
+	0x72, 0x61, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x65, 0x74,
+	0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x4c, 0x65, 0x61, 0x73, 0x65,
+	0x47, 0x72, 0x61, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x52, 0x0a,
+	0x0b, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x52, 0x65, 0x76, 0x6f, 0x6b, 0x65, 0x12, 0x20, 0x2e, 0x65,
+	0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x4c, 0x65, 0x61, 0x73,
+	0x65, 0x52, 0x65, 0x76, 0x6f, 0x6b, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21,
+	0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x4c, 0x65,
+	0x61, 0x73, 0x65, 0x52, 0x65, 0x76, 0x6f, 0x6b, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x5f, 0x0a, 0x0e, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x4b, 0x65, 0x65, 0x70, 0x41, 0x6c,
+	0x69, 0x76, 0x65, 0x12, 0x23, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72,
+	0x70, 0x62, 0x2e, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x4b, 0x65, 0x65, 0x70, 0x41, 0x6c, 0x69, 0x76,
+	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73,
+	0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x4b, 0x65, 0x65,
+	0x70, 0x41, 0x6c, 0x69, 0x76, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x28, 0x01,
+	0x30, 0x01, 0x12, 0x5e, 0x0a, 0x0f, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x54,
+	0x6f, 0x4c, 0x69, 0x76, 0x65, 0x12, 0x24, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76,
+	0x65, 0x72, 0x70, 0x62, 0x2e, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x54, 0x6f,
+	0x4c, 0x69, 0x76, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x65, 0x74,
+	0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x4c, 0x65, 0x61, 0x73, 0x65,
+	0x54, 0x69, 0x6d, 0x65, 0x54, 0x6f, 0x4c, 0x69, 0x76, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x52, 0x0a, 0x0b, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x4c, 0x65, 0x61, 0x73, 0x65,
+	0x73, 0x12, 0x20, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62,
+	0x2e, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x65, 0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72,
+	0x70, 0x62, 0x2e, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x4c, 0x65, 0x61, 0x73, 0x65, 0x73, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x13, 0x5a, 0x11, 0x67, 0x61, 0x6d, 0x65, 0x2f, 0x65,
+	0x74, 0x63, 0x64, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1749,69 +3174,116 @@ func file_proto_etcd_etcd_proto_rawDescGZIP() []byte {
 	return file_proto_etcd_etcd_proto_rawDescData
 }
 
-var file_proto_etcd_etcd_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_proto_etcd_etcd_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_proto_etcd_etcd_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_proto_etcd_etcd_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_proto_etcd_etcd_proto_goTypes = []any{
-	(RangeRequest_SortOrder)(0),  // 0: etcdserverpb.RangeRequest.SortOrder
-	(RangeRequest_SortTarget)(0), // 1: etcdserverpb.RangeRequest.SortTarget
-	(Compare_CompareResult)(0),   // 2: etcdserverpb.Compare.CompareResult
-	(Compare_CompareTarget)(0),   // 3: etcdserverpb.Compare.CompareTarget
-	(*ResponseHeader)(nil),       // 4: etcdserverpb.ResponseHeader
-	(*RangeRequest)(nil),         // 5: etcdserverpb.RangeRequest
-	(*RangeResponse)(nil),        // 6: etcdserverpb.RangeResponse
-	(*PutRequest)(nil),           // 7: etcdserverpb.PutRequest
-	(*PutResponse)(nil),          // 8: etcdserverpb.PutResponse
-	(*DeleteRangeRequest)(nil),   // 9: etcdserverpb.DeleteRangeRequest
-	(*DeleteRangeResponse)(nil),  // 10: etcdserverpb.DeleteRangeResponse
-	(*RequestOp)(nil),            // 11: etcdserverpb.RequestOp
-	(*ResponseOp)(nil),           // 12: etcdserverpb.ResponseOp
-	(*Compare)(nil),              // 13: etcdserverpb.Compare
-	(*TxnRequest)(nil),           // 14: etcdserverpb.TxnRequest
-	(*TxnResponse)(nil),          // 15: etcdserverpb.TxnResponse
-	(*CompactionRequest)(nil),    // 16: etcdserverpb.CompactionRequest
-	(*CompactionResponse)(nil),   // 17: etcdserverpb.CompactionResponse
-	(*KeyValue)(nil),             // 18: mvccpb.KeyValue
+	(RangeRequest_SortOrder)(0),        // 0: etcdserverpb.RangeRequest.SortOrder
+	(RangeRequest_SortTarget)(0),       // 1: etcdserverpb.RangeRequest.SortTarget
+	(Compare_CompareResult)(0),         // 2: etcdserverpb.Compare.CompareResult
+	(Compare_CompareTarget)(0),         // 3: etcdserverpb.Compare.CompareTarget
+	(WatchCreateRequest_FilterType)(0), // 4: etcdserverpb.WatchCreateRequest.FilterType
+	(*ResponseHeader)(nil),             // 5: etcdserverpb.ResponseHeader
+	(*RangeRequest)(nil),               // 6: etcdserverpb.RangeRequest
+	(*RangeResponse)(nil),              // 7: etcdserverpb.RangeResponse
+	(*PutRequest)(nil),                 // 8: etcdserverpb.PutRequest
+	(*PutResponse)(nil),                // 9: etcdserverpb.PutResponse
+	(*DeleteRangeRequest)(nil),         // 10: etcdserverpb.DeleteRangeRequest
+	(*DeleteRangeResponse)(nil),        // 11: etcdserverpb.DeleteRangeResponse
+	(*RequestOp)(nil),                  // 12: etcdserverpb.RequestOp
+	(*ResponseOp)(nil),                 // 13: etcdserverpb.ResponseOp
+	(*Compare)(nil),                    // 14: etcdserverpb.Compare
+	(*TxnRequest)(nil),                 // 15: etcdserverpb.TxnRequest
+	(*TxnResponse)(nil),                // 16: etcdserverpb.TxnResponse
+	(*CompactionRequest)(nil),          // 17: etcdserverpb.CompactionRequest
+	(*CompactionResponse)(nil),         // 18: etcdserverpb.CompactionResponse
+	(*WatchRequest)(nil),               // 19: etcdserverpb.WatchRequest
+	(*WatchCreateRequest)(nil),         // 20: etcdserverpb.WatchCreateRequest
+	(*WatchCancelRequest)(nil),         // 21: etcdserverpb.WatchCancelRequest
+	(*WatchProgressRequest)(nil),       // 22: etcdserverpb.WatchProgressRequest
+	(*WatchResponse)(nil),              // 23: etcdserverpb.WatchResponse
+	(*LeaseGrantRequest)(nil),          // 24: etcdserverpb.LeaseGrantRequest
+	(*LeaseGrantResponse)(nil),         // 25: etcdserverpb.LeaseGrantResponse
+	(*LeaseRevokeRequest)(nil),         // 26: etcdserverpb.LeaseRevokeRequest
+	(*LeaseRevokeResponse)(nil),        // 27: etcdserverpb.LeaseRevokeResponse
+	(*LeaseCheckpoint)(nil),            // 28: etcdserverpb.LeaseCheckpoint
+	(*LeaseCheckpointRequest)(nil),     // 29: etcdserverpb.LeaseCheckpointRequest
+	(*LeaseCheckpointResponse)(nil),    // 30: etcdserverpb.LeaseCheckpointResponse
+	(*LeaseKeepAliveRequest)(nil),      // 31: etcdserverpb.LeaseKeepAliveRequest
+	(*LeaseKeepAliveResponse)(nil),     // 32: etcdserverpb.LeaseKeepAliveResponse
+	(*LeaseTimeToLiveRequest)(nil),     // 33: etcdserverpb.LeaseTimeToLiveRequest
+	(*LeaseTimeToLiveResponse)(nil),    // 34: etcdserverpb.LeaseTimeToLiveResponse
+	(*LeaseLeasesRequest)(nil),         // 35: etcdserverpb.LeaseLeasesRequest
+	(*LeaseStatus)(nil),                // 36: etcdserverpb.LeaseStatus
+	(*LeaseLeasesResponse)(nil),        // 37: etcdserverpb.LeaseLeasesResponse
+	(*KeyValue)(nil),                   // 38: mvccpb.KeyValue
+	(*Event)(nil),                      // 39: mvccpb.Event
 }
 var file_proto_etcd_etcd_proto_depIdxs = []int32{
 	0,  // 0: etcdserverpb.RangeRequest.sort_order:type_name -> etcdserverpb.RangeRequest.SortOrder
 	1,  // 1: etcdserverpb.RangeRequest.sort_target:type_name -> etcdserverpb.RangeRequest.SortTarget
-	4,  // 2: etcdserverpb.RangeResponse.header:type_name -> etcdserverpb.ResponseHeader
-	18, // 3: etcdserverpb.RangeResponse.kvs:type_name -> mvccpb.KeyValue
-	4,  // 4: etcdserverpb.PutResponse.header:type_name -> etcdserverpb.ResponseHeader
-	18, // 5: etcdserverpb.PutResponse.prev_kv:type_name -> mvccpb.KeyValue
-	4,  // 6: etcdserverpb.DeleteRangeResponse.header:type_name -> etcdserverpb.ResponseHeader
-	18, // 7: etcdserverpb.DeleteRangeResponse.prev_kvs:type_name -> mvccpb.KeyValue
-	5,  // 8: etcdserverpb.RequestOp.request_range:type_name -> etcdserverpb.RangeRequest
-	7,  // 9: etcdserverpb.RequestOp.request_put:type_name -> etcdserverpb.PutRequest
-	9,  // 10: etcdserverpb.RequestOp.request_delete_range:type_name -> etcdserverpb.DeleteRangeRequest
-	14, // 11: etcdserverpb.RequestOp.request_txn:type_name -> etcdserverpb.TxnRequest
-	6,  // 12: etcdserverpb.ResponseOp.response_range:type_name -> etcdserverpb.RangeResponse
-	8,  // 13: etcdserverpb.ResponseOp.response_put:type_name -> etcdserverpb.PutResponse
-	10, // 14: etcdserverpb.ResponseOp.response_delete_range:type_name -> etcdserverpb.DeleteRangeResponse
-	15, // 15: etcdserverpb.ResponseOp.response_txn:type_name -> etcdserverpb.TxnResponse
+	5,  // 2: etcdserverpb.RangeResponse.header:type_name -> etcdserverpb.ResponseHeader
+	38, // 3: etcdserverpb.RangeResponse.kvs:type_name -> mvccpb.KeyValue
+	5,  // 4: etcdserverpb.PutResponse.header:type_name -> etcdserverpb.ResponseHeader
+	38, // 5: etcdserverpb.PutResponse.prev_kv:type_name -> mvccpb.KeyValue
+	5,  // 6: etcdserverpb.DeleteRangeResponse.header:type_name -> etcdserverpb.ResponseHeader
+	38, // 7: etcdserverpb.DeleteRangeResponse.prev_kvs:type_name -> mvccpb.KeyValue
+	6,  // 8: etcdserverpb.RequestOp.request_range:type_name -> etcdserverpb.RangeRequest
+	8,  // 9: etcdserverpb.RequestOp.request_put:type_name -> etcdserverpb.PutRequest
+	10, // 10: etcdserverpb.RequestOp.request_delete_range:type_name -> etcdserverpb.DeleteRangeRequest
+	15, // 11: etcdserverpb.RequestOp.request_txn:type_name -> etcdserverpb.TxnRequest
+	7,  // 12: etcdserverpb.ResponseOp.response_range:type_name -> etcdserverpb.RangeResponse
+	9,  // 13: etcdserverpb.ResponseOp.response_put:type_name -> etcdserverpb.PutResponse
+	11, // 14: etcdserverpb.ResponseOp.response_delete_range:type_name -> etcdserverpb.DeleteRangeResponse
+	16, // 15: etcdserverpb.ResponseOp.response_txn:type_name -> etcdserverpb.TxnResponse
 	2,  // 16: etcdserverpb.Compare.result:type_name -> etcdserverpb.Compare.CompareResult
 	3,  // 17: etcdserverpb.Compare.target:type_name -> etcdserverpb.Compare.CompareTarget
-	13, // 18: etcdserverpb.TxnRequest.compare:type_name -> etcdserverpb.Compare
-	11, // 19: etcdserverpb.TxnRequest.success:type_name -> etcdserverpb.RequestOp
-	11, // 20: etcdserverpb.TxnRequest.failure:type_name -> etcdserverpb.RequestOp
-	4,  // 21: etcdserverpb.TxnResponse.header:type_name -> etcdserverpb.ResponseHeader
-	12, // 22: etcdserverpb.TxnResponse.responses:type_name -> etcdserverpb.ResponseOp
-	4,  // 23: etcdserverpb.CompactionResponse.header:type_name -> etcdserverpb.ResponseHeader
-	5,  // 24: etcdserverpb.KV.Range:input_type -> etcdserverpb.RangeRequest
-	7,  // 25: etcdserverpb.KV.Put:input_type -> etcdserverpb.PutRequest
-	9,  // 26: etcdserverpb.KV.DeleteRange:input_type -> etcdserverpb.DeleteRangeRequest
-	14, // 27: etcdserverpb.KV.Txn:input_type -> etcdserverpb.TxnRequest
-	16, // 28: etcdserverpb.KV.Compact:input_type -> etcdserverpb.CompactionRequest
-	6,  // 29: etcdserverpb.KV.Range:output_type -> etcdserverpb.RangeResponse
-	8,  // 30: etcdserverpb.KV.Put:output_type -> etcdserverpb.PutResponse
-	10, // 31: etcdserverpb.KV.DeleteRange:output_type -> etcdserverpb.DeleteRangeResponse
-	15, // 32: etcdserverpb.KV.Txn:output_type -> etcdserverpb.TxnResponse
-	17, // 33: etcdserverpb.KV.Compact:output_type -> etcdserverpb.CompactionResponse
-	29, // [29:34] is the sub-list for method output_type
-	24, // [24:29] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	14, // 18: etcdserverpb.TxnRequest.compare:type_name -> etcdserverpb.Compare
+	12, // 19: etcdserverpb.TxnRequest.success:type_name -> etcdserverpb.RequestOp
+	12, // 20: etcdserverpb.TxnRequest.failure:type_name -> etcdserverpb.RequestOp
+	5,  // 21: etcdserverpb.TxnResponse.header:type_name -> etcdserverpb.ResponseHeader
+	13, // 22: etcdserverpb.TxnResponse.responses:type_name -> etcdserverpb.ResponseOp
+	5,  // 23: etcdserverpb.CompactionResponse.header:type_name -> etcdserverpb.ResponseHeader
+	20, // 24: etcdserverpb.WatchRequest.create_request:type_name -> etcdserverpb.WatchCreateRequest
+	21, // 25: etcdserverpb.WatchRequest.cancel_request:type_name -> etcdserverpb.WatchCancelRequest
+	22, // 26: etcdserverpb.WatchRequest.progress_request:type_name -> etcdserverpb.WatchProgressRequest
+	4,  // 27: etcdserverpb.WatchCreateRequest.filters:type_name -> etcdserverpb.WatchCreateRequest.FilterType
+	5,  // 28: etcdserverpb.WatchResponse.header:type_name -> etcdserverpb.ResponseHeader
+	39, // 29: etcdserverpb.WatchResponse.events:type_name -> mvccpb.Event
+	5,  // 30: etcdserverpb.LeaseGrantResponse.header:type_name -> etcdserverpb.ResponseHeader
+	5,  // 31: etcdserverpb.LeaseRevokeResponse.header:type_name -> etcdserverpb.ResponseHeader
+	28, // 32: etcdserverpb.LeaseCheckpointRequest.checkpoints:type_name -> etcdserverpb.LeaseCheckpoint
+	5,  // 33: etcdserverpb.LeaseCheckpointResponse.header:type_name -> etcdserverpb.ResponseHeader
+	5,  // 34: etcdserverpb.LeaseKeepAliveResponse.header:type_name -> etcdserverpb.ResponseHeader
+	5,  // 35: etcdserverpb.LeaseTimeToLiveResponse.header:type_name -> etcdserverpb.ResponseHeader
+	5,  // 36: etcdserverpb.LeaseLeasesResponse.header:type_name -> etcdserverpb.ResponseHeader
+	36, // 37: etcdserverpb.LeaseLeasesResponse.leases:type_name -> etcdserverpb.LeaseStatus
+	6,  // 38: etcdserverpb.KV.Range:input_type -> etcdserverpb.RangeRequest
+	8,  // 39: etcdserverpb.KV.Put:input_type -> etcdserverpb.PutRequest
+	10, // 40: etcdserverpb.KV.DeleteRange:input_type -> etcdserverpb.DeleteRangeRequest
+	15, // 41: etcdserverpb.KV.Txn:input_type -> etcdserverpb.TxnRequest
+	17, // 42: etcdserverpb.KV.Compact:input_type -> etcdserverpb.CompactionRequest
+	19, // 43: etcdserverpb.Watch.Watch:input_type -> etcdserverpb.WatchRequest
+	24, // 44: etcdserverpb.Lease.LeaseGrant:input_type -> etcdserverpb.LeaseGrantRequest
+	26, // 45: etcdserverpb.Lease.LeaseRevoke:input_type -> etcdserverpb.LeaseRevokeRequest
+	31, // 46: etcdserverpb.Lease.LeaseKeepAlive:input_type -> etcdserverpb.LeaseKeepAliveRequest
+	33, // 47: etcdserverpb.Lease.LeaseTimeToLive:input_type -> etcdserverpb.LeaseTimeToLiveRequest
+	35, // 48: etcdserverpb.Lease.LeaseLeases:input_type -> etcdserverpb.LeaseLeasesRequest
+	7,  // 49: etcdserverpb.KV.Range:output_type -> etcdserverpb.RangeResponse
+	9,  // 50: etcdserverpb.KV.Put:output_type -> etcdserverpb.PutResponse
+	11, // 51: etcdserverpb.KV.DeleteRange:output_type -> etcdserverpb.DeleteRangeResponse
+	16, // 52: etcdserverpb.KV.Txn:output_type -> etcdserverpb.TxnResponse
+	18, // 53: etcdserverpb.KV.Compact:output_type -> etcdserverpb.CompactionResponse
+	23, // 54: etcdserverpb.Watch.Watch:output_type -> etcdserverpb.WatchResponse
+	25, // 55: etcdserverpb.Lease.LeaseGrant:output_type -> etcdserverpb.LeaseGrantResponse
+	27, // 56: etcdserverpb.Lease.LeaseRevoke:output_type -> etcdserverpb.LeaseRevokeResponse
+	32, // 57: etcdserverpb.Lease.LeaseKeepAlive:output_type -> etcdserverpb.LeaseKeepAliveResponse
+	34, // 58: etcdserverpb.Lease.LeaseTimeToLive:output_type -> etcdserverpb.LeaseTimeToLiveResponse
+	37, // 59: etcdserverpb.Lease.LeaseLeases:output_type -> etcdserverpb.LeaseLeasesResponse
+	49, // [49:60] is the sub-list for method output_type
+	38, // [38:49] is the sub-list for method input_type
+	38, // [38:38] is the sub-list for extension type_name
+	38, // [38:38] is the sub-list for extension extendee
+	0,  // [0:38] is the sub-list for field type_name
 }
 
 func init() { file_proto_etcd_etcd_proto_init() }
@@ -1989,6 +3461,234 @@ func file_proto_etcd_etcd_proto_init() {
 				return nil
 			}
 		}
+		file_proto_etcd_etcd_proto_msgTypes[14].Exporter = func(v any, i int) any {
+			switch v := v.(*WatchRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[15].Exporter = func(v any, i int) any {
+			switch v := v.(*WatchCreateRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[16].Exporter = func(v any, i int) any {
+			switch v := v.(*WatchCancelRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[17].Exporter = func(v any, i int) any {
+			switch v := v.(*WatchProgressRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[18].Exporter = func(v any, i int) any {
+			switch v := v.(*WatchResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[19].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseGrantRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[20].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseGrantResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[21].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseRevokeRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[22].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseRevokeResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[23].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseCheckpoint); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[24].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseCheckpointRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[25].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseCheckpointResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[26].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseKeepAliveRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[27].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseKeepAliveResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[28].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseTimeToLiveRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[29].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseTimeToLiveResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[30].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseLeasesRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[31].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseStatus); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_etcd_etcd_proto_msgTypes[32].Exporter = func(v any, i int) any {
+			switch v := v.(*LeaseLeasesResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_proto_etcd_etcd_proto_msgTypes[7].OneofWrappers = []any{
 		(*RequestOp_RequestRange)(nil),
@@ -2009,15 +3709,20 @@ func file_proto_etcd_etcd_proto_init() {
 		(*Compare_Value)(nil),
 		(*Compare_Lease)(nil),
 	}
+	file_proto_etcd_etcd_proto_msgTypes[14].OneofWrappers = []any{
+		(*WatchRequest_CreateRequest)(nil),
+		(*WatchRequest_CancelRequest)(nil),
+		(*WatchRequest_ProgressRequest)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_etcd_etcd_proto_rawDesc,
-			NumEnums:      4,
-			NumMessages:   14,
+			NumEnums:      5,
+			NumMessages:   33,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   3,
 		},
 		GoTypes:           file_proto_etcd_etcd_proto_goTypes,
 		DependencyIndexes: file_proto_etcd_etcd_proto_depIdxs,
