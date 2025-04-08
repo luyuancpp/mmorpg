@@ -20,7 +20,7 @@ public:
 };
 
 class LoginC2LRequest;
-void LoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const  LoginC2LRequest& request);
+void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const  LoginC2LRequest& request);
 
 using AsyncLoginServiceLoginHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>&)>;
 
@@ -35,7 +35,7 @@ public:
 };
 
 class CreatePlayerC2LRequest;
-void LoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const  CreatePlayerC2LRequest& request);
+void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const  CreatePlayerC2LRequest& request);
 
 using AsyncLoginServiceCreatePlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceCreatePlayerGrpcClientCall>&)>;
 
@@ -50,7 +50,7 @@ public:
 };
 
 class EnterGameC2LRequest;
-void LoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const  EnterGameC2LRequest& request);
+void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const  EnterGameC2LRequest& request);
 
 using AsyncLoginServiceEnterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceEnterGameGrpcClientCall>&)>;
 
@@ -65,7 +65,7 @@ public:
 };
 
 class LeaveGameC2LRequest;
-void LoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  LeaveGameC2LRequest& request);
+void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  LeaveGameC2LRequest& request);
 
 using AsyncLoginServiceLeaveGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLeaveGameGrpcClientCall>&)>;
 
@@ -80,7 +80,7 @@ public:
 };
 
 class LoginNodeDisconnectRequest;
-void LoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const  LoginNodeDisconnectRequest& request);
+void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const  LoginNodeDisconnectRequest& request);
 
 using AsyncLoginServiceDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceDisconnectGrpcClientCall>&)>;
 

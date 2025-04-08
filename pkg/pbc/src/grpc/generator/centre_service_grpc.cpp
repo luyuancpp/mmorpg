@@ -42,7 +42,7 @@ struct CentreServiceUnRegisterGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void CentreServiceRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGameNodeRequest& request)
+void SendCentreServiceRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGameNodeRequest& request)
 {
     AsyncCentreServiceRegisterGameNodeGrpcClientCall* call = new AsyncCentreServiceRegisterGameNodeGrpcClientCall;
 
@@ -87,7 +87,7 @@ void AsyncCompleteGrpcCentreServiceRegisterGameNode(grpc::CompletionQueue& cq)
     }
 }
 
-void CentreServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGateNodeRequest& request)
+void SendCentreServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGateNodeRequest& request)
 {
     AsyncCentreServiceRegisterGateNodeGrpcClientCall* call = new AsyncCentreServiceRegisterGateNodeGrpcClientCall;
 
@@ -132,7 +132,7 @@ void AsyncCompleteGrpcCentreServiceRegisterGateNode(grpc::CompletionQueue& cq)
     }
 }
 
-void CentreServiceGatePlayerService(entt::registry& registry, entt::entity nodeEntity, const  GateClientMessageRequest& request)
+void SendCentreServiceGatePlayerService(entt::registry& registry, entt::entity nodeEntity, const  GateClientMessageRequest& request)
 {
     AsyncCentreServiceGatePlayerServiceGrpcClientCall* call = new AsyncCentreServiceGatePlayerServiceGrpcClientCall;
 
@@ -177,7 +177,7 @@ void AsyncCompleteGrpcCentreServiceGatePlayerService(grpc::CompletionQueue& cq)
     }
 }
 
-void CentreServiceGateSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const  GateSessionDisconnectRequest& request)
+void SendCentreServiceGateSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const  GateSessionDisconnectRequest& request)
 {
     AsyncCentreServiceGateSessionDisconnectGrpcClientCall* call = new AsyncCentreServiceGateSessionDisconnectGrpcClientCall;
 
@@ -222,7 +222,7 @@ void AsyncCompleteGrpcCentreServiceGateSessionDisconnect(grpc::CompletionQueue& 
     }
 }
 
-void CentreServiceLoginNodeAccountLogin(entt::registry& registry, entt::entity nodeEntity, const  LoginRequest& request)
+void SendCentreServiceLoginNodeAccountLogin(entt::registry& registry, entt::entity nodeEntity, const  LoginRequest& request)
 {
     AsyncCentreServiceLoginNodeAccountLoginGrpcClientCall* call = new AsyncCentreServiceLoginNodeAccountLoginGrpcClientCall;
 
@@ -267,7 +267,7 @@ void AsyncCompleteGrpcCentreServiceLoginNodeAccountLogin(grpc::CompletionQueue& 
     }
 }
 
-void CentreServiceLoginNodeEnterGame(entt::registry& registry, entt::entity nodeEntity, const  CentrePlayerGameNodeEntryRequest& request)
+void SendCentreServiceLoginNodeEnterGame(entt::registry& registry, entt::entity nodeEntity, const  CentrePlayerGameNodeEntryRequest& request)
 {
     AsyncCentreServiceLoginNodeEnterGameGrpcClientCall* call = new AsyncCentreServiceLoginNodeEnterGameGrpcClientCall;
 
@@ -312,7 +312,7 @@ void AsyncCompleteGrpcCentreServiceLoginNodeEnterGame(grpc::CompletionQueue& cq)
     }
 }
 
-void CentreServiceLoginNodeLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  LoginNodeLeaveGameRequest& request)
+void SendCentreServiceLoginNodeLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  LoginNodeLeaveGameRequest& request)
 {
     AsyncCentreServiceLoginNodeLeaveGameGrpcClientCall* call = new AsyncCentreServiceLoginNodeLeaveGameGrpcClientCall;
 
@@ -357,7 +357,7 @@ void AsyncCompleteGrpcCentreServiceLoginNodeLeaveGame(grpc::CompletionQueue& cq)
     }
 }
 
-void CentreServiceLoginNodeSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const  GateSessionDisconnectRequest& request)
+void SendCentreServiceLoginNodeSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const  GateSessionDisconnectRequest& request)
 {
     AsyncCentreServiceLoginNodeSessionDisconnectGrpcClientCall* call = new AsyncCentreServiceLoginNodeSessionDisconnectGrpcClientCall;
 
@@ -402,7 +402,7 @@ void AsyncCompleteGrpcCentreServiceLoginNodeSessionDisconnect(grpc::CompletionQu
     }
 }
 
-void CentreServicePlayerService(entt::registry& registry, entt::entity nodeEntity, const  NodeRouteMessageRequest& request)
+void SendCentreServicePlayerService(entt::registry& registry, entt::entity nodeEntity, const  NodeRouteMessageRequest& request)
 {
     AsyncCentreServicePlayerServiceGrpcClientCall* call = new AsyncCentreServicePlayerServiceGrpcClientCall;
 
@@ -447,7 +447,7 @@ void AsyncCompleteGrpcCentreServicePlayerService(grpc::CompletionQueue& cq)
     }
 }
 
-void CentreServiceEnterGsSucceed(entt::registry& registry, entt::entity nodeEntity, const  EnterGameNodeSuccessRequest& request)
+void SendCentreServiceEnterGsSucceed(entt::registry& registry, entt::entity nodeEntity, const  EnterGameNodeSuccessRequest& request)
 {
     AsyncCentreServiceEnterGsSucceedGrpcClientCall* call = new AsyncCentreServiceEnterGsSucceedGrpcClientCall;
 
@@ -492,7 +492,7 @@ void AsyncCompleteGrpcCentreServiceEnterGsSucceed(grpc::CompletionQueue& cq)
     }
 }
 
-void CentreServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const  RouteMessageRequest& request)
+void SendCentreServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const  RouteMessageRequest& request)
 {
     AsyncCentreServiceRouteNodeStringMsgGrpcClientCall* call = new AsyncCentreServiceRouteNodeStringMsgGrpcClientCall;
 
@@ -537,7 +537,7 @@ void AsyncCompleteGrpcCentreServiceRouteNodeStringMsg(grpc::CompletionQueue& cq)
     }
 }
 
-void CentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const  RoutePlayerMessageRequest& request)
+void SendCentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const  RoutePlayerMessageRequest& request)
 {
     AsyncCentreServiceRoutePlayerStringMsgGrpcClientCall* call = new AsyncCentreServiceRoutePlayerStringMsgGrpcClientCall;
 
@@ -582,7 +582,7 @@ void AsyncCompleteGrpcCentreServiceRoutePlayerStringMsg(grpc::CompletionQueue& c
     }
 }
 
-void CentreServiceUnRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  UnregisterGameNodeRequest& request)
+void SendCentreServiceUnRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  UnregisterGameNodeRequest& request)
 {
     AsyncCentreServiceUnRegisterGameNodeGrpcClientCall* call = new AsyncCentreServiceUnRegisterGameNodeGrpcClientCall;
 
