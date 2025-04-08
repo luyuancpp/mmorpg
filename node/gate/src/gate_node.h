@@ -59,7 +59,6 @@ private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     RpcClientSessionHandler rpcClientHandler;
-    NodeInfo nodeInfo;
     GateServiceHandler service_handler_;
     TimerTaskComp loginGrpcSelectTimer;
 };

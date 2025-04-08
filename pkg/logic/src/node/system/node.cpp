@@ -131,8 +131,8 @@ void Node::InitializeGrpcServices() {
 
 void Node::InitializeIpPort()
 {
-    nodeInfo.mutable_endpoint()->set_ip(get_local_ip());
-	nodeInfo.mutable_endpoint()->set_port(get_available_port());
+    GetNodeInfo().mutable_endpoint()->set_ip(get_local_ip());
+    GetNodeInfo().mutable_endpoint()->set_port(get_available_port());
 }
 
 void Node::InitializeNodeFromRequestInfo() {
@@ -245,19 +245,19 @@ void Node::AsyncOutput(const char* msg, int len) {
 #endif
 }
 
-std::string Node::FormatIpAndPort()const
+std::string Node::FormatIpAndPort()
 {
-	return ::FormatIpAndPort(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
+	return ::FormatIpAndPort(GetNodeInfo().endpoint().ip(), GetNodeInfo().endpoint().port());
 }
 
-std::string Node::GetIp() const
+std::string Node::GetIp() 
 {
-	return nodeInfo.endpoint().ip();
+	return GetNodeInfo().endpoint().ip();
 }
 
-uint32_t Node::GetPort() const
+uint32_t Node::GetPort() 
 {
-	return nodeInfo.endpoint().port();
+	return GetNodeInfo().endpoint().port();
 }
 
 bool Node::ParseJsonToServiceNode(const std::string& jsonValue, uint32_t serviceNodeType) {
@@ -293,7 +293,7 @@ void Node::HandleServiceNode(const std::string& key, const std::string& value) {
 		InitializeDeployService(value);
 		LOG_INFO << "Deploy Service Key: " << key << ", Value: " << value;
 	}
-	if (serviceNodeType == kLoginNode) {
+	else if (serviceNodeType == kLoginNode) {
 
 	}
 	else if (eNodeType_IsValid(serviceNodeType)) {

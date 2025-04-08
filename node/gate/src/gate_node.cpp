@@ -62,6 +62,8 @@ void GateNode::Initialize()
 
 void GateNode::StartRpcServer()
 {
+	Node::StartRpcServer(); 
+
     rpcServer->GetTcpServer().setConnectionCallback(
         std::bind(&GateNode::OnConnection, this, _1));
     rpcServer->GetTcpServer().setMessageCallback(
