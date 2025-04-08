@@ -61,7 +61,6 @@ void Node::Initialize() {
     InitializeNodeFromRequestInfo();   // 从请求中初始化节点信息
     SetupMessageHandlers();            // 设置消息处理器
     InitializeMiscellaneous();         // 初始化杂项
-    RegisterService();
 }   
 
 void Node::InitializeMiscellaneous() {
@@ -82,6 +81,8 @@ void Node::StartRpcServer() {
     tls.dispatcher.trigger<OnServerStart>();  // 启动服务器
 
 	deployRpcTimer.Cancel();
+
+	RegisterService();
 }
 
 
@@ -168,7 +169,7 @@ void Node::ConnectToCentreHelper(::google::protobuf::Service* service) {
     auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
     for (auto& centreNodeInfo : serviceNodeList[kCentreNode].node_list()) {
-        entt::entity id{ centreNodeInfo.lease_id() };
+        entt::entity id{ centreNodeInfo.node_id() };
         const auto centre_node_id = tls.centreNodeRegistry.create(id);
         if (centre_node_id != id) {
             continue;  // 如果创建失败，则跳过该中心节点
@@ -228,7 +229,7 @@ void Node::RegisterService()
 {
 	etcdserverpb::PutRequest request;
 
-	std::string key = GetServiceName() + "/zone/" + std::to_string(GetNodeInfo().zone_id()) + "/" + std::to_string(GetNodeInfo().lease_id());
+	std::string key = GetServiceName() + "/zone/" + std::to_string(GetNodeInfo().zone_id()) + "/" + std::to_string(GetNodeInfo().node_id());
     request.set_key(key);
 
     auto result = google::protobuf::util::MessageToJsonString(GetNodeInfo(), request.mutable_value());
