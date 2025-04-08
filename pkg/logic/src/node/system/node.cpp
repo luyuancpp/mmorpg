@@ -227,7 +227,9 @@ void Node::SendEtcdRangeRequest(const std::string& prefix)
 void Node::RegisterService()
 {
 	etcdserverpb::PutRequest request;
-	request.set_key(GetServiceName());  
+
+	std::string key = GetServiceName() + "/zone/" + std::to_string(GetNodeInfo().zone_id()) + "/" + std::to_string(GetNodeInfo().lease_id());
+    request.set_key(key);
 
     auto result = google::protobuf::util::MessageToJsonString(GetNodeInfo(), request.mutable_value());
 

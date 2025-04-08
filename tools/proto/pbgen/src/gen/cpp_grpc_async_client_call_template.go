@@ -24,7 +24,7 @@ public:
 };
 
 class {{.Request}};
-void {{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.PackageNameWithColon}}{{.Request}}& request);
+void Send{{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.PackageNameWithColon}}{{.Request}}& request);
 
 using Async{{.ServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
 
@@ -53,7 +53,7 @@ struct {{.ServiceFullNameWithNoColon}}{{.Method}}CompleteQueue{
 
 {{- range .GrpcServices }}
 
-void {{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.PackageNameWithColon}}{{.Request}}& request)
+void Send{{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.PackageNameWithColon}}{{.Request}}& request)
 {
     Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
 
