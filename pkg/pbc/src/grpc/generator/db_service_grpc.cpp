@@ -1,6 +1,6 @@
 #include "muduo/base/Logging.h"
 
-#include "grpc/generator/.h"
+#include "grpc/generator/db_service_grpc.h"
 #include "thread_local/storage.h"
 struct PlayerDBServiceLoad2RedisCompleteQueue{
 	grpc::CompletionQueue cq;
@@ -195,14 +195,14 @@ void AsyncCompleteGrpcAccountDBServiceSave2Redis(grpc::CompletionQueue& cq)
     }
 }
 
-void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+void InitPlayerDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 	registry.emplace<PlayerDBServiceLoad2RedisCompleteQueue>(nodeEntity);
 	registry.emplace<PlayerDBServiceSave2RedisCompleteQueue>(nodeEntity);
 	registry.emplace<AccountDBServiceLoad2RedisCompleteQueue>(nodeEntity);
 	registry.emplace<AccountDBServiceSave2RedisCompleteQueue>(nodeEntity);
 }
 
-void HandleCompletedQueueMessage(entt::registry& registry) {
+void HandlePlayerDBServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<PlayerDBServiceLoad2RedisCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){

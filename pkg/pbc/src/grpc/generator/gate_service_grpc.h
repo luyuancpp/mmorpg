@@ -2,13 +2,14 @@
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 
+#include "proto/common/gate_service.grpc.pb.h"
 
 
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcStubPtr = std::unique_ptr<::Stub>;
+using GrpcGateServiceStubPtr = std::unique_ptr<GateService::Stub>;
 class AsyncGateServiceRegisterGameGrpcClientCall
 {
 public:
@@ -130,8 +131,8 @@ using AsyncGateServiceBroadcastToPlayersHandlerFunctionType = std::function<void
 
 extern AsyncGateServiceBroadcastToPlayersHandlerFunctionType  AsyncGateServiceBroadcastToPlayersHandler;;
 
-void HandleCompletedQueueMessage(entt::registry& registry	); 
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
 
-void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
