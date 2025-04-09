@@ -111,6 +111,8 @@ func BuildProtoGrpc(protoPath string) (err error) {
 		return err
 	}
 
+	os.MkdirAll(config.GrpcTempDirectory, os.FileMode(0777))
+
 	// Process each protobuf file in the directory
 	for _, fd := range fds {
 		if !util.IsProtoFile(fd) {
@@ -332,6 +334,8 @@ func BuildProtoDesc(protoPath string) (err error) {
 	if fds, err = os.ReadDir(protoPath); err != nil {
 		return err
 	}
+
+	os.MkdirAll(config.PbDescDirectory, os.FileMode(0777))
 
 	// Process each protobuf file in the directory
 	for _, fd := range fds {

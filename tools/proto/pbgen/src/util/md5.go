@@ -87,7 +87,7 @@ func IsSameMD5(dstFilePath string, srcFilePath string) (same bool, err error) {
 }
 
 func GetMd5FileName(dstFilePath string) (filename string) {
-	return strings.Replace(dstFilePath, config.ProjectDir, config.Md5Dir, 1)
+	return strings.Replace(dstFilePath, config.ProjectDir, config.TempFileGenerationDir, 1)
 }
 
 func GetMd5ExFileName(dstFilePath string) (filename string) {

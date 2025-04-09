@@ -53,6 +53,8 @@ func CppPlayerDataLoadGenerator() {
 		config.GameMysqlDBProtoFileName+config.ProtoDescExtension,
 	)
 
+	os.MkdirAll(config.PlayerStorageMd5Directory, os.FileMode(0777))
+
 	// 读取 Descriptor Set 文件
 	data, err := os.ReadFile(descFilePath)
 	if err != nil {

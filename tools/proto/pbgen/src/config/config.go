@@ -75,13 +75,13 @@ const (
 // 常量：输出目录
 const (
 	ToolDir                          = "tools/"
-	TempFileGenerationDir            = "generated/temp/files/"
-	PbDescDirectory                  = ProjectDir + ToolDir + TempFileGenerationDir + "proto_desc/"
+	TempFileGenerationDir            = ProjectDir + ToolDir + "generated/temp/files/"
+	PbDescDirectory                  = TempFileGenerationDir + "proto_desc/"
 	PbcProtoOutputDirectory          = ProjectDir + PbcProtoDirectory + ProtoDirName
 	PbcOutputDirectory               = ProjectDir + PbcProtoDirectory
 	GrpcOutputDirectory              = ProjectDir + PbcProtoDirectory
-	GrpcTempDirectory                = ProjectDir + ToolDir + TempFileGenerationDir + "grpc/"
-	PbcTempDirectory                 = ProjectDir + ToolDir + TempFileGenerationDir + "pbc/"
+	GrpcTempDirectory                = TempFileGenerationDir + "grpc/"
+	PbcTempDirectory                 = TempFileGenerationDir + "pbc/"
 	GrpcProtoOutputDirectory         = ProjectDir + PbcProtoDirectory + ProtoDirName
 	RobotGoOutputDirectory           = ProjectDir + RobotDirectory
 	GoPbGameDirectory                = "pb/game/"

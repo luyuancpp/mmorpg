@@ -49,28 +49,16 @@ func MakeProjectDir() {
 
 func MakeMd5Dir() {
 	os.MkdirAll(config.BinDirectory, os.FileMode(0777))
-	os.MkdirAll(config.PbDescDirectory, os.FileMode(0777))
 	os.MkdirAll(config.Md5Dir, os.FileMode(0777))
-	os.MkdirAll(config.PlayerStorageMd5Directory, os.FileMode(0777))
-	os.MkdirAll(config.GrpcTempDirectory, os.FileMode(0777))
 
 	for i := 0; i < len(config.SourceDirectories); i++ {
 		config.ProtoDirectories = append(config.ProtoDirectories, config.ProjectDir+config.SourceDirectories[i])
-		config.ProjectSourceMd5Dirs = append(config.ProjectSourceMd5Dirs, config.Md5Dir+config.SourceDirectories[i])
 	}
 
 	for i := 0; i < len(config.ProtoDirectoryNames); i++ {
 		config.ProtoDirs = append(config.ProtoDirs, config.ProtoDir+config.ProtoDirectoryNames[i])
-		config.ProtoMd5Dirs = append(config.ProtoMd5Dirs, config.Md5Dir+config.ProtoDirectoryNames[i])
 	}
 
-	for i := 0; i < len(config.SourceDirectories); i++ {
-		MakeProjectMd5Dir(config.ProtoDirectories[i], config.ProjectSourceMd5Dirs[i])
-	}
-
-	for i := 0; i < len(config.ProtoMd5Dirs); i++ {
-		os.MkdirAll(config.ProtoMd5Dirs[i], os.FileMode(0777))
-	}
 }
 
 func main() {
