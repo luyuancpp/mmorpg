@@ -525,6 +525,13 @@ func BuildAllProtoc() {
 	// Iterate over configured proto directories
 	for i := 0; i < len(config.ProtoDirs); i++ {
 		go func(i int) {
+			err := BuildProtoDesc(config.ProtoDirs[i])
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(i)
+
+		go func(i int) {
 			// Execute functions concurrently for each directory
 			err := BuildProto(config.ProtoDirs[i])
 			if err != nil {
@@ -567,11 +574,5 @@ func BuildAllProtoc() {
 			}
 		}(i)
 
-		go func(i int) {
-			err := BuildProtoDesc(config.ProtoDirs[i])
-			if err != nil {
-				log.Fatal(err)
-			}
-		}(i)
 	}
 }
