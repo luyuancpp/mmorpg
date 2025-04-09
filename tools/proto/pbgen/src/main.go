@@ -53,8 +53,8 @@ func main() {
 	MakeProjectDir()
 	//开始读所有的proto文件
 	gen.ReadServiceIdFile()
-	gen.ReadAllProtoFileServices()
 	gen.BuildAllProtoc()
+	gen.ReadAllProtoFileServices()
 	util.Wg.Wait()
 
 	//gen.WriteLoadClientLuaFile()
