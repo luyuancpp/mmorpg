@@ -14,7 +14,7 @@ import (
 	"sync"
 )
 
-func BuildProto(protoPath string, protoMd5Path string) (err error) {
+func BuildProto(protoPath string) (err error) {
 	// Read directory entries
 	fds, err := os.ReadDir(protoPath)
 	if err != nil {
@@ -37,13 +37,22 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 
 			// Construct file paths
 			fileName := protoPath + fd.Name()
-			md5FileName := protoMd5Path + fd.Name() + config.Md5Ex
+
+			md5FileName := strings.Replace(fileName, config.ProtoDir, config.PbcTempDirectory, 1)
+			md5FileName = strings.Replace(md5FileName, config.ProtoEx, config.ProtoPbcEx, 1)
+
 			dstFileName := strings.Replace(fileName, config.ProtoDir, config.PbcProtoOutputDirectory, 1)
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
 
+			dir := path.Dir(md5FileName)
+			err := os.MkdirAll(dir, os.FileMode(0777))
+			if err != nil {
+				return
+			}
+
 			// Check if files with same MD5 and destinations exist
-			fileSame, _ := util.IsSameMD5(fileName, md5FileName)
-			if fileSame && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
+			fileSame, _ := util.IsSameMD51(dstFileName, md5FileName)
+			if fileSame {
 				return
 			}
 
@@ -52,10 +61,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 				log.Fatal(err)
 			}
 
-			// Write MD5 data to file
-			if err := util.WriteToMd5ExFile(fileName, md5FileName); err != nil {
-				log.Fatal(err)
-			}
+			util.Copy(md5FileName, dstFileName)
 		}(fd)
 	}
 
@@ -513,7 +519,7 @@ func BuildAllProtoc() {
 	for i := 0; i < len(config.ProtoDirs); i++ {
 		go func(i int) {
 			// Execute functions concurrently for each directory
-			err := BuildProto(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+			err := BuildProto(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}

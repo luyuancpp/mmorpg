@@ -80,7 +80,8 @@ const (
 	PbcProtoOutputDirectory          = ProjectDir + PbcProtoDirectory + ProtoDirName
 	PbcOutputDirectory               = ProjectDir + PbcProtoDirectory
 	GrpcOutputDirectory              = ProjectDir + PbcProtoDirectory
-	GrpcTempDirectory                = ProjectDir + ToolDir + TempFileGenerationDir
+	GrpcTempDirectory                = ProjectDir + ToolDir + TempFileGenerationDir + "grpc/"
+	PbcTempDirectory                 = ProjectDir + ToolDir + TempFileGenerationDir + "pbc/"
 	GrpcProtoOutputDirectory         = ProjectDir + PbcProtoDirectory + ProtoDirName
 	RobotGoOutputDirectory           = ProjectDir + RobotDirectory
 	GoPbGameDirectory                = "pb/game/"
@@ -92,7 +93,6 @@ const (
 	LoginGoGameDirectory             = LoginDirectory + GoPbGameDirectory
 	LoginMessageIdGoFile             = LoginGoGameDirectory + MessageIdGoFile
 	DbGoDirectory                    = ProjectDir + "node/db/"
-	DbGoGameDirectory                = DbGoDirectory + GoPbGameDirectory
 	ServiceInfoDirectory             = PbcOutputDirectory + "service_info/"
 	ServiceInfoExtension             = "_service_info"
 	ServiceCppFilePath               = ServiceInfoDirectory + "service_info.cpp"
@@ -103,7 +103,6 @@ const (
 	ClientServiceInstanceFilePath    = ProjectDir + "client/src/handler/player_service.cpp"
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
 	PlayerStorageSystemDirectory     = ProjectDir + NodePkgLogicSceneNodeDirectory + "src/player/system/"
-	DeployGoGameDirectory            = DeployDirectory + GoPbGameDirectory
 	CppGenGrpcDirectory              = ProjectDir + PbcProtoDirectory + "grpc/generator/"
 )
 
