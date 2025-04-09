@@ -88,6 +88,21 @@ func IsSameMD5(dstFilePath string, md5SrcFilePath string) (same bool, err error)
 	return true, err
 }
 
+func IsSameMD51(dstFilePath string, srcFilePath string) (same bool, err error) {
+	srcMd5, err := GetFileMd5(srcFilePath)
+	if err != nil {
+		return false, err
+	}
+	dstMd5, err := GetFileMd5(dstFilePath)
+	if err != nil {
+		return false, err
+	}
+	if srcMd5 != dstMd5 {
+		return false, nil
+	}
+	return true, err
+}
+
 func GetMd5FileName(dstFilePath string) (filename string) {
 	return strings.Replace(dstFilePath, config.ProjectDir, config.Md5Dir, 1)
 }
@@ -104,7 +119,7 @@ func Md5CopyByMd5Ex(dstFilePath string, srcFilePath string) (copy bool, err erro
 	if !same {
 		return false, err
 	}
-	_, err = Copy(srcFilePath, dstFilePath)
+	_, err = Copy(dstFilePath, srcFilePath)
 	return true, err
 }
 
