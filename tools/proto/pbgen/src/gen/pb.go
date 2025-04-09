@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"pbgen/config"
 	"pbgen/util"
 	"runtime"
@@ -97,7 +98,7 @@ func generateCppFiles(fileName, outputDir string) error {
 	return nil
 }
 
-func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
+func BuildProtoGrpc(protoPath string) (err error) {
 	// Read directory entries
 	var fds []os.DirEntry
 	if fds, err = os.ReadDir(protoPath); err != nil {
@@ -121,13 +122,22 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 
 			// Construct file paths
 			fileName := protoPath + fd.Name()
-			md5FileName := protoMd5Path + fd.Name() + config.GrpcEx + config.Md5Ex
+			md5FileName := strings.Replace(fileName, config.ProtoDir, config.GrpcTempDirectory, 1)
+
+			dir := path.Dir(md5FileName)
+			err := os.MkdirAll(dir, os.FileMode(0777))
+			if err != nil {
+				return
+			}
+
+			md5FileName = strings.Replace(md5FileName, config.ProtoEx, config.GrpcPbcEx, 1)
+
 			dstFileName := strings.Replace(fileName, config.ProtoDir, config.GrpcProtoOutputDirectory, 1)
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.GrpcPbcEx, 1)
 
 			// Check if files with same MD5 and destinations exist
-			fileSame, err := util.IsSameMD5(fileName, md5FileName)
-			if fileSame && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
+			fileSame, err := util.IsSameMD51(dstFileName, md5FileName)
+			if fileSame {
 				return
 			}
 
@@ -164,11 +174,13 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 				log.Fatal(err)
 			}
 
-			// Write MD5 data to file
-			err = util.WriteToMd5ExFile(fileName, md5FileName)
+			_, err = util.Copy(md5FileName, dstFileName)
 			if err != nil {
+				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 				log.Fatal(err)
+				return
 			}
+
 		}(fd)
 	}
 	return err
@@ -508,7 +520,7 @@ func BuildAllProtoc() {
 		}(i)
 
 		go func(i int) {
-			err := BuildProtoGrpc(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+			err := BuildProtoGrpc(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}
