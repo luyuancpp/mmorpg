@@ -5,9 +5,7 @@ const (
 	ProjectDir                = "../../../../"
 	ProtoDir                  = "../../../../proto/"
 	ProtoParentIncludePathDir = "../../../../"
-	BinDirectory              = "../bin/"
 	Md5Ex                     = ".md5"
-	Md5Dir                    = "../bin/md5/"
 	PlayerStorageMd5Directory = "../bin/md5/node/game/game_logic/"
 	ProtoEx                   = ".proto"
 	ProtoPbcEx                = ".pb.cc"
@@ -15,7 +13,6 @@ const (
 	ProtoGoEx                 = ".pb.go"
 	GrpcPbcEx                 = ".grpc.pb.cc"
 	GrpcPbhEx                 = ".grpc.pb.h"
-	GrpcEx                    = "grpc"
 	ProtoDescExtension        = ".desc"
 	ProtoDirName              = "proto/"
 	ThirdPartyDirectory       = "third_party/"
@@ -164,10 +161,7 @@ var (
 		"etcd/",
 	}
 
-	ProtoDirectories     []string
-	ProjectSourceMd5Dirs []string
-	ProtoDirs            []string
-	ProtoMd5Dirs         []string
+	ProtoDirs []string
 
 	CommonProtoDirIndex    = 0
 	ComponentProtoDirIndex = 1

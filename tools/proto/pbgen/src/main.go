@@ -40,30 +40,17 @@ func MakeProjectMd5Dir(src string, dst string) error {
 
 func MakeProjectDir() {
 	os.MkdirAll(config.PbcOutputDirectory, os.FileMode(0777))
-	os.MkdirAll(config.PbcProtoOutputDirectory, os.FileMode(0777))
-	os.MkdirAll(config.GrpcOutputDirectory, os.FileMode(0777))
 	os.MkdirAll(config.PbcLuaDirectory, os.FileMode(0777))
 	os.MkdirAll(config.ServiceInfoDirectory, os.FileMode(0777))
 	os.MkdirAll(config.CppGenGrpcDirectory, os.FileMode(0777))
-}
-
-func MakeMd5Dir() {
-	os.MkdirAll(config.BinDirectory, os.FileMode(0777))
-	os.MkdirAll(config.Md5Dir, os.FileMode(0777))
-
-	for i := 0; i < len(config.SourceDirectories); i++ {
-		config.ProtoDirectories = append(config.ProtoDirectories, config.ProjectDir+config.SourceDirectories[i])
-	}
 
 	for i := 0; i < len(config.ProtoDirectoryNames); i++ {
 		config.ProtoDirs = append(config.ProtoDirs, config.ProtoDir+config.ProtoDirectoryNames[i])
 	}
-
 }
 
 func main() {
 	MakeProjectDir()
-	MakeMd5Dir()
 	//开始读所有的proto文件
 	gen.ReadServiceIdFile()
 	gen.ReadAllProtoFileServices()
