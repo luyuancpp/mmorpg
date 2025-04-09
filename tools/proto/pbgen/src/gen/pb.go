@@ -21,6 +21,8 @@ func BuildProto(protoPath string) (err error) {
 		return err
 	}
 
+	os.MkdirAll(config.PbcProtoOutputDirectory, os.FileMode(0777))
+
 	// Wait group for synchronization
 	var wg sync.WaitGroup
 
@@ -112,6 +114,7 @@ func BuildProtoGrpc(protoPath string) (err error) {
 	}
 
 	os.MkdirAll(config.GrpcTempDirectory, os.FileMode(0777))
+	os.MkdirAll(config.GrpcOutputDirectory, os.FileMode(0777))
 
 	// Process each protobuf file in the directory
 	for _, fd := range fds {
