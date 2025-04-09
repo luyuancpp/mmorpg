@@ -68,7 +68,7 @@ func Copy(dstFile string, srcFile string) (written int64, err error) {
 		return nBytes, fmt.Errorf("failed to copy data from %s to %s: %v", srcFile, dstFile, err)
 	}
 
-	log.Default().Println("Copied %s -> %s\n", srcFile, dstFile)
+	log.Default().Println("Copied  \n", srcFile, " -> ", dstFile)
 
 	return nBytes, nil
 }
