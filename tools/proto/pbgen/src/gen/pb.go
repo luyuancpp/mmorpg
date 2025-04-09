@@ -192,7 +192,7 @@ func BuildProtoGrpc(protoPath string) (err error) {
 	return err
 }
 
-func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
+func BuildProtoGoLogin(protoPath string) (err error) {
 	// Read directory entries
 	var fds []os.DirEntry
 	if fds, err = os.ReadDir(protoPath); err != nil {
@@ -258,7 +258,7 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 	return err
 }
 
-func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
+func BuildProtoGoDb(protoPath string) (err error) {
 	// Read directory entries
 	var fds []os.DirEntry
 	if fds, err = os.ReadDir(protoPath); err != nil {
@@ -326,7 +326,7 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 	return err
 }
 
-func BuildProtoDesc(protoPath string, protoMd5Path string) (err error) {
+func BuildProtoDesc(protoPath string) (err error) {
 	// Read directory entries
 	var fds []os.DirEntry
 	if fds, err = os.ReadDir(protoPath); err != nil {
@@ -355,14 +355,14 @@ func BuildProtoDesc(protoPath string, protoMd5Path string) (err error) {
 			if sysType == `linux` {
 				// Command for Linux
 				cmd = exec.Command("protoc",
-					"--descriptor_set_out="+config.DBDescDirectory+fd.Name()+config.ProtoDescExtension,
+					"--descriptor_set_out="+config.PbDescDirectory+fd.Name()+config.ProtoDescExtension,
 					fileName,
 					"--proto_path="+config.ProtoParentIncludePathDir,
 					"--proto_path="+config.ProtoBufferDirectory)
 			} else {
 				// Command for other systems (presumably Windows)
 				cmd = exec.Command("./protoc.exe",
-					"--descriptor_set_out="+config.DBDescDirectory+fd.Name()+config.ProtoDescExtension,
+					"--descriptor_set_out="+config.PbDescDirectory+fd.Name()+config.ProtoDescExtension,
 					fileName,
 					"--proto_path="+config.ProtoParentIncludePathDir,
 					"--proto_path="+config.ProtoBufferDirectory)
@@ -385,7 +385,7 @@ func BuildProtoDesc(protoPath string, protoMd5Path string) (err error) {
 	return err
 }
 
-func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
+func BuildProtoGoClient(protoPath string) (err error) {
 	// Read directory entries
 	var fds []os.DirEntry
 	if fds, err = os.ReadDir(protoPath); err != nil {
@@ -448,7 +448,7 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 	return err
 }
 
-func BuildProtoGoDeploy(protoPath string, protoMd5Path string) (err error) {
+func BuildProtoGoDeploy(protoPath string) (err error) {
 	// Read directory entries
 	var fds []os.DirEntry
 	if fds, err = os.ReadDir(protoPath); err != nil {
@@ -533,35 +533,35 @@ func BuildAllProtoc() {
 		}(i)
 
 		go func(i int) {
-			err := BuildProtoGoClient(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+			err := BuildProtoGoClient(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}
 		}(i)
 
 		go func(i int) {
-			err := BuildProtoGoLogin(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+			err := BuildProtoGoLogin(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}
 		}(i)
 
 		go func(i int) {
-			err := BuildProtoGoDb(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+			err := BuildProtoGoDb(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}
 		}(i)
 
 		go func(i int) {
-			err := BuildProtoGoDeploy(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+			err := BuildProtoGoDeploy(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}
 		}(i)
 
 		go func(i int) {
-			err := BuildProtoDesc(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+			err := BuildProtoDesc(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}

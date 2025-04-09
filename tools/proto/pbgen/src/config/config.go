@@ -16,7 +16,6 @@ const (
 	GrpcPbcEx                 = ".grpc.pb.cc"
 	GrpcPbhEx                 = ".grpc.pb.h"
 	GrpcEx                    = "grpc"
-	DBDescDirectory           = "../bin/proto_desc/"
 	ProtoDescExtension        = ".desc"
 	ProtoDirName              = "proto/"
 	ThirdPartyDirectory       = "third_party/"
@@ -77,6 +76,7 @@ const (
 const (
 	ToolDir                          = "tools/"
 	TempFileGenerationDir            = "generated/temp/files/"
+	PbDescDirectory                  = ProjectDir + ToolDir + TempFileGenerationDir + "proto_desc/"
 	PbcProtoOutputDirectory          = ProjectDir + PbcProtoDirectory + ProtoDirName
 	PbcOutputDirectory               = ProjectDir + PbcProtoDirectory
 	GrpcOutputDirectory              = ProjectDir + PbcProtoDirectory

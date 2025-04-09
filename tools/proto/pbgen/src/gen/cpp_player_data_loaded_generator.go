@@ -49,7 +49,7 @@ type DescData struct {
 func CppPlayerDataLoadGenerator() {
 	// 生成文件路径
 	descFilePath := filepath.Join(
-		config.DBDescDirectory,
+		config.PbDescDirectory,
 		config.GameMysqlDBProtoFileName+config.ProtoDescExtension,
 	)
 
