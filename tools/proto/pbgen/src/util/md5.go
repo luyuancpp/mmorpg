@@ -1,7 +1,6 @@
 package util
 
 import (
-	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"io"
@@ -72,23 +71,7 @@ func WriteToMd5ExFile(filePath string, md5FilePath string) (err error) {
 	return err
 }
 
-func IsSameMD5(dstFilePath string, md5SrcFilePath string) (same bool, err error) {
-	srcByteMd5, err := os.ReadFile(md5SrcFilePath)
-	srcMd5 := bytes.NewBuffer(srcByteMd5).String()
-	if err != nil {
-		return false, err
-	}
-	dstMd5, err := GetFileMd5(dstFilePath)
-	if err != nil {
-		return false, err
-	}
-	if srcMd5 != dstMd5 {
-		return false, nil
-	}
-	return true, err
-}
-
-func IsSameMD51(dstFilePath string, srcFilePath string) (same bool, err error) {
+func IsSameMD5(dstFilePath string, srcFilePath string) (same bool, err error) {
 	srcMd5, err := GetFileMd5(srcFilePath)
 	if err != nil {
 		return false, err
