@@ -51,7 +51,7 @@ func BuildProto(protoPath string) (err error) {
 			}
 
 			// Check if files with same MD5 and destinations exist
-			fileSame, _ := util.IsSameMD51(dstFileName, md5FileName)
+			fileSame, _ := util.IsSameMD5(dstFileName, md5FileName)
 			if fileSame {
 				return
 			}
@@ -142,7 +142,7 @@ func BuildProtoGrpc(protoPath string) (err error) {
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.GrpcPbcEx, 1)
 
 			// Check if files with same MD5 and destinations exist
-			fileSame, err := util.IsSameMD51(dstFileName, md5FileName)
+			fileSame, err := util.IsSameMD5(dstFileName, md5FileName)
 			if fileSame {
 				return
 			}
