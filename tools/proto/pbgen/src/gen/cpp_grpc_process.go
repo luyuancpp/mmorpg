@@ -106,8 +106,8 @@ func CppGrpcCallClient() {
 				return
 			}
 
-			if !(strings.Contains(serviceMethods[0].Path, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-				strings.Contains(serviceMethods[0].Path, config.ProtoDirectoryNames[config.EtcdProtoDirIndex])) {
+			if !(strings.Contains(serviceMethods[0].Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
+				strings.Contains(serviceMethods[0].Path(), config.ProtoDirectoryNames[config.EtcdProtoDirIndex])) {
 				return
 			}
 
