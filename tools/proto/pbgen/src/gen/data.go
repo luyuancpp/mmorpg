@@ -12,7 +12,6 @@ type EmptyStruct struct{}
 
 // RPCMethod 定义RPC方法信息
 type RPCMethod struct {
-	Service  string
 	Method   string
 	Request  string
 	Response string
@@ -59,7 +58,7 @@ var FileMaxMessageId = uint64(0)
 
 // KeyName 返回RPC方法的键名
 func (info *RPCMethod) KeyName() string {
-	return info.Service + info.Method
+	return info.Service() + info.Method
 }
 
 // IncludeName 返回包含头文件名
@@ -72,7 +71,7 @@ func (info *RPCServiceInfo) FileName() string {
 }
 
 func (info *RPCServiceInfo) Path() string {
-	return filepath.Dir(*info.FdSet.GetFile()[0].Name)
+	return strings.Replace(filepath.Dir(*info.FdSet.GetFile()[0].Name), "/", "\\", -1)
 }
 
 // PbcHeadName 返回Proto文件头文件名
@@ -141,12 +140,12 @@ func (info *RPCMethod) CppRepliedHandlerIncludeName() string {
 
 // CppHandlerClassName 返回Cpp处理器类名
 func (info *RPCMethod) CppHandlerClassName() string {
-	return info.Service + config.HandlerFileName
+	return info.Service() + config.HandlerFileName
 }
 
 // CppRepliedHandlerClassName 返回Cpp已响应处理器类名
 func (info *RPCMethod) CppRepliedHandlerClassName() string {
-	return info.Service + config.RepliedHandlerFileName
+	return info.Service() + config.RepliedHandlerFileName
 }
 
 // IsPlayerService 检查是否为玩家服务
@@ -165,16 +164,16 @@ func (info *RPCMethod) CcGenericServices() bool {
 
 func (info *RPCMethod) GetServiceFullNameWithColon() string {
 	if len(info.Package()) <= 0 {
-		return info.Service
+		return info.Service()
 	}
-	return info.Package() + "::" + info.Service
+	return info.Package() + "::" + info.Service()
 }
 
 func (info *RPCMethod) GetServiceFullNameWithNoColon() string {
 	if len(info.Package()) <= 0 {
-		return info.Service
+		return info.Service()
 	}
-	return info.Package() + info.Service
+	return info.Package() + info.Service()
 }
 
 func (info *RPCMethod) GetPackageNameWithColon() string {
@@ -184,6 +183,10 @@ func (info *RPCMethod) GetPackageNameWithColon() string {
 	return info.Package() + "::"
 }
 
+func (info *RPCMethod) Service() string {
+	return info.FdSet.GetFile()[0].Service[0].GetName()
+}
+
 // Len 返回RPCMethods的长度
 func (s RPCMethods) Len() int {
 	return len(s)
@@ -191,7 +194,7 @@ func (s RPCMethods) Len() int {
 
 // Less 比较两个RPCMethods的索引
 func (s RPCMethods) Less(i, j int) bool {
-	if s[i].Service < s[j].Service {
+	if s[i].Service() < s[j].Service() {
 		return true
 	}
 	return s[i].Index < s[j].Index

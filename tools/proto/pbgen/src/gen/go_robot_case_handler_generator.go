@@ -94,10 +94,10 @@ func GoRobotTotalHandlerGenerator() {
 // generateHandlerCases creates the cases for the switch statement based on the method.
 func generateHandlerCases(method *RPCMethod, cases []HandlerCase) []HandlerCase {
 	handlerCases := HandlerCase{
-		MessageID:       method.Service + method.Method + config.MessageIdName,
-		HandlerFunction: "handle" + method.Service + method.Method,
+		MessageID:       method.Service() + method.Method + config.MessageIdName,
+		HandlerFunction: "handle" + method.Service() + method.Method,
 		MessageType:     determineResponseType(method),
-		FunctionCall:    method.Service + method.Method + "Handler",
+		FunctionCall:    method.Service() + method.Method + "Handler",
 	}
 	cases = append(cases, handlerCases)
 	return cases
@@ -130,7 +130,7 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 // isRelevantService checks if the service name is relevant.
 func isRelevantService(method *RPCMethod) bool {
 	return strings.Contains(method.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
-		strings.Contains(method.Service, "GamePlayer") || strings.Contains(method.Service, "ClientPlayer")
+		strings.Contains(method.Service(), "GamePlayer") || strings.Contains(method.Service(), "ClientPlayer")
 }
 
 // determineResponseType returns the response type or request type based on configuration.

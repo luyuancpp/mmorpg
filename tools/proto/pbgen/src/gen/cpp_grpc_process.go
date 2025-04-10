@@ -41,7 +41,7 @@ func generateGrpcMethod(method *RPCMethod, grpcServices []GrpcService) []GrpcSer
 		Request:                    method.Request,
 		Response:                   method.Response,
 		Method:                     method.Method,
-		ServiceName:                method.Service,
+		ServiceName:                method.Service(),
 		FileBaseName:               strings.ToLower(method.FileNameNoEx()),
 		ServiceFullNameWithColon:   method.GetServiceFullNameWithColon(),
 		ServiceFullNameWithNoColon: method.GetServiceFullNameWithNoColon(),

@@ -39,7 +39,7 @@ func GoRobotHandlerGenerator() {
 			}
 
 			for _, method := range v {
-				serviceName := method.Service
+				serviceName := method.Service()
 
 				if !isRelevantService(method) {
 					continue

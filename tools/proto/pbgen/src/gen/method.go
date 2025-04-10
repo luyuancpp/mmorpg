@@ -39,7 +39,7 @@ func getServiceIdDefinitions(method *RPCMethod) string {
 	data.WriteString("constexpr uint32_t " + method.KeyName() + config.MessageIdName + " = " + strconv.FormatUint(method.Id, 10) + ";\n")
 	data.WriteString("constexpr uint32_t " + method.KeyName() + "Index = " + strconv.FormatUint(method.Index, 10) + ";\n")
 
-	data.WriteString("#define " + method.KeyName() + "Method  ::" + method.Service + "_Stub::descriptor()->method(" +
+	data.WriteString("#define " + method.KeyName() + "Method  ::" + method.Service() + "_Stub::descriptor()->method(" +
 		strconv.FormatUint(method.Index, 10) + ")\n")
 
 	return data.String()
@@ -50,7 +50,7 @@ func getServiceHandlerHeadStr(methodList RPCMethods) string {
 	var data strings.Builder
 	data.WriteString("#pragma once\n")
 	data.WriteString(methodList[0].IncludeName())
-	data.WriteString("class " + methodList[0].Service + "Handler : public ::" + methodList[0].Service + "\n{\npublic:\n")
+	data.WriteString("class " + methodList[0].Service() + "Handler : public ::" + methodList[0].Service() + "\n{\npublic:\n")
 
 	for _, method := range methodList {
 		data.WriteString(getServiceHandlerMethodStr(method))
@@ -80,7 +80,7 @@ func getPlayerMethodHeadStr(methodList RPCMethods) string {
 	data.WriteString(methodList[0].IncludeName())
 	data.WriteString(config.PlayerServiceIncludeName)
 	data.WriteString(config.MacroReturnIncludeName)
-	data.WriteString("\nclass " + methodList[0].Service + config.HandlerFileName + " : public ::PlayerService" + "\n{\npublic:\n")
+	data.WriteString("\nclass " + methodList[0].Service() + config.HandlerFileName + " : public ::PlayerService" + "\n{\npublic:\n")
 	data.WriteString(config.Tab + "using PlayerService::PlayerService;\n")
 
 	data.WriteString(getPlayerMethodHandlerFunctions(methodList))
@@ -133,7 +133,7 @@ func getPlayerMethodRepliedHeadStr(methodList RPCMethods) string {
 	data.WriteString("#pragma once\n")
 	data.WriteString(methodList[0].IncludeName())
 	data.WriteString(config.PlayerServiceRepliedIncludeName)
-	data.WriteString("\nclass " + methodList[0].Service + config.RepliedHandlerFileName + " : public ::PlayerServiceReplied" + "\n{\npublic:\n")
+	data.WriteString("\nclass " + methodList[0].Service() + config.RepliedHandlerFileName + " : public ::PlayerServiceReplied" + "\n{\npublic:\n")
 	data.WriteString(config.Tab + "using PlayerServiceReplied::PlayerServiceReplied;\n")
 
 	data.WriteString(getPlayerMethodRepliedHandlerFunctions(methodList))
@@ -217,7 +217,7 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 	data.WriteString(firstMethodInfo.CppHandlerIncludeName())
 
 	// Determine class name based on the first method's service and handler name configuration
-	className := firstMethodInfo.Service + config.HandlerFileName
+	className := firstMethodInfo.Service() + config.HandlerFileName
 
 	// Iterate through yourCodes and methodList simultaneously
 	for i, code := range yourCodes {
