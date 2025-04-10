@@ -33,8 +33,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 	scanner := bufio.NewScanner(f)
 	var service string
 	var methodIndex uint64
-	var goPackageName string
-	var pbPackageName string
 
 	descFilePath := filepath.Join(
 		config.PbDescDirectory,
@@ -53,12 +51,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-
-		if strings.Contains(line, config.GoPackage) {
-			goPackageName = strings.ReplaceAll(strings.Split(line, " ")[3], ";", "")
-		} else if strings.Contains(line, config.PbPackage) {
-			pbPackageName = strings.ReplaceAll(strings.Split(line, " ")[1], ";", "")
-		}
 
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
 			service = strings.ReplaceAll(strings.Split(line, " ")[1], "{", "")
@@ -85,15 +77,13 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 
 			// 创建 RPCMethod 实例
 			rpcMethodInfo := RPCMethod{
-				Service:   service,
-				Method:    splitList[1],
-				Request:   strings.Replace(requestType, ".", "::", -1),
-				Response:  strings.Replace(responseType, ".", "::", -1),
-				Id:        math.MaxUint64,
-				Index:     methodIndex,
-				PbPackage: pbPackageName,
-				GoPackage: goPackageName,
-				FdSet:     fdSet,
+				Service:  service,
+				Method:   splitList[1],
+				Request:  strings.Replace(requestType, ".", "::", -1),
+				Response: strings.Replace(responseType, ".", "::", -1),
+				Id:       math.MaxUint64,
+				Index:    methodIndex,
+				FdSet:    fdSet,
 			}
 
 			result, ok := RpcServiceMap.Load(service)
