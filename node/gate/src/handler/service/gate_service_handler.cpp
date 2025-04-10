@@ -17,7 +17,7 @@ bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
 
 ///<<< END WRITING YOUR CODE
 void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,const ::RegisterGameNodeRequest* request,
-	     Empty* response,
+	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -49,7 +49,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 }
 
 void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,const ::UnregisterGameNodeRequest* request,
-	     Empty* response,
+	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -60,7 +60,7 @@ void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* contr
 }
 
 void GateServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller,const ::RegisterGameNodeSessionRequest* request,
-	     RegisterGameNodeSessionResponse* response,
+	     ::RegisterGameNodeSessionResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -79,7 +79,7 @@ void GateServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* 
 }
 
 void GateServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
-	     Empty* response,
+	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -99,7 +99,7 @@ void GateServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 }
 
 void GateServiceHandler::KickSessionByCentre(::google::protobuf::RpcController* controller,const ::KickSessionRequest* request,
-	     Empty* response,
+	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -109,7 +109,7 @@ void GateServiceHandler::KickSessionByCentre(::google::protobuf::RpcController* 
 }
 
 void GateServiceHandler::RouteNodeMessage(::google::protobuf::RpcController* controller,const ::RouteMessageRequest* request,
-	     RouteMessageResponse* response,
+	     ::RouteMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -118,7 +118,7 @@ void GateServiceHandler::RouteNodeMessage(::google::protobuf::RpcController* con
 }
 
 void GateServiceHandler::RoutePlayerMessage(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
-	     RoutePlayerMessageResponse* response,
+	     ::RoutePlayerMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -127,7 +127,7 @@ void GateServiceHandler::RoutePlayerMessage(::google::protobuf::RpcController* c
 }
 
 void GateServiceHandler::BroadcastToPlayers(::google::protobuf::RpcController* controller,const ::BroadcastToPlayersRequest* request,
-	     Empty* response,
+	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE

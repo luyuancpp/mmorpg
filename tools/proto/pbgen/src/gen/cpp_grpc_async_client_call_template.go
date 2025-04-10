@@ -10,7 +10,7 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using Grpc{{.ServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.PackageNameWithColon}}{{.ServiceName}}::Stub>;
+using Grpc{{.ServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.PbPackageName}}::{{.ServiceName}}::Stub>;
 
 
 {{- range .GrpcServices }}
@@ -19,12 +19,12 @@ class Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall
 public:
     ClientContext context;
     Status status;
-    {{.PackageNameWithColon}}{{.GetCppResponse}} reply;
-    std::unique_ptr<ClientAsyncResponseReader<  {{.PackageNameWithColon}}{{.GetCppResponse}}>> response_reader;
+    {{.CppResponse}} reply;
+    std::unique_ptr<ClientAsyncResponseReader<  {{.CppResponse}}>> response_reader;
 };
 
-class {{.GetCppRequest}};
-void Send{{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.PackageNameWithColon}}{{.GetCppRequest}}& request);
+class {{.CppRequest}};
+void Send{{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.CppRequest}}& request);
 
 using Async{{.ServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
 
@@ -53,7 +53,7 @@ struct {{.ServiceFullNameWithNoColon}}{{.Method}}CompleteQueue{
 
 {{- range .GrpcServices }}
 
-void Send{{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.PackageNameWithColon}}{{.GetCppRequest}}& request)
+void Send{{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.CppRequest}}& request)
 {
     Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
 

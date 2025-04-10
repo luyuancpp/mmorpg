@@ -36,7 +36,7 @@ struct GameServiceCreateSceneCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void SendGameServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const  PlayerEnterGameNodeRequest& request)
+void SendGameServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const  ::PlayerEnterGameNodeRequest& request)
 {
     AsyncGameServicePlayerEnterGameNodeGrpcClientCall* call = new AsyncGameServicePlayerEnterGameNodeGrpcClientCall;
 
@@ -81,7 +81,7 @@ void AsyncCompleteGrpcGameServicePlayerEnterGameNode(grpc::CompletionQueue& cq)
     }
 }
 
-void SendGameServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const  NodeRouteMessageRequest& request)
+void SendGameServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const  ::NodeRouteMessageRequest& request)
 {
     AsyncGameServiceSendMessageToPlayerGrpcClientCall* call = new AsyncGameServiceSendMessageToPlayerGrpcClientCall;
 
@@ -126,7 +126,7 @@ void AsyncCompleteGrpcGameServiceSendMessageToPlayer(grpc::CompletionQueue& cq)
     }
 }
 
-void SendGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const  ClientSendMessageToPlayerRequest& request)
+void SendGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const  ::ClientSendMessageToPlayerRequest& request)
 {
     AsyncGameServiceClientSendMessageToPlayerGrpcClientCall* call = new AsyncGameServiceClientSendMessageToPlayerGrpcClientCall;
 
@@ -171,7 +171,7 @@ void AsyncCompleteGrpcGameServiceClientSendMessageToPlayer(grpc::CompletionQueue
     }
 }
 
-void SendGameServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGateNodeRequest& request)
+void SendGameServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGateNodeRequest& request)
 {
     AsyncGameServiceRegisterGateNodeGrpcClientCall* call = new AsyncGameServiceRegisterGateNodeGrpcClientCall;
 
@@ -216,7 +216,7 @@ void AsyncCompleteGrpcGameServiceRegisterGateNode(grpc::CompletionQueue& cq)
     }
 }
 
-void SendGameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt::entity nodeEntity, const  NodeRouteMessageRequest& request)
+void SendGameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt::entity nodeEntity, const  ::NodeRouteMessageRequest& request)
 {
     AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall* call = new AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall;
 
@@ -261,7 +261,7 @@ void AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode(grpc::CompletionQ
     }
 }
 
-void SendGameServiceInvokePlayerService(entt::registry& registry, entt::entity nodeEntity, const  NodeRouteMessageRequest& request)
+void SendGameServiceInvokePlayerService(entt::registry& registry, entt::entity nodeEntity, const  ::NodeRouteMessageRequest& request)
 {
     AsyncGameServiceInvokePlayerServiceGrpcClientCall* call = new AsyncGameServiceInvokePlayerServiceGrpcClientCall;
 
@@ -306,7 +306,7 @@ void AsyncCompleteGrpcGameServiceInvokePlayerService(grpc::CompletionQueue& cq)
     }
 }
 
-void SendGameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const  RouteMessageRequest& request)
+void SendGameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const  ::RouteMessageRequest& request)
 {
     AsyncGameServiceRouteNodeStringMsgGrpcClientCall* call = new AsyncGameServiceRouteNodeStringMsgGrpcClientCall;
 
@@ -351,7 +351,7 @@ void AsyncCompleteGrpcGameServiceRouteNodeStringMsg(grpc::CompletionQueue& cq)
     }
 }
 
-void SendGameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const  RoutePlayerMessageRequest& request)
+void SendGameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const  ::RoutePlayerMessageRequest& request)
 {
     AsyncGameServiceRoutePlayerStringMsgGrpcClientCall* call = new AsyncGameServiceRoutePlayerStringMsgGrpcClientCall;
 
@@ -396,7 +396,7 @@ void AsyncCompleteGrpcGameServiceRoutePlayerStringMsg(grpc::CompletionQueue& cq)
     }
 }
 
-void SendGameServiceUpdateSessionDetail(entt::registry& registry, entt::entity nodeEntity, const  RegisterPlayerSessionRequest& request)
+void SendGameServiceUpdateSessionDetail(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterPlayerSessionRequest& request)
 {
     AsyncGameServiceUpdateSessionDetailGrpcClientCall* call = new AsyncGameServiceUpdateSessionDetailGrpcClientCall;
 
@@ -441,7 +441,7 @@ void AsyncCompleteGrpcGameServiceUpdateSessionDetail(grpc::CompletionQueue& cq)
     }
 }
 
-void SendGameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity, const  Centre2GsEnterSceneRequest& request)
+void SendGameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity, const  ::Centre2GsEnterSceneRequest& request)
 {
     AsyncGameServiceEnterSceneGrpcClientCall* call = new AsyncGameServiceEnterSceneGrpcClientCall;
 
@@ -486,7 +486,7 @@ void AsyncCompleteGrpcGameServiceEnterScene(grpc::CompletionQueue& cq)
     }
 }
 
-void SendGameServiceCreateScene(entt::registry& registry, entt::entity nodeEntity, const  CreateSceneRequest& request)
+void SendGameServiceCreateScene(entt::registry& registry, entt::entity nodeEntity, const  ::CreateSceneRequest& request)
 {
     AsyncGameServiceCreateSceneGrpcClientCall* call = new AsyncGameServiceCreateSceneGrpcClientCall;
 

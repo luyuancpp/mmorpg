@@ -12,15 +12,14 @@ import (
 )
 
 type GrpcService struct {
-	Request                    string
-	Response                   string
+	CppRequest                 string
+	CppResponse                string
 	Method                     string
 	ServiceName                string
 	FileBaseName               string
 	ServiceFullNameWithColon   string
 	ServiceFullNameWithNoColon string
 	PbPackageName              string
-	PackageNameWithColon       string
 	IncludeName                string
 }
 
@@ -32,21 +31,19 @@ type GrpcServiceTemplateData struct {
 	ServiceFullNameWithColon   string
 	ServiceFullNameWithNoColon string
 	PbPackageName              string
-	PackageNameWithColon       string
 }
 
 // generateHandlerCases creates the cases for the switch statement based on the method.
 func generateGrpcMethod(method *RPCMethod, grpcServices []GrpcService) []GrpcService {
 	grpcService := GrpcService{
-		Request:                    method.GetCppRequest(),
-		Response:                   method.GetCppResponse(),
+		CppRequest:                 method.CppRequest(),
+		CppResponse:                method.CppResponse(),
 		Method:                     method.Method(),
 		ServiceName:                method.Service(),
 		FileBaseName:               strings.ToLower(method.FileNameNoEx()),
 		ServiceFullNameWithColon:   method.GetServiceFullNameWithColon(),
 		ServiceFullNameWithNoColon: method.GetServiceFullNameWithNoColon(),
 		PbPackageName:              method.Package(),
-		PackageNameWithColon:       method.GetPackageNameWithColon(),
 		IncludeName:                method.GrpcIncludeHeadName(),
 	}
 	grpcServices = append(grpcServices, grpcService)
@@ -79,7 +76,6 @@ func generateGrpcFile(fileName string, grpcServices []GrpcService, text string) 
 		ServiceFullNameWithColon:   firstService.ServiceFullNameWithColon,
 		ServiceFullNameWithNoColon: firstService.ServiceFullNameWithNoColon,
 		PbPackageName:              firstService.PbPackageName,
-		PackageNameWithColon:       firstService.PackageNameWithColon,
 	}
 
 	// 将内容写入文件

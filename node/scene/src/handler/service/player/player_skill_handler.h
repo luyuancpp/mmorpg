@@ -31,25 +31,25 @@ public:
 		{
 		case 0:
 			ReleaseSkill(player,
-			static_cast<const ReleaseSkillSkillRequest*>(request),
-			static_cast<ReleaseSkillSkillResponse*>(response));
-			TRANSFER_ERROR_MESSAGE(static_cast<ReleaseSkillSkillResponse*>(response));
+			static_cast<const ::ReleaseSkillSkillRequest*>(request),
+			static_cast<::ReleaseSkillSkillResponse*>(response));
+			TRANSFER_ERROR_MESSAGE(static_cast<::ReleaseSkillSkillResponse*>(response));
 		break;
 		case 1:
 			NotifySkillUsed(player,
-			static_cast<const SkillUsedS2C*>(request),
-			static_cast<Empty*>(response));
+			static_cast<const ::SkillUsedS2C*>(request),
+			static_cast<::Empty*>(response));
 		break;
 		case 2:
 			NotifySkillInterrupted(player,
-			static_cast<const SkillInterruptedS2C*>(request),
-			static_cast<Empty*>(response));
+			static_cast<const ::SkillInterruptedS2C*>(request),
+			static_cast<::Empty*>(response));
 		break;
 		case 3:
 			GetSkillList(player,
-			static_cast<const GetSkillListRequest*>(request),
-			static_cast<GetSkillListResponse*>(response));
-			TRANSFER_ERROR_MESSAGE(static_cast<GetSkillListResponse*>(response));
+			static_cast<const ::GetSkillListRequest*>(request),
+			static_cast<::GetSkillListResponse*>(response));
+			TRANSFER_ERROR_MESSAGE(static_cast<::GetSkillListResponse*>(response));
 		break;
 		default:
 		break;

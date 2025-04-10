@@ -31,7 +31,7 @@ using namespace muduo::net;
 
 ///<<< END WRITING YOUR CODE
 void GameServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller,const ::PlayerEnterGameNodeRequest* request,
-	     Empty* response,
+	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -71,7 +71,7 @@ void GameServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* 
 }
 
 void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
-	     NodeRouteMessageResponse* response,
+	     ::NodeRouteMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -146,7 +146,7 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 }
 
 void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* controller,const ::ClientSendMessageToPlayerRequest* request,
-	     ClientSendMessageToPlayerResponse* response,
+	     ::ClientSendMessageToPlayerResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -208,7 +208,7 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 }
 
 void GameServiceHandler::RegisterGateNode(::google::protobuf::RpcController* controller,const ::RegisterGateNodeRequest* request,
-	     Empty* response,
+	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -233,7 +233,7 @@ void GameServiceHandler::RegisterGateNode(::google::protobuf::RpcController* con
 }
 
 void GameServiceHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
-	     Empty* response,
+	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -257,7 +257,7 @@ void GameServiceHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcCo
 }
 
 void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
-	     NodeRouteMessageResponse* response,
+	     ::NodeRouteMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -361,7 +361,7 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 }
 
 void GameServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,const ::RouteMessageRequest* request,
-	     RouteMessageResponse* response,
+	     ::RouteMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -369,7 +369,7 @@ void GameServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* c
 }
 
 void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
-	     RoutePlayerMessageResponse* response,
+	     ::RoutePlayerMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -377,7 +377,7 @@ void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController*
 }
 
 void GameServiceHandler::UpdateSessionDetail(::google::protobuf::RpcController* controller,const ::RegisterPlayerSessionRequest* request,
-	     Empty* response,
+	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -415,7 +415,7 @@ void GameServiceHandler::UpdateSessionDetail(::google::protobuf::RpcController* 
 }
 
 void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controller,const ::Centre2GsEnterSceneRequest* request,
-	     Empty* response,
+	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -438,7 +438,7 @@ void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controlle
 }
 
 void GameServiceHandler::CreateScene(::google::protobuf::RpcController* controller,const ::CreateSceneRequest* request,
-	     CreateSceneResponse* response,
+	     ::CreateSceneResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE

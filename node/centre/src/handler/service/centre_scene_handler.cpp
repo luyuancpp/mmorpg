@@ -4,7 +4,7 @@
 #include "scene/system/scene_system.h"
 ///<<< END WRITING YOUR CODE
 void CentreSceneServiceHandler::RegisterScene(::google::protobuf::RpcController* controller,const ::RegisterSceneRequest* request,
-	     RegisterSceneResponse* response,
+	     ::RegisterSceneResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -17,7 +17,7 @@ void CentreSceneServiceHandler::RegisterScene(::google::protobuf::RpcController*
 }
 
 void CentreSceneServiceHandler::UnRegisterScene(::google::protobuf::RpcController* controller,const ::UnRegisterSceneRequest* request,
-	     Empty* response,
+	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE

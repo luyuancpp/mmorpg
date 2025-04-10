@@ -46,10 +46,10 @@ func GoRobotHandlerGenerator() {
 				}
 				// Generate the Go handler function name and response type
 				handlerName := fmt.Sprintf("%sHandler", serviceName+method.Method())
-				responseType := method.GetCppResponse()
+				responseType := method.CppResponse()
 
 				if strings.Contains(responseType, config.EmptyResponseName) {
-					responseType = method.GetCppRequest()
+					responseType = method.CppRequest()
 				}
 
 				// Generate a valid file name for the Go file
