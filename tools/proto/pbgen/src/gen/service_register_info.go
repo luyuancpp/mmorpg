@@ -64,7 +64,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 			service = strings.ReplaceAll(strings.Split(line, " ")[1], "{", "")
 			rpcServiceInfo := RPCServiceInfo{}
 			rpcServiceInfo.FdSet = fdSet
-			rpcServiceInfo.Path = filePath
 			RpcServiceMap.Store(service, &rpcServiceInfo)
 			continue
 		} else if strings.Contains(line, "rpc ") {
@@ -93,7 +92,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 				Id:        math.MaxUint64,
 				Index:     methodIndex,
 				FileName:  fd.Name(),
-				Path:      filePath,
 				PbPackage: pbPackageName,
 				GoPackage: goPackageName,
 				FdSet:     fdSet,
@@ -356,7 +354,7 @@ func writeServiceInfoCppFile() {
 				method.Response,
 				handlerClassName,
 			))
-			if strings.Contains(method.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
+			if strings.Contains(method.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
 				initFuncBuilder.WriteString("gClientToServerMessageId.emplace(" + rpcId + ");\n")
 			}
 		}

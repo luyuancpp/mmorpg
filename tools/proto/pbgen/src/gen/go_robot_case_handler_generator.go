@@ -129,7 +129,7 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 
 // isRelevantService checks if the service name is relevant.
 func isRelevantService(method *RPCMethod) bool {
-	return strings.Contains(method.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
+	return strings.Contains(method.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
 		strings.Contains(method.Service, "GamePlayer") || strings.Contains(method.Service, "ClientPlayer")
 }
 

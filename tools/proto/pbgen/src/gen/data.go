@@ -19,7 +19,6 @@ type RPCMethod struct {
 	Id        uint64
 	Index     uint64
 	FileName  string
-	Path      string
 	PbPackage string
 	GoPackage string
 	FdSet     *descriptorpb.FileDescriptorSet
@@ -30,7 +29,6 @@ type RPCMethods []*RPCMethod
 
 // RPCServiceInfo 定义RPC服务信息
 type RPCServiceInfo struct {
-	Path       string
 	MethodInfo RPCMethods
 	FdSet      *descriptorpb.FileDescriptorSet
 }
@@ -69,11 +67,15 @@ func (info *RPCMethod) KeyName() string {
 
 // IncludeName 返回包含头文件名
 func (info *RPCServiceInfo) IncludeName() string {
-	return "#include \"" + strings.Replace(info.Path, config.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
+	return "#include \"" + strings.Replace(info.Path(), config.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
 }
 
 func (info *RPCServiceInfo) FileName() string {
 	return filepath.Base(*info.FdSet.GetFile()[0].Name)
+}
+
+func (info *RPCServiceInfo) Path() string {
+	return filepath.Dir(*info.FdSet.GetFile()[0].Name)
 }
 
 // PbcHeadName 返回Proto文件头文件名
@@ -89,12 +91,6 @@ func (info *RPCServiceInfo) HeadName() string {
 // FileBaseName 返回文件基本名
 func (info *RPCServiceInfo) FileBaseName() string {
 	return strings.Replace(info.FileName(), config.ProtoEx, "", 1)
-}
-
-// IsPlayerService 检查是否为玩家服务
-func (info *RPCServiceInfo) IsPlayerService() bool {
-	return strings.Contains(info.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
-		strings.Contains(info.Path, config.ProtoDirectoryNames[config.ServerPlayerDirIndex])
 }
 
 // FileBaseName 返回文件基本名
@@ -113,11 +109,15 @@ func (info *RPCMethod) GrpcHeadName() string {
 
 // IncludeName 返回包含头文件名
 func (info *RPCMethod) IncludeName() string {
-	return config.IncludeBegin + strings.Replace(info.Path, config.ProtoDir, config.ProtoDirName, 1) + info.PbcHeadName() + "\"\n"
+	return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.PbcHeadName() + "\"\n"
+}
+
+func (info *RPCMethod) Path() string {
+	return filepath.Dir(*info.FdSet.GetFile()[0].Name)
 }
 
 func (info *RPCMethod) GrpcIncludeHeadName() string {
-	return config.IncludeBegin + strings.Replace(info.Path, config.ProtoDir, config.ProtoDirName, 1) + info.GrpcHeadName() + "\"\n"
+	return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.GrpcHeadName() + "\"\n"
 }
 
 func (info *RPCMethod) ServiceInfoIncludeName() string {
@@ -146,8 +146,8 @@ func (info *RPCMethod) CppRepliedHandlerClassName() string {
 
 // IsPlayerService 检查是否为玩家服务
 func (info *RPCMethod) IsPlayerService() bool {
-	return strings.Contains(info.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
-		strings.Contains(info.Path, config.ProtoDirectoryNames[config.ServerPlayerDirIndex])
+	return strings.Contains(info.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
+		strings.Contains(info.Path(), config.ProtoDirectoryNames[config.ServerPlayerDirIndex])
 }
 
 func (info *RPCMethod) CcGenericServices() bool {
