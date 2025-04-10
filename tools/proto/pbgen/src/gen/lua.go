@@ -308,7 +308,7 @@ func writeLuaServiceMethodCppFile(methodList RPCMethods) {
 			config.Tab + "};\n\n"
 	}
 	data += "}\n"
-	fileName := methodList[0].FileBaseName() + "_service" + config.LuaCppExtension
+	fileName := methodList[0].FileNameNoEx() + "_service" + config.LuaCppExtension
 	util.WriteMd5Data2File(config.PbcLuaDirectory+fileName, data)
 }
 
