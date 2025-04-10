@@ -10,21 +10,6 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 using GrpcetcdserverpbKVStubPtr = std::unique_ptr<etcdserverpb::KV::Stub>;
-class AsyncetcdserverpbKVWatchGrpcClientCall
-{
-public:
-    ClientContext context;
-    Status status;
-    ::etcdserverpb::WatchResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::etcdserverpb::WatchResponse>> response_reader;
-};
-
-class ::etcdserverpb::WatchRequest;
-void SendetcdserverpbKVWatch(entt::registry& registry, entt::entity nodeEntity, const  ::etcdserverpb::WatchRequest& request);
-
-using AsyncetcdserverpbKVWatchHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVWatchGrpcClientCall>&)>;
-
-extern AsyncetcdserverpbKVWatchHandlerFunctionType  AsyncetcdserverpbKVWatchHandler;;
 class AsyncetcdserverpbKVLeaseGrantGrpcClientCall
 {
 public:
@@ -175,6 +160,21 @@ void SendetcdserverpbKVCompact(entt::registry& registry, entt::entity nodeEntity
 using AsyncetcdserverpbKVCompactHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVCompactGrpcClientCall>&)>;
 
 extern AsyncetcdserverpbKVCompactHandlerFunctionType  AsyncetcdserverpbKVCompactHandler;;
+class AsyncetcdserverpbKVWatchGrpcClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+    ::etcdserverpb::WatchResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  ::etcdserverpb::WatchResponse>> response_reader;
+};
+
+class ::etcdserverpb::WatchRequest;
+void SendetcdserverpbKVWatch(entt::registry& registry, entt::entity nodeEntity, const  ::etcdserverpb::WatchRequest& request);
+
+using AsyncetcdserverpbKVWatchHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVWatchGrpcClientCall>&)>;
+
+extern AsyncetcdserverpbKVWatchHandlerFunctionType  AsyncetcdserverpbKVWatchHandler;;
 
 void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry	); 
 
