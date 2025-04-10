@@ -44,19 +44,25 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 	for _, file := range fdSet.File {
 		for _, service := range file.Service {
 			rpcServiceInfo := RPCServiceInfo{
-				FdSet:            fdSet,
-				FileServiceIndex: fileServiceIndex,
+				FdSet:                  fdSet,
+				FileServiceIndex:       fileServiceIndex,
+				ServiceDescriptorProto: service,
 			}
 
-			for i := 0; i < len(service.Method); i++ {
+			index := uint64(0)
+			for _, method := range service.Method {
 				rpcMethodInfo := RPCMethod{
-					Id:               math.MaxUint64,
-					Index:            uint64(i),
-					FdSet:            fdSet,
-					FileServiceIndex: fileServiceIndex,
+					Id:                     math.MaxUint64,
+					Index:                  index,
+					FdSet:                  fdSet,
+					FileServiceIndex:       fileServiceIndex,
+					ServiceDescriptorProto: service,
+					MethodDescriptorProto:  method,
 				}
+
 				rpcServiceInfo.MethodInfo = append(rpcServiceInfo.MethodInfo, &rpcMethodInfo)
 				atomic.AddUint64(&MaxMessageId, 1)
+				index++
 			}
 
 			RpcServiceMap.Store(fdSet.GetFile()[0].GetService()[fileServiceIndex].GetName(), &rpcServiceInfo)
