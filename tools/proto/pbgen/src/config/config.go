@@ -135,21 +135,10 @@ const (
 	MysqlName                = "mysql"
 	PlayerServiceName        = "player_service.cpp"
 	PlayerRepliedServiceName = "player_service_replied.cpp"
-	PbPackage                = "package"
-	GoPackage                = "go_package"
 )
 
 // 常量：项目源目录
 var (
-	SourceDirectories = [...]string{
-		"pkg/common/",
-		"pkg/pbc/",
-		"node/centre/",
-		"node/scene/",
-		"node/gate/",
-		"client/",
-	}
-
 	ProtoDirectoryNames = [...]string{
 		"common/",
 		"logic/component/",
@@ -169,7 +158,6 @@ var (
 	LogicProtoDirIndex     = 3
 	ClientPlayerDirIndex   = 4
 	ServerPlayerDirIndex   = 5
-	LogicConstantsDirIndex = 6
 	EtcdProtoDirIndex      = 7
 )
 

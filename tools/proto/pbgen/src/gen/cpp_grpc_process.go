@@ -16,8 +16,6 @@ type GrpcService struct {
 	CppResponse                string
 	Method                     string
 	ServiceName                string
-	FileBaseName               string
-	ServiceFullNameWithColon   string
 	ServiceFullNameWithNoColon string
 	PbPackageName              string
 	IncludeName                string
@@ -28,7 +26,6 @@ type GrpcServiceTemplateData struct {
 	ServiceName                string
 	GeneratorFileName          string
 	IncludeName                string
-	ServiceFullNameWithColon   string
 	ServiceFullNameWithNoColon string
 	PbPackageName              string
 }
@@ -40,8 +37,6 @@ func generateGrpcMethod(method *RPCMethod, grpcServices []GrpcService) []GrpcSer
 		CppResponse:                method.CppResponse(),
 		Method:                     method.Method(),
 		ServiceName:                method.Service(),
-		FileBaseName:               strings.ToLower(method.FileNameNoEx()),
-		ServiceFullNameWithColon:   method.GetServiceFullNameWithColon(),
 		ServiceFullNameWithNoColon: method.GetServiceFullNameWithNoColon(),
 		PbPackageName:              method.Package(),
 		IncludeName:                method.GrpcIncludeHeadName(),
@@ -73,7 +68,6 @@ func generateGrpcFile(fileName string, grpcServices []GrpcService, text string) 
 		ServiceName:                firstService.ServiceName,
 		IncludeName:                firstService.IncludeName,
 		GeneratorFileName:          filepath.Base(strings.TrimSuffix(fileName, filepath.Ext(fileName))),
-		ServiceFullNameWithColon:   firstService.ServiceFullNameWithColon,
 		ServiceFullNameWithNoColon: firstService.ServiceFullNameWithNoColon,
 		PbPackageName:              firstService.PbPackageName,
 	}
