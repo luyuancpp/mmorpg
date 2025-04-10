@@ -71,7 +71,7 @@ func (info *RPCServiceInfo) FileName() string {
 }
 
 func (info *RPCServiceInfo) Path() string {
-	return strings.Replace(filepath.Dir(*info.FdSet.GetFile()[0].Name), "/", "\\", -1)
+	return strings.Replace(filepath.Dir(*info.FdSet.GetFile()[0].Name), "\\", "/", -1) + "/"
 }
 
 // PbcHeadName 返回Proto文件头文件名
@@ -108,6 +108,9 @@ func (info *RPCMethod) FileBaseName() string {
 }
 
 func (info *RPCMethod) Package() string {
+	if nil == info.FdSet.GetFile()[0].Package {
+		return ""
+	}
 	return *info.FdSet.GetFile()[0].Package
 }
 
@@ -117,7 +120,7 @@ func (info *RPCMethod) IncludeName() string {
 }
 
 func (info *RPCMethod) Path() string {
-	return strings.Replace(filepath.Dir(*info.FdSet.GetFile()[0].Name), "/", "\\", -1)
+	return strings.Replace(filepath.Dir(*info.FdSet.GetFile()[0].Name), "\\", "/", -1) + "/"
 }
 
 func (info *RPCMethod) GrpcIncludeHeadName() string {
