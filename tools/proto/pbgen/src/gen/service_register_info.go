@@ -24,15 +24,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 		return fmt.Errorf("not a proto file: %s", fd.Name())
 	}
 
-	f, err := os.Open(filePath + fd.Name())
-	if err != nil {
-		return fmt.Errorf("failed to open file %s: %w", fd.Name(), err)
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	var service string
-	methodIndex := uint64(0)
 	fileServiceIndex := uint32(0)
 
 	descFilePath := filepath.Join(
@@ -50,7 +41,29 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 		log.Fatalf("Failed to unmarshal descriptor set: %v", err)
 	}
 
-	for scanner.Scan() {
+	for _, file := range fdSet.File {
+		for _, service := range file.Service {
+			rpcServiceInfo := RPCServiceInfo{
+				FdSet:            fdSet,
+				FileServiceIndex: fileServiceIndex,
+			}
+
+			for i := 0; i < len(service.Method); i++ {
+				rpcMethodInfo := RPCMethod{
+					Id:               math.MaxUint64,
+					Index:            uint64(i),
+					FdSet:            fdSet,
+					FileServiceIndex: fileServiceIndex,
+				}
+				rpcServiceInfo.MethodInfo = append(rpcServiceInfo.MethodInfo, &rpcMethodInfo)
+				atomic.AddUint64(&MaxMessageId, 1)
+			}
+
+			RpcServiceMap.Store(fdSet.GetFile()[0].GetService()[fileServiceIndex].GetName(), &rpcServiceInfo)
+			fileServiceIndex++
+		}
+	}
+	/*for scanner.Scan() {
 		line := scanner.Text()
 
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
@@ -59,7 +72,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 				FdSet:            fdSet,
 				FileServiceIndex: fileServiceIndex,
 			}
-			RpcServiceMap.Store(service, &rpcServiceInfo)
+			RpcServiceMap.Store(fdSet.GetFile()[0].GetService()[fileServiceIndex].GetName(), &rpcServiceInfo)
 			fileServiceIndex++
 			methodIndex = 0
 			continue
@@ -81,11 +94,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 			methodIndex++
 			continue
 		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error reading file %s: %w", fd.Name(), err)
-	}
+	}*/
 
 	return nil
 }
@@ -323,9 +332,9 @@ func writeServiceInfoCppFile() {
 					"std::make_unique_for_overwrite<%s>()};\n",
 				rpcId,
 				method.Service(),
-				method.Method,
-				method.CppRequest,
-				method.CppResponse,
+				method.Method(),
+				method.CppRequest(),
+				method.CppResponse(),
 				handlerClassName,
 			))
 			if strings.Contains(method.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
