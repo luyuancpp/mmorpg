@@ -58,7 +58,7 @@ func writeClientMethodHandlerHeadFile(methodList RPCMethods) {
 		return
 	}
 
-	fileName := methodList[0].FileBaseName() + config.HandlerHeaderExtension
+	fileName := methodList[0].FileNameNoEx() + config.HandlerHeaderExtension
 	util.WriteMd5Data2File(config.RobotMethodHandlerDirectory+fileName, getClientMethodHandlerHeadStr(methodList))
 }
 
@@ -77,7 +77,7 @@ func writeClientHandlerDefaultInstanceFile() {
 			continue
 		}
 		method1Info := methodList[0]
-		includeBuilder.WriteString(config.IncludeBegin + method1Info.FileBaseName() + config.HandlerHeaderExtension + config.IncludeEndLine)
+		includeBuilder.WriteString(config.IncludeBegin + method1Info.FileNameNoEx() + config.HandlerHeaderExtension + config.IncludeEndLine)
 		instanceBuilder.WriteString(config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
 			"\", std::make_unique<" + method1Info.Service + config.HandlerFileName + ">());\n")
 	}

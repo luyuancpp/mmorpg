@@ -42,7 +42,7 @@ func generateGrpcMethod(method *RPCMethod, grpcServices []GrpcService) []GrpcSer
 		Response:                   method.Response,
 		Method:                     method.Method,
 		ServiceName:                method.Service,
-		FileBaseName:               strings.ToLower(method.FileBaseName()),
+		FileBaseName:               strings.ToLower(method.FileNameNoEx()),
 		ServiceFullNameWithColon:   method.GetServiceFullNameWithColon(),
 		ServiceFullNameWithNoColon: method.GetServiceFullNameWithNoColon(),
 		PbPackageName:              method.PbPackage,
@@ -92,7 +92,7 @@ func CppGrpcCallClient() {
 
 	for _, serviceMethods := range ServiceMethodMap {
 		// 对每个 serviceMethods，按 Proto 文件进行分组
-		protoFile := serviceMethods[0].FileBaseName() // 假设所有服务在同一个 proto 文件
+		protoFile := serviceMethods[0].FileNameNoEx() // 假设所有服务在同一个 proto 文件
 		protoServiceMap[protoFile] = append(protoServiceMap[protoFile], serviceMethods...)
 	}
 

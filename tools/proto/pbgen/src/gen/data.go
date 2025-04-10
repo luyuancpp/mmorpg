@@ -18,7 +18,6 @@ type RPCMethod struct {
 	Response  string
 	Id        uint64
 	Index     uint64
-	FileName  string
 	PbPackage string
 	GoPackage string
 	FdSet     *descriptorpb.FileDescriptorSet
@@ -93,18 +92,22 @@ func (info *RPCServiceInfo) FileBaseName() string {
 	return strings.Replace(info.FileName(), config.ProtoEx, "", 1)
 }
 
-// FileBaseName 返回文件基本名
-func (info *RPCMethod) FileBaseName() string {
-	return strings.Replace(info.FileName, config.ProtoEx, "", 1)
+// FileNameNoEx 返回文件基本名
+func (info *RPCMethod) FileNameNoEx() string {
+	return strings.Replace(info.FileBaseName(), config.ProtoEx, "", 1)
 }
 
 // PbcHeadName 返回Proto文件头文件名
 func (info *RPCMethod) PbcHeadName() string {
-	return strings.Replace(info.FileName, config.ProtoEx, config.ProtoPbhEx, 1)
+	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.ProtoPbhEx, 1)
 }
 
 func (info *RPCMethod) GrpcHeadName() string {
-	return strings.Replace(info.FileName, config.ProtoEx, config.GrpcPbhEx, 1)
+	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.GrpcPbhEx, 1)
+}
+
+func (info *RPCMethod) FileBaseName() string {
+	return filepath.Base(*info.FdSet.GetFile()[0].Name)
 }
 
 // IncludeName 返回包含头文件名
@@ -121,17 +124,17 @@ func (info *RPCMethod) GrpcIncludeHeadName() string {
 }
 
 func (info *RPCMethod) ServiceInfoIncludeName() string {
-	return config.IncludeBegin + info.FileBaseName() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
+	return config.IncludeBegin + info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
 }
 
 // CppHandlerIncludeName 返回Cpp处理器包含文件名
 func (info *RPCMethod) CppHandlerIncludeName() string {
-	return config.IncludeBegin + info.FileBaseName() + config.HandlerHeaderExtension + config.IncludeEndLine
+	return config.IncludeBegin + info.FileNameNoEx() + config.HandlerHeaderExtension + config.IncludeEndLine
 }
 
 // CppRepliedHandlerIncludeName 返回Cpp已响应处理器包含文件名
 func (info *RPCMethod) CppRepliedHandlerIncludeName() string {
-	return config.IncludeBegin + info.FileBaseName() + config.RepliedHandlerHeaderExtension + config.IncludeEndLine
+	return config.IncludeBegin + info.FileNameNoEx() + config.RepliedHandlerHeaderExtension + config.IncludeEndLine
 }
 
 // CppHandlerClassName 返回Cpp处理器类名
