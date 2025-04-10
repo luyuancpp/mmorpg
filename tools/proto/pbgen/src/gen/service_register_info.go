@@ -17,59 +17,68 @@ import (
 	"sync/atomic"
 )
 
-// ReadProtoFileService reads service information from a protobuf file.
-func ReadProtoFileService(fd os.DirEntry, filePath string) error {
+// ReadProtoFileService reads service information from a protobuf descriptor file.
+func ReadProtoFileService(fd os.DirEntry) error {
 
+	// Check if the file is a proto file
 	if !util.IsProtoFile(fd) {
 		return fmt.Errorf("not a proto file: %s", fd.Name())
 	}
 
+	// Initialize the index for services in the file
 	fileServiceIndex := uint32(0)
 
-	descFilePath := filepath.Join(
-		config.PbDescDirectory,
-		fd.Name()+config.ProtoDescExtension,
-	)
+	// Construct the path to the descriptor file
+	descFilePath := filepath.Join(config.PbDescDirectory, fd.Name()+config.ProtoDescExtension)
 
+	// Read the descriptor file
 	data, err := os.ReadFile(descFilePath)
 	if err != nil {
-		log.Fatalf("Failed to read descriptor set file: %v", err)
+		return fmt.Errorf("failed to read descriptor set file: %v", err)
 	}
 
+	// Unmarshal the descriptor set
 	fdSet := &descriptorpb.FileDescriptorSet{}
 	if err := proto.Unmarshal(data, fdSet); err != nil {
-		log.Fatalf("Failed to unmarshal descriptor set: %v", err)
+		return fmt.Errorf("failed to unmarshal descriptor set: %v", err)
 	}
 
+	// Iterate through each file in the descriptor set
 	for _, file := range fdSet.File {
 		for _, service := range file.Service {
+			// Create an RPCServiceInfo object for each service
 			rpcServiceInfo := RPCServiceInfo{
 				FdSet:                  fdSet,
 				FileServiceIndex:       fileServiceIndex,
 				ServiceDescriptorProto: service,
 			}
 
-			index := uint64(0)
-			for _, method := range service.Method {
+			// Iterate through each method in the service
+			for index, method := range service.Method {
+				// Create an RPCMethod object for each method
 				rpcMethodInfo := RPCMethod{
 					Id:                     math.MaxUint64,
-					Index:                  index,
+					Index:                  uint64(index),
 					FdSet:                  fdSet,
 					FileServiceIndex:       fileServiceIndex,
 					ServiceDescriptorProto: service,
 					MethodDescriptorProto:  method,
 				}
 
+				// Append the method info to the service info
 				rpcServiceInfo.MethodInfo = append(rpcServiceInfo.MethodInfo, &rpcMethodInfo)
+
+				// Increment the global message ID counter
 				atomic.AddUint64(&MaxMessageId, 1)
-				index++
 			}
 
-			RpcServiceMap.Store(fdSet.GetFile()[0].GetService()[fileServiceIndex].GetName(), &rpcServiceInfo)
+			// Store the service info in the global RpcServiceMap
+			RpcServiceMap.Store(service.GetName(), &rpcServiceInfo)
 			fileServiceIndex++
 		}
 	}
 
+	// Return nil on successful completion
 	return nil
 }
 
@@ -122,7 +131,7 @@ func ReadAllProtoFileServices() {
 			fd := v
 			go func(i int, fd os.DirEntry) {
 				defer util.Wg.Done()
-				_ = ReadProtoFileService(fd, config.ProtoDirs[i])
+				_ = ReadProtoFileService(fd)
 			}(i, fd)
 
 			util.Wg.Add(1)
