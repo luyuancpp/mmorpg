@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"google.golang.org/protobuf/types/descriptorpb"
 	"pbgen/config"
 	"strings"
 	"sync"
@@ -10,17 +11,17 @@ type EmptyStruct struct{}
 
 // RPCMethod 定义RPC方法信息
 type RPCMethod struct {
-	Service           string
-	Method            string
-	Request           string
-	Response          string
-	Id                uint64
-	Index             uint64
-	FileName          string
-	Path              string
-	CcGenericServices bool
-	PbPackage         string
-	GoPackage         string
+	Service   string
+	Method    string
+	Request   string
+	Response  string
+	Id        uint64
+	Index     uint64
+	FileName  string
+	Path      string
+	PbPackage string
+	GoPackage string
+	FdSet     *descriptorpb.FileDescriptorSet
 }
 
 // RPCMethods 是RPCMethod的切片
@@ -31,6 +32,7 @@ type RPCServiceInfo struct {
 	FileName   string
 	Path       string
 	MethodInfo RPCMethods
+	FdSet      *descriptorpb.FileDescriptorSet
 }
 
 // rpcLineReplacer 用于字符串替换
@@ -142,6 +144,10 @@ func (info *RPCMethod) CppRepliedHandlerClassName() string {
 func (info *RPCMethod) IsPlayerService() bool {
 	return strings.Contains(info.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
 		strings.Contains(info.Path, config.ProtoDirectoryNames[config.ServerPlayerDirIndex])
+}
+
+func (info *RPCMethod) CcGenericServices() bool {
+	return *info.FdSet.GetFile()[0].Options.CcGenericServices
 }
 
 func (info *RPCMethod) GetServiceFullNameWithColon() string {

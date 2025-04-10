@@ -599,7 +599,7 @@ func isGsMethodRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if !firstMethodInfo.CcGenericServices {
+	if !firstMethodInfo.CcGenericServices() {
 		return false
 	}
 
@@ -865,7 +865,7 @@ func isGateMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 	}
 
 	// Check if the method has CcGenericServices enabled
-	if !firstMethodInfo.CcGenericServices {
+	if !firstMethodInfo.CcGenericServices() {
 		return false
 	}
 
