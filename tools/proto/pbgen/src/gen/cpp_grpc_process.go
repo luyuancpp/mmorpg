@@ -38,9 +38,9 @@ type GrpcServiceTemplateData struct {
 // generateHandlerCases creates the cases for the switch statement based on the method.
 func generateGrpcMethod(method *RPCMethod, grpcServices []GrpcService) []GrpcService {
 	grpcService := GrpcService{
-		Request:                    method.Request,
-		Response:                   method.Response,
-		Method:                     method.Method,
+		Request:                    method.GetCppRequest(),
+		Response:                   method.GetCppResponse(),
+		Method:                     method.Method(),
 		ServiceName:                method.Service(),
 		FileBaseName:               strings.ToLower(method.FileNameNoEx()),
 		ServiceFullNameWithColon:   method.GetServiceFullNameWithColon(),

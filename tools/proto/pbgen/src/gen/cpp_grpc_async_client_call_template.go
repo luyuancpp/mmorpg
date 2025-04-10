@@ -19,12 +19,12 @@ class Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall
 public:
     ClientContext context;
     Status status;
-    {{.PackageNameWithColon}}{{.Response}} reply;
-    std::unique_ptr<ClientAsyncResponseReader<  {{.PackageNameWithColon}}{{.Response}}>> response_reader;
+    {{.PackageNameWithColon}}{{.GetCppResponse}} reply;
+    std::unique_ptr<ClientAsyncResponseReader<  {{.PackageNameWithColon}}{{.GetCppResponse}}>> response_reader;
 };
 
-class {{.Request}};
-void Send{{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.PackageNameWithColon}}{{.Request}}& request);
+class {{.GetCppRequest}};
+void Send{{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.PackageNameWithColon}}{{.GetCppRequest}}& request);
 
 using Async{{.ServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
 
@@ -53,7 +53,7 @@ struct {{.ServiceFullNameWithNoColon}}{{.Method}}CompleteQueue{
 
 {{- range .GrpcServices }}
 
-void Send{{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.PackageNameWithColon}}{{.Request}}& request)
+void Send{{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.PackageNameWithColon}}{{.GetCppRequest}}& request)
 {
     Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
 

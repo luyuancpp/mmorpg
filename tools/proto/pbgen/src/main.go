@@ -53,7 +53,9 @@ func main() {
 	MakeProjectDir()
 	//开始读所有的proto文件
 	gen.ReadServiceIdFile()
+	util.Wg.Wait()
 	gen.BuildAllProtoc()
+	util.Wg.Wait()
 	gen.ReadAllProtoFileServices()
 	util.Wg.Wait()
 

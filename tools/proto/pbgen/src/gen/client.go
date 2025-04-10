@@ -28,8 +28,8 @@ func getClientMethodHandlerHeadStr(methodList RPCMethods) string {
 		builder.WriteString(config.Tab3 + "case " + strconv.Itoa(i) + ":\n")
 		builder.WriteString(config.Tab3 + "{\n")
 		builder.WriteString(config.Tab4 + "tls_lua_state[\"" + method.KeyName() + config.HandlerFileName + "\"](\n")
-		builder.WriteString(config.Tab4 + "    static_cast<const ::" + method.Request + "*>(request),\n")
-		builder.WriteString(config.Tab4 + "    static_cast<::" + method.Response + "*>(response));\n")
+		builder.WriteString(config.Tab4 + "    static_cast<const ::" + method.GetCppRequest() + "*>(request),\n")
+		builder.WriteString(config.Tab4 + "    static_cast<::" + method.GetCppResponse() + "*>(response));\n")
 		builder.WriteString(config.Tab3 + "}\n")
 		builder.WriteString(config.Tab3 + "break;\n")
 	}
