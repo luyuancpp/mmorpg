@@ -117,7 +117,7 @@ func (info *RPCMethod) IncludeName() string {
 }
 
 func (info *RPCMethod) Path() string {
-	return filepath.Dir(*info.FdSet.GetFile()[0].Name)
+	return strings.Replace(filepath.Dir(*info.FdSet.GetFile()[0].Name), "/", "\\", -1)
 }
 
 func (info *RPCMethod) GrpcIncludeHeadName() string {
