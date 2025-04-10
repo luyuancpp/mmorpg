@@ -12,12 +12,10 @@ type EmptyStruct struct{}
 
 // RPCMethod 定义RPC方法信息
 type RPCMethod struct {
-	Method   string
-	Request  string
-	Response string
-	Id       uint64
-	Index    uint64
-	FdSet    *descriptorpb.FileDescriptorSet
+	Id               uint64
+	Index            uint64
+	FdSet            *descriptorpb.FileDescriptorSet
+	FileServiceIndex uint32
 }
 
 // RPCMethods 是RPCMethod的切片
@@ -25,8 +23,9 @@ type RPCMethods []*RPCMethod
 
 // RPCServiceInfo 定义RPC服务信息
 type RPCServiceInfo struct {
-	MethodInfo RPCMethods
-	FdSet      *descriptorpb.FileDescriptorSet
+	MethodInfo       RPCMethods
+	FdSet            *descriptorpb.FileDescriptorSet
+	FileServiceIndex uint32
 }
 
 // rpcLineReplacer 用于字符串替换
@@ -58,7 +57,7 @@ var FileMaxMessageId = uint64(0)
 
 // KeyName 返回RPC方法的键名
 func (info *RPCMethod) KeyName() string {
-	return info.Service() + info.Method
+	return info.Service() + info.Method()
 }
 
 // IncludeName 返回包含头文件名
@@ -170,6 +169,30 @@ func (info *RPCMethod) GetServiceFullNameWithColon() string {
 		return info.Service()
 	}
 	return info.Package() + "::" + info.Service()
+}
+
+func (info *RPCMethod) GetCppRequest() string {
+	// 获取 InputType
+	inputType := info.FdSet.GetFile()[0].GetService()[info.FileServiceIndex].GetMethod()[info.Index].GetInputType()
+
+	// 将 InputType 中的点（.）替换为双冒号（::）
+	updatedInputType := strings.Replace(inputType, ".", "::", -1)
+
+	return updatedInputType
+}
+
+func (info *RPCMethod) Method() string {
+	return info.FdSet.GetFile()[0].GetService()[info.FileServiceIndex].GetMethod()[info.Index].GetName()
+}
+
+func (info *RPCMethod) GetCppResponse() string {
+	// 获取 OutputType
+	outputType := info.FdSet.GetFile()[0].GetService()[info.FileServiceIndex].GetMethod()[info.Index].GetOutputType()
+
+	// 将 OutputType 中的点（.）替换为双冒号（::）
+	updatedOutputType := strings.Replace(outputType, ".", "::", -1)
+
+	return updatedOutputType
 }
 
 func (info *RPCMethod) GetServiceFullNameWithNoColon() string {

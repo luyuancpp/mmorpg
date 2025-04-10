@@ -32,7 +32,8 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 
 	scanner := bufio.NewScanner(f)
 	var service string
-	var methodIndex uint64
+	methodIndex := uint64(0)
+	fileServiceIndex := uint32(0)
 
 	descFilePath := filepath.Join(
 		config.PbDescDirectory,
@@ -54,35 +55,20 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
 			service = strings.ReplaceAll(strings.Split(line, " ")[1], "{", "")
-			rpcServiceInfo := RPCServiceInfo{}
-			rpcServiceInfo.FdSet = fdSet
+			rpcServiceInfo := RPCServiceInfo{
+				FdSet:            fdSet,
+				FileServiceIndex: fileServiceIndex,
+			}
 			RpcServiceMap.Store(service, &rpcServiceInfo)
+			fileServiceIndex++
+			methodIndex = 0
 			continue
 		} else if strings.Contains(line, "rpc ") {
-			// 去除多余的空格
-			line = rpcLineReplacer.Replace(strings.Trim(line, " "))
-			// 分割 line 按空格分割
-			splitList := strings.Split(line, " ")
-
-			// 检查是否是流式 RPC
-			var requestType, responseType string
-			if strings.Contains(splitList[2], "stream") {
-				requestType = splitList[3]
-				responseType = splitList[6]
-
-			} else {
-				requestType = splitList[2]
-				responseType = splitList[4]
-			}
-
-			// 创建 RPCMethod 实例
 			rpcMethodInfo := RPCMethod{
-				Method:   splitList[1],
-				Request:  strings.Replace(requestType, ".", "::", -1),
-				Response: strings.Replace(responseType, ".", "::", -1),
-				Id:       math.MaxUint64,
-				Index:    methodIndex,
-				FdSet:    fdSet,
+				Id:               math.MaxUint64,
+				Index:            methodIndex,
+				FdSet:            fdSet,
+				FileServiceIndex: fileServiceIndex - 1,
 			}
 
 			result, ok := RpcServiceMap.Load(service)
@@ -336,10 +322,10 @@ func writeServiceInfoCppFile() {
 					"\"%s\","+
 					"std::make_unique_for_overwrite<%s>()};\n",
 				rpcId,
-				method.Service,
+				method.Service(),
 				method.Method,
-				method.Request,
-				method.Response,
+				method.GetCppRequest,
+				method.GetCppResponse,
 				handlerClassName,
 			))
 			if strings.Contains(method.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
