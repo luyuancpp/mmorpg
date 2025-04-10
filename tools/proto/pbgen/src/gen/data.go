@@ -12,10 +12,12 @@ type EmptyStruct struct{}
 
 // RPCMethod 定义RPC方法信息
 type RPCMethod struct {
-	Id               uint64
-	Index            uint64
-	FdSet            *descriptorpb.FileDescriptorSet
-	FileServiceIndex uint32
+	Id                     uint64
+	Index                  uint64
+	FdSet                  *descriptorpb.FileDescriptorSet
+	FileServiceIndex       uint32
+	MethodDescriptorProto  *descriptorpb.MethodDescriptorProto
+	ServiceDescriptorProto *descriptorpb.ServiceDescriptorProto
 }
 
 // RPCMethods 是RPCMethod的切片
@@ -23,9 +25,10 @@ type RPCMethods []*RPCMethod
 
 // RPCServiceInfo 定义RPC服务信息
 type RPCServiceInfo struct {
-	MethodInfo       RPCMethods
-	FdSet            *descriptorpb.FileDescriptorSet
-	FileServiceIndex uint32
+	MethodInfo             RPCMethods
+	FdSet                  *descriptorpb.FileDescriptorSet
+	ServiceDescriptorProto *descriptorpb.ServiceDescriptorProto
+	FileServiceIndex       uint32
 }
 
 // rpcLineReplacer 用于字符串替换
