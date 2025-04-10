@@ -63,38 +63,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 			fileServiceIndex++
 		}
 	}
-	/*for scanner.Scan() {
-		line := scanner.Text()
-
-		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
-			service = strings.ReplaceAll(strings.Split(line, " ")[1], "{", "")
-			rpcServiceInfo := RPCServiceInfo{
-				FdSet:            fdSet,
-				FileServiceIndex: fileServiceIndex,
-			}
-			RpcServiceMap.Store(fdSet.GetFile()[0].GetService()[fileServiceIndex].GetName(), &rpcServiceInfo)
-			fileServiceIndex++
-			methodIndex = 0
-			continue
-		} else if strings.Contains(line, "rpc ") {
-			rpcMethodInfo := RPCMethod{
-				Id:               math.MaxUint64,
-				Index:            methodIndex,
-				FdSet:            fdSet,
-				FileServiceIndex: fileServiceIndex - 1,
-			}
-
-			result, ok := RpcServiceMap.Load(service)
-			if !ok {
-				fmt.Errorf("error reading file %s: %w", fd.Name(), err)
-			}
-			rpcServiceInfo := result.(*RPCServiceInfo)
-			rpcServiceInfo.MethodInfo = append(rpcServiceInfo.MethodInfo, &rpcMethodInfo)
-			atomic.AddUint64(&MaxMessageId, 1)
-			methodIndex++
-			continue
-		}
-	}*/
 
 	return nil
 }

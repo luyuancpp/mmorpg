@@ -17,9 +17,6 @@ struct etcdserverpbKVLeaseTimeToLiveCompleteQueue{
 struct etcdserverpbKVLeaseLeasesCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-struct etcdserverpbKVWatchCompleteQueue{
-	grpc::CompletionQueue cq;
-};
 struct etcdserverpbKVRangeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
@@ -35,12 +32,18 @@ struct etcdserverpbKVTxnCompleteQueue{
 struct etcdserverpbKVCompactCompleteQueue{
 	grpc::CompletionQueue cq;
 };
+struct etcdserverpbKVWatchCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendetcdserverpbKVLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const  ::etcdserverpb::LeaseGrantRequest& request)
 {
     AsyncetcdserverpbKVLeaseGrantGrpcClientCall* call = new AsyncetcdserverpbKVLeaseGrantGrpcClientCall;
 
-  
+    call->response_reader =
+        registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncLeaseGrant(&call->context, request,
+		&registry.get<etcdserverpbKVLeaseGrantCompleteQueue>(nodeEntity).cq);
+
     call->response_reader->StartCall();
 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
@@ -82,6 +85,9 @@ void SendetcdserverpbKVLeaseRevoke(entt::registry& registry, entt::entity nodeEn
 {
     AsyncetcdserverpbKVLeaseRevokeGrpcClientCall* call = new AsyncetcdserverpbKVLeaseRevokeGrpcClientCall;
 
+    call->response_reader =
+        registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncLeaseRevoke(&call->context, request,
+		&registry.get<etcdserverpbKVLeaseRevokeCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -124,7 +130,10 @@ void SendetcdserverpbKVLeaseKeepAlive(entt::registry& registry, entt::entity nod
 {
     AsyncetcdserverpbKVLeaseKeepAliveGrpcClientCall* call = new AsyncetcdserverpbKVLeaseKeepAliveGrpcClientCall;
 
- 
+    call->response_reader =
+        registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncLeaseKeepAlive(&call->context, request,
+		&registry.get<etcdserverpbKVLeaseKeepAliveCompleteQueue>(nodeEntity).cq);
+
     call->response_reader->StartCall();
 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
@@ -166,6 +175,9 @@ void SendetcdserverpbKVLeaseTimeToLive(entt::registry& registry, entt::entity no
 {
     AsyncetcdserverpbKVLeaseTimeToLiveGrpcClientCall* call = new AsyncetcdserverpbKVLeaseTimeToLiveGrpcClientCall;
 
+    call->response_reader =
+        registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncLeaseTimeToLive(&call->context, request,
+		&registry.get<etcdserverpbKVLeaseTimeToLiveCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -208,6 +220,9 @@ void SendetcdserverpbKVLeaseLeases(entt::registry& registry, entt::entity nodeEn
 {
     AsyncetcdserverpbKVLeaseLeasesGrpcClientCall* call = new AsyncetcdserverpbKVLeaseLeasesGrpcClientCall;
 
+    call->response_reader =
+        registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncLeaseLeases(&call->context, request,
+		&registry.get<etcdserverpbKVLeaseLeasesCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -240,48 +255,6 @@ void AsyncCompleteGrpcetcdserverpbKVLeaseLeases(grpc::CompletionQueue& cq)
     if (call->status.ok()){
 		if(AsyncetcdserverpbKVLeaseLeasesHandler){
 			AsyncetcdserverpbKVLeaseLeasesHandler(call);
-		}
-    }else{
-        LOG_ERROR << call->status.error_message();
-    }
-}
-
-void SendetcdserverpbKVWatch(entt::registry& registry, entt::entity nodeEntity, const  ::etcdserverpb::WatchRequest& request)
-{
-    AsyncetcdserverpbKVWatchGrpcClientCall* call = new AsyncetcdserverpbKVWatchGrpcClientCall;
-
-
-    call->response_reader->StartCall();
-
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-}
-
-using AsyncetcdserverpbKVWatchHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVWatchGrpcClientCall>&)>;
-AsyncetcdserverpbKVWatchHandlerFunctionType  AsyncetcdserverpbKVWatchHandler;
-
-void AsyncCompleteGrpcetcdserverpbKVWatch(grpc::CompletionQueue& cq)
-{
-    void* got_tag;
-    bool ok = false;
-
-    gpr_timespec tm;
-    tm.tv_sec = 0;
-    tm.tv_nsec = 0;
-    tm.clock_type = GPR_CLOCK_MONOTONIC;
-    if (grpc::CompletionQueue::GOT_EVENT != 
-		cq.AsyncNext(&got_tag, &ok, tm)){
-        return;
-    }
-
-    std::unique_ptr<AsyncetcdserverpbKVWatchGrpcClientCall> call(static_cast<AsyncetcdserverpbKVWatchGrpcClientCall*>(got_tag));
-	if (!ok){
-		LOG_ERROR << "RPC failed";
-		return;
-	}
-
-    if (call->status.ok()){
-		if(AsyncetcdserverpbKVWatchHandler){
-			AsyncetcdserverpbKVWatchHandler(call);
 		}
     }else{
         LOG_ERROR << call->status.error_message();
@@ -513,18 +486,63 @@ void AsyncCompleteGrpcetcdserverpbKVCompact(grpc::CompletionQueue& cq)
     }
 }
 
+void SendetcdserverpbKVWatch(entt::registry& registry, entt::entity nodeEntity, const  ::etcdserverpb::WatchRequest& request)
+{
+    AsyncetcdserverpbKVWatchGrpcClientCall* call = new AsyncetcdserverpbKVWatchGrpcClientCall;
+
+    call->response_reader =
+        registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncWatch(&call->context, request,
+		&registry.get<etcdserverpbKVWatchCompleteQueue>(nodeEntity).cq);
+
+    call->response_reader->StartCall();
+
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+}
+
+using AsyncetcdserverpbKVWatchHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVWatchGrpcClientCall>&)>;
+AsyncetcdserverpbKVWatchHandlerFunctionType  AsyncetcdserverpbKVWatchHandler;
+
+void AsyncCompleteGrpcetcdserverpbKVWatch(grpc::CompletionQueue& cq)
+{
+    void* got_tag;
+    bool ok = false;
+
+    gpr_timespec tm;
+    tm.tv_sec = 0;
+    tm.tv_nsec = 0;
+    tm.clock_type = GPR_CLOCK_MONOTONIC;
+    if (grpc::CompletionQueue::GOT_EVENT != 
+		cq.AsyncNext(&got_tag, &ok, tm)){
+        return;
+    }
+
+    std::unique_ptr<AsyncetcdserverpbKVWatchGrpcClientCall> call(static_cast<AsyncetcdserverpbKVWatchGrpcClientCall*>(got_tag));
+	if (!ok){
+		LOG_ERROR << "RPC failed";
+		return;
+	}
+
+    if (call->status.ok()){
+		if(AsyncetcdserverpbKVWatchHandler){
+			AsyncetcdserverpbKVWatchHandler(call);
+		}
+    }else{
+        LOG_ERROR << call->status.error_message();
+    }
+}
+
 void InitetcdserverpbKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 	registry.emplace<etcdserverpbKVLeaseGrantCompleteQueue>(nodeEntity);
 	registry.emplace<etcdserverpbKVLeaseRevokeCompleteQueue>(nodeEntity);
 	registry.emplace<etcdserverpbKVLeaseKeepAliveCompleteQueue>(nodeEntity);
 	registry.emplace<etcdserverpbKVLeaseTimeToLiveCompleteQueue>(nodeEntity);
 	registry.emplace<etcdserverpbKVLeaseLeasesCompleteQueue>(nodeEntity);
-	registry.emplace<etcdserverpbKVWatchCompleteQueue>(nodeEntity);
 	registry.emplace<etcdserverpbKVRangeCompleteQueue>(nodeEntity);
 	registry.emplace<etcdserverpbKVPutCompleteQueue>(nodeEntity);
 	registry.emplace<etcdserverpbKVDeleteRangeCompleteQueue>(nodeEntity);
 	registry.emplace<etcdserverpbKVTxnCompleteQueue>(nodeEntity);
 	registry.emplace<etcdserverpbKVCompactCompleteQueue>(nodeEntity);
+	registry.emplace<etcdserverpbKVWatchCompleteQueue>(nodeEntity);
 }
 
 void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry) {
@@ -559,12 +577,6 @@ void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry) {
 		}
 	}
 	{
-		auto&& view = registry.view<etcdserverpbKVWatchCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcetcdserverpbKVWatch(completeQueueComp.cq);
-		}
-	}
-	{
 		auto&& view = registry.view<etcdserverpbKVRangeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
 			AsyncCompleteGrpcetcdserverpbKVRange(completeQueueComp.cq);
@@ -592,6 +604,12 @@ void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry) {
 		auto&& view = registry.view<etcdserverpbKVCompactCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
 			AsyncCompleteGrpcetcdserverpbKVCompact(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<etcdserverpbKVWatchCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcetcdserverpbKVWatch(completeQueueComp.cq);
 		}
 	}
 }
