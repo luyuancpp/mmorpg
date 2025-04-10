@@ -12,15 +12,13 @@ type EmptyStruct struct{}
 
 // RPCMethod 定义RPC方法信息
 type RPCMethod struct {
-	Service   string
-	Method    string
-	Request   string
-	Response  string
-	Id        uint64
-	Index     uint64
-	PbPackage string
-	GoPackage string
-	FdSet     *descriptorpb.FileDescriptorSet
+	Service  string
+	Method   string
+	Request  string
+	Response string
+	Id       uint64
+	Index    uint64
+	FdSet    *descriptorpb.FileDescriptorSet
 }
 
 // RPCMethods 是RPCMethod的切片
@@ -110,6 +108,10 @@ func (info *RPCMethod) FileBaseName() string {
 	return filepath.Base(*info.FdSet.GetFile()[0].Name)
 }
 
+func (info *RPCMethod) Package() string {
+	return *info.FdSet.GetFile()[0].Package
+}
+
 // IncludeName 返回包含头文件名
 func (info *RPCMethod) IncludeName() string {
 	return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.PbcHeadName() + "\"\n"
@@ -162,24 +164,24 @@ func (info *RPCMethod) CcGenericServices() bool {
 }
 
 func (info *RPCMethod) GetServiceFullNameWithColon() string {
-	if len(info.PbPackage) <= 0 {
+	if len(info.Package()) <= 0 {
 		return info.Service
 	}
-	return info.PbPackage + "::" + info.Service
+	return info.Package() + "::" + info.Service
 }
 
 func (info *RPCMethod) GetServiceFullNameWithNoColon() string {
-	if len(info.PbPackage) <= 0 {
+	if len(info.Package()) <= 0 {
 		return info.Service
 	}
-	return info.PbPackage + info.Service
+	return info.Package() + info.Service
 }
 
 func (info *RPCMethod) GetPackageNameWithColon() string {
-	if len(info.PbPackage) <= 0 {
+	if len(info.Package()) <= 0 {
 		return ""
 	}
-	return info.PbPackage + "::"
+	return info.Package() + "::"
 }
 
 // Len 返回RPCMethods的长度
