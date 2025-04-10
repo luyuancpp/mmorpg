@@ -176,7 +176,7 @@ func (info *RPCMethod) GetServiceFullNameWithColon() string {
 
 func (info *RPCMethod) CppRequest() string {
 	// 获取 InputType
-	inputType := info.FdSet.GetFile()[0].GetService()[info.FileServiceIndex].GetMethod()[info.Index].GetInputType()
+	inputType := info.MethodDescriptorProto.GetInputType()
 
 	// 将 InputType 中的点（.）替换为双冒号（::）
 	updatedInputType := strings.Replace(inputType, ".", "::", -1)
@@ -185,12 +185,12 @@ func (info *RPCMethod) CppRequest() string {
 }
 
 func (info *RPCMethod) Method() string {
-	return info.FdSet.GetFile()[0].GetService()[info.FileServiceIndex].GetMethod()[info.Index].GetName()
+	return info.MethodDescriptorProto.GetName()
 }
 
 func (info *RPCMethod) CppResponse() string {
 	// 获取 OutputType
-	outputType := info.FdSet.GetFile()[0].GetService()[info.FileServiceIndex].GetMethod()[info.Index].GetOutputType()
+	outputType := info.MethodDescriptorProto.GetOutputType()
 
 	// 将 OutputType 中的点（.）替换为双冒号（::）
 	updatedOutputType := strings.Replace(outputType, ".", "::", -1)
@@ -213,7 +213,7 @@ func (info *RPCMethod) GetPackageNameWithColon() string {
 }
 
 func (info *RPCMethod) Service() string {
-	return info.FdSet.GetFile()[0].Service[0].GetName()
+	return info.ServiceDescriptorProto.GetName()
 }
 
 // Len 返回RPCMethods的长度
