@@ -135,8 +135,8 @@ func isRelevantService(method *RPCMethod) bool {
 
 // determineResponseType returns the response type or request type based on configuration.
 func determineResponseType(method *RPCMethod) string {
-	if strings.Contains(method.GetCppResponse(), config.EmptyResponseName) {
-		return method.GetCppRequest()
+	if strings.Contains(method.CppResponse(), config.EmptyResponseName) {
+		return method.CppRequest()
 	}
-	return method.GetCppResponse()
+	return method.CppResponse()
 }

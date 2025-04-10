@@ -8,7 +8,7 @@
 #include "scene/system/scene_system.h"
 ///<<< END WRITING YOUR CODE
 void GamePlayerServiceHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLoginRequest* request,
-	     google::protobuf::Empty* response)
+	     ::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "Handling Centre2GsLoginRequest for player: " << tls.registry.get<Guid>(player) << ", enter_gs_type: " << request->enter_gs_type();
@@ -23,7 +23,7 @@ void GamePlayerServiceHandler::Centre2GsLogin(entt::entity player,const ::Centre
 }
 
 void GamePlayerServiceHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,
-	     google::protobuf::Empty* response)
+	     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	PlayerSceneSystem::HandleLeaveScene(player);

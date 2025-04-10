@@ -171,7 +171,7 @@ func (info *RPCMethod) GetServiceFullNameWithColon() string {
 	return info.Package() + "::" + info.Service()
 }
 
-func (info *RPCMethod) GetCppRequest() string {
+func (info *RPCMethod) CppRequest() string {
 	// 获取 InputType
 	inputType := info.FdSet.GetFile()[0].GetService()[info.FileServiceIndex].GetMethod()[info.Index].GetInputType()
 
@@ -185,7 +185,7 @@ func (info *RPCMethod) Method() string {
 	return info.FdSet.GetFile()[0].GetService()[info.FileServiceIndex].GetMethod()[info.Index].GetName()
 }
 
-func (info *RPCMethod) GetCppResponse() string {
+func (info *RPCMethod) CppResponse() string {
 	// 获取 OutputType
 	outputType := info.FdSet.GetFile()[0].GetService()[info.FileServiceIndex].GetMethod()[info.Index].GetOutputType()
 

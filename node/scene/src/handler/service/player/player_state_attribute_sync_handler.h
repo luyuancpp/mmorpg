@@ -39,33 +39,33 @@ public:
 		{
 		case 0:
 			SyncBaseAttribute(player,
-			static_cast<const BaseAttributeSyncDataS2C*>(request),
-			static_cast<Empty*>(response));
+			static_cast<const ::BaseAttributeSyncDataS2C*>(request),
+			static_cast<::Empty*>(response));
 		break;
 		case 1:
 			SyncAttribute2Frames(player,
-			static_cast<const AttributeDelta2FramesS2C*>(request),
-			static_cast<Empty*>(response));
+			static_cast<const ::AttributeDelta2FramesS2C*>(request),
+			static_cast<::Empty*>(response));
 		break;
 		case 2:
 			SyncAttribute5Frames(player,
-			static_cast<const AttributeDelta5FramesS2C*>(request),
-			static_cast<Empty*>(response));
+			static_cast<const ::AttributeDelta5FramesS2C*>(request),
+			static_cast<::Empty*>(response));
 		break;
 		case 3:
 			SyncAttribute10Frames(player,
-			static_cast<const AttributeDelta10FramesS2C*>(request),
-			static_cast<Empty*>(response));
+			static_cast<const ::AttributeDelta10FramesS2C*>(request),
+			static_cast<::Empty*>(response));
 		break;
 		case 4:
 			SyncAttribute30Frames(player,
-			static_cast<const AttributeDelta30FramesS2C*>(request),
-			static_cast<Empty*>(response));
+			static_cast<const ::AttributeDelta30FramesS2C*>(request),
+			static_cast<::Empty*>(response));
 		break;
 		case 5:
 			SyncAttribute60Frames(player,
-			static_cast<const AttributeDelta60FramesS2C*>(request),
-			static_cast<Empty*>(response));
+			static_cast<const ::AttributeDelta60FramesS2C*>(request),
+			static_cast<::Empty*>(response));
 		break;
 		default:
 		break;

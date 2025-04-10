@@ -324,8 +324,8 @@ func writeServiceInfoCppFile() {
 				rpcId,
 				method.Service(),
 				method.Method,
-				method.GetCppRequest,
-				method.GetCppResponse,
+				method.CppRequest,
+				method.CppResponse,
 				handlerClassName,
 			))
 			if strings.Contains(method.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {

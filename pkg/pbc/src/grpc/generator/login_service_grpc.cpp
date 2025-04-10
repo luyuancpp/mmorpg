@@ -18,7 +18,7 @@ struct LoginServiceDisconnectCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const  LoginC2LRequest& request)
+void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const  ::LoginC2LRequest& request)
 {
     AsyncLoginServiceLoginGrpcClientCall* call = new AsyncLoginServiceLoginGrpcClientCall;
 
@@ -63,7 +63,7 @@ void AsyncCompleteGrpcLoginServiceLogin(grpc::CompletionQueue& cq)
     }
 }
 
-void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const  CreatePlayerC2LRequest& request)
+void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const  ::CreatePlayerC2LRequest& request)
 {
     AsyncLoginServiceCreatePlayerGrpcClientCall* call = new AsyncLoginServiceCreatePlayerGrpcClientCall;
 
@@ -108,7 +108,7 @@ void AsyncCompleteGrpcLoginServiceCreatePlayer(grpc::CompletionQueue& cq)
     }
 }
 
-void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const  EnterGameC2LRequest& request)
+void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const  ::EnterGameC2LRequest& request)
 {
     AsyncLoginServiceEnterGameGrpcClientCall* call = new AsyncLoginServiceEnterGameGrpcClientCall;
 
@@ -153,7 +153,7 @@ void AsyncCompleteGrpcLoginServiceEnterGame(grpc::CompletionQueue& cq)
     }
 }
 
-void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  LeaveGameC2LRequest& request)
+void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  ::LeaveGameC2LRequest& request)
 {
     AsyncLoginServiceLeaveGameGrpcClientCall* call = new AsyncLoginServiceLeaveGameGrpcClientCall;
 
@@ -198,7 +198,7 @@ void AsyncCompleteGrpcLoginServiceLeaveGame(grpc::CompletionQueue& cq)
     }
 }
 
-void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const  LoginNodeDisconnectRequest& request)
+void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const  ::LoginNodeDisconnectRequest& request)
 {
     AsyncLoginServiceDisconnectGrpcClientCall* call = new AsyncLoginServiceDisconnectGrpcClientCall;
 

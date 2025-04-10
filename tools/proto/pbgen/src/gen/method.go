@@ -66,8 +66,8 @@ func getServiceHandlerMethodStr(method *RPCMethod) string {
 	var data strings.Builder
 
 	data.WriteString(config.Tab + "void " + method.Method() + "(" + config.GoogleMethodController + "\n")
-	data.WriteString(config.Tab2 + "const ::" + method.GetCppRequest() + "* request,\n")
-	data.WriteString(config.Tab2 + "::" + method.GetCppResponse() + "* response,\n")
+	data.WriteString(config.Tab2 + "const " + method.CppRequest() + "* request,\n")
+	data.WriteString(config.Tab2 + method.CppResponse() + "* response,\n")
 	data.WriteString(config.Tab2 + "::google::protobuf::Closure* done)override;\n\n")
 
 	return data.String()
@@ -96,16 +96,16 @@ func getPlayerMethodHandlerFunctions(methodList RPCMethods) string {
 
 	for i, method := range methodList {
 		data.WriteString(config.Tab + "static void " + method.Method() + "(" + config.PlayerMethodController + "\n")
-		data.WriteString(config.Tab2 + "const " + method.GetCppRequest() + "* request,\n")
-		data.WriteString(config.Tab2 + method.GetCppResponse() + "* response);\n\n")
+		data.WriteString(config.Tab2 + "const " + method.CppRequest() + "* request,\n")
+		data.WriteString(config.Tab2 + method.CppResponse() + "* response);\n\n")
 
 		callFunctionList.WriteString(config.Tab2 + "case " + strconv.Itoa(i) + ":\n")
 		callFunctionList.WriteString(config.Tab3 + method.Method() + "(player,\n")
-		callFunctionList.WriteString(config.Tab3 + "static_cast<const " + method.GetCppRequest() + "*>(request),\n")
-		callFunctionList.WriteString(config.Tab3 + "static_cast<" + method.GetCppResponse() + "*>(response));\n")
+		callFunctionList.WriteString(config.Tab3 + "static_cast<const " + method.CppRequest() + "*>(request),\n")
+		callFunctionList.WriteString(config.Tab3 + "static_cast<" + method.CppResponse() + "*>(response));\n")
 
-		if !strings.Contains(method.GetCppResponse(), config.EmptyResponseName) {
-			callFunctionList.WriteString(config.Tab3 + "TRANSFER_ERROR_MESSAGE(static_cast<" + method.GetCppResponse() + "*>(response));\n")
+		if !strings.Contains(method.CppResponse(), config.EmptyResponseName) {
+			callFunctionList.WriteString(config.Tab3 + "TRANSFER_ERROR_MESSAGE(static_cast<" + method.CppResponse() + "*>(response));\n")
 		}
 
 		callFunctionList.WriteString(config.Tab2 + "break;\n")
@@ -149,13 +149,13 @@ func getPlayerMethodRepliedHandlerFunctions(methodList RPCMethods) string {
 
 	for i, method := range methodList {
 		data.WriteString(config.Tab + "static void " + method.Method() + "(" + config.PlayerMethodController + "\n")
-		data.WriteString(config.Tab2 + "const ::" + method.GetCppRequest() + "* request,\n")
-		data.WriteString(config.Tab2 + "::" + method.GetCppResponse() + "* response);\n\n")
+		data.WriteString(config.Tab2 + "const " + method.CppRequest() + "* request,\n")
+		data.WriteString(config.Tab2 + method.CppResponse() + "* response);\n\n")
 
 		callFunctionList.WriteString(config.Tab2 + "case " + strconv.Itoa(i) + ":\n")
 		callFunctionList.WriteString(config.Tab3 + method.Method() + "(player,\n")
 		callFunctionList.WriteString(config.Tab3 + "nullptr,\n")
-		callFunctionList.WriteString(config.Tab3 + "static_cast<" + method.GetCppResponse() + "*>(response));\n")
+		callFunctionList.WriteString(config.Tab3 + "static_cast<" + method.CppResponse() + "*>(response));\n")
 		callFunctionList.WriteString(config.Tab2 + "break;\n")
 	}
 
@@ -194,7 +194,7 @@ func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) string {
 	// Generate handler function declarations for each method
 	for _, methodInfo := range *methodList {
 		handlerDeclaration := fmt.Sprintf("void On%s%s(const TcpConnectionPtr& conn, const std::shared_ptr<%s>& replied, Timestamp timestamp);\n\n",
-			methodInfo.KeyName(), config.RepliedHandlerFileName, methodInfo.GetCppResponse())
+			methodInfo.KeyName(), config.RepliedHandlerFileName, methodInfo.CppResponse())
 		data.WriteString(handlerDeclaration)
 	}
 
@@ -229,9 +229,9 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 			methodInfo := (*methodList)[methodIndex]
 
 			// Append method handler function definition
-			data.WriteString(fmt.Sprintf("void %s::%s(%sconst ::%s* request,\n",
-				className, methodInfo.Method(), config.GoogleMethodController, methodInfo.GetCppRequest()))
-			data.WriteString(config.Tab + "     " + methodInfo.GetCppResponse() + "* response,\n")
+			data.WriteString(fmt.Sprintf("void %s::%s(%sconst %s* request,\n",
+				className, methodInfo.Method(), config.GoogleMethodController, methodInfo.CppRequest()))
+			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response,\n")
 			data.WriteString(config.Tab + "     ::google::protobuf::Closure* done)\n")
 			data.WriteString("{\n")
 			data.WriteString(code) // Append existing code section
@@ -280,12 +280,12 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 
 			// Register message callback in declaration data
 			declarationData.WriteString(fmt.Sprintf("%s%s", config.Tab,
-				"gResponseDispatcher.registerMessageCallback<"+methodInfo.GetCppResponse()+
+				"gResponseDispatcher.registerMessageCallback<"+methodInfo.CppResponse()+
 					">(std::bind(&"+funcName+", std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));\n"))
 
 			// Implementation of the handler function
 			implData.WriteString(fmt.Sprintf("void %s(const TcpConnectionPtr& conn, const std::shared_ptr<%s>& replied, Timestamp timestamp)\n{\n",
-				funcName, methodInfo.GetCppResponse()))
+				funcName, methodInfo.CppResponse()))
 			implData.WriteString(code) // Append existing code section
 			implData.WriteString("}\n\n")
 		} else {
@@ -329,9 +329,9 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className 
 			methodInfo := (*methodList)[methodIndex]
 
 			// Append method handler function definition
-			data.WriteString(fmt.Sprintf("void %s::%s(%sconst ::%s* request,\n",
-				className, methodInfo.Method(), config.PlayerMethodController, methodInfo.GetCppRequest()))
-			data.WriteString(config.Tab + "     " + methodInfo.GetCppResponse() + "* response)\n")
+			data.WriteString(fmt.Sprintf("void %s::%s(%sconst %s* request,\n",
+				className, methodInfo.Method(), config.PlayerMethodController, methodInfo.CppRequest()))
+			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response)\n")
 			data.WriteString("{\n")
 			data.WriteString(code) // Append existing code section
 			data.WriteString("}\n\n")
