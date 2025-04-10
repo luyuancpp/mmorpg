@@ -3,9 +3,9 @@
 
 #include "proto/etcd/etcd.pb.h"
 
-constexpr uint32_t KVRangeMessageId = 77;
-constexpr uint32_t KVRangeIndex = 0;
-#define KVRangeMethod  ::KV_Stub::descriptor()->method(0)
+constexpr uint32_t KVWatchMessageId = 81;
+constexpr uint32_t KVWatchIndex = 5;
+#define KVWatchMethod  ::KV_Stub::descriptor()->method(5)
 
 constexpr uint32_t KVPutMessageId = 76;
 constexpr uint32_t KVPutIndex = 1;
@@ -22,4 +22,7 @@ constexpr uint32_t KVTxnIndex = 3;
 constexpr uint32_t KVCompactMessageId = 80;
 constexpr uint32_t KVCompactIndex = 4;
 #define KVCompactMethod  ::KV_Stub::descriptor()->method(4)
+
+nt32_t KVLeaseLeasesIndex = 10;
+#define KVLeaseLeasesMethod  ::KV_Stub::descriptor()->method(10)
 
