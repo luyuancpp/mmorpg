@@ -64,7 +64,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 			service = strings.ReplaceAll(strings.Split(line, " ")[1], "{", "")
 			rpcServiceInfo := RPCServiceInfo{}
 			rpcServiceInfo.FdSet = fdSet
-			rpcServiceInfo.FileName = fd.Name()
 			rpcServiceInfo.Path = filePath
 			RpcServiceMap.Store(service, &rpcServiceInfo)
 			continue

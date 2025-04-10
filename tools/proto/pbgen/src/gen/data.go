@@ -2,6 +2,7 @@ package gen
 
 import (
 	"google.golang.org/protobuf/types/descriptorpb"
+	"path/filepath"
 	"pbgen/config"
 	"strings"
 	"sync"
@@ -29,7 +30,6 @@ type RPCMethods []*RPCMethod
 
 // RPCServiceInfo 定义RPC服务信息
 type RPCServiceInfo struct {
-	FileName   string
 	Path       string
 	MethodInfo RPCMethods
 	FdSet      *descriptorpb.FileDescriptorSet
@@ -72,19 +72,23 @@ func (info *RPCServiceInfo) IncludeName() string {
 	return "#include \"" + strings.Replace(info.Path, config.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
 }
 
+func (info *RPCServiceInfo) FileName() string {
+	return filepath.Base(*info.FdSet.GetFile()[0].Name)
+}
+
 // PbcHeadName 返回Proto文件头文件名
 func (info *RPCServiceInfo) PbcHeadName() string {
-	return strings.Replace(info.FileName, config.ProtoEx, config.ProtoPbhEx, 1)
+	return strings.Replace(info.FileName(), config.ProtoEx, config.ProtoPbhEx, 1)
 }
 
 // HeadName 返回头文件名
 func (info *RPCServiceInfo) HeadName() string {
-	return strings.Replace(info.FileName, config.ProtoEx, config.HeaderExtension, 1)
+	return strings.Replace(info.FileName(), config.ProtoEx, config.HeaderExtension, 1)
 }
 
 // FileBaseName 返回文件基本名
 func (info *RPCServiceInfo) FileBaseName() string {
-	return strings.Replace(info.FileName, config.ProtoEx, "", 1)
+	return strings.Replace(info.FileName(), config.ProtoEx, "", 1)
 }
 
 // IsPlayerService 检查是否为玩家服务
@@ -147,7 +151,11 @@ func (info *RPCMethod) IsPlayerService() bool {
 }
 
 func (info *RPCMethod) CcGenericServices() bool {
-	return *info.FdSet.GetFile()[0].Options.CcGenericServices
+	files := info.FdSet.GetFile()
+	if len(files) == 0 || files[0].Options == nil || files[0].Options.CcGenericServices == nil {
+		return false
+	}
+	return *files[0].Options.CcGenericServices
 }
 
 func (info *RPCMethod) GetServiceFullNameWithColon() string {
