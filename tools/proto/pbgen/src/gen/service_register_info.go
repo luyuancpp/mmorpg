@@ -3,6 +3,8 @@ package gen
 import (
 	"bufio"
 	"fmt"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 	"log"
 	"math"
 	"os"
@@ -31,16 +33,26 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 	scanner := bufio.NewScanner(f)
 	var service string
 	var methodIndex uint64
-	ccGenericServices := false
 	var goPackageName string
 	var pbPackageName string
 
+	descFilePath := filepath.Join(
+		config.PbDescDirectory,
+		fd.Name()+config.ProtoDescExtension,
+	)
+
+	data, err := os.ReadFile(descFilePath)
+	if err != nil {
+		log.Fatalf("Failed to read descriptor set file: %v", err)
+	}
+
+	fdSet := &descriptorpb.FileDescriptorSet{}
+	if err := proto.Unmarshal(data, fdSet); err != nil {
+		log.Fatalf("Failed to unmarshal descriptor set: %v", err)
+	}
+
 	for scanner.Scan() {
 		line := scanner.Text()
-
-		if strings.Contains(line, config.CcGenericServices) {
-			ccGenericServices = true
-		}
 
 		if strings.Contains(line, config.GoPackage) {
 			goPackageName = strings.ReplaceAll(strings.Split(line, " ")[3], ";", "")
@@ -51,6 +63,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
 			service = strings.ReplaceAll(strings.Split(line, " ")[1], "{", "")
 			rpcServiceInfo := RPCServiceInfo{}
+			rpcServiceInfo.FdSet = fdSet
 			rpcServiceInfo.FileName = fd.Name()
 			rpcServiceInfo.Path = filePath
 			RpcServiceMap.Store(service, &rpcServiceInfo)
@@ -74,17 +87,17 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 
 			// 创建 RPCMethod 实例
 			rpcMethodInfo := RPCMethod{
-				Service:           service,
-				Method:            splitList[1],
-				Request:           strings.Replace(requestType, ".", "::", -1),
-				Response:          strings.Replace(responseType, ".", "::", -1),
-				Id:                math.MaxUint64,
-				Index:             methodIndex,
-				FileName:          fd.Name(),
-				Path:              filePath,
-				CcGenericServices: ccGenericServices,
-				PbPackage:         pbPackageName,
-				GoPackage:         goPackageName,
+				Service:   service,
+				Method:    splitList[1],
+				Request:   strings.Replace(requestType, ".", "::", -1),
+				Response:  strings.Replace(responseType, ".", "::", -1),
+				Id:        math.MaxUint64,
+				Index:     methodIndex,
+				FileName:  fd.Name(),
+				Path:      filePath,
+				PbPackage: pbPackageName,
+				GoPackage: goPackageName,
+				FdSet:     fdSet,
 			}
 
 			result, ok := RpcServiceMap.Load(service)
@@ -283,7 +296,7 @@ func InitServiceId() {
 func GetSortServiceList() []string {
 	var ServiceList []string
 	for k, v := range ServiceMethodMap {
-		if len(v) > 0 && !v[0].CcGenericServices {
+		if len(v) > 0 && !v[0].CcGenericServices() {
 			continue
 		}
 		ServiceList = append(ServiceList, k)
