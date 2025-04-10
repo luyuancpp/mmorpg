@@ -295,7 +295,7 @@ func writeLuaServiceMethodCppFile(methodList RPCMethods) {
 	data += "#include \"thread_local/storage_lua.h\"\n"
 	data += methodList[0].IncludeName() + "\n\n"
 
-	data += "void Init" + methodList[0].Service + "Lua()\n{\n"
+	data += "void Init" + methodList[0].Service() + "Lua()\n{\n"
 	for i := 0; i < len(methodList); i++ {
 		data += config.Tab + "tls_lua_state[\"" + methodList[i].KeyName() + config.MessageIdName + "\"] = " +
 			strconv.FormatUint(methodList[i].Id, 10) + ";\n"
@@ -303,7 +303,7 @@ func writeLuaServiceMethodCppFile(methodList RPCMethods) {
 			strconv.FormatUint(methodList[i].Index, 10) + ";\n"
 		data += config.Tab + "tls_lua_state[\"" + methodList[i].KeyName() +
 			"\"] = []()-> const ::google::protobuf::MethodDescriptor* {\n" +
-			config.Tab2 + "return " + methodList[i].Service + "_Stub::descriptor()->method(" +
+			config.Tab2 + "return " + methodList[i].Service() + "_Stub::descriptor()->method(" +
 			strconv.FormatUint(methodList[i].Index, 10) + ");\n" +
 			config.Tab + "};\n\n"
 	}
@@ -325,8 +325,8 @@ func writeInitLuaServiceFile() {
 			continue
 		}
 		firstMethodInfo := methodList[0]
-		data += config.Tab + "void Init" + firstMethodInfo.Service + "Lua();\n"
-		data += config.Tab + "Init" + firstMethodInfo.Service + "Lua();\n\n"
+		data += config.Tab + "void Init" + firstMethodInfo.Service() + "Lua();\n"
+		data += config.Tab + "Init" + firstMethodInfo.Service() + "Lua();\n\n"
 	}
 	data += "}\n"
 	util.WriteMd5Data2File(config.LuaServiceFilePath, data)

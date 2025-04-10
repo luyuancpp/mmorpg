@@ -77,7 +77,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 
 			// 创建 RPCMethod 实例
 			rpcMethodInfo := RPCMethod{
-				Service:  service,
 				Method:   splitList[1],
 				Request:  strings.Replace(requestType, ".", "::", -1),
 				Response: strings.Replace(responseType, ".", "::", -1),
@@ -404,12 +403,12 @@ func generateInstanceData(ServiceList []string, isPlayerHandlerFunc func(*RPCMet
 		}
 
 		method1Info := methodList[0]
-		className := method1Info.Service + "Impl"
+		className := method1Info.Service() + "Impl"
 		includeData += config.IncludeBegin + method1Info.FileNameNoEx() + config.HandlerHeaderExtension + "\"\n"
 
-		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
-		instanceData += config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.HandlerFileName + ">(std::make_unique< " +
+		classData += "class " + className + " : public " + method1Info.Service() + "{};\n"
+		instanceData += config.Tab + "g_player_service.emplace(\"" + method1Info.Service() +
+			"\", std::make_unique<" + method1Info.Service() + config.HandlerFileName + ">(std::make_unique< " +
 			className + ">()));\n"
 	}
 
@@ -441,12 +440,12 @@ func generateRepliedInstanceData(ServiceList []string, isPlayerHandlerFunc func(
 		}
 
 		method1Info := methodList[0]
-		className := method1Info.Service + "Impl"
+		className := method1Info.Service() + "Impl"
 		includeData += config.IncludeBegin + method1Info.FileNameNoEx() + config.RepliedHandlerHeaderExtension + "\"\n"
 
-		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
-		instanceData += config.Tab + "g_player_service_replied.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.RepliedHandlerFileName + ">(std::make_unique<" +
+		classData += "class " + className + " : public " + method1Info.Service() + "{};\n"
+		instanceData += config.Tab + "g_player_service_replied.emplace(\"" + method1Info.Service() +
+			"\", std::make_unique<" + method1Info.Service() + config.RepliedHandlerFileName + ">(std::make_unique<" +
 			className + ">()));\n"
 	}
 

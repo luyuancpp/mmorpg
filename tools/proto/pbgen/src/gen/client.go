@@ -15,7 +15,7 @@ func getClientMethodHandlerHeadStr(methodList RPCMethods) string {
 	builder.WriteString("#include <sol/sol.hpp>\n")
 	builder.WriteString("#include \"thread_local/storage_lua.h\"\n")
 	builder.WriteString(methodList[0].IncludeName() + "\n")
-	builder.WriteString("class " + methodList[0].Service + config.HandlerFileName + " : public ::" + methodList[0].Service + " {\n")
+	builder.WriteString("class " + methodList[0].Service() + config.HandlerFileName + " : public ::" + methodList[0].Service() + " {\n")
 	builder.WriteString("public:\n")
 	builder.WriteString(config.Tab + "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n")
 	builder.WriteString(config.Tab + "                 ::google::protobuf::RpcController* controller,\n")
@@ -78,8 +78,8 @@ func writeClientHandlerDefaultInstanceFile() {
 		}
 		method1Info := methodList[0]
 		includeBuilder.WriteString(config.IncludeBegin + method1Info.FileNameNoEx() + config.HandlerHeaderExtension + config.IncludeEndLine)
-		instanceBuilder.WriteString(config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.HandlerFileName + ">());\n")
+		instanceBuilder.WriteString(config.Tab + "g_player_service.emplace(\"" + method1Info.Service() +
+			"\", std::make_unique<" + method1Info.Service() + config.HandlerFileName + ">());\n")
 	}
 
 	builder.WriteString(includeBuilder.String())
