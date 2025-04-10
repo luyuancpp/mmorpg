@@ -152,90 +152,6 @@ struct MyNestedMessageDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MyNestedMessageDefaultTypeInternal _MyNestedMessage_default_instance_;
 
-inline constexpr RoutingNodeInfo::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        node_info_{nullptr},
-        message_id_{0u} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR RoutingNodeInfo::RoutingNodeInfo(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct RoutingNodeInfoDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RoutingNodeInfoDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RoutingNodeInfoDefaultTypeInternal() {}
-  union {
-    RoutingNodeInfo _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RoutingNodeInfoDefaultTypeInternal _RoutingNodeInfo_default_instance_;
-
-inline constexpr RoutePlayerMessageResponse::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        node_list_{},
-        body_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        player_info_{nullptr} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR RoutePlayerMessageResponse::RoutePlayerMessageResponse(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct RoutePlayerMessageResponseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RoutePlayerMessageResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RoutePlayerMessageResponseDefaultTypeInternal() {}
-  union {
-    RoutePlayerMessageResponse _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RoutePlayerMessageResponseDefaultTypeInternal _RoutePlayerMessageResponse_default_instance_;
-
-inline constexpr RoutePlayerMessageRequest::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        node_list_{},
-        body_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        player_info_{nullptr} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR RoutePlayerMessageRequest::RoutePlayerMessageRequest(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct RoutePlayerMessageRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RoutePlayerMessageRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RoutePlayerMessageRequestDefaultTypeInternal() {}
-  union {
-    RoutePlayerMessageRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RoutePlayerMessageRequestDefaultTypeInternal _RoutePlayerMessageRequest_default_instance_;
-
 inline constexpr RegisterSessionCentreNodeResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -443,31 +359,6 @@ struct ProtoFieldCheckerTestPBDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ProtoFieldCheckerTestPBDefaultTypeInternal _ProtoFieldCheckerTestPB_default_instance_;
 
-inline constexpr NodeRoutingMessageBody::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        node_info_{nullptr} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR NodeRoutingMessageBody::NodeRoutingMessageBody(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct NodeRoutingMessageBodyDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR NodeRoutingMessageBodyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~NodeRoutingMessageBodyDefaultTypeInternal() {}
-  union {
-    NodeRoutingMessageBody _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRoutingMessageBodyDefaultTypeInternal _NodeRoutingMessageBody_default_instance_;
-
 inline constexpr MyProtoMessage::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -554,6 +445,219 @@ struct GateSessionDisconnectRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GateSessionDisconnectRequestDefaultTypeInternal _GateSessionDisconnectRequest_default_instance_;
 
+inline constexpr RoutingNodeInfo::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        node_info_{nullptr},
+        message_id_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR RoutingNodeInfo::RoutingNodeInfo(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct RoutingNodeInfoDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RoutingNodeInfoDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RoutingNodeInfoDefaultTypeInternal() {}
+  union {
+    RoutingNodeInfo _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RoutingNodeInfoDefaultTypeInternal _RoutingNodeInfo_default_instance_;
+
+inline constexpr RoutePlayerMessageResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        node_list_{},
+        body_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        player_info_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR RoutePlayerMessageResponse::RoutePlayerMessageResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct RoutePlayerMessageResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RoutePlayerMessageResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RoutePlayerMessageResponseDefaultTypeInternal() {}
+  union {
+    RoutePlayerMessageResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RoutePlayerMessageResponseDefaultTypeInternal _RoutePlayerMessageResponse_default_instance_;
+
+inline constexpr RoutePlayerMessageRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        node_list_{},
+        body_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        player_info_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR RoutePlayerMessageRequest::RoutePlayerMessageRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct RoutePlayerMessageRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RoutePlayerMessageRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RoutePlayerMessageRequestDefaultTypeInternal() {}
+  union {
+    RoutePlayerMessageRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RoutePlayerMessageRequestDefaultTypeInternal _RoutePlayerMessageRequest_default_instance_;
+
+inline constexpr PlayerNodeServiceRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        message_content_{nullptr},
+        header_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PlayerNodeServiceRequest::PlayerNodeServiceRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PlayerNodeServiceRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerNodeServiceRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerNodeServiceRequestDefaultTypeInternal() {}
+  union {
+    PlayerNodeServiceRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerNodeServiceRequestDefaultTypeInternal _PlayerNodeServiceRequest_default_instance_;
+
+inline constexpr PlayerMessageResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        message_content_{nullptr},
+        header_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PlayerMessageResponse::PlayerMessageResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PlayerMessageResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerMessageResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerMessageResponseDefaultTypeInternal() {}
+  union {
+    PlayerMessageResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerMessageResponseDefaultTypeInternal _PlayerMessageResponse_default_instance_;
+
+inline constexpr NodeRoutingMessageBody::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        node_info_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR NodeRoutingMessageBody::NodeRoutingMessageBody(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct NodeRoutingMessageBodyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NodeRoutingMessageBodyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NodeRoutingMessageBodyDefaultTypeInternal() {}
+  union {
+    NodeRoutingMessageBody _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRoutingMessageBodyDefaultTypeInternal _NodeRoutingMessageBody_default_instance_;
+
+inline constexpr NodeRouteMessageResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        message_content_{nullptr},
+        header_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR NodeRouteMessageResponse::NodeRouteMessageResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct NodeRouteMessageResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NodeRouteMessageResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NodeRouteMessageResponseDefaultTypeInternal() {}
+  union {
+    NodeRouteMessageResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRouteMessageResponseDefaultTypeInternal _NodeRouteMessageResponse_default_instance_;
+
+inline constexpr NodeRouteMessageRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        message_content_{nullptr},
+        header_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR NodeRouteMessageRequest::NodeRouteMessageRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct NodeRouteMessageRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NodeRouteMessageRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NodeRouteMessageRequestDefaultTypeInternal() {}
+  union {
+    NodeRouteMessageRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRouteMessageRequestDefaultTypeInternal _NodeRouteMessageRequest_default_instance_;
+
 inline constexpr RouteMessageResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : route_nodes_{},
@@ -615,110 +719,6 @@ struct RouteMessageRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RouteMessageRequestDefaultTypeInternal _RouteMessageRequest_default_instance_;
-
-inline constexpr PlayerNodeServiceRequest::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        message_content_{nullptr},
-        header_{nullptr} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR PlayerNodeServiceRequest::PlayerNodeServiceRequest(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct PlayerNodeServiceRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR PlayerNodeServiceRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~PlayerNodeServiceRequestDefaultTypeInternal() {}
-  union {
-    PlayerNodeServiceRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerNodeServiceRequestDefaultTypeInternal _PlayerNodeServiceRequest_default_instance_;
-
-inline constexpr PlayerMessageResponse::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        message_content_{nullptr},
-        header_{nullptr} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR PlayerMessageResponse::PlayerMessageResponse(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct PlayerMessageResponseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR PlayerMessageResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~PlayerMessageResponseDefaultTypeInternal() {}
-  union {
-    PlayerMessageResponse _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerMessageResponseDefaultTypeInternal _PlayerMessageResponse_default_instance_;
-
-inline constexpr NodeRouteMessageResponse::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        message_content_{nullptr},
-        header_{nullptr} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR NodeRouteMessageResponse::NodeRouteMessageResponse(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct NodeRouteMessageResponseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR NodeRouteMessageResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~NodeRouteMessageResponseDefaultTypeInternal() {}
-  union {
-    NodeRouteMessageResponse _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRouteMessageResponseDefaultTypeInternal _NodeRouteMessageResponse_default_instance_;
-
-inline constexpr NodeRouteMessageRequest::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        message_content_{nullptr},
-        header_{nullptr} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR NodeRouteMessageRequest::NodeRouteMessageRequest(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct NodeRouteMessageRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR NodeRouteMessageRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~NodeRouteMessageRequestDefaultTypeInternal() {}
-  union {
-    NodeRouteMessageRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRouteMessageRequestDefaultTypeInternal _NodeRouteMessageRequest_default_instance_;
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_proto_2fcommon_2fcommon_5fmessage_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**

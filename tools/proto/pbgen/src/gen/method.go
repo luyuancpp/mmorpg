@@ -366,7 +366,7 @@ func writeRegisterFile(dst string, cb checkRepliedCb) {
 
 		// Append instance creation for the service handler
 		instanceData.WriteString(fmt.Sprintf("%sgNodeService.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());\n",
-			config.Tab, firstMethodInfo.Service, firstMethodInfo.Service, config.HandlerFileName))
+			config.Tab, firstMethodInfo.Service(), firstMethodInfo.Service(), config.HandlerFileName))
 	}
 
 	// Finalize the data string with the unordered_map declaration and initialization function
