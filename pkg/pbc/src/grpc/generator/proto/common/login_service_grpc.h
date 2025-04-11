@@ -9,14 +9,16 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 using GrpcLoginServiceStubPtr = std::unique_ptr<::LoginService::Stub>;
+
 class AsyncLoginServiceLoginGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::LoginC2LResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::LoginC2LResponse>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::LoginC2LResponse>> response_reader;
 };
+
 
 class ::LoginC2LRequest;
 void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const  ::LoginC2LRequest& request);
@@ -27,14 +29,16 @@ extern AsyncLoginServiceLoginHandlerFunctionType  AsyncLoginServiceLoginHandler;
 
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncLoginServiceCreatePlayerGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::CreatePlayerC2LResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::CreatePlayerC2LResponse>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::CreatePlayerC2LResponse>> response_reader;
 };
+
 
 class ::CreatePlayerC2LRequest;
 void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const  ::CreatePlayerC2LRequest& request);
@@ -45,14 +49,16 @@ extern AsyncLoginServiceCreatePlayerHandlerFunctionType  AsyncLoginServiceCreate
 
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncLoginServiceEnterGameGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::EnterGameC2LResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::EnterGameC2LResponse>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::EnterGameC2LResponse>> response_reader;
 };
+
 
 class ::EnterGameC2LRequest;
 void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const  ::EnterGameC2LRequest& request);
@@ -63,14 +69,16 @@ extern AsyncLoginServiceEnterGameHandlerFunctionType  AsyncLoginServiceEnterGame
 
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncLoginServiceLeaveGameGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::Empty>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
+
 
 class ::LeaveGameC2LRequest;
 void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  ::LeaveGameC2LRequest& request);
@@ -81,14 +89,16 @@ extern AsyncLoginServiceLeaveGameHandlerFunctionType  AsyncLoginServiceLeaveGame
 
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncLoginServiceDisconnectGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::Empty>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
+
 
 class ::LoginNodeDisconnectRequest;
 void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const  ::LoginNodeDisconnectRequest& request);

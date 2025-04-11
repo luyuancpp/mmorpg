@@ -10,13 +10,15 @@ void SendetcdserverpbKVRange(entt::registry& registry, entt::entity nodeEntity, 
 {
     AsyncetcdserverpbKVRangeGrpcClientCall* call = new AsyncetcdserverpbKVRangeGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncRange(&call->context, request,
 		&registry.get<etcdserverpbKVRangeCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncetcdserverpbKVRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>&)>;
@@ -58,13 +60,15 @@ void SendetcdserverpbKVPut(entt::registry& registry, entt::entity nodeEntity, co
 {
     AsyncetcdserverpbKVPutGrpcClientCall* call = new AsyncetcdserverpbKVPutGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncPut(&call->context, request,
 		&registry.get<etcdserverpbKVPutCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncetcdserverpbKVPutHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>&)>;
@@ -106,13 +110,15 @@ void SendetcdserverpbKVDeleteRange(entt::registry& registry, entt::entity nodeEn
 {
     AsyncetcdserverpbKVDeleteRangeGrpcClientCall* call = new AsyncetcdserverpbKVDeleteRangeGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncDeleteRange(&call->context, request,
 		&registry.get<etcdserverpbKVDeleteRangeCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncetcdserverpbKVDeleteRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>&)>;
@@ -154,13 +160,15 @@ void SendetcdserverpbKVTxn(entt::registry& registry, entt::entity nodeEntity, co
 {
     AsyncetcdserverpbKVTxnGrpcClientCall* call = new AsyncetcdserverpbKVTxnGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncTxn(&call->context, request,
 		&registry.get<etcdserverpbKVTxnCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncetcdserverpbKVTxnHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>&)>;
@@ -202,13 +210,15 @@ void SendetcdserverpbKVCompact(entt::registry& registry, entt::entity nodeEntity
 {
     AsyncetcdserverpbKVCompactGrpcClientCall* call = new AsyncetcdserverpbKVCompactGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncCompact(&call->context, request,
 		&registry.get<etcdserverpbKVCompactCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncetcdserverpbKVCompactHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVCompactGrpcClientCall>&)>;
@@ -250,13 +260,14 @@ void SendetcdserverpbWatchWatch(entt::registry& registry, entt::entity nodeEntit
 {
     AsyncetcdserverpbWatchWatchGrpcClientCall* call = new AsyncetcdserverpbWatchWatchGrpcClientCall;
 
-    call->response_reader =
-        registry.get<GrpcetcdserverpbWatchStubPtr>(nodeEntity)->PrepareAsyncWatch(&call->context, request,
+
+    call->stream =
+        registry.get<GrpcetcdserverpbWatchStubPtr>(nodeEntity)->PrepareAsyncWatch(&call->context, 
 		&registry.get<etcdserverpbWatchWatchCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->stream->Write(request, (void*)call);
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncetcdserverpbWatchWatchHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbWatchWatchGrpcClientCall>&)>;
@@ -298,13 +309,15 @@ void SendetcdserverpbLeaseLeaseGrant(entt::registry& registry, entt::entity node
 {
     AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall* call = new AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcetcdserverpbLeaseStubPtr>(nodeEntity)->PrepareAsyncLeaseGrant(&call->context, request,
 		&registry.get<etcdserverpbLeaseLeaseGrantCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncetcdserverpbLeaseLeaseGrantHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>&)>;
@@ -346,13 +359,15 @@ void SendetcdserverpbLeaseLeaseRevoke(entt::registry& registry, entt::entity nod
 {
     AsyncetcdserverpbLeaseLeaseRevokeGrpcClientCall* call = new AsyncetcdserverpbLeaseLeaseRevokeGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcetcdserverpbLeaseStubPtr>(nodeEntity)->PrepareAsyncLeaseRevoke(&call->context, request,
 		&registry.get<etcdserverpbLeaseLeaseRevokeCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncetcdserverpbLeaseLeaseRevokeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseRevokeGrpcClientCall>&)>;
@@ -394,13 +409,14 @@ void SendetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, entt::entity 
 {
     AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClientCall* call = new AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClientCall;
 
-    call->response_reader =
-        registry.get<GrpcetcdserverpbLeaseStubPtr>(nodeEntity)->PrepareAsyncLeaseKeepAlive(&call->context, request,
+
+    call->stream =
+        registry.get<GrpcetcdserverpbLeaseStubPtr>(nodeEntity)->PrepareAsyncLeaseKeepAlive(&call->context, 
 		&registry.get<etcdserverpbLeaseLeaseKeepAliveCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->stream->Write(request, (void*)call);
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncetcdserverpbLeaseLeaseKeepAliveHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClientCall>&)>;
@@ -442,13 +458,15 @@ void SendetcdserverpbLeaseLeaseTimeToLive(entt::registry& registry, entt::entity
 {
     AsyncetcdserverpbLeaseLeaseTimeToLiveGrpcClientCall* call = new AsyncetcdserverpbLeaseLeaseTimeToLiveGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcetcdserverpbLeaseStubPtr>(nodeEntity)->PrepareAsyncLeaseTimeToLive(&call->context, request,
 		&registry.get<etcdserverpbLeaseLeaseTimeToLiveCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncetcdserverpbLeaseLeaseTimeToLiveHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseTimeToLiveGrpcClientCall>&)>;
@@ -490,13 +508,15 @@ void SendetcdserverpbLeaseLeaseLeases(entt::registry& registry, entt::entity nod
 {
     AsyncetcdserverpbLeaseLeaseLeasesGrpcClientCall* call = new AsyncetcdserverpbLeaseLeaseLeasesGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcetcdserverpbLeaseStubPtr>(nodeEntity)->PrepareAsyncLeaseLeases(&call->context, request,
 		&registry.get<etcdserverpbLeaseLeaseLeasesCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncetcdserverpbLeaseLeaseLeasesHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseLeasesGrpcClientCall>&)>;

@@ -10,13 +10,15 @@ void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeE
 {
     AsyncAccountDBServiceLoad2RedisGrpcClientCall* call = new AsyncAccountDBServiceLoad2RedisGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcAccountDBServiceStubPtr>(nodeEntity)->PrepareAsyncLoad2Redis(&call->context, request,
 		&registry.get<AccountDBServiceLoad2RedisCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncAccountDBServiceLoad2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncAccountDBServiceLoad2RedisGrpcClientCall>&)>;
@@ -58,13 +60,15 @@ void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeE
 {
     AsyncAccountDBServiceSave2RedisGrpcClientCall* call = new AsyncAccountDBServiceSave2RedisGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcAccountDBServiceStubPtr>(nodeEntity)->PrepareAsyncSave2Redis(&call->context, request,
 		&registry.get<AccountDBServiceSave2RedisCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncAccountDBServiceSave2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncAccountDBServiceSave2RedisGrpcClientCall>&)>;
@@ -106,13 +110,15 @@ void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEn
 {
     AsyncPlayerDBServiceLoad2RedisGrpcClientCall* call = new AsyncPlayerDBServiceLoad2RedisGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcPlayerDBServiceStubPtr>(nodeEntity)->PrepareAsyncLoad2Redis(&call->context, request,
 		&registry.get<PlayerDBServiceLoad2RedisCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncPlayerDBServiceLoad2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncPlayerDBServiceLoad2RedisGrpcClientCall>&)>;
@@ -154,13 +160,15 @@ void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEn
 {
     AsyncPlayerDBServiceSave2RedisGrpcClientCall* call = new AsyncPlayerDBServiceSave2RedisGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcPlayerDBServiceStubPtr>(nodeEntity)->PrepareAsyncSave2Redis(&call->context, request,
 		&registry.get<PlayerDBServiceSave2RedisCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncPlayerDBServiceSave2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncPlayerDBServiceSave2RedisGrpcClientCall>&)>;

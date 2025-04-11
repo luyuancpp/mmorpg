@@ -13,18 +13,25 @@ using grpc::ClientAsyncResponseReader;
 {{- range .ServiceInfo }}
 using Grpc{{.GetServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.Package}}::{{.Service}}::Stub>;
 {{- range .MethodInfo }}
+{{if .ClientStreaming}}
 class Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     {{.CppResponse}} reply;
-{{if .ClientStreaming}}
-    std::unique_ptr<ClientAsyncResponseReader<  {{.CppResponse}}>> response_reader;
-{{else}}
-	std::unique_ptr<ClientAsyncResponseReader<  {{.CppResponse}}>> response_reader;
-{{end}}
+    std::unique_ptr<grpc::ClientAsyncReaderWriter<{{.CppRequest}},  {{.CppResponse}}>> stream;
 };
+{{else}}
+class Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+    {{.CppResponse}} reply;
+	std::unique_ptr<ClientAsyncResponseReader<{{.CppResponse}}>> response_reader;
+};
+{{end}}
 
 class {{.CppRequest}};
 void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.CppRequest}}& request);
@@ -56,18 +63,21 @@ void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry,
     Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
 
 {{if .ClientStreaming}}
-    call->response_reader =
+    call->stream =
         registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&call->context, 
 		&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq);
+
+    	call->stream->Write(request, (void*)call);
+
 {{else}}
     call->response_reader =
         registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&call->context, request,
 		&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq);
+
+    	call->response_reader->StartCall();
+
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 {{end}}
-
-    call->response_reader->StartCall();
-
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
 using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
