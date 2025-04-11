@@ -11,7 +11,7 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 
-{{- range .GrpcServices }}
+{{- range .GrpcMethod }}
 using Grpc{{.GetServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.Package}}::{{.Service}}::Stub>;
 class Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall
 {
@@ -44,13 +44,13 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 #include "thread_local/storage.h"
 
 
-{{- range .GrpcServices }}
+{{- range .GrpcMethod }}
 struct {{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue{
 	grpc::CompletionQueue cq;
 };
 {{- end }}
 
-{{- range .GrpcServices }}
+{{- range .GrpcMethod }}
 
 void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.CppRequest}}& request)
 {
@@ -99,13 +99,13 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(grpc::Comple
 {{- end }}
 
 void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
-{{- range .GrpcServices }}
+{{- range .GrpcMethod }}
 	registry.emplace<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity);
 {{- end }}
 }
 
 void Handle{{.GetServiceFullNameWithNoColon}}CompletedQueueMessage(entt::registry& registry) {
-{{- range .GrpcServices }}
+{{- range .GrpcMethod }}
 	{
 		auto&& view = registry.view<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){

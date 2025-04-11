@@ -12,7 +12,7 @@ import (
 )
 
 type GrpcServiceTemplateData struct {
-	GrpcServices                  []RPCMethod
+	GrpcMethod                    []RPCMethod
 	Service                       string
 	GeneratorFileName             string
 	GrpcIncludeHeadName           string
@@ -38,7 +38,7 @@ func generateGrpcFile(fileName string, grpcServices []RPCMethod, text string) er
 
 	// 填充模板数据
 	data := GrpcServiceTemplateData{
-		GrpcServices:                  grpcServices,
+		GrpcMethod:                    grpcServices,
 		GrpcIncludeHeadName:           firstService.GrpcIncludeHeadName(),
 		GeneratorFileName:             filepath.Base(strings.TrimSuffix(fileName, filepath.Ext(fileName))),
 		GetServiceFullNameWithNoColon: firstService.GetServiceFullNameWithNoColon(),
