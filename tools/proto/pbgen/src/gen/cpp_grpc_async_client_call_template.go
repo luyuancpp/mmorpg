@@ -22,6 +22,13 @@ public:
     {{.CppResponse}} reply;
     std::unique_ptr<grpc::ClientAsyncReaderWriter<{{.CppRequest}},  {{.CppResponse}}>> stream;
 };
+
+
+using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
+
+extern Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;
+
+
 {{else}}
 class Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall
 {
@@ -31,14 +38,14 @@ public:
     {{.CppResponse}} reply;
 	std::unique_ptr<ClientAsyncResponseReader<{{.CppResponse}}>> response_reader;
 };
+
+using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
+
+extern Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;
 {{end}}
 
 class {{.CppRequest}};
 void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.CppRequest}}& request);
-
-using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
-
-extern Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;;
 
 void Handle{{.GetServiceFullNameWithNoColon}}CompletedQueueMessage(entt::registry& registry	); 
 void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
@@ -62,7 +69,7 @@ void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry,
 {
 {{if .ClientStreaming}}
 	auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
-	client->stream->Write(request, (void*)call);
+	client.stream->Write(request, nullptr);
 {{else}}
     Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
     call->response_reader =
@@ -75,6 +82,41 @@ void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry,
 {{end}}
 }
 
+{{if .ClientStreaming}}
+using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
+Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;
+
+void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(grpc::CompletionQueue& cq)
+{
+    void* got_tag;
+    bool ok = false;
+
+    gpr_timespec tm;
+    tm.tv_sec = 0;
+    tm.tv_nsec = 0;
+    tm.clock_type = GPR_CLOCK_MONOTONIC;
+    if (grpc::CompletionQueue::GOT_EVENT != 
+		cq.AsyncNext(&got_tag, &ok, tm)){
+        return;
+    }
+
+	{{.CppResponse}} response;
+    auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
+	if (!ok){
+		LOG_ERROR << "RPC failed";
+		return;
+	}
+
+    if (call->status.ok()){
+		client->steam->Read(&response);
+		if(Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler){
+			Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(response);
+		}
+    }else{
+        LOG_ERROR << call->status.error_message();
+    }
+}
+{{else}}
 using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
 Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;
 
@@ -106,6 +148,7 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(grpc::Comple
         LOG_ERROR << call->status.error_message();
     }
 }
+{{end}}
 {{- end }}
 {{- end }}
 
