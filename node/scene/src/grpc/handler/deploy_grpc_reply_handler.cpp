@@ -6,7 +6,7 @@
 #include "scene_node.h"
 #include "node/scene_node_info.h"
 
-#include "grpc/generator/deploy_service_grpc.h"
+#include "grpc/generator/proto/common/deploy_service_grpc.h"
 
 
 void InitGrpcDeployServiceResponseHandler() {

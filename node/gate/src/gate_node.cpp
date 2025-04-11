@@ -2,7 +2,7 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "grpc/generator/login_service_grpc.h"
+#include "grpc/generator/proto/common/login_service_grpc.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
 #include "muduo/base/TimeZone.h"

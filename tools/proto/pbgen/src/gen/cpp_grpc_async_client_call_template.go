@@ -110,7 +110,8 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(grpc::Comple
 	}
 
     if (client->status.ok()){
-		client->stream->Read(&response);
+		void* read_tag = nullptr;
+		client->stream->Read(&response, read_tag);
 		if(Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler){
 			Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(response);
 		}

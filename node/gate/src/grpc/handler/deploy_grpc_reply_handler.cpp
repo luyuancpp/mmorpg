@@ -2,7 +2,7 @@
 #include <memory>
 
 #include "gate_node.h"
-#include "grpc/generator/deploy_service_grpc.h"
+#include "grpc/generator/proto/common/deploy_service_grpc.h"
 
 void InitGrpcDeployServiceResponseHandler() {
     AsyncDeployServiceGetNodeInfoHandlerFunctionType AsyncDeployServiceGetNodeInfoHandler = [](const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>& call) {
