@@ -296,7 +296,8 @@ void AsyncCompleteGrpcetcdserverpbWatchWatch(grpc::CompletionQueue& cq)
 	}
 
     if (client->status.ok()){
-		client->stream->Read(&response);
+		void* read_tag = nullptr;
+		client->stream->Read(&response, read_tag);
 		if(AsyncetcdserverpbWatchWatchHandler){
 			AsyncetcdserverpbWatchWatchHandler(response);
 		}
@@ -446,7 +447,8 @@ void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(grpc::CompletionQueue& cq)
 	}
 
     if (client->status.ok()){
-		client->stream->Read(&response);
+		void* read_tag = nullptr;
+		client->stream->Read(&response, read_tag);
 		if(AsyncetcdserverpbLeaseLeaseKeepAliveHandler){
 			AsyncetcdserverpbLeaseLeaseKeepAliveHandler(response);
 		}

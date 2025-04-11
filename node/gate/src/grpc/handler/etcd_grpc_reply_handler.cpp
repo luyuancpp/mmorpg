@@ -2,7 +2,7 @@
 #include <memory>
 
 #include "muduo/base/Logging.h"
-#include "grpc/generator/etcd_grpc.h"
+#include "grpc/generator/proto/etcd/etcd_grpc.h"
 #include "node/system/node_system.h"
 #include "network/network_constants.h"
 #include "util/network_utils.h"

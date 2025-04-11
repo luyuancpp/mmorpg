@@ -1,7 +1,7 @@
 #include "muduo/base/Logging.h"
 
 #include "gate_node.h"
-#include "grpc/generator/login_service_grpc.h"
+#include "grpc/generator/proto/common/login_service_grpc.h"
 #include "thread_local/storage_gate.h"
 
 using GrpcLoginStubPtr = std::unique_ptr<LoginService::Stub>;
