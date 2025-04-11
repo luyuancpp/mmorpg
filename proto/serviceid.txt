@@ -79,9 +79,11 @@
 78=KVDeleteRange
 79=KVTxn
 80=KVCompact
-81=KVWatch
-83=KVLeaseKeepAlive
-84=KVLeaseTimeToLive
-85=KVLeaseLeases
-87=KVLeaseRevoke
-88=KVLeaseGrant
+81=PlayerDBServiceSave2Redis
+82=WatchWatch
+83=LeaseLeaseRevoke
+84=LeaseLeaseKeepAlive
+85=LeaseLeaseLeases
+86=LeaseLeaseTimeToLive
+87=LeaseLeaseGrant
+88=PlayerDBServiceLoad2Redis

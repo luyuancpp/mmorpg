@@ -11,42 +11,24 @@ import (
 	"text/template"
 )
 
-type GrpcService struct {
-	CppRequest                 string
-	CppResponse                string
-	Method                     string
-	Service                    string
-	ServiceFullNameWithNoColon string
-	Package                    string
-	GrpcIncludeHeadName        string
-}
-
 type GrpcServiceTemplateData struct {
-	GrpcServices               []GrpcService
-	Service                    string
-	GeneratorFileName          string
-	GrpcIncludeHeadName        string
-	ServiceFullNameWithNoColon string
-	Package                    string
+	GrpcServices                  []RPCMethod
+	Service                       string
+	GeneratorFileName             string
+	GrpcIncludeHeadName           string
+	GetServiceFullNameWithNoColon string
+	Package                       string
 }
 
 // generateHandlerCases creates the cases for the switch statement based on the method.
-func generateGrpcMethod(method *RPCMethod, grpcServices []GrpcService) []GrpcService {
-	grpcService := GrpcService{
-		CppRequest:                 method.CppRequest(),
-		CppResponse:                method.CppResponse(),
-		Method:                     method.Method(),
-		Service:                    method.Service(),
-		ServiceFullNameWithNoColon: method.GetServiceFullNameWithNoColon(),
-		Package:                    method.Package(),
-		GrpcIncludeHeadName:        method.GrpcIncludeHeadName(),
-	}
+func generateGrpcMethod(method *RPCMethod, grpcServices []RPCMethod) []RPCMethod {
+	grpcService := *method
 	grpcServices = append(grpcServices, grpcService)
 	return grpcServices
 }
 
 // 修改后的 generateGrpcFile 函数
-func generateGrpcFile(fileName string, grpcServices []GrpcService, text string) error {
+func generateGrpcFile(fileName string, grpcServices []RPCMethod, text string) error {
 	// 创建文件
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -64,12 +46,12 @@ func generateGrpcFile(fileName string, grpcServices []GrpcService, text string) 
 
 	// 填充模板数据
 	data := GrpcServiceTemplateData{
-		GrpcServices:               grpcServices,
-		Service:                    firstService.Service,
-		GrpcIncludeHeadName:        firstService.GrpcIncludeHeadName,
-		GeneratorFileName:          filepath.Base(strings.TrimSuffix(fileName, filepath.Ext(fileName))),
-		ServiceFullNameWithNoColon: firstService.ServiceFullNameWithNoColon,
-		Package:                    firstService.Package,
+		GrpcServices:                  grpcServices,
+		Service:                       firstService.Service(),
+		GrpcIncludeHeadName:           firstService.GrpcIncludeHeadName(),
+		GeneratorFileName:             filepath.Base(strings.TrimSuffix(fileName, filepath.Ext(fileName))),
+		GetServiceFullNameWithNoColon: firstService.GetServiceFullNameWithNoColon(),
+		Package:                       firstService.Package(),
 	}
 
 	// 将内容写入文件
@@ -101,7 +83,7 @@ func CppGrpcCallClient() {
 				return
 			}
 
-			grpcServices := make([]GrpcService, 0)
+			grpcServices := make([]RPCMethod, 0)
 			// 为每个方法生成 GrpcService 对象
 			for _, method := range serviceMethods {
 				grpcServices = generateGrpcMethod(method, grpcServices)
