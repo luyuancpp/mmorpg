@@ -21,7 +21,6 @@ public:
     Status status;
     {{.CppResponse}} reply;
     std::unique_ptr<grpc::ClientAsyncReaderWriter<{{.CppRequest}},  {{.CppResponse}}>> stream;
-	entt::entity nodeEntity{entt::null};
 };
 
 
@@ -162,7 +161,6 @@ void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& regist
 {{if .ClientStreaming}}
 	{
 		auto& client = registry.emplace<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
-		client.nodeEntity = nodeEntity;
 		client.stream =
 			registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&client.context, 
 			&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq);

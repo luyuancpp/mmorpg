@@ -576,7 +576,6 @@ void InitetcdserverpbWatchCompletedQueue(entt::registry& registry, entt::entity 
 
 	{
 		auto& client = registry.emplace<AsyncetcdserverpbWatchWatchGrpcClient>(nodeEntity);
-		client.nodeEntity = nodeEntity;
 		client.stream =
 			registry.get<GrpcetcdserverpbWatchStubPtr>(nodeEntity)->PrepareAsyncWatch(&client.context, 
 			&registry.get<etcdserverpbWatchWatchCompleteQueue>(nodeEntity).cq);
@@ -593,7 +592,6 @@ void InitetcdserverpbLeaseCompletedQueue(entt::registry& registry, entt::entity 
 
 	{
 		auto& client = registry.emplace<AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
-		client.nodeEntity = nodeEntity;
 		client.stream =
 			registry.get<GrpcetcdserverpbLeaseStubPtr>(nodeEntity)->PrepareAsyncLeaseKeepAlive(&client.context, 
 			&registry.get<etcdserverpbLeaseLeaseKeepAliveCompleteQueue>(nodeEntity).cq);
