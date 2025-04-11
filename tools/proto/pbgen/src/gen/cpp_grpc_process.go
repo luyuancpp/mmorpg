@@ -15,19 +15,19 @@ type GrpcService struct {
 	CppRequest                 string
 	CppResponse                string
 	Method                     string
-	ServiceName                string
+	Service                    string
 	ServiceFullNameWithNoColon string
-	PbPackageName              string
-	IncludeName                string
+	Package                    string
+	GrpcIncludeHeadName        string
 }
 
 type GrpcServiceTemplateData struct {
 	GrpcServices               []GrpcService
-	ServiceName                string
+	Service                    string
 	GeneratorFileName          string
-	IncludeName                string
+	GrpcIncludeHeadName        string
 	ServiceFullNameWithNoColon string
-	PbPackageName              string
+	Package                    string
 }
 
 // generateHandlerCases creates the cases for the switch statement based on the method.
@@ -36,10 +36,10 @@ func generateGrpcMethod(method *RPCMethod, grpcServices []GrpcService) []GrpcSer
 		CppRequest:                 method.CppRequest(),
 		CppResponse:                method.CppResponse(),
 		Method:                     method.Method(),
-		ServiceName:                method.Service(),
+		Service:                    method.Service(),
 		ServiceFullNameWithNoColon: method.GetServiceFullNameWithNoColon(),
-		PbPackageName:              method.Package(),
-		IncludeName:                method.GrpcIncludeHeadName(),
+		Package:                    method.Package(),
+		GrpcIncludeHeadName:        method.GrpcIncludeHeadName(),
 	}
 	grpcServices = append(grpcServices, grpcService)
 	return grpcServices
@@ -65,11 +65,11 @@ func generateGrpcFile(fileName string, grpcServices []GrpcService, text string) 
 	// 填充模板数据
 	data := GrpcServiceTemplateData{
 		GrpcServices:               grpcServices,
-		ServiceName:                firstService.ServiceName,
-		IncludeName:                firstService.IncludeName,
+		Service:                    firstService.Service,
+		GrpcIncludeHeadName:        firstService.GrpcIncludeHeadName,
 		GeneratorFileName:          filepath.Base(strings.TrimSuffix(fileName, filepath.Ext(fileName))),
 		ServiceFullNameWithNoColon: firstService.ServiceFullNameWithNoColon,
-		PbPackageName:              firstService.PbPackageName,
+		Package:                    firstService.Package,
 	}
 
 	// 将内容写入文件
