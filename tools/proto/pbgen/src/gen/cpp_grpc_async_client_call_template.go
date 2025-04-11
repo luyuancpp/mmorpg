@@ -14,7 +14,7 @@ using grpc::ClientAsyncResponseReader;
 using Grpc{{.GetServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.Package}}::{{.Service}}::Stub>;
 {{- range .MethodInfo }}
 {{if .ClientStreaming}}
-class Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall
+class Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient
 {
 public:
     ClientContext context;
@@ -60,16 +60,11 @@ struct {{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue{
 
 void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.CppRequest}}& request)
 {
-    Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
-
 {{if .ClientStreaming}}
-    call->stream =
-        registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&call->context, 
-		&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq);
-
-    	call->stream->Write(request, (void*)call);
-
+	auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
+	client->stream->Write(request, (void*)call);
 {{else}}
+    Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
     call->response_reader =
         registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&call->context, request,
 		&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq);
@@ -118,6 +113,15 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(grpc::Comple
 void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 {{- range .MethodInfo }}
 	registry.emplace<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity);
+{{if .ClientStreaming}}
+	{
+		auto& client = registry.emplace<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
+		client->stream =
+			registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&client->context, 
+			&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq);
+		client->stream->StartCall();
+	}
+{{end}}
 {{- end }}
 }
 {{- end }}
