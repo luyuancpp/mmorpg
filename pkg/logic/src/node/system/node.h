@@ -3,7 +3,7 @@
 #include <memory>
 #include <muduo/base/AsyncLogging.h>
 #include <muduo/net/TcpServer.h>
-#include "grpc/generator/deploy_service_grpc.h"
+#include "grpc/generator/proto/common/deploy_service_grpc.h"
 #include "network/rpc_client.h"
 #include "network/rpc_server.h"
 #include "proto/common/common.pb.h"

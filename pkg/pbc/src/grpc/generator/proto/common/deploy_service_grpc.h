@@ -19,13 +19,13 @@ public:
 	std::unique_ptr<ClientAsyncResponseReader<::NodeInfoResponse>> response_reader;
 };
 
+using AsyncDeployServiceGetNodeInfoHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>&)>;
+
+extern AsyncDeployServiceGetNodeInfoHandlerFunctionType  AsyncDeployServiceGetNodeInfoHandler;
+
 
 class ::NodeInfoRequest;
 void SendDeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, const  ::NodeInfoRequest& request);
-
-using AsyncDeployServiceGetNodeInfoHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>&)>;
-
-extern AsyncDeployServiceGetNodeInfoHandlerFunctionType  AsyncDeployServiceGetNodeInfoHandler;;
 
 void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
@@ -39,13 +39,13 @@ public:
 	std::unique_ptr<ClientAsyncResponseReader<::GetIDResponse>> response_reader;
 };
 
+using AsyncDeployServiceGetIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetIDGrpcClientCall>&)>;
+
+extern AsyncDeployServiceGetIDHandlerFunctionType  AsyncDeployServiceGetIDHandler;
+
 
 class ::GetIDRequest;
 void SendDeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, const  ::GetIDRequest& request);
-
-using AsyncDeployServiceGetIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetIDGrpcClientCall>&)>;
-
-extern AsyncDeployServiceGetIDHandlerFunctionType  AsyncDeployServiceGetIDHandler;;
 
 void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
@@ -59,13 +59,13 @@ public:
 	std::unique_ptr<ClientAsyncResponseReader<::ReleaseIDResponse>> response_reader;
 };
 
+using AsyncDeployServiceReleaseIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceReleaseIDGrpcClientCall>&)>;
+
+extern AsyncDeployServiceReleaseIDHandlerFunctionType  AsyncDeployServiceReleaseIDHandler;
+
 
 class ::ReleaseIDRequest;
 void SendDeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, const  ::ReleaseIDRequest& request);
-
-using AsyncDeployServiceReleaseIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceReleaseIDGrpcClientCall>&)>;
-
-extern AsyncDeployServiceReleaseIDHandlerFunctionType  AsyncDeployServiceReleaseIDHandler;;
 
 void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
@@ -79,13 +79,13 @@ public:
 	std::unique_ptr<ClientAsyncResponseReader<::RenewLeaseIDResponse>> response_reader;
 };
 
+using AsyncDeployServiceRenewLeaseHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceRenewLeaseGrpcClientCall>&)>;
+
+extern AsyncDeployServiceRenewLeaseHandlerFunctionType  AsyncDeployServiceRenewLeaseHandler;
+
 
 class ::RenewLeaseIDRequest;
 void SendDeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, const  ::RenewLeaseIDRequest& request);
-
-using AsyncDeployServiceRenewLeaseHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceRenewLeaseGrpcClientCall>&)>;
-
-extern AsyncDeployServiceRenewLeaseHandlerFunctionType  AsyncDeployServiceRenewLeaseHandler;;
 
 void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);

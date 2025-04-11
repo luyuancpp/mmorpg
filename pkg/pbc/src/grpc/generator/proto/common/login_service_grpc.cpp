@@ -8,9 +8,8 @@ struct LoginServiceLoginCompleteQueue{
 
 void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const  ::LoginC2LRequest& request)
 {
+
     AsyncLoginServiceLoginGrpcClientCall* call = new AsyncLoginServiceLoginGrpcClientCall;
-
-
     call->response_reader =
         registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncLogin(&call->context, request,
 		&registry.get<LoginServiceLoginCompleteQueue>(nodeEntity).cq);
@@ -20,6 +19,7 @@ void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, co
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 
 using AsyncLoginServiceLoginHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>&)>;
 AsyncLoginServiceLoginHandlerFunctionType  AsyncLoginServiceLoginHandler;
@@ -52,15 +52,15 @@ void AsyncCompleteGrpcLoginServiceLogin(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+
 struct LoginServiceCreatePlayerCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
 void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const  ::CreatePlayerC2LRequest& request)
 {
+
     AsyncLoginServiceCreatePlayerGrpcClientCall* call = new AsyncLoginServiceCreatePlayerGrpcClientCall;
-
-
     call->response_reader =
         registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncCreatePlayer(&call->context, request,
 		&registry.get<LoginServiceCreatePlayerCompleteQueue>(nodeEntity).cq);
@@ -70,6 +70,7 @@ void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEnt
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 
 using AsyncLoginServiceCreatePlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceCreatePlayerGrpcClientCall>&)>;
 AsyncLoginServiceCreatePlayerHandlerFunctionType  AsyncLoginServiceCreatePlayerHandler;
@@ -102,15 +103,15 @@ void AsyncCompleteGrpcLoginServiceCreatePlayer(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+
 struct LoginServiceEnterGameCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
 void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const  ::EnterGameC2LRequest& request)
 {
+
     AsyncLoginServiceEnterGameGrpcClientCall* call = new AsyncLoginServiceEnterGameGrpcClientCall;
-
-
     call->response_reader =
         registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncEnterGame(&call->context, request,
 		&registry.get<LoginServiceEnterGameCompleteQueue>(nodeEntity).cq);
@@ -120,6 +121,7 @@ void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 
 using AsyncLoginServiceEnterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceEnterGameGrpcClientCall>&)>;
 AsyncLoginServiceEnterGameHandlerFunctionType  AsyncLoginServiceEnterGameHandler;
@@ -152,15 +154,15 @@ void AsyncCompleteGrpcLoginServiceEnterGame(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+
 struct LoginServiceLeaveGameCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
 void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  ::LeaveGameC2LRequest& request)
 {
+
     AsyncLoginServiceLeaveGameGrpcClientCall* call = new AsyncLoginServiceLeaveGameGrpcClientCall;
-
-
     call->response_reader =
         registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncLeaveGame(&call->context, request,
 		&registry.get<LoginServiceLeaveGameCompleteQueue>(nodeEntity).cq);
@@ -170,6 +172,7 @@ void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 
 using AsyncLoginServiceLeaveGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLeaveGameGrpcClientCall>&)>;
 AsyncLoginServiceLeaveGameHandlerFunctionType  AsyncLoginServiceLeaveGameHandler;
@@ -202,15 +205,15 @@ void AsyncCompleteGrpcLoginServiceLeaveGame(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+
 struct LoginServiceDisconnectCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
 void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const  ::LoginNodeDisconnectRequest& request)
 {
+
     AsyncLoginServiceDisconnectGrpcClientCall* call = new AsyncLoginServiceDisconnectGrpcClientCall;
-
-
     call->response_reader =
         registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncDisconnect(&call->context, request,
 		&registry.get<LoginServiceDisconnectCompleteQueue>(nodeEntity).cq);
@@ -220,6 +223,7 @@ void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntit
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 
 using AsyncLoginServiceDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceDisconnectGrpcClientCall>&)>;
 AsyncLoginServiceDisconnectHandlerFunctionType  AsyncLoginServiceDisconnectHandler;
@@ -252,12 +256,18 @@ void AsyncCompleteGrpcLoginServiceDisconnect(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 	registry.emplace<LoginServiceLoginCompleteQueue>(nodeEntity);
+
 	registry.emplace<LoginServiceCreatePlayerCompleteQueue>(nodeEntity);
+
 	registry.emplace<LoginServiceEnterGameCompleteQueue>(nodeEntity);
+
 	registry.emplace<LoginServiceLeaveGameCompleteQueue>(nodeEntity);
+
 	registry.emplace<LoginServiceDisconnectCompleteQueue>(nodeEntity);
+
 }
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
 	{
