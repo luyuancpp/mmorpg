@@ -38,7 +38,7 @@ void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& regist
 
 const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 
-#include "grpc/generator/{{.GeneratorFileName}}.h"
+#include "grpc/generator/{{.GeneratorGrpcFileName}}.h"
 #include "thread_local/storage.h"
 
 {{- range .ServiceInfo }}

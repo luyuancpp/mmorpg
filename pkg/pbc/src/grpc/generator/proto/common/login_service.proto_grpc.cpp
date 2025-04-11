@@ -1,20 +1,8 @@
 #include "muduo/base/Logging.h"
 
-#include "grpc/generator/login_service_grpc.h"
+#include "grpc/generator/login_service_grpc.cpp.h"
 #include "thread_local/storage.h"
 struct LoginServiceLoginCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct LoginServiceCreatePlayerCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct LoginServiceEnterGameCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct LoginServiceLeaveGameCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct LoginServiceDisconnectCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
@@ -62,6 +50,9 @@ void AsyncCompleteGrpcLoginServiceLogin(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct LoginServiceCreatePlayerCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const  ::CreatePlayerC2LRequest& request)
 {
@@ -107,6 +98,9 @@ void AsyncCompleteGrpcLoginServiceCreatePlayer(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct LoginServiceEnterGameCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const  ::EnterGameC2LRequest& request)
 {
@@ -152,6 +146,9 @@ void AsyncCompleteGrpcLoginServiceEnterGame(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct LoginServiceLeaveGameCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  ::LeaveGameC2LRequest& request)
 {
@@ -197,6 +194,9 @@ void AsyncCompleteGrpcLoginServiceLeaveGame(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct LoginServiceDisconnectCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const  ::LoginNodeDisconnectRequest& request)
 {
@@ -242,7 +242,6 @@ void AsyncCompleteGrpcLoginServiceDisconnect(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
-
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 	registry.emplace<LoginServiceLoginCompleteQueue>(nodeEntity);
 	registry.emplace<LoginServiceCreatePlayerCompleteQueue>(nodeEntity);
@@ -250,7 +249,6 @@ void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeE
 	registry.emplace<LoginServiceLeaveGameCompleteQueue>(nodeEntity);
 	registry.emplace<LoginServiceDisconnectCompleteQueue>(nodeEntity);
 }
-
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<LoginServiceLoginCompleteQueue>();
@@ -283,4 +281,3 @@ void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
 		}
 	}
 }
-

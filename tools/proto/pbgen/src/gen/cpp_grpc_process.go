@@ -36,7 +36,7 @@ func generateGrpcFile(fileName string, grpcServices []*RPCServiceInfo, text stri
 	data := GrpcServiceTemplateData{
 		ServiceInfo:         grpcServices,
 		GrpcIncludeHeadName: grpcServices[0].GrpcIncludeHeadName(),
-		GeneratorFileName:   grpcServices[0].GeneratorFileName(),
+		GeneratorFileName:   grpcServices[0].GeneratorGrpcFileName(),
 	}
 
 	// 将内容写入文件
@@ -71,7 +71,9 @@ func CppGrpcCallClient() {
 
 			os.MkdirAll(path.Dir(config.CppGenGrpcDirectory+protoFile), os.FileMode(0777))
 
-			filePath := config.CppGenGrpcDirectory + protoFile + config.GrpcHeaderExtension
+			cppFileBaseName := strings.Replace(protoFile, ".", "_", -1)
+
+			filePath := config.CppGenGrpcDirectory + cppFileBaseName + config.GrpcHeaderExtension
 			if err := generateGrpcFile(filePath, serviceInfo, AsyncClientHeaderTemplate); err != nil {
 				log.Fatal(err)
 			}

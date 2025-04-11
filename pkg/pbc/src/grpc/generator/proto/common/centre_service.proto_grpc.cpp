@@ -1,44 +1,8 @@
 #include "muduo/base/Logging.h"
 
-#include "grpc/generator/centre_service_grpc.h"
+#include "grpc/generator/centre_service_grpc.cpp.h"
 #include "thread_local/storage.h"
 struct CentreServiceRegisterGameNodeCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct CentreServiceRegisterGateNodeCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct CentreServiceGatePlayerServiceCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct CentreServiceGateSessionDisconnectCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct CentreServiceLoginNodeAccountLoginCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct CentreServiceLoginNodeEnterGameCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct CentreServiceLoginNodeLeaveGameCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct CentreServiceLoginNodeSessionDisconnectCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct CentreServicePlayerServiceCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct CentreServiceEnterGsSucceedCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct CentreServiceRouteNodeStringMsgCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct CentreServiceRoutePlayerStringMsgCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct CentreServiceUnRegisterGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
@@ -86,6 +50,9 @@ void AsyncCompleteGrpcCentreServiceRegisterGameNode(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct CentreServiceRegisterGateNodeCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendCentreServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGateNodeRequest& request)
 {
@@ -131,6 +98,9 @@ void AsyncCompleteGrpcCentreServiceRegisterGateNode(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct CentreServiceGatePlayerServiceCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendCentreServiceGatePlayerService(entt::registry& registry, entt::entity nodeEntity, const  ::GateClientMessageRequest& request)
 {
@@ -176,6 +146,9 @@ void AsyncCompleteGrpcCentreServiceGatePlayerService(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct CentreServiceGateSessionDisconnectCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendCentreServiceGateSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const  ::GateSessionDisconnectRequest& request)
 {
@@ -221,6 +194,9 @@ void AsyncCompleteGrpcCentreServiceGateSessionDisconnect(grpc::CompletionQueue& 
         LOG_ERROR << call->status.error_message();
     }
 }
+struct CentreServiceLoginNodeAccountLoginCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendCentreServiceLoginNodeAccountLogin(entt::registry& registry, entt::entity nodeEntity, const  ::LoginRequest& request)
 {
@@ -266,6 +242,9 @@ void AsyncCompleteGrpcCentreServiceLoginNodeAccountLogin(grpc::CompletionQueue& 
         LOG_ERROR << call->status.error_message();
     }
 }
+struct CentreServiceLoginNodeEnterGameCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendCentreServiceLoginNodeEnterGame(entt::registry& registry, entt::entity nodeEntity, const  ::CentrePlayerGameNodeEntryRequest& request)
 {
@@ -311,6 +290,9 @@ void AsyncCompleteGrpcCentreServiceLoginNodeEnterGame(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct CentreServiceLoginNodeLeaveGameCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendCentreServiceLoginNodeLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  ::LoginNodeLeaveGameRequest& request)
 {
@@ -356,6 +338,9 @@ void AsyncCompleteGrpcCentreServiceLoginNodeLeaveGame(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct CentreServiceLoginNodeSessionDisconnectCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendCentreServiceLoginNodeSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const  ::GateSessionDisconnectRequest& request)
 {
@@ -401,6 +386,9 @@ void AsyncCompleteGrpcCentreServiceLoginNodeSessionDisconnect(grpc::CompletionQu
         LOG_ERROR << call->status.error_message();
     }
 }
+struct CentreServicePlayerServiceCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendCentreServicePlayerService(entt::registry& registry, entt::entity nodeEntity, const  ::NodeRouteMessageRequest& request)
 {
@@ -446,6 +434,9 @@ void AsyncCompleteGrpcCentreServicePlayerService(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct CentreServiceEnterGsSucceedCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendCentreServiceEnterGsSucceed(entt::registry& registry, entt::entity nodeEntity, const  ::EnterGameNodeSuccessRequest& request)
 {
@@ -491,6 +482,9 @@ void AsyncCompleteGrpcCentreServiceEnterGsSucceed(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct CentreServiceRouteNodeStringMsgCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendCentreServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const  ::RouteMessageRequest& request)
 {
@@ -536,6 +530,9 @@ void AsyncCompleteGrpcCentreServiceRouteNodeStringMsg(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct CentreServiceRoutePlayerStringMsgCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendCentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const  ::RoutePlayerMessageRequest& request)
 {
@@ -581,6 +578,9 @@ void AsyncCompleteGrpcCentreServiceRoutePlayerStringMsg(grpc::CompletionQueue& c
         LOG_ERROR << call->status.error_message();
     }
 }
+struct CentreServiceUnRegisterGameNodeCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendCentreServiceUnRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  ::UnregisterGameNodeRequest& request)
 {
@@ -626,7 +626,6 @@ void AsyncCompleteGrpcCentreServiceUnRegisterGameNode(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
-
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 	registry.emplace<CentreServiceRegisterGameNodeCompleteQueue>(nodeEntity);
 	registry.emplace<CentreServiceRegisterGateNodeCompleteQueue>(nodeEntity);
@@ -642,7 +641,6 @@ void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity node
 	registry.emplace<CentreServiceRoutePlayerStringMsgCompleteQueue>(nodeEntity);
 	registry.emplace<CentreServiceUnRegisterGameNodeCompleteQueue>(nodeEntity);
 }
-
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<CentreServiceRegisterGameNodeCompleteQueue>();
@@ -723,4 +721,3 @@ void HandleCentreServiceCompletedQueueMessage(entt::registry& registry) {
 		}
 	}
 }
-
