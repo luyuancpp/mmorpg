@@ -21,6 +21,7 @@ public:
     Status status;
     {{.CppResponse}} reply;
     std::unique_ptr<grpc::ClientAsyncReaderWriter<{{.CppRequest}},  {{.CppResponse}}>> stream;
+	entt::entity nodeEntity{entt::null};
 };
 
 
@@ -69,7 +70,7 @@ void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry,
 {
 {{if .ClientStreaming}}
 	auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
-	client.stream->Write(request, nullptr);
+	client.stream->Write(request, &client);
 {{else}}
     Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
     call->response_reader =
@@ -100,20 +101,21 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(grpc::Comple
         return;
     }
 
+    auto client(static_cast<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient*>(got_tag));
+
 	{{.CppResponse}} response;
-    auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
 	if (!ok){
 		LOG_ERROR << "RPC failed";
 		return;
 	}
 
-    if (call->status.ok()){
-		client->steam->Read(&response);
+    if (client->status.ok()){
+		client->stream->Read(&response);
 		if(Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler){
 			Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(response);
 		}
     }else{
-        LOG_ERROR << call->status.error_message();
+        LOG_ERROR << client->status.error_message();
     }
 }
 {{else}}
@@ -159,10 +161,11 @@ void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& regist
 {{if .ClientStreaming}}
 	{
 		auto& client = registry.emplace<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
-		client->stream =
-			registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&client->context, 
+		client.nodeEntity = nodeEntity;
+		client.stream =
+			registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&client.context, 
 			&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq);
-		client->stream->StartCall();
+		client.stream->StartCall(static_cast<void*>(&client));
 	}
 {{end}}
 {{- end }}
