@@ -8,7 +8,6 @@
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
-
 using GrpcLoginServiceStubPtr = std::unique_ptr<::LoginService::Stub>;
 class AsyncLoginServiceLoginGrpcClientCall
 {
@@ -25,6 +24,7 @@ void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, co
 using AsyncLoginServiceLoginHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>&)>;
 
 extern AsyncLoginServiceLoginHandlerFunctionType  AsyncLoginServiceLoginHandler;;
+using GrpcLoginServiceStubPtr = std::unique_ptr<::LoginService::Stub>;
 class AsyncLoginServiceCreatePlayerGrpcClientCall
 {
 public:
@@ -40,6 +40,7 @@ void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEnt
 using AsyncLoginServiceCreatePlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceCreatePlayerGrpcClientCall>&)>;
 
 extern AsyncLoginServiceCreatePlayerHandlerFunctionType  AsyncLoginServiceCreatePlayerHandler;;
+using GrpcLoginServiceStubPtr = std::unique_ptr<::LoginService::Stub>;
 class AsyncLoginServiceEnterGameGrpcClientCall
 {
 public:
@@ -55,6 +56,7 @@ void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity
 using AsyncLoginServiceEnterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceEnterGameGrpcClientCall>&)>;
 
 extern AsyncLoginServiceEnterGameHandlerFunctionType  AsyncLoginServiceEnterGameHandler;;
+using GrpcLoginServiceStubPtr = std::unique_ptr<::LoginService::Stub>;
 class AsyncLoginServiceLeaveGameGrpcClientCall
 {
 public:
@@ -70,6 +72,7 @@ void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity
 using AsyncLoginServiceLeaveGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLeaveGameGrpcClientCall>&)>;
 
 extern AsyncLoginServiceLeaveGameHandlerFunctionType  AsyncLoginServiceLeaveGameHandler;;
+using GrpcLoginServiceStubPtr = std::unique_ptr<::LoginService::Stub>;
 class AsyncLoginServiceDisconnectGrpcClientCall
 {
 public:
