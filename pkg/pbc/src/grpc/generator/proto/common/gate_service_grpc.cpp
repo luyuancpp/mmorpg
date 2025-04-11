@@ -10,13 +10,15 @@ void SendGateServiceRegisterGame(entt::registry& registry, entt::entity nodeEnti
 {
     AsyncGateServiceRegisterGameGrpcClientCall* call = new AsyncGateServiceRegisterGameGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRegisterGame(&call->context, request,
 		&registry.get<GateServiceRegisterGameCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncGateServiceRegisterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRegisterGameGrpcClientCall>&)>;
@@ -58,13 +60,15 @@ void SendGateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEn
 {
     AsyncGateServiceUnRegisterGameGrpcClientCall* call = new AsyncGateServiceUnRegisterGameGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncUnRegisterGame(&call->context, request,
 		&registry.get<GateServiceUnRegisterGameCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncGateServiceUnRegisterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceUnRegisterGameGrpcClientCall>&)>;
@@ -106,13 +110,15 @@ void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity n
 {
     AsyncGateServicePlayerEnterGameNodeGrpcClientCall* call = new AsyncGateServicePlayerEnterGameNodeGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncPlayerEnterGameNode(&call->context, request,
 		&registry.get<GateServicePlayerEnterGameNodeCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncGateServicePlayerEnterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServicePlayerEnterGameNodeGrpcClientCall>&)>;
@@ -154,13 +160,15 @@ void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity n
 {
     AsyncGateServiceSendMessageToPlayerGrpcClientCall* call = new AsyncGateServiceSendMessageToPlayerGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncSendMessageToPlayer(&call->context, request,
 		&registry.get<GateServiceSendMessageToPlayerCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncGateServiceSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceSendMessageToPlayerGrpcClientCall>&)>;
@@ -202,13 +210,15 @@ void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity n
 {
     AsyncGateServiceKickSessionByCentreGrpcClientCall* call = new AsyncGateServiceKickSessionByCentreGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncKickSessionByCentre(&call->context, request,
 		&registry.get<GateServiceKickSessionByCentreCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncGateServiceKickSessionByCentreHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceKickSessionByCentreGrpcClientCall>&)>;
@@ -250,13 +260,15 @@ void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity node
 {
     AsyncGateServiceRouteNodeMessageGrpcClientCall* call = new AsyncGateServiceRouteNodeMessageGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRouteNodeMessage(&call->context, request,
 		&registry.get<GateServiceRouteNodeMessageCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncGateServiceRouteNodeMessageHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRouteNodeMessageGrpcClientCall>&)>;
@@ -298,13 +310,15 @@ void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity no
 {
     AsyncGateServiceRoutePlayerMessageGrpcClientCall* call = new AsyncGateServiceRoutePlayerMessageGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRoutePlayerMessage(&call->context, request,
 		&registry.get<GateServiceRoutePlayerMessageCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncGateServiceRoutePlayerMessageHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRoutePlayerMessageGrpcClientCall>&)>;
@@ -346,13 +360,15 @@ void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity no
 {
     AsyncGateServiceBroadcastToPlayersGrpcClientCall* call = new AsyncGateServiceBroadcastToPlayersGrpcClientCall;
 
+
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncBroadcastToPlayers(&call->context, request,
 		&registry.get<GateServiceBroadcastToPlayersCompleteQueue>(nodeEntity).cq);
 
-    call->response_reader->StartCall();
+    	call->response_reader->StartCall();
 
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
 }
 
 using AsyncGateServiceBroadcastToPlayersHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceBroadcastToPlayersGrpcClientCall>&)>;

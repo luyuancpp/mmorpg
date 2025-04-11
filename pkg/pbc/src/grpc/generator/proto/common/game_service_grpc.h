@@ -9,14 +9,16 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
+
 class AsyncGameServicePlayerEnterGameNodeGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::Empty>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
+
 
 class ::PlayerEnterGameNodeRequest;
 void SendGameServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const  ::PlayerEnterGameNodeRequest& request);
@@ -27,14 +29,16 @@ extern AsyncGameServicePlayerEnterGameNodeHandlerFunctionType  AsyncGameServiceP
 
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncGameServiceSendMessageToPlayerGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::NodeRouteMessageResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::NodeRouteMessageResponse>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::NodeRouteMessageResponse>> response_reader;
 };
+
 
 class ::NodeRouteMessageRequest;
 void SendGameServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const  ::NodeRouteMessageRequest& request);
@@ -45,14 +49,16 @@ extern AsyncGameServiceSendMessageToPlayerHandlerFunctionType  AsyncGameServiceS
 
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncGameServiceClientSendMessageToPlayerGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::ClientSendMessageToPlayerResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::ClientSendMessageToPlayerResponse>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::ClientSendMessageToPlayerResponse>> response_reader;
 };
+
 
 class ::ClientSendMessageToPlayerRequest;
 void SendGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const  ::ClientSendMessageToPlayerRequest& request);
@@ -63,14 +69,16 @@ extern AsyncGameServiceClientSendMessageToPlayerHandlerFunctionType  AsyncGameSe
 
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncGameServiceRegisterGateNodeGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::Empty>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
+
 
 class ::RegisterGateNodeRequest;
 void SendGameServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGateNodeRequest& request);
@@ -81,14 +89,16 @@ extern AsyncGameServiceRegisterGateNodeHandlerFunctionType  AsyncGameServiceRegi
 
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::Empty>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
+
 
 class ::NodeRouteMessageRequest;
 void SendGameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt::entity nodeEntity, const  ::NodeRouteMessageRequest& request);
@@ -99,14 +109,16 @@ extern AsyncGameServiceCentreSendToPlayerViaGameNodeHandlerFunctionType  AsyncGa
 
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncGameServiceInvokePlayerServiceGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::NodeRouteMessageResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::NodeRouteMessageResponse>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::NodeRouteMessageResponse>> response_reader;
 };
+
 
 class ::NodeRouteMessageRequest;
 void SendGameServiceInvokePlayerService(entt::registry& registry, entt::entity nodeEntity, const  ::NodeRouteMessageRequest& request);
@@ -117,14 +129,16 @@ extern AsyncGameServiceInvokePlayerServiceHandlerFunctionType  AsyncGameServiceI
 
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncGameServiceRouteNodeStringMsgGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::RouteMessageResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::RouteMessageResponse>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::RouteMessageResponse>> response_reader;
 };
+
 
 class ::RouteMessageRequest;
 void SendGameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const  ::RouteMessageRequest& request);
@@ -135,14 +149,16 @@ extern AsyncGameServiceRouteNodeStringMsgHandlerFunctionType  AsyncGameServiceRo
 
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncGameServiceRoutePlayerStringMsgGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::RoutePlayerMessageResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::RoutePlayerMessageResponse>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::RoutePlayerMessageResponse>> response_reader;
 };
+
 
 class ::RoutePlayerMessageRequest;
 void SendGameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const  ::RoutePlayerMessageRequest& request);
@@ -153,14 +169,16 @@ extern AsyncGameServiceRoutePlayerStringMsgHandlerFunctionType  AsyncGameService
 
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncGameServiceUpdateSessionDetailGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::Empty>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
+
 
 class ::RegisterPlayerSessionRequest;
 void SendGameServiceUpdateSessionDetail(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterPlayerSessionRequest& request);
@@ -171,14 +189,16 @@ extern AsyncGameServiceUpdateSessionDetailHandlerFunctionType  AsyncGameServiceU
 
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncGameServiceEnterSceneGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::Empty>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
+
 
 class ::Centre2GsEnterSceneRequest;
 void SendGameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity, const  ::Centre2GsEnterSceneRequest& request);
@@ -189,14 +209,16 @@ extern AsyncGameServiceEnterSceneHandlerFunctionType  AsyncGameServiceEnterScene
 
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
 class AsyncGameServiceCreateSceneGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
     ::CreateSceneResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<  ::CreateSceneResponse>> response_reader;
+	std::unique_ptr<ClientAsyncResponseReader<::CreateSceneResponse>> response_reader;
 };
+
 
 class ::CreateSceneRequest;
 void SendGameServiceCreateScene(entt::registry& registry, entt::entity nodeEntity, const  ::CreateSceneRequest& request);
