@@ -23,3 +23,7 @@ constexpr uint32_t KVCompactMessageId = 80;
 constexpr uint32_t KVCompactIndex = 4;
 #define KVCompactMethod  ::KV_Stub::descriptor()->method(4)
 
+nt32_t LeaseLeaseLeasesMessageId = 85;
+constexpr uint32_t LeaseLeaseLeasesIndex = 4;
+#define LeaseLeaseLeasesMethod  ::Lease_Stub::descriptor()->method(4)
+

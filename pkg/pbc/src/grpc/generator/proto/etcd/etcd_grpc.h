@@ -118,7 +118,6 @@ public:
     Status status;
     ::etcdserverpb::WatchResponse reply;
     std::unique_ptr<grpc::ClientAsyncReaderWriter<::etcdserverpb::WatchRequest,  ::etcdserverpb::WatchResponse>> stream;
-	entt::entity nodeEntity{entt::null};
 };
 
 
@@ -183,7 +182,6 @@ public:
     Status status;
     ::etcdserverpb::LeaseKeepAliveResponse reply;
     std::unique_ptr<grpc::ClientAsyncReaderWriter<::etcdserverpb::LeaseKeepAliveRequest,  ::etcdserverpb::LeaseKeepAliveResponse>> stream;
-	entt::entity nodeEntity{entt::null};
 };
 
 
