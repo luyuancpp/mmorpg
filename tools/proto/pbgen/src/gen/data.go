@@ -233,6 +233,20 @@ func (info *RPCMethod) GetServiceFullNameWithNoColon() string {
 	return info.Package() + info.Service()
 }
 
+func (info *RPCMethod) ClientStreaming() bool {
+	if nil == info.MethodDescriptorProto.ClientStreaming {
+		return false
+	}
+	return *info.MethodDescriptorProto.ClientStreaming
+}
+
+func (info *RPCMethod) ServerStreaming() bool {
+	if nil == info.MethodDescriptorProto.ServerStreaming {
+		return false
+	}
+	return *info.MethodDescriptorProto.ServerStreaming
+}
+
 func (info *RPCMethod) GetPackageNameWithColon() string {
 	if len(info.Package()) <= 0 {
 		return ""

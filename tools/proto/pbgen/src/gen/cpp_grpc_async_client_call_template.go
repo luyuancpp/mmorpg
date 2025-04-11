@@ -19,7 +19,11 @@ public:
     ClientContext context;
     Status status;
     {{.CppResponse}} reply;
+{{if .ClientStreaming}}
     std::unique_ptr<ClientAsyncResponseReader<  {{.CppResponse}}>> response_reader;
+{{else}}
+	std::unique_ptr<ClientAsyncResponseReader<  {{.CppResponse}}>> response_reader;
+{{end}}
 };
 
 class {{.CppRequest}};
@@ -51,9 +55,15 @@ void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry,
 {
     Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
 
+{{if .ClientStreaming}}
+    call->response_reader =
+        registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&call->context, 
+		&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq);
+{{else}}
     call->response_reader =
         registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&call->context, request,
 		&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq);
+{{end}}
 
     call->response_reader->StartCall();
 
