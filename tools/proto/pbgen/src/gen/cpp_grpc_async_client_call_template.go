@@ -4,13 +4,13 @@ const AsyncClientHeaderTemplate = `#pragma once
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 
-{{.IncludeName}}
+{{.GrpcIncludeHeadName}}
 
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using Grpc{{.ServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.PbPackageName}}::{{.ServiceName}}::Stub>;
+using Grpc{{.ServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.Package}}::{{.Service}}::Stub>;
 
 
 {{- range .GrpcServices }}
