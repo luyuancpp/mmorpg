@@ -228,6 +228,12 @@
     <ClCompile Include="src\proto\etcd\version.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\grpc\generator\proto\common\deploy_service_grpc.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\grpc\generator\proto\etcd\etcd_grpc.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\common\c2gate.pb.h">
@@ -489,6 +495,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\etcd\version.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\grpc\generator\proto\common\deploy_service_grpc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\grpc\generator\proto\etcd\etcd_grpc.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -165,4 +165,81 @@ public:
 class ::NodeRouteMessageRequest;
 void SendCentreServicePlayerService(entt::registry& registry, entt::entity nodeEntity, const  ::NodeRouteMessageRequest& request);
 
-using AsyncCentreServicePlayerServiceHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServicePlayerService
+using AsyncCentreServicePlayerServiceHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServicePlayerServiceGrpcClientCall>&)>;
+
+extern AsyncCentreServicePlayerServiceHandlerFunctionType  AsyncCentreServicePlayerServiceHandler;;
+
+void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+class AsyncCentreServiceEnterGsSucceedGrpcClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+    ::Empty reply;
+    std::unique_ptr<ClientAsyncResponseReader<  ::Empty>> response_reader;
+};
+
+class ::EnterGameNodeSuccessRequest;
+void SendCentreServiceEnterGsSucceed(entt::registry& registry, entt::entity nodeEntity, const  ::EnterGameNodeSuccessRequest& request);
+
+using AsyncCentreServiceEnterGsSucceedHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceEnterGsSucceedGrpcClientCall>&)>;
+
+extern AsyncCentreServiceEnterGsSucceedHandlerFunctionType  AsyncCentreServiceEnterGsSucceedHandler;;
+
+void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+class AsyncCentreServiceRouteNodeStringMsgGrpcClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+    ::RouteMessageResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  ::RouteMessageResponse>> response_reader;
+};
+
+class ::RouteMessageRequest;
+void SendCentreServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const  ::RouteMessageRequest& request);
+
+using AsyncCentreServiceRouteNodeStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRouteNodeStringMsgGrpcClientCall>&)>;
+
+extern AsyncCentreServiceRouteNodeStringMsgHandlerFunctionType  AsyncCentreServiceRouteNodeStringMsgHandler;;
+
+void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+class AsyncCentreServiceRoutePlayerStringMsgGrpcClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+    ::RoutePlayerMessageResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  ::RoutePlayerMessageResponse>> response_reader;
+};
+
+class ::RoutePlayerMessageRequest;
+void SendCentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const  ::RoutePlayerMessageRequest& request);
+
+using AsyncCentreServiceRoutePlayerStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRoutePlayerStringMsgGrpcClientCall>&)>;
+
+extern AsyncCentreServiceRoutePlayerStringMsgHandlerFunctionType  AsyncCentreServiceRoutePlayerStringMsgHandler;;
+
+void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+class AsyncCentreServiceUnRegisterGameNodeGrpcClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+    ::Empty reply;
+    std::unique_ptr<ClientAsyncResponseReader<  ::Empty>> response_reader;
+};
+
+class ::UnregisterGameNodeRequest;
+void SendCentreServiceUnRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  ::UnregisterGameNodeRequest& request);
+
+using AsyncCentreServiceUnRegisterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceUnRegisterGameNodeGrpcClientCall>&)>;
+
+extern AsyncCentreServiceUnRegisterGameNodeHandlerFunctionType  AsyncCentreServiceUnRegisterGameNodeHandler;;
+
+void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);

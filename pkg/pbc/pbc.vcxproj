@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\grpc\generator\proto\common\deploy_service_grpc.cpp" />
+    <ClCompile Include="src\grpc\generator\proto\etcd\etcd_grpc.cpp" />
     <ClCompile Include="src\proto\common\c2gate.pb.cc" />
     <ClCompile Include="src\proto\common\centre_service.pb.cc" />
     <ClCompile Include="src\proto\common\common.pb.cc" />
@@ -92,6 +94,8 @@
     <ClCompile Include="src\service_info\service_info.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\grpc\generator\proto\common\deploy_service_grpc.h" />
+    <ClInclude Include="src\grpc\generator\proto\etcd\etcd_grpc.h" />
     <ClInclude Include="src\proto\common\c2gate.pb.h" />
     <ClInclude Include="src\proto\common\centre_service.pb.h" />
     <ClInclude Include="src\proto\common\common.pb.h" />

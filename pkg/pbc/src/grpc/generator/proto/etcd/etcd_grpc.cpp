@@ -1,6 +1,6 @@
 #include "muduo/base/Logging.h"
 
-#include "grpc/generator/etcd_grpc.cpp.h"
+#include "etcd_grpc.h"
 #include "thread_local/storage.h"
 struct etcdserverpbKVRangeCompleteQueue{
 	grpc::CompletionQueue cq;

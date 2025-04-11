@@ -35,6 +35,7 @@ const (
 	CppSystemExtension            = "_system.cpp"
 	GrpcHeaderExtension           = "_grpc.h"
 	GrpcCppExtension              = "_grpc.cpp"
+	GrpcExtension                 = "_grpc"
 )
 
 // 常量：目录路径

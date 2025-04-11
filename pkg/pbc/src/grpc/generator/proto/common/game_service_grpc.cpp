@@ -1,6 +1,6 @@
 #include "muduo/base/Logging.h"
 
-#include "grpc/generator/game_service_grpc.cpp.h"
+#include "game_service_grpc.h"
 #include "thread_local/storage.h"
 struct GameServicePlayerEnterGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;

@@ -93,6 +93,10 @@ func (info *RPCServiceInfo) FileBaseName() string {
 	return strings.Replace(info.FileName(), config.ProtoEx, "", 1)
 }
 
+func (info *RPCServiceInfo) ProtoPathWithFileBaseName() string {
+	return (info.Path()) + info.FileBaseName()
+}
+
 func (info *RPCServiceInfo) GrpcIncludeHeadName() string {
 	return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.GrpcHeadName() + config.GrpcPbhEx + "\"\n"
 }
@@ -109,7 +113,7 @@ func (info *RPCServiceInfo) GetServiceFullNameWithNoColon() string {
 }
 
 func (info *RPCServiceInfo) GeneratorGrpcFileName() string {
-	return info.FileBaseName()
+	return info.FileBaseName() + config.GrpcExtension
 }
 
 func (info *RPCServiceInfo) Service() string {

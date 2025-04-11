@@ -1,6 +1,6 @@
 #include "muduo/base/Logging.h"
 
-#include "grpc/generator/centre_service_grpc.cpp.h"
+#include "centre_service_grpc.h"
 #include "thread_local/storage.h"
 struct CentreServiceRegisterGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
