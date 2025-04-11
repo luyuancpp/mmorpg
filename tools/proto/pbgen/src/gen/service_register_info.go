@@ -74,6 +74,17 @@ func ReadProtoFileService(fd os.DirEntry) error {
 
 			// Store the service info in the global RpcServiceMap
 			RpcServiceMap.Store(service.GetName(), &rpcServiceInfo)
+
+			result, ok := FileServiceMap.Load(file.GetName())
+			if ok {
+				serviceList := result.([]*RPCServiceInfo)
+				serviceList = append(serviceList, &rpcServiceInfo)
+				FileServiceMap.Store(file.GetName(), serviceList)
+			} else {
+				var serviceList []*RPCServiceInfo
+				serviceList = append(serviceList, &rpcServiceInfo)
+				FileServiceMap.Store(file.GetName(), serviceList)
+			}
 			fileServiceIndex++
 		}
 	}
@@ -276,7 +287,7 @@ func writeServiceInfoCppFile() {
 	includeBuilder.WriteString("#include <array>\n")
 	includeBuilder.WriteString("#include \"service_info.h\"\n")
 
-	var servcieInfoIncludeBuilder strings.Builder
+	var serviceInfoIncludeBuilder strings.Builder
 
 	var classHandlerBuilder strings.Builder
 	var initFuncBuilder strings.Builder
@@ -295,7 +306,7 @@ func writeServiceInfoCppFile() {
 		}
 
 		includeBuilder.WriteString(methods[0].IncludeName())
-		servcieInfoIncludeBuilder.WriteString(methods[0].ServiceInfoIncludeName())
+		serviceInfoIncludeBuilder.WriteString(methods[0].ServiceInfoIncludeName())
 		handlerClassName := serviceName + "Impl"
 		classHandlerBuilder.WriteString("class " + handlerClassName + " final : public " + serviceName + "{};\n")
 	}
@@ -331,10 +342,10 @@ func writeServiceInfoCppFile() {
 	classHandlerBuilder.WriteString("\n")
 	messageIdHandlerBuilder.WriteString("\n")
 	initFuncBuilder.WriteString("}\n")
-	servcieInfoIncludeBuilder.WriteString("\n")
+	serviceInfoIncludeBuilder.WriteString("\n")
 
 	// Write to file
-	data := includeBuilder.String() + servcieInfoIncludeBuilder.String() + classHandlerBuilder.String() +
+	data := includeBuilder.String() + serviceInfoIncludeBuilder.String() + classHandlerBuilder.String() +
 		messageIdHandlerBuilder.String() + initFuncBuilder.String()
 	util.WriteMd5Data2File(config.ServiceCppFilePath, data)
 }

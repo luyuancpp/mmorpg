@@ -31,6 +31,8 @@ type RPCServiceInfo struct {
 	FileServiceIndex       uint32
 }
 
+var FileServiceMap sync.Map
+
 // rpcLineReplacer 用于字符串替换
 var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
 
@@ -91,6 +93,36 @@ func (info *RPCServiceInfo) FileBaseName() string {
 	return strings.Replace(info.FileName(), config.ProtoEx, "", 1)
 }
 
+func (info *RPCServiceInfo) GrpcIncludeHeadName() string {
+	return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.GrpcHeadName() + "\"\n"
+}
+
+func (info *RPCServiceInfo) GrpcHeadName() string {
+	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.GrpcPbhEx, 1)
+}
+
+func (info *RPCServiceInfo) GetServiceFullNameWithNoColon() string {
+	if len(info.Package()) <= 0 {
+		return info.Service()
+	}
+	return info.Package() + info.Service()
+}
+
+func (info *RPCServiceInfo) GeneratorFileName() string {
+	return info.FileBaseName() + config.GrpcCppExtension
+}
+
+func (info *RPCServiceInfo) Service() string {
+	return info.ServiceDescriptorProto.GetName()
+}
+
+func (info *RPCServiceInfo) Package() string {
+	if nil == info.FdSet.GetFile()[0].Package {
+		return ""
+	}
+	return *info.FdSet.GetFile()[0].Package
+}
+
 // FileNameNoEx 返回文件基本名
 func (info *RPCMethod) FileNameNoEx() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, "", 1)
@@ -99,10 +131,6 @@ func (info *RPCMethod) FileNameNoEx() string {
 // PbcHeadName 返回Proto文件头文件名
 func (info *RPCMethod) PbcHeadName() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.ProtoPbhEx, 1)
-}
-
-func (info *RPCMethod) GrpcHeadName() string {
-	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.GrpcPbhEx, 1)
 }
 
 func (info *RPCMethod) FileBaseName() string {
@@ -123,10 +151,6 @@ func (info *RPCMethod) IncludeName() string {
 
 func (info *RPCMethod) Path() string {
 	return strings.Replace(filepath.Dir(*info.FdSet.GetFile()[0].Name), "\\", "/", -1) + "/"
-}
-
-func (info *RPCMethod) GrpcIncludeHeadName() string {
-	return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.GrpcHeadName() + "\"\n"
 }
 
 func (info *RPCMethod) ServiceInfoIncludeName() string {

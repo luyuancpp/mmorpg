@@ -10,9 +10,9 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-
-{{- range .GrpcMethod }}
+{{- range .ServiceInfo }}
 using Grpc{{.GetServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.Package}}::{{.Service}}::Stub>;
+{{- range .MethodInfo }}
 class Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall
 {
 public:
@@ -29,13 +29,11 @@ using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = st
 
 extern Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;;
 
-{{- end }}
-
 void Handle{{.GetServiceFullNameWithNoColon}}CompletedQueueMessage(entt::registry& registry	); 
-
 void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-
+{{- end }}
+{{- end }}
 `
 
 const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
@@ -43,14 +41,11 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 #include "grpc/generator/{{.GeneratorFileName}}.h"
 #include "thread_local/storage.h"
 
-
-{{- range .GrpcMethod }}
+{{- range .ServiceInfo }}
+{{- range .MethodInfo }}
 struct {{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue{
 	grpc::CompletionQueue cq;
 };
-{{- end }}
-
-{{- range .GrpcMethod }}
 
 void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.CppRequest}}& request)
 {
@@ -97,15 +92,19 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(grpc::Comple
     }
 }
 {{- end }}
+{{- end }}
 
+{{- range .ServiceInfo }}
 void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
-{{- range .GrpcMethod }}
+{{- range .MethodInfo }}
 	registry.emplace<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity);
 {{- end }}
 }
+{{- end }}
 
+{{- range .ServiceInfo }}
 void Handle{{.GetServiceFullNameWithNoColon}}CompletedQueueMessage(entt::registry& registry) {
-{{- range .GrpcMethod }}
+{{- range .MethodInfo }}
 	{
 		auto&& view = registry.view<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
@@ -114,5 +113,5 @@ void Handle{{.GetServiceFullNameWithNoColon}}CompletedQueueMessage(entt::registr
 	}
 {{- end }}
 }
-
+{{- end }}
 `
