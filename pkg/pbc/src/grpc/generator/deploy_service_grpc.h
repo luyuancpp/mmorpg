@@ -8,7 +8,6 @@
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
-
 using GrpcDeployServiceStubPtr = std::unique_ptr<::DeployService::Stub>;
 class AsyncDeployServiceGetNodeInfoGrpcClientCall
 {
@@ -25,6 +24,7 @@ void SendDeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEnt
 using AsyncDeployServiceGetNodeInfoHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>&)>;
 
 extern AsyncDeployServiceGetNodeInfoHandlerFunctionType  AsyncDeployServiceGetNodeInfoHandler;;
+using GrpcDeployServiceStubPtr = std::unique_ptr<::DeployService::Stub>;
 class AsyncDeployServiceGetIDGrpcClientCall
 {
 public:
@@ -40,6 +40,7 @@ void SendDeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, c
 using AsyncDeployServiceGetIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetIDGrpcClientCall>&)>;
 
 extern AsyncDeployServiceGetIDHandlerFunctionType  AsyncDeployServiceGetIDHandler;;
+using GrpcDeployServiceStubPtr = std::unique_ptr<::DeployService::Stub>;
 class AsyncDeployServiceReleaseIDGrpcClientCall
 {
 public:
@@ -55,6 +56,7 @@ void SendDeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntit
 using AsyncDeployServiceReleaseIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceReleaseIDGrpcClientCall>&)>;
 
 extern AsyncDeployServiceReleaseIDHandlerFunctionType  AsyncDeployServiceReleaseIDHandler;;
+using GrpcDeployServiceStubPtr = std::unique_ptr<::DeployService::Stub>;
 class AsyncDeployServiceRenewLeaseGrpcClientCall
 {
 public:

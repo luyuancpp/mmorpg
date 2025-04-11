@@ -10,10 +10,9 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using Grpc{{.GetServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.Package}}::{{.Service}}::Stub>;
-
 
 {{- range .GrpcServices }}
+using Grpc{{.GetServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.Package}}::{{.Service}}::Stub>;
 class Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall
 {
 public:

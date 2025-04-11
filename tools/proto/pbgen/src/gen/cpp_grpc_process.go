@@ -17,14 +17,6 @@ type GrpcServiceTemplateData struct {
 	GeneratorFileName             string
 	GrpcIncludeHeadName           string
 	GetServiceFullNameWithNoColon string
-	Package                       string
-}
-
-// generateHandlerCases creates the cases for the switch statement based on the method.
-func generateGrpcMethod(method *RPCMethod, grpcServices []RPCMethod) []RPCMethod {
-	grpcService := *method
-	grpcServices = append(grpcServices, grpcService)
-	return grpcServices
 }
 
 // 修改后的 generateGrpcFile 函数
@@ -47,11 +39,9 @@ func generateGrpcFile(fileName string, grpcServices []RPCMethod, text string) er
 	// 填充模板数据
 	data := GrpcServiceTemplateData{
 		GrpcServices:                  grpcServices,
-		Service:                       firstService.Service(),
 		GrpcIncludeHeadName:           firstService.GrpcIncludeHeadName(),
 		GeneratorFileName:             filepath.Base(strings.TrimSuffix(fileName, filepath.Ext(fileName))),
 		GetServiceFullNameWithNoColon: firstService.GetServiceFullNameWithNoColon(),
-		Package:                       firstService.Package(),
 	}
 
 	// 将内容写入文件
@@ -84,12 +74,11 @@ func CppGrpcCallClient() {
 			}
 
 			grpcServices := make([]RPCMethod, 0)
-			// 为每个方法生成 GrpcService 对象
+
 			for _, method := range serviceMethods {
-				grpcServices = generateGrpcMethod(method, grpcServices)
+				grpcServices = append(grpcServices, *method)
 			}
 
-			// 生成 C++ 文件（只生成一个文件包含所有服务）
 			filePath := config.CppGenGrpcDirectory + protoFile + config.GrpcHeaderExtension
 			if err := generateGrpcFile(filePath, grpcServices, AsyncClientHeaderTemplate); err != nil {
 				log.Fatal(err)

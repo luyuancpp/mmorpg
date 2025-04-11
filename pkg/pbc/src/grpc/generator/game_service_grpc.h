@@ -8,7 +8,6 @@
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
-
 using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
 class AsyncGameServicePlayerEnterGameNodeGrpcClientCall
 {
@@ -25,6 +24,7 @@ void SendGameServicePlayerEnterGameNode(entt::registry& registry, entt::entity n
 using AsyncGameServicePlayerEnterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServicePlayerEnterGameNodeGrpcClientCall>&)>;
 
 extern AsyncGameServicePlayerEnterGameNodeHandlerFunctionType  AsyncGameServicePlayerEnterGameNodeHandler;;
+using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
 class AsyncGameServiceSendMessageToPlayerGrpcClientCall
 {
 public:
@@ -40,6 +40,7 @@ void SendGameServiceSendMessageToPlayer(entt::registry& registry, entt::entity n
 using AsyncGameServiceSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceSendMessageToPlayerGrpcClientCall>&)>;
 
 extern AsyncGameServiceSendMessageToPlayerHandlerFunctionType  AsyncGameServiceSendMessageToPlayerHandler;;
+using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
 class AsyncGameServiceClientSendMessageToPlayerGrpcClientCall
 {
 public:
@@ -55,6 +56,7 @@ void SendGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::en
 using AsyncGameServiceClientSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceClientSendMessageToPlayerGrpcClientCall>&)>;
 
 extern AsyncGameServiceClientSendMessageToPlayerHandlerFunctionType  AsyncGameServiceClientSendMessageToPlayerHandler;;
+using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
 class AsyncGameServiceRegisterGateNodeGrpcClientCall
 {
 public:
@@ -70,6 +72,7 @@ void SendGameServiceRegisterGateNode(entt::registry& registry, entt::entity node
 using AsyncGameServiceRegisterGateNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRegisterGateNodeGrpcClientCall>&)>;
 
 extern AsyncGameServiceRegisterGateNodeHandlerFunctionType  AsyncGameServiceRegisterGateNodeHandler;;
+using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
 class AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall
 {
 public:
@@ -85,6 +88,7 @@ void SendGameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt
 using AsyncGameServiceCentreSendToPlayerViaGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall>&)>;
 
 extern AsyncGameServiceCentreSendToPlayerViaGameNodeHandlerFunctionType  AsyncGameServiceCentreSendToPlayerViaGameNodeHandler;;
+using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
 class AsyncGameServiceInvokePlayerServiceGrpcClientCall
 {
 public:
@@ -100,6 +104,7 @@ void SendGameServiceInvokePlayerService(entt::registry& registry, entt::entity n
 using AsyncGameServiceInvokePlayerServiceHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceInvokePlayerServiceGrpcClientCall>&)>;
 
 extern AsyncGameServiceInvokePlayerServiceHandlerFunctionType  AsyncGameServiceInvokePlayerServiceHandler;;
+using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
 class AsyncGameServiceRouteNodeStringMsgGrpcClientCall
 {
 public:
@@ -115,6 +120,7 @@ void SendGameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity no
 using AsyncGameServiceRouteNodeStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRouteNodeStringMsgGrpcClientCall>&)>;
 
 extern AsyncGameServiceRouteNodeStringMsgHandlerFunctionType  AsyncGameServiceRouteNodeStringMsgHandler;;
+using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
 class AsyncGameServiceRoutePlayerStringMsgGrpcClientCall
 {
 public:
@@ -130,6 +136,7 @@ void SendGameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity 
 using AsyncGameServiceRoutePlayerStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRoutePlayerStringMsgGrpcClientCall>&)>;
 
 extern AsyncGameServiceRoutePlayerStringMsgHandlerFunctionType  AsyncGameServiceRoutePlayerStringMsgHandler;;
+using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
 class AsyncGameServiceUpdateSessionDetailGrpcClientCall
 {
 public:
@@ -145,6 +152,7 @@ void SendGameServiceUpdateSessionDetail(entt::registry& registry, entt::entity n
 using AsyncGameServiceUpdateSessionDetailHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceUpdateSessionDetailGrpcClientCall>&)>;
 
 extern AsyncGameServiceUpdateSessionDetailHandlerFunctionType  AsyncGameServiceUpdateSessionDetailHandler;;
+using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
 class AsyncGameServiceEnterSceneGrpcClientCall
 {
 public:
@@ -160,6 +168,7 @@ void SendGameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity
 using AsyncGameServiceEnterSceneHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceEnterSceneGrpcClientCall>&)>;
 
 extern AsyncGameServiceEnterSceneHandlerFunctionType  AsyncGameServiceEnterSceneHandler;;
+using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
 class AsyncGameServiceCreateSceneGrpcClientCall
 {
 public:
