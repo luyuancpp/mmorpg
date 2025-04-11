@@ -24,7 +24,9 @@ void SendDeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEnt
 using AsyncDeployServiceGetNodeInfoHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>&)>;
 
 extern AsyncDeployServiceGetNodeInfoHandlerFunctionType  AsyncDeployServiceGetNodeInfoHandler;;
-using GrpcDeployServiceStubPtr = std::unique_ptr<::DeployService::Stub>;
+
+void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 class AsyncDeployServiceGetIDGrpcClientCall
 {
 public:
@@ -40,7 +42,9 @@ void SendDeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, c
 using AsyncDeployServiceGetIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetIDGrpcClientCall>&)>;
 
 extern AsyncDeployServiceGetIDHandlerFunctionType  AsyncDeployServiceGetIDHandler;;
-using GrpcDeployServiceStubPtr = std::unique_ptr<::DeployService::Stub>;
+
+void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 class AsyncDeployServiceReleaseIDGrpcClientCall
 {
 public:
@@ -56,7 +60,9 @@ void SendDeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntit
 using AsyncDeployServiceReleaseIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceReleaseIDGrpcClientCall>&)>;
 
 extern AsyncDeployServiceReleaseIDHandlerFunctionType  AsyncDeployServiceReleaseIDHandler;;
-using GrpcDeployServiceStubPtr = std::unique_ptr<::DeployService::Stub>;
+
+void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 class AsyncDeployServiceRenewLeaseGrpcClientCall
 {
 public:
@@ -74,7 +80,4 @@ using AsyncDeployServiceRenewLeaseHandlerFunctionType = std::function<void(const
 extern AsyncDeployServiceRenewLeaseHandlerFunctionType  AsyncDeployServiceRenewLeaseHandler;;
 
 void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
-
 void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
-

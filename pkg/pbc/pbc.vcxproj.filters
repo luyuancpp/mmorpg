@@ -213,16 +213,7 @@
     <ClCompile Include="src\service_info\service_info.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\grpc\generator\deploy_service_grpc.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\grpc\generator\login_service_grpc.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\common\config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\grpc\generator\etcd_grpc.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\etcd\etcd.grpc.pb.cc">
@@ -485,16 +476,7 @@
     <ClInclude Include="src\service_info\service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\grpc\generator\deploy_service_grpc.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\grpc\generator\login_service_grpc.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\proto\common\config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\grpc\generator\etcd_grpc.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\etcd\etcd.grpc.pb.h">

@@ -24,7 +24,9 @@ void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeE
 using AsyncAccountDBServiceLoad2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncAccountDBServiceLoad2RedisGrpcClientCall>&)>;
 
 extern AsyncAccountDBServiceLoad2RedisHandlerFunctionType  AsyncAccountDBServiceLoad2RedisHandler;;
-using GrpcAccountDBServiceStubPtr = std::unique_ptr<::AccountDBService::Stub>;
+
+void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 class AsyncAccountDBServiceSave2RedisGrpcClientCall
 {
 public:
@@ -40,6 +42,9 @@ void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeE
 using AsyncAccountDBServiceSave2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncAccountDBServiceSave2RedisGrpcClientCall>&)>;
 
 extern AsyncAccountDBServiceSave2RedisHandlerFunctionType  AsyncAccountDBServiceSave2RedisHandler;;
+
+void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 using GrpcPlayerDBServiceStubPtr = std::unique_ptr<::PlayerDBService::Stub>;
 class AsyncPlayerDBServiceLoad2RedisGrpcClientCall
 {
@@ -56,7 +61,9 @@ void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEn
 using AsyncPlayerDBServiceLoad2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncPlayerDBServiceLoad2RedisGrpcClientCall>&)>;
 
 extern AsyncPlayerDBServiceLoad2RedisHandlerFunctionType  AsyncPlayerDBServiceLoad2RedisHandler;;
-using GrpcPlayerDBServiceStubPtr = std::unique_ptr<::PlayerDBService::Stub>;
+
+void HandlePlayerDBServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitPlayerDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 class AsyncPlayerDBServiceSave2RedisGrpcClientCall
 {
 public:
@@ -73,8 +80,5 @@ using AsyncPlayerDBServiceSave2RedisHandlerFunctionType = std::function<void(con
 
 extern AsyncPlayerDBServiceSave2RedisHandlerFunctionType  AsyncPlayerDBServiceSave2RedisHandler;;
 
-void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry	); 
-
-void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
-
+void HandlePlayerDBServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitPlayerDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);

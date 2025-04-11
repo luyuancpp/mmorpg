@@ -1,29 +1,8 @@
 #include "muduo/base/Logging.h"
 
-#include "grpc/generator/gate_service_grpc.h"
+#include "grpc/generator/gate_service_grpc.cpp.h"
 #include "thread_local/storage.h"
 struct GateServiceRegisterGameCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct GateServiceUnRegisterGameCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct GateServicePlayerEnterGameNodeCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct GateServiceSendMessageToPlayerCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct GateServiceKickSessionByCentreCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct GateServiceRouteNodeMessageCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct GateServiceRoutePlayerMessageCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-struct GateServiceBroadcastToPlayersCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
@@ -71,6 +50,9 @@ void AsyncCompleteGrpcGateServiceRegisterGame(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct GateServiceUnRegisterGameCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendGateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  ::UnregisterGameNodeRequest& request)
 {
@@ -116,6 +98,9 @@ void AsyncCompleteGrpcGateServiceUnRegisterGame(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct GateServicePlayerEnterGameNodeCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGameNodeSessionRequest& request)
 {
@@ -161,6 +146,9 @@ void AsyncCompleteGrpcGateServicePlayerEnterGameNode(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct GateServiceSendMessageToPlayerCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const  ::NodeRouteMessageRequest& request)
 {
@@ -206,6 +194,9 @@ void AsyncCompleteGrpcGateServiceSendMessageToPlayer(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct GateServiceKickSessionByCentreCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const  ::KickSessionRequest& request)
 {
@@ -251,6 +242,9 @@ void AsyncCompleteGrpcGateServiceKickSessionByCentre(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct GateServiceRouteNodeMessageCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const  ::RouteMessageRequest& request)
 {
@@ -296,6 +290,9 @@ void AsyncCompleteGrpcGateServiceRouteNodeMessage(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct GateServiceRoutePlayerMessageCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const  ::RoutePlayerMessageRequest& request)
 {
@@ -341,6 +338,9 @@ void AsyncCompleteGrpcGateServiceRoutePlayerMessage(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
+struct GateServiceBroadcastToPlayersCompleteQueue{
+	grpc::CompletionQueue cq;
+};
 
 void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const  ::BroadcastToPlayersRequest& request)
 {
@@ -386,7 +386,6 @@ void AsyncCompleteGrpcGateServiceBroadcastToPlayers(grpc::CompletionQueue& cq)
         LOG_ERROR << call->status.error_message();
     }
 }
-
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 	registry.emplace<GateServiceRegisterGameCompleteQueue>(nodeEntity);
 	registry.emplace<GateServiceUnRegisterGameCompleteQueue>(nodeEntity);
@@ -397,7 +396,6 @@ void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEn
 	registry.emplace<GateServiceRoutePlayerMessageCompleteQueue>(nodeEntity);
 	registry.emplace<GateServiceBroadcastToPlayersCompleteQueue>(nodeEntity);
 }
-
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<GateServiceRegisterGameCompleteQueue>();
@@ -448,4 +446,3 @@ void HandleGateServiceCompletedQueueMessage(entt::registry& registry) {
 		}
 	}
 }
-
