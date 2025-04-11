@@ -131,4 +131,25 @@ void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity no
 
 using AsyncGateServiceRoutePlayerMessageHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRoutePlayerMessageGrpcClientCall>&)>;
 
-extern AsyncGateService
+extern AsyncGateServiceRoutePlayerMessageHandlerFunctionType  AsyncGateServiceRoutePlayerMessageHandler;;
+
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+class AsyncGateServiceBroadcastToPlayersGrpcClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+    ::Empty reply;
+    std::unique_ptr<ClientAsyncResponseReader<  ::Empty>> response_reader;
+};
+
+class ::BroadcastToPlayersRequest;
+void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const  ::BroadcastToPlayersRequest& request);
+
+using AsyncGateServiceBroadcastToPlayersHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceBroadcastToPlayersGrpcClientCall>&)>;
+
+extern AsyncGateServiceBroadcastToPlayersHandlerFunctionType  AsyncGateServiceBroadcastToPlayersHandler;;
+
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);

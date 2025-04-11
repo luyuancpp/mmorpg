@@ -12,9 +12,9 @@ import (
 )
 
 type GrpcServiceTemplateData struct {
-	ServiceInfo         []*RPCServiceInfo
-	GrpcIncludeHeadName string
-	GeneratorFileName   string
+	ServiceInfo           []*RPCServiceInfo
+	GrpcIncludeHeadName   string
+	GeneratorGrpcFileName string
 }
 
 // 修改后的 generateGrpcFile 函数
@@ -34,9 +34,9 @@ func generateGrpcFile(fileName string, grpcServices []*RPCServiceInfo, text stri
 
 	// 填充模板数据
 	data := GrpcServiceTemplateData{
-		ServiceInfo:         grpcServices,
-		GrpcIncludeHeadName: grpcServices[0].GrpcIncludeHeadName(),
-		GeneratorFileName:   grpcServices[0].GeneratorGrpcFileName(),
+		ServiceInfo:           grpcServices,
+		GrpcIncludeHeadName:   grpcServices[0].GrpcIncludeHeadName(),
+		GeneratorGrpcFileName: grpcServices[0].GeneratorGrpcFileName(),
 	}
 
 	// 将内容写入文件
@@ -64,14 +64,15 @@ func CppGrpcCallClient() {
 				return
 			}
 
-			if !(strings.Contains(serviceInfo[0].Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-				strings.Contains(serviceInfo[0].Path(), config.ProtoDirectoryNames[config.EtcdProtoDirIndex])) {
+			firstService := serviceInfo[0]
+			if !(strings.Contains(firstService.Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
+				strings.Contains(firstService.Path(), config.ProtoDirectoryNames[config.EtcdProtoDirIndex])) {
 				return
 			}
 
 			os.MkdirAll(path.Dir(config.CppGenGrpcDirectory+protoFile), os.FileMode(0777))
 
-			cppFileBaseName := strings.Replace(protoFile, ".", "_", -1)
+			cppFileBaseName := firstService.ProtoPathWithFileBaseName()
 
 			filePath := config.CppGenGrpcDirectory + cppFileBaseName + config.GrpcHeaderExtension
 			if err := generateGrpcFile(filePath, serviceInfo, AsyncClientHeaderTemplate); err != nil {
@@ -79,7 +80,7 @@ func CppGrpcCallClient() {
 			}
 
 			// 生成对应的 .cpp 文件
-			filePathCpp := config.CppGenGrpcDirectory + protoFile + config.GrpcCppExtension
+			filePathCpp := config.CppGenGrpcDirectory + cppFileBaseName + config.GrpcCppExtension
 			if err := generateGrpcFile(filePathCpp, serviceInfo, AsyncClientCppHandleTemplate); err != nil {
 				log.Fatal(err)
 			}

@@ -1,6 +1,6 @@
 #include "muduo/base/Logging.h"
 
-#include "grpc/generator/gate_service_grpc.cpp.h"
+#include "gate_service_grpc.h"
 #include "thread_local/storage.h"
 struct GateServiceRegisterGameCompleteQueue{
 	grpc::CompletionQueue cq;

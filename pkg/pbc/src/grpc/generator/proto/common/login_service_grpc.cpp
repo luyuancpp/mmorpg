@@ -1,6 +1,6 @@
 #include "muduo/base/Logging.h"
 
-#include "grpc/generator/login_service_grpc.cpp.h"
+#include "login_service_grpc.h"
 #include "thread_local/storage.h"
 struct LoginServiceLoginCompleteQueue{
 	grpc::CompletionQueue cq;
