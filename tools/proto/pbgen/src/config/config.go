@@ -5,8 +5,6 @@ const (
 	ProjectDir                = "../../../../"
 	ProtoDir                  = "../../../../proto/"
 	ProtoParentIncludePathDir = "../../../../"
-	Md5Ex                     = ".md5"
-	PlayerStorageMd5Directory = "../bin/md5/node/game/game_logic/"
 	ProtoEx                   = ".proto"
 	ProtoPbcEx                = ".pb.cc"
 	ProtoPbhEx                = ".pb.h"
@@ -102,6 +100,7 @@ const (
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
 	PlayerStorageSystemDirectory     = ProjectDir + NodePkgLogicSceneNodeDirectory + "src/player/system/"
 	CppGenGrpcDirectory              = ProjectDir + PbcProtoDirectory + "grpc/generator/"
+	PlayerStorageTempDirectory       = TempFileGenerationDir + "/node/game/game_logic/"
 )
 
 // 常量：文件名
