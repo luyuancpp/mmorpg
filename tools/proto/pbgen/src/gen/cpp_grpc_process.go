@@ -44,15 +44,6 @@ func generateGrpcFile(fileName string, grpcServices []*RPCServiceInfo, text stri
 }
 
 func CppGrpcCallClient() {
-	// 以 proto 文件为单位处理服务
-	protoServiceMap := make(map[string][]*RPCMethod) // 将服务按 proto 文件分组
-
-	for _, serviceMethods := range ServiceMethodMap {
-		// 对每个 serviceMethods，按 Proto 文件进行分组
-		protoFile := serviceMethods[0].FileNameNoEx() // 假设所有服务在同一个 proto 文件
-		protoServiceMap[protoFile] = append(protoServiceMap[protoFile], serviceMethods...)
-	}
-
 	FileServiceMap.Range(func(k, v interface{}) bool {
 		protoFile := k.(string)
 		serviceList := v.([]*RPCServiceInfo)
