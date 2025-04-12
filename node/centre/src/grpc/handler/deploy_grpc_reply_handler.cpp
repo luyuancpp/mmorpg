@@ -2,7 +2,7 @@
 #include <memory>
 
 #include "muduo/base/Logging.h"
-#include "grpc/generator/deploy_service_grpc.h"
+#include "grpc/generator/proto/common/deploy_service_grpc.h"
 #include "centre_node.h"
 #include "node/centre_node_info.h"
 

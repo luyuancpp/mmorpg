@@ -3,7 +3,7 @@
 
 #include "muduo/base/Logging.h"
 #include <grpcpp/create_channel.h>
-#include "grpc/generator/etcd_grpc.h"
+#include "grpc/generator/proto/etcd/etcd_grpc.h"
 #include "centre_node.h"
 #include "node/centre_node_info.h"
 #include "node/system/node_system.h"
