@@ -19,6 +19,12 @@ func writeServiceIdHeadFile(methodList RPCMethods) {
 		return
 	}
 
+	firstMethod := methodList[0]
+
+	if !firstMethod.CcGenericServices() {
+		return
+	}
+
 	var data strings.Builder
 	data.WriteString("#pragma once\n#include <cstdint>\n\n")
 	data.WriteString(methodList[0].IncludeName() + "\n")
