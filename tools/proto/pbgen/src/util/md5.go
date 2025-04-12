@@ -90,10 +90,6 @@ func GetMd5FileName(dstFilePath string) (filename string) {
 	return strings.Replace(dstFilePath, config.ProjectDir, config.TempFileGenerationDir, 1)
 }
 
-func GetMd5ExFileName(dstFilePath string) (filename string) {
-	return GetMd5FileName(dstFilePath) + config.Md5Ex
-}
-
 func Md5CopyByMd5Ex(dstFilePath string, srcFilePath string) (copy bool, err error) {
 	same, err := IsSameMD5(dstFilePath, srcFilePath)
 	if err != nil {
