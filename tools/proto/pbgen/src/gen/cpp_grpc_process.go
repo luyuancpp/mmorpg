@@ -7,6 +7,7 @@ import (
 	"path"
 	"pbgen/config"
 	"pbgen/util"
+	"sort"
 	"strings"
 	"text/template"
 )
@@ -61,16 +62,23 @@ func CppGrpcCallClient() {
 				return
 			}
 
+			// ✅ 排序逻辑
+			sort.Slice(serviceInfo, func(i, j int) bool {
+				return serviceInfo[i].FileServiceIndex < serviceInfo[j].FileServiceIndex
+			})
+
+			// 确保目录存在
 			os.MkdirAll(path.Dir(config.CppGenGrpcDirectory+protoFile), os.FileMode(0777))
 
 			cppFileBaseName := firstService.ProtoPathWithFileBaseName()
 
+			// 生成 .h 文件
 			filePath := config.CppGenGrpcDirectory + cppFileBaseName + config.GrpcHeaderExtension
 			if err := generateGrpcFile(filePath, serviceInfo, AsyncClientHeaderTemplate); err != nil {
 				log.Fatal(err)
 			}
 
-			// 生成对应的 .cpp 文件
+			// 生成 .cpp 文件
 			filePathCpp := config.CppGenGrpcDirectory + cppFileBaseName + config.GrpcCppExtension
 			if err := generateGrpcFile(filePathCpp, serviceInfo, AsyncClientCppHandleTemplate); err != nil {
 				log.Fatal(err)
