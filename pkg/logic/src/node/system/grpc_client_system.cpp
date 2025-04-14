@@ -5,7 +5,7 @@
 #include "thread_local/storage_common_logic.h"
 #include <thread_local/storage.h>
 
-void GrpcClientManager::InitEtcdStubs(const ::google::protobuf::RepeatedPtrField<std::string>& etcdHosts) {
+void GrpcClientSystem::InitEtcdStubs(const ::google::protobuf::RepeatedPtrField<std::string>& etcdHosts) {
 	const std::string& etcdAddr = *etcdHosts.begin();
 	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
 
@@ -19,7 +19,7 @@ void GrpcClientManager::InitEtcdStubs(const ::google::protobuf::RepeatedPtrField
 		etcdserverpb::Lease::NewStub(channel);
 }
 
-void GrpcClientManager::InitDeployService(const std::string& deployAddress) {
+void GrpcClientSystem::InitDeployService(const std::string& deployAddress) {
 	auto channel = grpc::CreateChannel(deployAddress, grpc::InsecureChannelCredentials());
 	tls.globalNodeRegistry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()) =
 		DeployService::NewStub(channel);
