@@ -261,7 +261,7 @@ void Node::AsyncOutput(const char* msg, int len) {
 }
 
 void Node::InitGrpcClients() {
-	GrpcClientManager::InitEtcdStubs(tlsCommonLogic.GetBaseDeployConfig().etcd_hosts());
+	GrpcClientSystem::InitEtcdStubs(tlsCommonLogic.GetBaseDeployConfig().etcd_hosts());
 }
 
 
