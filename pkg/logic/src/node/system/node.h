@@ -50,7 +50,9 @@ protected:
 	void InitializeMiscellaneous();
     void ReleaseNodeId();
     void SetupMessageHandlers();
-    void SendEtcdRangeRequest(const std::string& prefix);
+    void GetKeyValue(const std::string& prefix);
+    void StartWatchingPrefix(const std::string& prefix);
+	void StopWatchingPrefix();
 	void RegisterService();
 	bool ParseJsonToServiceNode(const std::string& json_value, uint32_t serviceNodeType);
     static void AsyncOutput(const char* msg, int len);

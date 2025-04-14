@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="src\config_expression\config_expression.h" />
-    <ClInclude Include="src\config_loader\service_discovery.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\network\game_rpc.pb.h" />
     <ClInclude Include="src\network\process_info.h" />
@@ -34,11 +33,10 @@
     <ClInclude Include="src\util\node_id_generator.h" />
     <ClInclude Include="src\util\stacktrace_system.h" />
     <ClInclude Include="src\util\proto_field_checker.h" />
-    <ClInclude Include="src\network\boost_etcd_client.h" />
     <ClInclude Include="src\util\network_utils.h" />
+    <ClInclude Include="src\config_loader\config.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\config_loader\service_discovery.cpp" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\process_info.cpp" />
     <ClCompile Include="src\network\game_channel.cc" />
@@ -57,8 +55,8 @@
     <ClCompile Include="src\network\message_statistics.cpp" />
     <ClCompile Include="src\test\test.cpp" />
     <ClCompile Include="src\util\proto_field_checker.cpp" />
-    <ClCompile Include="src\network\boost_etcd_client.cpp" />
     <ClCompile Include="src\util\network_utils.cpp" />
+    <ClCompile Include="src\config_loader\config.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\network\autogen.bat" />
