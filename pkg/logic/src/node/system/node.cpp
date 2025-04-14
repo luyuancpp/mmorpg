@@ -56,6 +56,7 @@ void Node::Initialize() {
     InitializeTimeZone();              // 初始化时区
     SetupLogging();                    // 设置日志系统
 	InitializeIpPort();                // 初始化 IP 和端口
+	CreateEtcdStubs();
     InitializeGrpcServices();          // 初始化 gRPC 服务
     PrepareForBeforeConnection();      // 准备连接前的工作
     InitializeNodeFromRequestInfo();   // 从请求中初始化节点信息
@@ -82,6 +83,12 @@ void Node::StartRpcServer() {
 
 	deployRpcTimer.Cancel();
 
+
+	for (auto& serviceDiscoveryPrefixes : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes())
+	{
+		StartWatchingPrefix(serviceDiscoveryPrefixes);
+	}
+
 	RegisterService();
 }
 
@@ -102,6 +109,7 @@ void Node::ShutdownNode() {
     // 取消所有定时任务
     deployRpcTimer.Cancel();
     renewNodeLeaseTimer.Cancel();
+	etcdTimer.Cancel();
 
     // 关闭所有 gRPC 连接等
     
@@ -131,6 +139,19 @@ void Node::InitializeTimeZone() {
 void Node::InitializeGrpcServices() {
     InitDeployServiceCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
     InitetcdserverpbKVCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
+	InitetcdserverpbWatchCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
+	InitetcdserverpbLeaseCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
+
+	// 定时处理部署服务的完成队列
+	deployRpcTimer.RunEvery(0.001, []() {
+		HandleDeployServiceCompletedQueueMessage(tls.globalNodeRegistry);
+		});
+
+	etcdTimer.RunEvery(0.001, []() {
+		HandleetcdserverpbKVCompletedQueueMessage(tls.globalNodeRegistry);
+		HandleetcdserverpbWatchCompletedQueueMessage(tls.globalNodeRegistry);
+		HandleetcdserverpbLeaseCompletedQueueMessage(tls.globalNodeRegistry);
+		});
 }
 
 void Node::InitializeIpPort()
@@ -140,33 +161,11 @@ void Node::InitializeIpPort()
 }
 
 void Node::InitializeNodeFromRequestInfo() {
-    //todo const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
-    auto& targetStr = tlsCommonLogic.GetBaseDeployConfig().etcd_hosts();
 
-    try {
-
-        tls.globalNodeRegistry.emplace<GrpcetcdserverpbKVStubPtr>(GlobalGrpcNodeEntity())
-            = etcdserverpb::KV::NewStub(grpc::CreateChannel(*tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin(), grpc::InsecureChannelCredentials()));
-
-		for (auto& serviceDiscoveryPrefixes : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes())
-		{
-			GetKeyValue(serviceDiscoveryPrefixes);
-            StartWatchingPrefix(serviceDiscoveryPrefixes);
-		}
-    }
-    catch (const std::exception& e) {
-       LOG_FATAL <<  "Failed to initialize gRPC service: " << std::string(e.what());
-    }
-
-    // 定时处理部署服务的完成队列
-    deployRpcTimer.RunEvery(0.001, []() {
-        HandleDeployServiceCompletedQueueMessage(tls.globalNodeRegistry);
-        HandleetcdserverpbKVCompletedQueueMessage(tls.globalNodeRegistry);
-        HandleetcdserverpbWatchCompletedQueueMessage(tls.globalNodeRegistry);
-        HandleetcdserverpbWatchCompletedQueueMessage(tls.globalNodeRegistry);
-    });
-
-
+	for (auto& serviceDiscoveryPrefixes : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes())
+	{
+		GetKeyValue(serviceDiscoveryPrefixes);
+	}
 }
 
 void Node::ConnectToCentreHelper(::google::protobuf::Service* service) {
@@ -281,6 +280,26 @@ void Node::AsyncOutput(const char* msg, int len) {
 #ifdef WIN32
     Log2Console(msg, len);  // 在 Windows 系统上输出到控制台
 #endif
+}
+
+void Node::CreateEtcdStubs()
+{
+	try {
+
+		tls.globalNodeRegistry.emplace<GrpcetcdserverpbKVStubPtr>(GlobalGrpcNodeEntity())
+			= etcdserverpb::KV::NewStub(grpc::CreateChannel(*tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin(), grpc::InsecureChannelCredentials()));
+
+		tls.globalNodeRegistry.emplace<GrpcetcdserverpbWatchStubPtr>(GlobalGrpcNodeEntity())
+			= etcdserverpb::Watch::NewStub(grpc::CreateChannel(*tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin(), grpc::InsecureChannelCredentials()));
+
+		tls.globalNodeRegistry.emplace<GrpcetcdserverpbLeaseStubPtr>(GlobalGrpcNodeEntity())
+			= etcdserverpb::Lease::NewStub(grpc::CreateChannel(*tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin(), grpc::InsecureChannelCredentials()));
+	}
+	catch (const std::exception& e) {
+		LOG_FATAL << "Failed to initialize gRPC service: " << std::string(e.what());
+	}
+
+
 }
 
 std::string Node::FormatIpAndPort()
