@@ -22,14 +22,14 @@ public:
     virtual NodeInfo& GetNodeInfo() = 0;
 	virtual std::string GetServiceName() const = 0;
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
-	TimerTaskComp& GetDeployRpcTimer() { return deployRpcTimer; }
+	TimerTaskComp& GetDeployRpcTimer() { return deployQueueTimer; }
 	TimerTaskComp& GetRenewNodeLeaseTimer() { return renewNodeLeaseTimer; }
 	[[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
     std::string FormatIpAndPort() ;
 	std::string GetIp();
 	uint32_t GetPort();
 
-    void InitializeDeployService(const std::string& service_address);
+    void InitDeployService(const std::string& service_address);
     void HandleServiceNode(const std::string& key, const std::string& value);
 
 protected:
@@ -40,30 +40,33 @@ protected:
     virtual void PrepareForBeforeConnection() {}
     virtual void ReadyForGame(){}
     void SetupLogging();
-    virtual void LoadConfigurations();
+    virtual void LoadConfiguration();
     virtual void OnConfigLoadSuccessful(){}
-    void InitializeTimeZone();
+    void SetupEnvironment();
     void InitializeNodeFromRequestInfo();
     virtual void ConnectToCentreHelper(::google::protobuf::Service* service);
-    void InitializeGrpcServices();
-    void InitializeIpPort();
+    void InitGrpcQueues();
 	void InitializeMiscellaneous();
     void ReleaseNodeId();
-    void SetupMessageHandlers();
+    void SetupEventHandlers();
     void GetKeyValue(const std::string& prefix);
     void StartWatchingPrefix(const std::string& prefix);
-	void StopWatchingPrefix();
-	void RegisterService();
+	void StopWatchingAll();
+	void RegisterSelf();
 	bool ParseJsonToServiceNode(const std::string& json_value, uint32_t serviceNodeType);
     static void AsyncOutput(const char* msg, int len);
-    void CreateEtcdStubs();
+    void InitGrpcClients();
+    void FetchServiceRegistry();
+	void StartWatchingServices();
+    void WatchPrefix(const std::string& prefix);
+
 
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;
     RpcServerPtr rpcServer;
-    TimerTaskComp deployRpcTimer;
+    TimerTaskComp deployQueueTimer;
     TimerTaskComp renewNodeLeaseTimer;
-    TimerTaskComp etcdTimer;
+    TimerTaskComp etcdQueueTimer;
     RpcClientPtr zoneCentreNode;
 };
 
