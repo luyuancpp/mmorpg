@@ -6,19 +6,7 @@ struct DeployServiceGetNodeInfoCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void SendDeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, const  ::NodeInfoRequest& request)
-{
 
-    AsyncDeployServiceGetNodeInfoGrpcClientCall* call = new AsyncDeployServiceGetNodeInfoGrpcClientCall;
-    call->response_reader =
-        registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncGetNodeInfo(&call->context, request,
-		&registry.get<DeployServiceGetNodeInfoCompleteQueue>(nodeEntity).cq);
-
-    	call->response_reader->StartCall();
-
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-
-}
 
 
 using AsyncDeployServiceGetNodeInfoHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>&)>;
@@ -53,23 +41,25 @@ void AsyncCompleteGrpcDeployServiceGetNodeInfo(grpc::CompletionQueue& cq)
     }
 }
 
-struct DeployServiceGetIDCompleteQueue{
-	grpc::CompletionQueue cq;
-};
 
-void SendDeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, const  ::GetIDRequest& request)
+void SendDeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, const  ::NodeInfoRequest& request)
 {
 
-    AsyncDeployServiceGetIDGrpcClientCall* call = new AsyncDeployServiceGetIDGrpcClientCall;
+    AsyncDeployServiceGetNodeInfoGrpcClientCall* call = new AsyncDeployServiceGetNodeInfoGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncGetID(&call->context, request,
-		&registry.get<DeployServiceGetIDCompleteQueue>(nodeEntity).cq);
+        registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncGetNodeInfo(&call->context, request,
+		&registry.get<DeployServiceGetNodeInfoCompleteQueue>(nodeEntity).cq);
 
     	call->response_reader->StartCall();
 
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+struct DeployServiceGetIDCompleteQueue{
+	grpc::CompletionQueue cq;
+};
+
+
 
 
 using AsyncDeployServiceGetIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetIDGrpcClientCall>&)>;
@@ -104,23 +94,25 @@ void AsyncCompleteGrpcDeployServiceGetID(grpc::CompletionQueue& cq)
     }
 }
 
-struct DeployServiceReleaseIDCompleteQueue{
-	grpc::CompletionQueue cq;
-};
 
-void SendDeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, const  ::ReleaseIDRequest& request)
+void SendDeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, const  ::GetIDRequest& request)
 {
 
-    AsyncDeployServiceReleaseIDGrpcClientCall* call = new AsyncDeployServiceReleaseIDGrpcClientCall;
+    AsyncDeployServiceGetIDGrpcClientCall* call = new AsyncDeployServiceGetIDGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncReleaseID(&call->context, request,
-		&registry.get<DeployServiceReleaseIDCompleteQueue>(nodeEntity).cq);
+        registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncGetID(&call->context, request,
+		&registry.get<DeployServiceGetIDCompleteQueue>(nodeEntity).cq);
 
     	call->response_reader->StartCall();
 
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+struct DeployServiceReleaseIDCompleteQueue{
+	grpc::CompletionQueue cq;
+};
+
+
 
 
 using AsyncDeployServiceReleaseIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceReleaseIDGrpcClientCall>&)>;
@@ -155,23 +147,25 @@ void AsyncCompleteGrpcDeployServiceReleaseID(grpc::CompletionQueue& cq)
     }
 }
 
-struct DeployServiceRenewLeaseCompleteQueue{
-	grpc::CompletionQueue cq;
-};
 
-void SendDeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, const  ::RenewLeaseIDRequest& request)
+void SendDeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, const  ::ReleaseIDRequest& request)
 {
 
-    AsyncDeployServiceRenewLeaseGrpcClientCall* call = new AsyncDeployServiceRenewLeaseGrpcClientCall;
+    AsyncDeployServiceReleaseIDGrpcClientCall* call = new AsyncDeployServiceReleaseIDGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncRenewLease(&call->context, request,
-		&registry.get<DeployServiceRenewLeaseCompleteQueue>(nodeEntity).cq);
+        registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncReleaseID(&call->context, request,
+		&registry.get<DeployServiceReleaseIDCompleteQueue>(nodeEntity).cq);
 
     	call->response_reader->StartCall();
 
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+struct DeployServiceRenewLeaseCompleteQueue{
+	grpc::CompletionQueue cq;
+};
+
+
 
 
 using AsyncDeployServiceRenewLeaseHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceRenewLeaseGrpcClientCall>&)>;
@@ -206,6 +200,20 @@ void AsyncCompleteGrpcDeployServiceRenewLease(grpc::CompletionQueue& cq)
     }
 }
 
+
+void SendDeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, const  ::RenewLeaseIDRequest& request)
+{
+
+    AsyncDeployServiceRenewLeaseGrpcClientCall* call = new AsyncDeployServiceRenewLeaseGrpcClientCall;
+    call->response_reader =
+        registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncRenewLease(&call->context, request,
+		&registry.get<DeployServiceRenewLeaseCompleteQueue>(nodeEntity).cq);
+
+    	call->response_reader->StartCall();
+
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
 void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 	registry.emplace<DeployServiceGetNodeInfoCompleteQueue>(nodeEntity);
 
