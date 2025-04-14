@@ -65,22 +65,7 @@ struct {{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.CppRequest}}& request)
-{
-{{if .ClientStreaming}}
-	auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
-	client.stream->Write(request, &client);
-{{else}}
-    Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
-    call->response_reader =
-        registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&call->context, request,
-		&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
-
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-{{end}}
-}
 
 {{if .ClientStreaming}}
 using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
@@ -151,6 +136,26 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(grpc::Comple
     }
 }
 {{end}}
+
+void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.CppRequest}}& request)
+{
+{{if .ClientStreaming}}
+	auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
+	client.stream->Write(request, &client);
+	auto& cq = registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq;
+	AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(cq);
+{{else}}
+    Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
+    call->response_reader =
+        registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&call->context, request,
+		&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq);
+
+    	call->response_reader->StartCall();
+
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+{{end}}
+}
+
 {{- end }}
 {{- end }}
 
