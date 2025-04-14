@@ -89,6 +89,8 @@ void Node::StartRpcServer() {
 //优雅关闭和资源释放
 void Node::ShutdownNode() {
 
+    StopWatchingPrefix();
+
 	tls.dispatcher.clear();  // 清除所有事件处理器
 
     // 停止日志系统
@@ -146,10 +148,10 @@ void Node::InitializeNodeFromRequestInfo() {
         tls.globalNodeRegistry.emplace<GrpcetcdserverpbKVStubPtr>(GlobalGrpcNodeEntity())
             = etcdserverpb::KV::NewStub(grpc::CreateChannel(*tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin(), grpc::InsecureChannelCredentials()));
 
-
-		for (auto& service_discovery_prefixes : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes())
+		for (auto& serviceDiscoveryPrefixes : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes())
 		{
-			SendEtcdRangeRequest(service_discovery_prefixes);
+			GetKeyValue(serviceDiscoveryPrefixes);
+            StartWatchingPrefix(serviceDiscoveryPrefixes);
 		}
     }
     catch (const std::exception& e) {
@@ -160,6 +162,8 @@ void Node::InitializeNodeFromRequestInfo() {
     deployRpcTimer.RunEvery(0.001, []() {
         HandleDeployServiceCompletedQueueMessage(tls.globalNodeRegistry);
         HandleetcdserverpbKVCompletedQueueMessage(tls.globalNodeRegistry);
+        HandleetcdserverpbWatchCompletedQueueMessage(tls.globalNodeRegistry);
+        HandleetcdserverpbWatchCompletedQueueMessage(tls.globalNodeRegistry);
     });
 
 
@@ -212,7 +216,7 @@ void Node::SetupMessageHandlers()
 
 }
 
-void Node::SendEtcdRangeRequest(const std::string& prefix)
+void Node::GetKeyValue(const std::string& prefix)
 {
 	etcdserverpb::RangeRequest request;
 	request.set_key(prefix);  // 设置查询前缀
@@ -223,6 +227,36 @@ void Node::SendEtcdRangeRequest(const std::string& prefix)
 	request.set_range_end(range_end);  // 设置 range_end
 
     SendetcdserverpbKVRange(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
+}
+
+void Node::StartWatchingPrefix(const std::string& prefix)
+{
+	etcdserverpb::WatchRequest request;
+    auto& createRequest = *request.mutable_create_request();
+
+    createRequest.set_key(prefix);  // 设置查询前缀
+
+	// 设置 range_end 为 prefix + 1
+	std::string range_end = prefix;
+	range_end[range_end.size() - 1] = range_end[range_end.size() - 1] + 1; // 将最后一个字符加 1
+    createRequest.set_range_end(range_end);  // 设置 range_end
+
+    SendetcdserverpbWatchWatch(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
+}
+
+void Node::StopWatchingPrefix()
+{
+	//etcdserverpb::WatchRequest request;
+	//auto& createRequest = *request.mutable_cancel_request();
+
+	//createRequest.set_key(prefix);  // 设置查询前缀
+
+	//// 设置 range_end 为 prefix + 1
+	//std::string range_end = prefix;
+	//range_end[range_end.size() - 1] = range_end[range_end.size() - 1] + 1; // 将最后一个字符加 1
+	//createRequest.set_range_end(range_end);  // 设置 range_end
+
+	//SendetcdserverpbWatchWatch(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 }
 
 void Node::RegisterService()
