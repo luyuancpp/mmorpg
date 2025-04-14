@@ -56,12 +56,14 @@ protected:
 	void RegisterService();
 	bool ParseJsonToServiceNode(const std::string& json_value, uint32_t serviceNodeType);
     static void AsyncOutput(const char* msg, int len);
+    void CreateEtcdStubs();
 
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;
     RpcServerPtr rpcServer;
     TimerTaskComp deployRpcTimer;
     TimerTaskComp renewNodeLeaseTimer;
+    TimerTaskComp etcdTimer;
     RpcClientPtr zoneCentreNode;
 };
 
