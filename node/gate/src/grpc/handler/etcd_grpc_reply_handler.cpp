@@ -9,7 +9,7 @@
 #include "gate_node.h"
 #include "node/comp/node_comp.h"
 
-void InitGrpcetcdserverpbKVResponseHandler() {
+void InitGrpcetcdserverpbResponseHandler() {
 	AsyncetcdserverpbKVRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
 		if (call->status.ok()) {
 

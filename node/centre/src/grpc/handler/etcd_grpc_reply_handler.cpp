@@ -11,7 +11,7 @@
 #include "util/network_utils.h"
 
 
-void InitGrpcetcdserverpbKVResponseHandler() {
+void InitGrpcetcdserverpbResponseHandler() {
 	AsyncetcdserverpbKVRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
 		if (call->status.ok()) {
 			for (const auto& kv : call->reply.kvs()) {
@@ -30,5 +30,31 @@ void InitGrpcetcdserverpbKVResponseHandler() {
 		};
 
 	AsyncetcdserverpbKVTxnHandler = [](const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>& call) {
+		};
+
+	AsyncetcdserverpbWatchWatchHandler = [](const ::etcdserverpb::WatchResponse& response) {
+
+		if (response.created()) {
+			LOG_INFO << "Watch created: " << response.created();
+			return;
+		}
+
+		if (response.canceled()) {
+			LOG_INFO << "Watch canceled. Reason: " << response.cancel_reason();
+			if (response.compact_revision() > 0) {
+				LOG_ERROR << "Revision " << response.compact_revision() << " has been compacted.\n";
+				// 需要重新发起 watch 请求，从最新 revision 开始
+			}
+			return;
+		}
+
+		for (const auto& event : response.events()) {
+			if (event.type() == mvccpb::Event_EventType::Event_EventType_PUT) {
+				LOG_INFO << "Key put: " << event.kv().key() << "\n";
+			}
+			else if (event.type() == mvccpb::Event_EventType::Event_EventType_DELETE) {
+				LOG_INFO << "Key deleted: " << event.kv().key() << "\n";
+			}
+		}
 		};
 }

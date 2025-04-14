@@ -207,8 +207,8 @@ void Node::SetupMessageHandlers()
     void InitGrpcDeployServiceResponseHandler();
     InitGrpcDeployServiceResponseHandler();
 
-    void InitGrpcetcdserverpbKVResponseHandler();
-    InitGrpcetcdserverpbKVResponseHandler();
+    void InitGrpcetcdserverpbResponseHandler();
+    InitGrpcetcdserverpbResponseHandler();
 
 	void InitRepliedHandler();
 	InitRepliedHandler();
