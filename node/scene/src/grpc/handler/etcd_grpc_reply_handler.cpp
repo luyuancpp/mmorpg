@@ -8,7 +8,7 @@
 #include "util/network_utils.h"
 #include "scene_node.h"
 
-void InitGrpcetcdserverpbKVResponseHandler() {
+void InitGrpcetcdserverpbResponseHandler() {
 	AsyncetcdserverpbKVRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
 		if (call->status.ok()) {
 			for (const auto& kv : call->reply.kvs()) {
