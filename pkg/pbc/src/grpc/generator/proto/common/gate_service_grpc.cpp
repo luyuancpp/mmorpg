@@ -2,6 +2,11 @@
 
 #include "gate_service_grpc.h"
 #include "thread_local/storage.h"
+
+static uint32_t GRPC_WRITE_TAG = 1;
+static uint32_t GRPC_READ_TAG = 2;
+static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
+static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
 struct GateServiceRegisterGameCompleteQueue{
 	grpc::CompletionQueue cq;
 };
@@ -12,7 +17,7 @@ struct GateServiceRegisterGameCompleteQueue{
 using AsyncGateServiceRegisterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRegisterGameGrpcClientCall>&)>;
 AsyncGateServiceRegisterGameHandlerFunctionType  AsyncGateServiceRegisterGameHandler;
 
-void AsyncCompleteGrpcGateServiceRegisterGame(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGateServiceRegisterGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -65,7 +70,7 @@ struct GateServiceUnRegisterGameCompleteQueue{
 using AsyncGateServiceUnRegisterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceUnRegisterGameGrpcClientCall>&)>;
 AsyncGateServiceUnRegisterGameHandlerFunctionType  AsyncGateServiceUnRegisterGameHandler;
 
-void AsyncCompleteGrpcGateServiceUnRegisterGame(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -118,7 +123,7 @@ struct GateServicePlayerEnterGameNodeCompleteQueue{
 using AsyncGateServicePlayerEnterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServicePlayerEnterGameNodeGrpcClientCall>&)>;
 AsyncGateServicePlayerEnterGameNodeHandlerFunctionType  AsyncGateServicePlayerEnterGameNodeHandler;
 
-void AsyncCompleteGrpcGateServicePlayerEnterGameNode(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -171,7 +176,7 @@ struct GateServiceSendMessageToPlayerCompleteQueue{
 using AsyncGateServiceSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceSendMessageToPlayerGrpcClientCall>&)>;
 AsyncGateServiceSendMessageToPlayerHandlerFunctionType  AsyncGateServiceSendMessageToPlayerHandler;
 
-void AsyncCompleteGrpcGateServiceSendMessageToPlayer(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -224,7 +229,7 @@ struct GateServiceKickSessionByCentreCompleteQueue{
 using AsyncGateServiceKickSessionByCentreHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceKickSessionByCentreGrpcClientCall>&)>;
 AsyncGateServiceKickSessionByCentreHandlerFunctionType  AsyncGateServiceKickSessionByCentreHandler;
 
-void AsyncCompleteGrpcGateServiceKickSessionByCentre(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -277,7 +282,7 @@ struct GateServiceRouteNodeMessageCompleteQueue{
 using AsyncGateServiceRouteNodeMessageHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRouteNodeMessageGrpcClientCall>&)>;
 AsyncGateServiceRouteNodeMessageHandlerFunctionType  AsyncGateServiceRouteNodeMessageHandler;
 
-void AsyncCompleteGrpcGateServiceRouteNodeMessage(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -330,7 +335,7 @@ struct GateServiceRoutePlayerMessageCompleteQueue{
 using AsyncGateServiceRoutePlayerMessageHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRoutePlayerMessageGrpcClientCall>&)>;
 AsyncGateServiceRoutePlayerMessageHandlerFunctionType  AsyncGateServiceRoutePlayerMessageHandler;
 
-void AsyncCompleteGrpcGateServiceRoutePlayerMessage(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -383,7 +388,7 @@ struct GateServiceBroadcastToPlayersCompleteQueue{
 using AsyncGateServiceBroadcastToPlayersHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceBroadcastToPlayersGrpcClientCall>&)>;
 AsyncGateServiceBroadcastToPlayersHandlerFunctionType  AsyncGateServiceBroadcastToPlayersHandler;
 
-void AsyncCompleteGrpcGateServiceBroadcastToPlayers(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -448,49 +453,49 @@ void HandleGateServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<GateServiceRegisterGameCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGateServiceRegisterGame(completeQueueComp.cq);
+			AsyncCompleteGrpcGateServiceRegisterGame(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServiceUnRegisterGameCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGateServiceUnRegisterGame(completeQueueComp.cq);
+			AsyncCompleteGrpcGateServiceUnRegisterGame(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServicePlayerEnterGameNodeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGateServicePlayerEnterGameNode(completeQueueComp.cq);
+			AsyncCompleteGrpcGateServicePlayerEnterGameNode(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServiceSendMessageToPlayerCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGateServiceSendMessageToPlayer(completeQueueComp.cq);
+			AsyncCompleteGrpcGateServiceSendMessageToPlayer(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServiceKickSessionByCentreCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGateServiceKickSessionByCentre(completeQueueComp.cq);
+			AsyncCompleteGrpcGateServiceKickSessionByCentre(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServiceRouteNodeMessageCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGateServiceRouteNodeMessage(completeQueueComp.cq);
+			AsyncCompleteGrpcGateServiceRouteNodeMessage(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServiceRoutePlayerMessageCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGateServiceRoutePlayerMessage(completeQueueComp.cq);
+			AsyncCompleteGrpcGateServiceRoutePlayerMessage(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServiceBroadcastToPlayersCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGateServiceBroadcastToPlayers(completeQueueComp.cq);
+			AsyncCompleteGrpcGateServiceBroadcastToPlayers(registry, e, completeQueueComp.cq);
 		}
 	}
 }

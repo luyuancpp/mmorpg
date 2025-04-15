@@ -2,6 +2,11 @@
 
 #include "login_service_grpc.h"
 #include "thread_local/storage.h"
+
+static uint32_t GRPC_WRITE_TAG = 1;
+static uint32_t GRPC_READ_TAG = 2;
+static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
+static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
 struct LoginServiceLoginCompleteQueue{
 	grpc::CompletionQueue cq;
 };
@@ -12,7 +17,7 @@ struct LoginServiceLoginCompleteQueue{
 using AsyncLoginServiceLoginHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>&)>;
 AsyncLoginServiceLoginHandlerFunctionType  AsyncLoginServiceLoginHandler;
 
-void AsyncCompleteGrpcLoginServiceLogin(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -65,7 +70,7 @@ struct LoginServiceCreatePlayerCompleteQueue{
 using AsyncLoginServiceCreatePlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceCreatePlayerGrpcClientCall>&)>;
 AsyncLoginServiceCreatePlayerHandlerFunctionType  AsyncLoginServiceCreatePlayerHandler;
 
-void AsyncCompleteGrpcLoginServiceCreatePlayer(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -118,7 +123,7 @@ struct LoginServiceEnterGameCompleteQueue{
 using AsyncLoginServiceEnterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceEnterGameGrpcClientCall>&)>;
 AsyncLoginServiceEnterGameHandlerFunctionType  AsyncLoginServiceEnterGameHandler;
 
-void AsyncCompleteGrpcLoginServiceEnterGame(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -171,7 +176,7 @@ struct LoginServiceLeaveGameCompleteQueue{
 using AsyncLoginServiceLeaveGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLeaveGameGrpcClientCall>&)>;
 AsyncLoginServiceLeaveGameHandlerFunctionType  AsyncLoginServiceLeaveGameHandler;
 
-void AsyncCompleteGrpcLoginServiceLeaveGame(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -224,7 +229,7 @@ struct LoginServiceDisconnectCompleteQueue{
 using AsyncLoginServiceDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceDisconnectGrpcClientCall>&)>;
 AsyncLoginServiceDisconnectHandlerFunctionType  AsyncLoginServiceDisconnectHandler;
 
-void AsyncCompleteGrpcLoginServiceDisconnect(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -283,31 +288,31 @@ void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<LoginServiceLoginCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcLoginServiceLogin(completeQueueComp.cq);
+			AsyncCompleteGrpcLoginServiceLogin(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<LoginServiceCreatePlayerCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcLoginServiceCreatePlayer(completeQueueComp.cq);
+			AsyncCompleteGrpcLoginServiceCreatePlayer(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<LoginServiceEnterGameCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcLoginServiceEnterGame(completeQueueComp.cq);
+			AsyncCompleteGrpcLoginServiceEnterGame(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<LoginServiceLeaveGameCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcLoginServiceLeaveGame(completeQueueComp.cq);
+			AsyncCompleteGrpcLoginServiceLeaveGame(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<LoginServiceDisconnectCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcLoginServiceDisconnect(completeQueueComp.cq);
+			AsyncCompleteGrpcLoginServiceDisconnect(registry, e, completeQueueComp.cq);
 		}
 	}
 }

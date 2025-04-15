@@ -2,6 +2,11 @@
 
 #include "deploy_service_grpc.h"
 #include "thread_local/storage.h"
+
+static uint32_t GRPC_WRITE_TAG = 1;
+static uint32_t GRPC_READ_TAG = 2;
+static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
+static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
 struct DeployServiceGetNodeInfoCompleteQueue{
 	grpc::CompletionQueue cq;
 };
@@ -12,7 +17,7 @@ struct DeployServiceGetNodeInfoCompleteQueue{
 using AsyncDeployServiceGetNodeInfoHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>&)>;
 AsyncDeployServiceGetNodeInfoHandlerFunctionType  AsyncDeployServiceGetNodeInfoHandler;
 
-void AsyncCompleteGrpcDeployServiceGetNodeInfo(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcDeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -65,7 +70,7 @@ struct DeployServiceGetIDCompleteQueue{
 using AsyncDeployServiceGetIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetIDGrpcClientCall>&)>;
 AsyncDeployServiceGetIDHandlerFunctionType  AsyncDeployServiceGetIDHandler;
 
-void AsyncCompleteGrpcDeployServiceGetID(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcDeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -118,7 +123,7 @@ struct DeployServiceReleaseIDCompleteQueue{
 using AsyncDeployServiceReleaseIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceReleaseIDGrpcClientCall>&)>;
 AsyncDeployServiceReleaseIDHandlerFunctionType  AsyncDeployServiceReleaseIDHandler;
 
-void AsyncCompleteGrpcDeployServiceReleaseID(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcDeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -171,7 +176,7 @@ struct DeployServiceRenewLeaseCompleteQueue{
 using AsyncDeployServiceRenewLeaseHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceRenewLeaseGrpcClientCall>&)>;
 AsyncDeployServiceRenewLeaseHandlerFunctionType  AsyncDeployServiceRenewLeaseHandler;
 
-void AsyncCompleteGrpcDeployServiceRenewLease(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcDeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -228,25 +233,25 @@ void HandleDeployServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<DeployServiceGetNodeInfoCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcDeployServiceGetNodeInfo(completeQueueComp.cq);
+			AsyncCompleteGrpcDeployServiceGetNodeInfo(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<DeployServiceGetIDCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcDeployServiceGetID(completeQueueComp.cq);
+			AsyncCompleteGrpcDeployServiceGetID(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<DeployServiceReleaseIDCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcDeployServiceReleaseID(completeQueueComp.cq);
+			AsyncCompleteGrpcDeployServiceReleaseID(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<DeployServiceRenewLeaseCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcDeployServiceRenewLease(completeQueueComp.cq);
+			AsyncCompleteGrpcDeployServiceRenewLease(registry, e, completeQueueComp.cq);
 		}
 	}
 }
