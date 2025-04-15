@@ -24,7 +24,7 @@ public:
 };
 
 struct  {{.RequestName}}Buffer{
-	boost::circular_buffer<{{.CppRequest}}> pendingWritesBuffer;
+	boost::circular_buffer<{{.CppRequest}}> pendingWritesBuffer{200};
 };
 
 struct {{.RequestName}}WriteInProgress{ bool isInProgress{false};};
@@ -105,7 +105,7 @@ void MaybeWriteNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry&
 
 void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
-    void* got_tag;
+    void* got_tag = nullptr;
     bool ok = false;
 
     gpr_timespec tm;
@@ -123,12 +123,24 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
 	}
 
 	auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
+
+	if (nullptr == got_tag){
+		{{.CppResponse}} response;
+		client.stream->Read(&response, nullptr);
+		if(Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler){
+					Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(response);
+				}
+		return;
+	}
+
 	auto&  writeInProgress = registry.get<{{.RequestName}}WriteInProgress>(nodeEntity);
 
 	switch (static_cast<GrpcTag>(reinterpret_cast<intptr_t>(got_tag))){
 		case GrpcTag::WRITE:
-			writeInProgress.isInProgress = false;
-			MaybeWriteNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
+			{
+				writeInProgress.isInProgress = false;
+				MaybeWriteNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
+			}
 			break;
 		case GrpcTag::READ:
 			{
@@ -211,7 +223,7 @@ void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& regist
 {{if .ClientStreaming}}
 	{
 		auto& client = registry.emplace<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
-		registry.emplace<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer.resize(1000);
+		registry.emplace<{{.RequestName}}Buffer>(nodeEntity);
 		registry.emplace<{{.RequestName}}WriteInProgress>(nodeEntity);
 		client.stream =
 			registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->Async{{.Method}}(&client.context, 
