@@ -54,9 +54,11 @@ void Node::InitDeployService(const std::string& service_address)
 }
 
 void Node::Initialize() {
+	LoadYamlConfiguration();
+	ConfigureAndStartRpcServer ();
 	SetupLogging();
-	LoadConfiguration();
 	SetupEnvironment();
+	LoadConfiguration();
 	InitGrpcClients();
 	InitGrpcQueues();
 	FetchServiceRegistry();
@@ -64,10 +66,18 @@ void Node::Initialize() {
 	SetupEventHandlers();
 }
 
-void Node::StartRpcServer() {
+void Node::ConfigureAndStartRpcServer ()
+{
+	GetNodeInfo().mutable_endpoint()->set_ip(localip());
+	GetNodeInfo().mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
+
 	InetAddress service_addr(GetNodeInfo().endpoint().ip(), GetNodeInfo().endpoint().port());
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, service_addr);
 	rpcServer->start();
+}
+
+void Node::StartRpcServer() {
+
 
     tls.dispatcher.trigger<OnServerStart>();  // 启动服务器
 
@@ -103,9 +113,14 @@ void Node::SetupLogging() {
     muduoLog.start();  // 启动日志
 }
 
-void Node::LoadConfiguration() {
+void Node::LoadYamlConfiguration()
+{
 	readBaseDeployConfig("etc/base_deploy_config.yaml", tlsCommonLogic.GetBaseDeployConfig());
 	readGameConfig("etc/game_config.yaml", tlsCommonLogic.GetGameConfig());
+}
+
+void Node::LoadConfiguration() {
+
 	LoadAllConfig();
 	LoadAllConfigAsyncWhenServerLaunch();
 	OnConfigLoadSuccessful();
@@ -114,9 +129,6 @@ void Node::LoadConfiguration() {
 void Node::SetupEnvironment() {
     const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
     muduo::Logger::setTimeZone(tz);  // 设置时区为香港
-
-	GetNodeInfo().mutable_endpoint()->set_ip(localip());
-	GetNodeInfo().mutable_endpoint()->set_port(get_available_port());
 
 	GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());
 	GetNodeInfo().set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());

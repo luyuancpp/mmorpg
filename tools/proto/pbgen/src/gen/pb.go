@@ -40,21 +40,28 @@ func BuildProto(protoPath string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 
-			md5FileName := strings.Replace(fileName, config.ProtoDir, config.PbcTempDirectory, 1)
-			md5FileName = strings.Replace(md5FileName, config.ProtoEx, config.ProtoPbcEx, 1)
+			tempHeadFileName := strings.Replace(fileName, config.ProtoDir, config.PbcTempDirectory, 1)
+			tempHeadFileName = strings.Replace(tempHeadFileName, config.ProtoEx, config.ProtoPbhEx, 1)
 
-			dstFileName := strings.Replace(fileName, config.ProtoDir, config.PbcProtoOutputDirectory, 1)
-			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
+			tempCppFileName := strings.Replace(fileName, config.ProtoDir, config.PbcTempDirectory, 1)
+			tempCppFileName = strings.Replace(tempCppFileName, config.ProtoEx, config.ProtoPbcEx, 1)
 
-			dir := path.Dir(md5FileName)
+			dstFileHeadName := strings.Replace(fileName, config.ProtoDir, config.PbcProtoOutputDirectory, 1)
+			dstFileHeadName = strings.Replace(dstFileHeadName, config.ProtoEx, config.ProtoPbhEx, 1)
+
+			dstFileCppName := strings.Replace(fileName, config.ProtoDir, config.PbcProtoOutputDirectory, 1)
+			dstFileCppName = strings.Replace(dstFileCppName, config.ProtoEx, config.ProtoPbcEx, 1)
+
+			dir := path.Dir(tempCppFileName)
 			err := os.MkdirAll(dir, os.FileMode(0777))
 			if err != nil {
 				return
 			}
 
-			// Check if files with same MD5 and destinations exist
-			fileSame, _ := util.IsSameMD5(dstFileName, md5FileName)
-			if fileSame {
+			fileHeadSame, _ := util.IsSameMD5(dstFileHeadName, tempHeadFileName)
+			fileCppSame, _ := util.IsSameMD5(dstFileCppName, tempCppFileName)
+
+			if fileCppSame && fileHeadSame {
 				return
 			}
 
@@ -63,7 +70,8 @@ func BuildProto(protoPath string) (err error) {
 				log.Fatal(err)
 			}
 
-			util.Copy(md5FileName, dstFileName)
+			util.Copy(tempCppFileName, dstFileCppName)
+			util.Copy(tempHeadFileName, dstFileHeadName)
 		}(fd)
 	}
 
