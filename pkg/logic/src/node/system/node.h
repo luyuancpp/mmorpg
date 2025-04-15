@@ -32,11 +32,13 @@ public:
 
 protected:
     virtual void Initialize();
+    void ConfigureAndStartRpcServer ();
     virtual void StartRpcServer();
     virtual void ShutdownNode();
     virtual void PrepareForBeforeConnection() {}
     virtual void ReadyForGame(){}
     void SetupLogging();
+    void LoadYamlConfiguration();
     virtual void LoadConfiguration();
     virtual void OnConfigLoadSuccessful(){}
     void SetupEnvironment();
