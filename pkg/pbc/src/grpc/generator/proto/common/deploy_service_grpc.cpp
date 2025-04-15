@@ -4,7 +4,7 @@
 #include "thread_local/storage.h"
 
   enum class GrpcTag {
-        INIT,
+        INIT = 1,
         WRITE,
         READ,
         WRITES_DONE,
