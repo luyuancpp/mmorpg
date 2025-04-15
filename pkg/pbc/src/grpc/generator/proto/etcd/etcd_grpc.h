@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
-
+#include <boost/circular_buffer.hpp>
 #include "proto/etcd/etcd.grpc.pb.h"
 
 
@@ -120,6 +120,11 @@ public:
     std::unique_ptr<grpc::ClientAsyncReaderWriter<::etcdserverpb::WatchRequest,  ::etcdserverpb::WatchResponse>> stream;
 };
 
+struct  WatchRequestBuffer{
+	boost::circular_buffer<::etcdserverpb::WatchRequest> pendingWritesBuffer;
+};
+
+struct WatchRequestWriteInProgress{ bool isInProgress{false};};
 
 using AsyncetcdserverpbWatchWatchHandlerFunctionType = std::function<void(const ::etcdserverpb::WatchResponse&)>;
 
@@ -184,6 +189,11 @@ public:
     std::unique_ptr<grpc::ClientAsyncReaderWriter<::etcdserverpb::LeaseKeepAliveRequest,  ::etcdserverpb::LeaseKeepAliveResponse>> stream;
 };
 
+struct  LeaseKeepAliveRequestBuffer{
+	boost::circular_buffer<::etcdserverpb::LeaseKeepAliveRequest> pendingWritesBuffer;
+};
+
+struct LeaseKeepAliveRequestWriteInProgress{ bool isInProgress{false};};
 
 using AsyncetcdserverpbLeaseLeaseKeepAliveHandlerFunctionType = std::function<void(const ::etcdserverpb::LeaseKeepAliveResponse&)>;
 

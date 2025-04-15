@@ -226,6 +226,21 @@ func (info *RPCMethod) CppResponse() string {
 	return updatedOutputType
 }
 
+func GetTypeName(fullTypeName string) string {
+	// 查找最后一个'.'的位置
+	lastDotIndex := strings.LastIndex(fullTypeName, ".")
+	if lastDotIndex != -1 {
+		// 返回'.'后面的部分，即类型名
+		return fullTypeName[lastDotIndex+1:]
+	}
+	// 如果没有'.'，直接返回原始字符串
+	return fullTypeName
+}
+
+func (info *RPCMethod) RequestName() string {
+	return GetTypeName(info.MethodDescriptorProto.GetInputType())
+}
+
 func (info *RPCMethod) GetServiceFullNameWithNoColon() string {
 	if len(info.Package()) <= 0 {
 		return info.Service()

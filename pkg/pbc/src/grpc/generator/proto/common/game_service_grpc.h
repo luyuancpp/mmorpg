@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
-
+#include <boost/circular_buffer.hpp>
 #include "proto/common/game_service.grpc.pb.h"
 
 

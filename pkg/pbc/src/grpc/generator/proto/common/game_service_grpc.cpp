@@ -3,15 +3,17 @@
 #include "game_service_grpc.h"
 #include "thread_local/storage.h"
 
-static uint32_t GRPC_WRITE_TAG = 1;
-static uint32_t GRPC_READ_TAG = 2;
-static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
-static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
+  enum class GrpcTag {
+        INIT,
+        WRITE,
+        READ,
+        WRITES_DONE,
+        FINISH
+    };
+
 struct GameServicePlayerEnterGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGameServicePlayerEnterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServicePlayerEnterGameNodeGrpcClientCall>&)>;
@@ -60,11 +62,10 @@ void SendGameServicePlayerEnterGameNode(entt::registry& registry, entt::entity n
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GameServiceSendMessageToPlayerCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGameServiceSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceSendMessageToPlayerGrpcClientCall>&)>;
@@ -113,11 +114,10 @@ void SendGameServiceSendMessageToPlayer(entt::registry& registry, entt::entity n
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GameServiceClientSendMessageToPlayerCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGameServiceClientSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceClientSendMessageToPlayerGrpcClientCall>&)>;
@@ -166,11 +166,10 @@ void SendGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::en
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GameServiceRegisterGateNodeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGameServiceRegisterGateNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRegisterGateNodeGrpcClientCall>&)>;
@@ -219,11 +218,10 @@ void SendGameServiceRegisterGateNode(entt::registry& registry, entt::entity node
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GameServiceCentreSendToPlayerViaGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGameServiceCentreSendToPlayerViaGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall>&)>;
@@ -272,11 +270,10 @@ void SendGameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GameServiceInvokePlayerServiceCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGameServiceInvokePlayerServiceHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceInvokePlayerServiceGrpcClientCall>&)>;
@@ -325,11 +322,10 @@ void SendGameServiceInvokePlayerService(entt::registry& registry, entt::entity n
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GameServiceRouteNodeStringMsgCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGameServiceRouteNodeStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRouteNodeStringMsgGrpcClientCall>&)>;
@@ -378,11 +374,10 @@ void SendGameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity no
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GameServiceRoutePlayerStringMsgCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGameServiceRoutePlayerStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRoutePlayerStringMsgGrpcClientCall>&)>;
@@ -431,11 +426,10 @@ void SendGameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity 
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GameServiceUpdateSessionDetailCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGameServiceUpdateSessionDetailHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceUpdateSessionDetailGrpcClientCall>&)>;
@@ -484,11 +478,10 @@ void SendGameServiceUpdateSessionDetail(entt::registry& registry, entt::entity n
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GameServiceEnterSceneCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGameServiceEnterSceneHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceEnterSceneGrpcClientCall>&)>;
@@ -537,11 +530,10 @@ void SendGameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GameServiceCreateSceneCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGameServiceCreateSceneHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceCreateSceneGrpcClientCall>&)>;
