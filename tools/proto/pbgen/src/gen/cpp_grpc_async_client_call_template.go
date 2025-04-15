@@ -128,8 +128,8 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
 		{{.CppResponse}} response;
 		client.stream->Read(&response, nullptr);
 		if(Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler){
-					Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(response);
-				}
+			Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(response);
+		}
 		return;
 	}
 
@@ -140,16 +140,6 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
 			{
 				writeInProgress.isInProgress = false;
 				MaybeWriteNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
-			}
-			break;
-		case GrpcTag::READ:
-			{
-				{{.CppResponse}} response;
-				client.stream->Read(&response, (void*)(GrpcTag::READ));
-		
-				if(Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler){
-					Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(response);
-				}
 			}
 			break;
 		case GrpcTag::WRITES_DONE:

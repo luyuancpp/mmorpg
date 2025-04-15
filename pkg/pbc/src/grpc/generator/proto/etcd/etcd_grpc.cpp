@@ -324,8 +324,8 @@ void AsyncCompleteGrpcetcdserverpbWatchWatch(entt::registry& registry, entt::ent
 		::etcdserverpb::WatchResponse response;
 		client.stream->Read(&response, nullptr);
 		if(AsyncetcdserverpbWatchWatchHandler){
-					AsyncetcdserverpbWatchWatchHandler(response);
-				}
+			AsyncetcdserverpbWatchWatchHandler(response);
+		}
 		return;
 	}
 
@@ -336,16 +336,6 @@ void AsyncCompleteGrpcetcdserverpbWatchWatch(entt::registry& registry, entt::ent
 			{
 				writeInProgress.isInProgress = false;
 				MaybeWriteNextetcdserverpbWatchWatch(registry, nodeEntity, cq);
-			}
-			break;
-		case GrpcTag::READ:
-			{
-				::etcdserverpb::WatchResponse response;
-				client.stream->Read(&response, (void*)(GrpcTag::READ));
-		
-				if(AsyncetcdserverpbWatchWatchHandler){
-					AsyncetcdserverpbWatchWatchHandler(response);
-				}
 			}
 			break;
 		case GrpcTag::WRITES_DONE:
@@ -525,8 +515,8 @@ void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, 
 		::etcdserverpb::LeaseKeepAliveResponse response;
 		client.stream->Read(&response, nullptr);
 		if(AsyncetcdserverpbLeaseLeaseKeepAliveHandler){
-					AsyncetcdserverpbLeaseLeaseKeepAliveHandler(response);
-				}
+			AsyncetcdserverpbLeaseLeaseKeepAliveHandler(response);
+		}
 		return;
 	}
 
@@ -537,16 +527,6 @@ void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, 
 			{
 				writeInProgress.isInProgress = false;
 				MaybeWriteNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
-			}
-			break;
-		case GrpcTag::READ:
-			{
-				::etcdserverpb::LeaseKeepAliveResponse response;
-				client.stream->Read(&response, (void*)(GrpcTag::READ));
-		
-				if(AsyncetcdserverpbLeaseLeaseKeepAliveHandler){
-					AsyncetcdserverpbLeaseLeaseKeepAliveHandler(response);
-				}
 			}
 			break;
 		case GrpcTag::WRITES_DONE:

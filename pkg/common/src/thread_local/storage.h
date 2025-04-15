@@ -26,7 +26,7 @@ public:
     SnowFlake itemIdGenerator;
     Guid lastGeneratorItemGuid{ kInvalidGuid };
 
-	void ClearForTest();
+	void Clear();
 };
 
 extern thread_local ThreadLocalStorage tls;

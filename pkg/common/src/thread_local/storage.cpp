@@ -2,8 +2,9 @@
 
 thread_local ThreadLocalStorage tls;
 
-void ThreadLocalStorage::ClearForTest()
+void ThreadLocalStorage::Clear()
 {
+    globalRegistry.clear();
 	registry.clear();
 	sceneRegistry.clear();
     sceneNodeRegistry.clear();
@@ -12,6 +13,8 @@ void ThreadLocalStorage::ClearForTest()
     itemRegistry.clear();
     networkRegistry.clear();
     globalNodeRegistry.clear();
+
+    dispatcher.clear();
 
 	operatorEntity = entt::null;
 	errorEntity = entt::null;
