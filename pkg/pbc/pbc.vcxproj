@@ -71,6 +71,7 @@
     <ClCompile Include="src\proto\logic\component\skill_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\team_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\time_comp.pb.cc" />
+    <ClCompile Include="src\proto\logic\constants\etcd_grpc.pb.cc" />
     <ClCompile Include="src\proto\logic\constants\function_switch.pb.cc" />
     <ClCompile Include="src\proto\logic\constants\node.pb.cc" />
     <ClCompile Include="src\proto\logic\constants\scene.pb.cc" />
@@ -147,6 +148,7 @@
     <ClInclude Include="src\proto\logic\component\skill_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\team_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\time_comp.pb.h" />
+    <ClInclude Include="src\proto\logic\constants\etcd_grpc.pb.h" />
     <ClInclude Include="src\proto\logic\constants\function_switch.pb.h" />
     <ClInclude Include="src\proto\logic\constants\node.pb.h" />
     <ClInclude Include="src\proto\logic\constants\scene.pb.h" />

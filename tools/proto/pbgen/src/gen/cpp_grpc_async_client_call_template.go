@@ -63,14 +63,7 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 
 #include "{{.GeneratorGrpcFileName}}.h"
 #include "thread_local/storage.h"
-
-  enum class GrpcTag {
-        READ,
-        INIT,
-        WRITE,
-        WRITES_DONE,
-        FINISH
-    };
+#include "proto/logic/constants/etcd_grpc.pb.h"
 
 {{- range .ServiceInfo }}
 {{- range .MethodInfo }}
@@ -98,7 +91,7 @@ void MaybeWriteNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry&
 	auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
 	auto& request = pendingWritesBuffer.front();
 	writeInProgress.isInProgress = true;
-	client.stream->Write(request,  (void*)(GrpcTag::WRITE));		
+	client.stream->Write(request,  (void*)(GrpcOperation::WRITE));		
 }
 
 void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
@@ -123,8 +116,8 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
 	auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
 	auto&  writeInProgress = registry.get<{{.RequestName}}WriteInProgress>(nodeEntity);
 
-	switch (static_cast<GrpcTag>(reinterpret_cast<intptr_t>(got_tag))){
-		case GrpcTag::WRITE:
+	switch (static_cast<GrpcOperation>(reinterpret_cast<intptr_t>(got_tag))){
+		case GrpcOperation::WRITE:
 			{
 				auto&  pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
 				if (!pendingWritesBuffer.empty()) {
@@ -136,20 +129,20 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
 				
 				if (pendingWritesBuffer.empty()){
 					auto& response = registry.get<{{.CppResponse}}>(nodeEntity);
-					client.stream->Read(&response, (void*)GrpcTag::READ);
+					client.stream->Read(&response, (void*)GrpcOperation::READ);
 				}
 			}
 			break;
-		case GrpcTag::WRITES_DONE:
-			client.stream->Finish(&client.status,  (void*)(GrpcTag::FINISH));
+		case GrpcOperation::WRITES_DONE:
+			client.stream->Finish(&client.status,  (void*)(GrpcOperation::FINISH));
 			break;
-		case GrpcTag::FINISH:
+		case GrpcOperation::FINISH:
 			cq.Shutdown();
 			break;
-		case GrpcTag::READ:
+		case GrpcOperation::READ:
 			{
 				auto& response = registry.get<{{.CppResponse}}>(nodeEntity);
-				client.stream->Read(&response, (void*)GrpcTag::READ);
+				client.stream->Read(&response, (void*)GrpcOperation::READ);
 				if(Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler){
 					Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(response);
 				}
@@ -230,7 +223,7 @@ void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& regist
 		registry.emplace<{{.CppRequest}}>(nodeEntity);
 		client.stream =
 			registry.get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)->Async{{.Method}}(&client.context, 
-			&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq, (void*)(GrpcTag::INIT));
+			&registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq, (void*)(GrpcOperation::INIT));
 		
 	}
 {{end}}

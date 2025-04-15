@@ -58,6 +58,10 @@ func BuildProto(protoPath string) (err error) {
 				return
 			}
 
+			if err := generateCppFiles(fileName, config.PbcTempDirectory); err != nil {
+				log.Fatal(err)
+			}
+
 			fileHeadSame, _ := util.IsSameMD5(dstFileHeadName, tempHeadFileName)
 			fileCppSame, _ := util.IsSameMD5(dstFileCppName, tempCppFileName)
 
@@ -66,12 +70,9 @@ func BuildProto(protoPath string) (err error) {
 			}
 
 			// Generate C++ files
-			if err := generateCppFiles(fileName, config.PbcOutputDirectory); err != nil {
-				log.Fatal(err)
-			}
 
-			util.Copy(tempCppFileName, dstFileCppName)
-			util.Copy(tempHeadFileName, dstFileHeadName)
+			util.Copy(dstFileCppName, tempCppFileName)
+			util.Copy(dstFileHeadName, tempHeadFileName)
 		}(fd)
 	}
 
