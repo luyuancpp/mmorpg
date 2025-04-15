@@ -18,4 +18,5 @@ service_discovery_prefixes:
   - sceneservice.rpc
   - gateservice.rpc
   - centreservice.rpc
+  - loginservice.rpc
 
