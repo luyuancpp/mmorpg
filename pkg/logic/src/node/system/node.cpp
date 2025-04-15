@@ -91,7 +91,7 @@ void Node::StartRpcServer() {
 void Node::ShutdownNode() {
 
     StopWatchingAll();
-	tls.dispatcher.clear();  // 清除所有事件处理器
+	tls.Clear(); 
     muduoLog.stop();
     ReleaseNodeId();
 
