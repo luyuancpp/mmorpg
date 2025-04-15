@@ -3,15 +3,17 @@
 #include "deploy_service_grpc.h"
 #include "thread_local/storage.h"
 
-static uint32_t GRPC_WRITE_TAG = 1;
-static uint32_t GRPC_READ_TAG = 2;
-static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
-static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
+  enum class GrpcTag {
+        INIT,
+        WRITE,
+        READ,
+        WRITES_DONE,
+        FINISH
+    };
+
 struct DeployServiceGetNodeInfoCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncDeployServiceGetNodeInfoHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>&)>;
@@ -60,11 +62,10 @@ void SendDeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEnt
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct DeployServiceGetIDCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncDeployServiceGetIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetIDGrpcClientCall>&)>;
@@ -113,11 +114,10 @@ void SendDeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, c
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct DeployServiceReleaseIDCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncDeployServiceReleaseIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceReleaseIDGrpcClientCall>&)>;
@@ -166,11 +166,10 @@ void SendDeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntit
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct DeployServiceRenewLeaseCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncDeployServiceRenewLeaseHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceRenewLeaseGrpcClientCall>&)>;

@@ -3,15 +3,17 @@
 #include "db_service_grpc.h"
 #include "thread_local/storage.h"
 
-static uint32_t GRPC_WRITE_TAG = 1;
-static uint32_t GRPC_READ_TAG = 2;
-static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
-static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
+  enum class GrpcTag {
+        INIT,
+        WRITE,
+        READ,
+        WRITES_DONE,
+        FINISH
+    };
+
 struct AccountDBServiceLoad2RedisCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncAccountDBServiceLoad2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncAccountDBServiceLoad2RedisGrpcClientCall>&)>;
@@ -60,11 +62,10 @@ void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeE
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct AccountDBServiceSave2RedisCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncAccountDBServiceSave2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncAccountDBServiceSave2RedisGrpcClientCall>&)>;
@@ -113,11 +114,10 @@ void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeE
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct PlayerDBServiceLoad2RedisCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncPlayerDBServiceLoad2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncPlayerDBServiceLoad2RedisGrpcClientCall>&)>;
@@ -166,11 +166,10 @@ void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEn
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct PlayerDBServiceSave2RedisCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncPlayerDBServiceSave2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncPlayerDBServiceSave2RedisGrpcClientCall>&)>;

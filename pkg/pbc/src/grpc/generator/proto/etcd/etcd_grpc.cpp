@@ -3,15 +3,17 @@
 #include "etcd_grpc.h"
 #include "thread_local/storage.h"
 
-static uint32_t GRPC_WRITE_TAG = 1;
-static uint32_t GRPC_READ_TAG = 2;
-static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
-static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
+  enum class GrpcTag {
+        INIT,
+        WRITE,
+        READ,
+        WRITES_DONE,
+        FINISH
+    };
+
 struct etcdserverpbKVRangeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncetcdserverpbKVRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>&)>;
@@ -60,11 +62,10 @@ void SendetcdserverpbKVRange(entt::registry& registry, entt::entity nodeEntity, 
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct etcdserverpbKVPutCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncetcdserverpbKVPutHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>&)>;
@@ -113,11 +114,10 @@ void SendetcdserverpbKVPut(entt::registry& registry, entt::entity nodeEntity, co
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct etcdserverpbKVDeleteRangeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncetcdserverpbKVDeleteRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>&)>;
@@ -166,11 +166,10 @@ void SendetcdserverpbKVDeleteRange(entt::registry& registry, entt::entity nodeEn
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct etcdserverpbKVTxnCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncetcdserverpbKVTxnHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>&)>;
@@ -219,11 +218,10 @@ void SendetcdserverpbKVTxn(entt::registry& registry, entt::entity nodeEntity, co
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct etcdserverpbKVCompactCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncetcdserverpbKVCompactHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVCompactGrpcClientCall>&)>;
@@ -272,15 +270,34 @@ void SendetcdserverpbKVCompact(entt::registry& registry, entt::entity nodeEntity
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct etcdserverpbWatchWatchCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
 
-
-
 using AsyncetcdserverpbWatchWatchHandlerFunctionType = std::function<void(const ::etcdserverpb::WatchResponse&)>;
 AsyncetcdserverpbWatchWatchHandlerFunctionType  AsyncetcdserverpbWatchWatchHandler;
+
+void MaybeWriteNextetcdserverpbWatchWatch(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
+{
+	auto&  writeInProgress = registry.get<WatchRequestWriteInProgress>(nodeEntity);
+	auto&  pendingWritesBuffer = registry.get<WatchRequestBuffer>(nodeEntity).pendingWritesBuffer;
+
+	if (writeInProgress.isInProgress){
+		return;
+	}
+	if (pendingWritesBuffer.empty()){
+		return;
+	}
+
+	auto& client = registry.get<AsyncetcdserverpbWatchWatchGrpcClient>(nodeEntity);
+
+	auto& request = pendingWritesBuffer.front();
+	pendingWritesBuffer.pop_front();
+	writeInProgress.isInProgress = true;
+	client.stream->Write(request,  (void*)(GrpcTag::WRITE));		
+}
 
 void AsyncCompleteGrpcetcdserverpbWatchWatch(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
@@ -302,15 +319,28 @@ void AsyncCompleteGrpcetcdserverpbWatchWatch(entt::registry& registry, entt::ent
 	}
 
 	auto& client = registry.get<AsyncetcdserverpbWatchWatchGrpcClient>(nodeEntity);
+	auto&  writeInProgress = registry.get<WatchRequestWriteInProgress>(nodeEntity);
 
-	if (got_tag == P_GRPC_WRITE_TAG) {
-	} else {
-		::etcdserverpb::WatchResponse response;
-		client.stream->Read(&response, P_GRPC_READ_TAG);
-
-		if(AsyncetcdserverpbWatchWatchHandler){
-			AsyncetcdserverpbWatchWatchHandler(response);
-		}
+	switch (static_cast<GrpcTag>(reinterpret_cast<intptr_t>(got_tag))){
+		case GrpcTag::WRITE:
+			writeInProgress.isInProgress = false;
+			MaybeWriteNextetcdserverpbWatchWatch(registry, nodeEntity, cq);
+			break;
+		case GrpcTag::READ:
+			{
+				::etcdserverpb::WatchResponse response;
+				client.stream->Read(&response, (void*)(GrpcTag::READ));
+		
+				if(AsyncetcdserverpbWatchWatchHandler){
+					AsyncetcdserverpbWatchWatchHandler(response);
+				}
+			}
+			break;
+		case GrpcTag::WRITES_DONE:
+			client.stream->Finish(&client.status,  (void*)(GrpcTag::FINISH));
+			break;
+		case GrpcTag::FINISH:
+			cq.Shutdown();
 	}
 }
 
@@ -319,17 +349,16 @@ void AsyncCompleteGrpcetcdserverpbWatchWatch(entt::registry& registry, entt::ent
 void SendetcdserverpbWatchWatch(entt::registry& registry, entt::entity nodeEntity, const  ::etcdserverpb::WatchRequest& request)
 {
 
-	auto& client = registry.get<AsyncetcdserverpbWatchWatchGrpcClient>(nodeEntity);
-	client.stream->Write(request, static_cast<void*>(P_GRPC_WRITE_TAG));
 	auto& cq = registry.get<etcdserverpbWatchWatchCompleteQueue>(nodeEntity).cq;
-	AsyncCompleteGrpcetcdserverpbWatchWatch(registry, nodeEntity, cq);
+	auto&  pendingWritesBuffer = registry.get<WatchRequestBuffer>(nodeEntity).pendingWritesBuffer;
+	pendingWritesBuffer.push_back(request);
+	MaybeWriteNextetcdserverpbWatchWatch(registry, nodeEntity, cq);
 
 }
+
 struct etcdserverpbLeaseLeaseGrantCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncetcdserverpbLeaseLeaseGrantHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>&)>;
@@ -378,11 +407,10 @@ void SendetcdserverpbLeaseLeaseGrant(entt::registry& registry, entt::entity node
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct etcdserverpbLeaseLeaseRevokeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncetcdserverpbLeaseLeaseRevokeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseRevokeGrpcClientCall>&)>;
@@ -431,15 +459,34 @@ void SendetcdserverpbLeaseLeaseRevoke(entt::registry& registry, entt::entity nod
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct etcdserverpbLeaseLeaseKeepAliveCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
 
-
-
 using AsyncetcdserverpbLeaseLeaseKeepAliveHandlerFunctionType = std::function<void(const ::etcdserverpb::LeaseKeepAliveResponse&)>;
 AsyncetcdserverpbLeaseLeaseKeepAliveHandlerFunctionType  AsyncetcdserverpbLeaseLeaseKeepAliveHandler;
+
+void MaybeWriteNextetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
+{
+	auto&  writeInProgress = registry.get<LeaseKeepAliveRequestWriteInProgress>(nodeEntity);
+	auto&  pendingWritesBuffer = registry.get<LeaseKeepAliveRequestBuffer>(nodeEntity).pendingWritesBuffer;
+
+	if (writeInProgress.isInProgress){
+		return;
+	}
+	if (pendingWritesBuffer.empty()){
+		return;
+	}
+
+	auto& client = registry.get<AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
+
+	auto& request = pendingWritesBuffer.front();
+	pendingWritesBuffer.pop_front();
+	writeInProgress.isInProgress = true;
+	client.stream->Write(request,  (void*)(GrpcTag::WRITE));		
+}
 
 void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
@@ -461,15 +508,28 @@ void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, 
 	}
 
 	auto& client = registry.get<AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
+	auto&  writeInProgress = registry.get<LeaseKeepAliveRequestWriteInProgress>(nodeEntity);
 
-	if (got_tag == P_GRPC_WRITE_TAG) {
-	} else {
-		::etcdserverpb::LeaseKeepAliveResponse response;
-		client.stream->Read(&response, P_GRPC_READ_TAG);
-
-		if(AsyncetcdserverpbLeaseLeaseKeepAliveHandler){
-			AsyncetcdserverpbLeaseLeaseKeepAliveHandler(response);
-		}
+	switch (static_cast<GrpcTag>(reinterpret_cast<intptr_t>(got_tag))){
+		case GrpcTag::WRITE:
+			writeInProgress.isInProgress = false;
+			MaybeWriteNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
+			break;
+		case GrpcTag::READ:
+			{
+				::etcdserverpb::LeaseKeepAliveResponse response;
+				client.stream->Read(&response, (void*)(GrpcTag::READ));
+		
+				if(AsyncetcdserverpbLeaseLeaseKeepAliveHandler){
+					AsyncetcdserverpbLeaseLeaseKeepAliveHandler(response);
+				}
+			}
+			break;
+		case GrpcTag::WRITES_DONE:
+			client.stream->Finish(&client.status,  (void*)(GrpcTag::FINISH));
+			break;
+		case GrpcTag::FINISH:
+			cq.Shutdown();
 	}
 }
 
@@ -478,17 +538,16 @@ void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, 
 void SendetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const  ::etcdserverpb::LeaseKeepAliveRequest& request)
 {
 
-	auto& client = registry.get<AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
-	client.stream->Write(request, static_cast<void*>(P_GRPC_WRITE_TAG));
 	auto& cq = registry.get<etcdserverpbLeaseLeaseKeepAliveCompleteQueue>(nodeEntity).cq;
-	AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
+	auto&  pendingWritesBuffer = registry.get<LeaseKeepAliveRequestBuffer>(nodeEntity).pendingWritesBuffer;
+	pendingWritesBuffer.push_back(request);
+	MaybeWriteNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
 
 }
+
 struct etcdserverpbLeaseLeaseTimeToLiveCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncetcdserverpbLeaseLeaseTimeToLiveHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseTimeToLiveGrpcClientCall>&)>;
@@ -537,11 +596,10 @@ void SendetcdserverpbLeaseLeaseTimeToLive(entt::registry& registry, entt::entity
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct etcdserverpbLeaseLeaseLeasesCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncetcdserverpbLeaseLeaseLeasesHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseLeasesGrpcClientCall>&)>;
@@ -607,10 +665,11 @@ void InitetcdserverpbWatchCompletedQueue(entt::registry& registry, entt::entity 
 
 	{
 		auto& client = registry.emplace<AsyncetcdserverpbWatchWatchGrpcClient>(nodeEntity);
+		registry.emplace<WatchRequestBuffer>(nodeEntity).pendingWritesBuffer.resize(1000);
+		registry.emplace<WatchRequestWriteInProgress>(nodeEntity);
 		client.stream =
-			registry.get<GrpcetcdserverpbWatchStubPtr>(nodeEntity)->PrepareAsyncWatch(&client.context, 
-			&registry.get<etcdserverpbWatchWatchCompleteQueue>(nodeEntity).cq);
-		client.stream->StartCall(static_cast<void*>(&client));
+			registry.get<GrpcetcdserverpbWatchStubPtr>(nodeEntity)->AsyncWatch(&client.context, 
+			&registry.get<etcdserverpbWatchWatchCompleteQueue>(nodeEntity).cq, (void*)(GrpcTag::INIT));
 	}
 
 }
@@ -623,10 +682,11 @@ void InitetcdserverpbLeaseCompletedQueue(entt::registry& registry, entt::entity 
 
 	{
 		auto& client = registry.emplace<AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
+		registry.emplace<LeaseKeepAliveRequestBuffer>(nodeEntity).pendingWritesBuffer.resize(1000);
+		registry.emplace<LeaseKeepAliveRequestWriteInProgress>(nodeEntity);
 		client.stream =
-			registry.get<GrpcetcdserverpbLeaseStubPtr>(nodeEntity)->PrepareAsyncLeaseKeepAlive(&client.context, 
-			&registry.get<etcdserverpbLeaseLeaseKeepAliveCompleteQueue>(nodeEntity).cq);
-		client.stream->StartCall(static_cast<void*>(&client));
+			registry.get<GrpcetcdserverpbLeaseStubPtr>(nodeEntity)->AsyncLeaseKeepAlive(&client.context, 
+			&registry.get<etcdserverpbLeaseLeaseKeepAliveCompleteQueue>(nodeEntity).cq, (void*)(GrpcTag::INIT));
 	}
 
 	registry.emplace<etcdserverpbLeaseLeaseTimeToLiveCompleteQueue>(nodeEntity);

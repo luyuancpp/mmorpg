@@ -3,15 +3,17 @@
 #include "gate_service_grpc.h"
 #include "thread_local/storage.h"
 
-static uint32_t GRPC_WRITE_TAG = 1;
-static uint32_t GRPC_READ_TAG = 2;
-static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
-static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
+  enum class GrpcTag {
+        INIT,
+        WRITE,
+        READ,
+        WRITES_DONE,
+        FINISH
+    };
+
 struct GateServiceRegisterGameCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGateServiceRegisterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRegisterGameGrpcClientCall>&)>;
@@ -60,11 +62,10 @@ void SendGateServiceRegisterGame(entt::registry& registry, entt::entity nodeEnti
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GateServiceUnRegisterGameCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGateServiceUnRegisterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceUnRegisterGameGrpcClientCall>&)>;
@@ -113,11 +114,10 @@ void SendGateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEn
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GateServicePlayerEnterGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGateServicePlayerEnterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServicePlayerEnterGameNodeGrpcClientCall>&)>;
@@ -166,11 +166,10 @@ void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity n
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GateServiceSendMessageToPlayerCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGateServiceSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceSendMessageToPlayerGrpcClientCall>&)>;
@@ -219,11 +218,10 @@ void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity n
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GateServiceKickSessionByCentreCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGateServiceKickSessionByCentreHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceKickSessionByCentreGrpcClientCall>&)>;
@@ -272,11 +270,10 @@ void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity n
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GateServiceRouteNodeMessageCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGateServiceRouteNodeMessageHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRouteNodeMessageGrpcClientCall>&)>;
@@ -325,11 +322,10 @@ void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity node
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GateServiceRoutePlayerMessageCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGateServiceRoutePlayerMessageHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRoutePlayerMessageGrpcClientCall>&)>;
@@ -378,11 +374,10 @@ void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity no
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct GateServiceBroadcastToPlayersCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncGateServiceBroadcastToPlayersHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceBroadcastToPlayersGrpcClientCall>&)>;

@@ -3,15 +3,17 @@
 #include "login_service_grpc.h"
 #include "thread_local/storage.h"
 
-static uint32_t GRPC_WRITE_TAG = 1;
-static uint32_t GRPC_READ_TAG = 2;
-static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
-static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
+  enum class GrpcTag {
+        INIT,
+        WRITE,
+        READ,
+        WRITES_DONE,
+        FINISH
+    };
+
 struct LoginServiceLoginCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncLoginServiceLoginHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>&)>;
@@ -60,11 +62,10 @@ void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, co
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct LoginServiceCreatePlayerCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncLoginServiceCreatePlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceCreatePlayerGrpcClientCall>&)>;
@@ -113,11 +114,10 @@ void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEnt
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct LoginServiceEnterGameCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncLoginServiceEnterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceEnterGameGrpcClientCall>&)>;
@@ -166,11 +166,10 @@ void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct LoginServiceLeaveGameCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncLoginServiceLeaveGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLeaveGameGrpcClientCall>&)>;
@@ -219,11 +218,10 @@ void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
 struct LoginServiceDisconnectCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-
-
 
 
 using AsyncLoginServiceDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceDisconnectGrpcClientCall>&)>;
