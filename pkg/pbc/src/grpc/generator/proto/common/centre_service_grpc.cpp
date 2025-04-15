@@ -2,6 +2,11 @@
 
 #include "centre_service_grpc.h"
 #include "thread_local/storage.h"
+
+static uint32_t GRPC_WRITE_TAG = 1;
+static uint32_t GRPC_READ_TAG = 2;
+static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
+static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
 struct CentreServiceRegisterGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
@@ -12,7 +17,7 @@ struct CentreServiceRegisterGameNodeCompleteQueue{
 using AsyncCentreServiceRegisterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRegisterGameNodeGrpcClientCall>&)>;
 AsyncCentreServiceRegisterGameNodeHandlerFunctionType  AsyncCentreServiceRegisterGameNodeHandler;
 
-void AsyncCompleteGrpcCentreServiceRegisterGameNode(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -65,7 +70,7 @@ struct CentreServiceRegisterGateNodeCompleteQueue{
 using AsyncCentreServiceRegisterGateNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRegisterGateNodeGrpcClientCall>&)>;
 AsyncCentreServiceRegisterGateNodeHandlerFunctionType  AsyncCentreServiceRegisterGateNodeHandler;
 
-void AsyncCompleteGrpcCentreServiceRegisterGateNode(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -118,7 +123,7 @@ struct CentreServiceGatePlayerServiceCompleteQueue{
 using AsyncCentreServiceGatePlayerServiceHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceGatePlayerServiceGrpcClientCall>&)>;
 AsyncCentreServiceGatePlayerServiceHandlerFunctionType  AsyncCentreServiceGatePlayerServiceHandler;
 
-void AsyncCompleteGrpcCentreServiceGatePlayerService(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceGatePlayerService(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -171,7 +176,7 @@ struct CentreServiceGateSessionDisconnectCompleteQueue{
 using AsyncCentreServiceGateSessionDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceGateSessionDisconnectGrpcClientCall>&)>;
 AsyncCentreServiceGateSessionDisconnectHandlerFunctionType  AsyncCentreServiceGateSessionDisconnectHandler;
 
-void AsyncCompleteGrpcCentreServiceGateSessionDisconnect(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceGateSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -224,7 +229,7 @@ struct CentreServiceLoginNodeAccountLoginCompleteQueue{
 using AsyncCentreServiceLoginNodeAccountLoginHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceLoginNodeAccountLoginGrpcClientCall>&)>;
 AsyncCentreServiceLoginNodeAccountLoginHandlerFunctionType  AsyncCentreServiceLoginNodeAccountLoginHandler;
 
-void AsyncCompleteGrpcCentreServiceLoginNodeAccountLogin(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceLoginNodeAccountLogin(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -277,7 +282,7 @@ struct CentreServiceLoginNodeEnterGameCompleteQueue{
 using AsyncCentreServiceLoginNodeEnterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceLoginNodeEnterGameGrpcClientCall>&)>;
 AsyncCentreServiceLoginNodeEnterGameHandlerFunctionType  AsyncCentreServiceLoginNodeEnterGameHandler;
 
-void AsyncCompleteGrpcCentreServiceLoginNodeEnterGame(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceLoginNodeEnterGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -330,7 +335,7 @@ struct CentreServiceLoginNodeLeaveGameCompleteQueue{
 using AsyncCentreServiceLoginNodeLeaveGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceLoginNodeLeaveGameGrpcClientCall>&)>;
 AsyncCentreServiceLoginNodeLeaveGameHandlerFunctionType  AsyncCentreServiceLoginNodeLeaveGameHandler;
 
-void AsyncCompleteGrpcCentreServiceLoginNodeLeaveGame(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceLoginNodeLeaveGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -383,7 +388,7 @@ struct CentreServiceLoginNodeSessionDisconnectCompleteQueue{
 using AsyncCentreServiceLoginNodeSessionDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceLoginNodeSessionDisconnectGrpcClientCall>&)>;
 AsyncCentreServiceLoginNodeSessionDisconnectHandlerFunctionType  AsyncCentreServiceLoginNodeSessionDisconnectHandler;
 
-void AsyncCompleteGrpcCentreServiceLoginNodeSessionDisconnect(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceLoginNodeSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -436,7 +441,7 @@ struct CentreServicePlayerServiceCompleteQueue{
 using AsyncCentreServicePlayerServiceHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServicePlayerServiceGrpcClientCall>&)>;
 AsyncCentreServicePlayerServiceHandlerFunctionType  AsyncCentreServicePlayerServiceHandler;
 
-void AsyncCompleteGrpcCentreServicePlayerService(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServicePlayerService(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -489,7 +494,7 @@ struct CentreServiceEnterGsSucceedCompleteQueue{
 using AsyncCentreServiceEnterGsSucceedHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceEnterGsSucceedGrpcClientCall>&)>;
 AsyncCentreServiceEnterGsSucceedHandlerFunctionType  AsyncCentreServiceEnterGsSucceedHandler;
 
-void AsyncCompleteGrpcCentreServiceEnterGsSucceed(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceEnterGsSucceed(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -542,7 +547,7 @@ struct CentreServiceRouteNodeStringMsgCompleteQueue{
 using AsyncCentreServiceRouteNodeStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRouteNodeStringMsgGrpcClientCall>&)>;
 AsyncCentreServiceRouteNodeStringMsgHandlerFunctionType  AsyncCentreServiceRouteNodeStringMsgHandler;
 
-void AsyncCompleteGrpcCentreServiceRouteNodeStringMsg(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -595,7 +600,7 @@ struct CentreServiceRoutePlayerStringMsgCompleteQueue{
 using AsyncCentreServiceRoutePlayerStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRoutePlayerStringMsgGrpcClientCall>&)>;
 AsyncCentreServiceRoutePlayerStringMsgHandlerFunctionType  AsyncCentreServiceRoutePlayerStringMsgHandler;
 
-void AsyncCompleteGrpcCentreServiceRoutePlayerStringMsg(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -648,7 +653,7 @@ struct CentreServiceUnRegisterGameNodeCompleteQueue{
 using AsyncCentreServiceUnRegisterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceUnRegisterGameNodeGrpcClientCall>&)>;
 AsyncCentreServiceUnRegisterGameNodeHandlerFunctionType  AsyncCentreServiceUnRegisterGameNodeHandler;
 
-void AsyncCompleteGrpcCentreServiceUnRegisterGameNode(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceUnRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -723,79 +728,79 @@ void HandleCentreServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<CentreServiceRegisterGameNodeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceRegisterGameNode(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceRegisterGameNode(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<CentreServiceRegisterGateNodeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceRegisterGateNode(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceRegisterGateNode(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<CentreServiceGatePlayerServiceCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceGatePlayerService(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceGatePlayerService(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<CentreServiceGateSessionDisconnectCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceGateSessionDisconnect(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceGateSessionDisconnect(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<CentreServiceLoginNodeAccountLoginCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceLoginNodeAccountLogin(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceLoginNodeAccountLogin(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<CentreServiceLoginNodeEnterGameCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceLoginNodeEnterGame(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceLoginNodeEnterGame(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<CentreServiceLoginNodeLeaveGameCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceLoginNodeLeaveGame(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceLoginNodeLeaveGame(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<CentreServiceLoginNodeSessionDisconnectCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceLoginNodeSessionDisconnect(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceLoginNodeSessionDisconnect(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<CentreServicePlayerServiceCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServicePlayerService(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServicePlayerService(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<CentreServiceEnterGsSucceedCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceEnterGsSucceed(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceEnterGsSucceed(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<CentreServiceRouteNodeStringMsgCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceRouteNodeStringMsg(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceRouteNodeStringMsg(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<CentreServiceRoutePlayerStringMsgCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceRoutePlayerStringMsg(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceRoutePlayerStringMsg(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<CentreServiceUnRegisterGameNodeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceUnRegisterGameNode(completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceUnRegisterGameNode(registry, e, completeQueueComp.cq);
 		}
 	}
 }

@@ -2,6 +2,11 @@
 
 #include "game_service_grpc.h"
 #include "thread_local/storage.h"
+
+static uint32_t GRPC_WRITE_TAG = 1;
+static uint32_t GRPC_READ_TAG = 2;
+static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
+static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
 struct GameServicePlayerEnterGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
@@ -12,7 +17,7 @@ struct GameServicePlayerEnterGameNodeCompleteQueue{
 using AsyncGameServicePlayerEnterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServicePlayerEnterGameNodeGrpcClientCall>&)>;
 AsyncGameServicePlayerEnterGameNodeHandlerFunctionType  AsyncGameServicePlayerEnterGameNodeHandler;
 
-void AsyncCompleteGrpcGameServicePlayerEnterGameNode(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGameServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -65,7 +70,7 @@ struct GameServiceSendMessageToPlayerCompleteQueue{
 using AsyncGameServiceSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceSendMessageToPlayerGrpcClientCall>&)>;
 AsyncGameServiceSendMessageToPlayerHandlerFunctionType  AsyncGameServiceSendMessageToPlayerHandler;
 
-void AsyncCompleteGrpcGameServiceSendMessageToPlayer(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGameServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -118,7 +123,7 @@ struct GameServiceClientSendMessageToPlayerCompleteQueue{
 using AsyncGameServiceClientSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceClientSendMessageToPlayerGrpcClientCall>&)>;
 AsyncGameServiceClientSendMessageToPlayerHandlerFunctionType  AsyncGameServiceClientSendMessageToPlayerHandler;
 
-void AsyncCompleteGrpcGameServiceClientSendMessageToPlayer(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -171,7 +176,7 @@ struct GameServiceRegisterGateNodeCompleteQueue{
 using AsyncGameServiceRegisterGateNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRegisterGateNodeGrpcClientCall>&)>;
 AsyncGameServiceRegisterGateNodeHandlerFunctionType  AsyncGameServiceRegisterGateNodeHandler;
 
-void AsyncCompleteGrpcGameServiceRegisterGateNode(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGameServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -224,7 +229,7 @@ struct GameServiceCentreSendToPlayerViaGameNodeCompleteQueue{
 using AsyncGameServiceCentreSendToPlayerViaGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall>&)>;
 AsyncGameServiceCentreSendToPlayerViaGameNodeHandlerFunctionType  AsyncGameServiceCentreSendToPlayerViaGameNodeHandler;
 
-void AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -277,7 +282,7 @@ struct GameServiceInvokePlayerServiceCompleteQueue{
 using AsyncGameServiceInvokePlayerServiceHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceInvokePlayerServiceGrpcClientCall>&)>;
 AsyncGameServiceInvokePlayerServiceHandlerFunctionType  AsyncGameServiceInvokePlayerServiceHandler;
 
-void AsyncCompleteGrpcGameServiceInvokePlayerService(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGameServiceInvokePlayerService(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -330,7 +335,7 @@ struct GameServiceRouteNodeStringMsgCompleteQueue{
 using AsyncGameServiceRouteNodeStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRouteNodeStringMsgGrpcClientCall>&)>;
 AsyncGameServiceRouteNodeStringMsgHandlerFunctionType  AsyncGameServiceRouteNodeStringMsgHandler;
 
-void AsyncCompleteGrpcGameServiceRouteNodeStringMsg(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -383,7 +388,7 @@ struct GameServiceRoutePlayerStringMsgCompleteQueue{
 using AsyncGameServiceRoutePlayerStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRoutePlayerStringMsgGrpcClientCall>&)>;
 AsyncGameServiceRoutePlayerStringMsgHandlerFunctionType  AsyncGameServiceRoutePlayerStringMsgHandler;
 
-void AsyncCompleteGrpcGameServiceRoutePlayerStringMsg(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -436,7 +441,7 @@ struct GameServiceUpdateSessionDetailCompleteQueue{
 using AsyncGameServiceUpdateSessionDetailHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceUpdateSessionDetailGrpcClientCall>&)>;
 AsyncGameServiceUpdateSessionDetailHandlerFunctionType  AsyncGameServiceUpdateSessionDetailHandler;
 
-void AsyncCompleteGrpcGameServiceUpdateSessionDetail(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGameServiceUpdateSessionDetail(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -489,7 +494,7 @@ struct GameServiceEnterSceneCompleteQueue{
 using AsyncGameServiceEnterSceneHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceEnterSceneGrpcClientCall>&)>;
 AsyncGameServiceEnterSceneHandlerFunctionType  AsyncGameServiceEnterSceneHandler;
 
-void AsyncCompleteGrpcGameServiceEnterScene(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -542,7 +547,7 @@ struct GameServiceCreateSceneCompleteQueue{
 using AsyncGameServiceCreateSceneHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceCreateSceneGrpcClientCall>&)>;
 AsyncGameServiceCreateSceneHandlerFunctionType  AsyncGameServiceCreateSceneHandler;
 
-void AsyncCompleteGrpcGameServiceCreateScene(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcGameServiceCreateScene(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -613,67 +618,67 @@ void HandleGameServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<GameServicePlayerEnterGameNodeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGameServicePlayerEnterGameNode(completeQueueComp.cq);
+			AsyncCompleteGrpcGameServicePlayerEnterGameNode(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GameServiceSendMessageToPlayerCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGameServiceSendMessageToPlayer(completeQueueComp.cq);
+			AsyncCompleteGrpcGameServiceSendMessageToPlayer(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GameServiceClientSendMessageToPlayerCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGameServiceClientSendMessageToPlayer(completeQueueComp.cq);
+			AsyncCompleteGrpcGameServiceClientSendMessageToPlayer(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GameServiceRegisterGateNodeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGameServiceRegisterGateNode(completeQueueComp.cq);
+			AsyncCompleteGrpcGameServiceRegisterGateNode(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GameServiceCentreSendToPlayerViaGameNodeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode(completeQueueComp.cq);
+			AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GameServiceInvokePlayerServiceCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGameServiceInvokePlayerService(completeQueueComp.cq);
+			AsyncCompleteGrpcGameServiceInvokePlayerService(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GameServiceRouteNodeStringMsgCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGameServiceRouteNodeStringMsg(completeQueueComp.cq);
+			AsyncCompleteGrpcGameServiceRouteNodeStringMsg(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GameServiceRoutePlayerStringMsgCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGameServiceRoutePlayerStringMsg(completeQueueComp.cq);
+			AsyncCompleteGrpcGameServiceRoutePlayerStringMsg(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GameServiceUpdateSessionDetailCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGameServiceUpdateSessionDetail(completeQueueComp.cq);
+			AsyncCompleteGrpcGameServiceUpdateSessionDetail(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GameServiceEnterSceneCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGameServiceEnterScene(completeQueueComp.cq);
+			AsyncCompleteGrpcGameServiceEnterScene(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GameServiceCreateSceneCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGameServiceCreateScene(completeQueueComp.cq);
+			AsyncCompleteGrpcGameServiceCreateScene(registry, e, completeQueueComp.cq);
 		}
 	}
 }

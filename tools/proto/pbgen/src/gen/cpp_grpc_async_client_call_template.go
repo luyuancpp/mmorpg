@@ -59,6 +59,12 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 #include "{{.GeneratorGrpcFileName}}.h"
 #include "thread_local/storage.h"
 
+static uint32_t GRPC_WRITE_TAG = 1;
+static uint32_t GRPC_READ_TAG = 2;
+static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
+static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
+
+
 {{- range .ServiceInfo }}
 {{- range .MethodInfo }}
 struct {{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue{
@@ -71,7 +77,7 @@ struct {{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue{
 using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
 Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;
 
-void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -85,29 +91,29 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(grpc::Comple
         return;
     }
 
-    auto client(static_cast<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient*>(got_tag));
-
-	{{.CppResponse}} response;
 	if (!ok){
 		LOG_ERROR << "RPC failed";
 		return;
 	}
 
-    if (client->status.ok()){
-		void* read_tag = nullptr;
-		client->stream->Read(&response, read_tag);
+	auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
+
+	if (got_tag == P_GRPC_WRITE_TAG) {
+	} else {
+		{{.CppResponse}} response;
+		client.stream->Read(&response, P_GRPC_READ_TAG);
+
 		if(Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler){
 			Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(response);
 		}
-    }else{
-        LOG_ERROR << client->status.error_message();
-    }
+	}
 }
+
 {{else}}
 using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
 Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;
 
-void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -141,9 +147,9 @@ void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry,
 {
 {{if .ClientStreaming}}
 	auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
-	client.stream->Write(request, &client);
+	client.stream->Write(request, static_cast<void*>(P_GRPC_WRITE_TAG));
 	auto& cq = registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq;
-	AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(cq);
+	AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
 {{else}}
     Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
     call->response_reader =
@@ -182,7 +188,7 @@ void Handle{{.GetServiceFullNameWithNoColon}}CompletedQueueMessage(entt::registr
 	{
 		auto&& view = registry.view<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(completeQueueComp.cq);
+			AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, e, completeQueueComp.cq);
 		}
 	}
 {{- end }}

@@ -2,6 +2,11 @@
 
 #include "etcd_grpc.h"
 #include "thread_local/storage.h"
+
+static uint32_t GRPC_WRITE_TAG = 1;
+static uint32_t GRPC_READ_TAG = 2;
+static void* P_GRPC_WRITE_TAG = static_cast<void*>(&GRPC_WRITE_TAG);
+static void* P_GRPC_READ_TAG = static_cast<void*>(&GRPC_READ_TAG);
 struct etcdserverpbKVRangeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
@@ -12,7 +17,7 @@ struct etcdserverpbKVRangeCompleteQueue{
 using AsyncetcdserverpbKVRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>&)>;
 AsyncetcdserverpbKVRangeHandlerFunctionType  AsyncetcdserverpbKVRangeHandler;
 
-void AsyncCompleteGrpcetcdserverpbKVRange(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbKVRange(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -65,7 +70,7 @@ struct etcdserverpbKVPutCompleteQueue{
 using AsyncetcdserverpbKVPutHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>&)>;
 AsyncetcdserverpbKVPutHandlerFunctionType  AsyncetcdserverpbKVPutHandler;
 
-void AsyncCompleteGrpcetcdserverpbKVPut(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbKVPut(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -118,7 +123,7 @@ struct etcdserverpbKVDeleteRangeCompleteQueue{
 using AsyncetcdserverpbKVDeleteRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>&)>;
 AsyncetcdserverpbKVDeleteRangeHandlerFunctionType  AsyncetcdserverpbKVDeleteRangeHandler;
 
-void AsyncCompleteGrpcetcdserverpbKVDeleteRange(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -171,7 +176,7 @@ struct etcdserverpbKVTxnCompleteQueue{
 using AsyncetcdserverpbKVTxnHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>&)>;
 AsyncetcdserverpbKVTxnHandlerFunctionType  AsyncetcdserverpbKVTxnHandler;
 
-void AsyncCompleteGrpcetcdserverpbKVTxn(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbKVTxn(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -224,7 +229,7 @@ struct etcdserverpbKVCompactCompleteQueue{
 using AsyncetcdserverpbKVCompactHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVCompactGrpcClientCall>&)>;
 AsyncetcdserverpbKVCompactHandlerFunctionType  AsyncetcdserverpbKVCompactHandler;
 
-void AsyncCompleteGrpcetcdserverpbKVCompact(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbKVCompact(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -277,7 +282,7 @@ struct etcdserverpbWatchWatchCompleteQueue{
 using AsyncetcdserverpbWatchWatchHandlerFunctionType = std::function<void(const ::etcdserverpb::WatchResponse&)>;
 AsyncetcdserverpbWatchWatchHandlerFunctionType  AsyncetcdserverpbWatchWatchHandler;
 
-void AsyncCompleteGrpcetcdserverpbWatchWatch(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbWatchWatch(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -291,33 +296,33 @@ void AsyncCompleteGrpcetcdserverpbWatchWatch(grpc::CompletionQueue& cq)
         return;
     }
 
-    auto client(static_cast<AsyncetcdserverpbWatchWatchGrpcClient*>(got_tag));
-
-	::etcdserverpb::WatchResponse response;
 	if (!ok){
 		LOG_ERROR << "RPC failed";
 		return;
 	}
 
-    if (client->status.ok()){
-		void* read_tag = nullptr;
-		client->stream->Read(&response, read_tag);
+	auto& client = registry.get<AsyncetcdserverpbWatchWatchGrpcClient>(nodeEntity);
+
+	if (got_tag == P_GRPC_WRITE_TAG) {
+	} else {
+		::etcdserverpb::WatchResponse response;
+		client.stream->Read(&response, P_GRPC_READ_TAG);
+
 		if(AsyncetcdserverpbWatchWatchHandler){
 			AsyncetcdserverpbWatchWatchHandler(response);
 		}
-    }else{
-        LOG_ERROR << client->status.error_message();
-    }
+	}
 }
+
 
 
 void SendetcdserverpbWatchWatch(entt::registry& registry, entt::entity nodeEntity, const  ::etcdserverpb::WatchRequest& request)
 {
 
 	auto& client = registry.get<AsyncetcdserverpbWatchWatchGrpcClient>(nodeEntity);
-	client.stream->Write(request, &client);
+	client.stream->Write(request, static_cast<void*>(P_GRPC_WRITE_TAG));
 	auto& cq = registry.get<etcdserverpbWatchWatchCompleteQueue>(nodeEntity).cq;
-	AsyncCompleteGrpcetcdserverpbWatchWatch(cq);
+	AsyncCompleteGrpcetcdserverpbWatchWatch(registry, nodeEntity, cq);
 
 }
 struct etcdserverpbLeaseLeaseGrantCompleteQueue{
@@ -330,7 +335,7 @@ struct etcdserverpbLeaseLeaseGrantCompleteQueue{
 using AsyncetcdserverpbLeaseLeaseGrantHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>&)>;
 AsyncetcdserverpbLeaseLeaseGrantHandlerFunctionType  AsyncetcdserverpbLeaseLeaseGrantHandler;
 
-void AsyncCompleteGrpcetcdserverpbLeaseLeaseGrant(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -383,7 +388,7 @@ struct etcdserverpbLeaseLeaseRevokeCompleteQueue{
 using AsyncetcdserverpbLeaseLeaseRevokeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseRevokeGrpcClientCall>&)>;
 AsyncetcdserverpbLeaseLeaseRevokeHandlerFunctionType  AsyncetcdserverpbLeaseLeaseRevokeHandler;
 
-void AsyncCompleteGrpcetcdserverpbLeaseLeaseRevoke(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -436,7 +441,7 @@ struct etcdserverpbLeaseLeaseKeepAliveCompleteQueue{
 using AsyncetcdserverpbLeaseLeaseKeepAliveHandlerFunctionType = std::function<void(const ::etcdserverpb::LeaseKeepAliveResponse&)>;
 AsyncetcdserverpbLeaseLeaseKeepAliveHandlerFunctionType  AsyncetcdserverpbLeaseLeaseKeepAliveHandler;
 
-void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -450,33 +455,33 @@ void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(grpc::CompletionQueue& cq)
         return;
     }
 
-    auto client(static_cast<AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClient*>(got_tag));
-
-	::etcdserverpb::LeaseKeepAliveResponse response;
 	if (!ok){
 		LOG_ERROR << "RPC failed";
 		return;
 	}
 
-    if (client->status.ok()){
-		void* read_tag = nullptr;
-		client->stream->Read(&response, read_tag);
+	auto& client = registry.get<AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
+
+	if (got_tag == P_GRPC_WRITE_TAG) {
+	} else {
+		::etcdserverpb::LeaseKeepAliveResponse response;
+		client.stream->Read(&response, P_GRPC_READ_TAG);
+
 		if(AsyncetcdserverpbLeaseLeaseKeepAliveHandler){
 			AsyncetcdserverpbLeaseLeaseKeepAliveHandler(response);
 		}
-    }else{
-        LOG_ERROR << client->status.error_message();
-    }
+	}
 }
+
 
 
 void SendetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const  ::etcdserverpb::LeaseKeepAliveRequest& request)
 {
 
 	auto& client = registry.get<AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
-	client.stream->Write(request, &client);
+	client.stream->Write(request, static_cast<void*>(P_GRPC_WRITE_TAG));
 	auto& cq = registry.get<etcdserverpbLeaseLeaseKeepAliveCompleteQueue>(nodeEntity).cq;
-	AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(cq);
+	AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
 
 }
 struct etcdserverpbLeaseLeaseTimeToLiveCompleteQueue{
@@ -489,7 +494,7 @@ struct etcdserverpbLeaseLeaseTimeToLiveCompleteQueue{
 using AsyncetcdserverpbLeaseLeaseTimeToLiveHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseTimeToLiveGrpcClientCall>&)>;
 AsyncetcdserverpbLeaseLeaseTimeToLiveHandlerFunctionType  AsyncetcdserverpbLeaseLeaseTimeToLiveHandler;
 
-void AsyncCompleteGrpcetcdserverpbLeaseLeaseTimeToLive(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -542,7 +547,7 @@ struct etcdserverpbLeaseLeaseLeasesCompleteQueue{
 using AsyncetcdserverpbLeaseLeaseLeasesHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseLeasesGrpcClientCall>&)>;
 AsyncetcdserverpbLeaseLeaseLeasesHandlerFunctionType  AsyncetcdserverpbLeaseLeaseLeasesHandler;
 
-void AsyncCompleteGrpcetcdserverpbLeaseLeaseLeases(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -633,31 +638,31 @@ void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<etcdserverpbKVRangeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcetcdserverpbKVRange(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbKVRange(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<etcdserverpbKVPutCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcetcdserverpbKVPut(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbKVPut(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<etcdserverpbKVDeleteRangeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcetcdserverpbKVDeleteRange(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbKVDeleteRange(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<etcdserverpbKVTxnCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcetcdserverpbKVTxn(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbKVTxn(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<etcdserverpbKVCompactCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcetcdserverpbKVCompact(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbKVCompact(registry, e, completeQueueComp.cq);
 		}
 	}
 }
@@ -665,7 +670,7 @@ void HandleetcdserverpbWatchCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<etcdserverpbWatchWatchCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcetcdserverpbWatchWatch(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbWatchWatch(registry, e, completeQueueComp.cq);
 		}
 	}
 }
@@ -673,31 +678,31 @@ void HandleetcdserverpbLeaseCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<etcdserverpbLeaseLeaseGrantCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcetcdserverpbLeaseLeaseGrant(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbLeaseLeaseGrant(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<etcdserverpbLeaseLeaseRevokeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcetcdserverpbLeaseLeaseRevoke(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbLeaseLeaseRevoke(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<etcdserverpbLeaseLeaseKeepAliveCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<etcdserverpbLeaseLeaseTimeToLiveCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcetcdserverpbLeaseLeaseTimeToLive(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbLeaseLeaseTimeToLive(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<etcdserverpbLeaseLeaseLeasesCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcetcdserverpbLeaseLeaseLeases(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbLeaseLeaseLeases(registry, e, completeQueueComp.cq);
 		}
 	}
 }
