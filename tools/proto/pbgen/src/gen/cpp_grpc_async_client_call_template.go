@@ -65,9 +65,9 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 #include "thread_local/storage.h"
 
   enum class GrpcTag {
-        INIT = 1,
-        WRITE,
         READ,
+        INIT,
+        WRITE,
         WRITES_DONE,
         FINISH
     };
@@ -149,7 +149,7 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
 		case GrpcTag::READ:
 			{
 				auto& response = registry.get<{{.CppResponse}}>(nodeEntity);
-				client.stream->Read(&response, nullptr);
+				client.stream->Read(&response, (void*)GrpcTag::READ);
 				if(Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler){
 					Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(response);
 				}
