@@ -2,14 +2,7 @@
 
 #include "game_service_grpc.h"
 #include "thread_local/storage.h"
-
-  enum class GrpcTag {
-        READ,
-        INIT,
-        WRITE,
-        WRITES_DONE,
-        FINISH
-    };
+#include "proto/logic/constants/etcd_grpc.pb.h"
 
 struct GameServicePlayerEnterGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
