@@ -121,7 +121,7 @@ public:
 };
 
 struct  WatchRequestBuffer{
-	boost::circular_buffer<::etcdserverpb::WatchRequest> pendingWritesBuffer;
+	boost::circular_buffer<::etcdserverpb::WatchRequest> pendingWritesBuffer{200};
 };
 
 struct WatchRequestWriteInProgress{ bool isInProgress{false};};
@@ -190,7 +190,7 @@ public:
 };
 
 struct  LeaseKeepAliveRequestBuffer{
-	boost::circular_buffer<::etcdserverpb::LeaseKeepAliveRequest> pendingWritesBuffer;
+	boost::circular_buffer<::etcdserverpb::LeaseKeepAliveRequest> pendingWritesBuffer{200};
 };
 
 struct LeaseKeepAliveRequestWriteInProgress{ bool isInProgress{false};};
