@@ -4,9 +4,9 @@
 #include "thread_local/storage.h"
 
   enum class GrpcTag {
-        INIT = 1,
-        WRITE,
         READ,
+        INIT,
+        WRITE,
         WRITES_DONE,
         FINISH
     };
@@ -345,7 +345,7 @@ void AsyncCompleteGrpcetcdserverpbWatchWatch(entt::registry& registry, entt::ent
 		case GrpcTag::READ:
 			{
 				auto& response = registry.get<::etcdserverpb::WatchResponse>(nodeEntity);
-				client.stream->Read(&response, nullptr);
+				client.stream->Read(&response, (void*)GrpcTag::READ);
 				if(AsyncetcdserverpbWatchWatchHandler){
 					AsyncetcdserverpbWatchWatchHandler(response);
 				}
@@ -547,7 +547,7 @@ void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, 
 		case GrpcTag::READ:
 			{
 				auto& response = registry.get<::etcdserverpb::LeaseKeepAliveResponse>(nodeEntity);
-				client.stream->Read(&response, nullptr);
+				client.stream->Read(&response, (void*)GrpcTag::READ);
 				if(AsyncetcdserverpbLeaseLeaseKeepAliveHandler){
 					AsyncetcdserverpbLeaseLeaseKeepAliveHandler(response);
 				}
