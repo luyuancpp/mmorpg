@@ -56,5 +56,5 @@ void InitGrpcetcdserverpbResponseHandler() {
 				LOG_INFO << "Key deleted: " << event.kv().key() << "\n";
 			}
 		}
-		};
+	};
 }

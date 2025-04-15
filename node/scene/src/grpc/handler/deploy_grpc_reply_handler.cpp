@@ -10,9 +10,11 @@
 
 
 void InitGrpcDeployServiceResponseHandler() {
-	AsyncDeployServiceGetNodeInfoHandlerFunctionType AsyncDeployServiceGetNodeInfoHandler = [](const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>& call) {
+	AsyncDeployServiceGetNodeInfoHandler = [](const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>& call) {
 		gSceneNodeInfo.SetNodeId(call->reply.node_id());
 		gSceneNodeInfo.GetNodeInfo().set_lease_id(call->reply.lease_id());
 		gSceneNode->StartRpcServer();
 		};
+
+
 }

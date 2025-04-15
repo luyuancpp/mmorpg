@@ -46,7 +46,7 @@ void Node::InitDeployService(const std::string& service_address)
 	SendDeployServiceGetNodeInfo(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 
 	// 定时更新节点租约
-	GetRenewNodeLeaseTimer().RunEvery(kRenewLeaseTime, [this]() {
+	renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, [this]() {
 		RenewLeaseIDRequest request;
 		request.set_lease_id(GetNodeInfo().lease_id());
 		SendDeployServiceRenewLease(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
@@ -54,6 +54,7 @@ void Node::InitDeployService(const std::string& service_address)
 }
 
 void Node::Initialize() {
+	SetupLogging();
 	LoadConfiguration();
 	SetupEnvironment();
 	InitGrpcClients();
@@ -61,15 +62,6 @@ void Node::Initialize() {
 	FetchServiceRegistry();
 	RegisterSelf();
 	SetupEventHandlers();
-}
-
-void Node::InitializeMiscellaneous() {
-    GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());  // 记录节点的启动时间
-    GetNodeInfo().set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
-    GetNodeInfo().set_node_type(GetNodeType());
-    GetNodeInfo().set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
-
-	tls.globalNodeRegistry.emplace<ServiceNodeList>(GlobalGrpcNodeEntity());   
 }
 
 void Node::StartRpcServer() {
@@ -125,6 +117,13 @@ void Node::SetupEnvironment() {
 
 	GetNodeInfo().mutable_endpoint()->set_ip(localip());
 	GetNodeInfo().mutable_endpoint()->set_port(get_available_port());
+
+	GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());
+	GetNodeInfo().set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
+	GetNodeInfo().set_node_type(GetNodeType());
+	GetNodeInfo().set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
+
+	tls.globalNodeRegistry.emplace<ServiceNodeList>(GlobalGrpcNodeEntity());
 }
 
 void Node::InitGrpcQueues() {
@@ -142,14 +141,6 @@ void Node::InitGrpcQueues() {
 		HandleetcdserverpbWatchCompletedQueueMessage(tls.globalNodeRegistry);
 		HandleetcdserverpbLeaseCompletedQueueMessage(tls.globalNodeRegistry);
 		});
-}
-
-void Node::InitializeNodeFromRequestInfo() {
-
-	for (auto& serviceDiscoveryPrefixes : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes())
-	{
-		GetKeyValue(serviceDiscoveryPrefixes);
-	}
 }
 
 void Node::ConnectToCentreHelper(::google::protobuf::Service* service) {
@@ -199,19 +190,6 @@ void Node::SetupEventHandlers()
 
 }
 
-void Node::GetKeyValue(const std::string& prefix)
-{
-	etcdserverpb::RangeRequest request;
-	request.set_key(prefix);  // 设置查询前缀
-
-	// 设置 range_end 为 prefix + 1
-	std::string range_end = prefix;
-	range_end[range_end.size() - 1] = range_end[range_end.size() - 1] + 1; // 将最后一个字符加 1
-	request.set_range_end(range_end);  // 设置 range_end
-
-    SendetcdserverpbKVRange(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
-}
-
 void Node::FetchServiceRegistry() {
 	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
 		EtcdHelper::RangeQuery(prefix);  // 拉取已有服务节点信息
@@ -220,23 +198,8 @@ void Node::FetchServiceRegistry() {
 
 void Node::StartWatchingServices() {
 	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
-		WatchPrefix(prefix);  // 开始监听注册/变更
+		EtcdHelper::StartWatchingPrefix(prefix);
 	}
-}
-
-void Node::StartWatchingPrefix(const std::string& prefix)
-{
-	etcdserverpb::WatchRequest request;
-    auto& createRequest = *request.mutable_create_request();
-
-    createRequest.set_key(prefix);  // 设置查询前缀
-
-	// 设置 range_end 为 prefix + 1
-	std::string range_end = prefix;
-	range_end[range_end.size() - 1] = range_end[range_end.size() - 1] + 1; // 将最后一个字符加 1
-    createRequest.set_range_end(range_end);  // 设置 range_end
-
-    SendetcdserverpbWatchWatch(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 }
 
 void Node::StopWatchingAll()
@@ -245,11 +208,6 @@ void Node::StopWatchingAll()
 }
 
 void Node::RegisterSelf() {
-	GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());
-	GetNodeInfo().set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
-	GetNodeInfo().set_node_type(GetNodeType());
-	GetNodeInfo().set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
-
 	EtcdHelper::PutServiceNodeInfo(GetNodeInfo(), GetServiceName());
 }
 
@@ -332,6 +290,3 @@ void Node::HandleServiceNode(const std::string& key, const std::string& value) {
 }
 
 
-void Node::WatchPrefix(const std::string& prefix) {
-	EtcdHelper::StartWatchingPrefix(prefix);
-}
