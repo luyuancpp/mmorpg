@@ -22,8 +22,6 @@ public:
     virtual NodeInfo& GetNodeInfo() = 0;
 	virtual std::string GetServiceName() const = 0;
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
-	TimerTaskComp& GetDeployRpcTimer() { return deployQueueTimer; }
-	TimerTaskComp& GetRenewNodeLeaseTimer() { return renewNodeLeaseTimer; }
 	[[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
     std::string FormatIpAndPort() ;
 	std::string GetIp();
@@ -36,21 +34,16 @@ protected:
     virtual void Initialize();
     virtual void StartRpcServer();
     virtual void ShutdownNode();
-    virtual void SetNodeId(NodeId node_id)final{GetNodeInfo().set_node_id(node_id);}
     virtual void PrepareForBeforeConnection() {}
     virtual void ReadyForGame(){}
     void SetupLogging();
     virtual void LoadConfiguration();
     virtual void OnConfigLoadSuccessful(){}
     void SetupEnvironment();
-    void InitializeNodeFromRequestInfo();
     virtual void ConnectToCentreHelper(::google::protobuf::Service* service);
     void InitGrpcQueues();
-	void InitializeMiscellaneous();
     void ReleaseNodeId();
     void SetupEventHandlers();
-    void GetKeyValue(const std::string& prefix);
-    void StartWatchingPrefix(const std::string& prefix);
 	void StopWatchingAll();
 	void RegisterSelf();
 	bool ParseJsonToServiceNode(const std::string& json_value, uint32_t serviceNodeType);
@@ -58,8 +51,6 @@ protected:
     void InitGrpcClients();
     void FetchServiceRegistry();
 	void StartWatchingServices();
-    void WatchPrefix(const std::string& prefix);
-
 
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;
