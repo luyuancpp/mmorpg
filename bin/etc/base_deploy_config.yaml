@@ -14,5 +14,9 @@ services:
     url: "http://localhost:8082/v1/catalog/service/service2"  # 服务2的健康检查URL
     
 service_discovery_prefixes:
-  - deployservice
+  - deployservice.rpc
+  - sceneservice.rpc
+  - gateservice.rpc
+  - centreservice.rpc
+  - loginservice.rpc
 
