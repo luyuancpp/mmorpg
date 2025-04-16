@@ -159,26 +159,32 @@ void Node::ConnectToNodeHelper(entt::registry& registry, uint32_t nodeType) {
     auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
     for (auto& nodeInfo : serviceNodeList[nodeType].node_list()) {
-        entt::entity id{ nodeInfo.node_id() };
-        const auto nodeId = registry.create(id);
-        if (nodeId != id) {
-            continue;  // 如果创建失败，则跳过该中心节点
-        }
-
-        InetAddress endpoint(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
-        auto& node = registry.emplace<RpcClientPtr>(nodeId,
-            std::make_shared<RpcClientPtr::element_type>(loop_, endpoint));
-
-        // 注册服务并连接
-        node->registerService(GetNodeRepleyService());
-        node->connect();
-
-        // 判断是否为当前区域的中心节点
-        if (nodeType == kCentreNode &&
-			nodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
-            zoneCentreNode = node;
-        }
+		ConnectToNodeHelper(registry, nodeInfo);
     }
+}
+
+void Node::ConnectToNodeHelper(entt::registry& registry, const NodeInfo& nodeInfo)
+{
+	entt::entity id{ nodeInfo.node_id() };
+	const auto nodeId = registry.create(id);
+	if (nodeId != id) {
+		LOG_ERROR << "Failed to create node entity: " << entt::to_integral(nodeId);
+		return;  // 如果创建失败，则跳过该中心节点
+	}
+
+	InetAddress endpoint(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
+	auto& node = registry.emplace<RpcClientPtr>(nodeId,
+		std::make_shared<RpcClientPtr::element_type>(loop_, endpoint));
+
+	// 注册服务并连接
+	node->registerService(GetNodeRepleyService());
+	node->connect();
+
+	// 判断是否为当前区域的中心节点
+	if (nodeInfo.node_type() == kCentreNode &&
+		nodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
+		zoneCentreNode = node;
+	}
 }
 
 void Node::ReleaseNodeId() {

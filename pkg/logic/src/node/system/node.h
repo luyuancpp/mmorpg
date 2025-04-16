@@ -45,6 +45,8 @@ protected:
     virtual void OnConfigLoadSuccessful(){}
     void SetupEnvironment();
     void ConnectToNodeHelper(entt::registry& registry, uint32_t nodeType);
+	void ConnectToNodeHelper(entt::registry& registry, const NodeInfo& nodeInfo);
+
     void InitGrpcQueues();
     void ReleaseNodeId();
     void SetupEventHandlers();
