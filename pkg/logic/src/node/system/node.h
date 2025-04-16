@@ -36,14 +36,14 @@ public:
 
 protected:
     virtual void Initialize();
-    void ConfigureAndStartRpcServer ();
+    void SetupRpcServer ();
     virtual void StartRpcServer();
     virtual void ShutdownNode();
     virtual void PrepareForBeforeConnection() {}
     virtual void ReadyForGame(){}
-    void SetupLogging();
-    void LoadYamlConfiguration();
-    virtual void LoadConfiguration();
+    void SetupLoggingSystem();
+    void LoadConfigurationFiles();
+    virtual void LoadConfigurationData();
     virtual void OnConfigLoadSuccessful(){}
     void SetupEnvironment();
     void ConnectToNodeHelper(entt::registry& registry, uint32_t nodeType);
@@ -53,7 +53,7 @@ protected:
     void ReleaseNodeId();
     void SetupEventHandlers();
 	void StopWatchingAll();
-	void RegisterSelf();
+	void RegisterSelfInService();
 	void ConnectToServiceNode(const std::string& json_value, uint32_t serviceNodeType);
     static void AsyncOutput(const char* msg, int len);
     void InitGrpcClients();
