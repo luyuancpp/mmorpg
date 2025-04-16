@@ -43,7 +43,7 @@ protected:
     virtual void LoadConfiguration();
     virtual void OnConfigLoadSuccessful(){}
     void SetupEnvironment();
-    virtual void ConnectToCentreHelper(::google::protobuf::Service* service);
+    void ConnectToNodeHelper(::google::protobuf::Service* service, entt::registry& registry, uint32_t nodeType);
     void InitGrpcQueues();
     void ReleaseNodeId();
     void SetupEventHandlers();

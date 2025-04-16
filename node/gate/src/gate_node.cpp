@@ -71,7 +71,7 @@ void GateNode::StartRpcServer()
     
     tls_gate.session_id_gen().set_node_id(GetNodeId());
     
-    ConnectToCentreHelper(&serviceHandler);
+    ConnectToNodeHelper(&gateServcie, tls.centreNodeRegistry, kCentreNode);
     Connect2Login();
 
     LOG_INFO << "gate node  start at" << GetNodeInfo().DebugString();
