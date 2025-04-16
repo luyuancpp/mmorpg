@@ -8,13 +8,14 @@ extern ProtobufDispatcher gResponseDispatcher;
 #include "thread_local/storage_gate.h"
 
 ///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 
 void InitGameServicePlayerEnterGameNodeRepliedHandler()
 {
 	gResponseDispatcher.registerMessageCallback<::Empty>(std::bind(&OnGameServicePlayerEnterGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(std::bind(&OnGameServiceSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::ClientSendMessageToPlayerResponse>(std::bind(&OnGameServiceClientSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	gResponseDispatcher.registerMessageCallback<::Empty>(std::bind(&OnGameServiceRegisterGateNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::Empty>(std::bind(&OnGameServiceCentreSendToPlayerViaGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(std::bind(&OnGameServiceInvokePlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(std::bind(&OnGameServiceRouteNodeStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -46,12 +47,6 @@ void OnGameServiceClientSendMessageToPlayerRepliedHandler(const TcpConnectionPtr
         return;
     }
     gGateNode->Codec().send(it->second.conn, replied->message_content());
-///<<< END WRITING YOUR CODE
-}
-
-void OnGameServiceRegisterGateNodeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
-{
-///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 

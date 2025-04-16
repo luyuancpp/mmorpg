@@ -160,58 +160,6 @@ void SendGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::en
 
 }
 
-struct GameServiceRegisterGateNodeCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-
-
-using AsyncGameServiceRegisterGateNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRegisterGateNodeGrpcClientCall>&)>;
-AsyncGameServiceRegisterGateNodeHandlerFunctionType  AsyncGameServiceRegisterGateNodeHandler;
-
-void AsyncCompleteGrpcGameServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
-{
-    void* got_tag;
-    bool ok = false;
-
-    gpr_timespec tm;
-    tm.tv_sec = 0;
-    tm.tv_nsec = 0;
-    tm.clock_type = GPR_CLOCK_MONOTONIC;
-    if (grpc::CompletionQueue::GOT_EVENT != 
-		cq.AsyncNext(&got_tag, &ok, tm)){
-        return;
-    }
-
-    std::unique_ptr<AsyncGameServiceRegisterGateNodeGrpcClientCall> call(static_cast<AsyncGameServiceRegisterGateNodeGrpcClientCall*>(got_tag));
-	if (!ok){
-		LOG_ERROR << "RPC failed";
-		return;
-	}
-
-    if (call->status.ok()){
-		if(AsyncGameServiceRegisterGateNodeHandler){
-			AsyncGameServiceRegisterGateNodeHandler(call);
-		}
-    }else{
-        LOG_ERROR << call->status.error_message();
-    }
-}
-
-
-void SendGameServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGateNodeRequest& request)
-{
-
-    AsyncGameServiceRegisterGateNodeGrpcClientCall* call = new AsyncGameServiceRegisterGateNodeGrpcClientCall;
-    call->response_reader =
-        registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncRegisterGateNode(&call->context, request,
-		&registry.get<GameServiceRegisterGateNodeCompleteQueue>(nodeEntity).cq);
-
-    	call->response_reader->StartCall();
-
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-
-}
-
 struct GameServiceCentreSendToPlayerViaGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
@@ -582,8 +530,6 @@ void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEn
 
 	registry.emplace<GameServiceClientSendMessageToPlayerCompleteQueue>(nodeEntity);
 
-	registry.emplace<GameServiceRegisterGateNodeCompleteQueue>(nodeEntity);
-
 	registry.emplace<GameServiceCentreSendToPlayerViaGameNodeCompleteQueue>(nodeEntity);
 
 	registry.emplace<GameServiceInvokePlayerServiceCompleteQueue>(nodeEntity);
@@ -616,12 +562,6 @@ void HandleGameServiceCompletedQueueMessage(entt::registry& registry) {
 		auto&& view = registry.view<GameServiceClientSendMessageToPlayerCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
 			AsyncCompleteGrpcGameServiceClientSendMessageToPlayer(registry, e, completeQueueComp.cq);
-		}
-	}
-	{
-		auto&& view = registry.view<GameServiceRegisterGateNodeCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGameServiceRegisterGateNode(registry, e, completeQueueComp.cq);
 		}
 	}
 	{

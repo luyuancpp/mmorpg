@@ -404,27 +404,26 @@ const char descriptor_table_protodef_proto_2fcommon_2fgame_5fservice_2eproto[] A
     "uest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001("
     "\004\"\'\n\022CreateSceneRequest\022\021\n\tconfig_id\030\001 \001"
     "(\r\"@\n\023CreateSceneResponse\022)\n\nscene_info\030"
-    "\001 \001(\0132\025.SceneInfoPBComponent2\375\005\n\013GameSer"
+    "\001 \001(\0132\025.SceneInfoPBComponent2\307\005\n\013GameSer"
     "vice\022:\n\023PlayerEnterGameNode\022\033.PlayerEnte"
     "rGameNodeRequest\032\006.Empty\022J\n\023SendMessageT"
     "oPlayer\022\030.NodeRouteMessageRequest\032\031.Node"
     "RouteMessageResponse\022b\n\031ClientSendMessag"
     "eToPlayer\022!.ClientSendMessageToPlayerReq"
     "uest\032\".ClientSendMessageToPlayerResponse"
-    "\0224\n\020RegisterGateNode\022\030.RegisterGateNodeR"
-    "equest\032\006.Empty\022A\n\035CentreSendToPlayerViaG"
-    "ameNode\022\030.NodeRouteMessageRequest\032\006.Empt"
-    "y\022J\n\023InvokePlayerService\022\030.NodeRouteMess"
-    "ageRequest\032\031.NodeRouteMessageResponse\022A\n"
-    "\022RouteNodeStringMsg\022\024.RouteMessageReques"
-    "t\032\025.RouteMessageResponse\022O\n\024RoutePlayerS"
-    "tringMsg\022\032.RoutePlayerMessageRequest\032\033.R"
-    "outePlayerMessageResponse\022<\n\023UpdateSessi"
-    "onDetail\022\035.RegisterPlayerSessionRequest\032"
-    "\006.Empty\0221\n\nEnterScene\022\033.Centre2GsEnterSc"
-    "eneRequest\032\006.Empty\0228\n\013CreateScene\022\023.Crea"
-    "teSceneRequest\032\024.CreateSceneResponseB\014Z\007"
-    "pb/game\200\001\001b\006proto3"
+    "\022A\n\035CentreSendToPlayerViaGameNode\022\030.Node"
+    "RouteMessageRequest\032\006.Empty\022J\n\023InvokePla"
+    "yerService\022\030.NodeRouteMessageRequest\032\031.N"
+    "odeRouteMessageResponse\022A\n\022RouteNodeStri"
+    "ngMsg\022\024.RouteMessageRequest\032\025.RouteMessa"
+    "geResponse\022O\n\024RoutePlayerStringMsg\022\032.Rou"
+    "tePlayerMessageRequest\032\033.RoutePlayerMess"
+    "ageResponse\022<\n\023UpdateSessionDetail\022\035.Reg"
+    "isterPlayerSessionRequest\032\006.Empty\0221\n\nEnt"
+    "erScene\022\033.Centre2GsEnterSceneRequest\032\006.E"
+    "mpty\0228\n\013CreateScene\022\023.CreateSceneRequest"
+    "\032\024.CreateSceneResponseB\014Z\007pb/game\200\001\001b\006pr"
+    "oto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fgame_5fservice_2eproto_deps[3] =
     {
@@ -436,7 +435,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fgame_5fservice_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fgame_5fservice_2eproto = {
     false,
     false,
-    1578,
+    1524,
     descriptor_table_protodef_proto_2fcommon_2fgame_5fservice_2eproto,
     "proto/common/game_service.proto",
     &descriptor_table_proto_2fcommon_2fgame_5fservice_2eproto_once,
@@ -2762,11 +2761,6 @@ void GameService::ClientSendMessageToPlayer(::google::protobuf::RpcController* c
   controller->SetFailed("Method ClientSendMessageToPlayer() not implemented.");
   done->Run();
 }
-void GameService::RegisterGateNode(::google::protobuf::RpcController* controller,
-                         const ::RegisterGateNodeRequest*, ::Empty*, ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method RegisterGateNode() not implemented.");
-  done->Run();
-}
 void GameService::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller,
                          const ::NodeRouteMessageRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method CentreSendToPlayerViaGameNode() not implemented.");
@@ -2829,48 +2823,42 @@ void GameService::CallMethod(
                    done);
       break;
     case 3:
-      this->RegisterGateNode(controller,
-                   ::google::protobuf::DownCastMessage<::RegisterGateNodeRequest>(request),
-                   ::google::protobuf::DownCastMessage<::Empty>(response),
-                   done);
-      break;
-    case 4:
       this->CentreSendToPlayerViaGameNode(controller,
                    ::google::protobuf::DownCastMessage<::NodeRouteMessageRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response),
                    done);
       break;
-    case 5:
+    case 4:
       this->InvokePlayerService(controller,
                    ::google::protobuf::DownCastMessage<::NodeRouteMessageRequest>(request),
                    ::google::protobuf::DownCastMessage<::NodeRouteMessageResponse>(response),
                    done);
       break;
-    case 6:
+    case 5:
       this->RouteNodeStringMsg(controller,
                    ::google::protobuf::DownCastMessage<::RouteMessageRequest>(request),
                    ::google::protobuf::DownCastMessage<::RouteMessageResponse>(response),
                    done);
       break;
-    case 7:
+    case 6:
       this->RoutePlayerStringMsg(controller,
                    ::google::protobuf::DownCastMessage<::RoutePlayerMessageRequest>(request),
                    ::google::protobuf::DownCastMessage<::RoutePlayerMessageResponse>(response),
                    done);
       break;
-    case 8:
+    case 7:
       this->UpdateSessionDetail(controller,
                    ::google::protobuf::DownCastMessage<::RegisterPlayerSessionRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response),
                    done);
       break;
-    case 9:
+    case 8:
       this->EnterScene(controller,
                    ::google::protobuf::DownCastMessage<::Centre2GsEnterSceneRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response),
                    done);
       break;
-    case 10:
+    case 9:
       this->CreateScene(controller,
                    ::google::protobuf::DownCastMessage<::CreateSceneRequest>(request),
                    ::google::protobuf::DownCastMessage<::CreateSceneResponse>(response),
@@ -2894,20 +2882,18 @@ const ::google::protobuf::Message& GameService::GetRequestPrototype(
     case 2:
       return ::ClientSendMessageToPlayerRequest::default_instance();
     case 3:
-      return ::RegisterGateNodeRequest::default_instance();
+      return ::NodeRouteMessageRequest::default_instance();
     case 4:
       return ::NodeRouteMessageRequest::default_instance();
     case 5:
-      return ::NodeRouteMessageRequest::default_instance();
-    case 6:
       return ::RouteMessageRequest::default_instance();
-    case 7:
+    case 6:
       return ::RoutePlayerMessageRequest::default_instance();
-    case 8:
+    case 7:
       return ::RegisterPlayerSessionRequest::default_instance();
-    case 9:
+    case 8:
       return ::Centre2GsEnterSceneRequest::default_instance();
-    case 10:
+    case 9:
       return ::CreateSceneRequest::default_instance();
 
     default:
@@ -2930,18 +2916,16 @@ const ::google::protobuf::Message& GameService::GetResponsePrototype(
     case 3:
       return ::Empty::default_instance();
     case 4:
-      return ::Empty::default_instance();
-    case 5:
       return ::NodeRouteMessageResponse::default_instance();
-    case 6:
+    case 5:
       return ::RouteMessageResponse::default_instance();
-    case 7:
+    case 6:
       return ::RoutePlayerMessageResponse::default_instance();
+    case 7:
+      return ::Empty::default_instance();
     case 8:
       return ::Empty::default_instance();
     case 9:
-      return ::Empty::default_instance();
-    case 10:
       return ::CreateSceneResponse::default_instance();
 
     default:
@@ -2983,52 +2967,46 @@ void GameService_Stub::ClientSendMessageToPlayer(::google::protobuf::RpcControll
   channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
-void GameService_Stub::RegisterGateNode(::google::protobuf::RpcController* controller,
-                              const ::RegisterGateNodeRequest* request,
-                              ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(3), controller,
-                       request, response, done);
-}
 void GameService_Stub::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller,
                               const ::NodeRouteMessageRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(4), controller,
+  channel_->CallMethod(descriptor()->method(3), controller,
                        request, response, done);
 }
 void GameService_Stub::InvokePlayerService(::google::protobuf::RpcController* controller,
                               const ::NodeRouteMessageRequest* request,
                               ::NodeRouteMessageResponse* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(5), controller,
+  channel_->CallMethod(descriptor()->method(4), controller,
                        request, response, done);
 }
 void GameService_Stub::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
                               const ::RouteMessageRequest* request,
                               ::RouteMessageResponse* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(6), controller,
+  channel_->CallMethod(descriptor()->method(5), controller,
                        request, response, done);
 }
 void GameService_Stub::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
                               const ::RoutePlayerMessageRequest* request,
                               ::RoutePlayerMessageResponse* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(7), controller,
+  channel_->CallMethod(descriptor()->method(6), controller,
                        request, response, done);
 }
 void GameService_Stub::UpdateSessionDetail(::google::protobuf::RpcController* controller,
                               const ::RegisterPlayerSessionRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(8), controller,
+  channel_->CallMethod(descriptor()->method(7), controller,
                        request, response, done);
 }
 void GameService_Stub::EnterScene(::google::protobuf::RpcController* controller,
                               const ::Centre2GsEnterSceneRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(9), controller,
+  channel_->CallMethod(descriptor()->method(8), controller,
                        request, response, done);
 }
 void GameService_Stub::CreateScene(::google::protobuf::RpcController* controller,
                               const ::CreateSceneRequest* request,
                               ::CreateSceneResponse* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(10), controller,
+  channel_->CallMethod(descriptor()->method(9), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

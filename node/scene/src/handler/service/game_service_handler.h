@@ -21,12 +21,6 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void RegisterGateNode(::google::protobuf::RpcController* controller,
-		const ::RegisterGateNodeRequest* request,
-		::Empty* response,
-		::google::protobuf::Closure* done)override;
-
-
 	void CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller,
 		const ::NodeRouteMessageRequest* request,
 		::Empty* response,

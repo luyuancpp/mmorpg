@@ -79,30 +79,6 @@ void CentreNode::StartRpcServer()
 	LOG_INFO << "centre start at " << GetNodeInfo().DebugString();
 }
 
-
-void CentreNode::BroadCastRegisterGameToGate(entt::entity gameNodeId, entt::entity gate)
-{
-	auto gateNode = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate);
-	if (nullptr == gateNode)
-	{
-		LOG_ERROR << "gate not found ";
-		return;
-	}
-
-	auto gameNodeServiceAddr = tls.sceneNodeRegistry.try_get<InetAddress>(gameNodeId);
-	if (nullptr == gameNodeServiceAddr)
-	{
-		LOG_ERROR << "game not found ";
-		return;
-	}
-
-	RegisterGameNodeRequest request;
-	request.mutable_rpc_server()->set_ip(gameNodeServiceAddr->toIp());
-	request.mutable_rpc_server()->set_port(gameNodeServiceAddr->port());
-	request.set_scene_node_id(entt::to_integral(gameNodeId));
-	(*gateNode)->SendRequest(GateServiceRegisterGameMessageId, request);
-}
-
 void CentreNode::Receive2(const OnBeConnectedEvent& es)
 {
 	if (auto& conn = es.conn_; conn->connected())

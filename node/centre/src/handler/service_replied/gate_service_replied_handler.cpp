@@ -15,8 +15,6 @@ extern ProtobufDispatcher gResponseDispatcher;
 
 void InitGateServiceRegisterGameRepliedHandler()
 {
-	gResponseDispatcher.registerMessageCallback<::Empty>(std::bind(&OnGateServiceRegisterGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	gResponseDispatcher.registerMessageCallback<::Empty>(std::bind(&OnGateServiceUnRegisterGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::RegisterGameNodeSessionResponse>(std::bind(&OnGateServicePlayerEnterGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::Empty>(std::bind(&OnGateServiceSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::Empty>(std::bind(&OnGateServiceKickSessionByCentreRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));

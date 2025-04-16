@@ -143,12 +143,6 @@ void CentreServiceHandler::RegisterGameNode(::google::protobuf::RpcController* c
 		LOG_INFO << "Game node " << request->scene_node_id() << " updated to CrossRoomSceneNode.";
 	}
 
-	// Broadcast game registration to all gates
-	for (auto gate : tls.gateNodeRegistry.view<RpcSessionPtr>())
-	{
-		gCentreNode->BroadCastRegisterGameToGate(gameNodeId, gate);
-		LOG_INFO << "Broadcasted game registration for node " << request->scene_node_id() << " to gate.";
-	}
 	///<<< END WRITING YOUR CODE
 }
 
@@ -157,46 +151,7 @@ void CentreServiceHandler::RegisterGateNode(::google::protobuf::RpcController* c
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-// Extract client address and gate ID from the request
-	InetAddress clientAddress(request->rpc_client().ip(), request->rpc_client().port());
-	entt::entity gateId{ request->gate_node_id() };
-
-	// Search for a matching client connection in network registry
-	bool foundMatchingClient = false;
-	for (const auto& [entity, session] : tls.networkRegistry.view<RpcSession>().each())
-	{
-		if (session.connection->peerAddress().toIpPort() == clientAddress.toIpPort())
-		{
-			// Found matching client connection, create gate node
-			const auto createdGateId = tls.gateNodeRegistry.create(gateId);
-			if (createdGateId != gateId)
-			{
-				LOG_ERROR << "Failed to create gate " << request->gate_node_id();
-				return;
-			}
-
-			// Register gate node and associate with client session
-			tls.gateNodeRegistry.emplace<RpcSessionPtr>(gateId,
-				std::make_shared<RpcSessionPtr::element_type>(session.connection));
-			LOG_INFO << "Gate registered: " << MessageToJsonString(request);
-			foundMatchingClient = true;
-			break;
-		}
-	}
-
-	if (!foundMatchingClient)
-	{
-		LOG_ERROR << "No matching client session found for gate registration: " << MessageToJsonString(request);
-		return;
-	}
-
-	// Broadcast registration to all game nodes
-	for (const auto& entity : tls.sceneNodeRegistry.view<RpcSessionPtr>())
-	{
-		gCentreNode->BroadCastRegisterGameToGate(entity, gateId);
-		LOG_DEBUG << "Broadcasted gate registration to game node: " << entt::to_integral(entity) << ", gate ID: " << request->gate_node_id();
-	}
-    ///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 void CentreServiceHandler::GatePlayerService(::google::protobuf::RpcController* controller,const ::GateClientMessageRequest* request,
@@ -705,12 +660,6 @@ void CentreServiceHandler::UnRegisterGameNode(::google::protobuf::RpcController*
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    for (const auto& [e, gate_node]: tls.gateNodeRegistry.view<RpcSessionPtr>().each())
-    {
-		UnregisterGameNodeRequest message;
-		message.set_scene_node_id(request->scene_node_id());
-        gate_node->SendRequest(GateServiceRegisterGameMessageId, message);
-    }
 ///<<< END WRITING YOUR CODE
 }
 

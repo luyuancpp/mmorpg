@@ -24,8 +24,6 @@ void InitGameServicePlayerEnterGameNodeRepliedHandler()
 	gResponseDispatcher.registerMessageCallback<::Empty>(std::bind(&OnGameServicePlayerEnterGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(std::bind(&OnGameServiceSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::ClientSendMessageToPlayerResponse>(std::bind(&OnGameServiceClientSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	gResponseDispatcher.registerMessageCallback<::Empty>(std::bind(&OnGameServiceRegisterGateNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	gResponseDispatcher.registerMessageCallback<::Empty>(std::bind(&OnGameServiceCentreSendToPlayerViaGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(std::bind(&OnGameServiceInvokePlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(std::bind(&OnGameServiceRouteNodeStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::RoutePlayerMessageResponse>(std::bind(&OnGameServiceRoutePlayerStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));

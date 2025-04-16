@@ -104,24 +104,7 @@ void GateNode::Receive1(const OnConnected2TcpServerEvent& es)
             }
         }
 
-        //todo 断线重连
-        for (auto&& [e, game_node] : tls.sceneNodeRegistry.view<RpcClientPtr>().each())
-        {
-            if (!IsSameAddress(game_node->peer_addr(), conn->peerAddress()))
-            {
-                continue;
-            }
-            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-                [this, game_node]() ->void
-                {
-                    RegisterGateNodeRequest rq;
-                    rq.mutable_rpc_client()->set_ip(game_node->local_addr().toIp());
-                    rq.mutable_rpc_client()->set_port(game_node->local_addr().port());
-                    rq.set_gate_node_id(GetNodeId());
-                    game_node->CallRemoteMethod(GameServiceRegisterGateNodeMessageId, rq);
-                }
-            );
-        }
+  
 
     }
     else
