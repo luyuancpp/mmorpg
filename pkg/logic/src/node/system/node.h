@@ -29,10 +29,9 @@ public:
 	std::string GetIp();
 	uint32_t GetPort();
 
-    void InitDeployService(const std::string& service_address);
-    void OnStartServiceNode(const std::string& key, const std::string& value);
-	void OnStopServiceNode(const std::string& key, const std::string& value);
-
+    void InitializeDeploymentService(const std::string& service_address);
+    void HandleServiceNodeStart(const std::string& key, const std::string& value);
+	void HandleServiceNodeStop(const std::string& key, const std::string& value);
 
 protected:
     virtual void Initialize();
@@ -46,20 +45,20 @@ protected:
     virtual void LoadConfigurationData();
     virtual void OnConfigLoadSuccessful(){}
     void ConfigureEnvironment();
-    void ConnectToNodeHelper(entt::registry& registry, uint32_t nodeType);
-	void ConnectToNodeHelper(entt::registry& registry, const NodeInfo& nodeInfo);
+    void ConnectToNode(entt::registry& registry, uint32_t nodeType);
+	void ConnectToNode(entt::registry& registry, const NodeInfo& nodeInfo);
 
     void InitializeGrpcClients();
     void ReleaseNodeId();
     void SetUpEventHandlers();
 	void StopWatchingServiceNodes();
 	void RegisterSelfInService();
-	void ConnectToServiceNode(const std::string& json_value, uint32_t serviceNodeType);
+	void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
     void InitGrpcClients();
     void RegisterServiceNodes();
 	void StartWatchingServiceNodes();
-    void InitGrpcetcdserverpbResponseHandler();
+    void InitializeGrpcResponseHandlers();
     void InitializeGrpcMessageQueues();
 
     muduo::net::EventLoop* loop_;

@@ -34,7 +34,7 @@ Node::~Node() {
 	ShutdownNode();  // Clean up node resources upon destruction
 }
 
-void Node::InitDeployService(const std::string& service_address)
+void Node::InitializeDeploymentService(const std::string& service_address)
 {
 	tls.globalNodeRegistry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity())
 		= DeployService::NewStub(grpc::CreateChannel(service_address, grpc::InsecureChannelCredentials()));
@@ -183,15 +183,15 @@ void Node::StopWatchingServiceNodes() {
 	EtcdHelper::StopAllWatching();  // Stop watching all service nodes
 }
 
-void Node::ConnectToNodeHelper(entt::registry& registry, uint32_t nodeType) {
+void Node::ConnectToNode(entt::registry& registry, uint32_t nodeType) {
 	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
 	for (auto& nodeInfo : serviceNodeList[nodeType].node_list()) {
-		ConnectToNodeHelper(registry, nodeInfo);
+		ConnectToNode(registry, nodeInfo);
 	}
 }
 
-void Node::ConnectToNodeHelper(entt::registry& registry, const NodeInfo& nodeInfo)
+void Node::ConnectToNode(entt::registry& registry, const NodeInfo& nodeInfo)
 {
 	entt::entity id{ nodeInfo.node_id() };
 	const auto nodeId = registry.create(id);
@@ -229,7 +229,7 @@ void Node::SetUpEventHandlers()
 	void InitGrpcDeployServiceResponseHandler();
 	InitGrpcDeployServiceResponseHandler();
 
-	InitGrpcetcdserverpbResponseHandler();
+	InitializeGrpcResponseHandlers();
 
 	void InitRepliedHandler();
 	InitRepliedHandler();
@@ -264,127 +264,120 @@ uint32_t Node::GetPort()
 	return GetNodeInfo().endpoint().port();
 }
 
-void Node::ConnectToServiceNode(const std::string& json_value, uint32_t serviceNodeType) {
-	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
+	auto& serviceNodeRegistry = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
-	// 检查 serviceNodeType 是否有效
-	if (!eNodeType_IsValid(serviceNodeType)) {
+	// Validate the node type
+	if (!eNodeType_IsValid(nodeType)) {
 		return;
 	}
 
 	NodeInfo newNodeInfo;
 
-	// 调用 JsonStringToMessage 函数将 JSON 字符串解析到 protobuf 消息
-	auto result = google::protobuf::util::JsonStringToMessage(json_value, &newNodeInfo);
-
+	// Parse the JSON string into NodeInfo protobuf message
+	auto result = google::protobuf::util::JsonStringToMessage(nodeJson, &newNodeInfo);
 	if (!result.ok()) {
-		// 解析失败时记录错误日志
-		LOG_ERROR << "Failed to parse JSON to message for serviceNodeType: " << serviceNodeType
-			<< ", JSON: " << json_value
+		LOG_ERROR << "Failed to parse JSON for nodeType: " << nodeType
+			<< ", JSON: " << nodeJson
 			<< ", Error: " << result.message().data();
 		return;
 	}
 
 	google::protobuf::util::MessageDifferencer differencer;
 
-	// 遍历 serviceNodeList[serviceNodeType]，如果没有相同的节点则添加
-	auto& nodeList = *serviceNodeList[serviceNodeType].mutable_node_list();
-
+	// Check if the node already exists; if not, add it
+	auto& nodeList = *serviceNodeRegistry[nodeType].mutable_node_list();
 	for (const auto& existingNode : nodeList) {
-		if (!differencer.Compare(existingNode, newNodeInfo)) {
-			continue;
+		if (differencer.Compare(existingNode, newNodeInfo)) {
+			return; // Node already exists, no need to add
 		}
-		*nodeList.Add() = newNodeInfo;
 	}
 
-	if (serviceNodeType == kCentreNode) {
-		ConnectToNodeHelper(tls.centreNodeRegistry, newNodeInfo);
+	// Add new node to the list
+	*nodeList.Add() = newNodeInfo;
+
+	// Connect to the node based on its type
+	if (nodeType == kCentreNode) {
+		ConnectToNode(tls.centreNodeRegistry, newNodeInfo);
 	}
-	else if (serviceNodeType == kSceneNode) {
-		ConnectToNodeHelper(tls.sceneNodeRegistry, newNodeInfo);
+	else if (nodeType == kSceneNode) {
+		ConnectToNode(tls.sceneNodeRegistry, newNodeInfo);
 	}
-	else if (serviceNodeType == kGateNode) {
-		ConnectToNodeHelper(tls.gateNodeRegistry, newNodeInfo);
+	else if (nodeType == kGateNode) {
+		ConnectToNode(tls.gateNodeRegistry, newNodeInfo);
 	}
 
-	// 创建并连接新节点
-	LOG_INFO << "Connected to node: " << newNodeInfo.DebugString();
-
-	return;
+	LOG_INFO << "Successfully connected to node: " << newNodeInfo.DebugString();
 }
 
-// 处理服务节点的逻辑
-void Node::OnStartServiceNode(const std::string& key, const std::string& value) {
+void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
+	// Get the service node type from the key prefix
+	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
-	// 获取服务节点类型
-	auto serviceNodeType = NodeSystem::GetServiceTypeFromPrefix(key);
-
-	if (serviceNodeType == kDeployNode) {
-		// 处理部署服务
-		InitDeployService(value);
+	if (nodeType == kDeployNode) {
+		// Handle deployment node
+		InitializeDeploymentService(value);
 		LOG_INFO << "Deploy Service Key: " << key << ", Value: " << value;
 	}
-	else if (serviceNodeType == kLoginNode) {
-
+	else if (nodeType == kLoginNode) {
+		// Placeholder for login node handling (if necessary)
 	}
-	else if (eNodeType_IsValid(serviceNodeType)) {
-		ConnectToServiceNode(value, serviceNodeType);
+	else if (eNodeType_IsValid(nodeType)) {
+		// Add the service node to the appropriate registry
+		AddServiceNode(value, nodeType);
 	}
 	else {
-		// 无效的服务类型
 		LOG_ERROR << "Unknown service type for key: " << key;
 	}
 }
 
-void Node::OnStopServiceNode(const std::string& key, const std::string& value)
-{
-	// 获取服务节点类型
-	auto serviceNodeType = NodeSystem::GetServiceTypeFromPrefix(key);
+void Node::HandleServiceNodeStop(const std::string& key, const std::string& value) {
+	// Get the service node type from the key prefix
+	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
-	if (serviceNodeType == kDeployNode) {
-		// 处理部署服务
-		//InitDeployService(value);
+	if (nodeType == kDeployNode) {
+		// Handle deployment node
 		LOG_INFO << "Deploy Service Key: " << key << ", Value: " << value;
 	}
-	else if (serviceNodeType == kLoginNode) {
-
+	else if (nodeType == kLoginNode) {
+		// Placeholder for login node handling (if necessary)
 	}
-	else if (eNodeType_IsValid(serviceNodeType)) {
-		NodeInfo newNodeInfo;
+	else if (eNodeType_IsValid(nodeType)) {
+		NodeInfo nodeInfo;
 
-		// 调用 JsonStringToMessage 函数将 JSON 字符串解析到 protobuf 消息
-		auto result = google::protobuf::util::JsonStringToMessage(value, &newNodeInfo);
-
+		// Parse the JSON string into NodeInfo protobuf message
+		auto result = google::protobuf::util::JsonStringToMessage(value, &nodeInfo);
 		if (!result.ok()) {
-			// 解析失败时记录错误日志
-			LOG_ERROR << "Failed to parse JSON to message for serviceNodeType: " << serviceNodeType
+			LOG_ERROR << "Failed to parse JSON for nodeType: " << nodeType
 				<< ", JSON: " << value
 				<< ", Error: " << result.message().data();
 			return;
 		}
-		if (serviceNodeType == kCentreNode) {
-			tls.centreNodeRegistry.destroy(entt::entity{ newNodeInfo.node_id() });
+
+		// Remove the node from the registry based on its type
+		if (nodeType == kCentreNode) {
+			tls.centreNodeRegistry.destroy(entt::entity{ nodeInfo.node_id() });
 		}
-		else if (serviceNodeType == kSceneNode) {
-			tls.sceneNodeRegistry.destroy(entt::entity{ newNodeInfo.node_id() });
+		else if (nodeType == kSceneNode) {
+			tls.sceneNodeRegistry.destroy(entt::entity{ nodeInfo.node_id() });
 		}
-		else if (serviceNodeType == kGateNode) {
-			tls.gateNodeRegistry.destroy(entt::entity{ newNodeInfo.node_id() });
+		else if (nodeType == kGateNode) {
+			tls.gateNodeRegistry.destroy(entt::entity{ nodeInfo.node_id() });
 		}
 
+		LOG_INFO << "Successfully stopped service node: " << nodeInfo.DebugString();
 	}
 	else {
-		// 无效的服务类型
 		LOG_ERROR << "Unknown service type for key: " << key;
 	}
 }
 
-
-void Node::InitGrpcetcdserverpbResponseHandler() {
+void Node::InitializeGrpcResponseHandlers() {
+	// Define handlers for various gRPC response types
 	AsyncetcdserverpbKVRangeHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
 		if (call->status.ok()) {
 			for (const auto& kv : call->reply.kvs()) {
-				OnStartServiceNode(kv.key(), kv.value());
+				HandleServiceNodeStart(kv.key(), kv.value());
 			}
 		}
 		else {
@@ -393,16 +386,18 @@ void Node::InitGrpcetcdserverpbResponseHandler() {
 		};
 
 	AsyncetcdserverpbKVPutHandler = [](const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>& call) {
+		// Handle KV put response if needed
 		};
 
 	AsyncetcdserverpbKVDeleteRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>& call) {
+		// Handle KV delete response if needed
 		};
 
 	AsyncetcdserverpbKVTxnHandler = [](const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>& call) {
+		// Handle KV transaction response if needed
 		};
 
 	AsyncetcdserverpbWatchWatchHandler = [this](const ::etcdserverpb::WatchResponse& response) {
-
 		if (response.created()) {
 			LOG_INFO << "Watch created: " << response.created();
 			return;
@@ -411,21 +406,21 @@ void Node::InitGrpcetcdserverpbResponseHandler() {
 		if (response.canceled()) {
 			LOG_INFO << "Watch canceled. Reason: " << response.cancel_reason();
 			if (response.compact_revision() > 0) {
-				LOG_ERROR << "Revision " << response.compact_revision() << " has been compacted.\n";
-				// 需要重新发起 watch 请求，从最新 revision 开始
+				LOG_ERROR << "Revision " << response.compact_revision() << " has been compacted.";
+				// Re-initiate watch request with the latest revision
 			}
 			return;
 		}
 
 		for (const auto& event : response.events()) {
 			if (event.type() == mvccpb::Event_EventType::Event_EventType_PUT) {
-				LOG_INFO << "Key put: " << event.kv().key() << "\n";
-				OnStartServiceNode(event.kv().key(), event.kv().value());
+				LOG_INFO << "Key put: " << event.kv().key();
+				HandleServiceNodeStart(event.kv().key(), event.kv().value());
 			}
 			else if (event.type() == mvccpb::Event_EventType::Event_EventType_DELETE) {
-				OnStopServiceNode(event.kv().key(), event.kv().value());
-				LOG_INFO << "Key deleted: " << event.kv().key() << "\n";
+				HandleServiceNodeStop(event.kv().key(), event.kv().value());
+				LOG_INFO << "Key deleted: " << event.kv().key();
 			}
 		}
-	};
+		};
 }
