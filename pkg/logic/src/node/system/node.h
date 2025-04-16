@@ -14,6 +14,7 @@ class Node : muduo::noncopyable{
 public:
     using RpcServerPtr = std::unique_ptr<muduo::net::RpcServer>;
     using ServiceList = std::vector<::google::protobuf::Service*>;
+	using CanConnectNodeTypeList = std::set<uint32_t>;
 
     explicit Node(muduo::net::EventLoop* loop, const std::string& logFilePath);
     virtual ~Node();
@@ -23,6 +24,7 @@ public:
     virtual NodeInfo& GetNodeInfo() = 0;
 	virtual std::string GetServiceName() const = 0;
 	virtual ::google::protobuf::Service* GetNodeRepleyService() { return {}; }
+	virtual CanConnectNodeTypeList GetCanNodeTypeList() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
 	[[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
     std::string FormatIpAndPort() ;

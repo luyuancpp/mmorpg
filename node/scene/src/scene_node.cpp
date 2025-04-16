@@ -162,3 +162,7 @@ uint32_t SceneNode::GetNodeType() const
     return kSceneNode;
 }
 
+Node::CanConnectNodeTypeList SceneNode::GetCanNodeTypeList()
+{
+	return { kCentreNode };
+}

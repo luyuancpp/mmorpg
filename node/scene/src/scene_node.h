@@ -27,6 +27,8 @@ public:
     std::string GetServiceName() const override;
 
     ::google::protobuf::Service* GetNodeRepleyService() override { return &nodeReplyService; }
+
+	CanConnectNodeTypeList GetCanNodeTypeList() override;
     
     void Receive1(const OnConnected2TcpServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);
