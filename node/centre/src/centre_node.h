@@ -26,7 +26,7 @@ public:
 
 	std::string GetServiceName() const override;
 
-
+	ServiceList GetServiceList()override;
 	
 	static void BroadCastRegisterGameToGate(entt::entity gs, entt::entity gate);
 

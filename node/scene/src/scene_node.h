@@ -25,6 +25,9 @@ public:
     void Initialize()override;
 
     std::string GetServiceName() const override;
+    
+    ServiceList GetServiceList()override;
+
 
     void Receive1(const OnConnected2TcpServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);
