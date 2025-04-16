@@ -207,31 +207,6 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::RegisterGateNode(::google::protobuf::RpcController* controller,const ::RegisterGateNodeRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
-{
-///<<< BEGIN WRITING YOUR CODE
-	const InetAddress sessionAddr(request->rpc_client().ip(), request->rpc_client().port());
-
-	for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())
-	{
-		if (session.connection->peerAddress().toIpPort() != sessionAddr.toIpPort())
-		{
-			continue;
-		}
-
-		const auto gateNodeId = tls.gateNodeRegistry.create(entt::entity{ request->gate_node_id() });
-		tls.gateNodeRegistry.emplace<RpcSessionPtr>(gateNodeId, std::make_shared<RpcSessionPtr::element_type>(session.connection));
-		assert(gateNodeId == entt::entity{ request->gate_node_id() });
-
-		LOG_INFO << "Registered gate node: " << MessageToJsonString(request);
-
-		break;
-	}
-///<<< END WRITING YOUR CODE
-}
-
 void GameServiceHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
 	     ::Empty* response,
 	     ::google::protobuf::Closure* done)

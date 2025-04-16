@@ -28,8 +28,6 @@ public:
 
 	::google::protobuf::Service* GetNodeRepleyService() override { return &nodeReplyService; }
 
-	static void BroadCastRegisterGameToGate(entt::entity gs, entt::entity gate);
-
 	void StartRpcServer() override;
 
 	void Receive2(const OnBeConnectedEvent& es);

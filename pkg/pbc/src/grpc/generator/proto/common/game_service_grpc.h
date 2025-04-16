@@ -70,26 +70,6 @@ void SendGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::en
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-class AsyncGameServiceRegisterGateNodeGrpcClientCall
-{
-public:
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-};
-
-using AsyncGameServiceRegisterGateNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRegisterGateNodeGrpcClientCall>&)>;
-
-extern AsyncGameServiceRegisterGateNodeHandlerFunctionType  AsyncGameServiceRegisterGateNodeHandler;
-
-
-class ::RegisterGateNodeRequest;
-void SendGameServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGateNodeRequest& request);
-
-void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
-void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 class AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall
 {
 public:

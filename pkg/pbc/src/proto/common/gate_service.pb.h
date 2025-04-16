@@ -499,14 +499,6 @@ class GateService : public ::google::protobuf::Service {
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
-  virtual void RegisterGame(::google::protobuf::RpcController* controller,
-                        const ::RegisterGameNodeRequest* request,
-                        ::Empty* response,
-                        ::google::protobuf::Closure* done);
-  virtual void UnRegisterGame(::google::protobuf::RpcController* controller,
-                        const ::UnregisterGameNodeRequest* request,
-                        ::Empty* response,
-                        ::google::protobuf::Closure* done);
   virtual void PlayerEnterGameNode(::google::protobuf::RpcController* controller,
                         const ::RegisterGameNodeSessionRequest* request,
                         ::RegisterGameNodeSessionResponse* response,
@@ -562,14 +554,6 @@ class GateService_Stub final : public GateService {
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
   // implements GateService ------------------------------------------
-  void RegisterGame(::google::protobuf::RpcController* controller,
-                        const ::RegisterGameNodeRequest* request,
-                        ::Empty* response,
-                        ::google::protobuf::Closure* done) override;
-  void UnRegisterGame(::google::protobuf::RpcController* controller,
-                        const ::UnregisterGameNodeRequest* request,
-                        ::Empty* response,
-                        ::google::protobuf::Closure* done) override;
   void PlayerEnterGameNode(::google::protobuf::RpcController* controller,
                         const ::RegisterGameNodeSessionRequest* request,
                         ::RegisterGameNodeSessionResponse* response,

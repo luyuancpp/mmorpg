@@ -10,46 +10,6 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 using GrpcGateServiceStubPtr = std::unique_ptr<::GateService::Stub>;
 
-class AsyncGateServiceRegisterGameGrpcClientCall
-{
-public:
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-};
-
-using AsyncGateServiceRegisterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRegisterGameGrpcClientCall>&)>;
-
-extern AsyncGateServiceRegisterGameHandlerFunctionType  AsyncGateServiceRegisterGameHandler;
-
-
-class ::RegisterGameNodeRequest;
-void SendGateServiceRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGameNodeRequest& request);
-
-void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
-void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
-class AsyncGateServiceUnRegisterGameGrpcClientCall
-{
-public:
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-};
-
-using AsyncGateServiceUnRegisterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceUnRegisterGameGrpcClientCall>&)>;
-
-extern AsyncGateServiceUnRegisterGameHandlerFunctionType  AsyncGateServiceUnRegisterGameHandler;
-
-
-class ::UnregisterGameNodeRequest;
-void SendGateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  ::UnregisterGameNodeRequest& request);
-
-void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
-void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 class AsyncGateServicePlayerEnterGameNodeGrpcClientCall
 {
 public:

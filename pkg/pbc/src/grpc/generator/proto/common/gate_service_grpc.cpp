@@ -4,110 +4,6 @@
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
 
-struct GateServiceRegisterGameCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-
-
-using AsyncGateServiceRegisterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRegisterGameGrpcClientCall>&)>;
-AsyncGateServiceRegisterGameHandlerFunctionType  AsyncGateServiceRegisterGameHandler;
-
-void AsyncCompleteGrpcGateServiceRegisterGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
-{
-    void* got_tag;
-    bool ok = false;
-
-    gpr_timespec tm;
-    tm.tv_sec = 0;
-    tm.tv_nsec = 0;
-    tm.clock_type = GPR_CLOCK_MONOTONIC;
-    if (grpc::CompletionQueue::GOT_EVENT != 
-		cq.AsyncNext(&got_tag, &ok, tm)){
-        return;
-    }
-
-    std::unique_ptr<AsyncGateServiceRegisterGameGrpcClientCall> call(static_cast<AsyncGateServiceRegisterGameGrpcClientCall*>(got_tag));
-	if (!ok){
-		LOG_ERROR << "RPC failed";
-		return;
-	}
-
-    if (call->status.ok()){
-		if(AsyncGateServiceRegisterGameHandler){
-			AsyncGateServiceRegisterGameHandler(call);
-		}
-    }else{
-        LOG_ERROR << call->status.error_message();
-    }
-}
-
-
-void SendGateServiceRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGameNodeRequest& request)
-{
-
-    AsyncGateServiceRegisterGameGrpcClientCall* call = new AsyncGateServiceRegisterGameGrpcClientCall;
-    call->response_reader =
-        registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRegisterGame(&call->context, request,
-		&registry.get<GateServiceRegisterGameCompleteQueue>(nodeEntity).cq);
-
-    	call->response_reader->StartCall();
-
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-
-}
-
-struct GateServiceUnRegisterGameCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-
-
-using AsyncGateServiceUnRegisterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceUnRegisterGameGrpcClientCall>&)>;
-AsyncGateServiceUnRegisterGameHandlerFunctionType  AsyncGateServiceUnRegisterGameHandler;
-
-void AsyncCompleteGrpcGateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
-{
-    void* got_tag;
-    bool ok = false;
-
-    gpr_timespec tm;
-    tm.tv_sec = 0;
-    tm.tv_nsec = 0;
-    tm.clock_type = GPR_CLOCK_MONOTONIC;
-    if (grpc::CompletionQueue::GOT_EVENT != 
-		cq.AsyncNext(&got_tag, &ok, tm)){
-        return;
-    }
-
-    std::unique_ptr<AsyncGateServiceUnRegisterGameGrpcClientCall> call(static_cast<AsyncGateServiceUnRegisterGameGrpcClientCall*>(got_tag));
-	if (!ok){
-		LOG_ERROR << "RPC failed";
-		return;
-	}
-
-    if (call->status.ok()){
-		if(AsyncGateServiceUnRegisterGameHandler){
-			AsyncGateServiceUnRegisterGameHandler(call);
-		}
-    }else{
-        LOG_ERROR << call->status.error_message();
-    }
-}
-
-
-void SendGateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  ::UnregisterGameNodeRequest& request)
-{
-
-    AsyncGateServiceUnRegisterGameGrpcClientCall* call = new AsyncGateServiceUnRegisterGameGrpcClientCall;
-    call->response_reader =
-        registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncUnRegisterGame(&call->context, request,
-		&registry.get<GateServiceUnRegisterGameCompleteQueue>(nodeEntity).cq);
-
-    	call->response_reader->StartCall();
-
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-
-}
-
 struct GateServicePlayerEnterGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
@@ -420,10 +316,6 @@ void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity no
 
 }
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
-	registry.emplace<GateServiceRegisterGameCompleteQueue>(nodeEntity);
-
-	registry.emplace<GateServiceUnRegisterGameCompleteQueue>(nodeEntity);
-
 	registry.emplace<GateServicePlayerEnterGameNodeCompleteQueue>(nodeEntity);
 
 	registry.emplace<GateServiceSendMessageToPlayerCompleteQueue>(nodeEntity);
@@ -438,18 +330,6 @@ void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEn
 
 }
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry) {
-	{
-		auto&& view = registry.view<GateServiceRegisterGameCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGateServiceRegisterGame(registry, e, completeQueueComp.cq);
-		}
-	}
-	{
-		auto&& view = registry.view<GateServiceUnRegisterGameCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcGateServiceUnRegisterGame(registry, e, completeQueueComp.cq);
-		}
-	}
 	{
 		auto&& view = registry.view<GateServicePlayerEnterGameNodeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){

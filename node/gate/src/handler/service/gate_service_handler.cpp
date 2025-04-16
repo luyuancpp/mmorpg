@@ -15,49 +15,6 @@ bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
 	return (message_id != 47 && message_id != 21 && message_id != 37);
 }
 
-///<<< END WRITING YOUR CODE
-void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,const ::RegisterGameNodeRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-	// Centre server notification
-	entt::entity requestGameNodeId{ request->scene_node_id() };
-	if (tls.sceneNodeRegistry.valid(requestGameNodeId))
-	{
-		LOG_ERROR << "Game node reconnect";
-		return;
-	}
-	Destroy(tls.sceneNodeRegistry, requestGameNodeId);
-	auto gameNodeId = tls.sceneNodeRegistry.create(requestGameNodeId);
-	if (gameNodeId != requestGameNodeId)
-	{
-		LOG_ERROR << "Create game node failed";
-		return;
-	}
-
-	InetAddress gameServiceAddr(request->rpc_server().ip(), request->rpc_server().port());
-	auto& gameNode = tls.sceneNodeRegistry.emplace<RpcClientPtr>(gameNodeId,
-		std::make_unique<RpcClientPtr::element_type>(
-			EventLoop::getEventLoopOfCurrentThread(),
-			gameServiceAddr));
-	gameNode->registerService(&gGateNode->GetServiceHandler());
-	gameNode->connect();
-
-	LOG_INFO << "On game register: " << MessageToJsonString(request);
-	///<<< END WRITING YOUR CODE
-}
-
-void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,const ::UnregisterGameNodeRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-	entt::entity requestGameNodeId{ request->scene_node_id() };
-	Destroy(tls.sceneNodeRegistry, requestGameNodeId);
-	LOG_INFO << "On game unregister: " << MessageToJsonString(request);
-	///<<< END WRITING YOUR CODE
-}
 
 void GateServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller,const ::RegisterGameNodeSessionRequest* request,
 	     ::RegisterGameNodeSessionResponse* response,

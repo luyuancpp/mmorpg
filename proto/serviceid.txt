@@ -11,7 +11,6 @@
 10=DeployServiceGetNodeInfo
 11=GateServicePlayerEnterGameNode
 12=GateServiceRouteNodeMessage
-13=GateServiceRegisterGame
 14=GateServiceBroadcastToPlayers
 15=GateServiceRoutePlayerMessage
 16=ClientPlayerSceneServiceNotifyActorListCreate
@@ -38,7 +37,6 @@
 37=PlayerClientCommonServiceKickPlayer
 38=CentreServiceEnterGsSucceed
 39=GameServiceUpdateSessionDetail
-40=GateServiceUnRegisterGame
 41=CentreServiceLoginNodeLeaveGame
 42=CentreServiceRouteNodeStringMsg
 43=GamePlayerSceneServiceEnterSceneS2C
@@ -59,7 +57,6 @@
 58=PlayerSkillServiceNotifySkillInterrupted
 59=GameServiceInvokePlayerService
 60=ClientPlayerSceneServiceNotifyEnterScene
-61=GameServiceRegisterGateNode
 62=GamePlayerServiceExitGame
 63=GateServiceSendMessageToPlayer
 64=GameServiceRouteNodeStringMsg
