@@ -290,6 +290,19 @@ bool Node::ParseJsonToServiceNode(const std::string& jsonValue, uint32_t service
 		}
 		*nodeList.Add() = newNodeInfo;
 	}
+  
+	if (serviceNodeType == kCentreNode){
+		ConnectToNodeHelper(tls.centreNodeRegistry, newNodeInfo);
+	}
+	else if (serviceNodeType == kSceneNode) {
+		ConnectToNodeHelper(tls.sceneNodeRegistry, newNodeInfo);
+	}
+	else if (serviceNodeType == kGateNode) {
+		ConnectToNodeHelper(tls.gateNodeRegistry, newNodeInfo);
+	}
+
+    // 创建并连接新节点
+	LOG_INFO << "Connected to node: " << newNodeInfo.DebugString();
 
 	return true;  // 解析成功
 }
