@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"pbgen/config"
 	"pbgen/util"
 	"runtime"
@@ -40,20 +41,18 @@ func BuildProto(protoPath string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 
-			tempHeadFileName := strings.Replace(fileName, config.ProtoDir, config.PbcTempDirectory, 1)
-			tempHeadFileName = strings.Replace(tempHeadFileName, config.ProtoEx, config.ProtoPbhEx, 1)
-
-			tempCppFileName := strings.Replace(fileName, config.ProtoDir, config.PbcTempDirectory, 1)
-			tempCppFileName = strings.Replace(tempCppFileName, config.ProtoEx, config.ProtoPbcEx, 1)
-
 			dstFileHeadName := strings.Replace(fileName, config.ProtoDir, config.PbcProtoOutputDirectory, 1)
 			dstFileHeadName = strings.Replace(dstFileHeadName, config.ProtoEx, config.ProtoPbhEx, 1)
 
 			dstFileCppName := strings.Replace(fileName, config.ProtoDir, config.PbcProtoOutputDirectory, 1)
 			dstFileCppName = strings.Replace(dstFileCppName, config.ProtoEx, config.ProtoPbcEx, 1)
 
-			dir := path.Dir(tempCppFileName)
-			err := os.MkdirAll(dir, os.FileMode(0777))
+			protoRelativePath := strings.Replace(protoPath, config.ProjectDir, "", -1)
+			newBaseDir := path.Dir(config.PbcTempDirectory + protoRelativePath)
+			tempHeadFileName := filepath.Join(newBaseDir, filepath.Base(dstFileHeadName))
+			tempCppFileName := filepath.Join(newBaseDir, filepath.Base(dstFileCppName))
+
+			err := os.MkdirAll(newBaseDir, os.FileMode(0777))
 			if err != nil {
 				return
 			}
