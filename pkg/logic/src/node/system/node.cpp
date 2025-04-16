@@ -79,17 +79,11 @@ void Node::ConfigureAndStartRpcServer ()
 
 void Node::StartRpcServer() {
 
-
     tls.dispatcher.trigger<OnServerStart>();  // 启动服务器
 
 	deployQueueTimer.Cancel();
 
 	StartWatchingServices();
-
-	for (auto& service : GetServiceList())
-	{
-		rpcServer->registerService(service);
-	}
 
 	RegisterSelf();
 }

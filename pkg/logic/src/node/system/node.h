@@ -33,7 +33,6 @@ public:
 
 protected:
     virtual void Initialize();
-    virtual ServiceList GetServiceList() { return {}; }
     void ConfigureAndStartRpcServer ();
     virtual void StartRpcServer();
     virtual void ShutdownNode();

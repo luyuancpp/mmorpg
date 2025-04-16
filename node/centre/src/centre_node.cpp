@@ -67,6 +67,12 @@ uint32_t CentreNode::GetNodeType() const
 
 void CentreNode::StartRpcServer()
 {
+	rpcServer->registerService(&centreService);
+	for (auto& val : gNodeService | std::views::values)
+	{
+		rpcServer->registerService(val.get());
+	}
+
 	Node::StartRpcServer();
 
 	InitSystemAfterConnect();
@@ -150,19 +156,6 @@ void CentreNode::PrepareForBeforeConnection()
 std::string CentreNode::GetServiceName() const
 {
 	return "centreservcie.rpc";
-}
-
-Node::ServiceList CentreNode::GetServiceList()
-{
-	ServiceList serviceList{};
-
-	serviceList.emplace_back(&centreService);
-	for (auto& val : gNodeService | std::views::values)
-	{
-		serviceList.emplace_back(val.get());
-	}
-
-	return serviceList;
 }
 
 void CentreNode::InitSystemAfterConnect() const
