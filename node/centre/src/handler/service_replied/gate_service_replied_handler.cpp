@@ -13,7 +13,7 @@ extern ProtobufDispatcher gResponseDispatcher;
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
-void InitGateServiceRegisterGameRepliedHandler()
+void InitGateServicePlayerEnterGameNodeRepliedHandler()
 {
 	gResponseDispatcher.registerMessageCallback<::RegisterGameNodeSessionResponse>(std::bind(&OnGateServicePlayerEnterGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::Empty>(std::bind(&OnGateServiceSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -22,7 +22,6 @@ void InitGateServiceRegisterGameRepliedHandler()
 	gResponseDispatcher.registerMessageCallback<::RoutePlayerMessageResponse>(std::bind(&OnGateServiceRoutePlayerMessageRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	gResponseDispatcher.registerMessageCallback<::Empty>(std::bind(&OnGateServiceBroadcastToPlayersRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
-
 
 void OnGateServicePlayerEnterGameNodeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, Timestamp timestamp)
 {
