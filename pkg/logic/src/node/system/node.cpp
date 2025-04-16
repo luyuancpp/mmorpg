@@ -28,31 +28,37 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
 	: loop_(loop),
 	muduoLog(logFilePath, kMaxLogFileRollSize, 1) {
 	// Initialize node's event loop and logging system
+	LOG_INFO << "Node created with event loop and log file path: " << logFilePath;
 }
 
 Node::~Node() {
+	LOG_INFO << "Node is being destroyed.";
 	ShutdownNode();  // Clean up node resources upon destruction
 }
 
 void Node::InitializeDeploymentService(const std::string& service_address)
 {
+	LOG_INFO << "Initializing deployment service with address: " << service_address;
 	tls.globalNodeRegistry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity())
 		= DeployService::NewStub(grpc::CreateChannel(service_address, grpc::InsecureChannelCredentials()));
 
 	// Request to fetch node information
 	NodeInfoRequest request;
 	request.set_node_type(GetNodeType());  // Use subclass to specify node type
+	LOG_INFO << "Sending deployment service request for node type: " << GetNodeType();
 	SendDeployServiceGetNodeInfo(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 
 	// Periodically renew the node lease
 	renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, [this]() {
 		RenewLeaseIDRequest request;
 		request.set_lease_id(GetNodeInfo().lease_id());
+		LOG_INFO << "Renewing lease with ID: " << GetNodeInfo().lease_id();
 		SendDeployServiceRenewLease(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 		});
 }
 
 void Node::Initialize() {
+	LOG_INFO << "Initializing node...";
 	LoadConfigurationFiles();        // Load configuration files
 	SetupRpcServer();                // Set up the RPC server
 	SetupLoggingSystem();            // Set up logging system
@@ -63,31 +69,37 @@ void Node::Initialize() {
 	RegisterServiceNodes();         // Fetch and register service nodes
 	RegisterSelfInService();        // Register this node in the service registry
 	SetUpEventHandlers();           // Set up event handlers
+	LOG_INFO << "Node initialization complete.";
 }
 
 // Sets up the RPC server for the node
 void Node::SetupRpcServer() {
+	LOG_INFO << "Setting up RPC server with local IP: " << localip() << " and port: " << GetPort();
 	GetNodeInfo().mutable_endpoint()->set_ip(localip());
 	GetNodeInfo().mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
 
 	InetAddress service_addr(GetNodeInfo().endpoint().ip(), GetNodeInfo().endpoint().port());
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, service_addr);
 	rpcServer->start();
+	LOG_INFO << "RPC server started at " << service_addr.toIpPort();
 }
 
 // Starts the RPC server and begins service node watching
 void Node::StartRpcServer() {
+	LOG_INFO << "Starting RPC server...";
 	tls.dispatcher.trigger<OnServerStart>();  // Trigger server start event
 
 	deployQueueTimer.Cancel();  // Stop deploy queue timer
+	LOG_INFO << "Deploy queue timer canceled.";
 
 	StartWatchingServiceNodes();  // Start watching for new service nodes
-
 	RegisterSelfInService();     // Register this node in service registry
+	LOG_INFO << "Service nodes watching started and node registered.";
 }
 
 // Gracefully shuts down the node and releases resources
 void Node::ShutdownNode() {
+	LOG_INFO << "Shutting down node...";
 	StopWatchingServiceNodes();  // Stop watching all service nodes
 	tls.Clear();                  // Clear thread-local storage
 	muduoLog.stop();              // Stop logging system
@@ -97,6 +109,7 @@ void Node::ShutdownNode() {
 	deployQueueTimer.Cancel();
 	renewNodeLeaseTimer.Cancel();
 	etcdQueueTimer.Cancel();
+	LOG_INFO << "Timers canceled and resources released.";
 
 	// Close all gRPC connections
 }
@@ -265,10 +278,12 @@ uint32_t Node::GetPort()
 }
 
 void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
+	LOG_INFO << "Adding service node of type " << nodeType << " with JSON: " << nodeJson;
 	auto& serviceNodeRegistry = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
 	// Validate the node type
 	if (!eNodeType_IsValid(nodeType)) {
+		LOG_ERROR << "Invalid node type: " << nodeType;
 		return;
 	}
 
@@ -289,6 +304,7 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	auto& nodeList = *serviceNodeRegistry[nodeType].mutable_node_list();
 	for (const auto& existingNode : nodeList) {
 		if (differencer.Compare(existingNode, newNodeInfo)) {
+			LOG_INFO << "Node already exists, skipping addition.";
 			return; // Node already exists, no need to add
 		}
 	}
@@ -299,28 +315,30 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	// Connect to the node based on its type
 	if (nodeType == kCentreNode) {
 		ConnectToNode(tls.centreNodeRegistry, newNodeInfo);
+		LOG_INFO << "Connected to center node: " << newNodeInfo.DebugString();
 	}
 	else if (nodeType == kSceneNode) {
 		ConnectToNode(tls.sceneNodeRegistry, newNodeInfo);
+		LOG_INFO << "Connected to scene node: " << newNodeInfo.DebugString();
 	}
 	else if (nodeType == kGateNode) {
 		ConnectToNode(tls.gateNodeRegistry, newNodeInfo);
+		LOG_INFO << "Connected to gate node: " << newNodeInfo.DebugString();
 	}
-
-	LOG_INFO << "Successfully connected to node: " << newNodeInfo.DebugString();
 }
 
+// Handles the start of a service node
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
+	LOG_INFO << "Handling service node start for key: " << key << ", value: " << value;
 	// Get the service node type from the key prefix
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
 	if (nodeType == kDeployNode) {
-		// Handle deployment node
-		InitializeDeploymentService(value);
 		LOG_INFO << "Deploy Service Key: " << key << ", Value: " << value;
+		InitializeDeploymentService(value);
 	}
 	else if (nodeType == kLoginNode) {
-		// Placeholder for login node handling (if necessary)
+		LOG_INFO << "Login Node handling is not yet implemented.";
 	}
 	else if (eNodeType_IsValid(nodeType)) {
 		// Add the service node to the appropriate registry
@@ -331,16 +349,17 @@ void Node::HandleServiceNodeStart(const std::string& key, const std::string& val
 	}
 }
 
+// Handles the stop of a service node
 void Node::HandleServiceNodeStop(const std::string& key, const std::string& value) {
+	LOG_INFO << "Handling service node stop for key: " << key << ", value: " << value;
 	// Get the service node type from the key prefix
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
 	if (nodeType == kDeployNode) {
-		// Handle deployment node
 		LOG_INFO << "Deploy Service Key: " << key << ", Value: " << value;
 	}
 	else if (nodeType == kLoginNode) {
-		// Placeholder for login node handling (if necessary)
+		LOG_INFO << "Login Node handling is not yet implemented.";
 	}
 	else if (eNodeType_IsValid(nodeType)) {
 		NodeInfo nodeInfo;
@@ -357,15 +376,16 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		// Remove the node from the registry based on its type
 		if (nodeType == kCentreNode) {
 			tls.centreNodeRegistry.destroy(entt::entity{ nodeInfo.node_id() });
+			LOG_INFO << "Centre node stopped: " << nodeInfo.DebugString();
 		}
 		else if (nodeType == kSceneNode) {
 			tls.sceneNodeRegistry.destroy(entt::entity{ nodeInfo.node_id() });
+			LOG_INFO << "Scene node stopped: " << nodeInfo.DebugString();
 		}
 		else if (nodeType == kGateNode) {
 			tls.gateNodeRegistry.destroy(entt::entity{ nodeInfo.node_id() });
+			LOG_INFO << "Gate node stopped: " << nodeInfo.DebugString();
 		}
-
-		LOG_INFO << "Successfully stopped service node: " << nodeInfo.DebugString();
 	}
 	else {
 		LOG_ERROR << "Unknown service type for key: " << key;
