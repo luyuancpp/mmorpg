@@ -77,7 +77,7 @@ void SceneNode::StartRpcServer()
 
 	Node::StartRpcServer();
 
-    ConnectToCentreHelper(&gameService);
+    ConnectToNodeHelper(&gameService, tls.centreNodeRegistry, kCentreNode);
     
     ReadyForGame();
     

@@ -27,7 +27,7 @@ public:
     explicit GateNode(EventLoop* loop);
     ~GateNode() override;
     inline ProtobufCodec& Codec() { return codec_; }
-    inline GateServiceHandler& GetServiceHandler() { return serviceHandler; }
+    inline GateServiceHandler& GetServiceHandler() { return gateServcie; }
     inline RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
     inline  NodeInfo& GetNodeInfo() { return nodeInfo; }
     uint32_t GetNodeType() const override;
@@ -59,7 +59,7 @@ private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     RpcClientSessionHandler rpcClientHandler;
-    GateServiceHandler serviceHandler;
+    GateServiceHandler gateServcie;
     TimerTaskComp loginGrpcSelectTimer;
     NodeInfo nodeInfo;
 };

@@ -155,27 +155,28 @@ void Node::InitGrpcQueues() {
 		});
 }
 
-void Node::ConnectToCentreHelper(::google::protobuf::Service* service) {
+void Node::ConnectToNodeHelper(::google::protobuf::Service* service, entt::registry& registry, uint32_t nodeType) {
     auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
-    for (auto& centreNodeInfo : serviceNodeList[kCentreNode].node_list()) {
-        entt::entity id{ centreNodeInfo.node_id() };
-        const auto centre_node_id = tls.centreNodeRegistry.create(id);
-        if (centre_node_id != id) {
+    for (auto& nodeInfo : serviceNodeList[nodeType].node_list()) {
+        entt::entity id{ nodeInfo.node_id() };
+        const auto nodeId = registry.create(id);
+        if (nodeId != id) {
             continue;  // 如果创建失败，则跳过该中心节点
         }
 
-        InetAddress centre_addr(centreNodeInfo.endpoint().ip(), centreNodeInfo.endpoint().port());
-        auto& centre_node = tls.centreNodeRegistry.emplace<RpcClientPtr>(centre_node_id,
-            std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
+        InetAddress endpoint(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
+        auto& node = registry.emplace<RpcClientPtr>(nodeId,
+            std::make_shared<RpcClientPtr::element_type>(loop_, endpoint));
 
         // 注册服务并连接
-        centre_node->registerService(service);
-        centre_node->connect();
+        node->registerService(service);
+        node->connect();
 
         // 判断是否为当前区域的中心节点
-        if (centreNodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
-            zoneCentreNode = centre_node;
+        if (nodeType == kCentreNode&&
+			nodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
+            zoneCentreNode = node;
         }
     }
 }
