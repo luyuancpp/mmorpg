@@ -69,7 +69,7 @@ void SceneNode::StartRpcServer()
     InetAddress redis_addr("127.0.0.1", 6379);
     tlsGame.redis.Initialize(redis_addr);
 
-    rpcServer->registerService(&gameService);
+    rpcServer->registerService(&nodeReplyService);
 	for (auto& val : gNodeService | std::views::values)
 	{
         rpcServer->registerService(val.get());
@@ -77,7 +77,7 @@ void SceneNode::StartRpcServer()
 
 	Node::StartRpcServer();
 
-    ConnectToNodeHelper(&gameService, tls.centreNodeRegistry, kCentreNode);
+    ConnectToNodeHelper(tls.centreNodeRegistry, kCentreNode);
     
     ReadyForGame();
     

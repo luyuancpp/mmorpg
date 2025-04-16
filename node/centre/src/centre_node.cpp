@@ -67,7 +67,7 @@ uint32_t CentreNode::GetNodeType() const
 
 void CentreNode::StartRpcServer()
 {
-	rpcServer->registerService(&centreService);
+	rpcServer->registerService(&nodeReplyService);
 	for (auto& val : gNodeService | std::views::values)
 	{
 		rpcServer->registerService(val.get());

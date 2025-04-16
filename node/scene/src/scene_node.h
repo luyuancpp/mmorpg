@@ -25,6 +25,8 @@ public:
     void Initialize()override;
 
     std::string GetServiceName() const override;
+
+    ::google::protobuf::Service* GetNodeRepleyService() override { return &nodeReplyService; }
     
     void Receive1(const OnConnected2TcpServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);
@@ -38,7 +40,7 @@ public:
 private:
     PbSyncRedisClientPtr redis;
     RpcClientPtr myZoneCentreNode;
-    GameServiceHandler gameService;
+    GameServiceHandler nodeReplyService;
     TimerTaskComp worldTimer;
 };
 
