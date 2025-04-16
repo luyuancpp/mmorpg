@@ -81,7 +81,6 @@ void Node::SetupRpcServer() {
 	InetAddress service_addr(GetNodeInfo().endpoint().ip(), GetNodeInfo().endpoint().port());
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, service_addr);
 	rpcServer->start();
-	LOG_INFO << "RPC server started at " << service_addr.toIpPort();
 }
 
 // Starts the RPC server and begins service node watching
@@ -94,7 +93,9 @@ void Node::StartRpcServer() {
 
 	StartWatchingServiceNodes();  // Start watching for new service nodes
 	RegisterSelfInService();     // Register this node in service registry
-	LOG_INFO << "Service nodes watching started and node registered.";
+
+	LOG_INFO << "RPC server started at " << GetNodeInfo().DebugString();
+
 }
 
 // Gracefully shuts down the node and releases resources
@@ -311,6 +312,11 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 
 	// Add new node to the list
 	*nodeList.Add() = newNodeInfo;
+
+	if (nodeType == GetNodeType())
+	{
+		return;
+	}
 
 	// Connect to the node based on its type
 	if (nodeType == kCentreNode) {
