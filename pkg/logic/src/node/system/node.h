@@ -30,7 +30,9 @@ public:
 	uint32_t GetPort();
 
     void InitDeployService(const std::string& service_address);
-    void HandleServiceNode(const std::string& key, const std::string& value);
+    void OnStartServiceNode(const std::string& key, const std::string& value);
+	void OnStopServiceNode(const std::string& key, const std::string& value);
+
 
 protected:
     virtual void Initialize();
@@ -57,6 +59,7 @@ protected:
     void InitGrpcClients();
     void FetchServiceRegistry();
 	void StartWatchingServices();
+    void InitGrpcetcdserverpbResponseHandler();
 
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;

@@ -137,7 +137,6 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\grpc\handler\etcd_grpc_reply_handler.cpp" />
     <ClCompile Include="src\handler\event\actor_combat_state_event_handler.cpp" />
     <ClCompile Include="src\handler\event\actor_event_handler.cpp" />
     <ClCompile Include="src\handler\event\buff_event_handler.cpp" />

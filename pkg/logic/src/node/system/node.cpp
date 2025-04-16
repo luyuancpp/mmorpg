@@ -201,7 +201,6 @@ void Node::SetupEventHandlers()
     void InitGrpcDeployServiceResponseHandler();
     InitGrpcDeployServiceResponseHandler();
 
-    void InitGrpcetcdserverpbResponseHandler();
     InitGrpcetcdserverpbResponseHandler();
 
 	void InitRepliedHandler();
@@ -307,7 +306,7 @@ void Node::ConnectToServiceNode(const std::string& json_value, uint32_t serviceN
 }
 
 // 处理服务节点的逻辑
-void Node::HandleServiceNode(const std::string& key, const std::string& value) {
+void Node::OnStartServiceNode(const std::string& key, const std::string& value) {
 
 	// 获取服务节点类型
 	auto serviceNodeType = NodeSystem::GetServiceTypeFromPrefix(key);
@@ -329,4 +328,97 @@ void Node::HandleServiceNode(const std::string& key, const std::string& value) {
 	}
 }
 
+void Node::OnStopServiceNode(const std::string& key, const std::string& value)
+{
+	// 获取服务节点类型
+	auto serviceNodeType = NodeSystem::GetServiceTypeFromPrefix(key);
+
+	if (serviceNodeType == kDeployNode) {
+		// 处理部署服务
+		//InitDeployService(value);
+		LOG_INFO << "Deploy Service Key: " << key << ", Value: " << value;
+	}
+	else if (serviceNodeType == kLoginNode) {
+
+	}
+	else if (eNodeType_IsValid(serviceNodeType)) {
+		NodeInfo newNodeInfo;
+
+		// 调用 JsonStringToMessage 函数将 JSON 字符串解析到 protobuf 消息
+		auto result = google::protobuf::util::JsonStringToMessage(value, &newNodeInfo);
+
+		if (!result.ok()) {
+			// 解析失败时记录错误日志
+			LOG_ERROR << "Failed to parse JSON to message for serviceNodeType: " << serviceNodeType
+				<< ", JSON: " << value
+				<< ", Error: " << result.message().data();
+			return;
+		}
+		if (serviceNodeType == kCentreNode) {
+			tls.centreNodeRegistry.destroy(entt::entity{ newNodeInfo.node_id() });
+		}
+		else if (serviceNodeType == kSceneNode) {
+			tls.sceneNodeRegistry.destroy(entt::entity{ newNodeInfo.node_id() });
+		}
+		else if (serviceNodeType == kGateNode) {
+			tls.gateNodeRegistry.destroy(entt::entity{ newNodeInfo.node_id() });
+		}
+
+	}
+	else {
+		// 无效的服务类型
+		LOG_ERROR << "Unknown service type for key: " << key;
+	}
+}
+
+
+void Node::InitGrpcetcdserverpbResponseHandler() {
+	AsyncetcdserverpbKVRangeHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
+		if (call->status.ok()) {
+			for (const auto& kv : call->reply.kvs()) {
+				OnStartServiceNode(kv.key(), kv.value());
+			}
+		}
+		else {
+			LOG_ERROR << "RPC failed: " << call->status.error_message();
+		}
+		};
+
+	AsyncetcdserverpbKVPutHandler = [](const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>& call) {
+		};
+
+	AsyncetcdserverpbKVDeleteRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>& call) {
+		};
+
+	AsyncetcdserverpbKVTxnHandler = [](const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>& call) {
+		};
+
+	AsyncetcdserverpbWatchWatchHandler = [this](const ::etcdserverpb::WatchResponse& response) {
+
+		if (response.created()) {
+			LOG_INFO << "Watch created: " << response.created();
+			return;
+		}
+
+		if (response.canceled()) {
+			LOG_INFO << "Watch canceled. Reason: " << response.cancel_reason();
+			if (response.compact_revision() > 0) {
+				LOG_ERROR << "Revision " << response.compact_revision() << " has been compacted.\n";
+				// 需要重新发起 watch 请求，从最新 revision 开始
+			}
+			return;
+		}
+
+		for (const auto& event : response.events()) {
+			if (event.type() == mvccpb::Event_EventType::Event_EventType_PUT) {
+				LOG_INFO << "Key put: " << event.kv().key() << "\n";
+				OnStartServiceNode(event.kv().key(), event.kv().value());
+			}
+			else if (event.type() == mvccpb::Event_EventType::Event_EventType_DELETE) {
+				OnStopServiceNode(event.kv().key(), event.kv().value());
+				LOG_INFO << "Key deleted: " << event.kv().key() << "\n";
+			}
+		}
+		};
+}
 
