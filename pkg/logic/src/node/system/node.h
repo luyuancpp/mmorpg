@@ -45,21 +45,22 @@ protected:
     void LoadConfigurationFiles();
     virtual void LoadConfigurationData();
     virtual void OnConfigLoadSuccessful(){}
-    void SetupEnvironment();
+    void ConfigureEnvironment();
     void ConnectToNodeHelper(entt::registry& registry, uint32_t nodeType);
 	void ConnectToNodeHelper(entt::registry& registry, const NodeInfo& nodeInfo);
 
-    void InitGrpcQueues();
+    void InitializeGrpcClients();
     void ReleaseNodeId();
-    void SetupEventHandlers();
-	void StopWatchingAll();
+    void SetUpEventHandlers();
+	void StopWatchingServiceNodes();
 	void RegisterSelfInService();
 	void ConnectToServiceNode(const std::string& json_value, uint32_t serviceNodeType);
     static void AsyncOutput(const char* msg, int len);
     void InitGrpcClients();
-    void FetchServiceRegistry();
-	void StartWatchingServices();
+    void RegisterServiceNodes();
+	void StartWatchingServiceNodes();
     void InitGrpcetcdserverpbResponseHandler();
+    void InitializeGrpcMessageQueues();
 
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;

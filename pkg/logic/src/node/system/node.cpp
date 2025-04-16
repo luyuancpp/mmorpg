@@ -1,7 +1,5 @@
 ﻿#include "node.h"
-
 #include <grpcpp/create_channel.h>
-
 #include "all_config.h"
 #include "config_loader/config.h"
 #include "google/protobuf/util/json_util.h"
@@ -27,13 +25,13 @@
 #include "grpc_client_system.h"
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
-    : loop_(loop),
-      muduoLog(logFilePath, kMaxLogFileRollSize, 1) {
-    // 构造函数，初始化节点的事件循环和日志系统
+	: loop_(loop),
+	muduoLog(logFilePath, kMaxLogFileRollSize, 1) {
+	// Initialize node's event loop and logging system
 }
 
 Node::~Node() {
-    ShutdownNode();  // 节点销毁时进行清理
+	ShutdownNode();  // Clean up node resources upon destruction
 }
 
 void Node::InitDeployService(const std::string& service_address)
@@ -41,12 +39,12 @@ void Node::InitDeployService(const std::string& service_address)
 	tls.globalNodeRegistry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity())
 		= DeployService::NewStub(grpc::CreateChannel(service_address, grpc::InsecureChannelCredentials()));
 
-	// 创建请求并获取节点信息
+	// Request to fetch node information
 	NodeInfoRequest request;
-	request.set_node_type(GetNodeType());  // 使用子类实现具体类型
+	request.set_node_type(GetNodeType());  // Use subclass to specify node type
 	SendDeployServiceGetNodeInfo(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 
-	// 定时更新节点租约
+	// Periodically renew the node lease
 	renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, [this]() {
 		RenewLeaseIDRequest request;
 		request.set_lease_id(GetNodeInfo().lease_id());
@@ -55,20 +53,20 @@ void Node::InitDeployService(const std::string& service_address)
 }
 
 void Node::Initialize() {
-	LoadConfigurationFiles();
-	SetupRpcServer ();
-	SetupLoggingSystem();
-	SetupEnvironment();
-	LoadConfigurationData();
-	InitGrpcClients();
-	InitGrpcQueues();
-	FetchServiceRegistry();
-	RegisterSelfInService();
-	SetupEventHandlers();
+	LoadConfigurationFiles();        // Load configuration files
+	SetupRpcServer();                // Set up the RPC server
+	SetupLoggingSystem();            // Set up logging system
+	ConfigureEnvironment();          // Set environment settings
+	LoadConfigurationData();        // Load the configuration data
+	InitializeGrpcClients();        // Initialize gRPC clients
+	InitializeGrpcMessageQueues();  // Initialize gRPC queues for async processing
+	RegisterServiceNodes();         // Fetch and register service nodes
+	RegisterSelfInService();        // Register this node in the service registry
+	SetUpEventHandlers();           // Set up event handlers
 }
 
-void Node::SetupRpcServer ()
-{
+// Sets up the RPC server for the node
+void Node::SetupRpcServer() {
 	GetNodeInfo().mutable_endpoint()->set_ip(localip());
 	GetNodeInfo().mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
 
@@ -77,58 +75,56 @@ void Node::SetupRpcServer ()
 	rpcServer->start();
 }
 
+// Starts the RPC server and begins service node watching
 void Node::StartRpcServer() {
+	tls.dispatcher.trigger<OnServerStart>();  // Trigger server start event
 
-    tls.dispatcher.trigger<OnServerStart>();  // 启动服务器
+	deployQueueTimer.Cancel();  // Stop deploy queue timer
 
-	deployQueueTimer.Cancel();
+	StartWatchingServiceNodes();  // Start watching for new service nodes
 
-	StartWatchingServices();
-
-	RegisterSelfInService();
+	RegisterSelfInService();     // Register this node in service registry
 }
 
-
-//优雅关闭和资源释放
+// Gracefully shuts down the node and releases resources
 void Node::ShutdownNode() {
+	StopWatchingServiceNodes();  // Stop watching all service nodes
+	tls.Clear();                  // Clear thread-local storage
+	muduoLog.stop();              // Stop logging system
+	ReleaseNodeId();              // Release the node ID
 
-    StopWatchingAll();
-	tls.Clear(); 
-    muduoLog.stop();
-    ReleaseNodeId();
-
-    // 取消所有定时任务
-    deployQueueTimer.Cancel();
-    renewNodeLeaseTimer.Cancel();
+	// Cancel all timers
+	deployQueueTimer.Cancel();
+	renewNodeLeaseTimer.Cancel();
 	etcdQueueTimer.Cancel();
 
-    // 关闭所有 gRPC 连接等
-    
+	// Close all gRPC connections
 }
 
-
+// Sets up the logging system with appropriate configurations
 void Node::SetupLoggingSystem() {
-    muduo::Logger::setLogLevel(static_cast<muduo::Logger::LogLevel>(tlsCommonLogic.GetBaseDeployConfig().log_level()));
-    muduo::Logger::setOutput(AsyncOutput);
-    muduoLog.start();  // 启动日志
+	muduo::Logger::setLogLevel(static_cast<muduo::Logger::LogLevel>(tlsCommonLogic.GetBaseDeployConfig().log_level()));
+	muduo::Logger::setOutput(AsyncOutput);
+	muduoLog.start();  // Start logging
 }
 
-void Node::LoadConfigurationFiles()
-{
+// Loads configuration files for the node
+void Node::LoadConfigurationFiles() {
 	readBaseDeployConfig("etc/base_deploy_config.yaml", tlsCommonLogic.GetBaseDeployConfig());
 	readGameConfig("etc/game_config.yaml", tlsCommonLogic.GetGameConfig());
 }
 
+// Loads and processes all configuration data
 void Node::LoadConfigurationData() {
-
 	LoadAllConfig();
 	LoadAllConfigAsyncWhenServerLaunch();
 	OnConfigLoadSuccessful();
 }
 
-void Node::SetupEnvironment() {
-    const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
-    muduo::Logger::setTimeZone(tz);  // 设置时区为香港
+// Configures environment variables, such as time zone and node info
+void Node::ConfigureEnvironment() {
+	const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
+	muduo::Logger::setTimeZone(tz);  // Set timezone to Hong Kong
 
 	GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());
 	GetNodeInfo().set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
@@ -138,16 +134,24 @@ void Node::SetupEnvironment() {
 	tls.globalNodeRegistry.emplace<ServiceNodeList>(GlobalGrpcNodeEntity());
 }
 
-void Node::InitGrpcQueues() {
+// Initializes gRPC clients and stubs for service communication
+void Node::InitializeGrpcClients() {
+	GrpcClientSystem::InitEtcdStubs(tlsCommonLogic.GetBaseDeployConfig().etcd_hosts());
+}
+
+// Initializes the gRPC queues for async message handling
+void Node::InitializeGrpcMessageQueues() {
 	InitDeployServiceCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
 	InitetcdserverpbKVCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
 	InitetcdserverpbWatchCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
 	InitetcdserverpbLeaseCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
 
+	// Periodically handle deploy service completed messages
 	deployQueueTimer.RunEvery(0.001, []() {
 		HandleDeployServiceCompletedQueueMessage(tls.globalNodeRegistry);
 		});
 
+	// Periodically handle etcd server responses
 	etcdQueueTimer.RunEvery(0.001, []() {
 		HandleetcdserverpbKVCompletedQueueMessage(tls.globalNodeRegistry);
 		HandleetcdserverpbWatchCompletedQueueMessage(tls.globalNodeRegistry);
@@ -155,12 +159,36 @@ void Node::InitGrpcQueues() {
 		});
 }
 
-void Node::ConnectToNodeHelper(entt::registry& registry, uint32_t nodeType) {
-    auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+// Registers the current node with the service registry
+void Node::RegisterSelfInService() {
+	EtcdHelper::PutServiceNodeInfo(GetNodeInfo(), GetServiceName());
+}
 
-    for (auto& nodeInfo : serviceNodeList[nodeType].node_list()) {
+// Fetches and registers all service nodes from etcd
+void Node::RegisterServiceNodes() {
+	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
+		EtcdHelper::RangeQuery(prefix);  // Query and fetch service node info from etcd
+	}
+}
+
+// Starts watching for new service nodes in etcd
+void Node::StartWatchingServiceNodes() {
+	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
+		EtcdHelper::StartWatchingPrefix(prefix);  // Start watching the service prefix
+	}
+}
+
+// Stops watching for service nodes in etcd
+void Node::StopWatchingServiceNodes() {
+	EtcdHelper::StopAllWatching();  // Stop watching all service nodes
+}
+
+void Node::ConnectToNodeHelper(entt::registry& registry, uint32_t nodeType) {
+	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+
+	for (auto& nodeInfo : serviceNodeList[nodeType].node_list()) {
 		ConnectToNodeHelper(registry, nodeInfo);
-    }
+	}
 }
 
 void Node::ConnectToNodeHelper(entt::registry& registry, const NodeInfo& nodeInfo)
@@ -188,51 +216,31 @@ void Node::ConnectToNodeHelper(entt::registry& registry, const NodeInfo& nodeInf
 }
 
 void Node::ReleaseNodeId() {
-    ReleaseIDRequest request;
-    request.set_id(GetNodeId());  // 获取节点 ID
-    request.set_node_type(GetNodeType());  // 获取节点类型
-    SendDeployServiceReleaseID(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);  // 释放节点 ID
+	ReleaseIDRequest request;
+	request.set_id(GetNodeId());  // 获取节点 ID
+	request.set_node_type(GetNodeType());  // 获取节点类型
+	SendDeployServiceReleaseID(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);  // 释放节点 ID
 }
 
-void Node::SetupEventHandlers()
+void Node::SetUpEventHandlers()
 {
-    InitMessageInfo();
+	InitMessageInfo();
 
-    void InitGrpcDeployServiceResponseHandler();
-    InitGrpcDeployServiceResponseHandler();
+	void InitGrpcDeployServiceResponseHandler();
+	InitGrpcDeployServiceResponseHandler();
 
-    InitGrpcetcdserverpbResponseHandler();
+	InitGrpcetcdserverpbResponseHandler();
 
 	void InitRepliedHandler();
 	InitRepliedHandler();
 
 }
 
-void Node::FetchServiceRegistry() {
-	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
-		EtcdHelper::RangeQuery(prefix);  // 拉取已有服务节点信息
-	}
-}
-
-void Node::StartWatchingServices() {
-	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
-		EtcdHelper::StartWatchingPrefix(prefix);
-	}
-}
-
-void Node::StopWatchingAll()
-{
-	EtcdHelper::StopAllWatching();
-}
-
-void Node::RegisterSelfInService() {
-	EtcdHelper::PutServiceNodeInfo(GetNodeInfo(), GetServiceName());
-}
 
 void Node::AsyncOutput(const char* msg, int len) {
-    logger().append(msg, len);
+	logger().append(msg, len);
 #ifdef WIN32
-    Log2Console(msg, len);  // 在 Windows 系统上输出到控制台
+	Log2Console(msg, len);  // 在 Windows 系统上输出到控制台
 #endif
 }
 
@@ -246,12 +254,12 @@ std::string Node::FormatIpAndPort()
 	return ::FormatIpAndPort(GetNodeInfo().endpoint().ip(), GetNodeInfo().endpoint().port());
 }
 
-std::string Node::GetIp() 
+std::string Node::GetIp()
 {
 	return GetNodeInfo().endpoint().ip();
 }
 
-uint32_t Node::GetPort() 
+uint32_t Node::GetPort()
 {
 	return GetNodeInfo().endpoint().port();
 }
@@ -261,7 +269,7 @@ void Node::ConnectToServiceNode(const std::string& json_value, uint32_t serviceN
 
 	// 检查 serviceNodeType 是否有效
 	if (!eNodeType_IsValid(serviceNodeType)) {
-		return ;
+		return;
 	}
 
 	NodeInfo newNodeInfo;
@@ -274,7 +282,7 @@ void Node::ConnectToServiceNode(const std::string& json_value, uint32_t serviceN
 		LOG_ERROR << "Failed to parse JSON to message for serviceNodeType: " << serviceNodeType
 			<< ", JSON: " << json_value
 			<< ", Error: " << result.message().data();
-		return ;
+		return;
 	}
 
 	google::protobuf::util::MessageDifferencer differencer;
@@ -288,8 +296,8 @@ void Node::ConnectToServiceNode(const std::string& json_value, uint32_t serviceN
 		}
 		*nodeList.Add() = newNodeInfo;
 	}
-  
-	if (serviceNodeType == kCentreNode){
+
+	if (serviceNodeType == kCentreNode) {
 		ConnectToNodeHelper(tls.centreNodeRegistry, newNodeInfo);
 	}
 	else if (serviceNodeType == kSceneNode) {
@@ -299,10 +307,10 @@ void Node::ConnectToServiceNode(const std::string& json_value, uint32_t serviceN
 		ConnectToNodeHelper(tls.gateNodeRegistry, newNodeInfo);
 	}
 
-    // 创建并连接新节点
+	// 创建并连接新节点
 	LOG_INFO << "Connected to node: " << newNodeInfo.DebugString();
 
-	return; 
+	return;
 }
 
 // 处理服务节点的逻辑
@@ -419,6 +427,5 @@ void Node::InitGrpcetcdserverpbResponseHandler() {
 				LOG_INFO << "Key deleted: " << event.kv().key() << "\n";
 			}
 		}
-		};
+	};
 }
-
