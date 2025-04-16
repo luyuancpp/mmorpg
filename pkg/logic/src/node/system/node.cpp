@@ -155,7 +155,7 @@ void Node::InitGrpcQueues() {
 		});
 }
 
-void Node::ConnectToNodeHelper(::google::protobuf::Service* service, entt::registry& registry, uint32_t nodeType) {
+void Node::ConnectToNodeHelper(entt::registry& registry, uint32_t nodeType) {
     auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
     for (auto& nodeInfo : serviceNodeList[nodeType].node_list()) {
@@ -170,11 +170,11 @@ void Node::ConnectToNodeHelper(::google::protobuf::Service* service, entt::regis
             std::make_shared<RpcClientPtr::element_type>(loop_, endpoint));
 
         // 注册服务并连接
-        node->registerService(service);
+        node->registerService(GetNodeRepleyService());
         node->connect();
 
         // 判断是否为当前区域的中心节点
-        if (nodeType == kCentreNode&&
+        if (nodeType == kCentreNode &&
 			nodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
             zoneCentreNode = node;
         }

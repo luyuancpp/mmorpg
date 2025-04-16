@@ -22,6 +22,7 @@ public:
     virtual uint32_t GetNodeType() const = 0;
     virtual NodeInfo& GetNodeInfo() = 0;
 	virtual std::string GetServiceName() const = 0;
+	virtual ::google::protobuf::Service* GetNodeRepleyService() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
 	[[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
     std::string FormatIpAndPort() ;
@@ -43,7 +44,7 @@ protected:
     virtual void LoadConfiguration();
     virtual void OnConfigLoadSuccessful(){}
     void SetupEnvironment();
-    void ConnectToNodeHelper(::google::protobuf::Service* service, entt::registry& registry, uint32_t nodeType);
+    void ConnectToNodeHelper(entt::registry& registry, uint32_t nodeType);
     void InitGrpcQueues();
     void ReleaseNodeId();
     void SetupEventHandlers();

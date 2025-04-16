@@ -27,11 +27,12 @@ public:
     explicit GateNode(EventLoop* loop);
     ~GateNode() override;
     inline ProtobufCodec& Codec() { return codec_; }
-    inline GateServiceHandler& GetServiceHandler() { return gateServcie; }
+    inline GateServiceHandler& GetServiceHandler() { return nodeReplyService; }
     inline RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
     inline  NodeInfo& GetNodeInfo() { return nodeInfo; }
     uint32_t GetNodeType() const override;
     std::string GetServiceName() const override;
+	::google::protobuf::Service* GetNodeRepleyService() override{ return &nodeReplyService ; }
 
     inline void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn,
                             const ::google::protobuf::Message& message) const { rpcClientHandler.SendMessageToClient(conn, message); }
@@ -59,7 +60,7 @@ private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     RpcClientSessionHandler rpcClientHandler;
-    GateServiceHandler gateServcie;
+    GateServiceHandler nodeReplyService;
     TimerTaskComp loginGrpcSelectTimer;
     NodeInfo nodeInfo;
 };

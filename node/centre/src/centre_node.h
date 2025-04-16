@@ -26,6 +26,8 @@ public:
 
 	std::string GetServiceName() const override;
 
+	::google::protobuf::Service* GetNodeRepleyService() override { return &nodeReplyService; }
+
 	static void BroadCastRegisterGameToGate(entt::entity gs, entt::entity gate);
 
 	void StartRpcServer() override;
@@ -39,7 +41,7 @@ private:
 
 private:
 	PbSyncRedisClientPtr redis_;
-	CentreServiceHandler centreService;
+	CentreServiceHandler nodeReplyService;
 };
 
 extern CentreNode* gCentreNode ;
