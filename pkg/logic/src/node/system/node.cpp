@@ -313,7 +313,7 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	// Add new node to the list
 	*nodeList.Add() = newNodeInfo;
 
-	if (nodeType == GetNodeType())
+	if (!GetCanNodeTypeList().contains(nodeType))
 	{
 		return;
 	}

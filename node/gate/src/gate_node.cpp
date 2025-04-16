@@ -47,6 +47,11 @@ std::string GateNode::GetServiceName() const
     return "gateservice.rpc";
 }
 
+Node::CanConnectNodeTypeList GateNode::GetCanNodeTypeList()
+{
+    return { kCentreNode, kSceneNode }; 
+}
+
 void GateNode::Initialize()
 {
     gGateNode = this;

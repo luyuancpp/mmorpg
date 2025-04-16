@@ -48,6 +48,7 @@ compile_commands.json
 *.pyc
 *.dll
 *.log
+*.user
 x64/
 .vs/
 bin/config/xlwt/
