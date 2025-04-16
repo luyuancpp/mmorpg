@@ -33,15 +33,15 @@ static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_proto_2flogic_2fconstants_2fetcd_5fgrpc_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n%proto/logic/constants/etcd_grpc.proto*"
-    "G\n\tGrpcOpTag\022\010\n\004READ\020\000\022\010\n\004INIT\020\001\022\t\n\005WRIT"
-    "E\020\002\022\017\n\013WRITES_DONE\020\003\022\n\n\006FINISH\020\004B\tZ\007pb/g"
-    "ameb\006proto3"
+    "K\n\rGrpcOperation\022\010\n\004READ\020\000\022\010\n\004INIT\020\001\022\t\n\005"
+    "WRITE\020\002\022\017\n\013WRITES_DONE\020\003\022\n\n\006FINISH\020\004B\tZ\007"
+    "pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fconstants_2fetcd_5fgrpc_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fconstants_2fetcd_5fgrpc_2eproto = {
     false,
     false,
-    131,
+    135,
     descriptor_table_protodef_proto_2flogic_2fconstants_2fetcd_5fgrpc_2eproto,
     "proto/logic/constants/etcd_grpc.proto",
     &descriptor_table_proto_2flogic_2fconstants_2fetcd_5fgrpc_2eproto_once,
@@ -54,13 +54,13 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_
     file_level_enum_descriptors_proto_2flogic_2fconstants_2fetcd_5fgrpc_2eproto,
     file_level_service_descriptors_proto_2flogic_2fconstants_2fetcd_5fgrpc_2eproto,
 };
-const ::google::protobuf::EnumDescriptor* GrpcOpTag_descriptor() {
+const ::google::protobuf::EnumDescriptor* GrpcOperation_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2flogic_2fconstants_2fetcd_5fgrpc_2eproto);
   return file_level_enum_descriptors_proto_2flogic_2fconstants_2fetcd_5fgrpc_2eproto[0];
 }
-PROTOBUF_CONSTINIT const uint32_t GrpcOpTag_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t GrpcOperation_internal_data_[] = {
     327680u, 0u, };
-bool GrpcOpTag_IsValid(int value) {
+bool GrpcOperation_IsValid(int value) {
   return 0 <= value && value <= 4;
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -77,7 +77,7 @@ const (
 	PbcOutputDirectory               = ProjectDir + PbcProtoDirectory
 	GrpcOutputDirectory              = ProjectDir + PbcProtoDirectory
 	GrpcTempDirectory                = TempFileGenerationDir + "grpc/"
-	PbcTempDirectory                 = TempFileGenerationDir + "proto/"
+	PbcTempDirectory                 = TempFileGenerationDir
 	GrpcProtoOutputDirectory         = ProjectDir + PbcProtoDirectory + ProtoDirName
 	RobotGoOutputDirectory           = ProjectDir + RobotDirectory
 	GoPbGameDirectory                = "pb/game/"
