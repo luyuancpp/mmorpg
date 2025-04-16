@@ -55,19 +55,19 @@ void Node::InitDeployService(const std::string& service_address)
 }
 
 void Node::Initialize() {
-	LoadYamlConfiguration();
-	ConfigureAndStartRpcServer ();
-	SetupLogging();
+	LoadConfigurationFiles();
+	SetupRpcServer ();
+	SetupLoggingSystem();
 	SetupEnvironment();
-	LoadConfiguration();
+	LoadConfigurationData();
 	InitGrpcClients();
 	InitGrpcQueues();
 	FetchServiceRegistry();
-	RegisterSelf();
+	RegisterSelfInService();
 	SetupEventHandlers();
 }
 
-void Node::ConfigureAndStartRpcServer ()
+void Node::SetupRpcServer ()
 {
 	GetNodeInfo().mutable_endpoint()->set_ip(localip());
 	GetNodeInfo().mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
@@ -85,7 +85,7 @@ void Node::StartRpcServer() {
 
 	StartWatchingServices();
 
-	RegisterSelf();
+	RegisterSelfInService();
 }
 
 
@@ -107,19 +107,19 @@ void Node::ShutdownNode() {
 }
 
 
-void Node::SetupLogging() {
+void Node::SetupLoggingSystem() {
     muduo::Logger::setLogLevel(static_cast<muduo::Logger::LogLevel>(tlsCommonLogic.GetBaseDeployConfig().log_level()));
     muduo::Logger::setOutput(AsyncOutput);
     muduoLog.start();  // 启动日志
 }
 
-void Node::LoadYamlConfiguration()
+void Node::LoadConfigurationFiles()
 {
 	readBaseDeployConfig("etc/base_deploy_config.yaml", tlsCommonLogic.GetBaseDeployConfig());
 	readGameConfig("etc/game_config.yaml", tlsCommonLogic.GetGameConfig());
 }
 
-void Node::LoadConfiguration() {
+void Node::LoadConfigurationData() {
 
 	LoadAllConfig();
 	LoadAllConfigAsyncWhenServerLaunch();
@@ -225,7 +225,7 @@ void Node::StopWatchingAll()
 	EtcdHelper::StopAllWatching();
 }
 
-void Node::RegisterSelf() {
+void Node::RegisterSelfInService() {
 	EtcdHelper::PutServiceNodeInfo(GetNodeInfo(), GetServiceName());
 }
 
