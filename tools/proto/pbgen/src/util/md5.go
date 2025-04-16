@@ -71,7 +71,22 @@ func WriteToMd5ExFile(filePath string, md5FilePath string) (err error) {
 	return err
 }
 
+func AreFileSizesEqual(file1, file2 string) bool {
+	info1, err1 := os.Stat(file1)
+	info2, err2 := os.Stat(file2)
+
+	if err1 != nil || err2 != nil {
+		return false
+	}
+
+	return info1.Size() == info2.Size()
+}
+
 func IsSameMD5(dstFilePath string, srcFilePath string) (same bool, err error) {
+	if !AreFileSizesEqual(dstFilePath, srcFilePath) {
+		return false, nil
+	}
+
 	srcMd5, err := GetFileMd5(srcFilePath)
 	if err != nil {
 		return false, err
@@ -80,6 +95,7 @@ func IsSameMD5(dstFilePath string, srcFilePath string) (same bool, err error) {
 	if err != nil {
 		return false, err
 	}
+
 	if srcMd5 != dstMd5 {
 		return false, nil
 	}
