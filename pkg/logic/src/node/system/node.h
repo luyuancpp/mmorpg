@@ -52,7 +52,7 @@ protected:
     void SetupEventHandlers();
 	void StopWatchingAll();
 	void RegisterSelf();
-	bool ParseJsonToServiceNode(const std::string& json_value, uint32_t serviceNodeType);
+	void ConnectToServiceNode(const std::string& json_value, uint32_t serviceNodeType);
     static void AsyncOutput(const char* msg, int len);
     void InitGrpcClients();
     void FetchServiceRegistry();

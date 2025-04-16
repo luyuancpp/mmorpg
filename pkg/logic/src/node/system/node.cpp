@@ -257,32 +257,31 @@ uint32_t Node::GetPort()
 	return GetNodeInfo().endpoint().port();
 }
 
-bool Node::ParseJsonToServiceNode(const std::string& jsonValue, uint32_t serviceNodeType) {
+void Node::ConnectToServiceNode(const std::string& json_value, uint32_t serviceNodeType) {
 	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
 	// 检查 serviceNodeType 是否有效
 	if (!eNodeType_IsValid(serviceNodeType)) {
-		return false;
+		return ;
 	}
 
 	NodeInfo newNodeInfo;
 
 	// 调用 JsonStringToMessage 函数将 JSON 字符串解析到 protobuf 消息
-	auto result = google::protobuf::util::JsonStringToMessage(jsonValue, &newNodeInfo);
+	auto result = google::protobuf::util::JsonStringToMessage(json_value, &newNodeInfo);
 
 	if (!result.ok()) {
 		// 解析失败时记录错误日志
 		LOG_ERROR << "Failed to parse JSON to message for serviceNodeType: " << serviceNodeType
-			<< ", JSON: " << jsonValue
+			<< ", JSON: " << json_value
 			<< ", Error: " << result.message().data();
-		return false;
+		return ;
 	}
 
 	google::protobuf::util::MessageDifferencer differencer;
 
 	// 遍历 serviceNodeList[serviceNodeType]，如果没有相同的节点则添加
 	auto& nodeList = *serviceNodeList[serviceNodeType].mutable_node_list();
-	bool exists = false;
 
 	for (const auto& existingNode : nodeList) {
 		if (!differencer.Compare(existingNode, newNodeInfo)) {
@@ -304,7 +303,7 @@ bool Node::ParseJsonToServiceNode(const std::string& jsonValue, uint32_t service
     // 创建并连接新节点
 	LOG_INFO << "Connected to node: " << newNodeInfo.DebugString();
 
-	return true;  // 解析成功
+	return; 
 }
 
 // 处理服务节点的逻辑
@@ -322,13 +321,7 @@ void Node::HandleServiceNode(const std::string& key, const std::string& value) {
 
 	}
 	else if (eNodeType_IsValid(serviceNodeType)) {
-		// 解析有效的服务节点
-		if (ParseJsonToServiceNode(value, serviceNodeType)) {
-			LOG_INFO << "Service Node Key: " << key << ", Value: " << value;
-		}
-		else {
-			LOG_ERROR << "Failed to parse JSON for Service Node Key: " << key << ", Value: " << value;
-		}
+		ConnectToServiceNode(value, serviceNodeType);
 	}
 	else {
 		// 无效的服务类型
