@@ -5,6 +5,7 @@
 #include "all_config.h"
 #include "config_loader/config.h"
 #include "google/protobuf/util/json_util.h"
+#include "google/protobuf/util/message_differencer.h"
 #include "grpc/generator/proto/common/deploy_service_grpc.h"
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
 #include "log/constants/log_constants.h"
@@ -84,6 +85,11 @@ void Node::StartRpcServer() {
 	deployQueueTimer.Cancel();
 
 	StartWatchingServices();
+
+	for (auto& service : GetServiceList())
+	{
+		rpcServer->registerService(service);
+	}
 
 	RegisterSelf();
 }
@@ -258,8 +264,10 @@ bool Node::ParseJsonToServiceNode(const std::string& jsonValue, uint32_t service
 		return false;
 	}
 
+	NodeInfo newNodeInfo;
+
 	// 调用 JsonStringToMessage 函数将 JSON 字符串解析到 protobuf 消息
-	auto result = google::protobuf::util::JsonStringToMessage(jsonValue, serviceNodeList[serviceNodeType].add_node_list());
+	auto result = google::protobuf::util::JsonStringToMessage(jsonValue, &newNodeInfo);
 
 	if (!result.ok()) {
 		// 解析失败时记录错误日志
@@ -267,6 +275,19 @@ bool Node::ParseJsonToServiceNode(const std::string& jsonValue, uint32_t service
 			<< ", JSON: " << jsonValue
 			<< ", Error: " << result.message().data();
 		return false;
+	}
+
+	google::protobuf::util::MessageDifferencer differencer;
+
+	// 遍历 serviceNodeList[serviceNodeType]，如果没有相同的节点则添加
+	auto& nodeList = *serviceNodeList[serviceNodeType].mutable_node_list();
+	bool exists = false;
+
+	for (const auto& existingNode : nodeList) {
+		if (!differencer.Compare(existingNode, newNodeInfo)) {
+			continue;
+		}
+		*nodeList.Add() = newNodeInfo;
 	}
 
 	return true;  // 解析成功

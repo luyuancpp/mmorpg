@@ -64,18 +64,25 @@ std::string SceneNode::GetServiceName() const
 	return "sceneservice.rpc";
 }
 
+Node::ServiceList SceneNode::GetServiceList()
+{
+    ServiceList serviceList{};
+
+    serviceList.emplace_back(&gameService);
+	for (auto& val : gNodeService | std::views::values)
+	{
+        serviceList.emplace_back(val.get());
+	}
+
+    return serviceList;
+}
+
 void SceneNode::StartRpcServer()
 {
     InetAddress redis_addr("127.0.0.1", 6379);
     tlsGame.redis.Initialize(redis_addr);
 
 	Node::StartRpcServer();
-
-    rpcServer->registerService(&gameService);
-    for ( auto & val : gNodeService | std::views::values )
-    {
-        rpcServer->registerService(val.get());
-    }
 
     ConnectToCentreHelper(&gameService);
     

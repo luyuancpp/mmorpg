@@ -13,6 +13,7 @@
 class Node : muduo::noncopyable{
 public:
     using RpcServerPtr = std::unique_ptr<muduo::net::RpcServer>;
+    using ServiceList = std::vector<::google::protobuf::Service*>;
 
     explicit Node(muduo::net::EventLoop* loop, const std::string& logFilePath);
     virtual ~Node();
@@ -32,6 +33,7 @@ public:
 
 protected:
     virtual void Initialize();
+    virtual ServiceList GetServiceList() { return {}; }
     void ConfigureAndStartRpcServer ();
     virtual void StartRpcServer();
     virtual void ShutdownNode();
