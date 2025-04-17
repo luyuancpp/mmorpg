@@ -15,12 +15,11 @@ bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
 	return (message_id != 47 && message_id != 21 && message_id != 37);
 }
 
-
-void GateServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller,const ::RegisterGameNodeSessionRequest* request,
-	     ::RegisterGameNodeSessionResponse* response,
-	     ::google::protobuf::Closure* done)
+///<<< END WRITING YOUR CODE
+void GateServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller, const ::RegisterGameNodeSessionRequest* request,
+	::RegisterGameNodeSessionResponse* response,
+	::google::protobuf::Closure* done)
 {
-	///<<< BEGIN WRITING YOUR CODE
 	auto sessionIt = tls_gate.sessions().find(request->session_info().session_id());
 	if (sessionIt == tls_gate.sessions().end())
 	{
@@ -40,6 +39,7 @@ void GateServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
+
 	auto sessionIt = tls_gate.sessions().find(request->header().session_id());
 	if (sessionIt == tls_gate.sessions().end())
 	{
@@ -54,6 +54,7 @@ void GateServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	//LOG_TRACE << "Player message routed, session ID: " << request->head().session_id();
 	///<<< END WRITING YOUR CODE
 }
+
 
 void GateServiceHandler::KickSessionByCentre(::google::protobuf::RpcController* controller,const ::KickSessionRequest* request,
 	     ::Empty* response,
@@ -70,16 +71,15 @@ void GateServiceHandler::RouteNodeMessage(::google::protobuf::RpcController* con
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-
 	///<<< END WRITING YOUR CODE
 }
+
 
 void GateServiceHandler::RoutePlayerMessage(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
 	     ::RoutePlayerMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-
 	///<<< END WRITING YOUR CODE
 }
 
@@ -105,4 +105,6 @@ void GateServiceHandler::BroadcastToPlayers(::google::protobuf::RpcController* c
 	}
 	///<<< END WRITING YOUR CODE
 }
+
+
 
