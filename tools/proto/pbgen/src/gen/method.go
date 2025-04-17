@@ -300,11 +300,11 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods, method
 }
 
 func GenerateMethodHandlerNameWrapper(info *RPCMethod, ex string) string {
-	return info.Service() + config.HandlerFileName + "::" + info.Method()
+	return info.Service() + config.HandlerFileName + "::" + info.Method() + "("
 }
 
 func GenerateMethodHandlerNameWrapper1(info *RPCMethod, ex string) string {
-	return ex + "::" + info.Method()
+	return ex + "::" + info.Method() + "("
 }
 
 func GenerateMethodHandlerKeyNameWrapper(info *RPCMethod, ex string) string {
@@ -337,7 +337,7 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 	for _, methodInfo := range *methodList {
 		// 如果该方法有对应的 yourCode
 		if code, exists := yourCodesMap[GenerateMethodHandlerNameWrapper(methodInfo, ex)]; exists {
-			data.WriteString(fmt.Sprintf("void %s(%sconst %s* request,\n",
+			data.WriteString(fmt.Sprintf("void %s%sconst %s* request,\n",
 				GenerateMethodHandlerNameWrapper(methodInfo, ex), config.GoogleMethodController, methodInfo.CppRequest()))
 			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response,\n")
 			data.WriteString(config.Tab + "     ::google::protobuf::Closure* done)\n")
@@ -439,7 +439,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className 
 		// Check if there's code available for the current method
 		if code, exists := yourCodesMap[GenerateMethodHandlerNameWrapper1(methodInfo, className)]; exists {
 			// Append method handler function definition
-			data.WriteString(fmt.Sprintf("void %s(%sconst %s* request,\n",
+			data.WriteString(fmt.Sprintf("void %s%sconst %s* request,\n",
 				GenerateMethodHandlerNameWrapper1(methodInfo, className), config.PlayerMethodController, methodInfo.CppRequest()))
 			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response)\n")
 			data.WriteString("{\n")
