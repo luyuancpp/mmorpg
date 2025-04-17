@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message OnSceneNodeAddPbEvent
+{
+  uint64 entity = 1;
+  uint32 scenenode_type =2;
+}
+
