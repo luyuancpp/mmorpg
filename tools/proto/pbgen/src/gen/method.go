@@ -273,6 +273,11 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[s
 		}
 	}
 
+	// 如果没有找到第一个 yourCode，使用默认的 config.YourCodePair
+	if firstCode == "" {
+		firstCode = config.YourCodePair
+	}
+
 	// 检查是否有方法没有找到对应的 yourCode，如果没有找到，则添加默认值
 	for _, method := range *methodList {
 		if _, exists := codeMap[method.MethodName()]; !exists {
