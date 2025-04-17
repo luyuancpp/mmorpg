@@ -304,7 +304,7 @@ func GenerateMethodHandlerNameWrapper(info *RPCMethod) string {
 }
 
 func GenerateMethodHandlerKeyNameWrapper(info *RPCMethod) string {
-	return info.KeyName() // 调用方法并返回结果
+	return "On" + info.KeyName() + config.RepliedHandlerFileName
 }
 
 func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
@@ -327,14 +327,12 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 		data.WriteString(firstCode)
 	}
 
-	className := firstMethodInfo.Service() + config.HandlerFileName
-
 	// 遍历 methodList，构建每个方法的处理函数
 	for _, methodInfo := range *methodList {
 		// 如果该方法有对应的 yourCode
 		if code, exists := yourCodesMap[GenerateMethodHandlerNameWrapper(methodInfo)]; exists {
-			data.WriteString(fmt.Sprintf("void %s::%s(%sconst %s* request,\n",
-				className, methodInfo.Method(), config.GoogleMethodController, methodInfo.CppRequest()))
+			data.WriteString(fmt.Sprintf("void %s(%sconst %s* request,\n",
+				GenerateMethodHandlerNameWrapper(methodInfo), config.GoogleMethodController, methodInfo.CppRequest()))
 			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response,\n")
 			data.WriteString(config.Tab + "     ::google::protobuf::Closure* done)\n")
 			data.WriteString("{\n")
@@ -379,7 +377,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 		// Check if there's code available for the current method
 		if code, exists := yourCodesMap[GenerateMethodHandlerKeyNameWrapper(methodInfo)]; exists {
 			// Construct function name for the handler
-			funcName := "On" + methodInfo.KeyName() + config.RepliedHandlerFileName
+			funcName := GenerateMethodHandlerKeyNameWrapper(methodInfo)
 
 			// Register message callback in declaration data
 			declarationData.WriteString(fmt.Sprintf("%s%s", config.Tab,
@@ -433,8 +431,8 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className 
 		// Check if there's code available for the current method
 		if code, exists := yourCodesMap[GenerateMethodHandlerNameWrapper(methodInfo)]; exists {
 			// Append method handler function definition
-			data.WriteString(fmt.Sprintf("void %s::%s(%sconst %s* request,\n",
-				className, methodInfo.Method(), config.PlayerMethodController, methodInfo.CppRequest()))
+			data.WriteString(fmt.Sprintf("void %s(%sconst %s* request,\n",
+				GenerateMethodHandlerNameWrapper(methodInfo), config.PlayerMethodController, methodInfo.CppRequest()))
 			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response)\n")
 			data.WriteString("{\n")
 			data.WriteString(code) // Append the code for this method
