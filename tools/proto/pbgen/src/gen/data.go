@@ -132,9 +132,12 @@ func (info *RPCMethod) FileNameNoEx() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, "", 1)
 }
 
-// PbcHeadName 返回Proto文件头文件名
 func (info *RPCMethod) PbcHeadName() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.ProtoPbhEx, 1)
+}
+
+func (info *RPCMethod) MethodName() string {
+	return info.MethodDescriptorProto.GetName()
 }
 
 func (info *RPCMethod) FileBaseName() string {

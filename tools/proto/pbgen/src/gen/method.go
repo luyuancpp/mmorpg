@@ -209,37 +209,68 @@ func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) string {
 	return data.String()
 }
 
-func ReadCodeSectionsFromFile(cppFileName string, codeCount int) ([]string, error) {
-	var yourCodes []string
+func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[string]string, error) {
+	// 创建一个 map 来存储每个 RPCMethod 的 name 和对应的 yourCode
+	codeMap := make(map[string]string)
+
+	// 打开文件
 	fd, err := os.Open(cppFileName)
 	if err != nil {
-		for i := 0; i < codeCount; i++ {
-			yourCodes = append(yourCodes, config.YourCodePair)
-		}
-		return yourCodes, fmt.Errorf("failed to open file %s: %v", cppFileName, err)
+		// 如果打开文件失败，返回错误
+		return nil, fmt.Errorf("failed to open file %s: %v", cppFileName, err)
 	}
 	defer fd.Close()
+
+	// 创建一个扫描器来按行读取文件
 	scanner := bufio.NewScanner(fd)
-	var line string
-	yourCodeIndex := 0
+
+	// 记录当前正在处理的 yourCode
+	var currentCode string
+	var currentMethod *RPCMethod
+
+	// 遍历文件的每一行
 	for scanner.Scan() {
-		line = scanner.Text() + "\n"
-		if strings.Contains(line, config.YourCodeBegin) {
-			yourCodes = append(yourCodes, line)
-		} else if strings.Contains(line, config.YourCodeEnd) {
-			yourCodes[yourCodeIndex] += line
-			yourCodeIndex += 1
-		} else if yourCodeIndex < len(yourCodes) {
-			yourCodes[yourCodeIndex] += line
+		line := scanner.Text() + "\n"
+
+		// 如果是方法的开始行，检查是否是我们关心的 RPCMethod 名称
+		for _, method := range *methodList {
+			if strings.Contains(line, method.MethodName()) {
+				// 如果当前扫描的行是方法名，初始化对应的 yourCode
+				currentMethod = method
+				currentCode = line // 保存当前行
+				break
+			}
+		}
+
+		// 如果找到了当前方法的开始，接着读取直到找到结束
+		if currentMethod != nil {
+			if strings.Contains(line, config.YourCodeBegin) {
+				// 这行是 yourCode 的开始
+				currentCode += line
+			} else if strings.Contains(line, config.YourCodeEnd) {
+				// 这行是 yourCode 的结束
+				currentCode += line
+				// 保存该方法的完整 yourCode 到 map
+				codeMap[currentMethod.MethodName()] = currentCode
+				// 重置 currentMethod 和 currentCode
+				currentMethod = nil
+				currentCode = ""
+			} else {
+				// 追加其他行内容到 currentCode
+				currentCode += line
+			}
 		}
 	}
-	if len(yourCodes) < codeCount {
-		addCount := codeCount - len(yourCodes)
-		for i := 0; i < addCount; i++ {
-			yourCodes = append(yourCodes, config.YourCodePair)
+
+	// 检查是否有方法没有找到对应的 yourCode，如果没有找到，则添加默认值
+	for _, method := range *methodList {
+		if _, exists := codeMap[method.MethodName()]; !exists {
+			// 如果没有找到，填充默认值
+			codeMap[method.MethodName()] = config.YourCodePair
 		}
 	}
-	return yourCodes, err
+
+	return codeMap, nil
 }
 
 func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
@@ -248,8 +279,8 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 		return ""
 	}
 
-	// Read code sections from file
-	yourCodes, _ := ReadCodeSectionsFromFile(dst, len(*methodList)+1)
+	// Read code sections from file (returns a map with method name as key and code as value)
+	yourCodesMap, _ := ReadCodeSectionsFromFile(dst, methodList)
 
 	var data strings.Builder
 	firstMethodInfo := (*methodList)[0]
@@ -260,26 +291,20 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 	// Determine class name based on the first method's service and handler name configuration
 	className := firstMethodInfo.Service() + config.HandlerFileName
 
-	// Iterate through yourCodes and methodList simultaneously
-	for i, code := range yourCodes {
-		// Calculate the corresponding method index in methodList
-		methodIndex := i - 1
-
-		if methodIndex >= 0 && methodIndex < len(*methodList) {
-			// Retrieve method information
-			methodInfo := (*methodList)[methodIndex]
-
+	// Iterate through methodList and construct handler functions for each method
+	for _, methodInfo := range *methodList {
+		// Check if there's code available for the current method
+		if code, exists := yourCodesMap[methodInfo.MethodName()]; exists {
 			// Append method handler function definition
 			data.WriteString(fmt.Sprintf("void %s::%s(%sconst %s* request,\n",
 				className, methodInfo.Method(), config.GoogleMethodController, methodInfo.CppRequest()))
 			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response,\n")
 			data.WriteString(config.Tab + "     ::google::protobuf::Closure* done)\n")
 			data.WriteString("{\n")
-			data.WriteString(code) // Append existing code section
+			data.WriteString(code) // Append the code for this method
 			data.WriteString("}\n\n")
 		} else {
-			// Append non-method related code directly
-			data.WriteString(code)
+			data.WriteString(config.YourCodePair)
 		}
 	}
 
@@ -292,8 +317,8 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 		return ""
 	}
 
-	// Read code sections from file
-	yourCodes, _ := ReadCodeSectionsFromFile(dst, len(*methodList)+1)
+	// Read code sections from file (returns a map with method name as key and code as value)
+	yourCodesMap, _ := ReadCodeSectionsFromFile(dst, methodList)
 
 	var data strings.Builder
 	firstMethodInfo := (*methodList)[0]
@@ -307,15 +332,10 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 
 	var declarationData, implData strings.Builder
 
-	// Iterate through yourCodes and methodList simultaneously
-	for i, code := range yourCodes {
-		// Calculate the corresponding method index in methodList
-		methodIndex := i - 1
-
-		if methodIndex >= 0 && methodIndex < len(*methodList) {
-			// Retrieve method information
-			methodInfo := (*methodList)[methodIndex]
-
+	// Iterate through methodList and construct the handler registration and implementation
+	for _, methodInfo := range *methodList {
+		// Check if there's code available for the current method
+		if code, exists := yourCodesMap[methodInfo.name]; exists {
 			// Construct function name for the handler
 			funcName := "On" + methodInfo.KeyName() + config.RepliedHandlerFileName
 
@@ -327,11 +347,12 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 			// Implementation of the handler function
 			implData.WriteString(fmt.Sprintf("void %s(const TcpConnectionPtr& conn, const std::shared_ptr<%s>& replied, Timestamp timestamp)\n{\n",
 				funcName, methodInfo.CppResponse()))
-			implData.WriteString(code) // Append existing code section
+			implData.WriteString(code) // Append the code for this method
 			implData.WriteString("}\n\n")
 		} else {
-			// Append non-method related code directly
-			data.WriteString(code)
+			// If there's no code for this method, you can handle this case however you like.
+			// For now, we just append a comment or handle the missing code.
+			data.WriteString(fmt.Sprintf("// No code found for method %s\n", methodInfo.name))
 		}
 	}
 
@@ -352,33 +373,27 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className 
 		return includeName // Return the includeName if no methods are provided
 	}
 
-	// Read code sections from file
-	yourCodes, _ := ReadCodeSectionsFromFile(dst, len(*methodList)+1)
+	// Read code sections from file (returns a map with method name as key and code as value)
+	yourCodesMap, _ := ReadCodeSectionsFromFile(dst, methodList)
 
 	var data strings.Builder
 
 	// Append the provided includeName
 	data.WriteString(includeName)
 
-	// Iterate through yourCodes and methodList simultaneously
-	for i, code := range yourCodes {
-		// Calculate the corresponding method index in methodList
-		methodIndex := i - 1
-
-		if methodIndex >= 0 && methodIndex < len(*methodList) {
-			// Retrieve method information
-			methodInfo := (*methodList)[methodIndex]
-
+	// Iterate through methodList and construct handler functions for each method
+	for _, methodInfo := range *methodList {
+		// Check if there's code available for the current method
+		if code, exists := yourCodesMap[methodInfo.name]; exists {
 			// Append method handler function definition
 			data.WriteString(fmt.Sprintf("void %s::%s(%sconst %s* request,\n",
 				className, methodInfo.Method(), config.PlayerMethodController, methodInfo.CppRequest()))
 			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response)\n")
 			data.WriteString("{\n")
-			data.WriteString(code) // Append existing code section
+			data.WriteString(code) // Append the code for this method
 			data.WriteString("}\n\n")
 		} else {
-			// Append non-method related code directly
-			data.WriteString(code)
+			data.WriteString(config.YourCodePair)
 		}
 	}
 
