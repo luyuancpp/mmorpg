@@ -214,6 +214,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods, method
 	// 创建一个 map 来存储每个 RPCMethod 的 name 和对应的 yourCode
 	codeMap := make(map[string]string)
 
+	// 打开文件
 	fd, err := os.Open(cppFileName)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to open file %s: %v", cppFileName, err)
@@ -331,7 +332,7 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 	// 遍历 methodList，构建每个方法的处理函数
 	for _, methodInfo := range *methodList {
 		// 如果该方法有对应的 yourCode
-		if code, exists := yourCodesMap[GenerateMethodHandlerKeyNameWrapper(methodInfo)]; exists {
+		if code, exists := yourCodesMap[GenerateMethodHandlerNameWrapper(methodInfo)]; exists {
 			data.WriteString(fmt.Sprintf("void %s::%s(%sconst %s* request,\n",
 				className, methodInfo.Method(), config.GoogleMethodController, methodInfo.CppRequest()))
 			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response,\n")
@@ -376,7 +377,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 	// Iterate through methodList and construct the handler registration and implementation
 	for _, methodInfo := range *methodList {
 		// Check if there's code available for the current method
-		if code, exists := yourCodesMap[methodInfo.KeyName()]; exists {
+		if code, exists := yourCodesMap[GenerateMethodHandlerKeyNameWrapper(methodInfo)]; exists {
 			// Construct function name for the handler
 			funcName := "On" + methodInfo.KeyName() + config.RepliedHandlerFileName
 
