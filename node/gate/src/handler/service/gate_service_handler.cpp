@@ -16,10 +16,11 @@ bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
 }
 
 ///<<< END WRITING YOUR CODE
-void GateServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller, const ::RegisterGameNodeSessionRequest* request,
-	::RegisterGameNodeSessionResponse* response,
-	::google::protobuf::Closure* done)
+void GateServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller,const ::RegisterGameNodeSessionRequest* request,
+	     ::RegisterGameNodeSessionResponse* response,
+	     ::google::protobuf::Closure* done)
 {
+	///<<< BEGIN WRITING YOUR CODE
 	auto sessionIt = tls_gate.sessions().find(request->session_info().session_id());
 	if (sessionIt == tls_gate.sessions().end())
 	{
@@ -55,7 +56,6 @@ void GateServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	///<<< END WRITING YOUR CODE
 }
 
-
 void GateServiceHandler::KickSessionByCentre(::google::protobuf::RpcController* controller,const ::KickSessionRequest* request,
 	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
@@ -73,7 +73,6 @@ void GateServiceHandler::RouteNodeMessage(::google::protobuf::RpcController* con
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
 }
-
 
 void GateServiceHandler::RoutePlayerMessage(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
 	     ::RoutePlayerMessageResponse* response,
@@ -105,6 +104,4 @@ void GateServiceHandler::BroadcastToPlayers(::google::protobuf::RpcController* c
 	}
 	///<<< END WRITING YOUR CODE
 }
-
-
 
