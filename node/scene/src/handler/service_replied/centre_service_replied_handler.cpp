@@ -5,10 +5,6 @@ extern ProtobufDispatcher gResponseDispatcher;
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 
 void InitCentreServiceGatePlayerServiceRepliedHandler()
 {
