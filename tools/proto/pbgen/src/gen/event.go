@@ -137,41 +137,8 @@ func ReadEventCodeSectionsFromFile(cppFileName string, methodList []string) (map
 	return codeMap, firstCode, nil
 }
 
-func ReadEventCodeSectionsFromFile1(cppFileName string, codeCount int) ([]string, error) {
-	var yourCodes []string
-	fd, err := os.Open(cppFileName)
-	if err != nil {
-		for i := 0; i < codeCount; i++ {
-			yourCodes = append(yourCodes, config.YourCodePair)
-		}
-		return yourCodes, fmt.Errorf("failed to open file %s: %v", cppFileName, err)
-	}
-	defer fd.Close()
-	scanner := bufio.NewScanner(fd)
-	var line string
-	yourCodeIndex := 0
-	for scanner.Scan() {
-		line = scanner.Text() + "\n"
-		if strings.Contains(line, config.YourCodeBegin) {
-			yourCodes = append(yourCodes, line)
-		} else if strings.Contains(line, config.YourCodeEnd) {
-			yourCodes[yourCodeIndex] += line
-			yourCodeIndex += 1
-		} else if yourCodeIndex < len(yourCodes) {
-			yourCodes[yourCodeIndex] += line
-		}
-	}
-	if len(yourCodes) < codeCount {
-		addCount := codeCount - len(yourCodes)
-		for i := 0; i < addCount; i++ {
-			yourCodes = append(yourCodes, config.YourCodePair)
-		}
-	}
-	return yourCodes, err
-}
-
 func GetEventFunctionName(className string, eventName string) string {
-	return "void " + className + "::" + eventName + "Handler(const " + eventName + "& event)\n{\n"
+	return "void " + className + "::" + eventName + "Handler(const " + eventName + "& event)\n"
 }
 
 func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
@@ -230,6 +197,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 	fileName := strings.Replace(dstDir+strings.ToLower(fd.Name()), config.ProtoEx, "", -1)
 	headerFileName := fileName + config.HandlerHeaderExtension
 	cppFileName := fileName + config.HandlerCppExtension
+
 	util.WriteMd5Data2File(headerFileName, dataHead)
 
 	dataCpp := config.IncludeBegin + filepath.Base(headerFileName) + config.IncludeEndLine +
@@ -255,11 +223,14 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 		// 如果该方法有对应的 yourCode
 		eventHandlerFunctionName := GetEventFunctionName(className, eventName)
 		if code, exists := yourCodes[eventHandlerFunctionName]; exists {
-			dataCpp += handlerFunction
+			dataCpp += eventHandlerFunctionName
+			dataCpp += "{\n"
 			dataCpp += code
 			dataCpp += "}\n\n"
 		} else {
 			dataCpp += eventHandlerFunctionName
+			dataCpp += "{\n"
+			dataCpp += config.YourCodePair
 			dataCpp += "}\n\n"
 		}
 	}
