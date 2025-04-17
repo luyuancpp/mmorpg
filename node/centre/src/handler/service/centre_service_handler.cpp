@@ -70,8 +70,6 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 }
 
 ///<<< END WRITING YOUR CODE
-
-
 void CentreServiceHandler::GatePlayerService(::google::protobuf::RpcController* controller,const ::GateClientMessageRequest* request,
 	     ::Empty* response,
 	     ::google::protobuf::Closure* done)
