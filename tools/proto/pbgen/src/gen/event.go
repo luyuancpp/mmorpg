@@ -2,6 +2,7 @@ package gen
 
 import (
 	"bufio"
+	"fmt"
 	cases "golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"log"
@@ -44,6 +45,39 @@ func getClassName(fd os.DirEntry, suffix string) string {
 
 	// 拼接所有部分并加上后缀
 	return strings.Join(capitalizedParts, "") + suffix
+}
+
+func ReadEventCodeSectionsFromFile(cppFileName string, codeCount int) ([]string, error) {
+	var yourCodes []string
+	fd, err := os.Open(cppFileName)
+	if err != nil {
+		for i := 0; i < codeCount; i++ {
+			yourCodes = append(yourCodes, config.YourCodePair)
+		}
+		return yourCodes, fmt.Errorf("failed to open file %s: %v", cppFileName, err)
+	}
+	defer fd.Close()
+	scanner := bufio.NewScanner(fd)
+	var line string
+	yourCodeIndex := 0
+	for scanner.Scan() {
+		line = scanner.Text() + "\n"
+		if strings.Contains(line, config.YourCodeBegin) {
+			yourCodes = append(yourCodes, line)
+		} else if strings.Contains(line, config.YourCodeEnd) {
+			yourCodes[yourCodeIndex] += line
+			yourCodeIndex += 1
+		} else if yourCodeIndex < len(yourCodes) {
+			yourCodes[yourCodeIndex] += line
+		}
+	}
+	if len(yourCodes) < codeCount {
+		addCount := codeCount - len(yourCodes)
+		for i := 0; i < addCount; i++ {
+			yourCodes = append(yourCodes, config.YourCodePair)
+		}
+	}
+	return yourCodes, err
 }
 
 func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
@@ -104,7 +138,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine +
 		"#include \"thread_local/storage.h\"\n"
 
-	yourCodes, _ := ReadCodeSectionsFromFile(cppFileName, len(eventList)+1)
+	yourCodes, _ := ReadEventCodeSectionsFromFile(cppFileName, len(eventList)+1)
 
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
