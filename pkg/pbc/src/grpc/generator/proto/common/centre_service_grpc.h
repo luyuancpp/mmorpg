@@ -10,46 +10,6 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 using GrpcCentreServiceStubPtr = std::unique_ptr<::CentreService::Stub>;
 
-class AsyncCentreServiceRegisterGameNodeGrpcClientCall
-{
-public:
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-};
-
-using AsyncCentreServiceRegisterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRegisterGameNodeGrpcClientCall>&)>;
-
-extern AsyncCentreServiceRegisterGameNodeHandlerFunctionType  AsyncCentreServiceRegisterGameNodeHandler;
-
-
-class ::RegisterGameNodeRequest;
-void SendCentreServiceRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGameNodeRequest& request);
-
-void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
-void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
-class AsyncCentreServiceRegisterGateNodeGrpcClientCall
-{
-public:
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-};
-
-using AsyncCentreServiceRegisterGateNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRegisterGateNodeGrpcClientCall>&)>;
-
-extern AsyncCentreServiceRegisterGateNodeHandlerFunctionType  AsyncCentreServiceRegisterGateNodeHandler;
-
-
-class ::RegisterGateNodeRequest;
-void SendCentreServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGateNodeRequest& request);
-
-void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
-void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 class AsyncCentreServiceGatePlayerServiceGrpcClientCall
 {
 public:

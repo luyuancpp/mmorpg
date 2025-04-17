@@ -58,8 +58,6 @@ gMessageInfo[CentrePlayerServiceTestMessageId] = RpcService{"CentrePlayerService
 gMessageInfo[CentreSceneServiceRegisterSceneMessageId] = RpcService{"CentreSceneService","RegisterScene","::RegisterSceneRequest","::RegisterSceneResponse",std::make_unique_for_overwrite<CentreSceneServiceImpl>()};
 gMessageInfo[CentreSceneServiceUnRegisterSceneMessageId] = RpcService{"CentreSceneService","UnRegisterScene","::UnRegisterSceneRequest","::Empty",std::make_unique_for_overwrite<CentreSceneServiceImpl>()};
 
-gMessageInfo[CentreServiceRegisterGameNodeMessageId] = RpcService{"CentreService","RegisterGameNode","::RegisterGameNodeRequest","::Empty",std::make_unique_for_overwrite<CentreServiceImpl>()};
-gMessageInfo[CentreServiceRegisterGateNodeMessageId] = RpcService{"CentreService","RegisterGateNode","::RegisterGateNodeRequest","::Empty",std::make_unique_for_overwrite<CentreServiceImpl>()};
 gMessageInfo[CentreServiceGatePlayerServiceMessageId] = RpcService{"CentreService","GatePlayerService","::GateClientMessageRequest","::Empty",std::make_unique_for_overwrite<CentreServiceImpl>()};
 gMessageInfo[CentreServiceGateSessionDisconnectMessageId] = RpcService{"CentreService","GateSessionDisconnect","::GateSessionDisconnectRequest","::Empty",std::make_unique_for_overwrite<CentreServiceImpl>()};
 gMessageInfo[CentreServiceLoginNodeAccountLoginMessageId] = RpcService{"CentreService","LoginNodeAccountLogin","::LoginRequest","::LoginResponse",std::make_unique_for_overwrite<CentreServiceImpl>()};

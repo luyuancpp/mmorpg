@@ -859,14 +859,6 @@ class CentreService : public ::google::protobuf::Service {
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
-  virtual void RegisterGameNode(::google::protobuf::RpcController* controller,
-                        const ::RegisterGameNodeRequest* request,
-                        ::Empty* response,
-                        ::google::protobuf::Closure* done);
-  virtual void RegisterGateNode(::google::protobuf::RpcController* controller,
-                        const ::RegisterGateNodeRequest* request,
-                        ::Empty* response,
-                        ::google::protobuf::Closure* done);
   virtual void GatePlayerService(::google::protobuf::RpcController* controller,
                         const ::GateClientMessageRequest* request,
                         ::Empty* response,
@@ -942,14 +934,6 @@ class CentreService_Stub final : public CentreService {
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
   // implements CentreService ------------------------------------------
-  void RegisterGameNode(::google::protobuf::RpcController* controller,
-                        const ::RegisterGameNodeRequest* request,
-                        ::Empty* response,
-                        ::google::protobuf::Closure* done) override;
-  void RegisterGateNode(::google::protobuf::RpcController* controller,
-                        const ::RegisterGateNodeRequest* request,
-                        ::Empty* response,
-                        ::google::protobuf::Closure* done) override;
   void GatePlayerService(::google::protobuf::RpcController* controller,
                         const ::GateClientMessageRequest* request,
                         ::Empty* response,

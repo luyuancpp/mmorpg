@@ -86,37 +86,9 @@ void GateNode::Receive1(const OnConnected2TcpServerEvent& es)
 {
     if ( auto& conn = es.conn_ ; conn->connected())
     {
-        for (auto&& [_, centre_node] : tls.centreNodeRegistry.view<RpcClientPtr>().each())
-        {
-            if (IsSameAddress(conn->peerAddress(), centre_node->peer_addr()))
-            {
-                EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-                    [this, centre_node]() ->void
-                    {
-                        RegisterGateNodeRequest rq;
-                        rq.mutable_rpc_client()->set_ip(centre_node->local_addr().toIp());
-                        rq.mutable_rpc_client()->set_port(centre_node->local_addr().port());
-                        rq.set_gate_node_id(GetNodeId());
-                        centre_node->CallRemoteMethod(CentreServiceRegisterGateNodeMessageId, rq);
-                    }
-                );
-                return;
-            }
-        }
-
-  
-
     }
     else
     {
-        for (const auto& [e, game_node] : tls.sceneNodeRegistry.view<RpcClientPtr>().each())
-        {
-            if (!IsSameAddress(game_node->peer_addr(), conn->peerAddress()))
-            {
-                continue;
-            }
-            Destroy(tls.sceneNodeRegistry, e);
-        }
     }
 }
 

@@ -3,18 +3,6 @@
 class CentreServiceHandler : public ::CentreService
 {
 public:
-	void RegisterGameNode(::google::protobuf::RpcController* controller,
-		const ::RegisterGameNodeRequest* request,
-		::Empty* response,
-		::google::protobuf::Closure* done)override;
-
-
-	void RegisterGateNode(::google::protobuf::RpcController* controller,
-		const ::RegisterGateNodeRequest* request,
-		::Empty* response,
-		::google::protobuf::Closure* done)override;
-
-
 	void GatePlayerService(::google::protobuf::RpcController* controller,
 		const ::GateClientMessageRequest* request,
 		::Empty* response,
