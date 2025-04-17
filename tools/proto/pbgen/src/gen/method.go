@@ -210,7 +210,7 @@ func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) string {
 }
 
 // ReadCodeSectionsFromFile 函数接收一个函数作为参数，动态选择 A 或 B 方法
-func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods, methodFunc func(info *RPCMethod, ex string) string, ex string) (map[string]string, string, error) {
+func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods, methodFunc func(info *RPCMethod, funcParam string) string, funcParam string) (map[string]string, string, error) {
 	// 创建一个 map 来存储每个 RPCMethod 的 name 和对应的 yourCode
 	codeMap := make(map[string]string)
 
@@ -256,7 +256,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods, method
 		if nil == currentMethod {
 			// 如果是方法的开始行，检查是否是我们关心的 RPCMethod 名称
 			for _, method := range *methodList {
-				handlerName := methodFunc(method, ex)
+				handlerName := methodFunc(method, funcParam)
 				if strings.Contains(line, handlerName) {
 					currentMethod = method
 					break
@@ -272,7 +272,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods, method
 			} else if strings.Contains(line, config.YourCodeEnd) {
 				currentCode += line
 				// 使用 methodFunc currentMethod
-				handlerName := methodFunc(currentMethod, ex)
+				handlerName := methodFunc(currentMethod, funcParam)
 				codeMap[handlerName] = currentCode
 				currentMethod = nil
 				currentCode = ""
@@ -290,7 +290,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods, method
 
 	// 检查是否有方法没有找到对应的 yourCode，如果没有找到，则添加默认值
 	for _, method := range *methodList {
-		handlerName := methodFunc(method, ex)
+		handlerName := methodFunc(method, funcParam)
 		if _, exists := codeMap[handlerName]; !exists {
 			codeMap[handlerName] = config.YourCodePair
 		}

@@ -47,7 +47,97 @@ func getClassName(fd os.DirEntry, suffix string) string {
 	return strings.Join(capitalizedParts, "") + suffix
 }
 
-func ReadEventCodeSectionsFromFile(cppFileName string, codeCount int) ([]string, error) {
+// ReadCodeSectionsFromFile 函数接收一个函数作为参数，动态选择 A 或 B 方法
+func ReadEventCodeSectionsFromFile(cppFileName string, methodList []string) (map[string]string, string, error) {
+	// 创建一个 map 来存储每个 RPCMethod 的 name 和对应的 yourCode
+	codeMap := make(map[string]string)
+
+	// 打开文件
+	fd, err := os.Open(cppFileName)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to open file %s: %v", cppFileName, err)
+	}
+	defer fd.Close()
+
+	// 创建一个扫描器来按行读取文件
+	scanner := bufio.NewScanner(fd)
+
+	// 记录当前正在处理的 yourCode
+	var currentCode string
+	var currentMethod string
+	var firstCode string // 用于保存第一个特殊的 yourCode
+	var isFirstCode bool // 标记是否处理了第一个特殊的 yourCode
+	var inFirstCode bool // 标记是否在处理第一个特殊的 yourCode
+	var inMethodCode bool
+
+	// 遍历文件的每一行
+	for scanner.Scan() {
+		line := scanner.Text() + "\n"
+
+		// 如果正在处理第一个 yourCode，并且发现 YourCodeEnd
+		if inFirstCode && strings.Contains(line, config.YourCodeEnd) {
+			firstCode += line
+			inFirstCode = false
+			continue // 跳过其他处理，继续后续的代码处理
+		} else if inFirstCode {
+			firstCode += line
+		}
+
+		// 如果是第一个特殊的 yourCode块
+		if !isFirstCode && strings.Contains(line, config.YourCodeBegin) {
+			firstCode = line
+			inFirstCode = true
+			isFirstCode = true
+			continue
+		}
+
+		if "" == currentMethod {
+			// 如果是方法的开始行，检查是否是我们关心的 RPCMethod 名称
+			for _, method := range methodList {
+				handlerName := method
+				if strings.Contains(line, handlerName) {
+					currentMethod = method
+					break
+				}
+			}
+		}
+
+		// 如果找到了当前方法的开始，接着读取直到找到结束
+		if currentMethod != "" {
+			if strings.Contains(line, config.YourCodeBegin) {
+				inMethodCode = true
+				currentCode += line
+			} else if strings.Contains(line, config.YourCodeEnd) {
+				currentCode += line
+				// 使用 methodFunc currentMethod
+				handlerName := currentMethod
+				codeMap[handlerName] = currentCode
+				currentMethod = ""
+				currentCode = ""
+				inMethodCode = false
+			} else if inMethodCode {
+				currentCode += line
+			}
+		}
+	}
+
+	// 如果没有找到第一个 yourCode，使用默认的 config.YourCodePair
+	if firstCode == "" {
+		firstCode = config.YourCodePair
+	}
+
+	// 检查是否有方法没有找到对应的 yourCode，如果没有找到，则添加默认值
+	for _, method := range methodList {
+		handlerName := method
+		if _, exists := codeMap[handlerName]; !exists {
+			codeMap[handlerName] = config.YourCodePair
+		}
+	}
+
+	return codeMap, firstCode, nil
+}
+
+func ReadEventCodeSectionsFromFile1(cppFileName string, codeCount int) ([]string, error) {
 	var yourCodes []string
 	fd, err := os.Open(cppFileName)
 	if err != nil {
@@ -80,6 +170,10 @@ func ReadEventCodeSectionsFromFile(cppFileName string, codeCount int) ([]string,
 	return yourCodes, err
 }
 
+func GetEventFunctionName(className string, eventName string) string {
+	return "void " + className + "::" + eventName + "Handler(const " + eventName + "& event)\n{\n"
+}
+
 func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 	util.Wg.Done()
 
@@ -107,18 +201,23 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 
 	className := getClassName(fd, config.ClassNameSuffix)
 
+	var eventKeyNameList []string
+
 	var classDeclareHeader string
 	var registerFunctionBody string
 	var unregisterFunctionBody string
 	var handlerFunction string
-	for _, s := range eventList {
-		classDeclareHeader += "class " + s + ";\n"
-		handlerFunction += config.Tab + "static void " + s + "Handler(const " + s + "& event);\n"
-		registerFunctionBody += config.Tab + "tls.dispatcher.sink<" + s + ">().connect<&" +
-			className + "::" + s + "Handler>();\n"
-		unregisterFunctionBody += config.Tab + "tls.dispatcher.sink<" + s + ">().disconnect<&" +
-			className + "::" + s + "Handler>();\n"
+	for _, eventName := range eventList {
+		classDeclareHeader += "class " + eventName + ";\n"
+		handlerFunction += config.Tab + "static void " + eventName + "Handler(const " + eventName + "& event);\n"
+		registerFunctionBody += config.Tab + "tls.dispatcher.sink<" + eventName + ">().connect<&" +
+			className + "::" + eventName + "Handler>();\n"
+		unregisterFunctionBody += config.Tab + "tls.dispatcher.sink<" + eventName + ">().disconnect<&" +
+			className + "::" + eventName + "Handler>();\n"
+
+		eventKeyNameList = append(eventKeyNameList, GetEventFunctionName(className, eventName))
 	}
+
 	dataHead += classDeclareHeader + "\n"
 	dataHead += "class " + className + "\n"
 	dataHead += "{\npublic:\n"
@@ -138,22 +237,29 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine +
 		"#include \"thread_local/storage.h\"\n"
 
-	yourCodes, _ := ReadEventCodeSectionsFromFile(cppFileName, len(eventList)+1)
+	yourCodes, firstCode, err := ReadEventCodeSectionsFromFile(cppFileName, eventKeyNameList)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	for i := 0; i < len(yourCodes); i++ {
-		j := i - 1
-		isEventIndex := j >= 0 && j < len(eventList)
-		if j == 0 {
-			dataCpp += "void " + className + "::Register()\n" +
-				"{\n" + registerFunctionBody + "}\n\n"
-			dataCpp += "void " + className + "::UnRegister()\n" +
-				"{\n" + unregisterFunctionBody + "}\n\n"
-		}
-		if isEventIndex {
-			dataCpp += "void " + className + "::" + eventList[j] + "Handler(const " + eventList[j] + "& event)\n{\n"
-		}
-		dataCpp += yourCodes[i]
-		if isEventIndex {
+	if firstCode != "" {
+		dataCpp += firstCode
+	}
+
+	dataCpp += "void " + className + "::Register()\n" +
+		"{\n" + registerFunctionBody + "}\n\n"
+	dataCpp += "void " + className + "::UnRegister()\n" +
+		"{\n" + unregisterFunctionBody + "}\n\n"
+
+	for _, eventName := range eventList {
+		// 如果该方法有对应的 yourCode
+		eventHandlerFunctionName := GetEventFunctionName(className, eventName)
+		if code, exists := yourCodes[eventHandlerFunctionName]; exists {
+			dataCpp += handlerFunction
+			dataCpp += code
+			dataCpp += "}\n\n"
+		} else {
+			dataCpp += eventHandlerFunctionName
 			dataCpp += "}\n\n"
 		}
 	}
