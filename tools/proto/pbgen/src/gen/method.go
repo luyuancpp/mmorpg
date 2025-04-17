@@ -303,6 +303,10 @@ func GenerateMethodHandlerNameWrapper(info *RPCMethod) string {
 	return info.Service() + config.HandlerFileName + "::" + info.Method()
 }
 
+func GenerateMethodHandlerNameWrapper1(info *RPCMethod) string {
+	return info.Method()
+}
+
 func GenerateMethodHandlerKeyNameWrapper(info *RPCMethod) string {
 	return "On" + info.KeyName() + config.RepliedHandlerFileName
 }
@@ -414,7 +418,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className 
 	}
 
 	// Read code sections from file (returns a map with method name as key and code as value)
-	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methodList, GenerateMethodHandlerNameWrapper)
+	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methodList, GenerateMethodHandlerNameWrapper1)
 
 	var data strings.Builder
 
@@ -429,10 +433,10 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className 
 	// Iterate through methodList and construct handler functions for each method
 	for _, methodInfo := range *methodList {
 		// Check if there's code available for the current method
-		if code, exists := yourCodesMap[GenerateMethodHandlerNameWrapper(methodInfo)]; exists {
+		if code, exists := yourCodesMap[GenerateMethodHandlerNameWrapper1(methodInfo)]; exists {
 			// Append method handler function definition
-			data.WriteString(fmt.Sprintf("void %s(%sconst %s* request,\n",
-				GenerateMethodHandlerNameWrapper(methodInfo), config.PlayerMethodController, methodInfo.CppRequest()))
+			data.WriteString(fmt.Sprintf("void %s::%s(%sconst %s* request,\n",
+				className, GenerateMethodHandlerNameWrapper1(methodInfo), config.PlayerMethodController, methodInfo.CppRequest()))
 			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response)\n")
 			data.WriteString("{\n")
 			data.WriteString(code) // Append the code for this method
