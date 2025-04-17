@@ -104,7 +104,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine +
 		"#include \"thread_local/storage.h\"\n"
 
-	yourCodes, _ := util.ReadCodeSectionsFromFile(cppFileName, len(eventList)+1)
+	yourCodes, _ := ReadCodeSectionsFromFile(cppFileName, len(eventList)+1)
 
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1

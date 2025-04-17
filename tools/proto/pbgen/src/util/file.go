@@ -1,7 +1,6 @@
 package util
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -71,37 +70,4 @@ func Copy(dstFile string, srcFile string) (written int64, err error) {
 	log.Default().Println("Copied  \n", srcFile, " -> ", dstFile)
 
 	return nBytes, nil
-}
-
-func ReadCodeSectionsFromFile(cppFileName string, codeCount int) ([]string, error) {
-	var yourCodes []string
-	fd, err := os.Open(cppFileName)
-	if err != nil {
-		for i := 0; i < codeCount; i++ {
-			yourCodes = append(yourCodes, config.YourCodePair)
-		}
-		return yourCodes, fmt.Errorf("failed to open file %s: %v", cppFileName, err)
-	}
-	defer fd.Close()
-	scanner := bufio.NewScanner(fd)
-	var line string
-	yourCodeIndex := 0
-	for scanner.Scan() {
-		line = scanner.Text() + "\n"
-		if strings.Contains(line, config.YourCodeBegin) {
-			yourCodes = append(yourCodes, line)
-		} else if strings.Contains(line, config.YourCodeEnd) {
-			yourCodes[yourCodeIndex] += line
-			yourCodeIndex += 1
-		} else if yourCodeIndex < len(yourCodes) {
-			yourCodes[yourCodeIndex] += line
-		}
-	}
-	if len(yourCodes) < codeCount {
-		addCount := codeCount - len(yourCodes)
-		for i := 0; i < addCount; i++ {
-			yourCodes = append(yourCodes, config.YourCodePair)
-		}
-	}
-	return yourCodes, err
 }

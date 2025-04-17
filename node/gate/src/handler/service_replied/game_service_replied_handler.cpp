@@ -8,8 +8,6 @@ extern ProtobufDispatcher gResponseDispatcher;
 #include "thread_local/storage_gate.h"
 
 ///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 
 void InitGameServicePlayerEnterGameNodeRepliedHandler()
 {

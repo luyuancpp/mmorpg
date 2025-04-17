@@ -1,7 +1,9 @@
 package gen
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"pbgen/config"
 	"pbgen/util"
 	"strconv"
@@ -207,6 +209,39 @@ func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) string {
 	return data.String()
 }
 
+func ReadCodeSectionsFromFile(cppFileName string, codeCount int) ([]string, error) {
+	var yourCodes []string
+	fd, err := os.Open(cppFileName)
+	if err != nil {
+		for i := 0; i < codeCount; i++ {
+			yourCodes = append(yourCodes, config.YourCodePair)
+		}
+		return yourCodes, fmt.Errorf("failed to open file %s: %v", cppFileName, err)
+	}
+	defer fd.Close()
+	scanner := bufio.NewScanner(fd)
+	var line string
+	yourCodeIndex := 0
+	for scanner.Scan() {
+		line = scanner.Text() + "\n"
+		if strings.Contains(line, config.YourCodeBegin) {
+			yourCodes = append(yourCodes, line)
+		} else if strings.Contains(line, config.YourCodeEnd) {
+			yourCodes[yourCodeIndex] += line
+			yourCodeIndex += 1
+		} else if yourCodeIndex < len(yourCodes) {
+			yourCodes[yourCodeIndex] += line
+		}
+	}
+	if len(yourCodes) < codeCount {
+		addCount := codeCount - len(yourCodes)
+		for i := 0; i < addCount; i++ {
+			yourCodes = append(yourCodes, config.YourCodePair)
+		}
+	}
+	return yourCodes, err
+}
+
 func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 	// Ensure there are methods in the list
 	if len(*methodList) == 0 {
@@ -214,7 +249,7 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 	}
 
 	// Read code sections from file
-	yourCodes, _ := util.ReadCodeSectionsFromFile(dst, len(*methodList)+1)
+	yourCodes, _ := ReadCodeSectionsFromFile(dst, len(*methodList)+1)
 
 	var data strings.Builder
 	firstMethodInfo := (*methodList)[0]
@@ -258,7 +293,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 	}
 
 	// Read code sections from file
-	yourCodes, _ := util.ReadCodeSectionsFromFile(dst, len(*methodList)+1)
+	yourCodes, _ := ReadCodeSectionsFromFile(dst, len(*methodList)+1)
 
 	var data strings.Builder
 	firstMethodInfo := (*methodList)[0]
@@ -318,7 +353,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className 
 	}
 
 	// Read code sections from file
-	yourCodes, _ := util.ReadCodeSectionsFromFile(dst, len(*methodList)+1)
+	yourCodes, _ := ReadCodeSectionsFromFile(dst, len(*methodList)+1)
 
 	var data strings.Builder
 
