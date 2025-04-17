@@ -255,7 +255,6 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[s
 		for _, method := range *methodList {
 			if strings.Contains(line, method.GetServiceFullNameWithNoColon()) {
 				currentMethod = method
-				currentCode = line // 保存当前行
 				break
 			}
 		}
@@ -282,8 +281,8 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[s
 
 	// 检查是否有方法没有找到对应的 yourCode，如果没有找到，则添加默认值
 	for _, method := range *methodList {
-		if _, exists := codeMap[method.MethodName()]; !exists {
-			codeMap[method.MethodName()] = config.YourCodePair
+		if _, exists := codeMap[method.GetServiceFullNameWithNoColon()]; !exists {
+			codeMap[method.GetServiceFullNameWithNoColon()] = config.YourCodePair
 		}
 	}
 
