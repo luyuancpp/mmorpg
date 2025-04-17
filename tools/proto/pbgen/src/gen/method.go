@@ -335,7 +335,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 	// Iterate through methodList and construct the handler registration and implementation
 	for _, methodInfo := range *methodList {
 		// Check if there's code available for the current method
-		if code, exists := yourCodesMap[methodInfo.name]; exists {
+		if code, exists := yourCodesMap[methodInfo.MethodName()]; exists {
 			// Construct function name for the handler
 			funcName := "On" + methodInfo.KeyName() + config.RepliedHandlerFileName
 
@@ -352,7 +352,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 		} else {
 			// If there's no code for this method, you can handle this case however you like.
 			// For now, we just append a comment or handle the missing code.
-			data.WriteString(fmt.Sprintf("// No code found for method %s\n", methodInfo.name))
+			data.WriteString(fmt.Sprintf("// No code found for method %s\n", methodInfo.Method()))
 		}
 	}
 
@@ -384,7 +384,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className 
 	// Iterate through methodList and construct handler functions for each method
 	for _, methodInfo := range *methodList {
 		// Check if there's code available for the current method
-		if code, exists := yourCodesMap[methodInfo.name]; exists {
+		if code, exists := yourCodesMap[methodInfo.MethodName()]; exists {
 			// Append method handler function definition
 			data.WriteString(fmt.Sprintf("void %s::%s(%sconst %s* request,\n",
 				className, methodInfo.Method(), config.PlayerMethodController, methodInfo.CppRequest()))
