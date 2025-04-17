@@ -1,6 +1,5 @@
 0=PlayerClientCommonServiceSendTipToClient
 1=CentrePlayerSceneServiceEnterScene
-2=CentreServiceRegisterGateNode
 3=CentrePlayerSceneServiceLeaveScene
 4=CentrePlayerSceneServiceLeaveSceneAsyncSavePlayerComplete
 5=CentrePlayerSceneServiceSceneInfoC2S
@@ -50,7 +49,6 @@
 51=LoginServiceLeaveGame
 52=LoginServiceEnterGame
 53=CentreServiceLoginNodeEnterGame
-54=CentreServiceRegisterGameNode
 55=LoginServiceDisconnect
 56=GamePlayerSceneServiceLeaveScene
 57=PlayerSkillServiceGetSkillList

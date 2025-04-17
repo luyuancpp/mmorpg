@@ -29,29 +29,6 @@ void ServerEventHandler::UnRegister()
 void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	entt::entity centreId{ event.entity() };
-
-	auto centreNode = tls.centreNodeRegistry.try_get<RpcClientPtr>(centreId);
-	if (centreNode == nullptr)
-	{
-		LOG_ERROR << "Centre node not found for entity: " << entt::to_integral(centreId);
-		return;
-	}
-
-	auto& centreLocalAddr = (*centreNode)->local_addr();
-
-	RegisterGameNodeRequest registerGameRequest;
-	registerGameRequest.mutable_rpc_client()->set_ip(centreLocalAddr.toIp());
-	registerGameRequest.mutable_rpc_client()->set_port(centreLocalAddr.port());
-	registerGameRequest.mutable_rpc_server()->set_ip(gSceneNode->GetIp());
-	registerGameRequest.mutable_rpc_server()->set_port(gSceneNode->GetPort());
-	registerGameRequest.set_server_type(gSceneNode->GetNodeType());
-	registerGameRequest.set_scene_node_id(gSceneNode->GetNodeId());
-	registerGameRequest.set_scene_node_type(gSceneNode->GetNodeInfo().scene_node_type());
-
-	LOG_INFO << "Sending RegisterGameRequest to centre node: " << entt::to_integral(centreId);
-	(*centreNode)->CallRemoteMethod(CentreServiceRegisterGameNodeMessageId, registerGameRequest);
-
 	GameNodeSceneSystem::RegisterSceneToCentre();
 	
 ///<<< END WRITING YOUR CODE

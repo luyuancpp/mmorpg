@@ -194,28 +194,26 @@ const char descriptor_table_protodef_proto_2fcommon_2fcentre_5fservice_2eproto[]
     "(\004\022\025\n\rscene_node_id\030\002 \001(\r\"u\n CentrePlaye"
     "rGameNodeEntryRequest\022*\n\017client_msg_body"
     "\030\001 \001(\0132\021.EnterGameRequest\022%\n\014session_inf"
-    "o\030\002 \001(\0132\017.SessionDetails2\267\006\n\rCentreServi"
-    "ce\0224\n\020RegisterGameNode\022\030.RegisterGameNod"
-    "eRequest\032\006.Empty\0224\n\020RegisterGateNode\022\030.R"
-    "egisterGateNodeRequest\032\006.Empty\0226\n\021GatePl"
-    "ayerService\022\031.GateClientMessageRequest\032\006"
-    ".Empty\022>\n\025GateSessionDisconnect\022\035.GateSe"
-    "ssionDisconnectRequest\032\006.Empty\0226\n\025LoginN"
-    "odeAccountLogin\022\r.LoginRequest\032\016.LoginRe"
-    "sponse\022\?\n\022LoginNodeEnterGame\022!.CentrePla"
-    "yerGameNodeEntryRequest\032\006.Empty\0228\n\022Login"
-    "NodeLeaveGame\022\032.LoginNodeLeaveGameReques"
-    "t\032\006.Empty\022C\n\032LoginNodeSessionDisconnect\022"
-    "\035.GateSessionDisconnectRequest\032\006.Empty\022D"
-    "\n\rPlayerService\022\030.NodeRouteMessageReques"
-    "t\032\031.NodeRouteMessageResponse\0226\n\016EnterGsS"
-    "ucceed\022\034.EnterGameNodeSuccessRequest\032\006.E"
-    "mpty\022A\n\022RouteNodeStringMsg\022\024.RouteMessag"
-    "eRequest\032\025.RouteMessageResponse\022O\n\024Route"
-    "PlayerStringMsg\022\032.RoutePlayerMessageRequ"
-    "est\032\033.RoutePlayerMessageResponse\0228\n\022UnRe"
-    "gisterGameNode\022\032.UnregisterGameNodeReque"
-    "st\032\006.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
+    "o\030\002 \001(\0132\017.SessionDetails2\313\005\n\rCentreServi"
+    "ce\0226\n\021GatePlayerService\022\031.GateClientMess"
+    "ageRequest\032\006.Empty\022>\n\025GateSessionDisconn"
+    "ect\022\035.GateSessionDisconnectRequest\032\006.Emp"
+    "ty\0226\n\025LoginNodeAccountLogin\022\r.LoginReque"
+    "st\032\016.LoginResponse\022\?\n\022LoginNodeEnterGame"
+    "\022!.CentrePlayerGameNodeEntryRequest\032\006.Em"
+    "pty\0228\n\022LoginNodeLeaveGame\022\032.LoginNodeLea"
+    "veGameRequest\032\006.Empty\022C\n\032LoginNodeSessio"
+    "nDisconnect\022\035.GateSessionDisconnectReque"
+    "st\032\006.Empty\022D\n\rPlayerService\022\030.NodeRouteM"
+    "essageRequest\032\031.NodeRouteMessageResponse"
+    "\0226\n\016EnterGsSucceed\022\034.EnterGameNodeSucces"
+    "sRequest\032\006.Empty\022A\n\022RouteNodeStringMsg\022\024"
+    ".RouteMessageRequest\032\025.RouteMessageRespo"
+    "nse\022O\n\024RoutePlayerStringMsg\022\032.RoutePlaye"
+    "rMessageRequest\032\033.RoutePlayerMessageResp"
+    "onse\0228\n\022UnRegisterGameNode\022\032.UnregisterG"
+    "ameNodeRequest\032\006.EmptyB\014Z\007pb/game\200\001\001b\006pr"
+    "oto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcentre_5fservice_2eproto_deps[5] =
     {
@@ -229,7 +227,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcentre_5fservice_2epr
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcentre_5fservice_2eproto = {
     false,
     false,
-    1312,
+    1204,
     descriptor_table_protodef_proto_2fcommon_2fcentre_5fservice_2eproto,
     "proto/common/centre_service.proto",
     &descriptor_table_proto_2fcommon_2fcentre_5fservice_2eproto_once,
@@ -1163,16 +1161,6 @@ const ::google::protobuf::ServiceDescriptor* CentreService::GetDescriptor() {
   return descriptor();
 }
 
-void CentreService::RegisterGameNode(::google::protobuf::RpcController* controller,
-                         const ::RegisterGameNodeRequest*, ::Empty*, ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method RegisterGameNode() not implemented.");
-  done->Run();
-}
-void CentreService::RegisterGateNode(::google::protobuf::RpcController* controller,
-                         const ::RegisterGateNodeRequest*, ::Empty*, ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method RegisterGateNode() not implemented.");
-  done->Run();
-}
 void CentreService::GatePlayerService(::google::protobuf::RpcController* controller,
                          const ::GateClientMessageRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method GatePlayerService() not implemented.");
@@ -1237,78 +1225,66 @@ void CentreService::CallMethod(
   ABSL_DCHECK_EQ(method->service(), file_level_service_descriptors_proto_2fcommon_2fcentre_5fservice_2eproto[0]);
   switch (method->index()) {
     case 0:
-      this->RegisterGameNode(controller,
-                   ::google::protobuf::DownCastMessage<::RegisterGameNodeRequest>(request),
-                   ::google::protobuf::DownCastMessage<::Empty>(response),
-                   done);
-      break;
-    case 1:
-      this->RegisterGateNode(controller,
-                   ::google::protobuf::DownCastMessage<::RegisterGateNodeRequest>(request),
-                   ::google::protobuf::DownCastMessage<::Empty>(response),
-                   done);
-      break;
-    case 2:
       this->GatePlayerService(controller,
                    ::google::protobuf::DownCastMessage<::GateClientMessageRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response),
                    done);
       break;
-    case 3:
+    case 1:
       this->GateSessionDisconnect(controller,
                    ::google::protobuf::DownCastMessage<::GateSessionDisconnectRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response),
                    done);
       break;
-    case 4:
+    case 2:
       this->LoginNodeAccountLogin(controller,
                    ::google::protobuf::DownCastMessage<::LoginRequest>(request),
                    ::google::protobuf::DownCastMessage<::LoginResponse>(response),
                    done);
       break;
-    case 5:
+    case 3:
       this->LoginNodeEnterGame(controller,
                    ::google::protobuf::DownCastMessage<::CentrePlayerGameNodeEntryRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response),
                    done);
       break;
-    case 6:
+    case 4:
       this->LoginNodeLeaveGame(controller,
                    ::google::protobuf::DownCastMessage<::LoginNodeLeaveGameRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response),
                    done);
       break;
-    case 7:
+    case 5:
       this->LoginNodeSessionDisconnect(controller,
                    ::google::protobuf::DownCastMessage<::GateSessionDisconnectRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response),
                    done);
       break;
-    case 8:
+    case 6:
       this->PlayerService(controller,
                    ::google::protobuf::DownCastMessage<::NodeRouteMessageRequest>(request),
                    ::google::protobuf::DownCastMessage<::NodeRouteMessageResponse>(response),
                    done);
       break;
-    case 9:
+    case 7:
       this->EnterGsSucceed(controller,
                    ::google::protobuf::DownCastMessage<::EnterGameNodeSuccessRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response),
                    done);
       break;
-    case 10:
+    case 8:
       this->RouteNodeStringMsg(controller,
                    ::google::protobuf::DownCastMessage<::RouteMessageRequest>(request),
                    ::google::protobuf::DownCastMessage<::RouteMessageResponse>(response),
                    done);
       break;
-    case 11:
+    case 9:
       this->RoutePlayerStringMsg(controller,
                    ::google::protobuf::DownCastMessage<::RoutePlayerMessageRequest>(request),
                    ::google::protobuf::DownCastMessage<::RoutePlayerMessageResponse>(response),
                    done);
       break;
-    case 12:
+    case 10:
       this->UnRegisterGameNode(controller,
                    ::google::protobuf::DownCastMessage<::UnregisterGameNodeRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response),
@@ -1326,30 +1302,26 @@ const ::google::protobuf::Message& CentreService::GetRequestPrototype(
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
     case 0:
-      return ::RegisterGameNodeRequest::default_instance();
-    case 1:
-      return ::RegisterGateNodeRequest::default_instance();
-    case 2:
       return ::GateClientMessageRequest::default_instance();
-    case 3:
+    case 1:
       return ::GateSessionDisconnectRequest::default_instance();
-    case 4:
+    case 2:
       return ::LoginRequest::default_instance();
-    case 5:
+    case 3:
       return ::CentrePlayerGameNodeEntryRequest::default_instance();
-    case 6:
+    case 4:
       return ::LoginNodeLeaveGameRequest::default_instance();
-    case 7:
+    case 5:
       return ::GateSessionDisconnectRequest::default_instance();
-    case 8:
+    case 6:
       return ::NodeRouteMessageRequest::default_instance();
-    case 9:
+    case 7:
       return ::EnterGameNodeSuccessRequest::default_instance();
-    case 10:
+    case 8:
       return ::RouteMessageRequest::default_instance();
-    case 11:
+    case 9:
       return ::RoutePlayerMessageRequest::default_instance();
-    case 12:
+    case 10:
       return ::UnregisterGameNodeRequest::default_instance();
 
     default:
@@ -1368,26 +1340,22 @@ const ::google::protobuf::Message& CentreService::GetResponsePrototype(
     case 1:
       return ::Empty::default_instance();
     case 2:
-      return ::Empty::default_instance();
+      return ::LoginResponse::default_instance();
     case 3:
       return ::Empty::default_instance();
     case 4:
-      return ::LoginResponse::default_instance();
+      return ::Empty::default_instance();
     case 5:
       return ::Empty::default_instance();
     case 6:
-      return ::Empty::default_instance();
+      return ::NodeRouteMessageResponse::default_instance();
     case 7:
       return ::Empty::default_instance();
     case 8:
-      return ::NodeRouteMessageResponse::default_instance();
-    case 9:
-      return ::Empty::default_instance();
-    case 10:
       return ::RouteMessageResponse::default_instance();
-    case 11:
+    case 9:
       return ::RoutePlayerMessageResponse::default_instance();
-    case 12:
+    case 10:
       return ::Empty::default_instance();
 
     default:
@@ -1411,82 +1379,70 @@ CentreService_Stub::~CentreService_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void CentreService_Stub::RegisterGameNode(::google::protobuf::RpcController* controller,
-                              const ::RegisterGameNodeRequest* request,
-                              ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(0), controller,
-                       request, response, done);
-}
-void CentreService_Stub::RegisterGateNode(::google::protobuf::RpcController* controller,
-                              const ::RegisterGateNodeRequest* request,
-                              ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(1), controller,
-                       request, response, done);
-}
 void CentreService_Stub::GatePlayerService(::google::protobuf::RpcController* controller,
                               const ::GateClientMessageRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(2), controller,
+  channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
 void CentreService_Stub::GateSessionDisconnect(::google::protobuf::RpcController* controller,
                               const ::GateSessionDisconnectRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(3), controller,
+  channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
 void CentreService_Stub::LoginNodeAccountLogin(::google::protobuf::RpcController* controller,
                               const ::LoginRequest* request,
                               ::LoginResponse* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(4), controller,
+  channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
 void CentreService_Stub::LoginNodeEnterGame(::google::protobuf::RpcController* controller,
                               const ::CentrePlayerGameNodeEntryRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(5), controller,
+  channel_->CallMethod(descriptor()->method(3), controller,
                        request, response, done);
 }
 void CentreService_Stub::LoginNodeLeaveGame(::google::protobuf::RpcController* controller,
                               const ::LoginNodeLeaveGameRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(6), controller,
+  channel_->CallMethod(descriptor()->method(4), controller,
                        request, response, done);
 }
 void CentreService_Stub::LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller,
                               const ::GateSessionDisconnectRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(7), controller,
+  channel_->CallMethod(descriptor()->method(5), controller,
                        request, response, done);
 }
 void CentreService_Stub::PlayerService(::google::protobuf::RpcController* controller,
                               const ::NodeRouteMessageRequest* request,
                               ::NodeRouteMessageResponse* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(8), controller,
+  channel_->CallMethod(descriptor()->method(6), controller,
                        request, response, done);
 }
 void CentreService_Stub::EnterGsSucceed(::google::protobuf::RpcController* controller,
                               const ::EnterGameNodeSuccessRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(9), controller,
+  channel_->CallMethod(descriptor()->method(7), controller,
                        request, response, done);
 }
 void CentreService_Stub::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
                               const ::RouteMessageRequest* request,
                               ::RouteMessageResponse* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(10), controller,
+  channel_->CallMethod(descriptor()->method(8), controller,
                        request, response, done);
 }
 void CentreService_Stub::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
                               const ::RoutePlayerMessageRequest* request,
                               ::RoutePlayerMessageResponse* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(11), controller,
+  channel_->CallMethod(descriptor()->method(9), controller,
                        request, response, done);
 }
 void CentreService_Stub::UnRegisterGameNode(::google::protobuf::RpcController* controller,
                               const ::UnregisterGameNodeRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(12), controller,
+  channel_->CallMethod(descriptor()->method(10), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -4,110 +4,6 @@
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
 
-struct CentreServiceRegisterGameNodeCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-
-
-using AsyncCentreServiceRegisterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRegisterGameNodeGrpcClientCall>&)>;
-AsyncCentreServiceRegisterGameNodeHandlerFunctionType  AsyncCentreServiceRegisterGameNodeHandler;
-
-void AsyncCompleteGrpcCentreServiceRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
-{
-    void* got_tag;
-    bool ok = false;
-
-    gpr_timespec tm;
-    tm.tv_sec = 0;
-    tm.tv_nsec = 0;
-    tm.clock_type = GPR_CLOCK_MONOTONIC;
-    if (grpc::CompletionQueue::GOT_EVENT != 
-		cq.AsyncNext(&got_tag, &ok, tm)){
-        return;
-    }
-
-    std::unique_ptr<AsyncCentreServiceRegisterGameNodeGrpcClientCall> call(static_cast<AsyncCentreServiceRegisterGameNodeGrpcClientCall*>(got_tag));
-	if (!ok){
-		LOG_ERROR << "RPC failed";
-		return;
-	}
-
-    if (call->status.ok()){
-		if(AsyncCentreServiceRegisterGameNodeHandler){
-			AsyncCentreServiceRegisterGameNodeHandler(call);
-		}
-    }else{
-        LOG_ERROR << call->status.error_message();
-    }
-}
-
-
-void SendCentreServiceRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGameNodeRequest& request)
-{
-
-    AsyncCentreServiceRegisterGameNodeGrpcClientCall* call = new AsyncCentreServiceRegisterGameNodeGrpcClientCall;
-    call->response_reader =
-        registry.get<GrpcCentreServiceStubPtr>(nodeEntity)->PrepareAsyncRegisterGameNode(&call->context, request,
-		&registry.get<CentreServiceRegisterGameNodeCompleteQueue>(nodeEntity).cq);
-
-    	call->response_reader->StartCall();
-
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-
-}
-
-struct CentreServiceRegisterGateNodeCompleteQueue{
-	grpc::CompletionQueue cq;
-};
-
-
-using AsyncCentreServiceRegisterGateNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRegisterGateNodeGrpcClientCall>&)>;
-AsyncCentreServiceRegisterGateNodeHandlerFunctionType  AsyncCentreServiceRegisterGateNodeHandler;
-
-void AsyncCompleteGrpcCentreServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
-{
-    void* got_tag;
-    bool ok = false;
-
-    gpr_timespec tm;
-    tm.tv_sec = 0;
-    tm.tv_nsec = 0;
-    tm.clock_type = GPR_CLOCK_MONOTONIC;
-    if (grpc::CompletionQueue::GOT_EVENT != 
-		cq.AsyncNext(&got_tag, &ok, tm)){
-        return;
-    }
-
-    std::unique_ptr<AsyncCentreServiceRegisterGateNodeGrpcClientCall> call(static_cast<AsyncCentreServiceRegisterGateNodeGrpcClientCall*>(got_tag));
-	if (!ok){
-		LOG_ERROR << "RPC failed";
-		return;
-	}
-
-    if (call->status.ok()){
-		if(AsyncCentreServiceRegisterGateNodeHandler){
-			AsyncCentreServiceRegisterGateNodeHandler(call);
-		}
-    }else{
-        LOG_ERROR << call->status.error_message();
-    }
-}
-
-
-void SendCentreServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGateNodeRequest& request)
-{
-
-    AsyncCentreServiceRegisterGateNodeGrpcClientCall* call = new AsyncCentreServiceRegisterGateNodeGrpcClientCall;
-    call->response_reader =
-        registry.get<GrpcCentreServiceStubPtr>(nodeEntity)->PrepareAsyncRegisterGateNode(&call->context, request,
-		&registry.get<CentreServiceRegisterGateNodeCompleteQueue>(nodeEntity).cq);
-
-    	call->response_reader->StartCall();
-
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-
-}
-
 struct CentreServiceGatePlayerServiceCompleteQueue{
 	grpc::CompletionQueue cq;
 };
@@ -680,10 +576,6 @@ void SendCentreServiceUnRegisterGameNode(entt::registry& registry, entt::entity 
 
 }
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
-	registry.emplace<CentreServiceRegisterGameNodeCompleteQueue>(nodeEntity);
-
-	registry.emplace<CentreServiceRegisterGateNodeCompleteQueue>(nodeEntity);
-
 	registry.emplace<CentreServiceGatePlayerServiceCompleteQueue>(nodeEntity);
 
 	registry.emplace<CentreServiceGateSessionDisconnectCompleteQueue>(nodeEntity);
@@ -708,18 +600,6 @@ void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity node
 
 }
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry) {
-	{
-		auto&& view = registry.view<CentreServiceRegisterGameNodeCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceRegisterGameNode(registry, e, completeQueueComp.cq);
-		}
-	}
-	{
-		auto&& view = registry.view<CentreServiceRegisterGateNodeCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceRegisterGateNode(registry, e, completeQueueComp.cq);
-		}
-	}
 	{
 		auto&& view = registry.view<CentreServiceGatePlayerServiceCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){

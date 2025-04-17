@@ -4,6 +4,7 @@
 #include "buff_event_handler.h"
 #include "combat_event_handler.h"
 #include "mission_event_handler.h"
+#include "node_event_handler.h"
 #include "npc_event_handler.h"
 #include "player_event_handler.h"
 #include "scene_event_handler.h"
@@ -16,6 +17,7 @@ ActorEventHandler::Register();
 BuffEventHandler::Register();
 CombatEventHandler::Register();
 MissionEventHandler::Register();
+NodeEventHandler::Register();
 NpcEventHandler::Register();
 PlayerEventHandler::Register();
 SceneEventHandler::Register();
@@ -29,6 +31,7 @@ ActorEventHandler::UnRegister();
 BuffEventHandler::UnRegister();
 CombatEventHandler::UnRegister();
 MissionEventHandler::UnRegister();
+NodeEventHandler::UnRegister();
 NpcEventHandler::UnRegister();
 PlayerEventHandler::UnRegister();
 SceneEventHandler::UnRegister();
