@@ -229,6 +229,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[s
 	var firstCode string // 用于保存第一个特殊的 yourCode
 	var isFirstCode bool // 标记是否处理了第一个特殊的 yourCode
 	var inFirstCode bool // 标记是否在处理第一个特殊的 yourCode
+	var inMethodCode bool
 
 	// 遍历文件的每一行
 	for scanner.Scan() {
@@ -251,24 +252,28 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[s
 			continue
 		}
 
-		// 如果是方法的开始行，检查是否是我们关心的 RPCMethod 名称
-		for _, method := range *methodList {
-			if strings.Contains(line, method.GetServiceFullNameWithNoColon()) {
-				currentMethod = method
-				break
+		if nil == currentMethod {
+			// 如果是方法的开始行，检查是否是我们关心的 RPCMethod 名称
+			for _, method := range *methodList {
+				if strings.Contains(line, method.GetServiceFullNameWithNoColon()) {
+					currentMethod = method
+					break
+				}
 			}
 		}
 
 		// 如果找到了当前方法的开始，接着读取直到找到结束
 		if currentMethod != nil {
 			if strings.Contains(line, config.YourCodeBegin) {
+				inMethodCode = true
 				currentCode += line
 			} else if strings.Contains(line, config.YourCodeEnd) {
 				currentCode += line
 				codeMap[currentMethod.GetServiceFullNameWithNoColon()] = currentCode
 				currentMethod = nil
 				currentCode = ""
-			} else {
+				inMethodCode = false
+			} else if inMethodCode {
 				currentCode += line
 			}
 		}
