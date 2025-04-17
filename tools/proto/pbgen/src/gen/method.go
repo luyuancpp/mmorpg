@@ -209,15 +209,14 @@ func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) string {
 	return data.String()
 }
 
-func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[string]string, error) {
+func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[string]string, string, error) {
 	// 创建一个 map 来存储每个 RPCMethod 的 name 和对应的 yourCode
 	codeMap := make(map[string]string)
 
 	// 打开文件
 	fd, err := os.Open(cppFileName)
 	if err != nil {
-		// 如果打开文件失败，返回错误
-		return nil, fmt.Errorf("failed to open file %s: %v", cppFileName, err)
+		return nil, "", fmt.Errorf("failed to open file %s: %v", cppFileName, err)
 	}
 	defer fd.Close()
 
@@ -227,15 +226,32 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[s
 	// 记录当前正在处理的 yourCode
 	var currentCode string
 	var currentMethod *RPCMethod
+	var firstCode string // 用于保存第一个特殊的 yourCode
+	var isFirstCode bool // 标记是否处理了第一个特殊的 yourCode
+	var inFirstCode bool // 标记是否在处理第一个特殊的 yourCode
 
 	// 遍历文件的每一行
 	for scanner.Scan() {
 		line := scanner.Text() + "\n"
 
+		// 如果正在处理第一个 yourCode，并且发现 YourCodeEnd
+		if inFirstCode && strings.Contains(line, config.YourCodeEnd) {
+			firstCode += line
+			inFirstCode = false
+			continue // 跳过其他处理，继续后续的代码处理
+		}
+
+		// 如果是第一个特殊的 yourCode块
+		if !isFirstCode && strings.Contains(line, config.YourCodeBegin) {
+			firstCode = line
+			inFirstCode = true
+			isFirstCode = true
+			continue
+		}
+
 		// 如果是方法的开始行，检查是否是我们关心的 RPCMethod 名称
 		for _, method := range *methodList {
 			if strings.Contains(line, method.MethodName()) {
-				// 如果当前扫描的行是方法名，初始化对应的 yourCode
 				currentMethod = method
 				currentCode = line // 保存当前行
 				break
@@ -245,18 +261,13 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[s
 		// 如果找到了当前方法的开始，接着读取直到找到结束
 		if currentMethod != nil {
 			if strings.Contains(line, config.YourCodeBegin) {
-				// 这行是 yourCode 的开始
 				currentCode += line
 			} else if strings.Contains(line, config.YourCodeEnd) {
-				// 这行是 yourCode 的结束
 				currentCode += line
-				// 保存该方法的完整 yourCode 到 map
 				codeMap[currentMethod.MethodName()] = currentCode
-				// 重置 currentMethod 和 currentCode
 				currentMethod = nil
 				currentCode = ""
 			} else {
-				// 追加其他行内容到 currentCode
 				currentCode += line
 			}
 		}
@@ -265,46 +276,48 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[s
 	// 检查是否有方法没有找到对应的 yourCode，如果没有找到，则添加默认值
 	for _, method := range *methodList {
 		if _, exists := codeMap[method.MethodName()]; !exists {
-			// 如果没有找到，填充默认值
 			codeMap[method.MethodName()] = config.YourCodePair
 		}
 	}
 
-	return codeMap, nil
+	return codeMap, firstCode, nil
 }
 
 func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
-	// Ensure there are methods in the list
+	// 确保方法列表非空
 	if len(*methodList) == 0 {
 		return ""
 	}
 
-	// Read code sections from file (returns a map with method name as key and code as value)
-	yourCodesMap, _ := ReadCodeSectionsFromFile(dst, methodList)
+	// 读取代码块
+	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methodList)
 
 	var data strings.Builder
 	firstMethodInfo := (*methodList)[0]
 
-	// Start with the C++ handler include specific to the first method
+	// 写入 C++ 处理函数的头部
 	data.WriteString(firstMethodInfo.CppHandlerIncludeName())
 
-	// Determine class name based on the first method's service and handler name configuration
+	// 如果有第一个特殊的 yourCode，先写入
+	if firstCode != "" {
+		data.WriteString(firstCode)
+	}
+
 	className := firstMethodInfo.Service() + config.HandlerFileName
 
-	// Iterate through methodList and construct handler functions for each method
+	// 遍历 methodList，构建每个方法的处理函数
 	for _, methodInfo := range *methodList {
-		// Check if there's code available for the current method
+		// 如果该方法有对应的 yourCode
 		if code, exists := yourCodesMap[methodInfo.MethodName()]; exists {
-			// Append method handler function definition
 			data.WriteString(fmt.Sprintf("void %s::%s(%sconst %s* request,\n",
 				className, methodInfo.Method(), config.GoogleMethodController, methodInfo.CppRequest()))
 			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response,\n")
 			data.WriteString(config.Tab + "     ::google::protobuf::Closure* done)\n")
 			data.WriteString("{\n")
-			data.WriteString(code) // Append the code for this method
+			data.WriteString(code) // 插入该方法的 yourCode
 			data.WriteString("}\n\n")
 		} else {
-			data.WriteString(config.YourCodePair)
+			data.WriteString(config.YourCodePair) // 如果没有 yourCode，则使用默认值
 		}
 	}
 
@@ -318,7 +331,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 	}
 
 	// Read code sections from file (returns a map with method name as key and code as value)
-	yourCodesMap, _ := ReadCodeSectionsFromFile(dst, methodList)
+	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methodList)
 
 	var data strings.Builder
 	firstMethodInfo := (*methodList)[0]
@@ -329,6 +342,11 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 
 	// External declaration for the dispatcher
 	data.WriteString("extern ProtobufDispatcher gResponseDispatcher;\n\n")
+
+	// 如果有第一个特殊的 yourCode，先写入
+	if firstCode != "" {
+		data.WriteString(firstCode)
+	}
 
 	var declarationData, implData strings.Builder
 
@@ -374,12 +392,17 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className 
 	}
 
 	// Read code sections from file (returns a map with method name as key and code as value)
-	yourCodesMap, _ := ReadCodeSectionsFromFile(dst, methodList)
+	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methodList)
 
 	var data strings.Builder
 
 	// Append the provided includeName
 	data.WriteString(includeName)
+
+	// 如果有第一个特殊的 yourCode，先写入
+	if firstCode != "" {
+		data.WriteString(firstCode)
+	}
 
 	// Iterate through methodList and construct handler functions for each method
 	for _, methodInfo := range *methodList {
