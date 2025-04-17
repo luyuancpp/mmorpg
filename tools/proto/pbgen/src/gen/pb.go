@@ -108,7 +108,6 @@ func generateCppFiles(fileName, outputDir string) error {
 		return err
 	}
 
-	fmt.Println(cmd.String()) // Print the command for debugging purposes
 	return nil
 }
 
