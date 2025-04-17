@@ -265,10 +265,6 @@ func (info *RPCMethod) ServerStreaming() bool {
 	return *info.MethodDescriptorProto.ServerStreaming
 }
 
-func (info *RPCMethod) GenerateMethodHandlerName() string {
-	return info.Method() + "::" + config.GoogleMethodController
-}
-
 func (info *RPCMethod) GetPackageNameWithColon() string {
 	if len(info.Package()) <= 0 {
 		return ""
