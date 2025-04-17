@@ -239,6 +239,8 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[s
 			firstCode += line
 			inFirstCode = false
 			continue // 跳过其他处理，继续后续的代码处理
+		} else if inFirstCode {
+			firstCode += line
 		}
 
 		// 如果是第一个特殊的 yourCode块
@@ -251,7 +253,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[s
 
 		// 如果是方法的开始行，检查是否是我们关心的 RPCMethod 名称
 		for _, method := range *methodList {
-			if strings.Contains(line, method.MethodName()) {
+			if strings.Contains(line, method.GetServiceFullNameWithNoColon()) {
 				currentMethod = method
 				currentCode = line // 保存当前行
 				break
@@ -264,7 +266,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods) (map[s
 				currentCode += line
 			} else if strings.Contains(line, config.YourCodeEnd) {
 				currentCode += line
-				codeMap[currentMethod.MethodName()] = currentCode
+				codeMap[currentMethod.GetServiceFullNameWithNoColon()] = currentCode
 				currentMethod = nil
 				currentCode = ""
 			} else {
@@ -313,7 +315,7 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 	// 遍历 methodList，构建每个方法的处理函数
 	for _, methodInfo := range *methodList {
 		// 如果该方法有对应的 yourCode
-		if code, exists := yourCodesMap[methodInfo.MethodName()]; exists {
+		if code, exists := yourCodesMap[methodInfo.GetServiceFullNameWithNoColon()]; exists {
 			data.WriteString(fmt.Sprintf("void %s::%s(%sconst %s* request,\n",
 				className, methodInfo.Method(), config.GoogleMethodController, methodInfo.CppRequest()))
 			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response,\n")
@@ -358,7 +360,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 	// Iterate through methodList and construct the handler registration and implementation
 	for _, methodInfo := range *methodList {
 		// Check if there's code available for the current method
-		if code, exists := yourCodesMap[methodInfo.MethodName()]; exists {
+		if code, exists := yourCodesMap[methodInfo.GetServiceFullNameWithNoColon()]; exists {
 			// Construct function name for the handler
 			funcName := "On" + methodInfo.KeyName() + config.RepliedHandlerFileName
 
@@ -412,7 +414,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className 
 	// Iterate through methodList and construct handler functions for each method
 	for _, methodInfo := range *methodList {
 		// Check if there's code available for the current method
-		if code, exists := yourCodesMap[methodInfo.MethodName()]; exists {
+		if code, exists := yourCodesMap[methodInfo.GetServiceFullNameWithNoColon()]; exists {
 			// Append method handler function definition
 			data.WriteString(fmt.Sprintf("void %s::%s(%sconst %s* request,\n",
 				className, methodInfo.Method(), config.PlayerMethodController, methodInfo.CppRequest()))
