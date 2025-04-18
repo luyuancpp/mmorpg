@@ -11,7 +11,6 @@ class ServerEventHandler
 public:
 	static void Register();
 	static void UnRegister();
-
 	static void OnConnect2CentreHandler(const OnConnect2Centre& event);
 	static void OnConnect2GameHandler(const OnConnect2Game& event);
 	static void OnConnect2GateHandler(const OnConnect2Gate& event);

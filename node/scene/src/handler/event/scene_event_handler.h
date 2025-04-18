@@ -13,7 +13,6 @@ class SceneEventHandler
 public:
 	static void Register();
 	static void UnRegister();
-
 	static void OnSceneCreateHandler(const OnSceneCreate& event);
 	static void OnDestroySceneHandler(const OnDestroyScene& event);
 	static void BeforeEnterSceneHandler(const BeforeEnterScene& event);
