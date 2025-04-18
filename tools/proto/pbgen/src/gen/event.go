@@ -13,38 +13,26 @@ import (
 	"strings"
 )
 
-// generateClassNameFromFile 根据文件名生成类名，支持所有部分首字母大写，并追加后缀
-func generateClassNameFromFile(fd os.DirEntry, suffix string) string {
-	// 获取文件名
-	name := fd.Name()
-	if name == "" {
-		return ""
-	}
-
-	// 移除文件扩展名
-	baseName := strings.TrimSuffix(name, filepath.Ext(name))
-
-	// 按 "_" 分隔文件名
-	parts := strings.Split(baseName, "_")
-
-	// 初始化 Title 转换器
-	titleConverter := cases.Title(language.English)
-
-	// 遍历每部分，将非空部分的首字母大写
-	var capitalizedParts []string
-	for _, part := range parts {
-		if part != "" { // 跳过空字符串
-			capitalizedParts = append(capitalizedParts, titleConverter.String(part))
-		}
-	}
-
-	// 如果没有有效部分，返回默认类名
-	if len(capitalizedParts) == 0 {
+func generateClassNameFromFile(protoFile os.DirEntry, suffix string) string {
+	baseName := strings.TrimSuffix(protoFile.Name(), filepath.Ext(protoFile.Name()))
+	if baseName == "" {
 		return "Default" + suffix
 	}
 
-	// 拼接所有部分并加上后缀
-	return strings.Join(capitalizedParts, "") + suffix
+	parts := strings.Split(baseName, "_")
+	titleConverter := cases.Title(language.English)
+	var classNameParts []string
+	for _, part := range parts {
+		if part != "" {
+			classNameParts = append(classNameParts, titleConverter.String(part))
+		}
+	}
+
+	if len(classNameParts) == 0 {
+		return "Default" + suffix
+	}
+
+	return strings.Join(classNameParts, "") + suffix
 }
 
 // ReadCodeSectionsFromFile 函数接收一个函数作为参数，动态选择 A 或 B 方法
@@ -200,7 +188,7 @@ func generateEventHandlerFiles(protoFile os.DirEntry, dstDir string) {
 
 	util.WriteMd5Data2File(headerFilePath, dataHead)
 
-	dataCpp := config.IncludeBegin + filepath.Base(headerFilePath) + config.IncludeEndLine +
+	cppContent := config.IncludeBegin + filepath.Base(headerFilePath) + config.IncludeEndLine +
 		config.IncludeBegin + config.ProtoDirName + config.ProtoDirectoryNames[config.EventProtoDirIndex] +
 		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine +
 		"#include \"thread_local/storage.h\"\n"
@@ -211,30 +199,30 @@ func generateEventHandlerFiles(protoFile os.DirEntry, dstDir string) {
 	}
 
 	if firstCode != "" {
-		dataCpp += firstCode
+		cppContent += firstCode
 	}
 
-	dataCpp += "void " + className + "::Register()\n" +
+	cppContent += "void " + className + "::Register()\n" +
 		"{\n" + registerFunctionBody + "}\n\n"
-	dataCpp += "void " + className + "::UnRegister()\n" +
+	cppContent += "void " + className + "::UnRegister()\n" +
 		"{\n" + unregisterFunctionBody + "}\n\n"
 
 	for _, eventName := range eventMessages {
 		// 如果该方法有对应的 yourCode
 		eventHandlerFunctionName := buildEventHandlerSignature(className, eventName)
 		if code, exists := userCodeBlocks[eventHandlerFunctionName]; exists {
-			dataCpp += eventHandlerFunctionName
-			dataCpp += "{\n"
-			dataCpp += code
-			dataCpp += "}\n\n"
+			cppContent += eventHandlerFunctionName
+			cppContent += "{\n"
+			cppContent += code
+			cppContent += "}\n\n"
 		} else {
-			dataCpp += eventHandlerFunctionName
-			dataCpp += "{\n"
-			dataCpp += config.YourCodePair
-			dataCpp += "}\n\n"
+			cppContent += eventHandlerFunctionName
+			cppContent += "{\n"
+			cppContent += config.YourCodePair
+			cppContent += "}\n\n"
 		}
 	}
-	util.WriteMd5Data2File(cppFilePath, dataCpp)
+	util.WriteMd5Data2File(cppFilePath, cppContent)
 }
 
 func GenerateAllEventHandlers() {
