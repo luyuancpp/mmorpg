@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"log"
 	"pbgen/config"
 	"pbgen/util"
 	"strings"
@@ -67,8 +68,14 @@ func writeGateMethodHandlerHeadFile(methodList RPCMethods) {
 	// Construct the file name for the header handler file
 	fileName := methodList[0].FileNameNoEx() + config.HandlerHeaderExtension
 
+	data, err := getServiceHandlerHeadStr(methodList)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Write the MD5 data to the header handler file
-	util.WriteMd5Data2File(config.GateMethodHandlerDirectory+fileName, getServiceHandlerHeadStr(methodList))
+	util.WriteMd5Data2File(config.GateMethodHandlerDirectory+fileName, data)
 }
 
 func writeGateMethodHandlerCppFile(methodList RPCMethods) {

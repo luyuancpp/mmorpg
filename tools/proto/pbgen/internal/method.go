@@ -79,32 +79,92 @@ constexpr uint32_t {{.KeyName}}Index = {{.Index}};
 	return buf.String()
 }
 
-// Function to get the header string for service handlers
-func getServiceHandlerHeadStr(methods RPCMethods) string {
-	var data strings.Builder
-	data.WriteString("#pragma once\n")
-	data.WriteString(methods[0].IncludeName())
-	data.WriteString("class " + methods[0].Service() + "Handler : public ::" + methods[0].Service() + "\n{\npublic:\n")
+// 获取 C++ 头文件字符串，使用 text/template
+func getServiceHandlerHeadStr(methods RPCMethods) (string, error) {
+	// 定义 C++ 类头文件的模板
+	const tmplStr = `#pragma once
+{{.Include}}
 
-	for _, method := range methods {
-		data.WriteString(getServiceHandlerMethodStr(method))
-		data.WriteString("\n")
+class {{.Service}}Handler : public ::{{.Service}}
+{
+public:
+{{range .Methods}}
+{{getServiceHandlerMethodStr .}}
+{{end}}
+};`
+
+	// 创建一个模板对象
+	tmpl, err := template.New("header").Funcs(template.FuncMap{
+		"getServiceHandlerMethodStr": getServiceHandlerMethodStr,
+	}).Parse(tmplStr)
+	if err != nil {
+		return "", err
 	}
 
-	data.WriteString("};\n\n")
-	return data.String()
+	// 定义模板的数据
+	data := struct {
+		Include string
+		Service string
+		Methods RPCMethods
+	}{
+		Include: methods[0].IncludeName(), // 假设所有方法使用相同的 Include
+		Service: methods[0].Service(),     // 假设所有方法属于同一个服务
+		Methods: methods,
+	}
+
+	// 使用模板填充数据
+	var result strings.Builder
+	err = tmpl.Execute(&result, data)
+	if err != nil {
+		return "", err
+	}
+
+	// 返回生成的 C++ 头文件
+	return result.String(), nil
 }
 
 // Helper function to generate method strings for service handlers
-func getServiceHandlerMethodStr(method *RPCMethod) string {
-	var data strings.Builder
+func getServiceHandlerMethodStr(method *RPCMethod) (string, error) {
 
-	data.WriteString(config.Tab + "void " + method.Method() + "(" + config.GoogleMethodController + "\n")
-	data.WriteString(config.Tab2 + "const " + method.CppRequest() + "* request,\n")
-	data.WriteString(config.Tab2 + method.CppResponse() + "* response,\n")
-	data.WriteString(config.Tab2 + "::google::protobuf::Closure* done)override;\n\n")
+	const methodTemplate = `
+{{.Tab}}void {{.Method}}({{.GoogleMethodController}}
+{{.Tab2}}const {{.CppRequest}}* request,
+{{.Tab2}}{{.CppResponse}}* response,
+{{.Tab2}}::google::protobuf::Closure* done) override;
+`
 
-	return data.String()
+	type MethodData struct {
+		Tab                    string
+		Tab2                   string
+		Method                 string
+		GoogleMethodController string
+		CppRequest             string
+		CppResponse            string
+	}
+	// 填充模板所需的数据
+	data := MethodData{
+		Tab:                    config.Tab,
+		Tab2:                   config.Tab2,
+		Method:                 method.Method(),
+		GoogleMethodController: config.GoogleMethodController,
+		CppRequest:             method.CppRequest(),
+		CppResponse:            method.CppResponse(),
+	}
+
+	// 创建模板
+	tmpl, err := template.New("methodTemplate").Parse(methodTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	// 使用 bytes.Buffer 来捕获模板输出
+	var output bytes.Buffer
+	err = tmpl.Execute(&output, data)
+	if err != nil {
+		return "", err
+	}
+
+	return output.String(), nil
 }
 
 // Function to get the header string for player method handlers

@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"log"
 	"pbgen/config"
 	"pbgen/util"
 	"strings"
@@ -47,7 +48,12 @@ func writeCentreMethodHandlerHeadFile(methodList RPCMethods) {
 	fileName := firstMethodInfo.FileNameNoEx() + config.HandlerHeaderExtension
 	dstFileName := config.CentreNodeMethodHandlerDirectory + fileName
 
-	data := getServiceHandlerHeadStr(methodList)
+	data, err := getServiceHandlerHeadStr(methodList)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
