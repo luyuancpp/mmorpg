@@ -70,7 +70,13 @@ func GoRobotTotalHandlerGenerator() {
 
 	handlerCases := make([]HandlerCase, 0)
 
-	for _, serviceMethods := range ServiceMethodMap {
+	ServiceList := GetSortServiceList()
+
+	for _, key := range ServiceList {
+		serviceMethods, ok := ServiceMethodMap[key]
+		if !ok {
+			continue
+		}
 		if !isClientMethodRepliedHandler(&serviceMethods) {
 			continue
 		}
