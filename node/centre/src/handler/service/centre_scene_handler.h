@@ -1,19 +1,23 @@
 #pragma once
 #include "proto/logic/server/centre_scene.pb.h"
+
+
 class CentreSceneServiceHandler : public ::CentreSceneService
 {
 public:
+
+
 	void RegisterScene(::google::protobuf::RpcController* controller,
 		const ::RegisterSceneRequest* request,
 		::RegisterSceneResponse* response,
-		::google::protobuf::Closure* done)override;
+		::google::protobuf::Closure* done) override;
+
 
 
 	void UnRegisterScene(::google::protobuf::RpcController* controller,
 		const ::UnRegisterSceneRequest* request,
 		::Empty* response,
-		::google::protobuf::Closure* done)override;
+		::google::protobuf::Closure* done) override;
 
 
 };
-

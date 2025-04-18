@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"log"
 	"pbgen/config"
 	"pbgen/util"
 	"strings"
@@ -49,19 +50,25 @@ func IsGsPlayerHandler(methods *RPCMethods) bool {
 	return true
 }
 
-func writeGsMethodHandlerHeadFile(methodList RPCMethods) {
+func writeGsMethodHandlerHeadFile(methods RPCMethods) {
 	defer util.Wg.Done()
 
 	// Check if the method list qualifies as a game server method handler
-	if !IsGsMethodHandler(&methodList) {
+	if !IsGsMethodHandler(&methods) {
 		return
 	}
 
 	// Generate the file name based on the first method's base name and configuration
-	fileName := methodList[0].FileNameNoEx() + config.HandlerHeaderExtension
+	fileName := methods[0].FileNameNoEx() + config.HandlerHeaderExtension
+
+	data, err := getServiceHandlerHeadStr(methods)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Write the generated data to the destination file using util.WriteMd5Data2File
-	util.WriteMd5Data2File(config.GameNodeMethodHandlerDirectory+fileName, getServiceHandlerHeadStr(methodList))
+	util.WriteMd5Data2File(config.GameNodeMethodHandlerDirectory+fileName, data)
 }
 
 func writeGsMethodHandlerCppFile(methodList RPCMethods) {
