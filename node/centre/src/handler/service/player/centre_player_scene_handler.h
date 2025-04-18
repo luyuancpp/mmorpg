@@ -1,11 +1,15 @@
 #pragma once
 #include "proto/logic/server_player/centre_player_scene.pb.h"
+
 #include "player_service.h"
+
 #include "macros/return_define.h"
+
 class CentrePlayerSceneServiceHandler : public ::PlayerService
 {
 public:
-	using PlayerService::PlayerService;
+    using PlayerService::PlayerService;
+
 	static void EnterScene(entt::entity player,
 		const ::CentreEnterSceneRequest* request,
 		::google::protobuf::Empty* response);

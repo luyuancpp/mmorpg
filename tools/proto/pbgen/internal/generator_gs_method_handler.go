@@ -90,19 +90,24 @@ func writeGsMethodHandlerCppFile(methodList RPCMethods) {
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
-func writeGsPlayerMethodHandlerHeadFile(methodList RPCMethods) {
+func writeGsPlayerMethodHandlerHeadFile(methods RPCMethods) {
 	defer util.Wg.Done()
 
 	// Check if the method list qualifies as a game server player method handler
-	if !IsGsPlayerHandler(&methodList) {
+	if !IsGsPlayerHandler(&methods) {
 		return
 	}
 
 	// Generate the file name based on the first method's base name and configuration
-	fileName := methodList[0].FileNameNoEx() + config.HandlerHeaderExtension
+	fileName := methods[0].FileNameNoEx() + config.HandlerHeaderExtension
 
+	data, err := getPlayerMethodHeadStr(methods)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Write the generated data to the destination file using util.WriteMd5Data2File
-	util.WriteMd5Data2File(config.GameNodePlayerMethodHandlerDirectory+fileName, getPlayerMethodHeadStr(methodList))
+	util.WriteMd5Data2File(config.GameNodePlayerMethodHandlerDirectory+fileName, data)
 }
 
 func writeGsPlayerMethodHandlerCppFile(methodList RPCMethods) {

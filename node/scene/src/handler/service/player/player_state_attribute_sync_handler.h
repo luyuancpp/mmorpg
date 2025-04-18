@@ -1,11 +1,15 @@
 #pragma once
 #include "proto/logic/client_player/player_state_attribute_sync.pb.h"
+
 #include "player_service.h"
+
 #include "macros/return_define.h"
+
 class EntitySyncServiceHandler : public ::PlayerService
 {
 public:
-	using PlayerService::PlayerService;
+    using PlayerService::PlayerService;
+
 	static void SyncBaseAttribute(entt::entity player,
 		const ::BaseAttributeSyncDataS2C* request,
 		::Empty* response);

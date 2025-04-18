@@ -1,11 +1,15 @@
 #pragma once
 #include "proto/logic/server_player/game_player_scene.pb.h"
+
 #include "player_service.h"
+
 #include "macros/return_define.h"
+
 class GamePlayerSceneServiceHandler : public ::PlayerService
 {
 public:
-	using PlayerService::PlayerService;
+    using PlayerService::PlayerService;
+
 	static void EnterScene(entt::entity player,
 		const ::GsEnterSceneRequest* request,
 		::google::protobuf::Empty* response);

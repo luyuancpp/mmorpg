@@ -1,11 +1,15 @@
 #pragma once
 #include "proto/logic/client_player/player_scene.pb.h"
+
 #include "player_service.h"
+
 #include "macros/return_define.h"
+
 class ClientPlayerSceneServiceHandler : public ::PlayerService
 {
 public:
-	using PlayerService::PlayerService;
+    using PlayerService::PlayerService;
+
 	static void EnterScene(entt::entity player,
 		const ::EnterSceneC2SRequest* request,
 		::EnterSceneC2SResponse* response);

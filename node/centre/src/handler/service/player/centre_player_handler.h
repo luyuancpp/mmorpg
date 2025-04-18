@@ -1,11 +1,15 @@
 #pragma once
 #include "proto/logic/server_player/centre_player.pb.h"
+
 #include "player_service.h"
+
 #include "macros/return_define.h"
+
 class CentrePlayerServiceHandler : public ::PlayerService
 {
 public:
-	using PlayerService::PlayerService;
+    using PlayerService::PlayerService;
+
 	static void Test(entt::entity player,
 		const ::google::protobuf::Empty* request,
 		::google::protobuf::Empty* response);
