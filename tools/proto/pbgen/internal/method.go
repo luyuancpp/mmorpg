@@ -749,41 +749,81 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 }
 
 func getMethodPlayerHandlerCppStr(dst string, methods *RPCMethods, className string, includeName string) string {
-	// Ensure there are methods in the list
-	if len(*methods) == 0 {
-		return includeName // Return the includeName if no methods are provided
+	const playerHandlerCppTemplate = `
+{{ .IncludeName }}
+{{- if .FirstCode }}
+{{ .FirstCode }}
+{{ end }}
+
+{{- range .Methods }}
+{{- if .HasCode }}
+void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* request,
+{{ $.Tab }}{{ .CppResponse }}* response)
+{
+{{ .Code }}
+}
+{{ else }}
+{{ $.YourCodePair }}
+{{ end }}
+
+{{ end }}
+`
+	type PlayerHandlerMethod struct {
+		HandlerName string
+		CppRequest  string
+		CppResponse string
+		Code        string
+		HasCode     bool
 	}
 
-	// Read code sections from file (returns a map with method name as key and code as value)
+	type PlayerHandlerCppData struct {
+		IncludeName            string
+		FirstCode              string
+		PlayerMethodController string
+		Tab                    string
+		YourCodePair           string
+		Methods                []PlayerHandlerMethod
+	}
+
+	if len(*methods) == 0 {
+		return includeName // Still return include if empty
+	}
+
 	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methods, GenerateMethodHandlerNameWithClassPrefixWrapper, className)
 
-	var data strings.Builder
-
-	// Append the provided includeName
-	data.WriteString(includeName)
-
-	// 如果有第一个特殊的 yourCode，先写入
-	if firstCode != "" {
-		data.WriteString(firstCode)
+	var methodList []PlayerHandlerMethod
+	for _, method := range *methods {
+		handlerName := GenerateMethodHandlerNameWithClassPrefixWrapper(method, className)
+		code, exists := yourCodesMap[handlerName]
+		methodList = append(methodList, PlayerHandlerMethod{
+			HandlerName: handlerName,
+			CppRequest:  method.CppRequest(),
+			CppResponse: method.CppResponse(),
+			Code:        code,
+			HasCode:     exists,
+		})
 	}
 
-	// Iterate through methods and construct handler functions for each method
-	for _, methodInfo := range *methods {
-		// Check if there's code available for the current method
-		if code, exists := yourCodesMap[GenerateMethodHandlerNameWithClassPrefixWrapper(methodInfo, className)]; exists {
-			// Append method handler function definition
-			data.WriteString(fmt.Sprintf("void %s%sconst %s* request,\n",
-				GenerateMethodHandlerNameWithClassPrefixWrapper(methodInfo, className), config.PlayerMethodController, methodInfo.CppRequest()))
-			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response)\n")
-			data.WriteString("{\n")
-			data.WriteString(code) // Append the code for this method
-			data.WriteString("}\n\n")
-		} else {
-			data.WriteString(config.YourCodePair)
-		}
+	data := PlayerHandlerCppData{
+		IncludeName:            includeName,
+		FirstCode:              firstCode,
+		PlayerMethodController: config.PlayerMethodController,
+		Tab:                    config.Tab,
+		YourCodePair:           config.YourCodePair,
+		Methods:                methodList,
 	}
 
-	return data.String()
+	tmpl, err := template.New("playerHandlerCpp").Parse(playerHandlerCppTemplate)
+	if err != nil {
+		panic(err)
+	}
+
+	var output bytes.Buffer
+	if err := tmpl.Execute(&output, data); err != nil {
+		panic(err)
+	}
+
+	return output.String()
 }
 
 func GenRegisterFile(dst string, cb checkRepliedCb) {

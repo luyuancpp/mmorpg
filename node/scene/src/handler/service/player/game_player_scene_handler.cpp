@@ -1,4 +1,6 @@
+
 #include "game_player_scene_handler.h"
+
 ///<<< BEGIN WRITING YOUR CODE
 #include "core/network/message_system.h"
 #include "player/system/player_node_system.h"
@@ -8,8 +10,10 @@
 #include "scene/system/scene_system.h"
 #include "service_info/player_scene_service_info.h"
 ///<<< END WRITING YOUR CODE
+
+
 void GamePlayerSceneServiceHandler::EnterScene(entt::entity player,const ::GsEnterSceneRequest* request,
-	     ::google::protobuf::Empty* response)
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "Handling GsEnterSceneRequest for player: " << tls.registry.get<Guid>(player) << ", scene_id: " << request->scene_id();
@@ -17,10 +21,13 @@ void GamePlayerSceneServiceHandler::EnterScene(entt::entity player,const ::GsEnt
 	// 进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
 	PlayerSceneSystem::HandleEnterScene(player, entt::to_entity(request->scene_id()));
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
 void GamePlayerSceneServiceHandler::LeaveScene(entt::entity player,const ::GsLeaveSceneRequest* request,
-	     ::google::protobuf::Empty* response)
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "Handling GsLeaveSceneRequest for player: " << tls.registry.get<Guid>(player);
@@ -34,10 +41,13 @@ void GamePlayerSceneServiceHandler::LeaveScene(entt::entity player,const ::GsLea
 		LOG_INFO << "Player " << tls.registry.get<Guid>(player) << " session cleared after leaving scene.";
 	}
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
 void GamePlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,const ::EnterSceneS2CRequest* request,
-	     ::EnterScenerS2CResponse* response)
+	::EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "Handling EnterSceneS2CRequest for player: " << tls.registry.get<Guid>(player);
@@ -53,5 +63,8 @@ void GamePlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,const ::En
 	message.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfoPBComponent>(sceneEntity->sceneEntity));
 	SendMessageToPlayer(ClientPlayerSceneServiceNotifyEnterSceneMessageId, message, player);
 ///<<< END WRITING YOUR CODE
+
 }
+
+
 
