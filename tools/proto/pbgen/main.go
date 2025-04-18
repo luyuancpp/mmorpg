@@ -5,7 +5,7 @@ import (
 	"os"
 	"path"
 	"pbgen/config"
-	"pbgen/gen"
+	"pbgen/internal"
 	"pbgen/util"
 )
 
@@ -52,32 +52,32 @@ func MakeProjectDir() {
 func main() {
 	MakeProjectDir()
 	//开始读所有的proto文件
-	gen.ReadServiceIdFile()
-	gen.BuildProtocDesc()
+	internal.ReadServiceIdFile()
+	internal.BuildProtocDesc()
 	util.Wg.Wait()
-	gen.BuildAllProtoc()
+	internal.BuildAllProtoc()
 	util.Wg.Wait()
-	gen.ReadAllProtoFileServices()
+	internal.ReadAllProtoFileServices()
 	util.Wg.Wait()
 
-	//gen.WriteLoadClientLuaFile()
-	gen.GenerateAllEventHandlers()
-	//gen.WriteSol2LuaFile()
+	//internal.WriteLoadClientLuaFile()
+	internal.GenerateAllEventHandlers()
+	//internal.WriteSol2LuaFile()
 	util.Wg.Wait()
 	//所有文件的proto读完以后
-	gen.InitServiceId()
-	gen.WriteServiceIdFile()
-	gen.WriteMethodFile()
+	internal.InitServiceId()
+	internal.WriteServiceIdFile()
+	internal.WriteMethodFile()
 	util.Wg.Wait()
 	//所有service初始化完以后
-	gen.WriteGoMessageId()
-	gen.WriteServiceRegisterInfoFile()
-	//gen.WriteLuaServiceHeadHandlerFile()
-	//gen.WriteClientServiceHeadHandlerFile()
-	gen.GoRobotHandlerGenerator()
+	internal.WriteGoMessageId()
+	internal.WriteServiceRegisterInfoFile()
+	//internal.WriteLuaServiceHeadHandlerFile()
+	//internal.WriteClientServiceHeadHandlerFile()
+	internal.GoRobotHandlerGenerator()
 	util.Wg.Wait()
-	gen.GoRobotTotalHandlerGenerator()
-	gen.CppPlayerDataLoadGenerator()
-	gen.CppGrpcCallClient()
+	internal.GoRobotTotalHandlerGenerator()
+	internal.CppPlayerDataLoadGenerator()
+	internal.CppGrpcCallClient()
 	util.Wg.Wait()
 }

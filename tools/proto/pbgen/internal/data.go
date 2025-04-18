@@ -1,4 +1,4 @@
-package gen
+package internal
 
 import (
 	"google.golang.org/protobuf/types/descriptorpb"

@@ -1,0 +1,27 @@
+#include "{{ .HeaderFile }}"
+#include "{{ .ProtoInclude }}"
+#include "thread_local/storage.h"
+
+{{ .GlobalUserCode }}
+
+void {{ .ClassName }}::Register()
+{
+{{- range .EventMessages }}
+    tls.dispatcher.sink<{{ . }}>().connect<&{{ $.ClassName }}::{{ . }}Handler>();
+{{- end }}
+}
+
+void {{ .ClassName }}::UnRegister()
+{
+{{- range .EventMessages }}
+    tls.dispatcher.sink<{{ . }}>().disconnect<&{{ $.ClassName }}::{{ . }}Handler>();
+{{- end }}
+}
+
+{{- range .EventMessages }}
+
+void {{ $.ClassName }}::{{ . }}Handler(const {{ . }}& event)
+{
+{{ index $.UserCodeBlocks (printf "void %s::%sHandler(const %s& event)\n" $.ClassName . . ) }}
+}
+{{- end }}

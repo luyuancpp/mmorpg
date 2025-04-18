@@ -2,9 +2,9 @@ package config
 
 // 常量：项目目录和路径
 const (
-	ProjectDir                = "../../../../"
-	ProtoDir                  = "../../../../proto/"
-	ProtoParentIncludePathDir = "../../../../"
+	ProjectDir                = "../../../"
+	ProtoDir                  = ProjectDir + "proto/"
+	ProtoParentIncludePathDir = "../../../"
 	ProtoEx                   = ".proto"
 	ProtoPbcEx                = ".pb.cc"
 	ProtoPbhEx                = ".pb.h"

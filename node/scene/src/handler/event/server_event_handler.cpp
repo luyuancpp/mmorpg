@@ -1,6 +1,7 @@
 #include "server_event_handler.h"
 #include "proto/logic/event/server_event.pb.h"
 #include "thread_local/storage.h"
+
 ///<<< BEGIN WRITING YOUR CODE
 #include "scene_node.h"
 #include "network/rpc_client.h"
@@ -8,22 +9,24 @@
 #include "scene/system/game_node_scene_system.h"
 #include "scene/system/scene_system.h"
 ///<<< END WRITING YOUR CODE
+
+
 void ServerEventHandler::Register()
 {
-	tls.dispatcher.sink<OnConnect2Centre>().connect<&ServerEventHandler::OnConnect2CentreHandler>();
-	tls.dispatcher.sink<OnConnect2Game>().connect<&ServerEventHandler::OnConnect2GameHandler>();
-	tls.dispatcher.sink<OnConnect2Gate>().connect<&ServerEventHandler::OnConnect2GateHandler>();
-	tls.dispatcher.sink<OnConnect2Login>().connect<&ServerEventHandler::OnConnect2LoginHandler>();
-	tls.dispatcher.sink<OnServerStart>().connect<&ServerEventHandler::OnServerStartHandler>();
+    tls.dispatcher.sink<OnConnect2Centre>().connect<&ServerEventHandler::OnConnect2CentreHandler>();
+    tls.dispatcher.sink<OnConnect2Game>().connect<&ServerEventHandler::OnConnect2GameHandler>();
+    tls.dispatcher.sink<OnConnect2Gate>().connect<&ServerEventHandler::OnConnect2GateHandler>();
+    tls.dispatcher.sink<OnConnect2Login>().connect<&ServerEventHandler::OnConnect2LoginHandler>();
+    tls.dispatcher.sink<OnServerStart>().connect<&ServerEventHandler::OnServerStartHandler>();
 }
 
 void ServerEventHandler::UnRegister()
 {
-	tls.dispatcher.sink<OnConnect2Centre>().disconnect<&ServerEventHandler::OnConnect2CentreHandler>();
-	tls.dispatcher.sink<OnConnect2Game>().disconnect<&ServerEventHandler::OnConnect2GameHandler>();
-	tls.dispatcher.sink<OnConnect2Gate>().disconnect<&ServerEventHandler::OnConnect2GateHandler>();
-	tls.dispatcher.sink<OnConnect2Login>().disconnect<&ServerEventHandler::OnConnect2LoginHandler>();
-	tls.dispatcher.sink<OnServerStart>().disconnect<&ServerEventHandler::OnServerStartHandler>();
+    tls.dispatcher.sink<OnConnect2Centre>().disconnect<&ServerEventHandler::OnConnect2CentreHandler>();
+    tls.dispatcher.sink<OnConnect2Game>().disconnect<&ServerEventHandler::OnConnect2GameHandler>();
+    tls.dispatcher.sink<OnConnect2Gate>().disconnect<&ServerEventHandler::OnConnect2GateHandler>();
+    tls.dispatcher.sink<OnConnect2Login>().disconnect<&ServerEventHandler::OnConnect2LoginHandler>();
+    tls.dispatcher.sink<OnServerStart>().disconnect<&ServerEventHandler::OnServerStartHandler>();
 }
 
 void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& event)
@@ -32,24 +35,28 @@ void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& event)
 	GameNodeSceneSystem::RegisterSceneToCentre();
 	
 ///<<< END WRITING YOUR CODE
+
 }
 
 void ServerEventHandler::OnConnect2GameHandler(const OnConnect2Game& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void ServerEventHandler::OnConnect2GateHandler(const OnConnect2Gate& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
@@ -58,5 +65,5 @@ void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
     SceneUtil::SetSequenceNodeId(gSceneNode->GetNodeId());
     GameNodeSceneSystem::InitializeNodeScenes();
 ///<<< END WRITING YOUR CODE
-}
 
+}
