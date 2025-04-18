@@ -888,37 +888,51 @@ void InitServiceHandler()
 }
 
 func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
-	defer util.Wg.Done()
+	const repliedRegisterTemplate = `
+void InitRepliedHandler()
+{
+{{- range .InitFuncs }}
+    void {{ . }}();
+    {{ . }}();
 
-	var data strings.Builder
-
-	// Start the function definition for initializing replied handlers
-	data.WriteString("void InitRepliedHandler()\n{\n")
-
-	ServiceList := GetSortServiceList()
-	for _, key := range ServiceList {
-		methods, ok := ServiceMethodMap[key]
-		if !ok {
-			continue
-		}
-		if !cb(&methods) {
-			continue
-		}
-		firstMethodInfo := methods[0]
-
-		// Append the initialization function declaration
-		initFunctionName := "Init" + firstMethodInfo.KeyName() + config.RepliedHandlerFileName
-		data.WriteString(config.Tab + "void " + initFunctionName + "();\n")
-
-		// Call the initialization function
-		data.WriteString(config.Tab + initFunctionName + "();\n\n")
+{{- end }}
+}
+`
+	type RepliedRegisterData struct {
+		InitFuncs []string
 	}
 
-	// End the function definition
-	data.WriteString("}\n")
+	defer util.Wg.Done()
 
-	// Write the generated data to the destination file using util.WriteMd5Data2File
-	util.WriteMd5Data2File(dst, data.String())
+	ServiceList := GetSortServiceList()
+
+	var initFuncList []string
+
+	for _, key := range ServiceList {
+		methods, ok := ServiceMethodMap[key]
+		if !ok || !cb(&methods) {
+			continue
+		}
+
+		first := methods[0]
+		initFuncList = append(initFuncList, "Init"+first.KeyName()+config.RepliedHandlerFileName)
+	}
+
+	templateData := RepliedRegisterData{
+		InitFuncs: initFuncList,
+	}
+
+	tmpl, err := template.New("repliedRegister").Parse(repliedRegisterTemplate)
+	if err != nil {
+		panic(err)
+	}
+
+	var output bytes.Buffer
+	if err := tmpl.Execute(&output, templateData); err != nil {
+		panic(err)
+	}
+
+	util.WriteMd5Data2File(dst, output.String())
 }
 
 func WriteMethodFile() {
