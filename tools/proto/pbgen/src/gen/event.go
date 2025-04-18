@@ -13,8 +13,8 @@ import (
 	"strings"
 )
 
-// getClassName 根据文件名生成类名，支持所有部分首字母大写，并追加后缀
-func getClassName(fd os.DirEntry, suffix string) string {
+// generateClassNameFromFile 根据文件名生成类名，支持所有部分首字母大写，并追加后缀
+func generateClassNameFromFile(fd os.DirEntry, suffix string) string {
 	// 获取文件名
 	name := fd.Name()
 	if name == "" {
@@ -48,7 +48,7 @@ func getClassName(fd os.DirEntry, suffix string) string {
 }
 
 // ReadCodeSectionsFromFile 函数接收一个函数作为参数，动态选择 A 或 B 方法
-func ReadEventCodeSectionsFromFile(cppFileName string, methodList []string) (map[string]string, string, error) {
+func extractUserCodeBlocks(cppFileName string, methodList []string) (map[string]string, string, error) {
 	// 创建一个 map 来存储每个 RPCMethod 的 name 和对应的 yourCode
 	codeMap := make(map[string]string)
 
@@ -137,11 +137,11 @@ func ReadEventCodeSectionsFromFile(cppFileName string, methodList []string) (map
 	return codeMap, firstCode, nil
 }
 
-func GetEventFunctionName(className string, eventName string) string {
+func buildEventHandlerSignature(className string, eventName string) string {
 	return "void " + className + "::" + eventName + "Handler(const " + eventName + "& event)\n"
 }
 
-func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
+func generateEventHandlerFiles(fd os.DirEntry, dstDir string) {
 	util.Wg.Done()
 
 	var eventList []string
@@ -166,7 +166,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 
 	dataHead := "#pragma once\n\n"
 
-	className := getClassName(fd, config.ClassNameSuffix)
+	className := generateClassNameFromFile(fd, config.ClassNameSuffix)
 
 	var eventKeyNameList []string
 
@@ -182,7 +182,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 		unregisterFunctionBody += config.Tab + "tls.dispatcher.sink<" + eventName + ">().disconnect<&" +
 			className + "::" + eventName + "Handler>();\n"
 
-		eventKeyNameList = append(eventKeyNameList, GetEventFunctionName(className, eventName))
+		eventKeyNameList = append(eventKeyNameList, buildEventHandlerSignature(className, eventName))
 	}
 
 	dataHead += classDeclareHeader + "\n"
@@ -205,7 +205,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine +
 		"#include \"thread_local/storage.h\"\n"
 
-	yourCodes, firstCode, err := ReadEventCodeSectionsFromFile(cppFileName, eventKeyNameList)
+	yourCodes, firstCode, err := extractUserCodeBlocks(cppFileName, eventKeyNameList)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -221,7 +221,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 
 	for _, eventName := range eventList {
 		// 如果该方法有对应的 yourCode
-		eventHandlerFunctionName := GetEventFunctionName(className, eventName)
+		eventHandlerFunctionName := buildEventHandlerSignature(className, eventName)
 		if code, exists := yourCodes[eventHandlerFunctionName]; exists {
 			dataCpp += eventHandlerFunctionName
 			dataCpp += "{\n"
@@ -237,7 +237,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 	util.WriteMd5Data2File(cppFileName, dataCpp)
 }
 
-func WriteEventHandlerFile() {
+func GenerateAllEventHandlers() {
 	fds, err := os.ReadDir(config.ProtoDirs[config.EventProtoDirIndex])
 	if err != nil {
 		log.Fatal(err)
@@ -252,14 +252,14 @@ func WriteEventHandlerFile() {
 			continue
 		}
 		util.Wg.Add(1)
-		writeEventHandlerCpp(fd, config.GameNodeEventHandlerDirectory)
+		generateEventHandlerFiles(fd, config.GameNodeEventHandlerDirectory)
 		util.Wg.Add(1)
-		writeEventHandlerCpp(fd, config.CentreNodeEventHandlerDirectory)
+		generateEventHandlerFiles(fd, config.CentreNodeEventHandlerDirectory)
 		cppIncludeData += config.IncludeBegin +
 			strings.Replace(filepath.Base(strings.ToLower(fd.Name())), config.ProtoEx, config.HandlerHeaderExtension, 1) +
 			config.IncludeEndLine
-		registerData += getClassName(fd, config.ClassNameSuffix) + "::Register();\n"
-		unRegisterData += getClassName(fd, config.ClassNameSuffix) + "::UnRegister();\n"
+		registerData += generateClassNameFromFile(fd, config.ClassNameSuffix) + "::Register();\n"
+		unRegisterData += generateClassNameFromFile(fd, config.ClassNameSuffix) + "::UnRegister();\n"
 	}
 	eventHeadData := "#pragma once\n\n"
 	eventHeadData += "class EventHandler\n{\npublic:\n"
