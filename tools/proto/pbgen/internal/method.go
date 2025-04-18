@@ -662,66 +662,90 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 }
 
 func getMethodRepliedHandlerCppStr(dst string, methods *RPCMethods) string {
-	// Ensure there are methods in the list
+	const methodRepliedHandlerCppTemplate = `
+{{ .CppRepliedHandlerInclude }}#include "network/codec/dispatcher.h"
+
+extern ProtobufDispatcher gResponseDispatcher;
+
+{{ if .FirstCode }}
+{{ .FirstCode }}
+{{ end }}
+
+void Init{{ .InitFuncName }}{{ .RepliedHandlerFileName }}()
+{
+{{- range .Methods }}
+{{- if .HasCode }}
+    gResponseDispatcher.registerMessageCallback<{{ .CppResponse }}>(
+        std::bind(&{{ .FuncName }}, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+{{- end }}
+{{- end }}
+}
+
+{{- range .Methods }}
+{{- if .HasCode }}
+
+void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .CppResponse }}>& replied, Timestamp timestamp)
+{
+{{ .Code }}
+}
+{{- end }}
+{{- end }}
+`
+	type RepliedHandlerMethod struct {
+		FuncName    string
+		CppResponse string
+		Code        string
+		HasCode     bool
+	}
+
+	type RepliedHandlerCppData struct {
+		CppRepliedHandlerInclude string
+		FirstCode                string
+		InitFuncName             string
+		RepliedHandlerFileName   string
+		Methods                  []RepliedHandlerMethod
+	}
+
 	if len(*methods) == 0 {
 		return ""
 	}
 
-	emtpyString := ""
+	emptyString := ""
 
-	// Read code sections from file (returns a map with method name as key and code as value)
-	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methods, GenerateMethodHandlerKeyNameWrapper, emtpyString)
-
-	var data strings.Builder
+	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methods, GenerateMethodHandlerKeyNameWrapper, emptyString)
 	firstMethodInfo := (*methods)[0]
 
-	// Start with the C++ replied handler include specific to the first method
-	data.WriteString(firstMethodInfo.CppRepliedHandlerIncludeName())
-	data.WriteString("#include \"network/codec/dispatcher.h\"\n\n")
-
-	// External declaration for the dispatcher
-	data.WriteString("extern ProtobufDispatcher gResponseDispatcher;\n\n")
-
-	// 如果有第一个特殊的 yourCode，先写入
-	if firstCode != "" {
-		data.WriteString(firstCode)
+	var methodsData []RepliedHandlerMethod
+	for _, method := range *methods {
+		funcName := GenerateMethodHandlerKeyNameWrapper(method, emptyString)
+		code, exists := yourCodesMap[funcName]
+		methodsData = append(methodsData, RepliedHandlerMethod{
+			FuncName:    funcName,
+			CppResponse: method.CppResponse(),
+			Code:        code,
+			HasCode:     exists,
+		})
 	}
 
-	var declarationData, implData strings.Builder
-
-	// Iterate through methods and construct the handler registration and implementation
-	for _, methodInfo := range *methods {
-		// Check if there's code available for the current method
-		if code, exists := yourCodesMap[GenerateMethodHandlerKeyNameWrapper(methodInfo, emtpyString)]; exists {
-			// Construct function name for the handler
-			funcName := GenerateMethodHandlerKeyNameWrapper(methodInfo, emtpyString)
-
-			// Register message callback in declaration data
-			declarationData.WriteString(fmt.Sprintf("%s%s", config.Tab,
-				"gResponseDispatcher.registerMessageCallback<"+methodInfo.CppResponse()+
-					">(std::bind(&"+funcName+", std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));\n"))
-
-			// Implementation of the handler function
-			implData.WriteString(fmt.Sprintf("void %s(const TcpConnectionPtr& conn, const std::shared_ptr<%s>& replied, Timestamp timestamp)\n{\n",
-				funcName, methodInfo.CppResponse()))
-			implData.WriteString(code) // Append the code for this method
-			implData.WriteString("}\n\n")
-		} else {
-			// If there's no code for this method, you can handle this case however you like.
-			// For now, we just append a comment or handle the missing code.
-			data.WriteString(fmt.Sprintf("// No code found for method %s\n", methodInfo.Method()))
-		}
+	templateData := RepliedHandlerCppData{
+		CppRepliedHandlerInclude: firstMethodInfo.CppRepliedHandlerIncludeName(),
+		FirstCode:                firstCode,
+		InitFuncName:             firstMethodInfo.KeyName(),
+		RepliedHandlerFileName:   config.RepliedHandlerFileName,
+		Methods:                  methodsData,
 	}
 
-	// Initialize function for registering replied handler callbacks
-	data.WriteString(fmt.Sprintf("\nvoid Init%s%s()\n{\n", firstMethodInfo.KeyName(), config.RepliedHandlerFileName))
-	data.WriteString(declarationData.String())
-	data.WriteString("}\n\n")
+	tmpl, err := template.New("methodRepliedHandlerCpp").Parse(methodRepliedHandlerCppTemplate)
+	if err != nil {
+		panic(err)
+	}
 
-	// Append the implementation data for replied handler functions
-	data.WriteString(implData.String())
+	var output bytes.Buffer
+	if err := tmpl.Execute(&output, templateData); err != nil {
+		panic(err)
+	}
 
-	return data.String()
+	return output.String()
 }
 
 func getMethodPlayerHandlerCppStr(dst string, methods *RPCMethods, className string, includeName string) string {
