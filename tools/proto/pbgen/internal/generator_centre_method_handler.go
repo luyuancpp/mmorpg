@@ -197,8 +197,14 @@ func writeCentrePlayerMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	// Construct the file name using the base name of the first method in methodList
 	fileName := methodList[0].FileNameNoEx() + config.RepliedHandlerHeaderExtension
 
+	data, err := getPlayerMethodRepliedHeadStr(methodList)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Write the MD5 data to a file located in CentreMethodRepliedHandleDir
-	util.WriteMd5Data2File(config.CentrePlayerMethodRepliedHandlerDirectory+fileName, getPlayerMethodRepliedHeadStr(methodList))
+	util.WriteMd5Data2File(config.CentrePlayerMethodRepliedHandlerDirectory+fileName, data)
 }
 
 func writeCentrePlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {

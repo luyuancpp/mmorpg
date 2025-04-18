@@ -7,7 +7,6 @@ import (
 	"os"
 	"pbgen/config"
 	"pbgen/util"
-	"strconv"
 	"strings"
 	"text/template"
 )
@@ -291,52 +290,118 @@ func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
 	return output.String()
 }
 
-// Function to get the header string for player method replied handlers
-func getPlayerMethodRepliedHeadStr(methods RPCMethods) string {
-	var data strings.Builder
-	data.WriteString("#pragma once\n")
-	data.WriteString(methods[0].IncludeName())
-	data.WriteString(config.PlayerServiceRepliedIncludeName)
-	data.WriteString("\nclass " + methods[0].Service() + config.RepliedHandlerFileName + " : public ::PlayerServiceReplied" + "\n{\npublic:\n")
-	data.WriteString(config.Tab + "using PlayerServiceReplied::PlayerServiceReplied;\n")
+const playerMethodRepliedHeadTemplate = `
+#pragma once
+{{.IncludeName}}
+{{.PlayerServiceRepliedIncludeName}}
 
-	data.WriteString(getPlayerMethodRepliedHandlerFunctions(methods))
-	data.WriteString("\n};\n")
+class {{.Service}}RepliedHandler : public ::PlayerServiceReplied
+{
+public:
+    using PlayerServiceReplied::PlayerServiceReplied;
 
-	return data.String()
+{{.MethodHandlerFunctions}}
+};
+`
+
+type PlayerMethodRepliedData struct {
+	IncludeName                     string
+	PlayerServiceRepliedIncludeName string
+	Service                         string
+	MethodHandlerFunctions          string
 }
 
-// Helper function to generate method replied handler functions for player methods
-func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
-	var data strings.Builder
-	var callFunctionList strings.Builder
-
-	for i, method := range methods {
-		data.WriteString(config.Tab + "static void " + method.Method() + "(" + config.PlayerMethodController + "\n")
-		data.WriteString(config.Tab2 + "const " + method.CppRequest() + "* request,\n")
-		data.WriteString(config.Tab2 + method.CppResponse() + "* response);\n\n")
-
-		callFunctionList.WriteString(config.Tab2 + "case " + strconv.Itoa(i) + ":\n")
-		callFunctionList.WriteString(config.Tab3 + method.Method() + "(player,\n")
-		callFunctionList.WriteString(config.Tab3 + "nullptr,\n")
-		callFunctionList.WriteString(config.Tab3 + "static_cast<" + method.CppResponse() + "*>(response));\n")
-		callFunctionList.WriteString(config.Tab2 + "break;\n")
+func getPlayerMethodRepliedHeadStr(methods RPCMethods) (string, error) {
+	// 填充模板所需的数据
+	data := PlayerMethodRepliedData{
+		IncludeName:                     methods[0].IncludeName(),
+		PlayerServiceRepliedIncludeName: config.PlayerServiceRepliedIncludeName,
+		Service:                         methods[0].Service(),
+		MethodHandlerFunctions:          getPlayerMethodRepliedHandlerFunctions(methods),
 	}
 
-	data.WriteString(config.Tab + "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n")
-	data.WriteString(config.Tab2 + "entt::entity player,\n")
-	data.WriteString(config.Tab2 + "const ::google::protobuf::Message* request,\n")
-	data.WriteString(config.Tab2 + "::google::protobuf::Message* response)override \n")
-	data.WriteString(config.Tab2 + "{\n")
-	data.WriteString(config.Tab2 + "switch(method->index())\n")
-	data.WriteString(config.Tab2 + "{\n")
-	data.WriteString(callFunctionList.String())
-	data.WriteString(config.Tab2 + "default:\n")
-	data.WriteString(config.Tab2 + "break;\n")
-	data.WriteString(config.Tab2 + "}\n")
-	data.WriteString(config.Tab + "}\n")
+	// 创建模板
+	tmpl, err := template.New("playerMethodRepliedHeadTemplate").Parse(playerMethodRepliedHeadTemplate)
+	if err != nil {
+		return "", err
+	}
 
-	return data.String()
+	// 使用 bytes.Buffer 来捕获模板输出
+	var output bytes.Buffer
+	err = tmpl.Execute(&output, data)
+	if err != nil {
+		return "", err
+	}
+
+	return output.String(), nil
+}
+
+const playerMethodRepliedFunctionsTemplate = `
+{{- range .Methods }}
+    static void {{ .Method }}({{ $.PlayerMethodController }}
+        const {{ .CppRequest }}* request,
+        {{ .CppResponse }}* response);
+
+{{- end }}
+
+    void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+        entt::entity player,
+        const ::google::protobuf::Message* request,
+        ::google::protobuf::Message* response) override
+    {
+        switch (method->index())
+        {
+{{- range $index, $method := .Methods }}
+        case {{ $index }}:
+            {{ $method.Method }}(player,
+                nullptr,
+                static_cast<{{ $method.CppResponse }}*>(response));
+            break;
+{{- end }}
+        default:
+            break;
+        }
+    }
+`
+
+type PlayerRepliedMethod struct {
+	Method      string
+	CppRequest  string
+	CppResponse string
+}
+
+type PlayerRepliedFunctionsData struct {
+	PlayerMethodController string
+	Methods                []PlayerRepliedMethod
+}
+
+func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
+	var methodList []PlayerRepliedMethod
+
+	for _, method := range methods {
+		methodList = append(methodList, PlayerRepliedMethod{
+			Method:      method.Method(),
+			CppRequest:  method.CppRequest(),
+			CppResponse: method.CppResponse(),
+		})
+	}
+
+	data := PlayerRepliedFunctionsData{
+		PlayerMethodController: config.PlayerMethodController,
+		Methods:                methodList,
+	}
+
+	tmpl, err := template.New("playerMethodRepliedFunctions").Parse(playerMethodRepliedFunctionsTemplate)
+	if err != nil {
+		panic(err)
+	}
+
+	var output bytes.Buffer
+	if err := tmpl.Execute(&output, data); err != nil {
+		panic(err)
+	}
+
+	return output.String()
 }
 
 func getMethodRepliedHandlerHeadStr(methods *RPCMethods) string {
