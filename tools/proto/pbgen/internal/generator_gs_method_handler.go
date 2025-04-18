@@ -160,8 +160,14 @@ func writeGsPlayerMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	// Generate the file name based on the first method's base name and configuration
 	fileName := methodList[0].FileNameNoEx() + config.RepliedHandlerHeaderExtension
 
+	data, err := getPlayerMethodRepliedHeadStr(methodList)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Write the generated data to the destination file using util.WriteMd5Data2File
-	util.WriteMd5Data2File(config.GameNodePlayerMethodRepliedHandlerDirectory+fileName, getPlayerMethodRepliedHeadStr(methodList))
+	util.WriteMd5Data2File(config.GameNodePlayerMethodRepliedHandlerDirectory+fileName, data)
 }
 
 func writeGsPlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
