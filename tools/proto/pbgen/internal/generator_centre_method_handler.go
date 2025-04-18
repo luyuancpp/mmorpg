@@ -84,18 +84,23 @@ func isCentrePlayerHandler(methodList *RPCMethods) bool {
 	return strings.Contains(firstMethodInfo.FileNameNoEx(), config.CentrePlayerPrefixName)
 }
 
-func writeCentrePlayerMethodHandlerHeadFile(methodList RPCMethods) {
+func writeCentrePlayerMethodHandlerHeadFile(methods RPCMethods) {
 	defer util.Wg.Done()
 
-	if !isCentrePlayerHandler(&methodList) {
+	if !isCentrePlayerHandler(&methods) {
 		return
 	}
 
-	firstMethodInfo := methodList[0]
+	firstMethodInfo := methods[0]
 	fileName := firstMethodInfo.FileNameNoEx() + config.HandlerHeaderExtension
 	outputFilePath := config.CentreNodePlayerMethodHandlerDirectory + fileName
 
-	data := getPlayerMethodHeadStr(methodList)
+	data, err := getPlayerMethodHeadStr(methods)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	util.WriteMd5Data2File(outputFilePath, data)
 }
 

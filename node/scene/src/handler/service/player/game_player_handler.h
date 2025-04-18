@@ -1,11 +1,15 @@
 #pragma once
 #include "proto/logic/server_player/game_player.pb.h"
+
 #include "player_service.h"
+
 #include "macros/return_define.h"
+
 class GamePlayerServiceHandler : public ::PlayerService
 {
 public:
-	using PlayerService::PlayerService;
+    using PlayerService::PlayerService;
+
 	static void Centre2GsLogin(entt::entity player,
 		const ::Centre2GsLoginRequest* request,
 		::google::protobuf::Empty* response);

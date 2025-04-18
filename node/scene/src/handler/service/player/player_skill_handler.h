@@ -1,11 +1,15 @@
 #pragma once
 #include "proto/logic/client_player/player_skill.pb.h"
+
 #include "player_service.h"
+
 #include "macros/return_define.h"
+
 class PlayerSkillServiceHandler : public ::PlayerService
 {
 public:
-	using PlayerService::PlayerService;
+    using PlayerService::PlayerService;
+
 	static void ReleaseSkill(entt::entity player,
 		const ::ReleaseSkillSkillRequest* request,
 		::ReleaseSkillSkillResponse* response);

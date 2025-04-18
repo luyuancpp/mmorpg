@@ -168,19 +168,53 @@ func getServiceHandlerMethodStr(method *RPCMethod) (string, error) {
 }
 
 // Function to get the header string for player method handlers
-func getPlayerMethodHeadStr(methods RPCMethods) string {
-	var data strings.Builder
-	data.WriteString("#pragma once\n")
-	data.WriteString(methods[0].IncludeName())
-	data.WriteString(config.PlayerServiceIncludeName)
-	data.WriteString(config.MacroReturnIncludeName)
-	data.WriteString("\nclass " + methods[0].Service() + config.HandlerFileName + " : public ::PlayerService" + "\n{\npublic:\n")
-	data.WriteString(config.Tab + "using PlayerService::PlayerService;\n")
+func getPlayerMethodHeadStr(methods RPCMethods) (string, error) {
 
-	data.WriteString(getPlayerMethodHandlerFunctions(methods))
-	data.WriteString("\n};\n")
+	const playerMethodHeadTemplate = `#pragma once
+{{.IncludeName}}
+{{.PlayerServiceIncludeName}}
+{{.MacroReturnIncludeName}}
 
-	return data.String()
+class {{.Service}}Handler : public ::PlayerService
+{
+public:
+    using PlayerService::PlayerService;
+
+{{.MethodHandlerFunctions}}
+};
+`
+
+	type PlayerMethodData struct {
+		IncludeName              string
+		PlayerServiceIncludeName string
+		MacroReturnIncludeName   string
+		Service                  string
+		MethodHandlerFunctions   string
+	}
+
+	// 填充模板所需的数据
+	data := PlayerMethodData{
+		IncludeName:              methods[0].IncludeName(),
+		PlayerServiceIncludeName: config.PlayerServiceIncludeName,
+		MacroReturnIncludeName:   config.MacroReturnIncludeName,
+		Service:                  methods[0].Service(),
+		MethodHandlerFunctions:   getPlayerMethodHandlerFunctions(methods),
+	}
+
+	// 创建模板
+	tmpl, err := template.New("playerMethodHeadTemplate").Parse(playerMethodHeadTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	// 使用 bytes.Buffer 来捕获模板输出
+	var output bytes.Buffer
+	err = tmpl.Execute(&output, data)
+	if err != nil {
+		return "", err
+	}
+
+	return output.String(), nil
 }
 
 // Helper function to generate method handler functions for player methods

@@ -1,11 +1,15 @@
 #pragma once
 #include "proto/logic/client_player/player_common.pb.h"
+
 #include "player_service.h"
+
 #include "macros/return_define.h"
+
 class PlayerClientCommonServiceHandler : public ::PlayerService
 {
 public:
-	using PlayerService::PlayerService;
+    using PlayerService::PlayerService;
+
 	static void SendTipToClient(entt::entity player,
 		const ::TipInfoMessage* request,
 		::Empty* response);
