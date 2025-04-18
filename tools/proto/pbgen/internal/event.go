@@ -2,35 +2,17 @@ package internal
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
-
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	"pbgen/config"
 	"pbgen/util"
 )
-
-// renderTemplateToFile 渲染模板并写入文件
-func renderTemplateToFile(tmplPath string, outputPath string, data any) error {
-	tmpl, err := template.ParseFiles(tmplPath)
-	if err != nil {
-		return err
-	}
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return err
-	}
-
-	return os.WriteFile(outputPath, buf.Bytes(), 0644)
-}
 
 // generateClassNameFromFile 从 proto 文件名生成 C++ 类名（下划线转为大写驼峰），加后缀
 func generateClassNameFromFile(file os.DirEntry, suffix string) string {
