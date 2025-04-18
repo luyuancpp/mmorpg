@@ -3,79 +3,106 @@ package gen
 import (
 	"bufio"
 	"fmt"
-	cases "golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"pbgen/config"
 	"pbgen/util"
-	"strings"
 )
 
-func generateClassNameFromFile(protoFile os.DirEntry, suffix string) string {
-	baseName := strings.TrimSuffix(protoFile.Name(), filepath.Ext(protoFile.Name()))
-	if baseName == "" {
-		return "Default" + suffix
-	}
-
+// generateClassNameFromFile 从 proto 文件名生成 C++ 类名（下划线转为大写驼峰），加后缀
+func generateClassNameFromFile(file os.DirEntry, suffix string) string {
+	baseName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 	parts := strings.Split(baseName, "_")
-	titleConverter := cases.Title(language.English)
-	var classNameParts []string
+	title := cases.Title(language.English)
+
+	var classParts []string
 	for _, part := range parts {
 		if part != "" {
-			classNameParts = append(classNameParts, titleConverter.String(part))
+			classParts = append(classParts, title.String(part))
 		}
 	}
-
-	if len(classNameParts) == 0 {
+	if len(classParts) == 0 {
 		return "Default" + suffix
 	}
-
-	return strings.Join(classNameParts, "") + suffix
+	return strings.Join(classParts, "") + suffix
 }
 
-// ReadCodeSectionsFromFile 函数接收一个函数作为参数，动态选择 A 或 B 方法
-func extractUserCodeBlocks(filePath string, methodSignatures []string) (map[string]string, string, error) {
-	codeMap := make(map[string]string)
-	file, err := os.Open(filePath)
+// parseProtoMessages 提取 proto 文件中的所有 message 名称
+func parseProtoMessages(protoFilePath string) ([]string, error) {
+	file, err := os.Open(protoFilePath)
 	if err != nil {
-		return nil, "", fmt.Errorf("cannot open file %s: %v", filePath, err)
+		return nil, err
+	}
+	defer file.Close()
+
+	var messages []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(strings.TrimSpace(line), "message ") {
+			parts := strings.Fields(line)
+			if len(parts) > 1 {
+				messages = append(messages, parts[1])
+			}
+		}
+	}
+	return messages, scanner.Err()
+}
+
+// buildEventHandlerSignature 构建事件处理函数的定义签名
+func buildEventHandlerSignature(className, eventName string) string {
+	return fmt.Sprintf("void %s::%sHandler(const %s& event)\n", className, eventName, eventName)
+}
+
+// extractUserCodeBlocks 提取 .cpp 文件中每个事件处理函数的自定义代码区域
+func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[string]string, string, error) {
+	codeMap := make(map[string]string)
+
+	file, err := os.Open(cppPath)
+	if err != nil {
+		return nil, "", err
 	}
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	var (
-		firstCode       string
-		currentCode     string
-		currentMethod   string
-		inFirstBlock    bool
-		firstBlockFound bool
-		inMethodBlock   bool
+		globalCode    string
+		currentMethod string
+		currentCode   string
+		inGlobalCode  bool
+		inMethodCode  bool
+		globalHandled bool
 	)
 
 	for scanner.Scan() {
 		line := scanner.Text() + "\n"
 
-		if inFirstBlock {
-			firstCode += line
+		// 全局 yourCode 逻辑
+		if inGlobalCode {
+			globalCode += line
 			if strings.Contains(line, config.YourCodeEnd) {
-				inFirstBlock = false
+				inGlobalCode = false
 			}
 			continue
 		}
-
-		if !firstBlockFound && strings.Contains(line, config.YourCodeBegin) {
-			firstCode = line
-			inFirstBlock = true
-			firstBlockFound = true
+		if !globalHandled && strings.Contains(line, config.YourCodeBegin) {
+			globalCode = line
+			inGlobalCode = true
+			globalHandled = true
 			continue
 		}
 
+		// 事件处理函数代码提取
 		if currentMethod == "" {
-			for _, method := range methodSignatures {
-				if strings.Contains(line, method) {
-					currentMethod = method
+			for _, signature := range methodSignatures {
+				if strings.Contains(line, signature) {
+					currentMethod = signature
 					break
 				}
 			}
@@ -83,172 +110,121 @@ func extractUserCodeBlocks(filePath string, methodSignatures []string) (map[stri
 
 		if currentMethod != "" {
 			if strings.Contains(line, config.YourCodeBegin) {
-				inMethodBlock = true
+				inMethodCode = true
 				currentCode += line
 			} else if strings.Contains(line, config.YourCodeEnd) {
 				currentCode += line
 				codeMap[currentMethod] = currentCode
 				currentMethod = ""
 				currentCode = ""
-				inMethodBlock = false
-			} else if inMethodBlock {
+				inMethodCode = false
+			} else if inMethodCode {
 				currentCode += line
 			}
 		}
 	}
 
-	if firstCode == "" {
-		firstCode = config.YourCodePair
+	if globalCode == "" {
+		globalCode = config.YourCodePair
 	}
 
-	for _, method := range methodSignatures {
-		if _, exists := codeMap[method]; !exists {
-			codeMap[method] = config.YourCodePair
+	// 补充未找到的函数
+	for _, signature := range methodSignatures {
+		if _, exists := codeMap[signature]; !exists {
+			codeMap[signature] = config.YourCodePair
 		}
 	}
-
-	return codeMap, firstCode, nil
+	return codeMap, globalCode, scanner.Err()
 }
 
-func buildEventHandlerSignature(className string, eventName string) string {
-	return "void " + className + "::" + eventName + "Handler(const " + eventName + "& event)\n"
-}
+// generateEventHandlerFiles 为每个 proto 文件生成事件处理代码
+func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
+	defer util.Wg.Done()
 
-func generateEventHandlerFiles(protoFile os.DirEntry, dstDir string) {
-	util.Wg.Done()
-
-	var eventMessages []string
-	{
-		f, err := os.Open(config.ProtoDirs[config.EventProtoDirIndex] + protoFile.Name())
-		if err != nil {
-			return
-		}
-		defer f.Close()
-		scanner := bufio.NewScanner(f)
-		var line string
-		for scanner.Scan() {
-			line = scanner.Text()
-			if !strings.Contains(line, "message") {
-				continue
-			}
-			eventMessage := strings.Split(line, " ")[1]
-			eventMessage = strings.Replace(eventMessage, "\n", "", -1)
-			eventMessages = append(eventMessages, eventMessage)
-		}
-	}
-
-	dataHead := "#pragma once\n\n"
-
-	className := generateClassNameFromFile(protoFile, config.ClassNameSuffix)
-
-	var eventHandlerSignatures []string
-
-	var classDeclareHeader string
-	var registerFunctionBody string
-	var unregisterFunctionBody string
-	var handlerFunction string
-	for _, eventName := range eventMessages {
-		classDeclareHeader += "class " + eventName + ";\n"
-		handlerFunction += config.Tab + "static void " + eventName + "Handler(const " + eventName + "& event);\n"
-		registerFunctionBody += config.Tab + "tls.dispatcher.sink<" + eventName + ">().connect<&" +
-			className + "::" + eventName + "Handler>();\n"
-		unregisterFunctionBody += config.Tab + "tls.dispatcher.sink<" + eventName + ">().disconnect<&" +
-			className + "::" + eventName + "Handler>();\n"
-
-		eventHandlerSignatures = append(eventHandlerSignatures, buildEventHandlerSignature(className, eventName))
-	}
-
-	dataHead += classDeclareHeader + "\n"
-	dataHead += "class " + className + "\n"
-	dataHead += "{\npublic:\n"
-	dataHead += config.Tab + "static void Register();\n"
-	dataHead += config.Tab + "static void UnRegister();\n\n"
-	dataHead += handlerFunction
-	dataHead += "};\n"
-
-	baseName := filepath.Base(strings.ToLower(protoFile.Name()))
-	fileName := strings.Replace(dstDir+strings.ToLower(protoFile.Name()), config.ProtoEx, "", -1)
-	headerFilePath := fileName + config.HandlerHeaderExtension
-	cppFilePath := fileName + config.HandlerCppExtension
-
-	util.WriteMd5Data2File(headerFilePath, dataHead)
-
-	cppContent := config.IncludeBegin + filepath.Base(headerFilePath) + config.IncludeEndLine +
-		config.IncludeBegin + config.ProtoDirName + config.ProtoDirectoryNames[config.EventProtoDirIndex] +
-		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine +
-		"#include \"thread_local/storage.h\"\n"
-
-	userCodeBlocks, firstCode, err := extractUserCodeBlocks(cppFilePath, eventHandlerSignatures)
+	protoFilePath := config.ProtoDirs[config.EventProtoDirIndex] + file.Name()
+	messages, err := parseProtoMessages(protoFilePath)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	if firstCode != "" {
-		cppContent += firstCode
-	}
-
-	cppContent += "void " + className + "::Register()\n" +
-		"{\n" + registerFunctionBody + "}\n\n"
-	cppContent += "void " + className + "::UnRegister()\n" +
-		"{\n" + unregisterFunctionBody + "}\n\n"
-
-	for _, eventName := range eventMessages {
-		// 如果该方法有对应的 yourCode
-		eventHandlerFunctionName := buildEventHandlerSignature(className, eventName)
-		if code, exists := userCodeBlocks[eventHandlerFunctionName]; exists {
-			cppContent += eventHandlerFunctionName
-			cppContent += "{\n"
-			cppContent += code
-			cppContent += "}\n\n"
-		} else {
-			cppContent += eventHandlerFunctionName
-			cppContent += "{\n"
-			cppContent += config.YourCodePair
-			cppContent += "}\n\n"
-		}
-	}
-	util.WriteMd5Data2File(cppFilePath, cppContent)
-}
-
-func GenerateAllEventHandlers() {
-	fds, err := os.ReadDir(config.ProtoDirs[config.EventProtoDirIndex])
-	if err != nil {
-		log.Fatal(err)
+		log.Printf("Failed to parse proto: %v\n", err)
 		return
 	}
 
-	var cppIncludeData string
-	var registerData string
-	var unRegisterData string
-	for _, protoFile := range fds {
-		if !util.IsProtoFile(protoFile) {
+	className := generateClassNameFromFile(file, config.ClassNameSuffix)
+	baseName := strings.ToLower(strings.TrimSuffix(file.Name(), config.ProtoEx))
+	filePathPrefix := outputDir + baseName
+	headerFile := filePathPrefix + config.HandlerHeaderExtension
+	cppFile := filePathPrefix + config.HandlerCppExtension
+
+	// 构建函数签名列表
+	var handlerSignatures []string
+	for _, msg := range messages {
+		handlerSignatures = append(handlerSignatures, buildEventHandlerSignature(className, msg))
+	}
+
+	// 提取已存在的用户代码
+	userCodeBlocks, globalUserCode, _ := extractUserCodeBlocks(cppFile, handlerSignatures)
+
+	// 生成 header 内容
+	var headerBuilder strings.Builder
+	headerBuilder.WriteString("#pragma once\n\n")
+	for _, msg := range messages {
+		headerBuilder.WriteString("class " + msg + ";\n")
+	}
+	headerBuilder.WriteString(fmt.Sprintf("\nclass %s\n{\npublic:\n", className))
+	headerBuilder.WriteString(config.Tab + "static void Register();\n")
+	headerBuilder.WriteString(config.Tab + "static void UnRegister();\n")
+	for _, msg := range messages {
+		headerBuilder.WriteString(config.Tab + fmt.Sprintf("static void %sHandler(const %s& event);\n", msg, msg))
+	}
+	headerBuilder.WriteString("};\n")
+	util.WriteMd5Data2File(headerFile, headerBuilder.String())
+
+	// 生成 cpp 内容
+	var cppBuilder strings.Builder
+	cppBuilder.WriteString(fmt.Sprintf("#include \"%s\"\n", filepath.Base(headerFile)))
+	cppBuilder.WriteString(fmt.Sprintf("#include \"%s%s%s\"\n", config.ProtoDirName, config.ProtoDirectoryNames[config.EventProtoDirIndex], strings.Replace(file.Name(), config.ProtoEx, config.ProtoPbhEx, 1)))
+	cppBuilder.WriteString("#include \"thread_local/storage.h\"\n")
+
+	if globalUserCode != "" {
+		cppBuilder.WriteString(globalUserCode)
+	}
+
+	// Register/Unregister 函数体
+	cppBuilder.WriteString(fmt.Sprintf("void %s::Register()\n{\n", className))
+	for _, msg := range messages {
+		cppBuilder.WriteString(config.Tab + fmt.Sprintf("tls.dispatcher.sink<%s>().connect<&%s::%sHandler>();\n", msg, className, msg))
+	}
+	cppBuilder.WriteString("}\n\n")
+
+	cppBuilder.WriteString(fmt.Sprintf("void %s::UnRegister()\n{\n", className))
+	for _, msg := range messages {
+		cppBuilder.WriteString(config.Tab + fmt.Sprintf("tls.dispatcher.sink<%s>().disconnect<&%s::%sHandler>();\n", msg, className, msg))
+	}
+	cppBuilder.WriteString("}\n\n")
+
+	// 写入事件处理函数定义
+	for _, msg := range messages {
+		signature := buildEventHandlerSignature(className, msg)
+		cppBuilder.WriteString(signature + "{\n")
+		cppBuilder.WriteString(userCodeBlocks[signature])
+		cppBuilder.WriteString("}\n\n")
+	}
+
+	util.WriteMd5Data2File(cppFile, cppBuilder.String())
+}
+
+// generateAllEventHandlers 生成所有事件处理器
+func GenerateAllEventHandlers() {
+	files, err := os.ReadDir(config.ProtoDirs[config.EventProtoDirIndex])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range files {
+		if !util.IsProtoFile(file) {
 			continue
 		}
 		util.Wg.Add(2)
-		go generateEventHandlerFiles(protoFile, config.GameNodeEventHandlerDirectory)
-		go generateEventHandlerFiles(protoFile, config.CentreNodeEventHandlerDirectory)
-		cppIncludeData += config.IncludeBegin +
-			strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), config.ProtoEx, config.HandlerHeaderExtension, 1) +
-			config.IncludeEndLine
-		registerData += generateClassNameFromFile(protoFile, config.ClassNameSuffix) + "::Register();\n"
-		unRegisterData += generateClassNameFromFile(protoFile, config.ClassNameSuffix) + "::UnRegister();\n"
+		go generateEventHandlerFiles(file, config.GameNodeEventHandlerDirectory)
+		go generateEventHandlerFiles(file, config.CentreNodeEventHandlerDirectory)
 	}
-	eventHeadData := "#pragma once\n\n"
-	eventHeadData += "class EventHandler\n{\npublic:\n"
-	eventHeadData += "static void Register();\n"
-	eventHeadData += "static void UnRegister();\n"
-	eventHeadData += "};\n"
-	util.WriteMd5Data2File(config.GameNodeEventHandlerDirectory+config.EventHandlerHeaderFileName, eventHeadData)
-	util.WriteMd5Data2File(config.CentreNodeEventHandlerDirectory+config.EventHandlerHeaderFileName, eventHeadData)
-
-	eventCppData := config.IncludeBegin + config.EventHandlerHeaderFileName + config.IncludeEndLine
-	eventCppData += cppIncludeData
-	eventCppData += "void EventHandler::Register()\n{\n"
-	eventCppData += registerData
-	eventCppData += "}\n"
-	eventCppData += "void EventHandler::UnRegister()\n{\n"
-	eventCppData += unRegisterData
-	eventCppData += "}\n"
-	util.WriteMd5Data2File(config.GameNodeEventHandlerDirectory+config.EventHandlerCppFileName, eventCppData)
-	util.WriteMd5Data2File(config.CentreNodeEventHandlerDirectory+config.EventHandlerCppFileName, eventCppData)
 }
