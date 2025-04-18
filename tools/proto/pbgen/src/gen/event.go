@@ -220,19 +220,18 @@ func GenerateAllEventHandlers() {
 	var cppIncludeData string
 	var registerData string
 	var unRegisterData string
-	for _, fd := range fds {
-		if !util.IsProtoFile(fd) {
+	for _, protoFile := range fds {
+		if !util.IsProtoFile(protoFile) {
 			continue
 		}
-		util.Wg.Add(1)
-		generateEventHandlerFiles(fd, config.GameNodeEventHandlerDirectory)
-		util.Wg.Add(1)
-		generateEventHandlerFiles(fd, config.CentreNodeEventHandlerDirectory)
+		util.Wg.Add(2)
+		go generateEventHandlerFiles(protoFile, config.GameNodeEventHandlerDirectory)
+		go generateEventHandlerFiles(protoFile, config.CentreNodeEventHandlerDirectory)
 		cppIncludeData += config.IncludeBegin +
-			strings.Replace(filepath.Base(strings.ToLower(fd.Name())), config.ProtoEx, config.HandlerHeaderExtension, 1) +
+			strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), config.ProtoEx, config.HandlerHeaderExtension, 1) +
 			config.IncludeEndLine
-		registerData += generateClassNameFromFile(fd, config.ClassNameSuffix) + "::Register();\n"
-		unRegisterData += generateClassNameFromFile(fd, config.ClassNameSuffix) + "::UnRegister();\n"
+		registerData += generateClassNameFromFile(protoFile, config.ClassNameSuffix) + "::Register();\n"
+		unRegisterData += generateClassNameFromFile(protoFile, config.ClassNameSuffix) + "::UnRegister();\n"
 	}
 	eventHeadData := "#pragma once\n\n"
 	eventHeadData += "class EventHandler\n{\npublic:\n"
