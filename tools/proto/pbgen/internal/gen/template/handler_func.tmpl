@@ -1,0 +1,9 @@
+{{- define "handler_func" -}}
+void {{.ClassName}}::{{.Method}}({{.ControllerType}} ctrl,
+const {{.RequestType}}* request,
+{{.ResponseType}}* response,
+::google::protobuf::Closure* done)
+{
+{{.UserCode}}
+}
+{{- end -}}

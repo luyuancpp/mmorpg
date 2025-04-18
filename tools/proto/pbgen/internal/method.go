@@ -10,57 +10,94 @@ import (
 	"strings"
 )
 
+import (
+	"text/template"
+)
+
+// 用于填充模板的数据结构
+type HandlerFuncData struct {
+	ClassName      string
+	Method         string
+	ControllerType string
+	RequestType    string
+	ResponseType   string
+	UserCode       string
+}
+
+// 加载模板并应用
+func generateHandlerFunc(outputPath string, method *RPCMethod, userCode string) error {
+	// 加载模板文件
+	tmpl, err := template.ParseFiles("templates/handler_func.tmpl")
+	if err != nil {
+		return err
+	}
+
+	// 准备模板数据
+	data := HandlerFuncData{
+		ClassName:      method.Service() + config.HandlerFileName,
+		Method:         method.Method(),
+		ControllerType: config.GoogleMethodController,
+		RequestType:    method.CppRequest(),
+		ResponseType:   method.CppResponse(),
+		UserCode:       userCode,
+	}
+
+	// 创建输出文件
+	file, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// 执行模板
+	return tmpl.ExecuteTemplate(file, "handler_func", data)
+}
+
 // Type definitions for callback functions
-type checkRepliedCb func(methodList *RPCMethods) bool
+type checkRepliedCb func(methods *RPCMethods) bool
 
 // Function to write the header file for service ID
-func writeServiceIdHeadFile(methodList RPCMethods) {
+func writeServiceIdHeadFile(methods RPCMethods) {
 	defer util.Wg.Done()
 
-	if len(methodList) <= 0 {
+	if len(methods) <= 0 {
 		return
 	}
 
-	firstMethod := methodList[0]
+	firstMethod := methods[0]
 
 	if !firstMethod.CcGenericServices() {
 		return
 	}
 
-	var data strings.Builder
-	data.WriteString("#pragma once\n#include <cstdint>\n\n")
-	data.WriteString(methodList[0].IncludeName() + "\n")
-
-	for _, method := range methodList {
-		data.WriteString(getServiceIdDefinitions(method))
-		data.WriteString("\n")
-	}
-
-	fileName := methodList[0].FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension
-	util.WriteMd5Data2File(config.ServiceInfoDirectory+fileName, data.String())
+	fileName := methods[0].FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension
+	util.WriteMd5Data2File(config.ServiceInfoDirectory+fileName, GenServiceIdHeader(methods))
 }
 
-// Helper function to generate service ID definitions
-func getServiceIdDefinitions(method *RPCMethod) string {
-	var data strings.Builder
+func GenServiceIdHeader(methods RPCMethods) string {
+	if len(methods) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("#pragma once\n#include <cstdint>\n\n")
+	b.WriteString(methods[0].IncludeName() + "\n")
 
-	data.WriteString("constexpr uint32_t " + method.KeyName() + config.MessageIdName + " = " + strconv.FormatUint(method.Id, 10) + ";\n")
-	data.WriteString("constexpr uint32_t " + method.KeyName() + "Index = " + strconv.FormatUint(method.Index, 10) + ";\n")
-
-	data.WriteString("#define " + method.KeyName() + "Method  ::" + method.Service() + "_Stub::descriptor()->method(" +
-		strconv.FormatUint(method.Index, 10) + ")\n")
-
-	return data.String()
+	for _, method := range methods {
+		b.WriteString(fmt.Sprintf("constexpr uint32_t %s%s = %d;\n", method.KeyName(), config.MessageIdName, method.Id))
+		b.WriteString(fmt.Sprintf("constexpr uint32_t %sIndex = %d;\n", method.KeyName(), method.Index))
+		b.WriteString(fmt.Sprintf("#define %sMethod  ::%s_Stub::descriptor()->method(%d)\n\n", method.KeyName(), method.Service, method.Index))
+	}
+	return b.String()
 }
 
 // Function to get the header string for service handlers
-func getServiceHandlerHeadStr(methodList RPCMethods) string {
+func getServiceHandlerHeadStr(methods RPCMethods) string {
 	var data strings.Builder
 	data.WriteString("#pragma once\n")
-	data.WriteString(methodList[0].IncludeName())
-	data.WriteString("class " + methodList[0].Service() + "Handler : public ::" + methodList[0].Service() + "\n{\npublic:\n")
+	data.WriteString(methods[0].IncludeName())
+	data.WriteString("class " + methods[0].Service() + "Handler : public ::" + methods[0].Service() + "\n{\npublic:\n")
 
-	for _, method := range methodList {
+	for _, method := range methods {
 		data.WriteString(getServiceHandlerMethodStr(method))
 		data.WriteString("\n")
 	}
@@ -82,27 +119,27 @@ func getServiceHandlerMethodStr(method *RPCMethod) string {
 }
 
 // Function to get the header string for player method handlers
-func getPlayerMethodHeadStr(methodList RPCMethods) string {
+func getPlayerMethodHeadStr(methods RPCMethods) string {
 	var data strings.Builder
 	data.WriteString("#pragma once\n")
-	data.WriteString(methodList[0].IncludeName())
+	data.WriteString(methods[0].IncludeName())
 	data.WriteString(config.PlayerServiceIncludeName)
 	data.WriteString(config.MacroReturnIncludeName)
-	data.WriteString("\nclass " + methodList[0].Service() + config.HandlerFileName + " : public ::PlayerService" + "\n{\npublic:\n")
+	data.WriteString("\nclass " + methods[0].Service() + config.HandlerFileName + " : public ::PlayerService" + "\n{\npublic:\n")
 	data.WriteString(config.Tab + "using PlayerService::PlayerService;\n")
 
-	data.WriteString(getPlayerMethodHandlerFunctions(methodList))
+	data.WriteString(getPlayerMethodHandlerFunctions(methods))
 	data.WriteString("\n};\n")
 
 	return data.String()
 }
 
 // Helper function to generate method handler functions for player methods
-func getPlayerMethodHandlerFunctions(methodList RPCMethods) string {
+func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
 	var data strings.Builder
 	var callFunctionList strings.Builder
 
-	for i, method := range methodList {
+	for i, method := range methods {
 		data.WriteString(config.Tab + "static void " + method.Method() + "(" + config.PlayerMethodController + "\n")
 		data.WriteString(config.Tab2 + "const " + method.CppRequest() + "* request,\n")
 		data.WriteString(config.Tab2 + method.CppResponse() + "* response);\n\n")
@@ -136,26 +173,26 @@ func getPlayerMethodHandlerFunctions(methodList RPCMethods) string {
 }
 
 // Function to get the header string for player method replied handlers
-func getPlayerMethodRepliedHeadStr(methodList RPCMethods) string {
+func getPlayerMethodRepliedHeadStr(methods RPCMethods) string {
 	var data strings.Builder
 	data.WriteString("#pragma once\n")
-	data.WriteString(methodList[0].IncludeName())
+	data.WriteString(methods[0].IncludeName())
 	data.WriteString(config.PlayerServiceRepliedIncludeName)
-	data.WriteString("\nclass " + methodList[0].Service() + config.RepliedHandlerFileName + " : public ::PlayerServiceReplied" + "\n{\npublic:\n")
+	data.WriteString("\nclass " + methods[0].Service() + config.RepliedHandlerFileName + " : public ::PlayerServiceReplied" + "\n{\npublic:\n")
 	data.WriteString(config.Tab + "using PlayerServiceReplied::PlayerServiceReplied;\n")
 
-	data.WriteString(getPlayerMethodRepliedHandlerFunctions(methodList))
+	data.WriteString(getPlayerMethodRepliedHandlerFunctions(methods))
 	data.WriteString("\n};\n")
 
 	return data.String()
 }
 
 // Helper function to generate method replied handler functions for player methods
-func getPlayerMethodRepliedHandlerFunctions(methodList RPCMethods) string {
+func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
 	var data strings.Builder
 	var callFunctionList strings.Builder
 
-	for i, method := range methodList {
+	for i, method := range methods {
 		data.WriteString(config.Tab + "static void " + method.Method() + "(" + config.PlayerMethodController + "\n")
 		data.WriteString(config.Tab2 + "const " + method.CppRequest() + "* request,\n")
 		data.WriteString(config.Tab2 + method.CppResponse() + "* response);\n\n")
@@ -183,14 +220,14 @@ func getPlayerMethodRepliedHandlerFunctions(methodList RPCMethods) string {
 	return data.String()
 }
 
-func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) string {
+func getMethodRepliedHandlerHeadStr(methods *RPCMethods) string {
 	// Ensure there are methods in the list
-	if len(*methodList) == 0 {
+	if len(*methods) == 0 {
 		return ""
 	}
 
 	var data strings.Builder
-	firstMethodInfo := (*methodList)[0]
+	firstMethodInfo := (*methods)[0]
 
 	// Start with pragma once and include the first method's specific include if available
 	data.WriteString("#pragma once\n")
@@ -200,7 +237,7 @@ func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) string {
 	data.WriteString("using namespace muduo::net;\n\n")
 
 	// Generate handler function declarations for each method
-	for _, methodInfo := range *methodList {
+	for _, methodInfo := range *methods {
 		handlerDeclaration := fmt.Sprintf("void On%s%s(const TcpConnectionPtr& conn, const std::shared_ptr<%s>& replied, Timestamp timestamp);\n\n",
 			methodInfo.KeyName(), config.RepliedHandlerFileName, methodInfo.CppResponse())
 		data.WriteString(handlerDeclaration)
@@ -210,7 +247,7 @@ func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) string {
 }
 
 // ReadCodeSectionsFromFile 函数接收一个函数作为参数，动态选择 A 或 B 方法
-func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods, methodFunc func(info *RPCMethod, funcParam string) string, funcParam string) (map[string]string, string, error) {
+func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFunc func(info *RPCMethod, funcParam string) string, funcParam string) (map[string]string, string, error) {
 	// 创建一个 map 来存储每个 RPCMethod 的 name 和对应的 yourCode
 	codeMap := make(map[string]string)
 
@@ -255,7 +292,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods, method
 
 		if nil == currentMethod {
 			// 如果是方法的开始行，检查是否是我们关心的 RPCMethod 名称
-			for _, method := range *methodList {
+			for _, method := range *methods {
 				handlerName := methodFunc(method, funcParam)
 				if strings.Contains(line, handlerName) {
 					currentMethod = method
@@ -289,7 +326,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methodList *RPCMethods, method
 	}
 
 	// 检查是否有方法没有找到对应的 yourCode，如果没有找到，则添加默认值
-	for _, method := range *methodList {
+	for _, method := range *methods {
 		handlerName := methodFunc(method, funcParam)
 		if _, exists := codeMap[handlerName]; !exists {
 			codeMap[handlerName] = config.YourCodePair
@@ -311,19 +348,19 @@ func GenerateMethodHandlerKeyNameWrapper(info *RPCMethod, _ string) string {
 	return "On" + info.KeyName() + config.RepliedHandlerFileName
 }
 
-func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
+func getMethodHandlerCppStr(dst string, methods *RPCMethods) string {
 	// 确保方法列表非空
-	if len(*methodList) == 0 {
+	if len(*methods) == 0 {
 		return ""
 	}
 
 	ex := ""
 
 	// 读取代码块
-	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methodList, GenerateMethodHandlerNameWrapper, ex)
+	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methods, GenerateMethodHandlerNameWrapper, ex)
 
 	var data strings.Builder
-	firstMethodInfo := (*methodList)[0]
+	firstMethodInfo := (*methods)[0]
 
 	// 写入 C++ 处理函数的头部
 	data.WriteString(firstMethodInfo.CppHandlerIncludeName())
@@ -333,8 +370,8 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 		data.WriteString(firstCode)
 	}
 
-	// 遍历 methodList，构建每个方法的处理函数
-	for _, methodInfo := range *methodList {
+	// 遍历 methods，构建每个方法的处理函数
+	for _, methodInfo := range *methods {
 		// 如果该方法有对应的 yourCode
 		if code, exists := yourCodesMap[GenerateMethodHandlerNameWrapper(methodInfo, ex)]; exists {
 			data.WriteString(fmt.Sprintf("void %s%sconst %s* request,\n",
@@ -352,19 +389,19 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 	return data.String()
 }
 
-func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
+func getMethodRepliedHandlerCppStr(dst string, methods *RPCMethods) string {
 	// Ensure there are methods in the list
-	if len(*methodList) == 0 {
+	if len(*methods) == 0 {
 		return ""
 	}
 
 	emtpyString := ""
 
 	// Read code sections from file (returns a map with method name as key and code as value)
-	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methodList, GenerateMethodHandlerKeyNameWrapper, emtpyString)
+	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methods, GenerateMethodHandlerKeyNameWrapper, emtpyString)
 
 	var data strings.Builder
-	firstMethodInfo := (*methodList)[0]
+	firstMethodInfo := (*methods)[0]
 
 	// Start with the C++ replied handler include specific to the first method
 	data.WriteString(firstMethodInfo.CppRepliedHandlerIncludeName())
@@ -380,8 +417,8 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 
 	var declarationData, implData strings.Builder
 
-	// Iterate through methodList and construct the handler registration and implementation
-	for _, methodInfo := range *methodList {
+	// Iterate through methods and construct the handler registration and implementation
+	for _, methodInfo := range *methods {
 		// Check if there's code available for the current method
 		if code, exists := yourCodesMap[GenerateMethodHandlerKeyNameWrapper(methodInfo, emtpyString)]; exists {
 			// Construct function name for the handler
@@ -415,14 +452,14 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 	return data.String()
 }
 
-func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className string, includeName string) string {
+func getMethodPlayerHandlerCppStr(dst string, methods *RPCMethods, className string, includeName string) string {
 	// Ensure there are methods in the list
-	if len(*methodList) == 0 {
+	if len(*methods) == 0 {
 		return includeName // Return the includeName if no methods are provided
 	}
 
 	// Read code sections from file (returns a map with method name as key and code as value)
-	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methodList, GenerateMethodHandlerNameWithClassPrefixWrapper, className)
+	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methods, GenerateMethodHandlerNameWithClassPrefixWrapper, className)
 
 	var data strings.Builder
 
@@ -434,8 +471,8 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className 
 		data.WriteString(firstCode)
 	}
 
-	// Iterate through methodList and construct handler functions for each method
-	for _, methodInfo := range *methodList {
+	// Iterate through methods and construct handler functions for each method
+	for _, methodInfo := range *methods {
 		// Check if there's code available for the current method
 		if code, exists := yourCodesMap[GenerateMethodHandlerNameWithClassPrefixWrapper(methodInfo, className)]; exists {
 			// Append method handler function definition
@@ -461,14 +498,14 @@ func writeRegisterFile(dst string, cb checkRepliedCb) {
 
 	ServiceList := GetSortServiceList()
 	for _, key := range ServiceList {
-		methodList, ok := ServiceMethodMap[key]
+		methods, ok := ServiceMethodMap[key]
 		if !ok {
 			continue
 		}
-		if !cb(&methodList) {
+		if !cb(&methods) {
 			continue
 		}
-		firstMethodInfo := methodList[0]
+		firstMethodInfo := methods[0]
 
 		// Append C++ handler include specific to the first method
 		data.WriteString(firstMethodInfo.CppHandlerIncludeName())
@@ -498,14 +535,14 @@ func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
 
 	ServiceList := GetSortServiceList()
 	for _, key := range ServiceList {
-		methodList, ok := ServiceMethodMap[key]
+		methods, ok := ServiceMethodMap[key]
 		if !ok {
 			continue
 		}
-		if !cb(&methodList) {
+		if !cb(&methods) {
 			continue
 		}
-		firstMethodInfo := methodList[0]
+		firstMethodInfo := methods[0]
 
 		// Append the initialization function declaration
 		initFunctionName := "Init" + firstMethodInfo.KeyName() + config.RepliedHandlerFileName
@@ -523,12 +560,12 @@ func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
 }
 
 // / game server
-func isGsMethodHandler(methodList *RPCMethods) bool {
-	if len(*methodList) == 0 {
+func isGsMethodHandler(methods *RPCMethods) bool {
+	if len(*methods) == 0 {
 		return false
 	}
 
-	firstMethodInfo := (*methodList)[0]
+	firstMethodInfo := (*methods)[0]
 
 	isCommonOrLogicProto := strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
 		strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.LogicProtoDirIndex])
@@ -543,12 +580,12 @@ func isGsMethodHandler(methodList *RPCMethods) bool {
 	return isCommonOrLogicProto && hasGsPrefix
 }
 
-func isGsPlayerHandler(methodList *RPCMethods) bool {
-	if len(*methodList) <= 0 {
+func isGsPlayerHandler(methods *RPCMethods) bool {
+	if len(*methods) <= 0 {
 		return false
 	}
 
-	firstMethodInfo := (*methodList)[0]
+	firstMethodInfo := (*methods)[0]
 
 	// Check if the method belongs to a player service
 	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
