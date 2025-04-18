@@ -827,12 +827,33 @@ void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* re
 }
 
 func GenRegisterFile(dst string, cb checkRepliedCb) {
+
+	const registerFileTemplate = `
+{{- range .Includes }}
+{{ . }}
+{{ end }}
+
+std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
+
+void InitServiceHandler()
+{
+{{- range .InitLines }}
+{{ . }}
+{{ end }}
+}
+`
+	type RegisterFileData struct {
+		Includes  []string
+		InitLines []string
+	}
+
 	defer util.Wg.Done()
 
-	var data strings.Builder
-	var instanceData strings.Builder
-
 	ServiceList := GetSortServiceList()
+
+	var includes []string
+	var initLines []string
+
 	for _, key := range ServiceList {
 		methods, ok := ServiceMethodMap[key]
 		if !ok {
@@ -841,24 +862,29 @@ func GenRegisterFile(dst string, cb checkRepliedCb) {
 		if !cb(&methods) {
 			continue
 		}
-		firstMethodInfo := methods[0]
 
-		// Append C++ handler include specific to the first method
-		data.WriteString(firstMethodInfo.CppHandlerIncludeName())
-
-		// Append instance creation for the service handler
-		instanceData.WriteString(fmt.Sprintf("%sgNodeService.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());\n",
-			config.Tab, firstMethodInfo.Service(), firstMethodInfo.Service(), config.HandlerFileName))
+		first := methods[0]
+		includes = append(includes, first.CppHandlerIncludeName())
+		initLines = append(initLines, fmt.Sprintf("%sgNodeService.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());",
+			config.Tab, first.Service(), first.Service(), config.HandlerFileName))
 	}
 
-	// Finalize the data string with the unordered_map declaration and initialization function
-	data.WriteString("\nstd::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;\n\n")
-	data.WriteString("void InitServiceHandler()\n{\n")
-	data.WriteString(instanceData.String())
-	data.WriteString("}")
+	templateData := RegisterFileData{
+		Includes:  includes,
+		InitLines: initLines,
+	}
 
-	// Write the generated data to the destination file using util.WriteMd5Data2File
-	util.WriteMd5Data2File(dst, data.String())
+	tmpl, err := template.New("registerFile").Parse(registerFileTemplate)
+	if err != nil {
+		panic(err)
+	}
+
+	var output bytes.Buffer
+	if err := tmpl.Execute(&output, templateData); err != nil {
+		panic(err)
+	}
+
+	util.WriteMd5Data2File(dst, output.String())
 }
 
 func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
