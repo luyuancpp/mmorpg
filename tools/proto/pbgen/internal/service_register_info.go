@@ -472,7 +472,7 @@ func WriteServiceRegisterInfoFile() {
 	util.Wg.Add(1)
 	go writeServiceInfoHeadFile()
 	util.Wg.Add(1)
-	go writePlayerServiceInstanceFiles("instance", isGsPlayerHandler, config.GameNodePlayerMethodHandlerDirectory, config.PlayerServiceName)
+	go writePlayerServiceInstanceFiles("instance", IsGsPlayerHandler, config.GameNodePlayerMethodHandlerDirectory, config.PlayerServiceName)
 	util.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("instance", isCentrePlayerHandler, config.CentreNodePlayerMethodHandlerDirectory, config.PlayerServiceName)
 	util.Wg.Add(1)

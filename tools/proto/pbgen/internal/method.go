@@ -10,49 +10,6 @@ import (
 	"strings"
 )
 
-import (
-	"text/template"
-)
-
-// 用于填充模板的数据结构
-type HandlerFuncData struct {
-	ClassName      string
-	Method         string
-	ControllerType string
-	RequestType    string
-	ResponseType   string
-	UserCode       string
-}
-
-// 加载模板并应用
-func generateHandlerFunc(outputPath string, method *RPCMethod, userCode string) error {
-	// 加载模板文件
-	tmpl, err := template.ParseFiles("templates/handler_func.tmpl")
-	if err != nil {
-		return err
-	}
-
-	// 准备模板数据
-	data := HandlerFuncData{
-		ClassName:      method.Service() + config.HandlerFileName,
-		Method:         method.Method(),
-		ControllerType: config.GoogleMethodController,
-		RequestType:    method.CppRequest(),
-		ResponseType:   method.CppResponse(),
-		UserCode:       userCode,
-	}
-
-	// 创建输出文件
-	file, err := os.Create(outputPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// 执行模板
-	return tmpl.ExecuteTemplate(file, "handler_func", data)
-}
-
 // Type definitions for callback functions
 type checkRepliedCb func(methods *RPCMethods) bool
 
@@ -85,7 +42,7 @@ func GenServiceIdHeader(methods RPCMethods) string {
 	for _, method := range methods {
 		b.WriteString(fmt.Sprintf("constexpr uint32_t %s%s = %d;\n", method.KeyName(), config.MessageIdName, method.Id))
 		b.WriteString(fmt.Sprintf("constexpr uint32_t %sIndex = %d;\n", method.KeyName(), method.Index))
-		b.WriteString(fmt.Sprintf("#define %sMethod  ::%s_Stub::descriptor()->method(%d)\n\n", method.KeyName(), method.Service, method.Index))
+		b.WriteString(fmt.Sprintf("#define %sMethod  ::%s_Stub::descriptor()->method(%d)\n\n", method.KeyName(), method.Service(), method.Index))
 	}
 	return b.String()
 }
@@ -490,7 +447,7 @@ func getMethodPlayerHandlerCppStr(dst string, methods *RPCMethods, className str
 	return data.String()
 }
 
-func writeRegisterFile(dst string, cb checkRepliedCb) {
+func GenRegisterFile(dst string, cb checkRepliedCb) {
 	defer util.Wg.Done()
 
 	var data strings.Builder
@@ -559,49 +516,6 @@ func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
 	util.WriteMd5Data2File(dst, data.String())
 }
 
-// / game server
-func isGsMethodHandler(methods *RPCMethods) bool {
-	if len(*methods) == 0 {
-		return false
-	}
-
-	firstMethodInfo := (*methods)[0]
-
-	isCommonOrLogicProto := strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.LogicProtoDirIndex])
-
-	if strings.Contains(firstMethodInfo.Path(), config.PlayerName) ||
-		strings.Contains(firstMethodInfo.FileNameNoEx(), config.PlayerName) {
-		return false
-	}
-
-	hasGsPrefix := strings.HasPrefix(firstMethodInfo.FileNameNoEx(), config.GameNodePrefixName)
-
-	return isCommonOrLogicProto && hasGsPrefix
-}
-
-func isGsPlayerHandler(methods *RPCMethods) bool {
-	if len(*methods) <= 0 {
-		return false
-	}
-
-	firstMethodInfo := (*methods)[0]
-
-	// Check if the method belongs to a player service
-	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
-		return true
-	}
-
-	// Check if the file base name contains player name and does not contain centre prefix
-	fileBaseName := firstMethodInfo.FileNameNoEx()
-
-	if !strings.Contains(fileBaseName, config.GameNodePlayerPrefixName) {
-		return false
-	}
-
-	return true
-}
-
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
 		// Start concurrent operations for each service method
@@ -657,12 +571,12 @@ func WriteMethodFile() {
 
 	// Concurrent operations for game, centre, and gate registers
 	util.Wg.Add(1)
-	go writeRegisterFile(config.GameNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, isGsMethodHandler)
+	go GenRegisterFile(config.GameNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsGsMethodHandler)
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.GameNodeMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, isGsMethodRepliedHandler)
 
 	util.Wg.Add(1)
-	go writeRegisterFile(config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, isCentreMethodHandler)
+	go GenRegisterFile(config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, isCentreMethodHandler)
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, isCentreMethodRepliedHandler)
 
