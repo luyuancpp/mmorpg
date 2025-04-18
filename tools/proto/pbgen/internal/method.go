@@ -2,12 +2,14 @@ package internal
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"pbgen/config"
 	"pbgen/util"
 	"strconv"
 	"strings"
+	"text/template"
 )
 
 // Type definitions for callback functions
@@ -31,20 +33,50 @@ func writeServiceIdHeadFile(methods RPCMethods) {
 	util.WriteMd5Data2File(config.ServiceInfoDirectory+fileName, GenServiceIdHeader(methods))
 }
 
+// GenServiceIdHeader 使用模板生成服务 ID 头文件内容
 func GenServiceIdHeader(methods RPCMethods) string {
 	if len(methods) == 0 {
 		return ""
 	}
-	var b strings.Builder
-	b.WriteString("#pragma once\n#include <cstdint>\n\n")
-	b.WriteString(methods[0].IncludeName() + "\n")
 
-	for _, method := range methods {
-		b.WriteString(fmt.Sprintf("constexpr uint32_t %s%s = %d;\n", method.KeyName(), config.MessageIdName, method.Id))
-		b.WriteString(fmt.Sprintf("constexpr uint32_t %sIndex = %d;\n", method.KeyName(), method.Index))
-		b.WriteString(fmt.Sprintf("#define %sMethod  ::%s_Stub::descriptor()->method(%d)\n\n", method.KeyName(), method.Service(), method.Index))
+	// 创建模板内容
+	tmpl := `#pragma once
+#include <cstdint>
+
+{{.IncludeName}}
+
+{{range .Methods}}
+constexpr uint32_t {{.KeyName}}{{$.MessageIdName}} = {{.Id}};
+constexpr uint32_t {{.KeyName}}Index = {{.Index}};
+#define {{.KeyName}}Method  ::{{.Service}}_Stub::descriptor()->method({{.Index}})
+
+{{end}}
+`
+	// 创建模板并解析
+	t, err := template.New("serviceIdHeader").Parse(tmpl)
+	if err != nil {
+		panic(err) // 可以根据需求调整错误处理
 	}
-	return b.String()
+
+	// 使用模板填充数据
+	var buf bytes.Buffer
+	data := struct {
+		IncludeName   string
+		Methods       RPCMethods
+		MessageIdName string
+	}{
+		IncludeName:   methods[0].IncludeName(),
+		Methods:       methods,
+		MessageIdName: config.MessageIdName,
+	}
+
+	// 执行模板并写入 buffer
+	err = t.Execute(&buf, data)
+	if err != nil {
+		panic(err)
+	}
+
+	return buf.String()
 }
 
 // Function to get the header string for service handlers
