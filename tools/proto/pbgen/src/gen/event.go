@@ -141,12 +141,12 @@ func buildEventHandlerSignature(className string, eventName string) string {
 	return "void " + className + "::" + eventName + "Handler(const " + eventName + "& event)\n"
 }
 
-func generateEventHandlerFiles(fd os.DirEntry, dstDir string) {
+func generateEventHandlerFiles(protoFile os.DirEntry, dstDir string) {
 	util.Wg.Done()
 
-	var eventList []string
+	var eventMessages []string
 	{
-		f, err := os.Open(config.ProtoDirs[config.EventProtoDirIndex] + fd.Name())
+		f, err := os.Open(config.ProtoDirs[config.EventProtoDirIndex] + protoFile.Name())
 		if err != nil {
 			return
 		}
@@ -160,21 +160,21 @@ func generateEventHandlerFiles(fd os.DirEntry, dstDir string) {
 			}
 			eventMessage := strings.Split(line, " ")[1]
 			eventMessage = strings.Replace(eventMessage, "\n", "", -1)
-			eventList = append(eventList, eventMessage)
+			eventMessages = append(eventMessages, eventMessage)
 		}
 	}
 
 	dataHead := "#pragma once\n\n"
 
-	className := generateClassNameFromFile(fd, config.ClassNameSuffix)
+	className := generateClassNameFromFile(protoFile, config.ClassNameSuffix)
 
-	var eventKeyNameList []string
+	var eventHandlerSignatures []string
 
 	var classDeclareHeader string
 	var registerFunctionBody string
 	var unregisterFunctionBody string
 	var handlerFunction string
-	for _, eventName := range eventList {
+	for _, eventName := range eventMessages {
 		classDeclareHeader += "class " + eventName + ";\n"
 		handlerFunction += config.Tab + "static void " + eventName + "Handler(const " + eventName + "& event);\n"
 		registerFunctionBody += config.Tab + "tls.dispatcher.sink<" + eventName + ">().connect<&" +
@@ -182,7 +182,7 @@ func generateEventHandlerFiles(fd os.DirEntry, dstDir string) {
 		unregisterFunctionBody += config.Tab + "tls.dispatcher.sink<" + eventName + ">().disconnect<&" +
 			className + "::" + eventName + "Handler>();\n"
 
-		eventKeyNameList = append(eventKeyNameList, buildEventHandlerSignature(className, eventName))
+		eventHandlerSignatures = append(eventHandlerSignatures, buildEventHandlerSignature(className, eventName))
 	}
 
 	dataHead += classDeclareHeader + "\n"
@@ -193,19 +193,19 @@ func generateEventHandlerFiles(fd os.DirEntry, dstDir string) {
 	dataHead += handlerFunction
 	dataHead += "};\n"
 
-	baseName := filepath.Base(strings.ToLower(fd.Name()))
-	fileName := strings.Replace(dstDir+strings.ToLower(fd.Name()), config.ProtoEx, "", -1)
-	headerFileName := fileName + config.HandlerHeaderExtension
-	cppFileName := fileName + config.HandlerCppExtension
+	baseName := filepath.Base(strings.ToLower(protoFile.Name()))
+	fileName := strings.Replace(dstDir+strings.ToLower(protoFile.Name()), config.ProtoEx, "", -1)
+	headerFilePath := fileName + config.HandlerHeaderExtension
+	cppFilePath := fileName + config.HandlerCppExtension
 
-	util.WriteMd5Data2File(headerFileName, dataHead)
+	util.WriteMd5Data2File(headerFilePath, dataHead)
 
-	dataCpp := config.IncludeBegin + filepath.Base(headerFileName) + config.IncludeEndLine +
+	dataCpp := config.IncludeBegin + filepath.Base(headerFilePath) + config.IncludeEndLine +
 		config.IncludeBegin + config.ProtoDirName + config.ProtoDirectoryNames[config.EventProtoDirIndex] +
 		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine +
 		"#include \"thread_local/storage.h\"\n"
 
-	yourCodes, firstCode, err := extractUserCodeBlocks(cppFileName, eventKeyNameList)
+	userCodeBlocks, firstCode, err := extractUserCodeBlocks(cppFilePath, eventHandlerSignatures)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -219,10 +219,10 @@ func generateEventHandlerFiles(fd os.DirEntry, dstDir string) {
 	dataCpp += "void " + className + "::UnRegister()\n" +
 		"{\n" + unregisterFunctionBody + "}\n\n"
 
-	for _, eventName := range eventList {
+	for _, eventName := range eventMessages {
 		// 如果该方法有对应的 yourCode
 		eventHandlerFunctionName := buildEventHandlerSignature(className, eventName)
-		if code, exists := yourCodes[eventHandlerFunctionName]; exists {
+		if code, exists := userCodeBlocks[eventHandlerFunctionName]; exists {
 			dataCpp += eventHandlerFunctionName
 			dataCpp += "{\n"
 			dataCpp += code
@@ -234,7 +234,7 @@ func generateEventHandlerFiles(fd os.DirEntry, dstDir string) {
 			dataCpp += "}\n\n"
 		}
 	}
-	util.WriteMd5Data2File(cppFileName, dataCpp)
+	util.WriteMd5Data2File(cppFilePath, dataCpp)
 }
 
 func GenerateAllEventHandlers() {
