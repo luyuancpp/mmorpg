@@ -217,42 +217,78 @@ public:
 	return output.String(), nil
 }
 
-// Helper function to generate method handler functions for player methods
+const playerMethodFunctionsTemplate = `
+{{- range .Methods }}
+    static void {{ .Method }}({{ $.PlayerMethodController }}
+        const {{ .CppRequest }}* request,
+        {{ .CppResponse }}* response);
+
+{{- end }}
+
+    void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+        entt::entity player,
+        const ::google::protobuf::Message* request,
+        ::google::protobuf::Message* response) override
+    {
+        switch (method->index())
+        {
+{{- range $index, $method := .Methods }}
+        case {{ $index }}:
+            {{ $method.Method }}(player,
+                static_cast<const {{ $method.CppRequest }}*>(request),
+                static_cast<{{ $method.CppResponse }}*>(response));
+{{- if not $method.IsEmptyResponse }}
+            TRANSFER_ERROR_MESSAGE(static_cast<{{ $method.CppResponse }}*>(response));
+{{- end }}
+            break;
+{{- end }}
+        default:
+            break;
+        }
+    }
+`
+
+type PlayerMethod struct {
+	Method          string
+	CppRequest      string
+	CppResponse     string
+	IsEmptyResponse bool
+}
+
+type PlayerMethodFunctionsData struct {
+	PlayerMethodController string
+	Methods                []PlayerMethod
+}
+
 func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
-	var data strings.Builder
-	var callFunctionList strings.Builder
+	var methodList []PlayerMethod
 
-	for i, method := range methods {
-		data.WriteString(config.Tab + "static void " + method.Method() + "(" + config.PlayerMethodController + "\n")
-		data.WriteString(config.Tab2 + "const " + method.CppRequest() + "* request,\n")
-		data.WriteString(config.Tab2 + method.CppResponse() + "* response);\n\n")
-
-		callFunctionList.WriteString(config.Tab2 + "case " + strconv.Itoa(i) + ":\n")
-		callFunctionList.WriteString(config.Tab3 + method.Method() + "(player,\n")
-		callFunctionList.WriteString(config.Tab3 + "static_cast<const " + method.CppRequest() + "*>(request),\n")
-		callFunctionList.WriteString(config.Tab3 + "static_cast<" + method.CppResponse() + "*>(response));\n")
-
-		if !strings.Contains(method.CppResponse(), config.EmptyResponseName) {
-			callFunctionList.WriteString(config.Tab3 + "TRANSFER_ERROR_MESSAGE(static_cast<" + method.CppResponse() + "*>(response));\n")
-		}
-
-		callFunctionList.WriteString(config.Tab2 + "break;\n")
+	for _, method := range methods {
+		methodList = append(methodList, PlayerMethod{
+			Method:          method.Method(),
+			CppRequest:      method.CppRequest(),
+			CppResponse:     method.CppResponse(),
+			IsEmptyResponse: strings.Contains(method.CppResponse(), config.EmptyResponseName),
+		})
 	}
 
-	data.WriteString(config.Tab + "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n")
-	data.WriteString(config.Tab2 + "entt::entity player,\n")
-	data.WriteString(config.Tab2 + "const ::google::protobuf::Message* request,\n")
-	data.WriteString(config.Tab2 + "::google::protobuf::Message* response)override \n")
-	data.WriteString(config.Tab2 + "{\n")
-	data.WriteString(config.Tab2 + "switch(method->index())\n")
-	data.WriteString(config.Tab2 + "{\n")
-	data.WriteString(callFunctionList.String())
-	data.WriteString(config.Tab2 + "default:\n")
-	data.WriteString(config.Tab2 + "break;\n")
-	data.WriteString(config.Tab2 + "}\n")
-	data.WriteString(config.Tab + "}\n")
+	data := PlayerMethodFunctionsData{
+		PlayerMethodController: config.PlayerMethodController,
+		Methods:                methodList,
+	}
 
-	return data.String()
+	tmpl, err := template.New("playerMethodFunctions").Parse(playerMethodFunctionsTemplate)
+	if err != nil {
+		panic(err) // 可以改为返回 error
+	}
+
+	var output bytes.Buffer
+	err = tmpl.Execute(&output, data)
+	if err != nil {
+		panic(err)
+	}
+
+	return output.String()
 }
 
 // Function to get the header string for player method replied handlers
