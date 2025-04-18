@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -15,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"text/template"
 )
 
 // ReadProtoFileService reads service information from a protobuf descriptor file.
@@ -281,73 +283,105 @@ func GetSortServiceList() []string {
 
 // writeServiceInfoCppFile writes service information to a C++ file.
 func writeServiceInfoCppFile() {
+	type ServiceInfoCppData struct {
+		Includes             []string
+		ServiceInfoIncludes  []string
+		HandlerClasses       []string
+		InitLines            []string
+		ClientMessageIdLines []string
+		MessageIdArraySize   int
+	}
+	const serviceInfoCppTemplate = `#include <array>
+#include "service_info.h"
+{{- range .Includes }}
+{{ . }}
+{{- end }}
+
+{{- range .ServiceInfoIncludes }}
+{{ . }}
+{{- end }}
+
+{{- range .HandlerClasses }}
+{{ . }}
+{{- end }}
+
+std::unordered_set<uint32_t> gClientToServerMessageId;
+std::array<RpcService, {{ .MessageIdArraySize }}> gMessageInfo;
+
+void InitMessageInfo()
+{
+{{- range .InitLines }}
+    {{ . }}
+{{- end }}
+
+{{- range .ClientMessageIdLines }}
+    {{ . }}
+{{- end }}
+}
+`
+
 	defer util.Wg.Done()
 
-	var includeBuilder strings.Builder
-	includeBuilder.WriteString("#include <array>\n")
-	includeBuilder.WriteString("#include \"service_info.h\"\n")
-
-	var serviceInfoIncludeBuilder strings.Builder
-
-	var classHandlerBuilder strings.Builder
-	var initFuncBuilder strings.Builder
-	var messageIdHandlerBuilder strings.Builder
-
-	initFuncBuilder.WriteString("std::unordered_set<uint32_t> gClientToServerMessageId;\n")
-	initFuncBuilder.WriteString("std::array<RpcService, " + strconv.FormatUint(MessageIdLen(), 10) + "> gMessageInfo;\n\n")
-	initFuncBuilder.WriteString("void InitMessageInfo()\n{\n")
-
-	// Collect all service list and generate include statements and class handlers
 	serviceList := GetSortServiceList()
+
+	var includes, serviceInfoIncludes, handlerClasses, initLines, clientIdLines []string
+
 	for _, serviceName := range serviceList {
 		methods := ServiceMethodMap[serviceName]
 		if len(methods) == 0 {
 			continue
 		}
 
-		includeBuilder.WriteString(methods[0].IncludeName())
-		serviceInfoIncludeBuilder.WriteString(methods[0].ServiceInfoIncludeName())
-		handlerClassName := serviceName + "Impl"
-		classHandlerBuilder.WriteString("class " + handlerClassName + " final : public " + serviceName + "{};\n")
+		first := methods[0]
+		includes = append(includes, first.IncludeName())
+		serviceInfoIncludes = append(serviceInfoIncludes, first.ServiceInfoIncludeName())
+		handlerClass := fmt.Sprintf("class %sImpl final : public %s {};", serviceName, serviceName)
+		handlerClasses = append(handlerClasses, handlerClass)
 	}
 
-	// Generate initialization functions
 	for _, serviceName := range serviceList {
 		methods := ServiceMethodMap[serviceName]
 		for _, method := range methods {
 			rpcId := method.KeyName() + config.MessageIdName
-			handlerClassName := serviceName + "Impl"
-			initFuncBuilder.WriteString(fmt.Sprintf(
-				"gMessageInfo[%s] = RpcService{"+
-					"\"%s\","+
-					"\"%s\","+
-					"\"%s\","+
-					"\"%s\","+
-					"std::make_unique_for_overwrite<%s>()};\n",
+			handlerName := serviceName + "Impl"
+
+			initLine := fmt.Sprintf(
+				"gMessageInfo[%s] = RpcService{\"%s\", \"%s\", \"%s\", \"%s\", std::make_unique_for_overwrite<%s>()};",
 				rpcId,
 				method.Service(),
 				method.Method(),
 				method.CppRequest(),
 				method.CppResponse(),
-				handlerClassName,
-			))
+				handlerName,
+			)
+			initLines = append(initLines, initLine)
+
 			if strings.Contains(method.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
-				initFuncBuilder.WriteString("gClientToServerMessageId.emplace(" + rpcId + ");\n")
+				clientIdLines = append(clientIdLines, fmt.Sprintf("gClientToServerMessageId.emplace(%s);", rpcId))
 			}
 		}
-		initFuncBuilder.WriteString("\n")
 	}
 
-	includeBuilder.WriteString("\n")
-	classHandlerBuilder.WriteString("\n")
-	messageIdHandlerBuilder.WriteString("\n")
-	initFuncBuilder.WriteString("}\n")
-	serviceInfoIncludeBuilder.WriteString("\n")
+	tmplData := ServiceInfoCppData{
+		Includes:             includes,
+		ServiceInfoIncludes:  serviceInfoIncludes,
+		HandlerClasses:       handlerClasses,
+		InitLines:            initLines,
+		ClientMessageIdLines: clientIdLines,
+		MessageIdArraySize:   int(MessageIdLen()),
+	}
 
-	// Write to file
-	data := includeBuilder.String() + serviceInfoIncludeBuilder.String() + classHandlerBuilder.String() +
-		messageIdHandlerBuilder.String() + initFuncBuilder.String()
-	util.WriteMd5Data2File(config.ServiceCppFilePath, data)
+	tmpl, err := template.New("serviceInfoCpp").Parse(serviceInfoCppTemplate)
+	if err != nil {
+		panic(err)
+	}
+
+	var output bytes.Buffer
+	if err := tmpl.Execute(&output, tmplData); err != nil {
+		panic(err)
+	}
+
+	util.WriteMd5Data2File(config.ServiceCppFilePath, output.String())
 }
 
 // writeServiceInfoHeadFile writes service information to a header file.
@@ -377,77 +411,141 @@ func writeServiceInfoHeadFile() {
 }
 
 // Helper function to generate instance data for player services.
-func generateInstanceData(ServiceList []string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir string, serviceName string) string {
+func generateInstanceData(serviceList []string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir string, serviceName string) string {
+	const playerInstanceTemplate = `#include <memory>
+#include <unordered_map>
+#include "{{ .SelfHeader }}"
+{{- range .Includes }}
+{{ . }}
+{{- end }}
+
+{{- range .HandlerClasses }}
+{{ . }}
+{{- end }}
+
+std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;
+
+void InitPlayerService()
+{
+{{- range .InitLines }}
+    {{ . }}
+{{- end }}
+}
+`
+	type PlayerServiceInstanceData struct {
+		SelfHeader     string   // e.g. login_player_service.h
+		Includes       []string // list of #include "...Handler.h"
+		HandlerClasses []string // e.g. class LoginServiceImpl : public LoginService {};
+		InitLines      []string // e.g. g_player_service.emplace(...)
+	}
+
 	fileNameWithoutExt := serviceName[:len(serviceName)-len(filepath.Ext(serviceName))]
 
-	var data strings.Builder
-	includeData := "#include <memory>\n#include <unordered_map>\n#include \"" + fileNameWithoutExt + ".h\"\n\n"
-	instanceData := ""
-	classData := ""
+	var includes, handlerClasses, initLines []string
 
-	for _, key := range ServiceList {
+	for _, key := range serviceList {
 		methodList, ok := ServiceMethodMap[key]
 		if !ok || !isPlayerHandlerFunc(&methodList) {
 			continue
 		}
 
-		method1Info := methodList[0]
-		className := method1Info.Service() + "Impl"
-		includeData += config.IncludeBegin + method1Info.FileNameNoEx() + config.HandlerHeaderExtension + "\"\n"
+		method := methodList[0]
+		className := method.Service() + "Impl"
 
-		classData += "class " + className + " : public " + method1Info.Service() + "{};\n"
-		instanceData += config.Tab + "g_player_service.emplace(\"" + method1Info.Service() +
-			"\", std::make_unique<" + method1Info.Service() + config.HandlerFileName + ">(std::make_unique< " +
-			className + ">()));\n"
+		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileNameNoEx(), config.HandlerHeaderExtension))
+		handlerClasses = append(handlerClasses, fmt.Sprintf("class %s : public %s {};", className, method.Service()))
+		initLines = append(initLines, fmt.Sprintf(`g_player_service.emplace("%s", std::make_unique<%s%s>(std::make_unique<%s>()));`,
+			method.Service(), method.Service(), config.HandlerFileName, className))
 	}
 
-	data.WriteString(includeData)
-	data.WriteString("std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;\n\n")
-	data.WriteString(classData)
-	data.WriteString("void InitPlayerService()\n{\n")
-	data.WriteString(instanceData)
-	data.WriteString("}")
+	data := PlayerServiceInstanceData{
+		SelfHeader:     fileNameWithoutExt + ".h",
+		Includes:       includes,
+		HandlerClasses: handlerClasses,
+		InitLines:      initLines,
+	}
 
-	util.WriteMd5Data2File(handlerDir+serviceName, data.String())
+	tmpl, err := template.New("playerInstance").Parse(playerInstanceTemplate)
+	if err != nil {
+		panic(err)
+	}
 
-	return data.String()
+	var output bytes.Buffer
+	if err := tmpl.Execute(&output, data); err != nil {
+		panic(err)
+	}
+
+	util.WriteMd5Data2File(handlerDir+serviceName, output.String())
+	return output.String()
 }
 
 // Helper function to generate instance data for player services.
-func generateRepliedInstanceData(ServiceList []string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir string, serviceName string) string {
+func generateRepliedInstanceData(serviceList []string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir string, serviceName string) string {
+	const repliedInstanceTemplate = `#include <memory>
+#include <unordered_map>
+#include "{{ .SelfHeader }}"
+{{- range .Includes }}
+{{ . }}
+{{- end }}
+
+{{- range .HandlerClasses }}
+{{ . }}
+{{- end }}
+
+std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replied;
+
+void InitPlayerServiceReplied()
+{
+{{- range .InitLines }}
+    {{ . }}
+{{- end }}
+}
+`
+	type PlayerServiceRepliedInstanceData struct {
+		SelfHeader     string
+		Includes       []string
+		HandlerClasses []string
+		InitLines      []string
+	}
+
 	fileNameWithoutExt := serviceName[:len(serviceName)-len(filepath.Ext(serviceName))]
+	
+	var includes, handlerClasses, initLines []string
 
-	var data strings.Builder
-	includeData := "#include <memory>\n#include <unordered_map>\n#include \"" + fileNameWithoutExt + ".h\"\n\n"
-	instanceData := ""
-	classData := ""
-
-	for _, key := range ServiceList {
+	for _, key := range serviceList {
 		methodList, ok := ServiceMethodMap[key]
 		if !ok || !isPlayerHandlerFunc(&methodList) {
 			continue
 		}
 
-		method1Info := methodList[0]
-		className := method1Info.Service() + "Impl"
-		includeData += config.IncludeBegin + method1Info.FileNameNoEx() + config.RepliedHandlerHeaderExtension + "\"\n"
+		method := methodList[0]
+		className := method.Service() + "Impl"
 
-		classData += "class " + className + " : public " + method1Info.Service() + "{};\n"
-		instanceData += config.Tab + "g_player_service_replied.emplace(\"" + method1Info.Service() +
-			"\", std::make_unique<" + method1Info.Service() + config.RepliedHandlerFileName + ">(std::make_unique<" +
-			className + ">()));\n"
+		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileNameNoEx(), config.RepliedHandlerHeaderExtension))
+		handlerClasses = append(handlerClasses, fmt.Sprintf("class %s : public %s {};", className, method.Service()))
+		initLines = append(initLines, fmt.Sprintf(`g_player_service_replied.emplace("%s", std::make_unique<%s%s>(std::make_unique<%s>()));`,
+			method.Service(), method.Service(), config.RepliedHandlerFileName, className))
 	}
 
-	data.WriteString(includeData)
-	data.WriteString("std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replied;\n\n")
-	data.WriteString(classData)
-	data.WriteString("void InitPlayerServiceReplied()\n{\n")
-	data.WriteString(instanceData)
-	data.WriteString("}")
+	templateData := PlayerServiceRepliedInstanceData{
+		SelfHeader:     fileNameWithoutExt + ".h",
+		Includes:       includes,
+		HandlerClasses: handlerClasses,
+		InitLines:      initLines,
+	}
 
-	util.WriteMd5Data2File(handlerDir+serviceName, data.String())
+	tmpl, err := template.New("repliedInstance").Parse(repliedInstanceTemplate)
+	if err != nil {
+		panic(err)
+	}
 
-	return data.String()
+	var output bytes.Buffer
+	if err := tmpl.Execute(&output, templateData); err != nil {
+		panic(err)
+	}
+
+	util.WriteMd5Data2File(handlerDir+serviceName, output.String())
+	return output.String()
 }
 
 func writePlayerServiceInstanceFiles(serviceType string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir, serviceName string) {
