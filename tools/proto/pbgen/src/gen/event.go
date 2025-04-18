@@ -36,89 +36,74 @@ func generateClassNameFromFile(protoFile os.DirEntry, suffix string) string {
 }
 
 // ReadCodeSectionsFromFile 函数接收一个函数作为参数，动态选择 A 或 B 方法
-func extractUserCodeBlocks(cppFileName string, methodList []string) (map[string]string, string, error) {
-	// 创建一个 map 来存储每个 RPCMethod 的 name 和对应的 yourCode
+func extractUserCodeBlocks(filePath string, methodSignatures []string) (map[string]string, string, error) {
 	codeMap := make(map[string]string)
-
-	// 打开文件
-	fd, err := os.Open(cppFileName)
+	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to open file %s: %v", cppFileName, err)
+		return nil, "", fmt.Errorf("cannot open file %s: %v", filePath, err)
 	}
-	defer fd.Close()
+	defer file.Close()
 
-	// 创建一个扫描器来按行读取文件
-	scanner := bufio.NewScanner(fd)
+	scanner := bufio.NewScanner(file)
+	var (
+		firstCode       string
+		currentCode     string
+		currentMethod   string
+		inFirstBlock    bool
+		firstBlockFound bool
+		inMethodBlock   bool
+	)
 
-	// 记录当前正在处理的 yourCode
-	var currentCode string
-	var currentMethod string
-	var firstCode string // 用于保存第一个特殊的 yourCode
-	var isFirstCode bool // 标记是否处理了第一个特殊的 yourCode
-	var inFirstCode bool // 标记是否在处理第一个特殊的 yourCode
-	var inMethodCode bool
-
-	// 遍历文件的每一行
 	for scanner.Scan() {
 		line := scanner.Text() + "\n"
 
-		// 如果正在处理第一个 yourCode，并且发现 YourCodeEnd
-		if inFirstCode && strings.Contains(line, config.YourCodeEnd) {
+		if inFirstBlock {
 			firstCode += line
-			inFirstCode = false
-			continue // 跳过其他处理，继续后续的代码处理
-		} else if inFirstCode {
-			firstCode += line
-		}
-
-		// 如果是第一个特殊的 yourCode块
-		if !isFirstCode && strings.Contains(line, config.YourCodeBegin) {
-			firstCode = line
-			inFirstCode = true
-			isFirstCode = true
+			if strings.Contains(line, config.YourCodeEnd) {
+				inFirstBlock = false
+			}
 			continue
 		}
 
-		if "" == currentMethod {
-			// 如果是方法的开始行，检查是否是我们关心的 RPCMethod 名称
-			for _, method := range methodList {
-				handlerName := method
-				if strings.Contains(line, handlerName) {
+		if !firstBlockFound && strings.Contains(line, config.YourCodeBegin) {
+			firstCode = line
+			inFirstBlock = true
+			firstBlockFound = true
+			continue
+		}
+
+		if currentMethod == "" {
+			for _, method := range methodSignatures {
+				if strings.Contains(line, method) {
 					currentMethod = method
 					break
 				}
 			}
 		}
 
-		// 如果找到了当前方法的开始，接着读取直到找到结束
 		if currentMethod != "" {
 			if strings.Contains(line, config.YourCodeBegin) {
-				inMethodCode = true
+				inMethodBlock = true
 				currentCode += line
 			} else if strings.Contains(line, config.YourCodeEnd) {
 				currentCode += line
-				// 使用 methodFunc currentMethod
-				handlerName := currentMethod
-				codeMap[handlerName] = currentCode
+				codeMap[currentMethod] = currentCode
 				currentMethod = ""
 				currentCode = ""
-				inMethodCode = false
-			} else if inMethodCode {
+				inMethodBlock = false
+			} else if inMethodBlock {
 				currentCode += line
 			}
 		}
 	}
 
-	// 如果没有找到第一个 yourCode，使用默认的 config.YourCodePair
 	if firstCode == "" {
 		firstCode = config.YourCodePair
 	}
 
-	// 检查是否有方法没有找到对应的 yourCode，如果没有找到，则添加默认值
-	for _, method := range methodList {
-		handlerName := method
-		if _, exists := codeMap[handlerName]; !exists {
-			codeMap[handlerName] = config.YourCodePair
+	for _, method := range methodSignatures {
+		if _, exists := codeMap[method]; !exists {
+			codeMap[method] = config.YourCodePair
 		}
 	}
 
