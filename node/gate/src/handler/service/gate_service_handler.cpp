@@ -1,4 +1,6 @@
+
 #include "gate_service_handler.h"
+
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
@@ -16,9 +18,11 @@ bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
 }
 
 ///<<< END WRITING YOUR CODE
+
+
 void GateServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller,const ::RegisterGameNodeSessionRequest* request,
-	     ::RegisterGameNodeSessionResponse* response,
-	     ::google::protobuf::Closure* done)
+	::RegisterGameNodeSessionResponse* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	auto sessionIt = tls_gate.sessions().find(request->session_info().session_id());
@@ -33,11 +37,15 @@ void GateServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* 
 	LOG_INFO << "Player entered GS, session ID: " << request->session_info().session_id()
 		<< ", game node ID: " << request->scene_node_id();
 	///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void GateServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -54,37 +62,53 @@ void GateServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	gGateNode->SendMessageToClient(sessionIt->second.conn, request->message_content());
 	//LOG_TRACE << "Player message routed, session ID: " << request->head().session_id();
 	///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void GateServiceHandler::KickSessionByCentre(::google::protobuf::RpcController* controller,const ::KickSessionRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	Destroy(tls.sceneRegistry, entt::entity{ request->session_id() });
 	LOG_INFO << "Session ID kicked by Centre: " << request->session_id();
 	///<<< END WRITING YOUR CODE
+
 }
+
+
+
 
 void GateServiceHandler::RouteNodeMessage(::google::protobuf::RpcController* controller,const ::RouteMessageRequest* request,
-	     ::RouteMessageResponse* response,
-	     ::google::protobuf::Closure* done)
+	::RouteMessageResponse* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
+
 }
+
+
+
 
 void GateServiceHandler::RoutePlayerMessage(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
-	     ::RoutePlayerMessageResponse* response,
-	     ::google::protobuf::Closure* done)
+	::RoutePlayerMessageResponse* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void GateServiceHandler::BroadcastToPlayers(::google::protobuf::RpcController* controller,const ::BroadcastToPlayersRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto&& sessionId : request->session_list())
@@ -103,5 +127,8 @@ void GateServiceHandler::BroadcastToPlayers(::google::protobuf::RpcController* c
 		//LOG_TRACE << "Broadcast message sent to session ID: " << sessionId;
 	}
 	///<<< END WRITING YOUR CODE
+
 }
+
+
 

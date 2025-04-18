@@ -1,4 +1,6 @@
+
 #include "game_service_handler.h"
+
 ///<<< BEGIN WRITING YOUR CODE
 
 #include "common_error_tip.pb.h"
@@ -30,9 +32,11 @@ using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 using namespace muduo::net;
 
 ///<<< END WRITING YOUR CODE
+
+
 void GameServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller,const ::PlayerEnterGameNodeRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "Handling EnterGs request for player: " << request->player_id()
@@ -68,11 +72,15 @@ void GameServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* 
 
 	tlsGame.playerRedis->AsyncLoad(request->player_id());
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
-	     ::NodeRouteMessageResponse* response,
-	     ::google::protobuf::Closure* done)
+	::NodeRouteMessageResponse* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 
@@ -143,11 +151,15 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
 
     ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* controller,const ::ClientSendMessageToPlayerRequest* request,
-	     ::ClientSendMessageToPlayerResponse* response,
-	     ::google::protobuf::Closure* done)
+	::ClientSendMessageToPlayerResponse* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	if (request->message_content().message_id() >= gMessageInfo.size())
@@ -205,11 +217,15 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 
 	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void GameServiceHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	const auto it = tlsSessions.find(request->header().session_id());
@@ -229,11 +245,15 @@ void GameServiceHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcCo
 
 	::SendMessageToPlayer(request->message_content().message_id(), request->message_content(), player);
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
-	     ::NodeRouteMessageResponse* response,
-	     ::google::protobuf::Closure* done)
+	::NodeRouteMessageResponse* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	const auto it = tlsSessions.find(request->header().session_id());
@@ -333,27 +353,39 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 	}
         
 ///<<< END WRITING YOUR CODE
+
 }
+
+
+
 
 void GameServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,const ::RouteMessageRequest* request,
-	     ::RouteMessageResponse* response,
-	     ::google::protobuf::Closure* done)
+	::RouteMessageResponse* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
+
+
+
 
 void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
-	     ::RoutePlayerMessageResponse* response,
-	     ::google::protobuf::Closure* done)
+	::RoutePlayerMessageResponse* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void GameServiceHandler::UpdateSessionDetail(::google::protobuf::RpcController* controller,const ::RegisterPlayerSessionRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	PlayerNodeSystem::RemovePlayerSession(request->player_id());
@@ -387,11 +419,15 @@ void GameServiceHandler::UpdateSessionDetail(::google::protobuf::RpcController* 
 
 	PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(player);
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controller,const ::Centre2GsEnterSceneRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
     //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
@@ -410,13 +446,20 @@ void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controlle
 	PlayerSceneSystem::HandleEnterScene(player, sceneEntity);
 
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void GameServiceHandler::CreateScene(::google::protobuf::RpcController* controller,const ::CreateSceneRequest* request,
-	     ::CreateSceneResponse* response,
-	     ::google::protobuf::Closure* done)
+	::CreateSceneResponse* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
+
+
 

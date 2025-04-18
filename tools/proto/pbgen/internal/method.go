@@ -573,44 +573,92 @@ func GenerateMethodHandlerKeyNameWrapper(info *RPCMethod, _ string) string {
 }
 
 func getMethodHandlerCppStr(dst string, methods *RPCMethods) string {
-	// 确保方法列表非空
+
+	const methodHandlerCppTemplate = `
+{{ .CppHandlerInclude }}
+
+{{- if .FirstCode }}
+{{ .FirstCode }}
+{{- end }}
+
+{{- range .Methods }}
+{{ if .HasCode }}
+void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* request,
+{{ $.Tab }}{{ .CppResponse }}* response,
+{{ $.Tab }}::google::protobuf::Closure* done)
+{
+{{ .Code }}
+}
+{{ else }}
+{{ $.YourCodePair }}
+{{ end }}
+
+{{ end }}
+`
+
+	type HandlerMethod struct {
+		HandlerName string
+		CppRequest  string
+		CppResponse string
+		Code        string
+		HasCode     bool
+	}
+
+	type HandlerCppData struct {
+		CppHandlerInclude      string
+		GoogleMethodController string
+		FirstCode              string
+		YourCodePair           string
+		Tab                    string
+		Methods                []HandlerMethod
+	}
+
 	if len(*methods) == 0 {
 		return ""
 	}
 
 	ex := ""
 
-	// 读取代码块
+	// 获取 yourCode 段落
 	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methods, GenerateMethodHandlerNameWrapper, ex)
 
-	var data strings.Builder
 	firstMethodInfo := (*methods)[0]
 
-	// 写入 C++ 处理函数的头部
-	data.WriteString(firstMethodInfo.CppHandlerIncludeName())
-
-	// 如果有第一个特殊的 yourCode，先写入
-	if firstCode != "" {
-		data.WriteString(firstCode)
-	}
-
-	// 遍历 methods，构建每个方法的处理函数
+	var methodList []HandlerMethod
 	for _, methodInfo := range *methods {
-		// 如果该方法有对应的 yourCode
-		if code, exists := yourCodesMap[GenerateMethodHandlerNameWrapper(methodInfo, ex)]; exists {
-			data.WriteString(fmt.Sprintf("void %s%sconst %s* request,\n",
-				GenerateMethodHandlerNameWrapper(methodInfo, ex), config.GoogleMethodController, methodInfo.CppRequest()))
-			data.WriteString(config.Tab + "     " + methodInfo.CppResponse() + "* response,\n")
-			data.WriteString(config.Tab + "     ::google::protobuf::Closure* done)\n")
-			data.WriteString("{\n")
-			data.WriteString(code) // 插入该方法的 yourCode
-			data.WriteString("}\n\n")
-		} else {
-			data.WriteString(config.YourCodePair) // 如果没有 yourCode，则使用默认值
-		}
+		handlerName := GenerateMethodHandlerNameWrapper(methodInfo, ex)
+		code, exists := yourCodesMap[handlerName]
+		methodList = append(methodList, HandlerMethod{
+			HandlerName: handlerName,
+			CppRequest:  methodInfo.CppRequest(),
+			CppResponse: methodInfo.CppResponse(),
+			Code:        code,
+			HasCode:     exists,
+		})
 	}
 
-	return data.String()
+	// 填充模板数据
+	data := HandlerCppData{
+		CppHandlerInclude:      firstMethodInfo.CppHandlerIncludeName(),
+		GoogleMethodController: config.GoogleMethodController,
+		FirstCode:              firstCode,
+		YourCodePair:           config.YourCodePair,
+		Tab:                    config.Tab,
+		Methods:                methodList,
+	}
+
+	// 执行模板
+	tmpl, err := template.New("methodHandlerCpp").Parse(methodHandlerCppTemplate)
+	if err != nil {
+		panic(err)
+	}
+
+	var output bytes.Buffer
+	if err := tmpl.Execute(&output, data); err != nil {
+		panic(err)
+	}
+
+	return output.String()
 }
 
 func getMethodRepliedHandlerCppStr(dst string, methods *RPCMethods) string {
