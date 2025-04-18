@@ -1,0 +1,15 @@
+#pragma once
+
+{{- range .ForwardDeclarations }}
+class {{ . }};
+{{- end }}
+
+class {{ .ClassName }}
+{
+public:
+    static void Register();
+    static void UnRegister();
+{{- range .EventMessages }}
+    static void {{ . }}Handler(const {{ . }}& event);
+{{- end }}
+};

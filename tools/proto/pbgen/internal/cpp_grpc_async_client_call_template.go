@@ -1,4 +1,4 @@
-package gen
+package internal
 
 const AsyncClientHeaderTemplate = `#pragma once
 #include <memory>

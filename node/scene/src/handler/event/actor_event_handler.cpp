@@ -1,6 +1,7 @@
 #include "actor_event_handler.h"
 #include "proto/logic/event/actor_event.pb.h"
 #include "thread_local/storage.h"
+
 ///<<< BEGIN WRITING YOUR CODE
 #include "actor/action_state/constants/actor_state_constants.h"
 #include "actor/action_state/system/actor_action_state_system.h"
@@ -12,16 +13,18 @@
 #include "mount/system/mount_system.h"
 #include "scene/system/interest_system.h"
 ///<<< END WRITING YOUR CODE
+
+
 void ActorEventHandler::Register()
 {
-	tls.dispatcher.sink<InitializeActorComponentsEvent>().connect<&ActorEventHandler::InitializeActorComponentsEventHandler>();
-	tls.dispatcher.sink<InterruptCurrentStatePbEvent>().connect<&ActorEventHandler::InterruptCurrentStatePbEventHandler>();
+    tls.dispatcher.sink<InitializeActorComponentsEvent>().connect<&ActorEventHandler::InitializeActorComponentsEventHandler>();
+    tls.dispatcher.sink<InterruptCurrentStatePbEvent>().connect<&ActorEventHandler::InterruptCurrentStatePbEventHandler>();
 }
 
 void ActorEventHandler::UnRegister()
 {
-	tls.dispatcher.sink<InitializeActorComponentsEvent>().disconnect<&ActorEventHandler::InitializeActorComponentsEventHandler>();
-	tls.dispatcher.sink<InterruptCurrentStatePbEvent>().disconnect<&ActorEventHandler::InterruptCurrentStatePbEventHandler>();
+    tls.dispatcher.sink<InitializeActorComponentsEvent>().disconnect<&ActorEventHandler::InitializeActorComponentsEventHandler>();
+    tls.dispatcher.sink<InterruptCurrentStatePbEvent>().disconnect<&ActorEventHandler::InterruptCurrentStatePbEventHandler>();
 }
 
 void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeActorComponentsEvent& event)
@@ -37,6 +40,7 @@ void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeAc
 	CombatStateSystem::InitializeCombatStateComponent(actorEntity);
 	SkillSystem::InitializeActorComponents(actorEntity);
 ///<<< END WRITING YOUR CODE
+
 }
 
 void ActorEventHandler::InterruptCurrentStatePbEventHandler(const InterruptCurrentStatePbEvent& event)
@@ -48,5 +52,5 @@ void ActorEventHandler::InterruptCurrentStatePbEventHandler(const InterruptCurre
 		MountSystem::InterruptAndUnmountActor(actorEntity);
 	}
 ///<<< END WRITING YOUR CODE
-}
 
+}

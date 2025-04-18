@@ -1,12 +1,14 @@
-package gen
+package internal
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -14,6 +16,21 @@ import (
 	"pbgen/config"
 	"pbgen/util"
 )
+
+// renderTemplateToFile 渲染模板并写入文件
+func renderTemplateToFile(tmplPath string, outputPath string, data any) error {
+	tmpl, err := template.ParseFiles(tmplPath)
+	if err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return err
+	}
+
+	return os.WriteFile(outputPath, buf.Bytes(), 0644)
+}
 
 // generateClassNameFromFile 从 proto 文件名生成 C++ 类名（下划线转为大写驼峰），加后缀
 func generateClassNameFromFile(file os.DirEntry, suffix string) string {
@@ -137,79 +154,66 @@ func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[strin
 	return codeMap, globalCode, scanner.Err()
 }
 
-// generateEventHandlerFiles 为每个 proto 文件生成事件处理代码
+// EventTemplateData 用于渲染模板的数据结构
+type EventTemplateData struct {
+	ClassName           string
+	HeaderFile          string
+	ProtoInclude        string
+	EventMessages       []string
+	ForwardDeclarations []string
+	GlobalUserCode      string
+	UserCodeBlocks      map[string]string
+}
+
+// generateEventHandlerFiles 使用模板生成每个 proto 对应的 .h 和 .cpp 文件
 func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 	defer util.Wg.Done()
 
 	protoFilePath := config.ProtoDirs[config.EventProtoDirIndex] + file.Name()
-	messages, err := parseProtoMessages(protoFilePath)
+	eventMessages, err := parseProtoMessages(protoFilePath)
 	if err != nil {
-		log.Printf("Failed to parse proto: %v\n", err)
+		log.Printf("failed to parse proto: %v\n", err)
 		return
 	}
 
 	className := generateClassNameFromFile(file, config.ClassNameSuffix)
 	baseName := strings.ToLower(strings.TrimSuffix(file.Name(), config.ProtoEx))
-	filePathPrefix := outputDir + baseName
-	headerFile := filePathPrefix + config.HandlerHeaderExtension
-	cppFile := filePathPrefix + config.HandlerCppExtension
+	filePrefix := outputDir + baseName
 
-	// 构建函数签名列表
+	headerFilePath := filePrefix + config.HandlerHeaderExtension
+	cppFilePath := filePrefix + config.HandlerCppExtension
+	headerFileBase := filepath.Base(headerFilePath)
+
+	// 构建 handler 签名
 	var handlerSignatures []string
-	for _, msg := range messages {
-		handlerSignatures = append(handlerSignatures, buildEventHandlerSignature(className, msg))
+	for _, evt := range eventMessages {
+		handlerSignatures = append(handlerSignatures, buildEventHandlerSignature(className, evt))
 	}
 
-	// 提取已存在的用户代码
-	userCodeBlocks, globalUserCode, _ := extractUserCodeBlocks(cppFile, handlerSignatures)
-
-	// 生成 header 内容
-	var headerBuilder strings.Builder
-	headerBuilder.WriteString("#pragma once\n\n")
-	for _, msg := range messages {
-		headerBuilder.WriteString("class " + msg + ";\n")
-	}
-	headerBuilder.WriteString(fmt.Sprintf("\nclass %s\n{\npublic:\n", className))
-	headerBuilder.WriteString(config.Tab + "static void Register();\n")
-	headerBuilder.WriteString(config.Tab + "static void UnRegister();\n")
-	for _, msg := range messages {
-		headerBuilder.WriteString(config.Tab + fmt.Sprintf("static void %sHandler(const %s& event);\n", msg, msg))
-	}
-	headerBuilder.WriteString("};\n")
-	util.WriteMd5Data2File(headerFile, headerBuilder.String())
-
-	// 生成 cpp 内容
-	var cppBuilder strings.Builder
-	cppBuilder.WriteString(fmt.Sprintf("#include \"%s\"\n", filepath.Base(headerFile)))
-	cppBuilder.WriteString(fmt.Sprintf("#include \"%s%s%s\"\n", config.ProtoDirName, config.ProtoDirectoryNames[config.EventProtoDirIndex], strings.Replace(file.Name(), config.ProtoEx, config.ProtoPbhEx, 1)))
-	cppBuilder.WriteString("#include \"thread_local/storage.h\"\n")
-
-	if globalUserCode != "" {
-		cppBuilder.WriteString(globalUserCode)
+	// 提取自定义用户代码块
+	userCodeBlocks, globalCode, err := extractUserCodeBlocks(cppFilePath, handlerSignatures)
+	if err != nil {
+		log.Printf("warning: failed to read user code from %s: %v\n", cppFilePath, err)
 	}
 
-	// Register/Unregister 函数体
-	cppBuilder.WriteString(fmt.Sprintf("void %s::Register()\n{\n", className))
-	for _, msg := range messages {
-		cppBuilder.WriteString(config.Tab + fmt.Sprintf("tls.dispatcher.sink<%s>().connect<&%s::%sHandler>();\n", msg, className, msg))
-	}
-	cppBuilder.WriteString("}\n\n")
-
-	cppBuilder.WriteString(fmt.Sprintf("void %s::UnRegister()\n{\n", className))
-	for _, msg := range messages {
-		cppBuilder.WriteString(config.Tab + fmt.Sprintf("tls.dispatcher.sink<%s>().disconnect<&%s::%sHandler>();\n", msg, className, msg))
-	}
-	cppBuilder.WriteString("}\n\n")
-
-	// 写入事件处理函数定义
-	for _, msg := range messages {
-		signature := buildEventHandlerSignature(className, msg)
-		cppBuilder.WriteString(signature + "{\n")
-		cppBuilder.WriteString(userCodeBlocks[signature])
-		cppBuilder.WriteString("}\n\n")
+	// 构建模板数据
+	tmplData := EventTemplateData{
+		ClassName:           className,
+		HeaderFile:          headerFileBase,
+		ProtoInclude:        config.ProtoDirName + config.ProtoDirectoryNames[config.EventProtoDirIndex] + strings.Replace(file.Name(), config.ProtoEx, config.ProtoPbhEx, 1),
+		EventMessages:       eventMessages,
+		ForwardDeclarations: eventMessages,
+		GlobalUserCode:      globalCode,
+		UserCodeBlocks:      userCodeBlocks,
 	}
 
-	util.WriteMd5Data2File(cppFile, cppBuilder.String())
+	// 渲染模板并写入文件
+	if err := renderTemplateToFile("internal/gen/template/event_handler.h.tmpl", headerFilePath, tmplData); err != nil {
+		log.Printf("failed to generate header file: %v\n", err)
+	}
+	if err := renderTemplateToFile("internal/gen/template/event_handler.cpp.tmpl", cppFilePath, tmplData); err != nil {
+		log.Printf("failed to generate cpp file: %v\n", err)
+	}
 }
 
 // generateAllEventHandlers 生成所有事件处理器
