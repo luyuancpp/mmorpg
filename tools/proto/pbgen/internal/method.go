@@ -405,29 +405,69 @@ func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
 }
 
 func getMethodRepliedHandlerHeadStr(methods *RPCMethods) string {
+	const methodRepliedHandlerHeadTemplate = `
+#pragma once
+{{- .FirstMethodInfo.IncludeName }}
+#include "muduo/net/TcpConnection.h"
+
+using namespace muduo;
+using namespace muduo::net;
+
+{{- range .Methods }}
+void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .CppResponse }}>& replied, Timestamp timestamp);
+
+{{- end }}
+`
+	type MethodRepliedHandlerData struct {
+		FirstMethodInfo        *RPCMethod
+		Methods                *RPCMethods
+		RepliedHandlerFileName string
+	}
+
+	type MethodInfo struct {
+		KeyName     string
+		CppResponse string
+		IncludeName string
+	}
+
 	// Ensure there are methods in the list
 	if len(*methods) == 0 {
 		return ""
 	}
 
-	var data strings.Builder
-	firstMethodInfo := (*methods)[0]
-
-	// Start with pragma once and include the first method's specific include if available
-	data.WriteString("#pragma once\n")
-	data.WriteString(firstMethodInfo.IncludeName())
-	data.WriteString("#include \"muduo/net/TcpConnection.h\"\n\n")
-	data.WriteString("using namespace muduo;\n")
-	data.WriteString("using namespace muduo::net;\n\n")
-
-	// Generate handler function declarations for each method
-	for _, methodInfo := range *methods {
-		handlerDeclaration := fmt.Sprintf("void On%s%s(const TcpConnectionPtr& conn, const std::shared_ptr<%s>& replied, Timestamp timestamp);\n\n",
-			methodInfo.KeyName(), config.RepliedHandlerFileName, methodInfo.CppResponse())
-		data.WriteString(handlerDeclaration)
+	// Ensure there are methods in the list
+	if len(*methods) == 0 {
+		return ""
 	}
 
-	return data.String()
+	// Prepare data for the template
+	var methodsInfo []MethodInfo
+	for _, method := range *methods {
+		methodsInfo = append(methodsInfo, MethodInfo{
+			KeyName:     method.KeyName(),
+			CppResponse: method.CppResponse(),
+			IncludeName: method.IncludeName(),
+		})
+	}
+
+	data := MethodRepliedHandlerData{
+		FirstMethodInfo:        (*methods)[0],
+		Methods:                methods,
+		RepliedHandlerFileName: config.RepliedHandlerFileName,
+	}
+
+	// Parse and execute the template
+	tmpl, err := template.New("methodRepliedHandlerHead").Parse(methodRepliedHandlerHeadTemplate)
+	if err != nil {
+		panic(err)
+	}
+
+	var output bytes.Buffer
+	if err := tmpl.Execute(&output, data); err != nil {
+		panic(err)
+	}
+
+	return output.String()
 }
 
 // ReadCodeSectionsFromFile 函数接收一个函数作为参数，动态选择 A 或 B 方法
