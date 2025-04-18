@@ -61,7 +61,7 @@ func main() {
 	util.Wg.Wait()
 
 	//gen.WriteLoadClientLuaFile()
-	gen.WriteEventHandlerFile()
+	gen.GenerateAllEventHandlers()
 	//gen.WriteSol2LuaFile()
 	util.Wg.Wait()
 	//所有文件的proto读完以后
