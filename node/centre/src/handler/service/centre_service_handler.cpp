@@ -1,4 +1,6 @@
+
 #include "centre_service_handler.h"
+
 ///<<< BEGIN WRITING YOUR CODE
 #include "centre_node.h"
 #include "common_error_tip.pb.h"
@@ -70,17 +72,23 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 }
 
 ///<<< END WRITING YOUR CODE
+
+
 void CentreServiceHandler::GatePlayerService(::google::protobuf::RpcController* controller,const ::GateClientMessageRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcController* controller,const ::GateSessionDisconnectRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
@@ -147,11 +155,15 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 	PlayerNodeSystem::HandleNormalExit(playerId);
 
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void CentreServiceHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* controller,const ::LoginRequest* request,
-	     ::LoginResponse* response,
-	     ::google::protobuf::Closure* done)
+	::LoginResponse* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
     
@@ -166,11 +178,15 @@ void CentreServiceHandler::LoginNodeAccountLogin(::google::protobuf::RpcControll
 	//如果不是同一个登录服务器,踢掉已经登录的账号
 	//告诉客户端登录中
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController* controller,const ::CentrePlayerGameNodeEntryRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	//顶号
@@ -247,22 +263,30 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 
 
 	///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void CentreServiceHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* controller,const ::LoginNodeLeaveGameRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	//todo error
 	PlayerNodeSystem::HandleNormalExit(GetPlayerIDBySessionId(tlsCommonLogic.GetSessionId()));
 	//todo statistics
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void CentreServiceHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller,const ::GateSessionDisconnectRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	
@@ -270,11 +294,15 @@ void CentreServiceHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcCon
 	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
 	PlayerNodeSystem::HandleNormalExit(player_id);
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
-	     ::NodeRouteMessageResponse* response,
-	     ::google::protobuf::Closure* done)
+	::NodeRouteMessageResponse* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	const auto it = tlsSessions.find(request->header().session_id());
@@ -385,11 +413,15 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		<< " for player ID: " << playerId;
 
 	///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,const ::EnterGameNodeSuccessRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "EnterGsSucceed request received.";
@@ -419,11 +451,15 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->scene_node_id();
 
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,const ::RouteMessageRequest* request,
-	     ::RouteMessageResponse* response,
-	     ::google::protobuf::Closure* done)
+	::RouteMessageResponse* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -561,21 +597,32 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	}
 	}
 	///<<< END WRITING YOUR CODE
+
 }
+
+
+
 
 void CentreServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
-	     ::RoutePlayerMessageResponse* response,
-	     ::google::protobuf::Closure* done)
+	::RoutePlayerMessageResponse* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
+
+
+
 void CentreServiceHandler::UnRegisterGameNode(::google::protobuf::RpcController* controller,const ::UnregisterGameNodeRequest* request,
-	     ::Empty* response,
-	     ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
+
+
 
