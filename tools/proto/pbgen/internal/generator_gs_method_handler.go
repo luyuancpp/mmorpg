@@ -6,11 +6,54 @@ import (
 	"strings"
 )
 
+// / game server
+func IsGsMethodHandler(methods *RPCMethods) bool {
+	if len(*methods) == 0 {
+		return false
+	}
+
+	firstMethodInfo := (*methods)[0]
+
+	isCommonOrLogicProto := strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.LogicProtoDirIndex])
+
+	if strings.Contains(firstMethodInfo.Path(), config.PlayerName) ||
+		strings.Contains(firstMethodInfo.FileNameNoEx(), config.PlayerName) {
+		return false
+	}
+
+	hasGsPrefix := strings.HasPrefix(firstMethodInfo.FileNameNoEx(), config.GameNodePrefixName)
+
+	return isCommonOrLogicProto && hasGsPrefix
+}
+
+func IsGsPlayerHandler(methods *RPCMethods) bool {
+	if len(*methods) <= 0 {
+		return false
+	}
+
+	firstMethodInfo := (*methods)[0]
+
+	// Check if the method belongs to a player service
+	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
+		return true
+	}
+
+	// Check if the file base name contains player name and does not contain centre prefix
+	fileBaseName := firstMethodInfo.FileNameNoEx()
+
+	if !strings.Contains(fileBaseName, config.GameNodePlayerPrefixName) {
+		return false
+	}
+
+	return true
+}
+
 func writeGsMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
 	// Check if the method list qualifies as a game server method handler
-	if !isGsMethodHandler(&methodList) {
+	if !IsGsMethodHandler(&methodList) {
 		return
 	}
 
@@ -25,7 +68,7 @@ func writeGsMethodHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
 	// Check if the method list qualifies as a game server method handler
-	if !isGsMethodHandler(&methodList) {
+	if !IsGsMethodHandler(&methodList) {
 		return
 	}
 
@@ -44,7 +87,7 @@ func writeGsPlayerMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
 	// Check if the method list qualifies as a game server player method handler
-	if !isGsPlayerHandler(&methodList) {
+	if !IsGsPlayerHandler(&methodList) {
 		return
 	}
 
@@ -59,7 +102,7 @@ func writeGsPlayerMethodHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
 	// Check if methodList is empty or does not qualify as a game server player method handler
-	if len(methodList) <= 0 || !isGsPlayerHandler(&methodList) {
+	if len(methodList) <= 0 || !IsGsPlayerHandler(&methodList) {
 		return
 	}
 
