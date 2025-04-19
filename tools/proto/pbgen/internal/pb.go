@@ -338,6 +338,7 @@ func BuildProtoGoDb(protoPath string) (err error) {
 
 func BuildProtoDesc(protoPath string) (err error) {
 	// Read directory entries
+
 	var fds []os.DirEntry
 	if fds, err = os.ReadDir(protoPath); err != nil {
 		return err

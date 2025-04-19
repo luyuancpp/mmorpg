@@ -1,4 +1,5 @@
 #pragma once
+
 #include "proto/logic/client_player/player_common.pb.h"
 
 #include "player_service.h"

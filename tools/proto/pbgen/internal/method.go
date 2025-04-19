@@ -170,6 +170,7 @@ func getServiceHandlerMethodStr(method *RPCMethod) (string, error) {
 func getPlayerMethodHeadStr(methods RPCMethods) (string, error) {
 
 	const playerMethodHeadTemplate = `#pragma once
+
 {{.IncludeName}}
 {{.PlayerServiceIncludeName}}
 {{.MacroReturnIncludeName}}
@@ -405,11 +406,9 @@ func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
 }
 
 func getMethodRepliedHandlerHeadStr(methods *RPCMethods) string {
-	const methodRepliedHandlerHeadTemplate = `
-#pragma once
-{{- .FirstMethodInfo.IncludeName }}
+	const methodRepliedHandlerHeadTemplate = `#pragma once
 #include "muduo/net/TcpConnection.h"
-
+{{.FirstMethodInfo.IncludeName }}
 using namespace muduo;
 using namespace muduo::net;
 
