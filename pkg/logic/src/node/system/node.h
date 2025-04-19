@@ -26,7 +26,7 @@ public:
 	virtual ::google::protobuf::Service* GetNodeRepleyService() { return {}; }
 	virtual CanConnectNodeTypeList GetCanNodeTypeList() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
-	[[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
+    [[nodiscard]] RpcClientPtr GetZoneCentreNode() { return RpcClientPtr{}; }
     std::string FormatIpAndPort() ;
 	std::string GetIp();
 	uint32_t GetPort();
@@ -43,6 +43,7 @@ protected:
     virtual void PrepareForBeforeConnection() {}
     virtual void ReadyForGame(){}
     void SetupLoggingSystem();
+    void RegisterEventHandlers();
     void LoadConfigurationFiles();
     virtual void LoadConfigurationData();
     virtual void OnConfigLoadSuccessful(){}
@@ -63,13 +64,15 @@ protected:
     void InitializeGrpcResponseHandlers();
     void InitializeGrpcMessageQueues();
 
+    void OnConnectedToServer(const OnConnected2TcpServerEvent& es);
+    void OnClientConnected(const OnBeConnectedEvent& es);
+
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;
     RpcServerPtr rpcServer;
     TimerTaskComp deployQueueTimer;
     TimerTaskComp renewNodeLeaseTimer;
     TimerTaskComp etcdQueueTimer;
-    RpcClientPtr zoneCentreNode;
 };
 
 muduo::AsyncLogging& logger(); 

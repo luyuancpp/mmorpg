@@ -43,7 +43,7 @@ void CentreSceneServiceHandler::UnRegisterScene(::google::protobuf::RpcControlle
 		return;
 	}
 
-	//todo SceneUtil::DestroyScene({ gameNode, scene });
+	SceneUtil::DestroyScene({ gameNode, scene });
 	///<<< END WRITING YOUR CODE
 
 }

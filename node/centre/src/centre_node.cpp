@@ -81,47 +81,6 @@ void CentreNode::StartRpcServer()
 
 void CentreNode::Receive2(const OnBeConnectedEvent& es)
 {
-	if (auto& conn = es.conn_; conn->connected())
-	{
-		const auto e = tls.networkRegistry.create();
-		tls.networkRegistry.emplace<RpcSession>(e, RpcSession{ conn });
-	}
-	else
-	{
-		auto& currentAddr = conn->peerAddress();
-		for (const auto& [e, gameNode] : tls.sceneNodeRegistry.view<RpcSessionPtr>().each())
-		{
-			// 如果是游戏逻辑服则删除
-			if (gameNode->connection->peerAddress().toIpPort() == currentAddr.toIpPort())
-			{
-				Destroy(tls.sceneNodeRegistry, e);
-				break;
-			}
-		}
-
-		for (const auto& [e, gateNode] : tls.gateNodeRegistry.view<RpcSessionPtr>().each())
-		{
-			// 如果是游戏逻辑服则删除
-			if (nullptr != gateNode &&
-				gateNode->connection->peerAddress().toIpPort() == currentAddr.toIpPort())
-			{
-				// remove AfterChangeGsEnterScene
-				// todo 
-				Destroy(tls.gateNodeRegistry, e);
-				break;
-			}
-		}
-
-		for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())
-		{
-			if (session.connection->peerAddress().toIpPort() != currentAddr.toIpPort())
-			{
-				continue;
-			}
-			Destroy(tls.networkRegistry, e);
-			break;
-		}
-	}
 }
 
 void CentreNode::PrepareForBeforeConnection()

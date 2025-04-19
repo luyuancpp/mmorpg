@@ -59,6 +59,7 @@ void Node::InitializeDeploymentService(const std::string& service_address)
 
 void Node::Initialize() {
 	LOG_INFO << "Initializing node...";
+	RegisterEventHandlers();
 	LoadConfigurationFiles();        // Load configuration files
 	SetupRpcServer();                // Set up the RPC server
 	SetupLoggingSystem();            // Set up logging system
@@ -120,6 +121,11 @@ void Node::SetupLoggingSystem() {
 	muduo::Logger::setLogLevel(static_cast<muduo::Logger::LogLevel>(tlsCommonLogic.GetBaseDeployConfig().log_level()));
 	muduo::Logger::setOutput(AsyncOutput);
 	muduoLog.start();  // Start logging
+}
+
+void Node::RegisterEventHandlers()
+{
+	tls.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&Node::OnConnectedToServer>(*this);
 }
 
 // Loads configuration files for the node
@@ -215,17 +221,17 @@ void Node::ConnectToNode(entt::registry& registry, const NodeInfo& nodeInfo)
 	}
 
 	InetAddress endpoint(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
-	auto& node = registry.emplace<RpcClientPtr>(nodeId,
-		std::make_shared<RpcClientPtr::element_type>(loop_, endpoint));
+	auto& node = registry.emplace<RpcClient>(nodeId,
+		loop_, endpoint);
 
 	// 注册服务并连接
-	node->registerService(GetNodeRepleyService());
-	node->connect();
+	node.registerService(GetNodeRepleyService());
+	node.connect();
 
 	// 判断是否为当前区域的中心节点
 	if (nodeInfo.node_type() == kCentreNode &&
 		nodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
-		zoneCentreNode = node;
+		//todo zoneCentreNode = node;
 	}
 }
 
@@ -449,4 +455,53 @@ void Node::InitializeGrpcResponseHandlers() {
 			}
 		}
 		};
+}
+
+void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es)
+{
+    if (auto& conn = es.conn_; conn->connected())
+    {
+        for (const auto& [e, client] : tls.centreNodeRegistry.view<RpcClient>().each())
+        {
+			if (!IsSameAddress(client.peer_addr(), conn->peerAddress()))
+			{
+				continue;
+            }
+            // 连接中心节点
+            OnConnect2Centre connect2centre_event;
+            connect2centre_event.set_entity(entt::to_integral(e));
+            tls.dispatcher.trigger(connect2centre_event);
+            break;
+        }
+
+        for (const auto& [e, client] : tls.sceneNodeRegistry.view<RpcClient>().each())
+        {
+            if (!IsSameAddress(client.peer_addr(), conn->peerAddress()))
+            {
+                continue;
+            }
+
+            break;
+        }
+
+
+        for (const auto& [e, client] : tls.gateNodeRegistry.view<RpcClient>().each())
+        {
+            if (!IsSameAddress(client.peer_addr(), conn->peerAddress()))
+            {
+                continue;
+            }
+
+            break;
+        }
+    }
+    else
+    {
+     
+    }
+   
+}
+
+void Node::OnClientConnected(const OnBeConnectedEvent& es) {
+	
 }
