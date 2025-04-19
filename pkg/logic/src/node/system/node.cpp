@@ -319,7 +319,7 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	// Add new node to the list
 	*nodeList.Add() = newNodeInfo;
 
-	if (!GetCanNodeTypeList().contains(nodeType))
+	if (!GetAllowedTargetNodeTypes().contains(nodeType))
 	{
 		return;
 	}
@@ -457,51 +457,90 @@ void Node::InitializeGrpcResponseHandlers() {
 		};
 }
 
-void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es)
-{
-    if (auto& conn = es.conn_; conn->connected())
-    {
-        for (const auto& [e, client] : tls.centreNodeRegistry.view<RpcClient>().each())
-        {
-			if (!IsSameAddress(client.peer_addr(), conn->peerAddress()))
-			{
-				continue;
-            }
-            // 连接中心节点
+void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
+    auto& conn = es.conn_;
+    if (!conn->connected()) {
+        LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
+        return;
+    }
+
+    LOG_INFO << "Successfully connected to server: " << conn->peerAddress().toIpPort();
+
+    // 封装统一处理逻辑
+    auto handleConnection = [&](auto& registry, const std::string& registryName, auto onConnectedCallback) {
+        for (const auto& [e, client] : registry.view<RpcClient>().each()) {
+            if (!IsSameAddress(client.peer_addr(), conn->peerAddress()))
+                continue;
+
+            LOG_INFO << "Matched peer address in [" << registryName << "] registry: {}", registryName, conn->peerAddress().toIpPort();
+
+            onConnectedCallback(e);  // 调用特定回调（可空）
+            return true;
+        }
+
+		LOG_INFO << "No matching client found in [" << registryName << "] registry for address: " << conn->peerAddress().toIpPort();
+        return false;
+        };
+
+    // 中心节点连接成功，触发 OnConnect2Centre 事件
+    handleConnection(
+        tls.centreNodeRegistry,
+        "CentreNode",
+        [&](entt::entity e) {
             OnConnect2Centre connect2centre_event;
             connect2centre_event.set_entity(entt::to_integral(e));
             tls.dispatcher.trigger(connect2centre_event);
-            break;
+            LOG_INFO << "Triggered OnConnect2Centre event for entity: {}", static_cast<uint64_t>(e);
         }
+    );
 
-        for (const auto& [e, client] : tls.sceneNodeRegistry.view<RpcClient>().each())
-        {
-            if (!IsSameAddress(client.peer_addr(), conn->peerAddress()))
-            {
-                continue;
-            }
-
-            break;
+    // 场景节点连接成功（暂时无操作，可后续扩展）
+    handleConnection(
+        tls.sceneNodeRegistry,
+        "SceneNode",
+        [&](entt::entity e) {
+            // TODO: Add scene-specific logic here
+            LOG_INFO<<"SceneNode connected. Entity: " << entt::to_integral(e);
         }
+    );
 
-
-        for (const auto& [e, client] : tls.gateNodeRegistry.view<RpcClient>().each())
-        {
-            if (!IsSameAddress(client.peer_addr(), conn->peerAddress()))
-            {
-                continue;
-            }
-
-            break;
+    // 网关节点连接成功（暂时无操作，可后续扩展）
+    handleConnection(
+        tls.gateNodeRegistry,
+        "GateNode",
+        [&](entt::entity e) {
+            // TODO: Add gate-specific logic here
+            LOG_INFO <<  "GateNode connected. Entity:"  << entt::to_integral(e);
         }
-    }
-    else
-    {
-     
-    }
-   
+    );
 }
 
+
 void Node::OnClientConnected(const OnBeConnectedEvent& es) {
-	
+	auto& conn = es.conn_;
+    if ( !conn->connected()) {
+        return;
+    }
+
+    LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
+
+    // 封装注册逻辑
+    auto tryRegisterSession = [&](auto& registry, const std::string& registryName) {
+        for (const auto& [e, client] : registry.view<RpcClient>().each()) {
+            if (!IsSameAddress(client.peer_addr(), conn->peerAddress()))
+                continue;
+
+            registry.emplace<RpcSession>(e, conn);
+            LOG_INFO << "Registered RpcSession for  [" << registryName<< "] with entity : " <<  entt::to_integral(e);
+            return true; // 成功匹配并注册
+        }
+
+        LOG_WARN <<"No matching RpcClient found in  [" << registryName << "] for address: " << conn->peerAddress().toIpPort();
+        return false;
+        };
+
+    // 尝试在各注册表中绑定 session
+    tryRegisterSession(tls.centreNodeRegistry, "CentreNode");
+    tryRegisterSession(tls.sceneNodeRegistry, "SceneNode");
+    tryRegisterSession(tls.gateNodeRegistry, "GateNode");
 }
