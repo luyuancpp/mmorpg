@@ -46,8 +46,6 @@ void SceneNode::Initialize()
 {
     gSceneNode = this;
     
-    tls.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&SceneNode::Receive1>(*this);
-    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&SceneNode::Receive2>(*this);
     
     Node::Initialize();
     EventHandler::Register();
@@ -94,62 +92,6 @@ void SceneNode::ReadyForGame()
 {
     Node::ReadyForGame();
     World::ReadyForGame();
-}
-
-void SceneNode::Receive1(const OnConnected2TcpServerEvent& es)
-{
-    if ( auto& conn = es.conn_ ; conn->connected())
-    {
-        for (const auto& [it, centre_node] : tls.centreNodeRegistry.view<RpcClientPtr>().each())
-        {
-            if (conn->connected() &&
-                IsSameAddress(centre_node->peer_addr(), conn->peerAddress()))
-            {
-                OnConnect2Centre connect2centre_event;
-                connect2centre_event.set_entity(entt::to_integral(it));
-                tls.dispatcher.trigger(connect2centre_event);
-                break;
-            }
-            // centre 走断线重连，不删除
-        }
-    }
-    else
-    {
-
-    }
-
-}
-
-void SceneNode::Receive2(const OnBeConnectedEvent& es)
-{
-    if ( auto& conn = es.conn_ ; conn->connected())
-	{
-		auto e = tls.registry.create();
-		tls.networkRegistry.emplace<RpcSession>(e, RpcSession{ conn });
-	}
-    else
-    {
-        auto& current_addr = conn->peerAddress();
-        for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())
-        {
-            if (session.connection->peerAddress().toIpPort() != current_addr.toIpPort())
-            {
-                continue;
-            }
-            
-            for (const auto& [gate_e, gate_node] : tls.gateNodeRegistry.view<RpcSessionPtr>().each())
-            {
-                if (nullptr != gate_node &&
-                    gate_node->connection->peerAddress().toIpPort() == current_addr.toIpPort())
-                {
-                    Destroy(tls.gateNodeRegistry, gate_e);
-                    break;
-                }
-            }
-            Destroy(tls.networkRegistry, e);
-            break;
-        }
-    }
 }
 
 void SceneNode::OnConfigLoadSuccessful()

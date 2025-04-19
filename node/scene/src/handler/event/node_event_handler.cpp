@@ -9,14 +9,24 @@
 void NodeEventHandler::Register()
 {
     tls.dispatcher.sink<OnSceneNodeAddPbEvent>().connect<&NodeEventHandler::OnSceneNodeAddPbEventHandler>();
+    tls.dispatcher.sink<OnSceneNodeRemovePbEvent>().connect<&NodeEventHandler::OnSceneNodeRemovePbEventHandler>();
 }
 
 void NodeEventHandler::UnRegister()
 {
     tls.dispatcher.sink<OnSceneNodeAddPbEvent>().disconnect<&NodeEventHandler::OnSceneNodeAddPbEventHandler>();
+    tls.dispatcher.sink<OnSceneNodeRemovePbEvent>().disconnect<&NodeEventHandler::OnSceneNodeRemovePbEventHandler>();
 }
 
 void NodeEventHandler::OnSceneNodeAddPbEventHandler(const OnSceneNodeAddPbEvent& event)
+{
+///<<< BEGIN WRITING YOUR CODE
+    
+///<<< END WRITING YOUR CODE
+
+}
+
+void NodeEventHandler::OnSceneNodeRemovePbEventHandler(const OnSceneNodeRemovePbEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

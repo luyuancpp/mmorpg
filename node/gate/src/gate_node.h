@@ -28,7 +28,7 @@ public:
     ~GateNode() override;
     inline ProtobufCodec& Codec() { return codec_; }
     inline GateServiceHandler& GetServiceHandler() { return nodeReplyService; }
-    inline RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
+    inline RpcClientPtr GetZoneCentreNode() { return RpcClientPtr{}; }
     inline  NodeInfo& GetNodeInfo() { return nodeInfo; }
     uint32_t GetNodeType() const override;
     std::string GetServiceName() const override;
@@ -41,7 +41,6 @@ public:
     void Initialize()override;
     void StartRpcServer()override;
 
-    void Receive1(const OnConnected2TcpServerEvent& es) ;
 private:
     void OnConnection(const TcpConnectionPtr& conn)
     {

@@ -48,9 +48,6 @@
     <ClCompile Include="src\handler\service\register_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service_replied\db_service_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\service_replied\game_scene_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -132,9 +129,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\register_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\service_replied\db_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service_replied\game_scene_replied_handler.h">

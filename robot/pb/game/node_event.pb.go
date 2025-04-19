@@ -75,6 +75,69 @@ func (x *OnSceneNodeAddPbEvent) GetScenenodeType() uint32 {
 	return 0
 }
 
+type OnSceneNodeRemovePbEvent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Entity        uint64 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
+	NodeType      uint32 `protobuf:"varint,2,opt,name=node_type,json=nodeType,proto3" json:"node_type,omitempty"`
+	ScenenodeType uint32 `protobuf:"varint,3,opt,name=scenenode_type,json=scenenodeType,proto3" json:"scenenode_type,omitempty"`
+}
+
+func (x *OnSceneNodeRemovePbEvent) Reset() {
+	*x = OnSceneNodeRemovePbEvent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_logic_event_node_event_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *OnSceneNodeRemovePbEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OnSceneNodeRemovePbEvent) ProtoMessage() {}
+
+func (x *OnSceneNodeRemovePbEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_logic_event_node_event_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OnSceneNodeRemovePbEvent.ProtoReflect.Descriptor instead.
+func (*OnSceneNodeRemovePbEvent) Descriptor() ([]byte, []int) {
+	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *OnSceneNodeRemovePbEvent) GetEntity() uint64 {
+	if x != nil {
+		return x.Entity
+	}
+	return 0
+}
+
+func (x *OnSceneNodeRemovePbEvent) GetNodeType() uint32 {
+	if x != nil {
+		return x.NodeType
+	}
+	return 0
+}
+
+func (x *OnSceneNodeRemovePbEvent) GetScenenodeType() uint32 {
+	if x != nil {
+		return x.ScenenodeType
+	}
+	return 0
+}
+
 var File_proto_logic_event_node_event_proto protoreflect.FileDescriptor
 
 var file_proto_logic_event_node_event_proto_rawDesc = []byte{
@@ -85,8 +148,16 @@ var file_proto_logic_event_node_event_proto_rawDesc = []byte{
 	0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65,
 	0x6e, 0x74, 0x69, 0x74, 0x79, 0x12, 0x25, 0x0a, 0x0e, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x6e, 0x6f,
 	0x64, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x73,
-	0x63, 0x65, 0x6e, 0x65, 0x6e, 0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65, 0x42, 0x09, 0x5a, 0x07,
-	0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x63, 0x65, 0x6e, 0x65, 0x6e, 0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65, 0x22, 0x76, 0x0a, 0x18,
+	0x4f, 0x6e, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x6d, 0x6f, 0x76,
+	0x65, 0x50, 0x62, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69,
+	0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79,
+	0x12, 0x1b, 0x0a, 0x09, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0d, 0x52, 0x08, 0x6e, 0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65, 0x12, 0x25, 0x0a,
+	0x0e, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x6e, 0x6f, 0x64, 0x65,
+	0x54, 0x79, 0x70, 0x65, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -101,9 +172,10 @@ func file_proto_logic_event_node_event_proto_rawDescGZIP() []byte {
 	return file_proto_logic_event_node_event_proto_rawDescData
 }
 
-var file_proto_logic_event_node_event_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_logic_event_node_event_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_logic_event_node_event_proto_goTypes = []any{
-	(*OnSceneNodeAddPbEvent)(nil), // 0: OnSceneNodeAddPbEvent
+	(*OnSceneNodeAddPbEvent)(nil),    // 0: OnSceneNodeAddPbEvent
+	(*OnSceneNodeRemovePbEvent)(nil), // 1: OnSceneNodeRemovePbEvent
 }
 var file_proto_logic_event_node_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -131,6 +203,18 @@ func file_proto_logic_event_node_event_proto_init() {
 				return nil
 			}
 		}
+		file_proto_logic_event_node_event_proto_msgTypes[1].Exporter = func(v any, i int) any {
+			switch v := v.(*OnSceneNodeRemovePbEvent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -138,7 +222,7 @@ func file_proto_logic_event_node_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_logic_event_node_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
