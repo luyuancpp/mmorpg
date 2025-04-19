@@ -4,7 +4,7 @@ package config
 const (
 	ProjectDir                = "../../../"
 	ProtoDir                  = ProjectDir + "proto/"
-	ProtoParentIncludePathDir = "../../../"
+	ProtoParentIncludePathDir = ProjectDir
 	ProtoEx                   = ".proto"
 	ProtoPbcEx                = ".pb.cc"
 	ProtoPbhEx                = ".pb.h"

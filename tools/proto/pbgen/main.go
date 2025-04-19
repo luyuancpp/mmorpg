@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"pbgen/config"
@@ -50,6 +51,13 @@ func MakeProjectDir() {
 }
 
 func main() {
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Current working directory:", dir)
+
 	MakeProjectDir()
 	//开始读所有的proto文件
 	internal.ReadServiceIdFile()

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "proto/logic/server_player/game_player_scene.pb.h"
 
 #include "player_service.h"
