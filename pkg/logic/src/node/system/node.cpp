@@ -52,7 +52,7 @@ void Node::InitializeDeploymentService(const std::string& service_address)
 	renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, [this]() {
 		RenewLeaseIDRequest request;
 		request.set_lease_id(GetNodeInfo().lease_id());
-		LOG_INFO << "Renewing lease with ID: " << GetNodeInfo().lease_id();
+		LOG_TRACE << "Renewing lease with ID: " << GetNodeInfo().lease_id();
 		SendDeployServiceRenewLease(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 		});
 }
@@ -425,7 +425,7 @@ void Node::InitializeGrpcResponseHandlers() {
 
 	AsyncetcdserverpbWatchWatchHandler = [this](const ::etcdserverpb::WatchResponse& response) {
 		if (response.created()) {
-			LOG_INFO << "Watch created: " << response.created();
+			LOG_TRACE << "Watch created: " << response.created();
 			return;
 		}
 
