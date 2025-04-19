@@ -24,7 +24,7 @@ public:
     virtual NodeInfo& GetNodeInfo() = 0;
 	virtual std::string GetServiceName() const = 0;
 	virtual ::google::protobuf::Service* GetNodeRepleyService() { return {}; }
-	virtual CanConnectNodeTypeList GetCanNodeTypeList() { return {}; }
+	virtual CanConnectNodeTypeList GetAllowedTargetNodeTypes() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
     [[nodiscard]] RpcClientPtr GetZoneCentreNode() { return RpcClientPtr{}; }
     std::string FormatIpAndPort() ;

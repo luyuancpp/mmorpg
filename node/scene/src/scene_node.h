@@ -28,7 +28,7 @@ public:
 
     ::google::protobuf::Service* GetNodeRepleyService() override { return &nodeReplyService; }
 
-	CanConnectNodeTypeList GetCanNodeTypeList() override;
+	CanConnectNodeTypeList GetAllowedTargetNodeTypes() override;
     
     virtual void OnConfigLoadSuccessful()override;
     void StartRpcServer() override;

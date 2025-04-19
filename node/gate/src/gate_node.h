@@ -34,7 +34,7 @@ public:
     std::string GetServiceName() const override;
 	::google::protobuf::Service* GetNodeRepleyService() override{ return &nodeReplyService ; }
 
-    virtual CanConnectNodeTypeList GetCanNodeTypeList() override;
+    virtual CanConnectNodeTypeList GetAllowedTargetNodeTypes() override;
 
     inline void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn,
                             const ::google::protobuf::Message& message) const { rpcClientHandler.SendMessageToClient(conn, message); }
