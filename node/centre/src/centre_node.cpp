@@ -90,7 +90,7 @@ void CentreNode::PrepareForBeforeConnection()
 
 std::string CentreNode::GetServiceName() const
 {
-	return "centreservcie.rpc";
+	return "centreservice.rpc";
 }
 
 void CentreNode::InitSystemAfterConnect() const
