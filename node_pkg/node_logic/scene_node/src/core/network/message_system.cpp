@@ -37,10 +37,10 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 		return;
 	}
 
-	const auto gateNode = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gateNodeId);
+	const auto gateNode = tls.gateNodeRegistry.try_get<RpcSession>(gateNodeId);
 	if (!gateNode)
 	{
-		LOG_ERROR << "RpcSessionPtr not found for gate node";
+		LOG_ERROR << "RpcSession not found for gate node";
 		return;
 	}
 
@@ -48,7 +48,8 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	request.mutable_message_content()->set_message_id(messageId);
 	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
 	request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
-	(*gateNode)->SendRequest(GateServiceSendMessageToPlayerMessageId, request);
+
+	gateNode->SendRequest(GateServiceSendMessageToPlayerMessageId, request);
 }
 
 void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
@@ -120,14 +121,14 @@ void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& 
 		return;
 	}
 
-	const auto gateNode = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gateNodeId);
-	if (!gateNode)
+	const auto gateNodeSession = tls.gateNodeRegistry.try_get<RpcSession>(gateNodeId);
+	if (!gateNodeSession)
 	{
-		LOG_ERROR << "RpcSessionPtr not found for gate node: " << nodeId;
+		LOG_ERROR << "RpcSession not found for gate node: " << nodeId;
 		return;
 	}
 
-	(*gateNode)->SendRequest(GateServiceSendMessageToPlayerMessageId, message);
+	gateNodeSession->SendRequest(GateServiceSendMessageToPlayerMessageId, message);
 }
 
 void CallCentreNodeMethod(uint32_t messageId, const google::protobuf::Message& message, const NodeId nodeId)
@@ -189,10 +190,10 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 	BroadcastToPlayersRequest request;
 	for (auto&& [gateNodeId, sessionIdList] : gateList)
 	{
-		const auto gateNode = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gateNodeId);
-		if (!gateNode)
+		const auto gateNodeSession = tls.gateNodeRegistry.try_get<RpcSession>(gateNodeId);
+		if (!gateNodeSession)
 		{
-			LOG_ERROR << "RpcSessionPtr not found for gate node";
+			LOG_ERROR << "RpcSession not found for gate node";
 			continue;
 		}
 
@@ -203,7 +204,7 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 			request.mutable_session_list()->Add(sessionId);
 		}
 
-		(*gateNode)->SendRequest(GateServiceBroadcastToPlayersMessageId, request);
+		gateNodeSession->SendRequest(GateServiceBroadcastToPlayersMessageId, request);
 	}
 }
 
@@ -239,10 +240,10 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 	BroadcastToPlayersRequest request;
 	for (auto&& [gateNodeId, sessionIdList] : gateList)
 	{
-		const auto gateNode = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gateNodeId);
-		if (!gateNode)
+		const auto gateNodeSession = tls.gateNodeRegistry.try_get<RpcSession>(gateNodeId);
+		if (!gateNodeSession)
 		{
-			LOG_ERROR << "RpcSessionPtr not found for gate node";
+			LOG_ERROR << "RpcSession not found for gate node";
 			continue;
 		}
 
@@ -253,6 +254,6 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 			request.mutable_session_list()->Add(sessionId);
 		}
 
-		(*gateNode)->SendRequest(GateServiceBroadcastToPlayersMessageId, request);
+		gateNodeSession->SendRequest(GateServiceBroadcastToPlayersMessageId, request);
 	}
 }

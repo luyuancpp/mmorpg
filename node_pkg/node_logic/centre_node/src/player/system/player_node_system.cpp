@@ -113,8 +113,8 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 		return;
 	}
 
-	auto gateNode = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gateNodeId);
-	if (!gateNode)
+	auto gateNodeScene = tls.gateNodeRegistry.try_get<RpcSession>(gateNodeId);
+	if (!gateNodeScene)
 	{
 		LOG_ERROR << "Gate crash for session id: " << playerNodeInfo->gate_session_id();
 		return;
@@ -123,7 +123,7 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	RegisterGameNodeSessionRequest request;
 	request.mutable_session_info()->set_session_id(playerNodeInfo->gate_session_id());
 	request.set_scene_node_id(playerNodeInfo->scene_node_id());
-	(*gateNode)->CallRemoteMethod(GateServicePlayerEnterGameNodeMessageId, request);
+	gateNodeScene->CallRemoteMethod(GateServicePlayerEnterGameNodeMessageId, request);
 }
 
 void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
