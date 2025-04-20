@@ -67,6 +67,9 @@ extern EnterGameNodeSuccessRequestDefaultTypeInternal _EnterGameNodeSuccessReque
 class GateClientMessageRequest;
 struct GateClientMessageRequestDefaultTypeInternal;
 extern GateClientMessageRequestDefaultTypeInternal _GateClientMessageRequest_default_instance_;
+class InitSceneNodeRequest;
+struct InitSceneNodeRequestDefaultTypeInternal;
+extern InitSceneNodeRequestDefaultTypeInternal _InitSceneNodeRequest_default_instance_;
 class LoginNodeLeaveGameRequest;
 struct LoginNodeLeaveGameRequestDefaultTypeInternal;
 extern LoginNodeLeaveGameRequestDefaultTypeInternal _LoginNodeLeaveGameRequest_default_instance_;
@@ -223,6 +226,209 @@ class LoginNodeLeaveGameRequest final
                           const LoginNodeLeaveGameRequest& from_msg);
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
+  friend struct ::TableStruct_proto_2fcommon_2fcentre_5fservice_2eproto;
+};
+// -------------------------------------------------------------------
+
+class InitSceneNodeRequest final
+    : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:InitSceneNodeRequest) */ {
+ public:
+  inline InitSceneNodeRequest() : InitSceneNodeRequest(nullptr) {}
+  ~InitSceneNodeRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(InitSceneNodeRequest* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(InitSceneNodeRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR InitSceneNodeRequest(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline InitSceneNodeRequest(const InitSceneNodeRequest& from) : InitSceneNodeRequest(nullptr, from) {}
+  inline InitSceneNodeRequest(InitSceneNodeRequest&& from) noexcept
+      : InitSceneNodeRequest(nullptr, std::move(from)) {}
+  inline InitSceneNodeRequest& operator=(const InitSceneNodeRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline InitSceneNodeRequest& operator=(InitSceneNodeRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const InitSceneNodeRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const InitSceneNodeRequest* internal_default_instance() {
+    return reinterpret_cast<const InitSceneNodeRequest*>(
+        &_InitSceneNodeRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 4;
+  friend void swap(InitSceneNodeRequest& a, InitSceneNodeRequest& b) { a.Swap(&b); }
+  inline void Swap(InitSceneNodeRequest* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(InitSceneNodeRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  InitSceneNodeRequest* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<InitSceneNodeRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const InitSceneNodeRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const InitSceneNodeRequest& from) { InitSceneNodeRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(InitSceneNodeRequest* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "InitSceneNodeRequest"; }
+
+ protected:
+  explicit InitSceneNodeRequest(::google::protobuf::Arena* arena);
+  InitSceneNodeRequest(::google::protobuf::Arena* arena, const InitSceneNodeRequest& from);
+  InitSceneNodeRequest(::google::protobuf::Arena* arena, InitSceneNodeRequest&& from) noexcept
+      : InitSceneNodeRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kNodeIdFieldNumber = 1,
+    kSceneNodeTypeFieldNumber = 2,
+  };
+  // uint32 node_id = 1;
+  void clear_node_id() ;
+  ::uint32_t node_id() const;
+  void set_node_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_node_id() const;
+  void _internal_set_node_id(::uint32_t value);
+
+  public:
+  // uint32 scene_node_type = 2;
+  void clear_scene_node_type() ;
+  ::uint32_t scene_node_type() const;
+  void set_scene_node_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_scene_node_type() const;
+  void _internal_set_scene_node_type(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:InitSceneNodeRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      1, 2, 0,
+      0, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const InitSceneNodeRequest& from_msg);
+    ::uint32_t node_id_;
+    ::uint32_t scene_node_type_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
   friend struct ::TableStruct_proto_2fcommon_2fcentre_5fservice_2eproto;
 };
 // -------------------------------------------------------------------
@@ -899,8 +1105,8 @@ class CentreService : public ::google::protobuf::Service {
                         const ::RoutePlayerMessageRequest* request,
                         ::RoutePlayerMessageResponse* response,
                         ::google::protobuf::Closure* done);
-  virtual void UnRegisterGameNode(::google::protobuf::RpcController* controller,
-                        const ::UnregisterGameNodeRequest* request,
+  virtual void InitSceneNode(::google::protobuf::RpcController* controller,
+                        const ::InitSceneNodeRequest* request,
                         ::Empty* response,
                         ::google::protobuf::Closure* done);
 
@@ -974,8 +1180,8 @@ class CentreService_Stub final : public CentreService {
                         const ::RoutePlayerMessageRequest* request,
                         ::RoutePlayerMessageResponse* response,
                         ::google::protobuf::Closure* done) override;
-  void UnRegisterGameNode(::google::protobuf::RpcController* controller,
-                        const ::UnregisterGameNodeRequest* request,
+  void InitSceneNode(::google::protobuf::RpcController* controller,
+                        const ::InitSceneNodeRequest* request,
                         ::Empty* response,
                         ::google::protobuf::Closure* done) override;
 
@@ -1325,6 +1531,54 @@ inline void CentrePlayerGameNodeEntryRequest::set_allocated_session_info(::Sessi
 
   _impl_.session_info_ = reinterpret_cast<::SessionDetails*>(value);
   // @@protoc_insertion_point(field_set_allocated:CentrePlayerGameNodeEntryRequest.session_info)
+}
+
+// -------------------------------------------------------------------
+
+// InitSceneNodeRequest
+
+// uint32 node_id = 1;
+inline void InitSceneNodeRequest::clear_node_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_id_ = 0u;
+}
+inline ::uint32_t InitSceneNodeRequest::node_id() const {
+  // @@protoc_insertion_point(field_get:InitSceneNodeRequest.node_id)
+  return _internal_node_id();
+}
+inline void InitSceneNodeRequest::set_node_id(::uint32_t value) {
+  _internal_set_node_id(value);
+  // @@protoc_insertion_point(field_set:InitSceneNodeRequest.node_id)
+}
+inline ::uint32_t InitSceneNodeRequest::_internal_node_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.node_id_;
+}
+inline void InitSceneNodeRequest::_internal_set_node_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_id_ = value;
+}
+
+// uint32 scene_node_type = 2;
+inline void InitSceneNodeRequest::clear_scene_node_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_node_type_ = 0u;
+}
+inline ::uint32_t InitSceneNodeRequest::scene_node_type() const {
+  // @@protoc_insertion_point(field_get:InitSceneNodeRequest.scene_node_type)
+  return _internal_scene_node_type();
+}
+inline void InitSceneNodeRequest::set_scene_node_type(::uint32_t value) {
+  _internal_set_scene_node_type(value);
+  // @@protoc_insertion_point(field_set:InitSceneNodeRequest.scene_node_type)
+}
+inline ::uint32_t InitSceneNodeRequest::_internal_scene_node_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.scene_node_type_;
+}
+inline void InitSceneNodeRequest::_internal_set_scene_node_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_node_type_ = value;
 }
 
 #ifdef __GNUC__

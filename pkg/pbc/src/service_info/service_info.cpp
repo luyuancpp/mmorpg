@@ -88,7 +88,7 @@ void InitMessageInfo()
     gMessageInfo[CentreServiceEnterGsSucceedMessageId] = RpcService{"CentreService", "EnterGsSucceed", "::EnterGameNodeSuccessRequest", "::Empty", std::make_unique_for_overwrite<CentreServiceImpl>()};
     gMessageInfo[CentreServiceRouteNodeStringMsgMessageId] = RpcService{"CentreService", "RouteNodeStringMsg", "::RouteMessageRequest", "::RouteMessageResponse", std::make_unique_for_overwrite<CentreServiceImpl>()};
     gMessageInfo[CentreServiceRoutePlayerStringMsgMessageId] = RpcService{"CentreService", "RoutePlayerStringMsg", "::RoutePlayerMessageRequest", "::RoutePlayerMessageResponse", std::make_unique_for_overwrite<CentreServiceImpl>()};
-    gMessageInfo[CentreServiceUnRegisterGameNodeMessageId] = RpcService{"CentreService", "UnRegisterGameNode", "::UnregisterGameNodeRequest", "::Empty", std::make_unique_for_overwrite<CentreServiceImpl>()};
+    gMessageInfo[CentreServiceInitSceneNodeMessageId] = RpcService{"CentreService", "InitSceneNode", "::InitSceneNodeRequest", "::Empty", std::make_unique_for_overwrite<CentreServiceImpl>()};
     gMessageInfo[ClientPlayerSceneServiceEnterSceneMessageId] = RpcService{"ClientPlayerSceneService", "EnterScene", "::EnterSceneC2SRequest", "::EnterSceneC2SResponse", std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
     gMessageInfo[ClientPlayerSceneServiceNotifyEnterSceneMessageId] = RpcService{"ClientPlayerSceneService", "NotifyEnterScene", "::EnterSceneS2C", "::Empty", std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
     gMessageInfo[ClientPlayerSceneServiceSceneInfoC2SMessageId] = RpcService{"ClientPlayerSceneService", "SceneInfoC2S", "::SceneInfoRequest", "::Empty", std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};

@@ -55,8 +55,8 @@ constexpr uint32_t CentreServiceRoutePlayerStringMsgIndex = 9;
 #define CentreServiceRoutePlayerStringMsgMethod  ::CentreService_Stub::descriptor()->method(9)
 
 
-constexpr uint32_t CentreServiceUnRegisterGameNodeMessageId = 31;
-constexpr uint32_t CentreServiceUnRegisterGameNodeIndex = 10;
-#define CentreServiceUnRegisterGameNodeMethod  ::CentreService_Stub::descriptor()->method(10)
+constexpr uint32_t CentreServiceInitSceneNodeMessageId = 2;
+constexpr uint32_t CentreServiceInitSceneNodeIndex = 10;
+#define CentreServiceInitSceneNodeMethod  ::CentreService_Stub::descriptor()->method(10)
 
 
