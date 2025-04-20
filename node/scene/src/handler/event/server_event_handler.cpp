@@ -33,7 +33,6 @@ void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	GameNodeSceneSystem::RegisterSceneToCentre();
-	
 ///<<< END WRITING YOUR CODE
 
 }

@@ -21,6 +21,9 @@
 #include "util/game_registry.h"
 #include "util/network_utils.h"
 #include "world/world.h"
+#include "proto/common/centre_service.pb.h"
+#include "core/network/message_system.h"
+#include "service_info/centre_service_service_info.h"
 
 SceneNode* gSceneNode = nullptr;
 
@@ -48,6 +51,10 @@ void SceneNode::Initialize()
     
     
     Node::Initialize();
+
+    tls.dispatcher.sink<OnConnect2Centre>().connect<&SceneNode::OnConnect2CentreHandler>(*this);
+
+
     EventHandler::Register();
 
     InitPlayerService();
@@ -105,4 +112,12 @@ uint32_t SceneNode::GetNodeType() const
 Node::CanConnectNodeTypeList SceneNode::GetAllowedTargetNodeTypes()
 {
 	return { kCentreNode };
+}
+
+void SceneNode::OnConnect2CentreHandler(const OnConnect2Centre& event)
+{
+    InitSceneNodeRequest request;
+    request.set_node_id(gSceneNode->GetNodeId());
+    request.set_scene_node_type(gSceneNode->GetNodeInfo().scene_node_type());
+    BroadCastToCentre(CentreServiceInitSceneNodeMessageId, request);
 }
