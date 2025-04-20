@@ -141,10 +141,10 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 		return;
 	}
 
-	const auto gameNode = tls.sceneNodeRegistry.try_get<RpcSessionPtr>(gameNodeId);
+	const auto gameNode = tls.sceneNodeRegistry.try_get<RpcSession>(gameNodeId);
 	if (gameNode == nullptr)
 	{
-		LOG_ERROR << "RpcSessionPtr not found for game node ID: " << playerNodeInfo->scene_node_id();
+		LOG_ERROR << "RpcSession not found for game node ID: " << playerNodeInfo->scene_node_id();
 		return;
 	}
 
@@ -564,13 +564,13 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.GetNextRouteNodeId();
 			return;
 		}
-		const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
-		if (!gate_node)
+		const auto sceneNodeSession = tls.gateNodeRegistry.try_get<RpcSession>(gate_node_id);
+		if (!sceneNodeSession)
 		{
 			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.GetNextRouteNodeId();
 			return;
 		}
-		(*gate_node)->RouteMessageToNode(GateServiceRouteNodeMessageMessageId, *mutable_request);
+		sceneNodeSession->RouteMessageToNode(GateServiceRouteNodeMessageMessageId, *mutable_request);
 		break;
 	}
 	case kSceneNode:
@@ -581,13 +581,13 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 			LOG_ERROR << "Game node not found: " << tlsCommonLogic.GetNextRouteNodeId() << ", " << request->DebugString();
 			return;
 		}
-		const auto game_node = tls.sceneNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
-		if (!game_node)
+		const auto sceneNodeSession = tls.sceneNodeRegistry.try_get<RpcSession>(game_node_id);
+		if (!sceneNodeSession)
 		{
 			LOG_ERROR << "Game node not found: " << tlsCommonLogic.GetNextRouteNodeId() << ", " << request->DebugString();
 			return;
 		}
-		(*game_node)->RouteMessageToNode(GameServiceRouteNodeStringMsgMessageId, *mutable_request);
+		sceneNodeSession->RouteMessageToNode(GameServiceRouteNodeStringMsgMessageId, *mutable_request);
 		break;
 	}
 	default:

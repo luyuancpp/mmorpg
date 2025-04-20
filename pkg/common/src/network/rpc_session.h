@@ -77,5 +77,3 @@ bool IsSameAddress(const muduo::net::InetAddress& connAddr, const ServerInfo& se
 // 重载函数：判断两个 InetAddress 是否匹配
 bool IsSameAddress(const muduo::net::InetAddress& connAddr, const muduo::net::InetAddress& serverAddr);
 
-// 智能指针类型别名：管理 RpcSession 对象
-using RpcSessionPtr = std::shared_ptr<RpcSession>;
