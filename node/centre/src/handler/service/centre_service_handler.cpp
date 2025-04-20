@@ -620,6 +620,38 @@ void CentreServiceHandler::InitSceneNode(::google::protobuf::RpcController* cont
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+ 
+    auto sceneNodeId = entt::entity{ request->node_id() };
+    // Check if the scene node ID is valid
+    if (!tls.sceneNodeRegistry.valid(sceneNodeId))
+    {
+        LOG_ERROR << "Invalid scene node ID: " << request->node_id();
+        return;
+    }
+
+	// Search for a matching client connection and register the game node
+
+    AddMainSceneNodeComponent(tls.sceneNodeRegistry, sceneNodeId);
+
+
+    if (request->scene_node_type() == eGameNodeType::kMainSceneCrossNode)
+    {
+    	tls.sceneNodeRegistry.remove<MainSceneNode>(sceneNodeId);
+    	tls.sceneNodeRegistry.emplace<CrossMainSceneNode>(sceneNodeId);
+    	LOG_INFO << "Scene node " << request->node_id() << " updated to CrossMainSceneNode.";
+    }
+    else if (request->scene_node_type() == eGameNodeType::kRoomNode)
+    {
+    	tls.sceneNodeRegistry.remove<MainSceneNode>(sceneNodeId);
+    	tls.sceneNodeRegistry.emplace<RoomSceneNode>(sceneNodeId);
+    	LOG_INFO << "Scene node " << request->node_id() << " updated to RoomSceneNode.";
+    }
+    else if (request->scene_node_type() == eGameNodeType::kRoomSceneCrossNode)
+    {
+    	tls.sceneNodeRegistry.remove<MainSceneNode>(sceneNodeId);
+    	tls.sceneNodeRegistry.emplace<CrossRoomSceneNode>(sceneNodeId);
+    	LOG_INFO << "Scene node " << request->node_id() << " updated to CrossRoomSceneNode.";
+    }
 ///<<< END WRITING YOUR CODE
 
 }

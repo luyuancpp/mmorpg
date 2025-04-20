@@ -11,6 +11,8 @@
 
 #include "proto/common/deploy_service.pb.h"
 
+class OnConnect2Centre;
+
 class SceneNode : public Node
 {
 public:
@@ -35,6 +37,8 @@ public:
     virtual void PrepareForBeforeConnection() override;
     
     virtual void ReadyForGame()override;
+
+    void OnConnect2CentreHandler(const OnConnect2Centre& event);
 
 private:
     PbSyncRedisClientPtr redis;
