@@ -14,7 +14,6 @@
 #include "network/codec/codec.h"
 #include "network/codec/dispatcher.h"
 #include "time/comp/timer_task_comp.h"
-
 #include "proto/common/deploy_service.pb.h"
 #include "log/constants/log_constants.h"
 #include "node/system/node.h"
@@ -28,7 +27,6 @@ public:
     ~GateNode() override;
     inline ProtobufCodec& Codec() { return codec_; }
     inline GateServiceHandler& GetServiceHandler() { return nodeReplyService; }
-    inline RpcClientPtr GetZoneCentreNode() { return RpcClientPtr{}; }
     inline  NodeInfo& GetNodeInfo() { return nodeInfo; }
     uint32_t GetNodeType() const override;
     std::string GetServiceName() const override;

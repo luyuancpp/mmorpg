@@ -42,7 +42,6 @@ public:
 
 private:
     PbSyncRedisClientPtr redis;
-    RpcClientPtr myZoneCentreNode;
     GameServiceHandler nodeReplyService;
     TimerTaskComp worldTimer;
 };

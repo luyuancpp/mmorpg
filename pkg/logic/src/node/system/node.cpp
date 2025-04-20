@@ -246,7 +246,7 @@ void Node::ConnectToNode(entt::registry& registry, const NodeInfo& nodeInfo)
    // 判断是否为当前区域的中心节点  
    if (nodeInfo.node_type() == kCentreNode &&  
        nodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {  
-       // TODO: zoneCentreNode = node;  
+       zoneCentreNode = &node;  
    }  
 }
 
