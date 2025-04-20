@@ -207,32 +207,47 @@ void Node::ConnectToNode(entt::registry& registry, uint32_t nodeType) {
 	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
 	for (auto& nodeInfo : serviceNodeList[nodeType].node_list()) {
+  
 		ConnectToNode(registry, nodeInfo);
 	}
 }
 
-void Node::ConnectToNode(entt::registry& registry, const NodeInfo& nodeInfo)
-{
-	entt::entity id{ nodeInfo.node_id() };
-	const auto nodeId = registry.create(id);
-	if (nodeId != id) {
-		LOG_ERROR << "Failed to create node entity: " << entt::to_integral(nodeId);
-		return;  // 如果创建失败，则跳过该中心节点
-	}
+void Node::ConnectToNode(entt::registry& registry, const NodeInfo& nodeInfo)  
+{  
+   entt::entity id{ nodeInfo.node_id() };  
 
-	InetAddress endpoint(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
-	auto& node = registry.emplace<RpcClient>(nodeId,
-		loop_, endpoint);
+   // 检查节点是否已经存在  
+   if (registry.valid(id)) {  
+       auto* existingNodeInfo = registry.try_get<NodeInfo>(id);  
+       if (existingNodeInfo && existingNodeInfo->node_id() == nodeInfo.node_id()) {  
+           LOG_INFO << "Node with ID " << nodeInfo.node_id() << " already exists and matches. Skipping creation.";  
+           return;  // 如果节点已经存在且匹配，则直接返回  
+       } else {  
+           LOG_ERROR << "Node with ID " << nodeInfo.node_id() << " exists but does not match the provided NodeInfo!";  
+           return;  // 严重问题，节点存在但信息不匹配  
+       }  
+   }  
 
-	// 注册服务并连接
-	node.registerService(GetNodeRepleyService());
-	node.connect();
+   // 如果节点不存在，则创建新节点  
+   const auto nodeId = registry.create(id);  
+   if (nodeId != id) {  
+       LOG_ERROR << "Failed to create node entity: " << entt::to_integral(nodeId);  
+       return;  // 如果创建失败，则跳过该中心节点  
+   }  
 
-	// 判断是否为当前区域的中心节点
-	if (nodeInfo.node_type() == kCentreNode &&
-		nodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
-		//todo zoneCentreNode = node;
-	}
+   InetAddress endpoint(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());  
+   auto& node = registry.emplace<RpcClient>(nodeId, loop_, endpoint);  
+   registry.emplace<NodeInfo>(id, nodeInfo);  
+
+   // 注册服务并连接  
+   node.registerService(GetNodeRepleyService());  
+   node.connect();  
+
+   // 判断是否为当前区域的中心节点  
+   if (nodeInfo.node_type() == kCentreNode &&  
+       nodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {  
+       // TODO: zoneCentreNode = node;  
+   }  
 }
 
 void Node::ReleaseNodeId() {
@@ -535,7 +550,6 @@ void Node::OnClientConnected(const OnBeConnectedEvent& es) {
             return true; // 成功匹配并注册
         }
 
-        LOG_WARN <<"No matching RpcClient found in  [" << registryName << "] for address: " << conn->peerAddress().toIpPort();
         return false;
         };
 
