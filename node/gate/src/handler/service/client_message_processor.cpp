@@ -151,7 +151,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     // 通知中心服务器
     GateSessionDisconnectRequest request;
     request.mutable_session_info()->set_session_id(sessionId);
-    gGateNode->GetZoneCentreNode()->CallRemoteMethod(CentreServiceGateSessionDisconnectMessageId, request);
+    gGateNode->GetZoneCentreNode().CallRemoteMethod(CentreServiceGateSessionDisconnectMessageId, request);
 
     // 删除会话
     tls_gate.sessions().erase(sessionId);
@@ -170,13 +170,13 @@ void HandleGameNodeMessage(const Session& session, const RpcClientMessagePtr& re
         return;
     }
 
-    const auto& gameNode = tls.sceneNodeRegistry.get<RpcClientPtr>(gameNodeId);
+    auto& sceneNode = tls.sceneNodeRegistry.get<RpcClient>(gameNodeId);
     ClientSendMessageToPlayerRequest message;
     message.mutable_message_content()->set_serialized_message(request->body());
     message.set_session_id(sessionId);
     message.mutable_message_content()->set_id(request->id());
     message.mutable_message_content()->set_message_id(request->message_id());
-    gameNode->CallRemoteMethod(GameServiceClientSendMessageToPlayerMessageId, message);
+    sceneNode.CallRemoteMethod(GameServiceClientSendMessageToPlayerMessageId, message);
 
     LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 }

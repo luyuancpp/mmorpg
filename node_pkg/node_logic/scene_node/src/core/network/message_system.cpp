@@ -78,7 +78,7 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 		return;
 	}
 
-	const auto centreNode = tls.centreNodeRegistry.try_get<RpcClientPtr>(centreNodeId);
+	const auto centreNode = tls.centreNodeRegistry.try_get<RpcClient>(centreNodeId);
 	if (!centreNode)
 	{
 		LOG_ERROR << "RpcClientPtr not found for central node";
@@ -89,7 +89,7 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 	request.mutable_message_content()->set_message_id(messageId);
 	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
 	request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
-	(*centreNode)->SendRequest(CentreServicePlayerServiceMessageId, request);
+	centreNode->SendRequest(CentreServicePlayerServiceMessageId, request);
 }
 
 void SendToCentre(const uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
@@ -101,14 +101,14 @@ void SendToCentre(const uint32_t messageId, const google::protobuf::Message& mes
 		return;
 	}
 
-	const auto centreNode = tls.centreNodeRegistry.try_get<RpcClientPtr>(centreNodeId);
+	const auto centreNode = tls.centreNodeRegistry.try_get<RpcClient>(centreNodeId);
 	if (!centreNode)
 	{
 		LOG_ERROR << "RpcClientPtr not found for central node: " << nodeId;
 		return;
 	}
 
-	(*centreNode)->SendRequest(messageId, message);
+	centreNode->SendRequest(messageId, message);
 }
 
 void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
@@ -139,21 +139,21 @@ void CallCentreNodeMethod(uint32_t messageId, const google::protobuf::Message& m
 		return;
 	}
 
-	const auto centreNode = tls.centreNodeRegistry.try_get<RpcClientPtr>(centreNodeId);
+	const auto centreNode = tls.centreNodeRegistry.try_get<RpcClient>(centreNodeId);
 	if (!centreNode)
 	{
 		LOG_ERROR << "RpcClientPtr not found for central node: " << nodeId;
 		return;
 	}
 
-	(*centreNode)->CallRemoteMethod(messageId, message);
+	centreNode->CallRemoteMethod(messageId, message);
 }
 
 void BroadCastToCentre(uint32_t messageId, const google::protobuf::Message& message)
 {
-	for (auto&& [_, node] : tls.centreNodeRegistry.view<RpcClientPtr>().each())
+	for (auto&& [_, node] : tls.centreNodeRegistry.view<RpcClient>().each())
 	{
-		node->CallRemoteMethod(messageId, message);
+		node.CallRemoteMethod(messageId, message);
 	}
 }
 
