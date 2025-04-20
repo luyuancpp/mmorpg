@@ -75,8 +75,6 @@ void SceneNode::StartRpcServer()
 
 	Node::StartRpcServer();
 
-    ConnectToNode(tls.centreNodeRegistry, kCentreNode);
-    
     ReadyForGame();
     
     worldTimer.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
