@@ -524,15 +524,15 @@ void SendCentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entit
 
 }
 
-struct CentreServiceUnRegisterGameNodeCompleteQueue{
+struct CentreServiceInitSceneNodeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
 
-using AsyncCentreServiceUnRegisterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceUnRegisterGameNodeGrpcClientCall>&)>;
-AsyncCentreServiceUnRegisterGameNodeHandlerFunctionType  AsyncCentreServiceUnRegisterGameNodeHandler;
+using AsyncCentreServiceInitSceneNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceInitSceneNodeGrpcClientCall>&)>;
+AsyncCentreServiceInitSceneNodeHandlerFunctionType  AsyncCentreServiceInitSceneNodeHandler;
 
-void AsyncCompleteGrpcCentreServiceUnRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcCentreServiceInitSceneNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -546,15 +546,15 @@ void AsyncCompleteGrpcCentreServiceUnRegisterGameNode(entt::registry& registry, 
         return;
     }
 
-    std::unique_ptr<AsyncCentreServiceUnRegisterGameNodeGrpcClientCall> call(static_cast<AsyncCentreServiceUnRegisterGameNodeGrpcClientCall*>(got_tag));
+    std::unique_ptr<AsyncCentreServiceInitSceneNodeGrpcClientCall> call(static_cast<AsyncCentreServiceInitSceneNodeGrpcClientCall*>(got_tag));
 	if (!ok){
 		LOG_ERROR << "RPC failed";
 		return;
 	}
 
     if (call->status.ok()){
-		if(AsyncCentreServiceUnRegisterGameNodeHandler){
-			AsyncCentreServiceUnRegisterGameNodeHandler(call);
+		if(AsyncCentreServiceInitSceneNodeHandler){
+			AsyncCentreServiceInitSceneNodeHandler(call);
 		}
     }else{
         LOG_ERROR << call->status.error_message();
@@ -562,13 +562,13 @@ void AsyncCompleteGrpcCentreServiceUnRegisterGameNode(entt::registry& registry, 
 }
 
 
-void SendCentreServiceUnRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  ::UnregisterGameNodeRequest& request)
+void SendCentreServiceInitSceneNode(entt::registry& registry, entt::entity nodeEntity, const  ::InitSceneNodeRequest& request)
 {
 
-    AsyncCentreServiceUnRegisterGameNodeGrpcClientCall* call = new AsyncCentreServiceUnRegisterGameNodeGrpcClientCall;
+    AsyncCentreServiceInitSceneNodeGrpcClientCall* call = new AsyncCentreServiceInitSceneNodeGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcCentreServiceStubPtr>(nodeEntity)->PrepareAsyncUnRegisterGameNode(&call->context, request,
-		&registry.get<CentreServiceUnRegisterGameNodeCompleteQueue>(nodeEntity).cq);
+        registry.get<GrpcCentreServiceStubPtr>(nodeEntity)->PrepareAsyncInitSceneNode(&call->context, request,
+		&registry.get<CentreServiceInitSceneNodeCompleteQueue>(nodeEntity).cq);
 
     	call->response_reader->StartCall();
 
@@ -596,7 +596,7 @@ void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity node
 
 	registry.emplace<CentreServiceRoutePlayerStringMsgCompleteQueue>(nodeEntity);
 
-	registry.emplace<CentreServiceUnRegisterGameNodeCompleteQueue>(nodeEntity);
+	registry.emplace<CentreServiceInitSceneNodeCompleteQueue>(nodeEntity);
 
 }
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry) {
@@ -661,9 +661,9 @@ void HandleCentreServiceCompletedQueueMessage(entt::registry& registry) {
 		}
 	}
 	{
-		auto&& view = registry.view<CentreServiceUnRegisterGameNodeCompleteQueue>();
+		auto&& view = registry.view<CentreServiceInitSceneNodeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcCentreServiceUnRegisterGameNode(registry, e, completeQueueComp.cq);
+			AsyncCompleteGrpcCentreServiceInitSceneNode(registry, e, completeQueueComp.cq);
 		}
 	}
 }

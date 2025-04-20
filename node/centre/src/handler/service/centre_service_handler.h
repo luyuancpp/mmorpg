@@ -77,8 +77,8 @@ public:
 
 
 
-	void UnRegisterGameNode(::google::protobuf::RpcController* controller,
-		const ::UnregisterGameNodeRequest* request,
+	void InitSceneNode(::google::protobuf::RpcController* controller,
+		const ::InitSceneNodeRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done) override;
 

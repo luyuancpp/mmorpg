@@ -2,6 +2,7 @@ package game
 
 const PlayerClientCommonServiceSendTipToClientMessageId = 0
 const CentrePlayerSceneServiceEnterSceneMessageId = 1
+const CentreServiceInitSceneNodeMessageId = 2
 const CentrePlayerSceneServiceLeaveSceneMessageId = 3
 const CentrePlayerSceneServiceLeaveSceneAsyncSavePlayerCompleteMessageId = 4
 const CentrePlayerSceneServiceSceneInfoC2SMessageId = 5
@@ -29,7 +30,6 @@ const CentreSceneServiceUnRegisterSceneMessageId = 27
 const CentreServicePlayerServiceMessageId = 28
 const CentreSceneServiceRegisterSceneMessageId = 29
 const GateServiceKickSessionByCentreMessageId = 30
-const CentreServiceUnRegisterGameNodeMessageId = 31
 const ClientPlayerSceneServiceEnterSceneMessageId = 32
 const LoginServiceCreatePlayerMessageId = 33
 const LoginServiceLoginMessageId = 34

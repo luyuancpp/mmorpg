@@ -615,7 +615,7 @@ void CentreServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcControlle
 
 
 
-void CentreServiceHandler::UnRegisterGameNode(::google::protobuf::RpcController* controller,const ::UnregisterGameNodeRequest* request,
+void CentreServiceHandler::InitSceneNode(::google::protobuf::RpcController* controller,const ::InitSceneNodeRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {

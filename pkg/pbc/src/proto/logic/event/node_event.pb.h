@@ -51,6 +51,12 @@ struct TableStruct_proto_2flogic_2fevent_2fnode_5fevent_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_proto_2flogic_2fevent_2fnode_5fevent_2eproto;
+class OnNodeAddPbEvent;
+struct OnNodeAddPbEventDefaultTypeInternal;
+extern OnNodeAddPbEventDefaultTypeInternal _OnNodeAddPbEvent_default_instance_;
+class OnNodeRemovePbEvent;
+struct OnNodeRemovePbEventDefaultTypeInternal;
+extern OnNodeRemovePbEventDefaultTypeInternal _OnNodeRemovePbEvent_default_instance_;
 class OnSceneNodeAddPbEvent;
 struct OnSceneNodeAddPbEventDefaultTypeInternal;
 extern OnSceneNodeAddPbEventDefaultTypeInternal _OnSceneNodeAddPbEvent_default_instance_;
@@ -484,6 +490,436 @@ class OnSceneNodeAddPbEvent final
   union { Impl_ _impl_; };
   friend struct ::TableStruct_proto_2flogic_2fevent_2fnode_5fevent_2eproto;
 };
+// -------------------------------------------------------------------
+
+class OnNodeRemovePbEvent final
+    : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:OnNodeRemovePbEvent) */ {
+ public:
+  inline OnNodeRemovePbEvent() : OnNodeRemovePbEvent(nullptr) {}
+  ~OnNodeRemovePbEvent() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(OnNodeRemovePbEvent* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(OnNodeRemovePbEvent));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR OnNodeRemovePbEvent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline OnNodeRemovePbEvent(const OnNodeRemovePbEvent& from) : OnNodeRemovePbEvent(nullptr, from) {}
+  inline OnNodeRemovePbEvent(OnNodeRemovePbEvent&& from) noexcept
+      : OnNodeRemovePbEvent(nullptr, std::move(from)) {}
+  inline OnNodeRemovePbEvent& operator=(const OnNodeRemovePbEvent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline OnNodeRemovePbEvent& operator=(OnNodeRemovePbEvent&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const OnNodeRemovePbEvent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const OnNodeRemovePbEvent* internal_default_instance() {
+    return reinterpret_cast<const OnNodeRemovePbEvent*>(
+        &_OnNodeRemovePbEvent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 3;
+  friend void swap(OnNodeRemovePbEvent& a, OnNodeRemovePbEvent& b) { a.Swap(&b); }
+  inline void Swap(OnNodeRemovePbEvent* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(OnNodeRemovePbEvent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  OnNodeRemovePbEvent* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<OnNodeRemovePbEvent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const OnNodeRemovePbEvent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const OnNodeRemovePbEvent& from) { OnNodeRemovePbEvent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(OnNodeRemovePbEvent* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "OnNodeRemovePbEvent"; }
+
+ protected:
+  explicit OnNodeRemovePbEvent(::google::protobuf::Arena* arena);
+  OnNodeRemovePbEvent(::google::protobuf::Arena* arena, const OnNodeRemovePbEvent& from);
+  OnNodeRemovePbEvent(::google::protobuf::Arena* arena, OnNodeRemovePbEvent&& from) noexcept
+      : OnNodeRemovePbEvent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kEntityFieldNumber = 1,
+    kNodeTypeFieldNumber = 2,
+    kScenenodeTypeFieldNumber = 3,
+  };
+  // uint64 entity = 1;
+  void clear_entity() ;
+  ::uint64_t entity() const;
+  void set_entity(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_entity() const;
+  void _internal_set_entity(::uint64_t value);
+
+  public:
+  // uint32 node_type = 2;
+  void clear_node_type() ;
+  ::uint32_t node_type() const;
+  void set_node_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_node_type() const;
+  void _internal_set_node_type(::uint32_t value);
+
+  public:
+  // uint32 scenenode_type = 3;
+  void clear_scenenode_type() ;
+  ::uint32_t scenenode_type() const;
+  void set_scenenode_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_scenenode_type() const;
+  void _internal_set_scenenode_type(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:OnNodeRemovePbEvent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      2, 3, 0,
+      0, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const OnNodeRemovePbEvent& from_msg);
+    ::uint64_t entity_;
+    ::uint32_t node_type_;
+    ::uint32_t scenenode_type_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2flogic_2fevent_2fnode_5fevent_2eproto;
+};
+// -------------------------------------------------------------------
+
+class OnNodeAddPbEvent final
+    : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:OnNodeAddPbEvent) */ {
+ public:
+  inline OnNodeAddPbEvent() : OnNodeAddPbEvent(nullptr) {}
+  ~OnNodeAddPbEvent() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(OnNodeAddPbEvent* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(OnNodeAddPbEvent));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR OnNodeAddPbEvent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline OnNodeAddPbEvent(const OnNodeAddPbEvent& from) : OnNodeAddPbEvent(nullptr, from) {}
+  inline OnNodeAddPbEvent(OnNodeAddPbEvent&& from) noexcept
+      : OnNodeAddPbEvent(nullptr, std::move(from)) {}
+  inline OnNodeAddPbEvent& operator=(const OnNodeAddPbEvent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline OnNodeAddPbEvent& operator=(OnNodeAddPbEvent&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const OnNodeAddPbEvent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const OnNodeAddPbEvent* internal_default_instance() {
+    return reinterpret_cast<const OnNodeAddPbEvent*>(
+        &_OnNodeAddPbEvent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 2;
+  friend void swap(OnNodeAddPbEvent& a, OnNodeAddPbEvent& b) { a.Swap(&b); }
+  inline void Swap(OnNodeAddPbEvent* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(OnNodeAddPbEvent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  OnNodeAddPbEvent* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<OnNodeAddPbEvent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const OnNodeAddPbEvent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const OnNodeAddPbEvent& from) { OnNodeAddPbEvent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(OnNodeAddPbEvent* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "OnNodeAddPbEvent"; }
+
+ protected:
+  explicit OnNodeAddPbEvent(::google::protobuf::Arena* arena);
+  OnNodeAddPbEvent(::google::protobuf::Arena* arena, const OnNodeAddPbEvent& from);
+  OnNodeAddPbEvent(::google::protobuf::Arena* arena, OnNodeAddPbEvent&& from) noexcept
+      : OnNodeAddPbEvent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kEntityFieldNumber = 1,
+    kNodeTypeFieldNumber = 2,
+    kScenenodeTypeFieldNumber = 3,
+  };
+  // uint64 entity = 1;
+  void clear_entity() ;
+  ::uint64_t entity() const;
+  void set_entity(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_entity() const;
+  void _internal_set_entity(::uint64_t value);
+
+  public:
+  // uint32 node_type = 2;
+  void clear_node_type() ;
+  ::uint32_t node_type() const;
+  void set_node_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_node_type() const;
+  void _internal_set_node_type(::uint32_t value);
+
+  public:
+  // uint32 scenenode_type = 3;
+  void clear_scenenode_type() ;
+  ::uint32_t scenenode_type() const;
+  void set_scenenode_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_scenenode_type() const;
+  void _internal_set_scenenode_type(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:OnNodeAddPbEvent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      2, 3, 0,
+      0, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const OnNodeAddPbEvent& from_msg);
+    ::uint64_t entity_;
+    ::uint32_t node_type_;
+    ::uint32_t scenenode_type_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2flogic_2fevent_2fnode_5fevent_2eproto;
+};
 
 // ===================================================================
 
@@ -611,6 +1047,146 @@ inline ::uint32_t OnSceneNodeRemovePbEvent::_internal_scenenode_type() const {
   return _impl_.scenenode_type_;
 }
 inline void OnSceneNodeRemovePbEvent::_internal_set_scenenode_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scenenode_type_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// OnNodeAddPbEvent
+
+// uint64 entity = 1;
+inline void OnNodeAddPbEvent::clear_entity() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.entity_ = ::uint64_t{0u};
+}
+inline ::uint64_t OnNodeAddPbEvent::entity() const {
+  // @@protoc_insertion_point(field_get:OnNodeAddPbEvent.entity)
+  return _internal_entity();
+}
+inline void OnNodeAddPbEvent::set_entity(::uint64_t value) {
+  _internal_set_entity(value);
+  // @@protoc_insertion_point(field_set:OnNodeAddPbEvent.entity)
+}
+inline ::uint64_t OnNodeAddPbEvent::_internal_entity() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.entity_;
+}
+inline void OnNodeAddPbEvent::_internal_set_entity(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.entity_ = value;
+}
+
+// uint32 node_type = 2;
+inline void OnNodeAddPbEvent::clear_node_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_type_ = 0u;
+}
+inline ::uint32_t OnNodeAddPbEvent::node_type() const {
+  // @@protoc_insertion_point(field_get:OnNodeAddPbEvent.node_type)
+  return _internal_node_type();
+}
+inline void OnNodeAddPbEvent::set_node_type(::uint32_t value) {
+  _internal_set_node_type(value);
+  // @@protoc_insertion_point(field_set:OnNodeAddPbEvent.node_type)
+}
+inline ::uint32_t OnNodeAddPbEvent::_internal_node_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.node_type_;
+}
+inline void OnNodeAddPbEvent::_internal_set_node_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_type_ = value;
+}
+
+// uint32 scenenode_type = 3;
+inline void OnNodeAddPbEvent::clear_scenenode_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scenenode_type_ = 0u;
+}
+inline ::uint32_t OnNodeAddPbEvent::scenenode_type() const {
+  // @@protoc_insertion_point(field_get:OnNodeAddPbEvent.scenenode_type)
+  return _internal_scenenode_type();
+}
+inline void OnNodeAddPbEvent::set_scenenode_type(::uint32_t value) {
+  _internal_set_scenenode_type(value);
+  // @@protoc_insertion_point(field_set:OnNodeAddPbEvent.scenenode_type)
+}
+inline ::uint32_t OnNodeAddPbEvent::_internal_scenenode_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.scenenode_type_;
+}
+inline void OnNodeAddPbEvent::_internal_set_scenenode_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scenenode_type_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// OnNodeRemovePbEvent
+
+// uint64 entity = 1;
+inline void OnNodeRemovePbEvent::clear_entity() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.entity_ = ::uint64_t{0u};
+}
+inline ::uint64_t OnNodeRemovePbEvent::entity() const {
+  // @@protoc_insertion_point(field_get:OnNodeRemovePbEvent.entity)
+  return _internal_entity();
+}
+inline void OnNodeRemovePbEvent::set_entity(::uint64_t value) {
+  _internal_set_entity(value);
+  // @@protoc_insertion_point(field_set:OnNodeRemovePbEvent.entity)
+}
+inline ::uint64_t OnNodeRemovePbEvent::_internal_entity() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.entity_;
+}
+inline void OnNodeRemovePbEvent::_internal_set_entity(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.entity_ = value;
+}
+
+// uint32 node_type = 2;
+inline void OnNodeRemovePbEvent::clear_node_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_type_ = 0u;
+}
+inline ::uint32_t OnNodeRemovePbEvent::node_type() const {
+  // @@protoc_insertion_point(field_get:OnNodeRemovePbEvent.node_type)
+  return _internal_node_type();
+}
+inline void OnNodeRemovePbEvent::set_node_type(::uint32_t value) {
+  _internal_set_node_type(value);
+  // @@protoc_insertion_point(field_set:OnNodeRemovePbEvent.node_type)
+}
+inline ::uint32_t OnNodeRemovePbEvent::_internal_node_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.node_type_;
+}
+inline void OnNodeRemovePbEvent::_internal_set_node_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_type_ = value;
+}
+
+// uint32 scenenode_type = 3;
+inline void OnNodeRemovePbEvent::clear_scenenode_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scenenode_type_ = 0u;
+}
+inline ::uint32_t OnNodeRemovePbEvent::scenenode_type() const {
+  // @@protoc_insertion_point(field_get:OnNodeRemovePbEvent.scenenode_type)
+  return _internal_scenenode_type();
+}
+inline void OnNodeRemovePbEvent::set_scenenode_type(::uint32_t value) {
+  _internal_set_scenenode_type(value);
+  // @@protoc_insertion_point(field_set:OnNodeRemovePbEvent.scenenode_type)
+}
+inline ::uint32_t OnNodeRemovePbEvent::_internal_scenenode_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.scenenode_type_;
+}
+inline void OnNodeRemovePbEvent::_internal_set_scenenode_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scenenode_type_ = value;
 }

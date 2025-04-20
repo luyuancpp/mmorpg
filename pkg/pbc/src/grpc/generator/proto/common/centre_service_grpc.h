@@ -210,7 +210,7 @@ void SendCentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entit
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-class AsyncCentreServiceUnRegisterGameNodeGrpcClientCall
+class AsyncCentreServiceInitSceneNodeGrpcClientCall
 {
 public:
     ClientContext context;
@@ -219,13 +219,13 @@ public:
 	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
 
-using AsyncCentreServiceUnRegisterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceUnRegisterGameNodeGrpcClientCall>&)>;
+using AsyncCentreServiceInitSceneNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceInitSceneNodeGrpcClientCall>&)>;
 
-extern AsyncCentreServiceUnRegisterGameNodeHandlerFunctionType  AsyncCentreServiceUnRegisterGameNodeHandler;
+extern AsyncCentreServiceInitSceneNodeHandlerFunctionType  AsyncCentreServiceInitSceneNodeHandler;
 
 
-class ::UnregisterGameNodeRequest;
-void SendCentreServiceUnRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  ::UnregisterGameNodeRequest& request);
+class ::InitSceneNodeRequest;
+void SendCentreServiceInitSceneNode(entt::registry& registry, entt::entity nodeEntity, const  ::InitSceneNodeRequest& request);
 
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
