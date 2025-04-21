@@ -39,7 +39,6 @@ void CentreNode::Initialize()
 
 	Node::Initialize();
 
-	InitEventCallback();
 
 	EventHandler::Register();
 
@@ -48,11 +47,6 @@ void CentreNode::Initialize()
 
 	void InitServiceHandler();
 	InitServiceHandler();
-}
-
-void CentreNode::InitEventCallback()
-{
-	tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
 }
 
 NodeInfo& CentreNode::GetNodeInfo()
@@ -77,10 +71,6 @@ void CentreNode::StartRpcServer()
 
 	InitSystemAfterConnect();
 	LOG_INFO << "centre start at " << GetNodeInfo().DebugString();
-}
-
-void CentreNode::Receive2(const OnBeConnectedEvent& es)
-{
 }
 
 void CentreNode::PrepareForBeforeConnection()

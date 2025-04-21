@@ -30,10 +30,7 @@ public:
 
 	void StartRpcServer() override;
 
-	void Receive2(const OnBeConnectedEvent& es);
-
 private:
-	void InitEventCallback();
 	
 	void InitSystemAfterConnect() const;
 
