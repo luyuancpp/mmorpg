@@ -119,5 +119,5 @@ void SceneNode::OnConnect2CentreHandler(const OnConnect2Centre& event)
     InitSceneNodeRequest request;
     request.set_node_id(gSceneNode->GetNodeId());
     request.set_scene_node_type(gSceneNode->GetNodeInfo().scene_node_type());
-    BroadCastToCentre(CentreServiceInitSceneNodeMessageId, request);
+    CallCentreNodeMethod(CentreServiceInitSceneNodeMessageId, request, entt::to_integral(event.entity()));
 }

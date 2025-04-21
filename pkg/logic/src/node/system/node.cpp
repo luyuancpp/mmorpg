@@ -126,6 +126,7 @@ void Node::SetupLoggingSystem() {
 void Node::RegisterEventHandlers()
 {
 	tls.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&Node::OnConnectedToServer>(*this);
+	tls.dispatcher.sink<OnBeConnectedEvent>().connect<&Node::OnClientConnected>(*this);
 }
 
 // Loads configuration files for the node
@@ -268,9 +269,7 @@ void Node::SetUpEventHandlers()
 
 	void InitRepliedHandler();
 	InitRepliedHandler();
-
 }
-
 
 void Node::AsyncOutput(const char* msg, int len) {
 	logger().append(msg, len);
@@ -538,6 +537,12 @@ void Node::OnClientConnected(const OnBeConnectedEvent& es) {
     }
 
     LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
+
+	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+
+	for (auto& nodeInfoList : serviceNodeList) {
+
+	}
 
     // 封装注册逻辑
     auto tryRegisterSession = [&](auto& registry, const std::string& registryName) {
