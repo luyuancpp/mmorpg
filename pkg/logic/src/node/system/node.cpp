@@ -24,6 +24,9 @@
 #include "etcd_helper.h"
 #include "grpc_client_system.h"
 #include "proto/logic/event/node_event.pb.h"
+#include "service_info/centre_service_service_info.h"
+#include "service_info/game_service_service_info.h"
+#include "service_info/gate_service_service_info.h"
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
 	: loop_(loop),
@@ -473,72 +476,78 @@ void Node::InitializeGrpcResponseHandlers() {
 }
 
 void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
-    auto& conn = es.conn_;
-    if (!conn->connected()) {
-        LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
-        return;
-    }
+	auto& conn = es.conn_;
+	if (!conn->connected()) {
+		LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
+		return;
+	}
 
-    LOG_INFO << "Successfully connected to server: " << conn->peerAddress().toIpPort();
+	LOG_INFO << "Successfully connected to server: " << conn->peerAddress().toIpPort();
 
-    // 封装统一处理逻辑
-    auto handleConnection = [&](auto& registry, const std::string& registryName, auto onConnectedCallback) {
-        for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
-            if (!IsSameAddress(client.peer_addr(), conn->peerAddress()))
-                continue;
+	// 封装统一处理逻辑
+	auto handleConnection = [&](auto& registry, const std::string& registryName, auto onConnectedCallback) {
+		for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
+			if (!IsSameAddress(client.peer_addr(), conn->peerAddress()))
+				continue;
 
-            LOG_INFO << "Matched peer address in [" << registryName << "] registry: {}", registryName, conn->peerAddress().toIpPort();
-
+			LOG_INFO << "Matched peer address in [" << registryName << "] registry: {}", registryName, conn->peerAddress().toIpPort();
 
 			RegisterNodeSessionRequest request;
 			request.mutable_node_info()->CopyFrom(GetNodeInfo());
 			request.mutable_endpoint()->set_ip(conn->localAddress().toIp());
 			request.mutable_endpoint()->set_port(conn->localAddress().port());
 
-            onConnectedCallback(e);  // 调用特定回调（可空）
+			// 将 RegisterNodeSessionRequest 和 RpcClient 传递到回调中
+			onConnectedCallback(e, request, client);
 
 			ConnectToNodePbEvent connectToNodePbEvent;
 			connectToNodePbEvent.set_entity(entt::to_integral(e));
 			connectToNodePbEvent.set_node_type(nodeInfo.node_type());
 			tls.dispatcher.trigger(connectToNodePbEvent);
-            return true;
-        }
+			return true;
+		}
 
 		LOG_INFO << "No matching client found in [" << registryName << "] registry for address: " << conn->peerAddress().toIpPort();
-        return false;
-        };
+		return false;
+		};
 
-    // 中心节点连接成功，触发 OnConnect2Centre 事件
-    handleConnection(
-        tls.centreNodeRegistry,
-        "CentreNode",
-        [&](entt::entity e) {
-            OnConnect2CentrePbEvent connect2CentreEvent;
-            connect2CentreEvent.set_entity(entt::to_integral(e));
-            tls.dispatcher.trigger(connect2CentreEvent);
-            LOG_INFO << "Triggered OnConnect2Centre event for entity: {}", static_cast<uint64_t>(e);
-        }
-    );
+	// 中心节点连接成功，触发 OnConnect2Centre 事件
+	handleConnection(
+		tls.centreNodeRegistry,
+		"CentreNode",
+		[&](entt::entity e, RegisterNodeSessionRequest& request, RpcClient& client) {
+			OnConnect2CentrePbEvent connect2CentreEvent;
+			connect2CentreEvent.set_entity(entt::to_integral(e));
+			tls.dispatcher.trigger(connect2CentreEvent);
+			LOG_INFO << "Triggered OnConnect2Centre event for entity: {}", static_cast<uint64_t>(e);
 
-    // 场景节点连接成功（暂时无操作，可后续扩展）
-    handleConnection(
-        tls.sceneNodeRegistry,
-        "SceneNode",
-        [&](entt::entity e) {
-            // TODO: Add scene-specific logic here
-            LOG_INFO<<"SceneNode connected. Entity: " << entt::to_integral(e);
-        }
-    );
+			// 示例：使用 request 和 client 进行额外操作
+			client.CallRemoteMethod(CentreServiceRegisterNodeSessionMessageId, request);
+		}
+	);
 
-    // 网关节点连接成功（暂时无操作，可后续扩展）
-    handleConnection(
-        tls.gateNodeRegistry,
-        "GateNode",
-        [&](entt::entity e) {
-            // TODO: Add gate-specific logic here
-            LOG_INFO <<  "GateNode connected. Entity:"  << entt::to_integral(e);
-        }
-    );
+	// 场景节点连接成功（暂时无操作，可后续扩展）
+	handleConnection(
+		tls.sceneNodeRegistry,
+		"SceneNode",
+		[&](entt::entity e, RegisterNodeSessionRequest& request, RpcClient& client) {
+			client.CallRemoteMethod(GameServiceRegisterNodeSessionMessageId, request);
+
+			// TODO: Add scene-specific logic here
+			LOG_INFO << "SceneNode connected. Entity: " << entt::to_integral(e);
+		}
+	);
+
+	// 网关节点连接成功（暂时无操作，可后续扩展）
+	handleConnection(
+		tls.gateNodeRegistry,
+		"GateNode",
+		[&](entt::entity e, RegisterNodeSessionRequest& request, RpcClient& client) {
+			client.CallRemoteMethod(GateServiceRegisterNodeSessionMessageId, request);
+			// TODO: Add gate-specific logic here
+			LOG_INFO << "GateNode connected. Entity: " << entt::to_integral(e);
+		}
+	);
 }
 
 
