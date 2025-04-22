@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type OnConnect2Centre struct {
+type OnConnect2CentrePbEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -28,8 +28,8 @@ type OnConnect2Centre struct {
 	Entity uint64 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 }
 
-func (x *OnConnect2Centre) Reset() {
-	*x = OnConnect2Centre{}
+func (x *OnConnect2CentrePbEvent) Reset() {
+	*x = OnConnect2CentrePbEvent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_proto_logic_event_server_event_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +37,13 @@ func (x *OnConnect2Centre) Reset() {
 	}
 }
 
-func (x *OnConnect2Centre) String() string {
+func (x *OnConnect2CentrePbEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OnConnect2Centre) ProtoMessage() {}
+func (*OnConnect2CentrePbEvent) ProtoMessage() {}
 
-func (x *OnConnect2Centre) ProtoReflect() protoreflect.Message {
+func (x *OnConnect2CentrePbEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_logic_event_server_event_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,106 +55,12 @@ func (x *OnConnect2Centre) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OnConnect2Centre.ProtoReflect.Descriptor instead.
-func (*OnConnect2Centre) Descriptor() ([]byte, []int) {
+// Deprecated: Use OnConnect2CentrePbEvent.ProtoReflect.Descriptor instead.
+func (*OnConnect2CentrePbEvent) Descriptor() ([]byte, []int) {
 	return file_proto_logic_event_server_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *OnConnect2Centre) GetEntity() uint64 {
-	if x != nil {
-		return x.Entity
-	}
-	return 0
-}
-
-type OnConnect2Game struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Entity uint64 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
-}
-
-func (x *OnConnect2Game) Reset() {
-	*x = OnConnect2Game{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_logic_event_server_event_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *OnConnect2Game) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OnConnect2Game) ProtoMessage() {}
-
-func (x *OnConnect2Game) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_event_server_event_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use OnConnect2Game.ProtoReflect.Descriptor instead.
-func (*OnConnect2Game) Descriptor() ([]byte, []int) {
-	return file_proto_logic_event_server_event_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *OnConnect2Game) GetEntity() uint64 {
-	if x != nil {
-		return x.Entity
-	}
-	return 0
-}
-
-type OnConnect2Gate struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Entity uint64 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
-}
-
-func (x *OnConnect2Gate) Reset() {
-	*x = OnConnect2Gate{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_logic_event_server_event_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *OnConnect2Gate) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OnConnect2Gate) ProtoMessage() {}
-
-func (x *OnConnect2Gate) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_event_server_event_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use OnConnect2Gate.ProtoReflect.Descriptor instead.
-func (*OnConnect2Gate) Descriptor() ([]byte, []int) {
-	return file_proto_logic_event_server_event_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *OnConnect2Gate) GetEntity() uint64 {
+func (x *OnConnect2CentrePbEvent) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
@@ -172,7 +78,7 @@ type OnConnect2Login struct {
 func (x *OnConnect2Login) Reset() {
 	*x = OnConnect2Login{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_logic_event_server_event_proto_msgTypes[3]
+		mi := &file_proto_logic_event_server_event_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -185,7 +91,7 @@ func (x *OnConnect2Login) String() string {
 func (*OnConnect2Login) ProtoMessage() {}
 
 func (x *OnConnect2Login) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_event_server_event_proto_msgTypes[3]
+	mi := &file_proto_logic_event_server_event_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -198,7 +104,7 @@ func (x *OnConnect2Login) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnConnect2Login.ProtoReflect.Descriptor instead.
 func (*OnConnect2Login) Descriptor() ([]byte, []int) {
-	return file_proto_logic_event_server_event_proto_rawDescGZIP(), []int{3}
+	return file_proto_logic_event_server_event_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *OnConnect2Login) GetEntity() uint64 {
@@ -217,7 +123,7 @@ type OnServerStart struct {
 func (x *OnServerStart) Reset() {
 	*x = OnServerStart{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_logic_event_server_event_proto_msgTypes[4]
+		mi := &file_proto_logic_event_server_event_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -230,7 +136,7 @@ func (x *OnServerStart) String() string {
 func (*OnServerStart) ProtoMessage() {}
 
 func (x *OnServerStart) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_event_server_event_proto_msgTypes[4]
+	mi := &file_proto_logic_event_server_event_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -243,7 +149,7 @@ func (x *OnServerStart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnServerStart.ProtoReflect.Descriptor instead.
 func (*OnServerStart) Descriptor() ([]byte, []int) {
-	return file_proto_logic_event_server_event_proto_rawDescGZIP(), []int{4}
+	return file_proto_logic_event_server_event_proto_rawDescGZIP(), []int{2}
 }
 
 var File_proto_logic_event_server_event_proto protoreflect.FileDescriptor
@@ -251,20 +157,15 @@ var File_proto_logic_event_server_event_proto protoreflect.FileDescriptor
 var file_proto_logic_event_server_event_proto_rawDesc = []byte{
 	0x0a, 0x24, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x2f, 0x65, 0x76,
 	0x65, 0x6e, 0x74, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x5f, 0x65, 0x76, 0x65, 0x6e, 0x74,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x2a, 0x0a, 0x10, 0x4f, 0x6e, 0x43, 0x6f, 0x6e, 0x6e,
-	0x65, 0x63, 0x74, 0x32, 0x43, 0x65, 0x6e, 0x74, 0x72, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e,
-	0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69,
-	0x74, 0x79, 0x22, 0x28, 0x0a, 0x0e, 0x4f, 0x6e, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x32,
-	0x47, 0x61, 0x6d, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x22, 0x28, 0x0a, 0x0e,
-	0x4f, 0x6e, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x32, 0x47, 0x61, 0x74, 0x65, 0x12, 0x16,
-	0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06,
-	0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x22, 0x29, 0x0a, 0x0f, 0x4f, 0x6e, 0x43, 0x6f, 0x6e, 0x6e,
-	0x65, 0x63, 0x74, 0x32, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74,
-	0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74,
-	0x79, 0x22, 0x0f, 0x0a, 0x0d, 0x4f, 0x6e, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x74, 0x61,
-	0x72, 0x74, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x31, 0x0a, 0x17, 0x4f, 0x6e, 0x43, 0x6f, 0x6e, 0x6e,
+	0x65, 0x63, 0x74, 0x32, 0x43, 0x65, 0x6e, 0x74, 0x72, 0x65, 0x50, 0x62, 0x45, 0x76, 0x65, 0x6e,
+	0x74, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x04, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x22, 0x29, 0x0a, 0x0f, 0x4f, 0x6e, 0x43,
+	0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x32, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x12, 0x16, 0x0a, 0x06,
+	0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e,
+	0x74, 0x69, 0x74, 0x79, 0x22, 0x0f, 0x0a, 0x0d, 0x4f, 0x6e, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72,
+	0x53, 0x74, 0x61, 0x72, 0x74, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -279,13 +180,11 @@ func file_proto_logic_event_server_event_proto_rawDescGZIP() []byte {
 	return file_proto_logic_event_server_event_proto_rawDescData
 }
 
-var file_proto_logic_event_server_event_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_proto_logic_event_server_event_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_logic_event_server_event_proto_goTypes = []any{
-	(*OnConnect2Centre)(nil), // 0: OnConnect2Centre
-	(*OnConnect2Game)(nil),   // 1: OnConnect2Game
-	(*OnConnect2Gate)(nil),   // 2: OnConnect2Gate
-	(*OnConnect2Login)(nil),  // 3: OnConnect2Login
-	(*OnServerStart)(nil),    // 4: OnServerStart
+	(*OnConnect2CentrePbEvent)(nil), // 0: OnConnect2CentrePbEvent
+	(*OnConnect2Login)(nil),         // 1: OnConnect2Login
+	(*OnServerStart)(nil),           // 2: OnServerStart
 }
 var file_proto_logic_event_server_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -302,7 +201,7 @@ func file_proto_logic_event_server_event_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_proto_logic_event_server_event_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*OnConnect2Centre); i {
+			switch v := v.(*OnConnect2CentrePbEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -314,30 +213,6 @@ func file_proto_logic_event_server_event_proto_init() {
 			}
 		}
 		file_proto_logic_event_server_event_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*OnConnect2Game); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_logic_event_server_event_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*OnConnect2Gate); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_logic_event_server_event_proto_msgTypes[3].Exporter = func(v any, i int) any {
 			switch v := v.(*OnConnect2Login); i {
 			case 0:
 				return &v.state
@@ -349,7 +224,7 @@ func file_proto_logic_event_server_event_proto_init() {
 				return nil
 			}
 		}
-		file_proto_logic_event_server_event_proto_msgTypes[4].Exporter = func(v any, i int) any {
+		file_proto_logic_event_server_event_proto_msgTypes[2].Exporter = func(v any, i int) any {
 			switch v := v.(*OnServerStart); i {
 			case 0:
 				return &v.state
@@ -368,7 +243,7 @@ func file_proto_logic_event_server_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_logic_event_server_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

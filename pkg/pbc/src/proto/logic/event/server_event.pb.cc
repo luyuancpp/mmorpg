@@ -68,13 +68,13 @@ struct OnConnect2LoginDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnConnect2LoginDefaultTypeInternal _OnConnect2Login_default_instance_;
 
-inline constexpr OnConnect2Gate::Impl_::Impl_(
+inline constexpr OnConnect2CentrePbEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : entity_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR OnConnect2Gate::OnConnect2Gate(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR OnConnect2CentrePbEvent::OnConnect2CentrePbEvent(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
@@ -82,66 +82,16 @@ PROTOBUF_CONSTEXPR OnConnect2Gate::OnConnect2Gate(::_pbi::ConstantInitialized)
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct OnConnect2GateDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR OnConnect2GateDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~OnConnect2GateDefaultTypeInternal() {}
+struct OnConnect2CentrePbEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR OnConnect2CentrePbEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~OnConnect2CentrePbEventDefaultTypeInternal() {}
   union {
-    OnConnect2Gate _instance;
+    OnConnect2CentrePbEvent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnConnect2GateDefaultTypeInternal _OnConnect2Gate_default_instance_;
-
-inline constexpr OnConnect2Game::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : entity_{::uint64_t{0u}},
-        _cached_size_{0} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR OnConnect2Game::OnConnect2Game(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct OnConnect2GameDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR OnConnect2GameDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~OnConnect2GameDefaultTypeInternal() {}
-  union {
-    OnConnect2Game _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnConnect2GameDefaultTypeInternal _OnConnect2Game_default_instance_;
-
-inline constexpr OnConnect2Centre::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : entity_{::uint64_t{0u}},
-        _cached_size_{0} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR OnConnect2Centre::OnConnect2Centre(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct OnConnect2CentreDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR OnConnect2CentreDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~OnConnect2CentreDefaultTypeInternal() {}
-  union {
-    OnConnect2Centre _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnConnect2CentreDefaultTypeInternal _OnConnect2Centre_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnConnect2CentrePbEventDefaultTypeInternal _OnConnect2CentrePbEvent_default_instance_;
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_proto_2flogic_2fevent_2fserver_5fevent_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -150,32 +100,14 @@ const ::uint32_t
     TableStruct_proto_2flogic_2fevent_2fserver_5fevent_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::OnConnect2Centre, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::OnConnect2CentrePbEvent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::OnConnect2Centre, _impl_.entity_),
-        ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::OnConnect2Game, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::OnConnect2Game, _impl_.entity_),
-        ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::OnConnect2Gate, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::OnConnect2Gate, _impl_.entity_),
+        PROTOBUF_FIELD_OFFSET(::OnConnect2CentrePbEvent, _impl_.entity_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::OnConnect2Login, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -197,39 +129,33 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::OnConnect2Centre)},
-        {9, -1, -1, sizeof(::OnConnect2Game)},
-        {18, -1, -1, sizeof(::OnConnect2Gate)},
-        {27, -1, -1, sizeof(::OnConnect2Login)},
-        {36, -1, -1, sizeof(::OnServerStart)},
+        {0, -1, -1, sizeof(::OnConnect2CentrePbEvent)},
+        {9, -1, -1, sizeof(::OnConnect2Login)},
+        {18, -1, -1, sizeof(::OnServerStart)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_OnConnect2Centre_default_instance_._instance,
-    &::_OnConnect2Game_default_instance_._instance,
-    &::_OnConnect2Gate_default_instance_._instance,
+    &::_OnConnect2CentrePbEvent_default_instance_._instance,
     &::_OnConnect2Login_default_instance_._instance,
     &::_OnServerStart_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2flogic_2fevent_2fserver_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n$proto/logic/event/server_event.proto\"\""
-    "\n\020OnConnect2Centre\022\016\n\006entity\030\001 \001(\004\" \n\016On"
-    "Connect2Game\022\016\n\006entity\030\001 \001(\004\" \n\016OnConnec"
-    "t2Gate\022\016\n\006entity\030\001 \001(\004\"!\n\017OnConnect2Logi"
-    "n\022\016\n\006entity\030\001 \001(\004\"\017\n\rOnServerStartB\tZ\007pb"
-    "/gameb\006proto3"
+    "\n$proto/logic/event/server_event.proto\")"
+    "\n\027OnConnect2CentrePbEvent\022\016\n\006entity\030\001 \001("
+    "\004\"!\n\017OnConnect2Login\022\016\n\006entity\030\001 \001(\004\"\017\n\r"
+    "OnServerStartB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fevent_2fserver_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fevent_2fserver_5fevent_2eproto = {
     false,
     false,
-    213,
+    152,
     descriptor_table_protodef_proto_2flogic_2fevent_2fserver_5fevent_2eproto,
     "proto/logic/event/server_event.proto",
     &descriptor_table_proto_2flogic_2fevent_2fserver_5fevent_2eproto_once,
     nullptr,
     0,
-    5,
+    3,
     schemas,
     file_default_instances,
     TableStruct_proto_2flogic_2fevent_2fserver_5fevent_2eproto::offsets,
@@ -238,81 +164,81 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_
 };
 // ===================================================================
 
-class OnConnect2Centre::_Internal {
+class OnConnect2CentrePbEvent::_Internal {
  public:
 };
 
-OnConnect2Centre::OnConnect2Centre(::google::protobuf::Arena* arena)
+OnConnect2CentrePbEvent::OnConnect2CentrePbEvent(::google::protobuf::Arena* arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(arena, _class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:OnConnect2Centre)
+  // @@protoc_insertion_point(arena_constructor:OnConnect2CentrePbEvent)
 }
-OnConnect2Centre::OnConnect2Centre(
-    ::google::protobuf::Arena* arena, const OnConnect2Centre& from)
-    : OnConnect2Centre(arena) {
+OnConnect2CentrePbEvent::OnConnect2CentrePbEvent(
+    ::google::protobuf::Arena* arena, const OnConnect2CentrePbEvent& from)
+    : OnConnect2CentrePbEvent(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE OnConnect2Centre::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE OnConnect2CentrePbEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void OnConnect2Centre::SharedCtor(::_pb::Arena* arena) {
+inline void OnConnect2CentrePbEvent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.entity_ = {};
 }
-OnConnect2Centre::~OnConnect2Centre() {
-  // @@protoc_insertion_point(destructor:OnConnect2Centre)
+OnConnect2CentrePbEvent::~OnConnect2CentrePbEvent() {
+  // @@protoc_insertion_point(destructor:OnConnect2CentrePbEvent)
   SharedDtor(*this);
 }
-inline void OnConnect2Centre::SharedDtor(MessageLite& self) {
-  OnConnect2Centre& this_ = static_cast<OnConnect2Centre&>(self);
+inline void OnConnect2CentrePbEvent::SharedDtor(MessageLite& self) {
+  OnConnect2CentrePbEvent& this_ = static_cast<OnConnect2CentrePbEvent&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* OnConnect2Centre::PlacementNew_(const void*, void* mem,
+inline void* OnConnect2CentrePbEvent::PlacementNew_(const void*, void* mem,
                                         ::google::protobuf::Arena* arena) {
-  return ::new (mem) OnConnect2Centre(arena);
+  return ::new (mem) OnConnect2CentrePbEvent(arena);
 }
-constexpr auto OnConnect2Centre::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(OnConnect2Centre),
-                                            alignof(OnConnect2Centre));
+constexpr auto OnConnect2CentrePbEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(OnConnect2CentrePbEvent),
+                                            alignof(OnConnect2CentrePbEvent));
 }
 PROTOBUF_CONSTINIT
 PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::google::protobuf::internal::ClassDataFull OnConnect2Centre::_class_data_ = {
+const ::google::protobuf::internal::ClassDataFull OnConnect2CentrePbEvent::_class_data_ = {
     ::google::protobuf::internal::ClassData{
-        &_OnConnect2Centre_default_instance_._instance,
+        &_OnConnect2CentrePbEvent_default_instance_._instance,
         &_table_.header,
         nullptr,  // OnDemandRegisterArenaDtor
         nullptr,  // IsInitialized
-        &OnConnect2Centre::MergeImpl,
-        ::google::protobuf::Message::GetNewImpl<OnConnect2Centre>(),
+        &OnConnect2CentrePbEvent::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<OnConnect2CentrePbEvent>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-        &OnConnect2Centre::SharedDtor,
-        ::google::protobuf::Message::GetClearImpl<OnConnect2Centre>(), &OnConnect2Centre::ByteSizeLong,
-            &OnConnect2Centre::_InternalSerialize,
+        &OnConnect2CentrePbEvent::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<OnConnect2CentrePbEvent>(), &OnConnect2CentrePbEvent::ByteSizeLong,
+            &OnConnect2CentrePbEvent::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-        PROTOBUF_FIELD_OFFSET(OnConnect2Centre, _impl_._cached_size_),
+        PROTOBUF_FIELD_OFFSET(OnConnect2CentrePbEvent, _impl_._cached_size_),
         false,
     },
-    &OnConnect2Centre::kDescriptorMethods,
+    &OnConnect2CentrePbEvent::kDescriptorMethods,
     &descriptor_table_proto_2flogic_2fevent_2fserver_5fevent_2eproto,
     nullptr,  // tracker
 };
-const ::google::protobuf::internal::ClassData* OnConnect2Centre::GetClassData() const {
+const ::google::protobuf::internal::ClassData* OnConnect2CentrePbEvent::GetClassData() const {
   ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
   ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> OnConnect2Centre::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> OnConnect2CentrePbEvent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -327,17 +253,17 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> OnConnect2Centre::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::OnConnect2Centre>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::OnConnect2CentrePbEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(OnConnect2Centre, _impl_.entity_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(OnConnect2Centre, _impl_.entity_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(OnConnect2CentrePbEvent, _impl_.entity_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(OnConnect2CentrePbEvent, _impl_.entity_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 entity = 1;
-    {PROTOBUF_FIELD_OFFSET(OnConnect2Centre, _impl_.entity_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(OnConnect2CentrePbEvent, _impl_.entity_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -345,8 +271,8 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> OnConnect2Centre::_table_ = {
   }},
 };
 
-PROTOBUF_NOINLINE void OnConnect2Centre::Clear() {
-// @@protoc_insertion_point(message_clear_start:OnConnect2Centre)
+PROTOBUF_NOINLINE void OnConnect2CentrePbEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:OnConnect2CentrePbEvent)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -357,17 +283,17 @@ PROTOBUF_NOINLINE void OnConnect2Centre::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-        ::uint8_t* OnConnect2Centre::_InternalSerialize(
+        ::uint8_t* OnConnect2CentrePbEvent::_InternalSerialize(
             const MessageLite& base, ::uint8_t* target,
             ::google::protobuf::io::EpsCopyOutputStream* stream) {
-          const OnConnect2Centre& this_ = static_cast<const OnConnect2Centre&>(base);
+          const OnConnect2CentrePbEvent& this_ = static_cast<const OnConnect2CentrePbEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-        ::uint8_t* OnConnect2Centre::_InternalSerialize(
+        ::uint8_t* OnConnect2CentrePbEvent::_InternalSerialize(
             ::uint8_t* target,
             ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-          const OnConnect2Centre& this_ = *this;
+          const OnConnect2CentrePbEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:OnConnect2Centre)
+          // @@protoc_insertion_point(serialize_to_array_start:OnConnect2CentrePbEvent)
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
 
@@ -383,18 +309,18 @@ PROTOBUF_NOINLINE void OnConnect2Centre::Clear() {
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
                     this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
           }
-          // @@protoc_insertion_point(serialize_to_array_end:OnConnect2Centre)
+          // @@protoc_insertion_point(serialize_to_array_end:OnConnect2CentrePbEvent)
           return target;
         }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-        ::size_t OnConnect2Centre::ByteSizeLong(const MessageLite& base) {
-          const OnConnect2Centre& this_ = static_cast<const OnConnect2Centre&>(base);
+        ::size_t OnConnect2CentrePbEvent::ByteSizeLong(const MessageLite& base) {
+          const OnConnect2CentrePbEvent& this_ = static_cast<const OnConnect2CentrePbEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-        ::size_t OnConnect2Centre::ByteSizeLong() const {
-          const OnConnect2Centre& this_ = *this;
+        ::size_t OnConnect2CentrePbEvent::ByteSizeLong() const {
+          const OnConnect2CentrePbEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:OnConnect2Centre)
+          // @@protoc_insertion_point(message_byte_size_start:OnConnect2CentrePbEvent)
           ::size_t total_size = 0;
 
           ::uint32_t cached_has_bits = 0;
@@ -412,10 +338,10 @@ PROTOBUF_NOINLINE void OnConnect2Centre::Clear() {
                                                      &this_._impl_._cached_size_);
         }
 
-void OnConnect2Centre::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<OnConnect2Centre*>(&to_msg);
-  auto& from = static_cast<const OnConnect2Centre&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:OnConnect2Centre)
+void OnConnect2CentrePbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<OnConnect2CentrePbEvent*>(&to_msg);
+  auto& from = static_cast<const OnConnect2CentrePbEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:OnConnect2CentrePbEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -426,435 +352,21 @@ void OnConnect2Centre::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void OnConnect2Centre::CopyFrom(const OnConnect2Centre& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:OnConnect2Centre)
+void OnConnect2CentrePbEvent::CopyFrom(const OnConnect2CentrePbEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:OnConnect2CentrePbEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void OnConnect2Centre::InternalSwap(OnConnect2Centre* PROTOBUF_RESTRICT other) {
+void OnConnect2CentrePbEvent::InternalSwap(OnConnect2CentrePbEvent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
         swap(_impl_.entity_, other->_impl_.entity_);
 }
 
-::google::protobuf::Metadata OnConnect2Centre::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
-class OnConnect2Game::_Internal {
- public:
-};
-
-OnConnect2Game::OnConnect2Game(::google::protobuf::Arena* arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, _class_data_.base()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:OnConnect2Game)
-}
-OnConnect2Game::OnConnect2Game(
-    ::google::protobuf::Arena* arena, const OnConnect2Game& from)
-    : OnConnect2Game(arena) {
-  MergeFrom(from);
-}
-inline PROTOBUF_NDEBUG_INLINE OnConnect2Game::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* arena)
-      : _cached_size_{0} {}
-
-inline void OnConnect2Game::SharedCtor(::_pb::Arena* arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.entity_ = {};
-}
-OnConnect2Game::~OnConnect2Game() {
-  // @@protoc_insertion_point(destructor:OnConnect2Game)
-  SharedDtor(*this);
-}
-inline void OnConnect2Game::SharedDtor(MessageLite& self) {
-  OnConnect2Game& this_ = static_cast<OnConnect2Game&>(self);
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.~Impl_();
-}
-
-inline void* OnConnect2Game::PlacementNew_(const void*, void* mem,
-                                        ::google::protobuf::Arena* arena) {
-  return ::new (mem) OnConnect2Game(arena);
-}
-constexpr auto OnConnect2Game::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(OnConnect2Game),
-                                            alignof(OnConnect2Game));
-}
-PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::google::protobuf::internal::ClassDataFull OnConnect2Game::_class_data_ = {
-    ::google::protobuf::internal::ClassData{
-        &_OnConnect2Game_default_instance_._instance,
-        &_table_.header,
-        nullptr,  // OnDemandRegisterArenaDtor
-        nullptr,  // IsInitialized
-        &OnConnect2Game::MergeImpl,
-        ::google::protobuf::Message::GetNewImpl<OnConnect2Game>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-        &OnConnect2Game::SharedDtor,
-        ::google::protobuf::Message::GetClearImpl<OnConnect2Game>(), &OnConnect2Game::ByteSizeLong,
-            &OnConnect2Game::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-        PROTOBUF_FIELD_OFFSET(OnConnect2Game, _impl_._cached_size_),
-        false,
-    },
-    &OnConnect2Game::kDescriptorMethods,
-    &descriptor_table_proto_2flogic_2fevent_2fserver_5fevent_2eproto,
-    nullptr,  // tracker
-};
-const ::google::protobuf::internal::ClassData* OnConnect2Game::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
-  return _class_data_.base();
-}
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> OnConnect2Game::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    _class_data_.base(),
-    nullptr,  // post_loop_handler
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::OnConnect2Game>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // uint64 entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(OnConnect2Game, _impl_.entity_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(OnConnect2Game, _impl_.entity_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // uint64 entity = 1;
-    {PROTOBUF_FIELD_OFFSET(OnConnect2Game, _impl_.entity_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-  }},
-  // no aux_entries
-  {{
-  }},
-};
-
-PROTOBUF_NOINLINE void OnConnect2Game::Clear() {
-// @@protoc_insertion_point(message_clear_start:OnConnect2Game)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  _impl_.entity_ = ::uint64_t{0u};
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-        ::uint8_t* OnConnect2Game::_InternalSerialize(
-            const MessageLite& base, ::uint8_t* target,
-            ::google::protobuf::io::EpsCopyOutputStream* stream) {
-          const OnConnect2Game& this_ = static_cast<const OnConnect2Game&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-        ::uint8_t* OnConnect2Game::_InternalSerialize(
-            ::uint8_t* target,
-            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-          const OnConnect2Game& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:OnConnect2Game)
-          ::uint32_t cached_has_bits = 0;
-          (void)cached_has_bits;
-
-          // uint64 entity = 1;
-          if (this_._internal_entity() != 0) {
-            target = stream->EnsureSpace(target);
-            target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-                1, this_._internal_entity(), target);
-          }
-
-          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-            target =
-                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-          }
-          // @@protoc_insertion_point(serialize_to_array_end:OnConnect2Game)
-          return target;
-        }
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-        ::size_t OnConnect2Game::ByteSizeLong(const MessageLite& base) {
-          const OnConnect2Game& this_ = static_cast<const OnConnect2Game&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-        ::size_t OnConnect2Game::ByteSizeLong() const {
-          const OnConnect2Game& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:OnConnect2Game)
-          ::size_t total_size = 0;
-
-          ::uint32_t cached_has_bits = 0;
-          // Prevent compiler warnings about cached_has_bits being unused
-          (void)cached_has_bits;
-
-           {
-            // uint64 entity = 1;
-            if (this_._internal_entity() != 0) {
-              total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-                  this_._internal_entity());
-            }
-          }
-          return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                                     &this_._impl_._cached_size_);
-        }
-
-void OnConnect2Game::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<OnConnect2Game*>(&to_msg);
-  auto& from = static_cast<const OnConnect2Game&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:OnConnect2Game)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  if (from._internal_entity() != 0) {
-    _this->_impl_.entity_ = from._impl_.entity_;
-  }
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void OnConnect2Game::CopyFrom(const OnConnect2Game& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:OnConnect2Game)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void OnConnect2Game::InternalSwap(OnConnect2Game* PROTOBUF_RESTRICT other) {
-  using std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-        swap(_impl_.entity_, other->_impl_.entity_);
-}
-
-::google::protobuf::Metadata OnConnect2Game::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
-class OnConnect2Gate::_Internal {
- public:
-};
-
-OnConnect2Gate::OnConnect2Gate(::google::protobuf::Arena* arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, _class_data_.base()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:OnConnect2Gate)
-}
-OnConnect2Gate::OnConnect2Gate(
-    ::google::protobuf::Arena* arena, const OnConnect2Gate& from)
-    : OnConnect2Gate(arena) {
-  MergeFrom(from);
-}
-inline PROTOBUF_NDEBUG_INLINE OnConnect2Gate::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* arena)
-      : _cached_size_{0} {}
-
-inline void OnConnect2Gate::SharedCtor(::_pb::Arena* arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.entity_ = {};
-}
-OnConnect2Gate::~OnConnect2Gate() {
-  // @@protoc_insertion_point(destructor:OnConnect2Gate)
-  SharedDtor(*this);
-}
-inline void OnConnect2Gate::SharedDtor(MessageLite& self) {
-  OnConnect2Gate& this_ = static_cast<OnConnect2Gate&>(self);
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.~Impl_();
-}
-
-inline void* OnConnect2Gate::PlacementNew_(const void*, void* mem,
-                                        ::google::protobuf::Arena* arena) {
-  return ::new (mem) OnConnect2Gate(arena);
-}
-constexpr auto OnConnect2Gate::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(OnConnect2Gate),
-                                            alignof(OnConnect2Gate));
-}
-PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::google::protobuf::internal::ClassDataFull OnConnect2Gate::_class_data_ = {
-    ::google::protobuf::internal::ClassData{
-        &_OnConnect2Gate_default_instance_._instance,
-        &_table_.header,
-        nullptr,  // OnDemandRegisterArenaDtor
-        nullptr,  // IsInitialized
-        &OnConnect2Gate::MergeImpl,
-        ::google::protobuf::Message::GetNewImpl<OnConnect2Gate>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-        &OnConnect2Gate::SharedDtor,
-        ::google::protobuf::Message::GetClearImpl<OnConnect2Gate>(), &OnConnect2Gate::ByteSizeLong,
-            &OnConnect2Gate::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-        PROTOBUF_FIELD_OFFSET(OnConnect2Gate, _impl_._cached_size_),
-        false,
-    },
-    &OnConnect2Gate::kDescriptorMethods,
-    &descriptor_table_proto_2flogic_2fevent_2fserver_5fevent_2eproto,
-    nullptr,  // tracker
-};
-const ::google::protobuf::internal::ClassData* OnConnect2Gate::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
-  return _class_data_.base();
-}
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> OnConnect2Gate::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    _class_data_.base(),
-    nullptr,  // post_loop_handler
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::OnConnect2Gate>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // uint64 entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(OnConnect2Gate, _impl_.entity_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(OnConnect2Gate, _impl_.entity_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // uint64 entity = 1;
-    {PROTOBUF_FIELD_OFFSET(OnConnect2Gate, _impl_.entity_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-  }},
-  // no aux_entries
-  {{
-  }},
-};
-
-PROTOBUF_NOINLINE void OnConnect2Gate::Clear() {
-// @@protoc_insertion_point(message_clear_start:OnConnect2Gate)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  _impl_.entity_ = ::uint64_t{0u};
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-        ::uint8_t* OnConnect2Gate::_InternalSerialize(
-            const MessageLite& base, ::uint8_t* target,
-            ::google::protobuf::io::EpsCopyOutputStream* stream) {
-          const OnConnect2Gate& this_ = static_cast<const OnConnect2Gate&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-        ::uint8_t* OnConnect2Gate::_InternalSerialize(
-            ::uint8_t* target,
-            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-          const OnConnect2Gate& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:OnConnect2Gate)
-          ::uint32_t cached_has_bits = 0;
-          (void)cached_has_bits;
-
-          // uint64 entity = 1;
-          if (this_._internal_entity() != 0) {
-            target = stream->EnsureSpace(target);
-            target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-                1, this_._internal_entity(), target);
-          }
-
-          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-            target =
-                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-          }
-          // @@protoc_insertion_point(serialize_to_array_end:OnConnect2Gate)
-          return target;
-        }
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-        ::size_t OnConnect2Gate::ByteSizeLong(const MessageLite& base) {
-          const OnConnect2Gate& this_ = static_cast<const OnConnect2Gate&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-        ::size_t OnConnect2Gate::ByteSizeLong() const {
-          const OnConnect2Gate& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:OnConnect2Gate)
-          ::size_t total_size = 0;
-
-          ::uint32_t cached_has_bits = 0;
-          // Prevent compiler warnings about cached_has_bits being unused
-          (void)cached_has_bits;
-
-           {
-            // uint64 entity = 1;
-            if (this_._internal_entity() != 0) {
-              total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-                  this_._internal_entity());
-            }
-          }
-          return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                                     &this_._impl_._cached_size_);
-        }
-
-void OnConnect2Gate::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<OnConnect2Gate*>(&to_msg);
-  auto& from = static_cast<const OnConnect2Gate&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:OnConnect2Gate)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  if (from._internal_entity() != 0) {
-    _this->_impl_.entity_ = from._impl_.entity_;
-  }
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void OnConnect2Gate::CopyFrom(const OnConnect2Gate& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:OnConnect2Gate)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void OnConnect2Gate::InternalSwap(OnConnect2Gate* PROTOBUF_RESTRICT other) {
-  using std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-        swap(_impl_.entity_, other->_impl_.entity_);
-}
-
-::google::protobuf::Metadata OnConnect2Gate::GetMetadata() const {
+::google::protobuf::Metadata OnConnect2CentrePbEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

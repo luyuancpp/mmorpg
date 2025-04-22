@@ -209,3 +209,23 @@ void SendGameServiceCreateScene(entt::registry& registry, entt::entity nodeEntit
 
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
+class AsyncGameServiceRegisterNodeSessionGrpcClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+    ::Empty reply;
+	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
+};
+
+using AsyncGameServiceRegisterNodeSessionHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRegisterNodeSessionGrpcClientCall>&)>;
+
+extern AsyncGameServiceRegisterNodeSessionHandlerFunctionType  AsyncGameServiceRegisterNodeSessionHandler;
+
+
+class ::RegisterNodeSessionRequest;
+void SendGameServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterNodeSessionRequest& request);
+
+void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);

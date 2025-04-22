@@ -529,6 +529,32 @@ struct RoutePlayerMessageRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RoutePlayerMessageRequestDefaultTypeInternal _RoutePlayerMessageRequest_default_instance_;
 
+inline constexpr RegisterNodeSessionRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        node_info_{nullptr},
+        endpoint_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR RegisterNodeSessionRequest::RegisterNodeSessionRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct RegisterNodeSessionRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RegisterNodeSessionRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RegisterNodeSessionRequestDefaultTypeInternal() {}
+  union {
+    RegisterNodeSessionRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RegisterNodeSessionRequestDefaultTypeInternal _RegisterNodeSessionRequest_default_instance_;
+
 inline constexpr PlayerNodeServiceRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -1035,6 +1061,18 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::MyNestedMessage, _impl_.nested_int32_field_),
         PROTOBUF_FIELD_OFFSET(::MyNestedMessage, _impl_.nested_int64_field_),
+        PROTOBUF_FIELD_OFFSET(::RegisterNodeSessionRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::RegisterNodeSessionRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::RegisterNodeSessionRequest, _impl_.node_info_),
+        PROTOBUF_FIELD_OFFSET(::RegisterNodeSessionRequest, _impl_.endpoint_),
+        0,
+        1,
 };
 
 static const ::_pbi::MigrationSchema
@@ -1065,6 +1103,7 @@ static const ::_pbi::MigrationSchema
         {271, 280, -1, sizeof(::ProtoFieldCheckerTestPB)},
         {281, 294, -1, sizeof(::MyProtoMessage)},
         {299, -1, -1, sizeof(::MyNestedMessage)},
+        {309, 319, -1, sizeof(::RegisterNodeSessionRequest)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_RoutingNodeInfo_default_instance_._instance,
@@ -1093,6 +1132,7 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::_ProtoFieldCheckerTestPB_default_instance_._instance,
     &::_MyProtoMessage_default_instance_._instance,
     &::_MyNestedMessage_default_instance_._instance,
+    &::_RegisterNodeSessionRequest_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -1159,7 +1199,10 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto[]
     "ed_int64_field\030\004 \003(\003\022(\n\016nested_message\030\005"
     " \001(\0132\020.MyNestedMessage\"I\n\017MyNestedMessag"
     "e\022\032\n\022nested_int32_field\030\001 \001(\005\022\032\n\022nested_"
-    "int64_field\030\002 \001(\003B\tZ\007pb/gameb\006proto3"
+    "int64_field\030\002 \001(\003\"b\n\032RegisterNodeSession"
+    "Request\022\034\n\tnode_info\030\001 \001(\0132\t.NodeInfo\022&\n"
+    "\010endpoint\030\002 \001(\0132\024.EndpointPBComponentB\tZ"
+    "\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps[3] =
     {
@@ -1171,13 +1214,13 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_5fmessage_2epr
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto = {
     false,
     false,
-    2556,
+    2656,
     descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto,
     "proto/common/common_message.proto",
     &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
     descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps,
     3,
-    26,
+    27,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto::offsets,
@@ -8722,6 +8765,317 @@ void MyNestedMessage::InternalSwap(MyNestedMessage* PROTOBUF_RESTRICT other) {
 }
 
 ::google::protobuf::Metadata MyNestedMessage::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class RegisterNodeSessionRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<RegisterNodeSessionRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RegisterNodeSessionRequest, _impl_._has_bits_);
+};
+
+void RegisterNodeSessionRequest::clear_node_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.node_info_ != nullptr) _impl_.node_info_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+void RegisterNodeSessionRequest::clear_endpoint() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.endpoint_ != nullptr) _impl_.endpoint_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+RegisterNodeSessionRequest::RegisterNodeSessionRequest(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:RegisterNodeSessionRequest)
+}
+inline PROTOBUF_NDEBUG_INLINE RegisterNodeSessionRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::RegisterNodeSessionRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+RegisterNodeSessionRequest::RegisterNodeSessionRequest(
+    ::google::protobuf::Arena* arena,
+    const RegisterNodeSessionRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  RegisterNodeSessionRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.node_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::NodeInfo>(
+                              arena, *from._impl_.node_info_)
+                        : nullptr;
+  _impl_.endpoint_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::EndpointPBComponent>(
+                              arena, *from._impl_.endpoint_)
+                        : nullptr;
+
+  // @@protoc_insertion_point(copy_constructor:RegisterNodeSessionRequest)
+}
+inline PROTOBUF_NDEBUG_INLINE RegisterNodeSessionRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void RegisterNodeSessionRequest::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, node_info_),
+           0,
+           offsetof(Impl_, endpoint_) -
+               offsetof(Impl_, node_info_) +
+               sizeof(Impl_::endpoint_));
+}
+RegisterNodeSessionRequest::~RegisterNodeSessionRequest() {
+  // @@protoc_insertion_point(destructor:RegisterNodeSessionRequest)
+  SharedDtor(*this);
+}
+inline void RegisterNodeSessionRequest::SharedDtor(MessageLite& self) {
+  RegisterNodeSessionRequest& this_ = static_cast<RegisterNodeSessionRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.node_info_;
+  delete this_._impl_.endpoint_;
+  this_._impl_.~Impl_();
+}
+
+inline void* RegisterNodeSessionRequest::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) RegisterNodeSessionRequest(arena);
+}
+constexpr auto RegisterNodeSessionRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(RegisterNodeSessionRequest),
+                                            alignof(RegisterNodeSessionRequest));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull RegisterNodeSessionRequest::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_RegisterNodeSessionRequest_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &RegisterNodeSessionRequest::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<RegisterNodeSessionRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &RegisterNodeSessionRequest::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<RegisterNodeSessionRequest>(), &RegisterNodeSessionRequest::ByteSizeLong,
+            &RegisterNodeSessionRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(RegisterNodeSessionRequest, _impl_._cached_size_),
+        false,
+    },
+    &RegisterNodeSessionRequest::kDescriptorMethods,
+    &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* RegisterNodeSessionRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 2, 0, 2> RegisterNodeSessionRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(RegisterNodeSessionRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    2,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::RegisterNodeSessionRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // .EndpointPBComponent endpoint = 2;
+    {::_pbi::TcParser::FastMtS1,
+     {18, 1, 1, PROTOBUF_FIELD_OFFSET(RegisterNodeSessionRequest, _impl_.endpoint_)}},
+    // .NodeInfo node_info = 1;
+    {::_pbi::TcParser::FastMtS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(RegisterNodeSessionRequest, _impl_.node_info_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .NodeInfo node_info = 1;
+    {PROTOBUF_FIELD_OFFSET(RegisterNodeSessionRequest, _impl_.node_info_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .EndpointPBComponent endpoint = 2;
+    {PROTOBUF_FIELD_OFFSET(RegisterNodeSessionRequest, _impl_.endpoint_), _Internal::kHasBitsOffset + 1, 1,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::NodeInfo>()},
+    {::_pbi::TcParser::GetTable<::EndpointPBComponent>()},
+  }}, {{
+  }},
+};
+
+PROTOBUF_NOINLINE void RegisterNodeSessionRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:RegisterNodeSessionRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      ABSL_DCHECK(_impl_.node_info_ != nullptr);
+      _impl_.node_info_->Clear();
+    }
+    if (cached_has_bits & 0x00000002u) {
+      ABSL_DCHECK(_impl_.endpoint_ != nullptr);
+      _impl_.endpoint_->Clear();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* RegisterNodeSessionRequest::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const RegisterNodeSessionRequest& this_ = static_cast<const RegisterNodeSessionRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* RegisterNodeSessionRequest::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const RegisterNodeSessionRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:RegisterNodeSessionRequest)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          cached_has_bits = this_._impl_._has_bits_[0];
+          // .NodeInfo node_info = 1;
+          if (cached_has_bits & 0x00000001u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                1, *this_._impl_.node_info_, this_._impl_.node_info_->GetCachedSize(), target,
+                stream);
+          }
+
+          // .EndpointPBComponent endpoint = 2;
+          if (cached_has_bits & 0x00000002u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                2, *this_._impl_.endpoint_, this_._impl_.endpoint_->GetCachedSize(), target,
+                stream);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:RegisterNodeSessionRequest)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t RegisterNodeSessionRequest::ByteSizeLong(const MessageLite& base) {
+          const RegisterNodeSessionRequest& this_ = static_cast<const RegisterNodeSessionRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t RegisterNodeSessionRequest::ByteSizeLong() const {
+          const RegisterNodeSessionRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:RegisterNodeSessionRequest)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+          cached_has_bits = this_._impl_._has_bits_[0];
+          if (cached_has_bits & 0x00000003u) {
+            // .NodeInfo node_info = 1;
+            if (cached_has_bits & 0x00000001u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.node_info_);
+            }
+            // .EndpointPBComponent endpoint = 2;
+            if (cached_has_bits & 0x00000002u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.endpoint_);
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void RegisterNodeSessionRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<RegisterNodeSessionRequest*>(&to_msg);
+  auto& from = static_cast<const RegisterNodeSessionRequest&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:RegisterNodeSessionRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      ABSL_DCHECK(from._impl_.node_info_ != nullptr);
+      if (_this->_impl_.node_info_ == nullptr) {
+        _this->_impl_.node_info_ =
+            ::google::protobuf::Message::CopyConstruct<::NodeInfo>(arena, *from._impl_.node_info_);
+      } else {
+        _this->_impl_.node_info_->MergeFrom(*from._impl_.node_info_);
+      }
+    }
+    if (cached_has_bits & 0x00000002u) {
+      ABSL_DCHECK(from._impl_.endpoint_ != nullptr);
+      if (_this->_impl_.endpoint_ == nullptr) {
+        _this->_impl_.endpoint_ =
+            ::google::protobuf::Message::CopyConstruct<::EndpointPBComponent>(arena, *from._impl_.endpoint_);
+      } else {
+        _this->_impl_.endpoint_->MergeFrom(*from._impl_.endpoint_);
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void RegisterNodeSessionRequest::CopyFrom(const RegisterNodeSessionRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:RegisterNodeSessionRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void RegisterNodeSessionRequest::InternalSwap(RegisterNodeSessionRequest* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RegisterNodeSessionRequest, _impl_.endpoint_)
+      + sizeof(RegisterNodeSessionRequest::_impl_.endpoint_)
+      - PROTOBUF_FIELD_OFFSET(RegisterNodeSessionRequest, _impl_.node_info_)>(
+          reinterpret_cast<char*>(&_impl_.node_info_),
+          reinterpret_cast<char*>(&other->_impl_.node_info_));
+}
+
+::google::protobuf::Metadata RegisterNodeSessionRequest::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -60,3 +60,8 @@ constexpr uint32_t CentreServiceInitSceneNodeIndex = 10;
 #define CentreServiceInitSceneNodeMethod  ::CentreService_Stub::descriptor()->method(10)
 
 
+constexpr uint32_t CentreServiceRegisterNodeSessionMessageId = 31;
+constexpr uint32_t CentreServiceRegisterNodeSessionIndex = 11;
+#define CentreServiceRegisterNodeSessionMethod  ::CentreService_Stub::descriptor()->method(11)
+
+

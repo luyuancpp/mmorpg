@@ -208,7 +208,7 @@ type OnNodeRemovePbEvent struct {
 
 	Entity        uint64 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	NodeType      uint32 `protobuf:"varint,2,opt,name=node_type,json=nodeType,proto3" json:"node_type,omitempty"`
-	ScenenodeType uint32 `protobuf:"varint,3,opt,name=scenenode_type,json=scenenodeType,proto3" json:"scenenode_type,omitempty"`
+	SceneNodeType uint32 `protobuf:"varint,3,opt,name=scene_node_type,json=sceneNodeType,proto3" json:"scene_node_type,omitempty"`
 }
 
 func (x *OnNodeRemovePbEvent) Reset() {
@@ -257,11 +257,104 @@ func (x *OnNodeRemovePbEvent) GetNodeType() uint32 {
 	return 0
 }
 
-func (x *OnNodeRemovePbEvent) GetScenenodeType() uint32 {
+func (x *OnNodeRemovePbEvent) GetSceneNodeType() uint32 {
 	if x != nil {
-		return x.ScenenodeType
+		return x.SceneNodeType
 	}
 	return 0
+}
+
+type ConnectToNodePbEvent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Entity   uint32 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
+	NodeType uint32 `protobuf:"varint,2,opt,name=node_type,json=nodeType,proto3" json:"node_type,omitempty"`
+}
+
+func (x *ConnectToNodePbEvent) Reset() {
+	*x = ConnectToNodePbEvent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_logic_event_node_event_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ConnectToNodePbEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConnectToNodePbEvent) ProtoMessage() {}
+
+func (x *ConnectToNodePbEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_logic_event_node_event_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConnectToNodePbEvent.ProtoReflect.Descriptor instead.
+func (*ConnectToNodePbEvent) Descriptor() ([]byte, []int) {
+	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ConnectToNodePbEvent) GetEntity() uint32 {
+	if x != nil {
+		return x.Entity
+	}
+	return 0
+}
+
+func (x *ConnectToNodePbEvent) GetNodeType() uint32 {
+	if x != nil {
+		return x.NodeType
+	}
+	return 0
+}
+
+type OnNodeConnectedPbEvent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *OnNodeConnectedPbEvent) Reset() {
+	*x = OnNodeConnectedPbEvent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_logic_event_node_event_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *OnNodeConnectedPbEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OnNodeConnectedPbEvent) ProtoMessage() {}
+
+func (x *OnNodeConnectedPbEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_logic_event_node_event_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OnNodeConnectedPbEvent.ProtoReflect.Descriptor instead.
+func (*OnNodeConnectedPbEvent) Descriptor() ([]byte, []int) {
+	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{5}
 }
 
 var File_proto_logic_event_node_event_proto protoreflect.FileDescriptor
@@ -289,15 +382,22 @@ var file_proto_logic_event_node_event_proto_rawDesc = []byte{
 	0x01, 0x28, 0x0d, 0x52, 0x08, 0x6e, 0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65, 0x12, 0x25, 0x0a,
 	0x0e, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18,
 	0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x6e, 0x6f, 0x64, 0x65,
-	0x54, 0x79, 0x70, 0x65, 0x22, 0x71, 0x0a, 0x13, 0x4f, 0x6e, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65,
+	0x54, 0x79, 0x70, 0x65, 0x22, 0x72, 0x0a, 0x13, 0x4f, 0x6e, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65,
 	0x6d, 0x6f, 0x76, 0x65, 0x50, 0x62, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x65,
 	0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74,
 	0x69, 0x74, 0x79, 0x12, 0x1b, 0x0a, 0x09, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65,
 	0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x6e, 0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65,
-	0x12, 0x25, 0x0a, 0x0e, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x74, 0x79,
-	0x70, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x6e,
-	0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61,
-	0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x12, 0x26, 0x0a, 0x0f, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x5f, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x74,
+	0x79, 0x70, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x73, 0x63, 0x65, 0x6e, 0x65,
+	0x4e, 0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65, 0x22, 0x4b, 0x0a, 0x14, 0x43, 0x6f, 0x6e, 0x6e,
+	0x65, 0x63, 0x74, 0x54, 0x6f, 0x4e, 0x6f, 0x64, 0x65, 0x50, 0x62, 0x45, 0x76, 0x65, 0x6e, 0x74,
+	0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d,
+	0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x12, 0x1b, 0x0a, 0x09, 0x6e, 0x6f, 0x64, 0x65,
+	0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x6e, 0x6f, 0x64,
+	0x65, 0x54, 0x79, 0x70, 0x65, 0x22, 0x18, 0x0a, 0x16, 0x4f, 0x6e, 0x4e, 0x6f, 0x64, 0x65, 0x43,
+	0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x65, 0x64, 0x50, 0x62, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x42,
+	0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -312,12 +412,14 @@ func file_proto_logic_event_node_event_proto_rawDescGZIP() []byte {
 	return file_proto_logic_event_node_event_proto_rawDescData
 }
 
-var file_proto_logic_event_node_event_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_logic_event_node_event_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_logic_event_node_event_proto_goTypes = []any{
 	(*OnSceneNodeAddPbEvent)(nil),    // 0: OnSceneNodeAddPbEvent
 	(*OnSceneNodeRemovePbEvent)(nil), // 1: OnSceneNodeRemovePbEvent
 	(*OnNodeAddPbEvent)(nil),         // 2: OnNodeAddPbEvent
 	(*OnNodeRemovePbEvent)(nil),      // 3: OnNodeRemovePbEvent
+	(*ConnectToNodePbEvent)(nil),     // 4: ConnectToNodePbEvent
+	(*OnNodeConnectedPbEvent)(nil),   // 5: OnNodeConnectedPbEvent
 }
 var file_proto_logic_event_node_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -381,6 +483,30 @@ func file_proto_logic_event_node_event_proto_init() {
 				return nil
 			}
 		}
+		file_proto_logic_event_node_event_proto_msgTypes[4].Exporter = func(v any, i int) any {
+			switch v := v.(*ConnectToNodePbEvent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_logic_event_node_event_proto_msgTypes[5].Exporter = func(v any, i int) any {
+			switch v := v.(*OnNodeConnectedPbEvent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -388,7 +514,7 @@ func file_proto_logic_event_node_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_logic_event_node_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

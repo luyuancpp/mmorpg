@@ -404,7 +404,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fgame_5fservice_2eproto[] A
     "uest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001("
     "\004\"\'\n\022CreateSceneRequest\022\021\n\tconfig_id\030\001 \001"
     "(\r\"@\n\023CreateSceneResponse\022)\n\nscene_info\030"
-    "\001 \001(\0132\025.SceneInfoPBComponent2\307\005\n\013GameSer"
+    "\001 \001(\0132\025.SceneInfoPBComponent2\203\006\n\013GameSer"
     "vice\022:\n\023PlayerEnterGameNode\022\033.PlayerEnte"
     "rGameNodeRequest\032\006.Empty\022J\n\023SendMessageT"
     "oPlayer\022\030.NodeRouteMessageRequest\032\031.Node"
@@ -422,8 +422,9 @@ const char descriptor_table_protodef_proto_2fcommon_2fgame_5fservice_2eproto[] A
     "isterPlayerSessionRequest\032\006.Empty\0221\n\nEnt"
     "erScene\022\033.Centre2GsEnterSceneRequest\032\006.E"
     "mpty\0228\n\013CreateScene\022\023.CreateSceneRequest"
-    "\032\024.CreateSceneResponseB\014Z\007pb/game\200\001\001b\006pr"
-    "oto3"
+    "\032\024.CreateSceneResponse\022:\n\023RegisterNodeSe"
+    "ssion\022\033.RegisterNodeSessionRequest\032\006.Emp"
+    "tyB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fgame_5fservice_2eproto_deps[3] =
     {
@@ -435,7 +436,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fgame_5fservice_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fgame_5fservice_2eproto = {
     false,
     false,
-    1524,
+    1584,
     descriptor_table_protodef_proto_2fcommon_2fgame_5fservice_2eproto,
     "proto/common/game_service.proto",
     &descriptor_table_proto_2fcommon_2fgame_5fservice_2eproto_once,
@@ -2796,6 +2797,11 @@ void GameService::CreateScene(::google::protobuf::RpcController* controller,
   controller->SetFailed("Method CreateScene() not implemented.");
   done->Run();
 }
+void GameService::RegisterNodeSession(::google::protobuf::RpcController* controller,
+                         const ::RegisterNodeSessionRequest*, ::Empty*, ::google::protobuf::Closure* done) {
+  controller->SetFailed("Method RegisterNodeSession() not implemented.");
+  done->Run();
+}
 
 void GameService::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
@@ -2864,6 +2870,12 @@ void GameService::CallMethod(
                    ::google::protobuf::DownCastMessage<::CreateSceneResponse>(response),
                    done);
       break;
+    case 10:
+      this->RegisterNodeSession(controller,
+                   ::google::protobuf::DownCastMessage<::RegisterNodeSessionRequest>(request),
+                   ::google::protobuf::DownCastMessage<::Empty>(response),
+                   done);
+      break;
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -2895,6 +2907,8 @@ const ::google::protobuf::Message& GameService::GetRequestPrototype(
       return ::Centre2GsEnterSceneRequest::default_instance();
     case 9:
       return ::CreateSceneRequest::default_instance();
+    case 10:
+      return ::RegisterNodeSessionRequest::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -2927,6 +2941,8 @@ const ::google::protobuf::Message& GameService::GetResponsePrototype(
       return ::Empty::default_instance();
     case 9:
       return ::CreateSceneResponse::default_instance();
+    case 10:
+      return ::Empty::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -3007,6 +3023,12 @@ void GameService_Stub::CreateScene(::google::protobuf::RpcController* controller
                               const ::CreateSceneRequest* request,
                               ::CreateSceneResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(9), controller,
+                       request, response, done);
+}
+void GameService_Stub::RegisterNodeSession(::google::protobuf::RpcController* controller,
+                              const ::RegisterNodeSessionRequest* request,
+                              ::Empty* response, ::google::protobuf::Closure* done) {
+  channel_->CallMethod(descriptor()->method(10), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

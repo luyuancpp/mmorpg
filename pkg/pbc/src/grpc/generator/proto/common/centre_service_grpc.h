@@ -229,3 +229,23 @@ void SendCentreServiceInitSceneNode(entt::registry& registry, entt::entity nodeE
 
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
+class AsyncCentreServiceRegisterNodeSessionGrpcClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+    ::Empty reply;
+	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
+};
+
+using AsyncCentreServiceRegisterNodeSessionHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRegisterNodeSessionGrpcClientCall>&)>;
+
+extern AsyncCentreServiceRegisterNodeSessionHandlerFunctionType  AsyncCentreServiceRegisterNodeSessionHandler;
+
+
+class ::RegisterNodeSessionRequest;
+void SendCentreServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterNodeSessionRequest& request);
+
+void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
