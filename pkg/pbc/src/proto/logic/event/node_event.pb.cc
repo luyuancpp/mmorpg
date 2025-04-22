@@ -82,7 +82,7 @@ inline constexpr OnNodeRemovePbEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : entity_{::uint64_t{0u}},
         node_type_{0u},
-        scenenode_type_{0u},
+        scene_node_type_{0u},
         _cached_size_{0} {}
 
 template <typename>
@@ -104,6 +104,24 @@ struct OnNodeRemovePbEventDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnNodeRemovePbEventDefaultTypeInternal _OnNodeRemovePbEvent_default_instance_;
+              template <typename>
+PROTOBUF_CONSTEXPR OnNodeConnectedPbEvent::OnNodeConnectedPbEvent(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(_class_data_.base()){}
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase() {
+}
+#endif  // PROTOBUF_CUSTOM_VTABLE
+struct OnNodeConnectedPbEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR OnNodeConnectedPbEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~OnNodeConnectedPbEventDefaultTypeInternal() {}
+  union {
+    OnNodeConnectedPbEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnNodeConnectedPbEventDefaultTypeInternal _OnNodeConnectedPbEvent_default_instance_;
 
 inline constexpr OnNodeAddPbEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -131,6 +149,32 @@ struct OnNodeAddPbEventDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnNodeAddPbEventDefaultTypeInternal _OnNodeAddPbEvent_default_instance_;
+
+inline constexpr ConnectToNodePbEvent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : entity_{0u},
+        node_type_{0u},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ConnectToNodePbEvent::ConnectToNodePbEvent(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ConnectToNodePbEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ConnectToNodePbEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ConnectToNodePbEventDefaultTypeInternal() {}
+  union {
+    ConnectToNodePbEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ConnectToNodePbEventDefaultTypeInternal _ConnectToNodePbEvent_default_instance_;
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_proto_2flogic_2fevent_2fnode_5fevent_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -180,7 +224,25 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::OnNodeRemovePbEvent, _impl_.entity_),
         PROTOBUF_FIELD_OFFSET(::OnNodeRemovePbEvent, _impl_.node_type_),
-        PROTOBUF_FIELD_OFFSET(::OnNodeRemovePbEvent, _impl_.scenenode_type_),
+        PROTOBUF_FIELD_OFFSET(::OnNodeRemovePbEvent, _impl_.scene_node_type_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::ConnectToNodePbEvent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::ConnectToNodePbEvent, _impl_.entity_),
+        PROTOBUF_FIELD_OFFSET(::ConnectToNodePbEvent, _impl_.node_type_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::OnNodeConnectedPbEvent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
 };
 
 static const ::_pbi::MigrationSchema
@@ -189,12 +251,16 @@ static const ::_pbi::MigrationSchema
         {10, -1, -1, sizeof(::OnSceneNodeRemovePbEvent)},
         {21, -1, -1, sizeof(::OnNodeAddPbEvent)},
         {32, -1, -1, sizeof(::OnNodeRemovePbEvent)},
+        {43, -1, -1, sizeof(::ConnectToNodePbEvent)},
+        {53, -1, -1, sizeof(::OnNodeConnectedPbEvent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_OnSceneNodeAddPbEvent_default_instance_._instance,
     &::_OnSceneNodeRemovePbEvent_default_instance_._instance,
     &::_OnNodeAddPbEvent_default_instance_._instance,
     &::_OnNodeRemovePbEvent_default_instance_._instance,
+    &::_ConnectToNodePbEvent_default_instance_._instance,
+    &::_OnNodeConnectedPbEvent_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2flogic_2fevent_2fnode_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -204,22 +270,24 @@ const char descriptor_table_protodef_proto_2flogic_2fevent_2fnode_5fevent_2eprot
     "vePbEvent\022\016\n\006entity\030\001 \001(\004\022\021\n\tnode_type\030\002"
     " \001(\r\022\026\n\016scenenode_type\030\003 \001(\r\"M\n\020OnNodeAd"
     "dPbEvent\022\016\n\006entity\030\001 \001(\004\022\021\n\tnode_type\030\002 "
-    "\001(\r\022\026\n\016scenenode_type\030\003 \001(\r\"P\n\023OnNodeRem"
+    "\001(\r\022\026\n\016scenenode_type\030\003 \001(\r\"Q\n\023OnNodeRem"
     "ovePbEvent\022\016\n\006entity\030\001 \001(\004\022\021\n\tnode_type\030"
-    "\002 \001(\r\022\026\n\016scenenode_type\030\003 \001(\rB\tZ\007pb/game"
-    "b\006proto3"
+    "\002 \001(\r\022\027\n\017scene_node_type\030\003 \001(\r\"9\n\024Connec"
+    "tToNodePbEvent\022\016\n\006entity\030\001 \001(\r\022\021\n\tnode_t"
+    "ype\030\002 \001(\r\"\030\n\026OnNodeConnectedPbEventB\tZ\007p"
+    "b/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fevent_2fnode_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fevent_2fnode_5fevent_2eproto = {
     false,
     false,
-    368,
+    454,
     descriptor_table_protodef_proto_2flogic_2fevent_2fnode_5fevent_2eproto,
     "proto/logic/event/node_event.proto",
     &descriptor_table_proto_2flogic_2fevent_2fnode_5fevent_2eproto_once,
     nullptr,
     0,
-    4,
+    6,
     schemas,
     file_default_instances,
     TableStruct_proto_2flogic_2fevent_2fnode_5fevent_2eproto::offsets,
@@ -1023,9 +1091,9 @@ inline void OnNodeRemovePbEvent::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, entity_),
            0,
-           offsetof(Impl_, scenenode_type_) -
+           offsetof(Impl_, scene_node_type_) -
                offsetof(Impl_, entity_) +
-               sizeof(Impl_::scenenode_type_));
+               sizeof(Impl_::scene_node_type_));
 }
 OnNodeRemovePbEvent::~OnNodeRemovePbEvent() {
   // @@protoc_insertion_point(destructor:OnNodeRemovePbEvent)
@@ -1099,9 +1167,9 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> OnNodeRemovePbEvent::_table_ = {
     // uint32 node_type = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(OnNodeRemovePbEvent, _impl_.node_type_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.node_type_)}},
-    // uint32 scenenode_type = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(OnNodeRemovePbEvent, _impl_.scenenode_type_), 63>(),
-     {24, 63, 0, PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.scenenode_type_)}},
+    // uint32 scene_node_type = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(OnNodeRemovePbEvent, _impl_.scene_node_type_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.scene_node_type_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -1111,8 +1179,8 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> OnNodeRemovePbEvent::_table_ = {
     // uint32 node_type = 2;
     {PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.node_type_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 scenenode_type = 3;
-    {PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.scenenode_type_), 0, 0,
+    // uint32 scene_node_type = 3;
+    {PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.scene_node_type_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
@@ -1128,8 +1196,8 @@ PROTOBUF_NOINLINE void OnNodeRemovePbEvent::Clear() {
   (void) cached_has_bits;
 
   ::memset(&_impl_.entity_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.scenenode_type_) -
-      reinterpret_cast<char*>(&_impl_.entity_)) + sizeof(_impl_.scenenode_type_));
+      reinterpret_cast<char*>(&_impl_.scene_node_type_) -
+      reinterpret_cast<char*>(&_impl_.entity_)) + sizeof(_impl_.scene_node_type_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -1162,11 +1230,11 @@ PROTOBUF_NOINLINE void OnNodeRemovePbEvent::Clear() {
                 2, this_._internal_node_type(), target);
           }
 
-          // uint32 scenenode_type = 3;
-          if (this_._internal_scenenode_type() != 0) {
+          // uint32 scene_node_type = 3;
+          if (this_._internal_scene_node_type() != 0) {
             target = stream->EnsureSpace(target);
             target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-                3, this_._internal_scenenode_type(), target);
+                3, this_._internal_scene_node_type(), target);
           }
 
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -1204,10 +1272,10 @@ PROTOBUF_NOINLINE void OnNodeRemovePbEvent::Clear() {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
                   this_._internal_node_type());
             }
-            // uint32 scenenode_type = 3;
-            if (this_._internal_scenenode_type() != 0) {
+            // uint32 scene_node_type = 3;
+            if (this_._internal_scene_node_type() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-                  this_._internal_scenenode_type());
+                  this_._internal_scene_node_type());
             }
           }
           return this_.MaybeComputeUnknownFieldsSize(total_size,
@@ -1228,8 +1296,8 @@ void OnNodeRemovePbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   if (from._internal_node_type() != 0) {
     _this->_impl_.node_type_ = from._impl_.node_type_;
   }
-  if (from._internal_scenenode_type() != 0) {
-    _this->_impl_.scenenode_type_ = from._impl_.scenenode_type_;
+  if (from._internal_scene_node_type() != 0) {
+    _this->_impl_.scene_node_type_ = from._impl_.scene_node_type_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -1246,8 +1314,8 @@ void OnNodeRemovePbEvent::InternalSwap(OnNodeRemovePbEvent* PROTOBUF_RESTRICT ot
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.scenenode_type_)
-      + sizeof(OnNodeRemovePbEvent::_impl_.scenenode_type_)
+      PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.scene_node_type_)
+      + sizeof(OnNodeRemovePbEvent::_impl_.scene_node_type_)
       - PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.entity_)>(
           reinterpret_cast<char*>(&_impl_.entity_),
           reinterpret_cast<char*>(&other->_impl_.entity_));
@@ -1255,6 +1323,350 @@ void OnNodeRemovePbEvent::InternalSwap(OnNodeRemovePbEvent* PROTOBUF_RESTRICT ot
 
 ::google::protobuf::Metadata OnNodeRemovePbEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class ConnectToNodePbEvent::_Internal {
+ public:
+};
+
+ConnectToNodePbEvent::ConnectToNodePbEvent(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:ConnectToNodePbEvent)
+}
+ConnectToNodePbEvent::ConnectToNodePbEvent(
+    ::google::protobuf::Arena* arena, const ConnectToNodePbEvent& from)
+    : ConnectToNodePbEvent(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE ConnectToNodePbEvent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void ConnectToNodePbEvent::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, entity_),
+           0,
+           offsetof(Impl_, node_type_) -
+               offsetof(Impl_, entity_) +
+               sizeof(Impl_::node_type_));
+}
+ConnectToNodePbEvent::~ConnectToNodePbEvent() {
+  // @@protoc_insertion_point(destructor:ConnectToNodePbEvent)
+  SharedDtor(*this);
+}
+inline void ConnectToNodePbEvent::SharedDtor(MessageLite& self) {
+  ConnectToNodePbEvent& this_ = static_cast<ConnectToNodePbEvent&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* ConnectToNodePbEvent::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) ConnectToNodePbEvent(arena);
+}
+constexpr auto ConnectToNodePbEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ConnectToNodePbEvent),
+                                            alignof(ConnectToNodePbEvent));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull ConnectToNodePbEvent::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_ConnectToNodePbEvent_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &ConnectToNodePbEvent::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<ConnectToNodePbEvent>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &ConnectToNodePbEvent::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<ConnectToNodePbEvent>(), &ConnectToNodePbEvent::ByteSizeLong,
+            &ConnectToNodePbEvent::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_._cached_size_),
+        false,
+    },
+    &ConnectToNodePbEvent::kDescriptorMethods,
+    &descriptor_table_proto_2flogic_2fevent_2fnode_5fevent_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* ConnectToNodePbEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ConnectToNodePbEvent::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::ConnectToNodePbEvent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint32 node_type = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConnectToNodePbEvent, _impl_.node_type_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_.node_type_)}},
+    // uint32 entity = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConnectToNodePbEvent, _impl_.entity_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_.entity_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint32 entity = 1;
+    {PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_.entity_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // uint32 node_type = 2;
+    {PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_.node_type_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+PROTOBUF_NOINLINE void ConnectToNodePbEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:ConnectToNodePbEvent)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.entity_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.node_type_) -
+      reinterpret_cast<char*>(&_impl_.entity_)) + sizeof(_impl_.node_type_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* ConnectToNodePbEvent::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const ConnectToNodePbEvent& this_ = static_cast<const ConnectToNodePbEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* ConnectToNodePbEvent::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const ConnectToNodePbEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:ConnectToNodePbEvent)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // uint32 entity = 1;
+          if (this_._internal_entity() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+                1, this_._internal_entity(), target);
+          }
+
+          // uint32 node_type = 2;
+          if (this_._internal_node_type() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+                2, this_._internal_node_type(), target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:ConnectToNodePbEvent)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t ConnectToNodePbEvent::ByteSizeLong(const MessageLite& base) {
+          const ConnectToNodePbEvent& this_ = static_cast<const ConnectToNodePbEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t ConnectToNodePbEvent::ByteSizeLong() const {
+          const ConnectToNodePbEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:ConnectToNodePbEvent)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // uint32 entity = 1;
+            if (this_._internal_entity() != 0) {
+              total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+                  this_._internal_entity());
+            }
+            // uint32 node_type = 2;
+            if (this_._internal_node_type() != 0) {
+              total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+                  this_._internal_node_type());
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void ConnectToNodePbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ConnectToNodePbEvent*>(&to_msg);
+  auto& from = static_cast<const ConnectToNodePbEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ConnectToNodePbEvent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_entity() != 0) {
+    _this->_impl_.entity_ = from._impl_.entity_;
+  }
+  if (from._internal_node_type() != 0) {
+    _this->_impl_.node_type_ = from._impl_.node_type_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ConnectToNodePbEvent::CopyFrom(const ConnectToNodePbEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ConnectToNodePbEvent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ConnectToNodePbEvent::InternalSwap(ConnectToNodePbEvent* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_.node_type_)
+      + sizeof(ConnectToNodePbEvent::_impl_.node_type_)
+      - PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_.entity_)>(
+          reinterpret_cast<char*>(&_impl_.entity_),
+          reinterpret_cast<char*>(&other->_impl_.entity_));
+}
+
+::google::protobuf::Metadata ConnectToNodePbEvent::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class OnNodeConnectedPbEvent::_Internal {
+ public:
+};
+
+OnNodeConnectedPbEvent::OnNodeConnectedPbEvent(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(arena_constructor:OnNodeConnectedPbEvent)
+}
+OnNodeConnectedPbEvent::OnNodeConnectedPbEvent(
+    ::google::protobuf::Arena* arena,
+    const OnNodeConnectedPbEvent& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  OnNodeConnectedPbEvent* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:OnNodeConnectedPbEvent)
+}
+
+inline void* OnNodeConnectedPbEvent::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) OnNodeConnectedPbEvent(arena);
+}
+constexpr auto OnNodeConnectedPbEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(OnNodeConnectedPbEvent),
+                                            alignof(OnNodeConnectedPbEvent));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull OnNodeConnectedPbEvent::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_OnNodeConnectedPbEvent_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &OnNodeConnectedPbEvent::MergeImpl,
+        ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<OnNodeConnectedPbEvent>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &OnNodeConnectedPbEvent::SharedDtor,
+        ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<OnNodeConnectedPbEvent>(), &OnNodeConnectedPbEvent::ByteSizeLong,
+            &OnNodeConnectedPbEvent::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(OnNodeConnectedPbEvent, _impl_._cached_size_),
+        false,
+    },
+    &OnNodeConnectedPbEvent::kDescriptorMethods,
+    &descriptor_table_proto_2flogic_2fevent_2fnode_5fevent_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* OnNodeConnectedPbEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 0, 0, 0, 2> OnNodeConnectedPbEvent::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    0, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967295,  // skipmap
+    offsetof(decltype(_table_), field_names),  // no field_entries
+    0,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::OnNodeConnectedPbEvent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }},
+  // no field_entries, or aux_entries
+  {{
+  }},
+};
+
+
+
+
+
+
+
+
+::google::protobuf::Metadata OnNodeConnectedPbEvent::GetMetadata() const {
+  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

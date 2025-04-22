@@ -132,3 +132,15 @@ void GateServiceHandler::BroadcastToPlayers(::google::protobuf::RpcController* c
 
 
 
+
+void GateServiceHandler::RegisterNodeSession(::google::protobuf::RpcController* controller,const ::RegisterNodeSessionRequest* request,
+	::Empty* response,
+	::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+}
+
+
+

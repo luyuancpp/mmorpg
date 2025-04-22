@@ -111,6 +111,9 @@ extern RegisterGateNodeRequestDefaultTypeInternal _RegisterGateNodeRequest_defau
 class RegisterGateNodeSessionResponse;
 struct RegisterGateNodeSessionResponseDefaultTypeInternal;
 extern RegisterGateNodeSessionResponseDefaultTypeInternal _RegisterGateNodeSessionResponse_default_instance_;
+class RegisterNodeSessionRequest;
+struct RegisterNodeSessionRequestDefaultTypeInternal;
+extern RegisterNodeSessionRequestDefaultTypeInternal _RegisterNodeSessionRequest_default_instance_;
 class RegisterSessionCentreNodeResponse;
 struct RegisterSessionCentreNodeResponseDefaultTypeInternal;
 extern RegisterSessionCentreNodeResponseDefaultTypeInternal _RegisterSessionCentreNodeResponse_default_instance_;
@@ -4168,6 +4171,220 @@ class RoutePlayerMessageRequest final
     ::google::protobuf::RepeatedPtrField< ::NodeInfo > node_list_;
     ::google::protobuf::internal::ArenaStringPtr body_;
     ::PlayerInfoExternal* player_info_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
+};
+// -------------------------------------------------------------------
+
+class RegisterNodeSessionRequest final
+    : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:RegisterNodeSessionRequest) */ {
+ public:
+  inline RegisterNodeSessionRequest() : RegisterNodeSessionRequest(nullptr) {}
+  ~RegisterNodeSessionRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(RegisterNodeSessionRequest* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(RegisterNodeSessionRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RegisterNodeSessionRequest(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline RegisterNodeSessionRequest(const RegisterNodeSessionRequest& from) : RegisterNodeSessionRequest(nullptr, from) {}
+  inline RegisterNodeSessionRequest(RegisterNodeSessionRequest&& from) noexcept
+      : RegisterNodeSessionRequest(nullptr, std::move(from)) {}
+  inline RegisterNodeSessionRequest& operator=(const RegisterNodeSessionRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RegisterNodeSessionRequest& operator=(RegisterNodeSessionRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RegisterNodeSessionRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const RegisterNodeSessionRequest* internal_default_instance() {
+    return reinterpret_cast<const RegisterNodeSessionRequest*>(
+        &_RegisterNodeSessionRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 26;
+  friend void swap(RegisterNodeSessionRequest& a, RegisterNodeSessionRequest& b) { a.Swap(&b); }
+  inline void Swap(RegisterNodeSessionRequest* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RegisterNodeSessionRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RegisterNodeSessionRequest* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<RegisterNodeSessionRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RegisterNodeSessionRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RegisterNodeSessionRequest& from) { RegisterNodeSessionRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(RegisterNodeSessionRequest* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "RegisterNodeSessionRequest"; }
+
+ protected:
+  explicit RegisterNodeSessionRequest(::google::protobuf::Arena* arena);
+  RegisterNodeSessionRequest(::google::protobuf::Arena* arena, const RegisterNodeSessionRequest& from);
+  RegisterNodeSessionRequest(::google::protobuf::Arena* arena, RegisterNodeSessionRequest&& from) noexcept
+      : RegisterNodeSessionRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kNodeInfoFieldNumber = 1,
+    kEndpointFieldNumber = 2,
+  };
+  // .NodeInfo node_info = 1;
+  bool has_node_info() const;
+  void clear_node_info() ;
+  const ::NodeInfo& node_info() const;
+  PROTOBUF_NODISCARD ::NodeInfo* release_node_info();
+  ::NodeInfo* mutable_node_info();
+  void set_allocated_node_info(::NodeInfo* value);
+  void unsafe_arena_set_allocated_node_info(::NodeInfo* value);
+  ::NodeInfo* unsafe_arena_release_node_info();
+
+  private:
+  const ::NodeInfo& _internal_node_info() const;
+  ::NodeInfo* _internal_mutable_node_info();
+
+  public:
+  // .EndpointPBComponent endpoint = 2;
+  bool has_endpoint() const;
+  void clear_endpoint() ;
+  const ::EndpointPBComponent& endpoint() const;
+  PROTOBUF_NODISCARD ::EndpointPBComponent* release_endpoint();
+  ::EndpointPBComponent* mutable_endpoint();
+  void set_allocated_endpoint(::EndpointPBComponent* value);
+  void unsafe_arena_set_allocated_endpoint(::EndpointPBComponent* value);
+  ::EndpointPBComponent* unsafe_arena_release_endpoint();
+
+  private:
+  const ::EndpointPBComponent& _internal_endpoint() const;
+  ::EndpointPBComponent* _internal_mutable_endpoint();
+
+  public:
+  // @@protoc_insertion_point(class_scope:RegisterNodeSessionRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      1, 2, 2,
+      0, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const RegisterNodeSessionRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::NodeInfo* node_info_;
+    ::EndpointPBComponent* endpoint_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -9177,6 +9394,192 @@ inline ::int64_t MyNestedMessage::_internal_nested_int64_field() const {
 inline void MyNestedMessage::_internal_set_nested_int64_field(::int64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.nested_int64_field_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// RegisterNodeSessionRequest
+
+// .NodeInfo node_info = 1;
+inline bool RegisterNodeSessionRequest::has_node_info() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.node_info_ != nullptr);
+  return value;
+}
+inline const ::NodeInfo& RegisterNodeSessionRequest::_internal_node_info() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::NodeInfo* p = _impl_.node_info_;
+  return p != nullptr ? *p : reinterpret_cast<const ::NodeInfo&>(::_NodeInfo_default_instance_);
+}
+inline const ::NodeInfo& RegisterNodeSessionRequest::node_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:RegisterNodeSessionRequest.node_info)
+  return _internal_node_info();
+}
+inline void RegisterNodeSessionRequest::unsafe_arena_set_allocated_node_info(::NodeInfo* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.node_info_);
+  }
+  _impl_.node_info_ = reinterpret_cast<::NodeInfo*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:RegisterNodeSessionRequest.node_info)
+}
+inline ::NodeInfo* RegisterNodeSessionRequest::release_node_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::NodeInfo* released = _impl_.node_info_;
+  _impl_.node_info_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::NodeInfo* RegisterNodeSessionRequest::unsafe_arena_release_node_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:RegisterNodeSessionRequest.node_info)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::NodeInfo* temp = _impl_.node_info_;
+  _impl_.node_info_ = nullptr;
+  return temp;
+}
+inline ::NodeInfo* RegisterNodeSessionRequest::_internal_mutable_node_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.node_info_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::NodeInfo>(GetArena());
+    _impl_.node_info_ = reinterpret_cast<::NodeInfo*>(p);
+  }
+  return _impl_.node_info_;
+}
+inline ::NodeInfo* RegisterNodeSessionRequest::mutable_node_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::NodeInfo* _msg = _internal_mutable_node_info();
+  // @@protoc_insertion_point(field_mutable:RegisterNodeSessionRequest.node_info)
+  return _msg;
+}
+inline void RegisterNodeSessionRequest::set_allocated_node_info(::NodeInfo* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.node_info_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.node_info_ = reinterpret_cast<::NodeInfo*>(value);
+  // @@protoc_insertion_point(field_set_allocated:RegisterNodeSessionRequest.node_info)
+}
+
+// .EndpointPBComponent endpoint = 2;
+inline bool RegisterNodeSessionRequest::has_endpoint() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.endpoint_ != nullptr);
+  return value;
+}
+inline const ::EndpointPBComponent& RegisterNodeSessionRequest::_internal_endpoint() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::EndpointPBComponent* p = _impl_.endpoint_;
+  return p != nullptr ? *p : reinterpret_cast<const ::EndpointPBComponent&>(::_EndpointPBComponent_default_instance_);
+}
+inline const ::EndpointPBComponent& RegisterNodeSessionRequest::endpoint() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:RegisterNodeSessionRequest.endpoint)
+  return _internal_endpoint();
+}
+inline void RegisterNodeSessionRequest::unsafe_arena_set_allocated_endpoint(::EndpointPBComponent* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.endpoint_);
+  }
+  _impl_.endpoint_ = reinterpret_cast<::EndpointPBComponent*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:RegisterNodeSessionRequest.endpoint)
+}
+inline ::EndpointPBComponent* RegisterNodeSessionRequest::release_endpoint() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::EndpointPBComponent* released = _impl_.endpoint_;
+  _impl_.endpoint_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::EndpointPBComponent* RegisterNodeSessionRequest::unsafe_arena_release_endpoint() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:RegisterNodeSessionRequest.endpoint)
+
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::EndpointPBComponent* temp = _impl_.endpoint_;
+  _impl_.endpoint_ = nullptr;
+  return temp;
+}
+inline ::EndpointPBComponent* RegisterNodeSessionRequest::_internal_mutable_endpoint() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.endpoint_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::EndpointPBComponent>(GetArena());
+    _impl_.endpoint_ = reinterpret_cast<::EndpointPBComponent*>(p);
+  }
+  return _impl_.endpoint_;
+}
+inline ::EndpointPBComponent* RegisterNodeSessionRequest::mutable_endpoint() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000002u;
+  ::EndpointPBComponent* _msg = _internal_mutable_endpoint();
+  // @@protoc_insertion_point(field_mutable:RegisterNodeSessionRequest.endpoint)
+  return _msg;
+}
+inline void RegisterNodeSessionRequest::set_allocated_endpoint(::EndpointPBComponent* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.endpoint_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+
+  _impl_.endpoint_ = reinterpret_cast<::EndpointPBComponent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:RegisterNodeSessionRequest.endpoint)
 }
 
 #ifdef __GNUC__

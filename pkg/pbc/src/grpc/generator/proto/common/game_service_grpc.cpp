@@ -523,6 +523,58 @@ void SendGameServiceCreateScene(entt::registry& registry, entt::entity nodeEntit
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
+struct GameServiceRegisterNodeSessionCompleteQueue{
+	grpc::CompletionQueue cq;
+};
+
+
+using AsyncGameServiceRegisterNodeSessionHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRegisterNodeSessionGrpcClientCall>&)>;
+AsyncGameServiceRegisterNodeSessionHandlerFunctionType  AsyncGameServiceRegisterNodeSessionHandler;
+
+void AsyncCompleteGrpcGameServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
+{
+    void* got_tag;
+    bool ok = false;
+
+    gpr_timespec tm;
+    tm.tv_sec = 0;
+    tm.tv_nsec = 0;
+    tm.clock_type = GPR_CLOCK_MONOTONIC;
+    if (grpc::CompletionQueue::GOT_EVENT != 
+		cq.AsyncNext(&got_tag, &ok, tm)){
+        return;
+    }
+
+    std::unique_ptr<AsyncGameServiceRegisterNodeSessionGrpcClientCall> call(static_cast<AsyncGameServiceRegisterNodeSessionGrpcClientCall*>(got_tag));
+	if (!ok){
+		LOG_ERROR << "RPC failed";
+		return;
+	}
+
+    if (call->status.ok()){
+		if(AsyncGameServiceRegisterNodeSessionHandler){
+			AsyncGameServiceRegisterNodeSessionHandler(call);
+		}
+    }else{
+        LOG_ERROR << call->status.error_message();
+    }
+}
+
+
+void SendGameServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterNodeSessionRequest& request)
+{
+
+    AsyncGameServiceRegisterNodeSessionGrpcClientCall* call = new AsyncGameServiceRegisterNodeSessionGrpcClientCall;
+    call->response_reader =
+        registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncRegisterNodeSession(&call->context, request,
+		&registry.get<GameServiceRegisterNodeSessionCompleteQueue>(nodeEntity).cq);
+
+    	call->response_reader->StartCall();
+
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 	registry.emplace<GameServicePlayerEnterGameNodeCompleteQueue>(nodeEntity);
 
@@ -543,6 +595,8 @@ void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEn
 	registry.emplace<GameServiceEnterSceneCompleteQueue>(nodeEntity);
 
 	registry.emplace<GameServiceCreateSceneCompleteQueue>(nodeEntity);
+
+	registry.emplace<GameServiceRegisterNodeSessionCompleteQueue>(nodeEntity);
 
 }
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry) {
@@ -604,6 +658,12 @@ void HandleGameServiceCompletedQueueMessage(entt::registry& registry) {
 		auto&& view = registry.view<GameServiceCreateSceneCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
 			AsyncCompleteGrpcGameServiceCreateScene(registry, e, completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GameServiceRegisterNodeSessionCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGameServiceRegisterNodeSession(registry, e, completeQueueComp.cq);
 		}
 	}
 }

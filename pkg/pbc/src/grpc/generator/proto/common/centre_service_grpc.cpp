@@ -575,6 +575,58 @@ void SendCentreServiceInitSceneNode(entt::registry& registry, entt::entity nodeE
     	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
+struct CentreServiceRegisterNodeSessionCompleteQueue{
+	grpc::CompletionQueue cq;
+};
+
+
+using AsyncCentreServiceRegisterNodeSessionHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRegisterNodeSessionGrpcClientCall>&)>;
+AsyncCentreServiceRegisterNodeSessionHandlerFunctionType  AsyncCentreServiceRegisterNodeSessionHandler;
+
+void AsyncCompleteGrpcCentreServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
+{
+    void* got_tag;
+    bool ok = false;
+
+    gpr_timespec tm;
+    tm.tv_sec = 0;
+    tm.tv_nsec = 0;
+    tm.clock_type = GPR_CLOCK_MONOTONIC;
+    if (grpc::CompletionQueue::GOT_EVENT != 
+		cq.AsyncNext(&got_tag, &ok, tm)){
+        return;
+    }
+
+    std::unique_ptr<AsyncCentreServiceRegisterNodeSessionGrpcClientCall> call(static_cast<AsyncCentreServiceRegisterNodeSessionGrpcClientCall*>(got_tag));
+	if (!ok){
+		LOG_ERROR << "RPC failed";
+		return;
+	}
+
+    if (call->status.ok()){
+		if(AsyncCentreServiceRegisterNodeSessionHandler){
+			AsyncCentreServiceRegisterNodeSessionHandler(call);
+		}
+    }else{
+        LOG_ERROR << call->status.error_message();
+    }
+}
+
+
+void SendCentreServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterNodeSessionRequest& request)
+{
+
+    AsyncCentreServiceRegisterNodeSessionGrpcClientCall* call = new AsyncCentreServiceRegisterNodeSessionGrpcClientCall;
+    call->response_reader =
+        registry.get<GrpcCentreServiceStubPtr>(nodeEntity)->PrepareAsyncRegisterNodeSession(&call->context, request,
+		&registry.get<CentreServiceRegisterNodeSessionCompleteQueue>(nodeEntity).cq);
+
+    	call->response_reader->StartCall();
+
+    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 	registry.emplace<CentreServiceGatePlayerServiceCompleteQueue>(nodeEntity);
 
@@ -597,6 +649,8 @@ void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity node
 	registry.emplace<CentreServiceRoutePlayerStringMsgCompleteQueue>(nodeEntity);
 
 	registry.emplace<CentreServiceInitSceneNodeCompleteQueue>(nodeEntity);
+
+	registry.emplace<CentreServiceRegisterNodeSessionCompleteQueue>(nodeEntity);
 
 }
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry) {
@@ -664,6 +718,12 @@ void HandleCentreServiceCompletedQueueMessage(entt::registry& registry) {
 		auto&& view = registry.view<CentreServiceInitSceneNodeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
 			AsyncCompleteGrpcCentreServiceInitSceneNode(registry, e, completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<CentreServiceRegisterNodeSessionCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcCentreServiceRegisterNodeSession(registry, e, completeQueueComp.cq);
 		}
 	}
 }

@@ -658,3 +658,15 @@ void CentreServiceHandler::InitSceneNode(::google::protobuf::RpcController* cont
 
 
 
+
+void CentreServiceHandler::RegisterNodeSession(::google::protobuf::RpcController* controller,const ::RegisterNodeSessionRequest* request,
+	::Empty* response,
+	::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+}
+
+
+

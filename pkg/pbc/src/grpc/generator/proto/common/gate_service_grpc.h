@@ -129,3 +129,23 @@ void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity no
 
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
+class AsyncGateServiceRegisterNodeSessionGrpcClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+    ::Empty reply;
+	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
+};
+
+using AsyncGateServiceRegisterNodeSessionHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRegisterNodeSessionGrpcClientCall>&)>;
+
+extern AsyncGateServiceRegisterNodeSessionHandlerFunctionType  AsyncGateServiceRegisterNodeSessionHandler;
+
+
+class ::RegisterNodeSessionRequest;
+void SendGateServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterNodeSessionRequest& request);
+
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
+void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);

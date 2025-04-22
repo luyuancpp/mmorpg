@@ -2,17 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message OnConnect2Centre
-{
-  uint64 entity = 1;
-}
-
-message OnConnect2Game
-{
-  uint64 entity = 1;
-}
-
-message OnConnect2Gate
+message OnConnect2CentrePbEvent
 {
   uint64 entity = 1;
 }

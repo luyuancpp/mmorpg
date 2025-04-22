@@ -23,6 +23,7 @@
 #include "network/process_info.h"
 #include "etcd_helper.h"
 #include "grpc_client_system.h"
+#include "proto/logic/event/node_event.pb.h"
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
 	: loop_(loop),
@@ -482,13 +483,24 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
 
     // 封装统一处理逻辑
     auto handleConnection = [&](auto& registry, const std::string& registryName, auto onConnectedCallback) {
-        for (const auto& [e, client] : registry.view<RpcClient>().each()) {
+        for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
             if (!IsSameAddress(client.peer_addr(), conn->peerAddress()))
                 continue;
 
             LOG_INFO << "Matched peer address in [" << registryName << "] registry: {}", registryName, conn->peerAddress().toIpPort();
 
+
+			RegisterNodeSessionRequest request;
+			request.mutable_node_info()->CopyFrom(GetNodeInfo());
+			request.mutable_endpoint()->set_ip(conn->localAddress().toIp());
+			request.mutable_endpoint()->set_port(conn->localAddress().port());
+
             onConnectedCallback(e);  // 调用特定回调（可空）
+
+			ConnectToNodePbEvent connectToNodePbEvent;
+			connectToNodePbEvent.set_entity(entt::to_integral(e));
+			connectToNodePbEvent.set_node_type(nodeInfo.node_type());
+			tls.dispatcher.trigger(connectToNodePbEvent);
             return true;
         }
 
@@ -501,9 +513,9 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
         tls.centreNodeRegistry,
         "CentreNode",
         [&](entt::entity e) {
-            OnConnect2Centre connect2centre_event;
-            connect2centre_event.set_entity(entt::to_integral(e));
-            tls.dispatcher.trigger(connect2centre_event);
+            OnConnect2CentrePbEvent connect2CentreEvent;
+            connect2CentreEvent.set_entity(entt::to_integral(e));
+            tls.dispatcher.trigger(connect2CentreEvent);
             LOG_INFO << "Triggered OnConnect2Centre event for entity: {}", static_cast<uint64_t>(e);
         }
     );

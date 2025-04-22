@@ -55,3 +55,8 @@ constexpr uint32_t GameServiceCreateSceneIndex = 9;
 #define GameServiceCreateSceneMethod  ::GameService_Stub::descriptor()->method(9)
 
 
+constexpr uint32_t GameServiceRegisterNodeSessionMessageId = 61;
+constexpr uint32_t GameServiceRegisterNodeSessionIndex = 10;
+#define GameServiceRegisterNodeSessionMethod  ::GameService_Stub::descriptor()->method(10)
+
+

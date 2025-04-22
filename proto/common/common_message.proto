@@ -193,3 +193,10 @@ message MyNestedMessage
   int32 nested_int32_field = 1;          // 单个 int32 字段
   int64 nested_int64_field = 2;          // 单个 int64 字段
 }
+
+// 注册节点Session的请求
+message RegisterNodeSessionRequest {
+  NodeInfo node_info = 1;  // 节点信息
+  EndpointPBComponent endpoint = 2;
+}
+

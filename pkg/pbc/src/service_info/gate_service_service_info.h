@@ -35,3 +35,8 @@ constexpr uint32_t GateServiceBroadcastToPlayersIndex = 5;
 #define GateServiceBroadcastToPlayersMethod  ::GateService_Stub::descriptor()->method(5)
 
 
+constexpr uint32_t GateServiceRegisterNodeSessionMessageId = 13;
+constexpr uint32_t GateServiceRegisterNodeSessionIndex = 6;
+#define GateServiceRegisterNodeSessionMethod  ::GateService_Stub::descriptor()->method(6)
+
+

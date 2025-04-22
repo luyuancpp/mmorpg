@@ -1109,6 +1109,10 @@ class CentreService : public ::google::protobuf::Service {
                         const ::InitSceneNodeRequest* request,
                         ::Empty* response,
                         ::google::protobuf::Closure* done);
+  virtual void RegisterNodeSession(::google::protobuf::RpcController* controller,
+                        const ::RegisterNodeSessionRequest* request,
+                        ::Empty* response,
+                        ::google::protobuf::Closure* done);
 
   // implements Service ----------------------------------------------
   const ::google::protobuf::ServiceDescriptor* GetDescriptor() override;
@@ -1182,6 +1186,10 @@ class CentreService_Stub final : public CentreService {
                         ::google::protobuf::Closure* done) override;
   void InitSceneNode(::google::protobuf::RpcController* controller,
                         const ::InitSceneNodeRequest* request,
+                        ::Empty* response,
+                        ::google::protobuf::Closure* done) override;
+  void RegisterNodeSession(::google::protobuf::RpcController* controller,
+                        const ::RegisterNodeSessionRequest* request,
                         ::Empty* response,
                         ::google::protobuf::Closure* done) override;
 

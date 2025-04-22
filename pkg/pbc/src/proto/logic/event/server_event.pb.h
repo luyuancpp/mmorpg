@@ -52,15 +52,9 @@ struct TableStruct_proto_2flogic_2fevent_2fserver_5fevent_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_proto_2flogic_2fevent_2fserver_5fevent_2eproto;
-class OnConnect2Centre;
-struct OnConnect2CentreDefaultTypeInternal;
-extern OnConnect2CentreDefaultTypeInternal _OnConnect2Centre_default_instance_;
-class OnConnect2Game;
-struct OnConnect2GameDefaultTypeInternal;
-extern OnConnect2GameDefaultTypeInternal _OnConnect2Game_default_instance_;
-class OnConnect2Gate;
-struct OnConnect2GateDefaultTypeInternal;
-extern OnConnect2GateDefaultTypeInternal _OnConnect2Gate_default_instance_;
+class OnConnect2CentrePbEvent;
+struct OnConnect2CentrePbEventDefaultTypeInternal;
+extern OnConnect2CentrePbEventDefaultTypeInternal _OnConnect2CentrePbEvent_default_instance_;
 class OnConnect2Login;
 struct OnConnect2LoginDefaultTypeInternal;
 extern OnConnect2LoginDefaultTypeInternal _OnConnect2Login_default_instance_;
@@ -137,7 +131,7 @@ class OnServerStart final
     return reinterpret_cast<const OnServerStart*>(
         &_OnServerStart_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 2;
   friend void swap(OnServerStart& a, OnServerStart& b) { a.Swap(&b); }
   inline void Swap(OnServerStart* other) {
     if (other == this) return;
@@ -284,7 +278,7 @@ class OnConnect2Login final
     return reinterpret_cast<const OnConnect2Login*>(
         &_OnConnect2Login_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 1;
   friend void swap(OnConnect2Login& a, OnConnect2Login& b) { a.Swap(&b); }
   inline void Swap(OnConnect2Login* other) {
     if (other == this) return;
@@ -415,32 +409,32 @@ class OnConnect2Login final
 };
 // -------------------------------------------------------------------
 
-class OnConnect2Gate final
+class OnConnect2CentrePbEvent final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:OnConnect2Gate) */ {
+/* @@protoc_insertion_point(class_definition:OnConnect2CentrePbEvent) */ {
  public:
-  inline OnConnect2Gate() : OnConnect2Gate(nullptr) {}
-  ~OnConnect2Gate() PROTOBUF_FINAL;
+  inline OnConnect2CentrePbEvent() : OnConnect2CentrePbEvent(nullptr) {}
+  ~OnConnect2CentrePbEvent() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(OnConnect2Gate* msg, std::destroying_delete_t) {
+  void operator delete(OnConnect2CentrePbEvent* msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(OnConnect2Gate));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(OnConnect2CentrePbEvent));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR OnConnect2Gate(
+  explicit PROTOBUF_CONSTEXPR OnConnect2CentrePbEvent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline OnConnect2Gate(const OnConnect2Gate& from) : OnConnect2Gate(nullptr, from) {}
-  inline OnConnect2Gate(OnConnect2Gate&& from) noexcept
-      : OnConnect2Gate(nullptr, std::move(from)) {}
-  inline OnConnect2Gate& operator=(const OnConnect2Gate& from) {
+  inline OnConnect2CentrePbEvent(const OnConnect2CentrePbEvent& from) : OnConnect2CentrePbEvent(nullptr, from) {}
+  inline OnConnect2CentrePbEvent(OnConnect2CentrePbEvent&& from) noexcept
+      : OnConnect2CentrePbEvent(nullptr, std::move(from)) {}
+  inline OnConnect2CentrePbEvent& operator=(const OnConnect2CentrePbEvent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline OnConnect2Gate& operator=(OnConnect2Gate&& from) noexcept {
+  inline OnConnect2CentrePbEvent& operator=(OnConnect2CentrePbEvent&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -468,398 +462,16 @@ class OnConnect2Gate final
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const OnConnect2Gate& default_instance() {
+  static const OnConnect2CentrePbEvent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const OnConnect2Gate* internal_default_instance() {
-    return reinterpret_cast<const OnConnect2Gate*>(
-        &_OnConnect2Gate_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 2;
-  friend void swap(OnConnect2Gate& a, OnConnect2Gate& b) { a.Swap(&b); }
-  inline void Swap(OnConnect2Gate* other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(OnConnect2Gate* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  OnConnect2Gate* New(::google::protobuf::Arena* arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<OnConnect2Gate>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const OnConnect2Gate& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const OnConnect2Gate& from) { OnConnect2Gate::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* _InternalSerialize(
-      const MessageLite& msg, ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(OnConnect2Gate* other);
- private:
-  template <typename T>
-  friend ::absl::string_view(
-      ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "OnConnect2Gate"; }
-
- protected:
-  explicit OnConnect2Gate(::google::protobuf::Arena* arena);
-  OnConnect2Gate(::google::protobuf::Arena* arena, const OnConnect2Gate& from);
-  OnConnect2Gate(::google::protobuf::Arena* arena, OnConnect2Gate&& from) noexcept
-      : OnConnect2Gate(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
-  static void* PlacementNew_(const void*, void* mem,
-                             ::google::protobuf::Arena* arena);
-  static constexpr auto InternalNewImpl_();
-  static const ::google::protobuf::internal::ClassDataFull _class_data_;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kEntityFieldNumber = 1,
-  };
-  // uint64 entity = 1;
-  void clear_entity() ;
-  ::uint64_t entity() const;
-  void set_entity(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_entity() const;
-  void _internal_set_entity(::uint64_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:OnConnect2Gate)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 0,
-      0, 2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from,
-                          const OnConnect2Gate& from_msg);
-    ::uint64_t entity_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2flogic_2fevent_2fserver_5fevent_2eproto;
-};
-// -------------------------------------------------------------------
-
-class OnConnect2Game final
-    : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:OnConnect2Game) */ {
- public:
-  inline OnConnect2Game() : OnConnect2Game(nullptr) {}
-  ~OnConnect2Game() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(OnConnect2Game* msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(OnConnect2Game));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR OnConnect2Game(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline OnConnect2Game(const OnConnect2Game& from) : OnConnect2Game(nullptr, from) {}
-  inline OnConnect2Game(OnConnect2Game&& from) noexcept
-      : OnConnect2Game(nullptr, std::move(from)) {}
-  inline OnConnect2Game& operator=(const OnConnect2Game& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline OnConnect2Game& operator=(OnConnect2Game&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const OnConnect2Game& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const OnConnect2Game* internal_default_instance() {
-    return reinterpret_cast<const OnConnect2Game*>(
-        &_OnConnect2Game_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 1;
-  friend void swap(OnConnect2Game& a, OnConnect2Game& b) { a.Swap(&b); }
-  inline void Swap(OnConnect2Game* other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(OnConnect2Game* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  OnConnect2Game* New(::google::protobuf::Arena* arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<OnConnect2Game>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const OnConnect2Game& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const OnConnect2Game& from) { OnConnect2Game::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* _InternalSerialize(
-      const MessageLite& msg, ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(OnConnect2Game* other);
- private:
-  template <typename T>
-  friend ::absl::string_view(
-      ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "OnConnect2Game"; }
-
- protected:
-  explicit OnConnect2Game(::google::protobuf::Arena* arena);
-  OnConnect2Game(::google::protobuf::Arena* arena, const OnConnect2Game& from);
-  OnConnect2Game(::google::protobuf::Arena* arena, OnConnect2Game&& from) noexcept
-      : OnConnect2Game(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
-  static void* PlacementNew_(const void*, void* mem,
-                             ::google::protobuf::Arena* arena);
-  static constexpr auto InternalNewImpl_();
-  static const ::google::protobuf::internal::ClassDataFull _class_data_;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kEntityFieldNumber = 1,
-  };
-  // uint64 entity = 1;
-  void clear_entity() ;
-  ::uint64_t entity() const;
-  void set_entity(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_entity() const;
-  void _internal_set_entity(::uint64_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:OnConnect2Game)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 0,
-      0, 2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from,
-                          const OnConnect2Game& from_msg);
-    ::uint64_t entity_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2flogic_2fevent_2fserver_5fevent_2eproto;
-};
-// -------------------------------------------------------------------
-
-class OnConnect2Centre final
-    : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:OnConnect2Centre) */ {
- public:
-  inline OnConnect2Centre() : OnConnect2Centre(nullptr) {}
-  ~OnConnect2Centre() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(OnConnect2Centre* msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(OnConnect2Centre));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR OnConnect2Centre(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline OnConnect2Centre(const OnConnect2Centre& from) : OnConnect2Centre(nullptr, from) {}
-  inline OnConnect2Centre(OnConnect2Centre&& from) noexcept
-      : OnConnect2Centre(nullptr, std::move(from)) {}
-  inline OnConnect2Centre& operator=(const OnConnect2Centre& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline OnConnect2Centre& operator=(OnConnect2Centre&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const OnConnect2Centre& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const OnConnect2Centre* internal_default_instance() {
-    return reinterpret_cast<const OnConnect2Centre*>(
-        &_OnConnect2Centre_default_instance_);
+  static inline const OnConnect2CentrePbEvent* internal_default_instance() {
+    return reinterpret_cast<const OnConnect2CentrePbEvent*>(
+        &_OnConnect2CentrePbEvent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(OnConnect2Centre& a, OnConnect2Centre& b) { a.Swap(&b); }
-  inline void Swap(OnConnect2Centre* other) {
+  friend void swap(OnConnect2CentrePbEvent& a, OnConnect2CentrePbEvent& b) { a.Swap(&b); }
+  inline void Swap(OnConnect2CentrePbEvent* other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -867,7 +479,7 @@ class OnConnect2Centre final
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(OnConnect2Centre* other) {
+  void UnsafeArenaSwap(OnConnect2CentrePbEvent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -875,13 +487,13 @@ class OnConnect2Centre final
 
   // implements Message ----------------------------------------------
 
-  OnConnect2Centre* New(::google::protobuf::Arena* arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<OnConnect2Centre>(arena);
+  OnConnect2CentrePbEvent* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<OnConnect2CentrePbEvent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const OnConnect2Centre& from);
+  void CopyFrom(const OnConnect2CentrePbEvent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const OnConnect2Centre& from) { OnConnect2Centre::MergeImpl(*this, from); }
+  void MergeFrom(const OnConnect2CentrePbEvent& from) { OnConnect2CentrePbEvent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -918,18 +530,18 @@ class OnConnect2Centre final
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(OnConnect2Centre* other);
+  void InternalSwap(OnConnect2CentrePbEvent* other);
  private:
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "OnConnect2Centre"; }
+  static ::absl::string_view FullMessageName() { return "OnConnect2CentrePbEvent"; }
 
  protected:
-  explicit OnConnect2Centre(::google::protobuf::Arena* arena);
-  OnConnect2Centre(::google::protobuf::Arena* arena, const OnConnect2Centre& from);
-  OnConnect2Centre(::google::protobuf::Arena* arena, OnConnect2Centre&& from) noexcept
-      : OnConnect2Centre(arena) {
+  explicit OnConnect2CentrePbEvent(::google::protobuf::Arena* arena);
+  OnConnect2CentrePbEvent(::google::protobuf::Arena* arena, const OnConnect2CentrePbEvent& from);
+  OnConnect2CentrePbEvent(::google::protobuf::Arena* arena, OnConnect2CentrePbEvent&& from) noexcept
+      : OnConnect2CentrePbEvent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
@@ -956,7 +568,7 @@ class OnConnect2Centre final
   void _internal_set_entity(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:OnConnect2Centre)
+  // @@protoc_insertion_point(class_scope:OnConnect2CentrePbEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -978,7 +590,7 @@ class OnConnect2Centre final
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
-                          const OnConnect2Centre& from_msg);
+                          const OnConnect2CentrePbEvent& from_msg);
     ::uint64_t entity_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -1001,78 +613,26 @@ class OnConnect2Centre final
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// OnConnect2Centre
+// OnConnect2CentrePbEvent
 
 // uint64 entity = 1;
-inline void OnConnect2Centre::clear_entity() {
+inline void OnConnect2CentrePbEvent::clear_entity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.entity_ = ::uint64_t{0u};
 }
-inline ::uint64_t OnConnect2Centre::entity() const {
-  // @@protoc_insertion_point(field_get:OnConnect2Centre.entity)
+inline ::uint64_t OnConnect2CentrePbEvent::entity() const {
+  // @@protoc_insertion_point(field_get:OnConnect2CentrePbEvent.entity)
   return _internal_entity();
 }
-inline void OnConnect2Centre::set_entity(::uint64_t value) {
+inline void OnConnect2CentrePbEvent::set_entity(::uint64_t value) {
   _internal_set_entity(value);
-  // @@protoc_insertion_point(field_set:OnConnect2Centre.entity)
+  // @@protoc_insertion_point(field_set:OnConnect2CentrePbEvent.entity)
 }
-inline ::uint64_t OnConnect2Centre::_internal_entity() const {
+inline ::uint64_t OnConnect2CentrePbEvent::_internal_entity() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.entity_;
 }
-inline void OnConnect2Centre::_internal_set_entity(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.entity_ = value;
-}
-
-// -------------------------------------------------------------------
-
-// OnConnect2Game
-
-// uint64 entity = 1;
-inline void OnConnect2Game::clear_entity() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.entity_ = ::uint64_t{0u};
-}
-inline ::uint64_t OnConnect2Game::entity() const {
-  // @@protoc_insertion_point(field_get:OnConnect2Game.entity)
-  return _internal_entity();
-}
-inline void OnConnect2Game::set_entity(::uint64_t value) {
-  _internal_set_entity(value);
-  // @@protoc_insertion_point(field_set:OnConnect2Game.entity)
-}
-inline ::uint64_t OnConnect2Game::_internal_entity() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.entity_;
-}
-inline void OnConnect2Game::_internal_set_entity(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.entity_ = value;
-}
-
-// -------------------------------------------------------------------
-
-// OnConnect2Gate
-
-// uint64 entity = 1;
-inline void OnConnect2Gate::clear_entity() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.entity_ = ::uint64_t{0u};
-}
-inline ::uint64_t OnConnect2Gate::entity() const {
-  // @@protoc_insertion_point(field_get:OnConnect2Gate.entity)
-  return _internal_entity();
-}
-inline void OnConnect2Gate::set_entity(::uint64_t value) {
-  _internal_set_entity(value);
-  // @@protoc_insertion_point(field_set:OnConnect2Gate.entity)
-}
-inline ::uint64_t OnConnect2Gate::_internal_entity() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.entity_;
-}
-inline void OnConnect2Gate::_internal_set_entity(::uint64_t value) {
+inline void OnConnect2CentrePbEvent::_internal_set_entity(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.entity_ = value;
 }

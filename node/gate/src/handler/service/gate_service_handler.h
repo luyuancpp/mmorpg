@@ -48,4 +48,11 @@ public:
 		::google::protobuf::Closure* done) override;
 
 
+
+	void RegisterNodeSession(::google::protobuf::RpcController* controller,
+		const ::RegisterNodeSessionRequest* request,
+		::Empty* response,
+		::google::protobuf::Closure* done) override;
+
+
 };

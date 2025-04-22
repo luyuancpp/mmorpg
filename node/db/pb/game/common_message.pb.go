@@ -1530,6 +1530,62 @@ func (x *MyNestedMessage) GetNestedInt64Field() int64 {
 	return 0
 }
 
+// 注册节点Session的请求
+type RegisterNodeSessionRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	NodeInfo *NodeInfo            `protobuf:"bytes,1,opt,name=node_info,json=nodeInfo,proto3" json:"node_info,omitempty"` // 节点信息
+	Endpoint *EndpointPBComponent `protobuf:"bytes,2,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+}
+
+func (x *RegisterNodeSessionRequest) Reset() {
+	*x = RegisterNodeSessionRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_common_common_message_proto_msgTypes[26]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterNodeSessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterNodeSessionRequest) ProtoMessage() {}
+
+func (x *RegisterNodeSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_common_message_proto_msgTypes[26]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterNodeSessionRequest.ProtoReflect.Descriptor instead.
+func (*RegisterNodeSessionRequest) Descriptor() ([]byte, []int) {
+	return file_proto_common_common_message_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *RegisterNodeSessionRequest) GetNodeInfo() *NodeInfo {
+	if x != nil {
+		return x.NodeInfo
+	}
+	return nil
+}
+
+func (x *RegisterNodeSessionRequest) GetEndpoint() *EndpointPBComponent {
+	if x != nil {
+		return x.Endpoint
+	}
+	return nil
+}
+
 var File_proto_common_common_message_proto protoreflect.FileDescriptor
 
 var file_proto_common_common_message_proto_rawDesc = []byte{
@@ -1735,8 +1791,16 @@ var file_proto_common_common_message_proto_rawDesc = []byte{
 	0x6e, 0x74, 0x33, 0x32, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x12, 0x2c, 0x0a, 0x12, 0x6e, 0x65, 0x73,
 	0x74, 0x65, 0x64, 0x5f, 0x69, 0x6e, 0x74, 0x36, 0x34, 0x5f, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x18,
 	0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x10, 0x6e, 0x65, 0x73, 0x74, 0x65, 0x64, 0x49, 0x6e, 0x74,
-	0x36, 0x34, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61,
-	0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x36, 0x34, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x22, 0x76, 0x0a, 0x1a, 0x52, 0x65, 0x67, 0x69, 0x73,
+	0x74, 0x65, 0x72, 0x4e, 0x6f, 0x64, 0x65, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x26, 0x0a, 0x09, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x69, 0x6e,
+	0x66, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x49,
+	0x6e, 0x66, 0x6f, 0x52, 0x08, 0x6e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x30, 0x0a,
+	0x08, 0x65, 0x6e, 0x64, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x14, 0x2e, 0x45, 0x6e, 0x64, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70,
+	0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x52, 0x08, 0x65, 0x6e, 0x64, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x42,
+	0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -1751,7 +1815,7 @@ func file_proto_common_common_message_proto_rawDescGZIP() []byte {
 	return file_proto_common_common_message_proto_rawDescData
 }
 
-var file_proto_common_common_message_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_proto_common_common_message_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_proto_common_common_message_proto_goTypes = []any{
 	(*RoutingNodeInfo)(nil),                   // 0: RoutingNodeInfo
 	(*MessageContent)(nil),                    // 1: MessageContent
@@ -1779,14 +1843,16 @@ var file_proto_common_common_message_proto_goTypes = []any{
 	(*ProtoFieldCheckerTestPB)(nil),           // 23: ProtoFieldCheckerTestPB
 	(*MyProtoMessage)(nil),                    // 24: MyProtoMessage
 	(*MyNestedMessage)(nil),                   // 25: MyNestedMessage
-	(*NodeInfo)(nil),                          // 26: NodeInfo
-	(*TipInfoMessage)(nil),                    // 27: TipInfoMessage
-	(*SessionDetails)(nil),                    // 28: SessionDetails
-	(*NetworkAddress)(nil),                    // 29: NetworkAddress
+	(*RegisterNodeSessionRequest)(nil),        // 26: RegisterNodeSessionRequest
+	(*NodeInfo)(nil),                          // 27: NodeInfo
+	(*TipInfoMessage)(nil),                    // 28: TipInfoMessage
+	(*SessionDetails)(nil),                    // 29: SessionDetails
+	(*NetworkAddress)(nil),                    // 30: NetworkAddress
+	(*EndpointPBComponent)(nil),               // 31: EndpointPBComponent
 }
 var file_proto_common_common_message_proto_depIdxs = []int32{
-	26, // 0: RoutingNodeInfo.node_info:type_name -> NodeInfo
-	27, // 1: MessageContent.error_message:type_name -> TipInfoMessage
+	27, // 0: RoutingNodeInfo.node_info:type_name -> NodeInfo
+	28, // 1: MessageContent.error_message:type_name -> TipInfoMessage
 	1,  // 2: NodeRouteMessageRequest.message_content:type_name -> MessageContent
 	2,  // 3: NodeRouteMessageRequest.header:type_name -> NodeMessageHeader
 	1,  // 4: NodeRouteMessageResponse.message_content:type_name -> MessageContent
@@ -1795,29 +1861,31 @@ var file_proto_common_common_message_proto_depIdxs = []int32{
 	5,  // 7: PlayerNodeServiceRequest.header:type_name -> PlayerInfoExternal
 	1,  // 8: PlayerMessageResponse.message_content:type_name -> MessageContent
 	5,  // 9: PlayerMessageResponse.header:type_name -> PlayerInfoExternal
-	26, // 10: NodeRoutingMessageBody.node_info:type_name -> NodeInfo
-	28, // 11: RegisterGameNodeSessionRequest.session_info:type_name -> SessionDetails
-	28, // 12: RegisterGameNodeSessionResponse.session_info:type_name -> SessionDetails
-	28, // 13: RegisterGateNodeSessionResponse.session_info:type_name -> SessionDetails
-	28, // 14: RegisterCentreSessionNodeRequest.session_info:type_name -> SessionDetails
-	28, // 15: RegisterSessionCentreNodeResponse.session_info:type_name -> SessionDetails
-	28, // 16: GateSessionDisconnectRequest.session_info:type_name -> SessionDetails
+	27, // 10: NodeRoutingMessageBody.node_info:type_name -> NodeInfo
+	29, // 11: RegisterGameNodeSessionRequest.session_info:type_name -> SessionDetails
+	29, // 12: RegisterGameNodeSessionResponse.session_info:type_name -> SessionDetails
+	29, // 13: RegisterGateNodeSessionResponse.session_info:type_name -> SessionDetails
+	29, // 14: RegisterCentreSessionNodeRequest.session_info:type_name -> SessionDetails
+	29, // 15: RegisterSessionCentreNodeResponse.session_info:type_name -> SessionDetails
+	29, // 16: GateSessionDisconnectRequest.session_info:type_name -> SessionDetails
 	0,  // 17: RouteMessageRequest.route_nodes:type_name -> RoutingNodeInfo
 	0,  // 18: RouteMessageResponse.route_nodes:type_name -> RoutingNodeInfo
-	26, // 19: RoutePlayerMessageRequest.node_list:type_name -> NodeInfo
+	27, // 19: RoutePlayerMessageRequest.node_list:type_name -> NodeInfo
 	5,  // 20: RoutePlayerMessageRequest.player_info:type_name -> PlayerInfoExternal
-	26, // 21: RoutePlayerMessageResponse.node_list:type_name -> NodeInfo
+	27, // 21: RoutePlayerMessageResponse.node_list:type_name -> NodeInfo
 	5,  // 22: RoutePlayerMessageResponse.player_info:type_name -> PlayerInfoExternal
-	29, // 23: RegisterGameNodeRequest.rpc_client:type_name -> NetworkAddress
-	29, // 24: RegisterGameNodeRequest.rpc_server:type_name -> NetworkAddress
-	29, // 25: RegisterGateNodeRequest.rpc_client:type_name -> NetworkAddress
+	30, // 23: RegisterGameNodeRequest.rpc_client:type_name -> NetworkAddress
+	30, // 24: RegisterGameNodeRequest.rpc_server:type_name -> NetworkAddress
+	30, // 25: RegisterGateNodeRequest.rpc_client:type_name -> NetworkAddress
 	22, // 26: ProtoFieldCheckerTestPB.sub_message:type_name -> ProtoFieldCheckerTestSubPB
 	25, // 27: MyProtoMessage.nested_message:type_name -> MyNestedMessage
-	28, // [28:28] is the sub-list for method output_type
-	28, // [28:28] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	27, // 28: RegisterNodeSessionRequest.node_info:type_name -> NodeInfo
+	31, // 29: RegisterNodeSessionRequest.endpoint:type_name -> EndpointPBComponent
+	30, // [30:30] is the sub-list for method output_type
+	30, // [30:30] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_common_message_proto_init() }
@@ -2141,6 +2209,18 @@ func file_proto_common_common_message_proto_init() {
 				return nil
 			}
 		}
+		file_proto_common_common_message_proto_msgTypes[26].Exporter = func(v any, i int) any {
+			switch v := v.(*RegisterNodeSessionRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2148,7 +2228,7 @@ func file_proto_common_common_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_common_common_message_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

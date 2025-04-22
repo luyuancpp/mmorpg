@@ -34,6 +34,8 @@ void InitCentreServiceGatePlayerServiceRepliedHandler()
         std::bind(&OnCentreServiceRoutePlayerStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gResponseDispatcher.registerMessageCallback<::Empty>(
         std::bind(&OnCentreServiceInitSceneNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    gResponseDispatcher.registerMessageCallback<::Empty>(
+        std::bind(&OnCentreServiceRegisterNodeSessionRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void OnCentreServiceGatePlayerServiceRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
@@ -107,6 +109,13 @@ void OnCentreServiceRoutePlayerStringMsgRepliedHandler(const TcpConnectionPtr& c
 }
 
 void OnCentreServiceInitSceneNodeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+}
+
+void OnCentreServiceRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
