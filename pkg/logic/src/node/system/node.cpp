@@ -554,6 +554,19 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
 void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 	auto& conn = es.conn_;
 	if (!conn->connected()) {
+		for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each()) {
+			auto& existingConn = session.connection;
+			if (!IsSameAddress(conn->peerAddress(), existingConn->peerAddress())) {
+				LOG_TRACE << "Endpoint mismatch: expected IP = " << conn->peerAddress().toIp()
+					<< ", port = " << conn->peerAddress().port() 
+					<< "; actual IP = " << existingConn->peerAddress().toIp() 
+					<< ", port = " << existingConn->peerAddress().port();
+				continue;
+			}
+
+			tls.networkRegistry.destroy(e);
+			return;
+		}
 		return;
 	}
 
@@ -563,12 +576,14 @@ void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 }
 
 void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
-	auto& nodeInfo = request.node_info();
+auto& nodeInfo = request.node_info();
 
 	// Helper lambda to process a registry
 	auto processRegistry = [&](auto& registry, const TcpConnectionPtr& conn, const std::string& registryName) {
 		for (const auto& [id, existingNodeInfo] : registry.view<NodeInfo>().each()) {
 			if (existingNodeInfo.node_id() != nodeInfo.node_id()) {
+				LOG_TRACE << "Node ID mismatch in " << registryName << ": existing ID = " 
+				 << existingNodeInfo.node_id() << ", received ID = " << nodeInfo.node_id();
 				continue;
 			}
 			registry.emplace<RpcSession>(id, RpcSession{ conn });
@@ -576,12 +591,16 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
 			return true;
 		}
 		return false;
-		};
+	};
 
 	for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each()) {
 		auto& conn = session.connection;
 		if (request.endpoint().ip() != conn->peerAddress().toIp() ||
 			request.endpoint().port() != conn->peerAddress().port()) {
+			LOG_TRACE << "Endpoint mismatch: expected IP = " << request.endpoint().ip() 
+				<< ", port = " << request.endpoint().port() 
+				<< "; actual IP = " << conn->peerAddress().toIp() 
+				<< ", port = " << conn->peerAddress().port();
 			continue;
 		}
 
@@ -592,7 +611,5 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
 			tls.networkRegistry.destroy(e);
 			return;
 		}
-
-		LOG_WARN << "Node with ID " << nodeInfo.node_id() << " not found in any registry.";
 	}
 }
