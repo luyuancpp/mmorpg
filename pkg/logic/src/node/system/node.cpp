@@ -553,34 +553,46 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
 
 void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 	auto& conn = es.conn_;
-    if ( !conn->connected()) {
-        return;
-    }
-
-    LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
-
-	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
-
-	for (auto& nodeInfoList : serviceNodeList) {
-
+	if (!conn->connected()) {
+		return;
 	}
 
-    // 封装注册逻辑
-    auto tryRegisterSession = [&](auto& registry, const std::string& registryName) {
-        for (const auto& [e, client] : registry.view<RpcClient>().each()) {
-            if (!IsSameAddress(client.peer_addr(), conn->peerAddress()))
-                continue;
+	auto e = tls.registry.create();
+	tls.networkRegistry.emplace<RpcSession>(e, RpcSession{ conn });
+	LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
+}
 
-            registry.emplace<RpcSession>(e, conn);
-            LOG_INFO << "Registered RpcSession for  [" << registryName<< "] with entity : " <<  entt::to_integral(e);
-            return true; // 成功匹配并注册
-        }
+void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
+	auto& nodeInfo = request.node_info();
 
-        return false;
-        };
+	// Helper lambda to process a registry
+	auto processRegistry = [&](auto& registry, const std::string& registryName) {
+		for (const auto& [id, existingNodeInfo] : registry.view<NodeInfo>().each()) {
+			if (existingNodeInfo.node_id() != nodeInfo.node_id()) {
+				continue;
+			}
+			registry.emplace_or_replace<RpcSession>(id, tls.networkRegistry.get<RpcSession>(id));
+			LOG_INFO << "Node with ID " << nodeInfo.node_id() << " found in " << registryName << " registry.";
+			return true;
+		}
+		return false;
+		};
 
-    // 尝试在各注册表中绑定 session
-    tryRegisterSession(tls.centreNodeRegistry, "CentreNode");
-    tryRegisterSession(tls.sceneNodeRegistry, "SceneNode");
-    tryRegisterSession(tls.gateNodeRegistry, "GateNode");
+	for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each()) {
+		auto& conn = session.connection;
+		if (request.endpoint().ip() != conn->peerAddress().toIp() ||
+			request.endpoint().port() != conn->peerAddress().port()) {
+			continue;
+		}
+
+		// Process each registry
+		if (processRegistry(tls.centreNodeRegistry, "CentreNode") ||
+			processRegistry(tls.sceneNodeRegistry, "SceneNode") ||
+			processRegistry(tls.gateNodeRegistry, "GateNode")) {
+			tls.networkRegistry.destroy(e);
+			return;
+		}
+
+		LOG_WARN << "Node with ID " << nodeInfo.node_id() << " not found in any registry.";
+	}
 }
