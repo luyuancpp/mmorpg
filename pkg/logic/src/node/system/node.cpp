@@ -566,12 +566,12 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
 	auto& nodeInfo = request.node_info();
 
 	// Helper lambda to process a registry
-	auto processRegistry = [&](auto& registry, const std::string& registryName) {
+	auto processRegistry = [&](auto& registry, const TcpConnectionPtr& conn, const std::string& registryName) {
 		for (const auto& [id, existingNodeInfo] : registry.view<NodeInfo>().each()) {
 			if (existingNodeInfo.node_id() != nodeInfo.node_id()) {
 				continue;
 			}
-			registry.emplace_or_replace<RpcSession>(id, tls.networkRegistry.get<RpcSession>(id));
+			registry.emplace<RpcSession>(id, RpcSession{ conn });
 			LOG_INFO << "Node with ID " << nodeInfo.node_id() << " found in " << registryName << " registry.";
 			return true;
 		}
@@ -586,9 +586,9 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
 		}
 
 		// Process each registry
-		if (processRegistry(tls.centreNodeRegistry, "CentreNode") ||
-			processRegistry(tls.sceneNodeRegistry, "SceneNode") ||
-			processRegistry(tls.gateNodeRegistry, "GateNode")) {
+		if (processRegistry(tls.centreNodeRegistry, conn, "CentreNode") ||
+			processRegistry(tls.sceneNodeRegistry, conn, "SceneNode") ||
+			processRegistry(tls.gateNodeRegistry, conn, "GateNode")) {
 			tls.networkRegistry.destroy(e);
 			return;
 		}
