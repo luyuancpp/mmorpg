@@ -10,6 +10,8 @@
 #include "time/comp/timer_task_comp.h"
 #include "type_define/type_define.h"
 
+class RegisterNodeSessionRequest;
+
 class Node : muduo::noncopyable{
 public:
     using RpcServerPtr = std::unique_ptr<muduo::net::RpcServer>;
@@ -34,7 +36,7 @@ public:
     void InitializeDeploymentService(const std::string& service_address);
     void HandleServiceNodeStart(const std::string& key, const std::string& value);
 	void HandleServiceNodeStop(const std::string& key, const std::string& value);
-
+	void HandleNodeRegistration(const RegisterNodeSessionRequest& request);
 protected:
     virtual void Initialize();
     void SetupRpcServer ();

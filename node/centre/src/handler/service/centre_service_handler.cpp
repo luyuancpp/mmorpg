@@ -664,6 +664,7 @@ void CentreServiceHandler::RegisterNodeSession(::google::protobuf::RpcController
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	gCentreNode->HandleNodeRegistration(*request);
 ///<<< END WRITING YOUR CODE
 
 }
