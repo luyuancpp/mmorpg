@@ -234,7 +234,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fcentre_5fservice_2eproto[]
     "\030\001 \001(\0132\021.EnterGameRequest\022%\n\014session_inf"
     "o\030\002 \001(\0132\017.SessionDetails\"@\n\024InitSceneNod"
     "eRequest\022\017\n\007node_id\030\001 \001(\r\022\027\n\017scene_node_"
-    "type\030\002 \001(\r2\375\005\n\rCentreService\0226\n\021GatePlay"
+    "type\030\002 \001(\r2\223\006\n\rCentreService\0226\n\021GatePlay"
     "erService\022\031.GateClientMessageRequest\032\006.E"
     "mpty\022>\n\025GateSessionDisconnect\022\035.GateSess"
     "ionDisconnectRequest\032\006.Empty\0226\n\025LoginNod"
@@ -251,9 +251,10 @@ const char descriptor_table_protodef_proto_2fcommon_2fcentre_5fservice_2eproto[]
     "equest\032\025.RouteMessageResponse\022O\n\024RoutePl"
     "ayerStringMsg\022\032.RoutePlayerMessageReques"
     "t\032\033.RoutePlayerMessageResponse\022.\n\rInitSc"
-    "eneNode\022\025.InitSceneNodeRequest\032\006.Empty\022:"
+    "eneNode\022\025.InitSceneNodeRequest\032\006.Empty\022P"
     "\n\023RegisterNodeSession\022\033.RegisterNodeSess"
-    "ionRequest\032\006.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
+    "ionRequest\032\034.RegisterNodeSessionResponse"
+    "B\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcentre_5fservice_2eproto_deps[5] =
     {
@@ -267,7 +268,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcentre_5fservice_2epr
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcentre_5fservice_2eproto = {
     false,
     false,
-    1320,
+    1342,
     descriptor_table_protodef_proto_2fcommon_2fcentre_5fservice_2eproto,
     "proto/common/centre_service.proto",
     &descriptor_table_proto_2fcommon_2fcentre_5fservice_2eproto_once,
@@ -1498,7 +1499,7 @@ void CentreService::InitSceneNode(::google::protobuf::RpcController* controller,
   done->Run();
 }
 void CentreService::RegisterNodeSession(::google::protobuf::RpcController* controller,
-                         const ::RegisterNodeSessionRequest*, ::Empty*, ::google::protobuf::Closure* done) {
+                         const ::RegisterNodeSessionRequest*, ::RegisterNodeSessionResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RegisterNodeSession() not implemented.");
   done->Run();
 }
@@ -1579,7 +1580,7 @@ void CentreService::CallMethod(
     case 11:
       this->RegisterNodeSession(controller,
                    ::google::protobuf::DownCastMessage<::RegisterNodeSessionRequest>(request),
-                   ::google::protobuf::DownCastMessage<::Empty>(response),
+                   ::google::protobuf::DownCastMessage<::RegisterNodeSessionResponse>(response),
                    done);
       break;
 
@@ -1652,7 +1653,7 @@ const ::google::protobuf::Message& CentreService::GetResponsePrototype(
     case 10:
       return ::Empty::default_instance();
     case 11:
-      return ::Empty::default_instance();
+      return ::RegisterNodeSessionResponse::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -1743,7 +1744,7 @@ void CentreService_Stub::InitSceneNode(::google::protobuf::RpcController* contro
 }
 void CentreService_Stub::RegisterNodeSession(::google::protobuf::RpcController* controller,
                               const ::RegisterNodeSessionRequest* request,
-                              ::Empty* response, ::google::protobuf::Closure* done) {
+                              ::RegisterNodeSessionResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(11), controller,
                        request, response, done);
 }
