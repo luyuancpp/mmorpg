@@ -304,7 +304,7 @@ uint32_t Node::GetPort()
 
 void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	LOG_INFO << "Adding service node of type " << nodeType << " with JSON: " << nodeJson;
-	auto& serviceNodeRegistry = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
 	// Validate the node type
 	if (!eNodeType_IsValid(nodeType)) {
@@ -326,7 +326,7 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	google::protobuf::util::MessageDifferencer differencer;
 
 	// Check if the node already exists; if not, add it
-	auto& nodeList = *serviceNodeRegistry[nodeType].mutable_node_list();
+	auto& nodeList = *serviceNodeList[nodeType].mutable_node_list();
 	for (const auto& existingNode : nodeList) {
 		if (differencer.Compare(existingNode, newNodeInfo)) {
 			LOG_INFO << "Node already exists, skipping addition.";
@@ -570,46 +570,56 @@ void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 		return;
 	}
 
-	auto e = tls.registry.create();
-	tls.networkRegistry.emplace<RpcSession>(e, RpcSession{ conn });
+	auto e = tls.networkRegistry.create();
+	tls.networkRegistry.destroy(e);
+
 	LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
 }
 
 void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
-auto& nodeInfo = request.node_info();
+   auto& nodeInfo = request.node_info();
 
-	// Helper lambda to process a registry
-	auto processRegistry = [&](auto& registry, const TcpConnectionPtr& conn, const std::string& registryName) {
-		for (const auto& [id, existingNodeInfo] : registry.view<NodeInfo>().each()) {
-			if (existingNodeInfo.node_id() != nodeInfo.node_id()) {
-				LOG_TRACE << "Node ID mismatch in " << registryName << ": existing ID = " 
-				 << existingNodeInfo.node_id() << ", received ID = " << nodeInfo.node_id();
-				continue;
-			}
-			registry.emplace<RpcSession>(id, RpcSession{ conn });
-			LOG_INFO << "Node with ID " << nodeInfo.node_id() << " found in " << registryName << " registry.";
-			return true;
-		}
-		return false;
-	};
+   auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
-	for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each()) {
-		auto& conn = session.connection;
-		if (request.endpoint().ip() != conn->peerAddress().toIp() ||
-			request.endpoint().port() != conn->peerAddress().port()) {
-			LOG_TRACE << "Endpoint mismatch: expected IP = " << request.endpoint().ip() 
-				<< ", port = " << request.endpoint().port() 
-				<< "; actual IP = " << conn->peerAddress().toIp() 
-				<< ", port = " << conn->peerAddress().port();
-			continue;
-		}
+   // Helper lambda to process a registry
+   auto processRegistry = [&](auto& registry, const TcpConnectionPtr& conn, const std::string& registryName, const NodeInfoListPBComponent& nodeList) {
+       for (const auto& serverNodeInfo : nodeList.node_list()) {
+           if (serverNodeInfo.lease_id() != nodeInfo.lease_id()) {
+               LOG_TRACE << "Node ID mismatch in " << registryName << ": expected ID = " 
+                         << serverNodeInfo.node_id() << ", received ID = " << nodeInfo.node_id();
+               continue;
+           }
 
-		// Process each registry
-		if (processRegistry(tls.centreNodeRegistry, conn, "CentreNode") ||
-			processRegistry(tls.sceneNodeRegistry, conn, "SceneNode") ||
-			processRegistry(tls.gateNodeRegistry, conn, "GateNode")) {
-			tls.networkRegistry.destroy(e);
-			return;
-		}
-	}
+		   entt::entity id = registry.create();
+		   if (id != entt::entity{nodeInfo.node_id()})
+		   {
+			   LOG_ERROR << "Failed to create node entity: " << entt::to_integral(id);
+			   return false;
+		   }
+		   registry.emplace<RpcSession>(id, RpcSession{ conn });
+		   LOG_INFO << "Node with ID " << nodeInfo.node_id() << " found in " << registryName << " registry.";
+		   return true;
+
+       }
+       return false;
+   };
+
+   for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each()) {
+       auto& conn = session.connection;
+       if (request.endpoint().ip() != conn->peerAddress().toIp() ||
+           request.endpoint().port() != conn->peerAddress().port()) {
+           LOG_TRACE << "Endpoint mismatch: expected IP = " << request.endpoint().ip() 
+                     << ", port = " << request.endpoint().port() 
+                     << "; actual IP = " << conn->peerAddress().toIp() 
+                     << ", port = " << conn->peerAddress().port();
+           continue;
+       }
+       // Process each registry using server list type's NodeInfo list
+       if (processRegistry(tls.centreNodeRegistry, conn, "CentreNode", serviceNodeList[kCentreNode]) ||
+           processRegistry(tls.sceneNodeRegistry, conn, "SceneNode", serviceNodeList[kSceneNode]) ||
+           processRegistry(tls.gateNodeRegistry, conn, "GateNode", serviceNodeList[kGateNode])) {
+		   tls.networkRegistry.destroy(e);
+           return;
+       }
+   }
 }
