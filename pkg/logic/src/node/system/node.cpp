@@ -494,7 +494,7 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
             LOG_INFO << "Matched peer address in [" << registryName << "] registry: " << conn->peerAddress().toIpPort();
 
             RegisterNodeSessionRequest request;
-            request.mutable_node_info()->CopyFrom(GetNodeInfo());
+            request.mutable_self_node()->CopyFrom(GetNodeInfo());
             request.mutable_endpoint()->set_ip(conn->localAddress().toIp());
             request.mutable_endpoint()->set_port(conn->localAddress().port());
 
@@ -577,28 +577,28 @@ void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 }
 
 void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
-   auto& nodeInfo = request.node_info();
+   auto& peerNodeInfo = request.self_node();
 
    auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
    // Helper lambda to process a registry
    auto processRegistry = [&](auto& registry, const TcpConnectionPtr& conn, const std::string& registryName, const NodeInfoListPBComponent& nodeList) {
        for (const auto& serverNodeInfo : nodeList.node_list()) {
-           if (serverNodeInfo.node_type() != nodeInfo.node_type() || 
-			   serverNodeInfo.node_id() != nodeInfo.node_id()) {
+           if (serverNodeInfo.node_type() != peerNodeInfo.node_type() || 
+			   serverNodeInfo.node_id() != peerNodeInfo.node_id()) {
 			   LOG_TRACE << "Mismatch in node type or ID. Expected node: " << serverNodeInfo.DebugString()
-				   << "; received node: " << nodeInfo.DebugString();
+				   << "; received node: " << peerNodeInfo.DebugString();
                continue;
            }
 
 		   entt::entity id = registry.create();
-		   if (id != entt::entity{nodeInfo.node_id()})
+		   if (id != entt::entity{peerNodeInfo.node_id()})
 		   {
 			   LOG_ERROR << "Failed to create node entity: " << entt::to_integral(id);
 			   return false;
 		   }
 		   registry.emplace<RpcSession>(id, RpcSession{ conn });
-		   LOG_INFO << "Node with ID " << nodeInfo.node_id() << " found in " << registryName << " registry.";
+		   LOG_INFO << "Node with ID " << peerNodeInfo.node_id() << " found in " << registryName << " registry.";
 		   return true;
 
        }
