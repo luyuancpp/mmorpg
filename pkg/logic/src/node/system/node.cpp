@@ -571,7 +571,7 @@ void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 	}
 
 	auto e = tls.networkRegistry.create();
-	tls.networkRegistry.destroy(e);
+	tls.networkRegistry.emplace<RpcSession>(e, RpcSession{ conn });
 
 	LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
 }
@@ -584,9 +584,10 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
    // Helper lambda to process a registry
    auto processRegistry = [&](auto& registry, const TcpConnectionPtr& conn, const std::string& registryName, const NodeInfoListPBComponent& nodeList) {
        for (const auto& serverNodeInfo : nodeList.node_list()) {
-           if (serverNodeInfo.lease_id() != nodeInfo.lease_id()) {
-               LOG_TRACE << "Node ID mismatch in " << registryName << ": expected ID = " 
-                         << serverNodeInfo.node_id() << ", received ID = " << nodeInfo.node_id();
+           if (serverNodeInfo.node_type() != nodeInfo.node_type() || 
+			   serverNodeInfo.node_id() != nodeInfo.node_id()) {
+			   LOG_TRACE << "Mismatch in node type or ID. Expected node: " << serverNodeInfo.DebugString()
+				   << "; received node: " << nodeInfo.DebugString();
                continue;
            }
 
