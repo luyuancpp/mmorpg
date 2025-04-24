@@ -665,6 +665,7 @@ void CentreServiceHandler::RegisterNodeSession(::google::protobuf::RpcController
 {
 ///<<< BEGIN WRITING YOUR CODE
 	gCentreNode->HandleNodeRegistration(*request);
+	response->mutable_peer_node()->CopyFrom(gCentreNode->GetNodeInfo());
 ///<<< END WRITING YOUR CODE
 
 }

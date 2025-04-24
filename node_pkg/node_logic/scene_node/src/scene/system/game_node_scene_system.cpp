@@ -28,7 +28,7 @@ void GameNodeSceneSystem::InitializeNodeScenes() {
 	}
 }
 
-void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene) {
+void GameNodeSceneSystem::RegisterSceneToAllCentre(entt::entity scene) {
 	const auto sceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(scene);
 	if (!sceneInfo) {
 		return;
@@ -41,7 +41,8 @@ void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene) {
 	BroadCastToCentre(CentreSceneServiceRegisterSceneMessageId, request);
 }
 
-void GameNodeSceneSystem::RegisterSceneToCentre() {
+void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
+{
 	RegisterSceneRequest request;
 	request.set_scene_node_id(gSceneNodeInfo.GetNodeId());
 
@@ -49,7 +50,7 @@ void GameNodeSceneSystem::RegisterSceneToCentre() {
 		request.mutable_scenes_info()->Add()->CopyFrom(sceneInfo);
 	}
 
-	BroadCastToCentre(CentreSceneServiceRegisterSceneMessageId, request);
+	CallCentreNodeMethod(CentreSceneServiceRegisterSceneMessageId, request, entt::to_integral(centre));
 }
 
 void GameNodeSceneSystem::HandleSceneCreation(const OnSceneCreate& message) {
