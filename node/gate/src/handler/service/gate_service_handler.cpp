@@ -139,6 +139,7 @@ void GateServiceHandler::RegisterNodeSession(::google::protobuf::RpcController* 
 {
 ///<<< BEGIN WRITING YOUR CODE
 	gGateNode->HandleNodeRegistration(*request);
+	response->mutable_peer_node()->CopyFrom(gGateNode->GetNodeInfo());
 ///<<< END WRITING YOUR CODE
 
 }

@@ -28,7 +28,6 @@ void ServerEventHandler::UnRegister()
 void ServerEventHandler::OnConnect2CentrePbEventHandler(const OnConnect2CentrePbEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    GameNodeSceneSystem::RegisterSceneToCentre();
 ///<<< END WRITING YOUR CODE
 
 }

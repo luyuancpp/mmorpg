@@ -6,6 +6,7 @@ extern ProtobufDispatcher gResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
+#include "scene/system/game_node_scene_system.h"
 ///<<< END WRITING YOUR CODE
 
 
@@ -118,6 +119,8 @@ void OnCentreServiceInitSceneNodeRepliedHandler(const TcpConnectionPtr& conn, co
 void OnCentreServiceRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterNodeSessionResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    auto centreNodeId = entt::entity{ replied->peer_node().node_id() };
+	GameNodeSceneSystem::RegisterAllSceneToCentre(centreNodeId);
 ///<<< END WRITING YOUR CODE
 
 }

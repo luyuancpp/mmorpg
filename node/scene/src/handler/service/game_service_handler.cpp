@@ -470,6 +470,7 @@ void GameServiceHandler::RegisterNodeSession(::google::protobuf::RpcController* 
 {
 ///<<< BEGIN WRITING YOUR CODE
 	gSceneNode->HandleNodeRegistration(*request);
+	response->mutable_peer_node()->CopyFrom(gSceneNode->GetNodeInfo());
 ///<<< END WRITING YOUR CODE
 
 }
