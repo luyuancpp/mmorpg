@@ -96,8 +96,8 @@ void Node::StartRpcServer() {
 	deployQueueTimer.Cancel();  // Stop deploy queue timer
 	LOG_INFO << "Deploy queue timer canceled.";
 
-	StartWatchingServiceNodes();  // Start watching for new service nodes
 	RegisterSelfInService();     // Register this node in service registry
+	StartWatchingServiceNodes();  // Start watching for new service nodes
 
 	LOG_INFO << "RPC server started at " << GetNodeInfo().DebugString();
 
@@ -579,6 +579,8 @@ void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
    auto& peerNodeInfo = request.self_node();
 
+   LOG_INFO << "Received node registration request:" << request.DebugString();
+
    auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
    // Helper lambda to process a registry
@@ -591,7 +593,7 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
                continue;
            }
 
-		   entt::entity id = registry.create();
+		   entt::entity id = registry.create(entt::entity{ peerNodeInfo.node_id() });
 		   if (id != entt::entity{peerNodeInfo.node_id()})
 		   {
 			   LOG_ERROR << "Failed to create node entity: " << entt::to_integral(id);
