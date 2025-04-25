@@ -215,8 +215,8 @@ class AsyncGameServiceRegisterNodeSessionGrpcClientCall
 public:
     ClientContext context;
     Status status;
-    ::RegisterNodeSessionResponse reply;
-	std::unique_ptr<ClientAsyncResponseReader<::RegisterNodeSessionResponse>> response_reader;
+    ::Empty reply;
+	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
 
 using AsyncGameServiceRegisterNodeSessionHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRegisterNodeSessionGrpcClientCall>&)>;

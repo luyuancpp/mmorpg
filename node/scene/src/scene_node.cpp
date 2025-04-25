@@ -52,9 +52,6 @@ void SceneNode::Initialize()
     
     Node::Initialize();
 
-    tls.dispatcher.sink<OnConnect2CentrePbEvent>().connect<&SceneNode::OnConnect2CentreHandler>(*this);
-
-
     EventHandler::Register();
 
     InitPlayerService();
@@ -114,10 +111,3 @@ Node::CanConnectNodeTypeList SceneNode::GetAllowedTargetNodeTypes()
 	return { kCentreNode };
 }
 
-void SceneNode::OnConnect2CentreHandler(const OnConnect2CentrePbEvent& event)
-{
-    InitSceneNodeRequest request;
-    request.set_node_id(gSceneNode->GetNodeId());
-    request.set_scene_node_type(gSceneNode->GetNodeInfo().scene_node_type());
-    CallCentreNodeMethod(CentreServiceInitSceneNodeMessageId, request, entt::to_integral(event.entity()));
-}

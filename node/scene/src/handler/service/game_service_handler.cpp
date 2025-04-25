@@ -465,12 +465,11 @@ void GameServiceHandler::CreateScene(::google::protobuf::RpcController* controll
 
 
 void GameServiceHandler::RegisterNodeSession(::google::protobuf::RpcController* controller,const ::RegisterNodeSessionRequest* request,
-	::RegisterNodeSessionResponse* response,
+	::Empty* response,
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	gSceneNode->HandleNodeRegistration(*request);
-	response->mutable_peer_node()->CopyFrom(gSceneNode->GetNodeInfo());
 ///<<< END WRITING YOUR CODE
 
 }

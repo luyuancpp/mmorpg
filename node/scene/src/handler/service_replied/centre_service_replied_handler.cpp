@@ -7,6 +7,9 @@ extern ProtobufDispatcher gResponseDispatcher;
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "scene/system/game_node_scene_system.h"
+#include "proto/logic/constants/node.pb.h"
+#include "proto/logic/event/server_event.pb.h"
+#include "thread_local/storage.cpp"
 ///<<< END WRITING YOUR CODE
 
 
@@ -35,7 +38,7 @@ void InitCentreServiceGatePlayerServiceRepliedHandler()
         std::bind(&OnCentreServiceRoutePlayerStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gResponseDispatcher.registerMessageCallback<::Empty>(
         std::bind(&OnCentreServiceInitSceneNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RegisterNodeSessionResponse>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(
         std::bind(&OnCentreServiceRegisterNodeSessionRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
@@ -116,11 +119,9 @@ void OnCentreServiceInitSceneNodeRepliedHandler(const TcpConnectionPtr& conn, co
 
 }
 
-void OnCentreServiceRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterNodeSessionResponse>& replied, Timestamp timestamp)
+void OnCentreServiceRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto centreNodeId = entt::entity{ replied->peer_node().node_id() };
-	GameNodeSceneSystem::RegisterAllSceneToCentre(centreNodeId);
 ///<<< END WRITING YOUR CODE
 
 }

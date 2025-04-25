@@ -71,5 +71,5 @@ service GameService {
   rpc UpdateSessionDetail (RegisterPlayerSessionRequest) returns (Empty);
   rpc EnterScene (Centre2GsEnterSceneRequest) returns (Empty);
   rpc CreateScene (CreateSceneRequest) returns (CreateSceneResponse);
-  rpc RegisterNodeSession (RegisterNodeSessionRequest) returns (RegisterNodeSessionResponse);
+  rpc RegisterNodeSession (RegisterNodeSessionRequest) returns (Empty);
 }

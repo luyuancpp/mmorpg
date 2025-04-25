@@ -520,12 +520,13 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
         "CentreNode",
         CentreServiceRegisterNodeSessionMessageId,
         [&](entt::entity e, RegisterNodeSessionRequest& request, RpcClient& client) {
-            OnConnect2CentrePbEvent connect2CentreEvent;
-            connect2CentreEvent.set_entity(entt::to_integral(e));
-            tls.dispatcher.trigger(connect2CentreEvent);
-            LOG_INFO << "Triggered OnConnect2Centre event for entity: " << entt::to_integral(e);
-
             client.CallRemoteMethod(CentreServiceRegisterNodeSessionMessageId, request);
+			OnConnect2CentrePbEvent connect2CentreEvent;
+			connect2CentreEvent.set_entity(entt::to_integral(e));
+			tls.dispatcher.trigger(connect2CentreEvent);
+			LOG_INFO << "Triggered OnConnect2Centre event for entity: " << entt::to_integral(e);
+
+			LOG_INFO << "CentreNode connected. Entity: " << entt::to_integral(e);
         }
     );
 

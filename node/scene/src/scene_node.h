@@ -38,8 +38,6 @@ public:
     
     virtual void ReadyForGame()override;
 
-    void OnConnect2CentreHandler(const OnConnect2CentrePbEvent& event);
-
 private:
     PbSyncRedisClientPtr redis;
     GameServiceHandler nodeReplyService;

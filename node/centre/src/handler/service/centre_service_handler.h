@@ -86,7 +86,7 @@ public:
 
 	void RegisterNodeSession(::google::protobuf::RpcController* controller,
 		const ::RegisterNodeSessionRequest* request,
-		::RegisterNodeSessionResponse* response,
+		::Empty* response,
 		::google::protobuf::Closure* done) override;
 
 

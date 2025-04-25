@@ -123,7 +123,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fgate_5fservice_2eproto[] A
     "o\"(\n\022KickSessionRequest\022\022\n\nsession_id\030\001 "
     "\001(\004\"[\n\031BroadcastToPlayersRequest\022\024\n\014sess"
     "ion_list\030\001 \003(\004\022(\n\017message_content\030\002 \001(\0132"
-    "\017.MessageContent2\360\003\n\013GateService\022X\n\023Play"
+    "\017.MessageContent2\332\003\n\013GateService\022X\n\023Play"
     "erEnterGameNode\022\037.RegisterGameNodeSessio"
     "nRequest\032 .RegisterGameNodeSessionRespon"
     "se\0227\n\023SendMessageToPlayer\022\030.NodeRouteMes"
@@ -133,10 +133,9 @@ const char descriptor_table_protodef_proto_2fcommon_2fgate_5fservice_2eproto[] A
     "eMessageResponse\022M\n\022RoutePlayerMessage\022\032"
     ".RoutePlayerMessageRequest\032\033.RoutePlayer"
     "MessageResponse\0228\n\022BroadcastToPlayers\022\032."
-    "BroadcastToPlayersRequest\032\006.Empty\022P\n\023Reg"
+    "BroadcastToPlayersRequest\032\006.Empty\022:\n\023Reg"
     "isterNodeSession\022\033.RegisterNodeSessionRe"
-    "quest\032\034.RegisterNodeSessionResponseB\014Z\007p"
-    "b/game\200\001\001b\006proto3"
+    "quest\032\006.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fgate_5fservice_2eproto_deps[3] =
     {
@@ -148,7 +147,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fgate_5fservice_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fgate_5fservice_2eproto = {
     false,
     false,
-    777,
+    755,
     descriptor_table_protodef_proto_2fcommon_2fgate_5fservice_2eproto,
     "proto/common/gate_service.proto",
     &descriptor_table_proto_2fcommon_2fgate_5fservice_2eproto_once,
@@ -709,7 +708,7 @@ void GateService::BroadcastToPlayers(::google::protobuf::RpcController* controll
   done->Run();
 }
 void GateService::RegisterNodeSession(::google::protobuf::RpcController* controller,
-                         const ::RegisterNodeSessionRequest*, ::RegisterNodeSessionResponse*, ::google::protobuf::Closure* done) {
+                         const ::RegisterNodeSessionRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RegisterNodeSession() not implemented.");
   done->Run();
 }
@@ -760,7 +759,7 @@ void GateService::CallMethod(
     case 6:
       this->RegisterNodeSession(controller,
                    ::google::protobuf::DownCastMessage<::RegisterNodeSessionRequest>(request),
-                   ::google::protobuf::DownCastMessage<::RegisterNodeSessionResponse>(response),
+                   ::google::protobuf::DownCastMessage<::Empty>(response),
                    done);
       break;
 
@@ -813,7 +812,7 @@ const ::google::protobuf::Message& GateService::GetResponsePrototype(
     case 5:
       return ::Empty::default_instance();
     case 6:
-      return ::RegisterNodeSessionResponse::default_instance();
+      return ::Empty::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -874,7 +873,7 @@ void GateService_Stub::BroadcastToPlayers(::google::protobuf::RpcController* con
 }
 void GateService_Stub::RegisterNodeSession(::google::protobuf::RpcController* controller,
                               const ::RegisterNodeSessionRequest* request,
-                              ::RegisterNodeSessionResponse* response, ::google::protobuf::Closure* done) {
+                              ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(6), controller,
                        request, response, done);
 }
