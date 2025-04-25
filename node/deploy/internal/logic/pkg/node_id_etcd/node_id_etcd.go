@@ -155,7 +155,7 @@ func GenerateID(ctx context.Context, etcdClient *clientv3.Client, nodeType uint3
 
 // 生成 ID 并附带租约
 func GenerateIDWithLease(ctx context.Context, etcdClient *clientv3.Client, nodeType uint32) (uint64, clientv3.LeaseID, error) {
-	idTTL := time.Duration(5 * time.Second)
+	idTTL := time.Duration(60 * time.Second)
 	leaseResp, err := etcdClient.Grant(ctx, int64(idTTL.Seconds()))
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to create lease: %v", err)
