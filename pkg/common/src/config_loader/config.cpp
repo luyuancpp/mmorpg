@@ -12,12 +12,16 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 		baseConfig.add_etcd_hosts(host.as<std::string>());
 	}
 
+	// 可选解析：节点续约间隔
+	if (root["Etcd"]["KeepaliveInterval"]) {
+		baseConfig.set_lease_renew_interval(root["Etcd"]["KeepaliveInterval"].as<uint32_t>());
+	}
+
 	// 解析日志级别配置 (uint32 类型)
 	baseConfig.set_log_level(root["LogLevel"].as<uint32_t>());
 
 	// 解析服务列表
 	for (const auto& service : root["services"]) {
-		// 使用 auto 进行类型推导
 		auto* s = baseConfig.add_services();
 		s->set_name(service["name"].as<std::string>());
 		s->set_url(service["url"].as<std::string>());
@@ -30,6 +34,7 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 
 	return true;
 }
+
 
 // 读取游戏配置
 bool readGameConfig(const std::string& filename, GameConfig& gameConfig) {
