@@ -286,7 +286,6 @@ void Node::InitGrpcClients() {
 	GrpcClientSystem::InitEtcdStubs(tlsCommonLogic.GetBaseDeployConfig().etcd_hosts());
 }
 
-
 std::string Node::FormatIpAndPort()
 {
 	return ::FormatIpAndPort(GetNodeInfo().endpoint().ip(), GetNodeInfo().endpoint().port());
