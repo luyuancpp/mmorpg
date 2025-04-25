@@ -630,7 +630,6 @@ void CentreServiceHandler::InitSceneNode(::google::protobuf::RpcController* cont
     }
 
 	// Search for a matching client connection and register the game node
-
     AddMainSceneNodeComponent(tls.sceneNodeRegistry, sceneNodeId);
 
 
@@ -660,12 +659,11 @@ void CentreServiceHandler::InitSceneNode(::google::protobuf::RpcController* cont
 
 
 void CentreServiceHandler::RegisterNodeSession(::google::protobuf::RpcController* controller,const ::RegisterNodeSessionRequest* request,
-	::RegisterNodeSessionResponse* response,
+	::Empty* response,
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	gCentreNode->HandleNodeRegistration(*request);
-	response->mutable_peer_node()->CopyFrom(gCentreNode->GetNodeInfo());
 ///<<< END WRITING YOUR CODE
 
 }

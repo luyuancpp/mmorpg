@@ -8,6 +8,7 @@
 #include "service_info/centre_service_service_info.h"
 #include "scene/system/game_node_scene_system.h"
 #include "scene/system/scene_system.h"
+#include "core/network/message_system.h"
 ///<<< END WRITING YOUR CODE
 
 
@@ -28,6 +29,13 @@ void ServerEventHandler::UnRegister()
 void ServerEventHandler::OnConnect2CentrePbEventHandler(const OnConnect2CentrePbEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	InitSceneNodeRequest request;
+	request.set_node_id(gSceneNode->GetNodeId());
+	request.set_scene_node_type(gSceneNode->GetNodeInfo().scene_node_type());
+	CallCentreNodeMethod(CentreServiceInitSceneNodeMessageId, request, entt::to_integral(event.entity()));
+
+	entt::entity centreNodeId = entt::to_entity(event.entity());
+	GameNodeSceneSystem::RegisterAllSceneToCentre(centreNodeId);
 ///<<< END WRITING YOUR CODE
 
 }

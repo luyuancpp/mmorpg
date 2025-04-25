@@ -26,6 +26,6 @@ service GateService {
   rpc RouteNodeMessage (RouteMessageRequest) returns (RouteMessageResponse);
   rpc RoutePlayerMessage (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse);
   rpc BroadcastToPlayers (BroadcastToPlayersRequest) returns (Empty);
-  rpc RegisterNodeSession (RegisterNodeSessionRequest) returns (RegisterNodeSessionResponse);
+  rpc RegisterNodeSession (RegisterNodeSessionRequest) returns (Empty);
   
 }

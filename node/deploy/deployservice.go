@@ -39,7 +39,7 @@ func main() {
 			// 如果是临时维护模式，延迟60秒后再启动定时任务
 			logx.Info("In maintenance mode, delaying periodic sweep start...")
 			time.Sleep(60 * time.Second) // 延迟60秒
-			go node_id_etcd.StartPeriodicSweep(ctx.NodeEtcdClient, 30*time.Second)
+			go node_id_etcd.StartPeriodicSweep(ctx.NodeEtcdClient, 1*time.Second)
 		}()
 
 	} else {
@@ -50,7 +50,7 @@ func main() {
 		}
 
 		// 在非维护模式下，启动定时任务
-		go node_id_etcd.StartPeriodicSweep(ctx.NodeEtcdClient, 30*time.Second)
+		go node_id_etcd.StartPeriodicSweep(ctx.NodeEtcdClient, 1*time.Second)
 	}
 
 	// 调用 StartPeriodicSweep 启动定时任务，每隔 60 秒调用一次 SweepExpiredIDs

@@ -24,7 +24,7 @@ void InitGateServicePlayerEnterGameNodeRepliedHandler()
         std::bind(&OnGateServiceRoutePlayerMessageRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gResponseDispatcher.registerMessageCallback<::Empty>(
         std::bind(&OnGateServiceBroadcastToPlayersRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RegisterNodeSessionResponse>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(
         std::bind(&OnGateServiceRegisterNodeSessionRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
@@ -70,7 +70,7 @@ void OnGateServiceBroadcastToPlayersRepliedHandler(const TcpConnectionPtr& conn,
 
 }
 
-void OnGateServiceRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterNodeSessionResponse>& replied, Timestamp timestamp)
+void OnGateServiceRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
