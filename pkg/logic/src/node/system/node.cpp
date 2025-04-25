@@ -53,7 +53,7 @@ void Node::InitializeDeploymentService(const std::string& service_address)
 	SendDeployServiceGetNodeInfo(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 
 	// Periodically renew the node lease
-	renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, [this]() {
+	renewNodeLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
 		RenewLeaseIDRequest request;
 		request.set_lease_id(GetNodeInfo().lease_id());
 		LOG_TRACE << "Renewing lease with ID: " << GetNodeInfo().lease_id();

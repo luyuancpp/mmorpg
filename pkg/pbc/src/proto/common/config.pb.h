@@ -640,6 +640,7 @@ class BaseDeployConfig final
     kServicesFieldNumber = 3,
     kServiceDiscoveryPrefixesFieldNumber = 4,
     kLogLevelFieldNumber = 2,
+    kLeaseRenewIntervalFieldNumber = 5,
   };
   // repeated string etcd_hosts = 1;
   int etcd_hosts_size() const;
@@ -712,12 +713,22 @@ class BaseDeployConfig final
   void _internal_set_log_level(::uint32_t value);
 
   public:
+  // uint32 lease_renew_interval = 5;
+  void clear_lease_renew_interval() ;
+  ::uint32_t lease_renew_interval() const;
+  void set_lease_renew_interval(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_lease_renew_interval() const;
+  void _internal_set_lease_renew_interval(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:BaseDeployConfig)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 1,
+      3, 5, 1,
       61, 2>
       _table_;
 
@@ -739,6 +750,7 @@ class BaseDeployConfig final
     ::google::protobuf::RepeatedPtrField< ::ServiceConfig > services_;
     ::google::protobuf::RepeatedPtrField<std::string> service_discovery_prefixes_;
     ::uint32_t log_level_;
+    ::uint32_t lease_renew_interval_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1059,6 +1071,28 @@ inline ::google::protobuf::RepeatedPtrField<std::string>*
 BaseDeployConfig::_internal_mutable_service_discovery_prefixes() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.service_discovery_prefixes_;
+}
+
+// uint32 lease_renew_interval = 5;
+inline void BaseDeployConfig::clear_lease_renew_interval() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lease_renew_interval_ = 0u;
+}
+inline ::uint32_t BaseDeployConfig::lease_renew_interval() const {
+  // @@protoc_insertion_point(field_get:BaseDeployConfig.lease_renew_interval)
+  return _internal_lease_renew_interval();
+}
+inline void BaseDeployConfig::set_lease_renew_interval(::uint32_t value) {
+  _internal_set_lease_renew_interval(value);
+  // @@protoc_insertion_point(field_set:BaseDeployConfig.lease_renew_interval)
+}
+inline ::uint32_t BaseDeployConfig::_internal_lease_renew_interval() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.lease_renew_interval_;
+}
+inline void BaseDeployConfig::_internal_set_lease_renew_interval(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lease_renew_interval_ = value;
 }
 
 // -------------------------------------------------------------------

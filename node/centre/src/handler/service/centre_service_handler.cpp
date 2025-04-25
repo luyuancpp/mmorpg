@@ -632,7 +632,6 @@ void CentreServiceHandler::InitSceneNode(::google::protobuf::RpcController* cont
 	// Search for a matching client connection and register the game node
     AddMainSceneNodeComponent(tls.sceneNodeRegistry, sceneNodeId);
 
-
     if (request->scene_node_type() == eGameNodeType::kMainSceneCrossNode)
     {
     	tls.sceneNodeRegistry.remove<MainSceneNode>(sceneNodeId);
