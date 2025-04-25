@@ -622,6 +622,7 @@ void CentreServiceHandler::InitSceneNode(::google::protobuf::RpcController* cont
 ///<<< BEGIN WRITING YOUR CODE
  
     auto sceneNodeId = entt::entity{ request->node_id() };
+
     // Check if the scene node ID is valid
     if (!tls.sceneNodeRegistry.valid(sceneNodeId))
     {
