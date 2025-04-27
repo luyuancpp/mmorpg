@@ -56,11 +56,13 @@ protected:
     void ReleaseNodeId();
     void SetUpEventHandlers();
 	void StopWatchingServiceNodes();
+    std::string BuildServiceNodeKey();
 	void RegisterSelfInService();
 	void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
     void InitGrpcClients();
     void FetchesServiceNodes();
+    void FetchDeployServiceNode();
 	void StartWatchingServiceNodes();
     void InitializeGrpcResponseHandlers();
     void InitializeGrpcMessageQueues();

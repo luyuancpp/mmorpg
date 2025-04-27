@@ -4,8 +4,8 @@ option go_package = "pb/game";
 
 // 服务配置，避免与 protobuf 的 Service 冲突
 message ServiceConfig {
-    string name = 1;
-    string url = 2;
+    string name = 1;  // 服务名称
+    string url = 2;   // 服务的健康检查或访问URL
 }
 
 // 基础部署配置
@@ -14,7 +14,8 @@ message BaseDeployConfig {
     uint32 log_level = 2;                 // 日志级别，使用 uint32
     repeated ServiceConfig services = 3;  // 服务列表
     repeated string service_discovery_prefixes = 4; // etcd 服务前缀
-    uint32 lease_renew_interval = 5;     // 节点续约间隔（单位：秒）
+    uint32 lease_renew_interval = 5;      // 节点续约间隔（单位：秒）
+    string deployservice_prefix = 6;      // 单独的 deployservice.rpc 前缀字段
 }
 
 // 游戏配置

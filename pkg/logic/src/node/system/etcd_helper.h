@@ -6,7 +6,7 @@
 #include "proto/common/common.pb.h"
 
 namespace EtcdHelper {
-	void PutServiceNodeInfo(const NodeInfo& nodeInfo, const std::string& serviceName);
+	void PutServiceNodeInfo(const NodeInfo& nodeInfo, const std::string& key);
 	void RangeQuery(const std::string& prefix);
 	void StartWatchingPrefix(const std::string& prefix);
 	void StopAllWatching();  // 可扩展的占位函数

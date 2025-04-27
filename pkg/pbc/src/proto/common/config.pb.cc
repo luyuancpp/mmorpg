@@ -86,6 +86,9 @@ inline constexpr BaseDeployConfig::Impl_::Impl_(
       : etcd_hosts_{},
         services_{},
         service_discovery_prefixes_{},
+        deployservice_prefix_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         log_level_{0u},
         lease_renew_interval_{0u},
         _cached_size_{0} {}
@@ -139,6 +142,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_.services_),
         PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_.service_discovery_prefixes_),
         PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_.lease_renew_interval_),
+        PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_.deployservice_prefix_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::GameConfig, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -155,7 +159,7 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::ServiceConfig)},
         {10, -1, -1, sizeof(::BaseDeployConfig)},
-        {23, -1, -1, sizeof(::GameConfig)},
+        {24, -1, -1, sizeof(::GameConfig)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_ServiceConfig_default_instance_._instance,
@@ -165,19 +169,20 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2fconfig_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\031proto/common/config.proto\"*\n\rServiceCo"
-    "nfig\022\014\n\004name\030\001 \001(\t\022\013\n\003url\030\002 \001(\t\"\235\001\n\020Base"
+    "nfig\022\014\n\004name\030\001 \001(\t\022\013\n\003url\030\002 \001(\t\"\273\001\n\020Base"
     "DeployConfig\022\022\n\netcd_hosts\030\001 \003(\t\022\021\n\tlog_"
     "level\030\002 \001(\r\022 \n\010services\030\003 \003(\0132\016.ServiceC"
     "onfig\022\"\n\032service_discovery_prefixes\030\004 \003("
-    "\t\022\034\n\024lease_renew_interval\030\005 \001(\r\"6\n\nGameC"
-    "onfig\022\027\n\017scene_node_type\030\001 \001(\r\022\017\n\007zone_i"
-    "d\030\002 \001(\rB\tZ\007pb/gameb\006proto3"
+    "\t\022\034\n\024lease_renew_interval\030\005 \001(\r\022\034\n\024deplo"
+    "yservice_prefix\030\006 \001(\t\"6\n\nGameConfig\022\027\n\017s"
+    "cene_node_type\030\001 \001(\r\022\017\n\007zone_id\030\002 \001(\rB\tZ"
+    "\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fconfig_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fconfig_2eproto = {
     false,
     false,
-    306,
+    336,
     descriptor_table_protodef_proto_2fcommon_2fconfig_2eproto,
     "proto/common/config.proto",
     &descriptor_table_proto_2fcommon_2fconfig_2eproto_once,
@@ -471,6 +476,7 @@ inline PROTOBUF_NDEBUG_INLINE BaseDeployConfig::Impl_::Impl_(
       : etcd_hosts_{visibility, arena, from.etcd_hosts_},
         services_{visibility, arena, from.services_},
         service_discovery_prefixes_{visibility, arena, from.service_discovery_prefixes_},
+        deployservice_prefix_(arena, from.deployservice_prefix_),
         _cached_size_{0} {}
 
 BaseDeployConfig::BaseDeployConfig(
@@ -502,6 +508,7 @@ inline PROTOBUF_NDEBUG_INLINE BaseDeployConfig::Impl_::Impl_(
       : etcd_hosts_{visibility, arena},
         services_{visibility, arena},
         service_discovery_prefixes_{visibility, arena},
+        deployservice_prefix_(arena),
         _cached_size_{0} {}
 
 inline void BaseDeployConfig::SharedCtor(::_pb::Arena* arena) {
@@ -521,6 +528,7 @@ inline void BaseDeployConfig::SharedDtor(MessageLite& self) {
   BaseDeployConfig& this_ = static_cast<BaseDeployConfig&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.deployservice_prefix_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -544,7 +552,7 @@ constexpr auto BaseDeployConfig::InternalNewImpl_() {
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
-    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+    return ::google::protobuf::internal::MessageCreator::CopyInit(
         sizeof(BaseDeployConfig), alignof(BaseDeployConfig), *arena_bits);
   } else {
     return ::google::protobuf::internal::MessageCreator(&BaseDeployConfig::PlacementNew_,
@@ -580,15 +588,15 @@ const ::google::protobuf::internal::ClassData* BaseDeployConfig::GetClassData() 
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 5, 1, 61, 2> BaseDeployConfig::_table_ = {
+const ::_pbi::TcParseTable<3, 6, 1, 81, 2> BaseDeployConfig::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    5, 56,  // max_field_number, fast_idx_mask
+    6, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967264,  // skipmap
+    4294967232,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    5,  // num_field_entries
+    6,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     _class_data_.base(),
@@ -614,7 +622,9 @@ const ::_pbi::TcParseTable<3, 5, 1, 61, 2> BaseDeployConfig::_table_ = {
     // uint32 lease_renew_interval = 5;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BaseDeployConfig, _impl_.lease_renew_interval_), 63>(),
      {40, 63, 0, PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.lease_renew_interval_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // string deployservice_prefix = 6;
+    {::_pbi::TcParser::FastUS1,
+     {50, 63, 0, PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.deployservice_prefix_)}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
@@ -634,13 +644,17 @@ const ::_pbi::TcParseTable<3, 5, 1, 61, 2> BaseDeployConfig::_table_ = {
     // uint32 lease_renew_interval = 5;
     {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.lease_renew_interval_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // string deployservice_prefix = 6;
+    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.deployservice_prefix_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }}, {{
     {::_pbi::TcParser::GetTable<::ServiceConfig>()},
   }}, {{
-    "\20\12\0\0\32\0\0\0"
+    "\20\12\0\0\32\0\24\0"
     "BaseDeployConfig"
     "etcd_hosts"
     "service_discovery_prefixes"
+    "deployservice_prefix"
   }},
 };
 
@@ -654,6 +668,7 @@ PROTOBUF_NOINLINE void BaseDeployConfig::Clear() {
   _impl_.etcd_hosts_.Clear();
   _impl_.services_.Clear();
   _impl_.service_discovery_prefixes_.Clear();
+  _impl_.deployservice_prefix_.ClearToEmpty();
   ::memset(&_impl_.log_level_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.lease_renew_interval_) -
       reinterpret_cast<char*>(&_impl_.log_level_)) + sizeof(_impl_.lease_renew_interval_));
@@ -716,6 +731,14 @@ PROTOBUF_NOINLINE void BaseDeployConfig::Clear() {
                 5, this_._internal_lease_renew_interval(), target);
           }
 
+          // string deployservice_prefix = 6;
+          if (!this_._internal_deployservice_prefix().empty()) {
+            const std::string& _s = this_._internal_deployservice_prefix();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "BaseDeployConfig.deployservice_prefix");
+            target = stream->WriteStringMaybeAliased(6, _s, target);
+          }
+
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
             target =
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -768,6 +791,11 @@ PROTOBUF_NOINLINE void BaseDeployConfig::Clear() {
             }
           }
            {
+            // string deployservice_prefix = 6;
+            if (!this_._internal_deployservice_prefix().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_deployservice_prefix());
+            }
             // uint32 log_level = 2;
             if (this_._internal_log_level() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
@@ -795,6 +823,9 @@ void BaseDeployConfig::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   _this->_internal_mutable_services()->MergeFrom(
       from._internal_services());
   _this->_internal_mutable_service_discovery_prefixes()->MergeFrom(from._internal_service_discovery_prefixes());
+  if (!from._internal_deployservice_prefix().empty()) {
+    _this->_internal_set_deployservice_prefix(from._internal_deployservice_prefix());
+  }
   if (from._internal_log_level() != 0) {
     _this->_impl_.log_level_ = from._impl_.log_level_;
   }
@@ -814,10 +845,13 @@ void BaseDeployConfig::CopyFrom(const BaseDeployConfig& from) {
 
 void BaseDeployConfig::InternalSwap(BaseDeployConfig* PROTOBUF_RESTRICT other) {
   using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.etcd_hosts_.InternalSwap(&other->_impl_.etcd_hosts_);
   _impl_.services_.InternalSwap(&other->_impl_.services_);
   _impl_.service_discovery_prefixes_.InternalSwap(&other->_impl_.service_discovery_prefixes_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.deployservice_prefix_, &other->_impl_.deployservice_prefix_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.lease_renew_interval_)
       + sizeof(BaseDeployConfig::_impl_.lease_renew_interval_)

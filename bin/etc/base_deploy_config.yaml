@@ -14,10 +14,12 @@ services:
   - name: "service2"
     url: "http://localhost:8082/v1/catalog/service/service2"  # 服务2的健康检查URL
     
-service_discovery_prefixes:
-  - deployservice.rpc
-  - sceneservice.rpc
-  - gateservice.rpc
-  - centreservice.rpc
-  - loginservice.rpc
+# 独立配置 deployservice.rpc 前缀
+deployservice_prefix: "deployservice.rpc"
 
+# 其他服务的服务发现前缀
+service_discovery_prefixes:
+  - "sceneservice.rpc"
+  - "gateservice.rpc"
+  - "centreservice.rpc"
+  - "loginservice.rpc"
