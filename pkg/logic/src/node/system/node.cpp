@@ -27,6 +27,7 @@
 #include "service_info/centre_service_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
+#include "pbc/common_error_tip.pb.h"
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
 	: loop_(loop),
@@ -507,6 +508,7 @@ void Node::InitializeGrpcResponseHandlers() {
 
 }
 
+
 void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
 	auto& conn = es.conn_;
 	if (!conn->connected()) {
@@ -516,66 +518,35 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
 
 	LOG_INFO << "Successfully connected to server: " << conn->peerAddress().toIpPort();
 
-	// Define a lambda to handle connection logic for different registries
-	auto handleConnection = [&](auto& registry, const std::string& registryName, uint32_t messageId, auto onConnectedCallback) {
-		for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
-			if (!IsSameAddress(client.peer_addr(), conn->peerAddress())) {
-				continue;
-			}
-
-			LOG_INFO << "Matched peer address in [" << registryName << "] registry: " << conn->peerAddress().toIpPort();
-
-			RegisterNodeSessionRequest request;
-			request.mutable_self_node()->CopyFrom(GetNodeInfo());
-			request.mutable_endpoint()->set_ip(conn->localAddress().toIp());
-			request.mutable_endpoint()->set_port(conn->localAddress().port());
-
-			// Execute the provided callback
-			onConnectedCallback(e, request, client);
-
-			// Trigger a generic event for node connection
-			ConnectToNodePbEvent connectToNodePbEvent;
-			connectToNodePbEvent.set_entity(entt::to_integral(e));
-			connectToNodePbEvent.set_node_type(nodeInfo.node_type());
-			tls.dispatcher.trigger(connectToNodePbEvent);
-
-			return true;
-		}
-
-		LOG_INFO << "No matching client found in [" << registryName << "] registry for address: " << conn->peerAddress().toIpPort();
-		return false;
-		};
-
 	// Handle connections for different node types
-	handleConnection(
+	AttemptNodeRegistration(
 		tls.centreNodeRegistry,
-		"CentreNode",
 		CentreServiceRegisterNodeSessionMessageId,
+		conn,
 		[&](entt::entity e, RegisterNodeSessionRequest& request, RpcClient& client) {
 			client.CallRemoteMethod(CentreServiceRegisterNodeSessionMessageId, request);
 			OnConnect2CentrePbEvent connect2CentreEvent;
 			connect2CentreEvent.set_entity(entt::to_integral(e));
 			tls.dispatcher.trigger(connect2CentreEvent);
 			LOG_INFO << "Triggered OnConnect2Centre event for entity: " << entt::to_integral(e);
-
 			LOG_INFO << "CentreNode connected. Entity: " << entt::to_integral(e);
 		}
 	);
 
-	handleConnection(
+	AttemptNodeRegistration(
 		tls.sceneNodeRegistry,
-		"SceneNode",
 		GameServiceRegisterNodeSessionMessageId,
+		conn,
 		[&](entt::entity e, RegisterNodeSessionRequest& request, RpcClient& client) {
 			client.CallRemoteMethod(GameServiceRegisterNodeSessionMessageId, request);
 			LOG_INFO << "SceneNode connected. Entity: " << entt::to_integral(e);
 		}
 	);
 
-	handleConnection(
+	AttemptNodeRegistration(
 		tls.gateNodeRegistry,
-		"GateNode",
 		GateServiceRegisterNodeSessionMessageId,
+		conn,
 		[&](entt::entity e, RegisterNodeSessionRequest& request, RpcClient& client) {
 			client.CallRemoteMethod(GateServiceRegisterNodeSessionMessageId, request);
 			LOG_INFO << "GateNode connected. Entity: " << entt::to_integral(e);
@@ -583,6 +554,37 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
 	);
 }
 
+
+void Node::AttemptNodeRegistration(
+	entt::registry& registry,
+	uint32_t messageId,
+	const muduo::net::TcpConnectionPtr& conn,
+	std::function<void(entt::entity, RegisterNodeSessionRequest&, RpcClient&)> onConnectedCallback
+) {
+	for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
+		if (!IsSameAddress(client.peer_addr(), conn->peerAddress())) {
+			continue;
+		}
+
+		LOG_INFO << "Matched peer address in [" << tls.GetRegistryName(registry) << "] registry: " << conn->peerAddress().toIpPort();
+
+		RegisterNodeSessionRequest request;
+		request.mutable_self_node()->CopyFrom(GetNodeInfo());
+		request.mutable_endpoint()->set_ip(conn->localAddress().toIp());
+		request.mutable_endpoint()->set_port(conn->localAddress().port());
+
+		// Execute the provided callback
+		onConnectedCallback(e, request, client);
+
+		// Trigger a generic event for node connection
+		ConnectToNodePbEvent connectToNodePbEvent;
+		connectToNodePbEvent.set_entity(entt::to_integral(e));
+		connectToNodePbEvent.set_node_type(nodeInfo.node_type());
+		tls.dispatcher.trigger(connectToNodePbEvent);
+
+		return;
+	}
+}
 
 void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 	auto& conn = es.conn_;
@@ -609,7 +611,7 @@ void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 	LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
 }
 
-void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
+uint32_t Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
 	auto& peerNodeInfo = request.self_node();
 
 	LOG_INFO << "Received node registration request:" << request.DebugString();
@@ -654,7 +656,9 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
 			processRegistry(tls.sceneNodeRegistry, conn, "SceneNode", serviceNodeList[kSceneNode]) ||
 			processRegistry(tls.gateNodeRegistry, conn, "GateNode", serviceNodeList[kGateNode])) {
 			tls.networkRegistry.destroy(e);
-			return;
+			return kCommon_errorOK;
 		}
 	}
+
+	return kFailedToRegisterTheNode;
 }

@@ -1980,7 +1980,7 @@ class GameService : public ::google::protobuf::Service {
                         ::google::protobuf::Closure* done);
   virtual void RegisterNodeSession(::google::protobuf::RpcController* controller,
                         const ::RegisterNodeSessionRequest* request,
-                        ::Empty* response,
+                        ::RegisterNodeSessionResponse* response,
                         ::google::protobuf::Closure* done);
 
   // implements Service ----------------------------------------------
@@ -2055,7 +2055,7 @@ class GameService_Stub final : public GameService {
                         ::google::protobuf::Closure* done) override;
   void RegisterNodeSession(::google::protobuf::RpcController* controller,
                         const ::RegisterNodeSessionRequest* request,
-                        ::Empty* response,
+                        ::RegisterNodeSessionResponse* response,
                         ::google::protobuf::Closure* done) override;
 
  private:

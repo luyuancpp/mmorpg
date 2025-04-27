@@ -465,11 +465,11 @@ void GameServiceHandler::CreateScene(::google::protobuf::RpcController* controll
 
 
 void GameServiceHandler::RegisterNodeSession(::google::protobuf::RpcController* controller,const ::RegisterNodeSessionRequest* request,
-	::Empty* response,
+	::RegisterNodeSessionResponse* response,
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	gSceneNode->HandleNodeRegistration(*request);
+	response->mutable_error_message()->set_id(gSceneNode->HandleNodeRegistration(*request));
 ///<<< END WRITING YOUR CODE
 
 }

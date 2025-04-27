@@ -532,7 +532,8 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr RegisterNodeSessionResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        peer_node_{nullptr} {}
+        peer_node_{nullptr},
+        error_message_{nullptr} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR RegisterNodeSessionResponse::RegisterNodeSessionResponse(::_pbi::ConstantInitialized)
@@ -1106,7 +1107,9 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::RegisterNodeSessionResponse, _impl_.error_message_),
         PROTOBUF_FIELD_OFFSET(::RegisterNodeSessionResponse, _impl_.peer_node_),
+        1,
         0,
 };
 
@@ -1139,7 +1142,7 @@ static const ::_pbi::MigrationSchema
         {281, 294, -1, sizeof(::MyProtoMessage)},
         {299, -1, -1, sizeof(::MyNestedMessage)},
         {309, 319, -1, sizeof(::RegisterNodeSessionRequest)},
-        {321, 330, -1, sizeof(::RegisterNodeSessionResponse)},
+        {321, 331, -1, sizeof(::RegisterNodeSessionResponse)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_RoutingNodeInfo_default_instance_._instance,
@@ -1238,8 +1241,9 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto[]
     "e\022\032\n\022nested_int32_field\030\001 \001(\005\022\032\n\022nested_"
     "int64_field\030\002 \001(\003\"b\n\032RegisterNodeSession"
     "Request\022\034\n\tself_node\030\001 \001(\0132\t.NodeInfo\022&\n"
-    "\010endpoint\030\002 \001(\0132\024.EndpointPBComponent\";\n"
-    "\033RegisterNodeSessionResponse\022\034\n\tpeer_nod"
+    "\010endpoint\030\002 \001(\0132\024.EndpointPBComponent\"c\n"
+    "\033RegisterNodeSessionResponse\022&\n\rerror_me"
+    "ssage\030\004 \001(\0132\017.TipInfoMessage\022\034\n\tpeer_nod"
     "e\030\001 \001(\0132\t.NodeInfoB\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps[3] =
@@ -1252,7 +1256,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_5fmessage_2epr
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto = {
     false,
     false,
-    2717,
+    2757,
     descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto,
     "proto/common/common_message.proto",
     &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
@@ -9126,6 +9130,11 @@ class RegisterNodeSessionResponse::_Internal {
       8 * PROTOBUF_FIELD_OFFSET(RegisterNodeSessionResponse, _impl_._has_bits_);
 };
 
+void RegisterNodeSessionResponse::clear_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
 void RegisterNodeSessionResponse::clear_peer_node() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.peer_node_ != nullptr) _impl_.peer_node_->Clear();
@@ -9163,6 +9172,9 @@ RegisterNodeSessionResponse::RegisterNodeSessionResponse(
   _impl_.peer_node_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::NodeInfo>(
                               arena, *from._impl_.peer_node_)
                         : nullptr;
+  _impl_.error_message_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::TipInfoMessage>(
+                              arena, *from._impl_.error_message_)
+                        : nullptr;
 
   // @@protoc_insertion_point(copy_constructor:RegisterNodeSessionResponse)
 }
@@ -9173,7 +9185,12 @@ inline PROTOBUF_NDEBUG_INLINE RegisterNodeSessionResponse::Impl_::Impl_(
 
 inline void RegisterNodeSessionResponse::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.peer_node_ = {};
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, peer_node_),
+           0,
+           offsetof(Impl_, error_message_) -
+               offsetof(Impl_, peer_node_) +
+               sizeof(Impl_::error_message_));
 }
 RegisterNodeSessionResponse::~RegisterNodeSessionResponse() {
   // @@protoc_insertion_point(destructor:RegisterNodeSessionResponse)
@@ -9184,6 +9201,7 @@ inline void RegisterNodeSessionResponse::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   delete this_._impl_.peer_node_;
+  delete this_._impl_.error_message_;
   this_._impl_.~Impl_();
 }
 
@@ -9223,16 +9241,16 @@ const ::google::protobuf::internal::ClassData* RegisterNodeSessionResponse::GetC
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RegisterNodeSessionResponse::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 2, 0, 2> RegisterNodeSessionResponse::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(RegisterNodeSessionResponse, _impl_._has_bits_),
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    4, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967286,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
-    1,  // num_aux_entries
+    2,  // num_field_entries
+    2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     _class_data_.base(),
     nullptr,  // post_loop_handler
@@ -9241,6 +9259,9 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RegisterNodeSessionResponse::_table_ =
     ::_pbi::TcParser::GetTable<::RegisterNodeSessionResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
+    // .TipInfoMessage error_message = 4;
+    {::_pbi::TcParser::FastMtS1,
+     {34, 1, 1, PROTOBUF_FIELD_OFFSET(RegisterNodeSessionResponse, _impl_.error_message_)}},
     // .NodeInfo peer_node = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(RegisterNodeSessionResponse, _impl_.peer_node_)}},
@@ -9250,8 +9271,12 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RegisterNodeSessionResponse::_table_ =
     // .NodeInfo peer_node = 1;
     {PROTOBUF_FIELD_OFFSET(RegisterNodeSessionResponse, _impl_.peer_node_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .TipInfoMessage error_message = 4;
+    {PROTOBUF_FIELD_OFFSET(RegisterNodeSessionResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 1, 1,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::NodeInfo>()},
+    {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
   }}, {{
   }},
 };
@@ -9264,9 +9289,15 @@ PROTOBUF_NOINLINE void RegisterNodeSessionResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(_impl_.peer_node_ != nullptr);
-    _impl_.peer_node_->Clear();
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      ABSL_DCHECK(_impl_.peer_node_ != nullptr);
+      _impl_.peer_node_->Clear();
+    }
+    if (cached_has_bits & 0x00000002u) {
+      ABSL_DCHECK(_impl_.error_message_ != nullptr);
+      _impl_.error_message_->Clear();
+    }
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -9295,6 +9326,13 @@ PROTOBUF_NOINLINE void RegisterNodeSessionResponse::Clear() {
                 stream);
           }
 
+          // .TipInfoMessage error_message = 4;
+          if (cached_has_bits & 0x00000002u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                4, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
+                stream);
+          }
+
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
             target =
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -9318,12 +9356,18 @@ PROTOBUF_NOINLINE void RegisterNodeSessionResponse::Clear() {
           // Prevent compiler warnings about cached_has_bits being unused
           (void)cached_has_bits;
 
-           {
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+          cached_has_bits = this_._impl_._has_bits_[0];
+          if (cached_has_bits & 0x00000003u) {
             // .NodeInfo peer_node = 1;
-            cached_has_bits = this_._impl_._has_bits_[0];
             if (cached_has_bits & 0x00000001u) {
               total_size += 1 +
                             ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.peer_node_);
+            }
+            // .TipInfoMessage error_message = 4;
+            if (cached_has_bits & 0x00000002u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
             }
           }
           return this_.MaybeComputeUnknownFieldsSize(total_size,
@@ -9340,13 +9384,24 @@ void RegisterNodeSessionResponse::MergeImpl(::google::protobuf::MessageLite& to_
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(from._impl_.peer_node_ != nullptr);
-    if (_this->_impl_.peer_node_ == nullptr) {
-      _this->_impl_.peer_node_ =
-          ::google::protobuf::Message::CopyConstruct<::NodeInfo>(arena, *from._impl_.peer_node_);
-    } else {
-      _this->_impl_.peer_node_->MergeFrom(*from._impl_.peer_node_);
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      ABSL_DCHECK(from._impl_.peer_node_ != nullptr);
+      if (_this->_impl_.peer_node_ == nullptr) {
+        _this->_impl_.peer_node_ =
+            ::google::protobuf::Message::CopyConstruct<::NodeInfo>(arena, *from._impl_.peer_node_);
+      } else {
+        _this->_impl_.peer_node_->MergeFrom(*from._impl_.peer_node_);
+      }
+    }
+    if (cached_has_bits & 0x00000002u) {
+      ABSL_DCHECK(from._impl_.error_message_ != nullptr);
+      if (_this->_impl_.error_message_ == nullptr) {
+        _this->_impl_.error_message_ =
+            ::google::protobuf::Message::CopyConstruct<::TipInfoMessage>(arena, *from._impl_.error_message_);
+      } else {
+        _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -9365,7 +9420,12 @@ void RegisterNodeSessionResponse::InternalSwap(RegisterNodeSessionResponse* PROT
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  swap(_impl_.peer_node_, other->_impl_.peer_node_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RegisterNodeSessionResponse, _impl_.error_message_)
+      + sizeof(RegisterNodeSessionResponse::_impl_.error_message_)
+      - PROTOBUF_FIELD_OFFSET(RegisterNodeSessionResponse, _impl_.peer_node_)>(
+          reinterpret_cast<char*>(&_impl_.peer_node_),
+          reinterpret_cast<char*>(&other->_impl_.peer_node_));
 }
 
 ::google::protobuf::Metadata RegisterNodeSessionResponse::GetMetadata() const {
