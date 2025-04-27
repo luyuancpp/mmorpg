@@ -50,7 +50,6 @@ protected:
     virtual void LoadConfigurationData();
     virtual void OnConfigLoadSuccessful(){}
     void ConfigureEnvironment();
-    void ConnectToNode(entt::registry& registry, uint32_t nodeType);
 	void ConnectToNode(entt::registry& registry, const NodeInfo& nodeInfo);
 
     void InitializeGrpcClients();
