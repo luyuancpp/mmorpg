@@ -517,8 +517,11 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
 	}
 
 	LOG_INFO << "Successfully connected to server: " << conn->peerAddress().toIpPort();
+	RegisterNodeSessions(conn);
+}
 
-	// Handle connections for different node types
+// Handle connections for different node types
+void Node::RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn) {
 	AttemptNodeRegistration(
 		tls.centreNodeRegistry,
 		CentreServiceRegisterNodeSessionMessageId,
@@ -554,7 +557,6 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
 	);
 }
 
-
 void Node::AttemptNodeRegistration(
 	entt::registry& registry,
 	uint32_t messageId,
@@ -573,15 +575,14 @@ void Node::AttemptNodeRegistration(
 		request.mutable_endpoint()->set_ip(conn->localAddress().toIp());
 		request.mutable_endpoint()->set_port(conn->localAddress().port());
 
-		// Execute the provided callback
-		onConnectedCallback(e, request, client);
-
 		// Trigger a generic event for node connection
 		ConnectToNodePbEvent connectToNodePbEvent;
 		connectToNodePbEvent.set_entity(entt::to_integral(e));
 		connectToNodePbEvent.set_node_type(nodeInfo.node_type());
 		tls.dispatcher.trigger(connectToNodePbEvent);
 
+		// Execute the provided callback
+		onConnectedCallback(e, request, client);
 		return;
 	}
 }
