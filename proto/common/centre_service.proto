@@ -50,5 +50,5 @@ service CentreService {
   rpc RouteNodeStringMsg (RouteMessageRequest) returns (RouteMessageResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse);
   rpc InitSceneNode (InitSceneNodeRequest) returns (Empty);
-  rpc RegisterNodeSession (RegisterNodeSessionRequest) returns (Empty );
+  rpc RegisterNodeSession (RegisterNodeSessionRequest) returns (RegisterNodeSessionResponse );
 }

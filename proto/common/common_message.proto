@@ -200,5 +200,6 @@ message RegisterNodeSessionRequest {
 }
 
 message RegisterNodeSessionResponse {
-  NodeInfo peer_node = 1;              // 对方的节点信息（返回的是对方）
+    TipInfoMessage error_message = 4;  // 错误消息（可选）
+    NodeInfo peer_node = 1;              // 对方的节点信息（返回的是对方）
 }

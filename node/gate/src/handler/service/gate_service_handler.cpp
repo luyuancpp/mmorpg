@@ -134,11 +134,11 @@ void GateServiceHandler::BroadcastToPlayers(::google::protobuf::RpcController* c
 
 
 void GateServiceHandler::RegisterNodeSession(::google::protobuf::RpcController* controller,const ::RegisterNodeSessionRequest* request,
-	::Empty* response,
+	::RegisterNodeSessionResponse* response,
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	gGateNode->HandleNodeRegistration(*request);
+	response->mutable_error_message()->set_id(gGateNode->HandleNodeRegistration(*request));
 ///<<< END WRITING YOUR CODE
 
 }

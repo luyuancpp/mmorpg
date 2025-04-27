@@ -36,7 +36,7 @@ public:
     void InitializeDeploymentService(const std::string& service_address);
     void HandleServiceNodeStart(const std::string& key, const std::string& value);
 	void HandleServiceNodeStop(const std::string& key, const std::string& value);
-	void HandleNodeRegistration(const RegisterNodeSessionRequest& request);
+	uint32_t HandleNodeRegistration(const RegisterNodeSessionRequest& request);
 protected:
     virtual void Initialize();
     void SetupRpcServer ();
@@ -66,7 +66,12 @@ protected:
 	void StartWatchingServiceNodes();
     void InitializeGrpcResponseHandlers();
     void InitializeGrpcMessageQueues();
-
+    void AttemptNodeRegistration(
+        entt::registry& registry,
+        uint32_t messageId,
+        const muduo::net::TcpConnectionPtr& conn,
+        std::function<void(entt::entity, RegisterNodeSessionRequest&, RpcClient&)> onConnectedCallback
+    );
     void OnConnectedToServer(const OnConnected2TcpServerEvent& es);
     void OnClientConnected(const OnBeConnectedEvent& es);
 
