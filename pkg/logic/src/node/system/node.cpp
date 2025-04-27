@@ -71,7 +71,6 @@ void Node::Initialize() {
 	LoadConfigurationData();        // Load the configuration data
 	InitializeGrpcClients();        // Initialize gRPC clients
 	InitializeGrpcMessageQueues();  // Initialize gRPC queues for async processing
-	RegisterServiceNodes();         // Fetch and register service nodes
 	SetUpEventHandlers();           // Set up event handlers
 	LOG_INFO << "Node initialization complete.";
 }
@@ -96,7 +95,6 @@ void Node::StartRpcServer() {
 	LOG_INFO << "Deploy queue timer canceled.";
 
 	RegisterSelfInService();     // Register this node in service registry
-	StartWatchingServiceNodes();  // Start watching for new service nodes
 
 	LOG_INFO << "RPC server started at " << GetNodeInfo().DebugString();
 
@@ -188,8 +186,8 @@ void Node::RegisterSelfInService() {
 	EtcdHelper::PutServiceNodeInfo(GetNodeInfo(), GetServiceName());
 }
 
-// Fetches and registers all service nodes from etcd
-void Node::RegisterServiceNodes() {
+// Fetches  all service nodes from etcd
+void Node::FetchesServiceNodes() {
 	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
 		EtcdHelper::RangeQuery(prefix);  // Query and fetch service node info from etcd
 	}
@@ -439,14 +437,18 @@ void Node::InitializeGrpcResponseHandlers() {
 			for (const auto& kv : call->reply.kvs()) {
 				HandleServiceNodeStart(kv.key(), kv.value());
 			}
+			StartWatchingServiceNodes();  // Start watching for new service nodes
 		}
 		else {
 			LOG_ERROR << "RPC failed: " << call->status.error_message();
 		}
 		};
 
-	AsyncetcdserverpbKVPutHandler = [](const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>& call) {
-		// Handle KV put response if needed
+	AsyncetcdserverpbKVPutHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>& call) {
+		if (call->reply.prev_kv().key() == GetServiceName())
+		{
+			FetchesServiceNodes();         // Fetch and register service nodes
+		}
 		};
 
 	AsyncetcdserverpbKVDeleteRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>& call) {
@@ -483,6 +485,7 @@ void Node::InitializeGrpcResponseHandlers() {
 			}
 		}
 		};
+
 }
 
 void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {

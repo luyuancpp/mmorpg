@@ -60,7 +60,7 @@ protected:
 	void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
     void InitGrpcClients();
-    void RegisterServiceNodes();
+    void FetchesServiceNodes();
 	void StartWatchingServiceNodes();
     void InitializeGrpcResponseHandlers();
     void InitializeGrpcMessageQueues();
