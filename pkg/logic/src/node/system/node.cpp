@@ -293,64 +293,78 @@ uint32_t Node::GetPort()
 }
 
 void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
-    LOG_INFO << "Adding service node of type " << nodeType << " with JSON: " << nodeJson;
+	LOG_INFO << "Adding service node of type " << nodeType << " with JSON: " << nodeJson;
 
-    // Validate the node type  
-    if (!eNodeType_IsValid(nodeType)) {
-        LOG_ERROR << "Invalid node type: " << nodeType;
-        return;
-    }
+	// Validate the node type  
+	if (!eNodeType_IsValid(nodeType)) {
+		LOG_ERROR << "Invalid node type: " << nodeType;
+		return;
+	}
 
-    NodeInfo newNodeInfo;
+	NodeInfo newNodeInfo;
 
-    // Parse the JSON string into NodeInfo protobuf message  
-    auto result = google::protobuf::util::JsonStringToMessage(nodeJson, &newNodeInfo);
-    if (!result.ok()) {
-        LOG_ERROR << "Failed to parse JSON for nodeType: " << nodeType
-                  << ", JSON: " << nodeJson
-                  << ", Error: " << result.message().data();
-        return;
-    }
-
-    // Check if the node already exists in the corresponding node registry's RpcClient components
-    auto checkRegistryForDuplicate = [&](auto& registry) {
-        for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
-            if (nodeInfo.endpoint().ip() == newNodeInfo.endpoint().ip() &&
-                nodeInfo.endpoint().port() == newNodeInfo.endpoint().port()) {
-                LOG_INFO << "Node with endpoint IP: " << nodeInfo.endpoint().ip()
-                         << " and Port: " << nodeInfo.endpoint().port()
-                         << " already exists in the registry. Skipping addition.";
-                return true;
-            }
-        }
-        return false;
-    };
-
-    if ((nodeType == kCentreNode && checkRegistryForDuplicate(tls.centreNodeRegistry)) ||
-        (nodeType == kSceneNode && checkRegistryForDuplicate(tls.sceneNodeRegistry)) ||
-        (nodeType == kGateNode && checkRegistryForDuplicate(tls.gateNodeRegistry))) {
-        return;
-    }
-
-    if (!GetAllowedTargetNodeTypes().contains(nodeType)) {
-        return;
-    }
-
-    // Connect to the node based on its type  
-    if (nodeType == kCentreNode) {
-        ConnectToNode(tls.centreNodeRegistry, newNodeInfo);
-        LOG_INFO << "Connected to center node: " << newNodeInfo.DebugString();
-    } else if (nodeType == kSceneNode) {
-        ConnectToNode(tls.sceneNodeRegistry, newNodeInfo);
-        LOG_INFO << "Connected to scene node: " << newNodeInfo.DebugString();
-    } else if (nodeType == kGateNode) {
-        ConnectToNode(tls.gateNodeRegistry, newNodeInfo);
-        LOG_INFO << "Connected to gate node: " << newNodeInfo.DebugString();
-    }
+	// Parse the JSON string into NodeInfo protobuf message  
+	auto result = google::protobuf::util::JsonStringToMessage(nodeJson, &newNodeInfo);
+	if (!result.ok()) {
+		LOG_ERROR << "Failed to parse JSON for nodeType: " << nodeType
+			<< ", JSON: " << nodeJson
+			<< ", Error: " << result.message().data();
+		return;
+	}
 
 	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+	// Check if the node already exists based on endpoint; if so, return  
 	auto& nodeList = *serviceNodeList[nodeType].mutable_node_list();
+	for (const auto& existingNode : nodeList) {
+		if (existingNode.lease_id() == newNodeInfo.lease_id()) {
+			LOG_INFO << "Node with endpoint IP: " << existingNode.endpoint().ip()
+				<< " and Port: " << existingNode.endpoint().port()
+				<< " already exists. Skipping addition.";
+			return;
+		}
+	}
+
 	*nodeList.Add() = newNodeInfo;
+
+	LOG_TRACE << "Successfully added node to serviceNodeList. NodeType: " << nodeType << ", NodeInfo: " << newNodeInfo.DebugString();
+
+	if (!GetAllowedTargetNodeTypes().contains(nodeType)) {
+		return;
+	}
+
+	// Check if the node already exists in the corresponding node registry's RpcClient components
+	auto checkRegistryForDuplicate = [&](auto& registry) {
+		for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
+			if (nodeInfo.endpoint().ip() == newNodeInfo.endpoint().ip() &&
+				nodeInfo.endpoint().port() == newNodeInfo.endpoint().port()) {
+				LOG_INFO << "Node with endpoint IP: " << nodeInfo.endpoint().ip()
+					<< " and Port: " << nodeInfo.endpoint().port()
+					<< " already exists in the registry. Skipping addition.";
+				return true;
+			}
+		}
+		return false;
+		};
+
+	if ((nodeType == kCentreNode && checkRegistryForDuplicate(tls.centreNodeRegistry)) ||
+		(nodeType == kSceneNode && checkRegistryForDuplicate(tls.sceneNodeRegistry)) ||
+		(nodeType == kGateNode && checkRegistryForDuplicate(tls.gateNodeRegistry))) {
+		return;
+	}
+
+	// Connect to the node based on its type  
+	if (nodeType == kCentreNode) {
+		ConnectToNode(tls.centreNodeRegistry, newNodeInfo);
+		LOG_INFO << "Connected to center node: " << newNodeInfo.DebugString();
+	}
+	else if (nodeType == kSceneNode) {
+		ConnectToNode(tls.sceneNodeRegistry, newNodeInfo);
+		LOG_INFO << "Connected to scene node: " << newNodeInfo.DebugString();
+	}
+	else if (nodeType == kGateNode) {
+		ConnectToNode(tls.gateNodeRegistry, newNodeInfo);
+		LOG_INFO << "Connected to gate node: " << newNodeInfo.DebugString();
+	}
 }
 
 // Handles the start of a service node
