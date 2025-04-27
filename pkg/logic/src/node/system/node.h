@@ -72,6 +72,7 @@ protected:
         const muduo::net::TcpConnectionPtr& conn,
         std::function<void(entt::entity, RegisterNodeSessionRequest&, RpcClient&)> onConnectedCallback
     );
+    void RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn);
     void OnConnectedToServer(const OnConnected2TcpServerEvent& es);
     void OnClientConnected(const OnBeConnectedEvent& es);
 
