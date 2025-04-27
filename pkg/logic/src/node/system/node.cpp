@@ -463,7 +463,7 @@ void Node::InitializeGrpcResponseHandlers() {
 
 	AsyncetcdserverpbKVPutHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>& call) {
 		LOG_DEBUG << "Put response: " << call->reply.DebugString();
-		if (call->reply.prev_kv().key() == GetServiceName())
+		if (call->reply.prev_kv().key() == BuildServiceNodeKey())
 		{
 			StartWatchingServiceNodes();  // Start watching for new service nodes
 			FetchesServiceNodes();         // Fetch and register service nodes
