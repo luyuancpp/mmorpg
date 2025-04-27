@@ -7,16 +7,11 @@
 #include <muduo/base/Logging.h>
 #include <thread_local/storage.h>
 
-void EtcdHelper::PutServiceNodeInfo(const NodeInfo& nodeInfo, const std::string& serviceName) {
+void EtcdHelper::PutServiceNodeInfo(const NodeInfo& nodeInfo, const std::string& key) {
     etcdserverpb::PutRequest request;
 
-    // 构造 etcd 中的键名，结构如下：
-    // {serviceName}/zone/{zone_id}/node_type/{node_type}/node_id/{node_id}
-    std::string key = serviceName +
-        "/zone/" + std::to_string(nodeInfo.zone_id()) +
-        "/node_type/" + std::to_string(nodeInfo.node_type()) +
-        "/node_id/" + std::to_string(nodeInfo.node_id());
     request.set_key(key);
+	request.set_prev_kv(true);
 
     // 将 NodeInfo 序列化为 JSON 字符串，设置为 value
     std::string jsonValue;

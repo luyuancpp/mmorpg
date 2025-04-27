@@ -639,6 +639,7 @@ class BaseDeployConfig final
     kEtcdHostsFieldNumber = 1,
     kServicesFieldNumber = 3,
     kServiceDiscoveryPrefixesFieldNumber = 4,
+    kDeployservicePrefixFieldNumber = 6,
     kLogLevelFieldNumber = 2,
     kLeaseRenewIntervalFieldNumber = 5,
   };
@@ -703,6 +704,22 @@ class BaseDeployConfig final
   ::google::protobuf::RepeatedPtrField<std::string>* _internal_mutable_service_discovery_prefixes();
 
   public:
+  // string deployservice_prefix = 6;
+  void clear_deployservice_prefix() ;
+  const std::string& deployservice_prefix() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_deployservice_prefix(Arg_&& arg, Args_... args);
+  std::string* mutable_deployservice_prefix();
+  PROTOBUF_NODISCARD std::string* release_deployservice_prefix();
+  void set_allocated_deployservice_prefix(std::string* value);
+
+  private:
+  const std::string& _internal_deployservice_prefix() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_deployservice_prefix(
+      const std::string& value);
+  std::string* _internal_mutable_deployservice_prefix();
+
+  public:
   // uint32 log_level = 2;
   void clear_log_level() ;
   ::uint32_t log_level() const;
@@ -728,8 +745,8 @@ class BaseDeployConfig final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 5, 1,
-      61, 2>
+      3, 6, 1,
+      81, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -749,6 +766,7 @@ class BaseDeployConfig final
     ::google::protobuf::RepeatedPtrField<std::string> etcd_hosts_;
     ::google::protobuf::RepeatedPtrField< ::ServiceConfig > services_;
     ::google::protobuf::RepeatedPtrField<std::string> service_discovery_prefixes_;
+    ::google::protobuf::internal::ArenaStringPtr deployservice_prefix_;
     ::uint32_t log_level_;
     ::uint32_t lease_renew_interval_;
     ::google::protobuf::internal::CachedSize _cached_size_;
@@ -1093,6 +1111,54 @@ inline ::uint32_t BaseDeployConfig::_internal_lease_renew_interval() const {
 inline void BaseDeployConfig::_internal_set_lease_renew_interval(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.lease_renew_interval_ = value;
+}
+
+// string deployservice_prefix = 6;
+inline void BaseDeployConfig::clear_deployservice_prefix() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.deployservice_prefix_.ClearToEmpty();
+}
+inline const std::string& BaseDeployConfig::deployservice_prefix() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BaseDeployConfig.deployservice_prefix)
+  return _internal_deployservice_prefix();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void BaseDeployConfig::set_deployservice_prefix(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.deployservice_prefix_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BaseDeployConfig.deployservice_prefix)
+}
+inline std::string* BaseDeployConfig::mutable_deployservice_prefix() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_deployservice_prefix();
+  // @@protoc_insertion_point(field_mutable:BaseDeployConfig.deployservice_prefix)
+  return _s;
+}
+inline const std::string& BaseDeployConfig::_internal_deployservice_prefix() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.deployservice_prefix_.Get();
+}
+inline void BaseDeployConfig::_internal_set_deployservice_prefix(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.deployservice_prefix_.Set(value, GetArena());
+}
+inline std::string* BaseDeployConfig::_internal_mutable_deployservice_prefix() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.deployservice_prefix_.Mutable( GetArena());
+}
+inline std::string* BaseDeployConfig::release_deployservice_prefix() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BaseDeployConfig.deployservice_prefix)
+  return _impl_.deployservice_prefix_.Release();
+}
+inline void BaseDeployConfig::set_allocated_deployservice_prefix(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.deployservice_prefix_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.deployservice_prefix_.IsDefault()) {
+    _impl_.deployservice_prefix_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:BaseDeployConfig.deployservice_prefix)
 }
 
 // -------------------------------------------------------------------

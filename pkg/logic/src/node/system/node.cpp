@@ -72,6 +72,7 @@ void Node::Initialize() {
 	InitializeGrpcClients();        // Initialize gRPC clients
 	InitializeGrpcMessageQueues();  // Initialize gRPC queues for async processing
 	SetUpEventHandlers();           // Set up event handlers
+	FetchDeployServiceNode();
 	LOG_INFO << "Node initialization complete.";
 }
 
@@ -181,15 +182,32 @@ void Node::InitializeGrpcMessageQueues() {
 		});
 }
 
+std::string Node::BuildServiceNodeKey() {
+	// 构造 etcd 中的键名，结构如下：
+// {serviceName}/zone/{zone_id}/node_type/{node_type}/node_id/{node_id}
+	return GetNodeInfo(), GetServiceName() +
+		"/zone/" + std::to_string(GetNodeInfo().zone_id()) +
+		"/node_type/" + std::to_string(GetNodeInfo().node_type()) +
+		"/node_id/" + std::to_string(GetNodeInfo().node_id());
+}
+
+
 // Registers the current node with the service registry
 void Node::RegisterSelfInService() {
-	EtcdHelper::PutServiceNodeInfo(GetNodeInfo(), GetServiceName());
+	EtcdHelper::PutServiceNodeInfo(GetNodeInfo(), BuildServiceNodeKey());
 }
 
 // Fetches  all service nodes from etcd
 void Node::FetchesServiceNodes() {
 	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
 		EtcdHelper::RangeQuery(prefix);  // Query and fetch service node info from etcd
+	}
+}
+
+void Node::FetchDeployServiceNode() {
+	const std::string& deployPrefix = tlsCommonLogic.GetBaseDeployConfig().deployservice_prefix();
+	if (!deployPrefix.empty()) {
+		EtcdHelper::RangeQuery(deployPrefix);  // 从 etcd 查询并获取 deployservice 前缀的服务节点信息
 	}
 }
 
@@ -437,7 +455,6 @@ void Node::InitializeGrpcResponseHandlers() {
 			for (const auto& kv : call->reply.kvs()) {
 				HandleServiceNodeStart(kv.key(), kv.value());
 			}
-			StartWatchingServiceNodes();  // Start watching for new service nodes
 		}
 		else {
 			LOG_ERROR << "RPC failed: " << call->status.error_message();
@@ -445,8 +462,10 @@ void Node::InitializeGrpcResponseHandlers() {
 		};
 
 	AsyncetcdserverpbKVPutHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>& call) {
+		LOG_DEBUG << "Put response: " << call->reply.DebugString();
 		if (call->reply.prev_kv().key() == GetServiceName())
 		{
+			StartWatchingServiceNodes();  // Start watching for new service nodes
 			FetchesServiceNodes();         // Fetch and register service nodes
 		}
 		};

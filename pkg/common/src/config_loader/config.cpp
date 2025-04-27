@@ -3,6 +3,7 @@
 #include <yaml-cpp/yaml.h>
 
 // 读取基础部署配置
+// 读取基础部署配置
 bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseConfig) {
 	// 读取 YAML 配置文件
 	YAML::Node root = YAML::LoadFile(filename);
@@ -18,7 +19,9 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 	}
 
 	// 解析日志级别配置 (uint32 类型)
-	baseConfig.set_log_level(root["LogLevel"].as<uint32_t>());
+	if (root["LogLevel"]) {
+		baseConfig.set_log_level(root["LogLevel"].as<uint32_t>());
+	}
 
 	// 解析服务列表
 	for (const auto& service : root["services"]) {
@@ -28,8 +31,15 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 	}
 
 	// 解析服务前缀列表
-	for (const auto& prefix : root["service_discovery_prefixes"]) {
-		baseConfig.mutable_service_discovery_prefixes()->Add(prefix.as<std::string>());
+	if (root["service_discovery_prefixes"]) {
+		for (const auto& prefix : root["service_discovery_prefixes"]) {
+			baseConfig.mutable_service_discovery_prefixes()->Add(prefix.as<std::string>());
+		}
+	}
+
+	// 解析单独的 deployservice_prefix 字段
+	if (root["deployservice_prefix"]) {
+		baseConfig.set_deployservice_prefix(root["deployservice_prefix"].as<std::string>());
 	}
 
 	return true;
