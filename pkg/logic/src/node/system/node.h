@@ -52,8 +52,7 @@ protected:
     virtual void LoadConfigurationData();
     virtual void OnConfigLoadSuccessful(){}
     void ConfigureEnvironment();
-	void ConnectToNode(entt::registry& registry, const NodeInfo& nodeInfo);
-
+	void ConnectToNode(const NodeInfo& nodeInfo);
     void InitializeGrpcClients();
     void ReleaseNodeId();
     void SetUpEventHandlers();
@@ -69,7 +68,7 @@ protected:
     void InitializeGrpcResponseHandlers();
     void InitializeGrpcMessageQueues();
     void AttemptNodeRegistration(
-        entt::registry& registry,
+        uint32_t nodeType,
         uint32_t messageId,
         const muduo::net::TcpConnectionPtr& conn);
     void RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn);

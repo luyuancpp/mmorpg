@@ -224,8 +224,10 @@ void Node::StopWatchingServiceNodes() {
 	EtcdHelper::StopAllWatching();  // Stop watching all service nodes
 }
 
-void Node::ConnectToNode(entt::registry& registry, const NodeInfo& nodeInfo)
+void Node::ConnectToNode(const NodeInfo& nodeInfo)
 {
+	auto& registry = NodeSystem::GetRegistryForNodeType(nodeInfo.node_type());
+
 	entt::entity id{ nodeInfo.node_id() };
 
 	// 检查节点是否已经存在  
@@ -350,7 +352,9 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	}
 
 	// Check if the node already exists in the corresponding node registry's RpcClient components
-	auto checkRegistryForDuplicate = [&](auto& registry) {
+	auto checkRegistryForDuplicate = [&]() {
+		entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
+		// Check if the node already exists in the registry based on IP and port
 		for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
 			if (nodeInfo.endpoint().ip() == newNodeInfo.endpoint().ip() &&
 				nodeInfo.endpoint().port() == newNodeInfo.endpoint().port()) {
@@ -363,25 +367,12 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 		return false;
 		};
 
-	if ((nodeType == kCentreNode && checkRegistryForDuplicate(tls.centreNodeRegistry)) ||
-		(nodeType == kSceneNode && checkRegistryForDuplicate(tls.sceneNodeRegistry)) ||
-		(nodeType == kGateNode && checkRegistryForDuplicate(tls.gateNodeRegistry))) {
+	if (checkRegistryForDuplicate()) {
 		return;
 	}
 
-	// Connect to the node based on its type  
-	if (nodeType == kCentreNode) {
-		ConnectToNode(tls.centreNodeRegistry, newNodeInfo);
-		LOG_INFO << "Connected to center node: " << newNodeInfo.DebugString();
-	}
-	else if (nodeType == kSceneNode) {
-		ConnectToNode(tls.sceneNodeRegistry, newNodeInfo);
-		LOG_INFO << "Connected to scene node: " << newNodeInfo.DebugString();
-	}
-	else if (nodeType == kGateNode) {
-		ConnectToNode(tls.gateNodeRegistry, newNodeInfo);
-		LOG_INFO << "Connected to gate node: " << newNodeInfo.DebugString();
-	}
+	ConnectToNode(newNodeInfo);
+	LOG_INFO << "Connected to  node: " << newNodeInfo.DebugString();
 }
 
 // Handles the start of a service node
@@ -430,19 +421,9 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 			return;
 		}
 
-		// Remove the node from the registry based on its type
-		if (nodeType == kCentreNode) {
-			tls.centreNodeRegistry.destroy(entt::entity{ nodeInfo.node_id() });
-			LOG_INFO << "Centre node stopped: " << nodeInfo.DebugString();
-		}
-		else if (nodeType == kSceneNode) {
-			tls.sceneNodeRegistry.destroy(entt::entity{ nodeInfo.node_id() });
-			LOG_INFO << "Scene node stopped: " << nodeInfo.DebugString();
-		}
-		else if (nodeType == kGateNode) {
-			tls.gateNodeRegistry.destroy(entt::entity{ nodeInfo.node_id() });
-			LOG_INFO << "Gate node stopped: " << nodeInfo.DebugString();
-		}
+		entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
+		registry.destroy(entt::entity{ nodeInfo.node_id() });  // Remove the node from the registry
+		LOG_INFO << "Service node stopped: " << nodeInfo.DebugString();
 	}
 	else {
 		LOG_ERROR << "Unknown service type for key: " << key;
@@ -505,9 +486,7 @@ void Node::InitializeGrpcResponseHandlers() {
 			}
 		}
 		};
-
 }
-
 
 void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
 	auto& conn = es.conn_;
@@ -523,29 +502,31 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
 // Handle connections for different node types
 void Node::RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn) {
 	AttemptNodeRegistration(
-		tls.centreNodeRegistry,
+		kCentreNode,
 		CentreServiceRegisterNodeSessionMessageId,
 		conn
 	);
 
 	AttemptNodeRegistration(
-		tls.sceneNodeRegistry,
+		kSceneNode,
 		GameServiceRegisterNodeSessionMessageId,
 		conn
 	);
 
 	AttemptNodeRegistration(
-		tls.gateNodeRegistry,
+		kGateNode,
 		GateServiceRegisterNodeSessionMessageId,
 		conn
 	);
 }
 
 void Node::AttemptNodeRegistration(
-	entt::registry& registry,
+	uint32_t nodeType,
 	uint32_t messageId,
 	const muduo::net::TcpConnectionPtr& conn
 ) {
+	entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
+
 	for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
 		if (!IsSameAddress(client.peer_addr(), conn->peerAddress())) {
 			continue;
@@ -562,13 +543,6 @@ void Node::AttemptNodeRegistration(
 			client.CallRemoteMethod(messageId, request);
 
 			});
-	
-
-		//// Trigger a generic event for node connection
-		//ConnectToNodePbEvent connectToNodePbEvent;
-		//connectToNodePbEvent.set_entity(entt::to_integral(e));
-		//connectToNodePbEvent.set_node_type(nodeInfo.node_type());
-		//tls.dispatcher.trigger(connectToNodePbEvent);
 
 		return;
 	}
@@ -609,13 +583,16 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
 	// Helper lambda to process a registry
-	auto processRegistry = [&](auto& registry, const TcpConnectionPtr& conn, const NodeInfoListPBComponent& nodeList) {
+	auto processRegistry = [&](const TcpConnectionPtr& conn, uint32_t nodeType) {
+		auto& nodeList = serviceNodeList[nodeType];
 		for (const auto& serverNodeInfo : nodeList.node_list()) {
 			if (serverNodeInfo.lease_id() != peerNodeInfo.lease_id()) {
 				LOG_TRACE << "Mismatch in node type or ID. Expected node: " << serverNodeInfo.DebugString()
 					<< "; received node: " << peerNodeInfo.DebugString();
 				continue;
 			}
+
+			entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
 
 			entt::entity id = registry.create(entt::entity{ peerNodeInfo.node_id() });
 			if (id != entt::entity{ peerNodeInfo.node_id() })
@@ -642,9 +619,9 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 			continue;
 		}
 		// Process each registry using server list type's NodeInfo list
-		if (processRegistry(tls.centreNodeRegistry, conn,  serviceNodeList[kCentreNode]) ||
-			processRegistry(tls.sceneNodeRegistry, conn,  serviceNodeList[kSceneNode]) ||
-			processRegistry(tls.gateNodeRegistry, conn, serviceNodeList[kGateNode])) {
+		if (processRegistry(conn,  kCentreNode) ||
+			processRegistry(conn,  kSceneNode) ||
+			processRegistry(conn, kGateNode)) {
 			tls.networkRegistry.destroy(e);
 		}
 	}
