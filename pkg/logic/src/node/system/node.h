@@ -69,7 +69,6 @@ protected:
     void InitializeGrpcMessageQueues();
     void AttemptNodeRegistration(
         uint32_t nodeType,
-        uint32_t messageId,
         const muduo::net::TcpConnectionPtr& conn);
     void RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn);
     void OnConnectedToServer(const OnConnected2TcpServerEvent& es);
