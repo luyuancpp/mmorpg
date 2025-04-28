@@ -13,6 +13,7 @@ void ThreadLocalStorage::Clear()
 	itemRegistry.clear();
 	networkRegistry.clear();
 	globalNodeRegistry.clear();
+	invalidRegistry.clear();
 
 	dispatcher.clear();
 

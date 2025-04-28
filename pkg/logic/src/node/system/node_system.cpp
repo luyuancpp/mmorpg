@@ -1,5 +1,6 @@
 #include "node_system.h"
 #include <muduo/base/Logging.h>
+#include "thread_local/storage.h"
 
 eNodeType NodeSystem::GetServiceTypeFromPrefix(const std::string& prefix) {
 	if (prefix.find("deploy") != std::string::npos) {
@@ -25,4 +26,20 @@ eNodeType NodeSystem::GetServiceTypeFromPrefix(const std::string& prefix) {
 	}
 
 	return eNodeType::kCentreNode;
+}
+
+
+entt::registry& NodeSystem::GetRegistryForNodeType(uint32_t nodeType) {
+	switch (nodeType) {
+	case kCentreNode:
+		return tls.centreNodeRegistry;
+	case kSceneNode:
+		return tls.sceneNodeRegistry;
+	case kGateNode:
+		return tls.gateNodeRegistry;
+	default:
+		LOG_ERROR << "Unknown NodeType: " << static_cast<uint32_t>(nodeType);
+	}
+
+	return tls.invalidRegistry;
 }
