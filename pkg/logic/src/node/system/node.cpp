@@ -525,43 +525,26 @@ void Node::RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn) {
 	AttemptNodeRegistration(
 		tls.centreNodeRegistry,
 		CentreServiceRegisterNodeSessionMessageId,
-		conn,
-		[&](entt::entity e, RegisterNodeSessionRequest& request, RpcClient& client) {
-			client.CallRemoteMethod(CentreServiceRegisterNodeSessionMessageId, request);
-			OnConnect2CentrePbEvent connect2CentreEvent;
-			connect2CentreEvent.set_entity(entt::to_integral(e));
-			tls.dispatcher.trigger(connect2CentreEvent);
-			LOG_INFO << "Triggered OnConnect2Centre event for entity: " << entt::to_integral(e);
-			LOG_INFO << "CentreNode connected. Entity: " << entt::to_integral(e);
-		}
+		conn
 	);
 
 	AttemptNodeRegistration(
 		tls.sceneNodeRegistry,
 		GameServiceRegisterNodeSessionMessageId,
-		conn,
-		[&](entt::entity e, RegisterNodeSessionRequest& request, RpcClient& client) {
-			client.CallRemoteMethod(GameServiceRegisterNodeSessionMessageId, request);
-			LOG_INFO << "SceneNode connected. Entity: " << entt::to_integral(e);
-		}
+		conn
 	);
 
 	AttemptNodeRegistration(
 		tls.gateNodeRegistry,
 		GateServiceRegisterNodeSessionMessageId,
-		conn,
-		[&](entt::entity e, RegisterNodeSessionRequest& request, RpcClient& client) {
-			client.CallRemoteMethod(GateServiceRegisterNodeSessionMessageId, request);
-			LOG_INFO << "GateNode connected. Entity: " << entt::to_integral(e);
-		}
+		conn
 	);
 }
 
 void Node::AttemptNodeRegistration(
 	entt::registry& registry,
 	uint32_t messageId,
-	const muduo::net::TcpConnectionPtr& conn,
-	std::function<void(entt::entity, RegisterNodeSessionRequest&, RpcClient&)> onConnectedCallback
+	const muduo::net::TcpConnectionPtr& conn
 ) {
 	for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
 		if (!IsSameAddress(client.peer_addr(), conn->peerAddress())) {
@@ -570,19 +553,23 @@ void Node::AttemptNodeRegistration(
 
 		LOG_INFO << "Matched peer address in [" << tls.GetRegistryName(registry) << "] registry: " << conn->peerAddress().toIpPort();
 
-		RegisterNodeSessionRequest request;
-		request.mutable_self_node()->CopyFrom(GetNodeInfo());
-		request.mutable_endpoint()->set_ip(conn->localAddress().toIp());
-		request.mutable_endpoint()->set_port(conn->localAddress().port());
+		registry.emplace<TimerTaskComp>(e).RunAfter(0.5, [conn, this, messageId, &client] {
+			RegisterNodeSessionRequest request;
+			request.mutable_self_node()->CopyFrom(GetNodeInfo());
+			request.mutable_endpoint()->set_ip(conn->localAddress().toIp());
+			request.mutable_endpoint()->set_port(conn->localAddress().port());
 
-		// Trigger a generic event for node connection
-		ConnectToNodePbEvent connectToNodePbEvent;
-		connectToNodePbEvent.set_entity(entt::to_integral(e));
-		connectToNodePbEvent.set_node_type(nodeInfo.node_type());
-		tls.dispatcher.trigger(connectToNodePbEvent);
+			client.CallRemoteMethod(messageId, request);
 
-		// Execute the provided callback
-		onConnectedCallback(e, request, client);
+			});
+	
+
+		//// Trigger a generic event for node connection
+		//ConnectToNodePbEvent connectToNodePbEvent;
+		//connectToNodePbEvent.set_entity(entt::to_integral(e));
+		//connectToNodePbEvent.set_node_type(nodeInfo.node_type());
+		//tls.dispatcher.trigger(connectToNodePbEvent);
+
 		return;
 	}
 }
@@ -612,15 +599,17 @@ void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 	LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
 }
 
-uint32_t Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request) {
+void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response) {
 	auto& peerNodeInfo = request.self_node();
+
+	response.mutable_peer_node()->mutable_endpoint()->CopyFrom(GetNodeInfo().endpoint());
 
 	LOG_INFO << "Received node registration request:" << request.DebugString();
 
 	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
 	// Helper lambda to process a registry
-	auto processRegistry = [&](auto& registry, const TcpConnectionPtr& conn, const std::string& registryName, const NodeInfoListPBComponent& nodeList) {
+	auto processRegistry = [&](auto& registry, const TcpConnectionPtr& conn, const NodeInfoListPBComponent& nodeList) {
 		for (const auto& serverNodeInfo : nodeList.node_list()) {
 			if (serverNodeInfo.lease_id() != peerNodeInfo.lease_id()) {
 				LOG_TRACE << "Mismatch in node type or ID. Expected node: " << serverNodeInfo.DebugString()
@@ -631,11 +620,11 @@ uint32_t Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request)
 			entt::entity id = registry.create(entt::entity{ peerNodeInfo.node_id() });
 			if (id != entt::entity{ peerNodeInfo.node_id() })
 			{
-				LOG_ERROR << "Failed to create node entity: " << entt::to_integral(id) << registryName << " registry.";;
+				LOG_ERROR << "Failed to create node entity: " << entt::to_integral(id) << tls.GetRegistryName(registry) << " registry.";;
 				return false;
 			}
 			registry.emplace<RpcSession>(id, RpcSession{ conn });
-			LOG_INFO << "Node with ID " << peerNodeInfo.node_id() << " found in " << registryName << " registry.";
+			LOG_INFO << "Node with ID " << peerNodeInfo.node_id() << " found in " << tls.GetRegistryName(registry) << " registry.";
 			return true;
 
 		}
@@ -653,13 +642,52 @@ uint32_t Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request)
 			continue;
 		}
 		// Process each registry using server list type's NodeInfo list
-		if (processRegistry(tls.centreNodeRegistry, conn, "CentreNode", serviceNodeList[kCentreNode]) ||
-			processRegistry(tls.sceneNodeRegistry, conn, "SceneNode", serviceNodeList[kSceneNode]) ||
-			processRegistry(tls.gateNodeRegistry, conn, "GateNode", serviceNodeList[kGateNode])) {
+		if (processRegistry(tls.centreNodeRegistry, conn,  serviceNodeList[kCentreNode]) ||
+			processRegistry(tls.sceneNodeRegistry, conn,  serviceNodeList[kSceneNode]) ||
+			processRegistry(tls.gateNodeRegistry, conn, serviceNodeList[kGateNode])) {
 			tls.networkRegistry.destroy(e);
-			return kCommon_errorOK;
 		}
 	}
 
-	return kFailedToRegisterTheNode;
+	response.mutable_error_message()->set_id(kFailedToRegisterTheNode);
+}
+
+void TriggerNodeConnectionEvent(entt::registry& registry, const RegisterNodeSessionResponse& response) {
+	for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
+		if (client.peer_addr().toIp() != response.peer_node().endpoint().ip() ||
+			client.peer_addr().port() != response.peer_node().endpoint().port()) {
+			continue;
+		}
+
+		// Trigger a generic event for node connection
+		ConnectToNodePbEvent connectToNodePbEvent;
+		connectToNodePbEvent.set_entity(entt::to_integral(e));
+		connectToNodePbEvent.set_node_type(nodeInfo.node_type());
+		tls.dispatcher.trigger(connectToNodePbEvent);
+
+		if (nodeInfo.node_type() == kCentreNode){
+			OnConnect2CentrePbEvent connect2CentreEvent;
+			connect2CentreEvent.set_entity(entt::to_integral(e));
+			tls.dispatcher.trigger(connect2CentreEvent);
+			LOG_INFO << "Triggered OnConnect2Centre event for entity: " << entt::to_integral(e);
+			LOG_INFO << "CentreNode connected. Entity: " << entt::to_integral(e);
+		}
+
+		registry.remove<TimerTaskComp>(e);  // Remove the timer task component
+		break;
+	}
+}
+
+void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) {
+	LOG_INFO << "Received node registration response:" << response.DebugString();
+	if (response.error_message().id() != kSuccess) {
+		LOG_DEBUG << "Failed to register node: " << response.DebugString();
+		return;
+	}
+
+	TriggerNodeConnectionEvent(tls.centreNodeRegistry, response);
+	TriggerNodeConnectionEvent(tls.sceneNodeRegistry, response);
+	TriggerNodeConnectionEvent(tls.gateNodeRegistry, response);
+
+	LOG_INFO << "Node registration successful.";
 }
