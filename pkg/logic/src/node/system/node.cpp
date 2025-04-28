@@ -685,9 +685,12 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 		return;
 	}
 
-	TriggerNodeConnectionEvent(tls.centreNodeRegistry, response);
-	TriggerNodeConnectionEvent(tls.sceneNodeRegistry, response);
-	TriggerNodeConnectionEvent(tls.gateNodeRegistry, response);
+	// Get registry based on the node type
+	auto nodeType = response.peer_node().node_type();
+	entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
+
+	// Trigger the connection event for the corresponding registry
+	TriggerNodeConnectionEvent(registry, response);
 
 	LOG_INFO << "Node registration successful.";
 }
