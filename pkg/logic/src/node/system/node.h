@@ -11,6 +11,7 @@
 #include "type_define/type_define.h"
 
 class RegisterNodeSessionRequest;
+class RegisterNodeSessionResponse;
 
 class Node : muduo::noncopyable{
 public:
@@ -36,7 +37,8 @@ public:
     void InitializeDeploymentService(const std::string& service_address);
     void HandleServiceNodeStart(const std::string& key, const std::string& value);
 	void HandleServiceNodeStop(const std::string& key, const std::string& value);
-	uint32_t HandleNodeRegistration(const RegisterNodeSessionRequest& request);
+	void HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response);
+    void HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response);
 protected:
     virtual void Initialize();
     void SetupRpcServer ();
@@ -69,9 +71,7 @@ protected:
     void AttemptNodeRegistration(
         entt::registry& registry,
         uint32_t messageId,
-        const muduo::net::TcpConnectionPtr& conn,
-        std::function<void(entt::entity, RegisterNodeSessionRequest&, RpcClient&)> onConnectedCallback
-    );
+        const muduo::net::TcpConnectionPtr& conn);
     void RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn);
     void OnConnectedToServer(const OnConnected2TcpServerEvent& es);
     void OnClientConnected(const OnBeConnectedEvent& es);

@@ -138,7 +138,7 @@ void GateServiceHandler::RegisterNodeSession(::google::protobuf::RpcController* 
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	response->mutable_error_message()->set_id(gGateNode->HandleNodeRegistration(*request));
+	gGateNode->HandleNodeRegistration(*request, *response);
 ///<<< END WRITING YOUR CODE
 
 }
