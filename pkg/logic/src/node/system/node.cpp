@@ -630,6 +630,9 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 			processRegistry(conn,  kSceneNode) ||
 			processRegistry(conn, kGateNode)) {
 			tls.networkRegistry.destroy(e);
+
+			response.mutable_error_message()->set_id(kCommon_errorOK);
+			return ;
 		}
 	}
 
@@ -671,7 +674,7 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 
 	auto& peerNodeInfo = response.peer_node();
 
-	if (response.error_message().id() != kSuccess) {
+	if (response.error_message().id() != kCommon_errorOK) {
 		LOG_DEBUG << "Failed to register node: " << response.DebugString();
 
 		for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
