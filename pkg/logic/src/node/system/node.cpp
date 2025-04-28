@@ -500,29 +500,36 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
 }
 
 // Handle connections for different node types
+
+// 全局静态变量，存储 NodeType 到 MessageId 的映射
+// 全局静态数组，存储 NodeType 到 MessageId 的映射
+static uint32_t gNodeToNodeRegistrationMessageIdMap[eNodeType_MAX] = {
+	0,
+	0,
+	CentreServiceRegisterNodeSessionMessageId,  // 对应 kCentreNode
+	GameServiceRegisterNodeSessionMessageId,    // 对应 kSceneNode
+	GateServiceRegisterNodeSessionMessageId     // 对应 kGateNode
+};
+
 void Node::RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn) {
 	AttemptNodeRegistration(
 		kCentreNode,
-		CentreServiceRegisterNodeSessionMessageId,
 		conn
 	);
 
 	AttemptNodeRegistration(
 		kSceneNode,
-		GameServiceRegisterNodeSessionMessageId,
 		conn
 	);
 
 	AttemptNodeRegistration(
 		kGateNode,
-		GateServiceRegisterNodeSessionMessageId,
 		conn
 	);
 }
 
 void Node::AttemptNodeRegistration(
 	uint32_t nodeType,
-	uint32_t messageId,
 	const muduo::net::TcpConnectionPtr& conn
 ) {
 	entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
@@ -534,13 +541,13 @@ void Node::AttemptNodeRegistration(
 
 		LOG_INFO << "Matched peer address in [" << tls.GetRegistryName(registry) << "] registry: " << conn->peerAddress().toIpPort();
 
-		registry.emplace<TimerTaskComp>(e).RunAfter(0.5, [conn, this, messageId, &client] {
+		registry.emplace<TimerTaskComp>(e).RunAfter(0.5, [conn, this, nodeType, &client] {
 			RegisterNodeSessionRequest request;
 			request.mutable_self_node()->CopyFrom(GetNodeInfo());
 			request.mutable_endpoint()->set_ip(conn->localAddress().toIp());
 			request.mutable_endpoint()->set_port(conn->localAddress().port());
 
-			client.CallRemoteMethod(messageId, request);
+			client.CallRemoteMethod(gNodeToNodeRegistrationMessageIdMap[nodeType], request);
 
 			});
 
@@ -657,14 +664,39 @@ void TriggerNodeConnectionEvent(entt::registry& registry, const RegisterNodeSess
 
 void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) {
 	LOG_INFO << "Received node registration response:" << response.DebugString();
-	if (response.error_message().id() != kSuccess) {
-		LOG_DEBUG << "Failed to register node: " << response.DebugString();
-		return;
-	}
 
 	// Get registry based on the node type
 	auto nodeType = response.peer_node().node_type();
 	entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
+
+	auto& peerNodeInfo = response.peer_node();
+
+	if (response.error_message().id() != kSuccess) {
+		LOG_DEBUG << "Failed to register node: " << response.DebugString();
+
+		for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
+			if (client.peer_addr().toIp() !=  peerNodeInfo.endpoint().ip() || 
+				client.peer_addr().port() != peerNodeInfo.endpoint().port()) {
+				continue;
+			}
+
+			LOG_INFO << "Matched peer address in [" << tls.GetRegistryName(registry) << "] registry: " << peerNodeInfo.DebugString();
+
+			registry.emplace<TimerTaskComp>(e).RunAfter(0.5, [&] {
+				RegisterNodeSessionRequest request;
+				request.mutable_self_node()->CopyFrom(GetNodeInfo());
+				request.mutable_endpoint()->CopyFrom(peerNodeInfo);
+
+				client.CallRemoteMethod(gNodeToNodeRegistrationMessageIdMap[nodeType], request);
+				});
+
+			return;
+		}
+		return;
+	}
+
+	entt::entity e{ response.peer_node().node_id() };
+	registry.remove<TimerTaskComp>(e);
 
 	// Trigger the connection event for the corresponding registry
 	TriggerNodeConnectionEvent(registry, response);

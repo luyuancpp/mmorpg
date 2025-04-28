@@ -6,6 +6,7 @@ extern ProtobufDispatcher gResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
+#include "gate_node.h"
 ///<<< END WRITING YOUR CODE
 
 
@@ -118,6 +119,7 @@ void OnCentreServiceInitSceneNodeRepliedHandler(const TcpConnectionPtr& conn, co
 void OnCentreServiceRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterNodeSessionResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	gGateNode->HandleNodeRegistrationResponse(*replied);
 ///<<< END WRITING YOUR CODE
 
 }

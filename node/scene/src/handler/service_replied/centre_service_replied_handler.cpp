@@ -9,7 +9,8 @@ extern ProtobufDispatcher gResponseDispatcher;
 #include "scene/system/game_node_scene_system.h"
 #include "proto/logic/constants/node.pb.h"
 #include "proto/logic/event/server_event.pb.h"
-#include "thread_local/storage.cpp"
+#include "thread_local/storage.h"
+#include "scene_node.h"
 ///<<< END WRITING YOUR CODE
 
 
@@ -122,7 +123,7 @@ void OnCentreServiceInitSceneNodeRepliedHandler(const TcpConnectionPtr& conn, co
 void OnCentreServiceRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterNodeSessionResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    
+	gSceneNode->HandleNodeRegistrationResponse(*replied);
 ///<<< END WRITING YOUR CODE
 
 }
