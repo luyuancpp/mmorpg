@@ -1,8 +1,8 @@
-﻿
+
 #include "game_service_replied_handler.h"
 
 #include "service_info//game_service_service_info.h"
-#include "network/codec/dispatcher.h"
+#include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gResponseDispatcher;
 

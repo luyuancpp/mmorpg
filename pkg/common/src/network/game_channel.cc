@@ -7,7 +7,7 @@
 #include "proto/common/empty.pb.h"
 #include "service_info/service_info.h"
 #include "test/test.h"
-#include "network/codec/message_response_dispather.h"
+#include "network/codec/message_response_dispatcher.h"
 
 using namespace std::placeholders;
 
