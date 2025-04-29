@@ -28,7 +28,7 @@ func writeServiceIdHeadFile(methods RPCMethods) {
 		return
 	}
 
-	fileName := methods[0].FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension
+	fileName := methods[0].ServiceInfoHeadInclude()
 	util.WriteMd5Data2File(config.ServiceInfoDirectory+fileName, GenServiceIdHeader(methods))
 }
 
@@ -662,9 +662,11 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 
 func getMethodRepliedHandlerCppStr(dst string, methods *RPCMethods) string {
 	const methodRepliedHandlerCppTemplate = `
-{{ .CppRepliedHandlerInclude }}#include "network/codec/dispatcher.h"
+{{ .CppRepliedHandlerInclude }}
+#include "{{ .ServiceInfoName }}/{{ .ServiceInfoHeadInclude }}"
+#include "network/codec/dispatcher.h"
 
-extern ProtobufDispatcher gResponseDispatcher;
+extern MessageResponseDispatcher gResponseDispatcher;
 
 {{ if .FirstCode }}
 {{ .FirstCode }}
@@ -674,7 +676,7 @@ void Init{{ .InitFuncName }}{{ .RepliedHandlerFileName }}()
 {
 {{- range .Methods }}
 {{- if .HasCode }}
-    gResponseDispatcher.registerMessageCallback<{{ .CppResponse }}>(
+    gResponseDispatcher.registerMessageCallback<{{ .CppResponse }}>({{.KeyName}}{{$.MessageIdName}},
         std::bind(&{{ .FuncName }}, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 {{- end }}
 {{- end }}
@@ -695,6 +697,7 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 		CppResponse string
 		Code        string
 		HasCode     bool
+		KeyName     string
 	}
 
 	type RepliedHandlerCppData struct {
@@ -703,6 +706,9 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 		InitFuncName             string
 		RepliedHandlerFileName   string
 		Methods                  []RepliedHandlerMethod
+		MessageIdName            string
+		ServiceInfoHeadInclude   string
+		ServiceInfoName          string
 	}
 
 	if len(*methods) == 0 {
@@ -723,6 +729,7 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 			CppResponse: method.CppResponse(),
 			Code:        code,
 			HasCode:     exists,
+			KeyName:     method.KeyName(),
 		})
 	}
 
@@ -732,6 +739,9 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 		InitFuncName:             firstMethodInfo.KeyName(),
 		RepliedHandlerFileName:   config.RepliedHandlerFileName,
 		Methods:                  methodsData,
+		MessageIdName:            config.MessageIdName,
+		ServiceInfoHeadInclude:   firstMethodInfo.ServiceInfoHeadInclude(),
+		ServiceInfoName:          config.ServiceInfoName,
 	}
 
 	tmpl, err := template.New("methodRepliedHandlerCpp").Parse(methodRepliedHandlerCppTemplate)

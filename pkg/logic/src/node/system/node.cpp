@@ -629,6 +629,7 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 		if (processRegistry(conn,  kCentreNode) ||
 			processRegistry(conn,  kSceneNode) ||
 			processRegistry(conn, kGateNode)) {
+
 			tls.networkRegistry.destroy(e);
 
 			response.mutable_error_message()->set_id(kCommon_errorOK);

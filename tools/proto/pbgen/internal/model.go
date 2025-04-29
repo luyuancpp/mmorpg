@@ -132,6 +132,10 @@ func (info *RPCMethod) FileNameNoEx() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, "", 1)
 }
 
+func (info *RPCMethod) ServiceInfoHeadInclude() string {
+	return info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension
+}
+
 func (info *RPCMethod) PbcHeadName() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.ProtoPbhEx, 1)
 }

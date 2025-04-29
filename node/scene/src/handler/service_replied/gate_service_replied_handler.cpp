@@ -1,8 +1,10 @@
 
 #include "gate_service_replied_handler.h"
+
+#include "service_info//gate_service_service_info.h"
 #include "network/codec/dispatcher.h"
 
-extern ProtobufDispatcher gResponseDispatcher;
+extern MessageResponseDispatcher gResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -12,19 +14,19 @@ extern ProtobufDispatcher gResponseDispatcher;
 
 void InitGateServicePlayerEnterGameNodeRepliedHandler()
 {
-    gResponseDispatcher.registerMessageCallback<::RegisterGameNodeSessionResponse>(
+    gResponseDispatcher.registerMessageCallback<::RegisterGameNodeSessionResponse>(GateServicePlayerEnterGameNodeMessageId,
         std::bind(&OnGateServicePlayerEnterGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(GateServiceSendMessageToPlayerMessageId,
         std::bind(&OnGateServiceSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(GateServiceKickSessionByCentreMessageId,
         std::bind(&OnGateServiceKickSessionByCentreRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(
+    gResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(GateServiceRouteNodeMessageMessageId,
         std::bind(&OnGateServiceRouteNodeMessageRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RoutePlayerMessageResponse>(
+    gResponseDispatcher.registerMessageCallback<::RoutePlayerMessageResponse>(GateServiceRoutePlayerMessageMessageId,
         std::bind(&OnGateServiceRoutePlayerMessageRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(GateServiceBroadcastToPlayersMessageId,
         std::bind(&OnGateServiceBroadcastToPlayersRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RegisterNodeSessionResponse>(
+    gResponseDispatcher.registerMessageCallback<::RegisterNodeSessionResponse>(GateServiceRegisterNodeSessionMessageId,
         std::bind(&OnGateServiceRegisterNodeSessionRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 

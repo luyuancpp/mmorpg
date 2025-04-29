@@ -1,8 +1,10 @@
 
 #include "centre_scene_replied_handler.h"
+
+#include "service_info//centre_scene_service_info.h"
 #include "network/codec/dispatcher.h"
 
-extern ProtobufDispatcher gResponseDispatcher;
+extern MessageResponseDispatcher gResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -12,9 +14,9 @@ extern ProtobufDispatcher gResponseDispatcher;
 
 void InitCentreSceneServiceRegisterSceneRepliedHandler()
 {
-    gResponseDispatcher.registerMessageCallback<::RegisterSceneResponse>(
+    gResponseDispatcher.registerMessageCallback<::RegisterSceneResponse>(CentreSceneServiceRegisterSceneMessageId,
         std::bind(&OnCentreSceneServiceRegisterSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(CentreSceneServiceUnRegisterSceneMessageId,
         std::bind(&OnCentreSceneServiceUnRegisterSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 

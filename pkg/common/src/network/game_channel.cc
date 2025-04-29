@@ -7,6 +7,7 @@
 #include "proto/common/empty.pb.h"
 #include "service_info/service_info.h"
 #include "test/test.h"
+#include "network/codec/message_response_dispather.h"
 
 using namespace std::placeholders;
 
@@ -19,7 +20,7 @@ void HandleUnknownProtobufMessage(const TcpConnectionPtr&, const MessagePtr& mes
 }
 
 // 全局响应分发器
-ProtobufDispatcher gResponseDispatcher(std::bind(&HandleUnknownProtobufMessage, _1, _2, _3));
+MessageResponseDispatcher gResponseDispatcher(std::bind(&HandleUnknownProtobufMessage, _1, _2, _3));
 
 // ====================== GameChannel 类实现 ======================
 
@@ -254,7 +255,7 @@ void GameChannel::HandleResponseMessage(const TcpConnectionPtr& conn, const Game
     }
 
     LOG_DEBUG << "Dispatching response for message ID: " << rpcMessage.message_id();
-    gResponseDispatcher.onProtobufMessage(conn, response, receiveTime);
+    gResponseDispatcher.onProtobufMessage(rpcMessage.message_id(), conn, response, receiveTime);
 }
 
 void GameChannel::HandleRequestMessage(const TcpConnectionPtr& connection, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
