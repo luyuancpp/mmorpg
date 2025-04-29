@@ -79,13 +79,13 @@ void Node::Initialize() {
 
 // Sets up the RPC server for the node
 void Node::SetupRpcServer() {
-	LOG_INFO << "Setting up RPC server with local IP: " << localip() << " and port: " << GetPort();
 	GetNodeInfo().mutable_endpoint()->set_ip(localip());
 	GetNodeInfo().mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
 
 	InetAddress service_addr(GetNodeInfo().endpoint().ip(), GetNodeInfo().endpoint().port());
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, service_addr);
 	rpcServer->start();
+	LOG_INFO << "Setting up RPC server with local IP: " << localip() << " and port: " << GetPort();
 }
 
 // Starts the RPC server and begins service node watching
@@ -583,7 +583,7 @@ void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response) {
 	auto& peerNodeInfo = request.self_node();
 
-	response.mutable_peer_node()->mutable_endpoint()->CopyFrom(GetNodeInfo().endpoint());
+	response.mutable_peer_node()->CopyFrom(GetNodeInfo());
 
 	LOG_INFO << "Received node registration request:" << request.DebugString();
 
