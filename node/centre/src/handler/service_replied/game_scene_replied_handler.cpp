@@ -1,8 +1,10 @@
 
 #include "game_scene_replied_handler.h"
+
+#include "service_info//game_scene_service_info.h"
 #include "network/codec/dispatcher.h"
 
-extern ProtobufDispatcher gResponseDispatcher;
+extern MessageResponseDispatcher gResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -12,7 +14,7 @@ extern ProtobufDispatcher gResponseDispatcher;
 
 void InitGameSceneServiceTestRepliedHandler()
 {
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(GameSceneServiceTestMessageId,
         std::bind(&OnGameSceneServiceTestRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 

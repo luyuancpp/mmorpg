@@ -1,8 +1,10 @@
-
+﻿
 #include "game_service_replied_handler.h"
+
+#include "service_info//game_service_service_info.h"
 #include "network/codec/dispatcher.h"
 
-extern ProtobufDispatcher gResponseDispatcher;
+extern MessageResponseDispatcher gResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -25,27 +27,27 @@ extern ProtobufDispatcher gResponseDispatcher;
 
 void InitGameServicePlayerEnterGameNodeRepliedHandler()
 {
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(GameServicePlayerEnterGameNodeMessageId,
         std::bind(&OnGameServicePlayerEnterGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(
+    gResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(GameServiceSendMessageToPlayerMessageId,
         std::bind(&OnGameServiceSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::ClientSendMessageToPlayerResponse>(
+    gResponseDispatcher.registerMessageCallback<::ClientSendMessageToPlayerResponse>(GameServiceClientSendMessageToPlayerMessageId,
         std::bind(&OnGameServiceClientSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(GameServiceCentreSendToPlayerViaGameNodeMessageId,
         std::bind(&OnGameServiceCentreSendToPlayerViaGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(
+    gResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(GameServiceInvokePlayerServiceMessageId,
         std::bind(&OnGameServiceInvokePlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(
+    gResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(GameServiceRouteNodeStringMsgMessageId,
         std::bind(&OnGameServiceRouteNodeStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RoutePlayerMessageResponse>(
+    gResponseDispatcher.registerMessageCallback<::RoutePlayerMessageResponse>(GameServiceRoutePlayerStringMsgMessageId,
         std::bind(&OnGameServiceRoutePlayerStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(GameServiceUpdateSessionDetailMessageId,
         std::bind(&OnGameServiceUpdateSessionDetailRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(GameServiceEnterSceneMessageId,
         std::bind(&OnGameServiceEnterSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::CreateSceneResponse>(
+    gResponseDispatcher.registerMessageCallback<::CreateSceneResponse>(GameServiceCreateSceneMessageId,
         std::bind(&OnGameServiceCreateSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RegisterNodeSessionResponse>(
+    gResponseDispatcher.registerMessageCallback<::RegisterNodeSessionResponse>(GameServiceRegisterNodeSessionMessageId,
         std::bind(&OnGameServiceRegisterNodeSessionRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 

@@ -1,8 +1,10 @@
 
 #include "centre_service_replied_handler.h"
+
+#include "service_info//centre_service_service_info.h"
 #include "network/codec/dispatcher.h"
 
-extern ProtobufDispatcher gResponseDispatcher;
+extern MessageResponseDispatcher gResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -17,29 +19,29 @@ extern ProtobufDispatcher gResponseDispatcher;
 
 void InitCentreServiceGatePlayerServiceRepliedHandler()
 {
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(CentreServiceGatePlayerServiceMessageId,
         std::bind(&OnCentreServiceGatePlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(CentreServiceGateSessionDisconnectMessageId,
         std::bind(&OnCentreServiceGateSessionDisconnectRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::LoginResponse>(
+    gResponseDispatcher.registerMessageCallback<::LoginResponse>(CentreServiceLoginNodeAccountLoginMessageId,
         std::bind(&OnCentreServiceLoginNodeAccountLoginRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(CentreServiceLoginNodeEnterGameMessageId,
         std::bind(&OnCentreServiceLoginNodeEnterGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(CentreServiceLoginNodeLeaveGameMessageId,
         std::bind(&OnCentreServiceLoginNodeLeaveGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(CentreServiceLoginNodeSessionDisconnectMessageId,
         std::bind(&OnCentreServiceLoginNodeSessionDisconnectRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(
+    gResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(CentreServicePlayerServiceMessageId,
         std::bind(&OnCentreServicePlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(CentreServiceEnterGsSucceedMessageId,
         std::bind(&OnCentreServiceEnterGsSucceedRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(
+    gResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(CentreServiceRouteNodeStringMsgMessageId,
         std::bind(&OnCentreServiceRouteNodeStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RoutePlayerMessageResponse>(
+    gResponseDispatcher.registerMessageCallback<::RoutePlayerMessageResponse>(CentreServiceRoutePlayerStringMsgMessageId,
         std::bind(&OnCentreServiceRoutePlayerStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(
+    gResponseDispatcher.registerMessageCallback<::Empty>(CentreServiceInitSceneNodeMessageId,
         std::bind(&OnCentreServiceInitSceneNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RegisterNodeSessionResponse>(
+    gResponseDispatcher.registerMessageCallback<::RegisterNodeSessionResponse>(CentreServiceRegisterNodeSessionMessageId,
         std::bind(&OnCentreServiceRegisterNodeSessionRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 

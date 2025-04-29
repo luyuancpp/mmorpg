@@ -89,7 +89,8 @@ const (
 	LoginGoGameDirectory             = LoginDirectory + GoPbGameDirectory
 	LoginMessageIdGoFile             = LoginGoGameDirectory + MessageIdGoFile
 	DbGoDirectory                    = ProjectDir + "node/db/"
-	ServiceInfoDirectory             = PbcOutputDirectory + "service_info/"
+	ServiceInfoName                  = "service_info/"
+	ServiceInfoDirectory             = PbcOutputDirectory + ServiceInfoName
 	ServiceInfoExtension             = "_service_info"
 	ServiceCppFilePath               = ServiceInfoDirectory + "service_info.cpp"
 	ServiceHeaderFilePath            = ServiceInfoDirectory + "service_info.h"
