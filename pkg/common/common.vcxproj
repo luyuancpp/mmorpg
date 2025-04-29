@@ -26,7 +26,7 @@
     <ClInclude Include="src\network\codec\codec.h" />
     <ClInclude Include="src\network\codec\dispatcher.h" />
     <ClInclude Include="src\network\codec\dispatcher_lite.h" />
-    <ClInclude Include="src\network\codec\message_response_dispather.h" />
+    <ClInclude Include="src\network\codec\message_response_dispatcher.h" />
     <ClInclude Include="src\network\game_rpc.pb.h" />
     <ClInclude Include="src\network\message_statistics.h" />
     <ClInclude Include="src\network\process_info.h" />

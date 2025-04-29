@@ -664,7 +664,7 @@ func getMethodRepliedHandlerCppStr(dst string, methods *RPCMethods) string {
 	const methodRepliedHandlerCppTemplate = `
 {{ .CppRepliedHandlerInclude }}
 #include "{{ .ServiceInfoName }}/{{ .ServiceInfoHeadInclude }}"
-#include "network/codec/dispatcher.h"
+#include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gResponseDispatcher;
 

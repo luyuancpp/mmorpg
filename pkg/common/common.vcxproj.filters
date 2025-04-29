@@ -35,7 +35,7 @@
     <ClInclude Include="src\util\proto_field_checker.h" />
     <ClInclude Include="src\util\network_utils.h" />
     <ClInclude Include="src\config_loader\config.h" />
-    <ClInclude Include="src\network\codec\message_response_dispather.h" />
+    <ClInclude Include="src\network\codec\message_response_dispatcher.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\network\game_rpc.pb.cc" />
