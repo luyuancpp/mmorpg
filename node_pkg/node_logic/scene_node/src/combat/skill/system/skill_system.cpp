@@ -385,7 +385,7 @@ uint32_t SkillSystem::CheckCooldown(const entt::entity casterEntity, const Skill
 }
 
 uint32_t SkillSystem::CheckCasting(const entt::entity casterEntity, const SkillTable* skillTable) {
-	if (const auto* castTimerComp = tls.registry.try_get<CastingTimerComp>(casterEntity)) {
+	if (auto* castTimerComp = tls.registry.try_get<CastingTimerComp>(casterEntity)) {
 		if (skillTable->immediately() && castTimerComp->timer.IsActive()) {
 			LOG_INFO << "Immediate skill: " << skillTable->id()
 				<< " is currently casting. Sending interrupt message.";
@@ -406,7 +406,7 @@ uint32_t SkillSystem::CheckCasting(const entt::entity casterEntity, const SkillT
 }
 
 uint32_t SkillSystem::CheckRecovery(const entt::entity casterEntity, const SkillTable* skillTable) {
-	if (const auto* recoveryTimeTimerComp = tls.registry.try_get<RecoveryTimerComp>(casterEntity)) {
+	if (auto* recoveryTimeTimerComp = tls.registry.try_get<RecoveryTimerComp>(casterEntity)) {
 		if (skillTable->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
 			LOG_INFO << "Immediate skill: " << skillTable->id()
 				<< " is currently casting. Sending interrupt message.";
@@ -427,7 +427,7 @@ uint32_t SkillSystem::CheckRecovery(const entt::entity casterEntity, const Skill
 }
 
 uint32_t SkillSystem::CheckChannel(const entt::entity casterEntity, const SkillTable* skillTable) {
-	if (const auto* channelFinishTimerComp = tls.registry.try_get<ChannelFinishTimerComp>(casterEntity)) {
+	if (auto* channelFinishTimerComp = tls.registry.try_get<ChannelFinishTimerComp>(casterEntity)) {
 		if (skillTable->immediately() && channelFinishTimerComp->timer.IsActive()) {
 			LOG_INFO << "Immediate skill: " << skillTable->id()
 				<< " is currently casting. Sending interrupt message.";
