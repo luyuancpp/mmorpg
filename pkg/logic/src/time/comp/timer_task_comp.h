@@ -28,10 +28,9 @@ public:
 
 	void Cancel();
 
-    bool IsActive() const;
+    bool IsActive();
 
     uint64_t GetEndTime();
-    void UpdateEndStamp();
 
     void SetCallBack(const TimerCallback& cb);
 private:
@@ -39,7 +38,6 @@ private:
 
     TimerId  timerId;
     TimerCallback callback;
-    Timestamp endTime;
 };
 
 
