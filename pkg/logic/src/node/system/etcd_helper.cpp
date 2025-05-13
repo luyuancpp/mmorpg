@@ -56,3 +56,10 @@ void EtcdHelper::StopAllWatching() {
 	// TODO: Add cancel_request implementation if needed
 }
 
+void EtcdHelper::GrantLease(uint32_t ttlSeconds) {
+	// 创建 LeaseGrantRequest 请求对象
+	etcdserverpb::LeaseGrantRequest leaseReq;
+	leaseReq.set_ttl(ttlSeconds);  // 设置 TTL（生存时间）
+
+	SendetcdserverpbLeaseLeaseGrant(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), leaseReq);
+}

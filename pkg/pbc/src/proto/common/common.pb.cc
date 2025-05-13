@@ -137,7 +137,8 @@ inline constexpr NodeInfo::Impl_::Impl_(
         launch_time_{::uint64_t{0u}},
         lease_id_{::uint64_t{0u}},
         scene_node_type_{0u},
-        zone_id_{0u} {}
+        zone_id_{0u},
+        status_{static_cast< ::NodeStatus >(0)} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR NodeInfo::NodeInfo(::_pbi::ConstantInitialized)
@@ -183,8 +184,7 @@ struct NodeInfoListPBComponentDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeInfoListPBComponentDefaultTypeInternal _NodeInfoListPBComponent_default_instance_;
-static constexpr const ::_pb::EnumDescriptor**
-    file_level_enum_descriptors_proto_2fcommon_2fcommon_2eproto = nullptr;
+static const ::_pb::EnumDescriptor* file_level_enum_descriptors_proto_2fcommon_2fcommon_2eproto[1];
 static constexpr const ::_pb::ServiceDescriptor**
     file_level_service_descriptors_proto_2fcommon_2fcommon_2eproto = nullptr;
 const ::uint32_t
@@ -215,12 +215,14 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.lease_id_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.endpoint_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.zone_id_),
+        PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.status_),
         ~0u,
         ~0u,
         ~0u,
         ~0u,
         ~0u,
         0,
+        ~0u,
         ~0u,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::NodeInfoListPBComponent, _internal_metadata_),
@@ -271,11 +273,11 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::EndpointPBComponent)},
-        {10, 25, -1, sizeof(::NodeInfo)},
-        {32, -1, -1, sizeof(::NodeInfoListPBComponent)},
-        {41, -1, -1, sizeof(::NetworkAddress)},
-        {51, 61, -1, sizeof(::SceneInfoPBComponent_CreatorsEntry_DoNotUse)},
-        {63, -1, -1, sizeof(::SceneInfoPBComponent)},
+        {10, 26, -1, sizeof(::NodeInfo)},
+        {34, -1, -1, sizeof(::NodeInfoListPBComponent)},
+        {43, -1, -1, sizeof(::NetworkAddress)},
+        {53, 63, -1, sizeof(::SceneInfoPBComponent_CreatorsEntry_DoNotUse)},
+        {65, -1, -1, sizeof(::SceneInfoPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_EndpointPBComponent_default_instance_._instance,
@@ -289,20 +291,21 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_2eproto[] ABSL_ATTR
     protodesc_cold) = {
     "\n\031proto/common/common.proto\032\026proto/commo"
     "n/tip.proto\"/\n\023EndpointPBComponent\022\n\n\002ip"
-    "\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\247\001\n\010NodeInfo\022\017\n\007nod"
+    "\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\304\001\n\010NodeInfo\022\017\n\007nod"
     "e_id\030\001 \001(\r\022\021\n\tnode_type\030\002 \001(\r\022\023\n\013launch_"
     "time\030\003 \001(\004\022\027\n\017scene_node_type\030\004 \001(\r\022\020\n\010l"
     "ease_id\030\005 \001(\004\022&\n\010endpoint\030\006 \001(\0132\024.Endpoi"
-    "ntPBComponent\022\017\n\007zone_id\030\007 \001(\r\"7\n\027NodeIn"
-    "foListPBComponent\022\034\n\tnode_list\030\001 \003(\0132\t.N"
-    "odeInfo\"*\n\016NetworkAddress\022\n\n\002ip\030\001 \001(\t\022\014\n"
-    "\004port\030\002 \001(\r\"\320\001\n\024SceneInfoPBComponent\022\024\n\014"
-    "scene_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rmirr"
-    "or_confid\030\003 \001(\r\022\025\n\rdungen_confid\030\004 \001(\r\0225"
-    "\n\010creators\030\005 \003(\0132#.SceneInfoPBComponent."
-    "CreatorsEntry\032/\n\rCreatorsEntry\022\013\n\003key\030\001 "
-    "\001(\004\022\r\n\005value\030\002 \001(\010:\0028\001B\tZ\007pb/gameb\006proto"
-    "3"
+    "ntPBComponent\022\017\n\007zone_id\030\007 \001(\r\022\033\n\006status"
+    "\030\010 \001(\0162\013.NodeStatus\"7\n\027NodeInfoListPBCom"
+    "ponent\022\034\n\tnode_list\030\001 \003(\0132\t.NodeInfo\"*\n\016"
+    "NetworkAddress\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r"
+    "\"\320\001\n\024SceneInfoPBComponent\022\024\n\014scene_confi"
+    "d\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rmirror_confid\030\003"
+    " \001(\r\022\025\n\rdungen_confid\030\004 \001(\r\0225\n\010creators\030"
+    "\005 \003(\0132#.SceneInfoPBComponent.CreatorsEnt"
+    "ry\032/\n\rCreatorsEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005valu"
+    "e\030\002 \001(\010:\0028\001*-\n\nNodeStatus\022\013\n\007UNKNOWN\020\000\022\010"
+    "\n\004FREE\020\001\022\010\n\004USED\020\002B\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_2eproto_deps[1] =
     {
@@ -312,7 +315,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_2eproto = {
     false,
     false,
-    601,
+    677,
     descriptor_table_protodef_proto_2fcommon_2fcommon_2eproto,
     "proto/common/common.proto",
     &descriptor_table_proto_2fcommon_2fcommon_2eproto_once,
@@ -325,6 +328,15 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon
     file_level_enum_descriptors_proto_2fcommon_2fcommon_2eproto,
     file_level_service_descriptors_proto_2fcommon_2fcommon_2eproto,
 };
+const ::google::protobuf::EnumDescriptor* NodeStatus_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcommon_2fcommon_2eproto);
+  return file_level_enum_descriptors_proto_2fcommon_2fcommon_2eproto[0];
+}
+PROTOBUF_CONSTINIT const uint32_t NodeStatus_internal_data_[] = {
+    196608u, 0u, };
+bool NodeStatus_IsValid(int value) {
+  return 0 <= value && value <= 2;
+}
 // ===================================================================
 
 class EndpointPBComponent::_Internal {
@@ -628,9 +640,9 @@ NodeInfo::NodeInfo(
                offsetof(Impl_, node_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, node_id_),
-           offsetof(Impl_, zone_id_) -
+           offsetof(Impl_, status_) -
                offsetof(Impl_, node_id_) +
-               sizeof(Impl_::zone_id_));
+               sizeof(Impl_::status_));
 
   // @@protoc_insertion_point(copy_constructor:NodeInfo)
 }
@@ -644,9 +656,9 @@ inline void NodeInfo::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, endpoint_),
            0,
-           offsetof(Impl_, zone_id_) -
+           offsetof(Impl_, status_) -
                offsetof(Impl_, endpoint_) +
-               sizeof(Impl_::zone_id_));
+               sizeof(Impl_::status_));
 }
 NodeInfo::~NodeInfo() {
   // @@protoc_insertion_point(destructor:NodeInfo)
@@ -696,15 +708,15 @@ const ::google::protobuf::internal::ClassData* NodeInfo::GetClassData() const {
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 7, 1, 0, 2> NodeInfo::_table_ = {
+const ::_pbi::TcParseTable<3, 8, 1, 0, 2> NodeInfo::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_._has_bits_),
     0, // no _extensions_
-    7, 56,  // max_field_number, fast_idx_mask
+    8, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967168,  // skipmap
+    4294967040,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    7,  // num_field_entries
+    8,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     _class_data_.base(),
@@ -714,7 +726,9 @@ const ::_pbi::TcParseTable<3, 7, 1, 0, 2> NodeInfo::_table_ = {
     ::_pbi::TcParser::GetTable<::NodeInfo>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // .NodeStatus status = 8;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.status_), 63>(),
+     {64, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.status_)}},
     // uint32 node_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.node_id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_id_)}},
@@ -760,6 +774,9 @@ const ::_pbi::TcParseTable<3, 7, 1, 0, 2> NodeInfo::_table_ = {
     // uint32 zone_id = 7;
     {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.zone_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // .NodeStatus status = 8;
+    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.status_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
   }}, {{
     {::_pbi::TcParser::GetTable<::EndpointPBComponent>()},
   }}, {{
@@ -779,8 +796,8 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
     _impl_.endpoint_->Clear();
   }
   ::memset(&_impl_.node_id_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.zone_id_) -
-      reinterpret_cast<char*>(&_impl_.node_id_)) + sizeof(_impl_.zone_id_));
+      reinterpret_cast<char*>(&_impl_.status_) -
+      reinterpret_cast<char*>(&_impl_.node_id_)) + sizeof(_impl_.status_));
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -850,6 +867,13 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
                 7, this_._internal_zone_id(), target);
           }
 
+          // .NodeStatus status = 8;
+          if (this_._internal_status() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteEnumToArray(
+                8, this_._internal_status(), target);
+          }
+
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
             target =
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -913,6 +937,11 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
                   this_._internal_zone_id());
             }
+            // .NodeStatus status = 8;
+            if (this_._internal_status() != 0) {
+              total_size += 1 +
+                            ::_pbi::WireFormatLite::EnumSize(this_._internal_status());
+            }
           }
           return this_.MaybeComputeUnknownFieldsSize(total_size,
                                                      &this_._impl_._cached_size_);
@@ -955,6 +984,9 @@ void NodeInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google
   if (from._internal_zone_id() != 0) {
     _this->_impl_.zone_id_ = from._impl_.zone_id_;
   }
+  if (from._internal_status() != 0) {
+    _this->_impl_.status_ = from._impl_.status_;
+  }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -972,8 +1004,8 @@ void NodeInfo::InternalSwap(NodeInfo* PROTOBUF_RESTRICT other) {
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.zone_id_)
-      + sizeof(NodeInfo::_impl_.zone_id_)
+      PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.status_)
+      + sizeof(NodeInfo::_impl_.status_)
       - PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.endpoint_)>(
           reinterpret_cast<char*>(&_impl_.endpoint_),
           reinterpret_cast<char*>(&other->_impl_.endpoint_));
