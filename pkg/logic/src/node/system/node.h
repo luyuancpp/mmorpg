@@ -25,7 +25,7 @@ public:
     virtual NodeId GetNodeId() final { return GetNodeInfo().node_id(); }
     virtual uint32_t GetNodeType() const = 0;
     virtual NodeInfo& GetNodeInfo() = 0;
-	virtual std::string GetServiceName() const = 0;
+	virtual std::string GetServiceName(uint32_t nodeType) const;
 	virtual ::google::protobuf::Service* GetNodeRepleyService() { return {}; }
 	virtual CanConnectNodeTypeList GetAllowedTargetNodeTypes() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
@@ -57,7 +57,7 @@ protected:
     void ReleaseNodeId();
     void SetUpEventHandlers();
 	void StopWatchingServiceNodes();
-    std::string BuildServiceNodeKey();
+    std::string BuildServiceNodeKey(const NodeInfo& nodeInfo);
 	void RegisterSelfInService();
 	void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
@@ -70,6 +70,7 @@ protected:
     void AttemptNodeRegistration(
         uint32_t nodeType,
         const muduo::net::TcpConnectionPtr& conn);
+    void AcquireNode();
     void RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn);
     void OnConnectedToServer(const OnConnected2TcpServerEvent& es);
     void OnClientConnected(const OnBeConnectedEvent& es);

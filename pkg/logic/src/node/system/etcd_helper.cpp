@@ -63,3 +63,22 @@ void EtcdHelper::GrantLease(uint32_t ttlSeconds) {
 
 	SendetcdserverpbLeaseLeaseGrant(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), leaseReq);
 }
+
+void EtcdHelper::CompareAndPutWithRetry(const std::string& key, const std::string& newValue, int64_t currentVersion) {
+	// 创建事务请求
+	etcdserverpb::TxnRequest txn;
+
+	// 添加版本比较条件
+	etcdserverpb::Compare* compare = txn.add_compare();
+	compare->set_key(key);
+	compare->set_result(etcdserverpb::Compare::EQUAL);  // 比较结果：等于
+	compare->set_target(etcdserverpb::Compare::MOD);     // 比较键的版本
+	compare->set_version(currentVersion);    // 设置当前版本号
+
+	// 添加成功时的操作（如果版本匹配）
+	auto& sucessOp = *txn.add_success();
+	sucessOp.mutable_request_put()->set_key(key);
+	sucessOp.mutable_request_put()->set_value(newValue);  // 如果版本匹配，更新值
+
+	SendetcdserverpbKVTxn(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), txn);
+}

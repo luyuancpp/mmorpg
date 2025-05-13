@@ -26,8 +26,6 @@ public:
     
     void Initialize()override;
 
-    std::string GetServiceName() const override;
-
     ::google::protobuf::Service* GetNodeRepleyService() override { return &nodeReplyService; }
 
 	CanConnectNodeTypeList GetAllowedTargetNodeTypes() override;

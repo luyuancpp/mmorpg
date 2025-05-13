@@ -41,6 +41,11 @@ Node::~Node() {
 	ShutdownNode();  // Clean up node resources upon destruction
 }
 
+std::string Node::GetServiceName(uint32_t nodeType) const
+{
+	return eNodeType_Name(nodeType) + ".rpc";
+}
+
 void Node::InitializeDeploymentService(const std::string& service_address)
 {
 	LOG_INFO << "Initializing deployment service with address: " << service_address;
@@ -185,19 +190,19 @@ void Node::InitializeGrpcMessageQueues() {
 		});
 }
 
-std::string Node::BuildServiceNodeKey() {
+std::string Node::BuildServiceNodeKey(const NodeInfo& nodeInfo) {
 	// 构造 etcd 中的键名，结构如下：
 // {serviceName}/zone/{zone_id}/node_type/{node_type}/node_id/{node_id}
-	return GetNodeInfo(), GetServiceName() +
-		"/zone/" + std::to_string(GetNodeInfo().zone_id()) +
-		"/node_type/" + std::to_string(GetNodeInfo().node_type()) +
-		"/node_id/" + std::to_string(GetNodeInfo().node_id());
+	return GetServiceName(nodeInfo.node_type()) +
+		"/zone/" + std::to_string(nodeInfo.zone_id()) +
+		"/node_type/" + std::to_string(nodeInfo.node_type()) +
+		"/node_id/" + std::to_string(nodeInfo.node_id());
 }
 
 
 // Registers the current node with the service registry
 void Node::RegisterSelfInService() {
-	EtcdHelper::PutServiceNodeInfo(GetNodeInfo(), BuildServiceNodeKey());
+	EtcdHelper::PutServiceNodeInfo(GetNodeInfo(), BuildServiceNodeKey(GetNodeInfo()));
 }
 
 // Fetches  all service nodes from etcd
@@ -439,6 +444,7 @@ void Node::InitializeGrpcResponseHandlers() {
 			for (const auto& kv : call->reply.kvs()) {
 				HandleServiceNodeStart(kv.key(), kv.value());
 			}
+			AcquireNode();
 		}
 		else {
 			LOG_ERROR << "RPC failed: " << call->status.error_message();
@@ -447,7 +453,7 @@ void Node::InitializeGrpcResponseHandlers() {
 
 	AsyncetcdserverpbKVPutHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>& call) {
 		LOG_DEBUG << "Put response: " << call->reply.DebugString();
-		if (call->reply.prev_kv().key() == BuildServiceNodeKey())
+		if (call->reply.prev_kv().key() == BuildServiceNodeKey(GetNodeInfo()))
 		{
 			StartWatchingServiceNodes();  // Start watching for new service nodes
 			FetchesServiceNodes();         // Fetch and register service nodes
@@ -459,7 +465,12 @@ void Node::InitializeGrpcResponseHandlers() {
 		};
 
 	AsyncetcdserverpbKVTxnHandler = [](const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>& call) {
-		// Handle KV transaction response if needed
+		if (call->status.ok()) {
+			LOG_DEBUG << "Transaction response: " << call->reply.DebugString();
+		}
+		else {
+			LOG_ERROR << "RPC failed: " << call->status.error_message();
+		}
 		};
 
 	AsyncetcdserverpbWatchWatchHandler = [this](const ::etcdserverpb::WatchResponse& response) {
@@ -489,8 +500,9 @@ void Node::InitializeGrpcResponseHandlers() {
 		}
 		};
 
-	AsyncetcdserverpbLeaseLeaseGrantHandler = [](const std::unique_ptr<AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>& call) {
+	AsyncetcdserverpbLeaseLeaseGrantHandler = [this](const std::unique_ptr<AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>& call) {
 		if (call->status.ok()) {
+			GetNodeInfo().set_lease_id(call->reply.id());
 			LOG_INFO << "Lease granted: " << call->reply.DebugString();
 		}
 		else {
@@ -718,4 +730,56 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 
 	LOG_INFO << "Node registration successful.";
 }
+
+void Node::AcquireNode()
+{
+	if (GetNodeInfo().node_id() > 0)
+	{
+		LOG_DEBUG << "Node ID already acquired: " << GetNodeInfo().node_id();
+		return;
+	}
+
+	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+	auto& nodeListPb = serviceNodeList[GetNodeType()];
+
+	uint32_t maxId = 0;
+
+	UInt32Set nodeIdSet;
+
+	for (auto& node : *nodeListPb.mutable_node_list())
+	{
+		GetNodeInfo().set_node_id(node.node_id());
+		maxId = std::max(maxId, node.node_id());
+		nodeIdSet.emplace(node.node_id());
+	}
+
+	uint32_t nodeId = maxId + 1;
+
+	for (uint32_t i = 0; i < maxId; ++i)
+	{
+		if (nodeIdSet.count(i) > 0)
+		{
+			continue;
+		}
+		else
+		{
+			nodeId = i;
+			break;
+		}
+	}
+
+	GetNodeInfo().set_node_id(nodeId);
+
+	std::string jsonValue;
+	auto status = google::protobuf::util::MessageToJsonString(GetNodeInfo(), &jsonValue);
+	if (!status.ok()) {
+		LOG_ERROR << " Failed to serialize NodeInfo to JSON. "
+			<< "Error: " << status.message().data();
+		return;
+	}
+
+	EtcdHelper::CompareAndPutWithRetry(BuildServiceNodeKey(GetNodeInfo()), jsonValue, 0);
+}
+
+
 

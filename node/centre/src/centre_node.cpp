@@ -78,11 +78,6 @@ void CentreNode::PrepareForBeforeConnection()
 	PlayerSessionSystem::Initialize();
 }
 
-std::string CentreNode::GetServiceName() const
-{
-	return "centreservice.rpc";
-}
-
 void CentreNode::InitSystemAfterConnect() const
 {
 	InetAddress redisAddr("127.0.0.1", 6379);

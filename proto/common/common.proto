@@ -10,12 +10,6 @@ message EndpointPBComponent
   uint32 port = 2;
 }
 
-enum NodeStatus {
-  UNKNOWN = 0;
-  FREE = 1;
-  USED = 2;
-}
-
 message NodeInfo
 {
   uint32 node_id = 1;
@@ -25,7 +19,6 @@ message NodeInfo
   uint64 lease_id = 5; //租约id
   EndpointPBComponent endpoint = 6;
   uint32 zone_id = 7;
-  NodeStatus status = 8;
 }
 
 message NodeInfoListPBComponent

@@ -29,7 +29,6 @@ public:
     inline GateServiceHandler& GetServiceHandler() { return nodeReplyService; }
     inline  NodeInfo& GetNodeInfo() { return nodeInfo; }
     uint32_t GetNodeType() const override;
-    std::string GetServiceName() const override;
 	::google::protobuf::Service* GetNodeRepleyService() override{ return &nodeReplyService ; }
 
     virtual CanConnectNodeTypeList GetAllowedTargetNodeTypes() override;
