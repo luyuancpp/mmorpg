@@ -46,27 +46,6 @@ std::string Node::GetServiceName(uint32_t nodeType) const
 	return eNodeType_Name(nodeType) + ".rpc";
 }
 
-void Node::InitializeDeploymentService(const std::string& service_address)
-{
-	LOG_INFO << "Initializing deployment service with address: " << service_address;
-	tls.globalNodeRegistry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity())
-		= DeployService::NewStub(grpc::CreateChannel(service_address, grpc::InsecureChannelCredentials()));
-
-	// Request to fetch node information
-	NodeInfoRequest request;
-	request.set_node_type(GetNodeType());  // Use subclass to specify node type
-	LOG_INFO << "Sending deployment service request for node type: " << GetNodeType();
-	SendDeployServiceGetNodeInfo(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
-
-	// Periodically renew the node lease
-	renewNodeLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
-		RenewLeaseIDRequest request;
-		request.set_lease_id(GetNodeInfo().lease_id());
-		LOG_TRACE << "Renewing lease with ID: " << GetNodeInfo().lease_id();
-		SendDeployServiceRenewLease(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
-		});
-}
-
 void Node::Initialize() {
 	LOG_INFO << "Initializing node...";
 	RegisterEventHandlers();
@@ -78,7 +57,10 @@ void Node::Initialize() {
 	InitializeGrpcClients();        // Initialize gRPC clients
 	InitializeGrpcMessageQueues();  // Initialize gRPC queues for async processing
 	SetUpEventHandlers();           // Set up event handlers
-	FetchDeployServiceNode();
+
+	EtcdHelper::GrantLease(tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds());
+
+	FetchesServiceNodes();
 	LOG_INFO << "Node initialization complete.";
 }
 
@@ -98,11 +80,6 @@ void Node::StartRpcServer() {
 	LOG_INFO << "Starting RPC server...";
 	tls.dispatcher.trigger<OnServerStart>();  // Trigger server start event
 
-	deployQueueTimer.Cancel();  // Stop deploy queue timer
-	LOG_INFO << "Deploy queue timer canceled.";
-
-	EtcdHelper::GrantLease(tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds());
-
 	RegisterSelfInService();     // Register this node in service registry
 
 	LOG_INFO << "RPC server started at " << GetNodeInfo().DebugString();
@@ -118,7 +95,6 @@ void Node::ShutdownNode() {
 	ReleaseNodeId();              // Release the node ID
 
 	// Cancel all timers
-	deployQueueTimer.Cancel();
 	renewNodeLeaseTimer.Cancel();
 	etcdQueueTimer.Cancel();
 	LOG_INFO << "Timers canceled and resources released.";
@@ -177,11 +153,6 @@ void Node::InitializeGrpcMessageQueues() {
 	InitetcdserverpbWatchCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
 	InitetcdserverpbLeaseCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
 
-	// Periodically handle deploy service completed messages
-	deployQueueTimer.RunEvery(0.001, []() {
-		HandleDeployServiceCompletedQueueMessage(tls.globalNodeRegistry);
-		});
-
 	// Periodically handle etcd server responses
 	etcdQueueTimer.RunEvery(0.001, []() {
 		HandleetcdserverpbKVCompletedQueueMessage(tls.globalNodeRegistry);
@@ -209,13 +180,6 @@ void Node::RegisterSelfInService() {
 void Node::FetchesServiceNodes() {
 	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
 		EtcdHelper::RangeQuery(prefix);  // Query and fetch service node info from etcd
-	}
-}
-
-void Node::FetchDeployServiceNode() {
-	const std::string& deployPrefix = tlsCommonLogic.GetBaseDeployConfig().deployservice_prefix();
-	if (!deployPrefix.empty()) {
-		EtcdHelper::RangeQuery(deployPrefix);  // 从 etcd 查询并获取 deployservice 前缀的服务节点信息
 	}
 }
 
@@ -388,11 +352,7 @@ void Node::HandleServiceNodeStart(const std::string& key, const std::string& val
 	// Get the service node type from the key prefix
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
-	if (nodeType == kDeployNode) {
-		LOG_INFO << "Deploy Service Key: " << key << ", Value: " << value;
-		InitializeDeploymentService(value);
-	}
-	else if (nodeType == kLoginNode) {
+	if (nodeType == kLoginNode) {
 		LOG_INFO << "Login Node handling is not yet implemented.";
 	}
 	else if (eNodeType_IsValid(nodeType)) {
@@ -468,7 +428,7 @@ void Node::InitializeGrpcResponseHandlers() {
 		if (call->status.ok()) {
 			LOG_DEBUG << "Transaction response: " << call->reply.DebugString();
 			if (call->reply.succeeded()) {
-				LOG_INFO << "Transaction succeeded.";
+				StartRpcServer();
 			}
 			else {
 				AcquireNode();
@@ -509,6 +469,15 @@ void Node::InitializeGrpcResponseHandlers() {
 	AsyncetcdserverpbLeaseLeaseGrantHandler = [this](const std::unique_ptr<AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>& call) {
 		if (call->status.ok()) {
 			GetNodeInfo().set_lease_id(call->reply.id());
+
+			// Periodically renew the node lease
+			renewNodeLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
+				etcdserverpb::LeaseKeepAliveRequest request;
+				request.set_id(GetNodeInfo().lease_id());
+				LOG_TRACE << "Renewing lease with ID: " << GetNodeInfo().lease_id();
+				SendetcdserverpbLeaseLeaseKeepAlive(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
+				});
+
 			LOG_INFO << "Lease granted: " << call->reply.DebugString();
 		}
 		else {

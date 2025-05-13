@@ -34,7 +34,6 @@ public:
 	std::string GetIp();
 	uint32_t GetPort();
 
-    void InitializeDeploymentService(const std::string& service_address);
     void HandleServiceNodeStart(const std::string& key, const std::string& value);
 	void HandleServiceNodeStop(const std::string& key, const std::string& value);
 	void HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response);
@@ -63,7 +62,6 @@ protected:
     static void AsyncOutput(const char* msg, int len);
     void InitGrpcClients();
     void FetchesServiceNodes();
-    void FetchDeployServiceNode();
 	void StartWatchingServiceNodes();
     void InitializeGrpcResponseHandlers();
     void InitializeGrpcMessageQueues();
@@ -78,7 +76,6 @@ protected:
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;
     RpcServerPtr rpcServer;
-    TimerTaskComp deployQueueTimer;
     TimerTaskComp renewNodeLeaseTimer;
     TimerTaskComp etcdQueueTimer;
     RpcClient* zoneCentreNode{nullptr};

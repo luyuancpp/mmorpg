@@ -64,7 +64,7 @@ void EtcdHelper::GrantLease(uint32_t ttlSeconds) {
 	SendetcdserverpbLeaseLeaseGrant(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), leaseReq);
 }
 
-void EtcdHelper::PutIfVersionMatchesOrAbsent(const std::string& key, const std::string& newValue, int64_t currentVersion) {
+void EtcdHelper::PutIfVersionMatchesOrAbsent(const std::string& key, const std::string& newValue, int64_t currentVersion, int64_t lease) {
 	// 创建事务请求
 	etcdserverpb::TxnRequest txn;
 
@@ -79,6 +79,7 @@ void EtcdHelper::PutIfVersionMatchesOrAbsent(const std::string& key, const std::
 	auto& sucessOp = *txn.add_success();
 	sucessOp.mutable_request_put()->set_key(key);
 	sucessOp.mutable_request_put()->set_value(newValue);  // 如果版本匹配，更新值
+	sucessOp.mutable_request_put()->set_lease(lease);  // 设置租约
 
 	SendetcdserverpbKVTxn(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), txn);
 }
@@ -93,5 +94,5 @@ void EtcdHelper::PutIfVersionMatchesOrAbsent(const std::string& key, const NodeI
 		return;
 	}
 
-	PutIfVersionMatchesOrAbsent(key, jsonValue, currentVersion);
+	PutIfVersionMatchesOrAbsent(key, jsonValue, currentVersion, nodeInfo.lease_id());
 }
