@@ -96,6 +96,8 @@ void Node::StartRpcServer() {
 	deployQueueTimer.Cancel();  // Stop deploy queue timer
 	LOG_INFO << "Deploy queue timer canceled.";
 
+	EtcdHelper::GrantLease(tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds());
+
 	RegisterSelfInService();     // Register this node in service registry
 
 	LOG_INFO << "RPC server started at " << GetNodeInfo().DebugString();
@@ -486,6 +488,15 @@ void Node::InitializeGrpcResponseHandlers() {
 			}
 		}
 		};
+
+	AsyncetcdserverpbLeaseLeaseGrantHandler = [](const std::unique_ptr<AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>& call) {
+		if (call->status.ok()) {
+			LOG_INFO << "Lease granted: " << call->reply.DebugString();
+		}
+		else {
+			LOG_ERROR << "RPC failed: " << call->status.error_message();
+		}
+		};
 }
 
 void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
@@ -707,3 +718,4 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 
 	LOG_INFO << "Node registration successful.";
 }
+

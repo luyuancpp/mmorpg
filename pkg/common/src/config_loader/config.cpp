@@ -1,8 +1,6 @@
 ﻿#include "config.h"
-
 #include <yaml-cpp/yaml.h>
 
-// 读取基础部署配置
 // 读取基础部署配置
 bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseConfig) {
 	// 读取 YAML 配置文件
@@ -42,9 +40,13 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 		baseConfig.set_deployservice_prefix(root["deployservice_prefix"].as<std::string>());
 	}
 
+	// 解析节点 TTL 配置 (node_ttl_seconds)
+	if (root["Etcd"]["NodeTTLSeconds"]) {
+		baseConfig.set_node_ttl_seconds(root["Etcd"]["NodeTTLSeconds"].as<uint32_t>());
+	}
+
 	return true;
 }
-
 
 // 读取游戏配置
 bool readGameConfig(const std::string& filename, GameConfig& gameConfig) {

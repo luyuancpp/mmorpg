@@ -16,6 +16,7 @@ message BaseDeployConfig {
     repeated string service_discovery_prefixes = 4; // etcd 服务前缀
     uint32 lease_renew_interval = 5;      // 节点续约间隔（单位：秒）
     string deployservice_prefix = 6;      // 单独的 deployservice.rpc 前缀字段
+    uint32 node_ttl_seconds = 7;          // 节点的租约TTL（单位：秒）
 }
 
 // 游戏配置
