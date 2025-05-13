@@ -31,7 +31,6 @@
 #include "google/protobuf/map.h"  // IWYU pragma: export
 #include "google/protobuf/map_entry.h"
 #include "google/protobuf/map_field_inl.h"
-#include "google/protobuf/generated_enum_reflection.h"
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/common/tip.pb.h"
 // @@protoc_insertion_point(includes)
@@ -79,40 +78,6 @@ namespace protobuf {
 }  // namespace protobuf
 }  // namespace google
 
-enum NodeStatus : int {
-  UNKNOWN = 0,
-  FREE = 1,
-  USED = 2,
-  NodeStatus_INT_MIN_SENTINEL_DO_NOT_USE_ =
-      std::numeric_limits<::int32_t>::min(),
-  NodeStatus_INT_MAX_SENTINEL_DO_NOT_USE_ =
-      std::numeric_limits<::int32_t>::max(),
-};
-
-bool NodeStatus_IsValid(int value);
-extern const uint32_t NodeStatus_internal_data_[];
-constexpr NodeStatus NodeStatus_MIN = static_cast<NodeStatus>(0);
-constexpr NodeStatus NodeStatus_MAX = static_cast<NodeStatus>(2);
-constexpr int NodeStatus_ARRAYSIZE = 2 + 1;
-const ::google::protobuf::EnumDescriptor*
-NodeStatus_descriptor();
-template <typename T>
-const std::string& NodeStatus_Name(T value) {
-  static_assert(std::is_same<T, NodeStatus>::value ||
-                    std::is_integral<T>::value,
-                "Incorrect type passed to NodeStatus_Name().");
-  return NodeStatus_Name(static_cast<NodeStatus>(value));
-}
-template <>
-inline const std::string& NodeStatus_Name(NodeStatus value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<NodeStatus_descriptor,
-                                                 0, 2>(
-      static_cast<int>(value));
-}
-inline bool NodeStatus_Parse(absl::string_view name, NodeStatus* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<NodeStatus>(
-      NodeStatus_descriptor(), name, value);
-}
 
 // ===================================================================
 
@@ -977,7 +942,6 @@ class NodeInfo final
     kLeaseIdFieldNumber = 5,
     kSceneNodeTypeFieldNumber = 4,
     kZoneIdFieldNumber = 7,
-    kStatusFieldNumber = 8,
   };
   // .EndpointPBComponent endpoint = 6;
   bool has_endpoint() const;
@@ -1054,22 +1018,12 @@ class NodeInfo final
   void _internal_set_zone_id(::uint32_t value);
 
   public:
-  // .NodeStatus status = 8;
-  void clear_status() ;
-  ::NodeStatus status() const;
-  void set_status(::NodeStatus value);
-
-  private:
-  ::NodeStatus _internal_status() const;
-  void _internal_set_status(::NodeStatus value);
-
-  public:
   // @@protoc_insertion_point(class_scope:NodeInfo)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 8, 1,
+      3, 7, 1,
       0, 2>
       _table_;
 
@@ -1096,7 +1050,6 @@ class NodeInfo final
     ::uint64_t lease_id_;
     ::uint32_t scene_node_type_;
     ::uint32_t zone_id_;
-    int status_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1619,28 +1572,6 @@ inline void NodeInfo::_internal_set_zone_id(::uint32_t value) {
   _impl_.zone_id_ = value;
 }
 
-// .NodeStatus status = 8;
-inline void NodeInfo::clear_status() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.status_ = 0;
-}
-inline ::NodeStatus NodeInfo::status() const {
-  // @@protoc_insertion_point(field_get:NodeInfo.status)
-  return _internal_status();
-}
-inline void NodeInfo::set_status(::NodeStatus value) {
-  _internal_set_status(value);
-  // @@protoc_insertion_point(field_set:NodeInfo.status)
-}
-inline ::NodeStatus NodeInfo::_internal_status() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return static_cast<::NodeStatus>(_impl_.status_);
-}
-inline void NodeInfo::_internal_set_status(::NodeStatus value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.status_ = value;
-}
-
 // -------------------------------------------------------------------
 
 // NodeInfoListPBComponent
@@ -1896,19 +1827,6 @@ inline ::google::protobuf::Map<::uint64_t, bool>* SceneInfoPBComponent::mutable_
 
 // @@protoc_insertion_point(namespace_scope)
 
-
-namespace google {
-namespace protobuf {
-
-template <>
-struct is_proto_enum<::NodeStatus> : std::true_type {};
-template <>
-inline const EnumDescriptor* GetEnumDescriptor<::NodeStatus>() {
-  return ::NodeStatus_descriptor();
-}
-
-}  // namespace protobuf
-}  // namespace google
 
 // @@protoc_insertion_point(global_scope)
 

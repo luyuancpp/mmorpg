@@ -24,8 +24,6 @@ public:
 
     void PrepareForBeforeConnection()override;
 
-	std::string GetServiceName() const override;
-
 	::google::protobuf::Service* GetNodeRepleyService() override { return &nodeReplyService; }
 
 	void StartRpcServer() override;

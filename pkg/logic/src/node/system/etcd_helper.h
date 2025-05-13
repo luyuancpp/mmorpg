@@ -11,4 +11,5 @@ namespace EtcdHelper {
 	void StartWatchingPrefix(const std::string& prefix);
 	void StopAllWatching();  // 可扩展的占位函数
 	void GrantLease(uint32_t ttlSeconds);
+	void CompareAndPutWithRetry(const std::string& key, const std::string& newValue, int64_t currentVersion);
 }

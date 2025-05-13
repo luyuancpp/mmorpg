@@ -42,11 +42,6 @@ uint32_t GateNode::GetNodeType() const
     return kGateNode;
 }
 
-std::string GateNode::GetServiceName() const
-{
-    return "gateservice.rpc";
-}
-
 Node::CanConnectNodeTypeList GateNode::GetAllowedTargetNodeTypes()
 {
     return { kCentreNode, kSceneNode }; 

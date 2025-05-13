@@ -61,11 +61,6 @@ void SceneNode::Initialize()
     World::InitializeSystemBeforeConnect();
 }
 
-std::string SceneNode::GetServiceName() const
-{
-	return "sceneservice.rpc";
-}
-
 void SceneNode::StartRpcServer()
 {
     InetAddress redis_addr("127.0.0.1", 6379);
