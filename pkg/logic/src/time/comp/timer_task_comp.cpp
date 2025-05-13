@@ -62,13 +62,15 @@ void TimerTaskComp::Cancel() {
     assert(nullptr == timerId.GetTimer());
 }
 
-bool TimerTaskComp::IsActive() {
-    if (nullptr == timerId.GetTimer())
-    {
-        return false;
-    }
 
-    return Timestamp::invalid() != timerId.GetTimer()->expiration() && timerId.GetTimer()->expiration() < Timestamp::now();
+bool TimerTaskComp::IsActive() {
+	auto timer = timerId.GetTimer();
+	if (!timer) {
+		return false;
+	}
+
+	auto expiration = timer->expiration();
+	return expiration != Timestamp::invalid() && !(expiration < Timestamp::now());
 }
 
 uint64_t TimerTaskComp::GetEndTime() {

@@ -43,9 +43,9 @@ public:
 	void RunAfter()
 	{
 		m_Timer.RunAfter(0.001, std::bind(&GameTimerTest::AfterCallBack, this));
+		m_TimerActiveTest.RunAfter(1, std::bind(&GameTimerTest::AfterCallBackActiveTest, this));
 	}
 
-	
 
 	void RunEvery()
 	{
@@ -60,6 +60,7 @@ public:
 	void Cancel()
 	{
 		m_Timer.Cancel();
+		assert(!m_Timer.IsActive());
 	}
 
 private:
@@ -68,6 +69,12 @@ private:
 	{
 		std::cout << "AfterCallBack" << this << std::endl;
 	}
+
+	void AfterCallBackActiveTest()
+	{
+		assert(!m_Timer.IsActive());
+	}
+
 
 	void RunEveryCallBack()
 	{
@@ -80,6 +87,8 @@ private:
     }
 private:
 	TimerTaskComp m_Timer;
+	TimerTaskComp m_TimerActiveTest;
+
 };
 
 class RecursionTimerTest
