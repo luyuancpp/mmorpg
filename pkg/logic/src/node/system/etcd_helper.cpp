@@ -64,7 +64,7 @@ void EtcdHelper::GrantLease(uint32_t ttlSeconds) {
 	SendetcdserverpbLeaseLeaseGrant(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), leaseReq);
 }
 
-void EtcdHelper::CompareAndPutWithRetry(const std::string& key, const std::string& newValue, int64_t currentVersion) {
+void EtcdHelper::PutIfVersionMatchesOrAbsent(const std::string& key, const std::string& newValue, int64_t currentVersion) {
 	// 创建事务请求
 	etcdserverpb::TxnRequest txn;
 
@@ -81,4 +81,17 @@ void EtcdHelper::CompareAndPutWithRetry(const std::string& key, const std::strin
 	sucessOp.mutable_request_put()->set_value(newValue);  // 如果版本匹配，更新值
 
 	SendetcdserverpbKVTxn(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), txn);
+}
+
+void EtcdHelper::PutIfVersionMatchesOrAbsent(const std::string& key, const NodeInfo& nodeInfo, int64_t currentVersion)
+{
+	std::string jsonValue;
+	auto status = google::protobuf::util::MessageToJsonString(nodeInfo, &jsonValue);
+	if (!status.ok()) {
+		LOG_ERROR << " Failed to serialize NodeInfo to JSON. "
+			<< "Error: " << status.message().data();
+		return;
+	}
+
+	PutIfVersionMatchesOrAbsent(key, jsonValue, currentVersion);
 }

@@ -464,9 +464,15 @@ void Node::InitializeGrpcResponseHandlers() {
 		// Handle KV delete response if needed
 		};
 
-	AsyncetcdserverpbKVTxnHandler = [](const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>& call) {
+	AsyncetcdserverpbKVTxnHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>& call) {
 		if (call->status.ok()) {
 			LOG_DEBUG << "Transaction response: " << call->reply.DebugString();
+			if (call->reply.succeeded()) {
+				LOG_INFO << "Transaction succeeded.";
+			}
+			else {
+				AcquireNode();
+			}
 		}
 		else {
 			LOG_ERROR << "RPC failed: " << call->status.error_message();
@@ -770,15 +776,7 @@ void Node::AcquireNode()
 
 	GetNodeInfo().set_node_id(nodeId);
 
-	std::string jsonValue;
-	auto status = google::protobuf::util::MessageToJsonString(GetNodeInfo(), &jsonValue);
-	if (!status.ok()) {
-		LOG_ERROR << " Failed to serialize NodeInfo to JSON. "
-			<< "Error: " << status.message().data();
-		return;
-	}
-
-	EtcdHelper::CompareAndPutWithRetry(BuildServiceNodeKey(GetNodeInfo()), jsonValue, 0);
+	EtcdHelper::PutIfVersionMatchesOrAbsent(BuildServiceNodeKey(GetNodeInfo()), GetNodeInfo(), nodeVersion);
 }
 
 

@@ -82,6 +82,7 @@ protected:
     TimerTaskComp renewNodeLeaseTimer;
     TimerTaskComp etcdQueueTimer;
     RpcClient* zoneCentreNode{nullptr};
+	int64_t nodeVersion{ 0 };
 };
 
 muduo::AsyncLogging& logger(); 
