@@ -41,7 +41,6 @@ void CentreNode::Initialize()
 
 	Node::Initialize();
 
-
 	EventHandler::Register();
 
 	InitPlayerService();
