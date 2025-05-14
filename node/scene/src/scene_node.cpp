@@ -44,6 +44,9 @@ void SceneNode::Initialize()
 {
     GetNodeInfo().set_node_type(SceneNodeService);
 
+	allowedTargetNodeTypes = { CentreNodeService };
+
+
     gSceneNode = this;
     
     
@@ -91,10 +94,5 @@ void SceneNode::ReadyForGame()
 void SceneNode::OnConfigLoadSuccessful()
 {
     ConfigSystem::OnConfigLoadSuccessful();
-}
-
-Node::CanConnectNodeTypeList SceneNode::GetAllowedTargetNodeTypes()
-{
-	return { CentreNodeService };
 }
 

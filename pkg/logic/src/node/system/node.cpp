@@ -313,7 +313,7 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 
 	LOG_TRACE << "Successfully added node to serviceNodeList. NodeType: " << nodeType << ", NodeInfo: " << newNodeInfo.DebugString();
 
-	if (!GetAllowedTargetNodeTypes().contains(nodeType)) {
+	if (!allowedTargetNodeTypes.contains(nodeType)) {
 		return;
 	}
 

@@ -19,14 +19,11 @@ public:
     explicit
         SceneNode(muduo::net::EventLoop* loop);
 	~SceneNode() override = default;
-
     
     void Initialize()override;
 
     ::google::protobuf::Service* GetNodeRepleyService() override { return &nodeReplyService; }
 
-	CanConnectNodeTypeList GetAllowedTargetNodeTypes() override;
-    
     virtual void OnConfigLoadSuccessful()override;
     void StartRpcServer() override;
     virtual void PrepareForBeforeConnection() override;
