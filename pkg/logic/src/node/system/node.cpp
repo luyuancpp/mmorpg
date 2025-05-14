@@ -57,9 +57,7 @@ void Node::Initialize() {
 	InitializeGrpcClients();        // Initialize gRPC clients
 	InitializeGrpcMessageQueues();  // Initialize gRPC queues for async processing
 	SetUpEventHandlers();           // Set up event handlers
-
-	EtcdHelper::GrantLease(tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds());
-
+	AcquireNodeLease();
 	FetchesServiceNodes();
 	LOG_INFO << "Node initialization complete.";
 }
@@ -230,7 +228,7 @@ void Node::ConnectToNode(const NodeInfo& nodeInfo)
 	node.connect();
 
 	// 判断是否为当前区域的中心节点  
-	if (nodeInfo.node_type() == kCentreNode &&
+	if (nodeInfo.node_type() == CentreNodeService &&
 		nodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
 		zoneCentreNode = &node;
 	}
@@ -352,7 +350,7 @@ void Node::HandleServiceNodeStart(const std::string& key, const std::string& val
 	// Get the service node type from the key prefix
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
-	if (nodeType == kLoginNode) {
+	if (nodeType == LoginNodeServcie) {
 		LOG_INFO << "Login Node handling is not yet implemented.";
 	}
 	else if (eNodeType_IsValid(nodeType)) {
@@ -370,10 +368,10 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 	// Get the service node type from the key prefix
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
-	if (nodeType == kDeployNode) {
+	if (nodeType == DeployNodeService) {
 		LOG_INFO << "Deploy Service Key: " << key << ", Value: " << value;
 	}
-	else if (nodeType == kLoginNode) {
+	else if (nodeType == LoginNodeServcie) {
 		LOG_INFO << "Login Node handling is not yet implemented.";
 	}
 	else if (eNodeType_IsValid(nodeType)) {
@@ -511,17 +509,17 @@ static uint32_t gNodeToNodeRegistrationMessageIdMap[eNodeType_MAX] = {
 
 void Node::RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn) {
 	AttemptNodeRegistration(
-		kCentreNode,
+		CentreNodeService,
 		conn
 	);
 
 	AttemptNodeRegistration(
-		kSceneNode,
+		SceneNodeService,
 		conn
 	);
 
 	AttemptNodeRegistration(
-		kGateNode,
+		GateNodeService,
 		conn
 	);
 }
@@ -624,9 +622,9 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 			continue;
 		}
 		// Process each registry using server list type's NodeInfo list
-		if (processRegistry(conn,  kCentreNode) ||
-			processRegistry(conn,  kSceneNode) ||
-			processRegistry(conn, kGateNode)) {
+		if (processRegistry(conn,  CentreNodeService) ||
+			processRegistry(conn,  SceneNodeService) ||
+			processRegistry(conn, GateNodeService)) {
 
 			tls.networkRegistry.destroy(e);
 
@@ -651,7 +649,7 @@ void TriggerNodeConnectionEvent(entt::registry& registry, const RegisterNodeSess
 		connectToNodePbEvent.set_node_type(nodeInfo.node_type());
 		tls.dispatcher.trigger(connectToNodePbEvent);
 
-		if (nodeInfo.node_type() == kCentreNode){
+		if (nodeInfo.node_type() == CentreNodeService){
 			OnConnect2CentrePbEvent connect2CentreEvent;
 			connect2CentreEvent.set_entity(entt::to_integral(e));
 			tls.dispatcher.trigger(connect2CentreEvent);
@@ -748,5 +746,13 @@ void Node::AcquireNode()
 	EtcdHelper::PutIfVersionMatchesOrAbsent(BuildServiceNodeKey(GetNodeInfo()), GetNodeInfo(), nodeVersion);
 }
 
+void Node::AcquireNodeLease()
+{
+	EtcdHelper::GrantLease(tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds());
+}
 
+void Node::KeepNodeAlive()
+{
+
+}
 

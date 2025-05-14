@@ -39,12 +39,12 @@ GateNode::~GateNode()
 
 uint32_t GateNode::GetNodeType() const
 {
-    return kGateNode;
+    return GateNodeService;
 }
 
 Node::CanConnectNodeTypeList GateNode::GetAllowedTargetNodeTypes()
 {
-    return { kCentreNode, kSceneNode }; 
+    return { CentreNodeService, SceneNodeService }; 
 }
 
 void GateNode::Initialize()
@@ -78,7 +78,7 @@ void GateNode::Connect2Login()
 {
 	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
-    for (auto& loginNodeInfo : serviceNodeList[kLoginNode].node_list())
+    for (auto& loginNodeInfo : serviceNodeList[LoginNodeServcie].node_list())
     {
         entt::entity id{ loginNodeInfo.node_id() };
         auto loginNodeId = tls_gate.loginNodeRegistry.create(id);

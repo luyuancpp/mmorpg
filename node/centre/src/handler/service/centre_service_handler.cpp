@@ -556,7 +556,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 
 	switch (tlsCommonLogic.GetNextRouteNodeType())
 	{
-	case kGateNode:
+	case GateNodeService:
 	{
 		entt::entity gate_node_id{ tlsCommonLogic.GetNextRouteNodeId() };
 		if (!tls.gateNodeRegistry.valid(gate_node_id))
@@ -573,7 +573,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 		sceneNodeSession->RouteMessageToNode(GateServiceRouteNodeMessageMessageId, *mutable_request);
 		break;
 	}
-	case kSceneNode:
+	case SceneNodeService:
 	{
 		entt::entity game_node_id{ tlsCommonLogic.GetNextRouteNodeId() };
 		if (!tls.sceneNodeRegistry.valid(game_node_id))

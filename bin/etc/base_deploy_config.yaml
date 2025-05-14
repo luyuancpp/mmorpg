@@ -2,8 +2,8 @@
 Etcd:
   Hosts:
     - "127.0.0.1:2379"  # Etcd 服务的主机地址
-  KeepaliveInterval: 10  # 保活间隔（秒）
-  NodeTTLSeconds: 30 # 节点的TTL时间，单位为秒。比如这里设置为30秒
+  KeepaliveInterval: 5  # 保活间隔（秒）
+  NodeTTLSeconds: 15 # 节点的TTL时间，单位为秒。比如这里设置为30秒
 
 # 日志配置，控制日志输出的级别
 LogLevel: 1  # 1表示info级别日志
@@ -14,9 +14,6 @@ services:
     url: "http://localhost:8081/v1/health/service/service1"  # 服务1的健康检查URL
   - name: "service2"
     url: "http://localhost:8082/v1/catalog/service/service2"  # 服务2的健康检查URL
-
-# 独立配置 deployservice.rpc 前缀
-deployservice_prefix: "deployservice.rpc"
 
 # 其他服务的服务发现前缀
 service_discovery_prefixes:

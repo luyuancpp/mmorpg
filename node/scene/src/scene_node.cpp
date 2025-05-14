@@ -98,11 +98,11 @@ void SceneNode::OnConfigLoadSuccessful()
 
 uint32_t SceneNode::GetNodeType() const
 {
-    return kSceneNode;
+    return SceneNodeService;
 }
 
 Node::CanConnectNodeTypeList SceneNode::GetAllowedTargetNodeTypes()
 {
-	return { kCentreNode };
+	return { CentreNodeService };
 }
 

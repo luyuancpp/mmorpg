@@ -69,6 +69,8 @@ protected:
         uint32_t nodeType,
         const muduo::net::TcpConnectionPtr& conn);
     void AcquireNode();
+	void AcquireNodeLease();
+	void KeepNodeAlive();   
     void RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn);
     void OnConnectedToServer(const OnConnected2TcpServerEvent& es);
     void OnClientConnected(const OnBeConnectedEvent& es);
