@@ -27,7 +27,6 @@ public:
     NodeInfo& GetNodeInfo()const;
 	virtual std::string GetServiceName(uint32_t nodeType) const;
 	virtual ::google::protobuf::Service* GetNodeRepleyService() { return {}; }
-	virtual CanConnectNodeTypeList GetAllowedTargetNodeTypes() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
     [[nodiscard]] RpcClient& GetZoneCentreNode() { return *zoneCentreNode; }
     std::string FormatIpAndPort() ;
@@ -82,6 +81,7 @@ protected:
     TimerTaskComp etcdQueueTimer;
     RpcClient* zoneCentreNode{nullptr};
 	int64_t nodeVersion{ 0 };
+	CanConnectNodeTypeList allowedTargetNodeTypes;
 };
 
 muduo::AsyncLogging& logger(); 
