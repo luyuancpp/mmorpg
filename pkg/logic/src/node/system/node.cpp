@@ -58,7 +58,6 @@ void Node::Initialize() {
 	InitializeGrpcMessageQueues();  // Initialize gRPC queues for async processing
 	SetUpEventHandlers();           // Set up event handlers
 	AcquireNodeLease();
-	FetchesServiceNodes();
 	LOG_INFO << "Node initialization complete.";
 }
 
@@ -414,7 +413,6 @@ void Node::InitializeGrpcResponseHandlers() {
 		if (call->reply.prev_kv().key() == BuildServiceNodeKey(GetNodeInfo()))
 		{
 			StartWatchingServiceNodes();  // Start watching for new service nodes
-			FetchesServiceNodes();         // Fetch and register service nodes
 		}
 		};
 
@@ -467,15 +465,8 @@ void Node::InitializeGrpcResponseHandlers() {
 	AsyncetcdserverpbLeaseLeaseGrantHandler = [this](const std::unique_ptr<AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>& call) {
 		if (call->status.ok()) {
 			GetNodeInfo().set_lease_id(call->reply.id());
-
-			// Periodically renew the node lease
-			renewNodeLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
-				etcdserverpb::LeaseKeepAliveRequest request;
-				request.set_id(GetNodeInfo().lease_id());
-				LOG_TRACE << "Renewing lease with ID: " << GetNodeInfo().lease_id();
-				SendetcdserverpbLeaseLeaseKeepAlive(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
-				});
-
+			KeepNodeAlive();
+			FetchesServiceNodes();
 			LOG_INFO << "Lease granted: " << call->reply.DebugString();
 		}
 		else {
@@ -753,6 +744,11 @@ void Node::AcquireNodeLease()
 
 void Node::KeepNodeAlive()
 {
-
+	renewNodeLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
+		etcdserverpb::LeaseKeepAliveRequest request;
+		request.set_id(GetNodeInfo().lease_id());
+		LOG_TRACE << "Renewing lease with ID: " << GetNodeInfo().lease_id();
+		SendetcdserverpbLeaseLeaseKeepAlive(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
+		});
 }
 
