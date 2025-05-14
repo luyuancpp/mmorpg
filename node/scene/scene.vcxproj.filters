@@ -30,9 +30,6 @@
     <ClCompile Include="src\handler\event\server_event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\grpc\handler\deploy_grpc_reply_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\service\game_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
