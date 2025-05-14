@@ -90,7 +90,7 @@ void CentrePlayerSceneServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 
 	playerNodeInfo->set_scene_node_id(kInvalidNodeId);
 
-	PlayerSceneSystem::ProcessPlayerEnterGameServer(player, SceneUtil::GetGameNodeId(toScene));
+	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, SceneUtil::GetGameNodeId(toScene));
 
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tls.registry.get<Guid>(player);
 ///<<< END WRITING YOUR CODE

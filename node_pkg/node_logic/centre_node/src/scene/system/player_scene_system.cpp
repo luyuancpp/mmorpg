@@ -74,7 +74,7 @@ void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
     }
 
     // Call method to handle player entering the game server
-    ProcessPlayerEnterGameServer(playerEntity, SceneUtil::GetGameNodeId(currentSceneId));
+    ProcessPlayerEnterSceneNode(playerEntity, SceneUtil::GetGameNodeId(currentSceneId));
 
     // Prepare change scene information
     ChangeSceneInfoPBComponent changeSceneInfo;
@@ -122,7 +122,7 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
     LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << playerNodeInfo->scene_node_id();
 }
 
-void PlayerSceneSystem::ProcessPlayerEnterGameServer(entt::entity playerEntity, NodeId nodeId)
+void PlayerSceneSystem::ProcessPlayerEnterSceneNode(entt::entity playerEntity, NodeId nodeId)
 {
     const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
     if (!playerNodeInfo)
@@ -134,7 +134,7 @@ void PlayerSceneSystem::ProcessPlayerEnterGameServer(entt::entity playerEntity, 
     PlayerEnterGameNodeRequest request;
     request.set_player_id(tls.registry.get<Guid>(playerEntity));
     request.set_session_id(playerNodeInfo->gate_session_id());
-    request.set_centre_node_id(gCentreNodeInfo.GetNodeId());
+    request.set_centre_node_id(GetNodeInfo().node_id());
     CallGameNodeMethod(GameServicePlayerEnterGameNodeMessageId, request, nodeId);
 }
 

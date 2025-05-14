@@ -35,6 +35,8 @@ CentreNode::CentreNode(muduo::net::EventLoop* loop)
 
 void CentreNode::Initialize()
 {
+	GetNodeInfo().set_node_type(CentreNodeService);
+
 	gCentreNode = this;
 
 	Node::Initialize();
@@ -47,16 +49,6 @@ void CentreNode::Initialize()
 
 	void InitServiceHandler();
 	InitServiceHandler();
-}
-
-NodeInfo& CentreNode::GetNodeInfo()
-{
-	return gCentreNodeInfo.GetNodeInfo();
-}
-
-uint32_t CentreNode::GetNodeType() const
-{
-	return CentreNodeService;
 }
 
 void CentreNode::StartRpcServer()
