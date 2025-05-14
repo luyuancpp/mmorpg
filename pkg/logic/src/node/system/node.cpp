@@ -397,11 +397,8 @@ void Node::InitializeGrpcResponseHandlers() {
 		};
 
 	AsyncetcdserverpbKVPutHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>& call) {
-		LOG_DEBUG << "Put response: " << call->reply.DebugString();
-		if (call->reply.prev_kv().key() == BuildServiceNodeKey(GetNodeInfo()))
-		{
+			LOG_DEBUG << "Put response: " << call->reply.DebugString();
 			StartWatchingServiceNodes();  // Start watching for new service nodes
-		}
 		};
 
 	AsyncetcdserverpbKVDeleteRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>& call) {
@@ -701,12 +698,9 @@ void Node::AcquireNode()
 		nodeIdSet.emplace(node.node_id());
 	}
 
-	uint32_t nodeId = maxId;
+	++maxId;
 
-	if (maxId > 0)
-	{
-		nodeId = maxId + 1;
-	}
+	uint32_t nodeId = maxId;
 
 	for (uint32_t i = 0; i < maxId; ++i)
 	{
@@ -723,7 +717,9 @@ void Node::AcquireNode()
 
 	GetNodeInfo().set_node_id(nodeId);
 
-	EtcdHelper::PutIfVersionMatchesOrAbsent(BuildServiceNodeKey(GetNodeInfo()), GetNodeInfo(), nodeVersion);
+	auto nodeKey = BuildServiceNodeKey(GetNodeInfo());
+
+	EtcdHelper::PutIfAbsent(nodeKey, GetNodeInfo(), 0);
 }
 
 void Node::AcquireNodeLease()

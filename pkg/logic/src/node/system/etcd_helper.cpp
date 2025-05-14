@@ -64,27 +64,28 @@ void EtcdHelper::GrantLease(uint32_t ttlSeconds) {
 	SendetcdserverpbLeaseLeaseGrant(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), leaseReq);
 }
 
-void EtcdHelper::PutIfVersionMatchesOrAbsent(const std::string& key, const std::string& newValue, int64_t currentVersion, int64_t lease) {
-	// 创建事务请求
+void EtcdHelper::PutIfAbsent(const std::string& key, const std::string& newValue, int64_t currentVersion, int64_t lease) {
 	etcdserverpb::TxnRequest txn;
 
-	// 添加版本比较条件
-	etcdserverpb::Compare* compare = txn.add_compare();
+	// Compare：version == 0 → key 不存在
+	auto* compare = txn.add_compare();
 	compare->set_key(key);
-	compare->set_result(etcdserverpb::Compare::EQUAL);  // 比较结果：等于
-	compare->set_target(etcdserverpb::Compare::MOD);     // 比较键的版本
-	compare->set_version(currentVersion);    // 设置当前版本号
+	compare->set_target(etcdserverpb::Compare::VERSION);
+	compare->set_result(etcdserverpb::Compare::EQUAL);
+	compare->set_version(0);
 
-	// 添加成功时的操作（如果版本匹配）
-	auto& sucessOp = *txn.add_success();
-	sucessOp.mutable_request_put()->set_key(key);
-	sucessOp.mutable_request_put()->set_value(newValue);  // 如果版本匹配，更新值
-	sucessOp.mutable_request_put()->set_lease(lease);  // 设置租约
+	// Success：put(key, value)
+	auto* successOp = txn.add_success()->mutable_request_put();
+	successOp->set_key(key);
+	successOp->set_value(newValue);
+	if (lease > 0) {
+		successOp->set_lease(lease);
+	}
 
 	SendetcdserverpbKVTxn(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), txn);
 }
 
-void EtcdHelper::PutIfVersionMatchesOrAbsent(const std::string& key, const NodeInfo& nodeInfo, int64_t currentVersion)
+void EtcdHelper::PutIfAbsent(const std::string& key, const NodeInfo& nodeInfo, int64_t currentVersion)
 {
 	std::string jsonValue;
 	auto status = google::protobuf::util::MessageToJsonString(nodeInfo, &jsonValue);
@@ -94,7 +95,7 @@ void EtcdHelper::PutIfVersionMatchesOrAbsent(const std::string& key, const NodeI
 		return;
 	}
 
-	PutIfVersionMatchesOrAbsent(key, jsonValue, currentVersion, nodeInfo.lease_id());
+	PutIfAbsent(key, jsonValue, currentVersion, nodeInfo.lease_id());
 }
 
 void EtcdHelper::RevokeLeaseAndCleanup(int64_t leaseId)
