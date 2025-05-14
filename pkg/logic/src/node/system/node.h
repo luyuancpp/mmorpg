@@ -22,9 +22,9 @@ public:
     explicit Node(muduo::net::EventLoop* loop, const std::string& logFilePath);
     virtual ~Node();
 
-    virtual NodeId GetNodeId() final { return GetNodeInfo().node_id(); }
-    virtual uint32_t GetNodeType() const = 0;
-    virtual NodeInfo& GetNodeInfo() = 0;
+    NodeId GetNodeId() const { return GetNodeInfo().node_id(); }
+    uint32_t GetNodeType() const { return GetNodeInfo().node_type(); }
+    NodeInfo& GetNodeInfo()const;
 	virtual std::string GetServiceName(uint32_t nodeType) const;
 	virtual ::google::protobuf::Service* GetNodeRepleyService() { return {}; }
 	virtual CanConnectNodeTypeList GetAllowedTargetNodeTypes() { return {}; }

@@ -15,14 +15,14 @@
 
 
 void GameNodeSceneSystem::InitializeNodeScenes() {
-	if (!(gSceneNodeInfo.GetNodeInfo().scene_node_type() == eGameNodeType::kMainSceneNode ||
-		gSceneNodeInfo.GetNodeInfo().scene_node_type() == eGameNodeType::kMainSceneCrossNode)) {
+	if (!(GetNodeInfo().scene_node_type() == eGameNodeType::kMainSceneNode ||
+		GetNodeInfo().scene_node_type() == eGameNodeType::kMainSceneCrossNode)) {
 		return;
 	}
 
 	const auto& mainSceneConf = GetMainSceneAllTable();
 	for (auto& item : mainSceneConf.data()) {
-		CreateGameNodeSceneParam params{ .node = entt::entity{gSceneNodeInfo.GetNodeId()} };
+		CreateGameNodeSceneParam params{ .node = entt::entity{GetNodeInfo().node_id()}};
 		params.sceneInfo.set_scene_confid(item.id());
 		SceneUtil::CreateScene2GameNode(params);
 	}
@@ -35,7 +35,7 @@ void GameNodeSceneSystem::RegisterSceneToAllCentre(entt::entity scene) {
 	}
 
 	RegisterSceneRequest request;
-	request.set_scene_node_id(gSceneNodeInfo.GetNodeId());
+	request.set_scene_node_id(GetNodeInfo().node_id());
 	request.mutable_scenes_info()->Add()->CopyFrom(*sceneInfo);
 
 	BroadCastToCentre(CentreSceneServiceRegisterSceneMessageId, request);
@@ -44,7 +44,7 @@ void GameNodeSceneSystem::RegisterSceneToAllCentre(entt::entity scene) {
 void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 {
 	RegisterSceneRequest request;
-	request.set_scene_node_id(gSceneNodeInfo.GetNodeId());
+	request.set_scene_node_id(GetNodeInfo().node_id());
 
 	for (auto&& [entity, sceneInfo] : tls.sceneRegistry.view<SceneInfoPBComponent>().each()) {
 		request.mutable_scenes_info()->Add()->CopyFrom(sceneInfo);

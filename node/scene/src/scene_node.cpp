@@ -40,13 +40,10 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 {
 }
 
-NodeInfo& SceneNode::GetNodeInfo()
-{
-    return gSceneNodeInfo.GetNodeInfo();
-}
-
 void SceneNode::Initialize()
 {
+    GetNodeInfo().set_node_type(SceneNodeService);
+
     gSceneNode = this;
     
     
@@ -94,11 +91,6 @@ void SceneNode::ReadyForGame()
 void SceneNode::OnConfigLoadSuccessful()
 {
     ConfigSystem::OnConfigLoadSuccessful();
-}
-
-uint32_t SceneNode::GetNodeType() const
-{
-    return SceneNodeService;
 }
 
 Node::CanConnectNodeTypeList SceneNode::GetAllowedTargetNodeTypes()

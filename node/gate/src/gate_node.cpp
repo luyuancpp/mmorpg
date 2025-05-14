@@ -37,11 +37,6 @@ GateNode::~GateNode()
 {
 }
 
-uint32_t GateNode::GetNodeType() const
-{
-    return GateNodeService;
-}
-
 Node::CanConnectNodeTypeList GateNode::GetAllowedTargetNodeTypes()
 {
     return { CentreNodeService, SceneNodeService }; 
@@ -49,6 +44,8 @@ Node::CanConnectNodeTypeList GateNode::GetAllowedTargetNodeTypes()
 
 void GateNode::Initialize()
 {
+	GetNodeInfo().set_node_type(GateNodeService);
+
     gGateNode = this;
 
     Node::Initialize();

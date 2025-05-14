@@ -18,10 +18,6 @@ public:
 
 	void        Initialize() override;
 
-	NodeInfo& GetNodeInfo()override;
-
-	uint32_t GetNodeType() const override;
-
     void PrepareForBeforeConnection()override;
 
 	::google::protobuf::Service* GetNodeRepleyService() override { return &nodeReplyService; }

@@ -20,9 +20,6 @@ public:
         SceneNode(muduo::net::EventLoop* loop);
 	~SceneNode() override = default;
 
-    NodeInfo& GetNodeInfo()override;
-
-    virtual uint32_t GetNodeType() const override;
     
     void Initialize()override;
 

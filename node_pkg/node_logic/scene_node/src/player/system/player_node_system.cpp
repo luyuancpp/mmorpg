@@ -127,7 +127,7 @@ void PlayerNodeSystem::NotifyEnterGsSucceed(entt::entity player, NodeId centreNo
 {
 	EnterGameNodeSuccessRequest request;
 	request.set_player_id(tls.registry.get<Guid>(player));
-	request.set_scene_node_id(gSceneNodeInfo.GetNodeId());
+	request.set_scene_node_id(GetNodeInfo().node_id());
 	CallCentreNodeMethod(CentreServiceEnterGsSucceedMessageId, request, centreNodeId);
 
 	// TODO: Handle game node update corresponding to gate before sending client messages

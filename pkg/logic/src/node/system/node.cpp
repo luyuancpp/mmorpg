@@ -41,6 +41,11 @@ Node::~Node() {
 	ShutdownNode();  // Clean up node resources upon destruction
 }
 
+NodeInfo& Node::GetNodeInfo()const
+{
+	return tls.globalRegistry.get_or_emplace<NodeInfo>(GlobalEntity());
+}
+
 std::string Node::GetServiceName(uint32_t nodeType) const
 {
 	return eNodeType_Name(nodeType) + ".rpc";

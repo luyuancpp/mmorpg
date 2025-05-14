@@ -27,8 +27,6 @@ public:
     ~GateNode() override;
     inline ProtobufCodec& Codec() { return codec_; }
     inline GateServiceHandler& GetServiceHandler() { return nodeReplyService; }
-    inline  NodeInfo& GetNodeInfo() { return nodeInfo; }
-    uint32_t GetNodeType() const override;
 	::google::protobuf::Service* GetNodeRepleyService() override{ return &nodeReplyService ; }
 
     virtual CanConnectNodeTypeList GetAllowedTargetNodeTypes() override;
@@ -60,7 +58,6 @@ private:
     RpcClientSessionHandler rpcClientHandler;
     GateServiceHandler nodeReplyService;
     TimerTaskComp loginGrpcSelectTimer;
-    NodeInfo nodeInfo;
 };
 
 extern GateNode* gGateNode;
