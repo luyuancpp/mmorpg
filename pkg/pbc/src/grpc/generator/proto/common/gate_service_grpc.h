@@ -8,144 +8,153 @@
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
+
 using GrpcGateServiceStubPtr = std::unique_ptr<::GateService::Stub>;
 
-class AsyncGateServicePlayerEnterGameNodeGrpcClientCall
-{
+
+
+class AsyncGateServicePlayerEnterGameNodeGrpcClientCall {
 public:
     ClientContext context;
     Status status;
     ::RegisterGameNodeSessionResponse reply;
-	std::unique_ptr<ClientAsyncResponseReader<::RegisterGameNodeSessionResponse>> response_reader;
+    std::unique_ptr<ClientAsyncResponseReader<::RegisterGameNodeSessionResponse>> response_reader;
 };
 
 using AsyncGateServicePlayerEnterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServicePlayerEnterGameNodeGrpcClientCall>&)>;
+extern AsyncGateServicePlayerEnterGameNodeHandlerFunctionType AsyncGateServicePlayerEnterGameNodeHandler;
 
-extern AsyncGateServicePlayerEnterGameNodeHandlerFunctionType  AsyncGateServicePlayerEnterGameNodeHandler;
 
 
 class ::RegisterGameNodeSessionRequest;
-void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterGameNodeSessionRequest& request);
 
-void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
+void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const ::RegisterGameNodeSessionRequest& request);
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-class AsyncGateServiceSendMessageToPlayerGrpcClientCall
-{
+
+
+class AsyncGateServiceSendMessageToPlayerGrpcClientCall {
 public:
     ClientContext context;
     Status status;
     ::Empty reply;
-	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
+    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
 
 using AsyncGateServiceSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceSendMessageToPlayerGrpcClientCall>&)>;
+extern AsyncGateServiceSendMessageToPlayerHandlerFunctionType AsyncGateServiceSendMessageToPlayerHandler;
 
-extern AsyncGateServiceSendMessageToPlayerHandlerFunctionType  AsyncGateServiceSendMessageToPlayerHandler;
 
 
 class ::NodeRouteMessageRequest;
-void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const  ::NodeRouteMessageRequest& request);
 
-void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
+void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request);
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-class AsyncGateServiceKickSessionByCentreGrpcClientCall
-{
+
+
+class AsyncGateServiceKickSessionByCentreGrpcClientCall {
 public:
     ClientContext context;
     Status status;
     ::Empty reply;
-	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
+    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
 
 using AsyncGateServiceKickSessionByCentreHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceKickSessionByCentreGrpcClientCall>&)>;
+extern AsyncGateServiceKickSessionByCentreHandlerFunctionType AsyncGateServiceKickSessionByCentreHandler;
 
-extern AsyncGateServiceKickSessionByCentreHandlerFunctionType  AsyncGateServiceKickSessionByCentreHandler;
 
 
 class ::KickSessionRequest;
-void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const  ::KickSessionRequest& request);
 
-void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
+void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const ::KickSessionRequest& request);
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-class AsyncGateServiceRouteNodeMessageGrpcClientCall
-{
+
+
+class AsyncGateServiceRouteNodeMessageGrpcClientCall {
 public:
     ClientContext context;
     Status status;
     ::RouteMessageResponse reply;
-	std::unique_ptr<ClientAsyncResponseReader<::RouteMessageResponse>> response_reader;
+    std::unique_ptr<ClientAsyncResponseReader<::RouteMessageResponse>> response_reader;
 };
 
 using AsyncGateServiceRouteNodeMessageHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRouteNodeMessageGrpcClientCall>&)>;
+extern AsyncGateServiceRouteNodeMessageHandlerFunctionType AsyncGateServiceRouteNodeMessageHandler;
 
-extern AsyncGateServiceRouteNodeMessageHandlerFunctionType  AsyncGateServiceRouteNodeMessageHandler;
 
 
 class ::RouteMessageRequest;
-void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const  ::RouteMessageRequest& request);
 
-void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
+void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const ::RouteMessageRequest& request);
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-class AsyncGateServiceRoutePlayerMessageGrpcClientCall
-{
+
+
+class AsyncGateServiceRoutePlayerMessageGrpcClientCall {
 public:
     ClientContext context;
     Status status;
     ::RoutePlayerMessageResponse reply;
-	std::unique_ptr<ClientAsyncResponseReader<::RoutePlayerMessageResponse>> response_reader;
+    std::unique_ptr<ClientAsyncResponseReader<::RoutePlayerMessageResponse>> response_reader;
 };
 
 using AsyncGateServiceRoutePlayerMessageHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRoutePlayerMessageGrpcClientCall>&)>;
+extern AsyncGateServiceRoutePlayerMessageHandlerFunctionType AsyncGateServiceRoutePlayerMessageHandler;
 
-extern AsyncGateServiceRoutePlayerMessageHandlerFunctionType  AsyncGateServiceRoutePlayerMessageHandler;
 
 
 class ::RoutePlayerMessageRequest;
-void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const  ::RoutePlayerMessageRequest& request);
 
-void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
+void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const ::RoutePlayerMessageRequest& request);
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-class AsyncGateServiceBroadcastToPlayersGrpcClientCall
-{
+
+
+class AsyncGateServiceBroadcastToPlayersGrpcClientCall {
 public:
     ClientContext context;
     Status status;
     ::Empty reply;
-	std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
+    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
 
 using AsyncGateServiceBroadcastToPlayersHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceBroadcastToPlayersGrpcClientCall>&)>;
+extern AsyncGateServiceBroadcastToPlayersHandlerFunctionType AsyncGateServiceBroadcastToPlayersHandler;
 
-extern AsyncGateServiceBroadcastToPlayersHandlerFunctionType  AsyncGateServiceBroadcastToPlayersHandler;
 
 
 class ::BroadcastToPlayersRequest;
-void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const  ::BroadcastToPlayersRequest& request);
 
-void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
+void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const ::BroadcastToPlayersRequest& request);
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-class AsyncGateServiceRegisterNodeSessionGrpcClientCall
-{
+
+
+class AsyncGateServiceRegisterNodeSessionGrpcClientCall {
 public:
     ClientContext context;
     Status status;
     ::RegisterNodeSessionResponse reply;
-	std::unique_ptr<ClientAsyncResponseReader<::RegisterNodeSessionResponse>> response_reader;
+    std::unique_ptr<ClientAsyncResponseReader<::RegisterNodeSessionResponse>> response_reader;
 };
 
 using AsyncGateServiceRegisterNodeSessionHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRegisterNodeSessionGrpcClientCall>&)>;
+extern AsyncGateServiceRegisterNodeSessionHandlerFunctionType AsyncGateServiceRegisterNodeSessionHandler;
 
-extern AsyncGateServiceRegisterNodeSessionHandlerFunctionType  AsyncGateServiceRegisterNodeSessionHandler;
 
 
 class ::RegisterNodeSessionRequest;
-void SendGateServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const  ::RegisterNodeSessionRequest& request);
 
-void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
+void SendGateServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request);
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
