@@ -1,4 +1,4 @@
-﻿#include "muduo/base/Logging.h"
+#include "muduo/base/Logging.h"
 
 #include "etcd_grpc.h"
 #include "thread_local/storage.h"
@@ -272,7 +272,7 @@ struct etcdserverpbWatchWatchCompleteQueue{
 using AsyncetcdserverpbWatchWatchHandlerFunctionType = std::function<void(const ::etcdserverpb::WatchResponse&)>;
 AsyncetcdserverpbWatchWatchHandlerFunctionType  AsyncetcdserverpbWatchWatchHandler;
 
-void MaybeWriteNextetcdserverpbWatchWatch(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
+void TryWriteNextNextetcdserverpbWatchWatch(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
 	auto&  writeInProgress = registry.get<WatchRequestWriteInProgress>(nodeEntity);
 	auto&  pendingWritesBuffer = registry.get<WatchRequestBuffer>(nodeEntity).pendingWritesBuffer;
@@ -310,41 +310,48 @@ void AsyncCompleteGrpcetcdserverpbWatchWatch(entt::registry& registry, entt::ent
 	}
 
 	auto& client = registry.get<AsyncetcdserverpbWatchWatchGrpcClient>(nodeEntity);
-	auto&  writeInProgress = registry.get<WatchRequestWriteInProgress>(nodeEntity);
+	auto& writeInProgress = registry.get<WatchRequestWriteInProgress>(nodeEntity);
 
 	switch (static_cast<GrpcOperation>(reinterpret_cast<intptr_t>(got_tag))){
-		case GrpcOperation::WRITE:
-			{
-				auto&  pendingWritesBuffer = registry.get<WatchRequestBuffer>(nodeEntity).pendingWritesBuffer;
+	case GrpcOperation::WRITE:{
+				auto& pendingWritesBuffer = registry.get<WatchRequestBuffer>(nodeEntity).pendingWritesBuffer;
 				if (!pendingWritesBuffer.empty()) {
 					pendingWritesBuffer.pop_front();
 				}
 
 				writeInProgress.isInProgress = false;
-				MaybeWriteNextetcdserverpbWatchWatch(registry, nodeEntity, cq);
-				
-				if (pendingWritesBuffer.empty()){
-					auto& response = registry.get<::etcdserverpb::WatchResponse>(nodeEntity);
-					client.stream->Read(&response, (void*)GrpcOperation::READ);
-				}
+
+				// 写完之后尝试继续写（而不是触发 Read）
+				TryWriteNextNextetcdserverpbWatchWatch(registry, nodeEntity, cq);
+				break;
 			}
-			break;
 		case GrpcOperation::WRITES_DONE:
 			client.stream->Finish(&client.status,  (void*)(GrpcOperation::FINISH));
 			break;
 		case GrpcOperation::FINISH:
 			cq.Shutdown();
 			break;
-		case GrpcOperation::READ:
-			{
+		case GrpcOperation::READ:{
 				auto& response = registry.get<::etcdserverpb::WatchResponse>(nodeEntity);
-				client.stream->Read(&response, (void*)GrpcOperation::READ);
+
 				if(AsyncetcdserverpbWatchWatchHandler){
 					AsyncetcdserverpbWatchWatchHandler(response);
 				}
+
+				client.stream->Read(&response, (void*)GrpcOperation::READ);  // 🔁 持续读
+				TryWriteNextNextetcdserverpbWatchWatch(registry, nodeEntity, cq);  // 📝 写
 				break;
 			}
+		case GrpcOperation::INIT: {
+			// 初始化成功后，触发第一次 Read
+			auto& response = registry.get<::etcdserverpb::WatchResponse>(nodeEntity);
+			client.stream->Read(&response, (void*)GrpcOperation::READ);
+
+			// 初始化完成后，也可以选择尝试第一次 Write
+			TryWriteNextNextetcdserverpbWatchWatch(registry, nodeEntity, cq);
 			break;
+		}
+
 		default:
 			break;
 	}
@@ -358,7 +365,7 @@ void SendetcdserverpbWatchWatch(entt::registry& registry, entt::entity nodeEntit
 	auto& cq = registry.get<etcdserverpbWatchWatchCompleteQueue>(nodeEntity).cq;
 	auto&  pendingWritesBuffer = registry.get<WatchRequestBuffer>(nodeEntity).pendingWritesBuffer;
 	pendingWritesBuffer.push_back(request);
-	MaybeWriteNextetcdserverpbWatchWatch(registry, nodeEntity, cq);
+	TryWriteNextNextetcdserverpbWatchWatch(registry, nodeEntity, cq);
 
 }
 
@@ -474,7 +481,7 @@ struct etcdserverpbLeaseLeaseKeepAliveCompleteQueue{
 using AsyncetcdserverpbLeaseLeaseKeepAliveHandlerFunctionType = std::function<void(const ::etcdserverpb::LeaseKeepAliveResponse&)>;
 AsyncetcdserverpbLeaseLeaseKeepAliveHandlerFunctionType  AsyncetcdserverpbLeaseLeaseKeepAliveHandler;
 
-void MaybeWriteNextetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
+void TryWriteNextNextetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
 	auto&  writeInProgress = registry.get<LeaseKeepAliveRequestWriteInProgress>(nodeEntity);
 	auto&  pendingWritesBuffer = registry.get<LeaseKeepAliveRequestBuffer>(nodeEntity).pendingWritesBuffer;
@@ -512,7 +519,7 @@ void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, 
 	}
 
 	auto& client = registry.get<AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
-	auto&  writeInProgress = registry.get<LeaseKeepAliveRequestWriteInProgress>(nodeEntity);
+	auto& writeInProgress = registry.get<LeaseKeepAliveRequestWriteInProgress>(nodeEntity);
 
 	switch (static_cast<GrpcOperation>(reinterpret_cast<intptr_t>(got_tag))){
 	case GrpcOperation::WRITE:{
@@ -524,7 +531,7 @@ void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, 
 				writeInProgress.isInProgress = false;
 
 				// 写完之后尝试继续写（而不是触发 Read）
-				MaybeWriteNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
+				TryWriteNextNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
 				break;
 			}
 		case GrpcOperation::WRITES_DONE:
@@ -536,12 +543,12 @@ void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, 
 		case GrpcOperation::READ:{
 				auto& response = registry.get<::etcdserverpb::LeaseKeepAliveResponse>(nodeEntity);
 
-				if (AsyncetcdserverpbLeaseLeaseKeepAliveHandler) {
+				if(AsyncetcdserverpbLeaseLeaseKeepAliveHandler){
 					AsyncetcdserverpbLeaseLeaseKeepAliveHandler(response);
 				}
 
 				client.stream->Read(&response, (void*)GrpcOperation::READ);  // 🔁 持续读
-				MaybeWriteNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);  // 📝 写
+				TryWriteNextNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);  // 📝 写
 				break;
 			}
 		case GrpcOperation::INIT: {
@@ -550,7 +557,7 @@ void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, 
 			client.stream->Read(&response, (void*)GrpcOperation::READ);
 
 			// 初始化完成后，也可以选择尝试第一次 Write
-			MaybeWriteNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
+			TryWriteNextNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
 			break;
 		}
 
@@ -567,7 +574,7 @@ void SendetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, entt::entity 
 	auto& cq = registry.get<etcdserverpbLeaseLeaseKeepAliveCompleteQueue>(nodeEntity).cq;
 	auto&  pendingWritesBuffer = registry.get<LeaseKeepAliveRequestBuffer>(nodeEntity).pendingWritesBuffer;
 	pendingWritesBuffer.push_back(request);
-	MaybeWriteNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
+	TryWriteNextNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
 
 }
 

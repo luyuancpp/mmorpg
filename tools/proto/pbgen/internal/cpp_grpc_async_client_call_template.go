@@ -76,7 +76,7 @@ struct {{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue{
 using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
 Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;
 
-void MaybeWriteNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
+void TryWriteNextNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq)
 {
 	auto&  writeInProgress = registry.get<{{.RequestName}}WriteInProgress>(nodeEntity);
 	auto&  pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
@@ -114,41 +114,48 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
 	}
 
 	auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
-	auto&  writeInProgress = registry.get<{{.RequestName}}WriteInProgress>(nodeEntity);
+	auto& writeInProgress = registry.get<{{.RequestName}}WriteInProgress>(nodeEntity);
 
 	switch (static_cast<GrpcOperation>(reinterpret_cast<intptr_t>(got_tag))){
-		case GrpcOperation::WRITE:
-			{
-				auto&  pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
+	case GrpcOperation::WRITE:{
+				auto& pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
 				if (!pendingWritesBuffer.empty()) {
 					pendingWritesBuffer.pop_front();
 				}
 
 				writeInProgress.isInProgress = false;
-				MaybeWriteNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
-				
-				if (pendingWritesBuffer.empty()){
-					auto& response = registry.get<{{.CppResponse}}>(nodeEntity);
-					client.stream->Read(&response, (void*)GrpcOperation::READ);
-				}
+
+				// 写完之后尝试继续写（而不是触发 Read）
+				TryWriteNextNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
+				break;
 			}
-			break;
 		case GrpcOperation::WRITES_DONE:
 			client.stream->Finish(&client.status,  (void*)(GrpcOperation::FINISH));
 			break;
 		case GrpcOperation::FINISH:
 			cq.Shutdown();
 			break;
-		case GrpcOperation::READ:
-			{
+		case GrpcOperation::READ:{
 				auto& response = registry.get<{{.CppResponse}}>(nodeEntity);
-				client.stream->Read(&response, (void*)GrpcOperation::READ);
+
 				if(Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler){
 					Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(response);
 				}
+
+				client.stream->Read(&response, (void*)GrpcOperation::READ);  // 🔁 持续读
+				TryWriteNextNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);  // 📝 写
 				break;
 			}
+		case GrpcOperation::INIT: {
+			// 初始化成功后，触发第一次 Read
+			auto& response = registry.get<{{.CppResponse}}>(nodeEntity);
+			client.stream->Read(&response, (void*)GrpcOperation::READ);
+
+			// 初始化完成后，也可以选择尝试第一次 Write
+			TryWriteNextNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
 			break;
+		}
+
 		default:
 			break;
 	}
@@ -194,7 +201,7 @@ void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry,
 	auto& cq = registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq;
 	auto&  pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
 	pendingWritesBuffer.push_back(request);
-	MaybeWriteNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
+	TryWriteNextNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
 {{else}}
     Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
     call->response_reader =
