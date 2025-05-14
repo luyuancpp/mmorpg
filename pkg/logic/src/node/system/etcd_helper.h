@@ -13,4 +13,5 @@ namespace EtcdHelper {
 	void GrantLease(uint32_t ttlSeconds);
 	void PutIfVersionMatchesOrAbsent(const std::string& key, const std::string& newValue, int64_t currentVersion, int64_t lease);
 	void PutIfVersionMatchesOrAbsent(const std::string& key, const NodeInfo& nodeInfo, int64_t currentVersion);
+	void RevokeLeaseAndCleanup(int64_t leaseId);
 }

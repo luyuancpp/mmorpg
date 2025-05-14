@@ -145,7 +145,6 @@ void Node::InitializeGrpcClients() {
 
 // Initializes the gRPC queues for async message handling
 void Node::InitializeGrpcMessageQueues() {
-	InitDeployServiceCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
 	InitetcdserverpbKVCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
 	InitetcdserverpbWatchCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
 	InitetcdserverpbLeaseCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
@@ -234,10 +233,7 @@ void Node::ConnectToNode(const NodeInfo& nodeInfo)
 }
 
 void Node::ReleaseNodeId() {
-	ReleaseIDRequest request;
-	request.set_id(GetNodeId());  // 获取节点 ID
-	request.set_node_type(GetNodeType());  // 获取节点类型
-	SendDeployServiceReleaseID(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);  // 释放节点 ID
+	EtcdHelper::RevokeLeaseAndCleanup(GetNodeInfo().lease_id());
 }
 
 void Node::SetUpEventHandlers()
@@ -349,10 +345,7 @@ void Node::HandleServiceNodeStart(const std::string& key, const std::string& val
 	// Get the service node type from the key prefix
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
-	if (nodeType == LoginNodeService) {
-		LOG_INFO << "Login Node handling is not yet implemented.";
-	}
-	else if (eNodeType_IsValid(nodeType)) {
+	if (eNodeType_IsValid(nodeType)) {
 		// Add the service node to the appropriate registry
 		AddServiceNode(value, nodeType);
 	}
@@ -401,7 +394,6 @@ void Node::InitializeGrpcResponseHandlers() {
 			for (const auto& kv : call->reply.kvs()) {
 				HandleServiceNodeStart(kv.key(), kv.value());
 			}
-			AcquireNode();
 		}
 		else {
 			LOG_ERROR << "RPC failed: " << call->status.error_message();
@@ -467,6 +459,7 @@ void Node::InitializeGrpcResponseHandlers() {
 			GetNodeInfo().set_lease_id(call->reply.id());
 			KeepNodeAlive();
 			FetchesServiceNodes();
+			AcquireNode();
 			LOG_INFO << "Lease granted: " << call->reply.DebugString();
 		}
 		else {
@@ -697,12 +690,6 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 
 void Node::AcquireNode()
 {
-	if (GetNodeInfo().node_id() > 0)
-	{
-		LOG_DEBUG << "Node ID already acquired: " << GetNodeInfo().node_id();
-		return;
-	}
-
 	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 	auto& nodeListPb = serviceNodeList[GetNodeType()];
 
@@ -717,7 +704,12 @@ void Node::AcquireNode()
 		nodeIdSet.emplace(node.node_id());
 	}
 
-	uint32_t nodeId = maxId + 1;
+	uint32_t nodeId = maxId;
+
+	if (maxId > 0)
+	{
+		nodeId = maxId + 1;
+	}
 
 	for (uint32_t i = 0; i < maxId; ++i)
 	{
