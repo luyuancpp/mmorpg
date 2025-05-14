@@ -47,12 +47,12 @@ void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity n
 
     AsyncGateServicePlayerEnterGameNodeGrpcClientCall* call = new AsyncGateServicePlayerEnterGameNodeGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncPlayerEnterGameNode(&call->context, request,
-		&registry.get<GateServicePlayerEnterGameNodeCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncPlayerEnterGameNode(&call->context, request,
+	&registry.get<GateServicePlayerEnterGameNodeCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -99,12 +99,12 @@ void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity n
 
     AsyncGateServiceSendMessageToPlayerGrpcClientCall* call = new AsyncGateServiceSendMessageToPlayerGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncSendMessageToPlayer(&call->context, request,
-		&registry.get<GateServiceSendMessageToPlayerCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncSendMessageToPlayer(&call->context, request,
+	&registry.get<GateServiceSendMessageToPlayerCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -151,12 +151,12 @@ void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity n
 
     AsyncGateServiceKickSessionByCentreGrpcClientCall* call = new AsyncGateServiceKickSessionByCentreGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncKickSessionByCentre(&call->context, request,
-		&registry.get<GateServiceKickSessionByCentreCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncKickSessionByCentre(&call->context, request,
+	&registry.get<GateServiceKickSessionByCentreCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -203,12 +203,12 @@ void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity node
 
     AsyncGateServiceRouteNodeMessageGrpcClientCall* call = new AsyncGateServiceRouteNodeMessageGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRouteNodeMessage(&call->context, request,
-		&registry.get<GateServiceRouteNodeMessageCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRouteNodeMessage(&call->context, request,
+	&registry.get<GateServiceRouteNodeMessageCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -255,12 +255,12 @@ void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity no
 
     AsyncGateServiceRoutePlayerMessageGrpcClientCall* call = new AsyncGateServiceRoutePlayerMessageGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRoutePlayerMessage(&call->context, request,
-		&registry.get<GateServiceRoutePlayerMessageCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRoutePlayerMessage(&call->context, request,
+	&registry.get<GateServiceRoutePlayerMessageCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -307,12 +307,12 @@ void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity no
 
     AsyncGateServiceBroadcastToPlayersGrpcClientCall* call = new AsyncGateServiceBroadcastToPlayersGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncBroadcastToPlayers(&call->context, request,
-		&registry.get<GateServiceBroadcastToPlayersCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncBroadcastToPlayers(&call->context, request,
+	&registry.get<GateServiceBroadcastToPlayersCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -359,12 +359,12 @@ void SendGateServiceRegisterNodeSession(entt::registry& registry, entt::entity n
 
     AsyncGateServiceRegisterNodeSessionGrpcClientCall* call = new AsyncGateServiceRegisterNodeSessionGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRegisterNodeSession(&call->context, request,
-		&registry.get<GateServiceRegisterNodeSessionCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRegisterNodeSession(&call->context, request,
+	&registry.get<GateServiceRegisterNodeSessionCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
@@ -386,43 +386,43 @@ void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEn
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<GateServicePlayerEnterGameNodeCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcGateServicePlayerEnterGameNode(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServiceSendMessageToPlayerCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcGateServiceSendMessageToPlayer(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServiceKickSessionByCentreCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcGateServiceKickSessionByCentre(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServiceRouteNodeMessageCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcGateServiceRouteNodeMessage(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServiceRoutePlayerMessageCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcGateServiceRoutePlayerMessage(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServiceBroadcastToPlayersCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcGateServiceBroadcastToPlayers(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<GateServiceRegisterNodeSessionCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcGateServiceRegisterNodeSession(registry, e, completeQueueComp.cq);
 		}
 	}

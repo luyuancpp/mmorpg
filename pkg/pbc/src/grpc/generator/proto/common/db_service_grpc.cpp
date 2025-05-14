@@ -47,12 +47,12 @@ void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeE
 
     AsyncAccountDBServiceLoad2RedisGrpcClientCall* call = new AsyncAccountDBServiceLoad2RedisGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcAccountDBServiceStubPtr>(nodeEntity)->PrepareAsyncLoad2Redis(&call->context, request,
-		&registry.get<AccountDBServiceLoad2RedisCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcAccountDBServiceStubPtr>(nodeEntity)->PrepareAsyncLoad2Redis(&call->context, request,
+	&registry.get<AccountDBServiceLoad2RedisCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -99,12 +99,12 @@ void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeE
 
     AsyncAccountDBServiceSave2RedisGrpcClientCall* call = new AsyncAccountDBServiceSave2RedisGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcAccountDBServiceStubPtr>(nodeEntity)->PrepareAsyncSave2Redis(&call->context, request,
-		&registry.get<AccountDBServiceSave2RedisCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcAccountDBServiceStubPtr>(nodeEntity)->PrepareAsyncSave2Redis(&call->context, request,
+	&registry.get<AccountDBServiceSave2RedisCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -151,12 +151,12 @@ void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEn
 
     AsyncPlayerDBServiceLoad2RedisGrpcClientCall* call = new AsyncPlayerDBServiceLoad2RedisGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcPlayerDBServiceStubPtr>(nodeEntity)->PrepareAsyncLoad2Redis(&call->context, request,
-		&registry.get<PlayerDBServiceLoad2RedisCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcPlayerDBServiceStubPtr>(nodeEntity)->PrepareAsyncLoad2Redis(&call->context, request,
+	&registry.get<PlayerDBServiceLoad2RedisCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -203,12 +203,12 @@ void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEn
 
     AsyncPlayerDBServiceSave2RedisGrpcClientCall* call = new AsyncPlayerDBServiceSave2RedisGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcPlayerDBServiceStubPtr>(nodeEntity)->PrepareAsyncSave2Redis(&call->context, request,
-		&registry.get<PlayerDBServiceSave2RedisCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcPlayerDBServiceStubPtr>(nodeEntity)->PrepareAsyncSave2Redis(&call->context, request,
+	&registry.get<PlayerDBServiceSave2RedisCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
@@ -226,13 +226,13 @@ void InitPlayerDBServiceCompletedQueue(entt::registry& registry, entt::entity no
 void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<AccountDBServiceLoad2RedisCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcAccountDBServiceLoad2Redis(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<AccountDBServiceSave2RedisCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcAccountDBServiceSave2Redis(registry, e, completeQueueComp.cq);
 		}
 	}
@@ -240,13 +240,13 @@ void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry) {
 void HandlePlayerDBServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<PlayerDBServiceLoad2RedisCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcPlayerDBServiceLoad2Redis(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<PlayerDBServiceSave2RedisCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcPlayerDBServiceSave2Redis(registry, e, completeQueueComp.cq);
 		}
 	}
