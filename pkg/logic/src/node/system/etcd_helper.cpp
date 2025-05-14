@@ -96,3 +96,11 @@ void EtcdHelper::PutIfVersionMatchesOrAbsent(const std::string& key, const NodeI
 
 	PutIfVersionMatchesOrAbsent(key, jsonValue, currentVersion, nodeInfo.lease_id());
 }
+
+void EtcdHelper::RevokeLeaseAndCleanup(int64_t leaseId)
+{
+	etcdserverpb::LeaseRevokeRequest request;
+	request.set_id(leaseId);
+
+	SendetcdserverpbLeaseLeaseRevoke(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
+}
