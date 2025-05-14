@@ -240,9 +240,6 @@ void Node::SetUpEventHandlers()
 {
 	InitMessageInfo();
 
-	void InitGrpcDeployServiceResponseHandler();
-	InitGrpcDeployServiceResponseHandler();
-
 	InitializeGrpcResponseHandlers();
 
 	void InitRepliedHandler();
