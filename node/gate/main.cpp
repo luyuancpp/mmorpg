@@ -7,8 +7,8 @@ int main(int argc, char* argv[])
 	absl::InitializeLog();
 
     EventLoop loop;
-    GateNode server(&loop);
-    server.Initialize();
+    GateNode node(&loop);
+    node.Initialize();
     loop.loop();
     google::protobuf::ShutdownProtobufLibrary();
 

@@ -4,13 +4,13 @@ option go_package = "pb/game";
 
 enum eNodeType
 {
-    kDeployNode   = 0;  // 部署节点
-    kDatabaseNode = 1;  // 网关服务器
-    kCentreNode   = 2;  // 场景切换中心服务器
-    kSceneNode    = 3;  // 场景服务器
-    kGateNode     = 4;  // 网关节点
-    kLoginNode    = 5;  // 登录服务器节点
-    kRedisNode    = 6;   // Redis 节点
+    DeployNodeService   = 0,  // 部署节点服务
+    DatabaseNodeService = 1,  // 数据库节点服务
+    CentreNodeService   = 2,  // 场景切换中心服务器服务
+    SceneNodeService    = 3,  // 场景服务器服务
+    GateNodeService     = 4,  // 网关节点服务
+    LoginNodeService    = 5,  // 登录服务器节点服务
+    RedisNodeService    = 6   // Redis 节点服务
 };
 
 

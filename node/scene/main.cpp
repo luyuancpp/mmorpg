@@ -11,8 +11,8 @@ int main(int argc, char* argv[])
     absl::InitializeLog();
     
     EventLoop loop;
-    SceneNode server(&loop);
-    server.Initialize();
+    SceneNode node(&loop);
+    node.Initialize();
     loop.loop();
     google::protobuf::ShutdownProtobufLibrary();
     return 0;

@@ -56,7 +56,7 @@ NodeInfo& CentreNode::GetNodeInfo()
 
 uint32_t CentreNode::GetNodeType() const
 {
-	return kCentreNode;
+	return CentreNodeService;
 }
 
 void CentreNode::StartRpcServer()

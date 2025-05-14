@@ -55,13 +55,13 @@ namespace protobuf {
 }  // namespace google
 
 enum eNodeType : int {
-  kDeployNode = 0,
-  kDatabaseNode = 1,
-  kCentreNode = 2,
-  kSceneNode = 3,
-  kGateNode = 4,
-  kLoginNode = 5,
-  kRedisNode = 6,
+  DeployNodeService = 0,
+  DatabaseNodeService = 1,
+  CentreNodeService = 2,
+  SceneNodeService = 3,
+  GateNodeService = 4,
+  LoginNodeServcie = 5,
+  RedisNodeService = 6,
   eNodeType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   eNodeType_INT_MAX_SENTINEL_DO_NOT_USE_ =

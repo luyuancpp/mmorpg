@@ -4,38 +4,38 @@
 
 eNodeType NodeSystem::GetServiceTypeFromPrefix(const std::string& prefix) {
 	if (prefix.find("deploy") != std::string::npos) {
-		return eNodeType::kDeployNode;
+		return eNodeType::DeployNodeService;
 	}
 	else if (prefix.find("scene") != std::string::npos) {
-		return  eNodeType::kSceneNode;
+		return  eNodeType::SceneNodeService;
 	}
 	else if (prefix.find("gate") != std::string::npos) {
-		return eNodeType::kGateNode;
+		return eNodeType::GateNodeService;
 	}
 	else if (prefix.find("centre") != std::string::npos) {
-		return eNodeType::kCentreNode;
+		return eNodeType::CentreNodeService;
 	}
 	else if (prefix.find("login") != std::string::npos) {
-		return eNodeType::kLoginNode;
+		return eNodeType::LoginNodeServcie;
 	}
 	else if (prefix.find("database") != std::string::npos) {
-		return eNodeType::kDatabaseNode;
+		return eNodeType::DatabaseNodeService;
 	}
 	else {
 		LOG_ERROR << "Unknown service type for prefix: " << prefix;
 	}
 
-	return eNodeType::kCentreNode;
+	return eNodeType::CentreNodeService;
 }
 
 
 entt::registry& NodeSystem::GetRegistryForNodeType(uint32_t nodeType) {
 	switch (nodeType) {
-	case kCentreNode:
+	case CentreNodeService:
 		return tls.centreNodeRegistry;
-	case kSceneNode:
+	case SceneNodeService:
 		return tls.sceneNodeRegistry;
-	case kGateNode:
+	case GateNodeService:
 		return tls.gateNodeRegistry;
 	default:
 		LOG_ERROR << "Unknown NodeType: " << static_cast<uint32_t>(nodeType);
