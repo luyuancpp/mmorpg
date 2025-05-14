@@ -60,7 +60,7 @@ enum eNodeType : int {
   CentreNodeService = 2,
   SceneNodeService = 3,
   GateNodeService = 4,
-  LoginNodeServcie = 5,
+  LoginNodeService = 5,
   RedisNodeService = 6,
   eNodeType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),

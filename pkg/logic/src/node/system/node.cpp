@@ -349,7 +349,7 @@ void Node::HandleServiceNodeStart(const std::string& key, const std::string& val
 	// Get the service node type from the key prefix
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
-	if (nodeType == LoginNodeServcie) {
+	if (nodeType == LoginNodeService) {
 		LOG_INFO << "Login Node handling is not yet implemented.";
 	}
 	else if (eNodeType_IsValid(nodeType)) {
@@ -370,7 +370,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 	if (nodeType == DeployNodeService) {
 		LOG_INFO << "Deploy Service Key: " << key << ", Value: " << value;
 	}
-	else if (nodeType == LoginNodeServcie) {
+	else if (nodeType == LoginNodeService) {
 		LOG_INFO << "Login Node handling is not yet implemented.";
 	}
 	else if (eNodeType_IsValid(nodeType)) {

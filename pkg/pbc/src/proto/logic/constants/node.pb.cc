@@ -32,19 +32,21 @@ static constexpr ::_pbi::MigrationSchema* schemas = nullptr;
 static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_proto_2flogic_2fconstants_2fnode_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n proto/logic/constants/node.proto*x\n\teN"
-    "odeType\022\016\n\nDeployNode\020\000\022\020\n\014DatabaseNode\020"
-    "\001\022\016\n\nCentreNode\020\002\022\r\n\tSceneNode\020\003\022\014\n\010Gate"
-    "Node\020\004\022\r\n\tLoginNode\020\005\022\r\n\tRedisNode\020\006*d\n\r"
-    "eGameNodeType\022\022\n\016kMainSceneNode\020\000\022\r\n\tkRo"
-    "omNode\020\001\022\027\n\023kMainSceneCrossNode\020\002\022\027\n\023kRo"
-    "omSceneCrossNode\020\003B\tZ\007pb/gameb\006proto3"
+    "\n proto/logic/constants/node.proto*\251\001\n\te"
+    "NodeType\022\025\n\021DeployNodeService\020\000\022\027\n\023Datab"
+    "aseNodeService\020\001\022\025\n\021CentreNodeService\020\002\022"
+    "\024\n\020SceneNodeService\020\003\022\023\n\017GateNodeService"
+    "\020\004\022\024\n\020LoginNodeService\020\005\022\024\n\020RedisNodeSer"
+    "vice\020\006*d\n\reGameNodeType\022\022\n\016kMainSceneNod"
+    "e\020\000\022\r\n\tkRoomNode\020\001\022\027\n\023kMainSceneCrossNod"
+    "e\020\002\022\027\n\023kRoomSceneCrossNode\020\003B\tZ\007pb/gameb"
+    "\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto = {
     false,
     false,
-    277,
+    327,
     descriptor_table_protodef_proto_2flogic_2fconstants_2fnode_2eproto,
     "proto/logic/constants/node.proto",
     &descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto_once,

@@ -16,7 +16,7 @@ eNodeType NodeSystem::GetServiceTypeFromPrefix(const std::string& prefix) {
 		return eNodeType::CentreNodeService;
 	}
 	else if (prefix.find("login") != std::string::npos) {
-		return eNodeType::LoginNodeServcie;
+		return eNodeType::LoginNodeService;
 	}
 	else if (prefix.find("database") != std::string::npos) {
 		return eNodeType::DatabaseNodeService;
