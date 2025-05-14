@@ -17,7 +17,7 @@ services:
 
 # 其他服务的服务发现前缀
 service_discovery_prefixes:
-  - "sceneservice.rpc"
-  - "gateservice.rpc"
-  - "centreservice.rpc"
-  - "loginservice.rpc"
+  - "SceneNodeService.rpc"
+  - "GateNodeService.rpc"
+  - "CentreNodeService.rpc"
+  - "LoginNodeService.rpc"
