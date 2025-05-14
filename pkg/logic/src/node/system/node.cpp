@@ -662,10 +662,11 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 
 			LOG_INFO << "Matched peer address in [" << tls.GetRegistryName(registry) << "] registry: " << peerNodeInfo.DebugString();
 
-			registry.emplace<TimerTaskComp>(e).RunAfter(0.5, [&] {
+			registry.get<TimerTaskComp>(e).RunAfter(0.5, [this, &client, nodeType]() {
 				RegisterNodeSessionRequest request;
-				request.mutable_self_node()->CopyFrom(GetNodeInfo());
-				request.mutable_endpoint()->CopyFrom(peerNodeInfo);
+				*request.mutable_self_node() = GetNodeInfo();
+				request.mutable_endpoint()->set_ip(client.local_addr().toIp());
+				request.mutable_endpoint()->set_port(client.local_addr().port());
 
 				client.CallRemoteMethod(gNodeToNodeRegistrationMessageIdMap[nodeType], request);
 				});
