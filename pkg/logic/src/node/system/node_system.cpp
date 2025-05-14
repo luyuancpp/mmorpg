@@ -1,31 +1,26 @@
-#include "node_system.h"
+﻿#include "node_system.h"
 #include <muduo/base/Logging.h>
 #include "thread_local/storage.h"
 
+// 静态映射表定义（可放在 .cpp 中）
+const std::unordered_map<eNodeType, std::string> nodeTypeNameMap = {
+	{ eNodeType::DeployNodeService,  eNodeType_Name(DeployNodeService) },
+	{ eNodeType::SceneNodeService,   eNodeType_Name(SceneNodeService) },
+	{ eNodeType::GateNodeService,    eNodeType_Name(GateNodeService) },
+	{ eNodeType::CentreNodeService,  eNodeType_Name(CentreNodeService) },
+	{ eNodeType::LoginNodeService,   eNodeType_Name(LoginNodeService) },
+	{ eNodeType::DatabaseNodeService,eNodeType_Name(DatabaseNodeService) }
+};
+
 eNodeType NodeSystem::GetServiceTypeFromPrefix(const std::string& prefix) {
-	if (prefix.find("deploy") != std::string::npos) {
-		return eNodeType::DeployNodeService;
-	}
-	else if (prefix.find("scene") != std::string::npos) {
-		return  eNodeType::SceneNodeService;
-	}
-	else if (prefix.find("gate") != std::string::npos) {
-		return eNodeType::GateNodeService;
-	}
-	else if (prefix.find("centre") != std::string::npos) {
-		return eNodeType::CentreNodeService;
-	}
-	else if (prefix.find("login") != std::string::npos) {
-		return eNodeType::LoginNodeService;
-	}
-	else if (prefix.find("database") != std::string::npos) {
-		return eNodeType::DatabaseNodeService;
-	}
-	else {
-		LOG_ERROR << "Unknown service type for prefix: " << prefix;
+	for (const auto& [type, name] : nodeTypeNameMap) {
+		if (prefix.find(name) != std::string::npos) {
+			return type;
+		}
 	}
 
-	return eNodeType::CentreNodeService;
+	LOG_ERROR << "Unknown service type for prefix: " << prefix;
+	return eNodeType::CentreNodeService; // 默认返回，可以根据需求改成 Invalid 或抛异常
 }
 
 
