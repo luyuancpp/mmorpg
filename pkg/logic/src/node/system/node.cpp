@@ -96,6 +96,7 @@ void Node::ShutdownNode() {
 	etcdQueueTimer.Cancel();
 	LOG_INFO << "Timers canceled and resources released.";
 
+	tls.Clear();
 	// Close all gRPC connections
 }
 
@@ -106,8 +107,7 @@ void Node::SetupLoggingSystem() {
 	muduoLog.start();  // Start logging
 }
 
-void Node::RegisterEventHandlers()
-{
+void Node::RegisterEventHandlers(){
 	tls.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&Node::OnConnectedToServer>(*this);
 	tls.dispatcher.sink<OnBeConnectedEvent>().connect<&Node::OnClientConnected>(*this);
 }
@@ -357,13 +357,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 	// Get the service node type from the key prefix
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
-	if (nodeType == DeployNodeService) {
-		LOG_INFO << "Deploy Service Key: " << key << ", Value: " << value;
-	}
-	else if (nodeType == LoginNodeService) {
-		LOG_INFO << "Login Node handling is not yet implemented.";
-	}
-	else if (eNodeType_IsValid(nodeType)) {
+	if (eNodeType_IsValid(nodeType)) {
 		NodeInfo nodeInfo;
 
 		// Parse the JSON string into NodeInfo protobuf message
@@ -380,7 +374,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		LOG_INFO << "Service node stopped: " << nodeInfo.DebugString();
 	}
 	else {
-		LOG_ERROR << "Unknown service type for key: " << key;
+		LOG_TRACE << "Unknown service type for key: " << key;
 	}
 }
 
