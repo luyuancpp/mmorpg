@@ -47,12 +47,12 @@ void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, co
 
     AsyncLoginServiceLoginGrpcClientCall* call = new AsyncLoginServiceLoginGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncLogin(&call->context, request,
-		&registry.get<LoginServiceLoginCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncLogin(&call->context, request,
+	&registry.get<LoginServiceLoginCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -99,12 +99,12 @@ void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEnt
 
     AsyncLoginServiceCreatePlayerGrpcClientCall* call = new AsyncLoginServiceCreatePlayerGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncCreatePlayer(&call->context, request,
-		&registry.get<LoginServiceCreatePlayerCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncCreatePlayer(&call->context, request,
+	&registry.get<LoginServiceCreatePlayerCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -151,12 +151,12 @@ void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity
 
     AsyncLoginServiceEnterGameGrpcClientCall* call = new AsyncLoginServiceEnterGameGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncEnterGame(&call->context, request,
-		&registry.get<LoginServiceEnterGameCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncEnterGame(&call->context, request,
+	&registry.get<LoginServiceEnterGameCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -203,12 +203,12 @@ void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity
 
     AsyncLoginServiceLeaveGameGrpcClientCall* call = new AsyncLoginServiceLeaveGameGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncLeaveGame(&call->context, request,
-		&registry.get<LoginServiceLeaveGameCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncLeaveGame(&call->context, request,
+	&registry.get<LoginServiceLeaveGameCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -255,12 +255,12 @@ void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntit
 
     AsyncLoginServiceDisconnectGrpcClientCall* call = new AsyncLoginServiceDisconnectGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncDisconnect(&call->context, request,
-		&registry.get<LoginServiceDisconnectCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncDisconnect(&call->context, request,
+	&registry.get<LoginServiceDisconnectCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
@@ -278,31 +278,31 @@ void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeE
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<LoginServiceLoginCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcLoginServiceLogin(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<LoginServiceCreatePlayerCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcLoginServiceCreatePlayer(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<LoginServiceEnterGameCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcLoginServiceEnterGame(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<LoginServiceLeaveGameCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcLoginServiceLeaveGame(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<LoginServiceDisconnectCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcLoginServiceDisconnect(registry, e, completeQueueComp.cq);
 		}
 	}

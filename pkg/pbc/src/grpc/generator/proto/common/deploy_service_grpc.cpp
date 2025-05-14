@@ -47,12 +47,12 @@ void SendDeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEnt
 
     AsyncDeployServiceGetNodeInfoGrpcClientCall* call = new AsyncDeployServiceGetNodeInfoGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncGetNodeInfo(&call->context, request,
-		&registry.get<DeployServiceGetNodeInfoCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncGetNodeInfo(&call->context, request,
+	&registry.get<DeployServiceGetNodeInfoCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -99,12 +99,12 @@ void SendDeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, c
 
     AsyncDeployServiceGetIDGrpcClientCall* call = new AsyncDeployServiceGetIDGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncGetID(&call->context, request,
-		&registry.get<DeployServiceGetIDCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncGetID(&call->context, request,
+	&registry.get<DeployServiceGetIDCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -151,12 +151,12 @@ void SendDeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntit
 
     AsyncDeployServiceReleaseIDGrpcClientCall* call = new AsyncDeployServiceReleaseIDGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncReleaseID(&call->context, request,
-		&registry.get<DeployServiceReleaseIDCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncReleaseID(&call->context, request,
+	&registry.get<DeployServiceReleaseIDCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 
@@ -203,12 +203,12 @@ void SendDeployServiceRenewLease(entt::registry& registry, entt::entity nodeEnti
 
     AsyncDeployServiceRenewLeaseGrpcClientCall* call = new AsyncDeployServiceRenewLeaseGrpcClientCall;
     call->response_reader =
-        registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncRenewLease(&call->context, request,
-		&registry.get<DeployServiceRenewLeaseCompleteQueue>(nodeEntity).cq);
+	registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncRenewLease(&call->context, request,
+	&registry.get<DeployServiceRenewLeaseCompleteQueue>(nodeEntity).cq);
 
-    	call->response_reader->StartCall();
+	call->response_reader->StartCall();
 
-    	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
 void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
@@ -224,25 +224,25 @@ void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity node
 void HandleDeployServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<DeployServiceGetNodeInfoCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcDeployServiceGetNodeInfo(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<DeployServiceGetIDCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcDeployServiceGetID(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<DeployServiceReleaseIDCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcDeployServiceReleaseID(registry, e, completeQueueComp.cq);
 		}
 	}
 	{
 		auto&& view = registry.view<DeployServiceRenewLeaseCompleteQueue>();
-		for(auto&& [e, completeQueueComp] : view.each()){
+		for (auto&& [e, completeQueueComp] : view.each()) 	{
 			AsyncCompleteGrpcDeployServiceRenewLease(registry, e, completeQueueComp.cq);
 		}
 	}
