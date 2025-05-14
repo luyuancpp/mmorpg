@@ -1,4 +1,4 @@
-#include "muduo/base/Logging.h"
+﻿#include "muduo/base/Logging.h"
 
 #include "etcd_grpc.h"
 #include "thread_local/storage.h"
@@ -515,38 +515,45 @@ void AsyncCompleteGrpcetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, 
 	auto&  writeInProgress = registry.get<LeaseKeepAliveRequestWriteInProgress>(nodeEntity);
 
 	switch (static_cast<GrpcOperation>(reinterpret_cast<intptr_t>(got_tag))){
-		case GrpcOperation::WRITE:
-			{
-				auto&  pendingWritesBuffer = registry.get<LeaseKeepAliveRequestBuffer>(nodeEntity).pendingWritesBuffer;
+	case GrpcOperation::WRITE:{
+				auto& pendingWritesBuffer = registry.get<LeaseKeepAliveRequestBuffer>(nodeEntity).pendingWritesBuffer;
 				if (!pendingWritesBuffer.empty()) {
 					pendingWritesBuffer.pop_front();
 				}
 
 				writeInProgress.isInProgress = false;
+
+				// 写完之后尝试继续写（而不是触发 Read）
 				MaybeWriteNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
-				
-				if (pendingWritesBuffer.empty()){
-					auto& response = registry.get<::etcdserverpb::LeaseKeepAliveResponse>(nodeEntity);
-					client.stream->Read(&response, (void*)GrpcOperation::READ);
-				}
+				break;
 			}
-			break;
 		case GrpcOperation::WRITES_DONE:
 			client.stream->Finish(&client.status,  (void*)(GrpcOperation::FINISH));
 			break;
 		case GrpcOperation::FINISH:
 			cq.Shutdown();
 			break;
-		case GrpcOperation::READ:
-			{
+		case GrpcOperation::READ:{
 				auto& response = registry.get<::etcdserverpb::LeaseKeepAliveResponse>(nodeEntity);
-				client.stream->Read(&response, (void*)GrpcOperation::READ);
-				if(AsyncetcdserverpbLeaseLeaseKeepAliveHandler){
+
+				if (AsyncetcdserverpbLeaseLeaseKeepAliveHandler) {
 					AsyncetcdserverpbLeaseLeaseKeepAliveHandler(response);
 				}
+
+				client.stream->Read(&response, (void*)GrpcOperation::READ);  // 🔁 持续读
+				MaybeWriteNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);  // 📝 写
 				break;
 			}
+		case GrpcOperation::INIT: {
+			// 初始化成功后，触发第一次 Read
+			auto& response = registry.get<::etcdserverpb::LeaseKeepAliveResponse>(nodeEntity);
+			client.stream->Read(&response, (void*)GrpcOperation::READ);
+
+			// 初始化完成后，也可以选择尝试第一次 Write
+			MaybeWriteNextetcdserverpbLeaseLeaseKeepAlive(registry, nodeEntity, cq);
 			break;
+		}
+
 		default:
 			break;
 	}
