@@ -53,7 +53,7 @@ std::string Node::GetServiceName(uint32_t nodeType) const
 }
 
 void Node::Initialize() {
-	LOG_INFO << "Initializing node...";
+	LOG_TRACE << "Initializing node...";
 	RegisterEventHandlers();
 	LoadConfigurationFiles();        // Load configuration files
 	SetupRpcServer();                // Set up the RPC server
@@ -64,7 +64,7 @@ void Node::Initialize() {
 	InitializeGrpcMessageQueues();  // Initialize gRPC queues for async processing
 	SetUpEventHandlers();           // Set up event handlers
 	AcquireNodeLease();
-	LOG_INFO << "Node initialization complete.";
+	LOG_TRACE << "Node initialization complete.";
 }
 
 // Sets up the RPC server for the node
@@ -80,13 +80,14 @@ void Node::SetupRpcServer() {
 
 // Starts the RPC server and begins service node watching
 void Node::StartRpcServer() {
+	StartWatchingServiceNodes();
 	tls.dispatcher.trigger<OnServerStart>();  // Trigger server start event
 	LOG_INFO << "RPC server started at " << GetNodeInfo().DebugString();
 }
 
 // Gracefully shuts down the node and releases resources
 void Node::ShutdownNode() {
-	LOG_INFO << "Shutting down node...";
+	LOG_TRACE << "Shutting down node...";
 	StopWatchingServiceNodes();  // Stop watching all service nodes
 	tls.Clear();                  // Clear thread-local storage
 	muduoLog.stop();              // Stop logging system
@@ -95,7 +96,7 @@ void Node::ShutdownNode() {
 	// Cancel all timers
 	renewNodeLeaseTimer.Cancel();
 	etcdQueueTimer.Cancel();
-	LOG_INFO << "Timers canceled and resources released.";
+	LOG_TRACE << "Timers canceled and resources released.";
 
 	tls.Clear();
 	// Close all gRPC connections
@@ -202,11 +203,11 @@ void Node::ConnectToNode(const NodeInfo& nodeInfo)
 	if (registry.valid(id)) {
 		auto* existingNodeInfo = registry.try_get<NodeInfo>(id);
 		if (existingNodeInfo && existingNodeInfo->node_id() == nodeInfo.node_id()) {
-			LOG_INFO << "Node with ID " << nodeInfo.node_id() << " already exists and matches. Skipping creation.";
+			LOG_TRACE << "Node with ID " << nodeInfo.node_id() << " already exists and matches. Skipping creation.";
 			return;  // 如果节点已经存在且匹配，则直接返回  
 		}
 		else {
-			LOG_ERROR << "Node with ID " << nodeInfo.node_id() << " exists but does not match the provided NodeInfo!";
+			LOG_TRACE << "Node with ID " << nodeInfo.node_id() << " exists but does not match the provided NodeInfo!";
 			return;  // 严重问题，节点存在但信息不匹配  
 		}
 	}
@@ -307,7 +308,7 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 
 	*nodeList.Add() = newNodeInfo;
 
-	LOG_TRACE << "Successfully added node to serviceNodeList. NodeType: " << nodeType << ", NodeInfo: " << newNodeInfo.DebugString();
+	LOG_INFO << "Successfully added node to serviceNodeList. NodeType: " << nodeType << ", NodeInfo: " << newNodeInfo.DebugString();
 
 	if (!allowedTargetNodeTypes.contains(nodeType)) {
 		return;
@@ -337,11 +338,24 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	LOG_INFO << "Connected to  node: " << newNodeInfo.DebugString();
 }
 
+inline bool IsNodeInfoType(int nodeType) {
+	static const std::unordered_set<int> validTypes = {
+	CentreNodeService,
+	SceneNodeService,
+	GateNodeService
+	};
+	return validTypes.count(nodeType) > 0;
+}
+
 // Handles the start of a service node
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
-	LOG_INFO << "Handling service node start for key: " << key << ", value: " << value;
+	LOG_DEBUG << "Handling service node start for key: " << key << ", value: " << value;
 	// Get the service node type from the key prefix
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
+
+	if (!IsNodeInfoType(nodeType)) {
+		return;
+	}
 
 	if (eNodeType_IsValid(nodeType)) {
 		// Add the service node to the appropriate registry
@@ -354,9 +368,13 @@ void Node::HandleServiceNodeStart(const std::string& key, const std::string& val
 
 // Handles the stop of a service node
 void Node::HandleServiceNodeStop(const std::string& key, const std::string& value) {
-	LOG_INFO << "Handling service node stop for key: " << key << ", value: " << value;
+	LOG_DEBUG << "Handling service node stop for key: " << key << ", value: " << value;
 	// Get the service node type from the key prefix
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
+
+	if (!IsNodeInfoType(nodeType)) {
+		return;
+	}
 
 	if (eNodeType_IsValid(nodeType)) {
 		NodeInfo nodeInfo;
@@ -554,7 +572,7 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 
 	response.mutable_peer_node()->CopyFrom(GetNodeInfo());
 
-	LOG_INFO << "Received node registration request:" << request.DebugString();
+	LOG_TRACE << "Received node registration request:" << request.DebugString();
 
 
 	// Helper lambda to process a registry
@@ -563,7 +581,7 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 		auto& nodeList = serviceNodeList[nodeType];
 		for (const auto& serverNodeInfo : nodeList.node_list()) {
 			if (serverNodeInfo.lease_id() != peerNodeInfo.lease_id()) {
-				LOG_TRACE << "Mismatch in node type or ID. Expected node: " << serverNodeInfo.DebugString()
+				LOG_DEBUG << "Mismatch in node type or ID. Expected node: " << serverNodeInfo.DebugString()
 					<< "; received node: " << peerNodeInfo.DebugString();
 				continue;
 			}
@@ -588,7 +606,7 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 		auto& conn = session.connection;
 		if (request.endpoint().ip() != conn->peerAddress().toIp() ||
 			request.endpoint().port() != conn->peerAddress().port()) {
-			LOG_TRACE << "Endpoint mismatch: expected IP = " << request.endpoint().ip()
+			LOG_DEBUG << "Endpoint mismatch: expected IP = " << request.endpoint().ip()
 				<< ", port = " << request.endpoint().port()
 				<< "; actual IP = " << conn->peerAddress().toIp()
 				<< ", port = " << conn->peerAddress().port();
@@ -634,7 +652,6 @@ void TriggerNodeConnectionEvent(entt::registry& registry, const RegisterNodeSess
 			OnConnect2CentrePbEvent connect2CentreEvent;
 			connect2CentreEvent.set_entity(entt::to_integral(e));
 			tls.dispatcher.trigger(connect2CentreEvent);
-			LOG_INFO << "Triggered OnConnect2Centre event for entity: " << entt::to_integral(e);
 			LOG_INFO << "CentreNode connected. Entity: " << entt::to_integral(e);
 		}
 
@@ -653,7 +670,7 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 	auto& peerNodeInfo = response.peer_node();
 
 	if (response.error_message().id() != kCommon_errorOK) {
-		LOG_DEBUG << "Failed to register node: " << response.DebugString();
+		LOG_TRACE << "Failed to register node: " << response.DebugString();
 
 		for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
 			if (client.peer_addr().toIp() !=  peerNodeInfo.endpoint().ip() || 
