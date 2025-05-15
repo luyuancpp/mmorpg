@@ -556,10 +556,10 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 
 	LOG_INFO << "Received node registration request:" << request.DebugString();
 
-	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
 	// Helper lambda to process a registry
 	auto processRegistry = [&](const TcpConnectionPtr& conn, uint32_t nodeType) {
+		auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 		auto& nodeList = serviceNodeList[nodeType];
 		for (const auto& serverNodeInfo : nodeList.node_list()) {
 			if (serverNodeInfo.lease_id() != peerNodeInfo.lease_id()) {
@@ -594,16 +594,24 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 				<< ", port = " << conn->peerAddress().port();
 			continue;
 		}
-		// Process each registry using server list type's NodeInfo list
-		if (processRegistry(conn,  CentreNodeService) ||
-			processRegistry(conn,  SceneNodeService) ||
-			processRegistry(conn, GateNodeService)) {
 
-			tls.networkRegistry.destroy(e);
+		for (uint32_t nodeType = eNodeType_MIN; nodeType < eNodeType_MAX; ++nodeType)
+		{
+			if (GetNodeType() == nodeType)
+			{
+				continue;
+			}
 
-			response.mutable_error_message()->set_id(kCommon_errorOK);
-			return ;
+			// Process each registry using server list type's NodeInfo list
+			if (processRegistry(conn, nodeType)) {
+
+				tls.networkRegistry.destroy(e);
+
+				response.mutable_error_message()->set_id(kCommon_errorOK);
+				return;
+			}
 		}
+
 	}
 
 	response.mutable_error_message()->set_id(kFailedToRegisterTheNode);
