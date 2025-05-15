@@ -92,40 +92,74 @@ inline bool eNodeType_Parse(absl::string_view name, eNodeType* value) {
   return ::google::protobuf::internal::ParseNamedEnum<eNodeType>(
       eNodeType_descriptor(), name, value);
 }
-enum eGameNodeType : int {
+enum eSceneNodeType : int {
   kMainSceneNode = 0,
   kRoomNode = 1,
   kMainSceneCrossNode = 2,
   kRoomSceneCrossNode = 3,
-  eGameNodeType_INT_MIN_SENTINEL_DO_NOT_USE_ =
+  eSceneNodeType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
-  eGameNodeType_INT_MAX_SENTINEL_DO_NOT_USE_ =
+  eSceneNodeType_INT_MAX_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::max(),
 };
 
-bool eGameNodeType_IsValid(int value);
-extern const uint32_t eGameNodeType_internal_data_[];
-constexpr eGameNodeType eGameNodeType_MIN = static_cast<eGameNodeType>(0);
-constexpr eGameNodeType eGameNodeType_MAX = static_cast<eGameNodeType>(3);
-constexpr int eGameNodeType_ARRAYSIZE = 3 + 1;
+bool eSceneNodeType_IsValid(int value);
+extern const uint32_t eSceneNodeType_internal_data_[];
+constexpr eSceneNodeType eSceneNodeType_MIN = static_cast<eSceneNodeType>(0);
+constexpr eSceneNodeType eSceneNodeType_MAX = static_cast<eSceneNodeType>(3);
+constexpr int eSceneNodeType_ARRAYSIZE = 3 + 1;
 const ::google::protobuf::EnumDescriptor*
-eGameNodeType_descriptor();
+eSceneNodeType_descriptor();
 template <typename T>
-const std::string& eGameNodeType_Name(T value) {
-  static_assert(std::is_same<T, eGameNodeType>::value ||
+const std::string& eSceneNodeType_Name(T value) {
+  static_assert(std::is_same<T, eSceneNodeType>::value ||
                     std::is_integral<T>::value,
-                "Incorrect type passed to eGameNodeType_Name().");
-  return eGameNodeType_Name(static_cast<eGameNodeType>(value));
+                "Incorrect type passed to eSceneNodeType_Name().");
+  return eSceneNodeType_Name(static_cast<eSceneNodeType>(value));
 }
 template <>
-inline const std::string& eGameNodeType_Name(eGameNodeType value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<eGameNodeType_descriptor,
+inline const std::string& eSceneNodeType_Name(eSceneNodeType value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<eSceneNodeType_descriptor,
                                                  0, 3>(
       static_cast<int>(value));
 }
-inline bool eGameNodeType_Parse(absl::string_view name, eGameNodeType* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<eGameNodeType>(
-      eGameNodeType_descriptor(), name, value);
+inline bool eSceneNodeType_Parse(absl::string_view name, eSceneNodeType* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<eSceneNodeType>(
+      eSceneNodeType_descriptor(), name, value);
+}
+enum eNodeProtocolType : int {
+  TCP = 0,
+  HTTP = 1,
+  GRPC = 2,
+  eNodeProtocolType_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      std::numeric_limits<::int32_t>::min(),
+  eNodeProtocolType_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      std::numeric_limits<::int32_t>::max(),
+};
+
+bool eNodeProtocolType_IsValid(int value);
+extern const uint32_t eNodeProtocolType_internal_data_[];
+constexpr eNodeProtocolType eNodeProtocolType_MIN = static_cast<eNodeProtocolType>(0);
+constexpr eNodeProtocolType eNodeProtocolType_MAX = static_cast<eNodeProtocolType>(2);
+constexpr int eNodeProtocolType_ARRAYSIZE = 2 + 1;
+const ::google::protobuf::EnumDescriptor*
+eNodeProtocolType_descriptor();
+template <typename T>
+const std::string& eNodeProtocolType_Name(T value) {
+  static_assert(std::is_same<T, eNodeProtocolType>::value ||
+                    std::is_integral<T>::value,
+                "Incorrect type passed to eNodeProtocolType_Name().");
+  return eNodeProtocolType_Name(static_cast<eNodeProtocolType>(value));
+}
+template <>
+inline const std::string& eNodeProtocolType_Name(eNodeProtocolType value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<eNodeProtocolType_descriptor,
+                                                 0, 2>(
+      static_cast<int>(value));
+}
+inline bool eNodeProtocolType_Parse(absl::string_view name, eNodeProtocolType* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<eNodeProtocolType>(
+      eNodeProtocolType_descriptor(), name, value);
 }
 
 // ===================================================================
@@ -161,10 +195,16 @@ inline const EnumDescriptor* GetEnumDescriptor<::eNodeType>() {
   return ::eNodeType_descriptor();
 }
 template <>
-struct is_proto_enum<::eGameNodeType> : std::true_type {};
+struct is_proto_enum<::eSceneNodeType> : std::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor<::eGameNodeType>() {
-  return ::eGameNodeType_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor<::eSceneNodeType>() {
+  return ::eSceneNodeType_descriptor();
+}
+template <>
+struct is_proto_enum<::eNodeProtocolType> : std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor<::eNodeProtocolType>() {
+  return ::eNodeProtocolType_descriptor();
 }
 
 }  // namespace protobuf

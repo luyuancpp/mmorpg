@@ -15,8 +15,8 @@
 
 
 void GameNodeSceneSystem::InitializeNodeScenes() {
-	if (!(GetNodeInfo().scene_node_type() == eGameNodeType::kMainSceneNode ||
-		GetNodeInfo().scene_node_type() == eGameNodeType::kMainSceneCrossNode)) {
+	if (!(GetNodeInfo().scene_node_type() == eSceneNodeType::kMainSceneNode ||
+		GetNodeInfo().scene_node_type() == eSceneNodeType::kMainSceneCrossNode)) {
 		return;
 	}
 

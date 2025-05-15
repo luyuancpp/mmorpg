@@ -22,8 +22,8 @@ void ClientPlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Ent
 		<< ", scene_info: " << request->scene_info().DebugString();
 
 	auto game_node_type = gSceneNode->GetNodeInfo().scene_node_type();
-	if (game_node_type == eGameNodeType::kRoomNode ||
-		game_node_type == eGameNodeType::kRoomSceneCrossNode)
+	if (game_node_type == eSceneNodeType::kRoomNode ||
+		game_node_type == eSceneNodeType::kRoomSceneCrossNode)
 	{
 		LOG_ERROR << "EnterSceneC2S request rejected due to server type: " << game_node_type;
 		response->mutable_error_message()->set_id(kEnterSceneServerType);
