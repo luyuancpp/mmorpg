@@ -761,7 +761,6 @@ void Node::KeepNodeAlive()
 	renewNodeLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
 		etcdserverpb::LeaseKeepAliveRequest request;
 		request.set_id(GetNodeInfo().lease_id());
-		LOG_TRACE << "Renewing lease with ID: " << GetNodeInfo().lease_id();
 		SendetcdserverpbLeaseLeaseKeepAlive(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 		});
 }
