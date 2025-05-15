@@ -1,33 +1,34 @@
-#pragma once
+﻿#pragma once
 
 #include <random>
+#include <concepts>
 
 class Random
 {
 public:
-	Random() : rand(std::random_device{}()) {}
-
-	template <typename RandType>
-	inline RandType Rand(RandType minNum, RandType maxNum)
+	Random()
 	{
-		std::uniform_int_distribution<RandType> dist(minNum, maxNum);
-		return dist(rand);
+		std::random_device rd;
+		std::seed_seq seed{ rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd() };
+		rng.seed(seed);
 	}
 
-	inline double RandDouble(double minNum, double maxNum)
+	// 限定整数类型
+	template <std::integral IntType>
+	IntType Rand(IntType min, IntType max)
 	{
-		std::uniform_real_distribution<double> dist(minNum, maxNum);
-		return dist(rand);
+		std::uniform_int_distribution<IntType> dist(min, max);
+		return dist(rng);
 	}
 
-	inline float RandFloat(float minNum, float maxNum)
+	// 限定浮点类型（float 或 double）
+	template <std::floating_point FloatType>
+	FloatType RandReal(FloatType min, FloatType max)
 	{
-		std::uniform_real_distribution<float> dist(minNum, maxNum);
-		return dist(rand);
+		std::uniform_real_distribution<FloatType> dist(min, max);
+		return dist(rng);
 	}
 
 private:
-	std::mt19937_64 rand;
+	std::mt19937_64 rng;
 };
-
-thread_local Random tls_rand;

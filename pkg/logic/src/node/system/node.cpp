@@ -28,6 +28,7 @@
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
 #include "pbc/common_error_tip.pb.h"
+#include "util/random.h"
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
 	: loop_(loop),
@@ -682,40 +683,48 @@ void Node::AcquireNode()
 	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 	auto& nodeListPb = serviceNodeList[GetNodeType()];
 
-	uint32_t maxId = 0;
-
+	uint32_t maxNodeId = 0;
 	UInt32Set nodeIdSet;
 
+	// 遍历现有节点并记录最大的 NodeId 和已占用的 NodeId
 	for (auto& node : *nodeListPb.mutable_node_list())
 	{
-		GetNodeInfo().set_node_id(node.node_id());
-		maxId = std::max(maxId, node.node_id());
+		maxNodeId = std::max(maxNodeId, node.node_id());
 		nodeIdSet.emplace(node.node_id());
 	}
 
-	++maxId;
+	// 增加随机偏移，降低并发冲突概率
+	constexpr uint32_t randomOffset = 5;
+	uint32_t startNodeId = maxNodeId + tlsCommonLogic.GetRandom().Rand<uint32_t>(0, randomOffset);
 
-	uint32_t nodeId = maxId;
+	// 计算遍历的范围
+	uint32_t searchRange = maxNodeId + randomOffset + 1;
 
-	for (uint32_t i = 0; i < maxId; ++i)
+	// 遍历从 0 到 maxNodeId + randomOffset 查找可用 node_id
+	uint32_t candidateNodeId = 0;
+
+	// 遍历 searchRange 范围内的所有 ID
+	for (uint32_t i = 0; i < searchRange; ++i)
 	{
-		if (nodeIdSet.count(i) > 0)
+		uint32_t tryId = i; // 直接用 i 来遍历
+
+		// 如果该 node_id 没有被占用
+		if (nodeIdSet.count(tryId) == 0)
 		{
-			continue;
-		}
-		else
-		{
-			nodeId = i;
+			candidateNodeId = tryId;
 			break;
 		}
 	}
 
-	GetNodeInfo().set_node_id(nodeId);
-
+	// 设置最终的 node_id
+	GetNodeInfo().set_node_id(candidateNodeId);
 	auto nodeKey = BuildServiceNodeKey(GetNodeInfo());
 
+	// 将新节点写入 etcd，如果存在则不写入
 	EtcdHelper::PutIfAbsent(nodeKey, GetNodeInfo());
 }
+
+
 
 void Node::AcquireNodeLease()
 {
