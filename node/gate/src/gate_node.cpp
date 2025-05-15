@@ -53,16 +53,18 @@ void GateNode::Initialize()
 
 void GateNode::StartRpcServer()
 {
+
+	rpcServer->GetTcpServer().setConnectionCallback(
+		std::bind(&GateNode::OnConnection, this, _1));
+	rpcServer->GetTcpServer().setMessageCallback(
+		std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
+
+	tls_gate.session_id_gen().set_node_id(GetNodeId());
+
+	Connect2Login();
+
 	Node::StartRpcServer(); 
 
-    rpcServer->GetTcpServer().setConnectionCallback(
-        std::bind(&GateNode::OnConnection, this, _1));
-    rpcServer->GetTcpServer().setMessageCallback(
-        std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
-    
-    tls_gate.session_id_gen().set_node_id(GetNodeId());
-    
-    Connect2Login();
 
     LOG_INFO << "gate node  start at" << GetNodeInfo().DebugString();
 }

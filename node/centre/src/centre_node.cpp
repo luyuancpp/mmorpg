@@ -52,6 +52,9 @@ void CentreNode::Initialize()
 
 void CentreNode::StartRpcServer()
 {
+	InetAddress redisAddr("127.0.0.1", 6379);
+	tls_centre.redis_system().Initialize(redisAddr);
+
 	rpcServer->registerService(&nodeReplyService);
 	for (auto& val : gNodeService | std::views::values)
 	{
@@ -60,7 +63,6 @@ void CentreNode::StartRpcServer()
 
 	Node::StartRpcServer();
 
-	InitSystemAfterConnect();
 	LOG_INFO << "centre start at " << GetNodeInfo().DebugString();
 }
 
@@ -69,9 +71,4 @@ void CentreNode::PrepareForBeforeConnection()
 	PlayerSessionSystem::Initialize();
 }
 
-void CentreNode::InitSystemAfterConnect() const
-{
-	InetAddress redisAddr("127.0.0.1", 6379);
-	tls_centre.redis_system().Initialize(redisAddr);
-}
 
