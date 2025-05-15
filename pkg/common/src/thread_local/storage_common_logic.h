@@ -3,6 +3,7 @@
 #include "config_loader/config.h"
 #include "proto/common/common_message.pb.h"
 #include "type_define/type_define.h"
+#include "util/random.h"
 
 class ThreadLocalStorageCommonLogic
 {
@@ -41,6 +42,12 @@ public:
     {
         GameConfig = gameConfig;
     }
+
+
+	[[nodiscard]] Random& GetRandom()
+	{
+		return random;
+	}
 private:
     RoutingNodeInfo route_data_;
     std::string route_msg_body_;
@@ -51,6 +58,7 @@ private:
     PlayerListMap playerList;
     BaseDeployConfig BaseDeployConfig;
     GameConfig GameConfig;
+	Random random;
 };
 
 extern thread_local ThreadLocalStorageCommonLogic tlsCommonLogic;
