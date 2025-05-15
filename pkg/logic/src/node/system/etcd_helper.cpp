@@ -72,20 +72,18 @@ void EtcdHelper::PutIfAbsent(const std::string& key, const std::string& newValue
 	compare->set_key(key);
 	compare->set_target(etcdserverpb::Compare::VERSION);
 	compare->set_result(etcdserverpb::Compare::EQUAL);
-	compare->set_version(0);
+	compare->set_version(currentVersion);
 
 	// Success：put(key, value)
 	auto* successOp = txn.add_success()->mutable_request_put();
 	successOp->set_key(key);
 	successOp->set_value(newValue);
-	if (lease > 0) {
-		successOp->set_lease(lease);
-	}
+	successOp->set_lease(lease);
 
 	SendetcdserverpbKVTxn(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), txn);
 }
 
-void EtcdHelper::PutIfAbsent(const std::string& key, const NodeInfo& nodeInfo, int64_t currentVersion)
+void EtcdHelper::PutIfAbsent(const std::string& key, const NodeInfo& nodeInfo)
 {
 	std::string jsonValue;
 	auto status = google::protobuf::util::MessageToJsonString(nodeInfo, &jsonValue);
@@ -95,7 +93,7 @@ void EtcdHelper::PutIfAbsent(const std::string& key, const NodeInfo& nodeInfo, i
 		return;
 	}
 
-	PutIfAbsent(key, jsonValue, currentVersion, nodeInfo.lease_id());
+	PutIfAbsent(key, jsonValue, 0, nodeInfo.lease_id());
 }
 
 void EtcdHelper::RevokeLeaseAndCleanup(int64_t leaseId)
