@@ -79,13 +79,8 @@ void Node::SetupRpcServer() {
 
 // Starts the RPC server and begins service node watching
 void Node::StartRpcServer() {
-	LOG_INFO << "Starting RPC server...";
 	tls.dispatcher.trigger<OnServerStart>();  // Trigger server start event
-
-	RegisterSelfInService();     // Register this node in service registry
-
 	LOG_INFO << "RPC server started at " << GetNodeInfo().DebugString();
-
 }
 
 // Gracefully shuts down the node and releases resources
@@ -719,7 +714,7 @@ void Node::AcquireNode()
 
 	auto nodeKey = BuildServiceNodeKey(GetNodeInfo());
 
-	EtcdHelper::PutIfAbsent(nodeKey, GetNodeInfo(), 0);
+	EtcdHelper::PutIfAbsent(nodeKey, GetNodeInfo());
 }
 
 void Node::AcquireNodeLease()
