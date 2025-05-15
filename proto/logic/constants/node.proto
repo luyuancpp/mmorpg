@@ -14,7 +14,7 @@ enum eNodeType
 };
 
 
-enum eGameNodeType
+enum eSceneNodeType
 {
 	kMainSceneNode = 0;//主世界场景
 	kRoomNode = 1;//副本场景
@@ -22,3 +22,9 @@ enum eGameNodeType
 	kRoomSceneCrossNode = 3;//跨服副本场景
 };
 
+// 定义节点协议类型的枚举
+enum eNodeProtocolType {
+  TCP = 0;
+  HTTP = 1;
+  GRPC = 2;
+}

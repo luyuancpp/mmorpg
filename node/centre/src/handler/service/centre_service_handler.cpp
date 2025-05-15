@@ -633,19 +633,19 @@ void CentreServiceHandler::InitSceneNode(::google::protobuf::RpcController* cont
 	// Search for a matching client connection and register the game node
     AddMainSceneNodeComponent(tls.sceneNodeRegistry, sceneNodeId);
 
-    if (request->scene_node_type() == eGameNodeType::kMainSceneCrossNode)
+    if (request->scene_node_type() == eSceneNodeType::kMainSceneCrossNode)
     {
     	tls.sceneNodeRegistry.remove<MainSceneNode>(sceneNodeId);
     	tls.sceneNodeRegistry.emplace<CrossMainSceneNode>(sceneNodeId);
     	LOG_INFO << "Scene node " << request->node_id() << " updated to CrossMainSceneNode.";
     }
-    else if (request->scene_node_type() == eGameNodeType::kRoomNode)
+    else if (request->scene_node_type() == eSceneNodeType::kRoomNode)
     {
     	tls.sceneNodeRegistry.remove<MainSceneNode>(sceneNodeId);
     	tls.sceneNodeRegistry.emplace<RoomSceneNode>(sceneNodeId);
     	LOG_INFO << "Scene node " << request->node_id() << " updated to RoomSceneNode.";
     }
-    else if (request->scene_node_type() == eGameNodeType::kRoomSceneCrossNode)
+    else if (request->scene_node_type() == eSceneNodeType::kRoomSceneCrossNode)
     {
     	tls.sceneNodeRegistry.remove<MainSceneNode>(sceneNodeId);
     	tls.sceneNodeRegistry.emplace<CrossRoomSceneNode>(sceneNodeId);

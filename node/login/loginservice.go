@@ -2,19 +2,14 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	"log"
-	"time"
-
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"login/client/deployservice"
 	"login/internal/config"
 	loginserviceServer "login/internal/server/loginservice"
 	"login/internal/svc"
@@ -36,52 +31,8 @@ func main() {
 	// 创建服务上下文
 	ctx := svc.NewServiceContext(c)
 
-	// 获取节点 ID 和租约 ID
-	deployService := deployservice.NewDeployService(*ctx.DeployClient)
-	id, err := deployService.GetID(context.Background(), &game.GetIDRequest{NodeType: NodeType})
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	// 设置当前节点的 ID 和租约 ID
-	ctx.SetNodeId(id.Id)
-	ctx.NodeLeaseID = id.LeaseId
-
-	// 启动一个 goroutine 每 10 秒更新一次租约
-	go renewLeasePeriodically(deployService, ctx)
-
-	// 程序退出时释放 ID
-	defer releaseNodeID(deployService, id.Id)
-
 	// 启动 gRPC 服务器
 	startGRPCServer(c, ctx)
-}
-
-// renewLeasePeriodically 每 10 秒更新一次租约
-func renewLeasePeriodically(deployService deployservice.DeployService, ctx *svc.ServiceContext) {
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			_, err := deployService.RenewLease(context.Background(), &game.RenewLeaseIDRequest{LeaseId: ctx.NodeLeaseID})
-			if err != nil {
-				log.Fatal(err)
-				return
-			}
-		}
-	}
-}
-
-// releaseNodeID 释放节点 ID
-func releaseNodeID(deployService deployservice.DeployService, nodeId uint64) {
-	_, err := deployService.ReleaseID(context.Background(), &game.ReleaseIDRequest{NodeType: NodeType, Id: nodeId})
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
 }
 
 // startGRPCServer 启动 gRPC 服务

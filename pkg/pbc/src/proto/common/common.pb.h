@@ -942,6 +942,7 @@ class NodeInfo final
     kLeaseIdFieldNumber = 5,
     kSceneNodeTypeFieldNumber = 4,
     kZoneIdFieldNumber = 7,
+    kProtocolTypeFieldNumber = 8,
   };
   // .EndpointPBComponent endpoint = 6;
   bool has_endpoint() const;
@@ -1018,12 +1019,22 @@ class NodeInfo final
   void _internal_set_zone_id(::uint32_t value);
 
   public:
+  // uint32 protocol_type = 8;
+  void clear_protocol_type() ;
+  ::uint32_t protocol_type() const;
+  void set_protocol_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_protocol_type() const;
+  void _internal_set_protocol_type(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:NodeInfo)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 7, 1,
+      3, 8, 1,
       0, 2>
       _table_;
 
@@ -1050,6 +1061,7 @@ class NodeInfo final
     ::uint64_t lease_id_;
     ::uint32_t scene_node_type_;
     ::uint32_t zone_id_;
+    ::uint32_t protocol_type_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1570,6 +1582,28 @@ inline ::uint32_t NodeInfo::_internal_zone_id() const {
 inline void NodeInfo::_internal_set_zone_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.zone_id_ = value;
+}
+
+// uint32 protocol_type = 8;
+inline void NodeInfo::clear_protocol_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.protocol_type_ = 0u;
+}
+inline ::uint32_t NodeInfo::protocol_type() const {
+  // @@protoc_insertion_point(field_get:NodeInfo.protocol_type)
+  return _internal_protocol_type();
+}
+inline void NodeInfo::set_protocol_type(::uint32_t value) {
+  _internal_set_protocol_type(value);
+  // @@protoc_insertion_point(field_set:NodeInfo.protocol_type)
+}
+inline ::uint32_t NodeInfo::_internal_protocol_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.protocol_type_;
+}
+inline void NodeInfo::_internal_set_protocol_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.protocol_type_ = value;
 }
 
 // -------------------------------------------------------------------

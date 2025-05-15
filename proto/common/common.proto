@@ -10,15 +10,15 @@ message EndpointPBComponent
   uint32 port = 2;
 }
 
-message NodeInfo
-{
+message NodeInfo {
   uint32 node_id = 1;
   uint32 node_type = 2;
   uint64 launch_time = 3;
   uint32 scene_node_type = 4;
-  uint64 lease_id = 5; //租约id
+  uint64 lease_id = 5; // 租约id
   EndpointPBComponent endpoint = 6;
   uint32 zone_id = 7;
+  uint32 protocol_type = 8; // 节点通信协议类型
 }
 
 message NodeInfoListPBComponent

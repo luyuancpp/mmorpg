@@ -24,7 +24,7 @@ PROTOBUF_PRAGMA_INIT_SEG
 namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
-static const ::_pb::EnumDescriptor* file_level_enum_descriptors_proto_2flogic_2fconstants_2fnode_2eproto[2];
+static const ::_pb::EnumDescriptor* file_level_enum_descriptors_proto_2flogic_2fconstants_2fnode_2eproto[3];
 static constexpr const ::_pb::ServiceDescriptor**
     file_level_service_descriptors_proto_2flogic_2fconstants_2fnode_2eproto = nullptr;
 const ::uint32_t TableStruct_proto_2flogic_2fconstants_2fnode_2eproto::offsets[1] = {};
@@ -37,16 +37,17 @@ const char descriptor_table_protodef_proto_2flogic_2fconstants_2fnode_2eproto[] 
     "aseNodeService\020\001\022\025\n\021CentreNodeService\020\002\022"
     "\024\n\020SceneNodeService\020\003\022\023\n\017GateNodeService"
     "\020\004\022\024\n\020LoginNodeService\020\005\022\024\n\020RedisNodeSer"
-    "vice\020\006*d\n\reGameNodeType\022\022\n\016kMainSceneNod"
-    "e\020\000\022\r\n\tkRoomNode\020\001\022\027\n\023kMainSceneCrossNod"
-    "e\020\002\022\027\n\023kRoomSceneCrossNode\020\003B\tZ\007pb/gameb"
-    "\006proto3"
+    "vice\020\006*e\n\016eSceneNodeType\022\022\n\016kMainSceneNo"
+    "de\020\000\022\r\n\tkRoomNode\020\001\022\027\n\023kMainSceneCrossNo"
+    "de\020\002\022\027\n\023kRoomSceneCrossNode\020\003*0\n\021eNodePr"
+    "otocolType\022\007\n\003TCP\020\000\022\010\n\004HTTP\020\001\022\010\n\004GRPC\020\002B"
+    "\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto = {
     false,
     false,
-    327,
+    378,
     descriptor_table_protodef_proto_2flogic_2fconstants_2fnode_2eproto,
     "proto/logic/constants/node.proto",
     &descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto_once,
@@ -68,14 +69,23 @@ PROTOBUF_CONSTINIT const uint32_t eNodeType_internal_data_[] = {
 bool eNodeType_IsValid(int value) {
   return 0 <= value && value <= 6;
 }
-const ::google::protobuf::EnumDescriptor* eGameNodeType_descriptor() {
+const ::google::protobuf::EnumDescriptor* eSceneNodeType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto);
   return file_level_enum_descriptors_proto_2flogic_2fconstants_2fnode_2eproto[1];
 }
-PROTOBUF_CONSTINIT const uint32_t eGameNodeType_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t eSceneNodeType_internal_data_[] = {
     262144u, 0u, };
-bool eGameNodeType_IsValid(int value) {
+bool eSceneNodeType_IsValid(int value) {
   return 0 <= value && value <= 3;
+}
+const ::google::protobuf::EnumDescriptor* eNodeProtocolType_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto);
+  return file_level_enum_descriptors_proto_2flogic_2fconstants_2fnode_2eproto[2];
+}
+PROTOBUF_CONSTINIT const uint32_t eNodeProtocolType_internal_data_[] = {
+    196608u, 0u, };
+bool eNodeProtocolType_IsValid(int value) {
+  return 0 <= value && value <= 2;
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

@@ -11,13 +11,11 @@ import (
 )
 
 var dbConfigFile = flag.String("db_rpc_client", "etc/db_client.yaml", "the config file")
-var deployConfigFile = flag.String("deploy_rpc_client", "etc/deploy_client.yaml", "the config file")
 
 type ServiceContext struct {
 	Config       config.Config
 	Redis        *redis.Client
 	DbClient     *zrpc.Client
-	DeployClient *zrpc.Client
 	CentreClient *centre.Client
 	SnowFlake    *snowflake.Node
 	NodeLeaseID  uint64
@@ -28,15 +26,10 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	conf.MustLoad(*dbConfigFile, &dbRpc)
 	dbClient := zrpc.MustNewClient(dbRpc)
 
-	var deployRpc zrpc.RpcClientConf
-	conf.MustLoad(*deployConfigFile, &deployRpc)
-	deployClient := zrpc.MustNewClient(deployRpc)
-
 	return &ServiceContext{
-		Config:       c,
-		Redis:        redis.NewClient(&redis.Options{Addr: config.RedisConfig.Addr}),
-		DbClient:     &dbClient,
-		DeployClient: &deployClient,
+		Config:   c,
+		Redis:    redis.NewClient(&redis.Options{Addr: config.RedisConfig.Addr}),
+		DbClient: &dbClient,
 		//CentreClient: centre.NewCentreClient(config.CentreClientConf.Ip, config.CentreClientConf.Port),
 	}
 }
