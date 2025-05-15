@@ -25,10 +25,6 @@ public:
 	void StartRpcServer() override;
 
 private:
-	
-	void InitSystemAfterConnect() const;
-
-private:
 	PbSyncRedisClientPtr redis_;
 	CentreServiceHandler nodeReplyService;
 };

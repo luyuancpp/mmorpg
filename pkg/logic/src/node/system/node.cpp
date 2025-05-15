@@ -80,9 +80,10 @@ void Node::SetupRpcServer() {
 
 // Starts the RPC server and begins service node watching
 void Node::StartRpcServer() {
+	FetchesServiceNodes();
 	StartWatchingServiceNodes();
 	tls.dispatcher.trigger<OnServerStart>();  // Trigger server start event
-	LOG_INFO << "RPC server started at " << GetNodeInfo().DebugString();
+	LOG_TRACE << "RPC server started at " << GetNodeInfo().DebugString();
 }
 
 // Gracefully shuts down the node and releases resources
@@ -465,7 +466,6 @@ void Node::InitializeGrpcResponseHandlers() {
 		if (call->status.ok()) {
 			GetNodeInfo().set_lease_id(call->reply.id());
 			KeepNodeAlive();
-			FetchesServiceNodes();
 			AcquireNode();
 			LOG_INFO << "Lease granted: " << call->reply.DebugString();
 		}
@@ -615,7 +615,7 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 
 		for (uint32_t nodeType = eNodeType_MIN; nodeType < eNodeType_MAX; ++nodeType)
 		{
-			if (GetNodeType() == nodeType)
+			if (GetNodeType() == nodeType || !IsNodeInfoType(nodeType))
 			{
 				continue;
 			}
