@@ -63,6 +63,8 @@ func startGRPCServer(c config.Config, ctx *svc.ServiceContext) {
 		return
 	}
 
+	ctx.SetNodeId(int64(loginEtcdNode.Info.NodeId))
+
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		// 注册 LoginService 服务
 		game.RegisterLoginServiceServer(grpcServer, loginserviceServer.NewLoginServiceServer(ctx))

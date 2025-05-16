@@ -42,8 +42,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	}
 }
 
-func (c *ServiceContext) SetNodeId(nodeId uint64) {
-	node, err := snowflake.NewNode(int64(nodeId))
+func (c *ServiceContext) SetNodeId(nodeId int64) {
+	node, err := snowflake.NewNode(nodeId)
 	if err != nil {
 		return
 	}
