@@ -42,9 +42,9 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 	// 使用命名空间客户端限定在前缀范围内
 	watch := namespace.NewWatcher(nw.client, nw.prefix)
 
-	go func() {
+	go func(prefix string) {
 		defer close(events)
-		rch := watch.Watch(ctx, "", clientv3.WithPrefix())
+		rch := watch.Watch(ctx, prefix, clientv3.WithPrefix())
 
 		for wresp := range rch {
 			for _, ev := range wresp.Events {
@@ -67,7 +67,7 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 				}
 			}
 		}
-	}()
+	}(nw.prefix)
 
 	return events
 }
