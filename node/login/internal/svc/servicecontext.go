@@ -9,20 +9,18 @@ import (
 	"github.com/zeromicro/go-zero/zrpc"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"login/internal/config"
-	"login/internal/logic/pkg/centre"
 	"login/pb/game"
 )
 
 var dbConfigFile = flag.String("db_rpc_client", "etc/db_client.yaml", "the config file")
 
 type ServiceContext struct {
-	Config       config.Config
-	Redis        *redis.Client
-	DbClient     *zrpc.Client
-	CentreClient *centre.Client
-	SnowFlake    *snowflake.Node
-	NodeInfo     game.NodeInfo
-	EtcdClient   *clientv3.Client
+	Config     config.Config
+	Redis      *redis.Client
+	DbClient   *zrpc.Client
+	SnowFlake  *snowflake.Node
+	NodeInfo   game.NodeInfo
+	EtcdClient *clientv3.Client
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -37,10 +35,9 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		logx.Error(err)
 	}
 	return &ServiceContext{
-		Config:   c,
-		Redis:    redis.NewClient(&redis.Options{Addr: config.RedisConfig.Addr}),
-		DbClient: &dbClient,
-		//CentreClient: centre.NewCentreClient(config.CentreClientConf.Ip, config.CentreClientConf.Port),
+		Config:     c,
+		Redis:      redis.NewClient(&redis.Options{Addr: config.RedisConfig.Addr}),
+		DbClient:   &dbClient,
 		EtcdClient: etcdClient,
 	}
 }

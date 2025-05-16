@@ -58,7 +58,7 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 				case clientv3.EventTypeDelete:
 					// key 中包含 ID，可以从中提取
 					//id := extractNodeID(key)
-					//info.LeaseId = (id)
+					//Info.LeaseId = (id)
 					events <- NodeEvent{Type: NodeRemoved, Info: &info}
 				}
 			}

@@ -720,10 +720,7 @@ void Node::AcquireNode()
 
 	// 增加随机偏移，降低并发冲突概率
 	constexpr uint32_t randomOffset = 5;
-	uint32_t startNodeId = maxNodeId + tlsCommonLogic.GetRandom().Rand<uint32_t>(0, randomOffset);
-
-	// 计算遍历的范围
-	uint32_t searchRange = maxNodeId + randomOffset + 1;
+	uint32_t searchRange = maxNodeId + tlsCommonLogic.GetRandom().Rand<uint32_t>(0, randomOffset);
 
 	// 遍历从 0 到 maxNodeId + randomOffset 查找可用 node_id
 	uint32_t candidateNodeId = 0;

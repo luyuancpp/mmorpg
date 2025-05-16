@@ -100,9 +100,9 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 
 // Notify central service about player entry
 func (l *EnterGameLogic) notifyCentreService(in *game.EnterGameC2LRequest) {
-	centreRequest := &game.CentrePlayerGameNodeEntryRequest{
-		ClientMsgBody: in.ClientMsgBody,
-		SessionInfo:   in.SessionInfo,
-	}
-	l.svcCtx.CentreClient.Send(centreRequest, game.CentreServiceLoginNodeEnterGameMessageId)
+	//todo centreRequest := &game.CentrePlayerGameNodeEntryRequest{
+	//	ClientMsgBody: in.ClientMsgBody,
+	//	SessionInfo:   in.SessionInfo,
+	//}
+	//l.svcCtx.CentreClient.Send(centreRequest, game.CentreServiceLoginNodeEnterGameMessageId)
 }
