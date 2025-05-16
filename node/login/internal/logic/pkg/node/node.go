@@ -2,8 +2,6 @@
 package node
 
 import (
-	"fmt"
-	"github.com/golang/protobuf/proto"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"golang.org/x/net/context"
 	"login/internal/config"
@@ -59,20 +57,7 @@ func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
 	}
 }
 
-func (n *Node) Register() error {
-	// 序列化节点信息
-	data, err := proto.Marshal(n.Info)
-	if err != nil {
-		return fmt.Errorf("failed to marshal node Info: %v", err)
-	}
-
-	// 注册节点
-	key := fmt.Sprintf("services/%d", n.Info.NodeId)
-	err = n.reg.RegisterNode(key, string(data))
-	if err != nil {
-		return fmt.Errorf("failed to register node: %v", err)
-	}
-
+func (n *Node) KeepAlive() error {
 	// 保持租约有效
 	n.reg.KeepAlive()
 

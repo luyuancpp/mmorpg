@@ -136,6 +136,7 @@ void Node::ConfigureEnvironment() {
 	GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());
 	GetNodeInfo().set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
 	GetNodeInfo().set_node_type(GetNodeType());
+	GetNodeInfo().set_protocol_type(TCP);
 	GetNodeInfo().set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
 
 	tls.globalNodeRegistry.emplace<ServiceNodeList>(GlobalGrpcNodeEntity());
