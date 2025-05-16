@@ -5,18 +5,19 @@ import (
 	"flag"
 	"fmt"
 	"github.com/zeromicro/go-zero/core/conf"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-
 	"login/internal/config"
+	"login/internal/logic/pkg/node"
 	loginserviceServer "login/internal/server/loginservice"
 	"login/internal/svc"
 	"login/pb/game"
 )
 
-var configFile = flag.String("loginService", "etc/login_service.yaml", "the config file")
+var configFile = flag.String("loginService", "etc/loginservice.yaml", "the config file")
 
 const NodeType = 2
 
@@ -37,6 +38,15 @@ func main() {
 
 // startGRPCServer 启动 gRPC 服务
 func startGRPCServer(c config.Config, ctx *svc.ServiceContext) {
+
+	loginEtcdNode := node.NewNode(uint32(game.ENodeType_LoginNodeService), "127.0.0.1", 2379, 10)
+
+	err := loginEtcdNode.Register()
+	if err != nil {
+		logx.Error(err)
+		return
+	}
+
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		// 注册 LoginService 服务
 		game.RegisterLoginServiceServer(grpcServer, loginserviceServer.NewLoginServiceServer(ctx))

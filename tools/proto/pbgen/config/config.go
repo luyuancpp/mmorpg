@@ -159,6 +159,7 @@ var (
 	LogicProtoDirIndex     = 3
 	ClientPlayerDirIndex   = 4
 	ServerPlayerDirIndex   = 5
+	ConstantsDirIndex      = 6
 	EtcdProtoDirIndex      = 7
 )
 
