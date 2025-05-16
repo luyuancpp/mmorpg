@@ -2,6 +2,7 @@
 package node
 
 import (
+	"fmt"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"golang.org/x/net/context"
 	"login/internal/config"
@@ -13,7 +14,17 @@ import (
 type Node struct {
 	Info   *game.NodeInfo
 	reg    *etcd.NodeRegistry
-	client *clientv3.Client
+	Client *clientv3.Client
+}
+
+// BuildRpcPrefix 生成不包含 node_id 的路径
+func BuildRpcPrefix(serviceName string, zoneId, nodeType uint32) string {
+	return fmt.Sprintf("%s.rpc/zone/%d/node_type/%d/", serviceName, zoneId, nodeType)
+}
+
+// BuildRpcPath 生成包含 node_id 的完整路径
+func BuildRpcPath(serviceName string, zoneId, nodeType, nodeId uint32) string {
+	return fmt.Sprintf("%s.rpc/zone/%d/node_type/%d/node_id/%d", serviceName, zoneId, nodeType, nodeId)
 }
 
 func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
@@ -53,7 +64,7 @@ func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
 	return &Node{
 		Info:   info,
 		reg:    reg,
-		client: client,
+		Client: client,
 	}
 }
 

@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"login/internal/config"
+	"login/internal/logic/pkg/centre"
 	"login/internal/logic/pkg/node"
 	loginserviceServer "login/internal/server/loginservice"
 	"login/internal/svc"
@@ -37,6 +38,7 @@ func main() {
 
 	// 启动 gRPC 服务器
 	startGRPCServer(c, ctx)
+
 }
 
 // startGRPCServer 启动 gRPC 服务
@@ -64,6 +66,21 @@ func startGRPCServer(c config.Config, ctx *svc.ServiceContext) {
 	}
 
 	ctx.SetNodeId(int64(loginEtcdNode.Info.NodeId))
+
+	nw := node.NewNodeWatcher(loginEtcdNode.Client,
+		node.BuildRpcPrefix(game.ENodeType_name[int32(game.ENodeType_CentreNodeService)], config.AppConfig.ZoneID,
+			uint32(game.ENodeType_CentreNodeService)))
+
+	centreNodes, err := nw.Range()
+	if err != nil {
+		logx.Error("Failed to fetch centreNodes: %v", err)
+		return
+	}
+	fmt.Println("Current Nodes:")
+	for _, nodeInfo := range centreNodes {
+		ctx.CentreClient = centre.NewCentreClient(nodeInfo.Endpoint.Ip, nodeInfo.Endpoint.Port)
+		logx.Info("Node: %+v\n", nodeInfo.String())
+	}
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		// 注册 LoginService 服务
