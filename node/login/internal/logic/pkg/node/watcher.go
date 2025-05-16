@@ -4,10 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/zeromicro/go-zero/core/logx"
+	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/namespace"
 	"log"
 	"login/pb/game"
+	"sync"
+	"time"
 )
 
 // NodeEventType 表示节点事件类型
@@ -77,19 +82,50 @@ func (nw *NodeWatcher) Range() ([]game.NodeInfo, error) {
 	// 使用命名空间客户端限定在前缀范围内
 	kv := namespace.NewKV(nw.client, nw.prefix)
 
+	// 设置带有超时的 context，避免长时间阻塞
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	// 获取所有 key
-	resp, err := kv.Get(context.Background(), "", clientv3.WithPrefix())
+	resp, err := kv.Get(ctx, "", clientv3.WithPrefix())
 	if err != nil {
+		logx.Errorf("Failed to get keys with prefix %s: %v", nw.prefix, err)
 		return nil, err
 	}
 
 	var nodes []game.NodeInfo
+	var wg sync.WaitGroup
+
+	// 使用 channel 和 goroutine 并发解析每个节点
+	nodeChan := make(chan game.NodeInfo, len(resp.Kvs))
+
 	for _, kv := range resp.Kvs {
-		var nodeInfo game.NodeInfo
-		if err := json.Unmarshal(kv.Value, &nodeInfo); err != nil {
-			log.Printf("Invalid NodeInfo JSON for key=%s: %v", string(kv.Key), err)
-			continue
-		}
+		wg.Add(1)
+		go func(kv *mvccpb.KeyValue) {
+			defer wg.Done()
+
+			var nodeInfo game.NodeInfo
+			logx.Debugf("Parsing node data: %s", string(kv.Value)) // 简单输出，以避免过多日志
+
+			// 解析 JSON 数据
+			if err := jsonpb.UnmarshalString(string(kv.Value), &nodeInfo); err != nil {
+				logx.Errorf("Invalid NodeInfo JSON for key=%s: %v", string(kv.Key), err)
+				return
+			}
+
+			// 发送解析结果到 channel
+			nodeChan <- nodeInfo
+		}(kv)
+	}
+
+	// 等待所有 goroutine 完成解析
+	go func() {
+		wg.Wait()
+		close(nodeChan)
+	}()
+
+	// 收集所有解析成功的节点信息
+	for nodeInfo := range nodeChan {
 		nodes = append(nodes, nodeInfo)
 	}
 
