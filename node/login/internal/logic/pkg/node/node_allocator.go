@@ -61,7 +61,7 @@ func (na *NodeAllocator) TryAllocateNodeID(ctx context.Context, info *game.NodeI
 }
 
 func (na *NodeAllocator) putIfAbsent(ctx context.Context, nodeID uint32, info *game.NodeInfo, leaseID clientv3.LeaseID) (bool, error) {
-	key := fmt.Sprintf("%s/zone/%d/node_type/%d/node_id/%d", na.Prefix, info.ZoneId, info.NodeType, nodeID)
+	key := BuildRpcPath(na.Prefix, info.ZoneId, info.NodeType, nodeID)
 
 	data, _ := json.Marshal(info)
 

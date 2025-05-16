@@ -11,8 +11,8 @@ type Client struct {
 	CentreClient *muduo.Client
 }
 
-func NewCentreClient(ip string, port int) *Client {
-	client, _ := muduo.NewClient(ip, port, &muduo.RpcCodec{RpcMsgType: &game.GameRpcMessage{}})
+func NewCentreClient(ip string, port uint32) *Client {
+	client, _ := muduo.NewClient(ip, int(port), &muduo.RpcCodec{RpcMsgType: &game.GameRpcMessage{}})
 	return &Client{
 		CentreClient: client,
 	}
