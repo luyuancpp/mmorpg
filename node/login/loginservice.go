@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/zeromicro/go-zero/core/conf"
+	"github.com/zeromicro/go-zero/core/discov"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
@@ -15,6 +16,8 @@ import (
 	loginserviceServer "login/internal/server/loginservice"
 	"login/internal/svc"
 	"login/pb/game"
+	"net"
+	"strconv"
 )
 
 var configFile = flag.String("loginService", "etc/loginservice.yaml", "the config file")
@@ -39,9 +42,22 @@ func main() {
 // startGRPCServer 启动 gRPC 服务
 func startGRPCServer(c config.Config, ctx *svc.ServiceContext) {
 
-	loginEtcdNode := node.NewNode(uint32(game.ENodeType_LoginNodeService), "127.0.0.1", 2379, 1000)
+	// 使用 net.SplitHostPort 分解 IP 和端口
+	host, portStr, err := net.SplitHostPort(ctx.Config.ListenOn)
+	if err != nil {
+		logx.Error("Error parsing address: %v\n", err)
+		return
+	}
 
-	err := loginEtcdNode.Register()
+	portInt, err := strconv.Atoi(portStr)
+	if err != nil {
+		logx.Error("Invalid port: %v\n", err)
+		return
+	}
+
+	loginEtcdNode := node.NewNode(uint32(game.ENodeType_LoginNodeService), host, uint32(portInt), discov.TimeToLive)
+
+	err = loginEtcdNode.KeepAlive()
 	if err != nil {
 		logx.Error(err)
 		return

@@ -4,8 +4,8 @@ package etcd
 import (
 	"context"
 	"fmt"
+	"github.com/zeromicro/go-zero/core/logx"
 	"go.etcd.io/etcd/client/v3"
-	"log"
 )
 
 type NodeRegistry struct {
@@ -39,7 +39,7 @@ func (r *NodeRegistry) KeepAlive() {
 	// 保持租约有效
 	ch, err := r.client.KeepAlive(context.Background(), r.Lease)
 	if err != nil {
-		log.Fatalf("Failed to keep alive Lease: %v", err)
+		logx.Error("Failed to keep alive Lease: %v", err)
 	}
 
 	go func() {
@@ -47,10 +47,10 @@ func (r *NodeRegistry) KeepAlive() {
 			select {
 			case ka := <-ch:
 				if ka == nil {
-					log.Println("Lease keep alive channel closed")
+					logx.Info("Lease keep alive channel closed")
 					return
 				}
-				log.Printf("Lease TTL: %d", ka.TTL)
+				logx.Debug("Lease TTL: %d", ka.TTL)
 			}
 		}
 	}()
