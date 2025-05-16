@@ -21,80 +21,95 @@ import (
 	"strconv"
 )
 
-var configFile = flag.String("loginService", "etc/loginservice.yaml", "the config file")
+var configFile = flag.String("loginService", "etc/loginservice.yaml", "the config file path")
 
-const NodeType = 2
+const nodeType = game.ENodeType_LoginNodeService
 
 func main() {
-	// 解析命令行参数
 	flag.Parse()
 
-	// 加载配置
-	var c config.Config
-	conf.MustLoad(*configFile, &c)
+	// 加载配置文件
+	var cfg config.Config
+	conf.MustLoad(*configFile, &cfg)
 
-	// 创建服务上下文
-	ctx := svc.NewServiceContext(c)
+	// 初始化服务上下文
+	ctx := svc.NewServiceContext(cfg)
 
-	// 启动 gRPC 服务器
-	startGRPCServer(c, ctx)
-
+	// 启动 gRPC 服务
+	startGRPCServer(cfg, ctx)
 }
 
-// startGRPCServer 启动 gRPC 服务
-func startGRPCServer(c config.Config, ctx *svc.ServiceContext) {
-
-	// 使用 net.SplitHostPort 分解 IP 和端口
-	host, portStr, err := net.SplitHostPort(ctx.Config.ListenOn)
+// startGRPCServer 启动 Login gRPC 服务并注册到 etcd
+func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) {
+	host, port, err := splitHostPort(ctx.Config.ListenOn)
 	if err != nil {
-		logx.Error("Error parsing address: %v\n", err)
+		logx.Errorf("Failed to parse listen address: %v", err)
 		return
 	}
 
-	portInt, err := strconv.Atoi(portStr)
-	if err != nil {
-		logx.Error("Invalid port: %v\n", err)
+	// 注册到 etcd
+	loginNode := node.NewNode(uint32(nodeType), host, port, discov.TimeToLive)
+	if err := loginNode.KeepAlive(); err != nil {
+		logx.Errorf("Failed to keep node alive: %v", err)
 		return
 	}
 
-	loginEtcdNode := node.NewNode(uint32(game.ENodeType_LoginNodeService), host, uint32(portInt), discov.TimeToLive)
+	ctx.SetNodeId(int64(loginNode.Info.NodeId))
+	logx.Infof("Login node registered: %+v", loginNode.Info.String())
 
-	err = loginEtcdNode.KeepAlive()
-	if err != nil {
-		logx.Error(err)
+	// 获取并连接到 centre 节点
+	if err := connectToCentreNodes(ctx, loginNode); err != nil {
+		logx.Errorf("Failed to connect to centre nodes: %v", err)
 		return
 	}
 
-	ctx.SetNodeId(int64(loginEtcdNode.Info.NodeId))
-
-	nw := node.NewNodeWatcher(loginEtcdNode.Client,
-		node.BuildRpcPrefix(game.ENodeType_name[int32(game.ENodeType_CentreNodeService)], config.AppConfig.ZoneID,
-			uint32(game.ENodeType_CentreNodeService)))
-
-	centreNodes, err := nw.Range()
-	if err != nil {
-		logx.Error("Failed to fetch centreNodes: %v", err)
-		return
-	}
-	fmt.Println("Current Nodes:")
-	for _, nodeInfo := range centreNodes {
-		ctx.CentreClient = centre.NewCentreClient(nodeInfo.Endpoint.Ip, nodeInfo.Endpoint.Port)
-		logx.Info("Node: %+v\n", nodeInfo.String())
-	}
-
-	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
-		// 注册 LoginService 服务
+	// 创建并启动 gRPC 服务
+	server := zrpc.MustNewServer(cfg.RpcServerConf, func(grpcServer *grpc.Server) {
 		game.RegisterLoginServiceServer(grpcServer, loginserviceServer.NewLoginServiceServer(ctx))
 
-		// 在开发模式或测试模式下启用 gRPC 反射
-		if c.Mode == service.DevMode || c.Mode == service.TestMode {
+		if cfg.Mode == service.DevMode || cfg.Mode == service.TestMode {
 			reflection.Register(grpcServer)
 		}
 	})
+	defer server.Stop()
 
-	defer s.Stop()
+	logx.Infof("Starting Login RPC server at %s...", cfg.ListenOn)
+	server.Start()
+}
 
-	// 打印启动信息并启动 gRPC 服务器
-	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)
-	s.Start()
+// splitHostPort 将 address 拆解为 host 和 uint32 类型的 port
+func splitHostPort(address string) (string, uint32, error) {
+	host, portStr, err := net.SplitHostPort(address)
+	if err != nil {
+		return "", 0, err
+	}
+	portInt, err := strconv.Atoi(portStr)
+	if err != nil {
+		return "", 0, err
+	}
+	return host, uint32(portInt), nil
+}
+
+// connectToCentreNodes 获取 centre 节点并初始化客户端
+func connectToCentreNodes(ctx *svc.ServiceContext, loginNode *node.Node) error {
+	prefix := node.BuildRpcPrefix(
+		game.ENodeType_name[int32(game.ENodeType_CentreNodeService)],
+		config.AppConfig.ZoneID,
+		uint32(game.ENodeType_CentreNodeService),
+	)
+
+	watcher := node.NewNodeWatcher(loginNode.Client, prefix)
+
+	nodes, err := watcher.Range()
+	if err != nil {
+		return fmt.Errorf("range centre nodes failed: %w", err)
+	}
+
+	for _, n := range nodes {
+		logx.Infof("Found centre node: %+v", n.String())
+		ctx.CentreClient = centre.NewCentreClient(n.Endpoint.Ip, n.Endpoint.Port)
+		break // 暂时只连接第一个节点，可按需扩展
+	}
+
+	return nil
 }
