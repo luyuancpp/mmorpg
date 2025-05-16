@@ -51,6 +51,9 @@ protected:
     virtual void OnConfigLoadSuccessful(){}
     void ConfigureEnvironment();
 	void ConnectToNode(const NodeInfo& nodeInfo);
+	void ConnectToGrpcNode(const NodeInfo& nodeInfo);
+	void ConnectToTcpNode(const NodeInfo& nodeInfo);
+	void ConnectToHttpNode(const NodeInfo& nodeInfo);
     void InitializeGrpcClients();
     void ReleaseNodeId();
     void SetUpEventHandlers();
