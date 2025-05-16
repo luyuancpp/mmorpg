@@ -9,6 +9,7 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"login/internal/config"
@@ -90,26 +91,58 @@ func splitHostPort(address string) (string, uint32, error) {
 	return host, uint32(portInt), nil
 }
 
-// connectToCentreNodes 获取 centre 节点并初始化客户端
 func connectToCentreNodes(ctx *svc.ServiceContext, loginNode *node.Node) error {
+	zoneId := config.AppConfig.ZoneID
+	nodeType := uint32(game.ENodeType_CentreNodeService)
+
 	prefix := node.BuildRpcPrefix(
 		game.ENodeType_name[int32(game.ENodeType_CentreNodeService)],
-		config.AppConfig.ZoneID,
-		uint32(game.ENodeType_CentreNodeService),
+		zoneId,
+		nodeType,
 	)
 
 	watcher := node.NewNodeWatcher(loginNode.Client, prefix)
 
+	// 1. 获取当前节点列表并连接
 	nodes, err := watcher.Range()
 	if err != nil {
 		return fmt.Errorf("range centre nodes failed: %w", err)
 	}
 
 	for _, n := range nodes {
-		logx.Infof("Found centre node: %+v", n.String())
-		ctx.CentreClient = centre.NewCentreClient(n.Endpoint.Ip, n.Endpoint.Port)
-		break // 暂时只连接第一个节点，可按需扩展
+		if n.ZoneId == zoneId {
+			logx.Infof("Connecting to centre node: %+v", n.String())
+			ctx.SetCentreClient(centre.NewCentreClient(n.Endpoint.Ip, n.Endpoint.Port))
+			break // 只连接一个，如需多连接可移除 break
+		}
 	}
+
+	// 2. 实时监听中心节点的变动
+	go func() {
+		events := watcher.Watch(context.Background())
+		for event := range events {
+			switch event.Type {
+			case node.NodeAdded:
+				if event.Info.ZoneId == zoneId {
+					logx.Infof("New centre node detected: %+v", event.Info.String())
+					ctx.SetCentreClient(centre.NewCentreClient(event.Info.Endpoint.Ip, event.Info.Endpoint.Port))
+				}
+			case node.NodeRemoved:
+				if event.Info.ZoneId == zoneId {
+					logx.Infof("Centre node removed: %+v", event.Info.String())
+					client := ctx.GetCentreClient()
+					if client != nil {
+						err := client.Close()
+						if err != nil {
+							logx.Errorf("Failed to close centre client: %v", err)
+							return
+						}
+					}
+
+				}
+			}
+		}
+	}()
 
 	return nil
 }

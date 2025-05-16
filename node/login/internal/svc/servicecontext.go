@@ -9,17 +9,19 @@ import (
 	"login/internal/config"
 	"login/internal/logic/pkg/centre"
 	"login/pb/game"
+	"sync/atomic"
 )
 
 var dbConfigFile = flag.String("db_rpc_client", "etc/db_client.yaml", "the config file")
 
 type ServiceContext struct {
-	Config       config.Config
-	Redis        *redis.Client
-	DbClient     *zrpc.Client
-	SnowFlake    *snowflake.Node
-	NodeInfo     game.NodeInfo
-	CentreClient *centre.Client
+	Config    config.Config
+	Redis     *redis.Client
+	DbClient  *zrpc.Client
+	SnowFlake *snowflake.Node
+	NodeInfo  game.NodeInfo
+	// 使用 atomic.Value 安全存储 CentreClient
+	centreClient atomic.Value // 类型为 *centre.CentreClient
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -45,4 +47,18 @@ func (c *ServiceContext) SetNodeId(nodeId int64) {
 	snowflake.StepBits = config.SnowFlakeConfig.NodeBits
 
 	c.SnowFlake = node
+}
+
+// SetCentreClient 设置中心节点客户端
+func (s *ServiceContext) SetCentreClient(c *centre.Client) {
+	s.centreClient.Store(c)
+}
+
+// GetCentreClient 获取当前中心节点客户端
+func (s *ServiceContext) GetCentreClient() *centre.Client {
+	value := s.centreClient.Load()
+	if value == nil {
+		return nil
+	}
+	return value.(*centre.Client)
 }
