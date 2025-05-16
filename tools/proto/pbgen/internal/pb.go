@@ -218,8 +218,10 @@ func BuildProtoGoLogin(protoPath string) (err error) {
 		if fd.Name() == config.DbProtoFileName {
 			continue
 		}
+
 		if !(strings.Contains(protoPath, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-			strings.Contains(protoPath, config.ProtoDirectoryNames[config.ComponentProtoDirIndex])) {
+			strings.Contains(protoPath, config.ProtoDirectoryNames[config.ComponentProtoDirIndex]) ||
+			strings.Contains(protoPath, config.ProtoDirectoryNames[config.ConstantsDirIndex])) {
 			return
 		}
 
@@ -289,8 +291,9 @@ func BuildProtoGoDb(protoPath string) (err error) {
 
 		// Skip if the directory path does not match specific criteria
 		if !(strings.Contains(protoPath, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-			strings.Contains(protoPath, config.ProtoDirectoryNames[config.ComponentProtoDirIndex])) {
-			return // This might need to be handled differently
+			strings.Contains(protoPath, config.ProtoDirectoryNames[config.ComponentProtoDirIndex]) ||
+			strings.Contains(protoPath, config.ProtoDirectoryNames[config.ConstantsDirIndex])) {
+			return
 		}
 
 		// Add a goroutine for each protobuf file processing
