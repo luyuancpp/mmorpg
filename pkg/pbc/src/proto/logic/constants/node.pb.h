@@ -128,9 +128,9 @@ inline bool eSceneNodeType_Parse(absl::string_view name, eSceneNodeType* value) 
       eSceneNodeType_descriptor(), name, value);
 }
 enum eNodeProtocolType : int {
-  TCP = 0,
-  HTTP = 1,
-  GRPC = 2,
+  PROTOCOL_TCP = 0,
+  PROTOCOL_HTTP = 1,
+  PROTOCOL_GRPC = 2,
   eNodeProtocolType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   eNodeProtocolType_INT_MAX_SENTINEL_DO_NOT_USE_ =

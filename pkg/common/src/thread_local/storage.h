@@ -16,6 +16,7 @@ public:
 	entt::registry networkRegistry;
 	entt::registry globalNodeRegistry;
 	entt::registry invalidRegistry;
+	entt::registry loginNodeRegistry;
 
 	entt::dispatcher dispatcher;
 

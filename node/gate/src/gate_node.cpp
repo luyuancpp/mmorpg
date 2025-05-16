@@ -18,6 +18,7 @@
 #include "time/system/time_system.h"
 #include "util/network_utils.h"
 #include "node/comp/node_comp.h"
+#include "node/system/node_system.h"
 
 GateNode* gGateNode = nullptr; 
 
@@ -40,7 +41,7 @@ GateNode::~GateNode()
 void GateNode::Initialize()
 {
 	GetNodeInfo().set_node_type(GateNodeService);
-    allowedTargetNodeTypes = { CentreNodeService, SceneNodeService };
+    allowedTargetNodeTypes = { CentreNodeService, SceneNodeService, LoginNodeService };
 
     gGateNode = this;
 
@@ -73,10 +74,13 @@ void GateNode::Connect2Login()
 {
 	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
 
+	auto& registry = NodeSystem::GetRegistryForNodeType(LoginNodeService);
+
+
     for (auto& loginNodeInfo : serviceNodeList[LoginNodeService].node_list())
     {
         entt::entity id{ loginNodeInfo.node_id() };
-        auto loginNodeId = tls_gate.loginNodeRegistry.create(id);
+        auto loginNodeId = registry.create(id);
         if (loginNodeId != id)
         {
 			LOG_ERROR << "Login node not found for entity: " << entt::to_integral(loginNodeId);
@@ -85,16 +89,16 @@ void GateNode::Connect2Login()
 
         auto channel = grpc::CreateChannel(::FormatIpAndPort(loginNodeInfo.endpoint().ip(), loginNodeInfo.endpoint().port()), 
             grpc::InsecureChannelCredentials());
-        tls_gate.loginNodeRegistry.emplace<GrpcLoginServiceStubPtr>(loginNodeId,
+        registry.emplace<GrpcLoginServiceStubPtr>(loginNodeId,
             LoginService::NewStub(channel));
         tls_gate.login_consistent_node().add(loginNodeInfo.node_id(),
             loginNodeId);
 
-        InitLoginServiceCompletedQueue(tls_gate.loginNodeRegistry, loginNodeId);
+        InitLoginServiceCompletedQueue(registry, loginNodeId);
     }
 
-    loginGrpcSelectTimer.RunEvery(0.01, []() {
-        HandleLoginServiceCompletedQueueMessage(tls_gate.loginNodeRegistry);
-        });
+	loginGrpcSelectTimer.RunEvery(0.01, [&registry]() {
+		HandleLoginServiceCompletedQueueMessage(registry);
+		});
 
 }

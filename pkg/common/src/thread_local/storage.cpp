@@ -14,6 +14,7 @@ void ThreadLocalStorage::Clear()
 	networkRegistry.clear();
 	globalNodeRegistry.clear();
 	invalidRegistry.clear();
+	loginNodeRegistry.clear();
 
 	dispatcher.clear();
 
@@ -33,6 +34,7 @@ std::string ThreadLocalStorage::GetRegistryName(const entt::registry& registry) 
 	if (&registry == &itemRegistry) return "ItemRegistry";
 	if (&registry == &networkRegistry) return "NetworkRegistry";
 	if (&registry == &globalNodeRegistry) return "GlobalNodeRegistry";
+	if (&registry == &loginNodeRegistry) return "LoginNodeRegistry";
 
 	return "UnknownRegistry";
 }

@@ -39,15 +39,16 @@ const char descriptor_table_protodef_proto_2flogic_2fconstants_2fnode_2eproto[] 
     "\020\004\022\024\n\020LoginNodeService\020\005\022\024\n\020RedisNodeSer"
     "vice\020\006*e\n\016eSceneNodeType\022\022\n\016kMainSceneNo"
     "de\020\000\022\r\n\tkRoomNode\020\001\022\027\n\023kMainSceneCrossNo"
-    "de\020\002\022\027\n\023kRoomSceneCrossNode\020\003*0\n\021eNodePr"
-    "otocolType\022\007\n\003TCP\020\000\022\010\n\004HTTP\020\001\022\010\n\004GRPC\020\002B"
-    "\tZ\007pb/gameb\006proto3"
+    "de\020\002\022\027\n\023kRoomSceneCrossNode\020\003*K\n\021eNodePr"
+    "otocolType\022\020\n\014PROTOCOL_TCP\020\000\022\021\n\rPROTOCOL"
+    "_HTTP\020\001\022\021\n\rPROTOCOL_GRPC\020\002B\tZ\007pb/gameb\006p"
+    "roto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto = {
     false,
     false,
-    378,
+    405,
     descriptor_table_protodef_proto_2flogic_2fconstants_2fnode_2eproto,
     "proto/logic/constants/node.proto",
     &descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto_once,

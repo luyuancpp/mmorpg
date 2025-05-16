@@ -32,6 +32,8 @@ entt::registry& NodeSystem::GetRegistryForNodeType(uint32_t nodeType) {
 		return tls.sceneNodeRegistry;
 	case GateNodeService:
 		return tls.gateNodeRegistry;
+	case LoginNodeService:
+		return tls.loginNodeRegistry;
 	default:
 		LOG_ERROR << "Unknown NodeType: " << static_cast<uint32_t>(nodeType);
 	}

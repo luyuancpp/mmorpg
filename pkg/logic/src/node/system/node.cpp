@@ -71,6 +71,12 @@ void Node::Initialize() {
 void Node::SetupRpcServer() {
 	GetNodeInfo().mutable_endpoint()->set_ip(localip());
 	GetNodeInfo().mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
+	GetNodeInfo().set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
+	GetNodeInfo().set_node_type(GetNodeType());
+	GetNodeInfo().set_protocol_type(PROTOCOL_TCP);
+	GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());
+	GetNodeInfo().set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
+
 
 	InetAddress service_addr(GetNodeInfo().endpoint().ip(), GetNodeInfo().endpoint().port());
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, service_addr);
@@ -133,12 +139,6 @@ void Node::ConfigureEnvironment() {
 	const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
 	muduo::Logger::setTimeZone(tz);  // Set timezone to Hong Kong
 
-	GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());
-	GetNodeInfo().set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
-	GetNodeInfo().set_node_type(GetNodeType());
-	GetNodeInfo().set_protocol_type(TCP);
-	GetNodeInfo().set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
-
 	tls.globalNodeRegistry.emplace<ServiceNodeList>(GlobalGrpcNodeEntity());
 }
 
@@ -197,6 +197,30 @@ void Node::StopWatchingServiceNodes() {
 
 void Node::ConnectToNode(const NodeInfo& nodeInfo)
 {
+	switch (nodeInfo.protocol_type()) {
+	case PROTOCOL_GRPC:
+		ConnectToGrpcNode(nodeInfo);
+		break;
+	case PROTOCOL_TCP:
+		ConnectToTcpNode(nodeInfo);
+		break;
+	case PROTOCOL_HTTP:
+		ConnectToHttpNode(nodeInfo);
+		break;
+	default:
+		LOG_ERROR << "Unsupported protocol type: " << nodeInfo.protocol_type()
+			<< " for node: " << nodeInfo.DebugString();
+		break;
+	}
+}
+
+void Node::ConnectToGrpcNode(const NodeInfo& nodeInfo)
+{
+	
+}
+
+void Node::ConnectToTcpNode(const NodeInfo& nodeInfo)
+{
 	auto& registry = NodeSystem::GetRegistryForNodeType(nodeInfo.node_type());
 
 	entt::entity id{ nodeInfo.node_id() };
@@ -234,6 +258,11 @@ void Node::ConnectToNode(const NodeInfo& nodeInfo)
 		nodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
 		zoneCentreNode = &node;
 	}
+}
+
+void Node::ConnectToHttpNode(const NodeInfo& nodeInfo)
+{
+
 }
 
 void Node::ReleaseNodeId() {
