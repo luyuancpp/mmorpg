@@ -39,7 +39,7 @@ func main() {
 // startGRPCServer 启动 gRPC 服务
 func startGRPCServer(c config.Config, ctx *svc.ServiceContext) {
 
-	loginEtcdNode := node.NewNode(uint32(game.ENodeType_LoginNodeService), "127.0.0.1", 2379, 10)
+	loginEtcdNode := node.NewNode(uint32(game.ENodeType_LoginNodeService), "127.0.0.1", 2379, 1000)
 
 	err := loginEtcdNode.Register()
 	if err != nil {

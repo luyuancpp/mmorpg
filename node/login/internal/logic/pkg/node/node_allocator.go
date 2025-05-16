@@ -4,12 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"login/pb/game"
-	"strconv"
-	"strings"
-	"time"
-
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"login/pb/game"
 )
 
 type NodeAllocator struct {
@@ -22,7 +18,7 @@ func NewNodeAllocator(client *clientv3.Client, prefix string) *NodeAllocator {
 }
 
 // TryAllocateNodeID 尝试分配一个 node_id（复用已有空位），最大向上找空位
-func (na *NodeAllocator) TryAllocateNodeID(ctx context.Context, desiredID uint32, info *game.NodeInfo, leaseID clientv3.LeaseID) (uint32, error) {
+func (na *NodeAllocator) TryAllocateNodeID(ctx context.Context, info *game.NodeInfo, leaseID clientv3.LeaseID) (uint32, error) {
 	// 获取现有节点
 	resp, err := na.Client.Get(ctx, na.Prefix, clientv3.WithPrefix())
 	if err != nil {
@@ -33,34 +29,27 @@ func (na *NodeAllocator) TryAllocateNodeID(ctx context.Context, desiredID uint32
 	maxID := uint32(0)
 
 	for _, kv := range resp.Kvs {
-		idStr := strings.TrimPrefix(string(kv.Key), na.Prefix)
-		result, err := strconv.ParseUint(idStr, 10, 32)
-		id := uint32(result)
-		if err == nil {
-			usedIDs[id] = true
-			if id > maxID {
-				maxID = id
-			}
+		data := &game.NodeInfo{}
+		err := json.Unmarshal(kv.Value, &data)
+		if err != nil {
+			continue
+		}
+
+		id := data.NodeId
+		usedIDs[id] = true
+		if id > maxID {
+			maxID = id
 		}
 	}
 
-	// 尝试期望 ID 是否可用
-	if !usedIDs[desiredID] {
-		ok, err := na.putIfAbsent(ctx, desiredID, info, leaseID)
-		if err != nil {
-			return 0, err
-		}
-		if ok {
-			return desiredID, nil
-		}
-	}
+	searchRange := maxID + 10
 
 	// 向上查找可用 ID
-	for id := maxID + 1; id < 1_000_000; id++ {
+	for id := uint32(0); id < searchRange; id++ {
 		if !usedIDs[id] {
 			ok, err := na.putIfAbsent(ctx, id, info, leaseID)
 			if err != nil {
-				return 0, err
+				continue
 			}
 			if ok {
 				return id, nil
@@ -72,10 +61,7 @@ func (na *NodeAllocator) TryAllocateNodeID(ctx context.Context, desiredID uint32
 }
 
 func (na *NodeAllocator) putIfAbsent(ctx context.Context, nodeID uint32, info *game.NodeInfo, leaseID clientv3.LeaseID) (bool, error) {
-	key := fmt.Sprintf("%s%d", na.Prefix, nodeID)
-	info.NodeId = nodeID
-	info.LaunchTime = uint64(time.Now().Unix())
-	info.LeaseId = uint64(leaseID)
+	key := fmt.Sprintf("%s/zone/%d/node_type/%d/node_id/%d", na.Prefix, info.ZoneId, info.NodeType, nodeID)
 
 	data, _ := json.Marshal(info)
 
