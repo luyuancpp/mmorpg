@@ -77,6 +77,8 @@ protected:
     void OnConnectedToServer(const OnConnected2TcpServerEvent& es);
     void OnClientConnected(const OnBeConnectedEvent& es);
 
+    virtual void ProcessGrpcNode(const NodeInfo& info) {}
+
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;
     RpcServerPtr rpcServer;

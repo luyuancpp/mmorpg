@@ -1,4 +1,4 @@
-#include "gate_node.h"
+﻿#include "gate_node.h"
 
 #include <grpcpp/grpcpp.h>
 
@@ -62,43 +62,34 @@ void GateNode::StartRpcServer()
 
 	tls_gate.session_id_gen().set_node_id(GetNodeId());
 
-	Connect2Login();
+	//Connect2Login();
 
 	Node::StartRpcServer(); 
 
+	loginGrpcSelectTimer.RunEvery(0.01, []() {
+		HandleLoginServiceCompletedQueueMessage(tls.loginNodeRegistry);
+		});
 
     LOG_INFO << "gate node  start at" << GetNodeInfo().DebugString();
 }
 
-void GateNode::Connect2Login()
+void GateNode::ProcessGrpcNode(const NodeInfo& nodeInfo)
 {
-	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
-
-	auto& registry = NodeSystem::GetRegistryForNodeType(LoginNodeService);
-
-
-    for (auto& loginNodeInfo : serviceNodeList[LoginNodeService].node_list())
-    {
-        entt::entity id{ loginNodeInfo.node_id() };
-        auto loginNodeId = registry.create(id);
-        if (loginNodeId != id)
-        {
-			LOG_ERROR << "Login node not found for entity: " << entt::to_integral(loginNodeId);
-            continue;
-        }
-
-        auto channel = grpc::CreateChannel(::FormatIpAndPort(loginNodeInfo.endpoint().ip(), loginNodeInfo.endpoint().port()), 
-            grpc::InsecureChannelCredentials());
-        registry.emplace<GrpcLoginServiceStubPtr>(loginNodeId,
-            LoginService::NewStub(channel));
-        tls_gate.login_consistent_node().add(loginNodeInfo.node_id(),
-            loginNodeId);
-
-        InitLoginServiceCompletedQueue(registry, loginNodeId);
-    }
-
-	loginGrpcSelectTimer.RunEvery(0.01, [&registry]() {
-		HandleLoginServiceCompletedQueueMessage(registry);
-		});
-
+	auto& registry = NodeSystem::GetRegistryForNodeType(nodeInfo.node_type());
+	switch (eNodeType::LoginNodeService)
+	{
+	case eNodeType::LoginNodeService:
+	{
+		auto loginNodeId = registry.create(entt::entity{ nodeInfo.node_id() });
+		auto& channel = registry.get<std::shared_ptr<grpc::Channel>>(loginNodeId);
+		registry.emplace<GrpcLoginServiceStubPtr>(loginNodeId,
+			LoginService::NewStub(channel));
+		//todo 如果重连后连上了不同的gate会不会有异步问题
+		tls_gate.login_consistent_node().add(nodeInfo.node_id(),
+			loginNodeId);
+		break;
+	}
+	default:
+		break;
+	}
 }

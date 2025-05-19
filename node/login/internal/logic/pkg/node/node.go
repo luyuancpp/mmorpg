@@ -38,7 +38,7 @@ func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
 		},
 		ZoneId:       config.AppConfig.ZoneID,
 		LaunchTime:   uint64(time.Now().Unix()),
-		ProtocolType: uint32(game.ENodeProtocolType_GRPC),
+		ProtocolType: uint32(game.ENodeProtocolType_PROTOCOL_GRPC),
 	}
 
 	// 初始化 Etcd 客户端
