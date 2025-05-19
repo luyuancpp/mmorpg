@@ -39,7 +39,9 @@ private:
         rpcClientHandler.OnConnection(conn);
     }
 
-    void ProcessGrpcNode(const NodeInfo& info) override;
+    void ProcessGrpcNode(const NodeInfo& nodeInfo) override;
+    void ProcessNodeStop(const NodeInfo& nodeInfo) override;
+
 
     void OnUnknownMessage(const TcpConnectionPtr& conn,
                                  const MessagePtr& message,

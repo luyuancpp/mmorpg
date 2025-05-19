@@ -385,7 +385,7 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	LOG_INFO << "Connected to  node: " << newNodeInfo.DebugString();
 }
 
-inline bool IsNodeInfoType(int nodeType) {
+inline bool IsTcpNodeInfoType(int nodeType) {
 	static const std::unordered_set<int> validTypes = {
 	CentreNodeService,
 	SceneNodeService,
@@ -399,10 +399,6 @@ void Node::HandleServiceNodeStart(const std::string& key, const std::string& val
 	LOG_DEBUG << "Handling service node start for key: " << key << ", value: " << value;
 	// Get the service node type from the key prefix
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
-
-	if (!IsNodeInfoType(nodeType)) {
-		return;
-	}
 
 	if (eNodeType_IsValid(nodeType)) {
 		// Add the service node to the appropriate registry
@@ -419,10 +415,6 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 	// Get the service node type from the key prefix
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
-	if (!IsNodeInfoType(nodeType)) {
-		return;
-	}
-
 	if (eNodeType_IsValid(nodeType)) {
 		NodeInfo nodeInfo;
 
@@ -434,6 +426,8 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 				<< ", Error: " << result.message().data();
 			return;
 		}
+
+		ProcessNodeStop(nodeInfo);
 
 		entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
 		registry.destroy(entt::entity{ nodeInfo.node_id() });  // Remove the node from the registry
@@ -661,7 +655,7 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 
 		for (uint32_t nodeType = eNodeType_MIN; nodeType < eNodeType_MAX; ++nodeType)
 		{
-			if (GetNodeType() == nodeType || !IsNodeInfoType(nodeType))
+			if (GetNodeType() == nodeType || !IsTcpNodeInfoType(nodeType))
 			{
 				continue;
 			}
