@@ -93,3 +93,8 @@ void GateNode::ProcessGrpcNode(const NodeInfo& nodeInfo)
 		break;
 	}
 }
+
+void GateNode::ProcessNodeStop(const NodeInfo& nodeInfo)
+{
+	tls_gate.login_consistent_node().remove(nodeInfo.node_id());
+}
