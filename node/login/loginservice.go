@@ -55,6 +55,14 @@ func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) {
 		return
 	}
 
+	defer func(loginNode *node.Node) {
+		err := loginNode.Close()
+		if err != nil {
+			logx.Errorf("Failed to close node : %v", err)
+			return
+		}
+	}(loginNode)
+
 	ctx.SetNodeId(int64(loginNode.Info.NodeId))
 	logx.Infof("Login node registered: %+v", loginNode.Info.String())
 

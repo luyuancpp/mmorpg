@@ -35,11 +35,12 @@ func (r *NodeRegistry) RegisterNode(key string, value string) error {
 	return nil
 }
 
-func (r *NodeRegistry) KeepAlive() {
+func (r *NodeRegistry) KeepAlive(ctx context.Context) {
 	// 保持租约有效
-	ch, err := r.client.KeepAlive(context.Background(), r.Lease)
+	ch, err := r.client.KeepAlive(ctx, r.Lease)
 	if err != nil {
 		logx.Error("Failed to keep alive Lease: %v", err)
+		return
 	}
 
 	go func() {
@@ -51,7 +52,21 @@ func (r *NodeRegistry) KeepAlive() {
 					return
 				}
 				logx.Debug("Lease TTL: %d", ka.TTL)
+			case <-ctx.Done():
+				logx.Info("KeepAlive context canceled")
+				return
 			}
 		}
 	}()
+}
+
+// 新增 RevokeLease 方法来取消租约
+func (r *NodeRegistry) RevokeLease() error {
+	// 取消租约
+	_, err := r.client.Revoke(context.Background(), r.Lease)
+	if err != nil {
+		return fmt.Errorf("failed to revoke lease: %v", err)
+	}
+	logx.Info("Lease revoked successfully")
+	return nil
 }
