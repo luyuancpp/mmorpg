@@ -29,6 +29,7 @@
 #include "service_info/gate_service_service_info.h"
 #include "pbc/common_error_tip.pb.h"
 #include "util/random.h"
+#include <regex>
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
 	: loop_(loop),
@@ -416,22 +417,30 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
 	if (eNodeType_IsValid(nodeType)) {
-		NodeInfo nodeInfo;
 
-		// Parse the JSON string into NodeInfo protobuf message
-		auto result = google::protobuf::util::JsonStringToMessage(value, &nodeInfo);
-		if (!result.ok()) {
-			LOG_ERROR << "Failed to parse JSON for nodeType: " << nodeType
-				<< ", JSON: " << value
-				<< ", Error: " << result.message().data();
+		std::regex pattern(R"(.*?/node_type/(\d+)/node_id/(\d+))");
+		std::smatch match;
+
+		if (!std::regex_match(key, match, pattern)) {
 			return;
+
 		}
 
-		ProcessNodeStop(nodeInfo);
+		uint32_t nodeType = std::stoul(match[1]);
+		uint32_t nodeId = std::stoul(match[2]);
+
+		if (nodeType > std::numeric_limits<uint32_t>::max() ||
+			nodeId > std::numeric_limits<uint32_t>::max()) {
+			LOG_ERROR << "Value exceeds uint32_t limit.";
+			return ;
+		}
+
+		ProcessNodeStop(nodeType,nodeId);
 
 		entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
-		registry.destroy(entt::entity{ nodeInfo.node_id() });  // Remove the node from the registry
-		LOG_INFO << "Service node stopped: " << nodeInfo.DebugString();
+		Destroy(registry, entt::entity{ nodeId });
+		registry.destroy(entt::entity{ nodeId });  // Remove the node from the registry
+		LOG_INFO << "Service node stopped: " << nodeId;
 	}
 	else {
 		LOG_TRACE << "Unknown service type for key: " << key;

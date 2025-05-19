@@ -76,11 +76,11 @@ void GateNode::StartRpcServer()
 void GateNode::ProcessGrpcNode(const NodeInfo& nodeInfo)
 {
 	auto& registry = NodeSystem::GetRegistryForNodeType(nodeInfo.node_type());
-	switch (eNodeType::LoginNodeService)
+	switch (nodeInfo.node_type())
 	{
 	case eNodeType::LoginNodeService:
 	{
-		auto loginNodeId = registry.create(entt::entity{ nodeInfo.node_id() });
+		auto loginNodeId = entt::entity{ nodeInfo.node_id() };
 		auto& channel = registry.get<std::shared_ptr<grpc::Channel>>(loginNodeId);
 		registry.emplace<GrpcLoginServiceStubPtr>(loginNodeId,
 			LoginService::NewStub(channel));
@@ -94,7 +94,13 @@ void GateNode::ProcessGrpcNode(const NodeInfo& nodeInfo)
 	}
 }
 
-void GateNode::ProcessNodeStop(const NodeInfo& nodeInfo)
-{
-	tls_gate.login_consistent_node().remove(nodeInfo.node_id());
+ void GateNode::ProcessNodeStop(uint32_t nodeType, uint32_t nodeId) 
+ {
+	 switch (nodeType)
+	 {
+	 case eNodeType::LoginNodeService:
+		 tls_gate.login_consistent_node().remove(nodeId);
+	 default:
+		 break;
+	 }
 }

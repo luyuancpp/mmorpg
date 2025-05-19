@@ -40,7 +40,7 @@ private:
     }
 
     void ProcessGrpcNode(const NodeInfo& nodeInfo) override;
-    void ProcessNodeStop(const NodeInfo& nodeInfo) override;
+    void ProcessNodeStop(uint32_t nodeType, uint32_t nodeId)override;
 
 
     void OnUnknownMessage(const TcpConnectionPtr& conn,
