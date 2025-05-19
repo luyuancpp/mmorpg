@@ -435,11 +435,23 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 			return ;
 		}
 
+		auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+		// Check if the node already exists based on lease_id; if so, remove it and then add the new node
+		auto& nodeList = *serviceNodeList[nodeType].mutable_node_list();
+		for (auto it = nodeList.begin(); it != nodeList.end(); ) {
+			if (it->node_type() == nodeType && it->node_id() == nodeId) {
+				LOG_INFO << "Node with lease_id: " << it->lease_id()
+					<< " already exists. Removing the old node and adding the new one.";
+				it = nodeList.erase(it);  // Erase the node and return the new iterator
+				break;
+			}
+		}
+
+
 		ProcessNodeStop(nodeType,nodeId);
 
 		entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
 		Destroy(registry, entt::entity{ nodeId });
-		registry.destroy(entt::entity{ nodeId });  // Remove the node from the registry
 		LOG_INFO << "Service node stopped: " << nodeId;
 	}
 	else {
