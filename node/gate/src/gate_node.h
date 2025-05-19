@@ -9,13 +9,11 @@
 
 #include "handler/service/client_message_processor.h"
 #include "handler/service/gate_service_handler.h"
-#include "network/rpc_client.h"
 #include "network/rpc_connection_event.h"
 #include "network/codec/codec.h"
 #include "network/codec/dispatcher.h"
 #include "time/comp/timer_task_comp.h"
 #include "proto/common/deploy_service.pb.h"
-#include "log/constants/log_constants.h"
 #include "node/system/node.h"
 
 class GateNode : public  Node
@@ -27,7 +25,7 @@ public:
     ~GateNode() override;
     inline ProtobufCodec& Codec() { return codec_; }
     inline GateServiceHandler& GetServiceHandler() { return nodeReplyService; }
-	::google::protobuf::Service* GetNodeRepleyService() override{ return &nodeReplyService ; }
+	::google::protobuf::Service* GetNodeReplyService() override{ return &nodeReplyService ; }
 
     inline void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn,
                             const ::google::protobuf::Message& message) const { rpcClientHandler.SendMessageToClient(conn, message); }

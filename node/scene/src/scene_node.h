@@ -1,15 +1,11 @@
 #pragma once
 
 #include "muduo/net/EventLoop.h"
-#include "muduo/base/AsyncLogging.h"
-
 #include "handler/service/game_service_handler.h"
 #include "network/rpc_client.h"
 #include "network/rpc_connection_event.h"
 #include "node/system/node.h"
 #include "redis_client/redis_client.h"
-
-#include "proto/common/deploy_service.pb.h"
 
 class OnConnect2CentrePbEvent;
 
@@ -22,7 +18,7 @@ public:
     
     void Initialize()override;
 
-    ::google::protobuf::Service* GetNodeRepleyService() override { return &nodeReplyService; }
+    ::google::protobuf::Service* GetNodeReplyService() override { return &nodeReplyService; }
 
     virtual void OnConfigLoadSuccessful()override;
     void StartRpcServer() override;

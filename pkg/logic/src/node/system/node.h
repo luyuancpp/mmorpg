@@ -26,7 +26,7 @@ public:
     uint32_t GetNodeType() const { return GetNodeInfo().node_type(); }
     NodeInfo& GetNodeInfo()const;
 	virtual std::string GetServiceName(uint32_t nodeType) const;
-	virtual ::google::protobuf::Service* GetNodeRepleyService() { return {}; }
+	virtual ::google::protobuf::Service* GetNodeReplyService() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
     [[nodiscard]] RpcClient& GetZoneCentreNode() { return *zoneCentreNode; }
     std::string FormatIpAndPort() ;
