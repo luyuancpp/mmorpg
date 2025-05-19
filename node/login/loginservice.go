@@ -79,7 +79,7 @@ func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) error {
 		logx.Errorf("Failed to start gRPC server: %v", err)
 		return err
 	}
-	
+
 	// 正常启动后返回 nil
 	return nil
 }

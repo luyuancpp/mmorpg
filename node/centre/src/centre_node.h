@@ -1,10 +1,6 @@
 #pragma once
 
-#include "proto/common/deploy_service.pb.h"
-#include "entt/src/entt/entity/registry.hpp"
 #include "handler/service/centre_service_handler.h"
-#include "muduo/base/AsyncLogging.h"
-#include "network/rpc_connection_event.h"
 #include "node/system/node.h"
 #include "redis_client/redis_client.h"
 
@@ -20,7 +16,7 @@ public:
 
     void PrepareForBeforeConnection()override;
 
-	::google::protobuf::Service* GetNodeRepleyService() override { return &nodeReplyService; }
+	::google::protobuf::Service* GetNodeReplyService() override { return &nodeReplyService; }
 
 	void StartRpcServer() override;
 

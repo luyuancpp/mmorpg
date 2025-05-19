@@ -267,7 +267,7 @@ void Node::ConnectToTcpNode(const NodeInfo& nodeInfo)
 	registry.emplace<NodeInfo>(id, nodeInfo);
 
 	// 注册服务并连接  
-	node.registerService(GetNodeRepleyService());
+	node.registerService(GetNodeReplyService());
 	node.connect();
 
 	// 判断是否为当前区域的中心节点  
