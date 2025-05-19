@@ -445,6 +445,9 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 				it = nodeList.erase(it);  // Erase the node and return the new iterator
 				break;
 			}
+			else {
+				++it;  // Move to the next element if no deletion
+			}
 		}
 
 
