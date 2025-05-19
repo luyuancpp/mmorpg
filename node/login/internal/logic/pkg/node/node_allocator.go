@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/zeromicro/go-zero/core/logx"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"login/pb/game"
 )
@@ -63,13 +65,21 @@ func (na *NodeAllocator) TryAllocateNodeID(ctx context.Context, info *game.NodeI
 func (na *NodeAllocator) putIfAbsent(ctx context.Context, nodeID uint32, info *game.NodeInfo, leaseID clientv3.LeaseID) (bool, error) {
 	key := BuildRpcPath(na.Prefix, info.ZoneId, info.NodeType, nodeID)
 
-	data, _ := json.Marshal(info)
+	info.NodeId = nodeID
+
+	marshaler := &jsonpb.Marshaler{}
+
+	result, err := marshaler.MarshalToString(info)
+	if err != nil {
+		logx.Errorf("Error marshaling:", err)
+		return false, err
+	}
 
 	txn := na.Client.Txn(ctx)
 	txnResp, err := txn.If(
 		clientv3.Compare(clientv3.Version(key), "=", 0),
 	).Then(
-		clientv3.OpPut(key, string(data), clientv3.WithLease(leaseID)),
+		clientv3.OpPut(key, result, clientv3.WithLease(leaseID)),
 	).Commit()
 
 	if err != nil {

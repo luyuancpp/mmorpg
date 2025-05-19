@@ -78,7 +78,7 @@ protected:
     void OnClientConnected(const OnBeConnectedEvent& es);
 
     virtual void ProcessGrpcNode(const NodeInfo& nodeInfo) {}
-    virtual void ProcessNodeStop(const NodeInfo& nodeInfo) {}
+    virtual void ProcessNodeStop(uint32_t nodeType, uint32_t nodeId) {}
 
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;
