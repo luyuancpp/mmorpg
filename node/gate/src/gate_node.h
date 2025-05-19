@@ -39,7 +39,7 @@ private:
         rpcClientHandler.OnConnection(conn);
     }
 
-    void Connect2Login();
+    void ProcessGrpcNode(const NodeInfo& info) override;
 
     void OnUnknownMessage(const TcpConnectionPtr& conn,
                                  const MessagePtr& message,

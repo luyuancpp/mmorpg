@@ -216,7 +216,23 @@ void Node::ConnectToNode(const NodeInfo& nodeInfo)
 
 void Node::ConnectToGrpcNode(const NodeInfo& nodeInfo)
 {
-	
+	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+
+	auto& registry = NodeSystem::GetRegistryForNodeType(nodeInfo.node_type());
+
+	entt::entity id{ nodeInfo.node_id() };
+	auto nodeId = registry.create(id);
+	if (nodeId != id)
+	{
+		LOG_ERROR << "Login node not found for entity: " << entt::to_integral(nodeId);
+		return;
+	}
+
+	registry.emplace<std::shared_ptr<grpc::Channel>>(nodeId,
+		grpc::CreateChannel(::FormatIpAndPort(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port()),
+			grpc::InsecureChannelCredentials()));
+
+	ProcessGrpcNode(nodeInfo);
 }
 
 void Node::ConnectToTcpNode(const NodeInfo& nodeInfo)
