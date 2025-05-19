@@ -37,53 +37,72 @@ func main() {
 	ctx := svc.NewServiceContext(cfg)
 
 	// 启动 gRPC 服务
-	startGRPCServer(cfg, ctx)
+	if err := startGRPCServer(cfg, ctx); err != nil {
+		logx.Errorf("Failed to start GRPC server: %v", err)
+	}
 }
 
 // startGRPCServer 启动 Login gRPC 服务并注册到 etcd
-func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) {
+func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) error {
+
+	// 获取地址并启动 gRPC 服务
 	host, port, err := splitHostPort(ctx.Config.ListenOn)
 	if err != nil {
 		logx.Errorf("Failed to parse listen address: %v", err)
-		return
+		return err
 	}
 
-	// 注册到 etcd
+	// 注册节点到 etcd
 	loginNode := node.NewNode(uint32(nodeType), host, port, discov.TimeToLive)
 	if err := loginNode.KeepAlive(); err != nil {
 		logx.Errorf("Failed to keep node alive: %v", err)
-		return
+		return err
 	}
 
-	defer func(loginNode *node.Node) {
-		err := loginNode.Close()
-		if err != nil {
-			logx.Errorf("Failed to close node : %v", err)
-			return
+	defer func() {
+		if err := loginNode.Close(); err != nil {
+			logx.Errorf("Failed to close node: %v", err)
 		}
-	}(loginNode)
+	}()
 
 	ctx.SetNodeId(int64(loginNode.Info.NodeId))
 	logx.Infof("Login node registered: %+v", loginNode.Info.String())
 
-	// 获取并连接到 centre 节点
+	// 获取并连接到 Centre 节点
 	if err := connectToCentreNodes(ctx, loginNode); err != nil {
 		logx.Errorf("Failed to connect to centre nodes: %v", err)
-		return
+		return err
 	}
 
-	// 创建并启动 gRPC 服务
+	// 启动 gRPC 服务器
+	if err := startServer(cfg, ctx); err != nil {
+		logx.Errorf("Failed to start gRPC server: %v", err)
+		return err
+	}
+	
+	// 正常启动后返回 nil
+	return nil
+}
+
+// startServer 启动并配置 gRPC 服务
+func startServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	server := zrpc.MustNewServer(cfg.RpcServerConf, func(grpcServer *grpc.Server) {
+		// 注册服务
 		game.RegisterLoginServiceServer(grpcServer, loginserviceServer.NewLoginServiceServer(ctx))
 
+		// 在开发或测试模式下，启用反射
 		if cfg.Mode == service.DevMode || cfg.Mode == service.TestMode {
 			reflection.Register(grpcServer)
 		}
 	})
+
 	defer server.Stop()
 
+	// 启动 gRPC 服务器
 	logx.Infof("Starting Login RPC server at %s...", cfg.ListenOn)
 	server.Start()
+
+	return nil
 }
 
 // splitHostPort 将 address 拆解为 host 和 uint32 类型的 port
@@ -146,7 +165,6 @@ func connectToCentreNodes(ctx *svc.ServiceContext, loginNode *node.Node) error {
 							return
 						}
 					}
-
 				}
 			}
 		}
