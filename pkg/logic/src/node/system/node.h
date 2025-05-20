@@ -35,8 +35,8 @@ public:
 
     void HandleServiceNodeStart(const std::string& key, const std::string& value);
 	void HandleServiceNodeStop(const std::string& key, const std::string& value);
-	void HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response);
-    void HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response);
+	void HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response) const;
+    void HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const;
 protected:
     virtual void Initialize();
     void SetupRpcServer ();
@@ -69,9 +69,9 @@ protected:
     void InitializeGrpcMessageQueues();
     void AttemptNodeRegistration(
         uint32_t nodeType,
-        const muduo::net::TcpConnectionPtr& conn);
+        const muduo::net::TcpConnectionPtr& conn) const;
     void AcquireNode();
-	void AcquireNodeLease();
+    static void AcquireNodeLease();
 	void KeepNodeAlive();   
     void RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn);
     void OnConnectedToServer(const OnConnected2TcpServerEvent& es);

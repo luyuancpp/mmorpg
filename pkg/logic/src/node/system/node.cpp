@@ -4,16 +4,13 @@
 #include "config_loader/config.h"
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/message_differencer.h"
-#include "grpc/generator/proto/common/deploy_service_grpc.h"
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
 #include "logic/constants/node.pb.h"
 #include "logic/event/server_event.pb.h"
 #include "muduo/base/TimeZone.h"
-#include "network/network_constants.h"
 #include "network/rpc_session.h"
-#include "proto/common/deploy_service.grpc.pb.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_common_logic.h"
 #include "time/system/time_system.h"
@@ -221,7 +218,7 @@ void Node::ConnectToGrpcNode(const NodeInfo& nodeInfo)
 
 	auto& registry = NodeSystem::GetRegistryForNodeType(nodeInfo.node_type());
 
-	entt::entity id{ nodeInfo.node_id() };
+	const entt::entity id{ nodeInfo.node_id() };
 	auto nodeId = registry.create(id);
 	if (nodeId != id)
 	{
@@ -244,8 +241,8 @@ void Node::ConnectToTcpNode(const NodeInfo& nodeInfo)
 
 	// 检查节点是否已经存在  
 	if (registry.valid(id)) {
-		auto* existingNodeInfo = registry.try_get<NodeInfo>(id);
-		if (existingNodeInfo && existingNodeInfo->node_id() == nodeInfo.node_id()) {
+		if (auto* existingNodeInfo = registry.try_get<NodeInfo>(id);
+			existingNodeInfo && existingNodeInfo->node_id() == nodeInfo.node_id()) {
 			LOG_TRACE << "Node with ID " << nodeInfo.node_id() << " already exists and matches. Skipping creation.";
 			return;  // 如果节点已经存在且匹配，则直接返回  
 		}
@@ -392,16 +389,15 @@ inline bool IsTcpNodeInfoType(int nodeType) {
 	SceneNodeService,
 	GateNodeService
 	};
-	return validTypes.count(nodeType) > 0;
+	return validTypes.contains(nodeType);
 }
 
 // Handles the start of a service node
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
 	LOG_DEBUG << "Handling service node start for key: " << key << ", value: " << value;
 	// Get the service node type from the key prefix
-	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
-	if (eNodeType_IsValid(nodeType)) {
+	if (const auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key); eNodeType_IsValid(nodeType)) {
 		// Add the service node to the appropriate registry
 		AddServiceNode(value, nodeType);
 	}
@@ -414,7 +410,7 @@ void Node::HandleServiceNodeStart(const std::string& key, const std::string& val
 void Node::HandleServiceNodeStop(const std::string& key, const std::string& value) {
 	LOG_DEBUG << "Handling service node stop for key: " << key << ", value: " << value;
 	// Get the service node type from the key prefix
-	auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
+	const auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
 	if (eNodeType_IsValid(nodeType)) {
 
@@ -423,14 +419,11 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 
 		if (!std::regex_match(key, match, pattern)) {
 			return;
-
 		}
 
-		uint32_t nodeType = std::stoul(match[1]);
 		uint32_t nodeId = std::stoul(match[2]);
 
-		if (nodeType > std::numeric_limits<uint32_t>::max() ||
-			nodeId > std::numeric_limits<uint32_t>::max()) {
+		if (nodeId > std::numeric_limits<uint32_t>::max()) {
 			LOG_ERROR << "Value exceeds uint32_t limit.";
 			return ;
 		}
@@ -582,7 +575,8 @@ void Node::RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn) {
 void Node::AttemptNodeRegistration(
 	uint32_t nodeType,
 	const muduo::net::TcpConnectionPtr& conn
-) {
+) const
+{
 	entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
 
 	for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
@@ -631,7 +625,8 @@ void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 	LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
 }
 
-void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response) {
+void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response) const
+{
 	auto& peerNodeInfo = request.self_node();
 
 	response.mutable_peer_node()->CopyFrom(GetNodeInfo());
@@ -641,9 +636,8 @@ void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, Reg
 
 	// Helper lambda to process a registry
 	auto processRegistry = [&](const TcpConnectionPtr& conn, uint32_t nodeType) {
-		auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
-		auto& nodeList = serviceNodeList[nodeType];
-		for (const auto& serverNodeInfo : nodeList.node_list()) {
+		const auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+		for (auto& nodeList = serviceNodeList[nodeType]; const auto& serverNodeInfo : nodeList.node_list()) {
 			if (serverNodeInfo.lease_id() != peerNodeInfo.lease_id()) {
 				LOG_DEBUG << "Mismatch in node type or ID. Expected node: " << serverNodeInfo.DebugString()
 					<< "; received node: " << peerNodeInfo.DebugString();
@@ -724,7 +718,8 @@ void TriggerNodeConnectionEvent(entt::registry& registry, const RegisterNodeSess
 	}
 }
 
-void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) {
+void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const
+{
 	LOG_INFO << "Received node registration response:" << response.DebugString();
 
 	// Get registry based on the node type
@@ -804,7 +799,7 @@ void Node::AcquireNode()
 
 	// 设置最终的 node_id
 	GetNodeInfo().set_node_id(candidateNodeId);
-	auto nodeKey = BuildServiceNodeKey(GetNodeInfo());
+	const auto nodeKey = BuildServiceNodeKey(GetNodeInfo());
 
 	// 将新节点写入 etcd，如果存在则不写入
 	EtcdHelper::PutIfAbsent(nodeKey, GetNodeInfo());
