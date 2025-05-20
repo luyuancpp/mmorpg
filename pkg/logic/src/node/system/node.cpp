@@ -805,15 +805,12 @@ void Node::AcquireNode()
 	EtcdHelper::PutIfAbsent(nodeKey, GetNodeInfo());
 }
 
-
-
 void Node::AcquireNodeLease()
 {
 	EtcdHelper::GrantLease(tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds());
 }
 
-void Node::KeepNodeAlive()
-{
+void Node::KeepNodeAlive(){
 	renewNodeLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
 		etcdserverpb::LeaseKeepAliveRequest request;
 		request.set_id(GetNodeInfo().lease_id());
