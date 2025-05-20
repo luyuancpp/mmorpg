@@ -14,9 +14,9 @@ struct OnConnected2TcpServerEvent
     muduo::net::TcpConnectionPtr conn_;
 };
 
-struct OnBeConnectedEvent//服务器被连接
+struct OnTcpClientConnectedEvent//服务器被连接
 {
-    OnBeConnectedEvent(const muduo::net::TcpConnectionPtr& conn)
+    OnTcpClientConnectedEvent(const muduo::net::TcpConnectionPtr& conn)
         : conn_(conn)
     {
     }

@@ -58,7 +58,7 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
     conn->setContext(GameChannelPtr());
     // FIXME:
   }
-  tls.dispatcher.trigger<OnBeConnectedEvent>(conn);
+  tls.dispatcher.trigger<OnTcpClientConnectedEvent>(conn);
 }
 
 // void RpcServer::onMessage(const TcpConnectionPtr& conn,

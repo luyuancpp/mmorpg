@@ -13,7 +13,7 @@ public:
 	entt::registry gateNodeRegistry;
 	entt::registry centreNodeRegistry;
 	entt::registry itemRegistry;
-	entt::registry networkRegistry;
+	entt::registry sessionRegistry;
 	entt::registry globalNodeRegistry;
 	entt::registry invalidRegistry;
 	entt::registry loginNodeRegistry;

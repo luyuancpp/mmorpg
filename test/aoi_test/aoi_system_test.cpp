@@ -89,8 +89,8 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
         auto player_entity = tls.registry.create();
 
         Transform& transform = tls.registry.emplace<Transform>(player_entity);
-        transform.mutable_location()->set_x(tlsCommonLogic.GetRandom().RandReal<double>(0, 1000));
-        transform.mutable_location()->set_y(tlsCommonLogic.GetRandom().RandReal<double>(0, 1000));
+        transform.mutable_location()->set_x(tlsCommonLogic.GetRng().RandReal<double>(0, 1000));
+        transform.mutable_location()->set_y(tlsCommonLogic.GetRng().RandReal<double>(0, 1000));
 
         tls.registry.emplace<SceneEntityComp>(player_entity, scene_entity_comp);
 
