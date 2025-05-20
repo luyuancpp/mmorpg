@@ -49,22 +49,24 @@ std::string Node::GetServiceName(uint32_t nodeType) const {
 }
 
 void Node::Initialize() {
-    LOG_TRACE << "Initializing node...";
-    RegisterEventHandlers();
-    LoadConfigurationFiles();        // Load configuration files
-    SetUpRpcServer();                // Set up the RPC server
-    SetUpLoggingSystem();            // Set up logging system
-    ConfigureEnvironment();          // Set environment settings
-    LoadConfigurationData();        // Load the configuration data
-    InitializeGrpcClients();        // Initialize gRPC clients
-    InitializeGrpcMessageQueues();  // Initialize gRPC queues for async processing
-    SetUpEventHandlers();           // Set up event handlers
-    AcquireNodeLease();
-    LOG_TRACE << "Node initialization complete.";
+	LOG_TRACE << "Starting node initialization...";
+
+	RegisterCoreEventHandlers();   // 注册基础事件处理器
+	LoadConfigFiles();             // 加载配置文件
+	InitRpcServer();               // 初始化 RPC 服务
+	InitLoggingSystem();           // 设置日志系统
+	SetupEnvironment();            // 设置运行环境（如时区）
+	LoadAllConfigs();              // 加载配置数据
+	InitGrpcClients();             // 初始化 gRPC 客户端
+	InitGrpcQueues();              // 初始化 gRPC 异步队列
+	RegisterGrpcHandlers();        // 注册 gRPC 响应处理器
+	RequestNodeLease();            // 向 etcd 请求租约（用于注册自身）
+
+	LOG_TRACE << "Node initialization finished.";
 }
 
 // Sets up the RPC server for the node
-void Node::SetUpRpcServer() {
+void Node::InitRpcServer() {
     auto& nodeInfo = GetNodeInfo();
     nodeInfo.mutable_endpoint()->set_ip(localip());
     nodeInfo.mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
@@ -106,32 +108,32 @@ void Node::ShutdownNode() {
 }
 
 // Sets up the logging system with appropriate configurations
-void Node::SetUpLoggingSystem() {
+void Node::InitLoggingSystem() {
     muduo::Logger::setLogLevel(static_cast<muduo::Logger::LogLevel>(tlsCommonLogic.GetBaseDeployConfig().log_level()));
     muduo::Logger::setOutput(AsyncOutput);
     muduoLog.start();  // Start logging
 }
 
-void Node::RegisterEventHandlers() {
+void Node::RegisterCoreEventHandlers() {
     tls.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&Node::OnConnectedToServer>(*this);
     tls.dispatcher.sink<OnTcpClientConnectedEvent>().connect<&Node::OnClientConnected>(*this);
 }
 
 // Loads configuration files for the node
-void Node::LoadConfigurationFiles() {
+void Node::	LoadConfigFiles() {
     readBaseDeployConfig("etc/base_deploy_config.yaml", tlsCommonLogic.GetBaseDeployConfig());
     readGameConfig("etc/game_config.yaml", tlsCommonLogic.GetGameConfig());
 }
 
 // Loads and processes all configuration data
-void Node::LoadConfigurationData() {
+void Node::LoadAllConfigs() {
     LoadAllConfig();
     LoadAllConfigAsyncWhenServerLaunch();
     OnConfigLoadSuccessful();
 }
 
 // Configures environment variables, such as time zone and node info
-void Node::ConfigureEnvironment() {
+void Node::SetupEnvironment() {
     const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
     muduo::Logger::setTimeZone(tz);  // Set timezone to Hong Kong
 
@@ -139,12 +141,12 @@ void Node::ConfigureEnvironment() {
 }
 
 // Initializes gRPC clients and stubs for service communication
-void Node::InitializeGrpcClients() {
+void Node::InitGrpcClients() {
     GrpcClientSystem::InitEtcdStubs(tlsCommonLogic.GetBaseDeployConfig().etcd_hosts());
 }
 
 // Initializes the gRPC queues for async message handling
-void Node::InitializeGrpcMessageQueues() {
+void Node::InitGrpcQueues() {
     InitetcdserverpbKVCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
     InitetcdserverpbWatchCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
     InitetcdserverpbLeaseCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
@@ -274,7 +276,7 @@ void Node::ReleaseNodeId() {
     EtcdHelper::RevokeLeaseAndCleanup(static_cast<int64_t>(GetNodeInfo().lease_id()));
 }
 
-void Node::SetUpEventHandlers() {
+void Node::RegisterGrpcHandlers() {
     InitMessageInfo();
     InitializeGrpcResponseHandlers();
 
@@ -287,10 +289,6 @@ void Node::AsyncOutput(const char* msg, int len) {
 #ifdef WIN32
     LogToConsole(msg, len);  // Output to console on Windows
 #endif
-}
-
-void Node::InitGrpcClients() {
-    GrpcClientSystem::InitEtcdStubs(tlsCommonLogic.GetBaseDeployConfig().etcd_hosts());
 }
 
 std::string Node::FormatIpAndPort() {
@@ -717,9 +715,9 @@ void Node::AcquireNode() {
 	}
 
 	GetNodeInfo().set_node_id(assignedId);
-	const auto nodeKey = MakeServiceNodeEtcdKey(GetNodeInfo());
+	const auto serviceKey  = MakeServiceNodeEtcdKey(GetNodeInfo());
 
-	EtcdHelper::PutIfAbsent(nodeKey, GetNodeInfo());
+	EtcdHelper::PutIfAbsent(serviceKey , GetNodeInfo());
 }
 
 void Node::KeepNodeAlive() {
@@ -730,7 +728,7 @@ void Node::KeepNodeAlive() {
 	});
 }
 
-void Node::AcquireNodeLease() {
+void Node::RequestNodeLease() {
 	uint64_t ttl = tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds();
 	EtcdHelper::GrantLease(ttl);
 }
