@@ -2,8 +2,6 @@
 #include <google/protobuf/util/json_util.h>
 #include "thread_local/storage_common_logic.h"
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
-#include "network/network_constants.h"
-#include "log/system/console_log_system.h"
 #include <muduo/base/Logging.h>
 #include <thread_local/storage.h>
 

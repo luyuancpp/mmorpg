@@ -3,7 +3,6 @@
 #include <memory>
 #include <muduo/base/AsyncLogging.h>
 #include <muduo/net/TcpServer.h>
-#include "grpc/generator/proto/common/deploy_service_grpc.h"
 #include "network/rpc_client.h"
 #include "network/rpc_server.h"
 #include "proto/common/common.pb.h"
@@ -41,7 +40,7 @@ protected:
     virtual void Initialize();
     void SetupRpcServer ();
     virtual void StartRpcServer();
-    virtual void ShutdownNode();
+    void ShutdownNode();
     virtual void PrepareForBeforeConnection() {}
     virtual void ReadyForGame(){}
     void SetupLoggingSystem();
