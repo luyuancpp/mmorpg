@@ -32,7 +32,7 @@ entt::entity GlobalEntity()
     return tls.globalEntity;
 }
 
-entt::entity GlobalGrpcNodeEntity()
+entt::entity GetGlobalGrpcNodeEntity()
 {
     if (tls.globalGrpcNodeEntity == entt::null)
     {

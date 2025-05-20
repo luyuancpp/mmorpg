@@ -6,7 +6,7 @@
 entt::entity ErrorEntity();
 entt::entity OperatorEntity();
 entt::entity GlobalEntity();
-entt::entity GlobalGrpcNodeEntity();
+entt::entity GetGlobalGrpcNodeEntity();
 
 class EventOwner
 {

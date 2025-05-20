@@ -135,7 +135,7 @@ void Node::ConfigureEnvironment() {
     const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
     muduo::Logger::setTimeZone(tz);  // Set timezone to Hong Kong
 
-    tls.globalNodeRegistry.emplace<ServiceNodeList>(GlobalGrpcNodeEntity());
+    tls.globalNodeRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 }
 
 // Initializes gRPC clients and stubs for service communication
@@ -145,9 +145,9 @@ void Node::InitializeGrpcClients() {
 
 // Initializes the gRPC queues for async message handling
 void Node::InitializeGrpcMessageQueues() {
-    InitetcdserverpbKVCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
-    InitetcdserverpbWatchCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
-    InitetcdserverpbLeaseCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
+    InitetcdserverpbKVCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+    InitetcdserverpbWatchCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+    InitetcdserverpbLeaseCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
 
     // Periodically handle etcd server responses
     etcdQueueTimer.RunEvery(0.001, []() {
@@ -209,7 +209,7 @@ void Node::ConnectToNode(const NodeInfo& nodeInfo) {
 }
 
 void Node::ConnectToGrpcNode(const NodeInfo& nodeInfo) {
-    auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+    auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
     auto& registry = NodeSystem::GetRegistryForNodeType(nodeInfo.node_type());
 
     const entt::entity id{ nodeInfo.node_id() };
@@ -309,7 +309,6 @@ uint32_t Node::GetPort() {
 void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	LOG_INFO << "Adding service node of type " << nodeType << " with JSON: " << nodeJson;
 
-	// Validate the node type  
 	if (!eNodeType_IsValid(static_cast<int32_t>(nodeType))) {
 		LOG_ERROR << "Invalid node type: " << nodeType;
 		return;
@@ -317,58 +316,54 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 
 	NodeInfo newNodeInfo;
 
-	// Parse the JSON string into NodeInfo protobuf message  
-	auto result = google::protobuf::util::JsonStringToMessage(nodeJson, &newNodeInfo);
-	if (!result.ok()) {
+	auto parseResult = google::protobuf::util::JsonStringToMessage(nodeJson, &newNodeInfo);
+	if (!parseResult.ok()) {
 		LOG_ERROR << "Failed to parse JSON for nodeType: " << nodeType
-			<< ", JSON: " << nodeJson
-			<< ", Error: " << result.message().data();
+				  << ", JSON: " << nodeJson
+				  << ", Error: " << parseResult.message().data();
 		return;
 	}
 
-	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
-	// Check if the node already exists based on endpoint; if so, return  
-	auto& nodeList = *serviceNodeList[nodeType].mutable_node_list();
+	auto& nodeRegistry = tls.globalNodeRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
+
 	for (const auto& existingNode : nodeList) {
 		if (existingNode.lease_id() == newNodeInfo.lease_id()) {
-			LOG_INFO << "Node with endpoint IP: " << existingNode.endpoint().ip()
-				<< " and Port: " << existingNode.endpoint().port()
-				<< " already exists. Skipping addition.";
+			LOG_INFO << "Node already exists with IP: " << existingNode.endpoint().ip()
+					 << ", Port: " << existingNode.endpoint().port();
 			return;
 		}
 	}
 
 	*nodeList.Add() = newNodeInfo;
 
-	LOG_INFO << "Successfully added node to serviceNodeList. NodeType: " << nodeType << ", NodeInfo: " << newNodeInfo.DebugString();
+	LOG_INFO << "Node added. Type: " << nodeType << ", Info: " << newNodeInfo.DebugString();
 
-	if (!allowedTargetNodeTypes.contains(nodeType)) {
+	if (!targetNodeTypeWhitelist.contains(nodeType)) {
 		return;
 	}
 
-	// Check if the node already exists in the corresponding node registry's RpcClient components
-	auto checkRegistryForDuplicate = [&]() {
+	auto isNodeAlreadyRegistered = [&]() -> bool {
 		entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
-		// Check if the node already exists in the registry based on IP and port
-		for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
+		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
 			if (nodeInfo.endpoint().ip() == newNodeInfo.endpoint().ip() &&
 				nodeInfo.endpoint().port() == newNodeInfo.endpoint().port()) {
-				LOG_INFO << "Node with endpoint IP: " << nodeInfo.endpoint().ip()
-					<< " and Port: " << nodeInfo.endpoint().port()
-					<< " already exists in the registry. Skipping addition.";
+				LOG_INFO << "Node already registered with IP: " << nodeInfo.endpoint().ip()
+						 << ", Port: " << nodeInfo.endpoint().port();
 				return true;
-			}
+				}
 		}
 		return false;
-		};
+	};
 
-	if (checkRegistryForDuplicate()) {
+	if (isNodeAlreadyRegistered()) {
 		return;
 	}
 
 	ConnectToNode(newNodeInfo);
-	LOG_INFO << "Connected to  node: " << newNodeInfo.DebugString();
+	LOG_INFO << "Connected to node: " << newNodeInfo.DebugString();
 }
+
 
 inline bool IsTcpNodeInfoType(int nodeType) {
 	static const std::unordered_set<int> validTypes = {
@@ -379,117 +374,105 @@ inline bool IsTcpNodeInfoType(int nodeType) {
 	return validTypes.contains(nodeType);
 }
 
-// Handles the start of a service node
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
-	LOG_DEBUG << "Handling service node start for key: " << key << ", value: " << value;
-	// Get the service node type from the key prefix
+	LOG_DEBUG << "Handling service node start. Key: " << key << ", Value: " << value;
 
 	if (const auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key); eNodeType_IsValid(nodeType)) {
-		// Add the service node to the appropriate registry
 		AddServiceNode(value, nodeType);
-	}
-	else {
+	} else {
 		LOG_ERROR << "Unknown service type for key: " << key;
 	}
 }
 
-// Handles the stop of a service node
 void Node::HandleServiceNodeStop(const std::string& key, const std::string& value) {
-	LOG_DEBUG << "Handling service node stop for key: " << key << ", value: " << value;
-	// Get the service node type from the key prefix
+	LOG_DEBUG << "Handling service node stop. Key: " << key << ", Value: " << value;
+
 	const auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
-	if (eNodeType_IsValid(nodeType)) {
-
-		std::regex pattern(R"(.*?/node_type/(\d+)/node_id/(\d+))");
-		std::smatch match;
-
-		if (!std::regex_match(key, match, pattern)) {
-			return;
-		}
-
-		uint32_t nodeId = std::stoul(match[2]);
-
-		if (nodeId > std::numeric_limits<uint32_t>::max()) {
-			LOG_ERROR << "Value exceeds uint32_t limit.";
-			return ;
-		}
-
-		auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
-		// Check if the node already exists based on lease_id; if so, remove it and then add the new node
-		auto& nodeList = *serviceNodeList[nodeType].mutable_node_list();
-		for (auto it = nodeList.begin(); it != nodeList.end(); ) {
-			if (it->node_type() == nodeType && it->node_id() == nodeId) {
-				LOG_INFO << "Node with lease_id: " << it->lease_id()
-					<< " already exists. Removing the old node and adding the new one.";
-				it = nodeList.erase(it);  // Erase the node and return the new iterator
-				break;
-			}
-			else {
-				++it;  // Move to the next element if no deletion
-			}
-		}
-
-
-		ProcessNodeStop(nodeType,nodeId);
-
-		entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
-		Destroy(registry, entt::entity{ nodeId });
-		LOG_INFO << "Service node stopped: " << nodeId;
-	}
-	else {
+	if (!eNodeType_IsValid(nodeType)) {
 		LOG_TRACE << "Unknown service type for key: " << key;
+		return;
 	}
+
+	std::regex pattern(R"(.*?/node_type/(\d+)/node_id/(\d+))");
+	std::smatch match;
+
+	if (!std::regex_match(key, match, pattern)) {
+		return;
+	}
+
+	uint32_t nodeId = std::stoul(match[2]);
+
+	if (nodeId > std::numeric_limits<uint32_t>::max()) {
+		LOG_ERROR << "Value exceeds uint32_t limit.";
+		return;
+	}
+
+	auto& nodeRegistry = tls.globalNodeRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
+
+	for (auto it = nodeList.begin(); it != nodeList.end(); ) {
+		if (it->node_type() == nodeType && it->node_id() == nodeId) {
+			LOG_INFO << "Removing old node with lease_id: " << it->lease_id();
+			it = nodeList.erase(it);
+			break;
+		} else {
+			++it;
+		}
+	}
+
+	ProcessNodeStop(nodeType, nodeId);
+
+	entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
+	Destroy(registry, entt::entity{nodeId});
+
+	LOG_INFO << "Service node stopped. ID: " << nodeId;
 }
 
 void Node::InitializeGrpcResponseHandlers() {
-	// Define handlers for various gRPC response types
+	// gRPC KV Range Response Handler
 	AsyncetcdserverpbKVRangeHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
 		if (call->status.ok()) {
 			for (const auto& kv : call->reply.kvs()) {
 				HandleServiceNodeStart(kv.key(), kv.value());
 			}
-		}
-		else {
+		} else {
 			LOG_ERROR << "RPC failed: " << call->status.error_message();
 		}
-		};
+	};
 
+	// gRPC Put Response Handler
 	AsyncetcdserverpbKVPutHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>& call) {
-			LOG_DEBUG << "Put response: " << call->reply.DebugString();
-			StartWatchingServiceNodes();  // Start watching for new service nodes
-		};
+		LOG_DEBUG << "Put response: " << call->reply.DebugString();
+		StartWatchingServiceNodes();
+	};
 
+	// gRPC Delete Response Handler
 	AsyncetcdserverpbKVDeleteRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>& call) {
-		// Handle KV delete response if needed
-		};
+		// Reserved for future use
+	};
 
+	// gRPC Transaction Handler
 	AsyncetcdserverpbKVTxnHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>& call) {
 		if (call->status.ok()) {
 			LOG_DEBUG << "Transaction response: " << call->reply.DebugString();
-			if (call->reply.succeeded()) {
-				StartRpcServer();
-			}
-			else {
-				AcquireNode();
-			}
-		}
-		else {
+			call->reply.succeeded() ? StartRpcServer() : AcquireNode();
+		} else {
 			LOG_ERROR << "RPC failed: " << call->status.error_message();
 		}
-		};
+	};
 
+	// gRPC Watch Handler
 	AsyncetcdserverpbWatchWatchHandler = [this](const ::etcdserverpb::WatchResponse& response) {
 		if (response.created()) {
-			LOG_TRACE << "Watch created: " << response.created();
+			LOG_TRACE << "Watch created.";
 			return;
 		}
 
 		if (response.canceled()) {
 			LOG_INFO << "Watch canceled. Reason: " << response.cancel_reason();
 			if (response.compact_revision() > 0) {
-				LOG_ERROR << "Revision " << response.compact_revision() << " has been compacted.";
-				// Re-initiate watch request with the latest revision
+				LOG_ERROR << "Revision " << response.compact_revision() << " compacted.";
 			}
 			return;
 		}
@@ -498,36 +481,35 @@ void Node::InitializeGrpcResponseHandlers() {
 			if (event.type() == mvccpb::Event_EventType::Event_EventType_PUT) {
 				LOG_INFO << "Key put: " << event.kv().key();
 				HandleServiceNodeStart(event.kv().key(), event.kv().value());
-			}
-			else if (event.type() == mvccpb::Event_EventType::Event_EventType_DELETE) {
+			} else if (event.type() == mvccpb::Event_EventType::Event_EventType_DELETE) {
 				HandleServiceNodeStop(event.kv().key(), event.kv().value());
 				LOG_INFO << "Key deleted: " << event.kv().key();
 			}
 		}
-		};
+	};
 
+	// gRPC Lease Grant Handler
 	AsyncetcdserverpbLeaseLeaseGrantHandler = [this](const std::unique_ptr<AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>& call) {
 		if (call->status.ok()) {
 			GetNodeInfo().set_lease_id(call->reply.id());
 			KeepNodeAlive();
 			AcquireNode();
 			LOG_INFO << "Lease granted: " << call->reply.DebugString();
-		}
-		else {
+		} else {
 			LOG_ERROR << "RPC failed: " << call->status.error_message();
 		}
-		};
+	};
 }
 
-void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& es) {
-	auto& conn = es.conn_;
-	if (!conn->connected()) {
-		LOG_INFO << "Client disconnected: " << conn->peerAddress().toIpPort();
+void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& event) {
+	auto& connection = event.conn_;
+	if (!connection->connected()) {
+		LOG_INFO << "Client disconnected: " << connection->peerAddress().toIpPort();
 		return;
 	}
 
-	LOG_INFO << "Successfully connected to server: " << conn->peerAddress().toIpPort();
-	RegisterNodeSessions(conn);
+	LOG_INFO << "Connected to server: " << connection->peerAddress().toIpPort();
+	RegisterNodeSessions(connection);
 }
 
 // Handle connections for different node types
@@ -542,46 +524,31 @@ static uint32_t gNodeToNodeRegistrationMessageIdMap[eNodeType_MAX] = {
 	GateServiceRegisterNodeSessionMessageId     // 对应 kGateNode
 };
 
-void Node::RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn) {
-	AttemptNodeRegistration(
-		CentreNodeService,
-		conn
-	);
-
-	AttemptNodeRegistration(
-		SceneNodeService,
-		conn
-	);
-
-	AttemptNodeRegistration(
-		GateNodeService,
-		conn
-	);
+void Node::RegisterNodeSessions(const muduo::net::TcpConnectionPtr& connection) {
+	AttemptNodeRegistration(CentreNodeService, connection);
+	AttemptNodeRegistration(SceneNodeService, connection);
+	AttemptNodeRegistration(GateNodeService, connection);
 }
 
-void Node::AttemptNodeRegistration(
-	uint32_t nodeType,
-	const muduo::net::TcpConnectionPtr& conn
-) const
-{
+void Node::AttemptNodeRegistration(uint32_t nodeType, const muduo::net::TcpConnectionPtr& connection) const {
 	entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
 
-	for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
-		if (!IsSameAddress(client.peer_addr(), conn->peerAddress())) {
+	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
+		if (!IsSameAddress(client.peer_addr(), connection->peerAddress())) {
 			continue;
 		}
 
-		LOG_INFO << "Matched peer address in [" << tls.GetRegistryName(registry) << "] registry: " << conn->peerAddress().toIpPort();
+		LOG_INFO << "Matching peer address found in " << tls.GetRegistryName(registry)
+				 << ": " << connection->peerAddress().toIpPort();
 
-		registry.emplace<TimerTaskComp>(e).RunAfter(0.5, [conn, this, nodeType, &client] {
+		registry.emplace<TimerTaskComp>(entity).RunAfter(0.5, [connection, this, nodeType, &client]() {
 			RegisterNodeSessionRequest request;
 			request.mutable_self_node()->CopyFrom(GetNodeInfo());
-			request.mutable_endpoint()->set_ip(conn->localAddress().toIp());
-			request.mutable_endpoint()->set_port(conn->localAddress().port());
+			request.mutable_endpoint()->set_ip(connection->localAddress().toIp());
+			request.mutable_endpoint()->set_port(connection->localAddress().port());
 
 			client.CallRemoteMethod(gNodeToNodeRegistrationMessageIdMap[nodeType], request);
-
-			});
+		});
 
 		return;
 	}
@@ -612,69 +579,56 @@ void Node::OnClientConnected(const OnBeConnectedEvent& es) {
 	LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
 }
 
-void Node::HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response) const
-{
+void Node::HandleNodeRegistration(
+	const RegisterNodeSessionRequest& request,
+	RegisterNodeSessionResponse& response
+) const {
 	auto& peerNodeInfo = request.self_node();
-
 	response.mutable_peer_node()->CopyFrom(GetNodeInfo());
 
-	LOG_TRACE << "Received node registration request:" << request.DebugString();
+	LOG_TRACE << "Received node registration request: " << request.DebugString();
 
+	auto tryRegisterToRegistry = [&](const TcpConnectionPtr& connection, uint32_t nodeType) -> bool {
+		const auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 
-	// Helper lambda to process a registry
-	auto processRegistry = [&](const TcpConnectionPtr& conn, uint32_t nodeType) {
-		const auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
-		for (auto& nodeList = serviceNodeList[nodeType]; const auto& serverNodeInfo : nodeList.node_list()) {
+		for (auto& serverNodeInfo : serviceNodeList[nodeType].node_list()) {
 			if (serverNodeInfo.lease_id() != peerNodeInfo.lease_id()) {
-				LOG_DEBUG << "Mismatch in node type or ID. Expected node: " << serverNodeInfo.DebugString()
-					<< "; received node: " << peerNodeInfo.DebugString();
 				continue;
 			}
 
 			entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
+			entt::entity entity = registry.create(entt::entity{ peerNodeInfo.node_id() });
 
-			entt::entity id = registry.create(entt::entity{ peerNodeInfo.node_id() });
-			if (id != entt::entity{ peerNodeInfo.node_id() })
-			{
-				LOG_ERROR << "Failed to create node entity: " << entt::to_integral(id) << tls.GetRegistryName(registry) << " registry.";;
+			if (entity != entt::entity{ peerNodeInfo.node_id() }) {
+				LOG_ERROR << "Failed to create node entity in " << tls.GetRegistryName(registry);
 				return false;
 			}
-			registry.emplace<RpcSession>(id, RpcSession{ conn });
-			LOG_INFO << "Node with ID " << peerNodeInfo.node_id() << " found in " << tls.GetRegistryName(registry) << " registry.";
+
+			registry.emplace<RpcSession>(entity, RpcSession{ connection });
+			LOG_INFO << "Node with ID " << peerNodeInfo.node_id() << " registered in " << tls.GetRegistryName(registry);
 			return true;
-
 		}
-		return false;
-		};
 
-	for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each()) {
-		auto& conn = session.connection;
-		if (request.endpoint().ip() != conn->peerAddress().toIp() ||
-			request.endpoint().port() != conn->peerAddress().port()) {
-			LOG_DEBUG << "Endpoint mismatch: expected IP = " << request.endpoint().ip()
-				<< ", port = " << request.endpoint().port()
-				<< "; actual IP = " << conn->peerAddress().toIp()
-				<< ", port = " << conn->peerAddress().port();
+		return false;
+	};
+
+	for (const auto& [entity, session] : tls.networkRegistry.view<RpcSession>().each()) {
+		auto& connection = session.connection;
+		if (!IsSameAddress(connection->peerAddress(), muduo::net::InetAddress(request.endpoint().ip(), request.endpoint().port()))) {
 			continue;
 		}
 
-		for (uint32_t nodeType = eNodeType_MIN; nodeType < eNodeType_MAX; ++nodeType)
-		{
-			if (GetNodeType() == nodeType || !IsTcpNodeInfoType(nodeType))
-			{
+		for (uint32_t nodeType = eNodeType_MIN; nodeType < eNodeType_MAX; ++nodeType) {
+			if (GetNodeType() == nodeType || !IsTcpNodeInfoType(nodeType)) {
 				continue;
 			}
 
-			// Process each registry using server list type's NodeInfo list
-			if (processRegistry(conn, nodeType)) {
-
-				tls.networkRegistry.destroy(e);
-
+			if (tryRegisterToRegistry(connection, nodeType)) {
+				tls.networkRegistry.destroy(entity);
 				response.mutable_error_message()->set_id(kCommon_errorOK);
 				return;
 			}
 		}
-
 	}
 
 	response.mutable_error_message()->set_id(kFailedToRegisterTheNode);
@@ -705,103 +659,80 @@ void TriggerNodeConnectionEvent(entt::registry& registry, const RegisterNodeSess
 	}
 }
 
-void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const
-{
-	LOG_INFO << "Received node registration response:" << response.DebugString();
+void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const {
+	LOG_INFO << "Received node registration response: " << response.DebugString();
 
-	// Get registry based on the node type
-	auto nodeType = response.peer_node().node_type();
+	uint32_t nodeType = response.peer_node().node_type();
 	entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
 
-	auto& peerNodeInfo = response.peer_node();
-
 	if (response.error_message().id() != kCommon_errorOK) {
-		LOG_TRACE << "Failed to register node: " << response.DebugString();
+		LOG_TRACE << "Failed registration: " << response.DebugString();
 
-		for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
-			if (client.peer_addr().toIp() !=  peerNodeInfo.endpoint().ip() || 
-				client.peer_addr().port() != peerNodeInfo.endpoint().port()) {
+		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
+			if (!IsSameAddress(client.peer_addr(), muduo::net::InetAddress(
+				response.peer_node().endpoint().ip(),
+				response.peer_node().endpoint().port()))) {
 				continue;
-			}
+				}
 
-			LOG_INFO << "Matched peer address in [" << tls.GetRegistryName(registry) << "] registry: " << peerNodeInfo.DebugString();
-
-			registry.get<TimerTaskComp>(e).RunAfter(0.5, [this, &client, nodeType]() {
+			registry.get<TimerTaskComp>(entity).RunAfter(0.5, [this, &client, nodeType]() {
 				RegisterNodeSessionRequest request;
 				*request.mutable_self_node() = GetNodeInfo();
 				request.mutable_endpoint()->set_ip(client.local_addr().toIp());
 				request.mutable_endpoint()->set_port(client.local_addr().port());
-
 				client.CallRemoteMethod(gNodeToNodeRegistrationMessageIdMap[nodeType], request);
-				});
-
+			});
 			return;
 		}
 		return;
 	}
 
-	entt::entity e{ response.peer_node().node_id() };
-	registry.remove<TimerTaskComp>(e);
+	entt::entity peerEntity{ response.peer_node().node_id() };
+	registry.remove<TimerTaskComp>(peerEntity);
 
-	// Trigger the connection event for the corresponding registry
 	TriggerNodeConnectionEvent(registry, response);
-
 	LOG_INFO << "Node registration successful.";
 }
 
-void Node::AcquireNode()
-{
-	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
-	auto& nodeListPb = serviceNodeList[GetNodeType()];
+void Node::AcquireNode() {
+	auto& nodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[GetNodeType()];
+	auto& protoList = *nodeList.mutable_node_list();
 
 	uint32_t maxNodeId = 0;
-	UInt32Set nodeIdSet;
+	UInt32Set occupiedNodeIds;
 
-	// 遍历现有节点并记录最大的 NodeId 和已占用的 NodeId
-	for (auto& node : *nodeListPb.mutable_node_list())
-	{
+	for (const auto& node : protoList) {
 		maxNodeId = std::max(maxNodeId, node.node_id());
-		nodeIdSet.emplace(node.node_id());
+		occupiedNodeIds.insert(node.node_id());
 	}
 
-	// 增加随机偏移，降低并发冲突概率
 	constexpr uint32_t randomOffset = 5;
-	uint32_t searchRange = maxNodeId + tlsCommonLogic.GetRandom().Rand<uint32_t>(0, randomOffset);
+	uint32_t searchLimit = maxNodeId + tlsCommonLogic.GetRandom().Rand<uint32_t>(0, randomOffset);
+	uint32_t assignedId = 0;
 
-	// 遍历从 0 到 maxNodeId + randomOffset 查找可用 node_id
-	uint32_t candidateNodeId = 0;
-
-	// 遍历 searchRange 范围内的所有 ID
-	for (uint32_t i = 0; i < searchRange; ++i)
-	{
-		uint32_t tryId = i; // 直接用 i 来遍历
-
-		// 如果该 node_id 没有被占用
-		if (nodeIdSet.count(tryId) == 0)
-		{
-			candidateNodeId = tryId;
+	for (uint32_t id = 0; id < searchLimit; ++id) {
+		if (!occupiedNodeIds.contains(id)) {
+			assignedId = id;
 			break;
 		}
 	}
 
-	// 设置最终的 node_id
-	GetNodeInfo().set_node_id(candidateNodeId);
+	GetNodeInfo().set_node_id(assignedId);
 	const auto nodeKey = BuildServiceNodeKey(GetNodeInfo());
 
-	// 将新节点写入 etcd，如果存在则不写入
 	EtcdHelper::PutIfAbsent(nodeKey, GetNodeInfo());
+}
+
+void Node::KeepNodeAlive() {
+	renewNodeLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
+		etcdserverpb::LeaseKeepAliveRequest request;
+		request.set_id(static_cast<int64_t>(GetNodeInfo().lease_id()));
+		SendetcdserverpbLeaseLeaseKeepAlive(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), request);
+	});
 }
 
 void Node::AcquireNodeLease()
 {
 	EtcdHelper::GrantLease(tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds());
-}
-
-void Node::KeepNodeAlive(){
-	renewNodeLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
-		etcdserverpb::LeaseKeepAliveRequest request;
-		request.set_id(static_cast<int64_t>(GetNodeInfo().lease_id()));
-		SendetcdserverpbLeaseLeaseKeepAlive(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
-		});
 }
 

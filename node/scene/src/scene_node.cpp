@@ -38,7 +38,7 @@ void SceneNode::Initialize()
 {
     GetNodeInfo().set_node_type(SceneNodeService);
 
-	allowedTargetNodeTypes = { CentreNodeService };
+	targetNodeTypeWhitelist = { CentreNodeService };
 
 
     gSceneNode = this;
