@@ -40,18 +40,13 @@ void SceneNode::Initialize()
 
 	targetNodeTypeWhitelist = { CentreNodeService };
 
-
     gSceneNode = this;
     
-    
     Node::Initialize();
-
     EventHandler::Register();
 
     InitPlayerService();
-    
     InitPlayerServiceReplied();
-    
     World::InitializeSystemBeforeConnect();
 }
 
@@ -74,14 +69,13 @@ void SceneNode::StartRpcServer()
     LOG_INFO << "game node  start at " << GetNodeInfo().DebugString();
 }
 
-void SceneNode::PrepareForBeforeConnection()
+void SceneNode::InitGlobalData()
 {
-    Node::PrepareForBeforeConnection();
+    Node::InitGlobalData();
 }
 
 void SceneNode::ReadyForGame()
 {
-    Node::ReadyForGame();
     World::ReadyForGame();
 }
 

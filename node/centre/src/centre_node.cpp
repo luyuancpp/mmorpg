@@ -62,8 +62,9 @@ void CentreNode::StartRpcServer()
 	LOG_INFO << "centre start at " << GetNodeInfo().DebugString();
 }
 
-void CentreNode::PrepareForBeforeConnection()
+void CentreNode::InitGlobalData()
 {
+	Node::InitGlobalData();
 	PlayerSessionSystem::Initialize();
 }
 

@@ -14,7 +14,7 @@ public:
 
 	void        Initialize() override;
 
-    void PrepareForBeforeConnection()override;
+    void InitGlobalData()override;
 
 	::google::protobuf::Service* GetNodeReplyService() override { return &nodeReplyService; }
 
