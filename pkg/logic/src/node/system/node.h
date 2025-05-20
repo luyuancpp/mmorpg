@@ -43,7 +43,7 @@ public:
 
 protected:
     // 初始化相关
-    void InitGlobalData();
+    virtual void InitGlobalData();
     virtual void Initialize();
     void InitRpcServer();
     virtual void StartRpcServer();
@@ -82,8 +82,6 @@ protected:
     void OnClientConnected(const OnTcpClientConnectedEvent& es);
 
     // 虚函数，供子类扩展
-    virtual void PrepareForBeforeConnection() {}
-    virtual void ReadyForGame() {}
     virtual void ProcessGrpcNode(const NodeInfo& nodeInfo) {}
     virtual void ProcessNodeStop(uint32_t nodeType, uint32_t nodeId) {}
 

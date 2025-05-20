@@ -22,9 +22,9 @@ public:
 
     virtual void OnConfigLoadSuccessful()override;
     void StartRpcServer() override;
-    virtual void PrepareForBeforeConnection() override;
+    virtual void InitGlobalData() override;
     
-    virtual void ReadyForGame()override;
+    void ReadyForGame();
 
 private:
     PbSyncRedisClientPtr redis;
