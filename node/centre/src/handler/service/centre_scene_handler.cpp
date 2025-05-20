@@ -4,6 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 #include "scene/system/scene_system.h"
+#include "proto/logic/constants/node.pb.h"
 ///<<< END WRITING YOUR CODE
 
 
@@ -21,9 +22,6 @@ void CentreSceneServiceHandler::RegisterScene(::google::protobuf::RpcController*
 
 }
 
-
-
-
 void CentreSceneServiceHandler::UnRegisterScene(::google::protobuf::RpcController* controller,const ::UnRegisterSceneRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -37,7 +35,7 @@ void CentreSceneServiceHandler::UnRegisterScene(::google::protobuf::RpcControlle
 	}
 
 	const entt::entity gameNode{ request->scene_node_id() };
-	if (!tls.sceneNodeRegistry.valid(gameNode))
+	if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(gameNode))
 	{
 		LOG_ERROR << "Node not found: " << request->scene_node_id();
 		return;

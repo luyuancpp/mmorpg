@@ -7,8 +7,6 @@ void ThreadLocalStorage::Clear()
 	globalRegistry.clear();
 	registry.clear();
 	sceneRegistry.clear();
-	sceneNodeRegistry.clear();
-	gateNodeRegistry.clear();
 	itemRegistry.clear();
 	sessionRegistry.clear();
 	globalNodeRegistry.clear();

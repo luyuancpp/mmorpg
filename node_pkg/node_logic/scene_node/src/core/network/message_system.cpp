@@ -32,13 +32,13 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	}
 
 	entt::entity gateNodeId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
-	if (!tls.gateNodeRegistry.valid(gateNodeId))
+	if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
 	{
 		LOG_ERROR << "Gate node not found for player";
 		return;
 	}
 
-	const auto gateNode = tls.gateNodeRegistry.try_get<RpcSession>(gateNodeId);
+	const auto gateNode = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateNodeId);
 	if (!gateNode)
 	{
 		LOG_ERROR << "RpcSession not found for gate node";
@@ -116,13 +116,13 @@ void SendToCentre(const uint32_t messageId, const google::protobuf::Message& mes
 void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
 {
 	entt::entity gateNodeId{ GetGateNodeId(nodeId) };
-	if (!tls.gateNodeRegistry.valid(gateNodeId))
+	if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
 	{
 		LOG_ERROR << "Gate node not found for nodeId: " << nodeId;
 		return;
 	}
 
-	const auto gateNodeSession = tls.gateNodeRegistry.try_get<RpcSession>(gateNodeId);
+	const auto gateNodeSession = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateNodeId);
 	if (!gateNodeSession)
 	{
 		LOG_ERROR << "RpcSession not found for gate node: " << nodeId;
@@ -179,7 +179,7 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 		}
 
 		entt::entity gateNodeId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
-		if (!tls.gateNodeRegistry.valid(gateNodeId))
+		if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
 		{
 			LOG_ERROR << "Gate node not found for player session ID: " << playerNodeInfo->gate_session_id();
 			continue;
@@ -191,7 +191,7 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 	BroadcastToPlayersRequest request;
 	for (auto&& [gateNodeId, sessionIdList] : gateList)
 	{
-		const auto gateNodeSession = tls.gateNodeRegistry.try_get<RpcSession>(gateNodeId);
+		const auto gateNodeSession = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateNodeId);
 		if (!gateNodeSession)
 		{
 			LOG_ERROR << "RpcSession not found for gate node";
@@ -229,7 +229,7 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 		}
 
 		entt::entity gateNodeId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
-		if (!tls.gateNodeRegistry.valid(gateNodeId))
+		if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
 		{
 			LOG_ERROR << "Gate node not found for player session ID: " << playerNodeInfo->gate_session_id();
 			continue;
@@ -241,7 +241,7 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 	BroadcastToPlayersRequest request;
 	for (auto&& [gateNodeId, sessionIdList] : gateList)
 	{
-		const auto gateNodeSession = tls.gateNodeRegistry.try_get<RpcSession>(gateNodeId);
+		const auto gateNodeSession = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateNodeId);
 		if (!gateNodeSession)
 		{
 			LOG_ERROR << "RpcSession not found for gate node";

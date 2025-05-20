@@ -22,6 +22,7 @@
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"
 #include "util/defer.h"
+#include "proto/logic/constants/node.pb.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
 {
@@ -107,13 +108,13 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	}
 
 	entt::entity gateNodeId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
-	if (!tls.gateNodeRegistry.valid(gateNodeId))
+	if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
 	{
 		LOG_ERROR << "Gate crash for session id: " << playerNodeInfo->gate_session_id();
 		return;
 	}
 
-	auto gateNodeScene = tls.gateNodeRegistry.try_get<RpcSession>(gateNodeId);
+	auto gateNodeScene = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateNodeId);
 	if (!gateNodeScene)
 	{
 		LOG_ERROR << "Gate crash for session id: " << playerNodeInfo->gate_session_id();

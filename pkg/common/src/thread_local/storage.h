@@ -12,8 +12,6 @@ public:
 	entt::registry globalRegistry;
 	entt::registry registry;
 	entt::registry sceneRegistry;
-	entt::registry sceneNodeRegistry;
-	entt::registry gateNodeRegistry;
 	entt::registry itemRegistry;
 	entt::registry sessionRegistry;
 	entt::registry globalNodeRegistry;
