@@ -280,7 +280,7 @@ void Node::ConnectToHttpNode(const NodeInfo& nodeInfo)
 }
 
 void Node::ReleaseNodeId() {
-	EtcdHelper::RevokeLeaseAndCleanup(GetNodeInfo().lease_id());
+	EtcdHelper::RevokeLeaseAndCleanup(static_cast<int64_t>(GetNodeInfo().lease_id()));
 }
 
 void Node::SetUpEventHandlers()
@@ -323,7 +323,7 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	LOG_INFO << "Adding service node of type " << nodeType << " with JSON: " << nodeJson;
 
 	// Validate the node type  
-	if (!eNodeType_IsValid(nodeType)) {
+	if (!eNodeType_IsValid(static_cast<int32_t>(nodeType))) {
 		LOG_ERROR << "Invalid node type: " << nodeType;
 		return;
 	}
@@ -813,7 +813,7 @@ void Node::AcquireNodeLease()
 void Node::KeepNodeAlive(){
 	renewNodeLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
 		etcdserverpb::LeaseKeepAliveRequest request;
-		request.set_id(GetNodeInfo().lease_id());
+		request.set_id(static_cast<int64_t>(GetNodeInfo().lease_id()));
 		SendetcdserverpbLeaseLeaseKeepAlive(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 		});
 }
