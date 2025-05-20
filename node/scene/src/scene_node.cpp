@@ -47,6 +47,9 @@ void SceneNode::Initialize()
 
     InitPlayerService();
     InitPlayerServiceReplied();
+
+    void InitServiceHandler();
+	InitServiceHandler();
     World::InitializeSystemBeforeConnect();
 }
 

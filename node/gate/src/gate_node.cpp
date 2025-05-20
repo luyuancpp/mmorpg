@@ -25,9 +25,6 @@ GateNode::GateNode(EventLoop* loop)
     rpcClientHandler(codec_, dispatcher_)
 { }
 
-GateNode::~GateNode()
-{
-}
 
 void GateNode::Initialize()
 {
@@ -55,7 +52,7 @@ void GateNode::StartRpcServer()
 	Node::StartRpcServer(); 
 
 	loginGrpcSelectTimer.RunEvery(0.01, []() {
-		HandleLoginServiceCompletedQueueMessage(tls.loginNodeRegistry);
+		HandleLoginServiceCompletedQueueMessage(tls.GetNodeRegistry(eNodeType::LoginNodeService));
 		});
 
     LOG_INFO << "gate node  start at" << GetNodeInfo().DebugString();
