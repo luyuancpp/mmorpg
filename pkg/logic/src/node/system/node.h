@@ -37,6 +37,7 @@ public:
 	void HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response) const;
     void HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const;
 protected:
+    void InitGlobalData();
     virtual void Initialize();
     void InitRpcServer ();
     virtual void StartRpcServer();

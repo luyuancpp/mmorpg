@@ -28,15 +28,6 @@
 #include "util/random.h"
 #include <regex>
 
-
-// 重构思路（伪代码）：
-// 1. 统一命名风格：类成员变量用  前缀，局部变量驼峰命名，函数名大写每个单词。
-// 2. 拆分过长函数，合并重复逻辑，简化流程。
-// 3. 明确职责：配置加载、日志、RPC、gRPC、etcd、节点注册、连接、事件处理分块。
-// 4. 变量名更直观，注释更清晰。
-// 5. 保持 node 外部接口不变。
-// 6. 只重构 Node 类本身。
-
 Node::Node(muduo::net::EventLoop* eventLoop, const std::string& logFilePath)
     : eventLoop(eventLoop),
     logSystem(logFilePath, kMaxLogFileRollSize, 1) {
@@ -56,9 +47,15 @@ std::string Node::GetServiceName(uint32_t nodeType) const {
     return eNodeType_Name(nodeType) + ".rpc";
 }
 
+void Node::InitGlobalData()
+{
+    tls.globalNodeRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+}
+
 void Node::Initialize() {
     LOG_TRACE << "Node initializing...";
 
+    InitGlobalData();
     RegisterEventHandlers();
     LoadConfigs();
     InitRpcServer();
