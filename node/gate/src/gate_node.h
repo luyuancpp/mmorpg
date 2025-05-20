@@ -22,7 +22,7 @@ public:
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     explicit GateNode(EventLoop* loop);
-    ~GateNode() override;
+    ~GateNode() override {}
     inline ProtobufCodec& Codec() { return codec_; }
     inline GateServiceHandler& GetServiceHandler() { return nodeReplyService; }
 	::google::protobuf::Service* GetNodeReplyService() override{ return &nodeReplyService ; }

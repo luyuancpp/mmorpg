@@ -25,18 +25,16 @@ eNodeType NodeSystem::GetServiceTypeFromPrefix(const std::string& prefix) {
 
 
 entt::registry& NodeSystem::GetRegistryForNodeType(uint32_t nodeType) {
-	switch (nodeType) {
-	case CentreNodeService:
-		return tls.centreNodeRegistry;
-	case SceneNodeService:
-		return tls.sceneNodeRegistry;
-	case GateNodeService:
-		return tls.gateNodeRegistry;
-	case LoginNodeService:
-		return tls.loginNodeRegistry;
-	default:
-		LOG_ERROR << "Unknown NodeType: " << static_cast<uint32_t>(nodeType);
-	}
+	return tls.GetNodeRegistry(nodeType);
+}
 
-	return tls.invalidRegistry;
+std::string NodeSystem::GetRegistryName(const entt::registry& registry) 
+{
+	// 假设有一个 std::map<std::string, entt::registry> registries;
+	for (const auto& pair : tls.GetNodeRegistry()) {
+		if (&pair.second == &registry) {
+			return eNodeType_Name(pair.first);
+		}
+	}
+	return "UnknownRegistry";
 }

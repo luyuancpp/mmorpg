@@ -479,7 +479,7 @@ void Node::TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnec
     entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
     for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
         if (!IsSameAddress(client.peer_addr(), conn->peerAddress())) continue;
-        LOG_INFO << "Peer address match in " << tls.GetRegistryName(registry)
+        LOG_INFO << "Peer address match in " << NodeSystem::GetRegistryName(registry)
                  << ": " << conn->peerAddress().toIpPort();
         registry.emplace<TimerTaskComp>(entity).RunAfter(0.5, [conn, this, nodeType, &client]() {
             RegisterNodeSessionRequest req;
@@ -529,12 +529,12 @@ void Node::HandleNodeRegistration(
             entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
             entt::entity entity = registry.create(entt::entity{ peerNode.node_id() });
             if (entity != entt::entity{ peerNode.node_id() }) {
-                LOG_ERROR << "Create node entity failed in " << tls.GetRegistryName(registry);
+                LOG_ERROR << "Create node entity failed in " << NodeSystem::GetRegistryName(registry);
                 return false;
             }
             registry.emplace<RpcSession>(entity, RpcSession{ conn });
             LOG_INFO << "Node registered, id: " << peerNode.node_id()
-                     << " in " << tls.GetRegistryName(registry);
+                     << " in " << NodeSystem::GetRegistryName(registry);
             return true;
         }
         return false;

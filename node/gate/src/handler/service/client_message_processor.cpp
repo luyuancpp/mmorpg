@@ -15,6 +15,7 @@
 #include "service_info/player_common_service_info.h"
 #include "thread_local/storage_gate.h"
 #include "util/random.h"
+#include "proto/logic/constants/node.pb.h"
 
 extern std::unordered_set<uint32_t> gClientToServerMessageId;
 
@@ -145,7 +146,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     {
         LoginNodeDisconnectRequest request;
         request.set_session_id(sessionId);
-        SendLoginServiceDisconnect(tls.loginNodeRegistry, *loginNode , request);
+        SendLoginServiceDisconnect(tls.GetNodeRegistry(eNodeType::LoginNodeService), *loginNode , request);
     }
 
     // 通知中心服务器
@@ -186,7 +187,7 @@ void SendLoginRequestToLoginNode(entt::entity loginNode, Guid sessionId, const R
 {
     LoginC2LRequest message;
     SetSessionAndParseBody(message, request, sessionId);
-    SendLoginServiceLogin(tls.loginNodeRegistry, loginNode, message);
+    SendLoginServiceLogin(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
 
     LOG_TRACE << "Sent LoginC2LRequest, session id: " << sessionId;
 }
@@ -195,7 +196,7 @@ void SendCreatePlayerRequestToLoginNode(entt::entity loginNode, Guid sessionId, 
 {
     CreatePlayerC2LRequest message;
     SetSessionAndParseBody(message, request, sessionId);
-    SendLoginServiceCreatePlayer(tls.loginNodeRegistry, loginNode, message);
+    SendLoginServiceCreatePlayer(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
 
     LOG_TRACE << "Sent CreatePlayerC2LRequest, session id: " << sessionId;
 }
@@ -204,7 +205,7 @@ void SendEnterGameRequestToLoginNode(entt::entity loginNode, Guid sessionId, con
 {
     EnterGameC2LRequest message;
     SetSessionAndParseBody(message, request, sessionId);
-    SendLoginServiceEnterGame(tls.loginNodeRegistry, loginNode, message);
+    SendLoginServiceEnterGame(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
 
     LOG_TRACE << "Sent EnterGameC2LRequest, session id: " << sessionId;
 }

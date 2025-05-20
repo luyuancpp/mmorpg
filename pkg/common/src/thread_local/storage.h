@@ -6,6 +6,7 @@
 class ThreadLocalStorage
 {
 public:
+	using RggistryMap = std::unordered_map<uint32_t, entt::registry>;
 	entt::registry globalRegistry;
 	entt::registry registry;
 	entt::registry sceneRegistry;
@@ -15,8 +16,6 @@ public:
 	entt::registry itemRegistry;
 	entt::registry sessionRegistry;
 	entt::registry globalNodeRegistry;
-	entt::registry invalidRegistry;
-	entt::registry loginNodeRegistry;
 
 	entt::dispatcher dispatcher;
 
@@ -29,7 +28,18 @@ public:
 	Guid lastGeneratorItemGuid{ kInvalidGuid };
 
 	void Clear();
-	std::string GetRegistryName(const entt::registry& registry) const;
+
+	entt::registry& GetNodeRegistry(uint32_t type) {
+		return nodeRegistries[type];
+	}
+
+	const RggistryMap& GetNodeRegistry() {
+		return nodeRegistries;
+	}
+
+
+private:
+	RggistryMap nodeRegistries;
 };
 
 extern thread_local ThreadLocalStorage tls;

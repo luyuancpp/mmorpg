@@ -13,28 +13,11 @@ void ThreadLocalStorage::Clear()
 	itemRegistry.clear();
 	sessionRegistry.clear();
 	globalNodeRegistry.clear();
-	invalidRegistry.clear();
-	loginNodeRegistry.clear();
+	nodeRegistries.clear();
 
 	dispatcher.clear();
 
 	operatorEntity = entt::null;
 	errorEntity = entt::null;
 	globalEntity = entt::null;
-}
-
-std::string ThreadLocalStorage::GetRegistryName(const entt::registry& registry) const
-{
-	if (&registry == &globalRegistry) return "GlobalRegistry";
-	if (&registry == &this->registry) return "Registry";
-	if (&registry == &sceneRegistry) return "SceneRegistry";
-	if (&registry == &sceneNodeRegistry) return "SceneNodeRegistry";
-	if (&registry == &gateNodeRegistry) return "GateNodeRegistry";
-	if (&registry == &centreNodeRegistry) return "CentreNodeRegistry";
-	if (&registry == &itemRegistry) return "ItemRegistry";
-	if (&registry == &sessionRegistry) return "NetworkRegistry";
-	if (&registry == &globalNodeRegistry) return "GlobalNodeRegistry";
-	if (&registry == &loginNodeRegistry) return "LoginNodeRegistry";
-
-	return "UnknownRegistry";
 }
