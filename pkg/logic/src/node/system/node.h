@@ -26,7 +26,7 @@ public:
     NodeInfo& GetNodeInfo()const;
 	virtual std::string GetServiceName(uint32_t nodeType) const;
 	virtual ::google::protobuf::Service* GetNodeReplyService() { return {}; }
-    inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
+    inline [[nodiscard]] muduo::AsyncLogging& Log() { return logSystem; }
     [[nodiscard]] RpcClient& GetZoneCentreNode() { return *zoneCentreNode; }
     std::string FormatIpAndPort() ;
 	std::string GetIp();
@@ -40,15 +40,15 @@ protected:
     virtual void Initialize();
     void InitRpcServer ();
     virtual void StartRpcServer();
-    void ShutdownNode();
+    void Shutdown();
     virtual void PrepareForBeforeConnection() {}
     virtual void ReadyForGame(){}
-    void InitLoggingSystem();
-    void RegisterCoreEventHandlers();
-    void LoadConfigFiles();
-    virtual void LoadAllConfigs();
+    void InitLogSystem();
+    void RegisterEventHandlers();
+    void LoadConfigs();
+    void LoadAllConfigData();
     virtual void OnConfigLoadSuccessful(){}
-    void SetupEnvironment();
+    void SetupTimeZone();
 	void ConnectToNode(const NodeInfo& nodeInfo);
 	void ConnectToGrpcNode(const NodeInfo& nodeInfo);
 	void ConnectToTcpNode(const NodeInfo& nodeInfo);
@@ -57,31 +57,29 @@ protected:
     void ReleaseNodeId();
     void RegisterGrpcHandlers();
 	void StopWatchingServiceNodes();
-    std::string MakeServiceNodeEtcdKey(const NodeInfo& nodeInfo);
-	void RegisterSelfInService();
+    std::string MakeEtcdKey(const NodeInfo& nodeInfo);
+	void RegisterSelf();
 	void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
     void FetchServiceNodes();
 	void StartWatchingServiceNodes();
-    void InitializeGrpcResponseHandlers();
+    void InitGrpcResponseHandlers();
     void InitGrpcQueues();
-    void AttemptNodeRegistration(
-        uint32_t nodeType,
-        const muduo::net::TcpConnectionPtr& conn) const;
+    void TryRegisterNodeSession(uint32_t nodeType,  const muduo::net::TcpConnectionPtr& conn) const;
     void AcquireNode();
-    static void RequestNodeLease();
+    static void RequestEtcdLease();
 	void KeepNodeAlive();   
     void RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn);
-    void OnConnectedToServer(const OnConnected2TcpServerEvent& es);
+    void OnServerConnected(const OnConnected2TcpServerEvent& es);
     void OnClientConnected(const OnTcpClientConnectedEvent& es);
 
     virtual void ProcessGrpcNode(const NodeInfo& nodeInfo) {}
     virtual void ProcessNodeStop(uint32_t nodeType, uint32_t nodeId) {}
 
-    muduo::net::EventLoop* loop_;
-    muduo::AsyncLogging muduoLog;
+    muduo::net::EventLoop* eventLoop;
+    muduo::AsyncLogging logSystem;
     RpcServerPtr rpcServer;
-    TimerTaskComp renewNodeLeaseTimer;
+    TimerTaskComp renewLeaseTimer;
     TimerTaskComp etcdQueueTimer;
     RpcClient* zoneCentreNode{nullptr};
 	CanConnectNodeTypeList targetNodeTypeWhitelist;
