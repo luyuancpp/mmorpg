@@ -65,21 +65,24 @@ void Node::Initialize() {
 	LOG_TRACE << "Node initialization finished.";
 }
 
-// Sets up the RPC server for the node
 void Node::InitRpcServer() {
-    auto& nodeInfo = GetNodeInfo();
-    nodeInfo.mutable_endpoint()->set_ip(localip());
-    nodeInfo.mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
-    nodeInfo.set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
-    nodeInfo.set_node_type(GetNodeType());
-    nodeInfo.set_protocol_type(PROTOCOL_TCP);
-    nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());
-    nodeInfo.set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
+	NodeInfo& nodeInfo = GetNodeInfo();
 
-    InetAddress serviceAddr(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
-    rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, serviceAddr);
-    rpcServer->start();
-    LOG_INFO << "Setting up RPC server with local IP: " << localip() << " and port: " << GetPort();
+	// 初始化本地节点信息
+	nodeInfo.mutable_endpoint()->set_ip(localip());
+	nodeInfo.mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
+	nodeInfo.set_node_type(GetNodeType());
+	nodeInfo.set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
+	nodeInfo.set_protocol_type(PROTOCOL_TCP);
+	nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());
+	nodeInfo.set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
+
+	// 创建 RPC 服务器实例
+	InetAddress rpcAddr(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
+	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, rpcAddr);
+	rpcServer->start();
+
+	LOG_INFO << "RPC server started at " << rpcAddr.toIpPort();
 }
 
 // Starts the RPC server and begins service node watching
@@ -107,11 +110,13 @@ void Node::ShutdownNode() {
     // Close all gRPC connections
 }
 
-// Sets up the logging system with appropriate configurations
 void Node::InitLoggingSystem() {
-    muduo::Logger::setLogLevel(static_cast<muduo::Logger::LogLevel>(tlsCommonLogic.GetBaseDeployConfig().log_level()));
-    muduo::Logger::setOutput(AsyncOutput);
-    muduoLog.start();  // Start logging
+	auto logLevel = static_cast<muduo::Logger::LogLevel>(
+		tlsCommonLogic.GetBaseDeployConfig().log_level()
+	);
+	muduo::Logger::setLogLevel(logLevel);
+	muduo::Logger::setOutput(AsyncOutput);
+	muduoLog.start();  // 启动文件日志写入
 }
 
 void Node::RegisterCoreEventHandlers() {
@@ -119,45 +124,45 @@ void Node::RegisterCoreEventHandlers() {
     tls.dispatcher.sink<OnTcpClientConnectedEvent>().connect<&Node::OnClientConnected>(*this);
 }
 
-// Loads configuration files for the node
-void Node::	LoadConfigFiles() {
-    readBaseDeployConfig("etc/base_deploy_config.yaml", tlsCommonLogic.GetBaseDeployConfig());
-    readGameConfig("etc/game_config.yaml", tlsCommonLogic.GetGameConfig());
+void Node::LoadConfigFiles() {
+	readBaseDeployConfig("etc/base_deploy_config.yaml", tlsCommonLogic.GetBaseDeployConfig());
+	readGameConfig("etc/game_config.yaml", tlsCommonLogic.GetGameConfig());
 }
 
-// Loads and processes all configuration data
 void Node::LoadAllConfigs() {
-    LoadAllConfig();
-    LoadAllConfigAsyncWhenServerLaunch();
-    OnConfigLoadSuccessful();
+	LoadAllConfig();                    // 同步加载
+	LoadAllConfigAsyncWhenServerLaunch();  // 异步延迟加载
+	OnConfigLoadSuccessful();           // 通知加载成功
 }
 
-// Configures environment variables, such as time zone and node info
 void Node::SetupEnvironment() {
-    const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
-    muduo::Logger::setTimeZone(tz);  // Set timezone to Hong Kong
+	const muduo::TimeZone hongKongTz("zoneinfo/Asia/Hong_Kong");
+	muduo::Logger::setTimeZone(hongKongTz);  // 设置时区为香港
 
-    tls.globalNodeRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	// 初始化全局注册表
+	tls.globalNodeRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 }
+
 
 // Initializes gRPC clients and stubs for service communication
 void Node::InitGrpcClients() {
     GrpcClientSystem::InitEtcdStubs(tlsCommonLogic.GetBaseDeployConfig().etcd_hosts());
 }
 
-// Initializes the gRPC queues for async message handling
 void Node::InitGrpcQueues() {
-    InitetcdserverpbKVCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
-    InitetcdserverpbWatchCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
-    InitetcdserverpbLeaseCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+	// 初始化 gRPC 响应队列
+	InitetcdserverpbKVCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+	InitetcdserverpbWatchCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+	InitetcdserverpbLeaseCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
 
-    // Periodically handle etcd server responses
-    etcdQueueTimer.RunEvery(0.001, []() {
+	// 周期性处理 etcd 响应
+	etcdQueueTimer.RunEvery(0.001, [] {
 		HandleetcdserverpbKVCompletedQueueMessage(tls.globalNodeRegistry);
 		HandleetcdserverpbWatchCompletedQueueMessage(tls.globalNodeRegistry);
 		HandleetcdserverpbLeaseCompletedQueueMessage(tls.globalNodeRegistry);
-    });
+	});
 }
+
 
 std::string Node::MakeServiceNodeEtcdKey(const NodeInfo& nodeInfo) {
     // 构造 etcd 中的键名，结构如下：
@@ -276,12 +281,12 @@ void Node::ReleaseNodeId() {
     EtcdHelper::RevokeLeaseAndCleanup(static_cast<int64_t>(GetNodeInfo().lease_id()));
 }
 
-void Node::RegisterGrpcHandlers() {
-    InitMessageInfo();
-    InitializeGrpcResponseHandlers();
+void InitRepliedHandler();
 
-	void InitRepliedHandler();
-	InitRepliedHandler();
+void Node::RegisterGrpcHandlers() {
+	InitMessageInfo();            // 初始化消息绑定
+	InitializeGrpcResponseHandlers();  // 设置响应处理
+	InitRepliedHandler();         // 注册应答处理器
 }
 
 void Node::AsyncOutput(const char* msg, int len) {
@@ -729,8 +734,9 @@ void Node::KeepNodeAlive() {
 }
 
 void Node::RequestNodeLease() {
-	uint64_t ttl = tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds();
-	EtcdHelper::GrantLease(ttl);
+	uint64_t ttlSeconds = tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds();
+	EtcdHelper::GrantLease(ttlSeconds);  // 向 etcd 发起租约
 }
+
 
 
