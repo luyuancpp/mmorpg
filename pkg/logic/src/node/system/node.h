@@ -85,7 +85,7 @@ protected:
     TimerTaskComp renewNodeLeaseTimer;
     TimerTaskComp etcdQueueTimer;
     RpcClient* zoneCentreNode{nullptr};
-	CanConnectNodeTypeList allowedTargetNodeTypes;
+	CanConnectNodeTypeList targetNodeTypeWhitelist;
 };
 
 muduo::AsyncLogging& logger(); 

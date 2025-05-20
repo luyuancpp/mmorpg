@@ -32,7 +32,7 @@ GateNode::~GateNode()
 void GateNode::Initialize()
 {
 	GetNodeInfo().set_node_type(GateNodeService);
-    allowedTargetNodeTypes = { CentreNodeService, SceneNodeService, LoginNodeService };
+    targetNodeTypeWhitelist = { CentreNodeService, SceneNodeService, LoginNodeService };
 
     gGateNode = this;
 
