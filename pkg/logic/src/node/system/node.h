@@ -77,6 +77,8 @@ protected:
     virtual void ProcessGrpcNode(const NodeInfo& nodeInfo) {}
     virtual void ProcessNodeStop(uint32_t nodeType, uint32_t nodeId) {}
 
+    bool IsNodeRegistered(uint32_t nodeType, const NodeInfo& node) const;
+
     muduo::net::EventLoop* eventLoop;
     muduo::AsyncLogging logSystem;
     RpcServerPtr rpcServer;
