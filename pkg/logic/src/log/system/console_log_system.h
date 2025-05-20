@@ -1,3 +1,3 @@
 #pragma once
 
-void Log2Console(const char* msg, int len);
+void LogToConsole(const char* msg, int len);
