@@ -31,10 +31,12 @@ entt::registry& NodeSystem::GetRegistryForNodeType(uint32_t nodeType) {
 std::string NodeSystem::GetRegistryName(const entt::registry& registry) 
 {
 	// 假设有一个 std::map<std::string, entt::registry> registries;
-	for (const auto& pair : tls.GetNodeRegistry()) {
-		if (&pair.second == &registry) {
-			return eNodeType_Name(pair.first);
+	for (uint32_t i = 0; i < tls.GetNodeRegistry().size(); ++i)
+	{
+		if (&tls.GetNodeRegistry(i) == &registry) {
+			return eNodeType_Name(i);
 		}
 	}
+
 	return "UnknownRegistry";
 }

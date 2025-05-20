@@ -9,11 +9,14 @@ void ThreadLocalStorage::Clear()
 	sceneRegistry.clear();
 	sceneNodeRegistry.clear();
 	gateNodeRegistry.clear();
-	centreNodeRegistry.clear();
 	itemRegistry.clear();
 	sessionRegistry.clear();
 	globalNodeRegistry.clear();
-	nodeRegistries.clear();
+	
+	for (auto& registry : nodeRegistries)
+	{
+		registry.clear();
+	}
 
 	dispatcher.clear();
 
