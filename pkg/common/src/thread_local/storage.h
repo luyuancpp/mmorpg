@@ -3,16 +3,17 @@
 #include "util/game_registry.h"
 #include "util/snow_flake.h"
 
+constexpr uint32_t kMaxNodeType = 20;
+
 class ThreadLocalStorage
 {
 public:
-	using RggistryMap = std::unordered_map<uint32_t, entt::registry>;
+	using Rggistries = std::array<entt::registry, kMaxNodeType>;
 	entt::registry globalRegistry;
 	entt::registry registry;
 	entt::registry sceneRegistry;
 	entt::registry sceneNodeRegistry;
 	entt::registry gateNodeRegistry;
-	entt::registry centreNodeRegistry;
 	entt::registry itemRegistry;
 	entt::registry sessionRegistry;
 	entt::registry globalNodeRegistry;
@@ -33,13 +34,13 @@ public:
 		return nodeRegistries[type];
 	}
 
-	const RggistryMap& GetNodeRegistry() {
+	const Rggistries& GetNodeRegistry() {
 		return nodeRegistries;
 	}
 
 
 private:
-	RggistryMap nodeRegistries;
+	Rggistries nodeRegistries;
 };
 
 extern thread_local ThreadLocalStorage tls;
