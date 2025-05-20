@@ -4,7 +4,7 @@
 
 static_assert(eNodeType_MAX <= kMaxNodeType);
 
-// 静态映射表定义（可放在 .cpp 中）
+// 静态映射表定义（可放在 .cpp 中）//todo
 const std::unordered_map<eNodeType, std::string> nodeTypeNameMap = {
 	{ eNodeType::DeployNodeService,  eNodeType_Name(DeployNodeService) },
 	{ eNodeType::SceneNodeService,   eNodeType_Name(SceneNodeService) },

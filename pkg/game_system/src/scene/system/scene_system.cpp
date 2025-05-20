@@ -8,6 +8,7 @@
 #include "pbc/common_error_tip.pb.h"
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "proto/logic/event/scene_event.pb.h"
+#include "proto/logic/constants/node.pb.h"
 
 #include <ranges> // Only if using C++20 ranges
 
@@ -58,7 +59,7 @@ void SceneUtil::Clear() {
 	LOG_TRACE << "Clearing scene system data";
 	tls.sceneRegistry.clear();
 	tls.registry.clear();
-	tls.sceneNodeRegistry.clear();
+	tls.GetNodeRegistry(eNodeType::SceneNodeService).clear();
 }
 
 // Get game node ID associated with a scene entity
@@ -86,8 +87,8 @@ uint32_t SceneUtil::GenSceneGuid() {
 // Get total number of scenes associated with a specific configuration ID
 std::size_t SceneUtil::GetScenesSize(uint32_t sceneConfigId) {
 	std::size_t sceneSize = 0;
-	for (auto node : tls.sceneNodeRegistry.view<NodeSceneComp>()) {
-		auto& nodeSceneComp = tls.sceneNodeRegistry.get<NodeSceneComp>(node);
+	for (auto node : tls.GetNodeRegistry(eNodeType::SceneNodeService).view<NodeSceneComp>()) {
+		auto& nodeSceneComp = tls.GetNodeRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(node);
 		sceneSize += nodeSceneComp.GetScenesByConfig(sceneConfigId).size();
 	}
 	LOG_TRACE << "Total scenes size for config ID " << sceneConfigId << ": " << sceneSize;
@@ -110,8 +111,8 @@ bool SceneUtil::IsSceneEmpty() {
 
 // Check if there are non-empty scene lists for a specific configuration
 bool SceneUtil::ConfigSceneListNotEmpty(uint32_t sceneConfigId) {
-	for (auto nodeEid : tls.sceneNodeRegistry.view<NodeSceneComp>()) {
-		auto& nodeSceneComp = tls.sceneNodeRegistry.get<NodeSceneComp>(nodeEid);
+	for (auto nodeEid : tls.GetNodeRegistry(eNodeType::SceneNodeService).view<NodeSceneComp>()) {
+		auto& nodeSceneComp = tls.GetNodeRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(nodeEid);
 		if (!nodeSceneComp.GetScenesByConfig(sceneConfigId).empty()) {
 			LOG_TRACE << "Non-empty scene list found for config ID: " << sceneConfigId;
 			return true;
@@ -142,12 +143,12 @@ entt::entity SceneUtil::CreateScene2GameNode(const CreateGameNodeSceneParam& par
 	tls.sceneRegistry.emplace<SceneInfoPBComponent>(scene, std::move(sceneInfo));
 	tls.sceneRegistry.emplace<ScenePlayers>(scene);
 
-	auto* serverPlayerInfo = tls.sceneNodeRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(param.node);
+	auto* serverPlayerInfo = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<GameNodePlayerInfoPtrPBComponent>(param.node);
 	if (serverPlayerInfo) {
 		tls.sceneRegistry.emplace<GameNodePlayerInfoPtrPBComponent>(scene, *serverPlayerInfo);
 	}
 
-	auto* pServerComp = tls.sceneNodeRegistry.try_get<NodeSceneComp>(param.node);
+	auto* pServerComp = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<NodeSceneComp>(param.node);
 	if (pServerComp) {
 		pServerComp->AddScene(scene);
 	}
@@ -167,7 +168,7 @@ void SceneUtil::DestroyScene(const DestroySceneParam& param) {
 		return;
 	}
 
-	auto* pServerComp = tls.sceneNodeRegistry.try_get<NodeSceneComp>(param.node);
+	auto* pServerComp = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<NodeSceneComp>(param.node);
 	if (!pServerComp) {
 		LOG_ERROR << "ServerComp not found for node";
 		return;
@@ -190,7 +191,7 @@ void SceneUtil::DestroyScene(const DestroySceneParam& param) {
 
 // Handle server node destruction
 void SceneUtil::HandleDestroyGameNode(entt::entity node) {
-	auto& nodeSceneComp = tls.sceneNodeRegistry.get<NodeSceneComp>(node);
+	auto& nodeSceneComp = tls.GetNodeRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(node);
 	auto sceneLists = nodeSceneComp.GetSceneLists();
 
 	// Destroy all scenes associated with the server node
@@ -201,7 +202,7 @@ void SceneUtil::HandleDestroyGameNode(entt::entity node) {
 	}
 
 	// Destroy the server node itself
-	Destroy(tls.sceneNodeRegistry, node);
+	Destroy(tls.GetNodeRegistry(eNodeType::SceneNodeService), node);
 
 	// Log server destruction
 	LOG_INFO << "Destroyed server with ID: " << entt::to_integral(node);
@@ -340,7 +341,7 @@ void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
 
 // Force a player to change scenes
 void SceneUtil::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
-	auto& destNodeScene = tls.sceneNodeRegistry.get<NodeSceneComp>(param.destNode);
+	auto& destNodeScene = tls.GetNodeRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(param.destNode);
 	auto sceneEntity = destNodeScene.GetSceneWithMinPlayerCountByConfigId(param.sceneConfId);
 
 	if (sceneEntity == entt::null) {
@@ -360,7 +361,7 @@ void SceneUtil::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
 
 // Replace a crashed server node with a new node
 void SceneUtil::ReplaceCrashGameNode(entt::entity crashNode, entt::entity destNode) {
-	auto& crashNodeScene = tls.sceneNodeRegistry.get<NodeSceneComp>(crashNode);
+	auto& crashNodeScene = tls.GetNodeRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(crashNode);
 	auto sceneLists = crashNodeScene.GetSceneLists();
 
 	for (auto& confIdSceneList : sceneLists | std::views::values) {
@@ -375,6 +376,6 @@ void SceneUtil::ReplaceCrashGameNode(entt::entity crashNode, entt::entity destNo
 		}
 	}
 
-	Destroy(tls.sceneNodeRegistry, crashNode);
+	Destroy(tls.GetNodeRegistry(eNodeType::SceneNodeService), crashNode);
 	LOG_INFO << "Replaced crashed server with new node: " << entt::to_integral(destNode);
 }

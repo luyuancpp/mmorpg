@@ -11,17 +11,18 @@
 #include "thread_local/storage_centre.h"
 #include "thread_local/storage_common_logic.h"
 #include "type_define/type_define.h"
+#include "proto/logic/constants/node.pb.h"
 
 void SendToGs(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
 {
 	entt::entity gameNodeId{ nodeId };
-	if (!tls.sceneNodeRegistry.valid(gameNodeId))
+	if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(gameNodeId))
 	{
 		LOG_ERROR << "Game node not found -> " << entt::to_integral(nodeId);
 		return;
 	}
 
-	const auto sceneSession = tls.sceneNodeRegistry.try_get<RpcSession>(gameNodeId);
+	const auto sceneSession = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<RpcSession>(gameNodeId);
 	if (!sceneSession)
 	{
 		LOG_ERROR << "RpcSession not found for game node -> " << entt::to_integral(nodeId);
@@ -52,14 +53,14 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
     entt::entity gameNodeEntity{ playerNodeInfo->scene_node_id() };
 
     // 检查游戏节点是否有效
-    if (!tls.sceneNodeRegistry.valid(gameNodeEntity))
+    if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(gameNodeEntity))
     {
         LOG_ERROR << "Game node not found for player -> " << playerNodeInfo->scene_node_id();
         return;
     }
 
     // 获取游戏节点的 RPC 会话
-    auto sceneSession = tls.sceneNodeRegistry.try_get<RpcSession>(gameNodeEntity);
+    auto sceneSession = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<RpcSession>(gameNodeEntity);
     if (!sceneSession)
     {
         LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->scene_node_id()
@@ -111,14 +112,14 @@ void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Messag
     entt::entity gameNodeEntity{ playerNodeInfo->scene_node_id() };
 
     // 检查游戏节点是否有效
-    if (!tls.sceneNodeRegistry.valid(gameNodeEntity))
+    if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(gameNodeEntity))
     {
         LOG_ERROR << "Game node not found for player -> " << playerNodeInfo->scene_node_id();
         return;
     }
 
     // 获取游戏节点的 RPC 会话
-    auto sceneSession = tls.sceneNodeRegistry.try_get<RpcSession>(gameNodeEntity);
+    auto sceneSession = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<RpcSession>(gameNodeEntity);
     if (!sceneSession)
     {
         LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->scene_node_id();
@@ -155,14 +156,14 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 
     // Retrieve the gate session ID associated with the player
     entt::entity gateSessionId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
-    if (!tls.gateNodeRegistry.valid(gateSessionId))
+    if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateSessionId))
     {
         LOG_ERROR << "Gate session not found for player with session ID " << playerNodeInfo->gate_session_id();
         return;
     }
 
     // Retrieve the RpcSession for the gate node (rename to gateSessionPtr for clarity)
-    const auto gateSessionPtr = tls.gateNodeRegistry.try_get<RpcSession>(gateSessionId);
+    const auto gateSessionPtr = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateSessionId);
     if (!gateSessionPtr)
     {
         LOG_ERROR << "RpcSession not found for gate with session ID " << playerNodeInfo->gate_session_id();
@@ -195,14 +196,14 @@ void SendMessageToGateById(const uint32_t messageId, const google::protobuf::Mes
     // 尝试获取 gateNodeId 对应的 gate 实体
     entt::entity gateEntity{ gateNodeId };
 
-    if (!tls.gateNodeRegistry.valid(gateEntity))
+    if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateEntity))
     {
         LOG_ERROR << "Gate not found for NodeId -> " << gateNodeId;
         return;
     }
 
     // 尝试从注册表中获取 gate 的会话对象
-    const auto gateSessionPtr = tls.gateNodeRegistry.try_get<RpcSession>(gateEntity);
+    const auto gateSessionPtr = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateEntity);
 
     if (!gateSessionPtr)
     {
@@ -236,14 +237,14 @@ void CallScenePlayerMethod(uint32_t messageId, const google::protobuf::Message& 
     entt::entity sceneNodeEntity{ playerNodeInfo->scene_node_id() };
 
     // 如果游戏节点无效，返回
-    if (!tls.sceneNodeRegistry.valid(sceneNodeEntity))
+    if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(sceneNodeEntity))
     {
         LOG_ERROR << "Game node not valid for player -> " << entt::to_integral(player) << ", game_node_id: " << playerNodeInfo->scene_node_id();
         return;
     }
 
     // 获取游戏节点的 RPC 会话
-    const auto sceneSession = tls.sceneNodeRegistry.try_get<RpcSession>(sceneNodeEntity);
+    const auto sceneSession = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<RpcSession>(sceneNodeEntity);
     if (!sceneSession)
     {
         LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->scene_node_id();
@@ -275,14 +276,14 @@ void CallGameNodeMethod(uint32_t messageId, const google::protobuf::Message& mes
     entt::entity sceneNodeEntity{ nodeId };
 
     // 如果游戏节点无效，直接返回
-    if (!tls.sceneNodeRegistry.valid(sceneNodeEntity))
+    if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(sceneNodeEntity))
     {
         LOG_ERROR << "Game node entity is not valid for nodeId -> " << nodeId;
         return;
     }
 
     // 获取游戏节点的 RPC 会话
-    const auto sceneNodeSession = tls.sceneNodeRegistry.try_get<RpcSession>(sceneNodeEntity);
+    const auto sceneNodeSession = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<RpcSession>(sceneNodeEntity);
     if (!sceneNodeSession)
     {
         LOG_ERROR << "RpcSession not found for game node -> " << nodeId;

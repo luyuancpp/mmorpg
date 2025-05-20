@@ -13,6 +13,7 @@
 #include "player/system/player_tip_system.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
+#include "proto/logic/constants/node.pb.h"
 
 void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
 {
@@ -206,7 +207,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 
 	const auto fromSceneGameNode = SceneUtil::get_game_node_eid(fromSceneInfo->guid());
 	const auto toSceneGameNode = SceneUtil::get_game_node_eid(toSceneGuid);
-	if (!tls.sceneNodeRegistry.valid(fromSceneGameNode) || !tls.sceneNodeRegistry.valid(toSceneGameNode))
+	if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(fromSceneGameNode) || !tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(toSceneGameNode))
 	{
 		LOG_ERROR << "Game nodes not valid for scene change, from: " << fromSceneInfo->guid() << ", to: " << toSceneGuid;
 		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
