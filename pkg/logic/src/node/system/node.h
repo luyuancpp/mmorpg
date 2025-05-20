@@ -57,7 +57,7 @@ protected:
     void ReleaseNodeId();
     void SetUpEventHandlers();
 	void StopWatchingServiceNodes();
-    std::string BuildServiceNodeKey(const NodeInfo& nodeInfo);
+    std::string MakeServiceNodeEtcdKey(const NodeInfo& nodeInfo);
 	void RegisterSelfInService();
 	void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
@@ -74,7 +74,7 @@ protected:
 	void KeepNodeAlive();   
     void RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn);
     void OnConnectedToServer(const OnConnected2TcpServerEvent& es);
-    void OnClientConnected(const OnBeConnectedEvent& es);
+    void OnClientConnected(const OnTcpClientConnectedEvent& es);
 
     virtual void ProcessGrpcNode(const NodeInfo& nodeInfo) {}
     virtual void ProcessNodeStop(uint32_t nodeType, uint32_t nodeId) {}

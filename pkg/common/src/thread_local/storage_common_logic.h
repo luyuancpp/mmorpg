@@ -44,7 +44,7 @@ public:
     }
 
 
-	[[nodiscard]] Random& GetRandom()
+	[[nodiscard]] Random& GetRng()
 	{
 		return random;
 	}

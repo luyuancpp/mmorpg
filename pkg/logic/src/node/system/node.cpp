@@ -114,7 +114,7 @@ void Node::SetUpLoggingSystem() {
 
 void Node::RegisterEventHandlers() {
     tls.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&Node::OnConnectedToServer>(*this);
-    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&Node::OnClientConnected>(*this);
+    tls.dispatcher.sink<OnTcpClientConnectedEvent>().connect<&Node::OnClientConnected>(*this);
 }
 
 // Loads configuration files for the node
@@ -157,7 +157,7 @@ void Node::InitializeGrpcMessageQueues() {
     });
 }
 
-std::string Node::BuildServiceNodeKey(const NodeInfo& nodeInfo) {
+std::string Node::MakeServiceNodeEtcdKey(const NodeInfo& nodeInfo) {
     // 构造 etcd 中的键名，结构如下：
     // {serviceName}/zone/{zone_id}/node_type/{node_type}/node_id/{node_id}
     return GetServiceName(nodeInfo.node_type()) +
@@ -168,7 +168,7 @@ std::string Node::BuildServiceNodeKey(const NodeInfo& nodeInfo) {
 
 // Registers the current node with the service registry
 void Node::RegisterSelfInService() {
-    EtcdHelper::PutServiceNodeInfo(GetNodeInfo(), BuildServiceNodeKey(GetNodeInfo()));
+    EtcdHelper::PutServiceNodeInfo(GetNodeInfo(), MakeServiceNodeEtcdKey(GetNodeInfo()));
 }
 
 // Fetches all service nodes from etcd
@@ -516,7 +516,7 @@ void Node::OnConnectedToServer(const OnConnected2TcpServerEvent& event) {
 
 // 全局静态变量，存储 NodeType 到 MessageId 的映射
 // 全局静态数组，存储 NodeType 到 MessageId 的映射
-static uint32_t gNodeToNodeRegistrationMessageIdMap[eNodeType_MAX] = {
+static uint32_t kNodeTypeToMessageId[eNodeType_MAX] = {
 	0,
 	0,
 	CentreServiceRegisterNodeSessionMessageId,  // 对应 kCentreNode
@@ -547,36 +547,35 @@ void Node::AttemptNodeRegistration(uint32_t nodeType, const muduo::net::TcpConne
 			request.mutable_endpoint()->set_ip(connection->localAddress().toIp());
 			request.mutable_endpoint()->set_port(connection->localAddress().port());
 
-			client.CallRemoteMethod(gNodeToNodeRegistrationMessageIdMap[nodeType], request);
+			client.CallRemoteMethod(kNodeTypeToMessageId[nodeType], request);
 		});
 
 		return;
 	}
 }
 
-void Node::OnClientConnected(const OnBeConnectedEvent& es) {
-	auto& conn = es.conn_;
-	if (!conn->connected()) {
-		for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each()) {
+void Node::OnClientConnected(const OnTcpClientConnectedEvent& event) {
+	auto& connection = event.conn_;
+	if (!connection->connected()) {
+		for (const auto& [entity, session] : tls.sessionRegistry.view<RpcSession>().each()) {
 			auto& existingConn = session.connection;
-			if (!IsSameAddress(conn->peerAddress(), existingConn->peerAddress())) {
-				LOG_TRACE << "Endpoint mismatch: expected IP = " << conn->peerAddress().toIp()
-					<< ", port = " << conn->peerAddress().port()
+			if (!IsSameAddress(connection->peerAddress(), existingConn->peerAddress())) {
+				LOG_TRACE << "Endpoint mismatch: expected IP = " << connection->peerAddress().toIp()
+					<< ", port = " << connection->peerAddress().port()
 					<< "; actual IP = " << existingConn->peerAddress().toIp()
 					<< ", port = " << existingConn->peerAddress().port();
 				continue;
 			}
-
-			tls.networkRegistry.destroy(e);
+			tls.sessionRegistry.destroy(entity);
 			return;
 		}
 		return;
 	}
 
-	auto e = tls.networkRegistry.create();
-	tls.networkRegistry.emplace<RpcSession>(e, RpcSession{ conn });
+	auto entity = tls.sessionRegistry.create();
+	tls.sessionRegistry.emplace<RpcSession>(entity, RpcSession{ connection });
 
-	LOG_INFO << "Client connected: {}" << conn->peerAddress().toIpPort();
+	LOG_INFO << "Client connected: " << connection->peerAddress().toIpPort();
 }
 
 void Node::HandleNodeRegistration(
@@ -612,7 +611,7 @@ void Node::HandleNodeRegistration(
 		return false;
 	};
 
-	for (const auto& [entity, session] : tls.networkRegistry.view<RpcSession>().each()) {
+	for (const auto& [entity, session] : tls.sessionRegistry.view<RpcSession>().each()) {
 		auto& connection = session.connection;
 		if (!IsSameAddress(connection->peerAddress(), muduo::net::InetAddress(request.endpoint().ip(), request.endpoint().port()))) {
 			continue;
@@ -624,7 +623,7 @@ void Node::HandleNodeRegistration(
 			}
 
 			if (tryRegisterToRegistry(connection, nodeType)) {
-				tls.networkRegistry.destroy(entity);
+				tls.sessionRegistry.destroy(entity);
 				response.mutable_error_message()->set_id(kCommon_errorOK);
 				return;
 			}
@@ -635,29 +634,29 @@ void Node::HandleNodeRegistration(
 }
 
 void TriggerNodeConnectionEvent(entt::registry& registry, const RegisterNodeSessionResponse& response) {
-	for (const auto& [e, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
+	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
 		if (client.peer_addr().toIp() != response.peer_node().endpoint().ip() ||
 			client.peer_addr().port() != response.peer_node().endpoint().port()) {
 			continue;
+			}
+
+		ConnectToNodePbEvent connectEvent;
+		connectEvent.set_entity(entt::to_integral(entity));
+		connectEvent.set_node_type(nodeInfo.node_type());
+		tls.dispatcher.trigger(connectEvent);
+
+		if (nodeInfo.node_type() == CentreNodeService) {
+			OnConnect2CentrePbEvent centreEvent;
+			centreEvent.set_entity(entt::to_integral(entity));
+			tls.dispatcher.trigger(centreEvent);
+			LOG_INFO << "CentreNode connected. Entity: " << entt::to_integral(entity);
 		}
 
-		// Trigger a generic event for node connection
-		ConnectToNodePbEvent connectToNodePbEvent;
-		connectToNodePbEvent.set_entity(entt::to_integral(e));
-		connectToNodePbEvent.set_node_type(nodeInfo.node_type());
-		tls.dispatcher.trigger(connectToNodePbEvent);
-
-		if (nodeInfo.node_type() == CentreNodeService){
-			OnConnect2CentrePbEvent connect2CentreEvent;
-			connect2CentreEvent.set_entity(entt::to_integral(e));
-			tls.dispatcher.trigger(connect2CentreEvent);
-			LOG_INFO << "CentreNode connected. Entity: " << entt::to_integral(e);
-		}
-
-		registry.remove<TimerTaskComp>(e);  // Remove the timer task component
+		registry.remove<TimerTaskComp>(entity);
 		break;
 	}
 }
+
 
 void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const {
 	LOG_INFO << "Received node registration response: " << response.DebugString();
@@ -680,7 +679,7 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 				*request.mutable_self_node() = GetNodeInfo();
 				request.mutable_endpoint()->set_ip(client.local_addr().toIp());
 				request.mutable_endpoint()->set_port(client.local_addr().port());
-				client.CallRemoteMethod(gNodeToNodeRegistrationMessageIdMap[nodeType], request);
+				client.CallRemoteMethod(kNodeTypeToMessageId[nodeType], request);
 			});
 			return;
 		}
@@ -707,7 +706,7 @@ void Node::AcquireNode() {
 	}
 
 	constexpr uint32_t randomOffset = 5;
-	uint32_t searchLimit = maxNodeId + tlsCommonLogic.GetRandom().Rand<uint32_t>(0, randomOffset);
+	uint32_t searchLimit = maxNodeId + tlsCommonLogic.GetRng().Rand<uint32_t>(0, randomOffset);
 	uint32_t assignedId = 0;
 
 	for (uint32_t id = 0; id < searchLimit; ++id) {
@@ -718,7 +717,7 @@ void Node::AcquireNode() {
 	}
 
 	GetNodeInfo().set_node_id(assignedId);
-	const auto nodeKey = BuildServiceNodeKey(GetNodeInfo());
+	const auto nodeKey = MakeServiceNodeEtcdKey(GetNodeInfo());
 
 	EtcdHelper::PutIfAbsent(nodeKey, GetNodeInfo());
 }
@@ -731,8 +730,9 @@ void Node::KeepNodeAlive() {
 	});
 }
 
-void Node::AcquireNodeLease()
-{
-	EtcdHelper::GrantLease(tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds());
+void Node::AcquireNodeLease() {
+	uint64_t ttl = tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds();
+	EtcdHelper::GrantLease(ttl);
 }
+
 
