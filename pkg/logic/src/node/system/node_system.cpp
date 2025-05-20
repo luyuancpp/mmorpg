@@ -2,6 +2,8 @@
 #include <muduo/base/Logging.h>
 #include "thread_local/storage.h"
 
+static_assert(eNodeType_MAX <= kMaxNodeType);
+
 // 静态映射表定义（可放在 .cpp 中）
 const std::unordered_map<eNodeType, std::string> nodeTypeNameMap = {
 	{ eNodeType::DeployNodeService,  eNodeType_Name(DeployNodeService) },
@@ -30,7 +32,6 @@ entt::registry& NodeSystem::GetRegistryForNodeType(uint32_t nodeType) {
 
 std::string NodeSystem::GetRegistryName(const entt::registry& registry) 
 {
-	// 假设有一个 std::map<std::string, entt::registry> registries;
 	for (uint32_t i = 0; i < tls.GetNodeRegistry().size(); ++i)
 	{
 		if (&tls.GetNodeRegistry(i) == &registry) {
