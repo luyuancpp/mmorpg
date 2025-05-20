@@ -38,39 +38,38 @@ public:
     void HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const;
 protected:
     virtual void Initialize();
-    void SetUpRpcServer ();
+    void InitRpcServer ();
     virtual void StartRpcServer();
     void ShutdownNode();
     virtual void PrepareForBeforeConnection() {}
     virtual void ReadyForGame(){}
-    void SetUpLoggingSystem();
-    void RegisterEventHandlers();
-    void LoadConfigurationFiles();
-    virtual void LoadConfigurationData();
+    void InitLoggingSystem();
+    void RegisterCoreEventHandlers();
+    void LoadConfigFiles();
+    virtual void LoadAllConfigs();
     virtual void OnConfigLoadSuccessful(){}
-    void ConfigureEnvironment();
+    void SetupEnvironment();
 	void ConnectToNode(const NodeInfo& nodeInfo);
 	void ConnectToGrpcNode(const NodeInfo& nodeInfo);
 	void ConnectToTcpNode(const NodeInfo& nodeInfo);
 	void ConnectToHttpNode(const NodeInfo& nodeInfo);
-    void InitializeGrpcClients();
+    void InitGrpcClients();
     void ReleaseNodeId();
-    void SetUpEventHandlers();
+    void RegisterGrpcHandlers();
 	void StopWatchingServiceNodes();
     std::string MakeServiceNodeEtcdKey(const NodeInfo& nodeInfo);
 	void RegisterSelfInService();
 	void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
-    void InitGrpcClients();
     void FetchServiceNodes();
 	void StartWatchingServiceNodes();
     void InitializeGrpcResponseHandlers();
-    void InitializeGrpcMessageQueues();
+    void InitGrpcQueues();
     void AttemptNodeRegistration(
         uint32_t nodeType,
         const muduo::net::TcpConnectionPtr& conn) const;
     void AcquireNode();
-    static void AcquireNodeLease();
+    static void RequestNodeLease();
 	void KeepNodeAlive();   
     void RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn);
     void OnConnectedToServer(const OnConnected2TcpServerEvent& es);
