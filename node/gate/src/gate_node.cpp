@@ -71,8 +71,8 @@ void GateNode::ProcessGrpcNode(const NodeInfo& nodeInfo)
 	{
 	case eNodeType::LoginNodeService:
 	{
-		auto loginNodeId = entt::entity{ nodeInfo.node_id() };
-		auto& channel = registry.get<std::shared_ptr<grpc::Channel>>(loginNodeId);
+		const auto loginNodeId = entt::entity{ nodeInfo.node_id() };
+		const auto& channel = registry.get<std::shared_ptr<grpc::Channel>>(loginNodeId);
 		registry.emplace<GrpcLoginServiceStubPtr>(loginNodeId,
 			LoginService::NewStub(channel));
 		//todo 如果重连后连上了不同的gate会不会有异步问题
