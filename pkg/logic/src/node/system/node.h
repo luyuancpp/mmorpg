@@ -38,12 +38,12 @@ public:
     void HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const;
 protected:
     virtual void Initialize();
-    void SetupRpcServer ();
+    void SetUpRpcServer ();
     virtual void StartRpcServer();
     void ShutdownNode();
     virtual void PrepareForBeforeConnection() {}
     virtual void ReadyForGame(){}
-    void SetupLoggingSystem();
+    void SetUpLoggingSystem();
     void RegisterEventHandlers();
     void LoadConfigurationFiles();
     virtual void LoadConfigurationData();
@@ -62,7 +62,7 @@ protected:
 	void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
     void InitGrpcClients();
-    void FetchesServiceNodes();
+    void FetchServiceNodes();
 	void StartWatchingServiceNodes();
     void InitializeGrpcResponseHandlers();
     void InitializeGrpcMessageQueues();

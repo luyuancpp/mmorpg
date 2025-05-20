@@ -11,7 +11,7 @@
 
 thread_local std::string console_msg;
 
-void Log2Console(const char* msg, int len)
+void LogToConsole(const char* msg, int len)
 {
     console_msg.assign(msg, len );
     if (std::string{ msg, kLoginInfoInex, 5 }.compare("TRACE") == 0)
