@@ -82,14 +82,16 @@ void Node::InitRpcServer() {
     info.set_protocol_type(PROTOCOL_TCP);
     info.set_launch_time(TimeUtil::NowSecondsUTC());
     info.set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
-
-    InetAddress addr(info.endpoint().ip(), info.endpoint().port());
-    rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, addr);
-    rpcServer->start();
-    LOG_INFO << "RPC server started at " << addr.toIpPort();
+	LOG_DEBUG << "Node info: " << info.DebugString();
 }
 
 void Node::StartRpcServer() {
+	NodeInfo& info = GetNodeInfo();
+
+    InetAddress addr(info.endpoint().ip(), info.endpoint().port());
+	rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, addr);
+	rpcServer->start();
+
     FetchServiceNodes();
     StartWatchingServiceNodes();
     tls.dispatcher.trigger<OnServerStart>();
@@ -159,10 +161,6 @@ std::string Node::MakeEtcdKey(const NodeInfo& info) {
            "/zone/" + std::to_string(info.zone_id()) +
            "/node_type/" + std::to_string(info.node_type()) +
            "/node_id/" + std::to_string(info.node_id());
-}
-
-void Node::RegisterSelf() {
-    EtcdHelper::PutServiceNodeInfo(GetNodeInfo(), MakeEtcdKey(GetNodeInfo()));
 }
 
 void Node::FetchServiceNodes() {
@@ -621,9 +619,13 @@ void Node::AcquireNode() {
             break;
         }
     }
+
+    auto& info = GetNodeInfo();
     GetNodeInfo().set_node_id(assignedId);
-    const auto serviceKey = MakeEtcdKey(GetNodeInfo());
-    EtcdHelper::PutIfAbsent(serviceKey, GetNodeInfo());
+	info.mutable_endpoint()->set_port(GetNodeType() * 10000 + assignedId);
+
+    const auto serviceKey = MakeEtcdKey(info);
+    EtcdHelper::PutIfAbsent(serviceKey, info);
 }
 
 void Node::KeepNodeAlive() {
