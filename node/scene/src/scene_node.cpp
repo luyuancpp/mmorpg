@@ -29,7 +29,7 @@ muduo::AsyncLogging& logger()
 }
 
 SceneNode::SceneNode(muduo::net::EventLoop* loop)
-    :Node(loop, "logs/game")
+    :Node(loop, "logs/scene")
 {
 }
 
