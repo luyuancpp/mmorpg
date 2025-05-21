@@ -10,7 +10,6 @@ public:
 	explicit CentreNode(muduo::net::EventLoop* loop);
 	~CentreNode() override = default;
 
-	void        Initialize() override;
 
     void InitGlobalData()override;
 

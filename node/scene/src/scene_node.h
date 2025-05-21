@@ -16,8 +16,6 @@ public:
         SceneNode(muduo::net::EventLoop* loop);
 	~SceneNode() override = default;
     
-    void Initialize()override;
-
     ::google::protobuf::Service* GetNodeReplyService() override { return &nodeReplyService; }
 
     virtual void OnConfigLoadSuccessful()override;

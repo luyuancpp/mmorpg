@@ -23,21 +23,13 @@ GateNode::GateNode(EventLoop* loop)
     dispatcher_(std::bind(&GateNode::OnUnknownMessage, this, _1, _2, _3)),
     codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
     rpcClientHandler(codec_, dispatcher_)
-{ }
-
-
-void GateNode::Initialize()
 {
+	gGateNode = this;
 	GetNodeInfo().set_node_type(GateNodeService);
-    targetNodeTypeWhitelist = { CentreNodeService, SceneNodeService, LoginNodeService };
+	targetNodeTypeWhitelist = { CentreNodeService, SceneNodeService, LoginNodeService };
 
-    gGateNode = this;
-
-    Node::Initialize();
-
-    void InitGrpcLoginSercieResponseHandler();
-    InitGrpcLoginSercieResponseHandler();
-
+	void InitGrpcLoginSercieResponseHandler();
+	InitGrpcLoginSercieResponseHandler();
 }
 
 void GateNode::StartRpcServer()
