@@ -7,10 +7,8 @@
 class RedisSystem
 {
 public:
-    using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
-    void Initialize(muduo::net::InetAddress& server_addr);
+    void Initialize();
 private:
-    HiredisPtr hiredis;
 };
 
 

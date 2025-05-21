@@ -92,8 +92,8 @@ void Node::InitRpcServer() {
 	}
 
     InetAddress addr(tlsCommonLogic.GetGameConfig().zone_redis().host(), tlsCommonLogic.GetGameConfig().zone_redis().port());
-	zoneRedis = std::make_unique<HiredisPtr::element_type>(eventLoop, addr);
-    zoneRedis->connect();
+    tlsCommonLogic.GetZoneRedis() = std::make_unique<ThreadLocalStorageCommonLogic::HiredisPtr::element_type>(eventLoop, addr);
+    tlsCommonLogic.GetZoneRedis()->connect();
 
 	LOG_DEBUG << "Node info: " << info.DebugString();
 }

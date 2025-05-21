@@ -29,8 +29,7 @@ muduo::AsyncLogging& logger()
 }
 
 SceneNode::SceneNode(muduo::net::EventLoop* loop)
-    :Node(loop, "logs/game"),
-     redis(std::make_shared<PbSyncRedisClientPtr::element_type>())
+    :Node(loop, "logs/game")
 {
 }
 
@@ -57,8 +56,7 @@ void SceneNode::StartRpcServer()
 {
 	Node::StartRpcServer();
 
-    InetAddress redis_addr("127.0.0.1", 6379);
-    tlsGame.redis.Initialize(redis_addr);
+    tlsGame.redis.Initialize();
 
     rpcServer->registerService(&nodeReplyService);
 
