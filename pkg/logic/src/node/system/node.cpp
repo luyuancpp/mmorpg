@@ -622,7 +622,9 @@ void Node::AcquireNode() {
 
     auto& info = GetNodeInfo();
     GetNodeInfo().set_node_id(assignedId);
-	info.mutable_endpoint()->set_port(GetNodeType() * 10000 + assignedId);
+
+	constexpr uint32_t kPortRangePerNodeType = 10000;
+	info.mutable_endpoint()->set_port(GetNodeType() * kPortRangePerNodeType + assignedId);
 
     const auto serviceKey = MakeEtcdKey(info);
     EtcdHelper::PutIfAbsent(serviceKey, info);
