@@ -98,4 +98,5 @@ protected:
     CanConnectNodeTypeList targetNodeTypeWhitelist;
 };
 
-muduo::AsyncLogging& logger();
+extern Node* gNode;
+

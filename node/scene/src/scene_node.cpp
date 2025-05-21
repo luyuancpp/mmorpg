@@ -23,11 +23,6 @@ SceneNode* gSceneNode = nullptr;
 
 using namespace muduo::net;
 
-muduo::AsyncLogging& logger()
-{
-    return  gSceneNode->Log();
-}
-
 SceneNode::SceneNode(muduo::net::EventLoop* loop)
     :Node(loop, "logs/scene")
 {

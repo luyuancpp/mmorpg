@@ -13,10 +13,6 @@
 
 GateNode* gGateNode = nullptr; 
 
-muduo::AsyncLogging& logger()
-{
-    return  gGateNode->Log();
-}
 
 GateNode::GateNode(EventLoop* loop)
     : Node(loop, "logs/gate"),
