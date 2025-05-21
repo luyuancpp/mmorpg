@@ -64,7 +64,6 @@ protected:
     void RegisterGrpcHandlers();
     void StopWatchingServiceNodes();
     std::string MakeEtcdKey(const NodeInfo& nodeInfo);
-    void RegisterSelf();
     void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
     void FetchServiceNodes();
