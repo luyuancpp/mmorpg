@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -12,22 +13,21 @@ import (
 	"text/template"
 )
 
+// GrpcServiceTemplateData 用于传递给模板的数据结构
 type GrpcServiceTemplateData struct {
 	ServiceInfo           []*RPCServiceInfo
 	GrpcIncludeHeadName   string
 	GeneratorGrpcFileName string
 }
 
-// 修改后的 generateGrpcFile 函数
+// generateGrpcFile 根据模板生成 gRPC 文件，并避免重复写入
 func generateGrpcFile(fileName string, grpcServices []*RPCServiceInfo, text string) error {
-	// 创建文件
-	file, err := os.Create(fileName)
-	if err != nil {
-		return fmt.Errorf("could not create file: %w", err)
+	// 检查输入数据是否为空
+	if len(grpcServices) == 0 {
+		return fmt.Errorf("grpcServices cannot be empty")
 	}
-	defer file.Close()
 
-	// 模板内容
+	// 渲染模板内容
 	tmpl, err := template.New(fileName).Parse(text)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
@@ -40,8 +40,38 @@ func generateGrpcFile(fileName string, grpcServices []*RPCServiceInfo, text stri
 		GeneratorGrpcFileName: grpcServices[0].GeneratorGrpcFileName(),
 	}
 
-	// 将内容写入文件
-	return tmpl.Execute(file, data)
+	var generatedContent bytes.Buffer
+	// 渲染模板到缓冲区
+	if err := tmpl.Execute(&generatedContent, data); err != nil {
+		return fmt.Errorf("could not execute template: %w", err)
+	}
+
+	// 读取现有文件的内容（如果文件存在）
+	existingContent, err := os.ReadFile(fileName)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("could not read existing file: %w", err)
+	}
+
+	// 如果文件内容相同，则跳过写入
+	if err == nil && bytes.Equal(existingContent, generatedContent.Bytes()) {
+		fmt.Println("文件内容没有变化，跳过写入:", fileName)
+		return nil
+	}
+
+	// 创建文件并写入渲染后的内容
+	file, err := os.Create(fileName)
+	if err != nil {
+		return fmt.Errorf("could not create file: %w", err)
+	}
+	defer file.Close()
+
+	// 写入生成的内容到文件
+	if _, err := file.Write(generatedContent.Bytes()); err != nil {
+		return fmt.Errorf("could not write to file: %w", err)
+	}
+
+	fmt.Println("文件已更新:", fileName)
+	return nil
 }
 
 func CppGrpcCallClient() {
@@ -62,7 +92,6 @@ func CppGrpcCallClient() {
 				return
 			}
 
-			// ✅ 排序逻辑
 			sort.Slice(serviceInfo, func(i, j int) bool {
 				return serviceInfo[i].FileServiceIndex < serviceInfo[j].FileServiceIndex
 			})
