@@ -4,11 +4,13 @@
 #include "proto/common/common_message.pb.h"
 #include "type_define/type_define.h"
 #include "util/random.h"
+#include <muduo/contrib/hiredis/hiredis.h>
 
 class ThreadLocalStorageCommonLogic
 {
 public:
     using PlayerListMap = std::unordered_map<Guid, entt::entity>;
+	using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
 
     RoutingNodeInfo& GetRoutingNodeInfo() { return route_data_; }
     std::string& RouteMsgBody() { return route_msg_body_; }
@@ -48,6 +50,11 @@ public:
 	{
 		return random;
 	}
+
+	HiredisPtr& GetZoneRedis()
+	{
+		return zoneRedis;
+	}
 private:
     RoutingNodeInfo route_data_;
     std::string route_msg_body_;
@@ -59,6 +66,7 @@ private:
     BaseDeployConfig BaseDeployConfig;
     GameConfig GameConfig;
 	Random random;
+	HiredisPtr zoneRedis;
 };
 
 extern thread_local ThreadLocalStorageCommonLogic tlsCommonLogic;

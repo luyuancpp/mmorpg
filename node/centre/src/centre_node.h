@@ -10,8 +10,6 @@ public:
 	explicit CentreNode(muduo::net::EventLoop* loop);
 	~CentreNode() override = default;
 
-	inline PbSyncRedisClientPtr& GetRedis() { return redis_; }
-
 	void        Initialize() override;
 
     void InitGlobalData()override;
@@ -21,7 +19,6 @@ public:
 	void StartRpcServer() override;
 
 private:
-	PbSyncRedisClientPtr redis_;
 	CentreServiceHandler nodeReplyService;
 };
 

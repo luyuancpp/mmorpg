@@ -27,7 +27,6 @@ public:
     void ReadyForGame();
 
 private:
-    PbSyncRedisClientPtr redis;
     GameServiceHandler nodeReplyService;
     TimerTaskComp worldTimer;
 };

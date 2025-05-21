@@ -24,8 +24,7 @@ muduo::AsyncLogging& logger()
 }
 
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
-	: Node(loop, "logs/centre"),
-	redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
+	: Node(loop, "logs/centre")
 {
 }
 
@@ -48,8 +47,7 @@ void CentreNode::Initialize()
 
 void CentreNode::StartRpcServer()
 {
-	InetAddress redisAddr("127.0.0.1", 6379);
-	tls_centre.redis_system().Initialize(redisAddr);
+	tls_centre.redis_system().Initialize();
 
 	Node::StartRpcServer();
 
