@@ -47,11 +47,9 @@ void CentreNode::Initialize()
 
 void CentreNode::StartRpcServer()
 {
-	tls_centre.redis_system().Initialize();
+	tls_centre.GetRedisSystem().Initialize();
 
 	Node::StartRpcServer();
-
-	rpcServer->registerService(&nodeReplyService);
 
 	LOG_INFO << "centre start at " << GetNodeInfo().DebugString();
 }

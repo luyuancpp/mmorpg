@@ -86,11 +86,6 @@ void Node::InitRpcServer() {
     info.set_launch_time(TimeUtil::NowSecondsUTC());
     info.set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
 
-	for (auto& val : gNodeService | std::views::values)
-	{
-		rpcServer->registerService(val.get());
-	}
-
     InetAddress addr(tlsCommonLogic.GetGameConfig().zone_redis().host(), tlsCommonLogic.GetGameConfig().zone_redis().port());
     tlsCommonLogic.GetZoneRedis() = std::make_unique<ThreadLocalStorageCommonLogic::HiredisPtr::element_type>(eventLoop, addr);
     tlsCommonLogic.GetZoneRedis()->connect();
@@ -104,6 +99,12 @@ void Node::StartRpcServer() {
     InetAddress addr(info.endpoint().ip(), info.endpoint().port());
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, addr);
 	rpcServer->start();
+
+    rpcServer->registerService(GetNodeReplyService());
+	for (auto& val : gNodeService | std::views::values)
+	{
+		rpcServer->registerService(val.get());
+	}
 
     FetchServiceNodes();
     StartWatchingServiceNodes();
