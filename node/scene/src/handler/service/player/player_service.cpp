@@ -1,6 +1,7 @@
 #include <memory>
+#include <string>
 #include <unordered_map>
-#include "player_service.h"
+#include "service/player_service.h"
 #include "player_scene_handler.h"
 #include "player_state_attribute_sync_handler.h"
 #include "game_player_scene_handler.h"

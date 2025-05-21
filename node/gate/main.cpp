@@ -8,7 +8,6 @@ int main(int argc, char* argv[])
 
     EventLoop loop;
     GateNode node(&loop);
-    node.Initialize();
     loop.loop();
     google::protobuf::ShutdownProtobufLibrary();
 

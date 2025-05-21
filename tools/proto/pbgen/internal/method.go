@@ -838,6 +838,9 @@ void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* re
 func GenRegisterFile(dst string, cb checkRepliedCb) {
 
 	const registerFileTemplate = `
+#include <unordered_map>
+#include <memory>
+#include <google/protobuf/service.h>
 {{- range .Includes }}
 {{ . }}
 {{ end }}
@@ -1008,6 +1011,8 @@ func WriteMethodFile() {
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, isCentreMethodRepliedHandler)
 
+	util.Wg.Add(1)
+	go GenRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterHandlerCppExtension, ReturnNoHandler)
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, isGateMethodRepliedHandler)
 }

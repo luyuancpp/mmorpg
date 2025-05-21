@@ -1,4 +1,7 @@
 
+#include <unordered_map>
+#include <memory>
+#include <google/protobuf/service.h>
 #include "centre_scene_handler.h"
 
 

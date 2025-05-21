@@ -66,6 +66,8 @@ const (
 	CentrePlayerMethodRepliedHandlerDirectory   = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
 	GateMethodHandlerDirectory                  = ProjectDir + GateNodeDirectory + HandlerSourceDirectory
 	GateMethodRepliedHandlerDirectory           = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory
+	GateNodePlayerMethodHandlerDirectory        = ProjectDir + GateNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
+	GateNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
 )
 
 // 常量：输出目录
@@ -173,8 +175,9 @@ const (
 	CentrePrefixName                = "centre"
 	CentrePlayerPrefixName          = "centre_player"
 	PlayerName                      = "player"
-	PlayerServiceIncludeName        = "#include \"player_service.h\"\n"
-	PlayerServiceRepliedIncludeName = "#include \"player_service_replied.h\"\n"
+	ServiceIncludeName              = "service/"
+	PlayerServiceIncludeName        = "#include \"service/player_service.h\"\n"
+	PlayerServiceRepliedIncludeName = "#include \"service/player_service_replied.h\"\n"
 	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
 	ClientLuaProjectRelative        = "script/lua/service/"
 	GatePrefixName                  = "gate"

@@ -6,8 +6,7 @@
 #include "common_error_tip.pb.h"
 #include "mainscene_config.h"
 #include "game_common_logic/system/session_system.h"
-#include "handler/service/register_handler.h"
-#include "handler/service/player/player_service.h"
+#include "service/player_service.h"
 #include "muduo/net/Callbacks.h"
 #include "muduo/net/InetAddress.h"
 #include "network/message_system.h"
@@ -41,6 +40,8 @@ using namespace muduo;
 using namespace muduo::net;
 
 constexpr std::size_t kMaxPlayerSize{50000};
+
+extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
 Guid GetPlayerIDBySessionId(const uint64_t session_id)
 {

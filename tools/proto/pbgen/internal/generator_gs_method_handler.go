@@ -50,6 +50,10 @@ func IsGsPlayerHandler(methods *RPCMethods) bool {
 	return true
 }
 
+func ReturnNoHandler(methods *RPCMethods) bool {
+	return false
+}
+
 func writeGsMethodHandlerHeadFile(methods RPCMethods) {
 	defer util.Wg.Done()
 

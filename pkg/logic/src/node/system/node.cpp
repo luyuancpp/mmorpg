@@ -46,6 +46,18 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
     LOG_INFO << "Node created, log file: " << logPath;
 
     gNode = this;
+
+    //未实现的节点实现一个空函数
+	void InitPlayerService();
+	InitPlayerService();
+
+    void InitPlayerServiceReplied();
+	InitPlayerServiceReplied();
+
+	void InitServiceHandler();
+	InitServiceHandler();
+
+    Initialize();
 }
 
 Node::~Node() {

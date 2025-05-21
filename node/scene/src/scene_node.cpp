@@ -4,9 +4,8 @@
 
 #include "core/config/config_system.h"
 #include "handler/event/event_handler.h"
-#include "handler/service/register_handler.h"
-#include "handler/service/player/player_service.h"
-#include "handler/service_replied/player/player_service_replied.h"
+#include "service/player_service.h"
+#include "service/player_service_replied.h"
 #include "log/constants/log_constants.h"
 #include "muduo/base/Logging.h"
 #include "muduo/net/InetAddress.h"
@@ -32,11 +31,6 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 
 	EventHandler::Register();
 
-	InitPlayerService();
-	InitPlayerServiceReplied();
-
-	void InitServiceHandler();
-	InitServiceHandler();
 	World::InitializeSystemBeforeConnect();
 }
 
