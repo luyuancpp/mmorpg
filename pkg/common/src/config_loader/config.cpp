@@ -1,5 +1,6 @@
 ﻿#include "config.h"
 #include <yaml-cpp/yaml.h>
+#include <muduo/base/Logging.h>
 
 // 读取基础部署配置
 bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseConfig) {
@@ -61,6 +62,29 @@ bool readGameConfig(const std::string& filename, GameConfig& gameConfig) {
 	// 解析区域ID (uint32 类型)
 	if (root["ZoneId"]) {
 		gameConfig.set_zone_id(root["ZoneId"].as<uint32_t>());
+	}
+
+	// 解析 zoneredis 配置
+	if (root["zoneredis"]) {
+		YAML::Node zoneredisNode = root["zoneredis"];
+
+		// 检查并解析 Redis 配置
+		if (zoneredisNode["host"]) {
+			gameConfig.mutable_zone_redis()->set_host(zoneredisNode["host"].as<std::string>());
+		}
+		if (zoneredisNode["port"]) {
+			gameConfig.mutable_zone_redis()->set_port(zoneredisNode["port"].as<uint32_t>());
+		}
+		if (zoneredisNode["password"]) {
+			gameConfig.mutable_zone_redis()->set_password(zoneredisNode["password"].as<std::string>());
+		}
+		if (zoneredisNode["db"]) {
+			gameConfig.mutable_zone_redis()->set_db(zoneredisNode["db"].as<uint32_t>());
+		}
+	}
+	else {
+		LOG_ERROR << "Warning: zoneredis configuration not found in config file.";
+		return false;
 	}
 
 	return true;

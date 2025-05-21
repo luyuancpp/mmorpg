@@ -3,3 +3,13 @@
 # 游戏场景配置
 SceneNodeType: 1  # 场景节点类型，服务器1的特定配置
 ZoneId : 0
+
+# Zoneredis 配置
+zoneredis:
+  host: "127.0.0.1"        # Redis 服务器地址
+  port: 6379               # Redis 服务器端口
+  password: "yourpassword" # Redis 密码（如果有的话）
+  db: 0                    # 使用的 Redis 数据库编号
+  timeout: 3000            # 连接 Redis 的超时时间（毫秒）
+  max_connections: 100     # 最大连接数
+  retry_interval: 1000     # 连接重试间隔时间（毫秒）

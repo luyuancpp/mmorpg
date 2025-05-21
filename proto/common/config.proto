@@ -23,4 +23,13 @@ message BaseDeployConfig {
 message GameConfig {
     uint32 scene_node_type = 1;  // 场景节点类型，使用 uint32
     uint32 zone_id = 2;          // 区域ID，使用 uint32
+	 // Zoneredis 配置
+    message ZoneRedisConfig {
+        string host = 3;           // Redis 服务器地址
+        uint32 port = 4;           // Redis 服务器端口
+        string password = 5;       // Redis 密码（可选）
+        uint32 db = 6;             // 使用的 Redis 数据库编号
+    }
+
+    ZoneRedisConfig zone_redis = 7; // 添加一个 ZoneRedisConfig 配置
 }

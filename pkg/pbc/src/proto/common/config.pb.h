@@ -57,6 +57,9 @@ extern BaseDeployConfigDefaultTypeInternal _BaseDeployConfig_default_instance_;
 class GameConfig;
 struct GameConfigDefaultTypeInternal;
 extern GameConfigDefaultTypeInternal _GameConfig_default_instance_;
+class GameConfig_ZoneRedisConfig;
+struct GameConfig_ZoneRedisConfigDefaultTypeInternal;
+extern GameConfig_ZoneRedisConfigDefaultTypeInternal _GameConfig_ZoneRedisConfig_default_instance_;
 class ServiceConfig;
 struct ServiceConfigDefaultTypeInternal;
 extern ServiceConfigDefaultTypeInternal _ServiceConfig_default_instance_;
@@ -286,6 +289,245 @@ class ServiceConfig final
 };
 // -------------------------------------------------------------------
 
+class GameConfig_ZoneRedisConfig final
+    : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:GameConfig.ZoneRedisConfig) */ {
+ public:
+  inline GameConfig_ZoneRedisConfig() : GameConfig_ZoneRedisConfig(nullptr) {}
+  ~GameConfig_ZoneRedisConfig() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GameConfig_ZoneRedisConfig* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GameConfig_ZoneRedisConfig));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GameConfig_ZoneRedisConfig(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline GameConfig_ZoneRedisConfig(const GameConfig_ZoneRedisConfig& from) : GameConfig_ZoneRedisConfig(nullptr, from) {}
+  inline GameConfig_ZoneRedisConfig(GameConfig_ZoneRedisConfig&& from) noexcept
+      : GameConfig_ZoneRedisConfig(nullptr, std::move(from)) {}
+  inline GameConfig_ZoneRedisConfig& operator=(const GameConfig_ZoneRedisConfig& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GameConfig_ZoneRedisConfig& operator=(GameConfig_ZoneRedisConfig&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GameConfig_ZoneRedisConfig& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const GameConfig_ZoneRedisConfig* internal_default_instance() {
+    return reinterpret_cast<const GameConfig_ZoneRedisConfig*>(
+        &_GameConfig_ZoneRedisConfig_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 2;
+  friend void swap(GameConfig_ZoneRedisConfig& a, GameConfig_ZoneRedisConfig& b) { a.Swap(&b); }
+  inline void Swap(GameConfig_ZoneRedisConfig* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GameConfig_ZoneRedisConfig* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GameConfig_ZoneRedisConfig* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GameConfig_ZoneRedisConfig>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GameConfig_ZoneRedisConfig& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GameConfig_ZoneRedisConfig& from) { GameConfig_ZoneRedisConfig::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GameConfig_ZoneRedisConfig* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "GameConfig.ZoneRedisConfig"; }
+
+ protected:
+  explicit GameConfig_ZoneRedisConfig(::google::protobuf::Arena* arena);
+  GameConfig_ZoneRedisConfig(::google::protobuf::Arena* arena, const GameConfig_ZoneRedisConfig& from);
+  GameConfig_ZoneRedisConfig(::google::protobuf::Arena* arena, GameConfig_ZoneRedisConfig&& from) noexcept
+      : GameConfig_ZoneRedisConfig(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kHostFieldNumber = 3,
+    kPasswordFieldNumber = 5,
+    kPortFieldNumber = 4,
+    kDbFieldNumber = 6,
+  };
+  // string host = 3;
+  void clear_host() ;
+  const std::string& host() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_host(Arg_&& arg, Args_... args);
+  std::string* mutable_host();
+  PROTOBUF_NODISCARD std::string* release_host();
+  void set_allocated_host(std::string* value);
+
+  private:
+  const std::string& _internal_host() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_host(
+      const std::string& value);
+  std::string* _internal_mutable_host();
+
+  public:
+  // string password = 5;
+  void clear_password() ;
+  const std::string& password() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_password(Arg_&& arg, Args_... args);
+  std::string* mutable_password();
+  PROTOBUF_NODISCARD std::string* release_password();
+  void set_allocated_password(std::string* value);
+
+  private:
+  const std::string& _internal_password() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_password(
+      const std::string& value);
+  std::string* _internal_mutable_password();
+
+  public:
+  // uint32 port = 4;
+  void clear_port() ;
+  ::uint32_t port() const;
+  void set_port(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_port() const;
+  void _internal_set_port(::uint32_t value);
+
+  public:
+  // uint32 db = 6;
+  void clear_db() ;
+  ::uint32_t db() const;
+  void set_db(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_db() const;
+  void _internal_set_db(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:GameConfig.ZoneRedisConfig)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      2, 4, 0,
+      47, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const GameConfig_ZoneRedisConfig& from_msg);
+    ::google::protobuf::internal::ArenaStringPtr host_;
+    ::google::protobuf::internal::ArenaStringPtr password_;
+    ::uint32_t port_;
+    ::uint32_t db_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fconfig_2eproto;
+};
+// -------------------------------------------------------------------
+
 class GameConfig final
     : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:GameConfig) */ {
@@ -346,7 +588,7 @@ class GameConfig final
     return reinterpret_cast<const GameConfig*>(
         &_GameConfig_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 3;
   friend void swap(GameConfig& a, GameConfig& b) { a.Swap(&b); }
   inline void Swap(GameConfig* other) {
     if (other == this) return;
@@ -430,12 +672,29 @@ class GameConfig final
  public:
   ::google::protobuf::Metadata GetMetadata() const;
   // nested types ----------------------------------------------------
+  using ZoneRedisConfig = GameConfig_ZoneRedisConfig;
 
   // accessors -------------------------------------------------------
   enum : int {
+    kZoneRedisFieldNumber = 7,
     kSceneNodeTypeFieldNumber = 1,
     kZoneIdFieldNumber = 2,
   };
+  // .GameConfig.ZoneRedisConfig zone_redis = 7;
+  bool has_zone_redis() const;
+  void clear_zone_redis() ;
+  const ::GameConfig_ZoneRedisConfig& zone_redis() const;
+  PROTOBUF_NODISCARD ::GameConfig_ZoneRedisConfig* release_zone_redis();
+  ::GameConfig_ZoneRedisConfig* mutable_zone_redis();
+  void set_allocated_zone_redis(::GameConfig_ZoneRedisConfig* value);
+  void unsafe_arena_set_allocated_zone_redis(::GameConfig_ZoneRedisConfig* value);
+  ::GameConfig_ZoneRedisConfig* unsafe_arena_release_zone_redis();
+
+  private:
+  const ::GameConfig_ZoneRedisConfig& _internal_zone_redis() const;
+  ::GameConfig_ZoneRedisConfig* _internal_mutable_zone_redis();
+
+  public:
   // uint32 scene_node_type = 1;
   void clear_scene_node_type() ;
   ::uint32_t scene_node_type() const;
@@ -461,7 +720,7 @@ class GameConfig final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      1, 2, 0,
+      2, 3, 1,
       0, 2>
       _table_;
 
@@ -479,9 +738,11 @@ class GameConfig final
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const GameConfig& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::GameConfig_ZoneRedisConfig* zone_redis_;
     ::uint32_t scene_node_type_;
     ::uint32_t zone_id_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1197,6 +1458,150 @@ inline void BaseDeployConfig::_internal_set_node_ttl_seconds(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
+// GameConfig_ZoneRedisConfig
+
+// string host = 3;
+inline void GameConfig_ZoneRedisConfig::clear_host() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.host_.ClearToEmpty();
+}
+inline const std::string& GameConfig_ZoneRedisConfig::host() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:GameConfig.ZoneRedisConfig.host)
+  return _internal_host();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void GameConfig_ZoneRedisConfig::set_host(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.host_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:GameConfig.ZoneRedisConfig.host)
+}
+inline std::string* GameConfig_ZoneRedisConfig::mutable_host() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_host();
+  // @@protoc_insertion_point(field_mutable:GameConfig.ZoneRedisConfig.host)
+  return _s;
+}
+inline const std::string& GameConfig_ZoneRedisConfig::_internal_host() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.host_.Get();
+}
+inline void GameConfig_ZoneRedisConfig::_internal_set_host(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.host_.Set(value, GetArena());
+}
+inline std::string* GameConfig_ZoneRedisConfig::_internal_mutable_host() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.host_.Mutable( GetArena());
+}
+inline std::string* GameConfig_ZoneRedisConfig::release_host() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:GameConfig.ZoneRedisConfig.host)
+  return _impl_.host_.Release();
+}
+inline void GameConfig_ZoneRedisConfig::set_allocated_host(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.host_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.host_.IsDefault()) {
+    _impl_.host_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:GameConfig.ZoneRedisConfig.host)
+}
+
+// uint32 port = 4;
+inline void GameConfig_ZoneRedisConfig::clear_port() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.port_ = 0u;
+}
+inline ::uint32_t GameConfig_ZoneRedisConfig::port() const {
+  // @@protoc_insertion_point(field_get:GameConfig.ZoneRedisConfig.port)
+  return _internal_port();
+}
+inline void GameConfig_ZoneRedisConfig::set_port(::uint32_t value) {
+  _internal_set_port(value);
+  // @@protoc_insertion_point(field_set:GameConfig.ZoneRedisConfig.port)
+}
+inline ::uint32_t GameConfig_ZoneRedisConfig::_internal_port() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.port_;
+}
+inline void GameConfig_ZoneRedisConfig::_internal_set_port(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.port_ = value;
+}
+
+// string password = 5;
+inline void GameConfig_ZoneRedisConfig::clear_password() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.password_.ClearToEmpty();
+}
+inline const std::string& GameConfig_ZoneRedisConfig::password() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:GameConfig.ZoneRedisConfig.password)
+  return _internal_password();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void GameConfig_ZoneRedisConfig::set_password(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.password_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:GameConfig.ZoneRedisConfig.password)
+}
+inline std::string* GameConfig_ZoneRedisConfig::mutable_password() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_password();
+  // @@protoc_insertion_point(field_mutable:GameConfig.ZoneRedisConfig.password)
+  return _s;
+}
+inline const std::string& GameConfig_ZoneRedisConfig::_internal_password() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.password_.Get();
+}
+inline void GameConfig_ZoneRedisConfig::_internal_set_password(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.password_.Set(value, GetArena());
+}
+inline std::string* GameConfig_ZoneRedisConfig::_internal_mutable_password() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.password_.Mutable( GetArena());
+}
+inline std::string* GameConfig_ZoneRedisConfig::release_password() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:GameConfig.ZoneRedisConfig.password)
+  return _impl_.password_.Release();
+}
+inline void GameConfig_ZoneRedisConfig::set_allocated_password(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.password_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.password_.IsDefault()) {
+    _impl_.password_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:GameConfig.ZoneRedisConfig.password)
+}
+
+// uint32 db = 6;
+inline void GameConfig_ZoneRedisConfig::clear_db() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.db_ = 0u;
+}
+inline ::uint32_t GameConfig_ZoneRedisConfig::db() const {
+  // @@protoc_insertion_point(field_get:GameConfig.ZoneRedisConfig.db)
+  return _internal_db();
+}
+inline void GameConfig_ZoneRedisConfig::set_db(::uint32_t value) {
+  _internal_set_db(value);
+  // @@protoc_insertion_point(field_set:GameConfig.ZoneRedisConfig.db)
+}
+inline ::uint32_t GameConfig_ZoneRedisConfig::_internal_db() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.db_;
+}
+inline void GameConfig_ZoneRedisConfig::_internal_set_db(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.db_ = value;
+}
+
+// -------------------------------------------------------------------
+
 // GameConfig
 
 // uint32 scene_node_type = 1;
@@ -1241,6 +1646,102 @@ inline ::uint32_t GameConfig::_internal_zone_id() const {
 inline void GameConfig::_internal_set_zone_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.zone_id_ = value;
+}
+
+// .GameConfig.ZoneRedisConfig zone_redis = 7;
+inline bool GameConfig::has_zone_redis() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.zone_redis_ != nullptr);
+  return value;
+}
+inline void GameConfig::clear_zone_redis() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.zone_redis_ != nullptr) _impl_.zone_redis_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::GameConfig_ZoneRedisConfig& GameConfig::_internal_zone_redis() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::GameConfig_ZoneRedisConfig* p = _impl_.zone_redis_;
+  return p != nullptr ? *p : reinterpret_cast<const ::GameConfig_ZoneRedisConfig&>(::_GameConfig_ZoneRedisConfig_default_instance_);
+}
+inline const ::GameConfig_ZoneRedisConfig& GameConfig::zone_redis() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:GameConfig.zone_redis)
+  return _internal_zone_redis();
+}
+inline void GameConfig::unsafe_arena_set_allocated_zone_redis(::GameConfig_ZoneRedisConfig* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.zone_redis_);
+  }
+  _impl_.zone_redis_ = reinterpret_cast<::GameConfig_ZoneRedisConfig*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:GameConfig.zone_redis)
+}
+inline ::GameConfig_ZoneRedisConfig* GameConfig::release_zone_redis() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::GameConfig_ZoneRedisConfig* released = _impl_.zone_redis_;
+  _impl_.zone_redis_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::GameConfig_ZoneRedisConfig* GameConfig::unsafe_arena_release_zone_redis() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:GameConfig.zone_redis)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::GameConfig_ZoneRedisConfig* temp = _impl_.zone_redis_;
+  _impl_.zone_redis_ = nullptr;
+  return temp;
+}
+inline ::GameConfig_ZoneRedisConfig* GameConfig::_internal_mutable_zone_redis() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.zone_redis_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::GameConfig_ZoneRedisConfig>(GetArena());
+    _impl_.zone_redis_ = reinterpret_cast<::GameConfig_ZoneRedisConfig*>(p);
+  }
+  return _impl_.zone_redis_;
+}
+inline ::GameConfig_ZoneRedisConfig* GameConfig::mutable_zone_redis() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::GameConfig_ZoneRedisConfig* _msg = _internal_mutable_zone_redis();
+  // @@protoc_insertion_point(field_mutable:GameConfig.zone_redis)
+  return _msg;
+}
+inline void GameConfig::set_allocated_zone_redis(::GameConfig_ZoneRedisConfig* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete (_impl_.zone_redis_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = (value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.zone_redis_ = reinterpret_cast<::GameConfig_ZoneRedisConfig*>(value);
+  // @@protoc_insertion_point(field_set_allocated:GameConfig.zone_redis)
 }
 
 #ifdef __GNUC__

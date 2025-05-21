@@ -34,6 +34,9 @@
 #include "pbc/common_error_tip.pb.h"
 #include "util/random.h"
 #include <regex>
+#include <ranges>
+
+std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
     : eventLoop(loop), logSystem(logPath, kMaxLogFileRollSize, 1) {
@@ -82,6 +85,16 @@ void Node::InitRpcServer() {
     info.set_protocol_type(PROTOCOL_TCP);
     info.set_launch_time(TimeUtil::NowSecondsUTC());
     info.set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
+
+	for (auto& val : gNodeService | std::views::values)
+	{
+		rpcServer->registerService(val.get());
+	}
+
+    InetAddress addr(tlsCommonLogic.GetGameConfig().zone_redis().host(), tlsCommonLogic.GetGameConfig().zone_redis().port());
+	zoneRedis = std::make_unique<HiredisPtr::element_type>(eventLoop, addr);
+    zoneRedis->connect();
+
 	LOG_DEBUG << "Node info: " << info.DebugString();
 }
 
