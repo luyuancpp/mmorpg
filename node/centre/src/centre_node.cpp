@@ -18,11 +18,6 @@ using namespace net;
 
 CentreNode* gCentreNode = nullptr;
 
-muduo::AsyncLogging& logger()
-{
-	return  gCentreNode->Log();
-}
-
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
 	: Node(loop, "logs/centre")
 {

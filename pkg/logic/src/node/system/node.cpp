@@ -38,9 +38,14 @@
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
+Node* gNode;
+
+
 Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
     : eventLoop(loop), logSystem(logPath, kMaxLogFileRollSize, 1) {
     LOG_INFO << "Node created, log file: " << logPath;
+
+    gNode = this;
 }
 
 Node::~Node() {
@@ -276,7 +281,7 @@ void Node::RegisterGrpcHandlers() {
 }
 
 void Node::AsyncOutput(const char* msg, int len) {
-    logger().append(msg, len);
+    gNode->Log().append(msg, len);
 #ifdef WIN32
     LogToConsole(msg, len);
 #endif
