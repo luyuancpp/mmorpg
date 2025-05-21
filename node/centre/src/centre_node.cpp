@@ -26,15 +26,8 @@ muduo::AsyncLogging& logger()
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
 	: Node(loop, "logs/centre")
 {
-}
-
-void CentreNode::Initialize()
-{
-	GetNodeInfo().set_node_type(CentreNodeService);
-
 	gCentreNode = this;
-
-	Node::Initialize();
+	GetNodeInfo().set_node_type(CentreNodeService);
 
 	EventHandler::Register();
 

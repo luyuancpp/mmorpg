@@ -31,26 +31,18 @@ muduo::AsyncLogging& logger()
 SceneNode::SceneNode(muduo::net::EventLoop* loop)
     :Node(loop, "logs/scene")
 {
-}
-
-void SceneNode::Initialize()
-{
-    GetNodeInfo().set_node_type(SceneNodeService);
-
+	gSceneNode = this;
+	GetNodeInfo().set_node_type(SceneNodeService);
 	targetNodeTypeWhitelist = { CentreNodeService };
 
-    gSceneNode = this;
-    
-    Node::Initialize();
+	EventHandler::Register();
 
-    EventHandler::Register();
+	InitPlayerService();
+	InitPlayerServiceReplied();
 
-    InitPlayerService();
-    InitPlayerServiceReplied();
-
-    void InitServiceHandler();
+	void InitServiceHandler();
 	InitServiceHandler();
-    World::InitializeSystemBeforeConnect();
+	World::InitializeSystemBeforeConnect();
 }
 
 void SceneNode::StartRpcServer()

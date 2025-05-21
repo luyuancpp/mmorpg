@@ -28,7 +28,6 @@ public:
 
     inline void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn,
                             const ::google::protobuf::Message& message) const { rpcClientHandler.SendMessageToClient(conn, message); }
-    void Initialize()override;
     void StartRpcServer()override;
 private:
     void OnConnection(const TcpConnectionPtr& conn)
