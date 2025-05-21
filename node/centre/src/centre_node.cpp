@@ -51,13 +51,13 @@ void CentreNode::StartRpcServer()
 	InetAddress redisAddr("127.0.0.1", 6379);
 	tls_centre.redis_system().Initialize(redisAddr);
 
+	Node::StartRpcServer();
+
 	rpcServer->registerService(&nodeReplyService);
 	for (auto& val : gNodeService | std::views::values)
 	{
 		rpcServer->registerService(val.get());
 	}
-
-	Node::StartRpcServer();
 
 	LOG_INFO << "centre start at " << GetNodeInfo().DebugString();
 }

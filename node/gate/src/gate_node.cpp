@@ -42,6 +42,8 @@ void GateNode::Initialize()
 
 void GateNode::StartRpcServer()
 {
+	Node::StartRpcServer();
+
 	rpcServer->GetTcpServer().setConnectionCallback(
 		std::bind(&GateNode::OnConnection, this, _1));
 	rpcServer->GetTcpServer().setMessageCallback(
@@ -49,7 +51,6 @@ void GateNode::StartRpcServer()
 
 	tls_gate.session_id_gen().set_node_id(GetNodeId());
 
-	Node::StartRpcServer(); 
 
 	loginGrpcSelectTimer.RunEvery(0.01, []() {
 		HandleLoginServiceCompletedQueueMessage(tls.GetNodeRegistry(eNodeType::LoginNodeService));
