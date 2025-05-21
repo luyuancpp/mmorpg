@@ -54,10 +54,6 @@ void CentreNode::StartRpcServer()
 	Node::StartRpcServer();
 
 	rpcServer->registerService(&nodeReplyService);
-	for (auto& val : gNodeService | std::views::values)
-	{
-		rpcServer->registerService(val.get());
-	}
 
 	LOG_INFO << "centre start at " << GetNodeInfo().DebugString();
 }

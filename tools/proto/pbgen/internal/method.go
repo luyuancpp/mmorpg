@@ -842,7 +842,7 @@ func GenRegisterFile(dst string, cb checkRepliedCb) {
 {{ . }}
 {{ end }}
 
-std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
+extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
 void InitServiceHandler()
 {

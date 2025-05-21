@@ -22,6 +22,9 @@ void CentreSceneServiceHandler::RegisterScene(::google::protobuf::RpcController*
 
 }
 
+
+
+
 void CentreSceneServiceHandler::UnRegisterScene(::google::protobuf::RpcController* controller,const ::UnRegisterSceneRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)

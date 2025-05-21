@@ -8,6 +8,7 @@
 #include "proto/common/common.pb.h"
 #include "time/comp/timer_task_comp.h"
 #include "type_define/type_define.h"
+#include <muduo/contrib/hiredis/hiredis.h>
 
 class RegisterNodeSessionRequest;
 class RegisterNodeSessionResponse;
@@ -18,6 +19,7 @@ public:
     using RpcServerPtr = std::unique_ptr<muduo::net::RpcServer>;
     using ServiceList = std::vector<::google::protobuf::Service*>;
     using CanConnectNodeTypeList = std::set<uint32_t>;
+	using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
 
     // 构造与析构
     explicit Node(muduo::net::EventLoop* loop, const std::string& logFilePath);
@@ -96,6 +98,7 @@ protected:
     TimerTaskComp etcdQueueTimer;
     RpcClient* zoneCentreNode{nullptr};
     CanConnectNodeTypeList targetNodeTypeWhitelist;
+    HiredisPtr zoneRedis;
 };
 
 muduo::AsyncLogging& logger();

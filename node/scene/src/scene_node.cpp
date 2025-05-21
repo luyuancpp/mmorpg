@@ -61,10 +61,6 @@ void SceneNode::StartRpcServer()
     tlsGame.redis.Initialize(redis_addr);
 
     rpcServer->registerService(&nodeReplyService);
-	for (auto& val : gNodeService | std::views::values)
-	{
-        rpcServer->registerService(val.get());
-	}
 
 
     ReadyForGame();
