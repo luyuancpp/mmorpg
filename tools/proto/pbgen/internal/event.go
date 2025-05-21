@@ -250,22 +250,7 @@ public:
 	static void UnRegister();
 };
 `
-
-	// Template for the C++ source file content
-	const eventHandlerCppTemplate = `{{.IncludeBegin}}{{.EventHandlerHeaderFileName}}{{.IncludeEndLine}}
-{{.CppIncludeData}}
-
-void EventHandler::Register()
-{
-{{.RegisterData}}
-}
-
-void EventHandler::UnRegister()
-{
-{{.UnRegisterData}}
-}
-`
-
+	
 	// Prepare the dynamic data
 	var cppIncludeData, registerData, unRegisterData string
 	for _, protoFile := range protoFiles {
