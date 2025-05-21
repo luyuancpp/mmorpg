@@ -1,4 +1,5 @@
 #include "event_handler.h"
+
 #include "actor_combat_state_event_handler.h"
 #include "actor_event_handler.h"
 #include "buff_event_handler.h"
@@ -10,6 +11,8 @@
 #include "scene_event_handler.h"
 #include "server_event_handler.h"
 #include "skill_event_handler.h"
+
+
 void EventHandler::Register()
 {
 ActorCombatStateEventHandler::Register();
@@ -23,7 +26,9 @@ PlayerEventHandler::Register();
 SceneEventHandler::Register();
 ServerEventHandler::Register();
 SkillEventHandler::Register();
+
 }
+
 void EventHandler::UnRegister()
 {
 ActorCombatStateEventHandler::UnRegister();
@@ -37,4 +42,5 @@ PlayerEventHandler::UnRegister();
 SceneEventHandler::UnRegister();
 ServerEventHandler::UnRegister();
 SkillEventHandler::UnRegister();
+
 }

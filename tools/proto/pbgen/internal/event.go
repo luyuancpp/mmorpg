@@ -213,4 +213,112 @@ func GenerateAllEventHandlers() {
 		go generateEventHandlerFiles(file, config.GameNodeEventHandlerDirectory)
 		go generateEventHandlerFiles(file, config.CentreNodeEventHandlerDirectory)
 	}
+
+	err = GenerateAllEventHandlersTemplate(files)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+}
+
+type Config struct {
+	ProtoDirs                       []string
+	EventProtoDirIndex              int
+	ProtoEx                         string
+	HandlerHeaderExtension          string
+	EventHandlerHeaderFileName      string
+	EventHandlerCppFileName         string
+	GameNodeEventHandlerDirectory   string
+	CentreNodeEventHandlerDirectory string
+	IncludeBegin                    string
+	IncludeEndLine                  string
+	ClassNameSuffix                 string
+}
+
+type ProtoFile struct {
+	Name string
+}
+
+func GenerateAllEventHandlersTemplate(protoFiles []os.DirEntry) error {
+	// Template for the header file content
+	const eventHandlerHeaderTemplate = `#pragma once
+
+class EventHandler
+{
+public:
+	static void Register();
+	static void UnRegister();
+};
+`
+
+	// Template for the C++ source file content
+	const eventHandlerCppTemplate = `{{.IncludeBegin}}{{.EventHandlerHeaderFileName}}{{.IncludeEndLine}}
+{{.CppIncludeData}}
+
+void EventHandler::Register()
+{
+{{.RegisterData}}
+}
+
+void EventHandler::UnRegister()
+{
+{{.UnRegisterData}}
+}
+`
+
+	// Prepare the dynamic data
+	var cppIncludeData, registerData, unRegisterData string
+	for _, protoFile := range protoFiles {
+		// Only process valid proto files
+		if !strings.HasSuffix(protoFile.Name(), config.ProtoEx) {
+			continue
+		}
+
+		// Include header file name with the right extension
+		cppIncludeData += config.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), config.ProtoEx, config.HandlerHeaderExtension, 1) + config.IncludeEndLine
+
+		// Register and UnRegister data
+		className := generateClassNameFromFile(protoFile, config.ClassNameSuffix)
+		registerData += className + "::Register();\n"
+		unRegisterData += className + "::UnRegister();\n"
+	}
+
+	// Create header file content
+	eventHeadData := eventHandlerHeaderTemplate
+
+	// Prepare the data for C++ source file
+	eventCppData := struct {
+		IncludeBegin               string
+		EventHandlerHeaderFileName string
+		IncludeEndLine             string
+		CppIncludeData             string
+		RegisterData               string
+		UnRegisterData             string
+	}{
+		IncludeBegin:               config.IncludeBegin,
+		EventHandlerHeaderFileName: config.EventHandlerHeaderFileName,
+		IncludeEndLine:             config.IncludeEndLine,
+		CppIncludeData:             cppIncludeData,
+		RegisterData:               registerData,
+		UnRegisterData:             unRegisterData,
+	}
+
+	headerFilePath := config.GameNodeEventHandlerDirectory + config.EventHandlerHeaderFileName
+	cppFilePath := config.GameNodeEventHandlerDirectory + config.EventHandlerCppFileName
+	if err := renderTemplateToFile("internal/gen/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
+		log.Printf("failed to generate header file: %v\n", err)
+	}
+	if err := renderTemplateToFile("internal/gen/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
+		log.Printf("failed to generate cpp file: %v\n", err)
+	}
+
+	headerFilePath = config.CentreNodeEventHandlerDirectory + config.EventHandlerHeaderFileName
+	cppFilePath = config.CentreNodeEventHandlerDirectory + config.EventHandlerCppFileName
+	if err := renderTemplateToFile("internal/gen/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
+		log.Printf("failed to generate header file: %v\n", err)
+	}
+	if err := renderTemplateToFile("internal/gen/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
+		log.Printf("failed to generate cpp file: %v\n", err)
+	}
+	return nil
 }
