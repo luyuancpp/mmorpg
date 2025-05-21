@@ -12,7 +12,6 @@ int main(int argc, char* argv[])
 
     EventLoop loop;
     CentreNode node(&loop);
-    node.Initialize();
     loop.loop();
     google::protobuf::ShutdownProtobufLibrary();
     return 0;

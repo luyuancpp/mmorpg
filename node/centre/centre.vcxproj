@@ -220,14 +220,11 @@
     <ClInclude Include="src\handler\service\player\centre_player_handler.h" />
     <ClInclude Include="src\handler\service\player\centre_player_scene_handler.h" />
     <ClInclude Include="src\handler\service\centre_service_handler.h" />
-    <ClInclude Include="src\handler\service\player\player_service.h" />
-    <ClInclude Include="src\handler\service\register_handler.h" />
     <ClInclude Include="src\handler\service_replied\game_scene_replied_handler.h" />
     <ClInclude Include="src\handler\service_replied\player\game_player_scene_replied_handler.h" />
     <ClInclude Include="src\handler\service_replied\player\game_player_replied_handler.h" />
     <ClInclude Include="src\handler\service_replied\game_service_replied_handler.h" />
     <ClInclude Include="src\handler\service_replied\gate_service_replied_handler.h" />
-    <ClInclude Include="src\handler\service_replied\player\player_service_replied.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

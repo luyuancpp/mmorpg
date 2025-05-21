@@ -1,6 +1,6 @@
 #include <memory>
 #include <unordered_map>
-#include "player_service_replied.h"
+#include "service/player_service_replied.h"
 #include "game_player_scene_replied_handler.h"
 #include "game_player_replied_handler.h"
 class GamePlayerSceneServiceImpl : public GamePlayerSceneService {};

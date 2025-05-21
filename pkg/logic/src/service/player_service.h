@@ -1,20 +1,19 @@
 #pragma once
 #include <memory>
 #include <unordered_map>
-
-#include "google/protobuf/message.h"
+#include <entt/src/entt/entity/entity.hpp>
 #include "google/protobuf/service.h"
 
-#include "util/game_registry.h"
+#include "thread_local/storage.h"
 
 class PlayerService
 {
 public:
-    PlayerService(std::unique_ptr<::google::protobuf::Service>&& pb_service)
-        : pb_service_(std::move(pb_service))
-    {
+	PlayerService(std::unique_ptr<::google::protobuf::Service>&& pb_service)
+		: pb_service_(std::move(pb_service))
+	{
 
-    }
+	}
 
     virtual void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         entt::entity player,
@@ -29,4 +28,5 @@ private:
 void InitPlayerService();
 
 extern std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;
+
 

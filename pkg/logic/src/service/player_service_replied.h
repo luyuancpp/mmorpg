@@ -1,12 +1,9 @@
 #pragma once
 #include <memory>
 #include <unordered_map>
+#include <entt/src/entt/entity/entity.hpp>
 
-#include "google/protobuf/message.h"
 #include "google/protobuf/service.h"
-
-#include "thread_local/storage.h"
-
 
 class PlayerServiceReplied
 {
@@ -22,9 +19,9 @@ public:
 		const ::google::protobuf::Message* request,
 		::google::protobuf::Message* response) = 0;
 
-    ::google::protobuf::Service* service() { return pb_service_.get(); }
+	::google::protobuf::Service* service() { return pb_service_.get(); }
 private:
-    std::unique_ptr<::google::protobuf::Service> pb_service_;
+	std::unique_ptr<::google::protobuf::Service> pb_service_;
 };
 
 void InitPlayerServiceReplied();

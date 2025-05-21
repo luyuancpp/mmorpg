@@ -2,7 +2,7 @@
 
 #include "proto/logic/client_player/player_state_attribute_sync.pb.h"
 
-#include "player_service.h"
+#include "service/player_service.h"
 
 #include "macros/return_define.h"
 

@@ -2,7 +2,7 @@
 #pragma once
 #include "proto/logic/server_player/game_player.pb.h"
 
-#include "player_service_replied.h"
+#include "service/player_service_replied.h"
 
 
 class GamePlayerServiceRepliedHandler : public ::PlayerServiceReplied

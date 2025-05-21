@@ -413,6 +413,7 @@ func writeServiceInfoHeadFile() {
 // Helper function to generate instance data for player services.
 func generateInstanceData(serviceList []string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir string, serviceName string) string {
 	const playerInstanceTemplate = `#include <memory>
+#include <string>
 #include <unordered_map>
 #include "{{ .SelfHeader }}"
 {{- range .Includes }}
@@ -459,7 +460,7 @@ void InitPlayerService()
 	}
 
 	data := PlayerServiceInstanceData{
-		SelfHeader:     fileNameWithoutExt + ".h",
+		SelfHeader:     config.ServiceIncludeName + fileNameWithoutExt + ".h",
 		Includes:       includes,
 		HandlerClasses: handlerClasses,
 		InitLines:      initLines,
@@ -509,7 +510,7 @@ void InitPlayerServiceReplied()
 	}
 
 	fileNameWithoutExt := serviceName[:len(serviceName)-len(filepath.Ext(serviceName))]
-	
+
 	var includes, handlerClasses, initLines []string
 
 	for _, key := range serviceList {
@@ -528,7 +529,7 @@ void InitPlayerServiceReplied()
 	}
 
 	templateData := PlayerServiceRepliedInstanceData{
-		SelfHeader:     fileNameWithoutExt + ".h",
+		SelfHeader:     config.ServiceIncludeName + fileNameWithoutExt + ".h",
 		Includes:       includes,
 		HandlerClasses: handlerClasses,
 		InitLines:      initLines,
@@ -577,4 +578,9 @@ func WriteServiceRegisterInfoFile() {
 	go writePlayerServiceInstanceFiles("repliedInstance", isGsPlayerRepliedHandler, config.GameNodePlayerMethodRepliedHandlerDirectory, config.PlayerRepliedServiceName)
 	util.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("repliedInstance", isCentrePlayerRepliedHandler, config.CentrePlayerMethodRepliedHandlerDirectory, config.PlayerRepliedServiceName)
+
+	util.Wg.Add(1)
+	go writePlayerServiceInstanceFiles("instance", ReturnNoHandler, config.GateNodePlayerMethodHandlerDirectory, config.PlayerServiceName)
+	util.Wg.Add(1)
+	go writePlayerServiceInstanceFiles("repliedInstance", ReturnNoHandler, config.GateNodePlayerMethodRepliedHandlerDirectory, config.PlayerRepliedServiceName)
 }

@@ -4,9 +4,8 @@
 #include <grpcpp/grpcpp.h>
 
 #include "handler/event/event_handler.h"
-#include "handler/service/register_handler.h"
-#include "handler/service/player/player_service.h"
-#include "handler/service_replied/player/player_service_replied.h"
+#include "service/player_service.h"
+#include "service/player_service_replied.h"
 #include "muduo/net/EventLoop.h"
 #include "network/rpc_session.h"
 #include "player/system/player_session_system.h"
@@ -26,11 +25,6 @@ CentreNode::CentreNode(muduo::net::EventLoop* loop)
 
 	EventHandler::Register();
 
-	InitPlayerService();
-	InitPlayerServiceReplied();
-
-	void InitServiceHandler();
-	InitServiceHandler();
 }
 
 void CentreNode::StartRpcServer()
