@@ -99,7 +99,6 @@ void Node::StartRpcServer() {
     InetAddress addr(info.endpoint().ip(), info.endpoint().port());
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, addr);
 	rpcServer->start();
-
     rpcServer->registerService(GetNodeReplyService());
 	for (auto& val : gNodeService | std::views::values)
 	{
