@@ -24,7 +24,6 @@ public:
     explicit GateNode(EventLoop* loop);
     ~GateNode() override {}
     inline ProtobufCodec& Codec() { return codec_; }
-    inline GateServiceHandler& GetServiceHandler() { return nodeReplyService; }
 	::google::protobuf::Service* GetNodeReplyService() override{ return &nodeReplyService ; }
 
     inline void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn,

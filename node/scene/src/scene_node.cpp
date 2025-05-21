@@ -42,6 +42,7 @@ void SceneNode::Initialize()
     gSceneNode = this;
     
     Node::Initialize();
+
     EventHandler::Register();
 
     InitPlayerService();
@@ -57,9 +58,6 @@ void SceneNode::StartRpcServer()
 	Node::StartRpcServer();
 
     tlsGame.redis.Initialize();
-
-    rpcServer->registerService(&nodeReplyService);
-
 
     ReadyForGame();
     
