@@ -31,7 +31,7 @@ void {{ sheetname }}ConfigurationTable::Load() {
     {% endfor %}
 }
 
-{{ get_table_return_type }} {{ sheetname }}ConfigurationTable::GetTable(const uint32_t tableId) {
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}ConfigurationTable::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId;
@@ -40,7 +40,7 @@ void {{ sheetname }}ConfigurationTable::Load() {
     return { it->second, kSuccess };
 }
 
-{{ get_table_return_type }} {{ sheetname }}ConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}ConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };
@@ -50,7 +50,7 @@ void {{ sheetname }}ConfigurationTable::Load() {
 
 {% for data in datastring %}
     {% if data[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.TABLE_KEY_CELL %}
-        {{ get_table_return_type }} {{ sheetname }}ConfigurationTable::GetBy{{ data[gen_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const {
+        std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}ConfigurationTable::GetBy{{ data[gen_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const {
             const auto it = kv_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}data_.find(tableId);
             if (it == kv_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}data_.end()) {
                 LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId;
