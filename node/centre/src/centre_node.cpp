@@ -16,18 +16,15 @@ using namespace net;
 CentreNode* gCentreNode = nullptr;
 
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
-	: Node(loop, "logs/centre")
-{
+	: Node(loop, "logs/centre"){
 	gCentreNode = this;
 	GetNodeInfo().set_node_type(CentreNodeService);
 	PlayerSessionSystem::Initialize();
 	EventHandler::Register();
+	tls_centre.GetRedisSystem().Initialize();
 }
 
-void CentreNode::StartRpcServer()
-{
-	tls_centre.GetRedisSystem().Initialize();
-
+void CentreNode::StartRpcServer(){
 	Node::StartRpcServer();
 
 	LOG_INFO << "centre start at " << GetNodeInfo().DebugString();

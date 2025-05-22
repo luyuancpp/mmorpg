@@ -30,6 +30,8 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 	GetNodeInfo().set_node_type(SceneNodeService);
 	targetNodeTypeWhitelist = { CentreNodeService };
 
+	tlsGame.redis.Initialize();
+
 	EventHandler::Register();
 
 	World::InitializeSystemBeforeConnect();
@@ -44,11 +46,9 @@ void SceneNode::StartRpcServer()
 {
 	Node::StartRpcServer();
 
-    tlsGame.redis.Initialize();
-
-    World::ReadyForGame();
-    
-    worldTimer.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
+	World::ReadyForGame();
+	worldTimer.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
+	
     LOG_INFO << "game node  start at " << GetNodeInfo().DebugString();
 }
 

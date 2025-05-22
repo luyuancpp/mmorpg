@@ -46,25 +46,25 @@ inline const MonsterBaseTabledData& GetMonsterBaseAllTable() {
 }
 
 #define FetchAndValidateMonsterBaseTable(tableId) \
-    const auto [monsterbaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( monsterbaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return fetchResult; } } while(0)
+    const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( monsterBaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomMonsterBaseTable(prefix, tableId) \
     const auto [prefix##MonsterBaseTable, prefix##fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(tableId); \
     do { if (!(prefix##MonsterBaseTable)) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchMonsterBaseTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [monsterbaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( monsterbaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return customReturnValue; } } while(0)
+    const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( monsterBaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchMonsterBaseTableOrReturnVoid(tableId) \
-    const auto [monsterbaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( monsterbaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return; } } while(0)
+    const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( monsterBaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchMonsterBaseTableOrContinue(tableId) \
-    const auto [monsterbaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( monsterbaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; continue; } } while(0)
+    const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( monsterBaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchMonsterBaseTableOrReturnFalse(tableId) \
-    const auto [monsterbaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( monsterbaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return false; } } while(0)
+    const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( monsterBaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return false; } } while(0)

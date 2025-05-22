@@ -39,7 +39,6 @@ void GateNode::StartRpcServer()
 
 	tls_gate.session_id_gen().set_node_id(GetNodeId());
 
-
 	loginGrpcSelectTimer.RunEvery(0.01, []() {
 		HandleLoginServiceCompletedQueueMessage(tls.GetNodeRegistry(eNodeType::LoginNodeService));
 		});
