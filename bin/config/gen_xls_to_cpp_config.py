@@ -323,7 +323,7 @@ def process_workbook(filename):
             #gen_common.mywrite(cpp_header_content, CPP_DIR / header_filename)
 
             # Create a Jinja2 environment and load the templates
-            env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+            env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), auto_reload=True)
 
             # Render the header templates
             header_template = env.get_template('config_template.h.jinja')
@@ -331,7 +331,9 @@ def process_workbook(filename):
                 datastring=data['get_first_19_rows_per_column'],
                 sheetname=sheetname,
                 use_flat_multimap=data['multi'],
-                gen_common=gen_common
+                gen_common=gen_common,
+                get_cpp_type_param_name_with_ref=get_cpp_type_param_name_with_ref,
+                get_cpp_type_name=get_cpp_type_name
             )
 
             gen_common.mywrite(header_content, CPP_DIR / header_filename)
@@ -341,7 +343,10 @@ def process_workbook(filename):
             implementation_content = implementation_template.render(
                 datastring=data['get_first_19_rows_per_column'],
                 sheetname=sheetname,
-                gen_common=gen_common
+                gen_common=gen_common,
+                get_cpp_type_param_name_with_ref=get_cpp_type_param_name_with_ref,
+                get_cpp_type_name=get_cpp_type_name
+
             )
 
             #cpp_implementation_content = generate_cpp_implementation(data['get_first_19_rows_per_column'], sheetname,

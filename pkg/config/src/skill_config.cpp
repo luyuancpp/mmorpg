@@ -7,33 +7,24 @@ void SkillConfigurationTable::Load() {
     data_.Clear();
     const auto contents = File2String("config/generated/json/skill.json");
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
-        LOG_FATAL << "Skill " << result.message().data();
+        LOG_FATAL << "Skill" << result.message().data();
     }
 
-    for (int32_t i = 0; i < data_.data_size(); ++i) { 
+    for (int32_t i = 0; i < data_.data_size(); ++i) {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
-
-
     }
-
-    {
-      expression_damage_.Init({
-   "level"
-     });
-    }
+    expression_damage_.Init(level);
 }
-
 
 std::pair<const SkillTable*, uint32_t> SkillConfigurationTable::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-       LOG_ERROR << "Skill table not found for ID: " << tableId;
+        LOG_ERROR << "Skill table not found for ID: " << tableId;
         return { nullptr, kInvalidTableId };
     }
     return { it->second, kSuccess };
 }
-
 
 std::pair<const SkillTable*, uint32_t> SkillConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
@@ -42,4 +33,3 @@ std::pair<const SkillTable*, uint32_t> SkillConfigurationTable::GetTableWithoutE
     }
     return { it->second, kSuccess };
 }
-
