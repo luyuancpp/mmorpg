@@ -59,8 +59,6 @@ std::optional<entt::entity> FindLoginNodeForSession(uint64_t sessionId)
 
 void RpcClientSessionHandler::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
-    // todo 改包把消息发给其他玩家怎么办
-    // todo 玩家没登录直接发其他消息，乱发消息
     // todo如果我没登录就发送其他协议到controller game server 怎么办
     if (conn->connected())
     {
@@ -105,8 +103,6 @@ void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr
 // 2. 合并LoginNode相关的发送函数，减少重复
 // 3. 拆分HandleRpcRequest，简化主流程
 // 4. 优化变量/函数命名
-
-
 // 5. 拆分校验函数
 bool RpcClientSessionHandler::CheckMessageSize(const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
     constexpr size_t maxByteSize = 1024;
@@ -187,6 +183,9 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 	{
 		sessionId = tls_gate.session_id_gen().Generate();
 	}
+
+	// 用session id 防止改包把消息发给其他玩家
+
 	conn->setContext(sessionId);
 	Session session;
 	session.conn = conn;
@@ -198,6 +197,7 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 // Handle messages related to the game node
 void HandleGameNodeMessage(const Session& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
 {
+	// 玩家没登录直接发其他消息，乱发消息
     const entt::entity gameNodeId{ session.gameNodeId };
     if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(gameNodeId))
     {
