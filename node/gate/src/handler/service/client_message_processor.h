@@ -9,6 +9,8 @@
 
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 
+struct Session;
+
 class RpcClientSessionHandler : muduo::noncopyable
 {
 public:
@@ -34,6 +36,10 @@ public:
 
     // 向客户端发送提示
     static void SendTipToClient(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
+
+    bool CheckMessageSize(const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const;
+
+    bool CheckMessageLimit(Session& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn)const;
 
 private:
 
