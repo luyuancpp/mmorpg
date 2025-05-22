@@ -19,14 +19,11 @@
 #include "proto/common/centre_service.pb.h"
 #include "core/network/message_system.h"
 
-SceneNode* gSceneNode = nullptr;
-
 using namespace muduo::net;
 
 SceneNode::SceneNode(muduo::net::EventLoop* loop)
     :Node(loop, "logs/scene")
 {
-	gSceneNode = this;
 	GetNodeInfo().set_node_type(SceneNodeService);
 	targetNodeTypeWhitelist = { CentreNodeService };
 

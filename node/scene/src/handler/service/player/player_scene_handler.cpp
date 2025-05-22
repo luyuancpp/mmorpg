@@ -21,7 +21,7 @@ void ClientPlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Ent
 	LOG_TRACE << "EnterSceneC2S request received for player: " << tls.registry.get<Guid>(player)
 		<< ", scene_info: " << request->scene_info().DebugString();
 
-	auto game_node_type = gSceneNode->GetNodeInfo().scene_node_type();
+	auto game_node_type = gNode->GetNodeInfo().scene_node_type();
 	if (game_node_type == eSceneNodeType::kRoomNode ||
 		game_node_type == eSceneNodeType::kRoomSceneCrossNode)
 	{

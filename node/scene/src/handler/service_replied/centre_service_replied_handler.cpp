@@ -125,7 +125,7 @@ void OnCentreServiceInitSceneNodeRepliedHandler(const TcpConnectionPtr& conn, co
 void OnCentreServiceRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterNodeSessionResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	gSceneNode->HandleNodeRegistrationResponse(*replied);
+	gNode->HandleNodeRegistrationResponse(*replied);
 ///<<< END WRITING YOUR CODE
 
 }

@@ -470,7 +470,7 @@ void GameServiceHandler::RegisterNodeSession(::google::protobuf::RpcController* 
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	gSceneNode->HandleNodeRegistration(*request, *response);
+	gNode->HandleNodeRegistration(*request, *response);
 ///<<< END WRITING YOUR CODE
 
 }
