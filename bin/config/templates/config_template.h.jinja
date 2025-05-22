@@ -1,6 +1,5 @@
 #pragma once
 #include <cstdint>
-#include <memory>
 #include <unordered_map>
 #include "config_expression/config_expression.h"
 #include "muduo/base/Logging.h"
@@ -8,7 +7,7 @@
 
 class {{ sheetname }}ConfigurationTable {
 public:
-    using KeyValueDataType = std::{{ container_type }}<uint32_t, const {{ sheetname }}Table*>;
+    using KeyValueDataType = std::unordered_map{{ container_type }}<uint32_t, const {{ sheetname }}Table*>;
 
     static {{ sheetname }}ConfigurationTable& Instance() {
         static {{ sheetname }}ConfigurationTable instance;
