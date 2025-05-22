@@ -2,6 +2,8 @@
 # coding=utf-8
 import logging
 
+from pathlib import Path
+
 BEGIN_ROW_IDX = 19
 FIELD_INFO_END_ROW_INDEX = 18
 md5_output_dir = "generated/xlsx/md5/"
@@ -34,6 +36,7 @@ SHEET_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX - 1
 SHEET_GROUP_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX
 SHEET_COLUM_NAME_INDEX = FIELD_INFO_END_ROW_INDEX + 1
 
+TEMPLATE_DIR = Path('templates')
 def mywrite(content, filename):
     """将字符串写入指定文件"""
     with open(filename, "w", encoding="utf-8") as output_file:

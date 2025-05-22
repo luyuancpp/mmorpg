@@ -9,6 +9,9 @@ from os.path import isfile, join
 import openpyxl
 import multiprocessing
 from typing import List, Optional
+import  utils
+from jinja2 import Environment, FileSystemLoader
+from pathlib import Path
 
 import gen_common  # Assuming gen_common contains the necessary functions
 from common import constants
@@ -16,7 +19,6 @@ from common import constants
 # Setup Logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
 
 class ExcelToCppConverter:
     def __init__(self, excel_file: str):
@@ -34,28 +36,31 @@ class ExcelToCppConverter:
         return self.constants_name_index is not None
 
     def generate_cpp_constants(self) -> str:
-        cpp_constants = "#pragma once\n\n"
+        constants_list = []
 
         for row in self.worksheet.iter_rows(min_row=20, values_only=True):
             id_value = row[0]
             if id_value is None:
-                continue  # Skip rows with no ID
+                continue
 
             constant_name = self._generate_constant_name(row, id_value)
-            cpp_constant = f"constexpr uint32_t {constant_name} = {id_value};\n"
-            cpp_constants += cpp_constant
+            constants_list.append({'name': constant_name, 'value': id_value})
 
-        return cpp_constants
+        env = Environment(loader=FileSystemLoader(gen_common.TEMPLATE_DIR))
+        template = env.get_template("constants.h.j2")
+        return template.render(constants=constants_list)
 
     def _generate_constant_name(self, row: tuple, id_value: int) -> str:
         if self.constants_name_index is not None and row[self.constants_name_index]:
             return f'k{self.sheet}_{row[self.constants_name_index]}'
-        return f"k{self.sheet}_{id_value}"
+        return f'k{self.sheet}_{id_value}'
 
-    def save_cpp_constants_to_file(self, cpp_constants: str) -> None:
-        output_file = constants.GENERATOR_CONSTANTS_NAME_DIR + self.sheet.lower() + '_table_id_constants.h'
-        with open(output_file, 'w') as file:
-            file.write(cpp_constants)
+    def save_cpp_constants_to_file(self, cpp_code: str) -> None:
+        output_path = os.path.join(constants.GENERATOR_CONSTANTS_NAME_DIR,
+                                   f"{self.sheet.lower()}_table_id_constants.h")
+        with open(output_path, 'w') as f:
+            f.write(cpp_code)
+
 
 
 def get_xlsx_files(directory: str) -> List[str]:
@@ -63,34 +68,35 @@ def get_xlsx_files(directory: str) -> List[str]:
     return [join(directory, filename) for filename in listdir(directory)
             if isfile(join(directory, filename)) and filename.endswith('.xlsx')]
 
-
-def process_file(excel_file: str) -> None:
-    converter = ExcelToCppConverter(excel_file)
+def process_file(file_path: str):
+    converter = ExcelToCppConverter(file_path)
     if converter.should_process():
-        cpp_constants = converter.generate_cpp_constants()
-        converter.save_cpp_constants_to_file(cpp_constants)
+        cpp_code = converter.generate_cpp_constants()
+        converter.save_cpp_constants_to_file(cpp_code)
+        logger.info(f"Processed: {file_path}")
     else:
-        logger.debug(f"Skipping file {excel_file} as it does not contain 'constants_name' column.")
+        logger.info(f"Skipped (no constants_name): {file_path}")
 
-
-def main() -> None:
+def main():
     os.makedirs(constants.GENERATOR_CONSTANTS_NAME_DIR, exist_ok=True)
 
     try:
-        xlsx_files = get_xlsx_files(constants.XLSX_DIR)
+        xlsx_files = utils.get_xlsx_files(constants.XLSX_DIR)
     except Exception as e:
-        logger.error(f"Failed to list .xlsx files: {e}")
+        logger.error(f"Failed to list files: {e}")
         return
 
     num_threads = min(multiprocessing.cpu_count(), len(xlsx_files))
-
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-        futures = [executor.submit(process_file, file_path) for file_path in xlsx_files]
+        futures = [executor.submit(process_file, f) for f in xlsx_files]
         for future in concurrent.futures.as_completed(futures):
             try:
                 future.result()
             except Exception as e:
-                logger.error(f"An error occurred during processing: {e}")
+                logger.error(f"Error during processing: {e}")
+
+if __name__ == "__main__":
+    main()
 
 
 if __name__ == "__main__":
