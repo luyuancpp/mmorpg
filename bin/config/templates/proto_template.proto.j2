@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+{% for sheet_name, data in workbook_data.items() %}
+message {{ sheet_name }} {
+  {% for key, value in data.items() %}
+  {{ value['type'] }} {{ key }} = {{ loop.index }};
+  {% endfor %}
+}
+
+{% endfor %}
