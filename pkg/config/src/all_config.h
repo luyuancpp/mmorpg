@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <functional>  // 为了使用 std::function
 
