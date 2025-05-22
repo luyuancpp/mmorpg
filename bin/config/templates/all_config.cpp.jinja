@@ -8,7 +8,7 @@
 #include "{{ item.lower() }}_config.h"
 {% endfor %}
 
-ConfigLoadCallback configLoadCallback;
+LoadSuccessCallback configLoadCallback;
 
 void LoadConfigs() {
 {% for item in sheetnames %}

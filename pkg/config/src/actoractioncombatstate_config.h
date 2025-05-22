@@ -9,19 +9,34 @@ class ActorActionCombatStateConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const ActorActionCombatStateTable*>;
 
+    // Callback type definition
+    using LoadSuccessCallback = std::function<void()>;
+
     static ActorActionCombatStateConfigurationTable& Instance() {
         static ActorActionCombatStateConfigurationTable instance;
         return instance;
     }
 
     const ActorActionCombatStateTabledData& All() const { return data_; }
+
     std::pair<const ActorActionCombatStateTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const ActorActionCombatStateTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
+
     void Load();
+
+    // Setter for the success callback
+    void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
+        loadSuccessCallback_ = callback;
+    }
+
+    
+
 private:
+    LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
     ActorActionCombatStateTabledData data_;
     KeyValueDataType kv_data_;
+    
 };
 
 inline const ActorActionCombatStateTabledData& GetActorActionCombatStateAllTable() {

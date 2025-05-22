@@ -9,19 +9,34 @@ class ConditionConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const ConditionTable*>;
 
+    // Callback type definition
+    using LoadSuccessCallback = std::function<void()>;
+
     static ConditionConfigurationTable& Instance() {
         static ConditionConfigurationTable instance;
         return instance;
     }
 
     const ConditionTabledData& All() const { return data_; }
+
     std::pair<const ConditionTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const ConditionTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
+
     void Load();
+
+    // Setter for the success callback
+    void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
+        loadSuccessCallback_ = callback;
+    }
+
+    
+
 private:
+    LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
     ConditionTabledData data_;
     KeyValueDataType kv_data_;
+    
 };
 
 inline const ConditionTabledData& GetConditionAllTable() {

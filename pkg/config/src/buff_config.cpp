@@ -18,6 +18,8 @@ void BuffConfigurationTable::Load() {
             "level", 
             "health"
     });
+
+    if (loadSuccessCallback_){loadSuccessCallback_()}
 }
 
 std::pair<const BuffTable*, uint32_t> BuffConfigurationTable::GetTable(const uint32_t tableId) {
