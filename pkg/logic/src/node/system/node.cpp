@@ -46,7 +46,8 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
     LOG_INFO << "Node created, log file: " << logPath;
 
     gNode = this;
-
+    tls.globalNodeRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+    
     //未实现的节点实现一个空函数
 	void InitPlayerService();
 	InitPlayerService();
@@ -73,13 +74,8 @@ std::string Node::GetServiceName(uint32_t type) const {
     return eNodeType_Name(type) + ".rpc";
 }
 
-void Node::InitGlobalData() {
-    tls.globalNodeRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
-}
-
 void Node::Initialize() {
     LOG_TRACE << "Node initializing...";
-    InitGlobalData();
     RegisterEventHandlers();
     LoadConfigs();
     InitRpcServer();
@@ -160,9 +156,7 @@ void Node::LoadConfigs() {
 }
 
 void Node::LoadAllConfigData() {
-    LoadAllConfig();
-    LoadAllConfigAsyncWhenServerLaunch();
-    OnConfigLoadSuccessful();
+    LoadConfigsAsync();
 }
 
 void Node::SetupTimeZone() {

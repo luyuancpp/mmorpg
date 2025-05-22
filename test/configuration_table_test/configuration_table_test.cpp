@@ -6,9 +6,9 @@
 #include "skill_config.h"
 #include "buff_config.h"
 
-void LoadAllConfig();
+void LoadConfigs();
 
-TEST(LoadAllConfigTest, GetAbilityAllTable)
+TEST(LoadConfigsTest, GetAbilityAllTable)
 {
 	for (auto& it : GetSkillAllTable().data())
 	{
@@ -16,7 +16,7 @@ TEST(LoadAllConfigTest, GetAbilityAllTable)
 	}
 }
 
-TEST(LoadAllConfigTest, GetBuffAllTable)
+TEST(LoadConfigsTest, GetBuffAllTable)
 {
 	for (auto& it : GetBuffAllTable().data())
 	{
@@ -25,7 +25,7 @@ TEST(LoadAllConfigTest, GetBuffAllTable)
 }
 
 
-TEST(LoadAllConfigTest, GetTestAllTable)
+TEST(LoadConfigsTest, GetTestAllTable)
 {
     for (auto& it : GetTestAllTable().data())
     {
@@ -33,7 +33,7 @@ TEST(LoadAllConfigTest, GetTestAllTable)
     }
 }
 
-TEST(LoadAllConfigTest, GetTestMultiKeyAllTable)
+TEST(LoadConfigsTest, GetTestMultiKeyAllTable)
 {
 	for (auto& it : GetTestMultiKeyAllTable().data())
 	{
@@ -41,7 +41,7 @@ TEST(LoadAllConfigTest, GetTestMultiKeyAllTable)
 	}
 }
 
-TEST(LoadAllConfigTest, GetTestMultiUint32ValueRangeTable)
+TEST(LoadConfigsTest, GetTestMultiUint32ValueRangeTable)
 {
 	auto& data = TestMultiKeyConfigurationTable::Instance().GetMuint32KeyData();
 	auto range17 = data.equal_range(17);
@@ -51,7 +51,7 @@ TEST(LoadAllConfigTest, GetTestMultiUint32ValueRangeTable)
 	}
 }
 
-TEST(LoadAllConfigTest, GetTestMultiInt32ValueRangeTable)
+TEST(LoadConfigsTest, GetTestMultiInt32ValueRangeTable)
 {
 	auto& data = TestMultiKeyConfigurationTable::Instance().GetMin32KeyData();
 	auto range10 = data.equal_range(10);
@@ -60,7 +60,7 @@ TEST(LoadAllConfigTest, GetTestMultiInt32ValueRangeTable)
 	}
 }
 
-TEST(LoadAllConfigTest, GetTestMultiStringValueRangeTable)
+TEST(LoadConfigsTest, GetTestMultiStringValueRangeTable)
 {
 	auto& data = TestMultiKeyConfigurationTable::Instance().GetMstringkeyData();
 	auto rangeaa = data.equal_range("aa");
@@ -69,19 +69,19 @@ TEST(LoadAllConfigTest, GetTestMultiStringValueRangeTable)
 	}
 }
 
-TEST(LoadAllConfigTest, GetTestUint32ValueFindTable)
+TEST(LoadConfigsTest, GetTestUint32ValueFindTable)
 {
 	auto it = TestMultiKeyConfigurationTable::Instance().GetByUint32Key(14);
 	EXPECT_EQ(it.first->id(), 1);
 }
 
-TEST(LoadAllConfigTest, GetTestInt32ValueAllTable)
+TEST(LoadConfigsTest, GetTestInt32ValueAllTable)
 {
 	auto it = TestMultiKeyConfigurationTable::Instance().GetByIn32Key(8);
 	EXPECT_EQ(it.first->id(), 1);
 }
 
-TEST(LoadAllConfigTest, GetTestStringValueAllTable)
+TEST(LoadConfigsTest, GetTestStringValueAllTable)
 {
 	auto it = TestMultiKeyConfigurationTable::Instance().GetByStringkey("aa");
 	EXPECT_EQ(it.first->id(), 1);
@@ -91,7 +91,7 @@ TEST(LoadAllConfigTest, GetTestStringValueAllTable)
 int main(int argc, char** argv) {
 
     ::testing::InitGoogleTest(&argc, argv);
-    LoadAllConfig();
+    LoadConfigs();
     int ret = RUN_ALL_TESTS();
     return ret;
 }

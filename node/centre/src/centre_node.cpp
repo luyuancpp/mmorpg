@@ -20,9 +20,8 @@ CentreNode::CentreNode(muduo::net::EventLoop* loop)
 {
 	gCentreNode = this;
 	GetNodeInfo().set_node_type(CentreNodeService);
-
+	PlayerSessionSystem::Initialize();
 	EventHandler::Register();
-
 }
 
 void CentreNode::StartRpcServer()
@@ -34,10 +33,5 @@ void CentreNode::StartRpcServer()
 	LOG_INFO << "centre start at " << GetNodeInfo().DebugString();
 }
 
-void CentreNode::InitGlobalData()
-{
-	Node::InitGlobalData();
-	PlayerSessionSystem::Initialize();
-}
 
 

@@ -41,17 +41,15 @@ public:
     void HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response) const;
     void HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const;
 
-	virtual void Initialize();
 protected:
     // 初始化相关
-    virtual void InitGlobalData();
     void InitRpcServer();
+    void Initialize();
     virtual void StartRpcServer();
     void InitLogSystem();
     void RegisterEventHandlers();
     void LoadConfigs();
     void LoadAllConfigData();
-    virtual void OnConfigLoadSuccessful() {}
     void SetupTimeZone();
 
     // 节点连接与管理

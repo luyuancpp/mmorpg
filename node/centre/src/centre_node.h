@@ -2,16 +2,12 @@
 
 #include "handler/service/centre_service_handler.h"
 #include "node/system/node.h"
-#include "redis_client/redis_client.h"
 
 class CentreNode : public Node
 {
 public:
 	explicit CentreNode(muduo::net::EventLoop* loop);
 	~CentreNode() override = default;
-
-
-    void InitGlobalData()override;
 
 	::google::protobuf::Service* GetNodeReplyService() override { return &nodeReplyService; }
 

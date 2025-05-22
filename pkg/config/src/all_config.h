@@ -1,4 +1,15 @@
 #pragma once
 
-void LoadAllConfig();
-void LoadAllConfigAsyncWhenServerLaunch();
+#include <functional>  // 为了使用 std::function
+
+// 配置加载成功的回调函数类型
+using ConfigLoadCallback = std::function< void() >;
+
+// 同步加载所有配置
+void LoadConfigs();
+
+// 异步加载所有配置（在服务器启动时调用）
+void LoadConfigsAsync();
+
+// 设置配置加载成功的回调函数
+void OnConfigLoadSuccess(const ConfigLoadCallback& callback);
