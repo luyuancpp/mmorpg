@@ -64,25 +64,25 @@ inline const {{ sheetname }}TabledData& Get{{ sheetname }}AllTable() {
 }
 
 #define FetchAndValidate{{ sheetname }}Table(tableId) \
-    const auto [{{ sheetname | lower }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( {{ sheetname | lower }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return fetchResult; } } while(0)
+    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( {{  sheetname[0].lower() + sheetname[1:] }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustom{{ sheetname }}Table(prefix, tableId) \
     const auto [prefix##{{ sheetname }}Table, prefix##fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
     do { if (!(prefix##{{ sheetname }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrReturnCustom(tableId, customReturnValue) \
-    const auto [{{ sheetname | lower }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( {{ sheetname | lower }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return customReturnValue; } } while(0)
+    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( {{  sheetname[0].lower() + sheetname[1:] }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrReturnVoid(tableId) \
-    const auto [{{ sheetname | lower }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( {{ sheetname | lower }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return; } } while(0)
+    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( {{  sheetname[0].lower() + sheetname[1:] }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrContinue(tableId) \
-    const auto [{{ sheetname | lower }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( {{ sheetname | lower }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; continue; } } while(0)
+    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( {{  sheetname[0].lower() + sheetname[1:] }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; continue; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrReturnFalse(tableId) \
-    const auto [{{ sheetname | lower }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( {{ sheetname | lower }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return false; } } while(0)
+    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( {{  sheetname[0].lower() + sheetname[1:] }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return false; } } while(0)
