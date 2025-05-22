@@ -22,8 +22,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 KEY_ROW_IDX = 4
 CPP_DIR = Path("generated/cpp")
 XLS_DIR = Path("xlsx")
-TEMPLATE_DIR = Path('templates')
-
 
 def get_column_names(sheet):
     """Get column names from the Excel sheet."""
@@ -80,7 +78,7 @@ def process_workbook(filename):
             cpp_filename = f"{sheetname.lower()}_config.cpp"
 
             # Create a Jinja2 environment and load the templates
-            env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), auto_reload=True)
+            env = Environment(loader=FileSystemLoader(gen_common.TEMPLATE_DIR), auto_reload=True)
 
             # Render the header templates
             header_template = env.get_template('config_template.h.jinja')
@@ -127,7 +125,7 @@ def generate_all_config():
     cpucount = cpu_count()
 
     # 初始化模板引擎
-    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+    env = Environment(loader=FileSystemLoader(gen_common.TEMPLATE_DIR))
     header_template = env.get_template("all_config.h.jinja")
     cpp_template = env.get_template("all_config.cpp.jinja")
 
