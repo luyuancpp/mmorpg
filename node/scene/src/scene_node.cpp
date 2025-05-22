@@ -2,6 +2,7 @@
 
 #include <ranges>
 
+#include "all_config.h"
 #include "core/config/config_system.h"
 #include "handler/event/event_handler.h"
 #include "service/player_service.h"
@@ -32,6 +33,11 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 	EventHandler::Register();
 
 	World::InitializeSystemBeforeConnect();
+
+	OnConfigLoadSuccess([]()
+	{
+		ConfigSystem::OnConfigLoadSuccessful();
+	});
 }
 
 void SceneNode::StartRpcServer()
@@ -40,24 +46,10 @@ void SceneNode::StartRpcServer()
 
     tlsGame.redis.Initialize();
 
-    ReadyForGame();
+    World::ReadyForGame();
     
     worldTimer.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
     LOG_INFO << "game node  start at " << GetNodeInfo().DebugString();
 }
 
-void SceneNode::InitGlobalData()
-{
-    Node::InitGlobalData();
-}
-
-void SceneNode::ReadyForGame()
-{
-    World::ReadyForGame();
-}
-
-void SceneNode::OnConfigLoadSuccessful()
-{
-    ConfigSystem::OnConfigLoadSuccessful();
-}
 

@@ -40,8 +40,9 @@
 #include "testmultikey_config.h"
 
 
-void LoadAllConfig()
-{
+ConfigLoadCallback configLoadCallback;
+
+void LoadConfigs() {
 
     ActorActionCombatStateConfigurationTable::Instance().Load();
 
@@ -79,157 +80,148 @@ void LoadAllConfig()
 
     TestMultiKeyConfigurationTable::Instance().Load();
 
+
+    if (configLoadCallback){
+        configLoadCallback();
+    }
 }
 
-void LoadAllConfigAsyncWhenServerLaunch()
+void LoadConfigsAsync() {
+    static muduo::CountDownLatch latch(18);
 {
-    static muduo::CountDownLatch latch_(18);
-
-    
-    {
-        std::thread t([&]() {
+        std::thread t([]() {
             ActorActionCombatStateConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             ActorActionStateConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             BuffConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             ClassConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             ConditionConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             CooldownConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             GlobalVariableConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             ItemConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             MainSceneConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             MessageLimiterConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             MissionConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             MonsterBaseConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             RewardConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             SceneConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             SkillConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             SkillPermissionConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             TestConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
-    {
-        std::thread t([&]() {
+{
+        std::thread t([]() {
             TestMultiKeyConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    
 
-    latch_.wait();
+    latch.wait();
+
+     if (configLoadCallback){
+        configLoadCallback();
+    }
+}
+
+void OnConfigLoadSuccess(const ConfigLoadCallback& callback){
+configLoadCallback = callback;
 }

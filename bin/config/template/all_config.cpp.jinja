@@ -8,19 +8,21 @@
 #include "{{ item.lower() }}_config.h"
 {% endfor %}
 
-void LoadAllConfig()
-{
+ConfigLoadCallback configLoadCallback;
+
+void LoadConfigs() {
 {% for item in sheetnames %}
     {{ item }}ConfigurationTable::Instance().Load();
 {% endfor %}
+
+    if (configLoadCallback){
+        configLoadCallback();
+    }
 }
 
-void LoadAllConfigAsyncWhenServerLaunch()
-{
+void LoadConfigsAsync() {
     static muduo::CountDownLatch latch({{ sheetnames|length }});
-
-{% for item in sheetnames %}
-    {
+{% for item in sheetnames %}{
         std::thread t([]() {
             {{ item }}ConfigurationTable::Instance().Load();
             latch.countDown();
@@ -28,6 +30,13 @@ void LoadAllConfigAsyncWhenServerLaunch()
         t.detach();
     }
 {% endfor %}
-
     latch.wait();
+
+     if (configLoadCallback){
+        configLoadCallback();
+    }
+}
+
+void OnConfigLoadSuccess(const ConfigLoadCallback& callback){
+configLoadCallback = callback;
 }

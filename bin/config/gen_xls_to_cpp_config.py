@@ -8,7 +8,12 @@ import gen_common
 import concurrent.futures
 from pathlib import Path
 from multiprocessing import cpu_count
+from pathlib import Path
+from multiprocessing import cpu_count
+import openpyxl
 import logging
+from jinja2 import Environment, FileSystemLoader
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -17,6 +22,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 KEY_ROW_IDX = 4
 CPP_DIR = Path("generated/cpp")
 XLS_DIR = Path("xlsx")
+TEMPLATE_DIR = Path('template')
 
 
 def get_column_names(sheet):
@@ -323,54 +329,29 @@ def process_workbook(filename):
 
 
 def generate_all_config():
-    """Generate header and implementation files for loading all configurations."""
-    sheetnames = []
+    # 收集所有 sheet 名
+    sheetnames = set()
     xlsx_files = sorted(XLS_DIR.glob('*.xlsx'), key=lambda f: f.stat().st_size, reverse=True)
-
     for filepath in xlsx_files:
         try:
             workbook = openpyxl.load_workbook(filepath)
             workbook_data = get_workbook_data(workbook)
-            sheetnames.extend(workbook_data.keys())
+            sheetnames.update(workbook_data.keys())
         except Exception as e:
             logging.error(f"Failed to process file {filepath}: {e}")
 
-    header_content = '#pragma once\nvoid LoadAllConfig();\nvoid LoadAllConfigAsyncWhenServerLaunch();\n'
-    cpp_content = '#include "all_config.h"\n\n#include <thread>\n#include "muduo/base/CountDownLatch.h"\n\n'
-
-    for item in sheetnames:
-        cpp_content += f'#include "{item.lower()}_config.h"\n'
-
-    cpp_content += 'void LoadAllConfig()\n{\n'
-    for item in sheetnames:
-        cpp_content += f'    {item}ConfigurationTable::Instance().Load();\n'
-    cpp_content += '}\n\n'
-
+    sheetnames = sorted(sheetnames)  # 保持稳定输出
     cpucount = cpu_count()
-    cpp_content += 'void LoadAllConfigAsyncWhenServerLaunch()\n{\n'
-    cpp_content += f'    static muduo::CountDownLatch latch_({len(sheetnames)});\n'
 
-    load_blocks = [[] for _ in range(cpucount)]
-    for idx, item in enumerate(sheetnames):
-        load_blocks[idx % cpucount].append(f'    {item}ConfigurationTable::Instance().Load();\n')
+    # 初始化模板引擎
+    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+    header_template = env.get_template("all_config.h.jinja")
+    cpp_template = env.get_template("all_config.cpp.jinja")
 
-    for block in load_blocks:
-        if block:
-            cpp_content += '\n    /// Begin\n'
-            cpp_content += '    {\n'
-            cpp_content += '        std::thread t([&]() {\n\n'
-            cpp_content += ''.join(block)
-            cpp_content += '            latch_.countDown();\n'
-            cpp_content += '        });\n'
-            cpp_content += '        t.detach();\n'
-            cpp_content += '    }\n'
-            cpp_content += '    /// End\n'
-
-    cpp_content += '    latch_.wait();\n'
-    cpp_content += '}\n'
+    header_content = header_template.render()
+    cpp_content = cpp_template.render(sheetnames=sheetnames, cpucount=cpucount)
 
     return header_content, cpp_content
-
 
 def main():
     """Main function to generate all configuration files."""

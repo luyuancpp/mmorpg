@@ -18,12 +18,8 @@ public:
     
     ::google::protobuf::Service* GetNodeReplyService() override { return &nodeReplyService; }
 
-    virtual void OnConfigLoadSuccessful()override;
     void StartRpcServer() override;
-    virtual void InitGlobalData() override;
     
-    void ReadyForGame();
-
 private:
     GameServiceHandler nodeReplyService;
     TimerTaskComp worldTimer;
