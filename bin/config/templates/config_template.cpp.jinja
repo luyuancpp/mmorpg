@@ -23,9 +23,13 @@ void {{ sheetname }}ConfigurationTable::Load() {
     {%- for data in datastring %}
         {%- if data and data[gen_common.COL_OBJ_TABLE_EXPRESSION_PARAM_NAMES_INDEX] is not none %}
             {%- set word_count, word_list = gen_common.count_words_by_comma(data[gen_common.COL_OBJ_TABLE_EXPRESSION_PARAM_NAMES_INDEX]) %}
-            {%- if word_count > 0 %}
-    expression_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}_.Init({{ word_list | join(', ') }});
-            {%- endif %}
+                {%- if word_count > 0 %}
+    expression_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}_.Init({
+          {%- for word in word_list %}
+            "{{ word }}"{%- if not loop.last %}, {% endif %}
+          {%- endfor %}
+    });
+                {%- endif %}
         {%- endif %}
     {%- endfor %}
 }
