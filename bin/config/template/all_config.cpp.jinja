@@ -17,17 +17,17 @@ void LoadAllConfig()
 
 void LoadAllConfigAsyncWhenServerLaunch()
 {
-    static muduo::CountDownLatch latch_({{ sheetnames|length }});
+    static muduo::CountDownLatch latch({{ sheetnames|length }});
 
-    {% for item in sheetnames %}
+{% for item in sheetnames %}
     {
-        std::thread t([&]() {
+        std::thread t([]() {
             {{ item }}ConfigurationTable::Instance().Load();
-            latch_.countDown();
+            latch.countDown();
         });
         t.detach();
     }
-    {% endfor %}
+{% endfor %}
 
-    latch_.wait();
+    latch.wait();
 }
