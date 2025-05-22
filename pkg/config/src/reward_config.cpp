@@ -14,8 +14,6 @@ void RewardConfigurationTable::Load() {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
     }
-
-    if (loadSuccessCallback_){loadSuccessCallback_()}
 }
 
 std::pair<const RewardTable*, uint32_t> RewardConfigurationTable::GetTable(const uint32_t tableId) {

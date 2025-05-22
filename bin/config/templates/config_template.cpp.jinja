@@ -32,8 +32,6 @@ void {{ sheetname }}ConfigurationTable::Load() {
                 {%- endif %}
         {%- endif %}
     {%- endfor %}
-
-    if (loadSuccessCallback_){loadSuccessCallback_()}
 }
 
 std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}ConfigurationTable::GetTable(const uint32_t tableId) {

@@ -27,8 +27,10 @@ public:
 
     // Setter for the success callback
     void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
-        loadSuccessCallback_ = callback;
+        loadSuccessCallback_ = callback;//multi thread
     }
+
+    void LoadSuccess(){if (loadSuccessCallback_){loadSuccessCallback_();}}
 
     std::pair<const TestMultiKeyTable*, uint32_t> GetByStringkey(const std::string& tableId) const;
     const std::unordered_map<std::string, const TestMultiKeyTable*>& GetStringkeyData() const { return kv_stringkeydata_; }std::pair<const TestMultiKeyTable*, uint32_t> GetByUint32key(uint32_t tableId) const;

@@ -14,8 +14,6 @@ void MonsterBaseConfigurationTable::Load() {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
     }
-
-    if (loadSuccessCallback_){loadSuccessCallback_()}
 }
 
 std::pair<const MonsterBaseTable*, uint32_t> MonsterBaseConfigurationTable::GetTable(const uint32_t tableId) {

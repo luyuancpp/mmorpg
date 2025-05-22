@@ -14,8 +14,6 @@ void ItemConfigurationTable::Load() {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
     }
-
-    if (loadSuccessCallback_){loadSuccessCallback_()}
 }
 
 std::pair<const ItemTable*, uint32_t> ItemConfigurationTable::GetTable(const uint32_t tableId) {
