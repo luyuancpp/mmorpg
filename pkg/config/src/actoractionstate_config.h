@@ -46,25 +46,25 @@ inline const ActorActionStateTabledData& GetActorActionStateAllTable() {
 }
 
 #define FetchAndValidateActorActionStateTable(tableId) \
-    const auto [actoractionstateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( actoractionstateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return fetchResult; } } while(0)
+    const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( actorActionStateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomActorActionStateTable(prefix, tableId) \
     const auto [prefix##ActorActionStateTable, prefix##fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
     do { if (!(prefix##ActorActionStateTable)) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchActorActionStateTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [actoractionstateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( actoractionstateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return customReturnValue; } } while(0)
+    const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( actorActionStateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchActorActionStateTableOrReturnVoid(tableId) \
-    const auto [actoractionstateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( actoractionstateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return; } } while(0)
+    const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( actorActionStateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchActorActionStateTableOrContinue(tableId) \
-    const auto [actoractionstateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( actoractionstateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; continue; } } while(0)
+    const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( actorActionStateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchActorActionStateTableOrReturnFalse(tableId) \
-    const auto [actoractionstateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( actoractionstateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return false; } } while(0)
+    const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( actorActionStateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return false; } } while(0)

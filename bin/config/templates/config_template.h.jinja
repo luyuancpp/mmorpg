@@ -39,8 +39,19 @@ public:
     const std::{{ column_map_type }}<{{ get_cpp_type_name(data[gen_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}Table*>& Get{{ data[gen_common.COL_OBJ_COLUMN_NAME] | title }}Data() const { return kv_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}data_; }
         {%- endif -%}
         {%- if data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not none -%}
-    {{ data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] }} Get{{ data[gen_common.COL_OBJ_COLUMN_NAME] | title }}(const uint32_t tableId);
-    void Set{{ data[gen_common.COL_OBJ_COLUMN_NAME] | title }}Param(const std::vector<{{ data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] }}>& paramList);
+    {{ data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] }} Get{{ data[gen_common.COL_OBJ_COLUMN_NAME] | title }}(const uint32_t tableId){
+        auto [table, ok] = GetTable(tableId);  // Fetch table using tableId
+        if (!ok || table == nullptr) {         // Check if the table is valid
+            LOG_ERROR << "{{ data[gen_common.COL_OBJ_COLUMN_NAME] | title }} table not found for ID: " << tableId;
+            return double();  // Return default value (zero) if table is invalid
+        }
+
+        // Call the appropriate method to get the damage
+        return expression_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}_.Value(table->{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}());
+    }
+    void Set{{ data[gen_common.COL_OBJ_COLUMN_NAME] | title }}Param(const std::vector<{{ data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] }}>& paramList){
+               expression_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}_.SetParam(paramList);  // Set parameters for damage calculation
+    }
         {%- endif -%}
     {%- endfor %}
 

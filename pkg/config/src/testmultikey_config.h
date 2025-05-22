@@ -58,25 +58,25 @@ inline const TestMultiKeyTabledData& GetTestMultiKeyAllTable() {
 }
 
 #define FetchAndValidateTestMultiKeyTable(tableId) \
-    const auto [testmultikeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( testmultikeyTable )) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return fetchResult; } } while(0)
+    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( testMultiKeyTable )) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomTestMultiKeyTable(prefix, tableId) \
     const auto [prefix##TestMultiKeyTable, prefix##fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
     do { if (!(prefix##TestMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchTestMultiKeyTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [testmultikeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( testmultikeyTable )) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return customReturnValue; } } while(0)
+    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( testMultiKeyTable )) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchTestMultiKeyTableOrReturnVoid(tableId) \
-    const auto [testmultikeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( testmultikeyTable )) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return; } } while(0)
+    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( testMultiKeyTable )) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchTestMultiKeyTableOrContinue(tableId) \
-    const auto [testmultikeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( testmultikeyTable )) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; continue; } } while(0)
+    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( testMultiKeyTable )) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchTestMultiKeyTableOrReturnFalse(tableId) \
-    const auto [testmultikeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
-    do { if (!( testmultikeyTable )) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return false; } } while(0)
+    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
+    do { if (!( testMultiKeyTable )) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return false; } } while(0)

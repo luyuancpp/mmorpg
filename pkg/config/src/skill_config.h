@@ -32,8 +32,19 @@ public:
 
     void LoadSuccess(){if (loadSuccessCallback_){loadSuccessCallback_();}}
 
-    double GetDamage(const uint32_t tableId);
-    void SetDamageParam(const std::vector<double>& paramList);
+    double GetDamage(const uint32_t tableId){
+        auto [table, ok] = GetTable(tableId);  // Fetch table using tableId
+        if (!ok || table == nullptr) {         // Check if the table is valid
+            LOG_ERROR << "Damage table not found for ID: " << tableId;
+            return double();  // Return default value (zero) if table is invalid
+        }
+
+        // Call the appropriate method to get the damage
+        return expression_damage_.Value(table->damage());
+    }
+    void SetDamageParam(const std::vector<double>& paramList){
+               expression_damage_.SetParam(paramList);  // Set parameters for damage calculation
+    }
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
