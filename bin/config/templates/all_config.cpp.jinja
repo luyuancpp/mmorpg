@@ -6,37 +6,39 @@
 {#- Include config headers #}
 {% for item in sheetnames %}
 #include "{{ item.lower() }}_config.h"
-{% endfor %}
+{%- endfor %}
 
-LoadSuccessCallback configLoadCallback;
+LoadSuccessCallback loadSuccessCallback;
 
 void LoadConfigs() {
 {% for item in sheetnames %}
     {{ item }}ConfigurationTable::Instance().Load();
+    {{ item }}ConfigurationTable::Instance().LoadSuccess();
 {% endfor %}
 
-    if (configLoadCallback){
-        configLoadCallback();
+    if (loadSuccessCallback){
+        loadSuccessCallback();
     }
 }
 
 void LoadConfigsAsync() {
     static muduo::CountDownLatch latch({{ sheetnames|length }});
-{% for item in sheetnames %}{
-        std::thread t([]() {
-            {{ item }}ConfigurationTable::Instance().Load();
-            latch.countDown();
-        });
-        t.detach();
-    }
-{% endfor %}
+{% for item in sheetnames %}
+    std::thread {{ item }}LoadThread([](){
+        {{ item }}ConfigurationTable::Instance().Load();
+            latch.countDown();});
+            {{ item }}LoadThread.detach();
+{%endfor %}
     latch.wait();
 
-     if (configLoadCallback){
-        configLoadCallback();
+{% for item in sheetnames %}
+    {{ item }}ConfigurationTable::Instance().LoadSuccess();
+{%- endfor %}
+     if (loadSuccessCallback){
+        loadSuccessCallback();
     }
 }
 
-void OnConfigLoadSuccess(const ConfigLoadCallback& callback){
-configLoadCallback = callback;
+void OnConfigLoadSuccess(const LoadSuccessCallback& callback){
+loadSuccessCallback = callback;
 }

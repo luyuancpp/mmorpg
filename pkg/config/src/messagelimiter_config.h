@@ -27,8 +27,10 @@ public:
 
     // Setter for the success callback
     void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
-        loadSuccessCallback_ = callback;
+        loadSuccessCallback_ = callback;//multi thread
     }
+
+    void LoadSuccess(){if (loadSuccessCallback_){loadSuccessCallback_();}}
 
     
 
