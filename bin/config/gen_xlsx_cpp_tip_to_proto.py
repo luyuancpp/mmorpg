@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from openpyxl import load_workbook
 import gen_common  # Assuming gen_common contains the necessary functions
 from common import constants
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -87,23 +88,18 @@ def read_excel_data(file_path, existing_ids):
 
 
 def generate_proto_file(group_name, group_data):
-    """Generate a Proto file for a given group."""
+    """Generate a Proto file for a given group using Jinja2 template."""
     try:
-        proto_content = f"// Proto file for {group_name}\n"
-        proto_content += 'syntax = "proto3";\n\n'
-        proto_content += 'option go_package = "pb/game";\n\n'
-        proto_content += f"enum {group_name} {{\n"
+        template_env = Environment(
+            loader=FileSystemLoader(gen_common.TEMPLATE_DIR),  # 你的模板目录
+            autoescape=select_autoescape(['proto'])  # 可选
+        )
+        template = template_env.get_template("tip_enum.proto.j2")
 
-        if group_name == "common_error":
-            proto_content += '  option allow_alias = true;\n\n'
-
-        proto_content += f'  k{group_name.capitalize()}OK = 0;\n'
-
-        for enum_name, enum_id in group_data.items():
-            enum_name_with_k = f"k{enum_name}"
-            proto_content += f"  {enum_name_with_k} = {enum_id};\n"
-
-        proto_content += '};\n'
+        proto_content = template.render(
+            group_name=group_name,
+            group_data=group_data
+        )
 
         proto_file_path = os.path.join(output_dir, f"{group_name.lower()}_tip.proto")
         with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
