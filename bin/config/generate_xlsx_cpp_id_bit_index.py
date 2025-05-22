@@ -13,10 +13,13 @@ from typing import List, Optional, Dict
 
 import gen_common  # Assuming gen_common contains the necessary functions
 from common import constants
+from jinja2 import Environment, FileSystemLoader
 
 # Setup Logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
 
 class ExcelToCppConverter:
     def __init__(self, excel_file: str):
@@ -26,6 +29,12 @@ class ExcelToCppConverter:
         self.worksheet = self.workbook[self.sheet]
         self.bit_index_col = self._find_bit_index_column()
         self.mapping_file = join(constants.GENERATOR_TABLE_INDEX_MAPPING_DIR, f"{self.sheet.lower()}_mapping.json")
+
+        # Initialize Jinja2 environment
+        self.template_env = Environment(
+            loader=FileSystemLoader(gen_common.TEMPLATE_DIR),  # Path to your template folder
+            autoescape=True
+        )
 
     def _find_bit_index_column(self) -> Optional[int]:
         """Find the index of the column where the 7th row contains 'bit_index'."""
@@ -43,11 +52,9 @@ class ExcelToCppConverter:
                 try:
                     # Load the JSON data
                     data = json.load(file)
-
-                    # Convert keys to integers
-                    return {int(k): v for k, v in data.items()}
+                    return {int(k): v for k, v in data.items()}  # Convert keys to integers
                 except json.JSONDecodeError:
-                    print("Error: JSON file is not valid.")
+                    logger.error("Error: JSON file is not valid.")
                     return {}
         return {}
 
@@ -78,16 +85,10 @@ class ExcelToCppConverter:
         return self.bit_index_col is not None
 
     def generate_cpp_constants(self) -> str:
-        """Generate C++ constants from the Excel data."""
-        cpp_constants = "#pragma once\n"
-        cpp_constants += '#include <cstdint>\n'
-        cpp_constants += '#include <unordered_map>\n\n'
-
+        """Generate C++ constants from the Excel data using Jinja2 template."""
         id_to_index = self._load_existing_mapping()
         unused_indexes = self._find_unused_indexes(id_to_index)
         current_index = max(id_to_index.values(), default=-1) + 1
-
-        cpp_constants += f'const std::unordered_map<uint64_t, uint32_t> {self.sheet}BitMap{{\n'
 
         # Iterate through rows to assign ID to index
         for row in self.worksheet.iter_rows(min_row=20, values_only=True):
@@ -103,37 +104,24 @@ class ExcelToCppConverter:
                     current_index += 1
                 id_to_index[id_value] = index
 
-        # Add constants to the C++ string
-        for row in self.worksheet.iter_rows(min_row=20, values_only=True):
-            id_value = row[0]
-            if id_value is None:
-                continue  # Skip rows with no ID
-
-            constant_name = self._generate_constant_name(row, id_to_index[id_value])
-            cpp_constant = f"{{{constant_name}, {id_to_index[id_value]}}},\n"
-            cpp_constants += cpp_constant
-
-        cpp_constants += f'}};\n\n'
-
-        # Add max bit index constant
-        max_bit_index = self._find_max_bit_index()
-        cpp_constants += f"constexpr uint32_t k{self.sheet}MaxBitIndex = {max_bit_index};\n"
+        # Render the template
+        template = self.template_env.get_template("cpp_config_id_bit_template.h.j2")
+        cpp_constants = template.render(
+            sheet=self.sheet,
+            id_to_index=id_to_index,
+            max_bit_index=self._find_max_bit_index()
+        )
 
         # Save the mapping
         self._save_mapping(id_to_index)
         return cpp_constants
-
-    def _generate_constant_name(self, row: tuple, index: int) -> str:
-        """Generate the constant name based on the 'bit_index' or ID value."""
-        if self.bit_index_col is not None and row[self.bit_index_col]:
-            return f'{row[self.bit_index_col]}'
-        return f"k{self.sheet}_{index}"
 
     def save_cpp_constants_to_file(self, cpp_constants: str) -> None:
         """Save the generated C++ constants to a file."""
         output_file = join(constants.GENERATOR_TABLE_INDEX_DIR, f"{self.sheet.lower()}_table_id_bit_index.h")
         with open(output_file, 'w') as file:
             file.write(cpp_constants)
+
 
 def get_xlsx_files(directory: str) -> List[str]:
     """List all .xlsx files in the specified directory."""
