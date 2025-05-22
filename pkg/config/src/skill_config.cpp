@@ -14,7 +14,9 @@ void SkillConfigurationTable::Load() {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
     }
-    expression_damage_.Init(level);
+    expression_damage_.Init({
+            "level"
+    });
 }
 
 std::pair<const SkillTable*, uint32_t> SkillConfigurationTable::GetTable(const uint32_t tableId) {

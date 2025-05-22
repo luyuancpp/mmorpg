@@ -14,7 +14,10 @@ void BuffConfigurationTable::Load() {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
     }
-    expression_healthregeneration_.Init(level, health);
+    expression_healthregeneration_.Init({
+            "level", 
+            "health"
+    });
 }
 
 std::pair<const BuffTable*, uint32_t> BuffConfigurationTable::GetTable(const uint32_t tableId) {
