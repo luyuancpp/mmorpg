@@ -24,8 +24,8 @@ GateNode::GateNode(EventLoop* loop)
 	GetNodeInfo().set_node_type(GateNodeService);
 	targetNodeTypeWhitelist = { CentreNodeService, SceneNodeService, LoginNodeService };
 
-	void InitGrpcLoginSercieResponseHandler();
-	InitGrpcLoginSercieResponseHandler();
+	void InitGrpcLoginServiceResponseHandler();
+	InitGrpcLoginServiceResponseHandler();
 }
 
 void GateNode::StartRpcServer()

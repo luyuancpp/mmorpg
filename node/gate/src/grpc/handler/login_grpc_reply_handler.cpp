@@ -6,7 +6,7 @@
 
 using GrpcLoginStubPtr = std::unique_ptr<LoginService::Stub>;
 
-void InitGrpcLoginSercieResponseHandler() {
+void InitGrpcLoginServiceResponseHandler() {
     {
         using Function = std::function<void(const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>&)>;
         extern Function AsyncLoginServiceLoginHandler;
