@@ -1,0 +1,62 @@
+#include "google/protobuf/util/json_util.h"
+#include "src/util/file2string.h"
+#include "common_error_tip.pb.h"
+#include "{{ sheetname | lower }}_config.h"
+
+void {{ sheetname }}ConfigurationTable::Load() {
+    data_.Clear();
+    const auto contents = File2String("config/generated/json/{{ sheetname | lower }}.json");
+    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+        LOG_FATAL << "{{ sheetname }}" << result.message().data();
+    }
+
+    for (int32_t i = 0; i < data_.data_size(); ++i) {
+        const auto& row_data = data_.data(i);
+        kv_data_.emplace(row_data.id(), &row_data);
+
+        {% for data in datastring %}
+            {% if data[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.TABLE_KEY_CELL %}
+                kv_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}data_.emplace(row_data.{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}(), &row_data);
+            {% endif %}
+        {% endfor %}
+    }
+
+    {% for data in datastring %}
+        {% if data[gen_common.COL_OBJ_TABLE_EXPRESSION_PARAM_NAMES_INDEX] is not none %}
+            {% set word_count, word_list = gen_common.count_words_by_comma(data[gen_common.COL_OBJ_TABLE_EXPRESSION_PARAM_NAMES_INDEX]) %}
+            {% if word_count > 0 %}
+                expression_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}_.Init({{ word_list | join(', ') }});
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+}
+
+{{ get_table_return_type }} {{ sheetname }}ConfigurationTable::GetTable(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
+        LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId;
+        return { nullptr, kInvalidTableId };
+    }
+    return { it->second, kSuccess };
+}
+
+{{ get_table_return_type }} {{ sheetname }}ConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
+        return { nullptr, kInvalidTableId };
+    }
+    return { it->second, kSuccess };
+}
+
+{% for data in datastring %}
+    {% if data[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.TABLE_KEY_CELL %}
+        {{ get_table_return_type }} {{ sheetname }}ConfigurationTable::GetBy{{ data[gen_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const {
+            const auto it = kv_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}data_.find(tableId);
+            if (it == kv_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}data_.end()) {
+                LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId;
+                return { nullptr, kInvalidTableId };
+            }
+            return { it->second, kSuccess };
+        }
+    {% endif %}
+{% endfor %}

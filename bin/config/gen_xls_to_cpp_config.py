@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 KEY_ROW_IDX = 4
 CPP_DIR = Path("generated/cpp")
 XLS_DIR = Path("xlsx")
-TEMPLATE_DIR = Path('template')
+TEMPLATE_DIR = Path('templates')
 
 
 def get_column_names(sheet):
@@ -198,6 +198,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
 def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
     """Generate C++ implementation file content."""
     sheet_name_lower = sheetname.lower()
+
     container_type = "unordered_multimap" if use_flat_multimap else "unordered_map"
     table_type = f'{sheetname}Table*'
     const_table_type = f'const {table_type}'
@@ -319,11 +320,33 @@ def process_workbook(filename):
             cpp_filename = f"{sheetname.lower()}_config.cpp"
 
             cpp_header_content = generate_cpp_header(data['get_first_19_rows_per_column'], sheetname, data['multi'])
-            gen_common.mywrite(cpp_header_content, CPP_DIR / header_filename)
+            #gen_common.mywrite(cpp_header_content, CPP_DIR / header_filename)
 
-            cpp_implementation_content = generate_cpp_implementation(data['get_first_19_rows_per_column'], sheetname,
-                                                                     data['multi'])
-            gen_common.mywrite(cpp_implementation_content, CPP_DIR / cpp_filename)
+            # Create a Jinja2 environment and load the templates
+            env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+
+            # Render the header templates
+            header_template = env.get_template('config_template.h.jinja')
+            header_content = header_template.render(
+                datastring=data['get_first_19_rows_per_column'],
+                sheetname=sheetname,
+                use_flat_multimap=data['multi'],
+                gen_common=gen_common
+            )
+
+            gen_common.mywrite(header_content, CPP_DIR / header_filename)
+
+            # Render the implementation templates
+            implementation_template = env.get_template('config_template.cpp.jinja')
+            implementation_content = implementation_template.render(
+                datastring=data['get_first_19_rows_per_column'],
+                sheetname=sheetname,
+                gen_common=gen_common
+            )
+
+            #cpp_implementation_content = generate_cpp_implementation(data['get_first_19_rows_per_column'], sheetname,
+                #                                                     data['multi'])
+            gen_common.mywrite(implementation_content, CPP_DIR / cpp_filename)
     except Exception as e:
         logging.error(f"Failed to load or process workbook {filename}: {e}")
 
