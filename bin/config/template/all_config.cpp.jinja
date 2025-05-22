@@ -1,0 +1,33 @@
+#include "all_config.h"
+
+#include <thread>
+#include "muduo/base/CountDownLatch.h"
+
+{#- Include config headers #}
+{% for item in sheetnames %}
+#include "{{ item.lower() }}_config.h"
+{% endfor %}
+
+void LoadAllConfig()
+{
+{% for item in sheetnames %}
+    {{ item }}ConfigurationTable::Instance().Load();
+{% endfor %}
+}
+
+void LoadAllConfigAsyncWhenServerLaunch()
+{
+    static muduo::CountDownLatch latch_({{ sheetnames|length }});
+
+    {% for item in sheetnames %}
+    {
+        std::thread t([&]() {
+            {{ item }}ConfigurationTable::Instance().Load();
+            latch_.countDown();
+        });
+        t.detach();
+    }
+    {% endfor %}
+
+    latch_.wait();
+}
