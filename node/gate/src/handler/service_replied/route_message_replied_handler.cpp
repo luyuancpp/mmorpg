@@ -39,6 +39,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		LOG_ERROR << "conn id not found  session id "  << "," << replied->session_id();
 		return;
 	}
+
 	MessageContent message;
 	message.set_serialized_message(replied->body());
 	message.set_message_id(route_data.message_id());;

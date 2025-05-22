@@ -17,6 +17,5 @@ private:
 	CentreServiceHandler nodeReplyService;
 };
 
-extern CentreNode* gCentreNode ;
 
 

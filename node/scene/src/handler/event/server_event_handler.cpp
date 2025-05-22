@@ -30,8 +30,8 @@ void ServerEventHandler::OnConnect2CentrePbEventHandler(const OnConnect2CentrePb
 {
 ///<<< BEGIN WRITING YOUR CODE
 	InitSceneNodeRequest request;
-	request.set_node_id(gSceneNode->GetNodeId());
-	request.set_scene_node_type(gSceneNode->GetNodeInfo().scene_node_type());
+	request.set_node_id(gNode->GetNodeId());
+	request.set_scene_node_type(gNode->GetNodeInfo().scene_node_type());
 	CallCentreNodeMethod(CentreServiceInitSceneNodeMessageId, request, entt::to_integral(event.entity()));
 
 	entt::entity centreNodeId = entt::to_entity(event.entity());
@@ -50,7 +50,7 @@ void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& event)
 void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    SceneUtil::SetSequenceNodeId(gSceneNode->GetNodeId());
+    SceneUtil::SetSequenceNodeId(gNode->GetNodeId());
     GameNodeSceneSystem::InitializeNodeScenes();
 ///<<< END WRITING YOUR CODE
 

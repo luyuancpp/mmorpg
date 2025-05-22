@@ -13,7 +13,6 @@
 
 GateNode* gGateNode = nullptr; 
 
-
 GateNode::GateNode(EventLoop* loop)
     : Node(loop, "logs/gate"),
     dispatcher_(std::bind(&GateNode::OnUnknownMessage, this, _1, _2, _3)),

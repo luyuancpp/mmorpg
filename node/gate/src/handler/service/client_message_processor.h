@@ -35,7 +35,6 @@ public:
     // 向客户端发送提示
     static void SendTipToClient(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
 
-
 private:
 
     // 处理连接断开事件

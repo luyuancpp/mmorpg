@@ -551,7 +551,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	// Need to route to the next node
 	auto* next_route_data = mutable_request->add_route_nodes();
 	next_route_data->CopyFrom(tlsCommonLogic.GetRoutingNodeInfo());
-	next_route_data->mutable_node_info()->CopyFrom(gCentreNode->GetNodeInfo());
+	next_route_data->mutable_node_info()->CopyFrom(gNode->GetNodeInfo());
 	mutable_request->set_body(tlsCommonLogic.RouteMsgBody());
 	mutable_request->set_id(request->id());
 
@@ -664,7 +664,7 @@ void CentreServiceHandler::RegisterNodeSession(::google::protobuf::RpcController
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	gCentreNode->HandleNodeRegistration(*request, *response);
+	gNode->HandleNodeRegistration(*request, *response);
 ///<<< END WRITING YOUR CODE
 
 }

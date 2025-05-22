@@ -13,11 +13,9 @@
 using namespace muduo;
 using namespace net;
 
-CentreNode* gCentreNode = nullptr;
 
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
 	: Node(loop, "logs/centre"){
-	gCentreNode = this;
 	GetNodeInfo().set_node_type(CentreNodeService);
 	PlayerSessionSystem::Initialize();
 	EventHandler::Register();
