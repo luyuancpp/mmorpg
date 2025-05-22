@@ -100,19 +100,39 @@ void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr
     LOG_ERROR << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;
 }
 
-void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn)
-{
-    auto sessionId = tls_gate.session_id_gen().Generate();
-    while (tls_gate.sessions().contains(sessionId))
-    {
-        sessionId = tls_gate.session_id_gen().Generate();
-    }
-    conn->setContext(sessionId);
-    Session session;
-    session.conn = conn;
-    tls_gate.sessions().emplace(sessionId, std::move(session));
+// 伪代码重构计划：
+// 1. 消息分发用map替换switch-case，提升可扩展性
+// 2. 合并LoginNode相关的发送函数，减少重复
+// 3. 拆分HandleRpcRequest，简化主流程
+// 4. 优化变量/函数命名
 
-    LOG_TRACE << "New connection, assigned session id: " << sessionId;
+
+// 5. 拆分校验函数
+bool RpcClientSessionHandler::CheckMessageSize(const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
+    constexpr size_t maxByteSize = 1024;
+    if (request->ByteSizeLong() > maxByteSize) {
+        LOG_ERROR << "Message size exceeds 1KB. Message ID: " << request->message_id();
+        MessageContent errResponse;
+        errResponse.set_id(request->id());
+        errResponse.set_message_id(request->message_id());
+        errResponse.mutable_error_message()->set_id(kMessageSizeExceeded);
+        conn->send(errResponse.SerializeAsString());
+        return false;
+    }
+    return true;
+}
+
+bool RpcClientSessionHandler::CheckMessageLimit(Session& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
+    if (const auto err = session.messageLimiter.CanSend(request->message_id()); kSuccess != err) {
+        LOG_ERROR << "Failed to send message. Message ID: " << request->message_id() << ", Error: " << err;
+        MessageContent errResponse;
+        errResponse.set_id(request->id());
+        errResponse.set_message_id(request->message_id());
+        errResponse.mutable_error_message()->set_id(err);
+        conn->send(errResponse.SerializeAsString());
+        return false;
+    }
+    return true;
 }
 
 template <typename Message, typename Request>
@@ -158,6 +178,21 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     tls_gate.sessions().erase(sessionId);
 
     LOG_TRACE << "Disconnected session id: " << sessionId;
+}
+
+void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn)
+{
+	auto sessionId = tls_gate.session_id_gen().Generate();
+	while (tls_gate.sessions().contains(sessionId))
+	{
+		sessionId = tls_gate.session_id_gen().Generate();
+	}
+	conn->setContext(sessionId);
+	Session session;
+	session.conn = conn;
+	tls_gate.sessions().emplace(sessionId, std::move(session));
+
+	LOG_TRACE << "New connection, assigned session id: " << sessionId;
 }
 
 // Handle messages related to the game node
@@ -237,65 +272,25 @@ void HandleLoginNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, 
     }
 }
 
-// Main request handler, forwards the request to the appropriate service
+//// Main request handler, forwards the request to the appropriate service
 void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPtr& conn,
-    const RpcClientMessagePtr& request,
-    muduo::Timestamp)
+	const RpcClientMessagePtr& request,
+	muduo::Timestamp)
 {
-    auto sessionId = GetSessionId(conn);
-    const auto sessionIt = tls_gate.sessions().find(sessionId);
-    if (sessionIt == tls_gate.sessions().end())
-    {
-        LOG_ERROR << "Session not found for session id: " << sessionId
-            << " in RPC request.";
-        return;
-    }
-
-    auto& session = sessionIt->second;
-
-    // 检查消息字节大小是否超过 1KB
-    constexpr size_t maxByteSize = 1024; // 1KB
-    if (request->ByteSizeLong() > maxByteSize)
-    {
-        LOG_ERROR << "Session ID: " << sessionId
-            << " - Message size exceeds 1KB. Message ID: "
-            << request->message_id();
-
-        MessageContent errResponse;
-        errResponse.set_id(request->id());
-        errResponse.set_message_id(request->message_id());
-        errResponse.mutable_error_message()->set_id(kMessageSizeExceeded); // 假设定义了对应的错误码
-        conn->send(errResponse.SerializeAsString()); // 发送错误响应
-        return;
-    }
-
-    // 根据服务 ID 转发消息
-    if (gClientToServerMessageId.contains(request->message_id()))
-    {
-        if (const auto err = session.messageLimiter.CanSend(request->message_id());
-            kSuccess != err) {
-
-            LOG_ERROR << "Session ID: " << sessionId
-                << " - Failed to send message. Message ID: "
-                << request->message_id()
-                << ", Error: " << err;
-
-            MessageContent errResponse;
-            errResponse.set_id(request->id());
-            errResponse.set_message_id(request->message_id());
-            errResponse.mutable_error_message()->set_id(err);
-            conn->send(errResponse.SerializeAsString()); // 发送错误响应
-            return;
-        }
-
-        HandleGameNodeMessage(session, request, sessionId, conn);
-    }
-    else
-    {
-        LOG_TRACE << "Session ID: " << sessionId
-            << " - Handling login node message. Message ID: "
-            << request->message_id();
-
-        HandleLoginNodeMessage(sessionId, request, conn);
-    }
+	auto sessionId = GetSessionId(conn);
+	const auto sessionIt = tls_gate.sessions().find(sessionId);
+	if (sessionIt == tls_gate.sessions().end()) {
+		LOG_ERROR << "Session not found for session id: " << sessionId << " in RPC request.";
+		return;
+	}
+	auto& session = sessionIt->second;
+	if (!CheckMessageSize(request, conn)) return;
+	if (gClientToServerMessageId.contains(request->message_id())) {
+		if (!CheckMessageLimit(session, request, conn)) return;
+		HandleGameNodeMessage(session, request, sessionId, conn);
+	}
+	else {
+		LOG_TRACE << "Session ID: " << sessionId << " - Handling login node message. Message ID: " << request->message_id();
+		HandleLoginNodeMessage(sessionId, request, conn);
+	}
 }
