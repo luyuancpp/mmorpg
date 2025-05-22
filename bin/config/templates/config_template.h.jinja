@@ -9,18 +9,28 @@ class {{ sheetname }}ConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map{{ container_type }}<uint32_t, const {{ sheetname }}Table*>;
 
+    // Callback type definition
+    using LoadSuccessCallback = std::function<void()>;
+
     static {{ sheetname }}ConfigurationTable& Instance() {
         static {{ sheetname }}ConfigurationTable instance;
         return instance;
     }
 
     const {{ sheetname }}TabledData& All() const { return data_; }
+
     std::pair<const {{ sheetname }}Table*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const {{ sheetname }}Table*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
+
     void Load();
 
-    {%- for data in datastring if data -%}
+    // Setter for the success callback
+    void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
+        loadSuccessCallback_ = callback;
+    }
+
+    {% for data in datastring if data %}
         {%- if data[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.TABLE_KEY_CELL -%}
             {%- set column_map_type = 'unordered_map' if data[gen_common.COL_OBJ_TABLE_MULTI] != gen_common.MULTI_TABLE_KEY_CELL else 'unordered_multimap' -%}
     std::pair<const {{ sheetname }}Table*, uint32_t> GetBy{{ data[gen_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const;
@@ -31,13 +41,14 @@ public:
     void Set{{ data[gen_common.COL_OBJ_COLUMN_NAME] | title }}Param(const std::vector<{{ data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] }}>& paramList);
         {%- endif -%}
     {%- endfor %}
+
 private:
+    LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
     {{ sheetname }}TabledData data_;
     KeyValueDataType kv_data_;
-
-    {%- for data in datastring if data -%}
+    {% for data in datastring if data %}
         {%- if data[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.TABLE_KEY_CELL -%}
-            {%- set column_map_type = 'unordered_map' if data[gen_common.COL_OBJ_TABLE_MULTI] != gen_common.MULTI_TABLE_KEY_CELL else 'unordered_multimap' -%}
+            {% set column_map_type = 'unordered_map' if data[gen_common.COL_OBJ_TABLE_MULTI] != gen_common.MULTI_TABLE_KEY_CELL else 'unordered_multimap' %}
     std::{{ column_map_type }}<{{ get_cpp_type_name(data[gen_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}Table*> kv_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}data_;
         {%- endif -%}
         {%- if data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not none -%}

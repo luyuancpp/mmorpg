@@ -17,6 +17,8 @@ void SkillConfigurationTable::Load() {
     expression_damage_.Init({
             "level"
     });
+
+    if (loadSuccessCallback_){loadSuccessCallback_()}
 }
 
 std::pair<const SkillTable*, uint32_t> SkillConfigurationTable::GetTable(const uint32_t tableId) {

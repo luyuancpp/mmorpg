@@ -9,21 +9,36 @@ class BuffConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const BuffTable*>;
 
+    // Callback type definition
+    using LoadSuccessCallback = std::function<void()>;
+
     static BuffConfigurationTable& Instance() {
         static BuffConfigurationTable instance;
         return instance;
     }
 
     const BuffTabledData& All() const { return data_; }
+
     std::pair<const BuffTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const BuffTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
-    void Load();double GetHealthregeneration(const uint32_t tableId);
+
+    void Load();
+
+    // Setter for the success callback
+    void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
+        loadSuccessCallback_ = callback;
+    }
+
+    double GetHealthregeneration(const uint32_t tableId);
     void SetHealthregenerationParam(const std::vector<double>& paramList);double GetBonusdamage(const uint32_t tableId);
     void SetBonusdamageParam(const std::vector<double>& paramList);
+
 private:
+    LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
     BuffTabledData data_;
-    KeyValueDataType kv_data_;ExcelExpression<double> expression_healthregeneration_;ExcelExpression<double> expression_bonusdamage_;
+    KeyValueDataType kv_data_;
+    ExcelExpression<double> expression_healthregeneration_;ExcelExpression<double> expression_bonusdamage_;
 };
 
 inline const BuffTabledData& GetBuffAllTable() {

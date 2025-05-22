@@ -3,7 +3,7 @@
 #include <functional>  // 为了使用 std::function
 
 // 配置加载成功的回调函数类型
-using ConfigLoadCallback = std::function< void() >;
+using LoadSuccessCallback = std::function< void() >;
 
 // 同步加载所有配置
 void LoadConfigs();
@@ -12,4 +12,4 @@ void LoadConfigs();
 void LoadConfigsAsync();
 
 // 设置配置加载成功的回调函数
-void OnConfigLoadSuccess(const ConfigLoadCallback& callback);
+void OnConfigLoadSuccess(const LoadSuccessCallback& callback);

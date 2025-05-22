@@ -9,19 +9,34 @@ class MissionConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const MissionTable*>;
 
+    // Callback type definition
+    using LoadSuccessCallback = std::function<void()>;
+
     static MissionConfigurationTable& Instance() {
         static MissionConfigurationTable instance;
         return instance;
     }
 
     const MissionTabledData& All() const { return data_; }
+
     std::pair<const MissionTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const MissionTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
+
     void Load();
+
+    // Setter for the success callback
+    void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
+        loadSuccessCallback_ = callback;
+    }
+
+    
+
 private:
+    LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
     MissionTabledData data_;
     KeyValueDataType kv_data_;
+    
 };
 
 inline const MissionTabledData& GetMissionAllTable() {

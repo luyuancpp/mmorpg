@@ -20,6 +20,8 @@ void TestMultiKeyConfigurationTable::Load() {
         kv_muint32keydata_.emplace(row_data.muint32key(), &row_data);
         kv_min32keydata_.emplace(row_data.min32key(), &row_data);
     }
+
+    if (loadSuccessCallback_){loadSuccessCallback_()}
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::GetTable(const uint32_t tableId) {

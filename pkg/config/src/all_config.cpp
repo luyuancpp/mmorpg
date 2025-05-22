@@ -40,7 +40,7 @@
 #include "testmultikey_config.h"
 
 
-ConfigLoadCallback configLoadCallback;
+LoadSuccessCallback configLoadCallback;
 
 void LoadConfigs() {
 

@@ -9,19 +9,34 @@ class MonsterBaseConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const MonsterBaseTable*>;
 
+    // Callback type definition
+    using LoadSuccessCallback = std::function<void()>;
+
     static MonsterBaseConfigurationTable& Instance() {
         static MonsterBaseConfigurationTable instance;
         return instance;
     }
 
     const MonsterBaseTabledData& All() const { return data_; }
+
     std::pair<const MonsterBaseTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const MonsterBaseTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
+
     void Load();
+
+    // Setter for the success callback
+    void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
+        loadSuccessCallback_ = callback;
+    }
+
+    
+
 private:
+    LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
     MonsterBaseTabledData data_;
     KeyValueDataType kv_data_;
+    
 };
 
 inline const MonsterBaseTabledData& GetMonsterBaseAllTable() {

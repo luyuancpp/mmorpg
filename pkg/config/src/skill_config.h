@@ -9,20 +9,35 @@ class SkillConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const SkillTable*>;
 
+    // Callback type definition
+    using LoadSuccessCallback = std::function<void()>;
+
     static SkillConfigurationTable& Instance() {
         static SkillConfigurationTable instance;
         return instance;
     }
 
     const SkillTabledData& All() const { return data_; }
+
     std::pair<const SkillTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const SkillTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
-    void Load();double GetDamage(const uint32_t tableId);
+
+    void Load();
+
+    // Setter for the success callback
+    void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
+        loadSuccessCallback_ = callback;
+    }
+
+    double GetDamage(const uint32_t tableId);
     void SetDamageParam(const std::vector<double>& paramList);
+
 private:
+    LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
     SkillTabledData data_;
-    KeyValueDataType kv_data_;ExcelExpression<double> expression_damage_;
+    KeyValueDataType kv_data_;
+    ExcelExpression<double> expression_damage_;
 };
 
 inline const SkillTabledData& GetSkillAllTable() {
