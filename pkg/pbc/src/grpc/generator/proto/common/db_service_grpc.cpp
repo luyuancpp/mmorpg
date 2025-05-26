@@ -43,7 +43,7 @@ void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeE
 
     AsyncAccountDBServiceLoad2RedisGrpcClientCall* call = new AsyncAccountDBServiceLoad2RedisGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcAccountDBServiceStubPtr>(nodeEntity)
+        .get<AccountDBServiceStubPtr>(nodeEntity)
         ->PrepareAsyncLoad2Redis(&call->context, request,
                                   &registry.get<AccountDBServiceLoad2RedisCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -89,7 +89,7 @@ void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeE
 
     AsyncAccountDBServiceSave2RedisGrpcClientCall* call = new AsyncAccountDBServiceSave2RedisGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcAccountDBServiceStubPtr>(nodeEntity)
+        .get<AccountDBServiceStubPtr>(nodeEntity)
         ->PrepareAsyncSave2Redis(&call->context, request,
                                   &registry.get<AccountDBServiceSave2RedisCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -135,7 +135,7 @@ void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEn
 
     AsyncPlayerDBServiceLoad2RedisGrpcClientCall* call = new AsyncPlayerDBServiceLoad2RedisGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcPlayerDBServiceStubPtr>(nodeEntity)
+        .get<PlayerDBServiceStubPtr>(nodeEntity)
         ->PrepareAsyncLoad2Redis(&call->context, request,
                                   &registry.get<PlayerDBServiceLoad2RedisCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -181,7 +181,7 @@ void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEn
 
     AsyncPlayerDBServiceSave2RedisGrpcClientCall* call = new AsyncPlayerDBServiceSave2RedisGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcPlayerDBServiceStubPtr>(nodeEntity)
+        .get<PlayerDBServiceStubPtr>(nodeEntity)
         ->PrepareAsyncSave2Redis(&call->context, request,
                                   &registry.get<PlayerDBServiceSave2RedisCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();

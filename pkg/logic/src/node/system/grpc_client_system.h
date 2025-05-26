@@ -5,5 +5,4 @@
 
 namespace GrpcClientSystem {
 	void InitEtcdStubs(const ::google::protobuf::RepeatedPtrField<std::string>& etcdHosts);
-	void InitDeployService(const std::string& deployAddress);
 }

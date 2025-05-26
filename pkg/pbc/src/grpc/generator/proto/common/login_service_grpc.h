@@ -11,11 +11,11 @@ using grpc::ClientAsyncResponseReader;
 
 namespace loginpb {
 
-using GrpcloginpbLoginServiceStubPtr = std::unique_ptr<LoginService::Stub>;
+using LoginServiceStubPtr = std::unique_ptr<LoginService::Stub>;
 
 
 
-class AsyncloginpbLoginServiceLoginGrpcClientCall {
+class AsyncLoginServiceLoginGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -23,20 +23,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::loginpb::LoginC2LResponse>> response_reader;
 };
 
-using AsyncloginpbLoginServiceLoginHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncloginpbLoginServiceLoginGrpcClientCall>&)>;
-extern AsyncloginpbLoginServiceLoginHandlerFunctionType AsyncloginpbLoginServiceLoginHandler;
+using AsyncLoginServiceLoginHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>&)>;
+extern AsyncLoginServiceLoginHandlerFunctionType AsyncLoginServiceLoginHandler;
 
 
 
 class ::loginpb::LoginC2LRequest;
 
-void SendloginpbLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginC2LRequest& request);
-void HandleloginpbLoginServiceCompletedQueueMessage(entt::registry& registry);
-void InitloginpbLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginC2LRequest& request);
+void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
+void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
 
-class AsyncloginpbLoginServiceCreatePlayerGrpcClientCall {
+class AsyncLoginServiceCreatePlayerGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -44,20 +44,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::loginpb::CreatePlayerC2LResponse>> response_reader;
 };
 
-using AsyncloginpbLoginServiceCreatePlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncloginpbLoginServiceCreatePlayerGrpcClientCall>&)>;
-extern AsyncloginpbLoginServiceCreatePlayerHandlerFunctionType AsyncloginpbLoginServiceCreatePlayerHandler;
+using AsyncLoginServiceCreatePlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceCreatePlayerGrpcClientCall>&)>;
+extern AsyncLoginServiceCreatePlayerHandlerFunctionType AsyncLoginServiceCreatePlayerHandler;
 
 
 
 class ::loginpb::CreatePlayerC2LRequest;
 
-void SendloginpbLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerC2LRequest& request);
-void HandleloginpbLoginServiceCompletedQueueMessage(entt::registry& registry);
-void InitloginpbLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerC2LRequest& request);
+void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
+void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
 
-class AsyncloginpbLoginServiceEnterGameGrpcClientCall {
+class AsyncLoginServiceEnterGameGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -65,20 +65,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::loginpb::EnterGameC2LResponse>> response_reader;
 };
 
-using AsyncloginpbLoginServiceEnterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncloginpbLoginServiceEnterGameGrpcClientCall>&)>;
-extern AsyncloginpbLoginServiceEnterGameHandlerFunctionType AsyncloginpbLoginServiceEnterGameHandler;
+using AsyncLoginServiceEnterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceEnterGameGrpcClientCall>&)>;
+extern AsyncLoginServiceEnterGameHandlerFunctionType AsyncLoginServiceEnterGameHandler;
 
 
 
 class ::loginpb::EnterGameC2LRequest;
 
-void SendloginpbLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameC2LRequest& request);
-void HandleloginpbLoginServiceCompletedQueueMessage(entt::registry& registry);
-void InitloginpbLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameC2LRequest& request);
+void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
+void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
 
-class AsyncloginpbLoginServiceLeaveGameGrpcClientCall {
+class AsyncLoginServiceLeaveGameGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -86,20 +86,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
 
-using AsyncloginpbLoginServiceLeaveGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncloginpbLoginServiceLeaveGameGrpcClientCall>&)>;
-extern AsyncloginpbLoginServiceLeaveGameHandlerFunctionType AsyncloginpbLoginServiceLeaveGameHandler;
+using AsyncLoginServiceLeaveGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLeaveGameGrpcClientCall>&)>;
+extern AsyncLoginServiceLeaveGameHandlerFunctionType AsyncLoginServiceLeaveGameHandler;
 
 
 
 class ::loginpb::LeaveGameC2LRequest;
 
-void SendloginpbLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameC2LRequest& request);
-void HandleloginpbLoginServiceCompletedQueueMessage(entt::registry& registry);
-void InitloginpbLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameC2LRequest& request);
+void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
+void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
 
-class AsyncloginpbLoginServiceDisconnectGrpcClientCall {
+class AsyncLoginServiceDisconnectGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -107,15 +107,15 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
 
-using AsyncloginpbLoginServiceDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncloginpbLoginServiceDisconnectGrpcClientCall>&)>;
-extern AsyncloginpbLoginServiceDisconnectHandlerFunctionType AsyncloginpbLoginServiceDisconnectHandler;
+using AsyncLoginServiceDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceDisconnectGrpcClientCall>&)>;
+extern AsyncLoginServiceDisconnectHandlerFunctionType AsyncLoginServiceDisconnectHandler;
 
 
 
 class ::loginpb::LoginNodeDisconnectRequest;
 
-void SendloginpbLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request);
-void HandleloginpbLoginServiceCompletedQueueMessage(entt::registry& registry);
-void InitloginpbLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request);
+void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
+void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace loginpb

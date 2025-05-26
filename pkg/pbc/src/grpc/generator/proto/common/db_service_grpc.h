@@ -11,7 +11,7 @@ using grpc::ClientAsyncResponseReader;
 
 namespace  {
 
-using GrpcAccountDBServiceStubPtr = std::unique_ptr<AccountDBService::Stub>;
+using AccountDBServiceStubPtr = std::unique_ptr<AccountDBService::Stub>;
 
 
 
@@ -55,7 +55,7 @@ void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeE
 void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry);
 void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-using GrpcPlayerDBServiceStubPtr = std::unique_ptr<PlayerDBService::Stub>;
+using PlayerDBServiceStubPtr = std::unique_ptr<PlayerDBService::Stub>;
 
 
 

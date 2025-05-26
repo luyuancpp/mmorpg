@@ -156,7 +156,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     {
         loginpb::LoginNodeDisconnectRequest request;
         request.set_session_id(sessionId);
-        SendloginpbLoginServiceDisconnect(tls.GetNodeRegistry(eNodeType::LoginNodeService), *loginNode , request);
+        SendLoginServiceDisconnect(tls.GetNodeRegistry(eNodeType::LoginNodeService), *loginNode , request);
     }
 
     // 通知中心服务器
@@ -216,7 +216,7 @@ void SendLoginRequestToLoginNode(entt::entity loginNode, Guid sessionId, const R
 {
     loginpb::LoginC2LRequest message;
     SetSessionAndParseBody(message, request, sessionId);
-    SendloginpbLoginServiceLogin(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
+    SendLoginServiceLogin(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
 
     LOG_TRACE << "Sent LoginC2LRequest, session id: " << sessionId;
 }
@@ -225,7 +225,7 @@ void SendCreatePlayerRequestToLoginNode(entt::entity loginNode, Guid sessionId, 
 {
     loginpb::CreatePlayerC2LRequest message;
     SetSessionAndParseBody(message, request, sessionId);
-    SendloginpbLoginServiceCreatePlayer(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
+    SendLoginServiceCreatePlayer(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
 
     LOG_TRACE << "Sent CreatePlayerC2LRequest, session id: " << sessionId;
 }
@@ -234,7 +234,7 @@ void SendEnterGameRequestToLoginNode(entt::entity loginNode, Guid sessionId, con
 {
     loginpb::EnterGameC2LRequest message;
     SetSessionAndParseBody(message, request, sessionId);
-    SendloginpbLoginServiceEnterGame(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
+    SendLoginServiceEnterGame(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
 
     LOG_TRACE << "Sent EnterGameC2LRequest, session id: " << sessionId;
 }

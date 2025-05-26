@@ -11,7 +11,7 @@ using grpc::ClientAsyncResponseReader;
 
 namespace  {
 
-using GrpcGameServiceStubPtr = std::unique_ptr<GameService::Stub>;
+using GameServiceStubPtr = std::unique_ptr<GameService::Stub>;
 
 
 
