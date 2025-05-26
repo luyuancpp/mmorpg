@@ -9,7 +9,9 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcCentreServiceStubPtr = std::unique_ptr<::CentreService::Stub>;
+namespace  {
+
+using GrpcCentreServiceStubPtr = std::unique_ptr<CentreService::Stub>;
 
 
 
@@ -263,3 +265,4 @@ void SendCentreServiceRegisterNodeSession(entt::registry& registry, entt::entity
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+}// namespace 

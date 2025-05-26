@@ -9,7 +9,9 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcetcdserverpbKVStubPtr = std::unique_ptr<etcdserverpb::KV::Stub>;
+namespace etcdserverpb {
+
+using GrpcetcdserverpbKVStubPtr = std::unique_ptr<KV::Stub>;
 
 
 
@@ -116,7 +118,7 @@ void SendetcdserverpbKVCompact(entt::registry& registry, entt::entity nodeEntity
 void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry);
 void InitetcdserverpbKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-using GrpcetcdserverpbWatchStubPtr = std::unique_ptr<etcdserverpb::Watch::Stub>;
+using GrpcetcdserverpbWatchStubPtr = std::unique_ptr<Watch::Stub>;
 
 
 
@@ -147,7 +149,7 @@ void SendetcdserverpbWatchWatch(entt::registry& registry, entt::entity nodeEntit
 void HandleetcdserverpbWatchCompletedQueueMessage(entt::registry& registry);
 void InitetcdserverpbWatchCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-using GrpcetcdserverpbLeaseStubPtr = std::unique_ptr<etcdserverpb::Lease::Stub>;
+using GrpcetcdserverpbLeaseStubPtr = std::unique_ptr<Lease::Stub>;
 
 
 
@@ -262,3 +264,4 @@ void SendetcdserverpbLeaseLeaseLeases(entt::registry& registry, entt::entity nod
 void HandleetcdserverpbLeaseCompletedQueueMessage(entt::registry& registry);
 void InitetcdserverpbLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+}// namespace etcdserverpb

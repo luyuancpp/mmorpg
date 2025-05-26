@@ -138,24 +138,6 @@ func BuildProtoGrpc(protoPath string) (err error) {
 
 			// Construct file paths
 			fileName := protoPath + fd.Name()
-			md5FileName := strings.Replace(fileName, config.ProtoDir, config.GrpcTempDirectory, 1)
-
-			dir := path.Dir(md5FileName)
-			err := os.MkdirAll(dir, os.FileMode(0777))
-			if err != nil {
-				return
-			}
-
-			md5FileName = strings.Replace(md5FileName, config.ProtoEx, config.GrpcPbcEx, 1)
-
-			dstFileName := strings.Replace(fileName, config.ProtoDir, config.GrpcProtoOutputDirectory, 1)
-			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.GrpcPbcEx, 1)
-
-			// Check if files with same MD5 and destinations exist
-			fileSame, err := util.IsSameMD5(dstFileName, md5FileName)
-			if fileSame {
-				return
-			}
 
 			// Determine the operating system type
 			sysType := runtime.GOOS
@@ -188,6 +170,25 @@ func BuildProtoGrpc(protoPath string) (err error) {
 			if err != nil {
 				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 				log.Fatal(err)
+			}
+
+			md5FileName := strings.Replace(fileName, config.ProtoDir, config.GrpcTempDirectory, 1)
+
+			dir := path.Dir(md5FileName)
+			err := os.MkdirAll(dir, os.FileMode(0777))
+			if err != nil {
+				return
+			}
+
+			md5FileName = strings.Replace(md5FileName, config.ProtoEx, config.GrpcPbcEx, 1)
+
+			dstFileName := strings.Replace(fileName, config.ProtoDir, config.GrpcProtoOutputDirectory, 1)
+			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.GrpcPbcEx, 1)
+
+			// Check if files with same MD5 and destinations exist
+			fileSame, err := util.IsSameMD5(dstFileName, md5FileName)
+			if fileSame {
+				return
 			}
 
 			_, err = util.Copy(md5FileName, dstFileName)

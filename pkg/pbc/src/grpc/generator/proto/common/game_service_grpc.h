@@ -9,7 +9,9 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcGameServiceStubPtr = std::unique_ptr<::GameService::Stub>;
+namespace  {
+
+using GrpcGameServiceStubPtr = std::unique_ptr<GameService::Stub>;
 
 
 
@@ -242,3 +244,4 @@ void SendGameServiceRegisterNodeSession(entt::registry& registry, entt::entity n
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry);
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+}// namespace 

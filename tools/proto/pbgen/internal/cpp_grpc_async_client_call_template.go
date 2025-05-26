@@ -10,9 +10,11 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
+namespace {{.Package}} {
+
 {{- range .ServiceInfo }}
 
-using Grpc{{.GetServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.Package}}::{{.Service}}::Stub>;
+using Grpc{{.GetServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.Service}}::Stub>;
 
 {{- range .MethodInfo }}
 
@@ -61,12 +63,15 @@ void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& regist
 {{- end }}
 {{- end }}
 
+}// namespace {{.Package}}
 `
 
 const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 #include "{{.GeneratorGrpcFileName}}.h"
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
+
+namespace {{.Package}}{
 
 {{- range .ServiceInfo }}
 {{- range .MethodInfo }}
@@ -156,20 +161,17 @@ Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType Async{{.Ge
 void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall> call(
-        static_cast<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall> call(
+        static_cast<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler) {
             Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(call);
@@ -236,4 +238,6 @@ void Handle{{.GetServiceFullNameWithNoColon}}CompletedQueueMessage(entt::registr
 {{- end }}
 }
 {{- end }}
+
+}// namespace {{.Package}}
 `

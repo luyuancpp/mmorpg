@@ -63,9 +63,9 @@ func main() {
 	internal.ReadServiceIdFile()
 	internal.BuildProtocDesc()
 	util.Wg.Wait()
-	internal.BuildAllProtoc()
-	util.Wg.Wait()
 	internal.ReadAllProtoFileServices()
+	util.Wg.Wait()
+	internal.BuildAllProtoc()
 	util.Wg.Wait()
 
 	//internal.WriteLoadClientLuaFile()

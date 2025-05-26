@@ -9,7 +9,9 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcDeployServiceStubPtr = std::unique_ptr<::DeployService::Stub>;
+namespace  {
+
+using GrpcDeployServiceStubPtr = std::unique_ptr<DeployService::Stub>;
 
 
 
@@ -95,3 +97,4 @@ void SendDeployServiceRenewLease(entt::registry& registry, entt::entity nodeEnti
 void HandleDeployServiceCompletedQueueMessage(entt::registry& registry);
 void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+}// namespace 

@@ -9,7 +9,9 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcGateServiceStubPtr = std::unique_ptr<::GateService::Stub>;
+namespace  {
+
+using GrpcGateServiceStubPtr = std::unique_ptr<GateService::Stub>;
 
 
 
@@ -158,3 +160,4 @@ void SendGateServiceRegisterNodeSession(entt::registry& registry, entt::entity n
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+}// namespace 

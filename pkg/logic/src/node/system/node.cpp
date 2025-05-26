@@ -169,14 +169,14 @@ void Node::InitGrpcClients() {
 }
 
 void Node::InitGrpcQueues() {
-    InitetcdserverpbKVCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
-    InitetcdserverpbWatchCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
-    InitetcdserverpbLeaseCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+    etcdserverpb::InitetcdserverpbKVCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+    etcdserverpb::InitetcdserverpbWatchCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+    etcdserverpb::InitetcdserverpbLeaseCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
 
     etcdQueueTimer.RunEvery(0.001, [] {
-        HandleetcdserverpbKVCompletedQueueMessage(tls.globalNodeRegistry);
-        HandleetcdserverpbWatchCompletedQueueMessage(tls.globalNodeRegistry);
-        HandleetcdserverpbLeaseCompletedQueueMessage(tls.globalNodeRegistry);
+        etcdserverpb::HandleetcdserverpbKVCompletedQueueMessage(tls.globalNodeRegistry);
+        etcdserverpb::HandleetcdserverpbWatchCompletedQueueMessage(tls.globalNodeRegistry);
+        etcdserverpb::HandleetcdserverpbLeaseCompletedQueueMessage(tls.globalNodeRegistry);
     });
 }
 
@@ -412,7 +412,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 }
 
 void Node::InitGrpcResponseHandlers() {
-    AsyncetcdserverpbKVRangeHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
+    etcdserverpb::AsyncetcdserverpbKVRangeHandler = [this](const std::unique_ptr<etcdserverpb::AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
         if (call->status.ok()) {
             for (const auto& kv : call->reply.kvs()) {
                 HandleServiceNodeStart(kv.key(), kv.value());
@@ -422,14 +422,14 @@ void Node::InitGrpcResponseHandlers() {
         }
     };
 
-    AsyncetcdserverpbKVPutHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>& call) {
+    etcdserverpb::AsyncetcdserverpbKVPutHandler = [this](const std::unique_ptr<etcdserverpb::AsyncetcdserverpbKVPutGrpcClientCall>& call) {
         LOG_DEBUG << "Put response: " << call->reply.DebugString();
         StartWatchingServiceNodes();
     };
 
-    AsyncetcdserverpbKVDeleteRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>&) {};
+    etcdserverpb::AsyncetcdserverpbKVDeleteRangeHandler = [](const std::unique_ptr<etcdserverpb::AsyncetcdserverpbKVDeleteRangeGrpcClientCall>&) {};
 
-    AsyncetcdserverpbKVTxnHandler = [this](const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>& call) {
+    etcdserverpb::AsyncetcdserverpbKVTxnHandler = [this](const std::unique_ptr<etcdserverpb::AsyncetcdserverpbKVTxnGrpcClientCall>& call) {
         if (call->status.ok()) {
             LOG_DEBUG << "Txn response: " << call->reply.DebugString();
             call->reply.succeeded() ? StartRpcServer() : AcquireNode();
@@ -438,7 +438,7 @@ void Node::InitGrpcResponseHandlers() {
         }
     };
 
-    AsyncetcdserverpbWatchWatchHandler = [this](const ::etcdserverpb::WatchResponse& response) {
+    etcdserverpb::AsyncetcdserverpbWatchWatchHandler = [this](const ::etcdserverpb::WatchResponse& response) {
         if (response.created()) {
             LOG_TRACE << "Watch created.";
             return;
@@ -461,7 +461,7 @@ void Node::InitGrpcResponseHandlers() {
         }
     };
 
-    AsyncetcdserverpbLeaseLeaseGrantHandler = [this](const std::unique_ptr<AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>& call) {
+    etcdserverpb::AsyncetcdserverpbLeaseLeaseGrantHandler = [this](const std::unique_ptr<etcdserverpb::AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>& call) {
         if (call->status.ok()) {
             GetNodeInfo().set_lease_id(call->reply.id());
             KeepNodeAlive();

@@ -281,6 +281,14 @@ func GetSortServiceList() []string {
 	return ServiceList
 }
 
+func GetProtocol(serviceName string) uint32 {
+	if config.GrpcServices[serviceName] {
+		return 1
+	}
+
+	return 0
+}
+
 // writeServiceInfoCppFile writes service information to a C++ file.
 func writeServiceInfoCppFile() {
 	type ServiceInfoCppData struct {
@@ -346,13 +354,14 @@ void InitMessageInfo()
 			handlerName := serviceName + "Impl"
 
 			initLine := fmt.Sprintf(
-				"gMessageInfo[%s] = RpcService{\"%s\", \"%s\", \"%s\", \"%s\", std::make_unique_for_overwrite<%s>()};",
+				"gMessageInfo[%s] = RpcService{\"%s\", \"%s\", \"%s\", \"%s\", std::make_unique_for_overwrite<%s>(), %d};",
 				rpcId,
 				method.Service(),
 				method.Method(),
 				method.CppRequest(),
 				method.CppResponse(),
 				handlerName,
+				GetProtocol(method.Service()),
 			)
 			initLines = append(initLines, initLine)
 
@@ -387,27 +396,19 @@ void InitMessageInfo()
 // writeServiceInfoHeadFile writes service information to a header file.
 func writeServiceInfoHeadFile() {
 	defer util.Wg.Done()
-	var data strings.Builder
+	type HeaderTemplateData struct {
+		MaxMessageLen uint64
+	}
 
-	data.WriteString("#pragma once\n")
-	data.WriteString("#include <memory>\n")
-	data.WriteString("#include <string>\n")
-	data.WriteString("#include <array>\n")
-	data.WriteString("#include <google/protobuf/message.h>\n")
-	data.WriteString("#include <google/protobuf/service.h>\n\n")
-	data.WriteString("struct RpcService\n{\n")
-	data.WriteString(config.Tab + "const char* serviceName{nullptr};\n")
-	data.WriteString(config.Tab + "const char* methodName{nullptr};\n")
-	data.WriteString(config.Tab + "const char* request{nullptr};\n")
-	data.WriteString(config.Tab + "const char* response{nullptr};\n")
-	data.WriteString(config.Tab + "std::unique_ptr<::google::protobuf::Service> serviceImplInstance;\n};\n\n")
-	data.WriteString("using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;\n\n")
-	data.WriteString("void InitMessageInfo();\n\n")
-	data.WriteString(fmt.Sprintf("constexpr uint32_t kMaxMessageLen = %d;\n\n", MessageIdLen()))
-	data.WriteString(fmt.Sprintf("extern std::array<RpcService, kMaxMessageLen> gMessageInfo;\n\n"))
-	data.WriteString("extern std::unordered_set<uint32_t> gClientToServerMessageId;\n")
+	data := HeaderTemplateData{
+		MaxMessageLen: MessageIdLen(),
+	}
 
-	util.WriteMd5Data2File(config.ServiceHeaderFilePath, data.String())
+	err := RenderTemplateToFile("internal/gen/template/service_header.tmpl", config.ServiceHeaderFilePath, data)
+	if err != nil {
+		panic(err)
+		return
+	}
 }
 
 // Helper function to generate instance data for player services.

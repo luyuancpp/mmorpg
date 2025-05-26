@@ -24,6 +24,7 @@ PROTOBUF_PRAGMA_INIT_SEG
 namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
+namespace loginpb {
 
 inline constexpr LoginNodeDisconnectRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -230,6 +231,7 @@ struct CreatePlayerC2LResponseDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CreatePlayerC2LResponseDefaultTypeInternal _CreatePlayerC2LResponse_default_instance_;
+}  // namespace loginpb
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_proto_2fcommon_2flogin_5fservice_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -237,150 +239,152 @@ static constexpr const ::_pb::ServiceDescriptor**
 const ::uint32_t
     TableStruct_proto_2fcommon_2flogin_5fservice_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
-        PROTOBUF_FIELD_OFFSET(::LoginC2LRequest, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::LoginC2LRequest, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginC2LRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginC2LRequest, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::LoginC2LRequest, _impl_.client_msg_body_),
-        PROTOBUF_FIELD_OFFSET(::LoginC2LRequest, _impl_.session_info_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginC2LRequest, _impl_.client_msg_body_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginC2LRequest, _impl_.session_info_),
         0,
         1,
-        PROTOBUF_FIELD_OFFSET(::LoginC2LResponse, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::LoginC2LResponse, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginC2LResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginC2LResponse, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::LoginC2LResponse, _impl_.client_msg_body_),
-        PROTOBUF_FIELD_OFFSET(::LoginC2LResponse, _impl_.session_info_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginC2LResponse, _impl_.client_msg_body_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginC2LResponse, _impl_.session_info_),
         0,
         1,
-        PROTOBUF_FIELD_OFFSET(::CreatePlayerC2LRequest, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::CreatePlayerC2LRequest, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::CreatePlayerC2LRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::CreatePlayerC2LRequest, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::CreatePlayerC2LRequest, _impl_.client_msg_body_),
-        PROTOBUF_FIELD_OFFSET(::CreatePlayerC2LRequest, _impl_.session_info_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::CreatePlayerC2LRequest, _impl_.client_msg_body_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::CreatePlayerC2LRequest, _impl_.session_info_),
         0,
         1,
-        PROTOBUF_FIELD_OFFSET(::EnterGameC2LRequest, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::EnterGameC2LRequest, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameC2LRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameC2LRequest, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::EnterGameC2LRequest, _impl_.client_msg_body_),
-        PROTOBUF_FIELD_OFFSET(::EnterGameC2LRequest, _impl_.session_info_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameC2LRequest, _impl_.client_msg_body_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameC2LRequest, _impl_.session_info_),
         0,
         1,
-        PROTOBUF_FIELD_OFFSET(::CreatePlayerC2LResponse, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::CreatePlayerC2LResponse, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::CreatePlayerC2LResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::CreatePlayerC2LResponse, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::CreatePlayerC2LResponse, _impl_.client_msg_body_),
-        PROTOBUF_FIELD_OFFSET(::CreatePlayerC2LResponse, _impl_.session_info_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::CreatePlayerC2LResponse, _impl_.client_msg_body_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::CreatePlayerC2LResponse, _impl_.session_info_),
         0,
         1,
-        PROTOBUF_FIELD_OFFSET(::EnterGameC2LResponse, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::EnterGameC2LResponse, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameC2LResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameC2LResponse, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::EnterGameC2LResponse, _impl_.client_msg_body_),
-        PROTOBUF_FIELD_OFFSET(::EnterGameC2LResponse, _impl_.session_info_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameC2LResponse, _impl_.client_msg_body_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameC2LResponse, _impl_.session_info_),
         0,
         1,
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::LoginNodeDisconnectRequest, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginNodeDisconnectRequest, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::LoginNodeDisconnectRequest, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginNodeDisconnectRequest, _impl_.session_id_),
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::LeaveGameC2LRequest, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LeaveGameC2LRequest, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::LeaveGameC2LRequest, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LeaveGameC2LRequest, _impl_.session_id_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, 10, -1, sizeof(::LoginC2LRequest)},
-        {12, 22, -1, sizeof(::LoginC2LResponse)},
-        {24, 34, -1, sizeof(::CreatePlayerC2LRequest)},
-        {36, 46, -1, sizeof(::EnterGameC2LRequest)},
-        {48, 58, -1, sizeof(::CreatePlayerC2LResponse)},
-        {60, 70, -1, sizeof(::EnterGameC2LResponse)},
-        {72, -1, -1, sizeof(::LoginNodeDisconnectRequest)},
-        {81, -1, -1, sizeof(::LeaveGameC2LRequest)},
+        {0, 10, -1, sizeof(::loginpb::LoginC2LRequest)},
+        {12, 22, -1, sizeof(::loginpb::LoginC2LResponse)},
+        {24, 34, -1, sizeof(::loginpb::CreatePlayerC2LRequest)},
+        {36, 46, -1, sizeof(::loginpb::EnterGameC2LRequest)},
+        {48, 58, -1, sizeof(::loginpb::CreatePlayerC2LResponse)},
+        {60, 70, -1, sizeof(::loginpb::EnterGameC2LResponse)},
+        {72, -1, -1, sizeof(::loginpb::LoginNodeDisconnectRequest)},
+        {81, -1, -1, sizeof(::loginpb::LeaveGameC2LRequest)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_LoginC2LRequest_default_instance_._instance,
-    &::_LoginC2LResponse_default_instance_._instance,
-    &::_CreatePlayerC2LRequest_default_instance_._instance,
-    &::_EnterGameC2LRequest_default_instance_._instance,
-    &::_CreatePlayerC2LResponse_default_instance_._instance,
-    &::_EnterGameC2LResponse_default_instance_._instance,
-    &::_LoginNodeDisconnectRequest_default_instance_._instance,
-    &::_LeaveGameC2LRequest_default_instance_._instance,
+    &::loginpb::_LoginC2LRequest_default_instance_._instance,
+    &::loginpb::_LoginC2LResponse_default_instance_._instance,
+    &::loginpb::_CreatePlayerC2LRequest_default_instance_._instance,
+    &::loginpb::_EnterGameC2LRequest_default_instance_._instance,
+    &::loginpb::_CreatePlayerC2LResponse_default_instance_._instance,
+    &::loginpb::_EnterGameC2LResponse_default_instance_._instance,
+    &::loginpb::_LoginNodeDisconnectRequest_default_instance_._instance,
+    &::loginpb::_LeaveGameC2LRequest_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2flogin_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n proto/common/login_service.proto\032\030prot"
-    "o/common/empty.proto\032\031proto/common/c2gat"
-    "e.proto\032\032proto/common/session.proto\"`\n\017L"
-    "oginC2LRequest\022&\n\017client_msg_body\030\001 \001(\0132"
-    "\r.LoginRequest\022%\n\014session_info\030\002 \001(\0132\017.S"
-    "essionDetails\"b\n\020LoginC2LResponse\022\'\n\017cli"
-    "ent_msg_body\030\001 \001(\0132\016.LoginResponse\022%\n\014se"
-    "ssion_info\030\002 \001(\0132\017.SessionDetails\"n\n\026Cre"
-    "atePlayerC2LRequest\022-\n\017client_msg_body\030\001"
-    " \001(\0132\024.CreatePlayerRequest\022%\n\014session_in"
-    "fo\030\002 \001(\0132\017.SessionDetails\"h\n\023EnterGameC2"
-    "LRequest\022*\n\017client_msg_body\030\001 \001(\0132\021.Ente"
-    "rGameRequest\022%\n\014session_info\030\002 \001(\0132\017.Ses"
-    "sionDetails\"p\n\027CreatePlayerC2LResponse\022."
-    "\n\017client_msg_body\030\001 \001(\0132\025.CreatePlayerRe"
-    "sponse\022%\n\014session_info\030\004 \001(\0132\017.SessionDe"
-    "tails\"j\n\024EnterGameC2LResponse\022+\n\017client_"
-    "msg_body\030\001 \001(\0132\022.EnterGameResponse\022%\n\014se"
-    "ssion_info\030\004 \001(\0132\017.SessionDetails\"0\n\032Log"
-    "inNodeDisconnectRequest\022\022\n\nsession_id\030\001 "
-    "\001(\004\")\n\023LeaveGameC2LRequest\022\022\n\nsession_id"
-    "\030\001 \001(\0042\227\002\n\014LoginService\022,\n\005Login\022\020.Login"
-    "C2LRequest\032\021.LoginC2LResponse\022A\n\014CreateP"
-    "layer\022\027.CreatePlayerC2LRequest\032\030.CreateP"
-    "layerC2LResponse\0228\n\tEnterGame\022\024.EnterGam"
-    "eC2LRequest\032\025.EnterGameC2LResponse\022)\n\tLe"
-    "aveGame\022\024.LeaveGameC2LRequest\032\006.Empty\0221\n"
-    "\nDisconnect\022\033.LoginNodeDisconnectRequest"
-    "\032\006.EmptyB\tZ\007pb/gameb\006proto3"
+    "\n proto/common/login_service.proto\022\007logi"
+    "npb\032\030proto/common/empty.proto\032\031proto/com"
+    "mon/c2gate.proto\032\032proto/common/session.p"
+    "roto\"`\n\017LoginC2LRequest\022&\n\017client_msg_bo"
+    "dy\030\001 \001(\0132\r.LoginRequest\022%\n\014session_info\030"
+    "\002 \001(\0132\017.SessionDetails\"b\n\020LoginC2LRespon"
+    "se\022\'\n\017client_msg_body\030\001 \001(\0132\016.LoginRespo"
+    "nse\022%\n\014session_info\030\002 \001(\0132\017.SessionDetai"
+    "ls\"n\n\026CreatePlayerC2LRequest\022-\n\017client_m"
+    "sg_body\030\001 \001(\0132\024.CreatePlayerRequest\022%\n\014s"
+    "ession_info\030\002 \001(\0132\017.SessionDetails\"h\n\023En"
+    "terGameC2LRequest\022*\n\017client_msg_body\030\001 \001"
+    "(\0132\021.EnterGameRequest\022%\n\014session_info\030\002 "
+    "\001(\0132\017.SessionDetails\"p\n\027CreatePlayerC2LR"
+    "esponse\022.\n\017client_msg_body\030\001 \001(\0132\025.Creat"
+    "ePlayerResponse\022%\n\014session_info\030\004 \001(\0132\017."
+    "SessionDetails\"j\n\024EnterGameC2LResponse\022+"
+    "\n\017client_msg_body\030\001 \001(\0132\022.EnterGameRespo"
+    "nse\022%\n\014session_info\030\004 \001(\0132\017.SessionDetai"
+    "ls\"0\n\032LoginNodeDisconnectRequest\022\022\n\nsess"
+    "ion_id\030\001 \001(\004\")\n\023LeaveGameC2LRequest\022\022\n\ns"
+    "ession_id\030\001 \001(\0042\327\002\n\014LoginService\022<\n\005Logi"
+    "n\022\030.loginpb.LoginC2LRequest\032\031.loginpb.Lo"
+    "ginC2LResponse\022Q\n\014CreatePlayer\022\037.loginpb"
+    ".CreatePlayerC2LRequest\032 .loginpb.Create"
+    "PlayerC2LResponse\022H\n\tEnterGame\022\034.loginpb"
+    ".EnterGameC2LRequest\032\035.loginpb.EnterGame"
+    "C2LResponse\0221\n\tLeaveGame\022\034.loginpb.Leave"
+    "GameC2LRequest\032\006.Empty\0229\n\nDisconnect\022#.l"
+    "oginpb.LoginNodeDisconnectRequest\032\006.Empt"
+    "yB\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2flogin_5fservice_2eproto_deps[3] =
     {
@@ -392,7 +396,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2flogin_5fservice_2epro
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2flogin_5fservice_2eproto = {
     false,
     false,
-    1147,
+    1220,
     descriptor_table_protodef_proto_2fcommon_2flogin_5fservice_2eproto,
     "proto/common/login_service.proto",
     &descriptor_table_proto_2fcommon_2flogin_5fservice_2eproto_once,
@@ -405,6 +409,7 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon
     file_level_enum_descriptors_proto_2fcommon_2flogin_5fservice_2eproto,
     file_level_service_descriptors_proto_2fcommon_2flogin_5fservice_2eproto,
 };
+namespace loginpb {
 // ===================================================================
 
 class LoginC2LRequest::_Internal {
@@ -432,11 +437,11 @@ LoginC2LRequest::LoginC2LRequest(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:LoginC2LRequest)
+  // @@protoc_insertion_point(arena_constructor:loginpb.LoginC2LRequest)
 }
 inline PROTOBUF_NDEBUG_INLINE LoginC2LRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from, const ::LoginC2LRequest& from_msg)
+    const Impl_& from, const ::loginpb::LoginC2LRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
@@ -461,7 +466,7 @@ LoginC2LRequest::LoginC2LRequest(
                               arena, *from._impl_.session_info_)
                         : nullptr;
 
-  // @@protoc_insertion_point(copy_constructor:LoginC2LRequest)
+  // @@protoc_insertion_point(copy_constructor:loginpb.LoginC2LRequest)
 }
 inline PROTOBUF_NDEBUG_INLINE LoginC2LRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
@@ -478,7 +483,7 @@ inline void LoginC2LRequest::SharedCtor(::_pb::Arena* arena) {
                sizeof(Impl_::session_info_));
 }
 LoginC2LRequest::~LoginC2LRequest() {
-  // @@protoc_insertion_point(destructor:LoginC2LRequest)
+  // @@protoc_insertion_point(destructor:loginpb.LoginC2LRequest)
   SharedDtor(*this);
 }
 inline void LoginC2LRequest::SharedDtor(MessageLite& self) {
@@ -541,7 +546,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> LoginC2LRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::LoginC2LRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::loginpb::LoginC2LRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .SessionDetails session_info = 2;
@@ -567,7 +572,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> LoginC2LRequest::_table_ = {
 };
 
 PROTOBUF_NOINLINE void LoginC2LRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:LoginC2LRequest)
+// @@protoc_insertion_point(message_clear_start:loginpb.LoginC2LRequest)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -599,7 +604,7 @@ PROTOBUF_NOINLINE void LoginC2LRequest::Clear() {
             ::google::protobuf::io::EpsCopyOutputStream* stream) const {
           const LoginC2LRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:LoginC2LRequest)
+          // @@protoc_insertion_point(serialize_to_array_start:loginpb.LoginC2LRequest)
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
 
@@ -623,7 +628,7 @@ PROTOBUF_NOINLINE void LoginC2LRequest::Clear() {
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
                     this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
           }
-          // @@protoc_insertion_point(serialize_to_array_end:LoginC2LRequest)
+          // @@protoc_insertion_point(serialize_to_array_end:loginpb.LoginC2LRequest)
           return target;
         }
 
@@ -634,7 +639,7 @@ PROTOBUF_NOINLINE void LoginC2LRequest::Clear() {
         ::size_t LoginC2LRequest::ByteSizeLong() const {
           const LoginC2LRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:LoginC2LRequest)
+          // @@protoc_insertion_point(message_byte_size_start:loginpb.LoginC2LRequest)
           ::size_t total_size = 0;
 
           ::uint32_t cached_has_bits = 0;
@@ -663,7 +668,7 @@ void LoginC2LRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
   auto* const _this = static_cast<LoginC2LRequest*>(&to_msg);
   auto& from = static_cast<const LoginC2LRequest&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:LoginC2LRequest)
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.LoginC2LRequest)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -694,7 +699,7 @@ void LoginC2LRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
 }
 
 void LoginC2LRequest::CopyFrom(const LoginC2LRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:LoginC2LRequest)
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.LoginC2LRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -743,11 +748,11 @@ LoginC2LResponse::LoginC2LResponse(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:LoginC2LResponse)
+  // @@protoc_insertion_point(arena_constructor:loginpb.LoginC2LResponse)
 }
 inline PROTOBUF_NDEBUG_INLINE LoginC2LResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from, const ::LoginC2LResponse& from_msg)
+    const Impl_& from, const ::loginpb::LoginC2LResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
@@ -772,7 +777,7 @@ LoginC2LResponse::LoginC2LResponse(
                               arena, *from._impl_.session_info_)
                         : nullptr;
 
-  // @@protoc_insertion_point(copy_constructor:LoginC2LResponse)
+  // @@protoc_insertion_point(copy_constructor:loginpb.LoginC2LResponse)
 }
 inline PROTOBUF_NDEBUG_INLINE LoginC2LResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
@@ -789,7 +794,7 @@ inline void LoginC2LResponse::SharedCtor(::_pb::Arena* arena) {
                sizeof(Impl_::session_info_));
 }
 LoginC2LResponse::~LoginC2LResponse() {
-  // @@protoc_insertion_point(destructor:LoginC2LResponse)
+  // @@protoc_insertion_point(destructor:loginpb.LoginC2LResponse)
   SharedDtor(*this);
 }
 inline void LoginC2LResponse::SharedDtor(MessageLite& self) {
@@ -852,7 +857,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> LoginC2LResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::LoginC2LResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::loginpb::LoginC2LResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .SessionDetails session_info = 2;
@@ -878,7 +883,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> LoginC2LResponse::_table_ = {
 };
 
 PROTOBUF_NOINLINE void LoginC2LResponse::Clear() {
-// @@protoc_insertion_point(message_clear_start:LoginC2LResponse)
+// @@protoc_insertion_point(message_clear_start:loginpb.LoginC2LResponse)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -910,7 +915,7 @@ PROTOBUF_NOINLINE void LoginC2LResponse::Clear() {
             ::google::protobuf::io::EpsCopyOutputStream* stream) const {
           const LoginC2LResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:LoginC2LResponse)
+          // @@protoc_insertion_point(serialize_to_array_start:loginpb.LoginC2LResponse)
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
 
@@ -934,7 +939,7 @@ PROTOBUF_NOINLINE void LoginC2LResponse::Clear() {
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
                     this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
           }
-          // @@protoc_insertion_point(serialize_to_array_end:LoginC2LResponse)
+          // @@protoc_insertion_point(serialize_to_array_end:loginpb.LoginC2LResponse)
           return target;
         }
 
@@ -945,7 +950,7 @@ PROTOBUF_NOINLINE void LoginC2LResponse::Clear() {
         ::size_t LoginC2LResponse::ByteSizeLong() const {
           const LoginC2LResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:LoginC2LResponse)
+          // @@protoc_insertion_point(message_byte_size_start:loginpb.LoginC2LResponse)
           ::size_t total_size = 0;
 
           ::uint32_t cached_has_bits = 0;
@@ -974,7 +979,7 @@ void LoginC2LResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   auto* const _this = static_cast<LoginC2LResponse*>(&to_msg);
   auto& from = static_cast<const LoginC2LResponse&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:LoginC2LResponse)
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.LoginC2LResponse)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1005,7 +1010,7 @@ void LoginC2LResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
 }
 
 void LoginC2LResponse::CopyFrom(const LoginC2LResponse& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:LoginC2LResponse)
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.LoginC2LResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1054,11 +1059,11 @@ CreatePlayerC2LRequest::CreatePlayerC2LRequest(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:CreatePlayerC2LRequest)
+  // @@protoc_insertion_point(arena_constructor:loginpb.CreatePlayerC2LRequest)
 }
 inline PROTOBUF_NDEBUG_INLINE CreatePlayerC2LRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from, const ::CreatePlayerC2LRequest& from_msg)
+    const Impl_& from, const ::loginpb::CreatePlayerC2LRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
@@ -1083,7 +1088,7 @@ CreatePlayerC2LRequest::CreatePlayerC2LRequest(
                               arena, *from._impl_.session_info_)
                         : nullptr;
 
-  // @@protoc_insertion_point(copy_constructor:CreatePlayerC2LRequest)
+  // @@protoc_insertion_point(copy_constructor:loginpb.CreatePlayerC2LRequest)
 }
 inline PROTOBUF_NDEBUG_INLINE CreatePlayerC2LRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
@@ -1100,7 +1105,7 @@ inline void CreatePlayerC2LRequest::SharedCtor(::_pb::Arena* arena) {
                sizeof(Impl_::session_info_));
 }
 CreatePlayerC2LRequest::~CreatePlayerC2LRequest() {
-  // @@protoc_insertion_point(destructor:CreatePlayerC2LRequest)
+  // @@protoc_insertion_point(destructor:loginpb.CreatePlayerC2LRequest)
   SharedDtor(*this);
 }
 inline void CreatePlayerC2LRequest::SharedDtor(MessageLite& self) {
@@ -1163,7 +1168,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> CreatePlayerC2LRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::CreatePlayerC2LRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::loginpb::CreatePlayerC2LRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .SessionDetails session_info = 2;
@@ -1189,7 +1194,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> CreatePlayerC2LRequest::_table_ = {
 };
 
 PROTOBUF_NOINLINE void CreatePlayerC2LRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:CreatePlayerC2LRequest)
+// @@protoc_insertion_point(message_clear_start:loginpb.CreatePlayerC2LRequest)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1221,7 +1226,7 @@ PROTOBUF_NOINLINE void CreatePlayerC2LRequest::Clear() {
             ::google::protobuf::io::EpsCopyOutputStream* stream) const {
           const CreatePlayerC2LRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:CreatePlayerC2LRequest)
+          // @@protoc_insertion_point(serialize_to_array_start:loginpb.CreatePlayerC2LRequest)
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
 
@@ -1245,7 +1250,7 @@ PROTOBUF_NOINLINE void CreatePlayerC2LRequest::Clear() {
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
                     this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
           }
-          // @@protoc_insertion_point(serialize_to_array_end:CreatePlayerC2LRequest)
+          // @@protoc_insertion_point(serialize_to_array_end:loginpb.CreatePlayerC2LRequest)
           return target;
         }
 
@@ -1256,7 +1261,7 @@ PROTOBUF_NOINLINE void CreatePlayerC2LRequest::Clear() {
         ::size_t CreatePlayerC2LRequest::ByteSizeLong() const {
           const CreatePlayerC2LRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:CreatePlayerC2LRequest)
+          // @@protoc_insertion_point(message_byte_size_start:loginpb.CreatePlayerC2LRequest)
           ::size_t total_size = 0;
 
           ::uint32_t cached_has_bits = 0;
@@ -1285,7 +1290,7 @@ void CreatePlayerC2LRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, 
   auto* const _this = static_cast<CreatePlayerC2LRequest*>(&to_msg);
   auto& from = static_cast<const CreatePlayerC2LRequest&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:CreatePlayerC2LRequest)
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.CreatePlayerC2LRequest)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1316,7 +1321,7 @@ void CreatePlayerC2LRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, 
 }
 
 void CreatePlayerC2LRequest::CopyFrom(const CreatePlayerC2LRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:CreatePlayerC2LRequest)
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.CreatePlayerC2LRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1365,11 +1370,11 @@ EnterGameC2LRequest::EnterGameC2LRequest(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:EnterGameC2LRequest)
+  // @@protoc_insertion_point(arena_constructor:loginpb.EnterGameC2LRequest)
 }
 inline PROTOBUF_NDEBUG_INLINE EnterGameC2LRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from, const ::EnterGameC2LRequest& from_msg)
+    const Impl_& from, const ::loginpb::EnterGameC2LRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
@@ -1394,7 +1399,7 @@ EnterGameC2LRequest::EnterGameC2LRequest(
                               arena, *from._impl_.session_info_)
                         : nullptr;
 
-  // @@protoc_insertion_point(copy_constructor:EnterGameC2LRequest)
+  // @@protoc_insertion_point(copy_constructor:loginpb.EnterGameC2LRequest)
 }
 inline PROTOBUF_NDEBUG_INLINE EnterGameC2LRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
@@ -1411,7 +1416,7 @@ inline void EnterGameC2LRequest::SharedCtor(::_pb::Arena* arena) {
                sizeof(Impl_::session_info_));
 }
 EnterGameC2LRequest::~EnterGameC2LRequest() {
-  // @@protoc_insertion_point(destructor:EnterGameC2LRequest)
+  // @@protoc_insertion_point(destructor:loginpb.EnterGameC2LRequest)
   SharedDtor(*this);
 }
 inline void EnterGameC2LRequest::SharedDtor(MessageLite& self) {
@@ -1474,7 +1479,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> EnterGameC2LRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::EnterGameC2LRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::loginpb::EnterGameC2LRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .SessionDetails session_info = 2;
@@ -1500,7 +1505,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> EnterGameC2LRequest::_table_ = {
 };
 
 PROTOBUF_NOINLINE void EnterGameC2LRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:EnterGameC2LRequest)
+// @@protoc_insertion_point(message_clear_start:loginpb.EnterGameC2LRequest)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1532,7 +1537,7 @@ PROTOBUF_NOINLINE void EnterGameC2LRequest::Clear() {
             ::google::protobuf::io::EpsCopyOutputStream* stream) const {
           const EnterGameC2LRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:EnterGameC2LRequest)
+          // @@protoc_insertion_point(serialize_to_array_start:loginpb.EnterGameC2LRequest)
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
 
@@ -1556,7 +1561,7 @@ PROTOBUF_NOINLINE void EnterGameC2LRequest::Clear() {
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
                     this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
           }
-          // @@protoc_insertion_point(serialize_to_array_end:EnterGameC2LRequest)
+          // @@protoc_insertion_point(serialize_to_array_end:loginpb.EnterGameC2LRequest)
           return target;
         }
 
@@ -1567,7 +1572,7 @@ PROTOBUF_NOINLINE void EnterGameC2LRequest::Clear() {
         ::size_t EnterGameC2LRequest::ByteSizeLong() const {
           const EnterGameC2LRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:EnterGameC2LRequest)
+          // @@protoc_insertion_point(message_byte_size_start:loginpb.EnterGameC2LRequest)
           ::size_t total_size = 0;
 
           ::uint32_t cached_has_bits = 0;
@@ -1596,7 +1601,7 @@ void EnterGameC2LRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   auto* const _this = static_cast<EnterGameC2LRequest*>(&to_msg);
   auto& from = static_cast<const EnterGameC2LRequest&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:EnterGameC2LRequest)
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.EnterGameC2LRequest)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1627,7 +1632,7 @@ void EnterGameC2LRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, con
 }
 
 void EnterGameC2LRequest::CopyFrom(const EnterGameC2LRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:EnterGameC2LRequest)
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.EnterGameC2LRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1676,11 +1681,11 @@ CreatePlayerC2LResponse::CreatePlayerC2LResponse(::google::protobuf::Arena* aren
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:CreatePlayerC2LResponse)
+  // @@protoc_insertion_point(arena_constructor:loginpb.CreatePlayerC2LResponse)
 }
 inline PROTOBUF_NDEBUG_INLINE CreatePlayerC2LResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from, const ::CreatePlayerC2LResponse& from_msg)
+    const Impl_& from, const ::loginpb::CreatePlayerC2LResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
@@ -1705,7 +1710,7 @@ CreatePlayerC2LResponse::CreatePlayerC2LResponse(
                               arena, *from._impl_.session_info_)
                         : nullptr;
 
-  // @@protoc_insertion_point(copy_constructor:CreatePlayerC2LResponse)
+  // @@protoc_insertion_point(copy_constructor:loginpb.CreatePlayerC2LResponse)
 }
 inline PROTOBUF_NDEBUG_INLINE CreatePlayerC2LResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
@@ -1722,7 +1727,7 @@ inline void CreatePlayerC2LResponse::SharedCtor(::_pb::Arena* arena) {
                sizeof(Impl_::session_info_));
 }
 CreatePlayerC2LResponse::~CreatePlayerC2LResponse() {
-  // @@protoc_insertion_point(destructor:CreatePlayerC2LResponse)
+  // @@protoc_insertion_point(destructor:loginpb.CreatePlayerC2LResponse)
   SharedDtor(*this);
 }
 inline void CreatePlayerC2LResponse::SharedDtor(MessageLite& self) {
@@ -1785,7 +1790,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> CreatePlayerC2LResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::CreatePlayerC2LResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::loginpb::CreatePlayerC2LResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .SessionDetails session_info = 4;
@@ -1811,7 +1816,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> CreatePlayerC2LResponse::_table_ = {
 };
 
 PROTOBUF_NOINLINE void CreatePlayerC2LResponse::Clear() {
-// @@protoc_insertion_point(message_clear_start:CreatePlayerC2LResponse)
+// @@protoc_insertion_point(message_clear_start:loginpb.CreatePlayerC2LResponse)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1843,7 +1848,7 @@ PROTOBUF_NOINLINE void CreatePlayerC2LResponse::Clear() {
             ::google::protobuf::io::EpsCopyOutputStream* stream) const {
           const CreatePlayerC2LResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:CreatePlayerC2LResponse)
+          // @@protoc_insertion_point(serialize_to_array_start:loginpb.CreatePlayerC2LResponse)
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
 
@@ -1867,7 +1872,7 @@ PROTOBUF_NOINLINE void CreatePlayerC2LResponse::Clear() {
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
                     this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
           }
-          // @@protoc_insertion_point(serialize_to_array_end:CreatePlayerC2LResponse)
+          // @@protoc_insertion_point(serialize_to_array_end:loginpb.CreatePlayerC2LResponse)
           return target;
         }
 
@@ -1878,7 +1883,7 @@ PROTOBUF_NOINLINE void CreatePlayerC2LResponse::Clear() {
         ::size_t CreatePlayerC2LResponse::ByteSizeLong() const {
           const CreatePlayerC2LResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:CreatePlayerC2LResponse)
+          // @@protoc_insertion_point(message_byte_size_start:loginpb.CreatePlayerC2LResponse)
           ::size_t total_size = 0;
 
           ::uint32_t cached_has_bits = 0;
@@ -1907,7 +1912,7 @@ void CreatePlayerC2LResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
   auto* const _this = static_cast<CreatePlayerC2LResponse*>(&to_msg);
   auto& from = static_cast<const CreatePlayerC2LResponse&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:CreatePlayerC2LResponse)
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.CreatePlayerC2LResponse)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1938,7 +1943,7 @@ void CreatePlayerC2LResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
 }
 
 void CreatePlayerC2LResponse::CopyFrom(const CreatePlayerC2LResponse& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:CreatePlayerC2LResponse)
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.CreatePlayerC2LResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1987,11 +1992,11 @@ EnterGameC2LResponse::EnterGameC2LResponse(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:EnterGameC2LResponse)
+  // @@protoc_insertion_point(arena_constructor:loginpb.EnterGameC2LResponse)
 }
 inline PROTOBUF_NDEBUG_INLINE EnterGameC2LResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from, const ::EnterGameC2LResponse& from_msg)
+    const Impl_& from, const ::loginpb::EnterGameC2LResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
@@ -2016,7 +2021,7 @@ EnterGameC2LResponse::EnterGameC2LResponse(
                               arena, *from._impl_.session_info_)
                         : nullptr;
 
-  // @@protoc_insertion_point(copy_constructor:EnterGameC2LResponse)
+  // @@protoc_insertion_point(copy_constructor:loginpb.EnterGameC2LResponse)
 }
 inline PROTOBUF_NDEBUG_INLINE EnterGameC2LResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
@@ -2033,7 +2038,7 @@ inline void EnterGameC2LResponse::SharedCtor(::_pb::Arena* arena) {
                sizeof(Impl_::session_info_));
 }
 EnterGameC2LResponse::~EnterGameC2LResponse() {
-  // @@protoc_insertion_point(destructor:EnterGameC2LResponse)
+  // @@protoc_insertion_point(destructor:loginpb.EnterGameC2LResponse)
   SharedDtor(*this);
 }
 inline void EnterGameC2LResponse::SharedDtor(MessageLite& self) {
@@ -2096,7 +2101,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> EnterGameC2LResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::EnterGameC2LResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::loginpb::EnterGameC2LResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .SessionDetails session_info = 4;
@@ -2122,7 +2127,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> EnterGameC2LResponse::_table_ = {
 };
 
 PROTOBUF_NOINLINE void EnterGameC2LResponse::Clear() {
-// @@protoc_insertion_point(message_clear_start:EnterGameC2LResponse)
+// @@protoc_insertion_point(message_clear_start:loginpb.EnterGameC2LResponse)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -2154,7 +2159,7 @@ PROTOBUF_NOINLINE void EnterGameC2LResponse::Clear() {
             ::google::protobuf::io::EpsCopyOutputStream* stream) const {
           const EnterGameC2LResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:EnterGameC2LResponse)
+          // @@protoc_insertion_point(serialize_to_array_start:loginpb.EnterGameC2LResponse)
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
 
@@ -2178,7 +2183,7 @@ PROTOBUF_NOINLINE void EnterGameC2LResponse::Clear() {
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
                     this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
           }
-          // @@protoc_insertion_point(serialize_to_array_end:EnterGameC2LResponse)
+          // @@protoc_insertion_point(serialize_to_array_end:loginpb.EnterGameC2LResponse)
           return target;
         }
 
@@ -2189,7 +2194,7 @@ PROTOBUF_NOINLINE void EnterGameC2LResponse::Clear() {
         ::size_t EnterGameC2LResponse::ByteSizeLong() const {
           const EnterGameC2LResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:EnterGameC2LResponse)
+          // @@protoc_insertion_point(message_byte_size_start:loginpb.EnterGameC2LResponse)
           ::size_t total_size = 0;
 
           ::uint32_t cached_has_bits = 0;
@@ -2218,7 +2223,7 @@ void EnterGameC2LResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, co
   auto* const _this = static_cast<EnterGameC2LResponse*>(&to_msg);
   auto& from = static_cast<const EnterGameC2LResponse&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:EnterGameC2LResponse)
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.EnterGameC2LResponse)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -2249,7 +2254,7 @@ void EnterGameC2LResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, co
 }
 
 void EnterGameC2LResponse::CopyFrom(const EnterGameC2LResponse& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:EnterGameC2LResponse)
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.EnterGameC2LResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -2284,7 +2289,7 @@ LoginNodeDisconnectRequest::LoginNodeDisconnectRequest(::google::protobuf::Arena
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:LoginNodeDisconnectRequest)
+  // @@protoc_insertion_point(arena_constructor:loginpb.LoginNodeDisconnectRequest)
 }
 LoginNodeDisconnectRequest::LoginNodeDisconnectRequest(
     ::google::protobuf::Arena* arena, const LoginNodeDisconnectRequest& from)
@@ -2301,7 +2306,7 @@ inline void LoginNodeDisconnectRequest::SharedCtor(::_pb::Arena* arena) {
   _impl_.session_id_ = {};
 }
 LoginNodeDisconnectRequest::~LoginNodeDisconnectRequest() {
-  // @@protoc_insertion_point(destructor:LoginNodeDisconnectRequest)
+  // @@protoc_insertion_point(destructor:loginpb.LoginNodeDisconnectRequest)
   SharedDtor(*this);
 }
 inline void LoginNodeDisconnectRequest::SharedDtor(MessageLite& self) {
@@ -2362,7 +2367,7 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> LoginNodeDisconnectRequest::_table_ = 
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::LoginNodeDisconnectRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::loginpb::LoginNodeDisconnectRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 session_id = 1;
@@ -2381,7 +2386,7 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> LoginNodeDisconnectRequest::_table_ = 
 };
 
 PROTOBUF_NOINLINE void LoginNodeDisconnectRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:LoginNodeDisconnectRequest)
+// @@protoc_insertion_point(message_clear_start:loginpb.LoginNodeDisconnectRequest)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -2402,7 +2407,7 @@ PROTOBUF_NOINLINE void LoginNodeDisconnectRequest::Clear() {
             ::google::protobuf::io::EpsCopyOutputStream* stream) const {
           const LoginNodeDisconnectRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:LoginNodeDisconnectRequest)
+          // @@protoc_insertion_point(serialize_to_array_start:loginpb.LoginNodeDisconnectRequest)
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
 
@@ -2418,7 +2423,7 @@ PROTOBUF_NOINLINE void LoginNodeDisconnectRequest::Clear() {
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
                     this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
           }
-          // @@protoc_insertion_point(serialize_to_array_end:LoginNodeDisconnectRequest)
+          // @@protoc_insertion_point(serialize_to_array_end:loginpb.LoginNodeDisconnectRequest)
           return target;
         }
 
@@ -2429,7 +2434,7 @@ PROTOBUF_NOINLINE void LoginNodeDisconnectRequest::Clear() {
         ::size_t LoginNodeDisconnectRequest::ByteSizeLong() const {
           const LoginNodeDisconnectRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:LoginNodeDisconnectRequest)
+          // @@protoc_insertion_point(message_byte_size_start:loginpb.LoginNodeDisconnectRequest)
           ::size_t total_size = 0;
 
           ::uint32_t cached_has_bits = 0;
@@ -2450,7 +2455,7 @@ PROTOBUF_NOINLINE void LoginNodeDisconnectRequest::Clear() {
 void LoginNodeDisconnectRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
   auto* const _this = static_cast<LoginNodeDisconnectRequest*>(&to_msg);
   auto& from = static_cast<const LoginNodeDisconnectRequest&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:LoginNodeDisconnectRequest)
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.LoginNodeDisconnectRequest)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -2462,7 +2467,7 @@ void LoginNodeDisconnectRequest::MergeImpl(::google::protobuf::MessageLite& to_m
 }
 
 void LoginNodeDisconnectRequest::CopyFrom(const LoginNodeDisconnectRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:LoginNodeDisconnectRequest)
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.LoginNodeDisconnectRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -2491,7 +2496,7 @@ LeaveGameC2LRequest::LeaveGameC2LRequest(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:LeaveGameC2LRequest)
+  // @@protoc_insertion_point(arena_constructor:loginpb.LeaveGameC2LRequest)
 }
 LeaveGameC2LRequest::LeaveGameC2LRequest(
     ::google::protobuf::Arena* arena, const LeaveGameC2LRequest& from)
@@ -2508,7 +2513,7 @@ inline void LeaveGameC2LRequest::SharedCtor(::_pb::Arena* arena) {
   _impl_.session_id_ = {};
 }
 LeaveGameC2LRequest::~LeaveGameC2LRequest() {
-  // @@protoc_insertion_point(destructor:LeaveGameC2LRequest)
+  // @@protoc_insertion_point(destructor:loginpb.LeaveGameC2LRequest)
   SharedDtor(*this);
 }
 inline void LeaveGameC2LRequest::SharedDtor(MessageLite& self) {
@@ -2569,7 +2574,7 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> LeaveGameC2LRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::LeaveGameC2LRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::loginpb::LeaveGameC2LRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 session_id = 1;
@@ -2588,7 +2593,7 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> LeaveGameC2LRequest::_table_ = {
 };
 
 PROTOBUF_NOINLINE void LeaveGameC2LRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:LeaveGameC2LRequest)
+// @@protoc_insertion_point(message_clear_start:loginpb.LeaveGameC2LRequest)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -2609,7 +2614,7 @@ PROTOBUF_NOINLINE void LeaveGameC2LRequest::Clear() {
             ::google::protobuf::io::EpsCopyOutputStream* stream) const {
           const LeaveGameC2LRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:LeaveGameC2LRequest)
+          // @@protoc_insertion_point(serialize_to_array_start:loginpb.LeaveGameC2LRequest)
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
 
@@ -2625,7 +2630,7 @@ PROTOBUF_NOINLINE void LeaveGameC2LRequest::Clear() {
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
                     this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
           }
-          // @@protoc_insertion_point(serialize_to_array_end:LeaveGameC2LRequest)
+          // @@protoc_insertion_point(serialize_to_array_end:loginpb.LeaveGameC2LRequest)
           return target;
         }
 
@@ -2636,7 +2641,7 @@ PROTOBUF_NOINLINE void LeaveGameC2LRequest::Clear() {
         ::size_t LeaveGameC2LRequest::ByteSizeLong() const {
           const LeaveGameC2LRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:LeaveGameC2LRequest)
+          // @@protoc_insertion_point(message_byte_size_start:loginpb.LeaveGameC2LRequest)
           ::size_t total_size = 0;
 
           ::uint32_t cached_has_bits = 0;
@@ -2657,7 +2662,7 @@ PROTOBUF_NOINLINE void LeaveGameC2LRequest::Clear() {
 void LeaveGameC2LRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
   auto* const _this = static_cast<LeaveGameC2LRequest*>(&to_msg);
   auto& from = static_cast<const LeaveGameC2LRequest&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:LeaveGameC2LRequest)
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.LeaveGameC2LRequest)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -2669,7 +2674,7 @@ void LeaveGameC2LRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, con
 }
 
 void LeaveGameC2LRequest::CopyFrom(const LeaveGameC2LRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:LeaveGameC2LRequest)
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.LeaveGameC2LRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -2686,6 +2691,7 @@ void LeaveGameC2LRequest::InternalSwap(LeaveGameC2LRequest* PROTOBUF_RESTRICT ot
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)
+}  // namespace loginpb
 namespace google {
 namespace protobuf {
 }  // namespace protobuf

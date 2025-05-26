@@ -7,8 +7,8 @@ import (
 	"text/template"
 )
 
-// renderTemplateToFile 渲染模板并写入文件，如果文件内容未改变则不写入
-func renderTemplateToFile(tmplPath string, outputPath string, data any) error {
+// RenderTemplateToFile 渲染模板并写入文件，如果文件内容未改变则不写入
+func RenderTemplateToFile(tmplPath string, outputPath string, data any) error {
 	// 解析模板
 	tmpl, err := template.ParseFiles(tmplPath)
 	if err != nil {

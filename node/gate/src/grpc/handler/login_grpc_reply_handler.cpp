@@ -4,13 +4,11 @@
 #include "grpc/generator/proto/common/login_service_grpc.h"
 #include "thread_local/storage_gate.h"
 
-using GrpcLoginStubPtr = std::unique_ptr<LoginService::Stub>;
+using GrpcLoginStubPtr = std::unique_ptr<loginpb::LoginService::Stub>;
 
 void InitGrpcLoginServiceResponseHandler() {
     {
-        using Function = std::function<void(const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>&)>;
-        extern Function AsyncLoginServiceLoginHandler;
-        AsyncLoginServiceLoginHandler = [](const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>& call) {
+        loginpb::AsyncloginpbLoginServiceLoginHandler = [](const std::unique_ptr<loginpb::AsyncloginpbLoginServiceLoginGrpcClientCall>& call) {
             auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {
@@ -22,9 +20,7 @@ void InitGrpcLoginServiceResponseHandler() {
     }
 
     {
-        using Function = std::function<void(const std::unique_ptr<AsyncLoginServiceCreatePlayerGrpcClientCall>&)>;
-        extern Function AsyncLoginServiceCreatePlayerHandler;
-        AsyncLoginServiceCreatePlayerHandler = [](const std::unique_ptr<AsyncLoginServiceCreatePlayerGrpcClientCall>& call) {
+        loginpb::AsyncloginpbLoginServiceCreatePlayerHandler = [](const std::unique_ptr<loginpb::AsyncloginpbLoginServiceCreatePlayerGrpcClientCall>& call) {
             auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {
@@ -36,9 +32,7 @@ void InitGrpcLoginServiceResponseHandler() {
     }
 
     {
-        using Function = std::function<void(const std::unique_ptr<AsyncLoginServiceEnterGameGrpcClientCall>&)>;
-        extern Function AsyncLoginServiceEnterGameHandler;
-        AsyncLoginServiceEnterGameHandler = [](const std::unique_ptr<AsyncLoginServiceEnterGameGrpcClientCall>& call) {
+        loginpb::AsyncloginpbLoginServiceEnterGameHandler = [](const std::unique_ptr<loginpb::AsyncloginpbLoginServiceEnterGameGrpcClientCall>& call) {
             auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {
@@ -51,9 +45,7 @@ void InitGrpcLoginServiceResponseHandler() {
 
 
     {
-        using Function = std::function<void(const std::unique_ptr<AsyncLoginServiceLeaveGameGrpcClientCall>&)>;
-        extern Function AsyncLoginServiceLeaveGameHandler;
-        AsyncLoginServiceLeaveGameHandler = [](const std::unique_ptr<AsyncLoginServiceLeaveGameGrpcClientCall>& call) {
+        loginpb::AsyncloginpbLoginServiceLeaveGameHandler = [](const std::unique_ptr<loginpb::AsyncloginpbLoginServiceLeaveGameGrpcClientCall>& call) {
           /*  auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {
