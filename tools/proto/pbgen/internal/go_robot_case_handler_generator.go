@@ -66,6 +66,16 @@ type CasesData struct {
 	Cases []HandlerCase
 }
 
+// isClientMethodRepliedHandler 检查是否为客户端方法已响应处理器
+func isClientMethodRepliedHandler(methodList *RPCMethods) bool {
+	if len(*methodList) == 0 {
+		return false
+	}
+	firstMethod := (*methodList)[0]
+	return strings.Contains(firstMethod.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
+		(strings.Contains(firstMethod.Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]))
+}
+
 func GoRobotTotalHandlerGenerator() {
 
 	handlerCases := make([]HandlerCase, 0)
