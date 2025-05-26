@@ -1,24 +1,28 @@
 package config
 
-// 常量：项目目录和路径
+// ----------- 项目根目录及相关路径 -----------
 const (
 	ProjectDir                = "../../../"
 	ProtoDir                  = ProjectDir + "proto/"
 	ProtoParentIncludePathDir = ProjectDir
-	ProtoEx                   = ".proto"
-	ProtoPbcEx                = ".pb.cc"
-	ProtoPbhEx                = ".pb.h"
-	ProtoGoEx                 = ".pb.go"
-	GrpcPbcEx                 = ".grpc.pb.cc"
-	GrpcPbhEx                 = ".grpc.pb.h"
-	ProtoDescExtension        = ".desc"
-	ProtoDirName              = "proto/"
 	ThirdPartyDirectory       = "third_party/"
 	GrpcDirectory             = ProjectDir + ThirdPartyDirectory + "grpc/"
 	ProtoBufferDirectory      = GrpcDirectory + "third_party/protobuf/src/"
 )
 
-// 常量：文件扩展名
+// ----------- Proto 文件扩展名 -----------
+const (
+	ProtoEx            = ".proto"
+	ProtoPbcEx         = ".pb.cc"
+	ProtoPbhEx         = ".pb.h"
+	ProtoGoEx          = ".pb.go"
+	GrpcPbcEx          = ".grpc.pb.cc"
+	GrpcPbhEx          = ".grpc.pb.h"
+	ProtoDescExtension = ".desc"
+	ProtoDirName       = "proto/"
+)
+
+// ----------- 通用文件扩展名 -----------
 const (
 	HeaderExtension               = ".h"
 	CppExtension                  = ".cpp"
@@ -28,15 +32,19 @@ const (
 	RepliedHandlerHeaderExtension = "_replied_handler.h"
 	CppRepliedHandlerEx           = "_replied_handler.cpp"
 	CppSol2Extension              = "_sol2.cpp"
-	MessageIdName                 = "MessageId"
-	MethodIndexName               = "Index"
 	CppSystemExtension            = "_system.cpp"
 	GrpcHeaderExtension           = "_grpc.h"
 	GrpcCppExtension              = "_grpc.cpp"
 	GrpcExtension                 = "_grpc"
 )
 
-// 常量：目录路径
+// ----------- 消息与方法相关名字 -----------
+const (
+	MessageIdName   = "MessageId"
+	MethodIndexName = "Index"
+)
+
+// ----------- 项目目录路径 -----------
 const (
 	NodePkgDirectory               = "node_pkg/"
 	NodePkgLogicDirectory          = NodePkgDirectory + "node_logic/"
@@ -53,7 +61,7 @@ const (
 	PbcLuaDirectory                = PbcOutputDirectory + "lua/"
 )
 
-// 常量：方法处理目录
+// ----------- 方法处理目录 -----------
 const (
 	RobotMethodHandlerDirectory                 = ProjectDir + RobotDirectory + "logic/handler/"
 	GameNodeMethodHandlerDirectory              = ProjectDir + GameNodeDirectory + HandlerSourceDirectory
@@ -70,43 +78,49 @@ const (
 	GateNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
 )
 
-// 常量：输出目录
+// ----------- 输出目录 -----------
 const (
-	ToolDir                          = "tools/"
-	TempFileGenerationDir            = ProjectDir + ToolDir + "generated/temp/files/"
-	PbDescDirectory                  = TempFileGenerationDir + "proto_desc/"
-	PbcProtoOutputDirectory          = ProjectDir + PbcProtoDirectory + ProtoDirName
-	PbcOutputDirectory               = ProjectDir + PbcProtoDirectory
-	GrpcOutputDirectory              = ProjectDir + PbcProtoDirectory
-	GrpcTempDirectory                = TempFileGenerationDir + "grpc/"
-	PbcTempDirectory                 = TempFileGenerationDir
-	GrpcProtoOutputDirectory         = ProjectDir + PbcProtoDirectory + ProtoDirName
-	RobotGoOutputDirectory           = ProjectDir + RobotDirectory
-	GoPbGameDirectory                = "pb/game/"
-	RobotGoGamePbDirectory           = RobotGoOutputDirectory + GoPbGameDirectory
-	MessageIdGoFile                  = "message_id.go"
-	RobotMessageIdFilePath           = RobotGoGamePbDirectory + MessageIdGoFile
-	LoginDirectory                   = ProjectDir + "node/login/"
-	DeployDirectory                  = ProjectDir + "node/deploy/"
-	LoginGoGameDirectory             = LoginDirectory + GoPbGameDirectory
-	LoginMessageIdGoFile             = LoginGoGameDirectory + MessageIdGoFile
-	DbGoDirectory                    = ProjectDir + "node/db/"
-	ServiceInfoName                  = "service_info/"
-	ServiceInfoDirectory             = PbcOutputDirectory + ServiceInfoName
-	ServiceInfoExtension             = "_service_info"
-	ServiceCppFilePath               = ServiceInfoDirectory + "service_info.cpp"
-	ServiceHeaderFilePath            = ServiceInfoDirectory + "service_info.h"
-	LuaServiceFilePath               = PbcLuaDirectory + "lua_service.cpp"
-	ClientLuaDirectory               = ProjectDir + "bin/script/lua/service/"
-	ClientLuaServiceFilePath         = ProjectDir + "client/src/handler/service_lua.cpp"
-	ClientServiceInstanceFilePath    = ProjectDir + "client/src/handler/player_service.cpp"
+	ToolDir               = "tools/"
+	TempFileGenerationDir = ProjectDir + ToolDir + "generated/temp/files/"
+	PbDescDirectory       = TempFileGenerationDir + "proto_desc/"
+
+	PbcProtoOutputDirectory  = ProjectDir + PbcProtoDirectory + ProtoDirName
+	PbcOutputDirectory       = ProjectDir + PbcProtoDirectory
+	GrpcOutputDirectory      = ProjectDir + PbcProtoDirectory
+	GrpcTempDirectory        = TempFileGenerationDir + "grpc/"
+	PbcTempDirectory         = TempFileGenerationDir
+	GrpcProtoOutputDirectory = ProjectDir + PbcProtoDirectory + ProtoDirName
+
+	RobotGoOutputDirectory = ProjectDir + RobotDirectory
+	GoPbGameDirectory      = "pb/game/"
+	RobotGoGamePbDirectory = RobotGoOutputDirectory + GoPbGameDirectory
+	MessageIdGoFile        = "message_id.go"
+	RobotMessageIdFilePath = RobotGoGamePbDirectory + MessageIdGoFile
+
+	LoginDirectory       = ProjectDir + "node/login/"
+	DeployDirectory      = ProjectDir + "node/deploy/"
+	LoginGoGameDirectory = LoginDirectory + GoPbGameDirectory
+	LoginMessageIdGoFile = LoginGoGameDirectory + MessageIdGoFile
+	DbGoDirectory        = ProjectDir + "node/db/"
+
+	ServiceInfoName       = "service_info/"
+	ServiceInfoDirectory  = PbcOutputDirectory + ServiceInfoName
+	ServiceInfoExtension  = "_service_info"
+	ServiceCppFilePath    = ServiceInfoDirectory + "service_info.cpp"
+	ServiceHeaderFilePath = ServiceInfoDirectory + "service_info.h"
+
+	LuaServiceFilePath            = PbcLuaDirectory + "lua_service.cpp"
+	ClientLuaDirectory            = ProjectDir + "bin/script/lua/service/"
+	ClientLuaServiceFilePath      = ProjectDir + "client/src/handler/service_lua.cpp"
+	ClientServiceInstanceFilePath = ProjectDir + "client/src/handler/player_service.cpp"
+
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
 	PlayerStorageSystemDirectory     = ProjectDir + NodePkgLogicSceneNodeDirectory + "src/player/system/"
 	CppGenGrpcDirectory              = ProjectDir + PbcProtoDirectory + "grpc/generator/"
 	PlayerStorageTempDirectory       = TempFileGenerationDir + "/node/game/game_logic/"
 )
 
-// 常量：文件名
+// ----------- 文件名 -----------
 const (
 	HandlerFileName                    = "Handler"
 	RepliedHandlerFileName             = "RepliedHandler"
@@ -120,7 +134,7 @@ const (
 	LoginServiceProtoFileName          = "login_service.proto"
 )
 
-// 常量：代码相关
+// ----------- 代码相关字符串常量 -----------
 const (
 	GoogleMethodController   = "::google::protobuf::RpcController* controller,"
 	PlayerMethodController   = "entt::entity player,"
@@ -140,7 +154,7 @@ const (
 	PlayerRepliedServiceName = "player_service_replied.cpp"
 )
 
-// 常量：项目源目录
+// ----------- 项目源目录相关 -----------
 var (
 	ProtoDirectoryNames = [...]string{
 		"common/",
@@ -165,7 +179,7 @@ var (
 	EtcdProtoDirIndex      = 7
 )
 
-// 常量：其他常量
+// ----------- 其他业务相关常量 -----------
 const (
 	LoginPrefixName                 = "login"
 	DeployPrefixName                = "deploy"
@@ -184,11 +198,13 @@ const (
 	ClassNameSuffix                 = "Handler"
 )
 
+// ----------- 事件处理目录 -----------
 const (
 	GameNodeEventHandlerDirectory   = ProjectDir + GameNodeDirectory + EventHandlerSourceDirectory
 	CentreNodeEventHandlerDirectory = ProjectDir + CentreNodeDirectory + EventHandlerSourceDirectory
 )
 
+// ----------- 玩家数据库名称 -----------
 const (
 	PlayerDatabaseName  = "player_database"
 	PlayerDatabaseName1 = "player_database_1"
