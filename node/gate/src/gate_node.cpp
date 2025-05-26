@@ -46,7 +46,7 @@ void GateNode::StartRpcServer()
 
 void GateNode::ProcessGrpcNode(const NodeInfo& nodeInfo)
 {
-	auto& registry = NodeSystem::GetRegistryForNodeType(nodeInfo.node_type());
+	auto& registry = tls.GetNodeRegistry(nodeInfo.node_type());
 	switch (nodeInfo.node_type())
 	{
 	case eNodeType::LoginNodeService:
@@ -58,6 +58,7 @@ void GateNode::ProcessGrpcNode(const NodeInfo& nodeInfo)
 		//todo 如果重连后连上了不同的gate会不会有异步问题
 		tls_gate.login_consistent_node().add(nodeInfo.node_id(),
 			loginNodeId);
+		loginpb::InitLoginServiceCompletedQueue(registry, loginNodeId);
 		break;
 	}
 	default:

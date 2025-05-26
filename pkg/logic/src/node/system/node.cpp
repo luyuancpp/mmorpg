@@ -239,7 +239,7 @@ void Node::ConnectToGrpcNode(const NodeInfo& info) {
 }
 
 void Node::ConnectToTcpNode(const NodeInfo& info) {
-    auto& registry = NodeSystem::GetRegistryForNodeType(info.node_type());
+    auto& registry = tls.GetNodeRegistry(info.node_type());
     entt::entity entityId{ info.node_id() };
 
     if (registry.valid(entityId)) {
@@ -345,7 +345,7 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 }
 
 bool Node::IsNodeRegistered(uint32_t nodeType, const NodeInfo& node) const {
-    entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
+    entt::registry& registry = tls.GetNodeRegistry(nodeType);
     for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
         if (nodeInfo.endpoint().ip() == node.endpoint().ip() &&
             nodeInfo.endpoint().port() == node.endpoint().port()) {
@@ -406,7 +406,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
     }
 
     ProcessNodeStop(nodeType, nodeId);
-    entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
+    entt::registry& registry = tls.GetNodeRegistry(nodeType);
     Destroy(registry, entt::entity{nodeId});
     LOG_INFO << "Service node stopped, id: " << nodeId;
 }
@@ -498,7 +498,7 @@ void Node::RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn) {
 }
 
 void Node::TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const {
-    entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
+    entt::registry& registry = tls.GetNodeRegistry(nodeType);
     for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
         if (!IsSameAddress(client.peer_addr(), conn->peerAddress())) continue;
         LOG_INFO << "Peer address match in " << NodeSystem::GetRegistryName(registry)
@@ -548,7 +548,7 @@ void Node::HandleNodeRegistration(
         const auto& nodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
         for (auto& serverNode : nodeList[nodeType].node_list()) {
             if (serverNode.lease_id() != peerNode.lease_id()) continue;
-            entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
+            entt::registry& registry = tls.GetNodeRegistry(nodeType);
             entt::entity entity = registry.create(entt::entity{ peerNode.node_id() });
             if (entity != entt::entity{ peerNode.node_id() }) {
                 LOG_ERROR << "Create node entity failed in " << NodeSystem::GetRegistryName(registry);
@@ -601,7 +601,7 @@ void TriggerNodeConnectionEvent(entt::registry& registry, const RegisterNodeSess
 void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const {
     LOG_INFO << "Node registration response: " << response.DebugString();
     uint32_t nodeType = response.peer_node().node_type();
-    entt::registry& registry = NodeSystem::GetRegistryForNodeType(nodeType);
+    entt::registry& registry = tls.GetNodeRegistry(nodeType);
     if (response.error_message().id() != kCommon_errorOK) {
         LOG_TRACE << "Registration failed: " << response.DebugString();
         for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
