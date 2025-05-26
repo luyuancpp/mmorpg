@@ -11,7 +11,7 @@ using grpc::ClientAsyncResponseReader;
 
 namespace  {
 
-using GrpcCentreServiceStubPtr = std::unique_ptr<CentreService::Stub>;
+using CentreServiceStubPtr = std::unique_ptr<CentreService::Stub>;
 
 
 

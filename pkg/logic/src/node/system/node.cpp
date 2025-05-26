@@ -169,14 +169,14 @@ void Node::InitGrpcClients() {
 }
 
 void Node::InitGrpcQueues() {
-    etcdserverpb::InitetcdserverpbKVCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
-    etcdserverpb::InitetcdserverpbWatchCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
-    etcdserverpb::InitetcdserverpbLeaseCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+    etcdserverpb::InitKVCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+    etcdserverpb::InitWatchCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+    etcdserverpb::InitLeaseCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
 
     etcdQueueTimer.RunEvery(0.001, [] {
-        etcdserverpb::HandleetcdserverpbKVCompletedQueueMessage(tls.globalNodeRegistry);
-        etcdserverpb::HandleetcdserverpbWatchCompletedQueueMessage(tls.globalNodeRegistry);
-        etcdserverpb::HandleetcdserverpbLeaseCompletedQueueMessage(tls.globalNodeRegistry);
+        etcdserverpb::HandleKVCompletedQueueMessage(tls.globalNodeRegistry);
+        etcdserverpb::HandleWatchCompletedQueueMessage(tls.globalNodeRegistry);
+        etcdserverpb::HandleLeaseCompletedQueueMessage(tls.globalNodeRegistry);
     });
 }
 
@@ -412,7 +412,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 }
 
 void Node::InitGrpcResponseHandlers() {
-    etcdserverpb::AsyncetcdserverpbKVRangeHandler = [this](const std::unique_ptr<etcdserverpb::AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
+    etcdserverpb::AsyncKVRangeHandler = [this](const std::unique_ptr<etcdserverpb::AsyncKVRangeGrpcClientCall>& call) {
         if (call->status.ok()) {
             for (const auto& kv : call->reply.kvs()) {
                 HandleServiceNodeStart(kv.key(), kv.value());
@@ -422,14 +422,14 @@ void Node::InitGrpcResponseHandlers() {
         }
     };
 
-    etcdserverpb::AsyncetcdserverpbKVPutHandler = [this](const std::unique_ptr<etcdserverpb::AsyncetcdserverpbKVPutGrpcClientCall>& call) {
+    etcdserverpb::AsyncKVPutHandler = [this](const std::unique_ptr<etcdserverpb::AsyncKVPutGrpcClientCall>& call) {
         LOG_DEBUG << "Put response: " << call->reply.DebugString();
         StartWatchingServiceNodes();
     };
 
-    etcdserverpb::AsyncetcdserverpbKVDeleteRangeHandler = [](const std::unique_ptr<etcdserverpb::AsyncetcdserverpbKVDeleteRangeGrpcClientCall>&) {};
+    etcdserverpb::AsyncKVDeleteRangeHandler = [](const std::unique_ptr<etcdserverpb::AsyncKVDeleteRangeGrpcClientCall>&) {};
 
-    etcdserverpb::AsyncetcdserverpbKVTxnHandler = [this](const std::unique_ptr<etcdserverpb::AsyncetcdserverpbKVTxnGrpcClientCall>& call) {
+    etcdserverpb::AsyncKVTxnHandler = [this](const std::unique_ptr<etcdserverpb::AsyncKVTxnGrpcClientCall>& call) {
         if (call->status.ok()) {
             LOG_DEBUG << "Txn response: " << call->reply.DebugString();
             call->reply.succeeded() ? StartRpcServer() : AcquireNode();
@@ -438,7 +438,7 @@ void Node::InitGrpcResponseHandlers() {
         }
     };
 
-    etcdserverpb::AsyncetcdserverpbWatchWatchHandler = [this](const ::etcdserverpb::WatchResponse& response) {
+    etcdserverpb::AsyncWatchWatchHandler = [this](const ::etcdserverpb::WatchResponse& response) {
         if (response.created()) {
             LOG_TRACE << "Watch created.";
             return;
@@ -461,7 +461,7 @@ void Node::InitGrpcResponseHandlers() {
         }
     };
 
-    etcdserverpb::AsyncetcdserverpbLeaseLeaseGrantHandler = [this](const std::unique_ptr<etcdserverpb::AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>& call) {
+    etcdserverpb::AsyncLeaseLeaseGrantHandler = [this](const std::unique_ptr<etcdserverpb::AsyncLeaseLeaseGrantGrpcClientCall>& call) {
         if (call->status.ok()) {
             GetNodeInfo().set_lease_id(call->reply.id());
             KeepNodeAlive();
@@ -658,7 +658,7 @@ void Node::KeepNodeAlive() {
     renewLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
         etcdserverpb::LeaseKeepAliveRequest req;
         req.set_id(static_cast<int64_t>(GetNodeInfo().lease_id()));
-        SendetcdserverpbLeaseLeaseKeepAlive(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), req);
+        SendLeaseLeaseKeepAlive(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), req);
     });
 }
 

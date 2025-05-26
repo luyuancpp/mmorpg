@@ -4,7 +4,6 @@
 
 #include "grpc/generator/proto/common/login_service_grpc.h"
 #include "network/rpc_session.h"
-#include "proto/common/deploy_service.grpc.pb.h"
 #include "proto/common/login_service.grpc.pb.h"
 #include "proto/logic/constants/node.pb.h"
 #include "service_info/service_info.h"
@@ -39,7 +38,7 @@ void GateNode::StartRpcServer()
 	tls_gate.session_id_gen().set_node_id(GetNodeId());
 
 	loginGrpcSelectTimer.RunEvery(0.01, []() {
-		loginpb::HandleloginpbLoginServiceCompletedQueueMessage(tls.GetNodeRegistry(eNodeType::LoginNodeService));
+		loginpb::HandleLoginServiceCompletedQueueMessage(tls.GetNodeRegistry(eNodeType::LoginNodeService));
 		});
 
     LOG_INFO << "gate node  start at" << GetNodeInfo().DebugString();
@@ -54,7 +53,7 @@ void GateNode::ProcessGrpcNode(const NodeInfo& nodeInfo)
 	{
 		const auto loginNodeId = entt::entity{ nodeInfo.node_id() };
 		const auto& channel = registry.get<std::shared_ptr<grpc::Channel>>(loginNodeId);
-		registry.emplace < loginpb::GrpcloginpbLoginServiceStubPtr > (loginNodeId,
+		registry.emplace < loginpb::LoginServiceStubPtr > (loginNodeId,
 			loginpb::LoginService::NewStub(channel));
 		//todo 如果重连后连上了不同的gate会不会有异步问题
 		tls_gate.login_consistent_node().add(nodeInfo.node_id(),

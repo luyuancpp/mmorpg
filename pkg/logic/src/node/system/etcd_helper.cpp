@@ -22,7 +22,7 @@ void EtcdHelper::PutServiceNodeInfo(const NodeInfo& nodeInfo, const std::string&
     }
     request.set_value(jsonValue);
 
-    SendetcdserverpbKVPut(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), request);
+    SendKVPut(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), request);
 
 }
 
@@ -34,7 +34,7 @@ void EtcdHelper::RangeQuery(const std::string& prefix) {
 	range_end.back() += 1; // last char + 1
 	request.set_range_end(range_end);
 
-	SendetcdserverpbKVRange(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), request);
+	SendKVRange(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), request);
 }
 
 void EtcdHelper::StartWatchingPrefix(const std::string& prefix) {
@@ -47,7 +47,7 @@ void EtcdHelper::StartWatchingPrefix(const std::string& prefix) {
 	range_end.back() += 1;
 	createReq.set_range_end(range_end);
 
-	SendetcdserverpbWatchWatch(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), request);
+	SendWatchWatch(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), request);
 }
 
 void EtcdHelper::StopAllWatching() {
@@ -59,7 +59,7 @@ void EtcdHelper::GrantLease(uint32_t ttlSeconds) {
 	etcdserverpb::LeaseGrantRequest leaseReq;
 	leaseReq.set_ttl(ttlSeconds);  // 设置 TTL（生存时间）
 
-	SendetcdserverpbLeaseLeaseGrant(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), leaseReq);
+	SendLeaseLeaseGrant(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), leaseReq);
 }
 
 void EtcdHelper::PutIfAbsent(const std::string& key, const std::string& newValue, int64_t currentVersion, int64_t lease) {
@@ -78,7 +78,7 @@ void EtcdHelper::PutIfAbsent(const std::string& key, const std::string& newValue
 	successOp->set_value(newValue);
 	successOp->set_lease(lease);
 
-	SendetcdserverpbKVTxn(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), txn);
+	SendKVTxn(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), txn);
 }
 
 void EtcdHelper::PutIfAbsent(const std::string& key, const NodeInfo& nodeInfo)
@@ -99,5 +99,5 @@ void EtcdHelper::RevokeLeaseAndCleanup(int64_t leaseId)
 	etcdserverpb::LeaseRevokeRequest request;
 	request.set_id(leaseId);
 
-	SendetcdserverpbLeaseLeaseRevoke(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), request);
+	SendLeaseLeaseRevoke(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), request);
 }

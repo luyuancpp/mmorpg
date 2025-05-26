@@ -43,7 +43,7 @@ void SendCentreServiceGatePlayerService(entt::registry& registry, entt::entity n
 
     AsyncCentreServiceGatePlayerServiceGrpcClientCall* call = new AsyncCentreServiceGatePlayerServiceGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcCentreServiceStubPtr>(nodeEntity)
+        .get<CentreServiceStubPtr>(nodeEntity)
         ->PrepareAsyncGatePlayerService(&call->context, request,
                                   &registry.get<CentreServiceGatePlayerServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -89,7 +89,7 @@ void SendCentreServiceGateSessionDisconnect(entt::registry& registry, entt::enti
 
     AsyncCentreServiceGateSessionDisconnectGrpcClientCall* call = new AsyncCentreServiceGateSessionDisconnectGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcCentreServiceStubPtr>(nodeEntity)
+        .get<CentreServiceStubPtr>(nodeEntity)
         ->PrepareAsyncGateSessionDisconnect(&call->context, request,
                                   &registry.get<CentreServiceGateSessionDisconnectCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -135,7 +135,7 @@ void SendCentreServiceLoginNodeAccountLogin(entt::registry& registry, entt::enti
 
     AsyncCentreServiceLoginNodeAccountLoginGrpcClientCall* call = new AsyncCentreServiceLoginNodeAccountLoginGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcCentreServiceStubPtr>(nodeEntity)
+        .get<CentreServiceStubPtr>(nodeEntity)
         ->PrepareAsyncLoginNodeAccountLogin(&call->context, request,
                                   &registry.get<CentreServiceLoginNodeAccountLoginCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -181,7 +181,7 @@ void SendCentreServiceLoginNodeEnterGame(entt::registry& registry, entt::entity 
 
     AsyncCentreServiceLoginNodeEnterGameGrpcClientCall* call = new AsyncCentreServiceLoginNodeEnterGameGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcCentreServiceStubPtr>(nodeEntity)
+        .get<CentreServiceStubPtr>(nodeEntity)
         ->PrepareAsyncLoginNodeEnterGame(&call->context, request,
                                   &registry.get<CentreServiceLoginNodeEnterGameCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -227,7 +227,7 @@ void SendCentreServiceLoginNodeLeaveGame(entt::registry& registry, entt::entity 
 
     AsyncCentreServiceLoginNodeLeaveGameGrpcClientCall* call = new AsyncCentreServiceLoginNodeLeaveGameGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcCentreServiceStubPtr>(nodeEntity)
+        .get<CentreServiceStubPtr>(nodeEntity)
         ->PrepareAsyncLoginNodeLeaveGame(&call->context, request,
                                   &registry.get<CentreServiceLoginNodeLeaveGameCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -273,7 +273,7 @@ void SendCentreServiceLoginNodeSessionDisconnect(entt::registry& registry, entt:
 
     AsyncCentreServiceLoginNodeSessionDisconnectGrpcClientCall* call = new AsyncCentreServiceLoginNodeSessionDisconnectGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcCentreServiceStubPtr>(nodeEntity)
+        .get<CentreServiceStubPtr>(nodeEntity)
         ->PrepareAsyncLoginNodeSessionDisconnect(&call->context, request,
                                   &registry.get<CentreServiceLoginNodeSessionDisconnectCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -319,7 +319,7 @@ void SendCentreServicePlayerService(entt::registry& registry, entt::entity nodeE
 
     AsyncCentreServicePlayerServiceGrpcClientCall* call = new AsyncCentreServicePlayerServiceGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcCentreServiceStubPtr>(nodeEntity)
+        .get<CentreServiceStubPtr>(nodeEntity)
         ->PrepareAsyncPlayerService(&call->context, request,
                                   &registry.get<CentreServicePlayerServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -365,7 +365,7 @@ void SendCentreServiceEnterGsSucceed(entt::registry& registry, entt::entity node
 
     AsyncCentreServiceEnterGsSucceedGrpcClientCall* call = new AsyncCentreServiceEnterGsSucceedGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcCentreServiceStubPtr>(nodeEntity)
+        .get<CentreServiceStubPtr>(nodeEntity)
         ->PrepareAsyncEnterGsSucceed(&call->context, request,
                                   &registry.get<CentreServiceEnterGsSucceedCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -411,7 +411,7 @@ void SendCentreServiceRouteNodeStringMsg(entt::registry& registry, entt::entity 
 
     AsyncCentreServiceRouteNodeStringMsgGrpcClientCall* call = new AsyncCentreServiceRouteNodeStringMsgGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcCentreServiceStubPtr>(nodeEntity)
+        .get<CentreServiceStubPtr>(nodeEntity)
         ->PrepareAsyncRouteNodeStringMsg(&call->context, request,
                                   &registry.get<CentreServiceRouteNodeStringMsgCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -457,7 +457,7 @@ void SendCentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entit
 
     AsyncCentreServiceRoutePlayerStringMsgGrpcClientCall* call = new AsyncCentreServiceRoutePlayerStringMsgGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcCentreServiceStubPtr>(nodeEntity)
+        .get<CentreServiceStubPtr>(nodeEntity)
         ->PrepareAsyncRoutePlayerStringMsg(&call->context, request,
                                   &registry.get<CentreServiceRoutePlayerStringMsgCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -503,7 +503,7 @@ void SendCentreServiceInitSceneNode(entt::registry& registry, entt::entity nodeE
 
     AsyncCentreServiceInitSceneNodeGrpcClientCall* call = new AsyncCentreServiceInitSceneNodeGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcCentreServiceStubPtr>(nodeEntity)
+        .get<CentreServiceStubPtr>(nodeEntity)
         ->PrepareAsyncInitSceneNode(&call->context, request,
                                   &registry.get<CentreServiceInitSceneNodeCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
@@ -549,7 +549,7 @@ void SendCentreServiceRegisterNodeSession(entt::registry& registry, entt::entity
 
     AsyncCentreServiceRegisterNodeSessionGrpcClientCall* call = new AsyncCentreServiceRegisterNodeSessionGrpcClientCall;
     call->response_reader = registry
-        .get<GrpcCentreServiceStubPtr>(nodeEntity)
+        .get<CentreServiceStubPtr>(nodeEntity)
         ->PrepareAsyncRegisterNodeSession(&call->context, request,
                                   &registry.get<CentreServiceRegisterNodeSessionCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();

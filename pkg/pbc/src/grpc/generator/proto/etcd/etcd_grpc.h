@@ -11,11 +11,11 @@ using grpc::ClientAsyncResponseReader;
 
 namespace etcdserverpb {
 
-using GrpcetcdserverpbKVStubPtr = std::unique_ptr<KV::Stub>;
+using KVStubPtr = std::unique_ptr<KV::Stub>;
 
 
 
-class AsyncetcdserverpbKVRangeGrpcClientCall {
+class AsyncKVRangeGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -23,20 +23,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::RangeResponse>> response_reader;
 };
 
-using AsyncetcdserverpbKVRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>&)>;
-extern AsyncetcdserverpbKVRangeHandlerFunctionType AsyncetcdserverpbKVRangeHandler;
+using AsyncKVRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncKVRangeGrpcClientCall>&)>;
+extern AsyncKVRangeHandlerFunctionType AsyncKVRangeHandler;
 
 
 
 class ::etcdserverpb::RangeRequest;
 
-void SendetcdserverpbKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request);
-void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry);
-void InitetcdserverpbKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request);
+void HandleKVCompletedQueueMessage(entt::registry& registry);
+void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
 
-class AsyncetcdserverpbKVPutGrpcClientCall {
+class AsyncKVPutGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -44,20 +44,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::PutResponse>> response_reader;
 };
 
-using AsyncetcdserverpbKVPutHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>&)>;
-extern AsyncetcdserverpbKVPutHandlerFunctionType AsyncetcdserverpbKVPutHandler;
+using AsyncKVPutHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncKVPutGrpcClientCall>&)>;
+extern AsyncKVPutHandlerFunctionType AsyncKVPutHandler;
 
 
 
 class ::etcdserverpb::PutRequest;
 
-void SendetcdserverpbKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request);
-void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry);
-void InitetcdserverpbKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request);
+void HandleKVCompletedQueueMessage(entt::registry& registry);
+void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
 
-class AsyncetcdserverpbKVDeleteRangeGrpcClientCall {
+class AsyncKVDeleteRangeGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -65,20 +65,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::DeleteRangeResponse>> response_reader;
 };
 
-using AsyncetcdserverpbKVDeleteRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>&)>;
-extern AsyncetcdserverpbKVDeleteRangeHandlerFunctionType AsyncetcdserverpbKVDeleteRangeHandler;
+using AsyncKVDeleteRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncKVDeleteRangeGrpcClientCall>&)>;
+extern AsyncKVDeleteRangeHandlerFunctionType AsyncKVDeleteRangeHandler;
 
 
 
 class ::etcdserverpb::DeleteRangeRequest;
 
-void SendetcdserverpbKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request);
-void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry);
-void InitetcdserverpbKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request);
+void HandleKVCompletedQueueMessage(entt::registry& registry);
+void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
 
-class AsyncetcdserverpbKVTxnGrpcClientCall {
+class AsyncKVTxnGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -86,20 +86,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::TxnResponse>> response_reader;
 };
 
-using AsyncetcdserverpbKVTxnHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>&)>;
-extern AsyncetcdserverpbKVTxnHandlerFunctionType AsyncetcdserverpbKVTxnHandler;
+using AsyncKVTxnHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncKVTxnGrpcClientCall>&)>;
+extern AsyncKVTxnHandlerFunctionType AsyncKVTxnHandler;
 
 
 
 class ::etcdserverpb::TxnRequest;
 
-void SendetcdserverpbKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request);
-void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry);
-void InitetcdserverpbKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request);
+void HandleKVCompletedQueueMessage(entt::registry& registry);
+void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
 
-class AsyncetcdserverpbKVCompactGrpcClientCall {
+class AsyncKVCompactGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -107,22 +107,22 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::CompactionResponse>> response_reader;
 };
 
-using AsyncetcdserverpbKVCompactHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVCompactGrpcClientCall>&)>;
-extern AsyncetcdserverpbKVCompactHandlerFunctionType AsyncetcdserverpbKVCompactHandler;
+using AsyncKVCompactHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncKVCompactGrpcClientCall>&)>;
+extern AsyncKVCompactHandlerFunctionType AsyncKVCompactHandler;
 
 
 
 class ::etcdserverpb::CompactionRequest;
 
-void SendetcdserverpbKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request);
-void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry);
-void InitetcdserverpbKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request);
+void HandleKVCompletedQueueMessage(entt::registry& registry);
+void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-using GrpcetcdserverpbWatchStubPtr = std::unique_ptr<Watch::Stub>;
+using WatchStubPtr = std::unique_ptr<Watch::Stub>;
 
 
 
-class AsyncetcdserverpbWatchWatchGrpcClient {
+class AsyncWatchWatchGrpcClient {
 public:
     ClientContext context;
     Status status;
@@ -138,22 +138,22 @@ struct WatchRequestWriteInProgress {
     bool isInProgress{false};
 };
 
-using AsyncetcdserverpbWatchWatchHandlerFunctionType = std::function<void(const ::etcdserverpb::WatchResponse&)>;
-extern AsyncetcdserverpbWatchWatchHandlerFunctionType AsyncetcdserverpbWatchWatchHandler;
+using AsyncWatchWatchHandlerFunctionType = std::function<void(const ::etcdserverpb::WatchResponse&)>;
+extern AsyncWatchWatchHandlerFunctionType AsyncWatchWatchHandler;
 
 
 
 class ::etcdserverpb::WatchRequest;
 
-void SendetcdserverpbWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request);
-void HandleetcdserverpbWatchCompletedQueueMessage(entt::registry& registry);
-void InitetcdserverpbWatchCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request);
+void HandleWatchCompletedQueueMessage(entt::registry& registry);
+void InitWatchCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-using GrpcetcdserverpbLeaseStubPtr = std::unique_ptr<Lease::Stub>;
+using LeaseStubPtr = std::unique_ptr<Lease::Stub>;
 
 
 
-class AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall {
+class AsyncLeaseLeaseGrantGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -161,20 +161,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseGrantResponse>> response_reader;
 };
 
-using AsyncetcdserverpbLeaseLeaseGrantHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseGrantGrpcClientCall>&)>;
-extern AsyncetcdserverpbLeaseLeaseGrantHandlerFunctionType AsyncetcdserverpbLeaseLeaseGrantHandler;
+using AsyncLeaseLeaseGrantHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLeaseLeaseGrantGrpcClientCall>&)>;
+extern AsyncLeaseLeaseGrantHandlerFunctionType AsyncLeaseLeaseGrantHandler;
 
 
 
 class ::etcdserverpb::LeaseGrantRequest;
 
-void SendetcdserverpbLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request);
-void HandleetcdserverpbLeaseCompletedQueueMessage(entt::registry& registry);
-void InitetcdserverpbLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request);
+void HandleLeaseCompletedQueueMessage(entt::registry& registry);
+void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
 
-class AsyncetcdserverpbLeaseLeaseRevokeGrpcClientCall {
+class AsyncLeaseLeaseRevokeGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -182,20 +182,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseRevokeResponse>> response_reader;
 };
 
-using AsyncetcdserverpbLeaseLeaseRevokeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseRevokeGrpcClientCall>&)>;
-extern AsyncetcdserverpbLeaseLeaseRevokeHandlerFunctionType AsyncetcdserverpbLeaseLeaseRevokeHandler;
+using AsyncLeaseLeaseRevokeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLeaseLeaseRevokeGrpcClientCall>&)>;
+extern AsyncLeaseLeaseRevokeHandlerFunctionType AsyncLeaseLeaseRevokeHandler;
 
 
 
 class ::etcdserverpb::LeaseRevokeRequest;
 
-void SendetcdserverpbLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request);
-void HandleetcdserverpbLeaseCompletedQueueMessage(entt::registry& registry);
-void InitetcdserverpbLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request);
+void HandleLeaseCompletedQueueMessage(entt::registry& registry);
+void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
 
-class AsyncetcdserverpbLeaseLeaseKeepAliveGrpcClient {
+class AsyncLeaseLeaseKeepAliveGrpcClient {
 public:
     ClientContext context;
     Status status;
@@ -211,20 +211,20 @@ struct LeaseKeepAliveRequestWriteInProgress {
     bool isInProgress{false};
 };
 
-using AsyncetcdserverpbLeaseLeaseKeepAliveHandlerFunctionType = std::function<void(const ::etcdserverpb::LeaseKeepAliveResponse&)>;
-extern AsyncetcdserverpbLeaseLeaseKeepAliveHandlerFunctionType AsyncetcdserverpbLeaseLeaseKeepAliveHandler;
+using AsyncLeaseLeaseKeepAliveHandlerFunctionType = std::function<void(const ::etcdserverpb::LeaseKeepAliveResponse&)>;
+extern AsyncLeaseLeaseKeepAliveHandlerFunctionType AsyncLeaseLeaseKeepAliveHandler;
 
 
 
 class ::etcdserverpb::LeaseKeepAliveRequest;
 
-void SendetcdserverpbLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request);
-void HandleetcdserverpbLeaseCompletedQueueMessage(entt::registry& registry);
-void InitetcdserverpbLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request);
+void HandleLeaseCompletedQueueMessage(entt::registry& registry);
+void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
 
-class AsyncetcdserverpbLeaseLeaseTimeToLiveGrpcClientCall {
+class AsyncLeaseLeaseTimeToLiveGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -232,20 +232,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseTimeToLiveResponse>> response_reader;
 };
 
-using AsyncetcdserverpbLeaseLeaseTimeToLiveHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseTimeToLiveGrpcClientCall>&)>;
-extern AsyncetcdserverpbLeaseLeaseTimeToLiveHandlerFunctionType AsyncetcdserverpbLeaseLeaseTimeToLiveHandler;
+using AsyncLeaseLeaseTimeToLiveHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLeaseLeaseTimeToLiveGrpcClientCall>&)>;
+extern AsyncLeaseLeaseTimeToLiveHandlerFunctionType AsyncLeaseLeaseTimeToLiveHandler;
 
 
 
 class ::etcdserverpb::LeaseTimeToLiveRequest;
 
-void SendetcdserverpbLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request);
-void HandleetcdserverpbLeaseCompletedQueueMessage(entt::registry& registry);
-void InitetcdserverpbLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request);
+void HandleLeaseCompletedQueueMessage(entt::registry& registry);
+void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 
 
-class AsyncetcdserverpbLeaseLeaseLeasesGrpcClientCall {
+class AsyncLeaseLeaseLeasesGrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -253,15 +253,15 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseLeasesResponse>> response_reader;
 };
 
-using AsyncetcdserverpbLeaseLeaseLeasesHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbLeaseLeaseLeasesGrpcClientCall>&)>;
-extern AsyncetcdserverpbLeaseLeaseLeasesHandlerFunctionType AsyncetcdserverpbLeaseLeaseLeasesHandler;
+using AsyncLeaseLeaseLeasesHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLeaseLeaseLeasesGrpcClientCall>&)>;
+extern AsyncLeaseLeaseLeasesHandlerFunctionType AsyncLeaseLeaseLeasesHandler;
 
 
 
 class ::etcdserverpb::LeaseLeasesRequest;
 
-void SendetcdserverpbLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request);
-void HandleetcdserverpbLeaseCompletedQueueMessage(entt::registry& registry);
-void InitetcdserverpbLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request);
+void HandleLeaseCompletedQueueMessage(entt::registry& registry);
+void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace etcdserverpb

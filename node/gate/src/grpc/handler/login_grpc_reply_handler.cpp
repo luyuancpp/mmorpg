@@ -8,7 +8,7 @@ using GrpcLoginStubPtr = std::unique_ptr<loginpb::LoginService::Stub>;
 
 void InitGrpcLoginServiceResponseHandler() {
     {
-        loginpb::AsyncloginpbLoginServiceLoginHandler = [](const std::unique_ptr<loginpb::AsyncloginpbLoginServiceLoginGrpcClientCall>& call) {
+        loginpb::AsyncLoginServiceLoginHandler = [](const std::unique_ptr<loginpb::AsyncLoginServiceLoginGrpcClientCall>& call) {
             auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {
@@ -20,7 +20,7 @@ void InitGrpcLoginServiceResponseHandler() {
     }
 
     {
-        loginpb::AsyncloginpbLoginServiceCreatePlayerHandler = [](const std::unique_ptr<loginpb::AsyncloginpbLoginServiceCreatePlayerGrpcClientCall>& call) {
+        loginpb::AsyncLoginServiceCreatePlayerHandler = [](const std::unique_ptr<loginpb::AsyncLoginServiceCreatePlayerGrpcClientCall>& call) {
             auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {
@@ -32,7 +32,7 @@ void InitGrpcLoginServiceResponseHandler() {
     }
 
     {
-        loginpb::AsyncloginpbLoginServiceEnterGameHandler = [](const std::unique_ptr<loginpb::AsyncloginpbLoginServiceEnterGameGrpcClientCall>& call) {
+        loginpb::AsyncLoginServiceEnterGameHandler = [](const std::unique_ptr<loginpb::AsyncLoginServiceEnterGameGrpcClientCall>& call) {
             auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {
@@ -45,7 +45,7 @@ void InitGrpcLoginServiceResponseHandler() {
 
 
     {
-        loginpb::AsyncloginpbLoginServiceLeaveGameHandler = [](const std::unique_ptr<loginpb::AsyncloginpbLoginServiceLeaveGameGrpcClientCall>& call) {
+        loginpb::AsyncLoginServiceLeaveGameHandler = [](const std::unique_ptr<loginpb::AsyncLoginServiceLeaveGameGrpcClientCall>& call) {
           /*  auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {

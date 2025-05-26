@@ -14,13 +14,13 @@ namespace {{.Package}} {
 
 {{- range .ServiceInfo }}
 
-using Grpc{{.GetServiceFullNameWithNoColon}}StubPtr = std::unique_ptr<{{.Service}}::Stub>;
+using {{.Service}}StubPtr = std::unique_ptr<{{.Service}}::Stub>;
 
 {{- range .MethodInfo }}
 
 {{if .ClientStreaming}}
 
-class Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient {
+class Async{{.Service}}{{.Method}}GrpcClient {
 public:
     ClientContext context;
     Status status;
@@ -36,12 +36,12 @@ struct {{.RequestName}}WriteInProgress {
     bool isInProgress{false};
 };
 
-using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
-extern Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;
+using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
+extern Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
 
 {{else}}
 
-class Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall {
+class Async{{.Service}}{{.Method}}GrpcClientCall {
 public:
     ClientContext context;
     Status status;
@@ -49,16 +49,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<{{.CppResponse}}>> response_reader;
 };
 
-using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
-extern Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;
+using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.Service}}{{.Method}}GrpcClientCall>&)>;
+extern Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
 
 {{end}}
 
 class {{.CppRequest}};
 
-void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request);
-void Handle{{.GetServiceFullNameWithNoColon}}CompletedQueueMessage(entt::registry& registry);
-void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request);
+void Handle{{.Service}}CompletedQueueMessage(entt::registry& registry);
+void Init{{.Service}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 {{- end }}
 {{- end }}
@@ -76,16 +76,16 @@ namespace {{.Package}}{
 {{- range .ServiceInfo }}
 {{- range .MethodInfo }}
 
-struct {{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue {
+struct {{.Service}}{{.Method}}CompleteQueue {
     grpc::CompletionQueue cq;
 };
 
 {{ if .ClientStreaming }}
 
-using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
-Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;
+using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
+Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
 
-void TryWriteNextNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
+void TryWriteNextNext{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     auto& writeInProgress = registry.get<{{.RequestName}}WriteInProgress>(nodeEntity);
     auto& pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
 
@@ -93,14 +93,14 @@ void TryWriteNextNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registr
         return;
     }
 
-    auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
+    auto& client = registry.get<Async{{.Service}}{{.Method}}GrpcClient>(nodeEntity);
     auto& request = pendingWritesBuffer.front();
 
     writeInProgress.isInProgress = true;
     client.stream->Write(request, (void*)(GrpcOperation::WRITE));
 }
 
-void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
+void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
 
@@ -114,7 +114,7 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
         return;
     }
 
-    auto& client = registry.get<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
+    auto& client = registry.get<Async{{.Service}}{{.Method}}GrpcClient>(nodeEntity);
     auto& writeInProgress = registry.get<{{.RequestName}}WriteInProgress>(nodeEntity);
 
     switch (static_cast<GrpcOperation>(reinterpret_cast<intptr_t>(got_tag))) {
@@ -124,7 +124,7 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
                 pendingWritesBuffer.pop_front();
             }
             writeInProgress.isInProgress = false;
-            TryWriteNextNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
+            TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
             break;
         }
         case GrpcOperation::WRITES_DONE:
@@ -135,17 +135,17 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
             break;
         case GrpcOperation::READ: {
             auto& response = registry.get<{{.CppResponse}}>(nodeEntity);
-            if (Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler) {
-                Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(response);
+            if (Async{{.Service}}{{.Method}}Handler) {
+                Async{{.Service}}{{.Method}}Handler(response);
             }
             client.stream->Read(&response, (void*)GrpcOperation::READ);
-            TryWriteNextNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
+            TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
             break;
         }
         case GrpcOperation::INIT: {
             auto& response = registry.get<{{.CppResponse}}>(nodeEntity);
             client.stream->Read(&response, (void*)GrpcOperation::READ);
-            TryWriteNextNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
+            TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
             break;
         }
         default:
@@ -155,10 +155,10 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
 
 {{ else }}
 
-using Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
-Async{{.GetServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler;
+using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.Service}}{{.Method}}GrpcClientCall>&)>;
+Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
 
-void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
+void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
@@ -170,11 +170,11 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
         return;
     }
 
-    std::unique_ptr<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall> call(
-        static_cast<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall*>(got_tag));
+    std::unique_ptr<Async{{.Service}}{{.Method}}GrpcClientCall> call(
+        static_cast<Async{{.Service}}{{.Method}}GrpcClientCall*>(got_tag));
     if (call->status.ok()) {
-        if (Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler) {
-            Async{{.GetServiceFullNameWithNoColon}}{{.Method}}Handler(call);
+        if (Async{{.Service}}{{.Method}}Handler) {
+            Async{{.Service}}{{.Method}}Handler(call);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -183,18 +183,18 @@ void AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::regist
 
 {{ end }}
 
-void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request) {
+void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request) {
 {{ if .ClientStreaming }}
-    auto& cq = registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq;
+    auto& cq = registry.get<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity).cq;
     auto& pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
     pendingWritesBuffer.push_back(request);
-    TryWriteNextNext{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, nodeEntity, cq);
+    TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
 {{ else }}
-    Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall* call = new Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall;
+    Async{{.Service}}{{.Method}}GrpcClientCall* call = new Async{{.Service}}{{.Method}}GrpcClientCall;
     call->response_reader = registry
-        .get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)
+        .get<{{.Service}}StubPtr>(nodeEntity)
         ->PrepareAsync{{.Method}}(&call->context, request,
-                                  &registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq);
+                                  &registry.get<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 {{ end }}
@@ -204,21 +204,21 @@ void Send{{.GetServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry,
 {{- end }}
 
 {{- range .ServiceInfo }}
-void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+void Init{{.Service}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 {{- range .MethodInfo }}
-    registry.emplace<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity);
+    registry.emplace<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity);
 {{ if .ClientStreaming }}
     {
-        auto& client = registry.emplace<Async{{.GetServiceFullNameWithNoColon}}{{.Method}}GrpcClient>(nodeEntity);
+        auto& client = registry.emplace<Async{{.Service}}{{.Method}}GrpcClient>(nodeEntity);
         registry.emplace<{{.RequestName}}Buffer>(nodeEntity);
         registry.emplace<{{.RequestName}}WriteInProgress>(nodeEntity);
         registry.emplace<{{.CppResponse}}>(nodeEntity);
         registry.emplace<{{.CppRequest}}>(nodeEntity);
 
         client.stream = registry
-            .get<Grpc{{.GetServiceFullNameWithNoColon}}StubPtr>(nodeEntity)
+            .get<{{.Service}}StubPtr>(nodeEntity)
             ->Async{{.Method}}(&client.context,
-                               &registry.get<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>(nodeEntity).cq,
+                               &registry.get<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity).cq,
                                (void*)(GrpcOperation::INIT));
     }
 {{ end }}
@@ -227,12 +227,12 @@ void Init{{.GetServiceFullNameWithNoColon}}CompletedQueue(entt::registry& regist
 {{- end }}
 
 {{- range .ServiceInfo }}
-void Handle{{.GetServiceFullNameWithNoColon}}CompletedQueueMessage(entt::registry& registry) {
+void Handle{{.Service}}CompletedQueueMessage(entt::registry& registry) {
 {{- range .MethodInfo }}
     {
-        auto&& view = registry.view<{{.GetServiceFullNameWithNoColon}}{{.Method}}CompleteQueue>();
+        auto&& view = registry.view<{{.Service}}{{.Method}}CompleteQueue>();
         for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpc{{.GetServiceFullNameWithNoColon}}{{.Method}}(registry, e, completeQueueComp.cq);
+            AsyncCompleteGrpc{{.Service}}{{.Method}}(registry, e, completeQueueComp.cq);
         }
     }
 {{- end }}
