@@ -54,6 +54,7 @@ struct TableStruct_proto_2fcommon_2flogin_5fservice_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_proto_2fcommon_2flogin_5fservice_2eproto;
+namespace loginpb {
 class CreatePlayerC2LRequest;
 struct CreatePlayerC2LRequestDefaultTypeInternal;
 extern CreatePlayerC2LRequestDefaultTypeInternal _CreatePlayerC2LRequest_default_instance_;
@@ -78,11 +79,13 @@ extern LoginC2LResponseDefaultTypeInternal _LoginC2LResponse_default_instance_;
 class LoginNodeDisconnectRequest;
 struct LoginNodeDisconnectRequestDefaultTypeInternal;
 extern LoginNodeDisconnectRequestDefaultTypeInternal _LoginNodeDisconnectRequest_default_instance_;
+}  // namespace loginpb
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
 }  // namespace google
 
+namespace loginpb {
 
 // ===================================================================
 
@@ -91,7 +94,7 @@ namespace protobuf {
 
 class LoginNodeDisconnectRequest final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:LoginNodeDisconnectRequest) */ {
+/* @@protoc_insertion_point(class_definition:loginpb.LoginNodeDisconnectRequest) */ {
  public:
   inline LoginNodeDisconnectRequest() : LoginNodeDisconnectRequest(nullptr) {}
   ~LoginNodeDisconnectRequest() PROTOBUF_FINAL;
@@ -215,7 +218,7 @@ class LoginNodeDisconnectRequest final
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "LoginNodeDisconnectRequest"; }
+  static ::absl::string_view FullMessageName() { return "loginpb.LoginNodeDisconnectRequest"; }
 
  protected:
   explicit LoginNodeDisconnectRequest(::google::protobuf::Arena* arena);
@@ -248,7 +251,7 @@ class LoginNodeDisconnectRequest final
   void _internal_set_session_id(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:LoginNodeDisconnectRequest)
+  // @@protoc_insertion_point(class_scope:loginpb.LoginNodeDisconnectRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -282,7 +285,7 @@ class LoginNodeDisconnectRequest final
 
 class LeaveGameC2LRequest final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:LeaveGameC2LRequest) */ {
+/* @@protoc_insertion_point(class_definition:loginpb.LeaveGameC2LRequest) */ {
  public:
   inline LeaveGameC2LRequest() : LeaveGameC2LRequest(nullptr) {}
   ~LeaveGameC2LRequest() PROTOBUF_FINAL;
@@ -406,7 +409,7 @@ class LeaveGameC2LRequest final
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "LeaveGameC2LRequest"; }
+  static ::absl::string_view FullMessageName() { return "loginpb.LeaveGameC2LRequest"; }
 
  protected:
   explicit LeaveGameC2LRequest(::google::protobuf::Arena* arena);
@@ -439,7 +442,7 @@ class LeaveGameC2LRequest final
   void _internal_set_session_id(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:LeaveGameC2LRequest)
+  // @@protoc_insertion_point(class_scope:loginpb.LeaveGameC2LRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -473,7 +476,7 @@ class LeaveGameC2LRequest final
 
 class LoginC2LRequest final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:LoginC2LRequest) */ {
+/* @@protoc_insertion_point(class_definition:loginpb.LoginC2LRequest) */ {
  public:
   inline LoginC2LRequest() : LoginC2LRequest(nullptr) {}
   ~LoginC2LRequest() PROTOBUF_FINAL;
@@ -597,7 +600,7 @@ class LoginC2LRequest final
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "LoginC2LRequest"; }
+  static ::absl::string_view FullMessageName() { return "loginpb.LoginC2LRequest"; }
 
  protected:
   explicit LoginC2LRequest(::google::protobuf::Arena* arena);
@@ -651,7 +654,7 @@ class LoginC2LRequest final
   ::SessionDetails* _internal_mutable_session_info();
 
   public:
-  // @@protoc_insertion_point(class_scope:LoginC2LRequest)
+  // @@protoc_insertion_point(class_scope:loginpb.LoginC2LRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -687,7 +690,7 @@ class LoginC2LRequest final
 
 class EnterGameC2LRequest final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:EnterGameC2LRequest) */ {
+/* @@protoc_insertion_point(class_definition:loginpb.EnterGameC2LRequest) */ {
  public:
   inline EnterGameC2LRequest() : EnterGameC2LRequest(nullptr) {}
   ~EnterGameC2LRequest() PROTOBUF_FINAL;
@@ -811,7 +814,7 @@ class EnterGameC2LRequest final
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "EnterGameC2LRequest"; }
+  static ::absl::string_view FullMessageName() { return "loginpb.EnterGameC2LRequest"; }
 
  protected:
   explicit EnterGameC2LRequest(::google::protobuf::Arena* arena);
@@ -865,7 +868,7 @@ class EnterGameC2LRequest final
   ::SessionDetails* _internal_mutable_session_info();
 
   public:
-  // @@protoc_insertion_point(class_scope:EnterGameC2LRequest)
+  // @@protoc_insertion_point(class_scope:loginpb.EnterGameC2LRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -901,7 +904,7 @@ class EnterGameC2LRequest final
 
 class CreatePlayerC2LRequest final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:CreatePlayerC2LRequest) */ {
+/* @@protoc_insertion_point(class_definition:loginpb.CreatePlayerC2LRequest) */ {
  public:
   inline CreatePlayerC2LRequest() : CreatePlayerC2LRequest(nullptr) {}
   ~CreatePlayerC2LRequest() PROTOBUF_FINAL;
@@ -1025,7 +1028,7 @@ class CreatePlayerC2LRequest final
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "CreatePlayerC2LRequest"; }
+  static ::absl::string_view FullMessageName() { return "loginpb.CreatePlayerC2LRequest"; }
 
  protected:
   explicit CreatePlayerC2LRequest(::google::protobuf::Arena* arena);
@@ -1079,7 +1082,7 @@ class CreatePlayerC2LRequest final
   ::SessionDetails* _internal_mutable_session_info();
 
   public:
-  // @@protoc_insertion_point(class_scope:CreatePlayerC2LRequest)
+  // @@protoc_insertion_point(class_scope:loginpb.CreatePlayerC2LRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1115,7 +1118,7 @@ class CreatePlayerC2LRequest final
 
 class EnterGameC2LResponse final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:EnterGameC2LResponse) */ {
+/* @@protoc_insertion_point(class_definition:loginpb.EnterGameC2LResponse) */ {
  public:
   inline EnterGameC2LResponse() : EnterGameC2LResponse(nullptr) {}
   ~EnterGameC2LResponse() PROTOBUF_FINAL;
@@ -1239,7 +1242,7 @@ class EnterGameC2LResponse final
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "EnterGameC2LResponse"; }
+  static ::absl::string_view FullMessageName() { return "loginpb.EnterGameC2LResponse"; }
 
  protected:
   explicit EnterGameC2LResponse(::google::protobuf::Arena* arena);
@@ -1293,7 +1296,7 @@ class EnterGameC2LResponse final
   ::SessionDetails* _internal_mutable_session_info();
 
   public:
-  // @@protoc_insertion_point(class_scope:EnterGameC2LResponse)
+  // @@protoc_insertion_point(class_scope:loginpb.EnterGameC2LResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1329,7 +1332,7 @@ class EnterGameC2LResponse final
 
 class LoginC2LResponse final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:LoginC2LResponse) */ {
+/* @@protoc_insertion_point(class_definition:loginpb.LoginC2LResponse) */ {
  public:
   inline LoginC2LResponse() : LoginC2LResponse(nullptr) {}
   ~LoginC2LResponse() PROTOBUF_FINAL;
@@ -1453,7 +1456,7 @@ class LoginC2LResponse final
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "LoginC2LResponse"; }
+  static ::absl::string_view FullMessageName() { return "loginpb.LoginC2LResponse"; }
 
  protected:
   explicit LoginC2LResponse(::google::protobuf::Arena* arena);
@@ -1507,7 +1510,7 @@ class LoginC2LResponse final
   ::SessionDetails* _internal_mutable_session_info();
 
   public:
-  // @@protoc_insertion_point(class_scope:LoginC2LResponse)
+  // @@protoc_insertion_point(class_scope:loginpb.LoginC2LResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1543,7 +1546,7 @@ class LoginC2LResponse final
 
 class CreatePlayerC2LResponse final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:CreatePlayerC2LResponse) */ {
+/* @@protoc_insertion_point(class_definition:loginpb.CreatePlayerC2LResponse) */ {
  public:
   inline CreatePlayerC2LResponse() : CreatePlayerC2LResponse(nullptr) {}
   ~CreatePlayerC2LResponse() PROTOBUF_FINAL;
@@ -1667,7 +1670,7 @@ class CreatePlayerC2LResponse final
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "CreatePlayerC2LResponse"; }
+  static ::absl::string_view FullMessageName() { return "loginpb.CreatePlayerC2LResponse"; }
 
  protected:
   explicit CreatePlayerC2LResponse(::google::protobuf::Arena* arena);
@@ -1721,7 +1724,7 @@ class CreatePlayerC2LResponse final
   ::SessionDetails* _internal_mutable_session_info();
 
   public:
-  // @@protoc_insertion_point(class_scope:CreatePlayerC2LResponse)
+  // @@protoc_insertion_point(class_scope:loginpb.CreatePlayerC2LResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1782,7 +1785,7 @@ inline const ::LoginRequest& LoginC2LRequest::_internal_client_msg_body() const 
   return p != nullptr ? *p : reinterpret_cast<const ::LoginRequest&>(::_LoginRequest_default_instance_);
 }
 inline const ::LoginRequest& LoginC2LRequest::client_msg_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:LoginC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_get:loginpb.LoginC2LRequest.client_msg_body)
   return _internal_client_msg_body();
 }
 inline void LoginC2LRequest::unsafe_arena_set_allocated_client_msg_body(::LoginRequest* value) {
@@ -1796,7 +1799,7 @@ inline void LoginC2LRequest::unsafe_arena_set_allocated_client_msg_body(::LoginR
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:LoginC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.LoginC2LRequest.client_msg_body)
 }
 inline ::LoginRequest* LoginC2LRequest::release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -1819,7 +1822,7 @@ inline ::LoginRequest* LoginC2LRequest::release_client_msg_body() {
 }
 inline ::LoginRequest* LoginC2LRequest::unsafe_arena_release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:LoginC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_release:loginpb.LoginC2LRequest.client_msg_body)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::LoginRequest* temp = _impl_.client_msg_body_;
@@ -1837,7 +1840,7 @@ inline ::LoginRequest* LoginC2LRequest::_internal_mutable_client_msg_body() {
 inline ::LoginRequest* LoginC2LRequest::mutable_client_msg_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::LoginRequest* _msg = _internal_mutable_client_msg_body();
-  // @@protoc_insertion_point(field_mutable:LoginC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_mutable:loginpb.LoginC2LRequest.client_msg_body)
   return _msg;
 }
 inline void LoginC2LRequest::set_allocated_client_msg_body(::LoginRequest* value) {
@@ -1858,7 +1861,7 @@ inline void LoginC2LRequest::set_allocated_client_msg_body(::LoginRequest* value
   }
 
   _impl_.client_msg_body_ = reinterpret_cast<::LoginRequest*>(value);
-  // @@protoc_insertion_point(field_set_allocated:LoginC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.LoginC2LRequest.client_msg_body)
 }
 
 // .SessionDetails session_info = 2;
@@ -1873,7 +1876,7 @@ inline const ::SessionDetails& LoginC2LRequest::_internal_session_info() const {
   return p != nullptr ? *p : reinterpret_cast<const ::SessionDetails&>(::_SessionDetails_default_instance_);
 }
 inline const ::SessionDetails& LoginC2LRequest::session_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:LoginC2LRequest.session_info)
+  // @@protoc_insertion_point(field_get:loginpb.LoginC2LRequest.session_info)
   return _internal_session_info();
 }
 inline void LoginC2LRequest::unsafe_arena_set_allocated_session_info(::SessionDetails* value) {
@@ -1887,7 +1890,7 @@ inline void LoginC2LRequest::unsafe_arena_set_allocated_session_info(::SessionDe
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:LoginC2LRequest.session_info)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.LoginC2LRequest.session_info)
 }
 inline ::SessionDetails* LoginC2LRequest::release_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -1910,7 +1913,7 @@ inline ::SessionDetails* LoginC2LRequest::release_session_info() {
 }
 inline ::SessionDetails* LoginC2LRequest::unsafe_arena_release_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:LoginC2LRequest.session_info)
+  // @@protoc_insertion_point(field_release:loginpb.LoginC2LRequest.session_info)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
   ::SessionDetails* temp = _impl_.session_info_;
@@ -1928,7 +1931,7 @@ inline ::SessionDetails* LoginC2LRequest::_internal_mutable_session_info() {
 inline ::SessionDetails* LoginC2LRequest::mutable_session_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::SessionDetails* _msg = _internal_mutable_session_info();
-  // @@protoc_insertion_point(field_mutable:LoginC2LRequest.session_info)
+  // @@protoc_insertion_point(field_mutable:loginpb.LoginC2LRequest.session_info)
   return _msg;
 }
 inline void LoginC2LRequest::set_allocated_session_info(::SessionDetails* value) {
@@ -1949,7 +1952,7 @@ inline void LoginC2LRequest::set_allocated_session_info(::SessionDetails* value)
   }
 
   _impl_.session_info_ = reinterpret_cast<::SessionDetails*>(value);
-  // @@protoc_insertion_point(field_set_allocated:LoginC2LRequest.session_info)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.LoginC2LRequest.session_info)
 }
 
 // -------------------------------------------------------------------
@@ -1968,7 +1971,7 @@ inline const ::LoginResponse& LoginC2LResponse::_internal_client_msg_body() cons
   return p != nullptr ? *p : reinterpret_cast<const ::LoginResponse&>(::_LoginResponse_default_instance_);
 }
 inline const ::LoginResponse& LoginC2LResponse::client_msg_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:LoginC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_get:loginpb.LoginC2LResponse.client_msg_body)
   return _internal_client_msg_body();
 }
 inline void LoginC2LResponse::unsafe_arena_set_allocated_client_msg_body(::LoginResponse* value) {
@@ -1982,7 +1985,7 @@ inline void LoginC2LResponse::unsafe_arena_set_allocated_client_msg_body(::Login
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:LoginC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.LoginC2LResponse.client_msg_body)
 }
 inline ::LoginResponse* LoginC2LResponse::release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -2005,7 +2008,7 @@ inline ::LoginResponse* LoginC2LResponse::release_client_msg_body() {
 }
 inline ::LoginResponse* LoginC2LResponse::unsafe_arena_release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:LoginC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_release:loginpb.LoginC2LResponse.client_msg_body)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::LoginResponse* temp = _impl_.client_msg_body_;
@@ -2023,7 +2026,7 @@ inline ::LoginResponse* LoginC2LResponse::_internal_mutable_client_msg_body() {
 inline ::LoginResponse* LoginC2LResponse::mutable_client_msg_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::LoginResponse* _msg = _internal_mutable_client_msg_body();
-  // @@protoc_insertion_point(field_mutable:LoginC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_mutable:loginpb.LoginC2LResponse.client_msg_body)
   return _msg;
 }
 inline void LoginC2LResponse::set_allocated_client_msg_body(::LoginResponse* value) {
@@ -2044,7 +2047,7 @@ inline void LoginC2LResponse::set_allocated_client_msg_body(::LoginResponse* val
   }
 
   _impl_.client_msg_body_ = reinterpret_cast<::LoginResponse*>(value);
-  // @@protoc_insertion_point(field_set_allocated:LoginC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.LoginC2LResponse.client_msg_body)
 }
 
 // .SessionDetails session_info = 2;
@@ -2059,7 +2062,7 @@ inline const ::SessionDetails& LoginC2LResponse::_internal_session_info() const 
   return p != nullptr ? *p : reinterpret_cast<const ::SessionDetails&>(::_SessionDetails_default_instance_);
 }
 inline const ::SessionDetails& LoginC2LResponse::session_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:LoginC2LResponse.session_info)
+  // @@protoc_insertion_point(field_get:loginpb.LoginC2LResponse.session_info)
   return _internal_session_info();
 }
 inline void LoginC2LResponse::unsafe_arena_set_allocated_session_info(::SessionDetails* value) {
@@ -2073,7 +2076,7 @@ inline void LoginC2LResponse::unsafe_arena_set_allocated_session_info(::SessionD
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:LoginC2LResponse.session_info)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.LoginC2LResponse.session_info)
 }
 inline ::SessionDetails* LoginC2LResponse::release_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -2096,7 +2099,7 @@ inline ::SessionDetails* LoginC2LResponse::release_session_info() {
 }
 inline ::SessionDetails* LoginC2LResponse::unsafe_arena_release_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:LoginC2LResponse.session_info)
+  // @@protoc_insertion_point(field_release:loginpb.LoginC2LResponse.session_info)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
   ::SessionDetails* temp = _impl_.session_info_;
@@ -2114,7 +2117,7 @@ inline ::SessionDetails* LoginC2LResponse::_internal_mutable_session_info() {
 inline ::SessionDetails* LoginC2LResponse::mutable_session_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::SessionDetails* _msg = _internal_mutable_session_info();
-  // @@protoc_insertion_point(field_mutable:LoginC2LResponse.session_info)
+  // @@protoc_insertion_point(field_mutable:loginpb.LoginC2LResponse.session_info)
   return _msg;
 }
 inline void LoginC2LResponse::set_allocated_session_info(::SessionDetails* value) {
@@ -2135,7 +2138,7 @@ inline void LoginC2LResponse::set_allocated_session_info(::SessionDetails* value
   }
 
   _impl_.session_info_ = reinterpret_cast<::SessionDetails*>(value);
-  // @@protoc_insertion_point(field_set_allocated:LoginC2LResponse.session_info)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.LoginC2LResponse.session_info)
 }
 
 // -------------------------------------------------------------------
@@ -2154,7 +2157,7 @@ inline const ::CreatePlayerRequest& CreatePlayerC2LRequest::_internal_client_msg
   return p != nullptr ? *p : reinterpret_cast<const ::CreatePlayerRequest&>(::_CreatePlayerRequest_default_instance_);
 }
 inline const ::CreatePlayerRequest& CreatePlayerC2LRequest::client_msg_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:CreatePlayerC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_get:loginpb.CreatePlayerC2LRequest.client_msg_body)
   return _internal_client_msg_body();
 }
 inline void CreatePlayerC2LRequest::unsafe_arena_set_allocated_client_msg_body(::CreatePlayerRequest* value) {
@@ -2168,7 +2171,7 @@ inline void CreatePlayerC2LRequest::unsafe_arena_set_allocated_client_msg_body(:
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:CreatePlayerC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.CreatePlayerC2LRequest.client_msg_body)
 }
 inline ::CreatePlayerRequest* CreatePlayerC2LRequest::release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -2191,7 +2194,7 @@ inline ::CreatePlayerRequest* CreatePlayerC2LRequest::release_client_msg_body() 
 }
 inline ::CreatePlayerRequest* CreatePlayerC2LRequest::unsafe_arena_release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:CreatePlayerC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_release:loginpb.CreatePlayerC2LRequest.client_msg_body)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::CreatePlayerRequest* temp = _impl_.client_msg_body_;
@@ -2209,7 +2212,7 @@ inline ::CreatePlayerRequest* CreatePlayerC2LRequest::_internal_mutable_client_m
 inline ::CreatePlayerRequest* CreatePlayerC2LRequest::mutable_client_msg_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::CreatePlayerRequest* _msg = _internal_mutable_client_msg_body();
-  // @@protoc_insertion_point(field_mutable:CreatePlayerC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_mutable:loginpb.CreatePlayerC2LRequest.client_msg_body)
   return _msg;
 }
 inline void CreatePlayerC2LRequest::set_allocated_client_msg_body(::CreatePlayerRequest* value) {
@@ -2230,7 +2233,7 @@ inline void CreatePlayerC2LRequest::set_allocated_client_msg_body(::CreatePlayer
   }
 
   _impl_.client_msg_body_ = reinterpret_cast<::CreatePlayerRequest*>(value);
-  // @@protoc_insertion_point(field_set_allocated:CreatePlayerC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.CreatePlayerC2LRequest.client_msg_body)
 }
 
 // .SessionDetails session_info = 2;
@@ -2245,7 +2248,7 @@ inline const ::SessionDetails& CreatePlayerC2LRequest::_internal_session_info() 
   return p != nullptr ? *p : reinterpret_cast<const ::SessionDetails&>(::_SessionDetails_default_instance_);
 }
 inline const ::SessionDetails& CreatePlayerC2LRequest::session_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:CreatePlayerC2LRequest.session_info)
+  // @@protoc_insertion_point(field_get:loginpb.CreatePlayerC2LRequest.session_info)
   return _internal_session_info();
 }
 inline void CreatePlayerC2LRequest::unsafe_arena_set_allocated_session_info(::SessionDetails* value) {
@@ -2259,7 +2262,7 @@ inline void CreatePlayerC2LRequest::unsafe_arena_set_allocated_session_info(::Se
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:CreatePlayerC2LRequest.session_info)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.CreatePlayerC2LRequest.session_info)
 }
 inline ::SessionDetails* CreatePlayerC2LRequest::release_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -2282,7 +2285,7 @@ inline ::SessionDetails* CreatePlayerC2LRequest::release_session_info() {
 }
 inline ::SessionDetails* CreatePlayerC2LRequest::unsafe_arena_release_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:CreatePlayerC2LRequest.session_info)
+  // @@protoc_insertion_point(field_release:loginpb.CreatePlayerC2LRequest.session_info)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
   ::SessionDetails* temp = _impl_.session_info_;
@@ -2300,7 +2303,7 @@ inline ::SessionDetails* CreatePlayerC2LRequest::_internal_mutable_session_info(
 inline ::SessionDetails* CreatePlayerC2LRequest::mutable_session_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::SessionDetails* _msg = _internal_mutable_session_info();
-  // @@protoc_insertion_point(field_mutable:CreatePlayerC2LRequest.session_info)
+  // @@protoc_insertion_point(field_mutable:loginpb.CreatePlayerC2LRequest.session_info)
   return _msg;
 }
 inline void CreatePlayerC2LRequest::set_allocated_session_info(::SessionDetails* value) {
@@ -2321,7 +2324,7 @@ inline void CreatePlayerC2LRequest::set_allocated_session_info(::SessionDetails*
   }
 
   _impl_.session_info_ = reinterpret_cast<::SessionDetails*>(value);
-  // @@protoc_insertion_point(field_set_allocated:CreatePlayerC2LRequest.session_info)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.CreatePlayerC2LRequest.session_info)
 }
 
 // -------------------------------------------------------------------
@@ -2340,7 +2343,7 @@ inline const ::EnterGameRequest& EnterGameC2LRequest::_internal_client_msg_body(
   return p != nullptr ? *p : reinterpret_cast<const ::EnterGameRequest&>(::_EnterGameRequest_default_instance_);
 }
 inline const ::EnterGameRequest& EnterGameC2LRequest::client_msg_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:EnterGameC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_get:loginpb.EnterGameC2LRequest.client_msg_body)
   return _internal_client_msg_body();
 }
 inline void EnterGameC2LRequest::unsafe_arena_set_allocated_client_msg_body(::EnterGameRequest* value) {
@@ -2354,7 +2357,7 @@ inline void EnterGameC2LRequest::unsafe_arena_set_allocated_client_msg_body(::En
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:EnterGameC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.EnterGameC2LRequest.client_msg_body)
 }
 inline ::EnterGameRequest* EnterGameC2LRequest::release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -2377,7 +2380,7 @@ inline ::EnterGameRequest* EnterGameC2LRequest::release_client_msg_body() {
 }
 inline ::EnterGameRequest* EnterGameC2LRequest::unsafe_arena_release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:EnterGameC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_release:loginpb.EnterGameC2LRequest.client_msg_body)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::EnterGameRequest* temp = _impl_.client_msg_body_;
@@ -2395,7 +2398,7 @@ inline ::EnterGameRequest* EnterGameC2LRequest::_internal_mutable_client_msg_bod
 inline ::EnterGameRequest* EnterGameC2LRequest::mutable_client_msg_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::EnterGameRequest* _msg = _internal_mutable_client_msg_body();
-  // @@protoc_insertion_point(field_mutable:EnterGameC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_mutable:loginpb.EnterGameC2LRequest.client_msg_body)
   return _msg;
 }
 inline void EnterGameC2LRequest::set_allocated_client_msg_body(::EnterGameRequest* value) {
@@ -2416,7 +2419,7 @@ inline void EnterGameC2LRequest::set_allocated_client_msg_body(::EnterGameReques
   }
 
   _impl_.client_msg_body_ = reinterpret_cast<::EnterGameRequest*>(value);
-  // @@protoc_insertion_point(field_set_allocated:EnterGameC2LRequest.client_msg_body)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.EnterGameC2LRequest.client_msg_body)
 }
 
 // .SessionDetails session_info = 2;
@@ -2431,7 +2434,7 @@ inline const ::SessionDetails& EnterGameC2LRequest::_internal_session_info() con
   return p != nullptr ? *p : reinterpret_cast<const ::SessionDetails&>(::_SessionDetails_default_instance_);
 }
 inline const ::SessionDetails& EnterGameC2LRequest::session_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:EnterGameC2LRequest.session_info)
+  // @@protoc_insertion_point(field_get:loginpb.EnterGameC2LRequest.session_info)
   return _internal_session_info();
 }
 inline void EnterGameC2LRequest::unsafe_arena_set_allocated_session_info(::SessionDetails* value) {
@@ -2445,7 +2448,7 @@ inline void EnterGameC2LRequest::unsafe_arena_set_allocated_session_info(::Sessi
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:EnterGameC2LRequest.session_info)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.EnterGameC2LRequest.session_info)
 }
 inline ::SessionDetails* EnterGameC2LRequest::release_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -2468,7 +2471,7 @@ inline ::SessionDetails* EnterGameC2LRequest::release_session_info() {
 }
 inline ::SessionDetails* EnterGameC2LRequest::unsafe_arena_release_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:EnterGameC2LRequest.session_info)
+  // @@protoc_insertion_point(field_release:loginpb.EnterGameC2LRequest.session_info)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
   ::SessionDetails* temp = _impl_.session_info_;
@@ -2486,7 +2489,7 @@ inline ::SessionDetails* EnterGameC2LRequest::_internal_mutable_session_info() {
 inline ::SessionDetails* EnterGameC2LRequest::mutable_session_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::SessionDetails* _msg = _internal_mutable_session_info();
-  // @@protoc_insertion_point(field_mutable:EnterGameC2LRequest.session_info)
+  // @@protoc_insertion_point(field_mutable:loginpb.EnterGameC2LRequest.session_info)
   return _msg;
 }
 inline void EnterGameC2LRequest::set_allocated_session_info(::SessionDetails* value) {
@@ -2507,7 +2510,7 @@ inline void EnterGameC2LRequest::set_allocated_session_info(::SessionDetails* va
   }
 
   _impl_.session_info_ = reinterpret_cast<::SessionDetails*>(value);
-  // @@protoc_insertion_point(field_set_allocated:EnterGameC2LRequest.session_info)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.EnterGameC2LRequest.session_info)
 }
 
 // -------------------------------------------------------------------
@@ -2526,7 +2529,7 @@ inline const ::CreatePlayerResponse& CreatePlayerC2LResponse::_internal_client_m
   return p != nullptr ? *p : reinterpret_cast<const ::CreatePlayerResponse&>(::_CreatePlayerResponse_default_instance_);
 }
 inline const ::CreatePlayerResponse& CreatePlayerC2LResponse::client_msg_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:CreatePlayerC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_get:loginpb.CreatePlayerC2LResponse.client_msg_body)
   return _internal_client_msg_body();
 }
 inline void CreatePlayerC2LResponse::unsafe_arena_set_allocated_client_msg_body(::CreatePlayerResponse* value) {
@@ -2540,7 +2543,7 @@ inline void CreatePlayerC2LResponse::unsafe_arena_set_allocated_client_msg_body(
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:CreatePlayerC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.CreatePlayerC2LResponse.client_msg_body)
 }
 inline ::CreatePlayerResponse* CreatePlayerC2LResponse::release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -2563,7 +2566,7 @@ inline ::CreatePlayerResponse* CreatePlayerC2LResponse::release_client_msg_body(
 }
 inline ::CreatePlayerResponse* CreatePlayerC2LResponse::unsafe_arena_release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:CreatePlayerC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_release:loginpb.CreatePlayerC2LResponse.client_msg_body)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::CreatePlayerResponse* temp = _impl_.client_msg_body_;
@@ -2581,7 +2584,7 @@ inline ::CreatePlayerResponse* CreatePlayerC2LResponse::_internal_mutable_client
 inline ::CreatePlayerResponse* CreatePlayerC2LResponse::mutable_client_msg_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::CreatePlayerResponse* _msg = _internal_mutable_client_msg_body();
-  // @@protoc_insertion_point(field_mutable:CreatePlayerC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_mutable:loginpb.CreatePlayerC2LResponse.client_msg_body)
   return _msg;
 }
 inline void CreatePlayerC2LResponse::set_allocated_client_msg_body(::CreatePlayerResponse* value) {
@@ -2602,7 +2605,7 @@ inline void CreatePlayerC2LResponse::set_allocated_client_msg_body(::CreatePlaye
   }
 
   _impl_.client_msg_body_ = reinterpret_cast<::CreatePlayerResponse*>(value);
-  // @@protoc_insertion_point(field_set_allocated:CreatePlayerC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.CreatePlayerC2LResponse.client_msg_body)
 }
 
 // .SessionDetails session_info = 4;
@@ -2617,7 +2620,7 @@ inline const ::SessionDetails& CreatePlayerC2LResponse::_internal_session_info()
   return p != nullptr ? *p : reinterpret_cast<const ::SessionDetails&>(::_SessionDetails_default_instance_);
 }
 inline const ::SessionDetails& CreatePlayerC2LResponse::session_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:CreatePlayerC2LResponse.session_info)
+  // @@protoc_insertion_point(field_get:loginpb.CreatePlayerC2LResponse.session_info)
   return _internal_session_info();
 }
 inline void CreatePlayerC2LResponse::unsafe_arena_set_allocated_session_info(::SessionDetails* value) {
@@ -2631,7 +2634,7 @@ inline void CreatePlayerC2LResponse::unsafe_arena_set_allocated_session_info(::S
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:CreatePlayerC2LResponse.session_info)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.CreatePlayerC2LResponse.session_info)
 }
 inline ::SessionDetails* CreatePlayerC2LResponse::release_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -2654,7 +2657,7 @@ inline ::SessionDetails* CreatePlayerC2LResponse::release_session_info() {
 }
 inline ::SessionDetails* CreatePlayerC2LResponse::unsafe_arena_release_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:CreatePlayerC2LResponse.session_info)
+  // @@protoc_insertion_point(field_release:loginpb.CreatePlayerC2LResponse.session_info)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
   ::SessionDetails* temp = _impl_.session_info_;
@@ -2672,7 +2675,7 @@ inline ::SessionDetails* CreatePlayerC2LResponse::_internal_mutable_session_info
 inline ::SessionDetails* CreatePlayerC2LResponse::mutable_session_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::SessionDetails* _msg = _internal_mutable_session_info();
-  // @@protoc_insertion_point(field_mutable:CreatePlayerC2LResponse.session_info)
+  // @@protoc_insertion_point(field_mutable:loginpb.CreatePlayerC2LResponse.session_info)
   return _msg;
 }
 inline void CreatePlayerC2LResponse::set_allocated_session_info(::SessionDetails* value) {
@@ -2693,7 +2696,7 @@ inline void CreatePlayerC2LResponse::set_allocated_session_info(::SessionDetails
   }
 
   _impl_.session_info_ = reinterpret_cast<::SessionDetails*>(value);
-  // @@protoc_insertion_point(field_set_allocated:CreatePlayerC2LResponse.session_info)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.CreatePlayerC2LResponse.session_info)
 }
 
 // -------------------------------------------------------------------
@@ -2712,7 +2715,7 @@ inline const ::EnterGameResponse& EnterGameC2LResponse::_internal_client_msg_bod
   return p != nullptr ? *p : reinterpret_cast<const ::EnterGameResponse&>(::_EnterGameResponse_default_instance_);
 }
 inline const ::EnterGameResponse& EnterGameC2LResponse::client_msg_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:EnterGameC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_get:loginpb.EnterGameC2LResponse.client_msg_body)
   return _internal_client_msg_body();
 }
 inline void EnterGameC2LResponse::unsafe_arena_set_allocated_client_msg_body(::EnterGameResponse* value) {
@@ -2726,7 +2729,7 @@ inline void EnterGameC2LResponse::unsafe_arena_set_allocated_client_msg_body(::E
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:EnterGameC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.EnterGameC2LResponse.client_msg_body)
 }
 inline ::EnterGameResponse* EnterGameC2LResponse::release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -2749,7 +2752,7 @@ inline ::EnterGameResponse* EnterGameC2LResponse::release_client_msg_body() {
 }
 inline ::EnterGameResponse* EnterGameC2LResponse::unsafe_arena_release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:EnterGameC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_release:loginpb.EnterGameC2LResponse.client_msg_body)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::EnterGameResponse* temp = _impl_.client_msg_body_;
@@ -2767,7 +2770,7 @@ inline ::EnterGameResponse* EnterGameC2LResponse::_internal_mutable_client_msg_b
 inline ::EnterGameResponse* EnterGameC2LResponse::mutable_client_msg_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::EnterGameResponse* _msg = _internal_mutable_client_msg_body();
-  // @@protoc_insertion_point(field_mutable:EnterGameC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_mutable:loginpb.EnterGameC2LResponse.client_msg_body)
   return _msg;
 }
 inline void EnterGameC2LResponse::set_allocated_client_msg_body(::EnterGameResponse* value) {
@@ -2788,7 +2791,7 @@ inline void EnterGameC2LResponse::set_allocated_client_msg_body(::EnterGameRespo
   }
 
   _impl_.client_msg_body_ = reinterpret_cast<::EnterGameResponse*>(value);
-  // @@protoc_insertion_point(field_set_allocated:EnterGameC2LResponse.client_msg_body)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.EnterGameC2LResponse.client_msg_body)
 }
 
 // .SessionDetails session_info = 4;
@@ -2803,7 +2806,7 @@ inline const ::SessionDetails& EnterGameC2LResponse::_internal_session_info() co
   return p != nullptr ? *p : reinterpret_cast<const ::SessionDetails&>(::_SessionDetails_default_instance_);
 }
 inline const ::SessionDetails& EnterGameC2LResponse::session_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:EnterGameC2LResponse.session_info)
+  // @@protoc_insertion_point(field_get:loginpb.EnterGameC2LResponse.session_info)
   return _internal_session_info();
 }
 inline void EnterGameC2LResponse::unsafe_arena_set_allocated_session_info(::SessionDetails* value) {
@@ -2817,7 +2820,7 @@ inline void EnterGameC2LResponse::unsafe_arena_set_allocated_session_info(::Sess
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:EnterGameC2LResponse.session_info)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.EnterGameC2LResponse.session_info)
 }
 inline ::SessionDetails* EnterGameC2LResponse::release_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -2840,7 +2843,7 @@ inline ::SessionDetails* EnterGameC2LResponse::release_session_info() {
 }
 inline ::SessionDetails* EnterGameC2LResponse::unsafe_arena_release_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:EnterGameC2LResponse.session_info)
+  // @@protoc_insertion_point(field_release:loginpb.EnterGameC2LResponse.session_info)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
   ::SessionDetails* temp = _impl_.session_info_;
@@ -2858,7 +2861,7 @@ inline ::SessionDetails* EnterGameC2LResponse::_internal_mutable_session_info() 
 inline ::SessionDetails* EnterGameC2LResponse::mutable_session_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::SessionDetails* _msg = _internal_mutable_session_info();
-  // @@protoc_insertion_point(field_mutable:EnterGameC2LResponse.session_info)
+  // @@protoc_insertion_point(field_mutable:loginpb.EnterGameC2LResponse.session_info)
   return _msg;
 }
 inline void EnterGameC2LResponse::set_allocated_session_info(::SessionDetails* value) {
@@ -2879,7 +2882,7 @@ inline void EnterGameC2LResponse::set_allocated_session_info(::SessionDetails* v
   }
 
   _impl_.session_info_ = reinterpret_cast<::SessionDetails*>(value);
-  // @@protoc_insertion_point(field_set_allocated:EnterGameC2LResponse.session_info)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.EnterGameC2LResponse.session_info)
 }
 
 // -------------------------------------------------------------------
@@ -2892,12 +2895,12 @@ inline void LoginNodeDisconnectRequest::clear_session_id() {
   _impl_.session_id_ = ::uint64_t{0u};
 }
 inline ::uint64_t LoginNodeDisconnectRequest::session_id() const {
-  // @@protoc_insertion_point(field_get:LoginNodeDisconnectRequest.session_id)
+  // @@protoc_insertion_point(field_get:loginpb.LoginNodeDisconnectRequest.session_id)
   return _internal_session_id();
 }
 inline void LoginNodeDisconnectRequest::set_session_id(::uint64_t value) {
   _internal_set_session_id(value);
-  // @@protoc_insertion_point(field_set:LoginNodeDisconnectRequest.session_id)
+  // @@protoc_insertion_point(field_set:loginpb.LoginNodeDisconnectRequest.session_id)
 }
 inline ::uint64_t LoginNodeDisconnectRequest::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -2918,12 +2921,12 @@ inline void LeaveGameC2LRequest::clear_session_id() {
   _impl_.session_id_ = ::uint64_t{0u};
 }
 inline ::uint64_t LeaveGameC2LRequest::session_id() const {
-  // @@protoc_insertion_point(field_get:LeaveGameC2LRequest.session_id)
+  // @@protoc_insertion_point(field_get:loginpb.LeaveGameC2LRequest.session_id)
   return _internal_session_id();
 }
 inline void LeaveGameC2LRequest::set_session_id(::uint64_t value) {
   _internal_set_session_id(value);
-  // @@protoc_insertion_point(field_set:LeaveGameC2LRequest.session_id)
+  // @@protoc_insertion_point(field_set:loginpb.LeaveGameC2LRequest.session_id)
 }
 inline ::uint64_t LeaveGameC2LRequest::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -2939,6 +2942,7 @@ inline void LeaveGameC2LRequest::_internal_set_session_id(::uint64_t value) {
 #endif  // __GNUC__
 
 // @@protoc_insertion_point(namespace_scope)
+}  // namespace loginpb
 
 
 // @@protoc_insertion_point(global_scope)

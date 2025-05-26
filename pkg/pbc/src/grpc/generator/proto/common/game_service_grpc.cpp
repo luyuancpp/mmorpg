@@ -3,6 +3,8 @@
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
 
+namespace {
+
 struct GameServicePlayerEnterGameNodeCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -15,20 +17,17 @@ AsyncGameServicePlayerEnterGameNodeHandlerFunctionType AsyncGameServicePlayerEnt
 void AsyncCompleteGrpcGameServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncGameServicePlayerEnterGameNodeGrpcClientCall> call(
-        static_cast<AsyncGameServicePlayerEnterGameNodeGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncGameServicePlayerEnterGameNodeGrpcClientCall> call(
+        static_cast<AsyncGameServicePlayerEnterGameNodeGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncGameServicePlayerEnterGameNodeHandler) {
             AsyncGameServicePlayerEnterGameNodeHandler(call);
@@ -64,20 +63,17 @@ AsyncGameServiceSendMessageToPlayerHandlerFunctionType AsyncGameServiceSendMessa
 void AsyncCompleteGrpcGameServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncGameServiceSendMessageToPlayerGrpcClientCall> call(
-        static_cast<AsyncGameServiceSendMessageToPlayerGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncGameServiceSendMessageToPlayerGrpcClientCall> call(
+        static_cast<AsyncGameServiceSendMessageToPlayerGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncGameServiceSendMessageToPlayerHandler) {
             AsyncGameServiceSendMessageToPlayerHandler(call);
@@ -113,20 +109,17 @@ AsyncGameServiceClientSendMessageToPlayerHandlerFunctionType AsyncGameServiceCli
 void AsyncCompleteGrpcGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncGameServiceClientSendMessageToPlayerGrpcClientCall> call(
-        static_cast<AsyncGameServiceClientSendMessageToPlayerGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncGameServiceClientSendMessageToPlayerGrpcClientCall> call(
+        static_cast<AsyncGameServiceClientSendMessageToPlayerGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncGameServiceClientSendMessageToPlayerHandler) {
             AsyncGameServiceClientSendMessageToPlayerHandler(call);
@@ -162,20 +155,17 @@ AsyncGameServiceCentreSendToPlayerViaGameNodeHandlerFunctionType AsyncGameServic
 void AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall> call(
-        static_cast<AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall> call(
+        static_cast<AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncGameServiceCentreSendToPlayerViaGameNodeHandler) {
             AsyncGameServiceCentreSendToPlayerViaGameNodeHandler(call);
@@ -211,20 +201,17 @@ AsyncGameServiceInvokePlayerServiceHandlerFunctionType AsyncGameServiceInvokePla
 void AsyncCompleteGrpcGameServiceInvokePlayerService(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncGameServiceInvokePlayerServiceGrpcClientCall> call(
-        static_cast<AsyncGameServiceInvokePlayerServiceGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncGameServiceInvokePlayerServiceGrpcClientCall> call(
+        static_cast<AsyncGameServiceInvokePlayerServiceGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncGameServiceInvokePlayerServiceHandler) {
             AsyncGameServiceInvokePlayerServiceHandler(call);
@@ -260,20 +247,17 @@ AsyncGameServiceRouteNodeStringMsgHandlerFunctionType AsyncGameServiceRouteNodeS
 void AsyncCompleteGrpcGameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncGameServiceRouteNodeStringMsgGrpcClientCall> call(
-        static_cast<AsyncGameServiceRouteNodeStringMsgGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncGameServiceRouteNodeStringMsgGrpcClientCall> call(
+        static_cast<AsyncGameServiceRouteNodeStringMsgGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncGameServiceRouteNodeStringMsgHandler) {
             AsyncGameServiceRouteNodeStringMsgHandler(call);
@@ -309,20 +293,17 @@ AsyncGameServiceRoutePlayerStringMsgHandlerFunctionType AsyncGameServiceRoutePla
 void AsyncCompleteGrpcGameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncGameServiceRoutePlayerStringMsgGrpcClientCall> call(
-        static_cast<AsyncGameServiceRoutePlayerStringMsgGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncGameServiceRoutePlayerStringMsgGrpcClientCall> call(
+        static_cast<AsyncGameServiceRoutePlayerStringMsgGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncGameServiceRoutePlayerStringMsgHandler) {
             AsyncGameServiceRoutePlayerStringMsgHandler(call);
@@ -358,20 +339,17 @@ AsyncGameServiceUpdateSessionDetailHandlerFunctionType AsyncGameServiceUpdateSes
 void AsyncCompleteGrpcGameServiceUpdateSessionDetail(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncGameServiceUpdateSessionDetailGrpcClientCall> call(
-        static_cast<AsyncGameServiceUpdateSessionDetailGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncGameServiceUpdateSessionDetailGrpcClientCall> call(
+        static_cast<AsyncGameServiceUpdateSessionDetailGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncGameServiceUpdateSessionDetailHandler) {
             AsyncGameServiceUpdateSessionDetailHandler(call);
@@ -407,20 +385,17 @@ AsyncGameServiceEnterSceneHandlerFunctionType AsyncGameServiceEnterSceneHandler;
 void AsyncCompleteGrpcGameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncGameServiceEnterSceneGrpcClientCall> call(
-        static_cast<AsyncGameServiceEnterSceneGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncGameServiceEnterSceneGrpcClientCall> call(
+        static_cast<AsyncGameServiceEnterSceneGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncGameServiceEnterSceneHandler) {
             AsyncGameServiceEnterSceneHandler(call);
@@ -456,20 +431,17 @@ AsyncGameServiceCreateSceneHandlerFunctionType AsyncGameServiceCreateSceneHandle
 void AsyncCompleteGrpcGameServiceCreateScene(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncGameServiceCreateSceneGrpcClientCall> call(
-        static_cast<AsyncGameServiceCreateSceneGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncGameServiceCreateSceneGrpcClientCall> call(
+        static_cast<AsyncGameServiceCreateSceneGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncGameServiceCreateSceneHandler) {
             AsyncGameServiceCreateSceneHandler(call);
@@ -505,20 +477,17 @@ AsyncGameServiceRegisterNodeSessionHandlerFunctionType AsyncGameServiceRegisterN
 void AsyncCompleteGrpcGameServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncGameServiceRegisterNodeSessionGrpcClientCall> call(
-        static_cast<AsyncGameServiceRegisterNodeSessionGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncGameServiceRegisterNodeSessionGrpcClientCall> call(
+        static_cast<AsyncGameServiceRegisterNodeSessionGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncGameServiceRegisterNodeSessionHandler) {
             AsyncGameServiceRegisterNodeSessionHandler(call);
@@ -633,3 +602,5 @@ void HandleGameServiceCompletedQueueMessage(entt::registry& registry) {
         }
     }
 }
+
+}// namespace 

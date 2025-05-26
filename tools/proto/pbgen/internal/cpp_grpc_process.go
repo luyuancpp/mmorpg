@@ -18,6 +18,7 @@ type GrpcServiceTemplateData struct {
 	ServiceInfo           []*RPCServiceInfo
 	GrpcIncludeHeadName   string
 	GeneratorGrpcFileName string
+	Package               string
 }
 
 // generateGrpcFile 根据模板生成 gRPC 文件，并避免重复写入
@@ -38,6 +39,7 @@ func generateGrpcFile(fileName string, grpcServices []*RPCServiceInfo, text stri
 		ServiceInfo:           grpcServices,
 		GrpcIncludeHeadName:   grpcServices[0].GrpcIncludeHeadName(),
 		GeneratorGrpcFileName: grpcServices[0].GeneratorGrpcFileName(),
+		Package:               grpcServices[0].Package(),
 	}
 
 	var generatedContent bytes.Buffer

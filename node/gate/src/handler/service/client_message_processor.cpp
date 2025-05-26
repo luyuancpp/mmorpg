@@ -154,9 +154,9 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     const auto& loginNode = FindLoginNodeForSession(sessionId);
     if (loginNode)
     {
-        LoginNodeDisconnectRequest request;
+        loginpb::LoginNodeDisconnectRequest request;
         request.set_session_id(sessionId);
-        SendLoginServiceDisconnect(tls.GetNodeRegistry(eNodeType::LoginNodeService), *loginNode , request);
+        SendloginpbLoginServiceDisconnect(tls.GetNodeRegistry(eNodeType::LoginNodeService), *loginNode , request);
     }
 
     // 通知中心服务器
@@ -214,27 +214,27 @@ void HandleGameNodeMessage(const Session& session, const RpcClientMessagePtr& re
 
 void SendLoginRequestToLoginNode(entt::entity loginNode, Guid sessionId, const RpcClientMessagePtr& request)
 {
-    LoginC2LRequest message;
+    loginpb::LoginC2LRequest message;
     SetSessionAndParseBody(message, request, sessionId);
-    SendLoginServiceLogin(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
+    SendloginpbLoginServiceLogin(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
 
     LOG_TRACE << "Sent LoginC2LRequest, session id: " << sessionId;
 }
 
 void SendCreatePlayerRequestToLoginNode(entt::entity loginNode, Guid sessionId, const RpcClientMessagePtr& request)
 {
-    CreatePlayerC2LRequest message;
+    loginpb::CreatePlayerC2LRequest message;
     SetSessionAndParseBody(message, request, sessionId);
-    SendLoginServiceCreatePlayer(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
+    SendloginpbLoginServiceCreatePlayer(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
 
     LOG_TRACE << "Sent CreatePlayerC2LRequest, session id: " << sessionId;
 }
 
 void SendEnterGameRequestToLoginNode(entt::entity loginNode, Guid sessionId, const RpcClientMessagePtr& request)
 {
-    EnterGameC2LRequest message;
+    loginpb::EnterGameC2LRequest message;
     SetSessionAndParseBody(message, request, sessionId);
-    SendLoginServiceEnterGame(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
+    SendloginpbLoginServiceEnterGame(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
 
     LOG_TRACE << "Sent EnterGameC2LRequest, session id: " << sessionId;
 }

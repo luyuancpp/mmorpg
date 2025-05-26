@@ -209,3 +209,7 @@ const (
 	PlayerDatabaseName  = "player_database"
 	PlayerDatabaseName1 = "player_database_1"
 )
+
+var GrpcServices = map[string]bool{
+	"LoginService": true,
+}

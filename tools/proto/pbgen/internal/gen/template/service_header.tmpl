@@ -6,6 +6,7 @@
 #include <google/protobuf/service.h>
 
 struct RpcService {
+	{{- /* Go template allows tab indentation using \t */}}
 	const char* serviceName{nullptr};
 	const char* methodName{nullptr};
 	const char* request{nullptr};
@@ -18,7 +19,7 @@ using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
 void InitMessageInfo();
 
-constexpr uint32_t kMaxMessageLen = 89;
+constexpr uint32_t kMaxMessageLen = {{ .MaxMessageLen }};
 
 extern std::array<RpcService, kMaxMessageLen> gMessageInfo;
 

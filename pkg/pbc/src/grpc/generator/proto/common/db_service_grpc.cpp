@@ -3,6 +3,8 @@
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
 
+namespace {
+
 struct AccountDBServiceLoad2RedisCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -15,20 +17,17 @@ AsyncAccountDBServiceLoad2RedisHandlerFunctionType AsyncAccountDBServiceLoad2Red
 void AsyncCompleteGrpcAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncAccountDBServiceLoad2RedisGrpcClientCall> call(
-        static_cast<AsyncAccountDBServiceLoad2RedisGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncAccountDBServiceLoad2RedisGrpcClientCall> call(
+        static_cast<AsyncAccountDBServiceLoad2RedisGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncAccountDBServiceLoad2RedisHandler) {
             AsyncAccountDBServiceLoad2RedisHandler(call);
@@ -64,20 +63,17 @@ AsyncAccountDBServiceSave2RedisHandlerFunctionType AsyncAccountDBServiceSave2Red
 void AsyncCompleteGrpcAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncAccountDBServiceSave2RedisGrpcClientCall> call(
-        static_cast<AsyncAccountDBServiceSave2RedisGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncAccountDBServiceSave2RedisGrpcClientCall> call(
+        static_cast<AsyncAccountDBServiceSave2RedisGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncAccountDBServiceSave2RedisHandler) {
             AsyncAccountDBServiceSave2RedisHandler(call);
@@ -113,20 +109,17 @@ AsyncPlayerDBServiceLoad2RedisHandlerFunctionType AsyncPlayerDBServiceLoad2Redis
 void AsyncCompleteGrpcPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncPlayerDBServiceLoad2RedisGrpcClientCall> call(
-        static_cast<AsyncPlayerDBServiceLoad2RedisGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncPlayerDBServiceLoad2RedisGrpcClientCall> call(
+        static_cast<AsyncPlayerDBServiceLoad2RedisGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncPlayerDBServiceLoad2RedisHandler) {
             AsyncPlayerDBServiceLoad2RedisHandler(call);
@@ -162,20 +155,17 @@ AsyncPlayerDBServiceSave2RedisHandlerFunctionType AsyncPlayerDBServiceSave2Redis
 void AsyncCompleteGrpcPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncPlayerDBServiceSave2RedisGrpcClientCall> call(
-        static_cast<AsyncPlayerDBServiceSave2RedisGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncPlayerDBServiceSave2RedisGrpcClientCall> call(
+        static_cast<AsyncPlayerDBServiceSave2RedisGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncPlayerDBServiceSave2RedisHandler) {
             AsyncPlayerDBServiceSave2RedisHandler(call);
@@ -238,3 +228,5 @@ void HandlePlayerDBServiceCompletedQueueMessage(entt::registry& registry) {
         }
     }
 }
+
+}// namespace 

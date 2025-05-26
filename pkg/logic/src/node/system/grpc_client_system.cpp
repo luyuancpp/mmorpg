@@ -9,13 +9,13 @@ void GrpcClientSystem::InitEtcdStubs(const ::google::protobuf::RepeatedPtrField<
 	const std::string& etcdAddr = *etcdHosts.begin();
 	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
 
-	tls.globalNodeRegistry.emplace<GrpcetcdserverpbKVStubPtr>(GetGlobalGrpcNodeEntity()) =
+	tls.globalNodeRegistry.emplace<etcdserverpb::GrpcetcdserverpbKVStubPtr>(GetGlobalGrpcNodeEntity()) =
 		etcdserverpb::KV::NewStub(channel);
 
-	tls.globalNodeRegistry.emplace<GrpcetcdserverpbWatchStubPtr>(GetGlobalGrpcNodeEntity()) =
+	tls.globalNodeRegistry.emplace<etcdserverpb::GrpcetcdserverpbWatchStubPtr>(GetGlobalGrpcNodeEntity()) =
 		etcdserverpb::Watch::NewStub(channel);
 
-	tls.globalNodeRegistry.emplace<GrpcetcdserverpbLeaseStubPtr>(GetGlobalGrpcNodeEntity()) =
+	tls.globalNodeRegistry.emplace<etcdserverpb::GrpcetcdserverpbLeaseStubPtr>(GetGlobalGrpcNodeEntity()) =
 		etcdserverpb::Lease::NewStub(channel);
 }
 

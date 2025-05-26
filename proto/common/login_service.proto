@@ -6,6 +6,8 @@ import "proto/common/empty.proto";
 import "proto/common/c2gate.proto";
 import "proto/common/session.proto";
 
+package loginpb;
+
 message LoginC2LRequest
 {
   LoginRequest client_msg_body = 1;

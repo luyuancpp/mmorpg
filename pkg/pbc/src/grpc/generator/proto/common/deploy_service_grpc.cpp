@@ -3,6 +3,8 @@
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
 
+namespace {
+
 struct DeployServiceGetNodeInfoCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -15,20 +17,17 @@ AsyncDeployServiceGetNodeInfoHandlerFunctionType AsyncDeployServiceGetNodeInfoHa
 void AsyncCompleteGrpcDeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall> call(
-        static_cast<AsyncDeployServiceGetNodeInfoGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall> call(
+        static_cast<AsyncDeployServiceGetNodeInfoGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncDeployServiceGetNodeInfoHandler) {
             AsyncDeployServiceGetNodeInfoHandler(call);
@@ -64,20 +63,17 @@ AsyncDeployServiceGetIDHandlerFunctionType AsyncDeployServiceGetIDHandler;
 void AsyncCompleteGrpcDeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncDeployServiceGetIDGrpcClientCall> call(
-        static_cast<AsyncDeployServiceGetIDGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncDeployServiceGetIDGrpcClientCall> call(
+        static_cast<AsyncDeployServiceGetIDGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncDeployServiceGetIDHandler) {
             AsyncDeployServiceGetIDHandler(call);
@@ -113,20 +109,17 @@ AsyncDeployServiceReleaseIDHandlerFunctionType AsyncDeployServiceReleaseIDHandle
 void AsyncCompleteGrpcDeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncDeployServiceReleaseIDGrpcClientCall> call(
-        static_cast<AsyncDeployServiceReleaseIDGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncDeployServiceReleaseIDGrpcClientCall> call(
+        static_cast<AsyncDeployServiceReleaseIDGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncDeployServiceReleaseIDHandler) {
             AsyncDeployServiceReleaseIDHandler(call);
@@ -162,20 +155,17 @@ AsyncDeployServiceRenewLeaseHandlerFunctionType AsyncDeployServiceRenewLeaseHand
 void AsyncCompleteGrpcDeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
     bool ok = false;
-
     gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
     if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
         return;
     }
-
-    std::unique_ptr<AsyncDeployServiceRenewLeaseGrpcClientCall> call(
-        static_cast<AsyncDeployServiceRenewLeaseGrpcClientCall*>(got_tag));
-
     if (!ok) {
         LOG_ERROR << "RPC failed";
         return;
     }
 
+    std::unique_ptr<AsyncDeployServiceRenewLeaseGrpcClientCall> call(
+        static_cast<AsyncDeployServiceRenewLeaseGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncDeployServiceRenewLeaseHandler) {
             AsyncDeployServiceRenewLeaseHandler(call);
@@ -234,3 +224,5 @@ void HandleDeployServiceCompletedQueueMessage(entt::registry& registry) {
         }
     }
 }
+
+}// namespace 

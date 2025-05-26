@@ -26,129 +26,131 @@
 #include <grpcpp/support/sync_stream.h>
 #include <grpcpp/ports_def.inc>
 
+namespace loginpb {
+
 class LoginService final {
  public:
   static constexpr char const* service_full_name() {
-    return "LoginService";
+    return "loginpb.LoginService";
   }
   class StubInterface {
    public:
     virtual ~StubInterface() {}
-    virtual ::grpc::Status Login(::grpc::ClientContext* context, const ::LoginC2LRequest& request, ::LoginC2LResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::LoginC2LResponse>> AsyncLogin(::grpc::ClientContext* context, const ::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::LoginC2LResponse>>(AsyncLoginRaw(context, request, cq));
+    virtual ::grpc::Status Login(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::loginpb::LoginC2LResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::LoginC2LResponse>> AsyncLogin(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::LoginC2LResponse>>(AsyncLoginRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::LoginC2LResponse>> PrepareAsyncLogin(::grpc::ClientContext* context, const ::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::LoginC2LResponse>>(PrepareAsyncLoginRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::LoginC2LResponse>> PrepareAsyncLogin(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::LoginC2LResponse>>(PrepareAsyncLoginRaw(context, request, cq));
     }
-    virtual ::grpc::Status CreatePlayer(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest& request, ::CreatePlayerC2LResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::CreatePlayerC2LResponse>> AsyncCreatePlayer(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::CreatePlayerC2LResponse>>(AsyncCreatePlayerRaw(context, request, cq));
+    virtual ::grpc::Status CreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::loginpb::CreatePlayerC2LResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::CreatePlayerC2LResponse>> AsyncCreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::CreatePlayerC2LResponse>>(AsyncCreatePlayerRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::CreatePlayerC2LResponse>> PrepareAsyncCreatePlayer(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::CreatePlayerC2LResponse>>(PrepareAsyncCreatePlayerRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::CreatePlayerC2LResponse>> PrepareAsyncCreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::CreatePlayerC2LResponse>>(PrepareAsyncCreatePlayerRaw(context, request, cq));
     }
-    virtual ::grpc::Status EnterGame(::grpc::ClientContext* context, const ::EnterGameC2LRequest& request, ::EnterGameC2LResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::EnterGameC2LResponse>> AsyncEnterGame(::grpc::ClientContext* context, const ::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::EnterGameC2LResponse>>(AsyncEnterGameRaw(context, request, cq));
+    virtual ::grpc::Status EnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::loginpb::EnterGameC2LResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::EnterGameC2LResponse>> AsyncEnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::EnterGameC2LResponse>>(AsyncEnterGameRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::EnterGameC2LResponse>> PrepareAsyncEnterGame(::grpc::ClientContext* context, const ::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::EnterGameC2LResponse>>(PrepareAsyncEnterGameRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::EnterGameC2LResponse>> PrepareAsyncEnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::EnterGameC2LResponse>>(PrepareAsyncEnterGameRaw(context, request, cq));
     }
-    virtual ::grpc::Status LeaveGame(::grpc::ClientContext* context, const ::LeaveGameC2LRequest& request, ::Empty* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> AsyncLeaveGame(::grpc::ClientContext* context, const ::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
+    virtual ::grpc::Status LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::Empty* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> AsyncLeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(AsyncLeaveGameRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncLeaveGame(::grpc::ClientContext* context, const ::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncLeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncLeaveGameRaw(context, request, cq));
     }
-    virtual ::grpc::Status Disconnect(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest& request, ::Empty* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> AsyncDisconnect(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) {
+    virtual ::grpc::Status Disconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::Empty* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> AsyncDisconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(AsyncDisconnectRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncDisconnect(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) {
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncDisconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncDisconnectRaw(context, request, cq));
     }
     class async_interface {
      public:
       virtual ~async_interface() {}
-      virtual void Login(::grpc::ClientContext* context, const ::LoginC2LRequest* request, ::LoginC2LResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void Login(::grpc::ClientContext* context, const ::LoginC2LRequest* request, ::LoginC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      virtual void CreatePlayer(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest* request, ::CreatePlayerC2LResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void CreatePlayer(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest* request, ::CreatePlayerC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      virtual void EnterGame(::grpc::ClientContext* context, const ::EnterGameC2LRequest* request, ::EnterGameC2LResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void EnterGame(::grpc::ClientContext* context, const ::EnterGameC2LRequest* request, ::EnterGameC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      virtual void LeaveGame(::grpc::ClientContext* context, const ::LeaveGameC2LRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void LeaveGame(::grpc::ClientContext* context, const ::LeaveGameC2LRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      virtual void Disconnect(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void Disconnect(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Login(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest* request, ::loginpb::LoginC2LResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Login(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest* request, ::loginpb::LoginC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void CreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest* request, ::loginpb::CreatePlayerC2LResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest* request, ::loginpb::CreatePlayerC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void EnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest* request, ::loginpb::EnterGameC2LResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void EnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest* request, ::loginpb::EnterGameC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Disconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Disconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
     class async_interface* experimental_async() { return async(); }
    private:
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::LoginC2LResponse>* AsyncLoginRaw(::grpc::ClientContext* context, const ::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::LoginC2LResponse>* PrepareAsyncLoginRaw(::grpc::ClientContext* context, const ::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::CreatePlayerC2LResponse>* AsyncCreatePlayerRaw(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::CreatePlayerC2LResponse>* PrepareAsyncCreatePlayerRaw(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::EnterGameC2LResponse>* AsyncEnterGameRaw(::grpc::ClientContext* context, const ::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::EnterGameC2LResponse>* PrepareAsyncEnterGameRaw(::grpc::ClientContext* context, const ::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncLeaveGameRaw(::grpc::ClientContext* context, const ::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncLeaveGameRaw(::grpc::ClientContext* context, const ::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncDisconnectRaw(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncDisconnectRaw(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::LoginC2LResponse>* AsyncLoginRaw(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::LoginC2LResponse>* PrepareAsyncLoginRaw(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::CreatePlayerC2LResponse>* AsyncCreatePlayerRaw(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::CreatePlayerC2LResponse>* PrepareAsyncCreatePlayerRaw(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::EnterGameC2LResponse>* AsyncEnterGameRaw(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::EnterGameC2LResponse>* PrepareAsyncEnterGameRaw(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncLeaveGameRaw(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncLeaveGameRaw(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncDisconnectRaw(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncDisconnectRaw(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
-    ::grpc::Status Login(::grpc::ClientContext* context, const ::LoginC2LRequest& request, ::LoginC2LResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::LoginC2LResponse>> AsyncLogin(::grpc::ClientContext* context, const ::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::LoginC2LResponse>>(AsyncLoginRaw(context, request, cq));
+    ::grpc::Status Login(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::loginpb::LoginC2LResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::LoginC2LResponse>> AsyncLogin(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::LoginC2LResponse>>(AsyncLoginRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::LoginC2LResponse>> PrepareAsyncLogin(::grpc::ClientContext* context, const ::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::LoginC2LResponse>>(PrepareAsyncLoginRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::LoginC2LResponse>> PrepareAsyncLogin(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::LoginC2LResponse>>(PrepareAsyncLoginRaw(context, request, cq));
     }
-    ::grpc::Status CreatePlayer(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest& request, ::CreatePlayerC2LResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::CreatePlayerC2LResponse>> AsyncCreatePlayer(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::CreatePlayerC2LResponse>>(AsyncCreatePlayerRaw(context, request, cq));
+    ::grpc::Status CreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::loginpb::CreatePlayerC2LResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::CreatePlayerC2LResponse>> AsyncCreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::CreatePlayerC2LResponse>>(AsyncCreatePlayerRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::CreatePlayerC2LResponse>> PrepareAsyncCreatePlayer(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::CreatePlayerC2LResponse>>(PrepareAsyncCreatePlayerRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::CreatePlayerC2LResponse>> PrepareAsyncCreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::CreatePlayerC2LResponse>>(PrepareAsyncCreatePlayerRaw(context, request, cq));
     }
-    ::grpc::Status EnterGame(::grpc::ClientContext* context, const ::EnterGameC2LRequest& request, ::EnterGameC2LResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::EnterGameC2LResponse>> AsyncEnterGame(::grpc::ClientContext* context, const ::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::EnterGameC2LResponse>>(AsyncEnterGameRaw(context, request, cq));
+    ::grpc::Status EnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::loginpb::EnterGameC2LResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::EnterGameC2LResponse>> AsyncEnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::EnterGameC2LResponse>>(AsyncEnterGameRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::EnterGameC2LResponse>> PrepareAsyncEnterGame(::grpc::ClientContext* context, const ::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::EnterGameC2LResponse>>(PrepareAsyncEnterGameRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::EnterGameC2LResponse>> PrepareAsyncEnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::EnterGameC2LResponse>>(PrepareAsyncEnterGameRaw(context, request, cq));
     }
-    ::grpc::Status LeaveGame(::grpc::ClientContext* context, const ::LeaveGameC2LRequest& request, ::Empty* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> AsyncLeaveGame(::grpc::ClientContext* context, const ::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
+    ::grpc::Status LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::Empty* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> AsyncLeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(AsyncLeaveGameRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncLeaveGame(::grpc::ClientContext* context, const ::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncLeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(PrepareAsyncLeaveGameRaw(context, request, cq));
     }
-    ::grpc::Status Disconnect(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest& request, ::Empty* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> AsyncDisconnect(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) {
+    ::grpc::Status Disconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::Empty* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> AsyncDisconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(AsyncDisconnectRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncDisconnect(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) {
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncDisconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(PrepareAsyncDisconnectRaw(context, request, cq));
     }
     class async final :
       public StubInterface::async_interface {
      public:
-      void Login(::grpc::ClientContext* context, const ::LoginC2LRequest* request, ::LoginC2LResponse* response, std::function<void(::grpc::Status)>) override;
-      void Login(::grpc::ClientContext* context, const ::LoginC2LRequest* request, ::LoginC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void CreatePlayer(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest* request, ::CreatePlayerC2LResponse* response, std::function<void(::grpc::Status)>) override;
-      void CreatePlayer(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest* request, ::CreatePlayerC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void EnterGame(::grpc::ClientContext* context, const ::EnterGameC2LRequest* request, ::EnterGameC2LResponse* response, std::function<void(::grpc::Status)>) override;
-      void EnterGame(::grpc::ClientContext* context, const ::EnterGameC2LRequest* request, ::EnterGameC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void LeaveGame(::grpc::ClientContext* context, const ::LeaveGameC2LRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
-      void LeaveGame(::grpc::ClientContext* context, const ::LeaveGameC2LRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void Disconnect(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
-      void Disconnect(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Login(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest* request, ::loginpb::LoginC2LResponse* response, std::function<void(::grpc::Status)>) override;
+      void Login(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest* request, ::loginpb::LoginC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest* request, ::loginpb::CreatePlayerC2LResponse* response, std::function<void(::grpc::Status)>) override;
+      void CreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest* request, ::loginpb::CreatePlayerC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void EnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest* request, ::loginpb::EnterGameC2LResponse* response, std::function<void(::grpc::Status)>) override;
+      void EnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest* request, ::loginpb::EnterGameC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
+      void LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Disconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
+      void Disconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -160,16 +162,16 @@ class LoginService final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class async async_stub_{this};
-    ::grpc::ClientAsyncResponseReader< ::LoginC2LResponse>* AsyncLoginRaw(::grpc::ClientContext* context, const ::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::LoginC2LResponse>* PrepareAsyncLoginRaw(::grpc::ClientContext* context, const ::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::CreatePlayerC2LResponse>* AsyncCreatePlayerRaw(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::CreatePlayerC2LResponse>* PrepareAsyncCreatePlayerRaw(::grpc::ClientContext* context, const ::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::EnterGameC2LResponse>* AsyncEnterGameRaw(::grpc::ClientContext* context, const ::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::EnterGameC2LResponse>* PrepareAsyncEnterGameRaw(::grpc::ClientContext* context, const ::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncLeaveGameRaw(::grpc::ClientContext* context, const ::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncLeaveGameRaw(::grpc::ClientContext* context, const ::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncDisconnectRaw(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncDisconnectRaw(::grpc::ClientContext* context, const ::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::LoginC2LResponse>* AsyncLoginRaw(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::LoginC2LResponse>* PrepareAsyncLoginRaw(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::CreatePlayerC2LResponse>* AsyncCreatePlayerRaw(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::CreatePlayerC2LResponse>* PrepareAsyncCreatePlayerRaw(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::EnterGameC2LResponse>* AsyncEnterGameRaw(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::EnterGameC2LResponse>* PrepareAsyncEnterGameRaw(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncLeaveGameRaw(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncLeaveGameRaw(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncDisconnectRaw(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncDisconnectRaw(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_Login_;
     const ::grpc::internal::RpcMethod rpcmethod_CreatePlayer_;
     const ::grpc::internal::RpcMethod rpcmethod_EnterGame_;
@@ -182,11 +184,11 @@ class LoginService final {
    public:
     Service();
     virtual ~Service();
-    virtual ::grpc::Status Login(::grpc::ServerContext* context, const ::LoginC2LRequest* request, ::LoginC2LResponse* response);
-    virtual ::grpc::Status CreatePlayer(::grpc::ServerContext* context, const ::CreatePlayerC2LRequest* request, ::CreatePlayerC2LResponse* response);
-    virtual ::grpc::Status EnterGame(::grpc::ServerContext* context, const ::EnterGameC2LRequest* request, ::EnterGameC2LResponse* response);
-    virtual ::grpc::Status LeaveGame(::grpc::ServerContext* context, const ::LeaveGameC2LRequest* request, ::Empty* response);
-    virtual ::grpc::Status Disconnect(::grpc::ServerContext* context, const ::LoginNodeDisconnectRequest* request, ::Empty* response);
+    virtual ::grpc::Status Login(::grpc::ServerContext* context, const ::loginpb::LoginC2LRequest* request, ::loginpb::LoginC2LResponse* response);
+    virtual ::grpc::Status CreatePlayer(::grpc::ServerContext* context, const ::loginpb::CreatePlayerC2LRequest* request, ::loginpb::CreatePlayerC2LResponse* response);
+    virtual ::grpc::Status EnterGame(::grpc::ServerContext* context, const ::loginpb::EnterGameC2LRequest* request, ::loginpb::EnterGameC2LResponse* response);
+    virtual ::grpc::Status LeaveGame(::grpc::ServerContext* context, const ::loginpb::LeaveGameC2LRequest* request, ::Empty* response);
+    virtual ::grpc::Status Disconnect(::grpc::ServerContext* context, const ::loginpb::LoginNodeDisconnectRequest* request, ::Empty* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_Login : public BaseClass {
@@ -200,11 +202,11 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Login(::grpc::ServerContext* /*context*/, const ::LoginC2LRequest* /*request*/, ::LoginC2LResponse* /*response*/) override {
+    ::grpc::Status Login(::grpc::ServerContext* /*context*/, const ::loginpb::LoginC2LRequest* /*request*/, ::loginpb::LoginC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestLogin(::grpc::ServerContext* context, ::LoginC2LRequest* request, ::grpc::ServerAsyncResponseWriter< ::LoginC2LResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestLogin(::grpc::ServerContext* context, ::loginpb::LoginC2LRequest* request, ::grpc::ServerAsyncResponseWriter< ::loginpb::LoginC2LResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -220,11 +222,11 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status CreatePlayer(::grpc::ServerContext* /*context*/, const ::CreatePlayerC2LRequest* /*request*/, ::CreatePlayerC2LResponse* /*response*/) override {
+    ::grpc::Status CreatePlayer(::grpc::ServerContext* /*context*/, const ::loginpb::CreatePlayerC2LRequest* /*request*/, ::loginpb::CreatePlayerC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestCreatePlayer(::grpc::ServerContext* context, ::CreatePlayerC2LRequest* request, ::grpc::ServerAsyncResponseWriter< ::CreatePlayerC2LResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestCreatePlayer(::grpc::ServerContext* context, ::loginpb::CreatePlayerC2LRequest* request, ::grpc::ServerAsyncResponseWriter< ::loginpb::CreatePlayerC2LResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -240,11 +242,11 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status EnterGame(::grpc::ServerContext* /*context*/, const ::EnterGameC2LRequest* /*request*/, ::EnterGameC2LResponse* /*response*/) override {
+    ::grpc::Status EnterGame(::grpc::ServerContext* /*context*/, const ::loginpb::EnterGameC2LRequest* /*request*/, ::loginpb::EnterGameC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestEnterGame(::grpc::ServerContext* context, ::EnterGameC2LRequest* request, ::grpc::ServerAsyncResponseWriter< ::EnterGameC2LResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestEnterGame(::grpc::ServerContext* context, ::loginpb::EnterGameC2LRequest* request, ::grpc::ServerAsyncResponseWriter< ::loginpb::EnterGameC2LResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -260,11 +262,11 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status LeaveGame(::grpc::ServerContext* /*context*/, const ::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status LeaveGame(::grpc::ServerContext* /*context*/, const ::loginpb::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestLeaveGame(::grpc::ServerContext* context, ::LeaveGameC2LRequest* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestLeaveGame(::grpc::ServerContext* context, ::loginpb::LeaveGameC2LRequest* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -280,11 +282,11 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::loginpb::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestDisconnect(::grpc::ServerContext* context, ::LoginNodeDisconnectRequest* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestDisconnect(::grpc::ServerContext* context, ::loginpb::LoginNodeDisconnectRequest* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -296,25 +298,25 @@ class LoginService final {
    public:
     WithCallbackMethod_Login() {
       ::grpc::Service::MarkMethodCallback(0,
-          new ::grpc::internal::CallbackUnaryHandler< ::LoginC2LRequest, ::LoginC2LResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::loginpb::LoginC2LRequest, ::loginpb::LoginC2LResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::LoginC2LRequest* request, ::LoginC2LResponse* response) { return this->Login(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::loginpb::LoginC2LRequest* request, ::loginpb::LoginC2LResponse* response) { return this->Login(context, request, response); }));}
     void SetMessageAllocatorFor_Login(
-        ::grpc::MessageAllocator< ::LoginC2LRequest, ::LoginC2LResponse>* allocator) {
+        ::grpc::MessageAllocator< ::loginpb::LoginC2LRequest, ::loginpb::LoginC2LResponse>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::LoginC2LRequest, ::LoginC2LResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::loginpb::LoginC2LRequest, ::loginpb::LoginC2LResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_Login() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Login(::grpc::ServerContext* /*context*/, const ::LoginC2LRequest* /*request*/, ::LoginC2LResponse* /*response*/) override {
+    ::grpc::Status Login(::grpc::ServerContext* /*context*/, const ::loginpb::LoginC2LRequest* /*request*/, ::loginpb::LoginC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* Login(
-      ::grpc::CallbackServerContext* /*context*/, const ::LoginC2LRequest* /*request*/, ::LoginC2LResponse* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::loginpb::LoginC2LRequest* /*request*/, ::loginpb::LoginC2LResponse* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithCallbackMethod_CreatePlayer : public BaseClass {
@@ -323,25 +325,25 @@ class LoginService final {
    public:
     WithCallbackMethod_CreatePlayer() {
       ::grpc::Service::MarkMethodCallback(1,
-          new ::grpc::internal::CallbackUnaryHandler< ::CreatePlayerC2LRequest, ::CreatePlayerC2LResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::loginpb::CreatePlayerC2LRequest, ::loginpb::CreatePlayerC2LResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::CreatePlayerC2LRequest* request, ::CreatePlayerC2LResponse* response) { return this->CreatePlayer(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::loginpb::CreatePlayerC2LRequest* request, ::loginpb::CreatePlayerC2LResponse* response) { return this->CreatePlayer(context, request, response); }));}
     void SetMessageAllocatorFor_CreatePlayer(
-        ::grpc::MessageAllocator< ::CreatePlayerC2LRequest, ::CreatePlayerC2LResponse>* allocator) {
+        ::grpc::MessageAllocator< ::loginpb::CreatePlayerC2LRequest, ::loginpb::CreatePlayerC2LResponse>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::CreatePlayerC2LRequest, ::CreatePlayerC2LResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::loginpb::CreatePlayerC2LRequest, ::loginpb::CreatePlayerC2LResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_CreatePlayer() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status CreatePlayer(::grpc::ServerContext* /*context*/, const ::CreatePlayerC2LRequest* /*request*/, ::CreatePlayerC2LResponse* /*response*/) override {
+    ::grpc::Status CreatePlayer(::grpc::ServerContext* /*context*/, const ::loginpb::CreatePlayerC2LRequest* /*request*/, ::loginpb::CreatePlayerC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* CreatePlayer(
-      ::grpc::CallbackServerContext* /*context*/, const ::CreatePlayerC2LRequest* /*request*/, ::CreatePlayerC2LResponse* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::loginpb::CreatePlayerC2LRequest* /*request*/, ::loginpb::CreatePlayerC2LResponse* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithCallbackMethod_EnterGame : public BaseClass {
@@ -350,25 +352,25 @@ class LoginService final {
    public:
     WithCallbackMethod_EnterGame() {
       ::grpc::Service::MarkMethodCallback(2,
-          new ::grpc::internal::CallbackUnaryHandler< ::EnterGameC2LRequest, ::EnterGameC2LResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::loginpb::EnterGameC2LRequest, ::loginpb::EnterGameC2LResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::EnterGameC2LRequest* request, ::EnterGameC2LResponse* response) { return this->EnterGame(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::loginpb::EnterGameC2LRequest* request, ::loginpb::EnterGameC2LResponse* response) { return this->EnterGame(context, request, response); }));}
     void SetMessageAllocatorFor_EnterGame(
-        ::grpc::MessageAllocator< ::EnterGameC2LRequest, ::EnterGameC2LResponse>* allocator) {
+        ::grpc::MessageAllocator< ::loginpb::EnterGameC2LRequest, ::loginpb::EnterGameC2LResponse>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::EnterGameC2LRequest, ::EnterGameC2LResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::loginpb::EnterGameC2LRequest, ::loginpb::EnterGameC2LResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_EnterGame() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status EnterGame(::grpc::ServerContext* /*context*/, const ::EnterGameC2LRequest* /*request*/, ::EnterGameC2LResponse* /*response*/) override {
+    ::grpc::Status EnterGame(::grpc::ServerContext* /*context*/, const ::loginpb::EnterGameC2LRequest* /*request*/, ::loginpb::EnterGameC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* EnterGame(
-      ::grpc::CallbackServerContext* /*context*/, const ::EnterGameC2LRequest* /*request*/, ::EnterGameC2LResponse* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::loginpb::EnterGameC2LRequest* /*request*/, ::loginpb::EnterGameC2LResponse* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithCallbackMethod_LeaveGame : public BaseClass {
@@ -377,25 +379,25 @@ class LoginService final {
    public:
     WithCallbackMethod_LeaveGame() {
       ::grpc::Service::MarkMethodCallback(3,
-          new ::grpc::internal::CallbackUnaryHandler< ::LeaveGameC2LRequest, ::Empty>(
+          new ::grpc::internal::CallbackUnaryHandler< ::loginpb::LeaveGameC2LRequest, ::Empty>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::LeaveGameC2LRequest* request, ::Empty* response) { return this->LeaveGame(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::loginpb::LeaveGameC2LRequest* request, ::Empty* response) { return this->LeaveGame(context, request, response); }));}
     void SetMessageAllocatorFor_LeaveGame(
-        ::grpc::MessageAllocator< ::LeaveGameC2LRequest, ::Empty>* allocator) {
+        ::grpc::MessageAllocator< ::loginpb::LeaveGameC2LRequest, ::Empty>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::LeaveGameC2LRequest, ::Empty>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::loginpb::LeaveGameC2LRequest, ::Empty>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_LeaveGame() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status LeaveGame(::grpc::ServerContext* /*context*/, const ::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status LeaveGame(::grpc::ServerContext* /*context*/, const ::loginpb::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* LeaveGame(
-      ::grpc::CallbackServerContext* /*context*/, const ::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::loginpb::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithCallbackMethod_Disconnect : public BaseClass {
@@ -404,25 +406,25 @@ class LoginService final {
    public:
     WithCallbackMethod_Disconnect() {
       ::grpc::Service::MarkMethodCallback(4,
-          new ::grpc::internal::CallbackUnaryHandler< ::LoginNodeDisconnectRequest, ::Empty>(
+          new ::grpc::internal::CallbackUnaryHandler< ::loginpb::LoginNodeDisconnectRequest, ::Empty>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::LoginNodeDisconnectRequest* request, ::Empty* response) { return this->Disconnect(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::loginpb::LoginNodeDisconnectRequest* request, ::Empty* response) { return this->Disconnect(context, request, response); }));}
     void SetMessageAllocatorFor_Disconnect(
-        ::grpc::MessageAllocator< ::LoginNodeDisconnectRequest, ::Empty>* allocator) {
+        ::grpc::MessageAllocator< ::loginpb::LoginNodeDisconnectRequest, ::Empty>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(4);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::LoginNodeDisconnectRequest, ::Empty>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::loginpb::LoginNodeDisconnectRequest, ::Empty>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_Disconnect() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::loginpb::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* Disconnect(
-      ::grpc::CallbackServerContext* /*context*/, const ::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::loginpb::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/)  { return nullptr; }
   };
   typedef WithCallbackMethod_Login<WithCallbackMethod_CreatePlayer<WithCallbackMethod_EnterGame<WithCallbackMethod_LeaveGame<WithCallbackMethod_Disconnect<Service > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
@@ -438,7 +440,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Login(::grpc::ServerContext* /*context*/, const ::LoginC2LRequest* /*request*/, ::LoginC2LResponse* /*response*/) override {
+    ::grpc::Status Login(::grpc::ServerContext* /*context*/, const ::loginpb::LoginC2LRequest* /*request*/, ::loginpb::LoginC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -455,7 +457,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status CreatePlayer(::grpc::ServerContext* /*context*/, const ::CreatePlayerC2LRequest* /*request*/, ::CreatePlayerC2LResponse* /*response*/) override {
+    ::grpc::Status CreatePlayer(::grpc::ServerContext* /*context*/, const ::loginpb::CreatePlayerC2LRequest* /*request*/, ::loginpb::CreatePlayerC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -472,7 +474,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status EnterGame(::grpc::ServerContext* /*context*/, const ::EnterGameC2LRequest* /*request*/, ::EnterGameC2LResponse* /*response*/) override {
+    ::grpc::Status EnterGame(::grpc::ServerContext* /*context*/, const ::loginpb::EnterGameC2LRequest* /*request*/, ::loginpb::EnterGameC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -489,7 +491,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status LeaveGame(::grpc::ServerContext* /*context*/, const ::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status LeaveGame(::grpc::ServerContext* /*context*/, const ::loginpb::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -506,7 +508,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::loginpb::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -523,7 +525,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Login(::grpc::ServerContext* /*context*/, const ::LoginC2LRequest* /*request*/, ::LoginC2LResponse* /*response*/) override {
+    ::grpc::Status Login(::grpc::ServerContext* /*context*/, const ::loginpb::LoginC2LRequest* /*request*/, ::loginpb::LoginC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -543,7 +545,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status CreatePlayer(::grpc::ServerContext* /*context*/, const ::CreatePlayerC2LRequest* /*request*/, ::CreatePlayerC2LResponse* /*response*/) override {
+    ::grpc::Status CreatePlayer(::grpc::ServerContext* /*context*/, const ::loginpb::CreatePlayerC2LRequest* /*request*/, ::loginpb::CreatePlayerC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -563,7 +565,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status EnterGame(::grpc::ServerContext* /*context*/, const ::EnterGameC2LRequest* /*request*/, ::EnterGameC2LResponse* /*response*/) override {
+    ::grpc::Status EnterGame(::grpc::ServerContext* /*context*/, const ::loginpb::EnterGameC2LRequest* /*request*/, ::loginpb::EnterGameC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -583,7 +585,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status LeaveGame(::grpc::ServerContext* /*context*/, const ::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status LeaveGame(::grpc::ServerContext* /*context*/, const ::loginpb::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -603,7 +605,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::loginpb::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -626,7 +628,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Login(::grpc::ServerContext* /*context*/, const ::LoginC2LRequest* /*request*/, ::LoginC2LResponse* /*response*/) override {
+    ::grpc::Status Login(::grpc::ServerContext* /*context*/, const ::loginpb::LoginC2LRequest* /*request*/, ::loginpb::LoginC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -648,7 +650,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status CreatePlayer(::grpc::ServerContext* /*context*/, const ::CreatePlayerC2LRequest* /*request*/, ::CreatePlayerC2LResponse* /*response*/) override {
+    ::grpc::Status CreatePlayer(::grpc::ServerContext* /*context*/, const ::loginpb::CreatePlayerC2LRequest* /*request*/, ::loginpb::CreatePlayerC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -670,7 +672,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status EnterGame(::grpc::ServerContext* /*context*/, const ::EnterGameC2LRequest* /*request*/, ::EnterGameC2LResponse* /*response*/) override {
+    ::grpc::Status EnterGame(::grpc::ServerContext* /*context*/, const ::loginpb::EnterGameC2LRequest* /*request*/, ::loginpb::EnterGameC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -692,7 +694,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status LeaveGame(::grpc::ServerContext* /*context*/, const ::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status LeaveGame(::grpc::ServerContext* /*context*/, const ::loginpb::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -714,7 +716,7 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::loginpb::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -729,10 +731,10 @@ class LoginService final {
     WithStreamedUnaryMethod_Login() {
       ::grpc::Service::MarkMethodStreamed(0,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::LoginC2LRequest, ::LoginC2LResponse>(
+          ::loginpb::LoginC2LRequest, ::loginpb::LoginC2LResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::LoginC2LRequest, ::LoginC2LResponse>* streamer) {
+                     ::loginpb::LoginC2LRequest, ::loginpb::LoginC2LResponse>* streamer) {
                        return this->StreamedLogin(context,
                          streamer);
                   }));
@@ -741,12 +743,12 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status Login(::grpc::ServerContext* /*context*/, const ::LoginC2LRequest* /*request*/, ::LoginC2LResponse* /*response*/) override {
+    ::grpc::Status Login(::grpc::ServerContext* /*context*/, const ::loginpb::LoginC2LRequest* /*request*/, ::loginpb::LoginC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedLogin(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::LoginC2LRequest,::LoginC2LResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedLogin(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::loginpb::LoginC2LRequest,::loginpb::LoginC2LResponse>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_CreatePlayer : public BaseClass {
@@ -756,10 +758,10 @@ class LoginService final {
     WithStreamedUnaryMethod_CreatePlayer() {
       ::grpc::Service::MarkMethodStreamed(1,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::CreatePlayerC2LRequest, ::CreatePlayerC2LResponse>(
+          ::loginpb::CreatePlayerC2LRequest, ::loginpb::CreatePlayerC2LResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::CreatePlayerC2LRequest, ::CreatePlayerC2LResponse>* streamer) {
+                     ::loginpb::CreatePlayerC2LRequest, ::loginpb::CreatePlayerC2LResponse>* streamer) {
                        return this->StreamedCreatePlayer(context,
                          streamer);
                   }));
@@ -768,12 +770,12 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status CreatePlayer(::grpc::ServerContext* /*context*/, const ::CreatePlayerC2LRequest* /*request*/, ::CreatePlayerC2LResponse* /*response*/) override {
+    ::grpc::Status CreatePlayer(::grpc::ServerContext* /*context*/, const ::loginpb::CreatePlayerC2LRequest* /*request*/, ::loginpb::CreatePlayerC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedCreatePlayer(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::CreatePlayerC2LRequest,::CreatePlayerC2LResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedCreatePlayer(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::loginpb::CreatePlayerC2LRequest,::loginpb::CreatePlayerC2LResponse>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_EnterGame : public BaseClass {
@@ -783,10 +785,10 @@ class LoginService final {
     WithStreamedUnaryMethod_EnterGame() {
       ::grpc::Service::MarkMethodStreamed(2,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::EnterGameC2LRequest, ::EnterGameC2LResponse>(
+          ::loginpb::EnterGameC2LRequest, ::loginpb::EnterGameC2LResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::EnterGameC2LRequest, ::EnterGameC2LResponse>* streamer) {
+                     ::loginpb::EnterGameC2LRequest, ::loginpb::EnterGameC2LResponse>* streamer) {
                        return this->StreamedEnterGame(context,
                          streamer);
                   }));
@@ -795,12 +797,12 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status EnterGame(::grpc::ServerContext* /*context*/, const ::EnterGameC2LRequest* /*request*/, ::EnterGameC2LResponse* /*response*/) override {
+    ::grpc::Status EnterGame(::grpc::ServerContext* /*context*/, const ::loginpb::EnterGameC2LRequest* /*request*/, ::loginpb::EnterGameC2LResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedEnterGame(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::EnterGameC2LRequest,::EnterGameC2LResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedEnterGame(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::loginpb::EnterGameC2LRequest,::loginpb::EnterGameC2LResponse>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_LeaveGame : public BaseClass {
@@ -810,10 +812,10 @@ class LoginService final {
     WithStreamedUnaryMethod_LeaveGame() {
       ::grpc::Service::MarkMethodStreamed(3,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::LeaveGameC2LRequest, ::Empty>(
+          ::loginpb::LeaveGameC2LRequest, ::Empty>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::LeaveGameC2LRequest, ::Empty>* streamer) {
+                     ::loginpb::LeaveGameC2LRequest, ::Empty>* streamer) {
                        return this->StreamedLeaveGame(context,
                          streamer);
                   }));
@@ -822,12 +824,12 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status LeaveGame(::grpc::ServerContext* /*context*/, const ::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status LeaveGame(::grpc::ServerContext* /*context*/, const ::loginpb::LeaveGameC2LRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedLeaveGame(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::LeaveGameC2LRequest,::Empty>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedLeaveGame(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::loginpb::LeaveGameC2LRequest,::Empty>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_Disconnect : public BaseClass {
@@ -837,10 +839,10 @@ class LoginService final {
     WithStreamedUnaryMethod_Disconnect() {
       ::grpc::Service::MarkMethodStreamed(4,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::LoginNodeDisconnectRequest, ::Empty>(
+          ::loginpb::LoginNodeDisconnectRequest, ::Empty>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::LoginNodeDisconnectRequest, ::Empty>* streamer) {
+                     ::loginpb::LoginNodeDisconnectRequest, ::Empty>* streamer) {
                        return this->StreamedDisconnect(context,
                          streamer);
                   }));
@@ -849,17 +851,19 @@ class LoginService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::loginpb::LoginNodeDisconnectRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedDisconnect(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::LoginNodeDisconnectRequest,::Empty>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedDisconnect(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::loginpb::LoginNodeDisconnectRequest,::Empty>* server_unary_streamer) = 0;
   };
   typedef WithStreamedUnaryMethod_Login<WithStreamedUnaryMethod_CreatePlayer<WithStreamedUnaryMethod_EnterGame<WithStreamedUnaryMethod_LeaveGame<WithStreamedUnaryMethod_Disconnect<Service > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
   typedef WithStreamedUnaryMethod_Login<WithStreamedUnaryMethod_CreatePlayer<WithStreamedUnaryMethod_EnterGame<WithStreamedUnaryMethod_LeaveGame<WithStreamedUnaryMethod_Disconnect<Service > > > > > StreamedService;
 };
+
+}  // namespace loginpb
 
 
 #include <grpcpp/ports_undef.inc>
