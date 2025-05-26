@@ -19,11 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LoginService_Login_FullMethodName        = "/LoginService/Login"
-	LoginService_CreatePlayer_FullMethodName = "/LoginService/CreatePlayer"
-	LoginService_EnterGame_FullMethodName    = "/LoginService/EnterGame"
-	LoginService_LeaveGame_FullMethodName    = "/LoginService/LeaveGame"
-	LoginService_Disconnect_FullMethodName   = "/LoginService/Disconnect"
+	LoginService_Login_FullMethodName        = "/loginpb.LoginService/Login"
+	LoginService_CreatePlayer_FullMethodName = "/loginpb.LoginService/CreatePlayer"
+	LoginService_EnterGame_FullMethodName    = "/loginpb.LoginService/EnterGame"
+	LoginService_LeaveGame_FullMethodName    = "/loginpb.LoginService/LeaveGame"
+	LoginService_Disconnect_FullMethodName   = "/loginpb.LoginService/Disconnect"
 )
 
 // LoginServiceClient is the client API for LoginService service.
@@ -244,7 +244,7 @@ func _LoginService_Disconnect_Handler(srv interface{}, ctx context.Context, dec 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var LoginService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "LoginService",
+	ServiceName: "loginpb.LoginService",
 	HandlerType: (*LoginServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
