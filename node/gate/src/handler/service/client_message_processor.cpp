@@ -98,12 +98,6 @@ void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr
     LOG_ERROR << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;
 }
 
-// 伪代码重构计划：
-// 1. 消息分发用map替换switch-case，提升可扩展性
-// 2. 合并LoginNode相关的发送函数，减少重复
-// 3. 拆分HandleRpcRequest，简化主流程
-// 4. 优化变量/函数命名
-// 5. 拆分校验函数
 bool RpcClientSessionHandler::CheckMessageSize(const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
     constexpr size_t maxByteSize = 1024;
     if (request->ByteSizeLong() > maxByteSize) {
