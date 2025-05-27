@@ -30,15 +30,6 @@
     <ClCompile Include="src\proto\common\comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\common\db_base.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\common\db_service.grpc.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\common\db_service.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\common\empty.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -52,9 +43,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\common\login_service.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\common\mysql_database_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\common\session.pb.cc">
@@ -234,6 +222,12 @@
     <ClCompile Include="src\proto\logic\event\node_event.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\common\mysql_database_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\common\db_base.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\common\c2gate.pb.h">
@@ -251,15 +245,6 @@
     <ClInclude Include="src\proto\common\comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\common\db_base.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\common\db_service.grpc.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\common\db_service.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\proto\common\empty.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -273,9 +258,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\common\login_service.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\common\mysql_database_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\common\session.pb.h">
@@ -501,6 +483,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\event\node_event.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\common\mysql_database_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\common\db_base.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
