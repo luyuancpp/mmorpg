@@ -6,7 +6,7 @@ require (
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang/protobuf v1.5.4
-	github.com/luyuancpp/dbprotooption v0.0.4
+	github.com/luyuancpp/dbprotooption v0.0.8
 	github.com/luyuancpp/pbmysql-go v0.0.10
 	github.com/zeromicro/go-zero v1.6.5
 	google.golang.org/grpc v1.64.0
