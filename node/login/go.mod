@@ -8,7 +8,7 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/looplab/fsm v1.0.2
 	github.com/luyuancpp/dbprotooption v0.0.4
-	github.com/luyuancpp/muduoclient v0.0.8
+	github.com/luyuancpp/muduoclient v0.0.10
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/redis/go-redis/v9 v9.5.3
 	github.com/stretchr/testify v1.9.0
