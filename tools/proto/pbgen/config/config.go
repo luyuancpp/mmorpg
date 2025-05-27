@@ -109,10 +109,9 @@ const (
 	ServiceCppFilePath    = ServiceInfoDirectory + "service_info.cpp"
 	ServiceHeaderFilePath = ServiceInfoDirectory + "service_info.h"
 
-	LuaServiceFilePath            = PbcLuaDirectory + "lua_service.cpp"
-	ClientLuaDirectory            = ProjectDir + "bin/script/lua/service/"
-	ClientLuaServiceFilePath      = ProjectDir + "client/src/handler/service_lua.cpp"
-	ClientServiceInstanceFilePath = ProjectDir + "client/src/handler/player_service.cpp"
+	LuaServiceFilePath       = PbcLuaDirectory + "lua_service.cpp"
+	ClientLuaDirectory       = ProjectDir + "bin/script/lua/service/"
+	ClientLuaServiceFilePath = ProjectDir + "client/src/handler/service_lua.cpp"
 
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
 	PlayerStorageSystemDirectory     = ProjectDir + NodePkgLogicSceneNodeDirectory + "src/player/system/"
