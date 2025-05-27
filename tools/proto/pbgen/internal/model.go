@@ -233,6 +233,25 @@ func (info *RPCMethod) CppResponse() string {
 	return updatedOutputType
 }
 
+func (info *RPCMethod) GoRequest() string {
+	// 获取 InputType
+	inputType := info.MethodDescriptorProto.GetInputType()
+
+	// 将 InputType 中的点（.）替换为双冒号（::）
+	updatedInputType := strings.Replace(inputType, ".", "", -1)
+
+	return updatedInputType
+}
+
+func (info *RPCMethod) GoResponse() string {
+	// 获取 OutputType
+	outputType := info.MethodDescriptorProto.GetOutputType()
+
+	updatedOutputType := strings.Replace(outputType, ".", "", -1)
+
+	return updatedOutputType
+}
+
 func GetTypeName(fullTypeName string) string {
 	// 查找最后一个'.'的位置
 	lastDotIndex := strings.LastIndex(fullTypeName, ".")
