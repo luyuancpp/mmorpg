@@ -67,7 +67,7 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageContent) {
 	}
 }
 func handleClientPlayerSceneServiceEnterScene(player *gameobject.Player, body []byte) {
-	message := &game.EnterSceneC2SResponse{}
+	message := &game.::EnterSceneC2SResponse{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::EnterSceneC2SResponse", zap.Error(err))
 		return
@@ -75,7 +75,7 @@ func handleClientPlayerSceneServiceEnterScene(player *gameobject.Player, body []
 	ClientPlayerSceneServiceEnterSceneHandler(player, message)
 }
 func handleClientPlayerSceneServiceNotifyEnterScene(player *gameobject.Player, body []byte) {
-	message := &game.EnterSceneS2C{}
+	message := &game.::EnterSceneS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::EnterSceneS2C", zap.Error(err))
 		return
@@ -83,7 +83,7 @@ func handleClientPlayerSceneServiceNotifyEnterScene(player *gameobject.Player, b
 	ClientPlayerSceneServiceNotifyEnterSceneHandler(player, message)
 }
 func handleClientPlayerSceneServiceSceneInfoC2S(player *gameobject.Player, body []byte) {
-	message := &game.SceneInfoRequest{}
+	message := &game.::SceneInfoRequest{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::SceneInfoRequest", zap.Error(err))
 		return
@@ -91,7 +91,7 @@ func handleClientPlayerSceneServiceSceneInfoC2S(player *gameobject.Player, body 
 	ClientPlayerSceneServiceSceneInfoC2SHandler(player, message)
 }
 func handleClientPlayerSceneServiceNotifySceneInfo(player *gameobject.Player, body []byte) {
-	message := &game.SceneInfoS2C{}
+	message := &game.::SceneInfoS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::SceneInfoS2C", zap.Error(err))
 		return
@@ -99,7 +99,7 @@ func handleClientPlayerSceneServiceNotifySceneInfo(player *gameobject.Player, bo
 	ClientPlayerSceneServiceNotifySceneInfoHandler(player, message)
 }
 func handleClientPlayerSceneServiceNotifyActorCreate(player *gameobject.Player, body []byte) {
-	message := &game.ActorCreateS2C{}
+	message := &game.::ActorCreateS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::ActorCreateS2C", zap.Error(err))
 		return
@@ -107,7 +107,7 @@ func handleClientPlayerSceneServiceNotifyActorCreate(player *gameobject.Player, 
 	ClientPlayerSceneServiceNotifyActorCreateHandler(player, message)
 }
 func handleClientPlayerSceneServiceNotifyActorDestroy(player *gameobject.Player, body []byte) {
-	message := &game.ActorDestroyS2C{}
+	message := &game.::ActorDestroyS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::ActorDestroyS2C", zap.Error(err))
 		return
@@ -115,7 +115,7 @@ func handleClientPlayerSceneServiceNotifyActorDestroy(player *gameobject.Player,
 	ClientPlayerSceneServiceNotifyActorDestroyHandler(player, message)
 }
 func handleClientPlayerSceneServiceNotifyActorListCreate(player *gameobject.Player, body []byte) {
-	message := &game.ActorListCreateS2C{}
+	message := &game.::ActorListCreateS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::ActorListCreateS2C", zap.Error(err))
 		return
@@ -123,7 +123,7 @@ func handleClientPlayerSceneServiceNotifyActorListCreate(player *gameobject.Play
 	ClientPlayerSceneServiceNotifyActorListCreateHandler(player, message)
 }
 func handleClientPlayerSceneServiceNotifyActorListDestroy(player *gameobject.Player, body []byte) {
-	message := &game.ActorListDestroyS2C{}
+	message := &game.::ActorListDestroyS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::ActorListDestroyS2C", zap.Error(err))
 		return
@@ -131,7 +131,7 @@ func handleClientPlayerSceneServiceNotifyActorListDestroy(player *gameobject.Pla
 	ClientPlayerSceneServiceNotifyActorListDestroyHandler(player, message)
 }
 func handleEntitySyncServiceSyncBaseAttribute(player *gameobject.Player, body []byte) {
-	message := &game.BaseAttributeSyncDataS2C{}
+	message := &game.::BaseAttributeSyncDataS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::BaseAttributeSyncDataS2C", zap.Error(err))
 		return
@@ -139,7 +139,7 @@ func handleEntitySyncServiceSyncBaseAttribute(player *gameobject.Player, body []
 	EntitySyncServiceSyncBaseAttributeHandler(player, message)
 }
 func handleEntitySyncServiceSyncAttribute2Frames(player *gameobject.Player, body []byte) {
-	message := &game.AttributeDelta2FramesS2C{}
+	message := &game.::AttributeDelta2FramesS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::AttributeDelta2FramesS2C", zap.Error(err))
 		return
@@ -147,7 +147,7 @@ func handleEntitySyncServiceSyncAttribute2Frames(player *gameobject.Player, body
 	EntitySyncServiceSyncAttribute2FramesHandler(player, message)
 }
 func handleEntitySyncServiceSyncAttribute5Frames(player *gameobject.Player, body []byte) {
-	message := &game.AttributeDelta5FramesS2C{}
+	message := &game.::AttributeDelta5FramesS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::AttributeDelta5FramesS2C", zap.Error(err))
 		return
@@ -155,7 +155,7 @@ func handleEntitySyncServiceSyncAttribute5Frames(player *gameobject.Player, body
 	EntitySyncServiceSyncAttribute5FramesHandler(player, message)
 }
 func handleEntitySyncServiceSyncAttribute10Frames(player *gameobject.Player, body []byte) {
-	message := &game.AttributeDelta10FramesS2C{}
+	message := &game.::AttributeDelta10FramesS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::AttributeDelta10FramesS2C", zap.Error(err))
 		return
@@ -163,7 +163,7 @@ func handleEntitySyncServiceSyncAttribute10Frames(player *gameobject.Player, bod
 	EntitySyncServiceSyncAttribute10FramesHandler(player, message)
 }
 func handleEntitySyncServiceSyncAttribute30Frames(player *gameobject.Player, body []byte) {
-	message := &game.AttributeDelta30FramesS2C{}
+	message := &game.::AttributeDelta30FramesS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::AttributeDelta30FramesS2C", zap.Error(err))
 		return
@@ -171,7 +171,7 @@ func handleEntitySyncServiceSyncAttribute30Frames(player *gameobject.Player, bod
 	EntitySyncServiceSyncAttribute30FramesHandler(player, message)
 }
 func handleEntitySyncServiceSyncAttribute60Frames(player *gameobject.Player, body []byte) {
-	message := &game.AttributeDelta60FramesS2C{}
+	message := &game.::AttributeDelta60FramesS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::AttributeDelta60FramesS2C", zap.Error(err))
 		return
@@ -179,7 +179,7 @@ func handleEntitySyncServiceSyncAttribute60Frames(player *gameobject.Player, bod
 	EntitySyncServiceSyncAttribute60FramesHandler(player, message)
 }
 func handlePlayerClientCommonServiceSendTipToClient(player *gameobject.Player, body []byte) {
-	message := &game.TipInfoMessage{}
+	message := &game.::TipInfoMessage{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::TipInfoMessage", zap.Error(err))
 		return
@@ -187,7 +187,7 @@ func handlePlayerClientCommonServiceSendTipToClient(player *gameobject.Player, b
 	PlayerClientCommonServiceSendTipToClientHandler(player, message)
 }
 func handlePlayerClientCommonServiceKickPlayer(player *gameobject.Player, body []byte) {
-	message := &game.TipInfoMessage{}
+	message := &game.::TipInfoMessage{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::TipInfoMessage", zap.Error(err))
 		return
@@ -195,7 +195,7 @@ func handlePlayerClientCommonServiceKickPlayer(player *gameobject.Player, body [
 	PlayerClientCommonServiceKickPlayerHandler(player, message)
 }
 func handlePlayerSkillServiceReleaseSkill(player *gameobject.Player, body []byte) {
-	message := &game.ReleaseSkillSkillResponse{}
+	message := &game.::ReleaseSkillSkillResponse{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::ReleaseSkillSkillResponse", zap.Error(err))
 		return
@@ -203,7 +203,7 @@ func handlePlayerSkillServiceReleaseSkill(player *gameobject.Player, body []byte
 	PlayerSkillServiceReleaseSkillHandler(player, message)
 }
 func handlePlayerSkillServiceNotifySkillUsed(player *gameobject.Player, body []byte) {
-	message := &game.SkillUsedS2C{}
+	message := &game.::SkillUsedS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::SkillUsedS2C", zap.Error(err))
 		return
@@ -211,7 +211,7 @@ func handlePlayerSkillServiceNotifySkillUsed(player *gameobject.Player, body []b
 	PlayerSkillServiceNotifySkillUsedHandler(player, message)
 }
 func handlePlayerSkillServiceNotifySkillInterrupted(player *gameobject.Player, body []byte) {
-	message := &game.SkillInterruptedS2C{}
+	message := &game.::SkillInterruptedS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::SkillInterruptedS2C", zap.Error(err))
 		return
@@ -219,7 +219,7 @@ func handlePlayerSkillServiceNotifySkillInterrupted(player *gameobject.Player, b
 	PlayerSkillServiceNotifySkillInterruptedHandler(player, message)
 }
 func handlePlayerSkillServiceGetSkillList(player *gameobject.Player, body []byte) {
-	message := &game.GetSkillListResponse{}
+	message := &game.::GetSkillListResponse{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal ::GetSkillListResponse", zap.Error(err))
 		return

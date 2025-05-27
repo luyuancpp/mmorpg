@@ -8,7 +8,6 @@
 7=GameServicePlayerEnterGameNode
 8=AccountDBServiceSave2Redis
 9=CentreServiceGateSessionDisconnect
-10=DeployServiceGetNodeInfo
 11=GateServicePlayerEnterGameNode
 12=GateServiceRouteNodeMessage
 13=GateServiceRegisterNodeSession
@@ -68,9 +67,6 @@
 69=EntitySyncServiceSyncAttribute10Frames
 70=EntitySyncServiceSyncAttribute60Frames
 71=EntitySyncServiceSyncAttribute30Frames
-72=DeployServiceGetID
-73=DeployServiceReleaseID
-74=DeployServiceRenewLease
 75=GameServiceEnterScene
 76=KVPut
 77=KVRange

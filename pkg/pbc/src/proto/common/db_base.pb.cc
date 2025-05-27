@@ -42,40 +42,40 @@ const char descriptor_table_protodef_proto_2fcommon_2fdb_5fbase_2eproto[] ABSL_A
     "ESULT_TYPE\022\022\n\016BS_RESULT_NONE\020\000\022\025\n\021BS_RES"
     "ULT_SUCCESS\020\001\022\024\n\020BS_RESULT_FAILED\020\002:;\n\rO"
     "ptionTableId\022\037.google.protobuf.MessageOp"
-    "tions\030\240\302\036 \001(\r\210\001\001:=\n\017OptionTableName\022\037.go"
-    "ogle.protobuf.MessageOptions\030\241\302\036 \001(\t\210\001\001:"
+    "tions\030\320\206\003 \001(\r\210\001\001:=\n\017OptionTableName\022\037.go"
+    "ogle.protobuf.MessageOptions\030\321\206\003 \001(\t\210\001\001:"
     ">\n\020OptionPrimaryKey\022\037.google.protobuf.Me"
-    "ssageOptions\030\242\302\036 \001(\t\210\001\001:>\n\020OptionForeign"
-    "Key\022\037.google.protobuf.MessageOptions\030\243\302\036"
+    "ssageOptions\030\322\206\003 \001(\t\210\001\001:>\n\020OptionForeign"
+    "Key\022\037.google.protobuf.MessageOptions\030\323\206\003"
     " \001(\t\210\001\001:E\n\027OptionForeignReferences\022\037.goo"
-    "gle.protobuf.MessageOptions\030\245\302\036 \001(\t\210\001\001:D"
+    "gle.protobuf.MessageOptions\030\325\206\003 \001(\t\210\001\001:D"
     "\n\026OptionAutoIncrementKey\022\037.google.protob"
-    "uf.MessageOptions\030\246\302\036 \001(\t\210\001\001:C\n\025OptionBa"
+    "uf.MessageOptions\030\326\206\003 \001(\t\210\001\001:C\n\025OptionBa"
     "ckupTableName\022\037.google.protobuf.MessageO"
-    "ptions\030\247\302\036 \001(\t\210\001\001:<\n\016OptionLoadOnly\022\037.go"
-    "ogle.protobuf.MessageOptions\030\250\302\036 \001(\010\210\001\001:"
+    "ptions\030\327\206\003 \001(\t\210\001\001:<\n\016OptionLoadOnly\022\037.go"
+    "ogle.protobuf.MessageOptions\030\330\206\003 \001(\010\210\001\001:"
     "A\n\023OptionProcedureName\022\037.google.protobuf"
-    ".MessageOptions\030\251\302\036 \001(\t\210\001\001:C\n\025OptionProc"
+    ".MessageOptions\030\331\206\003 \001(\t\210\001\001:C\n\025OptionProc"
     "edureResult\022\037.google.protobuf.MessageOpt"
-    "ions\030\252\302\036 \001(\t\210\001\001:9\n\013OptionIndex\022\037.google."
-    "protobuf.MessageOptions\030\253\302\036 \001(\t\210\001\001:=\n\017Op"
+    "ions\030\332\206\003 \001(\t\210\001\001:9\n\013OptionIndex\022\037.google."
+    "protobuf.MessageOptions\030\333\206\003 \001(\t\210\001\001:=\n\017Op"
     "tionUniqueKey\022\037.google.protobuf.MessageO"
-    "ptions\030\254\302\036 \001(\t\210\001\001:=\n\021OptionRepeatLimit\022\035"
-    ".google.protobuf.FieldOptions\030\300\317$ \001(\r\210\001\001"
+    "ptions\030\334\206\003 \001(\t\210\001\001:=\n\021OptionRepeatLimit\022\035"
+    ".google.protobuf.FieldOptions\030\340\324\003 \001(\r\210\001\001"
     ":>\n\022OptionDBFieldExtra\022\035.google.protobuf"
-    ".FieldOptions\030\301\317$ \001(\t\210\001\001:<\n\020OptionDBRead"
-    "Only\022\035.google.protobuf.FieldOptions\030\302\317$ "
+    ".FieldOptions\030\341\324\003 \001(\t\210\001\001:<\n\020OptionDBRead"
+    "Only\022\035.google.protobuf.FieldOptions\030\342\324\003 "
     "\001(\010\210\001\001:>\n\022OptionDBNamePrefix\022\035.google.pr"
-    "otobuf.FieldOptions\030\303\317$ \001(\t\210\001\001:;\n\017Option"
+    "otobuf.FieldOptions\030\343\324\003 \001(\t\210\001\001:;\n\017Option"
     "DBLoadSql\022\035.google.protobuf.FieldOptions"
-    "\030\304\317$ \001(\t\210\001\001:>\n\022OptionDBNeedEscape\022\035.goog"
-    "le.protobuf.FieldOptions\030\305\317$ \001(\010\210\001\001:=\n\021O"
+    "\030\344\324\003 \001(\t\210\001\001:>\n\022OptionDBNeedEscape\022\035.goog"
+    "le.protobuf.FieldOptions\030\345\324\003 \001(\010\210\001\001:=\n\021O"
     "ptionDBProcParam\022\035.google.protobuf.Field"
-    "Options\030\306\317$ \001(\010\210\001\001:9\n\rOptionOldName\022\035.go"
-    "ogle.protobuf.FieldOptions\030\307\317$ \001(\t\210\001\001:7\n"
+    "Options\030\346\324\003 \001(\010\210\001\001:9\n\rOptionOldName\022\035.go"
+    "ogle.protobuf.FieldOptions\030\347\324\003 \001(\t\210\001\001:7\n"
     "\013OptionTable\022\035.google.protobuf.FieldOpti"
-    "ons\030\310\317$ \001(\t\210\001\001:=\n\021OptionBackUpTabel\022\035.go"
-    "ogle.protobuf.FieldOptions\030\311\317$ \001(\t\210\001\001B)H"
+    "ons\030\350\324\003 \001(\t\210\001\001:=\n\021OptionBackUpTabel\022\035.go"
+    "ogle.protobuf.FieldOptions\030\351\324\003 \001(\t\210\001\001B)H"
     "\001Z%github.com/luyuancpp/dbprotooption;db"
     "b\006proto3"
 };
@@ -254,70 +254,70 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 static ::std::false_type
     _static_init2_ PROTOBUF_UNUSED =
         (::_pbi::AddDescriptors(&descriptor_table_proto_2fcommon_2fdb_5fbase_2eproto),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 500000, 13,
+            &::google::protobuf::MessageOptions::default_instance(), 50000, 13,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 500001, 9,
+            &::google::protobuf::MessageOptions::default_instance(), 50001, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 500002, 9,
+            &::google::protobuf::MessageOptions::default_instance(), 50002, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 500003, 9,
+            &::google::protobuf::MessageOptions::default_instance(), 50003, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 500005, 9,
+            &::google::protobuf::MessageOptions::default_instance(), 50005, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 500006, 9,
+            &::google::protobuf::MessageOptions::default_instance(), 50006, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 500007, 9,
+            &::google::protobuf::MessageOptions::default_instance(), 50007, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 500008, 8,
+            &::google::protobuf::MessageOptions::default_instance(), 50008, 8,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 500009, 9,
+            &::google::protobuf::MessageOptions::default_instance(), 50009, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 500010, 9,
+            &::google::protobuf::MessageOptions::default_instance(), 50010, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 500011, 9,
+            &::google::protobuf::MessageOptions::default_instance(), 50011, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 500012, 9,
+            &::google::protobuf::MessageOptions::default_instance(), 50012, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::FieldOptions::default_instance(), 600000, 13,
+            &::google::protobuf::FieldOptions::default_instance(), 60000, 13,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::FieldOptions::default_instance(), 600001, 9,
+            &::google::protobuf::FieldOptions::default_instance(), 60001, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::FieldOptions::default_instance(), 600002, 8,
+            &::google::protobuf::FieldOptions::default_instance(), 60002, 8,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::FieldOptions::default_instance(), 600003, 9,
+            &::google::protobuf::FieldOptions::default_instance(), 60003, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::FieldOptions::default_instance(), 600004, 9,
+            &::google::protobuf::FieldOptions::default_instance(), 60004, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::FieldOptions::default_instance(), 600005, 8,
+            &::google::protobuf::FieldOptions::default_instance(), 60005, 8,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::FieldOptions::default_instance(), 600006, 8,
+            &::google::protobuf::FieldOptions::default_instance(), 60006, 8,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::FieldOptions::default_instance(), 600007, 9,
+            &::google::protobuf::FieldOptions::default_instance(), 60007, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::FieldOptions::default_instance(), 600008, 9,
+            &::google::protobuf::FieldOptions::default_instance(), 60008, 9,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::FieldOptions::default_instance(), 600009, 9,
+            &::google::protobuf::FieldOptions::default_instance(), 60009, 9,
             false, false),
          ::std::false_type{});
 #include "google/protobuf/port_undef.inc"
