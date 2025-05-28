@@ -4,12 +4,10 @@
 #include "proto/logic/constants/etcd_grpc.pb.h"
 
 namespace {
-
+#pragma region CentreServiceGatePlayerService
 struct CentreServiceGatePlayerServiceCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncCentreServiceGatePlayerServiceHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceGatePlayerServiceGrpcClientCall>&)>;
 AsyncCentreServiceGatePlayerServiceHandlerFunctionType AsyncCentreServiceGatePlayerServiceHandler;
@@ -36,8 +34,6 @@ void AsyncCompleteGrpcCentreServiceGatePlayerService(entt::registry& registry, e
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendCentreServiceGatePlayerService(entt::registry& registry, entt::entity nodeEntity, const ::GateClientMessageRequest& request) {
 
@@ -68,12 +64,14 @@ void SendCentreServiceGatePlayerService(entt::registry& registry, entt::entity n
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region CentreServiceGateSessionDisconnect
 struct CentreServiceGateSessionDisconnectCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncCentreServiceGateSessionDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceGateSessionDisconnectGrpcClientCall>&)>;
 AsyncCentreServiceGateSessionDisconnectHandlerFunctionType AsyncCentreServiceGateSessionDisconnectHandler;
@@ -100,8 +98,6 @@ void AsyncCompleteGrpcCentreServiceGateSessionDisconnect(entt::registry& registr
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendCentreServiceGateSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::GateSessionDisconnectRequest& request) {
 
@@ -132,12 +128,14 @@ void SendCentreServiceGateSessionDisconnect(entt::registry& registry, entt::enti
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region CentreServiceLoginNodeAccountLogin
 struct CentreServiceLoginNodeAccountLoginCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncCentreServiceLoginNodeAccountLoginHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceLoginNodeAccountLoginGrpcClientCall>&)>;
 AsyncCentreServiceLoginNodeAccountLoginHandlerFunctionType AsyncCentreServiceLoginNodeAccountLoginHandler;
@@ -164,8 +162,6 @@ void AsyncCompleteGrpcCentreServiceLoginNodeAccountLogin(entt::registry& registr
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendCentreServiceLoginNodeAccountLogin(entt::registry& registry, entt::entity nodeEntity, const ::LoginRequest& request) {
 
@@ -196,12 +192,14 @@ void SendCentreServiceLoginNodeAccountLogin(entt::registry& registry, entt::enti
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region CentreServiceLoginNodeEnterGame
 struct CentreServiceLoginNodeEnterGameCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncCentreServiceLoginNodeEnterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceLoginNodeEnterGameGrpcClientCall>&)>;
 AsyncCentreServiceLoginNodeEnterGameHandlerFunctionType AsyncCentreServiceLoginNodeEnterGameHandler;
@@ -228,8 +226,6 @@ void AsyncCompleteGrpcCentreServiceLoginNodeEnterGame(entt::registry& registry, 
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendCentreServiceLoginNodeEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::CentrePlayerGameNodeEntryRequest& request) {
 
@@ -260,12 +256,14 @@ void SendCentreServiceLoginNodeEnterGame(entt::registry& registry, entt::entity 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region CentreServiceLoginNodeLeaveGame
 struct CentreServiceLoginNodeLeaveGameCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncCentreServiceLoginNodeLeaveGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceLoginNodeLeaveGameGrpcClientCall>&)>;
 AsyncCentreServiceLoginNodeLeaveGameHandlerFunctionType AsyncCentreServiceLoginNodeLeaveGameHandler;
@@ -292,8 +290,6 @@ void AsyncCompleteGrpcCentreServiceLoginNodeLeaveGame(entt::registry& registry, 
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendCentreServiceLoginNodeLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::LoginNodeLeaveGameRequest& request) {
 
@@ -324,12 +320,14 @@ void SendCentreServiceLoginNodeLeaveGame(entt::registry& registry, entt::entity 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region CentreServiceLoginNodeSessionDisconnect
 struct CentreServiceLoginNodeSessionDisconnectCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncCentreServiceLoginNodeSessionDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceLoginNodeSessionDisconnectGrpcClientCall>&)>;
 AsyncCentreServiceLoginNodeSessionDisconnectHandlerFunctionType AsyncCentreServiceLoginNodeSessionDisconnectHandler;
@@ -356,8 +354,6 @@ void AsyncCompleteGrpcCentreServiceLoginNodeSessionDisconnect(entt::registry& re
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendCentreServiceLoginNodeSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::GateSessionDisconnectRequest& request) {
 
@@ -388,12 +384,14 @@ void SendCentreServiceLoginNodeSessionDisconnect(entt::registry& registry, entt:
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region CentreServicePlayerService
 struct CentreServicePlayerServiceCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncCentreServicePlayerServiceHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServicePlayerServiceGrpcClientCall>&)>;
 AsyncCentreServicePlayerServiceHandlerFunctionType AsyncCentreServicePlayerServiceHandler;
@@ -420,8 +418,6 @@ void AsyncCompleteGrpcCentreServicePlayerService(entt::registry& registry, entt:
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendCentreServicePlayerService(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request) {
 
@@ -452,12 +448,14 @@ void SendCentreServicePlayerService(entt::registry& registry, entt::entity nodeE
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region CentreServiceEnterGsSucceed
 struct CentreServiceEnterGsSucceedCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncCentreServiceEnterGsSucceedHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceEnterGsSucceedGrpcClientCall>&)>;
 AsyncCentreServiceEnterGsSucceedHandlerFunctionType AsyncCentreServiceEnterGsSucceedHandler;
@@ -484,8 +482,6 @@ void AsyncCompleteGrpcCentreServiceEnterGsSucceed(entt::registry& registry, entt
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendCentreServiceEnterGsSucceed(entt::registry& registry, entt::entity nodeEntity, const ::EnterGameNodeSuccessRequest& request) {
 
@@ -516,12 +512,14 @@ void SendCentreServiceEnterGsSucceed(entt::registry& registry, entt::entity node
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region CentreServiceRouteNodeStringMsg
 struct CentreServiceRouteNodeStringMsgCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncCentreServiceRouteNodeStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRouteNodeStringMsgGrpcClientCall>&)>;
 AsyncCentreServiceRouteNodeStringMsgHandlerFunctionType AsyncCentreServiceRouteNodeStringMsgHandler;
@@ -548,8 +546,6 @@ void AsyncCompleteGrpcCentreServiceRouteNodeStringMsg(entt::registry& registry, 
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendCentreServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const ::RouteMessageRequest& request) {
 
@@ -580,12 +576,14 @@ void SendCentreServiceRouteNodeStringMsg(entt::registry& registry, entt::entity 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region CentreServiceRoutePlayerStringMsg
 struct CentreServiceRoutePlayerStringMsgCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncCentreServiceRoutePlayerStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRoutePlayerStringMsgGrpcClientCall>&)>;
 AsyncCentreServiceRoutePlayerStringMsgHandlerFunctionType AsyncCentreServiceRoutePlayerStringMsgHandler;
@@ -612,8 +610,6 @@ void AsyncCompleteGrpcCentreServiceRoutePlayerStringMsg(entt::registry& registry
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendCentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const ::RoutePlayerMessageRequest& request) {
 
@@ -644,12 +640,14 @@ void SendCentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entit
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region CentreServiceInitSceneNode
 struct CentreServiceInitSceneNodeCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncCentreServiceInitSceneNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceInitSceneNodeGrpcClientCall>&)>;
 AsyncCentreServiceInitSceneNodeHandlerFunctionType AsyncCentreServiceInitSceneNodeHandler;
@@ -676,8 +674,6 @@ void AsyncCompleteGrpcCentreServiceInitSceneNode(entt::registry& registry, entt:
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendCentreServiceInitSceneNode(entt::registry& registry, entt::entity nodeEntity, const ::InitSceneNodeRequest& request) {
 
@@ -708,12 +704,14 @@ void SendCentreServiceInitSceneNode(entt::registry& registry, entt::entity nodeE
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region CentreServiceRegisterNodeSession
 struct CentreServiceRegisterNodeSessionCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncCentreServiceRegisterNodeSessionHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRegisterNodeSessionGrpcClientCall>&)>;
 AsyncCentreServiceRegisterNodeSessionHandlerFunctionType AsyncCentreServiceRegisterNodeSessionHandler;
@@ -740,8 +738,6 @@ void AsyncCompleteGrpcCentreServiceRegisterNodeSession(entt::registry& registry,
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendCentreServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request) {
 
@@ -772,6 +768,10 @@ void SendCentreServiceRegisterNodeSession(entt::registry& registry, entt::entity
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
+
+
+
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
     registry.emplace<CentreServiceGatePlayerServiceCompleteQueue>(nodeEntity);
 
@@ -796,7 +796,6 @@ void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity node
     registry.emplace<CentreServiceInitSceneNodeCompleteQueue>(nodeEntity);
 
     registry.emplace<CentreServiceRegisterNodeSessionCompleteQueue>(nodeEntity);
-
 }
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry) {
     {
@@ -870,7 +869,4 @@ void HandleCentreServiceCompletedQueueMessage(entt::registry& registry) {
         for (auto&& [e, completeQueueComp] : view.each()) {
             AsyncCompleteGrpcCentreServiceRegisterNodeSession(registry, e, completeQueueComp.cq);
         }
-    }
-}
-
-}// namespace 
+    }}}// namespace 

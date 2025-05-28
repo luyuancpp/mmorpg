@@ -4,12 +4,10 @@
 #include "proto/logic/constants/etcd_grpc.pb.h"
 
 namespace {
-
+#pragma region AccountDBServiceLoad2Redis
 struct AccountDBServiceLoad2RedisCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncAccountDBServiceLoad2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncAccountDBServiceLoad2RedisGrpcClientCall>&)>;
 AsyncAccountDBServiceLoad2RedisHandlerFunctionType AsyncAccountDBServiceLoad2RedisHandler;
@@ -36,8 +34,6 @@ void AsyncCompleteGrpcAccountDBServiceLoad2Redis(entt::registry& registry, entt:
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const ::LoadAccountRequest& request) {
 
@@ -68,12 +64,14 @@ void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeE
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region AccountDBServiceSave2Redis
 struct AccountDBServiceSave2RedisCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncAccountDBServiceSave2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncAccountDBServiceSave2RedisGrpcClientCall>&)>;
 AsyncAccountDBServiceSave2RedisHandlerFunctionType AsyncAccountDBServiceSave2RedisHandler;
@@ -100,8 +98,6 @@ void AsyncCompleteGrpcAccountDBServiceSave2Redis(entt::registry& registry, entt:
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SaveAccountRequest& request) {
 
@@ -132,12 +128,14 @@ void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeE
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region PlayerDBServiceLoad2Redis
 struct PlayerDBServiceLoad2RedisCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncPlayerDBServiceLoad2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncPlayerDBServiceLoad2RedisGrpcClientCall>&)>;
 AsyncPlayerDBServiceLoad2RedisHandlerFunctionType AsyncPlayerDBServiceLoad2RedisHandler;
@@ -164,8 +162,6 @@ void AsyncCompleteGrpcPlayerDBServiceLoad2Redis(entt::registry& registry, entt::
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const ::LoadPlayerRequest& request) {
 
@@ -196,12 +192,14 @@ void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEn
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region PlayerDBServiceSave2Redis
 struct PlayerDBServiceSave2RedisCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncPlayerDBServiceSave2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncPlayerDBServiceSave2RedisGrpcClientCall>&)>;
 AsyncPlayerDBServiceSave2RedisHandlerFunctionType AsyncPlayerDBServiceSave2RedisHandler;
@@ -228,8 +226,6 @@ void AsyncCompleteGrpcPlayerDBServiceSave2Redis(entt::registry& registry, entt::
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SavePlayerRequest& request) {
 
@@ -260,17 +256,19 @@ void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEn
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
+
+
+
 void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
     registry.emplace<AccountDBServiceLoad2RedisCompleteQueue>(nodeEntity);
 
     registry.emplace<AccountDBServiceSave2RedisCompleteQueue>(nodeEntity);
-
 }
 void InitPlayerDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
     registry.emplace<PlayerDBServiceLoad2RedisCompleteQueue>(nodeEntity);
 
     registry.emplace<PlayerDBServiceSave2RedisCompleteQueue>(nodeEntity);
-
 }
 void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry) {
     {
@@ -284,8 +282,7 @@ void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry) {
         for (auto&& [e, completeQueueComp] : view.each()) {
             AsyncCompleteGrpcAccountDBServiceSave2Redis(registry, e, completeQueueComp.cq);
         }
-    }
-}
+    }}
 void HandlePlayerDBServiceCompletedQueueMessage(entt::registry& registry) {
     {
         auto&& view = registry.view<PlayerDBServiceLoad2RedisCompleteQueue>();
@@ -298,7 +295,4 @@ void HandlePlayerDBServiceCompletedQueueMessage(entt::registry& registry) {
         for (auto&& [e, completeQueueComp] : view.each()) {
             AsyncCompleteGrpcPlayerDBServiceSave2Redis(registry, e, completeQueueComp.cq);
         }
-    }
-}
-
-}// namespace 
+    }}}// namespace 

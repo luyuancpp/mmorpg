@@ -10,10 +10,8 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace  {
-
 using AccountDBServiceStubPtr = std::unique_ptr<AccountDBService::Stub>;
-
-
+#pragma region AccountDBServiceLoad2Redis
 
 class AsyncAccountDBServiceLoad2RedisGrpcClientCall {
 public:
@@ -27,7 +25,6 @@ using AsyncAccountDBServiceLoad2RedisHandlerFunctionType = std::function<void(co
 extern AsyncAccountDBServiceLoad2RedisHandlerFunctionType AsyncAccountDBServiceLoad2RedisHandler;
 
 
-
 class ::LoadAccountRequest;
 
 void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const ::LoadAccountRequest& request);
@@ -35,7 +32,10 @@ void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeE
 void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry);
 void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
 
+
+#pragma region AccountDBServiceSave2Redis
 
 class AsyncAccountDBServiceSave2RedisGrpcClientCall {
 public:
@@ -49,7 +49,6 @@ using AsyncAccountDBServiceSave2RedisHandlerFunctionType = std::function<void(co
 extern AsyncAccountDBServiceSave2RedisHandlerFunctionType AsyncAccountDBServiceSave2RedisHandler;
 
 
-
 class ::SaveAccountRequest;
 
 void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SaveAccountRequest& request);
@@ -57,9 +56,11 @@ void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeE
 void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry);
 void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
+
+
 using PlayerDBServiceStubPtr = std::unique_ptr<PlayerDBService::Stub>;
-
-
+#pragma region PlayerDBServiceLoad2Redis
 
 class AsyncPlayerDBServiceLoad2RedisGrpcClientCall {
 public:
@@ -73,7 +74,6 @@ using AsyncPlayerDBServiceLoad2RedisHandlerFunctionType = std::function<void(con
 extern AsyncPlayerDBServiceLoad2RedisHandlerFunctionType AsyncPlayerDBServiceLoad2RedisHandler;
 
 
-
 class ::LoadPlayerRequest;
 
 void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const ::LoadPlayerRequest& request);
@@ -81,7 +81,10 @@ void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEn
 void HandlePlayerDBServiceCompletedQueueMessage(entt::registry& registry);
 void InitPlayerDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
 
+
+#pragma region PlayerDBServiceSave2Redis
 
 class AsyncPlayerDBServiceSave2RedisGrpcClientCall {
 public:
@@ -95,12 +98,15 @@ using AsyncPlayerDBServiceSave2RedisHandlerFunctionType = std::function<void(con
 extern AsyncPlayerDBServiceSave2RedisHandlerFunctionType AsyncPlayerDBServiceSave2RedisHandler;
 
 
-
 class ::SavePlayerRequest;
 
 void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SavePlayerRequest& request);
 void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SavePlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandlePlayerDBServiceCompletedQueueMessage(entt::registry& registry);
 void InitPlayerDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
+#pragma endregion
+
+
 
 }// namespace 

@@ -11,15 +11,11 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace {{.Package}} {
-
 {{- range .ServiceInfo }}
-
 using {{.Service}}StubPtr = std::unique_ptr<{{.Service}}::Stub>;
-
 {{- range .MethodInfo }}
-
+#pragma region {{.Service}}{{.Method}}
 {{if .ClientStreaming}}
-
 class Async{{.Service}}{{.Method}}GrpcClient {
 public:
     ClientContext context;
@@ -38,9 +34,7 @@ struct {{.RequestName}}WriteInProgress {
 
 using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
 extern Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
-
 {{else}}
-
 class Async{{.Service}}{{.Method}}GrpcClientCall {
 public:
     ClientContext context;
@@ -51,7 +45,6 @@ public:
 
 using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.Service}}{{.Method}}GrpcClientCall>&)>;
 extern Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
-
 {{end}}
 
 class {{.CppRequest}};
@@ -61,7 +54,9 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
 void Handle{{.Service}}CompletedQueueMessage(entt::registry& registry);
 void Init{{.Service}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
-{{- end }}
+#pragma endregion
+
+{{ end }}
 {{- end }}
 
 }// namespace {{.Package}}
@@ -73,19 +68,15 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
 
 namespace {{.Package}}{
-
 {{- range .ServiceInfo }}
 {{- range .MethodInfo }}
-
+#pragma region {{.Service}}{{.Method}}
 struct {{.Service}}{{.Method}}CompleteQueue {
     grpc::CompletionQueue cq;
 };
-
 {{ if .ClientStreaming }}
-
 using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
 Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
-
 void TryWriteNextNext{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     auto& writeInProgress = registry.get<{{.RequestName}}WriteInProgress>(nodeEntity);
     auto& pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
@@ -153,9 +144,7 @@ void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::en
             break;
     }
 }
-
 {{ else }}
-
 using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.Service}}{{.Method}}GrpcClientCall>&)>;
 Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
 
@@ -181,8 +170,7 @@ void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::en
         LOG_ERROR << call->status.error_message();
     }
 }
-
-{{ end }}
+{{- end }}
 
 void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request) {
 {{ if .ClientStreaming }}
@@ -223,8 +211,10 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 {{ end }}
 }
+#pragma endregion
 
-{{- end }}
+
+{{end }}
 {{- end }}
 
 {{- range .ServiceInfo }}
@@ -246,9 +236,9 @@ void Init{{.Service}}CompletedQueue(entt::registry& registry, entt::entity nodeE
                                (void*)(GrpcOperation::INIT));
     }
 {{ end }}
-{{- end }}
+{{- end -}}
 }
-{{- end }}
+{{- end -}}
 
 {{- range .ServiceInfo }}
 void Handle{{.Service}}CompletedQueueMessage(entt::registry& registry) {
@@ -259,9 +249,9 @@ void Handle{{.Service}}CompletedQueueMessage(entt::registry& registry) {
             AsyncCompleteGrpc{{.Service}}{{.Method}}(registry, e, completeQueueComp.cq);
         }
     }
-{{- end }}
+{{- end -}}
 }
-{{- end }}
+{{- end -}}
 
 }// namespace {{.Package}}
 `
