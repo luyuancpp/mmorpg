@@ -36,6 +36,7 @@
     <ClInclude Include="src\util\network_utils.h" />
     <ClInclude Include="src\config_loader\config.h" />
     <ClInclude Include="src\network\codec\message_response_dispatcher.h" />
+    <ClInclude Include="src\util\base64.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\network\game_rpc.pb.cc" />
@@ -58,6 +59,7 @@
     <ClCompile Include="src\util\proto_field_checker.cpp" />
     <ClCompile Include="src\util\network_utils.cpp" />
     <ClCompile Include="src\config_loader\config.cpp" />
+    <ClCompile Include="src\util\base64.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\network\autogen.bat" />

@@ -214,9 +214,13 @@ void HandleGameNodeMessage(const Session& session, const RpcClientMessagePtr& re
 
 void SendLoginRequestToLoginNode(entt::entity loginNode, Guid sessionId, const RpcClientMessagePtr& request)
 {
-    loginpb::LoginC2LRequest message;
-    SetSessionAndParseBody(message, request, sessionId);
-    SendLoginServiceLogin(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
+	loginpb::LoginC2LRequest message;
+	SetSessionAndParseBody(message, request, sessionId);
+	SessionDetails sessionDetils;
+	sessionDetils.set_session_id(sessionId);
+
+    SendLoginServiceLogin(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message, { "x-session-detail-bin" }, { sessionDetils.SerializeAsString() });
+
 
     LOG_TRACE << "Sent LoginC2LRequest, session id: " << sessionId;
 }

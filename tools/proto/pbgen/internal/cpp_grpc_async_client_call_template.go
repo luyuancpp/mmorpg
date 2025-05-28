@@ -66,6 +66,7 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 #include "{{.GeneratorGrpcFileName}}.h"
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
+#include "util/base64.h"
 
 namespace {{.Package}}{
 {{- range .ServiceInfo }}
@@ -198,10 +199,10 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
 {{ else }}
     Async{{.Service}}{{.Method}}GrpcClientCall* call = new Async{{.Service}}{{.Method}}GrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<{{.Service}}StubPtr>(nodeEntity)
