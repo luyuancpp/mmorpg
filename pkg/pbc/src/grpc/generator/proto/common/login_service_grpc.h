@@ -10,10 +10,8 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace loginpb {
-
 using LoginServiceStubPtr = std::unique_ptr<LoginService::Stub>;
-
-
+#pragma region LoginServiceLogin
 
 class AsyncLoginServiceLoginGrpcClientCall {
 public:
@@ -27,7 +25,6 @@ using AsyncLoginServiceLoginHandlerFunctionType = std::function<void(const std::
 extern AsyncLoginServiceLoginHandlerFunctionType AsyncLoginServiceLoginHandler;
 
 
-
 class ::loginpb::LoginC2LRequest;
 
 void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginC2LRequest& request);
@@ -35,7 +32,10 @@ void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, co
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
 
+
+#pragma region LoginServiceCreatePlayer
 
 class AsyncLoginServiceCreatePlayerGrpcClientCall {
 public:
@@ -49,7 +49,6 @@ using AsyncLoginServiceCreatePlayerHandlerFunctionType = std::function<void(cons
 extern AsyncLoginServiceCreatePlayerHandlerFunctionType AsyncLoginServiceCreatePlayerHandler;
 
 
-
 class ::loginpb::CreatePlayerC2LRequest;
 
 void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerC2LRequest& request);
@@ -57,7 +56,10 @@ void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEnt
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
 
+
+#pragma region LoginServiceEnterGame
 
 class AsyncLoginServiceEnterGameGrpcClientCall {
 public:
@@ -71,7 +73,6 @@ using AsyncLoginServiceEnterGameHandlerFunctionType = std::function<void(const s
 extern AsyncLoginServiceEnterGameHandlerFunctionType AsyncLoginServiceEnterGameHandler;
 
 
-
 class ::loginpb::EnterGameC2LRequest;
 
 void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameC2LRequest& request);
@@ -79,7 +80,10 @@ void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
 
+
+#pragma region LoginServiceLeaveGame
 
 class AsyncLoginServiceLeaveGameGrpcClientCall {
 public:
@@ -93,7 +97,6 @@ using AsyncLoginServiceLeaveGameHandlerFunctionType = std::function<void(const s
 extern AsyncLoginServiceLeaveGameHandlerFunctionType AsyncLoginServiceLeaveGameHandler;
 
 
-
 class ::loginpb::LeaveGameC2LRequest;
 
 void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameC2LRequest& request);
@@ -101,7 +104,10 @@ void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
 
+
+#pragma region LoginServiceDisconnect
 
 class AsyncLoginServiceDisconnectGrpcClientCall {
 public:
@@ -115,12 +121,15 @@ using AsyncLoginServiceDisconnectHandlerFunctionType = std::function<void(const 
 extern AsyncLoginServiceDisconnectHandlerFunctionType AsyncLoginServiceDisconnectHandler;
 
 
-
 class ::loginpb::LoginNodeDisconnectRequest;
 
 void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request);
 void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
+#pragma endregion
+
+
 
 }// namespace loginpb

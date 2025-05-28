@@ -10,10 +10,8 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace  {
-
 using GateServiceStubPtr = std::unique_ptr<GateService::Stub>;
-
-
+#pragma region GateServicePlayerEnterGameNode
 
 class AsyncGateServicePlayerEnterGameNodeGrpcClientCall {
 public:
@@ -27,7 +25,6 @@ using AsyncGateServicePlayerEnterGameNodeHandlerFunctionType = std::function<voi
 extern AsyncGateServicePlayerEnterGameNodeHandlerFunctionType AsyncGateServicePlayerEnterGameNodeHandler;
 
 
-
 class ::RegisterGameNodeSessionRequest;
 
 void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const ::RegisterGameNodeSessionRequest& request);
@@ -35,7 +32,10 @@ void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity n
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
 
+
+#pragma region GateServiceSendMessageToPlayer
 
 class AsyncGateServiceSendMessageToPlayerGrpcClientCall {
 public:
@@ -49,7 +49,6 @@ using AsyncGateServiceSendMessageToPlayerHandlerFunctionType = std::function<voi
 extern AsyncGateServiceSendMessageToPlayerHandlerFunctionType AsyncGateServiceSendMessageToPlayerHandler;
 
 
-
 class ::NodeRouteMessageRequest;
 
 void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request);
@@ -57,7 +56,10 @@ void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity n
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
 
+
+#pragma region GateServiceKickSessionByCentre
 
 class AsyncGateServiceKickSessionByCentreGrpcClientCall {
 public:
@@ -71,7 +73,6 @@ using AsyncGateServiceKickSessionByCentreHandlerFunctionType = std::function<voi
 extern AsyncGateServiceKickSessionByCentreHandlerFunctionType AsyncGateServiceKickSessionByCentreHandler;
 
 
-
 class ::KickSessionRequest;
 
 void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const ::KickSessionRequest& request);
@@ -79,7 +80,10 @@ void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity n
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
 
+
+#pragma region GateServiceRouteNodeMessage
 
 class AsyncGateServiceRouteNodeMessageGrpcClientCall {
 public:
@@ -93,7 +97,6 @@ using AsyncGateServiceRouteNodeMessageHandlerFunctionType = std::function<void(c
 extern AsyncGateServiceRouteNodeMessageHandlerFunctionType AsyncGateServiceRouteNodeMessageHandler;
 
 
-
 class ::RouteMessageRequest;
 
 void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const ::RouteMessageRequest& request);
@@ -101,7 +104,10 @@ void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity node
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
 
+
+#pragma region GateServiceRoutePlayerMessage
 
 class AsyncGateServiceRoutePlayerMessageGrpcClientCall {
 public:
@@ -115,7 +121,6 @@ using AsyncGateServiceRoutePlayerMessageHandlerFunctionType = std::function<void
 extern AsyncGateServiceRoutePlayerMessageHandlerFunctionType AsyncGateServiceRoutePlayerMessageHandler;
 
 
-
 class ::RoutePlayerMessageRequest;
 
 void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const ::RoutePlayerMessageRequest& request);
@@ -123,7 +128,10 @@ void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity no
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
 
+
+#pragma region GateServiceBroadcastToPlayers
 
 class AsyncGateServiceBroadcastToPlayersGrpcClientCall {
 public:
@@ -137,7 +145,6 @@ using AsyncGateServiceBroadcastToPlayersHandlerFunctionType = std::function<void
 extern AsyncGateServiceBroadcastToPlayersHandlerFunctionType AsyncGateServiceBroadcastToPlayersHandler;
 
 
-
 class ::BroadcastToPlayersRequest;
 
 void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const ::BroadcastToPlayersRequest& request);
@@ -145,7 +152,10 @@ void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity no
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
+#pragma endregion
 
+
+#pragma region GateServiceRegisterNodeSession
 
 class AsyncGateServiceRegisterNodeSessionGrpcClientCall {
 public:
@@ -159,12 +169,15 @@ using AsyncGateServiceRegisterNodeSessionHandlerFunctionType = std::function<voi
 extern AsyncGateServiceRegisterNodeSessionHandlerFunctionType AsyncGateServiceRegisterNodeSessionHandler;
 
 
-
 class ::RegisterNodeSessionRequest;
 
 void SendGateServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request);
 void SendGateServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
+#pragma endregion
+
+
 
 }// namespace 

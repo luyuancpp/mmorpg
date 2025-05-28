@@ -4,12 +4,10 @@
 #include "proto/logic/constants/etcd_grpc.pb.h"
 
 namespace {
-
+#pragma region GameServicePlayerEnterGameNode
 struct GameServicePlayerEnterGameNodeCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncGameServicePlayerEnterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServicePlayerEnterGameNodeGrpcClientCall>&)>;
 AsyncGameServicePlayerEnterGameNodeHandlerFunctionType AsyncGameServicePlayerEnterGameNodeHandler;
@@ -36,8 +34,6 @@ void AsyncCompleteGrpcGameServicePlayerEnterGameNode(entt::registry& registry, e
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendGameServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const ::PlayerEnterGameNodeRequest& request) {
 
@@ -68,12 +64,14 @@ void SendGameServicePlayerEnterGameNode(entt::registry& registry, entt::entity n
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region GameServiceSendMessageToPlayer
 struct GameServiceSendMessageToPlayerCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncGameServiceSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceSendMessageToPlayerGrpcClientCall>&)>;
 AsyncGameServiceSendMessageToPlayerHandlerFunctionType AsyncGameServiceSendMessageToPlayerHandler;
@@ -100,8 +98,6 @@ void AsyncCompleteGrpcGameServiceSendMessageToPlayer(entt::registry& registry, e
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendGameServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request) {
 
@@ -132,12 +128,14 @@ void SendGameServiceSendMessageToPlayer(entt::registry& registry, entt::entity n
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region GameServiceClientSendMessageToPlayer
 struct GameServiceClientSendMessageToPlayerCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncGameServiceClientSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceClientSendMessageToPlayerGrpcClientCall>&)>;
 AsyncGameServiceClientSendMessageToPlayerHandlerFunctionType AsyncGameServiceClientSendMessageToPlayerHandler;
@@ -164,8 +162,6 @@ void AsyncCompleteGrpcGameServiceClientSendMessageToPlayer(entt::registry& regis
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const ::ClientSendMessageToPlayerRequest& request) {
 
@@ -196,12 +192,14 @@ void SendGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::en
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region GameServiceCentreSendToPlayerViaGameNode
 struct GameServiceCentreSendToPlayerViaGameNodeCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncGameServiceCentreSendToPlayerViaGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall>&)>;
 AsyncGameServiceCentreSendToPlayerViaGameNodeHandlerFunctionType AsyncGameServiceCentreSendToPlayerViaGameNodeHandler;
@@ -228,8 +226,6 @@ void AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode(entt::registry& r
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendGameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request) {
 
@@ -260,12 +256,14 @@ void SendGameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region GameServiceInvokePlayerService
 struct GameServiceInvokePlayerServiceCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncGameServiceInvokePlayerServiceHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceInvokePlayerServiceGrpcClientCall>&)>;
 AsyncGameServiceInvokePlayerServiceHandlerFunctionType AsyncGameServiceInvokePlayerServiceHandler;
@@ -292,8 +290,6 @@ void AsyncCompleteGrpcGameServiceInvokePlayerService(entt::registry& registry, e
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendGameServiceInvokePlayerService(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request) {
 
@@ -324,12 +320,14 @@ void SendGameServiceInvokePlayerService(entt::registry& registry, entt::entity n
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region GameServiceRouteNodeStringMsg
 struct GameServiceRouteNodeStringMsgCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncGameServiceRouteNodeStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRouteNodeStringMsgGrpcClientCall>&)>;
 AsyncGameServiceRouteNodeStringMsgHandlerFunctionType AsyncGameServiceRouteNodeStringMsgHandler;
@@ -356,8 +354,6 @@ void AsyncCompleteGrpcGameServiceRouteNodeStringMsg(entt::registry& registry, en
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendGameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const ::RouteMessageRequest& request) {
 
@@ -388,12 +384,14 @@ void SendGameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity no
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region GameServiceRoutePlayerStringMsg
 struct GameServiceRoutePlayerStringMsgCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncGameServiceRoutePlayerStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRoutePlayerStringMsgGrpcClientCall>&)>;
 AsyncGameServiceRoutePlayerStringMsgHandlerFunctionType AsyncGameServiceRoutePlayerStringMsgHandler;
@@ -420,8 +418,6 @@ void AsyncCompleteGrpcGameServiceRoutePlayerStringMsg(entt::registry& registry, 
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendGameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const ::RoutePlayerMessageRequest& request) {
 
@@ -452,12 +448,14 @@ void SendGameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region GameServiceUpdateSessionDetail
 struct GameServiceUpdateSessionDetailCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncGameServiceUpdateSessionDetailHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceUpdateSessionDetailGrpcClientCall>&)>;
 AsyncGameServiceUpdateSessionDetailHandlerFunctionType AsyncGameServiceUpdateSessionDetailHandler;
@@ -484,8 +482,6 @@ void AsyncCompleteGrpcGameServiceUpdateSessionDetail(entt::registry& registry, e
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendGameServiceUpdateSessionDetail(entt::registry& registry, entt::entity nodeEntity, const ::RegisterPlayerSessionRequest& request) {
 
@@ -516,12 +512,14 @@ void SendGameServiceUpdateSessionDetail(entt::registry& registry, entt::entity n
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region GameServiceEnterScene
 struct GameServiceEnterSceneCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncGameServiceEnterSceneHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceEnterSceneGrpcClientCall>&)>;
 AsyncGameServiceEnterSceneHandlerFunctionType AsyncGameServiceEnterSceneHandler;
@@ -548,8 +546,6 @@ void AsyncCompleteGrpcGameServiceEnterScene(entt::registry& registry, entt::enti
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendGameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::Centre2GsEnterSceneRequest& request) {
 
@@ -580,12 +576,14 @@ void SendGameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region GameServiceCreateScene
 struct GameServiceCreateSceneCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncGameServiceCreateSceneHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceCreateSceneGrpcClientCall>&)>;
 AsyncGameServiceCreateSceneHandlerFunctionType AsyncGameServiceCreateSceneHandler;
@@ -612,8 +610,6 @@ void AsyncCompleteGrpcGameServiceCreateScene(entt::registry& registry, entt::ent
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendGameServiceCreateScene(entt::registry& registry, entt::entity nodeEntity, const ::CreateSceneRequest& request) {
 
@@ -644,12 +640,14 @@ void SendGameServiceCreateScene(entt::registry& registry, entt::entity nodeEntit
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
 
+
+
+#pragma region GameServiceRegisterNodeSession
 struct GameServiceRegisterNodeSessionCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
-
 
 using AsyncGameServiceRegisterNodeSessionHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGameServiceRegisterNodeSessionGrpcClientCall>&)>;
 AsyncGameServiceRegisterNodeSessionHandlerFunctionType AsyncGameServiceRegisterNodeSessionHandler;
@@ -676,8 +674,6 @@ void AsyncCompleteGrpcGameServiceRegisterNodeSession(entt::registry& registry, e
         LOG_ERROR << call->status.error_message();
     }
 }
-
-
 
 void SendGameServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request) {
 
@@ -708,6 +704,10 @@ void SendGameServiceRegisterNodeSession(entt::registry& registry, entt::entity n
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+#pragma endregion
+
+
+
 void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
     registry.emplace<GameServicePlayerEnterGameNodeCompleteQueue>(nodeEntity);
 
@@ -730,7 +730,6 @@ void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEn
     registry.emplace<GameServiceCreateSceneCompleteQueue>(nodeEntity);
 
     registry.emplace<GameServiceRegisterNodeSessionCompleteQueue>(nodeEntity);
-
 }
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry) {
     {
@@ -798,7 +797,4 @@ void HandleGameServiceCompletedQueueMessage(entt::registry& registry) {
         for (auto&& [e, completeQueueComp] : view.each()) {
             AsyncCompleteGrpcGameServiceRegisterNodeSession(registry, e, completeQueueComp.cq);
         }
-    }
-}
-
-}// namespace 
+    }}}// namespace 
