@@ -54,3 +54,6 @@
 	path = third_party/curl
 	url = https://github.com/curl/curl.git
 	ignore = dirty
+[submodule "third_party/cppcodec"]
+	path = third_party/cppcodec
+	url = https://github.com/tplgy/cppcodec.git
