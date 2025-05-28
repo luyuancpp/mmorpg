@@ -31,6 +31,7 @@ extern AsyncLoginServiceLoginHandlerFunctionType AsyncLoginServiceLoginHandler;
 class ::loginpb::LoginC2LRequest;
 
 void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginC2LRequest& request);
+void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginC2LRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -52,6 +53,7 @@ extern AsyncLoginServiceCreatePlayerHandlerFunctionType AsyncLoginServiceCreateP
 class ::loginpb::CreatePlayerC2LRequest;
 
 void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerC2LRequest& request);
+void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerC2LRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -73,6 +75,7 @@ extern AsyncLoginServiceEnterGameHandlerFunctionType AsyncLoginServiceEnterGameH
 class ::loginpb::EnterGameC2LRequest;
 
 void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameC2LRequest& request);
+void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameC2LRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -94,6 +97,7 @@ extern AsyncLoginServiceLeaveGameHandlerFunctionType AsyncLoginServiceLeaveGameH
 class ::loginpb::LeaveGameC2LRequest;
 
 void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameC2LRequest& request);
+void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameC2LRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -115,6 +119,7 @@ extern AsyncLoginServiceDisconnectHandlerFunctionType AsyncLoginServiceDisconnec
 class ::loginpb::LoginNodeDisconnectRequest;
 
 void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request);
+void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 

@@ -51,6 +51,24 @@ void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity n
 
 }
 
+void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const ::RegisterGameNodeSessionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGateServicePlayerEnterGameNodeGrpcClientCall* call = new AsyncGateServicePlayerEnterGameNodeGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
+    call->response_reader = registry
+        .get<GateServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncPlayerEnterGameNode(&call->context, request,
+                                  &registry.get<GateServicePlayerEnterGameNodeCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
 struct GateServiceSendMessageToPlayerCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -88,6 +106,24 @@ void AsyncCompleteGrpcGateServiceSendMessageToPlayer(entt::registry& registry, e
 void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request) {
 
     AsyncGateServiceSendMessageToPlayerGrpcClientCall* call = new AsyncGateServiceSendMessageToPlayerGrpcClientCall;
+    call->response_reader = registry
+        .get<GateServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncSendMessageToPlayer(&call->context, request,
+                                  &registry.get<GateServiceSendMessageToPlayerCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
+void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGateServiceSendMessageToPlayerGrpcClientCall* call = new AsyncGateServiceSendMessageToPlayerGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
     call->response_reader = registry
         .get<GateServiceStubPtr>(nodeEntity)
         ->PrepareAsyncSendMessageToPlayer(&call->context, request,
@@ -143,6 +179,24 @@ void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity n
 
 }
 
+void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const ::KickSessionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGateServiceKickSessionByCentreGrpcClientCall* call = new AsyncGateServiceKickSessionByCentreGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
+    call->response_reader = registry
+        .get<GateServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncKickSessionByCentre(&call->context, request,
+                                  &registry.get<GateServiceKickSessionByCentreCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
 struct GateServiceRouteNodeMessageCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -180,6 +234,24 @@ void AsyncCompleteGrpcGateServiceRouteNodeMessage(entt::registry& registry, entt
 void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const ::RouteMessageRequest& request) {
 
     AsyncGateServiceRouteNodeMessageGrpcClientCall* call = new AsyncGateServiceRouteNodeMessageGrpcClientCall;
+    call->response_reader = registry
+        .get<GateServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRouteNodeMessage(&call->context, request,
+                                  &registry.get<GateServiceRouteNodeMessageCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
+void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const ::RouteMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGateServiceRouteNodeMessageGrpcClientCall* call = new AsyncGateServiceRouteNodeMessageGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
     call->response_reader = registry
         .get<GateServiceStubPtr>(nodeEntity)
         ->PrepareAsyncRouteNodeMessage(&call->context, request,
@@ -235,6 +307,24 @@ void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity no
 
 }
 
+void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const ::RoutePlayerMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGateServiceRoutePlayerMessageGrpcClientCall* call = new AsyncGateServiceRoutePlayerMessageGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
+    call->response_reader = registry
+        .get<GateServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRoutePlayerMessage(&call->context, request,
+                                  &registry.get<GateServiceRoutePlayerMessageCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
 struct GateServiceBroadcastToPlayersCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -281,6 +371,24 @@ void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity no
 
 }
 
+void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const ::BroadcastToPlayersRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGateServiceBroadcastToPlayersGrpcClientCall* call = new AsyncGateServiceBroadcastToPlayersGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
+    call->response_reader = registry
+        .get<GateServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncBroadcastToPlayers(&call->context, request,
+                                  &registry.get<GateServiceBroadcastToPlayersCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
 struct GateServiceRegisterNodeSessionCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -318,6 +426,24 @@ void AsyncCompleteGrpcGateServiceRegisterNodeSession(entt::registry& registry, e
 void SendGateServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request) {
 
     AsyncGateServiceRegisterNodeSessionGrpcClientCall* call = new AsyncGateServiceRegisterNodeSessionGrpcClientCall;
+    call->response_reader = registry
+        .get<GateServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRegisterNodeSession(&call->context, request,
+                                  &registry.get<GateServiceRegisterNodeSessionCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
+void SendGateServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGateServiceRegisterNodeSessionGrpcClientCall* call = new AsyncGateServiceRegisterNodeSessionGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
     call->response_reader = registry
         .get<GateServiceStubPtr>(nodeEntity)
         ->PrepareAsyncRegisterNodeSession(&call->context, request,

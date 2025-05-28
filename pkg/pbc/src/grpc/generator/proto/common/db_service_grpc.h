@@ -31,6 +31,7 @@ extern AsyncAccountDBServiceLoad2RedisHandlerFunctionType AsyncAccountDBServiceL
 class ::LoadAccountRequest;
 
 void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const ::LoadAccountRequest& request);
+void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const ::LoadAccountRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry);
 void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -52,6 +53,7 @@ extern AsyncAccountDBServiceSave2RedisHandlerFunctionType AsyncAccountDBServiceS
 class ::SaveAccountRequest;
 
 void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SaveAccountRequest& request);
+void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SaveAccountRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry);
 void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -75,6 +77,7 @@ extern AsyncPlayerDBServiceLoad2RedisHandlerFunctionType AsyncPlayerDBServiceLoa
 class ::LoadPlayerRequest;
 
 void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const ::LoadPlayerRequest& request);
+void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const ::LoadPlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandlePlayerDBServiceCompletedQueueMessage(entt::registry& registry);
 void InitPlayerDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -96,6 +99,7 @@ extern AsyncPlayerDBServiceSave2RedisHandlerFunctionType AsyncPlayerDBServiceSav
 class ::SavePlayerRequest;
 
 void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SavePlayerRequest& request);
+void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SavePlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandlePlayerDBServiceCompletedQueueMessage(entt::registry& registry);
 void InitPlayerDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
