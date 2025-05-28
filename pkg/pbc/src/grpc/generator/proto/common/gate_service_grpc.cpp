@@ -2,6 +2,7 @@
 #include "gate_service_grpc.h"
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
+#include "util/base64.h"
 
 namespace {
 #pragma region GateServicePlayerEnterGameNode
@@ -51,10 +52,10 @@ void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity n
 
     AsyncGateServicePlayerEnterGameNodeGrpcClientCall* call = new AsyncGateServicePlayerEnterGameNodeGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<GateServiceStubPtr>(nodeEntity)
@@ -115,10 +116,10 @@ void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity n
 
     AsyncGateServiceSendMessageToPlayerGrpcClientCall* call = new AsyncGateServiceSendMessageToPlayerGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<GateServiceStubPtr>(nodeEntity)
@@ -179,10 +180,10 @@ void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity n
 
     AsyncGateServiceKickSessionByCentreGrpcClientCall* call = new AsyncGateServiceKickSessionByCentreGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<GateServiceStubPtr>(nodeEntity)
@@ -243,10 +244,10 @@ void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity node
 
     AsyncGateServiceRouteNodeMessageGrpcClientCall* call = new AsyncGateServiceRouteNodeMessageGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<GateServiceStubPtr>(nodeEntity)
@@ -307,10 +308,10 @@ void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity no
 
     AsyncGateServiceRoutePlayerMessageGrpcClientCall* call = new AsyncGateServiceRoutePlayerMessageGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<GateServiceStubPtr>(nodeEntity)
@@ -371,10 +372,10 @@ void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity no
 
     AsyncGateServiceBroadcastToPlayersGrpcClientCall* call = new AsyncGateServiceBroadcastToPlayersGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<GateServiceStubPtr>(nodeEntity)
@@ -435,10 +436,10 @@ void SendGateServiceRegisterNodeSession(entt::registry& registry, entt::entity n
 
     AsyncGateServiceRegisterNodeSessionGrpcClientCall* call = new AsyncGateServiceRegisterNodeSessionGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<GateServiceStubPtr>(nodeEntity)

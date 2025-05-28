@@ -2,6 +2,7 @@
 #include "login_service_grpc.h"
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
+#include "util/base64.h"
 
 namespace loginpb{
 #pragma region LoginServiceLogin
@@ -51,10 +52,10 @@ void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, co
 
     AsyncLoginServiceLoginGrpcClientCall* call = new AsyncLoginServiceLoginGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<LoginServiceStubPtr>(nodeEntity)
@@ -115,10 +116,10 @@ void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEnt
 
     AsyncLoginServiceCreatePlayerGrpcClientCall* call = new AsyncLoginServiceCreatePlayerGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<LoginServiceStubPtr>(nodeEntity)
@@ -179,10 +180,10 @@ void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity
 
     AsyncLoginServiceEnterGameGrpcClientCall* call = new AsyncLoginServiceEnterGameGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<LoginServiceStubPtr>(nodeEntity)
@@ -243,10 +244,10 @@ void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity
 
     AsyncLoginServiceLeaveGameGrpcClientCall* call = new AsyncLoginServiceLeaveGameGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<LoginServiceStubPtr>(nodeEntity)
@@ -307,10 +308,10 @@ void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntit
 
     AsyncLoginServiceDisconnectGrpcClientCall* call = new AsyncLoginServiceDisconnectGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<LoginServiceStubPtr>(nodeEntity)

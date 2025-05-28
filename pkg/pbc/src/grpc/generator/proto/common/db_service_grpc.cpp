@@ -2,6 +2,7 @@
 #include "db_service_grpc.h"
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
+#include "util/base64.h"
 
 namespace {
 #pragma region AccountDBServiceLoad2Redis
@@ -51,10 +52,10 @@ void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeE
 
     AsyncAccountDBServiceLoad2RedisGrpcClientCall* call = new AsyncAccountDBServiceLoad2RedisGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<AccountDBServiceStubPtr>(nodeEntity)
@@ -115,10 +116,10 @@ void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeE
 
     AsyncAccountDBServiceSave2RedisGrpcClientCall* call = new AsyncAccountDBServiceSave2RedisGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<AccountDBServiceStubPtr>(nodeEntity)
@@ -179,10 +180,10 @@ void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEn
 
     AsyncPlayerDBServiceLoad2RedisGrpcClientCall* call = new AsyncPlayerDBServiceLoad2RedisGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<PlayerDBServiceStubPtr>(nodeEntity)
@@ -243,10 +244,10 @@ void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEn
 
     AsyncPlayerDBServiceSave2RedisGrpcClientCall* call = new AsyncPlayerDBServiceSave2RedisGrpcClientCall;
 
-	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
-	{
-		call->context.AddMetadata(metaKeys[i], metaValues[i]);
-	}
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
 
     call->response_reader = registry
         .get<PlayerDBServiceStubPtr>(nodeEntity)
