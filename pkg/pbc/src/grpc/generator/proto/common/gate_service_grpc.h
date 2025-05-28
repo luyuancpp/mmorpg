@@ -31,6 +31,7 @@ extern AsyncGateServicePlayerEnterGameNodeHandlerFunctionType AsyncGateServicePl
 class ::RegisterGameNodeSessionRequest;
 
 void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const ::RegisterGameNodeSessionRequest& request);
+void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const ::RegisterGameNodeSessionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -52,6 +53,7 @@ extern AsyncGateServiceSendMessageToPlayerHandlerFunctionType AsyncGateServiceSe
 class ::NodeRouteMessageRequest;
 
 void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request);
+void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -73,6 +75,7 @@ extern AsyncGateServiceKickSessionByCentreHandlerFunctionType AsyncGateServiceKi
 class ::KickSessionRequest;
 
 void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const ::KickSessionRequest& request);
+void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const ::KickSessionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -94,6 +97,7 @@ extern AsyncGateServiceRouteNodeMessageHandlerFunctionType AsyncGateServiceRoute
 class ::RouteMessageRequest;
 
 void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const ::RouteMessageRequest& request);
+void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const ::RouteMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -115,6 +119,7 @@ extern AsyncGateServiceRoutePlayerMessageHandlerFunctionType AsyncGateServiceRou
 class ::RoutePlayerMessageRequest;
 
 void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const ::RoutePlayerMessageRequest& request);
+void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const ::RoutePlayerMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -136,6 +141,7 @@ extern AsyncGateServiceBroadcastToPlayersHandlerFunctionType AsyncGateServiceBro
 class ::BroadcastToPlayersRequest;
 
 void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const ::BroadcastToPlayersRequest& request);
+void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const ::BroadcastToPlayersRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -157,6 +163,7 @@ extern AsyncGateServiceRegisterNodeSessionHandlerFunctionType AsyncGateServiceRe
 class ::RegisterNodeSessionRequest;
 
 void SendGateServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request);
+void SendGateServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry);
 void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 

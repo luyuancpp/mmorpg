@@ -51,6 +51,24 @@ void SendGameServicePlayerEnterGameNode(entt::registry& registry, entt::entity n
 
 }
 
+void SendGameServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const ::PlayerEnterGameNodeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGameServicePlayerEnterGameNodeGrpcClientCall* call = new AsyncGameServicePlayerEnterGameNodeGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
+    call->response_reader = registry
+        .get<GameServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncPlayerEnterGameNode(&call->context, request,
+                                  &registry.get<GameServicePlayerEnterGameNodeCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
 struct GameServiceSendMessageToPlayerCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -88,6 +106,24 @@ void AsyncCompleteGrpcGameServiceSendMessageToPlayer(entt::registry& registry, e
 void SendGameServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request) {
 
     AsyncGameServiceSendMessageToPlayerGrpcClientCall* call = new AsyncGameServiceSendMessageToPlayerGrpcClientCall;
+    call->response_reader = registry
+        .get<GameServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncSendMessageToPlayer(&call->context, request,
+                                  &registry.get<GameServiceSendMessageToPlayerCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
+void SendGameServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGameServiceSendMessageToPlayerGrpcClientCall* call = new AsyncGameServiceSendMessageToPlayerGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
     call->response_reader = registry
         .get<GameServiceStubPtr>(nodeEntity)
         ->PrepareAsyncSendMessageToPlayer(&call->context, request,
@@ -143,6 +179,24 @@ void SendGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::en
 
 }
 
+void SendGameServiceClientSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const ::ClientSendMessageToPlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGameServiceClientSendMessageToPlayerGrpcClientCall* call = new AsyncGameServiceClientSendMessageToPlayerGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
+    call->response_reader = registry
+        .get<GameServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncClientSendMessageToPlayer(&call->context, request,
+                                  &registry.get<GameServiceClientSendMessageToPlayerCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
 struct GameServiceCentreSendToPlayerViaGameNodeCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -180,6 +234,24 @@ void AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode(entt::registry& r
 void SendGameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request) {
 
     AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall* call = new AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall;
+    call->response_reader = registry
+        .get<GameServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncCentreSendToPlayerViaGameNode(&call->context, request,
+                                  &registry.get<GameServiceCentreSendToPlayerViaGameNodeCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
+void SendGameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall* call = new AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
     call->response_reader = registry
         .get<GameServiceStubPtr>(nodeEntity)
         ->PrepareAsyncCentreSendToPlayerViaGameNode(&call->context, request,
@@ -235,6 +307,24 @@ void SendGameServiceInvokePlayerService(entt::registry& registry, entt::entity n
 
 }
 
+void SendGameServiceInvokePlayerService(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGameServiceInvokePlayerServiceGrpcClientCall* call = new AsyncGameServiceInvokePlayerServiceGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
+    call->response_reader = registry
+        .get<GameServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncInvokePlayerService(&call->context, request,
+                                  &registry.get<GameServiceInvokePlayerServiceCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
 struct GameServiceRouteNodeStringMsgCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -272,6 +362,24 @@ void AsyncCompleteGrpcGameServiceRouteNodeStringMsg(entt::registry& registry, en
 void SendGameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const ::RouteMessageRequest& request) {
 
     AsyncGameServiceRouteNodeStringMsgGrpcClientCall* call = new AsyncGameServiceRouteNodeStringMsgGrpcClientCall;
+    call->response_reader = registry
+        .get<GameServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRouteNodeStringMsg(&call->context, request,
+                                  &registry.get<GameServiceRouteNodeStringMsgCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
+void SendGameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const ::RouteMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGameServiceRouteNodeStringMsgGrpcClientCall* call = new AsyncGameServiceRouteNodeStringMsgGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
     call->response_reader = registry
         .get<GameServiceStubPtr>(nodeEntity)
         ->PrepareAsyncRouteNodeStringMsg(&call->context, request,
@@ -327,6 +435,24 @@ void SendGameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity 
 
 }
 
+void SendGameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const ::RoutePlayerMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGameServiceRoutePlayerStringMsgGrpcClientCall* call = new AsyncGameServiceRoutePlayerStringMsgGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
+    call->response_reader = registry
+        .get<GameServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRoutePlayerStringMsg(&call->context, request,
+                                  &registry.get<GameServiceRoutePlayerStringMsgCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
 struct GameServiceUpdateSessionDetailCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -364,6 +490,24 @@ void AsyncCompleteGrpcGameServiceUpdateSessionDetail(entt::registry& registry, e
 void SendGameServiceUpdateSessionDetail(entt::registry& registry, entt::entity nodeEntity, const ::RegisterPlayerSessionRequest& request) {
 
     AsyncGameServiceUpdateSessionDetailGrpcClientCall* call = new AsyncGameServiceUpdateSessionDetailGrpcClientCall;
+    call->response_reader = registry
+        .get<GameServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncUpdateSessionDetail(&call->context, request,
+                                  &registry.get<GameServiceUpdateSessionDetailCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
+void SendGameServiceUpdateSessionDetail(entt::registry& registry, entt::entity nodeEntity, const ::RegisterPlayerSessionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGameServiceUpdateSessionDetailGrpcClientCall* call = new AsyncGameServiceUpdateSessionDetailGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
     call->response_reader = registry
         .get<GameServiceStubPtr>(nodeEntity)
         ->PrepareAsyncUpdateSessionDetail(&call->context, request,
@@ -419,6 +563,24 @@ void SendGameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity
 
 }
 
+void SendGameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::Centre2GsEnterSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGameServiceEnterSceneGrpcClientCall* call = new AsyncGameServiceEnterSceneGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
+    call->response_reader = registry
+        .get<GameServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncEnterScene(&call->context, request,
+                                  &registry.get<GameServiceEnterSceneCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
 struct GameServiceCreateSceneCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -465,6 +627,24 @@ void SendGameServiceCreateScene(entt::registry& registry, entt::entity nodeEntit
 
 }
 
+void SendGameServiceCreateScene(entt::registry& registry, entt::entity nodeEntity, const ::CreateSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGameServiceCreateSceneGrpcClientCall* call = new AsyncGameServiceCreateSceneGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
+    call->response_reader = registry
+        .get<GameServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncCreateScene(&call->context, request,
+                                  &registry.get<GameServiceCreateSceneCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
 struct GameServiceRegisterNodeSessionCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -502,6 +682,24 @@ void AsyncCompleteGrpcGameServiceRegisterNodeSession(entt::registry& registry, e
 void SendGameServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request) {
 
     AsyncGameServiceRegisterNodeSessionGrpcClientCall* call = new AsyncGameServiceRegisterNodeSessionGrpcClientCall;
+    call->response_reader = registry
+        .get<GameServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRegisterNodeSession(&call->context, request,
+                                  &registry.get<GameServiceRegisterNodeSessionCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
+void SendGameServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncGameServiceRegisterNodeSessionGrpcClientCall* call = new AsyncGameServiceRegisterNodeSessionGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
     call->response_reader = registry
         .get<GameServiceStubPtr>(nodeEntity)
         ->PrepareAsyncRegisterNodeSession(&call->context, request,

@@ -2,8 +2,10 @@
 package main
 
 import (
+	"encoding/base64"
 	"flag"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/discov"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -11,7 +13,9 @@ import (
 	"github.com/zeromicro/go-zero/zrpc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
+	"log"
 	"login/internal/config"
 	"login/internal/logic/pkg/centre"
 	"login/internal/logic/pkg/node"
@@ -84,6 +88,33 @@ func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	return nil
 }
 
+func SessionInterceptor(
+	ctx context.Context,
+	req interface{},
+	info *grpc.UnaryServerInfo,
+	handler grpc.UnaryHandler,
+) (interface{}, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		if vals, exists := md["x-session-detail-bin"]; exists && len(vals) > 0 {
+			// 解码 Base64
+			bin, err := base64.StdEncoding.DecodeString(vals[0])
+			if err != nil {
+				log.Println("Base64 decode error:", err)
+			} else {
+				var detail game.SessionDetails
+				if err := proto.Unmarshal(bin, &detail); err != nil {
+					log.Println("Protobuf unmarshal error:", err)
+				} else {
+					// 安全放入 context
+					ctx = context.WithValue(ctx, "SessionDetailsKey", &detail)
+				}
+			}
+		}
+	}
+	return handler(ctx, req)
+}
+
 // startServer 启动并配置 gRPC 服务
 func startServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	server := zrpc.MustNewServer(cfg.RpcServerConf, func(grpcServer *grpc.Server) {
@@ -95,6 +126,8 @@ func startServer(cfg config.Config, ctx *svc.ServiceContext) error {
 			reflection.Register(grpcServer)
 		}
 	})
+
+	server.AddUnaryInterceptors(SessionInterceptor)
 
 	defer server.Stop()
 

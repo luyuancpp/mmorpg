@@ -57,6 +57,7 @@ extern Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Metho
 class {{.CppRequest}};
 
 void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request);
+void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void Handle{{.Service}}CompletedQueueMessage(entt::registry& registry);
 void Init{{.Service}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -191,6 +192,29 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
     TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
 {{ else }}
     Async{{.Service}}{{.Method}}GrpcClientCall* call = new Async{{.Service}}{{.Method}}GrpcClientCall;
+    call->response_reader = registry
+        .get<{{.Service}}StubPtr>(nodeEntity)
+        ->PrepareAsync{{.Method}}(&call->context, request,
+                                  &registry.get<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+{{ end }}
+}
+
+void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+{{ if .ClientStreaming }}
+    auto& cq = registry.get<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity).cq;
+    auto& pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
+    pendingWritesBuffer.push_back(request);
+    TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
+{{ else }}
+    Async{{.Service}}{{.Method}}GrpcClientCall* call = new Async{{.Service}}{{.Method}}GrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
     call->response_reader = registry
         .get<{{.Service}}StubPtr>(nodeEntity)
         ->PrepareAsync{{.Method}}(&call->context, request,

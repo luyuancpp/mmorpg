@@ -31,6 +31,7 @@ extern AsyncCentreServiceGatePlayerServiceHandlerFunctionType AsyncCentreService
 class ::GateClientMessageRequest;
 
 void SendCentreServiceGatePlayerService(entt::registry& registry, entt::entity nodeEntity, const ::GateClientMessageRequest& request);
+void SendCentreServiceGatePlayerService(entt::registry& registry, entt::entity nodeEntity, const ::GateClientMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -52,6 +53,7 @@ extern AsyncCentreServiceGateSessionDisconnectHandlerFunctionType AsyncCentreSer
 class ::GateSessionDisconnectRequest;
 
 void SendCentreServiceGateSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::GateSessionDisconnectRequest& request);
+void SendCentreServiceGateSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::GateSessionDisconnectRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -73,6 +75,7 @@ extern AsyncCentreServiceLoginNodeAccountLoginHandlerFunctionType AsyncCentreSer
 class ::LoginRequest;
 
 void SendCentreServiceLoginNodeAccountLogin(entt::registry& registry, entt::entity nodeEntity, const ::LoginRequest& request);
+void SendCentreServiceLoginNodeAccountLogin(entt::registry& registry, entt::entity nodeEntity, const ::LoginRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -94,6 +97,7 @@ extern AsyncCentreServiceLoginNodeEnterGameHandlerFunctionType AsyncCentreServic
 class ::CentrePlayerGameNodeEntryRequest;
 
 void SendCentreServiceLoginNodeEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::CentrePlayerGameNodeEntryRequest& request);
+void SendCentreServiceLoginNodeEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::CentrePlayerGameNodeEntryRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -115,6 +119,7 @@ extern AsyncCentreServiceLoginNodeLeaveGameHandlerFunctionType AsyncCentreServic
 class ::LoginNodeLeaveGameRequest;
 
 void SendCentreServiceLoginNodeLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::LoginNodeLeaveGameRequest& request);
+void SendCentreServiceLoginNodeLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::LoginNodeLeaveGameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -136,6 +141,7 @@ extern AsyncCentreServiceLoginNodeSessionDisconnectHandlerFunctionType AsyncCent
 class ::GateSessionDisconnectRequest;
 
 void SendCentreServiceLoginNodeSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::GateSessionDisconnectRequest& request);
+void SendCentreServiceLoginNodeSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::GateSessionDisconnectRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -157,6 +163,7 @@ extern AsyncCentreServicePlayerServiceHandlerFunctionType AsyncCentreServicePlay
 class ::NodeRouteMessageRequest;
 
 void SendCentreServicePlayerService(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request);
+void SendCentreServicePlayerService(entt::registry& registry, entt::entity nodeEntity, const ::NodeRouteMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -178,6 +185,7 @@ extern AsyncCentreServiceEnterGsSucceedHandlerFunctionType AsyncCentreServiceEnt
 class ::EnterGameNodeSuccessRequest;
 
 void SendCentreServiceEnterGsSucceed(entt::registry& registry, entt::entity nodeEntity, const ::EnterGameNodeSuccessRequest& request);
+void SendCentreServiceEnterGsSucceed(entt::registry& registry, entt::entity nodeEntity, const ::EnterGameNodeSuccessRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -199,6 +207,7 @@ extern AsyncCentreServiceRouteNodeStringMsgHandlerFunctionType AsyncCentreServic
 class ::RouteMessageRequest;
 
 void SendCentreServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const ::RouteMessageRequest& request);
+void SendCentreServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const ::RouteMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -220,6 +229,7 @@ extern AsyncCentreServiceRoutePlayerStringMsgHandlerFunctionType AsyncCentreServ
 class ::RoutePlayerMessageRequest;
 
 void SendCentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const ::RoutePlayerMessageRequest& request);
+void SendCentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const ::RoutePlayerMessageRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -241,6 +251,7 @@ extern AsyncCentreServiceInitSceneNodeHandlerFunctionType AsyncCentreServiceInit
 class ::InitSceneNodeRequest;
 
 void SendCentreServiceInitSceneNode(entt::registry& registry, entt::entity nodeEntity, const ::InitSceneNodeRequest& request);
+void SendCentreServiceInitSceneNode(entt::registry& registry, entt::entity nodeEntity, const ::InitSceneNodeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -262,6 +273,7 @@ extern AsyncCentreServiceRegisterNodeSessionHandlerFunctionType AsyncCentreServi
 class ::RegisterNodeSessionRequest;
 
 void SendCentreServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request);
+void SendCentreServiceRegisterNodeSession(entt::registry& registry, entt::entity nodeEntity, const ::RegisterNodeSessionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleCentreServiceCompletedQueueMessage(entt::registry& registry);
 void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 

@@ -51,6 +51,24 @@ void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeE
 
 }
 
+void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const ::LoadAccountRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncAccountDBServiceLoad2RedisGrpcClientCall* call = new AsyncAccountDBServiceLoad2RedisGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
+    call->response_reader = registry
+        .get<AccountDBServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncLoad2Redis(&call->context, request,
+                                  &registry.get<AccountDBServiceLoad2RedisCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
 struct AccountDBServiceSave2RedisCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -88,6 +106,24 @@ void AsyncCompleteGrpcAccountDBServiceSave2Redis(entt::registry& registry, entt:
 void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SaveAccountRequest& request) {
 
     AsyncAccountDBServiceSave2RedisGrpcClientCall* call = new AsyncAccountDBServiceSave2RedisGrpcClientCall;
+    call->response_reader = registry
+        .get<AccountDBServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncSave2Redis(&call->context, request,
+                                  &registry.get<AccountDBServiceSave2RedisCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
+void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SaveAccountRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncAccountDBServiceSave2RedisGrpcClientCall* call = new AsyncAccountDBServiceSave2RedisGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
     call->response_reader = registry
         .get<AccountDBServiceStubPtr>(nodeEntity)
         ->PrepareAsyncSave2Redis(&call->context, request,
@@ -143,6 +179,24 @@ void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEn
 
 }
 
+void SendPlayerDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const ::LoadPlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncPlayerDBServiceLoad2RedisGrpcClientCall* call = new AsyncPlayerDBServiceLoad2RedisGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
+    call->response_reader = registry
+        .get<PlayerDBServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncLoad2Redis(&call->context, request,
+                                  &registry.get<PlayerDBServiceLoad2RedisCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
 struct PlayerDBServiceSave2RedisCompleteQueue {
     grpc::CompletionQueue cq;
 };
@@ -180,6 +234,24 @@ void AsyncCompleteGrpcPlayerDBServiceSave2Redis(entt::registry& registry, entt::
 void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SavePlayerRequest& request) {
 
     AsyncPlayerDBServiceSave2RedisGrpcClientCall* call = new AsyncPlayerDBServiceSave2RedisGrpcClientCall;
+    call->response_reader = registry
+        .get<PlayerDBServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncSave2Redis(&call->context, request,
+                                  &registry.get<PlayerDBServiceSave2RedisCompleteQueue>(nodeEntity).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+
+}
+
+void SendPlayerDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const ::SavePlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    AsyncPlayerDBServiceSave2RedisGrpcClientCall* call = new AsyncPlayerDBServiceSave2RedisGrpcClientCall;
+
+	for (uint32_t i = 0; i < metaKeys.size() && i < metaValues.size(); ++i)
+	{
+		call->context.AddMetadata(metaKeys[i], metaValues[i]);
+	}
+
     call->response_reader = registry
         .get<PlayerDBServiceStubPtr>(nodeEntity)
         ->PrepareAsyncSave2Redis(&call->context, request,
