@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+import "proto/common/common.proto";
+import "proto/common/empty.proto";
+import "proto/common/session.proto";
+import "proto/common/c2gate.proto";
+import "proto/common/common_message.proto";
+
+option cc_generic_services = true;
+
+message GateClientMessageRequest
+{
+  NetworkAddress rpc_client = 1;
+}
+
+message LoginNodeLeaveGameRequest
+{
+}
+
+message EnterGameNodeSuccessRequest
+{
+  uint64 player_id = 1;
+  uint32 scene_node_id = 2;
+}
+
+message CentrePlayerGameNodeEntryRequest
+{
+  EnterGameRequest client_msg_body = 1;
+  SessionDetails session_info = 2;
+}
+
+
+// 新增：SceneNode 初始化请求
+message InitSceneNodeRequest {
+  uint32 node_id = 1;
+  uint32 scene_node_type = 2;
+}
+
+service CentreService {
+  rpc GatePlayerService (GateClientMessageRequest) returns (Empty);
+  rpc GateSessionDisconnect (GateSessionDisconnectRequest) returns (Empty); 
+  rpc LoginNodeAccountLogin (LoginRequest) returns (LoginResponse);
+  rpc LoginNodeEnterGame (CentrePlayerGameNodeEntryRequest) returns (Empty);
+  rpc LoginNodeLeaveGame (LoginNodeLeaveGameRequest) returns (Empty);
+  rpc LoginNodeSessionDisconnect (GateSessionDisconnectRequest) returns (Empty); 
+  rpc PlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
+  rpc EnterGsSucceed (EnterGameNodeSuccessRequest) returns (Empty);
+  rpc RouteNodeStringMsg (RouteMessageRequest) returns (RouteMessageResponse);
+  rpc RoutePlayerStringMsg (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse);
+  rpc InitSceneNode (InitSceneNodeRequest) returns (Empty);
+  rpc RegisterNodeSession (RegisterNodeSessionRequest) returns (RegisterNodeSessionResponse );
+}

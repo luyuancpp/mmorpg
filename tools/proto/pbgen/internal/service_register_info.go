@@ -371,7 +371,7 @@ void InitMessageInfo()
 			)
 			initLines = append(initLines, initLine)
 
-			if strings.Contains(method.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
+			if strings.Contains(serviceName, config.ClientPrefixName) {
 				clientIdLines = append(clientIdLines, fmt.Sprintf("gClientToServerMessageId.emplace(%s);", rpcId))
 			}
 		}

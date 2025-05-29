@@ -16,7 +16,7 @@
 #include "thread_local/storage_common_logic.h"
 #include "thread_local/storage_game.h"
 #include "world/world.h"
-#include "proto/common/centre_service.pb.h"
+#include "proto/centre/centre_service.pb.h"
 #include "core/network/message_system.h"
 
 using namespace muduo::net;

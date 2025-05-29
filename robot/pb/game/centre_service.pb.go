@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.34.2
 // 	protoc        v5.29.0
-// source: proto/common/centre_service.proto
+// source: proto/centre/centre_service.proto
 
 package game
 
@@ -31,7 +31,7 @@ type GateClientMessageRequest struct {
 func (x *GateClientMessageRequest) Reset() {
 	*x = GateClientMessageRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_common_centre_service_proto_msgTypes[0]
+		mi := &file_proto_centre_centre_service_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -44,7 +44,7 @@ func (x *GateClientMessageRequest) String() string {
 func (*GateClientMessageRequest) ProtoMessage() {}
 
 func (x *GateClientMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_centre_service_proto_msgTypes[0]
+	mi := &file_proto_centre_centre_service_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *GateClientMessageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GateClientMessageRequest.ProtoReflect.Descriptor instead.
 func (*GateClientMessageRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_centre_service_proto_rawDescGZIP(), []int{0}
+	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GateClientMessageRequest) GetRpcClient() *NetworkAddress {
@@ -76,7 +76,7 @@ type LoginNodeLeaveGameRequest struct {
 func (x *LoginNodeLeaveGameRequest) Reset() {
 	*x = LoginNodeLeaveGameRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_common_centre_service_proto_msgTypes[1]
+		mi := &file_proto_centre_centre_service_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -89,7 +89,7 @@ func (x *LoginNodeLeaveGameRequest) String() string {
 func (*LoginNodeLeaveGameRequest) ProtoMessage() {}
 
 func (x *LoginNodeLeaveGameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_centre_service_proto_msgTypes[1]
+	mi := &file_proto_centre_centre_service_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -102,7 +102,7 @@ func (x *LoginNodeLeaveGameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginNodeLeaveGameRequest.ProtoReflect.Descriptor instead.
 func (*LoginNodeLeaveGameRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_centre_service_proto_rawDescGZIP(), []int{1}
+	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{1}
 }
 
 type EnterGameNodeSuccessRequest struct {
@@ -117,7 +117,7 @@ type EnterGameNodeSuccessRequest struct {
 func (x *EnterGameNodeSuccessRequest) Reset() {
 	*x = EnterGameNodeSuccessRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_common_centre_service_proto_msgTypes[2]
+		mi := &file_proto_centre_centre_service_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -130,7 +130,7 @@ func (x *EnterGameNodeSuccessRequest) String() string {
 func (*EnterGameNodeSuccessRequest) ProtoMessage() {}
 
 func (x *EnterGameNodeSuccessRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_centre_service_proto_msgTypes[2]
+	mi := &file_proto_centre_centre_service_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -143,7 +143,7 @@ func (x *EnterGameNodeSuccessRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterGameNodeSuccessRequest.ProtoReflect.Descriptor instead.
 func (*EnterGameNodeSuccessRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_centre_service_proto_rawDescGZIP(), []int{2}
+	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *EnterGameNodeSuccessRequest) GetPlayerId() uint64 {
@@ -172,7 +172,7 @@ type CentrePlayerGameNodeEntryRequest struct {
 func (x *CentrePlayerGameNodeEntryRequest) Reset() {
 	*x = CentrePlayerGameNodeEntryRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_common_centre_service_proto_msgTypes[3]
+		mi := &file_proto_centre_centre_service_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -185,7 +185,7 @@ func (x *CentrePlayerGameNodeEntryRequest) String() string {
 func (*CentrePlayerGameNodeEntryRequest) ProtoMessage() {}
 
 func (x *CentrePlayerGameNodeEntryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_centre_service_proto_msgTypes[3]
+	mi := &file_proto_centre_centre_service_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -198,7 +198,7 @@ func (x *CentrePlayerGameNodeEntryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CentrePlayerGameNodeEntryRequest.ProtoReflect.Descriptor instead.
 func (*CentrePlayerGameNodeEntryRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_centre_service_proto_rawDescGZIP(), []int{3}
+	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CentrePlayerGameNodeEntryRequest) GetClientMsgBody() *EnterGameRequest {
@@ -228,7 +228,7 @@ type InitSceneNodeRequest struct {
 func (x *InitSceneNodeRequest) Reset() {
 	*x = InitSceneNodeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_common_centre_service_proto_msgTypes[4]
+		mi := &file_proto_centre_centre_service_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -241,7 +241,7 @@ func (x *InitSceneNodeRequest) String() string {
 func (*InitSceneNodeRequest) ProtoMessage() {}
 
 func (x *InitSceneNodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_centre_service_proto_msgTypes[4]
+	mi := &file_proto_centre_centre_service_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -254,7 +254,7 @@ func (x *InitSceneNodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InitSceneNodeRequest.ProtoReflect.Descriptor instead.
 func (*InitSceneNodeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_centre_service_proto_rawDescGZIP(), []int{4}
+	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *InitSceneNodeRequest) GetNodeId() uint32 {
@@ -271,10 +271,10 @@ func (x *InitSceneNodeRequest) GetSceneNodeType() uint32 {
 	return 0
 }
 
-var File_proto_common_centre_service_proto protoreflect.FileDescriptor
+var File_proto_centre_centre_service_proto protoreflect.FileDescriptor
 
-var file_proto_common_centre_service_proto_rawDesc = []byte{
-	0x0a, 0x21, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x63,
+var file_proto_centre_centre_service_proto_rawDesc = []byte{
+	0x0a, 0x21, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x65, 0x6e, 0x74, 0x72, 0x65, 0x2f, 0x63,
 	0x65, 0x6e, 0x74, 0x72, 0x65, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f,
 	0x6e, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x18,
@@ -367,19 +367,19 @@ var file_proto_common_centre_service_proto_rawDesc = []byte{
 }
 
 var (
-	file_proto_common_centre_service_proto_rawDescOnce sync.Once
-	file_proto_common_centre_service_proto_rawDescData = file_proto_common_centre_service_proto_rawDesc
+	file_proto_centre_centre_service_proto_rawDescOnce sync.Once
+	file_proto_centre_centre_service_proto_rawDescData = file_proto_centre_centre_service_proto_rawDesc
 )
 
-func file_proto_common_centre_service_proto_rawDescGZIP() []byte {
-	file_proto_common_centre_service_proto_rawDescOnce.Do(func() {
-		file_proto_common_centre_service_proto_rawDescData = protoimpl.X.CompressGZIP(file_proto_common_centre_service_proto_rawDescData)
+func file_proto_centre_centre_service_proto_rawDescGZIP() []byte {
+	file_proto_centre_centre_service_proto_rawDescOnce.Do(func() {
+		file_proto_centre_centre_service_proto_rawDescData = protoimpl.X.CompressGZIP(file_proto_centre_centre_service_proto_rawDescData)
 	})
-	return file_proto_common_centre_service_proto_rawDescData
+	return file_proto_centre_centre_service_proto_rawDescData
 }
 
-var file_proto_common_centre_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_proto_common_centre_service_proto_goTypes = []any{
+var file_proto_centre_centre_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_proto_centre_centre_service_proto_goTypes = []any{
 	(*GateClientMessageRequest)(nil),         // 0: GateClientMessageRequest
 	(*LoginNodeLeaveGameRequest)(nil),        // 1: LoginNodeLeaveGameRequest
 	(*EnterGameNodeSuccessRequest)(nil),      // 2: EnterGameNodeSuccessRequest
@@ -401,7 +401,7 @@ var file_proto_common_centre_service_proto_goTypes = []any{
 	(*RoutePlayerMessageResponse)(nil),       // 18: RoutePlayerMessageResponse
 	(*RegisterNodeSessionResponse)(nil),      // 19: RegisterNodeSessionResponse
 }
-var file_proto_common_centre_service_proto_depIdxs = []int32{
+var file_proto_centre_centre_service_proto_depIdxs = []int32{
 	5,  // 0: GateClientMessageRequest.rpc_client:type_name -> NetworkAddress
 	6,  // 1: CentrePlayerGameNodeEntryRequest.client_msg_body:type_name -> EnterGameRequest
 	7,  // 2: CentrePlayerGameNodeEntryRequest.session_info:type_name -> SessionDetails
@@ -436,9 +436,9 @@ var file_proto_common_centre_service_proto_depIdxs = []int32{
 	0,  // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_proto_common_centre_service_proto_init() }
-func file_proto_common_centre_service_proto_init() {
-	if File_proto_common_centre_service_proto != nil {
+func init() { file_proto_centre_centre_service_proto_init() }
+func file_proto_centre_centre_service_proto_init() {
+	if File_proto_centre_centre_service_proto != nil {
 		return
 	}
 	file_proto_common_common_proto_init()
@@ -447,7 +447,7 @@ func file_proto_common_centre_service_proto_init() {
 	file_proto_common_c2gate_proto_init()
 	file_proto_common_common_message_proto_init()
 	if !protoimpl.UnsafeEnabled {
-		file_proto_common_centre_service_proto_msgTypes[0].Exporter = func(v any, i int) any {
+		file_proto_centre_centre_service_proto_msgTypes[0].Exporter = func(v any, i int) any {
 			switch v := v.(*GateClientMessageRequest); i {
 			case 0:
 				return &v.state
@@ -459,7 +459,7 @@ func file_proto_common_centre_service_proto_init() {
 				return nil
 			}
 		}
-		file_proto_common_centre_service_proto_msgTypes[1].Exporter = func(v any, i int) any {
+		file_proto_centre_centre_service_proto_msgTypes[1].Exporter = func(v any, i int) any {
 			switch v := v.(*LoginNodeLeaveGameRequest); i {
 			case 0:
 				return &v.state
@@ -471,7 +471,7 @@ func file_proto_common_centre_service_proto_init() {
 				return nil
 			}
 		}
-		file_proto_common_centre_service_proto_msgTypes[2].Exporter = func(v any, i int) any {
+		file_proto_centre_centre_service_proto_msgTypes[2].Exporter = func(v any, i int) any {
 			switch v := v.(*EnterGameNodeSuccessRequest); i {
 			case 0:
 				return &v.state
@@ -483,7 +483,7 @@ func file_proto_common_centre_service_proto_init() {
 				return nil
 			}
 		}
-		file_proto_common_centre_service_proto_msgTypes[3].Exporter = func(v any, i int) any {
+		file_proto_centre_centre_service_proto_msgTypes[3].Exporter = func(v any, i int) any {
 			switch v := v.(*CentrePlayerGameNodeEntryRequest); i {
 			case 0:
 				return &v.state
@@ -495,7 +495,7 @@ func file_proto_common_centre_service_proto_init() {
 				return nil
 			}
 		}
-		file_proto_common_centre_service_proto_msgTypes[4].Exporter = func(v any, i int) any {
+		file_proto_centre_centre_service_proto_msgTypes[4].Exporter = func(v any, i int) any {
 			switch v := v.(*InitSceneNodeRequest); i {
 			case 0:
 				return &v.state
@@ -512,18 +512,18 @@ func file_proto_common_centre_service_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_proto_common_centre_service_proto_rawDesc,
+			RawDescriptor: file_proto_centre_centre_service_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_common_centre_service_proto_goTypes,
-		DependencyIndexes: file_proto_common_centre_service_proto_depIdxs,
-		MessageInfos:      file_proto_common_centre_service_proto_msgTypes,
+		GoTypes:           file_proto_centre_centre_service_proto_goTypes,
+		DependencyIndexes: file_proto_centre_centre_service_proto_depIdxs,
+		MessageInfos:      file_proto_centre_centre_service_proto_msgTypes,
 	}.Build()
-	File_proto_common_centre_service_proto = out.File
-	file_proto_common_centre_service_proto_rawDesc = nil
-	file_proto_common_centre_service_proto_goTypes = nil
-	file_proto_common_centre_service_proto_depIdxs = nil
+	File_proto_centre_centre_service_proto = out.File
+	file_proto_centre_centre_service_proto_rawDesc = nil
+	file_proto_centre_centre_service_proto_goTypes = nil
+	file_proto_centre_centre_service_proto_depIdxs = nil
 }

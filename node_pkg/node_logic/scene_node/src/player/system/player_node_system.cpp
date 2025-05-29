@@ -3,7 +3,7 @@
 #include "node/scene_node_info.h"
 #include "proto/logic/event/actor_event.pb.h"
 #include "core/network/message_system.h"
-#include "proto/common/centre_service.pb.h"
+#include "proto/centre/centre_service.pb.h"
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
