@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\grpc\generator\proto\common\login_service_grpc.cpp" />
     <ClCompile Include="src\grpc\generator\proto\etcd\etcd_grpc.cpp" />
+    <ClCompile Include="src\grpc\generator\proto\login\login_service_grpc.cpp" />
     <ClCompile Include="src\proto\common\c2gate.pb.cc" />
     <ClCompile Include="src\proto\common\centre_service.pb.cc" />
     <ClCompile Include="src\proto\common\common.pb.cc" />
@@ -33,8 +33,6 @@
     <ClCompile Include="src\proto\common\empty.pb.cc" />
     <ClCompile Include="src\proto\common\game_service.pb.cc" />
     <ClCompile Include="src\proto\common\gate_service.pb.cc" />
-    <ClCompile Include="src\proto\common\login_service.grpc.pb.cc" />
-    <ClCompile Include="src\proto\common\login_service.pb.cc" />
     <ClCompile Include="src\proto\common\mysql_database_table.pb.cc" />
     <ClCompile Include="src\proto\common\session.pb.cc" />
     <ClCompile Include="src\proto\common\statistics.pb.cc" />
@@ -91,11 +89,13 @@
     <ClCompile Include="src\proto\logic\server_player\centre_player_scene.pb.cc" />
     <ClCompile Include="src\proto\logic\server_player\game_player.pb.cc" />
     <ClCompile Include="src\proto\logic\server_player\game_player_scene.pb.cc" />
+    <ClCompile Include="src\proto\login\login_service.grpc.pb.cc" />
+    <ClCompile Include="src\proto\login\login_service.pb.cc" />
     <ClCompile Include="src\service_info\service_info.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\grpc\generator\proto\common\login_service_grpc.h" />
     <ClInclude Include="src\grpc\generator\proto\etcd\etcd_grpc.h" />
+    <ClInclude Include="src\grpc\generator\proto\login\login_service_grpc.h" />
     <ClInclude Include="src\proto\common\c2gate.pb.h" />
     <ClInclude Include="src\proto\common\centre_service.pb.h" />
     <ClInclude Include="src\proto\common\common.pb.h" />
@@ -108,8 +108,6 @@
     <ClInclude Include="src\proto\common\empty.pb.h" />
     <ClInclude Include="src\proto\common\game_service.pb.h" />
     <ClInclude Include="src\proto\common\gate_service.pb.h" />
-    <ClInclude Include="src\proto\common\login_service.grpc.pb.h" />
-    <ClInclude Include="src\proto\common\login_service.pb.h" />
     <ClInclude Include="src\proto\common\mysql_database_table.pb.h" />
     <ClInclude Include="src\proto\common\session.pb.h" />
     <ClInclude Include="src\proto\common\statistics.pb.h" />
@@ -166,6 +164,8 @@
     <ClInclude Include="src\proto\logic\server_player\centre_player_scene.pb.h" />
     <ClInclude Include="src\proto\logic\server_player\game_player.pb.h" />
     <ClInclude Include="src\proto\logic\server_player\game_player_scene.pb.h" />
+    <ClInclude Include="src\proto\login\login_service.grpc.pb.h" />
+    <ClInclude Include="src\proto\login\login_service.pb.h" />
     <ClInclude Include="src\service_info\centre_player_scene_service_info.h" />
     <ClInclude Include="src\service_info\centre_player_service_info.h" />
     <ClInclude Include="src\service_info\centre_scene_service_info.h" />

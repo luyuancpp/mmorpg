@@ -164,6 +164,7 @@ var (
 		"logic/server_player/",
 		"logic/constants/",
 		"etcd/",
+		"login/",
 	}
 
 	ProtoDirs []string
@@ -176,6 +177,7 @@ var (
 	ServerPlayerDirIndex   = 5
 	ConstantsDirIndex      = 6
 	EtcdProtoDirIndex      = 7
+	LoginProtoDirIndex     = 8
 )
 
 // ----------- 其他业务相关常量 -----------

@@ -2,7 +2,7 @@
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
-#include "proto/common/login_service.grpc.pb.h"
+#include "proto/login/login_service.grpc.pb.h"
 
 
 using grpc::ClientContext;
