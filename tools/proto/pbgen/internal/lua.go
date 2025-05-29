@@ -18,40 +18,6 @@ const setName = "::set_"
 const mapType = "map"
 const stringType = "string"
 
-func WriteLoadClientLuaFile() {
-	util.Wg.Add(1)
-	go func() {
-		defer util.Wg.Done()
-		var fds []os.DirEntry
-		var err error
-		if fds, err = os.ReadDir(config.ClientLuaDirectory); err != nil {
-			return
-		}
-		data := "#include <sol/sol.hpp>\n" +
-			"#include \"muduo/base/Logging.h\"\n" +
-			"#include \"util/file2string.h\"\n" +
-			"#include \"thread_local/storage_lua.h\"\n" +
-			"void LoadLuaScript()\n{\n"
-		data += config.Tab + "std::string contents;\n"
-		for _, fd := range fds {
-			if !util.IsLuaFile(fd) {
-				continue
-			}
-			data += config.Tab + "contents = File2String(\"" + config.ClientLuaProjectRelative + fd.Name() + "\");\n"
-			data += config.Tab + "{\n"
-			data += config.Tab2 + "auto r = tls_lua_state.script(contents);\n"
-			data += config.Tab2 + "if (!r.valid())\n"
-			data += config.Tab2 + "{\n"
-			data += config.Tab3 + "sol::error err = r;\n"
-			data += config.Tab3 + "LOG_FATAL << err.what();\n"
-			data += config.Tab2 + "}\n"
-			data += config.Tab + "}\n"
-		}
-		data += "\n}\n"
-		util.WriteMd5Data2File(config.ClientLuaServiceFilePath, data)
-	}()
-}
-
 func toCppIntType(typeString string) (newType string, convert bool) {
 	if reflect.DeepEqual(typeString, "int32") ||
 		reflect.DeepEqual(typeString, "uint32") ||

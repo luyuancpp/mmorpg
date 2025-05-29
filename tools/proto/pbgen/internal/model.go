@@ -127,6 +127,10 @@ func (info *RPCServiceInfo) Package() string {
 	return *info.FdSet.GetFile()[0].Package
 }
 
+func (info *RPCServiceInfo) ServiceInfoHeadInclude() string {
+	return info.FileBaseName() + config.ServiceInfoExtension + config.HeaderExtension
+}
+
 // FileNameNoEx 返回文件基本名
 func (info *RPCMethod) FileNameNoEx() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, "", 1)
@@ -155,9 +159,20 @@ func (info *RPCMethod) Package() string {
 	return *info.FdSet.GetFile()[0].Package
 }
 
+func (info *RPCMethod) GrpcHeadName() string {
+	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.GrpcPbhEx, 1)
+}
+
+func (info *RPCMethod) GrpcIncludeHeadName() string {
+	return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.GrpcHeadName() + "\"\n"
+}
+
 // IncludeName 返回包含头文件名
 func (info *RPCMethod) IncludeName() string {
-	return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.PbcHeadName() + "\"\n"
+	if info.CcGenericServices() {
+		return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.PbcHeadName() + "\"\n"
+	}
+	return info.GrpcIncludeHeadName()
 }
 
 func (info *RPCMethod) Path() string {
