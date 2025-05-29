@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/common/login_service.pb.h"
+#include "proto/login/login_service.pb.h"
 
 
 constexpr uint32_t LoginServiceLoginMessageId = 34;

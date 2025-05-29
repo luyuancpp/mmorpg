@@ -2,9 +2,9 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "grpc/generator/proto/common/login_service_grpc.h"
+#include "grpc/generator/proto/login/login_service_grpc.h"
 #include "network/rpc_session.h"
-#include "proto/common/login_service.grpc.pb.h"
+#include "proto/login/login_service.grpc.pb.h"
 #include "proto/logic/constants/node.pb.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_gate.h"
