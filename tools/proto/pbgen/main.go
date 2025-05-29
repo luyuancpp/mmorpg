@@ -68,7 +68,6 @@ func main() {
 	internal.BuildAllProtoc()
 	util.Wg.Wait()
 
-	//internal.WriteLoadClientLuaFile()
 	internal.GenerateAllEventHandlers()
 	//internal.WriteSol2LuaFile()
 	util.Wg.Wait()
@@ -76,6 +75,7 @@ func main() {
 	internal.InitServiceId()
 	internal.WriteServiceIdFile()
 	internal.WriteMethodFile()
+	internal.GenerateServiceConstants()
 	util.Wg.Wait()
 	//所有service初始化完以后
 	internal.WriteGoMessageId()

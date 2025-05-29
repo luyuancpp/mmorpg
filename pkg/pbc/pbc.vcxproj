@@ -28,6 +28,8 @@
     <ClCompile Include="src\proto\common\comp.pb.cc" />
     <ClCompile Include="src\proto\common\config.pb.cc" />
     <ClCompile Include="src\proto\common\db_base.pb.cc" />
+    <ClCompile Include="src\proto\common\db_service.grpc.pb.cc" />
+    <ClCompile Include="src\proto\common\db_service.pb.cc" />
     <ClCompile Include="src\proto\common\empty.pb.cc" />
     <ClCompile Include="src\proto\common\game_service.pb.cc" />
     <ClCompile Include="src\proto\common\gate_service.pb.cc" />
@@ -101,6 +103,8 @@
     <ClInclude Include="src\proto\common\comp.pb.h" />
     <ClInclude Include="src\proto\common\config.pb.h" />
     <ClInclude Include="src\proto\common\db_base.pb.h" />
+    <ClInclude Include="src\proto\common\db_service.grpc.pb.h" />
+    <ClInclude Include="src\proto\common\db_service.pb.h" />
     <ClInclude Include="src\proto\common\empty.pb.h" />
     <ClInclude Include="src\proto\common\game_service.pb.h" />
     <ClInclude Include="src\proto\common\gate_service.pb.h" />

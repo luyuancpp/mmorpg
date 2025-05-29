@@ -271,10 +271,7 @@ func InitServiceId() {
 // GetSortServiceList returns a sorted list of service names.
 func GetSortServiceList() []string {
 	var ServiceList []string
-	for k, v := range ServiceMethodMap {
-		if len(v) > 0 && !v[0].CcGenericServices() {
-			continue
-		}
+	for k, _ := range ServiceMethodMap {
 		ServiceList = append(ServiceList, k)
 	}
 	sort.Strings(ServiceList)
@@ -341,6 +338,11 @@ void InitMessageInfo()
 		}
 
 		first := methods[0]
+
+		if !first.CcGenericServices() {
+			continue
+		}
+
 		includes = append(includes, first.IncludeName())
 		serviceInfoIncludes = append(serviceInfoIncludes, first.ServiceInfoIncludeName())
 		handlerClass := fmt.Sprintf("class %sImpl final : public %s {};", serviceName, serviceName)
@@ -350,6 +352,10 @@ void InitMessageInfo()
 	for _, serviceName := range serviceList {
 		methods := ServiceMethodMap[serviceName]
 		for _, method := range methods {
+			if !method.CcGenericServices() {
+				continue
+			}
+
 			rpcId := method.KeyName() + config.MessageIdName
 			handlerName := serviceName + "Impl"
 

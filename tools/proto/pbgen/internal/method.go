@@ -7,6 +7,7 @@ import (
 	"os"
 	"pbgen/config"
 	"pbgen/util"
+	"sort"
 	"strings"
 	"text/template"
 )
@@ -15,26 +16,19 @@ import (
 type checkRepliedCb func(methods *RPCMethods) bool
 
 // Function to write the header file for service ID
-func writeServiceIdHeadFile(methods RPCMethods) {
-	defer util.Wg.Done()
+func writeServiceIdHeadFile(serviceInfo []*RPCServiceInfo) {
 
-	if len(methods) <= 0 {
+	if len(serviceInfo) <= 0 {
 		return
 	}
 
-	firstMethod := methods[0]
-
-	if !firstMethod.CcGenericServices() {
-		return
-	}
-
-	fileName := methods[0].ServiceInfoHeadInclude()
-	util.WriteMd5Data2File(config.ServiceInfoDirectory+fileName, GenServiceIdHeader(methods))
+	fileName := serviceInfo[0].ServiceInfoHeadInclude()
+	util.WriteMd5Data2File(config.ServiceInfoDirectory+fileName, GenServiceIdHeader(serviceInfo))
 }
 
 // GenServiceIdHeader 使用模板生成服务 ID 头文件内容
-func GenServiceIdHeader(methods RPCMethods) string {
-	if len(methods) == 0 {
+func GenServiceIdHeader(serviceInfo []*RPCServiceInfo) string {
+	if len(serviceInfo) == 0 {
 		return ""
 	}
 
@@ -43,12 +37,12 @@ func GenServiceIdHeader(methods RPCMethods) string {
 #include <cstdint>
 
 {{.IncludeName}}
-
-{{range .Methods}}
+{{- range .ServiceInfo }}
+{{range .MethodInfo}}
 constexpr uint32_t {{.KeyName}}{{$.MessageIdName}} = {{.Id}};
 constexpr uint32_t {{.KeyName}}Index = {{.Index}};
 #define {{.KeyName}}Method  ::{{.Service}}_Stub::descriptor()->method({{.Index}})
-
+{{end}}
 {{end}}
 `
 	// 创建模板并解析
@@ -61,11 +55,11 @@ constexpr uint32_t {{.KeyName}}Index = {{.Index}};
 	var buf bytes.Buffer
 	data := struct {
 		IncludeName   string
-		Methods       RPCMethods
+		ServiceInfo   []*RPCServiceInfo
 		MessageIdName string
 	}{
-		IncludeName:   methods[0].IncludeName(),
-		Methods:       methods,
+		IncludeName:   serviceInfo[0].IncludeName(),
+		ServiceInfo:   serviceInfo,
 		MessageIdName: config.MessageIdName,
 	}
 
@@ -947,12 +941,32 @@ void InitRepliedHandler()
 	util.WriteMd5Data2File(dst, output.String())
 }
 
+func GenerateServiceConstants() {
+	FileServiceMap.Range(func(k, v interface{}) bool {
+		protoFile := k.(string)
+		serviceList := v.([]*RPCServiceInfo)
+		util.Wg.Add(1)
+		go func(protoFile string, serviceInfo []*RPCServiceInfo) {
+			defer util.Wg.Done()
+
+			if len(serviceInfo) <= 0 {
+				return
+			}
+
+			sort.Slice(serviceInfo, func(i, j int) bool {
+				return serviceInfo[i].FileServiceIndex < serviceInfo[j].FileServiceIndex
+			})
+
+			writeServiceIdHeadFile(serviceInfo)
+
+		}(protoFile, serviceList)
+
+		return true
+	})
+}
+
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
-		// Start concurrent operations for each service method
-		util.Wg.Add(1)
-		go writeServiceIdHeadFile(v)
-
 		// gs methods
 		util.Wg.Add(1)
 		go writeGsMethodHandlerHeadFile(v)
