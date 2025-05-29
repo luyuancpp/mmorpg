@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.26.1
-// source: common/db_service.proto
+// source: db/db_service.proto
 
 package game
 
@@ -155,7 +155,7 @@ var AccountDBService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "common/db_service.proto",
+	Metadata: "db/db_service.proto",
 }
 
 const (
@@ -295,5 +295,5 @@ var PlayerDBService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "common/db_service.proto",
+	Metadata: "db/db_service.proto",
 }

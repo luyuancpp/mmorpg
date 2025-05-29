@@ -257,40 +257,40 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2fmysql_5fdatabase_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\'proto/common/mysql_database_table.prot"
-    "o\032\032proto/common/db_base.proto\032 proto/com"
-    "mon/user_accounts.proto\032\027proto/common/co"
-    "mp.proto\032\031proto/common/common.proto\032-pro"
-    "to/logic/component/player_scene_comp.pro"
-    "to\032&proto/logic/component/actor_comp.pro"
-    "to\032\'proto/logic/component/player_comp.pr"
-    "oto\032-proto/logic/component/player_skill_"
-    "comp.proto\"r\n\ruser_accounts\022\017\n\007account\030\001"
-    " \001(\t\022\020\n\010password\030\002 \001(\t\0220\n\016simple_players"
-    "\030\003 \001(\0132\030.AccountSimplePlayerList:\014\222\222\364\001\007a"
-    "ccount\"7\n\026account_share_database\022\017\n\007acco"
-    "unt\030\001 \001(\t:\014\222\222\364\001\007account\"}\n\026player_centre"
-    "_database\022\021\n\tplayer_id\030\001 \001(\004\0222\n\nscene_in"
-    "fo\030\002 \001(\0132\036.PlayerSceneContextPBComponent"
-    ":\034\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\"\356\002\n\017playe"
-    "r_database\022\021\n\tplayer_id\030\001 \001(\004\022\035\n\ttransfo"
-    "rm\030\002 \001(\0132\n.Transform\0225\n\023uint64_pb_compon"
-    "ent\030\003 \001(\0132\030.PlayerUint64PBComponent\022/\n\ns"
-    "kill_list\030\004 \001(\0132\033.PlayerSkillListPBCompo"
-    "nent\0225\n\023uint32_pb_component\030\005 \001(\0132\030.Play"
-    "erUint32PbComponent\022@\n\034derived_attribute"
-    "s_component\030\006 \001(\0132\032.BaseAttributesPbComp"
-    "onent\022*\n\017level_component\030\007 \001(\0132\021.LevelPb"
-    "Component:\034\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\""
-    "D\n\021player_database_1\022\021\n\tplayer_id\030\001 \001(\004:"
-    "\034\222\222\364\001\tplayer_id\262\222\364\001\tplayer_idB\tZ\007pb/game"
-    "b\006proto3"
+    "o\032\026proto/db/db_base.proto\032 proto/common/"
+    "user_accounts.proto\032\027proto/common/comp.p"
+    "roto\032\031proto/common/common.proto\032-proto/l"
+    "ogic/component/player_scene_comp.proto\032&"
+    "proto/logic/component/actor_comp.proto\032\'"
+    "proto/logic/component/player_comp.proto\032"
+    "-proto/logic/component/player_skill_comp"
+    ".proto\"r\n\ruser_accounts\022\017\n\007account\030\001 \001(\t"
+    "\022\020\n\010password\030\002 \001(\t\0220\n\016simple_players\030\003 \001"
+    "(\0132\030.AccountSimplePlayerList:\014\222\222\364\001\007accou"
+    "nt\"7\n\026account_share_database\022\017\n\007account\030"
+    "\001 \001(\t:\014\222\222\364\001\007account\"}\n\026player_centre_dat"
+    "abase\022\021\n\tplayer_id\030\001 \001(\004\0222\n\nscene_info\030\002"
+    " \001(\0132\036.PlayerSceneContextPBComponent:\034\222\222"
+    "\364\001\tplayer_id\262\222\364\001\tplayer_id\"\356\002\n\017player_da"
+    "tabase\022\021\n\tplayer_id\030\001 \001(\004\022\035\n\ttransform\030\002"
+    " \001(\0132\n.Transform\0225\n\023uint64_pb_component\030"
+    "\003 \001(\0132\030.PlayerUint64PBComponent\022/\n\nskill"
+    "_list\030\004 \001(\0132\033.PlayerSkillListPBComponent"
+    "\0225\n\023uint32_pb_component\030\005 \001(\0132\030.PlayerUi"
+    "nt32PbComponent\022@\n\034derived_attributes_co"
+    "mponent\030\006 \001(\0132\032.BaseAttributesPbComponen"
+    "t\022*\n\017level_component\030\007 \001(\0132\021.LevelPbComp"
+    "onent:\034\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\"D\n\021p"
+    "layer_database_1\022\021\n\tplayer_id\030\001 \001(\004:\034\222\222\364"
+    "\001\tplayer_id\262\222\364\001\tplayer_idB\tZ\007pb/gameb\006pr"
+    "oto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fmysql_5fdatabase_5ftable_2eproto_deps[8] =
     {
         &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomp_2eproto,
-        &::descriptor_table_proto_2fcommon_2fdb_5fbase_2eproto,
         &::descriptor_table_proto_2fcommon_2fuser_5faccounts_2eproto,
+        &::descriptor_table_proto_2fdb_2fdb_5fbase_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fcomp_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto,
@@ -300,7 +300,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fmysql_5fdatabase_5fta
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    1088,
+    1084,
     descriptor_table_protodef_proto_2fcommon_2fmysql_5fdatabase_5ftable_2eproto,
     "proto/common/mysql_database_table.proto",
     &descriptor_table_proto_2fcommon_2fmysql_5fdatabase_5ftable_2eproto_once,
