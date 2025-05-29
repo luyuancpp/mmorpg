@@ -29,7 +29,7 @@
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
-#include "proto/common/db_base.pb.h"
+#include "proto/db/db_base.pb.h"
 #include "proto/common/user_accounts.pb.h"
 #include "proto/common/comp.pb.h"
 #include "proto/common/common.pb.h"
