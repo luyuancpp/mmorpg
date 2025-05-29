@@ -39,7 +39,6 @@ func IncludeName(path string, protoName string) string {
 
 func Copy(dstFile string, srcFile string) (written int64, err error) {
 	sourceFileStat, err := os.Stat(srcFile)
-
 	if err != nil {
 		return 0, fmt.Errorf("failed to get file info for %s: %v", srcFile, err)
 	}
@@ -49,14 +48,18 @@ func Copy(dstFile string, srcFile string) (written int64, err error) {
 	}
 
 	source, err := os.Open(srcFile)
-
 	if err != nil {
 		return 0, fmt.Errorf("failed to open source file %s: %v", srcFile, err)
 	}
 	defer source.Close()
 
-	destination, err := os.Create(dstFile)
+	// ✅ 创建目标目录（如果不存在）
+	dstDir := filepath.Dir(dstFile)
+	if err := os.MkdirAll(dstDir, os.ModePerm); err != nil {
+		return 0, fmt.Errorf("failed to create destination directory %s: %v", dstDir, err)
+	}
 
+	destination, err := os.Create(dstFile)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create destination file %s: %v", dstFile, err)
 	}
@@ -67,7 +70,6 @@ func Copy(dstFile string, srcFile string) (written int64, err error) {
 		return nBytes, fmt.Errorf("failed to copy data from %s to %s: %v", srcFile, dstFile, err)
 	}
 
-	log.Default().Println("Copied  \n", srcFile, " -> ", dstFile)
-
+	log.Default().Println("Copied\n", srcFile, "->", dstFile)
 	return nBytes, nil
 }

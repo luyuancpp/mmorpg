@@ -166,6 +166,7 @@ var (
 		"etcd/",
 		"login/",
 		"db/",
+		"centre/",
 	}
 
 	ProtoDirs []string
@@ -180,8 +181,10 @@ var (
 	EtcdProtoDirIndex      = 7
 	LoginProtoDirIndex     = 8
 	DbProtoDirIndex        = 9
+	CenterProtoDirIndex    = 10
 )
 
+// ----------- 其他业务相关常量 -----------
 // ----------- 其他业务相关常量 -----------
 const (
 	LoginPrefixName                 = "login"
@@ -191,6 +194,8 @@ const (
 	GameNodePlayerPrefixName        = "game_player"
 	CentrePrefixName                = "centre"
 	CentrePlayerPrefixName          = "centre_player"
+	ClientPrefixName                = "Client" // ✅ 新增
+	NodePrefixName                  = "node"   // ✅ 新增
 	PlayerName                      = "player"
 	ServiceIncludeName              = "service/"
 	PlayerServiceIncludeName        = "#include \"service/player_service.h\"\n"
