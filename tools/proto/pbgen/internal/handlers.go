@@ -97,6 +97,30 @@ var CentrePlayerRepliedHandler = HandlerConfig{
 	IsRepliedHandler:    true,
 }
 
+// ---------------- Gate	 Node ----------------
+
+var GateHandler = HandlerConfig{
+	IsValidFunc:         isGateServiceHandler,
+	GenerateDataFunc:    getServiceHandlerHeadStr,
+	GenerateCppDataFunc: getServiceHandlerCppStr,
+	Dir:                 config.GateMethodHandlerDirectory,
+	CppDir:              config.GateMethodHandlerDirectory,
+	HeaderExt:           config.HandlerHeaderExtension,
+	CppExt:              config.HandlerCppExtension,
+	IsRepliedHandler:    false,
+}
+
+var GateRepliedHandler = HandlerConfig{
+	IsValidFunc:         isGateMethodRepliedHandler,
+	GenerateDataFunc:    getServiceRepliedHandlerHeadStr,
+	GenerateCppDataFunc: getServiceRepliedHandlerCppStr,
+	Dir:                 config.GateMethodRepliedHandlerDirectory,
+	CppDir:              config.GateMethodRepliedHandlerDirectory,
+	HeaderExt:           config.RepliedHandlerHeaderExtension,
+	CppExt:              config.CppRepliedHandlerEx,
+	IsRepliedHandler:    true,
+}
+
 func ProcessAllHandlers(methodList RPCMethods) {
 
 	handlerConfigs := []HandlerConfig{
@@ -108,6 +132,8 @@ func ProcessAllHandlers(methodList RPCMethods) {
 		CentrePlayerHandler,
 		CentreRepliedHandler,
 		CentrePlayerRepliedHandler,
+		GateHandler,
+		GateRepliedHandler,
 	}
 
 	for _, cfg := range handlerConfigs {
