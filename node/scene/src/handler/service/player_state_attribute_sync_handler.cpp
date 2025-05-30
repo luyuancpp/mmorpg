@@ -1,0 +1,45 @@
+
+#include "player_state_attribute_sync_handler.h"
+
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+

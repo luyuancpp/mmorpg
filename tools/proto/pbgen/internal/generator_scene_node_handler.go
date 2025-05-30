@@ -211,8 +211,12 @@ func isGsMethodRepliedHandler(methodList *RPCMethods) bool {
 	if !strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
 		return false
 	}
-	
-	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
+
+	if util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
+		return false
+	}
+
+	return true
 }
 
 func writeGsMethodRepliedHandlerHeadFile(methodList RPCMethods) {
