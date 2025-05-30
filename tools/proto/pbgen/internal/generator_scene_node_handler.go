@@ -12,18 +12,11 @@ func IsGsMethodHandler(methods *RPCMethods) bool {
 	if len(*methods) == 0 {
 		return false
 	}
-
-	firstMethodInfo := (*methods)[0]
-
-	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) {
+	first := (*methods)[0]
+	if !strings.Contains(first.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) {
 		return false
 	}
-
-	if util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
-		return false
-	}
-
-	return true
+	return !util.ContainsPlayerKeyword(first.Service())
 }
 
 func IsGsPlayerHandler(methods *RPCMethods) bool {
@@ -124,7 +117,7 @@ func writeGsPlayerMethodHandlerCppFile(methodList RPCMethods) {
 
 	// Generate the C++ handler file content
 	data := getMethodPlayerHandlerCppStr(dstFileName,
-		&methodList,
+		methodList,
 		firstMethodInfo.CppHandlerClassName(),
 		firstMethodInfo.CppHandlerIncludeName())
 
@@ -184,7 +177,7 @@ func writeGsPlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
 
 	// Generate the C++ replied handler file content
 	data := getMethodPlayerHandlerCppStr(dstFileName,
-		&methodList,
+		methodList,
 		firstMethodInfo.CppRepliedHandlerClassName(),
 		firstMethodInfo.CppRepliedHandlerIncludeName())
 
@@ -229,7 +222,10 @@ func writeGsMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	fileBaseName := methodList[0].FileNameNoEx()
 	fileName := strings.ToLower(fileBaseName) + config.RepliedHandlerHeaderExtension
 	dstFileName := config.GameNodeMethodRepliedHandlerDirectory + fileName
-	data := getMethodRepliedHandlerHeadStr(&methodList)
+	data, err := getMethodRepliedHandlerHeadStr(methodList)
+	if err != nil {
+		log.Fatal(err)
+	}
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
@@ -243,6 +239,6 @@ func writeGsMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	fileBaseName := methodList[0].FileNameNoEx()
 	fileName := strings.ToLower(fileBaseName) + config.CppRepliedHandlerEx
 	dstFileName := config.GameNodeMethodRepliedHandlerDirectory + fileName
-	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
+	data := getMethodRepliedHandlerCppStr(dstFileName, methodList, "", "")
 	util.WriteMd5Data2File(dstFileName, data)
 }
