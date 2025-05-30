@@ -1,6 +1,6 @@
 #pragma once
 
-#include "proto/logic/server_player/centre_player_scene.pb.h"
+#include "proto/centre/centre_player_scene.pb.h"
 
 #include "service/player_service.h"
 
@@ -22,7 +22,7 @@ public:
         const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
         ::google::protobuf::Empty* response);
     static void SceneInfoC2S(entt::entity player,
-        const ::SceneInfoRequest* request,
+        const ::CentreSceneInfoRequest* request,
         ::google::protobuf::Empty* response);
 
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
@@ -49,7 +49,7 @@ public:
             break;
         case 3:
             SceneInfoC2S(player,
-                static_cast<const ::SceneInfoRequest*>(request),
+                static_cast<const ::CentreSceneInfoRequest*>(request),
                 static_cast<::google::protobuf::Empty*>(response));
             break;
         default:

@@ -15,7 +15,7 @@
 14=CentrePlayerSceneServiceLeaveScene
 15=CentreServicePlayerService
 16=GamePlayerServiceCentre2GsLogin
-17=PlayerSkillServiceNotifySkillUsed
+17=ClientPlayerSkillServiceReleaseSkill
 18=LoginServiceDisconnect
 19=GameServiceInvokePlayerService
 20=GameSceneServiceTest
@@ -44,14 +44,14 @@
 43=KVRange
 44=GameServiceSendMessageToPlayer
 45=LoginServiceLogin
-46=PlayerSkillServiceGetSkillList
+46=ClientPlayerSkillServiceNotifySkillUsed
 47=ClientPlayerSceneServiceNotifySceneInfo
 48=KVPut
 49=CentreServiceInitSceneNode
 50=GamePlayerSceneServiceLeaveScene
 51=GameServiceRoutePlayerStringMsg
 52=LoginServiceCreatePlayer
-53=PlayerSkillServiceNotifySkillInterrupted
+53=ClientPlayerSkillServiceNotifySkillInterrupted
 54=LeaseLeaseKeepAlive
 55=CentreServiceGatePlayerService
 56=CentrePlayerSceneServiceEnterScene
@@ -68,7 +68,7 @@
 67=CentreServiceLoginNodeSessionDisconnect
 68=PlayerClientCommonServiceSendTipToClient
 69=GateServiceRouteNodeMessage
-70=PlayerSkillServiceReleaseSkill
+70=ClientPlayerSkillServiceGetSkillList
 71=CentreServiceLoginNodeEnterGame
 72=GateServicePlayerEnterGameNode
 73=GamePlayerSceneServiceEnterSceneS2C

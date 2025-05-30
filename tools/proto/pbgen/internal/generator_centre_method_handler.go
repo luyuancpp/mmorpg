@@ -14,20 +14,11 @@ func isCentreMethodHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	// 检查是否在 common 或 logic proto 目录中
-	isInCommonOrLogicProtoDir := strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.LogicProtoDirIndex])
-
 	// 如果不在 common 或 logic proto 目录中，直接返回 false
-	if !isInCommonOrLogicProtoDir {
+	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CenterProtoDirIndex]) {
 		return false
 	}
 
-	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
-		return false
-	}
-
-	// 如果路径或文件名包含 PlayerName，直接返回 false
 	if strings.Contains(firstMethodInfo.Path(), config.PlayerName) ||
 		strings.Contains(firstMethodInfo.FileNameNoEx(), config.PlayerName) {
 		return false

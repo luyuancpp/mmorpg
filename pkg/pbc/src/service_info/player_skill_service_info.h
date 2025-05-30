@@ -1,23 +1,23 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/logic/client_player/player_skill.pb.h"
+#include "proto/game/player_skill.pb.h"
 
 
-constexpr uint32_t PlayerSkillServiceReleaseSkillMessageId = 70;
-constexpr uint32_t PlayerSkillServiceReleaseSkillIndex = 0;
-#define PlayerSkillServiceReleaseSkillMethod  ::PlayerSkillService_Stub::descriptor()->method(0)
+constexpr uint32_t ClientPlayerSkillServiceReleaseSkillMessageId = 17;
+constexpr uint32_t ClientPlayerSkillServiceReleaseSkillIndex = 0;
+#define ClientPlayerSkillServiceReleaseSkillMethod  ::ClientPlayerSkillService_Stub::descriptor()->method(0)
 
-constexpr uint32_t PlayerSkillServiceNotifySkillUsedMessageId = 17;
-constexpr uint32_t PlayerSkillServiceNotifySkillUsedIndex = 1;
-#define PlayerSkillServiceNotifySkillUsedMethod  ::PlayerSkillService_Stub::descriptor()->method(1)
+constexpr uint32_t ClientPlayerSkillServiceNotifySkillUsedMessageId = 46;
+constexpr uint32_t ClientPlayerSkillServiceNotifySkillUsedIndex = 1;
+#define ClientPlayerSkillServiceNotifySkillUsedMethod  ::ClientPlayerSkillService_Stub::descriptor()->method(1)
 
-constexpr uint32_t PlayerSkillServiceNotifySkillInterruptedMessageId = 53;
-constexpr uint32_t PlayerSkillServiceNotifySkillInterruptedIndex = 2;
-#define PlayerSkillServiceNotifySkillInterruptedMethod  ::PlayerSkillService_Stub::descriptor()->method(2)
+constexpr uint32_t ClientPlayerSkillServiceNotifySkillInterruptedMessageId = 53;
+constexpr uint32_t ClientPlayerSkillServiceNotifySkillInterruptedIndex = 2;
+#define ClientPlayerSkillServiceNotifySkillInterruptedMethod  ::ClientPlayerSkillService_Stub::descriptor()->method(2)
 
-constexpr uint32_t PlayerSkillServiceGetSkillListMessageId = 46;
-constexpr uint32_t PlayerSkillServiceGetSkillListIndex = 3;
-#define PlayerSkillServiceGetSkillListMethod  ::PlayerSkillService_Stub::descriptor()->method(3)
+constexpr uint32_t ClientPlayerSkillServiceGetSkillListMessageId = 70;
+constexpr uint32_t ClientPlayerSkillServiceGetSkillListIndex = 3;
+#define ClientPlayerSkillServiceGetSkillListMethod  ::ClientPlayerSkillService_Stub::descriptor()->method(3)
 
 

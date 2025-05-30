@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/logic/server_player/centre_player_scene.pb.h"
+#include "proto/centre/centre_player_scene.pb.h"
 
 
 constexpr uint32_t CentrePlayerSceneServiceEnterSceneMessageId = 56;
