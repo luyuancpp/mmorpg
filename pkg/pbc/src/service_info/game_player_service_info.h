@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/logic/server_player/game_player.pb.h"
+#include "proto/game/game_player.pb.h"
 
 
 constexpr uint32_t GamePlayerServiceCentre2GsLoginMessageId = 16;

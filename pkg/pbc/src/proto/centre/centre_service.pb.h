@@ -35,7 +35,7 @@
 #include "proto/common/empty.pb.h"
 #include "proto/common/session.pb.h"
 #include "proto/common/c2gate.pb.h"
-#include "proto/common/common_message.pb.h"
+#include "proto/common/message.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.

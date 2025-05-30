@@ -32,7 +32,7 @@
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/common/empty.pb.h"
 #include "proto/common/common.pb.h"
-#include "proto/common/common_message.pb.h"
+#include "proto/common/message.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
