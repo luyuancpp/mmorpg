@@ -117,7 +117,7 @@ public:
 }
 
 // Helper function to generate method strings for service handlers
-func getServiceHandlerMethodStr(method *RPCMethod) (string, error) {
+func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
 
 	const methodTemplate = `
 {{.Tab}}void {{.Method}}({{.GoogleMethodController}}
@@ -412,7 +412,7 @@ void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn
 {{- end }}
 `
 	type MethodRepliedHandlerData struct {
-		FirstMethodInfo        *RPCMethod
+		FirstMethodInfo        *MethodInfo
 		Methods                *RPCMethods
 		RepliedHandlerFileName string
 	}
@@ -464,8 +464,8 @@ void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn
 }
 
 // ReadCodeSectionsFromFile 函数接收一个函数作为参数，动态选择 A 或 B 方法
-func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFunc func(info *RPCMethod, funcParam string) string, funcParam string) (map[string]string, string, error) {
-	// 创建一个 map 来存储每个 RPCMethod 的 name 和对应的 yourCode
+func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFunc func(info *MethodInfo, funcParam string) string, funcParam string) (map[string]string, string, error) {
+	// 创建一个 map 来存储每个 MethodInfo 的 name 和对应的 yourCode
 	codeMap := make(map[string]string)
 
 	// 打开文件
@@ -480,7 +480,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 
 	// 记录当前正在处理的 yourCode
 	var currentCode string
-	var currentMethod *RPCMethod
+	var currentMethod *MethodInfo
 	var firstCode string // 用于保存第一个特殊的 yourCode
 	var isFirstCode bool // 标记是否处理了第一个特殊的 yourCode
 	var inFirstCode bool // 标记是否在处理第一个特殊的 yourCode
@@ -508,7 +508,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 		}
 
 		if nil == currentMethod {
-			// 如果是方法的开始行，检查是否是我们关心的 RPCMethod 名称
+			// 如果是方法的开始行，检查是否是我们关心的 MethodInfo 名称
 			for _, method := range *methods {
 				handlerName := methodFunc(method, funcParam)
 				if strings.Contains(line, handlerName) {
@@ -553,15 +553,15 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 	return codeMap, firstCode, nil
 }
 
-func GenerateMethodHandlerNameWrapper(info *RPCMethod, _ string) string {
+func GenerateMethodHandlerNameWrapper(info *MethodInfo, _ string) string {
 	return info.Service() + config.HandlerFileName + "::" + info.Method() + "("
 }
 
-func GenerateMethodHandlerNameWithClassPrefixWrapper(info *RPCMethod, classPrefix string) string {
+func GenerateMethodHandlerNameWithClassPrefixWrapper(info *MethodInfo, classPrefix string) string {
 	return classPrefix + "::" + info.Method() + "("
 }
 
-func GenerateMethodHandlerKeyNameWrapper(info *RPCMethod, _ string) string {
+func GenerateMethodHandlerKeyNameWrapper(info *MethodInfo, _ string) string {
 	return "On" + info.KeyName() + config.RepliedHandlerFileName
 }
 

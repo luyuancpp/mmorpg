@@ -10,8 +10,8 @@ import (
 
 type EmptyStruct struct{}
 
-// RPCMethod 定义RPC方法信息
-type RPCMethod struct {
+// MethodInfo 定义RPC方法信息
+type MethodInfo struct {
 	Id                     uint64
 	Index                  uint64
 	FdSet                  *descriptorpb.FileDescriptorSet
@@ -21,7 +21,7 @@ type RPCMethod struct {
 }
 
 // RPCMethods 是RPCMethod的切片
-type RPCMethods []*RPCMethod
+type RPCMethods []*MethodInfo
 
 // RPCServiceInfo 定义RPC服务信息
 type RPCServiceInfo struct {
@@ -43,7 +43,7 @@ var RpcServiceMap sync.Map
 var GrpcServiceFileMap sync.Map
 
 // RpcIdMethodMap 存储RPC方法ID映射
-var RpcIdMethodMap = map[uint64]*RPCMethod{}
+var RpcIdMethodMap = map[uint64]*MethodInfo{}
 
 // ServiceIdMap 存储服务ID映射
 var ServiceIdMap = map[string]uint64{}
@@ -61,7 +61,7 @@ var MessageIdFileMaxId = uint64(0)
 var FileMaxMessageId = uint64(0)
 
 // KeyName 返回RPC方法的键名
-func (info *RPCMethod) KeyName() string {
+func (info *MethodInfo) KeyName() string {
 	return info.Service() + info.Method()
 }
 
@@ -132,78 +132,78 @@ func (info *RPCServiceInfo) ServiceInfoHeadInclude() string {
 }
 
 // FileNameNoEx 返回文件基本名
-func (info *RPCMethod) FileNameNoEx() string {
+func (info *MethodInfo) FileNameNoEx() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, "", 1)
 }
 
-func (info *RPCMethod) ServiceInfoHeadInclude() string {
+func (info *MethodInfo) ServiceInfoHeadInclude() string {
 	return info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension
 }
 
-func (info *RPCMethod) PbcHeadName() string {
+func (info *MethodInfo) PbcHeadName() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.ProtoPbhEx, 1)
 }
 
-func (info *RPCMethod) MethodName() string {
+func (info *MethodInfo) MethodName() string {
 	return info.MethodDescriptorProto.GetName()
 }
 
-func (info *RPCMethod) FileBaseName() string {
+func (info *MethodInfo) FileBaseName() string {
 	return filepath.Base(*info.FdSet.GetFile()[0].Name)
 }
 
-func (info *RPCMethod) Package() string {
+func (info *MethodInfo) Package() string {
 	if nil == info.FdSet.GetFile()[0].Package {
 		return ""
 	}
 	return *info.FdSet.GetFile()[0].Package
 }
 
-func (info *RPCMethod) GrpcHeadName() string {
+func (info *MethodInfo) GrpcHeadName() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.GrpcPbhEx, 1)
 }
 
-func (info *RPCMethod) GrpcIncludeHeadName() string {
+func (info *MethodInfo) GrpcIncludeHeadName() string {
 	return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.GrpcHeadName() + "\"\n"
 }
 
 // IncludeName 返回包含头文件名
-func (info *RPCMethod) IncludeName() string {
+func (info *MethodInfo) IncludeName() string {
 	if info.CcGenericServices() {
 		return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.PbcHeadName() + "\"\n"
 	}
 	return info.GrpcIncludeHeadName()
 }
 
-func (info *RPCMethod) Path() string {
+func (info *MethodInfo) Path() string {
 	return strings.Replace(filepath.Dir(*info.FdSet.GetFile()[0].Name), "\\", "/", -1) + "/"
 }
 
-func (info *RPCMethod) ServiceInfoIncludeName() string {
+func (info *MethodInfo) ServiceInfoIncludeName() string {
 	return config.IncludeBegin + info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
 }
 
 // CppHandlerIncludeName 返回Cpp处理器包含文件名
-func (info *RPCMethod) CppHandlerIncludeName() string {
+func (info *MethodInfo) CppHandlerIncludeName() string {
 	return config.IncludeBegin + info.FileNameNoEx() + config.HandlerHeaderExtension + config.IncludeEndLine
 }
 
 // CppRepliedHandlerIncludeName 返回Cpp已响应处理器包含文件名
-func (info *RPCMethod) CppRepliedHandlerIncludeName() string {
+func (info *MethodInfo) CppRepliedHandlerIncludeName() string {
 	return config.IncludeBegin + info.FileNameNoEx() + config.RepliedHandlerHeaderExtension + config.IncludeEndLine
 }
 
 // CppHandlerClassName 返回Cpp处理器类名
-func (info *RPCMethod) CppHandlerClassName() string {
+func (info *MethodInfo) CppHandlerClassName() string {
 	return info.Service() + config.HandlerFileName
 }
 
 // CppRepliedHandlerClassName 返回Cpp已响应处理器类名
-func (info *RPCMethod) CppRepliedHandlerClassName() string {
+func (info *MethodInfo) CppRepliedHandlerClassName() string {
 	return info.Service() + config.RepliedHandlerFileName
 }
 
-func (info *RPCMethod) CcGenericServices() bool {
+func (info *MethodInfo) CcGenericServices() bool {
 	files := info.FdSet.GetFile()
 	if len(files) == 0 || files[0].Options == nil || files[0].Options.CcGenericServices == nil {
 		return false
@@ -211,14 +211,14 @@ func (info *RPCMethod) CcGenericServices() bool {
 	return *files[0].Options.CcGenericServices
 }
 
-func (info *RPCMethod) GetServiceFullNameWithColon() string {
+func (info *MethodInfo) GetServiceFullNameWithColon() string {
 	if len(info.Package()) <= 0 {
 		return info.Service()
 	}
 	return info.Package() + "::" + info.Service()
 }
 
-func (info *RPCMethod) CppRequest() string {
+func (info *MethodInfo) CppRequest() string {
 	// 获取 InputType
 	inputType := info.MethodDescriptorProto.GetInputType()
 
@@ -228,11 +228,11 @@ func (info *RPCMethod) CppRequest() string {
 	return updatedInputType
 }
 
-func (info *RPCMethod) Method() string {
+func (info *MethodInfo) Method() string {
 	return info.MethodDescriptorProto.GetName()
 }
 
-func (info *RPCMethod) CppResponse() string {
+func (info *MethodInfo) CppResponse() string {
 	// 获取 OutputType
 	outputType := info.MethodDescriptorProto.GetOutputType()
 
@@ -242,7 +242,7 @@ func (info *RPCMethod) CppResponse() string {
 	return updatedOutputType
 }
 
-func (info *RPCMethod) GoRequest() string {
+func (info *MethodInfo) GoRequest() string {
 	// 获取 InputType
 	inputType := info.MethodDescriptorProto.GetInputType()
 
@@ -252,7 +252,7 @@ func (info *RPCMethod) GoRequest() string {
 	return updatedInputType
 }
 
-func (info *RPCMethod) GoResponse() string {
+func (info *MethodInfo) GoResponse() string {
 	// 获取 OutputType
 	outputType := info.MethodDescriptorProto.GetOutputType()
 
@@ -272,39 +272,39 @@ func GetTypeName(fullTypeName string) string {
 	return fullTypeName
 }
 
-func (info *RPCMethod) RequestName() string {
+func (info *MethodInfo) RequestName() string {
 	return GetTypeName(info.MethodDescriptorProto.GetInputType())
 }
 
-func (info *RPCMethod) GetServiceFullNameWithNoColon() string {
+func (info *MethodInfo) GetServiceFullNameWithNoColon() string {
 	if len(info.Package()) <= 0 {
 		return info.Service()
 	}
 	return info.Package() + info.Service()
 }
 
-func (info *RPCMethod) ClientStreaming() bool {
+func (info *MethodInfo) ClientStreaming() bool {
 	if nil == info.MethodDescriptorProto.ClientStreaming {
 		return false
 	}
 	return *info.MethodDescriptorProto.ClientStreaming
 }
 
-func (info *RPCMethod) ServerStreaming() bool {
+func (info *MethodInfo) ServerStreaming() bool {
 	if nil == info.MethodDescriptorProto.ServerStreaming {
 		return false
 	}
 	return *info.MethodDescriptorProto.ServerStreaming
 }
 
-func (info *RPCMethod) GetPackageNameWithColon() string {
+func (info *MethodInfo) GetPackageNameWithColon() string {
 	if len(info.Package()) <= 0 {
 		return ""
 	}
 	return info.Package() + "::"
 }
 
-func (info *RPCMethod) Service() string {
+func (info *MethodInfo) Service() string {
 	return info.ServiceDescriptorProto.GetName()
 }
 
