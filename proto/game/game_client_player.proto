@@ -8,8 +8,13 @@ import "proto/common/empty.proto";
 
 option cc_generic_services = true;
 
-service PlayerClientCommonService 
+message GameKickPlayerRequest {
+  TipInfoMessage reason = 1;
+  string operator = 2;
+}
+
+service CentreClientPlayerCommonService 
 {
   rpc SendTipToClient (TipInfoMessage) returns (Empty);
-  rpc KickPlayer (TipInfoMessage) returns (Empty);
+  rpc KickPlayer (GameKickPlayerRequest) returns (Empty);
 }
