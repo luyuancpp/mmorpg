@@ -967,52 +967,6 @@ func GenerateServiceConstants() {
 
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
-		// gs methods
-		/*util.Wg.Add(1)
-		go writeGsMethodHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeGsMethodHandlerCppFile(v)
-		util.Wg.Add(1)
-		go writeGsPlayerMethodHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeGsPlayerMethodHandlerCppFile(v)
-		util.Wg.Add(1)
-		go writeGsMethodRepliedHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeGsMethodRepliedHandlerCppFile(v)
-		util.Wg.Add(1)
-		go writeGsPlayerMethodRepliedHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeGsPlayerMethodRepliedHandlerCppFile(v)
-
-		// centre methods
-		util.Wg.Add(1)
-		go writeCentreMethodHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeCentreMethodHandlerCppFile(v)
-		util.Wg.Add(1)
-		go writeCentrePlayerMethodHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeCentrePlayerMethodHandlerCppFile(v)
-		util.Wg.Add(1)
-		go writeCentreMethodRepliedHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeCentreMethodRepliedHandlerCppFile(v)
-		util.Wg.Add(1)
-		go writeCentrePlayerMethodRepliedHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeCentrePlayerMethodRepliedHandlerCppFile(v)*/
-
-		// gate methods
-		util.Wg.Add(1)
-		go writeGateMethodHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeGateMethodHandlerCppFile(v)
-		util.Wg.Add(1)
-		go writeGateMethodRepliedHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeGateMethodRepliedHandlerCppFile(v)
-
 		ProcessAllHandlers(v)
 	}
 
