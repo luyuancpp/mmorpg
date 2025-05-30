@@ -167,6 +167,11 @@ var (
 		"login/",
 		"db/",
 		"centre/",
+		"game/",
+		"gate/",
+		"chat/",
+		"team/",
+		"mail/",
 	}
 
 	ProtoDirs []string
@@ -182,6 +187,11 @@ var (
 	LoginProtoDirIndex     = 8
 	DbProtoDirIndex        = 9
 	CenterProtoDirIndex    = 10
+	GameProtoDirIndex      = 11
+	GateProtoDirIndex      = 12
+	ChatProtoDirIndex      = 13
+	TeamProtoDirIndex      = 14
+	MailProtoDirIndex      = 15
 )
 
 // ----------- 其他业务相关常量 -----------

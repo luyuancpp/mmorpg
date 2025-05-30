@@ -4,7 +4,6 @@ option go_package = "pb/game";
 
 import "google/protobuf/empty.proto";
 import "proto/common/common.proto";
-import "proto/logic/client_player/player_scene.proto";
 option cc_generic_services = true;
 
 message CentreEnterSceneRequest
@@ -20,10 +19,14 @@ message CentreLeaveSceneAsyncSavePlayerCompleteRequest
 {
 }
 
+message CentreSceneInfoRequest {
+}
+
+
 service CentrePlayerSceneService 
 {
   rpc EnterScene (CentreEnterSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveScene (CentreLeaveSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveSceneAsyncSavePlayerComplete (CentreLeaveSceneAsyncSavePlayerCompleteRequest) returns (google.protobuf.Empty);
-  rpc SceneInfoC2S (SceneInfoRequest) returns (google.protobuf.Empty);
+  rpc SceneInfoC2S (CentreSceneInfoRequest) returns (google.protobuf.Empty);
 }

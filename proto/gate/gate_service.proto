@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+import "proto/common/empty.proto";
+import "proto/common/common.proto";
+import "proto/common/common_message.proto";
+
+option cc_generic_services = true;
+
+message KickSessionRequest
+{
+  uint64 session_id = 1;
+}
+
+message BroadcastToPlayersRequest
+{
+  repeated uint64 session_list = 1;
+  MessageContent message_content = 2;
+}
+
+service GateService {
+  rpc PlayerEnterGameNode (RegisterGameNodeSessionRequest) returns (RegisterGameNodeSessionResponse);
+  rpc SendMessageToPlayer (NodeRouteMessageRequest) returns (Empty);
+  rpc KickSessionByCentre (KickSessionRequest) returns (Empty);
+  rpc RouteNodeMessage (RouteMessageRequest) returns (RouteMessageResponse);
+  rpc RoutePlayerMessage (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse);
+  rpc BroadcastToPlayers (BroadcastToPlayersRequest) returns (Empty);
+  rpc RegisterNodeSession (RegisterNodeSessionRequest) returns (RegisterNodeSessionResponse);
+  
+}

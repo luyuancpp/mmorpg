@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/common/gate_service.pb.h"
+#include "proto/gate/gate_service.pb.h"
 
 
 constexpr uint32_t GateServicePlayerEnterGameNodeMessageId = 72;
