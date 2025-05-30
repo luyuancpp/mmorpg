@@ -10,7 +10,7 @@ import (
 var GsHandler = HandlerConfig{
 	IsValidFunc:         IsGsMethodHandler,
 	GenerateDataFunc:    getServiceHandlerHeadStr,
-	GenerateCppDataFunc: getMethodPlayerHandlerCppStr,
+	GenerateCppDataFunc: getServiceHandlerCppStr,
 	Dir:                 config.GameNodeMethodHandlerDirectory,
 	CppDir:              config.GameNodeMethodHandlerDirectory,
 	HeaderExt:           config.HandlerHeaderExtension,
@@ -21,8 +21,8 @@ var GsHandler = HandlerConfig{
 
 var GsPlayerHandler = HandlerConfig{
 	IsValidFunc:         IsGsPlayerHandler,
-	GenerateDataFunc:    getPlayerMethodHeadStr,
-	GenerateCppDataFunc: getMethodPlayerHandlerCppStr,
+	GenerateDataFunc:    getPlayerServiceHeadStr,
+	GenerateCppDataFunc: getPlayerServiceHandlerCppStr,
 	Dir:                 config.GameNodePlayerMethodHandlerDirectory,
 	CppDir:              config.GameNodePlayerMethodHandlerDirectory,
 	HeaderExt:           config.HandlerHeaderExtension,
@@ -33,8 +33,8 @@ var GsPlayerHandler = HandlerConfig{
 
 var GsRepliedHandler = HandlerConfig{
 	IsValidFunc:         isGsMethodRepliedHandler,
-	GenerateDataFunc:    getMethodRepliedHandlerHeadStr,
-	GenerateCppDataFunc: getMethodRepliedHandlerCppStr,
+	GenerateDataFunc:    getServiceRepliedHandlerHeadStr,
+	GenerateCppDataFunc: getServiceRepliedHandlerCppStr,
 	Dir:                 config.GameNodeMethodRepliedHandlerDirectory,
 	CppDir:              config.GameNodeMethodRepliedHandlerDirectory,
 	HeaderExt:           config.RepliedHandlerHeaderExtension,
@@ -46,7 +46,7 @@ var GsRepliedHandler = HandlerConfig{
 var GsPlayerRepliedHandler = HandlerConfig{
 	IsValidFunc:         isGsPlayerRepliedHandler,
 	GenerateDataFunc:    getPlayerMethodRepliedHeadStr,
-	GenerateCppDataFunc: getMethodPlayerHandlerCppStr,
+	GenerateCppDataFunc: getPlayerServiceHandlerCppStr,
 	Dir:                 config.GameNodePlayerMethodRepliedHandlerDirectory,
 	CppDir:              config.GameNodePlayerMethodRepliedHandlerDirectory,
 	HeaderExt:           config.RepliedHandlerHeaderExtension,
@@ -60,7 +60,7 @@ var GsPlayerRepliedHandler = HandlerConfig{
 var CentreHandler = HandlerConfig{
 	IsValidFunc:         isCentreMethodHandler,
 	GenerateDataFunc:    getServiceHandlerHeadStr,
-	GenerateCppDataFunc: getMethodPlayerHandlerCppStr,
+	GenerateCppDataFunc: getServiceHandlerCppStr,
 	Dir:                 config.CentreNodeMethodHandlerDirectory,
 	CppDir:              config.CentreNodeMethodHandlerDirectory,
 	HeaderExt:           config.HandlerHeaderExtension,
@@ -71,8 +71,8 @@ var CentreHandler = HandlerConfig{
 
 var CentrePlayerHandler = HandlerConfig{
 	IsValidFunc:         isCentrePlayerHandler,
-	GenerateDataFunc:    getPlayerMethodHeadStr,
-	GenerateCppDataFunc: getMethodPlayerHandlerCppStr,
+	GenerateDataFunc:    getPlayerServiceHeadStr,
+	GenerateCppDataFunc: getPlayerServiceHandlerCppStr,
 	Dir:                 config.CentreNodePlayerMethodHandlerDirectory,
 	CppDir:              config.CentreNodePlayerMethodHandlerDirectory,
 	HeaderExt:           config.HandlerHeaderExtension,
@@ -83,8 +83,8 @@ var CentrePlayerHandler = HandlerConfig{
 
 var CentreRepliedHandler = HandlerConfig{
 	IsValidFunc:         isCentreMethodRepliedHandler,
-	GenerateDataFunc:    getMethodRepliedHandlerHeadStr,
-	GenerateCppDataFunc: getMethodRepliedHandlerCppStr,
+	GenerateDataFunc:    getServiceRepliedHandlerHeadStr,
+	GenerateCppDataFunc: getServiceRepliedHandlerCppStr,
 	Dir:                 config.CentreMethodRepliedHandleDir,
 	CppDir:              config.CentreMethodRepliedHandleDir,
 	HeaderExt:           config.RepliedHandlerHeaderExtension,
@@ -96,7 +96,7 @@ var CentreRepliedHandler = HandlerConfig{
 var CentrePlayerRepliedHandler = HandlerConfig{
 	IsValidFunc:         isCentrePlayerRepliedHandler,
 	GenerateDataFunc:    getPlayerMethodRepliedHeadStr,
-	GenerateCppDataFunc: getMethodPlayerHandlerCppStr,
+	GenerateCppDataFunc: getPlayerServiceHandlerCppStr,
 	Dir:                 config.CentrePlayerMethodRepliedHandlerDirectory,
 	CppDir:              config.CentrePlayerMethodRepliedHandlerDirectory,
 	HeaderExt:           config.RepliedHandlerHeaderExtension,

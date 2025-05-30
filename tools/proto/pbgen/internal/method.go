@@ -161,7 +161,7 @@ func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
 }
 
 // Function to get the header string for player method handlers
-func getPlayerMethodHeadStr(methods RPCMethods) (string, error) {
+func getPlayerServiceHeadStr(methods RPCMethods) (string, error) {
 
 	const playerMethodHeadTemplate = `#pragma once
 
@@ -399,7 +399,7 @@ func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
 	return output.String()
 }
 
-func getMethodRepliedHandlerHeadStr(methods RPCMethods) (string, error) {
+func getServiceRepliedHandlerHeadStr(methods RPCMethods) (string, error) {
 	const methodRepliedHandlerHeadTemplate = `#pragma once
 #include "muduo/net/TcpConnection.h"
 {{.FirstMethodInfo.IncludeName }}
@@ -565,7 +565,7 @@ func GenerateMethodHandlerKeyNameWrapper(info *MethodInfo, _ string) string {
 	return "On" + info.KeyName() + config.RepliedHandlerFileName
 }
 
-func getMethodHandlerCppStr(dst string, methods *RPCMethods) string {
+func getServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
 
 	const methodHandlerCppTemplate = `
 {{ .CppHandlerInclude }}
@@ -606,19 +606,19 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 		Methods                []HandlerMethod
 	}
 
-	if len(*methods) == 0 {
+	if len(methods) == 0 {
 		return ""
 	}
 
 	ex := ""
 
 	// 获取 yourCode 段落
-	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methods, GenerateMethodHandlerNameWrapper, ex)
+	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, &methods, GenerateMethodHandlerNameWrapper, ex)
 
-	firstMethodInfo := (*methods)[0]
+	firstMethodInfo := (methods)[0]
 
 	var methodList []HandlerMethod
-	for _, methodInfo := range *methods {
+	for _, methodInfo := range methods {
 		handlerName := GenerateMethodHandlerNameWrapper(methodInfo, ex)
 		code, exists := yourCodesMap[handlerName]
 		methodList = append(methodList, HandlerMethod{
@@ -654,7 +654,7 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 	return output.String()
 }
 
-func getMethodRepliedHandlerCppStr(dst string, methods RPCMethods, _ string, _ string) string {
+func getServiceRepliedHandlerCppStr(dst string, methods RPCMethods, _ string, _ string) string {
 	const methodRepliedHandlerCppTemplate = `
 {{ .CppRepliedHandlerInclude }}
 #include "{{ .ServiceInfoName }}/{{ .ServiceInfoHeadInclude }}"
@@ -751,7 +751,7 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 	return output.String()
 }
 
-func getMethodPlayerHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
+func getPlayerServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
 	const playerHandlerCppTemplate = `
 {{ .IncludeName }}
 {{- if .FirstCode }}

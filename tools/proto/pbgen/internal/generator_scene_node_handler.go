@@ -75,7 +75,7 @@ func writeGsMethodHandlerCppFile(methodList RPCMethods) {
 	dstFileName := config.GameNodeMethodHandlerDirectory + fileName
 
 	// Generate the C++ handler file content
-	data := getMethodHandlerCppStr(dstFileName, &methodList)
+	data := getServiceHandlerCppStr(dstFileName, methodList, "", "")
 
 	// Write the generated data to the destination file using util.WriteMd5Data2File
 	util.WriteMd5Data2File(dstFileName, data)
@@ -92,7 +92,7 @@ func writeGsPlayerMethodHandlerHeadFile(methods RPCMethods) {
 	// Generate the file name based on the first method's base name and configuration
 	fileName := methods[0].FileNameNoEx() + config.HandlerHeaderExtension
 
-	data, err := getPlayerMethodHeadStr(methods)
+	data, err := getPlayerServiceHeadStr(methods)
 
 	if err != nil {
 		log.Fatal(err)
@@ -116,7 +116,7 @@ func writeGsPlayerMethodHandlerCppFile(methodList RPCMethods) {
 	dstFileName := config.GameNodePlayerMethodHandlerDirectory + fileName
 
 	// Generate the C++ handler file content
-	data := getMethodPlayerHandlerCppStr(dstFileName,
+	data := getPlayerServiceHandlerCppStr(dstFileName,
 		methodList,
 		firstMethodInfo.CppHandlerClassName(),
 		firstMethodInfo.CppHandlerIncludeName())
@@ -176,7 +176,7 @@ func writeGsPlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	dstFileName := config.GameNodePlayerMethodRepliedHandlerDirectory + fileName
 
 	// Generate the C++ replied handler file content
-	data := getMethodPlayerHandlerCppStr(dstFileName,
+	data := getPlayerServiceHandlerCppStr(dstFileName,
 		methodList,
 		firstMethodInfo.CppRepliedHandlerClassName(),
 		firstMethodInfo.CppRepliedHandlerIncludeName())
@@ -222,7 +222,7 @@ func writeGsMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	fileBaseName := methodList[0].FileNameNoEx()
 	fileName := strings.ToLower(fileBaseName) + config.RepliedHandlerHeaderExtension
 	dstFileName := config.GameNodeMethodRepliedHandlerDirectory + fileName
-	data, err := getMethodRepliedHandlerHeadStr(methodList)
+	data, err := getServiceRepliedHandlerHeadStr(methodList)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -239,6 +239,6 @@ func writeGsMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	fileBaseName := methodList[0].FileNameNoEx()
 	fileName := strings.ToLower(fileBaseName) + config.CppRepliedHandlerEx
 	dstFileName := config.GameNodeMethodRepliedHandlerDirectory + fileName
-	data := getMethodRepliedHandlerCppStr(dstFileName, methodList, "", "")
+	data := getServiceRepliedHandlerCppStr(dstFileName, methodList, "", "")
 	util.WriteMd5Data2File(dstFileName, data)
 }
