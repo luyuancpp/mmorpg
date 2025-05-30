@@ -4,7 +4,7 @@ option go_package = "pb/game";
 
 import "proto/db/db_base.proto";
 import "proto/common/user_accounts.proto";
-import "proto/common/comp.proto";
+import "proto/logic/component/comp.proto";
 import "proto/common/common.proto";
 import "proto/logic/component/player_scene_comp.proto";
 import "proto/logic/component/actor_comp.proto";
