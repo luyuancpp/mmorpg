@@ -399,7 +399,7 @@ func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
 	return output.String()
 }
 
-func getMethodRepliedHandlerHeadStr(methods *RPCMethods) string {
+func getMethodRepliedHandlerHeadStr(methods RPCMethods) (string, error) {
 	const methodRepliedHandlerHeadTemplate = `#pragma once
 #include "muduo/net/TcpConnection.h"
 {{.FirstMethodInfo.IncludeName }}
@@ -413,7 +413,7 @@ void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn
 `
 	type MethodRepliedHandlerData struct {
 		FirstMethodInfo        *MethodInfo
-		Methods                *RPCMethods
+		Methods                RPCMethods
 		RepliedHandlerFileName string
 	}
 
@@ -424,18 +424,18 @@ void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn
 	}
 
 	// Ensure there are methods in the list
-	if len(*methods) == 0 {
-		return ""
+	if len(methods) == 0 {
+		return "", nil
 	}
 
 	// Ensure there are methods in the list
-	if len(*methods) == 0 {
-		return ""
+	if len(methods) == 0 {
+		return "", nil
 	}
 
 	// Prepare data for the template
 	var methodsInfo []MethodInfo
-	for _, method := range *methods {
+	for _, method := range methods {
 		methodsInfo = append(methodsInfo, MethodInfo{
 			KeyName:     method.KeyName(),
 			CppResponse: method.CppResponse(),
@@ -444,7 +444,7 @@ void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn
 	}
 
 	data := MethodRepliedHandlerData{
-		FirstMethodInfo:        (*methods)[0],
+		FirstMethodInfo:        (methods)[0],
 		Methods:                methods,
 		RepliedHandlerFileName: config.RepliedHandlerFileName,
 	}
@@ -460,7 +460,7 @@ void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn
 		panic(err)
 	}
 
-	return output.String()
+	return output.String(), nil
 }
 
 // ReadCodeSectionsFromFile 函数接收一个函数作为参数，动态选择 A 或 B 方法
@@ -654,7 +654,7 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 	return output.String()
 }
 
-func getMethodRepliedHandlerCppStr(dst string, methods *RPCMethods) string {
+func getMethodRepliedHandlerCppStr(dst string, methods RPCMethods, _ string, _ string) string {
 	const methodRepliedHandlerCppTemplate = `
 {{ .CppRepliedHandlerInclude }}
 #include "{{ .ServiceInfoName }}/{{ .ServiceInfoHeadInclude }}"
@@ -705,17 +705,17 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 		ServiceInfoName          string
 	}
 
-	if len(*methods) == 0 {
+	if len(methods) == 0 {
 		return ""
 	}
 
 	emptyString := ""
 
-	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methods, GenerateMethodHandlerKeyNameWrapper, emptyString)
-	firstMethodInfo := (*methods)[0]
+	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, &methods, GenerateMethodHandlerKeyNameWrapper, emptyString)
+	firstMethodInfo := (methods)[0]
 
 	var methodsData []RepliedHandlerMethod
-	for _, method := range *methods {
+	for _, method := range methods {
 		funcName := GenerateMethodHandlerKeyNameWrapper(method, emptyString)
 		code, exists := yourCodesMap[funcName]
 		methodsData = append(methodsData, RepliedHandlerMethod{
@@ -751,7 +751,7 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 	return output.String()
 }
 
-func getMethodPlayerHandlerCppStr(dst string, methods *RPCMethods, className string, includeName string) string {
+func getMethodPlayerHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
 	const playerHandlerCppTemplate = `
 {{ .IncludeName }}
 {{- if .FirstCode }}
@@ -788,14 +788,14 @@ void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* re
 		Methods                []PlayerHandlerMethod
 	}
 
-	if len(*methods) == 0 {
+	if len(methods) == 0 {
 		return includeName // Still return include if empty
 	}
 
-	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, methods, GenerateMethodHandlerNameWithClassPrefixWrapper, className)
+	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, &methods, GenerateMethodHandlerNameWithClassPrefixWrapper, className)
 
 	var methodList []PlayerHandlerMethod
-	for _, method := range *methods {
+	for _, method := range methods {
 		handlerName := GenerateMethodHandlerNameWithClassPrefixWrapper(method, className)
 		code, exists := yourCodesMap[handlerName]
 		methodList = append(methodList, PlayerHandlerMethod{
@@ -968,7 +968,7 @@ func GenerateServiceConstants() {
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
 		// gs methods
-		util.Wg.Add(1)
+		/*util.Wg.Add(1)
 		go writeGsMethodHandlerHeadFile(v)
 		util.Wg.Add(1)
 		go writeGsMethodHandlerCppFile(v)
@@ -1001,7 +1001,7 @@ func WriteMethodFile() {
 		util.Wg.Add(1)
 		go writeCentrePlayerMethodRepliedHandlerHeadFile(v)
 		util.Wg.Add(1)
-		go writeCentrePlayerMethodRepliedHandlerCppFile(v)
+		go writeCentrePlayerMethodRepliedHandlerCppFile(v)*/
 
 		// gate methods
 		util.Wg.Add(1)
@@ -1012,6 +1012,8 @@ func WriteMethodFile() {
 		go writeGateMethodRepliedHandlerHeadFile(v)
 		util.Wg.Add(1)
 		go writeGateMethodRepliedHandlerCppFile(v)
+
+		ProcessAllHandlers(v)
 	}
 
 	// Concurrent operations for game, centre, and gate registers
