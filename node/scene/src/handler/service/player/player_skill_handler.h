@@ -6,7 +6,7 @@
 
 #include "macros/return_define.h"
 
-class PlayerSkillServiceHandler : public ::PlayerService
+class ClientPlayerSkillServiceHandler : public ::PlayerService
 {
 public:
     using PlayerService::PlayerService;
