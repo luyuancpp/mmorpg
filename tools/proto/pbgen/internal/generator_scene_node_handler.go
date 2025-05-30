@@ -19,8 +19,7 @@ func IsGsMethodHandler(methods *RPCMethods) bool {
 		return false
 	}
 
-	if strings.Contains(firstMethodInfo.Path(), config.TypePlayer) ||
-		strings.Contains(firstMethodInfo.FileNameNoEx(), config.TypePlayer) {
+	if util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
 		return false
 	}
 
@@ -39,7 +38,7 @@ func IsGsPlayerHandler(methods *RPCMethods) bool {
 		return true
 	}
 
-	if !strings.Contains(firstMethodInfo.Service(), config.DisplayPlayer) {
+	if !strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
 		return false
 	}
 
@@ -141,7 +140,7 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) {
+	if util.IsPathInOtherProtoDirs(firstMethodInfo.Path(), config.GameProtoDirIndex) {
 		return false
 	}
 

@@ -18,8 +18,7 @@ func isCentreMethodHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if strings.Contains(firstMethodInfo.Service(), config.TypePlayer) ||
-		strings.Contains(firstMethodInfo.Service(), config.DisplayPlayer) {
+	if util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
 		return false
 	}
 
@@ -174,8 +173,7 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if !(strings.Contains(firstMethodInfo.Service(), config.TypePlayer) ||
-		strings.Contains(firstMethodInfo.Service(), config.DisplayPlayer)) {
+	if !(util.ContainsPlayerKeyword(firstMethodInfo.Service())) {
 		return false
 	}
 
