@@ -14,7 +14,6 @@ type HandlerConfig struct {
 	CppDir              string
 	HeaderExt           string
 	CppExt              string
-	UseCppClassName     bool
 	IsRepliedHandler    bool
 }
 
@@ -48,16 +47,9 @@ func writeHandlerCppFile(methodList RPCMethods, cfg HandlerConfig) {
 	fileName := strings.ToLower(first.FileNameNoEx()) + cfg.CppExt
 	fullPath := cfg.CppDir + fileName
 
-	var data string
-	if cfg.UseCppClassName {
-		data = cfg.GenerateCppDataFunc(fullPath, methodList,
-			getCppClassName(*first, cfg),
-			getCppIncludeName(*first, cfg))
-	} else {
-		data = getServiceHandlerCppStr(fullPath, methodList,
-			getCppClassName(*first, cfg),
-			getCppIncludeName(*first, cfg))
-	}
+	data := cfg.GenerateCppDataFunc(fullPath, methodList,
+		getCppClassName(*first, cfg),
+		getCppIncludeName(*first, cfg))
 
 	util.WriteMd5Data2File(fullPath, data)
 }

@@ -15,7 +15,6 @@ var GsHandler = HandlerConfig{
 	CppDir:              config.GameNodeMethodHandlerDirectory,
 	HeaderExt:           config.HandlerHeaderExtension,
 	CppExt:              config.HandlerCppExtension,
-	UseCppClassName:     false,
 	IsRepliedHandler:    false,
 }
 
@@ -27,7 +26,6 @@ var GsPlayerHandler = HandlerConfig{
 	CppDir:              config.GameNodePlayerMethodHandlerDirectory,
 	HeaderExt:           config.HandlerHeaderExtension,
 	CppExt:              config.HandlerCppExtension,
-	UseCppClassName:     true,
 	IsRepliedHandler:    false,
 }
 
@@ -39,7 +37,6 @@ var GsRepliedHandler = HandlerConfig{
 	CppDir:              config.GameNodeMethodRepliedHandlerDirectory,
 	HeaderExt:           config.RepliedHandlerHeaderExtension,
 	CppExt:              config.CppRepliedHandlerEx,
-	UseCppClassName:     false,
 	IsRepliedHandler:    true,
 }
 
@@ -51,7 +48,6 @@ var GsPlayerRepliedHandler = HandlerConfig{
 	CppDir:              config.GameNodePlayerMethodRepliedHandlerDirectory,
 	HeaderExt:           config.RepliedHandlerHeaderExtension,
 	CppExt:              config.CppRepliedHandlerEx,
-	UseCppClassName:     true,
 	IsRepliedHandler:    true,
 }
 
@@ -65,7 +61,6 @@ var CentreHandler = HandlerConfig{
 	CppDir:              config.CentreNodeMethodHandlerDirectory,
 	HeaderExt:           config.HandlerHeaderExtension,
 	CppExt:              config.HandlerCppExtension,
-	UseCppClassName:     false,
 	IsRepliedHandler:    false,
 }
 
@@ -77,7 +72,6 @@ var CentrePlayerHandler = HandlerConfig{
 	CppDir:              config.CentreNodePlayerMethodHandlerDirectory,
 	HeaderExt:           config.HandlerHeaderExtension,
 	CppExt:              config.HandlerCppExtension,
-	UseCppClassName:     true,
 	IsRepliedHandler:    false,
 }
 
@@ -89,7 +83,6 @@ var CentreRepliedHandler = HandlerConfig{
 	CppDir:              config.CentreMethodRepliedHandleDir,
 	HeaderExt:           config.RepliedHandlerHeaderExtension,
 	CppExt:              config.CppRepliedHandlerEx,
-	UseCppClassName:     false,
 	IsRepliedHandler:    true,
 }
 
@@ -101,7 +94,6 @@ var CentrePlayerRepliedHandler = HandlerConfig{
 	CppDir:              config.CentrePlayerMethodRepliedHandlerDirectory,
 	HeaderExt:           config.RepliedHandlerHeaderExtension,
 	CppExt:              config.CppRepliedHandlerEx,
-	UseCppClassName:     true,
 	IsRepliedHandler:    true,
 }
 
