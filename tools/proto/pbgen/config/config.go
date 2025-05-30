@@ -65,17 +65,17 @@ const (
 const (
 	RobotMethodHandlerDirectory                 = ProjectDir + RobotDirectory + "logic/handler/"
 	GameNodeMethodHandlerDirectory              = ProjectDir + GameNodeDirectory + HandlerSourceDirectory
-	GameNodePlayerMethodHandlerDirectory        = ProjectDir + GameNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
+	GameNodePlayerMethodHandlerDirectory        = ProjectDir + GameNodeDirectory + HandlerSourceDirectory + TypePlayer + "/"
 	GameNodeMethodRepliedHandlerDirectory       = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory
-	GameNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
+	GameNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory + TypePlayer + "/"
 	CentreNodeMethodHandlerDirectory            = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory
-	CentreNodePlayerMethodHandlerDirectory      = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
+	CentreNodePlayerMethodHandlerDirectory      = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory + TypePlayer + "/"
 	CentreMethodRepliedHandleDir                = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory
-	CentrePlayerMethodRepliedHandlerDirectory   = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
+	CentrePlayerMethodRepliedHandlerDirectory   = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory + TypePlayer + "/"
 	GateMethodHandlerDirectory                  = ProjectDir + GateNodeDirectory + HandlerSourceDirectory
 	GateMethodRepliedHandlerDirectory           = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory
-	GateNodePlayerMethodHandlerDirectory        = ProjectDir + GateNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
-	GateNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
+	GateNodePlayerMethodHandlerDirectory        = ProjectDir + GateNodeDirectory + HandlerSourceDirectory + TypePlayer + "/"
+	GateNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory + TypePlayer + "/"
 )
 
 // ----------- 输出目录 -----------
@@ -160,7 +160,7 @@ var (
 		"logic/component/",
 		"logic/event/",
 		"logic/shared/",
-		"gate/",
+		"logic/",
 		"logic/",
 		"logic/constants/",
 		"etcd/",
@@ -206,7 +206,8 @@ const (
 	CentrePlayerPrefixName          = "centre_player"
 	ClientPrefixName                = "Client" // ✅ 新增
 	NodePrefixName                  = "node"   // ✅ 新增
-	PlayerName                      = "player"
+	TypePlayer                      = "player"
+	DisplayPlayer                   = "Player"
 	ServiceIncludeName              = "service/"
 	PlayerServiceIncludeName        = "#include \"service/player_service.h\"\n"
 	PlayerServiceRepliedIncludeName = "#include \"service/player_service_replied.h\"\n"
