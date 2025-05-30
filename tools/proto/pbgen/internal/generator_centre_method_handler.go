@@ -171,13 +171,16 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if !(strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Service(), config.ProtoDirectoryNames[config.GameProtoDirIndex])) {
+	if !(strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex])) {
 		return false
 	}
 
 	if !(strings.Contains(firstMethodInfo.Service(), config.TypePlayer) ||
 		strings.Contains(firstMethodInfo.Service(), config.DisplayPlayer)) {
+		return false
+	}
+
+	if strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
 		return false
 	}
 
