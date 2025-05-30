@@ -1,7 +1,7 @@
 #pragma once
 
 #include "config_loader/config.h"
-#include "proto/common/common_message.pb.h"
+#include "proto/common/message.pb.h"
 #include "type_define/type_define.h"
 #include "util/random.h"
 #include <muduo/contrib/hiredis/hiredis.h>

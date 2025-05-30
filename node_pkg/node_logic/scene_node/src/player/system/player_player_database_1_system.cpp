@@ -1,6 +1,6 @@
 
 #include "thread_local/storage.h"
-#include "proto/common/mysql_database_table.pb.h"
+#include "proto/db/mysql_database_table.pb.h"
 
 void Player_database_1MessageFieldsUnmarshal(entt::entity player, const player_database& message){
 }

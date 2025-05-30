@@ -2,7 +2,7 @@
 
 #include "core/system/redis_system.h"
 #include "scene/comp/nav_comp.h"
-#include "proto/common/mysql_database_table.pb.h"
+#include "proto/db/mysql_database_table.pb.h"
 #include "proto/logic/component/frame_comp.pb.h"
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "util/node_id_generator.h"

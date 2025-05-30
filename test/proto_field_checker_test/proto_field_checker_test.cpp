@@ -1,5 +1,5 @@
 ﻿#include "util/proto_field_checker.h"
-#include "proto/common/common_message.pb.h"  // 你的 proto 生成的头文件
+#include "proto/common/message.pb.h"  // 你的 proto 生成的头文件
 #include <gtest/gtest.h>
 #include "gmock/gmock.h"
 
