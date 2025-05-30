@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/logic/server/game_scene.pb.h"
+#include "proto/game/game_scene.pb.h"
 
 
 constexpr uint32_t GameSceneServiceTestMessageId = 20;

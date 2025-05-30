@@ -32,7 +32,7 @@
 #include "google/protobuf/service.h"
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/common/tip.pb.h"
-#include "proto/common/comp.pb.h"
+#include "proto/logic/component/comp.pb.h"
 #include "proto/common/empty.pb.h"
 #include "proto/logic/component/player_skill_comp.pb.h"
 #include "proto/logic/component/skill_comp.pb.h"

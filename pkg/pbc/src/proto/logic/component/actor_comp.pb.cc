@@ -472,34 +472,35 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n&proto/logic/component/actor_comp.proto"
-    "\032\027proto/common/comp.proto\"+\n\010Location\022\t\n"
-    "\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"+\n\010Rotati"
-    "on\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"(\n\005S"
-    "cale\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"[\n"
-    "\tTransform\022\032\n\010location\030\001 \001(\0132\010.Vector3\022\033"
-    "\n\010rotation\030\002 \001(\0132\t.Rotation\022\025\n\005scale\030\003 \001"
-    "(\0132\006.Scale\"+\n\010Velocity\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002"
-    " \001(\001\022\t\n\001z\030\003 \001(\001\"/\n\014Acceleration\022\t\n\001x\030\001 \001"
-    "(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"\034\n\nViewRadius\022\016"
-    "\n\006radius\030\001 \001(\001\"\223\001\n\031BaseAttributesPbCompo"
-    "nent\022\020\n\010strength\030\001 \001(\004\022\017\n\007stamina\030\002 \001(\004\022"
-    "\016\n\006health\030\003 \001(\004\022\014\n\004mana\030\004 \001(\004\022\022\n\ncritcha"
-    "nce\030\005 \001(\004\022\r\n\005armor\030\006 \001(\004\022\022\n\nresistance\030\007"
-    " \001(\004\"!\n\020LevelPbComponent\022\r\n\005level\030\001 \001(\r\""
-    "\204\001\n\025ActorStatePbComponent\0229\n\nstate_list\030"
-    "\001 \003(\0132%.ActorStatePbComponent.StateListE"
-    "ntry\0320\n\016StateListEntry\022\013\n\003key\030\001 \001(\r\022\r\n\005v"
-    "alue\030\002 \001(\010:\0028\001B\tZ\007pb/gameb\006proto3"
+    "\032 proto/logic/component/comp.proto\"+\n\010Lo"
+    "cation\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\""
+    "+\n\010Rotation\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003"
+    " \001(\001\"(\n\005Scale\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z"
+    "\030\003 \001(\001\"[\n\tTransform\022\032\n\010location\030\001 \001(\0132\010."
+    "Vector3\022\033\n\010rotation\030\002 \001(\0132\t.Rotation\022\025\n\005"
+    "scale\030\003 \001(\0132\006.Scale\"+\n\010Velocity\022\t\n\001x\030\001 \001"
+    "(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"/\n\014Acceleration"
+    "\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"\034\n\nVie"
+    "wRadius\022\016\n\006radius\030\001 \001(\001\"\223\001\n\031BaseAttribut"
+    "esPbComponent\022\020\n\010strength\030\001 \001(\004\022\017\n\007stami"
+    "na\030\002 \001(\004\022\016\n\006health\030\003 \001(\004\022\014\n\004mana\030\004 \001(\004\022\022"
+    "\n\ncritchance\030\005 \001(\004\022\r\n\005armor\030\006 \001(\004\022\022\n\nres"
+    "istance\030\007 \001(\004\"!\n\020LevelPbComponent\022\r\n\005lev"
+    "el\030\001 \001(\r\"\204\001\n\025ActorStatePbComponent\0229\n\nst"
+    "ate_list\030\001 \003(\0132%.ActorStatePbComponent.S"
+    "tateListEntry\0320\n\016StateListEntry\022\013\n\003key\030\001"
+    " \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001B\tZ\007pb/gameb\006prot"
+    "o3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto_deps[1] =
     {
-        &::descriptor_table_proto_2fcommon_2fcomp_2eproto,
+        &::descriptor_table_proto_2flogic_2fcomponent_2fcomp_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto = {
     false,
     false,
-    753,
+    762,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto,
     "proto/logic/component/actor_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto_once,

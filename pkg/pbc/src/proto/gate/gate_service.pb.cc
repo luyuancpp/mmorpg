@@ -119,36 +119,36 @@ const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABS
     protodesc_cold) = {
     "\n\035proto/gate/gate_service.proto\032\030proto/c"
     "ommon/empty.proto\032\031proto/common/common.p"
-    "roto\032!proto/common/common_message.proto\""
-    "(\n\022KickSessionRequest\022\022\n\nsession_id\030\001 \001("
-    "\004\"[\n\031BroadcastToPlayersRequest\022\024\n\014sessio"
-    "n_list\030\001 \003(\004\022(\n\017message_content\030\002 \001(\0132\017."
-    "MessageContent2\360\003\n\013GateService\022X\n\023Player"
-    "EnterGameNode\022\037.RegisterGameNodeSessionR"
-    "equest\032 .RegisterGameNodeSessionResponse"
-    "\0227\n\023SendMessageToPlayer\022\030.NodeRouteMessa"
-    "geRequest\032\006.Empty\0222\n\023KickSessionByCentre"
-    "\022\023.KickSessionRequest\032\006.Empty\022\?\n\020RouteNo"
-    "deMessage\022\024.RouteMessageRequest\032\025.RouteM"
-    "essageResponse\022M\n\022RoutePlayerMessage\022\032.R"
-    "outePlayerMessageRequest\032\033.RoutePlayerMe"
-    "ssageResponse\0228\n\022BroadcastToPlayers\022\032.Br"
-    "oadcastToPlayersRequest\032\006.Empty\022P\n\023Regis"
-    "terNodeSession\022\033.RegisterNodeSessionRequ"
-    "est\032\034.RegisterNodeSessionResponseB\014Z\007pb/"
-    "game\200\001\001b\006proto3"
+    "roto\032\032proto/common/message.proto\"(\n\022Kick"
+    "SessionRequest\022\022\n\nsession_id\030\001 \001(\004\"[\n\031Br"
+    "oadcastToPlayersRequest\022\024\n\014session_list\030"
+    "\001 \003(\004\022(\n\017message_content\030\002 \001(\0132\017.Message"
+    "Content2\360\003\n\013GateService\022X\n\023PlayerEnterGa"
+    "meNode\022\037.RegisterGameNodeSessionRequest\032"
+    " .RegisterGameNodeSessionResponse\0227\n\023Sen"
+    "dMessageToPlayer\022\030.NodeRouteMessageReque"
+    "st\032\006.Empty\0222\n\023KickSessionByCentre\022\023.Kick"
+    "SessionRequest\032\006.Empty\022\?\n\020RouteNodeMessa"
+    "ge\022\024.RouteMessageRequest\032\025.RouteMessageR"
+    "esponse\022M\n\022RoutePlayerMessage\022\032.RoutePla"
+    "yerMessageRequest\032\033.RoutePlayerMessageRe"
+    "sponse\0228\n\022BroadcastToPlayers\022\032.Broadcast"
+    "ToPlayersRequest\032\006.Empty\022P\n\023RegisterNode"
+    "Session\022\033.RegisterNodeSessionRequest\032\034.R"
+    "egisterNodeSessionResponseB\014Z\007pb/game\200\001\001"
+    "b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps[3] =
     {
         &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
-        &::descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto,
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
+        &::descriptor_table_proto_2fcommon_2fmessage_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgate_2fgate_5fservice_2eproto = {
     false,
     false,
-    775,
+    768,
     descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto,
     "proto/gate/gate_service.proto",
     &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_once,

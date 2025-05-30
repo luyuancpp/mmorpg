@@ -224,51 +224,51 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto[]
     "\n!proto/centre/centre_service.proto\032\031pro"
     "to/common/common.proto\032\030proto/common/emp"
     "ty.proto\032\032proto/common/session.proto\032\031pr"
-    "oto/common/c2gate.proto\032!proto/common/co"
-    "mmon_message.proto\"\?\n\030GateClientMessageR"
-    "equest\022#\n\nrpc_client\030\001 \001(\0132\017.NetworkAddr"
-    "ess\"\033\n\031LoginNodeLeaveGameRequest\"G\n\033Ente"
-    "rGameNodeSuccessRequest\022\021\n\tplayer_id\030\001 \001"
-    "(\004\022\025\n\rscene_node_id\030\002 \001(\r\"u\n CentrePlaye"
-    "rGameNodeEntryRequest\022*\n\017client_msg_body"
-    "\030\001 \001(\0132\021.EnterGameRequest\022%\n\014session_inf"
-    "o\030\002 \001(\0132\017.SessionDetails\"@\n\024InitSceneNod"
-    "eRequest\022\017\n\007node_id\030\001 \001(\r\022\027\n\017scene_node_"
-    "type\030\002 \001(\r2\223\006\n\rCentreService\0226\n\021GatePlay"
-    "erService\022\031.GateClientMessageRequest\032\006.E"
-    "mpty\022>\n\025GateSessionDisconnect\022\035.GateSess"
-    "ionDisconnectRequest\032\006.Empty\0226\n\025LoginNod"
-    "eAccountLogin\022\r.LoginRequest\032\016.LoginResp"
-    "onse\022\?\n\022LoginNodeEnterGame\022!.CentrePlaye"
-    "rGameNodeEntryRequest\032\006.Empty\0228\n\022LoginNo"
-    "deLeaveGame\022\032.LoginNodeLeaveGameRequest\032"
-    "\006.Empty\022C\n\032LoginNodeSessionDisconnect\022\035."
-    "GateSessionDisconnectRequest\032\006.Empty\022D\n\r"
-    "PlayerService\022\030.NodeRouteMessageRequest\032"
-    "\031.NodeRouteMessageResponse\0226\n\016EnterGsSuc"
-    "ceed\022\034.EnterGameNodeSuccessRequest\032\006.Emp"
-    "ty\022A\n\022RouteNodeStringMsg\022\024.RouteMessageR"
-    "equest\032\025.RouteMessageResponse\022O\n\024RoutePl"
-    "ayerStringMsg\022\032.RoutePlayerMessageReques"
-    "t\032\033.RoutePlayerMessageResponse\022.\n\rInitSc"
-    "eneNode\022\025.InitSceneNodeRequest\032\006.Empty\022P"
-    "\n\023RegisterNodeSession\022\033.RegisterNodeSess"
-    "ionRequest\032\034.RegisterNodeSessionResponse"
-    "B\014Z\007pb/game\200\001\001b\006proto3"
+    "oto/common/c2gate.proto\032\032proto/common/me"
+    "ssage.proto\"\?\n\030GateClientMessageRequest\022"
+    "#\n\nrpc_client\030\001 \001(\0132\017.NetworkAddress\"\033\n\031"
+    "LoginNodeLeaveGameRequest\"G\n\033EnterGameNo"
+    "deSuccessRequest\022\021\n\tplayer_id\030\001 \001(\004\022\025\n\rs"
+    "cene_node_id\030\002 \001(\r\"u\n CentrePlayerGameNo"
+    "deEntryRequest\022*\n\017client_msg_body\030\001 \001(\0132"
+    "\021.EnterGameRequest\022%\n\014session_info\030\002 \001(\013"
+    "2\017.SessionDetails\"@\n\024InitSceneNodeReques"
+    "t\022\017\n\007node_id\030\001 \001(\r\022\027\n\017scene_node_type\030\002 "
+    "\001(\r2\223\006\n\rCentreService\0226\n\021GatePlayerServi"
+    "ce\022\031.GateClientMessageRequest\032\006.Empty\022>\n"
+    "\025GateSessionDisconnect\022\035.GateSessionDisc"
+    "onnectRequest\032\006.Empty\0226\n\025LoginNodeAccoun"
+    "tLogin\022\r.LoginRequest\032\016.LoginResponse\022\?\n"
+    "\022LoginNodeEnterGame\022!.CentrePlayerGameNo"
+    "deEntryRequest\032\006.Empty\0228\n\022LoginNodeLeave"
+    "Game\022\032.LoginNodeLeaveGameRequest\032\006.Empty"
+    "\022C\n\032LoginNodeSessionDisconnect\022\035.GateSes"
+    "sionDisconnectRequest\032\006.Empty\022D\n\rPlayerS"
+    "ervice\022\030.NodeRouteMessageRequest\032\031.NodeR"
+    "outeMessageResponse\0226\n\016EnterGsSucceed\022\034."
+    "EnterGameNodeSuccessRequest\032\006.Empty\022A\n\022R"
+    "outeNodeStringMsg\022\024.RouteMessageRequest\032"
+    "\025.RouteMessageResponse\022O\n\024RoutePlayerStr"
+    "ingMsg\022\032.RoutePlayerMessageRequest\032\033.Rou"
+    "tePlayerMessageResponse\022.\n\rInitSceneNode"
+    "\022\025.InitSceneNodeRequest\032\006.Empty\022P\n\023Regis"
+    "terNodeSession\022\033.RegisterNodeSessionRequ"
+    "est\032\034.RegisterNodeSessionResponseB\014Z\007pb/"
+    "game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_deps[5] =
     {
         &::descriptor_table_proto_2fcommon_2fc2gate_2eproto,
         &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
-        &::descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto,
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
+        &::descriptor_table_proto_2fcommon_2fmessage_2eproto,
         &::descriptor_table_proto_2fcommon_2fsession_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto = {
     false,
     false,
-    1342,
+    1335,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto,
     "proto/centre/centre_service.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_once,

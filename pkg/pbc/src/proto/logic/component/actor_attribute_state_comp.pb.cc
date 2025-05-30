@@ -185,25 +185,26 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2flogic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n6proto/logic/component/actor_attribute_"
-    "state_comp.proto\032\027proto/common/comp.prot"
-    "o\"\223\001\n\033CombatStateFlagsPbComponent\022A\n\013sta"
-    "te_flags\030\001 \003(\0132,.CombatStateFlagsPbCompo"
-    "nent.StateFlagsEntry\0321\n\017StateFlagsEntry\022"
-    "\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001\"^\n\037Calcu"
-    "latedAttributesPbComponent\022\024\n\014attack_pow"
-    "er\030\001 \001(\004\022\025\n\rdefense_power\030\002 \001(\004\022\016\n\006isDea"
-    "d\030\003 \001(\010\"2\n\034DerivedAttributesPbComponent\022"
-    "\022\n\nmax_health\030\001 \001(\004B\tZ\007pb/gameb\006proto3"
+    "state_comp.proto\032 proto/logic/component/"
+    "comp.proto\"\223\001\n\033CombatStateFlagsPbCompone"
+    "nt\022A\n\013state_flags\030\001 \003(\0132,.CombatStateFla"
+    "gsPbComponent.StateFlagsEntry\0321\n\017StateFl"
+    "agsEntry\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001"
+    "\"^\n\037CalculatedAttributesPbComponent\022\024\n\014a"
+    "ttack_power\030\001 \001(\004\022\025\n\rdefense_power\030\002 \001(\004"
+    "\022\016\n\006isDead\030\003 \001(\010\"2\n\034DerivedAttributesPbC"
+    "omponent\022\022\n\nmax_health\030\001 \001(\004B\tZ\007pb/gameb"
+    "\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2flogic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto_deps[1] =
     {
-        &::descriptor_table_proto_2fcommon_2fcomp_2eproto,
+        &::descriptor_table_proto_2flogic_2fcomponent_2fcomp_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto = {
     false,
     false,
-    398,
+    407,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto,
     "proto/logic/component/actor_attribute_state_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto_once,

@@ -176,27 +176,27 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2flogic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n3proto/logic/component/actor_combat_sta"
-    "te_comp.proto\032\027proto/common/comp.proto\"\215"
-    "\001\n\035CombatStateDetailsPbComponent\022<\n\007sour"
-    "ces\030\001 \003(\0132+.CombatStateDetailsPbComponen"
-    "t.SourcesEntry\032.\n\014SourcesEntry\022\013\n\003key\030\001 "
-    "\001(\004\022\r\n\005value\030\002 \001(\010:\0028\001\"\260\001\n CombatStateCo"
-    "llectionPbComponent\022=\n\006states\030\001 \003(\0132-.Co"
-    "mbatStateCollectionPbComponent.StatesEnt"
-    "ry\032M\n\013StatesEntry\022\013\n\003key\030\001 \001(\r\022-\n\005value\030"
-    "\002 \001(\0132\036.CombatStateDetailsPbComponent:\0028"
-    "\001*\034\n\014eCombatState\022\014\n\010kSilence\020\000B\tZ\007pb/ga"
-    "meb\006proto3"
+    "te_comp.proto\032 proto/logic/component/com"
+    "p.proto\"\215\001\n\035CombatStateDetailsPbComponen"
+    "t\022<\n\007sources\030\001 \003(\0132+.CombatStateDetailsP"
+    "bComponent.SourcesEntry\032.\n\014SourcesEntry\022"
+    "\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\010:\0028\001\"\260\001\n Comb"
+    "atStateCollectionPbComponent\022=\n\006states\030\001"
+    " \003(\0132-.CombatStateCollectionPbComponent."
+    "StatesEntry\032M\n\013StatesEntry\022\013\n\003key\030\001 \001(\r\022"
+    "-\n\005value\030\002 \001(\0132\036.CombatStateDetailsPbCom"
+    "ponent:\0028\001*\034\n\014eCombatState\022\014\n\010kSilence\020\000"
+    "B\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2flogic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_deps[1] =
     {
-        &::descriptor_table_proto_2fcommon_2fcomp_2eproto,
+        &::descriptor_table_proto_2flogic_2fcomponent_2fcomp_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto = {
     false,
     false,
-    450,
+    459,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto,
     "proto/logic/component/actor_combat_state_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_once,
