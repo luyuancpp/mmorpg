@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"log"
 	"pbgen/config"
 	"pbgen/util"
 	"strings"
@@ -23,42 +22,6 @@ func isCentreMethodHandler(methodList *RPCMethods) bool {
 	}
 
 	return true
-}
-
-func writeCentreMethodHandlerHeadFile(methodList RPCMethods) {
-	defer util.Wg.Done()
-
-	if !isCentreMethodHandler(&methodList) {
-		return
-	}
-
-	firstMethodInfo := methodList[0]
-	fileName := firstMethodInfo.FileNameNoEx() + config.HandlerHeaderExtension
-	dstFileName := config.CentreNodeMethodHandlerDirectory + fileName
-
-	data, err := getServiceHandlerHeadStr(methodList)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	util.WriteMd5Data2File(dstFileName, data)
-}
-
-func writeCentreMethodHandlerCppFile(methodList RPCMethods) {
-	defer util.Wg.Done()
-
-	if !isCentreMethodHandler(&methodList) {
-		return
-	}
-
-	firstMethodInfo := methodList[0]
-	fileBaseName := firstMethodInfo.FileNameNoEx()
-	lowerFileName := strings.ToLower(fileBaseName) + config.HandlerCppExtension
-	dstFileName := config.CentreNodeMethodHandlerDirectory + lowerFileName
-
-	data := getServiceHandlerCppStr(dstFileName, methodList, "", "")
-	util.WriteMd5Data2File(dstFileName, data)
 }
 
 func isCentrePlayerHandler(methodList *RPCMethods) bool {

@@ -15,7 +15,6 @@ type MethodInfo struct {
 	Id                     uint64
 	Index                  uint64
 	FdSet                  *descriptorpb.FileDescriptorSet
-	FileServiceIndex       uint32
 	MethodDescriptorProto  *descriptorpb.MethodDescriptorProto
 	ServiceDescriptorProto *descriptorpb.ServiceDescriptorProto
 }
