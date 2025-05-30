@@ -29,7 +29,6 @@
 28=GameServiceEnterScene
 29=WatchWatch
 30=EntitySyncServiceSyncAttribute30Frames
-31=PlayerClientCommonServiceKickPlayer
 32=GameServiceRegisterNodeSession
 33=CentrePlayerSceneServiceSceneInfoC2S
 34=CentreServiceEnterGsSucceed
@@ -66,7 +65,6 @@
 65=GameServiceUpdateSessionDetail
 66=EntitySyncServiceSyncAttribute10Frames
 67=CentreServiceLoginNodeSessionDisconnect
-68=PlayerClientCommonServiceSendTipToClient
 69=GateServiceRouteNodeMessage
 70=ClientPlayerSkillServiceGetSkillList
 71=CentreServiceLoginNodeEnterGame
@@ -81,3 +79,7 @@
 80=CentreServiceLoginNodeLeaveGame
 81=GameServiceCreateScene
 82=ClientPlayerSceneServiceNotifyActorCreate
+83=GameClientPlayerCommonServiceSendTipToClient
+86=CentreClientPlayerCommonServiceKickPlayer
+87=GameClientPlayerCommonServiceKickPlayer
+88=CentreClientPlayerCommonServiceSendTipToClient
