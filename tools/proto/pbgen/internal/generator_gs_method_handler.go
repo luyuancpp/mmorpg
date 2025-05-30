@@ -35,7 +35,7 @@ func IsGsPlayerHandler(methods *RPCMethods) bool {
 	firstMethodInfo := (*methods)[0]
 
 	// Check if the method belongs to a player service
-	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) {
+	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) {
 		return true
 	}
 
