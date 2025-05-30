@@ -33,9 +33,8 @@ func IsGsPlayerHandler(methods *RPCMethods) bool {
 
 	firstMethodInfo := (*methods)[0]
 
-	// Check if the method belongs to a player service
 	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) {
-		return true
+		return false
 	}
 
 	if !strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
@@ -200,19 +199,20 @@ func isGsMethodRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	// Check if the method is from a valid path and has generic services enabled
-	if !(strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CenterProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GateProtoDirIndex])) {
-		return false
-	}
-
 	if !firstMethodInfo.CcGenericServices() {
 		return false
 	}
 
-	// Check if the file base name contains specific keywords
-	return strings.Contains(firstMethodInfo.FileNameNoEx(), config.CentrePrefixName) ||
-		strings.Contains(firstMethodInfo.FileNameNoEx(), config.GatePrefixName)
+	// Check if the method is from a valid path and has generic services enabled
+	if !(util.IsPathInOtherProtoDirs(firstMethodInfo.Path(), config.GameProtoDirIndex)) {
+		return false
+	}
+
+	if !strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
+		return false
+	}
+	
+	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
 }
 
 func writeGsMethodRepliedHandlerHeadFile(methodList RPCMethods) {
