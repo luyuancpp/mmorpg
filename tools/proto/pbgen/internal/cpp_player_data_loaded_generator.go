@@ -16,7 +16,7 @@ import (
 
 const playerLoaderTemplate = `
 #include "thread_local/storage.h"
-#include "proto/common/mysql_database_table.pb.h"
+#include "proto/db/mysql_database_table.pb.h"
 
 void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const player_database& message){
 	{{- range .Fields }}
