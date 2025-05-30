@@ -57,8 +57,8 @@ func ReadProtoFileService(fd os.DirEntry) error {
 
 			// Iterate through each method in the service
 			for index, method := range service.Method {
-				// Create an RPCMethod object for each method
-				rpcMethodInfo := RPCMethod{
+				// Create an MethodInfo object for each method
+				rpcMethodInfo := MethodInfo{
 					Id:                     math.MaxUint64,
 					Index:                  uint64(index),
 					FdSet:                  fdSet,

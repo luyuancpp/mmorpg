@@ -7,130 +7,122 @@ import (
 	"strings"
 )
 
-// /gate
-func isGateMethodRepliedHandler(methodList *RPCMethods) (check bool) {
-	// Check if the methodList is empty
-	if len(*methodList) <= 0 {
-		return false
-	}
-
-	// Retrieve the first method information from methodList
-	firstMethodInfo := (*methodList)[0]
-
-	// Check if the method's path contains the common ProtoDirNames
-	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]) {
-		return false
-	}
-
-	// Check if the method has CcGenericServices enabled
-	if !firstMethodInfo.CcGenericServices() {
-		return false
-	}
-
-	// Check if the ProtoFileBaseName of the method contains any of the specified prefixes
-	return util.IsPathInOtherProtoDirs(firstMethodInfo.Path(), config.GateProtoDirIndex)
+// 判断 methodList 是否为空
+func isEmpty(methodList *RPCMethods) bool {
+	return len(*methodList) == 0
 }
 
-func isGateServiceHandler(methodList *RPCMethods) (check bool) {
-	if len(*methodList) <= 0 {
-		return false
-	}
-	firstMethodInfo := (*methodList)[0]
-	return strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GateProtoDirIndex])
+// 判断 path 是否包含指定目录名
+func containsDir(path string, dirIndex int) bool {
+	return strings.Contains(path, config.ProtoDirectoryNames[dirIndex])
 }
 
-func writeGateMethodHandlerHeadFile(methodList RPCMethods) {
+// 判断 methodList 第一个 method 是否满足给定条件函数
+func checkFirstMethod(methodList *RPCMethods, conditions ...func(*MethodInfo) bool) bool {
+	if isEmpty(methodList) {
+		return false
+	}
+	first := (*methodList)[0]
+	for _, cond := range conditions {
+		if !cond(first) {
+			return false
+		}
+	}
+	return true
+}
+
+// 特定条件判断
+
+func isGateServiceHandler(methodList *RPCMethods) bool {
+	return checkFirstMethod(methodList, func(m *MethodInfo) bool {
+		return containsDir(m.Path(), config.GateProtoDirIndex)
+	})
+}
+
+func isGateMethodRepliedHandler(methodList *RPCMethods) bool {
+	return checkFirstMethod(methodList,
+		func(m *MethodInfo) bool {
+			return containsDir(m.Path(), config.CommonProtoDirIndex)
+		},
+		func(m *MethodInfo) bool {
+			return m.CcGenericServices()
+		},
+		func(m *MethodInfo) bool {
+			return util.IsPathInOtherProtoDirs(m.Path(), config.GateProtoDirIndex)
+		},
+	)
+}
+
+// 通用写文件函数，传入判断条件和文件生成函数
+
+func writeGateMethodFile(
+	methodList RPCMethods,
+	checkFunc func(*RPCMethods) bool,
+	genFileName func(*MethodInfo) string,
+	genData func(string, *RPCMethods) (string, error),
+	outputDir string,
+) {
 	defer util.Wg.Done()
 
-	// Check if methodList is empty
-	if len(methodList) <= 0 {
+	if !checkFunc(&methodList) || len(methodList) == 0 {
 		return
 	}
 
-	// Check if methodList qualifies as a gate service handler
-	if !isGateServiceHandler(&methodList) {
-		return
-	}
-
-	// Construct the file name for the header handler file
-	fileName := methodList[0].FileNameNoEx() + config.HandlerHeaderExtension
-
-	data, err := getServiceHandlerHeadStr(methodList)
-
+	first := methodList[0]
+	fileName := genFileName(first)
+	dstFile := outputDir + fileName
+	data, err := genData(dstFile, &methodList)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("writeGateMethodFile: genData error: %v", err)
 	}
 
-	// Write the MD5 data to the header handler file
-	util.WriteMd5Data2File(config.GateMethodHandlerDirectory+fileName, data)
+	util.WriteMd5Data2File(dstFile, data)
+}
+
+// 具体写调用
+
+func writeGateMethodHandlerHeadFile(methodList RPCMethods) {
+	writeGateMethodFile(
+		methodList,
+		isGateServiceHandler,
+		func(m *MethodInfo) string { return m.FileNameNoEx() + config.HandlerHeaderExtension },
+		func(_ string, list *RPCMethods) (string, error) { return getServiceHandlerHeadStr(*list) },
+		config.GateMethodHandlerDirectory,
+	)
 }
 
 func writeGateMethodHandlerCppFile(methodList RPCMethods) {
-	defer util.Wg.Done()
-
-	// Check if methodList is empty
-	if len(methodList) <= 0 {
-		return
-	}
-
-	// Check if methodList qualifies as a gate service handler
-	if !isGateServiceHandler(&methodList) {
-		return
-	}
-
-	// Construct the file name for the C++ handler file
-	fileName := strings.ToLower(methodList[0].FileNameNoEx()) + config.HandlerCppExtension
-	dstFileName := config.GateMethodHandlerDirectory + fileName
-
-	// Generate the C++ handler code as a string
-	data := getMethodHandlerCppStr(dstFileName, &methodList)
-
-	// Write the generated C++ handler code to file
-	util.WriteMd5Data2File(dstFileName, data)
+	writeGateMethodFile(
+		methodList,
+		isGateServiceHandler,
+		func(m *MethodInfo) string { return strings.ToLower(m.FileNameNoEx()) + config.HandlerCppExtension },
+		func(dst string, list *RPCMethods) (string, error) {
+			return getMethodHandlerCppStr(dst, list), nil
+		},
+		config.GateMethodHandlerDirectory,
+	)
 }
 
 func writeGateMethodRepliedHandlerHeadFile(methodList RPCMethods) {
-	defer util.Wg.Done()
-
-	// Check if methodList is empty
-	if len(methodList) <= 0 {
-		return
-	}
-
-	// Check if methodList qualifies as a gate method replied handler
-	if !isGateMethodRepliedHandler(&methodList) {
-		return
-	}
-
-	// Construct the file name for the replied handler header file
-	fileName := strings.ToLower(methodList[0].FileNameNoEx()) + config.RepliedHandlerHeaderExtension
-	dstFileName := config.GateMethodRepliedHandlerDirectory + fileName
-
-	// Generate the header handler code as a string
-	data := getMethodRepliedHandlerHeadStr(&methodList)
-
-	// Write the generated header handler code to file
-	util.WriteMd5Data2File(dstFileName, data)
+	writeGateMethodFile(
+		methodList,
+		isGateMethodRepliedHandler,
+		func(m *MethodInfo) string {
+			return strings.ToLower(m.FileNameNoEx()) + config.RepliedHandlerHeaderExtension
+		},
+		func(_ string, list *RPCMethods) (string, error) { return getMethodRepliedHandlerHeadStr(list), nil },
+		config.GateMethodRepliedHandlerDirectory,
+	)
 }
 
 func writeGateMethodRepliedHandlerCppFile(methodList RPCMethods) {
-	defer util.Wg.Done()
-
-	// Check if methodList qualifies as a gate method replied handler
-	if !isGateMethodRepliedHandler(&methodList) {
-		return
-	}
-
-	// Retrieve the first method information from methodList
-	firstMethodInfo := methodList[0]
-
-	// Construct the file name for the C++ replied handler file
-	fileName := strings.ToLower(firstMethodInfo.FileNameNoEx()) + config.CppRepliedHandlerEx
-	dstFileName := config.GateMethodRepliedHandlerDirectory + fileName
-
-	// Generate the C++ replied handler code as a string
-	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
-
-	// Write the generated C++ replied handler code to file
-	util.WriteMd5Data2File(dstFileName, data)
+	writeGateMethodFile(
+		methodList,
+		isGateMethodRepliedHandler,
+		func(m *MethodInfo) string { return strings.ToLower(m.FileNameNoEx()) + config.CppRepliedHandlerEx },
+		func(dst string, list *RPCMethods) (string, error) {
+			return getMethodRepliedHandlerCppStr(dst, list), nil
+		},
+		config.GateMethodRepliedHandlerDirectory,
+	)
 }
