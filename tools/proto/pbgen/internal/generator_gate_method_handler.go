@@ -28,9 +28,7 @@ func isGateMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 	}
 
 	// Check if the ProtoFileBaseName of the method contains any of the specified prefixes
-	return strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CenterProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.LoginProtoDirIndex])
+	return util.IsPathInOtherProtoDirs(firstMethodInfo.Path(), config.GateProtoDirIndex)
 }
 
 func isGateServiceHandler(methodList *RPCMethods) (check bool) {
@@ -38,10 +36,7 @@ func isGateServiceHandler(methodList *RPCMethods) (check bool) {
 		return false
 	}
 	firstMethodInfo := (*methodList)[0]
-	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GateProtoDirIndex]) {
-		return false
-	}
-	return true
+	return strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GateProtoDirIndex])
 }
 
 func writeGateMethodHandlerHeadFile(methodList RPCMethods) {
