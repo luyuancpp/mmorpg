@@ -62,7 +62,6 @@ func ReadProtoFileService(fd os.DirEntry) error {
 					Id:                     math.MaxUint64,
 					Index:                  uint64(index),
 					FdSet:                  fdSet,
-					FileServiceIndex:       fileServiceIndex,
 					ServiceDescriptorProto: service,
 					MethodDescriptorProto:  method,
 				}
