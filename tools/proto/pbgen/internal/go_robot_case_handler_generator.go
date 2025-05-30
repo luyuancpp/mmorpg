@@ -72,8 +72,7 @@ func isClientMethodRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 	firstMethod := (*methodList)[0]
-	return strings.Contains(firstMethod.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
-		(strings.Contains(firstMethod.Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]))
+	return !strings.Contains(firstMethod.Path(), config.ProtoDirectoryNames[config.DbProtoDirIndex])
 }
 
 func GoRobotTotalHandlerGenerator() {
@@ -145,8 +144,7 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 
 // isRelevantService checks if the service name is relevant.
 func isRelevantService(method *RPCMethod) bool {
-	return strings.Contains(method.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
-		strings.Contains(method.Service(), "GamePlayer") || strings.Contains(method.Service(), "ClientPlayer")
+	return strings.Contains(method.Service(), "GamePlayer") || strings.Contains(method.Service(), "ClientPlayer")
 }
 
 // determineResponseType returns the response type or request type based on configuration.

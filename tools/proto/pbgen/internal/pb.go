@@ -221,7 +221,7 @@ func BuildProtoGoLogin(protoPath string) (err error) {
 		}
 
 		if !(strings.Contains(protoPath, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-			strings.Contains(protoPath, config.ProtoDirectoryNames[config.ComponentProtoDirIndex]) ||
+			strings.Contains(protoPath, config.ProtoDirectoryNames[config.LogicComponentProtoDirIndex]) ||
 			strings.Contains(protoPath, config.ProtoDirectoryNames[config.ConstantsDirIndex])) {
 			return
 		}
@@ -292,7 +292,7 @@ func BuildProtoGoDb(protoPath string) (err error) {
 
 		// Skip if the directory path does not match specific criteria
 		if !(strings.Contains(protoPath, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-			strings.Contains(protoPath, config.ProtoDirectoryNames[config.ComponentProtoDirIndex]) ||
+			strings.Contains(protoPath, config.ProtoDirectoryNames[config.LogicComponentProtoDirIndex]) ||
 			strings.Contains(protoPath, config.ProtoDirectoryNames[config.ConstantsDirIndex])) {
 			return
 		}
