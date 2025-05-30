@@ -151,7 +151,7 @@ type EventTemplateData struct {
 func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 	defer util.Wg.Done()
 
-	protoFilePath := config.ProtoDirs[config.EventProtoDirIndex] + file.Name()
+	protoFilePath := config.ProtoDirs[config.LogicEventProtoDirIndex] + file.Name()
 	eventMessages, err := parseProtoMessages(protoFilePath)
 	if err != nil {
 		log.Printf("failed to parse proto: %v\n", err)
@@ -182,7 +182,7 @@ func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 	tmplData := EventTemplateData{
 		ClassName:           className,
 		HeaderFile:          headerFileBase,
-		ProtoInclude:        config.ProtoDirName + config.ProtoDirectoryNames[config.EventProtoDirIndex] + strings.Replace(file.Name(), config.ProtoEx, config.ProtoPbhEx, 1),
+		ProtoInclude:        config.ProtoDirName + config.ProtoDirectoryNames[config.LogicEventProtoDirIndex] + strings.Replace(file.Name(), config.ProtoEx, config.ProtoPbhEx, 1),
 		EventMessages:       eventMessages,
 		ForwardDeclarations: eventMessages,
 		GlobalUserCode:      globalCode,
@@ -200,7 +200,7 @@ func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 
 // generateAllEventHandlers 生成所有事件处理器
 func GenerateAllEventHandlers() {
-	files, err := os.ReadDir(config.ProtoDirs[config.EventProtoDirIndex])
+	files, err := os.ReadDir(config.ProtoDirs[config.LogicEventProtoDirIndex])
 	if err != nil {
 		log.Fatal(err)
 	}

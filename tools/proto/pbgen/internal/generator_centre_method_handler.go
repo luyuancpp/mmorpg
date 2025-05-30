@@ -169,7 +169,7 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
+	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CenterProtoDirIndex]) {
 		return false
 	}
 

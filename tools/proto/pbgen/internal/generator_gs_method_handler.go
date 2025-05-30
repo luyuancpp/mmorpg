@@ -15,8 +15,7 @@ func IsGsMethodHandler(methods *RPCMethods) bool {
 
 	firstMethodInfo := (*methods)[0]
 
-	isCommonOrLogicProto := strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.LogicProtoDirIndex])
+	isCommonOrLogicProto := strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex])
 
 	if strings.Contains(firstMethodInfo.Path(), config.PlayerName) ||
 		strings.Contains(firstMethodInfo.FileNameNoEx(), config.PlayerName) {
@@ -36,7 +35,7 @@ func IsGsPlayerHandler(methods *RPCMethods) bool {
 	firstMethodInfo := (*methods)[0]
 
 	// Check if the method belongs to a player service
-	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
+	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) {
 		return true
 	}
 
@@ -145,7 +144,7 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
+	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) {
 		return false
 	}
 
@@ -206,12 +205,8 @@ func isGsMethodRepliedHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	// Check if the method is from a valid path and has generic services enabled
-	if !(strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.LogicProtoDirIndex])) {
-		return false
-	}
-
-	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
+	if !(strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CenterProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GateProtoDirIndex])) {
 		return false
 	}
 

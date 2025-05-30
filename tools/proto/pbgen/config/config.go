@@ -159,9 +159,9 @@ var (
 		"common/",
 		"logic/component/",
 		"logic/event/",
-		"logic/server/",
-		"logic/client_player/",
-		"logic/server_player/",
+		"logic/shared/",
+		"gate/",
+		"logic/",
 		"logic/constants/",
 		"etcd/",
 		"login/",
@@ -176,22 +176,22 @@ var (
 
 	ProtoDirs []string
 
-	CommonProtoDirIndex    = 0
-	ComponentProtoDirIndex = 1
-	EventProtoDirIndex     = 2
-	LogicProtoDirIndex     = 3
-	ClientPlayerDirIndex   = 4
-	ServerPlayerDirIndex   = 5
-	ConstantsDirIndex      = 6
-	EtcdProtoDirIndex      = 7
-	LoginProtoDirIndex     = 8
-	DbProtoDirIndex        = 9
-	CenterProtoDirIndex    = 10
-	GameProtoDirIndex      = 11
-	GateProtoDirIndex      = 12
-	ChatProtoDirIndex      = 13
-	TeamProtoDirIndex      = 14
-	MailProtoDirIndex      = 15
+	CommonProtoDirIndex         = 0
+	LogicComponentProtoDirIndex = 1
+	LogicEventProtoDirIndex     = 2
+	LogicSharedProtoDirIndex    = 3
+	ClientPlayerDirIndex        = 4
+	ServerPlayerDirIndex        = 5
+	ConstantsDirIndex           = 6
+	EtcdProtoDirIndex           = 7
+	LoginProtoDirIndex          = 8
+	DbProtoDirIndex             = 9
+	CenterProtoDirIndex         = 10
+	GameProtoDirIndex           = 11
+	GateProtoDirIndex           = 12
+	ChatProtoDirIndex           = 13
+	TeamProtoDirIndex           = 14
+	MailProtoDirIndex           = 15
 )
 
 // ----------- 其他业务相关常量 -----------
