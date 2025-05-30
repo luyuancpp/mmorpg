@@ -1,6 +1,6 @@
 
 #pragma once
-#include "proto/logic/server_player/game_player.pb.h"
+#include "proto/game/game_player.pb.h"
 
 #include "service/player_service_replied.h"
 
