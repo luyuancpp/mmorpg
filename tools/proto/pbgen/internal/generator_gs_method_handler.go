@@ -15,16 +15,16 @@ func IsGsMethodHandler(methods *RPCMethods) bool {
 
 	firstMethodInfo := (*methods)[0]
 
-	isCommonOrLogicProto := strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex])
-
-	if strings.Contains(firstMethodInfo.Path(), config.PlayerName) ||
-		strings.Contains(firstMethodInfo.FileNameNoEx(), config.PlayerName) {
+	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) {
 		return false
 	}
 
-	hasGsPrefix := strings.HasPrefix(firstMethodInfo.FileNameNoEx(), config.GameNodePrefixName)
+	if strings.Contains(firstMethodInfo.Path(), config.TypePlayer) ||
+		strings.Contains(firstMethodInfo.FileNameNoEx(), config.TypePlayer) {
+		return false
+	}
 
-	return isCommonOrLogicProto && hasGsPrefix
+	return true
 }
 
 func IsGsPlayerHandler(methods *RPCMethods) bool {
@@ -39,10 +39,7 @@ func IsGsPlayerHandler(methods *RPCMethods) bool {
 		return true
 	}
 
-	// Check if the file base name contains player name and does not contain centre prefix
-	fileBaseName := firstMethodInfo.FileNameNoEx()
-
-	if !strings.Contains(fileBaseName, config.GameNodePlayerPrefixName) {
+	if !strings.Contains(firstMethodInfo.Service(), config.DisplayPlayer) {
 		return false
 	}
 

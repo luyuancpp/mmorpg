@@ -203,12 +203,6 @@ func (info *RPCMethod) CppRepliedHandlerClassName() string {
 	return info.Service() + config.RepliedHandlerFileName
 }
 
-// IsPlayerService 检查是否为玩家服务
-func (info *RPCMethod) IsPlayerService() bool {
-	return strings.Contains(info.Path(), config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
-		strings.Contains(info.Path(), config.ProtoDirectoryNames[config.ServerPlayerDirIndex])
-}
-
 func (info *RPCMethod) CcGenericServices() bool {
 	files := info.FdSet.GetFile()
 	if len(files) == 0 || files[0].Options == nil || files[0].Options.CcGenericServices == nil {

@@ -28,28 +28,20 @@ func isGateMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 	}
 
 	// Check if the ProtoFileBaseName of the method contains any of the specified prefixes
-	return strings.Contains(firstMethodInfo.FileNameNoEx(), config.CentrePrefixName) ||
-		strings.Contains(firstMethodInfo.FileNameNoEx(), config.DeployPrefixName) ||
-		strings.Contains(firstMethodInfo.FileNameNoEx(), config.GameNodePrefixName) ||
-		strings.Contains(firstMethodInfo.FileNameNoEx(), config.LoginPrefixName)
+	return strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CenterProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.LoginProtoDirIndex])
 }
 
 func isGateServiceHandler(methodList *RPCMethods) (check bool) {
-	// Check if the methodList is empty
 	if len(*methodList) <= 0 {
 		return false
 	}
-
-	// Retrieve the first method information from methodList
 	firstMethodInfo := (*methodList)[0]
-
-	// Check if the method's path contains the common ProtoDirNames
-	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]) {
+	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GateProtoDirIndex]) {
 		return false
 	}
-
-	// Check if the ProtoFileBaseName of the method contains the substring "gate"
-	return strings.Contains(firstMethodInfo.FileNameNoEx(), "gate")
+	return true
 }
 
 func writeGateMethodHandlerHeadFile(methodList RPCMethods) {

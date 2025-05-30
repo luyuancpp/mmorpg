@@ -14,18 +14,16 @@ func isCentreMethodHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	// 如果不在 common 或 logic proto 目录中，直接返回 false
 	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CenterProtoDirIndex]) {
 		return false
 	}
 
-	if strings.Contains(firstMethodInfo.Path(), config.PlayerName) ||
-		strings.Contains(firstMethodInfo.FileNameNoEx(), config.PlayerName) {
+	if strings.Contains(firstMethodInfo.Service(), config.TypePlayer) ||
+		strings.Contains(firstMethodInfo.Service(), config.DisplayPlayer) {
 		return false
 	}
 
-	// 检查文件名是否包含 Centre 前缀
-	return strings.Contains(firstMethodInfo.FileNameNoEx(), config.CentrePrefixName)
+	return true
 }
 
 func writeCentreMethodHandlerHeadFile(methodList RPCMethods) {
@@ -123,13 +121,17 @@ func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if firstMethodInfo.IsPlayerService() {
+	if !(strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Service(), config.ProtoDirectoryNames[config.GameProtoDirIndex])) {
 		return false
 	}
 
-	// Ensure the file base name does not contain CentrePrefixName
-	return strings.Contains(firstMethodInfo.FileNameNoEx(), config.GameNodePrefixName) ||
-		strings.Contains(firstMethodInfo.FileNameNoEx(), config.GatePrefixName)
+	if strings.Contains(firstMethodInfo.Service(), config.TypePlayer) ||
+		strings.Contains(firstMethodInfo.Service(), config.DisplayPlayer) {
+		return false
+	}
+
+	return true
 }
 
 func writeCentreMethodRepliedHandlerHeadFile(methodList RPCMethods) {
@@ -169,12 +171,17 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CenterProtoDirIndex]) {
+	if !(strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Service(), config.ProtoDirectoryNames[config.GameProtoDirIndex])) {
 		return false
 	}
 
-	// Check if it's a player service and not containing CentrePrefixName in ProtoFileBaseName
-	return firstMethodInfo.IsPlayerService() && !strings.Contains(firstMethodInfo.FileNameNoEx(), config.CentrePrefixName)
+	if !(strings.Contains(firstMethodInfo.Service(), config.TypePlayer) ||
+		strings.Contains(firstMethodInfo.Service(), config.DisplayPlayer)) {
+		return false
+	}
+
+	return true
 }
 
 func writeCentrePlayerMethodRepliedHandlerHeadFile(methodList RPCMethods) {
