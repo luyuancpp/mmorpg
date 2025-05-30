@@ -57,7 +57,7 @@ func writeCentreMethodHandlerCppFile(methodList RPCMethods) {
 	lowerFileName := strings.ToLower(fileBaseName) + config.HandlerCppExtension
 	dstFileName := config.CentreNodeMethodHandlerDirectory + lowerFileName
 
-	data := getMethodHandlerCppStr(dstFileName, &methodList)
+	data := getServiceHandlerCppStr(dstFileName, methodList, "", "")
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
@@ -83,7 +83,7 @@ func writeCentrePlayerMethodHandlerHeadFile(methods RPCMethods) {
 	fileName := firstMethodInfo.FileNameNoEx() + config.HandlerHeaderExtension
 	outputFilePath := config.CentreNodePlayerMethodHandlerDirectory + fileName
 
-	data, err := getPlayerMethodHeadStr(methods)
+	data, err := getPlayerServiceHeadStr(methods)
 
 	if err != nil {
 		log.Fatal(err)
@@ -103,7 +103,7 @@ func writeCentrePlayerMethodHandlerCppFile(methodList RPCMethods) {
 	fileName := strings.ToLower(firstMethodInfo.FileNameNoEx()) + config.HandlerCppExtension
 	dstFileName := config.CentreNodePlayerMethodHandlerDirectory + fileName
 
-	data := getMethodPlayerHandlerCppStr(
+	data := getPlayerServiceHandlerCppStr(
 		dstFileName,
 		methodList,
 		firstMethodInfo.CppHandlerClassName(),
@@ -143,7 +143,7 @@ func writeCentreMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	fileName := strings.ToLower(firstMethodInfo.FileNameNoEx()) + config.RepliedHandlerHeaderExtension
 	dstFileName := config.CentreMethodRepliedHandleDir + fileName
 
-	data, err := getMethodRepliedHandlerHeadStr(methodList)
+	data, err := getServiceRepliedHandlerHeadStr(methodList)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -161,7 +161,7 @@ func writeCentreMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	fileName := strings.ToLower(firstMethodInfo.FileNameNoEx()) + config.CppRepliedHandlerEx
 	dstFileName := config.CentreMethodRepliedHandleDir + fileName
 
-	data := getMethodRepliedHandlerCppStr(dstFileName, methodList, "", "")
+	data := getServiceRepliedHandlerCppStr(dstFileName, methodList, "", "")
 
 	util.WriteMd5Data2File(dstFileName, data)
 }
@@ -227,7 +227,7 @@ func writeCentrePlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	dstFileName := config.CentrePlayerMethodRepliedHandlerDirectory + fileName
 
 	// Generate the C++ handler code as a string
-	data := getMethodPlayerHandlerCppStr(
+	data := getPlayerServiceHandlerCppStr(
 		dstFileName,
 		methodList,
 		firstMethodInfo.CppRepliedHandlerClassName(),

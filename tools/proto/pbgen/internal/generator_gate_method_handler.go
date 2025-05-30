@@ -97,7 +97,7 @@ func writeGateMethodHandlerCppFile(methodList RPCMethods) {
 		isGateServiceHandler,
 		func(m *MethodInfo) string { return strings.ToLower(m.FileNameNoEx()) + config.HandlerCppExtension },
 		func(dst string, list *RPCMethods) (string, error) {
-			return getMethodHandlerCppStr(dst, list), nil
+			return getServiceHandlerCppStr(dst, *list, "", ""), nil
 		},
 		config.GateMethodHandlerDirectory,
 	)
@@ -110,7 +110,7 @@ func writeGateMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 		func(m *MethodInfo) string {
 			return strings.ToLower(m.FileNameNoEx()) + config.RepliedHandlerHeaderExtension
 		},
-		func(_ string, list *RPCMethods) (string, error) { return getMethodRepliedHandlerHeadStr(*list) },
+		func(_ string, list *RPCMethods) (string, error) { return getServiceRepliedHandlerHeadStr(*list) },
 		config.GateMethodRepliedHandlerDirectory,
 	)
 }
@@ -121,7 +121,7 @@ func writeGateMethodRepliedHandlerCppFile(methodList RPCMethods) {
 		isGateMethodRepliedHandler,
 		func(m *MethodInfo) string { return strings.ToLower(m.FileNameNoEx()) + config.CppRepliedHandlerEx },
 		func(dst string, list *RPCMethods) (string, error) {
-			return getMethodRepliedHandlerCppStr(dst, *list, "", ""), nil
+			return getServiceRepliedHandlerCppStr(dst, *list, "", ""), nil
 		},
 		config.GateMethodRepliedHandlerDirectory,
 	)

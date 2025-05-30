@@ -54,7 +54,9 @@ func writeHandlerCppFile(methodList RPCMethods, cfg HandlerConfig) {
 			getCppClassName(*first, cfg),
 			getCppIncludeName(*first, cfg))
 	} else {
-		data = getMethodHandlerCppStr(fullPath, &methodList)
+		data = getServiceHandlerCppStr(fullPath, methodList,
+			getCppClassName(*first, cfg),
+			getCppIncludeName(*first, cfg))
 	}
 
 	util.WriteMd5Data2File(fullPath, data)
