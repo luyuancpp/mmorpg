@@ -12,9 +12,8 @@
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
-#include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
-#include "logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 #include "logic/event/server_event.pb.h"
 #include "muduo/base/TimeZone.h"
 #include "network/rpc_session.h"
@@ -35,6 +34,7 @@
 #include "util/random.h"
 #include <regex>
 #include <ranges>
+#include "log/constants/log_constants.h"
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 

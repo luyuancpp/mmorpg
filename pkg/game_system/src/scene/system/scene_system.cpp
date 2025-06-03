@@ -8,7 +8,7 @@
 #include "pbc/common_error_tip.pb.h"
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "proto/logic/event/scene_event.pb.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 
 #include <ranges> // Only if using C++20 ranges
 

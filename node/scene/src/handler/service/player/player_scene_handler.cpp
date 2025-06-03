@@ -10,7 +10,7 @@
 #include "scene/comp/scene_comp.h"
 #include "service_info/centre_player_scene_service_info.h"
 
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 ///<<< END WRITING YOUR CODE
 
 

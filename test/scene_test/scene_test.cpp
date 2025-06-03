@@ -9,7 +9,7 @@
 
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "proto/logic/component/scene_comp.pb.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 
 using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
 

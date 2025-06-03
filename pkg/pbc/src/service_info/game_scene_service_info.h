@@ -4,7 +4,7 @@
 #include "proto/scene/game_scene.pb.h"
 
 
-constexpr uint32_t GameSceneServiceTestMessageId = 24;
+constexpr uint32_t GameSceneServiceTestMessageId = 39;
 constexpr uint32_t GameSceneServiceTestIndex = 0;
 #define GameSceneServiceTestMethod  ::GameSceneService_Stub::descriptor()->method(0)
 

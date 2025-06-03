@@ -6,7 +6,7 @@
 #include "player/system/player_scene_system.h"
 #include "scene/comp/grid_comp.h"
 #include "proto/logic/event/scene_event.pb.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 #include "scene/comp/scene_comp.h"
 #include "scene/system/scene_system.h"
 #include "service_info/centre_scene_service_info.h"

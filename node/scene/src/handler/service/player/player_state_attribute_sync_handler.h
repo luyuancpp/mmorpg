@@ -1,6 +1,6 @@
 #pragma once
 
-#include "proto/game/player_state_attribute_sync.pb.h"
+#include "proto/scene/player_state_attribute_sync.pb.h"
 
 #include "service/player_service.h"
 

@@ -13,7 +13,7 @@
 #include "player/system/player_tip_system.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 
 void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
 {

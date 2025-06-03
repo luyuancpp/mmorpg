@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 #include "scene/system/scene_system.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 ///<<< END WRITING YOUR CODE
 
 

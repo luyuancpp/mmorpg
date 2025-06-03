@@ -11,7 +11,7 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/InetAddress.h"
 #include "network/rpc_session.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 #include "proto/logic/event/server_event.pb.h"
 #include "thread_local/storage_common_logic.h"
 #include "thread_local/storage_game.h"
