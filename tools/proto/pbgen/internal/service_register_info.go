@@ -312,8 +312,8 @@ func writeServiceInfoCppFile() {
 {{ . }}
 {{- end }}
 
-std::unordered_set<uint32_t> gAllowedClientMessageIds;
-std::array<RpcService, {{ .MessageIdArraySize }}> gRpcServiceByMessageId;
+std::unordered_set<uint32_t> gClientMessageIdWhitelist;
+std::array<RpcService, {{ .MessageIdArraySize }}> gRpcServiceRegistry;
 
 void InitMessageInfo()
 {
@@ -374,7 +374,7 @@ void InitMessageInfo()
 			if method.CcGenericServices() {
 				handler := serviceName + "Impl"
 				initLine = fmt.Sprintf(
-					`gRpcServiceByMessageId[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), %d, %s};`,
+					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), %d, %s};`,
 					messageId,
 					method.Service(),
 					method.Method(),
@@ -386,7 +386,7 @@ void InitMessageInfo()
 				)
 			} else {
 				initLine = fmt.Sprintf(
-					`gRpcServiceByMessageId[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), nullptr, %d, %s};`,
+					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), nullptr, %d, %s};`,
 					messageId,
 					method.Service(),
 					method.Method(),
@@ -400,7 +400,7 @@ void InitMessageInfo()
 			initLines = append(initLines, initLine)
 
 			if isClientMessage {
-				clientIdLines = append(clientIdLines, fmt.Sprintf("gAllowedClientMessageIds.emplace(%s);", messageId))
+				clientIdLines = append(clientIdLines, fmt.Sprintf("gClientMessageIdWhitelist.emplace(%s);", messageId))
 			}
 		}
 	}

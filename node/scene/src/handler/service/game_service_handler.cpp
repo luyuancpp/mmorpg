@@ -105,13 +105,13 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 
 	const auto& player = playerIt->second;
 
-	if (request->message_content().message_id() >= gRpcServiceByMessageId.size())
+	if (request->message_content().message_id() >= gRpcServiceRegistry.size())
 	{
 		LOG_ERROR << "Invalid message ID: " << request->message_content().message_id();
 		return;
 	}
 
-	const auto& messageInfo = gRpcServiceByMessageId[request->message_content().message_id()];
+	const auto& messageInfo = gRpcServiceRegistry[request->message_content().message_id()];
 	const auto serviceIt = g_player_service.find(messageInfo.serviceName);
 	if (serviceIt == g_player_service.end())
 	{
@@ -157,13 +157,13 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	if (request->message_content().message_id() >= gRpcServiceByMessageId.size())
+	if (request->message_content().message_id() >= gRpcServiceRegistry.size())
 	{
 		LOG_ERROR << "message_id not found " << request->message_content().message_id();
 		return;
 	}
 
-	const auto& messageInfo = gRpcServiceByMessageId.at(request->message_content().message_id());
+	const auto& messageInfo = gRpcServiceRegistry.at(request->message_content().message_id());
 	const auto serviceIt = g_player_service.find(messageInfo.serviceName);
 	if (serviceIt == g_player_service.end())
 	{
@@ -268,14 +268,14 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 		return;
 	}
 
-	if (request->message_content().message_id() >= gRpcServiceByMessageId.size())
+	if (request->message_content().message_id() >= gRpcServiceRegistry.size())
 	{
 		LOG_ERROR << "message_id not found " << request->message_content().message_id();
 		SendErrorToClient(*request, *response, kMessageIdNotFound);
 		return;
 	}
 
-	const auto& messageInfo = gRpcServiceByMessageId[request->message_content().message_id()];
+	const auto& messageInfo = gRpcServiceRegistry[request->message_content().message_id()];
 	const auto serviceIt = g_player_service.find(messageInfo.serviceName);
 	if (serviceIt == g_player_service.end())
 	{
