@@ -13,7 +13,7 @@ struct RpcService {
 	const char* response{nullptr};
 	std::unique_ptr<::google::protobuf::Service> serviceImplInstance;
 	uint32_t protocolType{0};
-	uin32_t nodeType{0};
+	uint32_t nodeType{0};
 };
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;

@@ -1,5 +1,5 @@
 #pragma once
-#include "proto/game/game_service.pb.h"
+#include "proto/scene/game_service.pb.h"
 
 
 class GameServiceHandler : public ::GameService

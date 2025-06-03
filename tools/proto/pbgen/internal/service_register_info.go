@@ -9,6 +9,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"path"
 	"path/filepath"
 	"pbgen/config"
 	"pbgen/util"
@@ -281,7 +282,6 @@ func GetProtocol(dirName string) uint32 {
 	if config.GrpcServices[dirName] {
 		return 1
 	}
-
 	return 0
 }
 
@@ -297,15 +297,15 @@ func writeServiceInfoCppFile() {
 	}
 	const serviceInfoCppTemplate = `#include <array>
 #include "service_info.h"
-{{- range .Includes }}
+#include "proto/common/node.pb.h"  
+
+{{range .Includes -}}
 {{ . }}
 {{- end }}
-
-{{- range .ServiceInfoIncludes }}
-{{ . }}
+{{- range .ServiceInfoIncludes -}}
+{{ . -}}
 {{- end }}
-
-{{- range .HandlerClasses }}
+{{range .HandlerClasses }}
 {{ . }}
 {{- end }}
 
@@ -338,36 +338,54 @@ void InitMessageInfo()
 
 		first := methods[0]
 
-		if !first.CcGenericServices() {
+		if first.CcGenericServices() {
+			includes = append(includes, first.IncludeName())
+			serviceInfoIncludes = append(serviceInfoIncludes, first.ServiceInfoIncludeName())
+			handlerClass := fmt.Sprintf("class %sImpl final : public %s {};", serviceName, serviceName)
+			handlerClasses = append(handlerClasses, handlerClass)
 			continue
 		}
 
-		includes = append(includes, first.IncludeName())
+		includes = append(includes, first.GrpcIncludeHeadName())
 		serviceInfoIncludes = append(serviceInfoIncludes, first.ServiceInfoIncludeName())
-		handlerClass := fmt.Sprintf("class %sImpl final : public %s {};", serviceName, serviceName)
-		handlerClasses = append(handlerClasses, handlerClass)
 	}
 
 	for _, serviceName := range serviceList {
 		methods := ServiceMethodMap[serviceName]
 		for _, method := range methods {
-			if !method.CcGenericServices() {
+			basePath := strings.ToLower(path.Base(method.Path()))
+			if method.CcGenericServices() {
+				rpcId := method.KeyName() + config.MessageIdName
+				handlerName := serviceName + "Impl"
+				initLine := fmt.Sprintf(
+					"gMessageInfo[%s] = RpcService{\"%s\", \"%s\", \"%s\", \"%s\", std::make_unique_for_overwrite<%s>(), %d, eNodeType::%sNodeService};",
+					rpcId,
+					method.Service(),
+					method.Method(),
+					method.CppRequest(),
+					method.CppResponse(),
+					handlerName,
+					GetProtocol(basePath),
+					util.CapitalizeWords(basePath))
+				initLines = append(initLines, initLine)
+
+				if strings.Contains(serviceName, config.ClientPrefixName) {
+					clientIdLines = append(clientIdLines, fmt.Sprintf("gClientToServerMessageId.emplace(%s);", rpcId))
+				}
 				continue
 			}
 
 			rpcId := method.KeyName() + config.MessageIdName
-			handlerName := serviceName + "Impl"
 
 			initLine := fmt.Sprintf(
-				"gMessageInfo[%s] = RpcService{\"%s\", \"%s\", \"%s\", \"%s\", std::make_unique_for_overwrite<%s>(), %d};",
+				"gMessageInfo[%s] = RpcService{\"%s\", \"%s\", \"%s\", \"%s\", nullptr, %d, eNodeType::%sNodeService};",
 				rpcId,
 				method.Service(),
 				method.Method(),
 				method.CppRequest(),
 				method.CppResponse(),
-				handlerName,
-				GetProtocol(method.Service()),
-			)
+				GetProtocol(basePath),
+				util.CapitalizeWords(basePath))
 			initLines = append(initLines, initLine)
 
 			if strings.Contains(serviceName, config.ClientPrefixName) {

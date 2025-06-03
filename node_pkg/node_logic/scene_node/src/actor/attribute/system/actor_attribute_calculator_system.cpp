@@ -8,7 +8,7 @@
 #include "buff_config.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "combat/buff/comp/buff_comp.h"
-#include "proto/game/player_state_attribute_sync.pb.h"
+#include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/logic/component/actor_combat_state_comp.pb.h"
 
 // 初始化属性计算工具，不执行任何操作，但为将来可能的初始化逻辑预留

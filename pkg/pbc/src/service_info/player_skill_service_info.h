@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/game/player_skill.pb.h"
+#include "proto/scene/player_skill.pb.h"
 
 
 constexpr uint32_t ClientPlayerSkillServiceReleaseSkillMessageId = 65;
