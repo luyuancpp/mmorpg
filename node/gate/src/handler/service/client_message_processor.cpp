@@ -17,6 +17,7 @@
 #include "thread_local/storage_gate.h"
 #include "util/random.h"
 #include "proto/common/node.pb.h"
+#include "node/system/node_system.h"
 
 RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
     ProtobufDispatcher& dispatcher)
@@ -188,19 +189,27 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 }
 
 // Handle messages related to the game node
-void HandleGameNodeMessage(const Session& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
+void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
 {
+    auto& messageInfo = gMessageInfo[request->message_id()];
+
 	// 玩家没登录直接发其他消息，乱发消息
-    const entt::entity gameNodeId{ session.gameNodeId };
-	auto& registy = tls.GetNodeRegistry(eNodeType::SceneNodeService);
-    if (!registy.valid(gameNodeId))
+    entt::entity tcpNodeId{ entt::null };
+    if (messageInfo.nodeType == SceneNodeService) {
+		tcpNodeId = entt::entity{ session.sceneNodeId };
+    }if (messageInfo.nodeType == CentreNodeService){
+		 tcpNodeId = entt::entity{ session.centreNodeId };
+    }
+
+	auto& registry = tls.GetNodeRegistry(messageInfo.nodeType);
+    if (!registry.valid(tcpNodeId))
     {
-        LOG_ERROR << "Invalid game node id " << session.gameNodeId << " for session id: " << sessionId;
+        LOG_ERROR << "Invalid tcp node id " << session.sceneNodeId << " for session id : " << sessionId << " registy " << NodeSystem::GetRegistryName(registry);
         RpcClientSessionHandler::SendTipToClient(conn, kServerCrashed);
         return;
     }
 
-    auto& sceneNode = registy.get<RpcClient>(gameNodeId);
+    auto& sceneNode = registry.get<RpcClient>(tcpNodeId);
     ClientSendMessageToPlayerRequest message;
     message.mutable_message_content()->set_serialized_message(request->body());
     message.set_session_id(sessionId);
@@ -284,18 +293,25 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
 
 	if (request->message_id() >= gMessageInfo.size())
 	{
-		LOG_ERROR << "Invalid message ID: " << request->message_content().message_id();
+		LOG_ERROR << "Invalid message ID: " << request->message_id();
 		return;
 	}
 
+    if (!CheckMessageSize(request, conn)) return;
+
 	auto& session = sessionIt->second;
-	if (!CheckMessageSize(request, conn)) return;
+    if (!CheckMessageLimit(session, request, conn)) return;
+
+	auto& messageInfo = gMessageInfo[request->message_id()];
+    if (messageInfo.protocolType == PROTOCOL_TCP){
+		HandleTcpNodeMessage(session, request, sessionId, conn);
+    }else if (messageInfo.protocolType == PROTOCOL_GRPC){
+        HandleLoginNodeMessage(sessionId, request, conn);
+    }
+
+	
 	if (gClientToServerMessageId.contains(request->message_id())) {
-		if (!CheckMessageLimit(session, request, conn)) return;
-		HandleGameNodeMessage(session, request, sessionId, conn);
 	}
 	else {
-		LOG_TRACE << "Session ID: " << sessionId << " - Handling login node message. Message ID: " << request->message_id();
-		HandleLoginNodeMessage(sessionId, request, conn);
 	}
 }

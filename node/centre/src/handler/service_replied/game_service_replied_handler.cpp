@@ -105,15 +105,15 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 		return;
 	}
 
-	const auto service_it = g_player_service_replied.find(message_info.serviceName);
-	if (service_it == g_player_service_replied.end())
+	const auto serviceIt = g_player_service_replied.find(message_info.serviceName);
+	if (serviceIt == g_player_service_replied.end())
 	{
 		LOG_ERROR << "PlayerService service not found " << player_id << ","
 		<< replied->message_content().message_id();
 		return;
 	}
 
-	const auto& serviceImpl = service_it->second;
+	const auto& serviceImpl = serviceIt->second;
 	google::protobuf::Service* service = serviceImpl->service();
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.methodName);
