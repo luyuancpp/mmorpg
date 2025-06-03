@@ -112,7 +112,6 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	}
 
 	const auto& messageInfo = gMessageInfo[request->message_content().message_id()];
-
 	const auto serviceIt = g_player_service.find(messageInfo.serviceName);
 	if (serviceIt == g_player_service.end())
 	{
@@ -122,7 +121,6 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 
 	const auto& serviceHandler = serviceIt->second;
 	google::protobuf::Service* service = serviceHandler->service();
-
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
 	if (nullptr == method)
 	{
@@ -138,19 +136,15 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	}
 
 	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
-
 	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
-
     response->mutable_header()->set_session_id(request->header().session_id());
     response->mutable_message_content()->set_message_id(request->message_content().message_id());
-
 	if (Empty::GetDescriptor() == playerResponse->GetDescriptor())
 	{
 		return;
 	}
 
 	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
-
     ///<<< END WRITING YOUR CODE
 
 }

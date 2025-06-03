@@ -8,7 +8,7 @@
 struct Session
 {
 	[[nodiscard]] bool HasLoginNodeId() const { return loginNodeId != kInvalidNodeId; }
-	NodeId gameNodeId{kInvalidNodeId};
+	NodeId sceneNodeId{kInvalidNodeId};
 	NodeId loginNodeId{kInvalidNodeId};
 	NodeId centreNodeId{kInvalidNodeId};
 	Guid playerGuild{ kInvalidGuid };
