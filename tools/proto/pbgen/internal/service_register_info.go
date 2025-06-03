@@ -277,8 +277,8 @@ func GetSortServiceList() []string {
 	return ServiceList
 }
 
-func GetProtocol(serviceName string) uint32 {
-	if config.GrpcServices[serviceName] {
+func GetProtocol(dirName string) uint32 {
+	if config.GrpcServices[dirName] {
 		return 1
 	}
 

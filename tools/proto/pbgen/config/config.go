@@ -230,5 +230,8 @@ const (
 )
 
 var GrpcServices = map[string]bool{
-	"LoginService": true,
+	"login": true,
+	"team":  true,
+	"mail":  true,
+	"chat":  true,
 }
