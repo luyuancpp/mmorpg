@@ -221,40 +221,6 @@ void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& req
 }
 
 
-void SendLoginRequestToLoginNode(entt::entity loginNode, Guid sessionId, const RpcClientMessagePtr& request)
-{
-	auto& messageInfo = gRpcServiceRegistry[request->message_id()];
-
-	SetSessionAndParseBody(*messageInfo.requestPrototype, request, sessionId);
-	SessionDetails sessionDetils;
-	sessionDetils.set_session_id(sessionId);
-
-    if (messageInfo.messageSender)
-    {
-        messageInfo.messageSender(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, *messageInfo.requestPrototype, { "x-session-detail-bin" }, { sessionDetils.SerializeAsString() });
-    }
-
-    LOG_TRACE << "Sent LoginC2LRequest, session id: " << sessionId;
-}
-
-void SendCreatePlayerRequestToLoginNode(entt::entity loginNode, Guid sessionId, const RpcClientMessagePtr& request)
-{
-    loginpb::CreatePlayerC2LRequest message;
-    SetSessionAndParseBody(message, request, sessionId);
-    SendLoginServiceCreatePlayer(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
-
-    LOG_TRACE << "Sent CreatePlayerC2LRequest, session id: " << sessionId;
-}
-
-void SendEnterGameRequestToLoginNode(entt::entity loginNode, Guid sessionId, const RpcClientMessagePtr& request)
-{
-    loginpb::EnterGameC2LRequest message;
-    SetSessionAndParseBody(message, request, sessionId);
-    SendLoginServiceEnterGame(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message);
-
-    LOG_TRACE << "Sent EnterGameC2LRequest, session id: " << sessionId;
-}
-
 void HandleLoginNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn)
 {
     auto loginNode = FindLoginNodeForSession(sessionId);
@@ -265,21 +231,16 @@ void HandleLoginNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, 
         return;
     }
 
-    switch (request->message_id())
-    {
-    case LoginServiceLoginMessageId:
-        SendLoginRequestToLoginNode(*loginNode, sessionId, request);
-        break;
-    case LoginServiceCreatePlayerMessageId:
-        SendCreatePlayerRequestToLoginNode(*loginNode, sessionId, request);
-        break;
-    case LoginServiceEnterGameMessageId:
-        SendEnterGameRequestToLoginNode(*loginNode, sessionId, request);
-        break;
-    default:
-        LOG_ERROR << "Unhandled message id: " << request->message_id() << " for session id: " << sessionId;
-        break;
-    }
+	auto& messageInfo = gRpcServiceRegistry[request->message_id()];
+
+	SetSessionAndParseBody(*messageInfo.requestPrototype, request, sessionId);
+	SessionDetails sessionDetils;
+	sessionDetils.set_session_id(sessionId);
+
+	if (messageInfo.messageSender)
+	{
+		messageInfo.messageSender(tls.GetNodeRegistry(messageInfo.targetNodeType), *loginNode, *messageInfo.requestPrototype, { "x-session-detail-bin" }, { sessionDetils.SerializeAsString() });
+	}
 }
 
 //// Main request handler, forwards the request to the appropriate service
@@ -314,6 +275,9 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
     if (messageInfo.protocolType == PROTOCOL_TCP){
 		HandleTcpNodeMessage(session, request, sessionId, conn);
     }else if (messageInfo.protocolType == PROTOCOL_GRPC){
-        HandleLoginNodeMessage(sessionId, request, conn);
+        if (messageInfo.targetNodeType == LoginNodeService)
+        {
+			HandleLoginNodeMessage(sessionId, request, conn);
+        }
     }
 }
