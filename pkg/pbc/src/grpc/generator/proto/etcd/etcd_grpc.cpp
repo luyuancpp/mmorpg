@@ -65,6 +65,11 @@ void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcd
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
+void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::etcdserverpb::RangeRequest& derived = static_cast<const ::etcdserverpb::RangeRequest&>(message);
+	SendKVRange(registry, nodeEntity, derived, metaKeys, metaValues);
+}
 #pragma endregion
 
 
@@ -128,6 +133,11 @@ void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdse
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
+}
+
+void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::etcdserverpb::PutRequest& derived = static_cast<const ::etcdserverpb::PutRequest&>(message);
+	SendKVPut(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 
@@ -193,6 +203,11 @@ void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
+void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::etcdserverpb::DeleteRangeRequest& derived = static_cast<const ::etcdserverpb::DeleteRangeRequest&>(message);
+	SendKVDeleteRange(registry, nodeEntity, derived, metaKeys, metaValues);
+}
 #pragma endregion
 
 
@@ -257,6 +272,11 @@ void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdse
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
+void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::etcdserverpb::TxnRequest& derived = static_cast<const ::etcdserverpb::TxnRequest&>(message);
+	SendKVTxn(registry, nodeEntity, derived, metaKeys, metaValues);
+}
 #pragma endregion
 
 
@@ -320,6 +340,11 @@ void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::et
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
+}
+
+void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::etcdserverpb::CompactionRequest& derived = static_cast<const ::etcdserverpb::CompactionRequest&>(message);
+	SendKVCompact(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 
@@ -418,6 +443,11 @@ void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::e
     TryWriteNextNextWatchWatch(registry, nodeEntity, cq);
 
 }
+
+void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::etcdserverpb::WatchRequest& derived = static_cast<const ::etcdserverpb::WatchRequest&>(message);
+	SendWatchWatch(registry, nodeEntity, derived, metaKeys, metaValues);
+}
 #pragma endregion
 
 
@@ -482,6 +512,11 @@ void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, cons
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
+void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::etcdserverpb::LeaseGrantRequest& derived = static_cast<const ::etcdserverpb::LeaseGrantRequest&>(message);
+	SendLeaseLeaseGrant(registry, nodeEntity, derived, metaKeys, metaValues);
+}
 #pragma endregion
 
 
@@ -545,6 +580,11 @@ void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, con
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
+}
+
+void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::etcdserverpb::LeaseRevokeRequest& derived = static_cast<const ::etcdserverpb::LeaseRevokeRequest&>(message);
+	SendLeaseLeaseRevoke(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 
@@ -643,6 +683,11 @@ void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, 
     TryWriteNextNextLeaseLeaseKeepAlive(registry, nodeEntity, cq);
 
 }
+
+void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::etcdserverpb::LeaseKeepAliveRequest& derived = static_cast<const ::etcdserverpb::LeaseKeepAliveRequest&>(message);
+	SendLeaseLeaseKeepAlive(registry, nodeEntity, derived, metaKeys, metaValues);
+}
 #pragma endregion
 
 
@@ -707,6 +752,11 @@ void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity,
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
+void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::etcdserverpb::LeaseTimeToLiveRequest& derived = static_cast<const ::etcdserverpb::LeaseTimeToLiveRequest&>(message);
+	SendLeaseLeaseTimeToLive(registry, nodeEntity, derived, metaKeys, metaValues);
+}
 #pragma endregion
 
 
@@ -770,6 +820,11 @@ void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, con
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
+}
+
+void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::etcdserverpb::LeaseLeasesRequest& derived = static_cast<const ::etcdserverpb::LeaseLeasesRequest&>(message);
+	SendLeaseLeaseLeases(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 

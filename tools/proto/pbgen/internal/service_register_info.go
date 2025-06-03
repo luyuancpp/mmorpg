@@ -309,7 +309,7 @@ func writeServiceInfoCppFile() {
 {{ . }}
 {{- end }}
 
-std::unordered_set<uint32_t> gClientToServerMessageId;
+std::unordered_set<uint32_t> gAllowedClientMessageIds;
 std::array<RpcService, {{ .MessageIdArraySize }}> gRpcServiceByMessageId;
 
 void InitMessageInfo()
@@ -354,11 +354,12 @@ void InitMessageInfo()
 		methods := ServiceMethodMap[serviceName]
 		for _, method := range methods {
 			basePath := strings.ToLower(path.Base(method.Path()))
+			rpcId := method.KeyName() + config.MessageIdName
+
 			if method.CcGenericServices() {
-				rpcId := method.KeyName() + config.MessageIdName
 				handlerName := serviceName + "Impl"
 				initLine := fmt.Sprintf(
-					"gRpcServiceByMessageId[%s] = RpcService{\"%s\", \"%s\", \"%s\", \"%s\", std::make_unique_for_overwrite<%s>(), %d, eNodeType::%sNodeService};",
+					"gRpcServiceByMessageId[%s] = RpcService{\"%s\", \"%s\", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), %d, eNodeType::%sNodeService};",
 					rpcId,
 					method.Service(),
 					method.Method(),
@@ -370,15 +371,13 @@ void InitMessageInfo()
 				initLines = append(initLines, initLine)
 
 				if strings.Contains(serviceName, config.ClientPrefixName) {
-					clientIdLines = append(clientIdLines, fmt.Sprintf("gClientToServerMessageId.emplace(%s);", rpcId))
+					clientIdLines = append(clientIdLines, fmt.Sprintf("gAllowedClientMessageIds.emplace(%s);", rpcId))
 				}
 				continue
 			}
 
-			rpcId := method.KeyName() + config.MessageIdName
-
 			initLine := fmt.Sprintf(
-				"gRpcServiceByMessageId[%s] = RpcService{\"%s\", \"%s\", \"%s\", \"%s\", nullptr, %d, eNodeType::%sNodeService};",
+				"gRpcServiceByMessageId[%s] = RpcService{\"%s\", \"%s\", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), nullptr, %d, eNodeType::%sNodeService};",
 				rpcId,
 				method.Service(),
 				method.Method(),

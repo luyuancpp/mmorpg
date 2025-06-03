@@ -18,6 +18,7 @@
 #include "util/random.h"
 #include "proto/common/node.pb.h"
 #include "node/system/node_system.h"
+#include "google/protobuf/descriptor.h"
 
 RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
     ProtobufDispatcher& dispatcher)
@@ -222,12 +223,12 @@ void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& req
 
 void SendLoginRequestToLoginNode(entt::entity loginNode, Guid sessionId, const RpcClientMessagePtr& request)
 {
-	loginpb::LoginC2LRequest message;
-	SetSessionAndParseBody(message, request, sessionId);
+	auto& messageInfo = gRpcServiceByMessageId[request->message_id()];
+
+	SetSessionAndParseBody(*messageInfo.request, request, sessionId);
 	SessionDetails sessionDetils;
 	sessionDetils.set_session_id(sessionId);
-
-    SendLoginServiceLogin(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message, { "x-session-detail-bin" }, { sessionDetils.SerializeAsString() });
+    loginpb::SendLoginServiceLogin(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, *messageInfo.request, { "x-session-detail-bin" }, { sessionDetils.SerializeAsString() });
 
     LOG_TRACE << "Sent LoginC2LRequest, session id: " << sessionId;
 }

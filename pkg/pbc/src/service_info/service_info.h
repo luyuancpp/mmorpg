@@ -8,8 +8,8 @@
 struct RpcService {
 	const char* serviceName{nullptr};
 	const char* methodName{nullptr};
-	const char* request{nullptr};
-	const char* response{nullptr};
+	std::unique_ptr<::google::protobuf::Message> request;
+	std::unique_ptr<::google::protobuf::Message> response;
 	std::unique_ptr<::google::protobuf::Service> serviceImplInstance;
 	uint32_t protocolType{0};
 	uint32_t nodeType{0};

@@ -65,6 +65,11 @@ void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, co
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
+void SendLoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::loginpb::LoginC2LRequest& derived = static_cast<const ::loginpb::LoginC2LRequest&>(message);
+	SendLoginServiceLogin(registry, nodeEntity, derived, metaKeys, metaValues);
+}
 #pragma endregion
 
 
@@ -128,6 +133,11 @@ void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEnt
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
+}
+
+void SendLoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::loginpb::CreatePlayerC2LRequest& derived = static_cast<const ::loginpb::CreatePlayerC2LRequest&>(message);
+	SendLoginServiceCreatePlayer(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 
@@ -193,6 +203,11 @@ void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
+void SendLoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::loginpb::EnterGameC2LRequest& derived = static_cast<const ::loginpb::EnterGameC2LRequest&>(message);
+	SendLoginServiceEnterGame(registry, nodeEntity, derived, metaKeys, metaValues);
+}
 #pragma endregion
 
 
@@ -257,6 +272,11 @@ void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
 }
+
+void SendLoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::loginpb::LeaveGameC2LRequest& derived = static_cast<const ::loginpb::LeaveGameC2LRequest&>(message);
+	SendLoginServiceLeaveGame(registry, nodeEntity, derived, metaKeys, metaValues);
+}
 #pragma endregion
 
 
@@ -320,6 +340,11 @@ void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntit
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
+}
+
+void SendLoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const ::loginpb::LoginNodeDisconnectRequest& derived = static_cast<const ::loginpb::LoginNodeDisconnectRequest&>(message);
+	SendLoginServiceDisconnect(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 
