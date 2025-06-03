@@ -190,7 +190,7 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 // Handle messages related to the game node
 void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
 {
-    auto& messageInfo = gMessageInfo[request->message_id()];
+    auto& messageInfo = gRpcServiceByMessageId[request->message_id()];
 
 	// 玩家没登录直接发其他消息，乱发消息
     entt::entity tcpNodeId{ entt::null };
@@ -289,7 +289,7 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
 		return;
 	}
 
-	if (request->message_id() >= gMessageInfo.size())
+	if (request->message_id() >= gRpcServiceByMessageId.size())
 	{
 		LOG_ERROR << "Invalid message ID: " << request->message_id();
 		return;
@@ -300,12 +300,12 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
 	auto& session = sessionIt->second;
     if (!CheckMessageLimit(session, request, conn)) return;
 
-	if (!gClientToServerMessageId.contains(request->message_id())) {
+	if (!gAllowedClientMessageIds.contains(request->message_id())) {
 		LOG_ERROR << "Client sent an invalid message: message ID not allowed - " << request->message_id();
 		return;
 	}
 
-	auto& messageInfo = gMessageInfo[request->message_id()];
+	auto& messageInfo = gRpcServiceByMessageId[request->message_id()];
     if (messageInfo.protocolType == PROTOCOL_TCP){
 		HandleTcpNodeMessage(session, request, sessionId, conn);
     }else if (messageInfo.protocolType == PROTOCOL_GRPC){

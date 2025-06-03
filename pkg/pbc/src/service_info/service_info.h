@@ -21,6 +21,6 @@ void InitMessageInfo();
 
 constexpr uint32_t kMaxMessageLen = 85;
 
-extern std::array<RpcService, kMaxMessageLen> gMessageInfo;
+extern std::array<RpcService, kMaxMessageLen> gRpcServiceByMessageId;
 
-extern std::unordered_set<uint32_t> gClientToServerMessageId;
+extern std::unordered_set<uint32_t> gAllowedClientMessageIds;

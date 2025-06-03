@@ -47,9 +47,9 @@ GameChannel::~GameChannel() {
 
 // 验证消息 ID 是否有效
 bool GameChannel::IsValidMessageId(uint32_t messageId) const {
-    if (messageId >= gMessageInfo.size()) {
+    if (messageId >= gRpcServiceByMessageId.size()) {
         LOG_ERROR << "Invalid message ID: " << messageId
-            << " (valid range: 0 to " << gMessageInfo.size() - 1 << ")";
+            << " (valid range: 0 to " << gRpcServiceByMessageId.size() - 1 << ")";
         return false;
     }
     return true;
@@ -245,7 +245,7 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr& conn, const RpcMessag
 void GameChannel::HandleResponseMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
     if (!IsValidMessageId(rpcMessage.message_id())) return;
 
-    const auto& messageInfo = gMessageInfo[rpcMessage.message_id()];
+    const auto& messageInfo = gRpcServiceByMessageId[rpcMessage.message_id()];
 	if (!messageInfo.serviceImplInstance)
 	{
 		LOG_ERROR << "Message service implementation not found for message ID: " << rpcMessage.message_id();
@@ -281,7 +281,7 @@ void GameChannel::ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMess
         return;
     }
 
-    const auto& messageInfo = gMessageInfo[rpcMessage.message_id()];
+    const auto& messageInfo = gRpcServiceByMessageId[rpcMessage.message_id()];
     auto it = services_->find(messageInfo.serviceName);
     if (it == services_->end()) {
         SendErrorResponse(rpcMessage, GameErrorCode::NO_SERVICE);
@@ -323,7 +323,7 @@ void GameChannel::SendErrorResponse(const GameRpcMessage& message, GameErrorCode
 
 void GameChannel::SendRouteResponse(uint32_t messageId, uint64_t id, const std::string& body) {
     // 检查 messageId 的合法性
-    if (messageId >= gMessageInfo.size()) {
+    if (messageId >= gRpcServiceByMessageId.size()) {
         LOG_ERROR << "Invalid message_id: " << messageId;
         return;
     }
