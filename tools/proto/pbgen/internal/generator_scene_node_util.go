@@ -12,7 +12,7 @@ func IsGsMethodHandler(methods *RPCMethods) bool {
 		return false
 	}
 	first := (*methods)[0]
-	if !strings.Contains(first.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) {
+	if !strings.Contains(first.Path(), config.ProtoDirectoryNames[config.SceneProtoDirIndex]) {
 		return false
 	}
 	return !util.ContainsPlayerKeyword(first.Service())
@@ -25,7 +25,7 @@ func IsGsPlayerHandler(methods *RPCMethods) bool {
 
 	firstMethodInfo := (*methods)[0]
 
-	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.GameProtoDirIndex]) {
+	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.SceneProtoDirIndex]) {
 		return false
 	}
 
@@ -47,7 +47,7 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if util.IsPathInOtherProtoDirs(firstMethodInfo.Path(), config.GameProtoDirIndex) {
+	if util.IsPathInOtherProtoDirs(firstMethodInfo.Path(), config.SceneProtoDirIndex) {
 		return false
 	}
 
@@ -66,8 +66,7 @@ func isGsMethodRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	// Check if the method is from a valid path and has generic services enabled
-	if !(util.IsPathInOtherProtoDirs(firstMethodInfo.Path(), config.GameProtoDirIndex)) {
+	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.SceneProtoDirIndex) {
 		return false
 	}
 
