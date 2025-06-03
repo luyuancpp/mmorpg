@@ -31,6 +31,7 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 
 	EventHandler::Register();
 
+
 	World::InitializeSystemBeforeConnect();
 
 	OnConfigLoadSuccess([]()
