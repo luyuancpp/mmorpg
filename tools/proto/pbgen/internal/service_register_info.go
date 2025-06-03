@@ -325,7 +325,7 @@ void InitMessageInfo()
     {{ . }}
 {{- end }}
 
-{{- range .ClientMessageIdLines }}
+{{range .ClientMessageIdLines }}
     {{ . }}
 {{- end }}
 }
@@ -351,6 +351,10 @@ void InitMessageInfo()
 
 		firstMethod := methods[0]
 
+		if util.IsPathInProtoDirs(firstMethod.Path(), config.DbProtoDirIndex) {
+			continue
+		}
+
 		if firstMethod.CcGenericServices() {
 			includes = append(includes, firstMethod.IncludeName())
 			serviceInfoIncludes = append(serviceInfoIncludes, firstMethod.ServiceInfoIncludeName())
@@ -368,6 +372,16 @@ void InitMessageInfo()
 
 	// Step 2: Generate init lines for RpcService and allowed client message IDs
 	for _, serviceName := range serviceList {
+		methods := ServiceMethodMap[serviceName]
+		if len(methods) == 0 {
+			continue
+		}
+
+		firstMethod := methods[0]
+		if util.IsPathInProtoDirs(firstMethod.Path(), config.DbProtoDirIndex) {
+			continue
+		}
+
 		for _, method := range ServiceMethodMap[serviceName] {
 			basePath := strings.ToLower(path.Base(method.Path()))
 			messageId := method.KeyName() + config.MessageIdName

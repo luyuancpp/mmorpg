@@ -17,3 +17,7 @@ func IsPathInOtherProtoDirs(path string, selfIndex int) bool {
 	}
 	return false
 }
+
+func IsPathInProtoDirs(path string, selfIndex int) bool {
+	return strings.Contains(config.ProtoDirectoryNames[selfIndex], path) || strings.Contains(path, config.ProtoDirectoryNames[selfIndex])
+}
