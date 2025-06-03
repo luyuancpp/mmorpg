@@ -75,7 +75,7 @@ std::string Node::GetServiceName(uint32_t type) const {
 
 void Node::Initialize() {
     LOG_TRACE << "Node initializing...";
-	InitMessageInfo();
+	RegisterHandlers();
     RegisterEventHandlers();
     LoadConfigs();
     InitRpcServer();
@@ -84,7 +84,6 @@ void Node::Initialize() {
     LoadAllConfigData();
     InitGrpcClients();
     InitGrpcQueues();
-    RegisterGrpcHandlers();
     RequestEtcdLease();
     LOG_TRACE << "Node initialization complete.";
 }
@@ -290,7 +289,8 @@ void Node::ReleaseNodeId() {
 }
 
 void InitRepliedHandler();
-void Node::RegisterGrpcHandlers() {
+void Node::RegisterHandlers() {
+	InitMessageInfo();
     InitGrpcResponseHandlers();
     InitRepliedHandler();
 }

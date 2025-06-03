@@ -54,7 +54,7 @@ message AttributeDelta60FramesS2C
 }
 
 // 服务定义，用于处理实体属性的同步
-service EntitySyncService
+service PlayerSyncService
 {
   rpc SyncBaseAttribute (BaseAttributeSyncDataS2C) returns (Empty); 
   rpc SyncAttribute2Frames (AttributeDelta2FramesS2C) returns (Empty);  

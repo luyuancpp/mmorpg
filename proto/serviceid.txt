@@ -18,10 +18,10 @@
 17=KVCompact
 18=ClientPlayerSkillServiceNotifySkillInterrupted
 19=CentreServiceRoutePlayerStringMsg
-20=EntitySyncServiceSyncAttribute2Frames
+20=PlayerSyncServiceSyncAttribute2Frames
 21=ClientPlayerSceneServiceNotifyActorListCreate
 22=GateServiceSendMessageToPlayer
-23=EntitySyncServiceSyncAttribute10Frames
+23=PlayerSyncServiceSyncAttribute5Frames
 24=GameServiceRoutePlayerStringMsg
 25=GameServiceInvokePlayerService
 26=CentreServiceLoginNodeSessionDisconnect
@@ -35,9 +35,9 @@
 34=GameSceneServiceTest
 35=GameServiceRouteNodeStringMsg
 36=ClientPlayerSkillServiceGetSkillList
-37=EntitySyncServiceSyncAttribute60Frames
+37=PlayerSyncServiceSyncAttribute10Frames
 38=ClientPlayerSceneServiceNotifyActorCreate
-39=EntitySyncServiceSyncAttribute5Frames
+39=PlayerSyncServiceSyncBaseAttribute
 40=GamePlayerSceneServiceEnterSceneS2C
 41=CentrePlayerServiceTest
 42=GameServicePlayerEnterGameNode
@@ -77,9 +77,9 @@
 76=ClientPlayerSceneServiceSceneInfoC2S
 77=LoginServiceLogin
 78=ClientPlayerSceneServiceNotifyEnterScene
-79=EntitySyncServiceSyncAttribute30Frames
+79=PlayerSyncServiceSyncAttribute30Frames
 80=CentrePlayerSceneServiceSceneInfoC2S
-81=EntitySyncServiceSyncBaseAttribute
+81=PlayerSyncServiceSyncAttribute60Frames
 82=LeaseLeaseLeases
 83=LoginServiceDisconnect
 84=CentrePlayerSceneServiceLeaveSceneAsyncSavePlayerComplete

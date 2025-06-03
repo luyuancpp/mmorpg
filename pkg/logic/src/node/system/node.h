@@ -59,7 +59,7 @@ protected:
     void ConnectToHttpNode(const NodeInfo& nodeInfo);
     void InitGrpcClients();
     void ReleaseNodeId();
-    void RegisterGrpcHandlers();
+    void RegisterHandlers();
     void StopWatchingServiceNodes();
     std::string MakeEtcdKey(const NodeInfo& nodeInfo);
     void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);

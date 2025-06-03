@@ -1289,17 +1289,17 @@ class BaseAttributeSyncDataS2C final
 
 // -------------------------------------------------------------------
 
-class EntitySyncService_Stub;
-class EntitySyncService : public ::google::protobuf::Service {
+class PlayerSyncService_Stub;
+class PlayerSyncService : public ::google::protobuf::Service {
  protected:
-  EntitySyncService() = default;
+  PlayerSyncService() = default;
 
  public:
-  using Stub = EntitySyncService_Stub;
+  using Stub = PlayerSyncService_Stub;
 
-  EntitySyncService(const EntitySyncService&) = delete;
-  EntitySyncService& operator=(const EntitySyncService&) = delete;
-  virtual ~EntitySyncService() = default;
+  PlayerSyncService(const PlayerSyncService&) = delete;
+  PlayerSyncService& operator=(const PlayerSyncService&) = delete;
+  virtual ~PlayerSyncService() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -1344,20 +1344,20 @@ class EntitySyncService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class EntitySyncService_Stub final : public EntitySyncService {
+class PlayerSyncService_Stub final : public PlayerSyncService {
  public:
-  EntitySyncService_Stub(::google::protobuf::RpcChannel* channel);
-  EntitySyncService_Stub(::google::protobuf::RpcChannel* channel,
+  PlayerSyncService_Stub(::google::protobuf::RpcChannel* channel);
+  PlayerSyncService_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  EntitySyncService_Stub(const EntitySyncService_Stub&) = delete;
-  EntitySyncService_Stub& operator=(const EntitySyncService_Stub&) = delete;
+  PlayerSyncService_Stub(const PlayerSyncService_Stub&) = delete;
+  PlayerSyncService_Stub& operator=(const PlayerSyncService_Stub&) = delete;
 
-  ~EntitySyncService_Stub() override;
+  ~PlayerSyncService_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements EntitySyncService ------------------------------------------
+  // implements PlayerSyncService ------------------------------------------
   void SyncBaseAttribute(::google::protobuf::RpcController* controller,
                         const ::BaseAttributeSyncDataS2C* request,
                         ::Empty* response,

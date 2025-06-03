@@ -2,7 +2,7 @@
 #include "proto/scene/player_state_attribute_sync.pb.h"
 
 
-class EntitySyncServiceHandler : public ::EntitySyncService
+class EntitySyncServiceHandler : public ::PlayerSyncService
 {
 public:
 

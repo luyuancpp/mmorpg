@@ -15,7 +15,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 
 
-void InitGameServicePlayerEnterGameNodeRepliedHandler()
+void InitGameServiceRepliedHandler()
 {
     gResponseDispatcher.registerMessageCallback<::Empty>(GameServicePlayerEnterGameNodeMessageId,
         std::bind(&OnGameServicePlayerEnterGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));

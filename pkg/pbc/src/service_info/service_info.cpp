@@ -9,7 +9,6 @@
 #include "proto/centre/centre_service.pb.h"
 #include "proto/scene/player_scene.pb.h"
 #include "proto/scene/player_skill.pb.h"
-#include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/scene/game_client_player.pb.h"
 #include "proto/scene/game_player_scene.pb.h"
 #include "proto/scene/game_player.pb.h"
@@ -19,6 +18,7 @@
 #include "proto/etcd/etcd.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 #include "proto/login/login_service.grpc.pb.h"
+#include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 
 #include "centre_client_player_service_info.h"
@@ -28,7 +28,6 @@
 #include "centre_service_service_info.h"
 #include "player_scene_service_info.h"
 #include "player_skill_service_info.h"
-#include "player_state_attribute_sync_service_info.h"
 #include "game_client_player_service_info.h"
 #include "game_player_scene_service_info.h"
 #include "game_player_service_info.h"
@@ -38,6 +37,7 @@
 #include "etcd_service_info.h"
 #include "etcd_service_info.h"
 #include "login_service_service_info.h"
+#include "player_state_attribute_sync_service_info.h"
 #include "etcd_service_info.h"
 
 
@@ -48,13 +48,13 @@ class CentreSceneServiceImpl final : public CentreSceneService {};
 class CentreServiceImpl final : public CentreService {};
 class ClientPlayerSceneServiceImpl final : public ClientPlayerSceneService {};
 class ClientPlayerSkillServiceImpl final : public ClientPlayerSkillService {};
-class EntitySyncServiceImpl final : public EntitySyncService {};
 class GameClientPlayerCommonServiceImpl final : public GameClientPlayerCommonService {};
 class GamePlayerSceneServiceImpl final : public GamePlayerSceneService {};
 class GamePlayerServiceImpl final : public GamePlayerService {};
 class GameSceneServiceImpl final : public GameSceneService {};
 class GameServiceImpl final : public GameService {};
 class GateServiceImpl final : public GateService {};
+class PlayerSyncServiceImpl final : public PlayerSyncService {};
 
 namespace etcdserverpb{void SendKVRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVPut(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -111,12 +111,6 @@ void InitMessageInfo()
     gRpcServiceRegistry[ClientPlayerSkillServiceNotifySkillUsedMessageId] = RpcService{"ClientPlayerSkillService", "NotifySkillUsed", std::make_unique_for_overwrite<::SkillUsedS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<ClientPlayerSkillServiceImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[ClientPlayerSkillServiceNotifySkillInterruptedMessageId] = RpcService{"ClientPlayerSkillService", "NotifySkillInterrupted", std::make_unique_for_overwrite<::SkillInterruptedS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<ClientPlayerSkillServiceImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[ClientPlayerSkillServiceGetSkillListMessageId] = RpcService{"ClientPlayerSkillService", "GetSkillList", std::make_unique_for_overwrite<::GetSkillListRequest>(), std::make_unique_for_overwrite<::GetSkillListResponse>(), std::make_unique_for_overwrite<ClientPlayerSkillServiceImpl>(), 0, eNodeType::SceneNodeService};
-    gRpcServiceRegistry[EntitySyncServiceSyncBaseAttributeMessageId] = RpcService{"EntitySyncService", "SyncBaseAttribute", std::make_unique_for_overwrite<::BaseAttributeSyncDataS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<EntitySyncServiceImpl>(), 0, eNodeType::SceneNodeService};
-    gRpcServiceRegistry[EntitySyncServiceSyncAttribute2FramesMessageId] = RpcService{"EntitySyncService", "SyncAttribute2Frames", std::make_unique_for_overwrite<::AttributeDelta2FramesS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<EntitySyncServiceImpl>(), 0, eNodeType::SceneNodeService};
-    gRpcServiceRegistry[EntitySyncServiceSyncAttribute5FramesMessageId] = RpcService{"EntitySyncService", "SyncAttribute5Frames", std::make_unique_for_overwrite<::AttributeDelta5FramesS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<EntitySyncServiceImpl>(), 0, eNodeType::SceneNodeService};
-    gRpcServiceRegistry[EntitySyncServiceSyncAttribute10FramesMessageId] = RpcService{"EntitySyncService", "SyncAttribute10Frames", std::make_unique_for_overwrite<::AttributeDelta10FramesS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<EntitySyncServiceImpl>(), 0, eNodeType::SceneNodeService};
-    gRpcServiceRegistry[EntitySyncServiceSyncAttribute30FramesMessageId] = RpcService{"EntitySyncService", "SyncAttribute30Frames", std::make_unique_for_overwrite<::AttributeDelta30FramesS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<EntitySyncServiceImpl>(), 0, eNodeType::SceneNodeService};
-    gRpcServiceRegistry[EntitySyncServiceSyncAttribute60FramesMessageId] = RpcService{"EntitySyncService", "SyncAttribute60Frames", std::make_unique_for_overwrite<::AttributeDelta60FramesS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<EntitySyncServiceImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[GameClientPlayerCommonServiceSendTipToClientMessageId] = RpcService{"GameClientPlayerCommonService", "SendTipToClient", std::make_unique_for_overwrite<::TipInfoMessage>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<GameClientPlayerCommonServiceImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[GameClientPlayerCommonServiceKickPlayerMessageId] = RpcService{"GameClientPlayerCommonService", "KickPlayer", std::make_unique_for_overwrite<::GameKickPlayerRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<GameClientPlayerCommonServiceImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[GamePlayerSceneServiceEnterSceneMessageId] = RpcService{"GamePlayerSceneService", "EnterScene", std::make_unique_for_overwrite<::GsEnterSceneRequest>(), std::make_unique_for_overwrite<::google::protobuf::Empty>(), std::make_unique_for_overwrite<GamePlayerSceneServiceImpl>(), 0, eNodeType::SceneNodeService};
@@ -158,6 +152,12 @@ void InitMessageInfo()
     gRpcServiceRegistry[LoginServiceEnterGameMessageId] = RpcService{"LoginService", "EnterGame", std::make_unique_for_overwrite<::loginpb::EnterGameC2LRequest>(), std::make_unique_for_overwrite<::loginpb::EnterGameC2LResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendLoginServiceEnterGame};
     gRpcServiceRegistry[LoginServiceLeaveGameMessageId] = RpcService{"LoginService", "LeaveGame", std::make_unique_for_overwrite<::loginpb::LeaveGameC2LRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendLoginServiceLeaveGame};
     gRpcServiceRegistry[LoginServiceDisconnectMessageId] = RpcService{"LoginService", "Disconnect", std::make_unique_for_overwrite<::loginpb::LoginNodeDisconnectRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendLoginServiceDisconnect};
+    gRpcServiceRegistry[PlayerSyncServiceSyncBaseAttributeMessageId] = RpcService{"PlayerSyncService", "SyncBaseAttribute", std::make_unique_for_overwrite<::BaseAttributeSyncDataS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<PlayerSyncServiceImpl>(), 0, eNodeType::SceneNodeService};
+    gRpcServiceRegistry[PlayerSyncServiceSyncAttribute2FramesMessageId] = RpcService{"PlayerSyncService", "SyncAttribute2Frames", std::make_unique_for_overwrite<::AttributeDelta2FramesS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<PlayerSyncServiceImpl>(), 0, eNodeType::SceneNodeService};
+    gRpcServiceRegistry[PlayerSyncServiceSyncAttribute5FramesMessageId] = RpcService{"PlayerSyncService", "SyncAttribute5Frames", std::make_unique_for_overwrite<::AttributeDelta5FramesS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<PlayerSyncServiceImpl>(), 0, eNodeType::SceneNodeService};
+    gRpcServiceRegistry[PlayerSyncServiceSyncAttribute10FramesMessageId] = RpcService{"PlayerSyncService", "SyncAttribute10Frames", std::make_unique_for_overwrite<::AttributeDelta10FramesS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<PlayerSyncServiceImpl>(), 0, eNodeType::SceneNodeService};
+    gRpcServiceRegistry[PlayerSyncServiceSyncAttribute30FramesMessageId] = RpcService{"PlayerSyncService", "SyncAttribute30Frames", std::make_unique_for_overwrite<::AttributeDelta30FramesS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<PlayerSyncServiceImpl>(), 0, eNodeType::SceneNodeService};
+    gRpcServiceRegistry[PlayerSyncServiceSyncAttribute60FramesMessageId] = RpcService{"PlayerSyncService", "SyncAttribute60Frames", std::make_unique_for_overwrite<::AttributeDelta60FramesS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<PlayerSyncServiceImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[WatchWatchMessageId] = RpcService{"Watch", "Watch", std::make_unique_for_overwrite<::etcdserverpb::WatchRequest>(), std::make_unique_for_overwrite<::etcdserverpb::WatchResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendWatchWatch};
 
 

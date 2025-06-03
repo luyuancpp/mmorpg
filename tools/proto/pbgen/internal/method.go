@@ -730,7 +730,7 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 	templateData := RepliedHandlerCppData{
 		CppRepliedHandlerInclude: firstMethodInfo.CppRepliedHandlerIncludeName(),
 		FirstCode:                firstCode,
-		InitFuncName:             firstMethodInfo.KeyName(),
+		InitFuncName:             firstMethodInfo.Service(),
 		RepliedHandlerFileName:   config.RepliedHandlerFileName,
 		Methods:                  methodsData,
 		MessageIdName:            config.MessageIdName,
@@ -921,7 +921,7 @@ void InitRepliedHandler()
 		}
 
 		first := methods[0]
-		initFuncList = append(initFuncList, "Init"+first.KeyName()+config.RepliedHandlerFileName)
+		initFuncList = append(initFuncList, "Init"+first.Service()+config.RepliedHandlerFileName)
 	}
 
 	templateData := RepliedRegisterData{
