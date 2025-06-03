@@ -60,7 +60,7 @@ class GameServiceImpl final : public GameService {};
 class GateServiceImpl final : public GateService {};
 
 std::unordered_set<uint32_t> gClientToServerMessageId;
-std::array<RpcService, 1> gMessageInfo;
+std::array<RpcService, 85> gMessageInfo;
 
 void InitMessageInfo()
 {

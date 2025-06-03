@@ -9,6 +9,7 @@
 #include "gate_node.h"
 #include "grpc/generator/proto/login/login_service_grpc.h"
 #include "pbc/common_error_tip.pb.h"
+#include "service_info/service_info.h"
 #include "service_info/centre_service_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/login_service_service_info.h"
@@ -16,8 +17,6 @@
 #include "thread_local/storage_gate.h"
 #include "util/random.h"
 #include "proto/common/node.pb.h"
-
-extern std::unordered_set<uint32_t> gClientToServerMessageId;
 
 RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
     ProtobufDispatcher& dispatcher)
@@ -193,14 +192,15 @@ void HandleGameNodeMessage(const Session& session, const RpcClientMessagePtr& re
 {
 	// 玩家没登录直接发其他消息，乱发消息
     const entt::entity gameNodeId{ session.gameNodeId };
-    if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(gameNodeId))
+	auto& registy = tls.GetNodeRegistry(eNodeType::SceneNodeService);
+    if (!registy.valid(gameNodeId))
     {
         LOG_ERROR << "Invalid game node id " << session.gameNodeId << " for session id: " << sessionId;
         RpcClientSessionHandler::SendTipToClient(conn, kServerCrashed);
         return;
     }
 
-    auto& sceneNode = tls.GetNodeRegistry(eNodeType::SceneNodeService).get<RpcClient>(gameNodeId);
+    auto& sceneNode = registy.get<RpcClient>(gameNodeId);
     ClientSendMessageToPlayerRequest message;
     message.mutable_message_content()->set_serialized_message(request->body());
     message.set_session_id(sessionId);
@@ -281,6 +281,13 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
 		LOG_ERROR << "Session not found for session id: " << sessionId << " in RPC request.";
 		return;
 	}
+
+	if (request->message_id() >= gMessageInfo.size())
+	{
+		LOG_ERROR << "Invalid message ID: " << request->message_content().message_id();
+		return;
+	}
+
 	auto& session = sessionIt->second;
 	if (!CheckMessageSize(request, conn)) return;
 	if (gClientToServerMessageId.contains(request->message_id())) {

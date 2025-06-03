@@ -41,7 +41,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fnode_2eproto[] ABSL_ATTRIB
     "ceneNode\020\000\022\r\n\tkRoomNode\020\001\022\027\n\023kMainSceneC"
     "rossNode\020\002\022\027\n\023kRoomSceneCrossNode\020\003*K\n\021e"
     "NodeProtocolType\022\020\n\014PROTOCOL_TCP\020\000\022\021\n\rPR"
-    "OTOCOL_HTTP\020\001\022\021\n\rPROTOCOL_GRPC\020\002B\tZ\007pb/g"
+    "OTOCOL_GRPC\020\001\022\021\n\rPROTOCOL_HTTP\020\002B\tZ\007pb/g"
     "ameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fnode_2eproto_once;
