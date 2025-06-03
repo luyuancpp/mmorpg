@@ -2,7 +2,6 @@
 #include "service_info.h"
 #include "proto/common/node.pb.h"
 
-#include "proto/db/db_service.grpc.pb.h"
 #include "proto/centre/centre_client_player.pb.h"
 #include "proto/centre/centre_player_scene.pb.h"
 #include "proto/centre/centre_player.pb.h"
@@ -20,10 +19,8 @@
 #include "proto/etcd/etcd.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 #include "proto/login/login_service.grpc.pb.h"
-#include "proto/db/db_service.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 
-#include "db_service_service_info.h"
 #include "centre_client_player_service_info.h"
 #include "centre_player_scene_service_info.h"
 #include "centre_player_service_info.h"
@@ -41,7 +38,6 @@
 #include "etcd_service_info.h"
 #include "etcd_service_info.h"
 #include "login_service_service_info.h"
-#include "db_service_service_info.h"
 #include "etcd_service_info.h"
 
 
@@ -60,8 +56,6 @@ class GameSceneServiceImpl final : public GameSceneService {};
 class GameServiceImpl final : public GameService {};
 class GateServiceImpl final : public GateService {};
 
-namespace {void SendAccountDBServiceLoad2Redis(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace {void SendAccountDBServiceSave2Redis(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVPut(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVDeleteRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -77,8 +71,6 @@ namespace loginpb{void SendLoginServiceCreatePlayer(entt::registry& , entt::enti
 namespace loginpb{void SendLoginServiceEnterGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginServiceLeaveGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginServiceDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace {void SendPlayerDBServiceLoad2Redis(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace {void SendPlayerDBServiceSave2Redis(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendWatchWatch(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
 std::unordered_set<uint32_t> gClientMessageIdWhitelist;
@@ -86,8 +78,6 @@ std::array<RpcService, 85> gRpcServiceRegistry;
 
 void InitMessageInfo()
 {
-    gRpcServiceRegistry[AccountDBServiceLoad2RedisMessageId] = RpcService{"AccountDBService", "Load2Redis", std::make_unique_for_overwrite<::LoadAccountRequest>(), std::make_unique_for_overwrite<::LoadAccountResponse>(), nullptr, 0, eNodeType::DbNodeService, ::SendAccountDBServiceLoad2Redis};
-    gRpcServiceRegistry[AccountDBServiceSave2RedisMessageId] = RpcService{"AccountDBService", "Save2Redis", std::make_unique_for_overwrite<::SaveAccountRequest>(), std::make_unique_for_overwrite<::SaveAccountResponse>(), nullptr, 0, eNodeType::DbNodeService, ::SendAccountDBServiceSave2Redis};
     gRpcServiceRegistry[CentreClientPlayerCommonServiceSendTipToClientMessageId] = RpcService{"CentreClientPlayerCommonService", "SendTipToClient", std::make_unique_for_overwrite<::TipInfoMessage>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentreClientPlayerCommonServiceImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentreClientPlayerCommonServiceKickPlayerMessageId] = RpcService{"CentreClientPlayerCommonService", "KickPlayer", std::make_unique_for_overwrite<::CentreKickPlayerRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentreClientPlayerCommonServiceImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentrePlayerSceneServiceEnterSceneMessageId] = RpcService{"CentrePlayerSceneService", "EnterScene", std::make_unique_for_overwrite<::CentreEnterSceneRequest>(), std::make_unique_for_overwrite<::google::protobuf::Empty>(), std::make_unique_for_overwrite<CentrePlayerSceneServiceImpl>(), 0, eNodeType::CentreNodeService};
@@ -168,9 +158,9 @@ void InitMessageInfo()
     gRpcServiceRegistry[LoginServiceEnterGameMessageId] = RpcService{"LoginService", "EnterGame", std::make_unique_for_overwrite<::loginpb::EnterGameC2LRequest>(), std::make_unique_for_overwrite<::loginpb::EnterGameC2LResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendLoginServiceEnterGame};
     gRpcServiceRegistry[LoginServiceLeaveGameMessageId] = RpcService{"LoginService", "LeaveGame", std::make_unique_for_overwrite<::loginpb::LeaveGameC2LRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendLoginServiceLeaveGame};
     gRpcServiceRegistry[LoginServiceDisconnectMessageId] = RpcService{"LoginService", "Disconnect", std::make_unique_for_overwrite<::loginpb::LoginNodeDisconnectRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendLoginServiceDisconnect};
-    gRpcServiceRegistry[PlayerDBServiceLoad2RedisMessageId] = RpcService{"PlayerDBService", "Load2Redis", std::make_unique_for_overwrite<::LoadPlayerRequest>(), std::make_unique_for_overwrite<::LoadPlayerResponse>(), nullptr, 0, eNodeType::DbNodeService, ::SendPlayerDBServiceLoad2Redis};
-    gRpcServiceRegistry[PlayerDBServiceSave2RedisMessageId] = RpcService{"PlayerDBService", "Save2Redis", std::make_unique_for_overwrite<::SavePlayerRequest>(), std::make_unique_for_overwrite<::SavePlayerResponse>(), nullptr, 0, eNodeType::DbNodeService, ::SendPlayerDBServiceSave2Redis};
     gRpcServiceRegistry[WatchWatchMessageId] = RpcService{"Watch", "Watch", std::make_unique_for_overwrite<::etcdserverpb::WatchRequest>(), std::make_unique_for_overwrite<::etcdserverpb::WatchResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendWatchWatch};
+
+
     gClientMessageIdWhitelist.emplace(CentreClientPlayerCommonServiceSendTipToClientMessageId);
     gClientMessageIdWhitelist.emplace(CentreClientPlayerCommonServiceKickPlayerMessageId);
     gClientMessageIdWhitelist.emplace(ClientPlayerSceneServiceEnterSceneMessageId);
