@@ -29,6 +29,7 @@ class ::etcdserverpb::RangeRequest;
 
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request);
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleKVCompletedQueueMessage(entt::registry& registry);
 void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -53,6 +54,7 @@ class ::etcdserverpb::PutRequest;
 
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request);
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleKVCompletedQueueMessage(entt::registry& registry);
 void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -77,6 +79,7 @@ class ::etcdserverpb::DeleteRangeRequest;
 
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request);
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleKVCompletedQueueMessage(entt::registry& registry);
 void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -101,6 +104,7 @@ class ::etcdserverpb::TxnRequest;
 
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request);
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleKVCompletedQueueMessage(entt::registry& registry);
 void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -125,6 +129,7 @@ class ::etcdserverpb::CompactionRequest;
 
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request);
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleKVCompletedQueueMessage(entt::registry& registry);
 void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -158,6 +163,7 @@ class ::etcdserverpb::WatchRequest;
 
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request);
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleWatchCompletedQueueMessage(entt::registry& registry);
 void InitWatchCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -183,6 +189,7 @@ class ::etcdserverpb::LeaseGrantRequest;
 
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request);
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleLeaseCompletedQueueMessage(entt::registry& registry);
 void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -207,6 +214,7 @@ class ::etcdserverpb::LeaseRevokeRequest;
 
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request);
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleLeaseCompletedQueueMessage(entt::registry& registry);
 void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -239,6 +247,7 @@ class ::etcdserverpb::LeaseKeepAliveRequest;
 
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request);
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleLeaseCompletedQueueMessage(entt::registry& registry);
 void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -263,6 +272,7 @@ class ::etcdserverpb::LeaseTimeToLiveRequest;
 
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request);
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleLeaseCompletedQueueMessage(entt::registry& registry);
 void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -287,6 +297,7 @@ class ::etcdserverpb::LeaseLeasesRequest;
 
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request);
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void HandleLeaseCompletedQueueMessage(entt::registry& registry);
 void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 

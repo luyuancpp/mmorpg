@@ -51,6 +51,7 @@ class {{.CppRequest}};
 
 void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request);
 void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void Handle{{.Service}}CompletedQueueMessage(entt::registry& registry);
 void Init{{.Service}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
@@ -211,6 +212,11 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 {{ end }}
+}
+
+void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+	const {{.CppRequest}}& derived = static_cast<const {{.CppRequest}}&>(message);
+	Send{{.Service}}{{.Method}}(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 
