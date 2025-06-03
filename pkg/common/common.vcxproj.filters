@@ -23,7 +23,6 @@
     <ClInclude Include="src\util\defer.h" />
     <ClInclude Include="src\util\file2string.h" />
     <ClInclude Include="src\util\game_registry.h" />
-    <ClInclude Include="src\util\pb.h" />
     <ClInclude Include="src\util\random.h" />
     <ClInclude Include="src\util\snow_flake.h" />
     <ClInclude Include="src\util\utility.h" />
@@ -51,7 +50,6 @@
     <ClCompile Include="src\thread_local\storage_lua.cpp" />
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\util\game_registry.cpp" />
-    <ClCompile Include="src\util\pb.cpp" />
     <ClCompile Include="src\util\utility.cpp" />
     <ClCompile Include="src\global_data\async_log_file.cpp" />
     <ClCompile Include="src\network\message_statistics.cpp" />

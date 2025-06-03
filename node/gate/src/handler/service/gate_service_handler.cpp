@@ -7,7 +7,6 @@
 #include "gate_node.h"
 #include "network/network_constants.h"
 #include "thread_local/storage_gate.h"
-#include "util/pb.h"
 
 #include "proto/logic/component/player_network_comp.pb.h"
 

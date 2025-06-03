@@ -25,7 +25,6 @@
 #include "node/system/node_system.h"
 #include "network/process_info.h"
 #include "etcd_helper.h"
-#include "grpc_client_system.h"
 #include "proto/logic/event/node_event.pb.h"
 #include "service_info/centre_service_service_info.h"
 #include "service_info/game_service_service_info.h"
@@ -166,7 +165,17 @@ void Node::SetupTimeZone() {
 }
 
 void Node::InitGrpcClients() {
-    GrpcClientSystem::InitEtcdStubs(tlsCommonLogic.GetBaseDeployConfig().etcd_hosts());
+	const std::string& etcdAddr = *tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin();
+	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
+
+	tls.globalNodeRegistry.emplace<etcdserverpb::KVStubPtr>(GetGlobalGrpcNodeEntity()) =
+		etcdserverpb::KV::NewStub(channel);
+
+	tls.globalNodeRegistry.emplace<etcdserverpb::WatchStubPtr>(GetGlobalGrpcNodeEntity()) =
+		etcdserverpb::Watch::NewStub(channel);
+
+	tls.globalNodeRegistry.emplace<etcdserverpb::LeaseStubPtr>(GetGlobalGrpcNodeEntity()) =
+		etcdserverpb::Lease::NewStub(channel);
 }
 
 void Node::InitGrpcQueues() {
