@@ -5,15 +5,15 @@
 #include "actor/attribute/system/actor_state_attribute_sync_system.h"
 #include "combat/buff/system/buff_system.h"
 #include "core/constants/fps_constants.h"
-#include "player/system/player_session_system.h"
 #include "scene/system/aoi_system.h"
 #include "scene/system/movement_acceleration_system.h"
 #include "scene/system/movement_system.h"
 #include "scene/system/view_system.h"
 #include "Recast/Recast.h"
 #include "thread_local/storage_game.h"
-
+#include "type_alias/player_session_type_alias.h"
 #include "proto/logic/component/frame_comp.pb.h"
+#include "thread_local/storage.h"
 
 using namespace std::chrono;
 
@@ -28,7 +28,8 @@ void World::InitializeSystemBeforeConnect()
     tlsGame.frameTime.set_target_fps(kTargetFPS);
     tlsGame.frameTime.set_delta_time(1.0 / tlsGame.frameTime.target_fps());
 
-    PlayerSessionSystem::Initialize();
+	tls.globalRegistry.emplace<SessionList>(GlobalEntity());
+
     ViewSystem::Initialize();
 }
 

@@ -191,7 +191,6 @@
     <ClInclude Include="src\npc\system\npc_system.h" />
     <ClInclude Include="src\player\system\player_node_system.h" />
     <ClInclude Include="src\player\system\player_scene_system.h" />
-    <ClInclude Include="src\player\system\player_session_system.h" />
     <ClInclude Include="src\player\system\player_skill_system.h" />
     <ClInclude Include="src\player\system\player_tip_system.h" />
     <ClInclude Include="src\scene\comp\dt_crowd_comp.h" />
@@ -241,7 +240,6 @@
     <ClCompile Include="src\player\system\player_player_database_1_system.cpp" />
     <ClCompile Include="src\player\system\player_player_database_system.cpp" />
     <ClCompile Include="src\player\system\player_scene_system.cpp" />
-    <ClCompile Include="src\player\system\player_session_system.cpp" />
     <ClCompile Include="src\player\system\player_skill_system.cpp" />
     <ClCompile Include="src\player\system\player_tip_system.cpp" />
     <ClCompile Include="src\scene\system\aoi_system.cpp" />
