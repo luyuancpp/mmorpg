@@ -187,7 +187,7 @@ var (
 	LoginProtoDirIndex          = 8
 	DbProtoDirIndex             = 9
 	CenterProtoDirIndex         = 10
-	GameProtoDirIndex           = 11
+	SceneProtoDirIndex          = 11
 	GateProtoDirIndex           = 12
 	ChatProtoDirIndex           = 13
 	TeamProtoDirIndex           = 14
