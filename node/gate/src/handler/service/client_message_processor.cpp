@@ -191,17 +191,17 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 // Handle messages related to the game node
 void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
 {
-    auto& messageInfo = gRpcServiceByMessageId[request->message_id()];
+    auto& messageInfo = gRpcServiceRegistry[request->message_id()];
 
 	// 玩家没登录直接发其他消息，乱发消息
     entt::entity tcpNodeId{ entt::null };
-    if (messageInfo.nodeType == SceneNodeService) {
+    if (messageInfo.targetNodeType == SceneNodeService) {
 		tcpNodeId = entt::entity{ session.sceneNodeId };
-    }if (messageInfo.nodeType == CentreNodeService){
+    }if (messageInfo.targetNodeType == CentreNodeService){
 		 tcpNodeId = entt::entity{ session.centreNodeId };
     }
 
-	auto& registry = tls.GetNodeRegistry(messageInfo.nodeType);
+	auto& registry = tls.GetNodeRegistry(messageInfo.targetNodeType);
     if (!registry.valid(tcpNodeId))
     {
         LOG_ERROR << "Invalid tcp node id " << session.sceneNodeId << " for session id : " << sessionId << " registy " << NodeSystem::GetRegistryName(registry);
@@ -223,12 +223,16 @@ void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& req
 
 void SendLoginRequestToLoginNode(entt::entity loginNode, Guid sessionId, const RpcClientMessagePtr& request)
 {
-	auto& messageInfo = gRpcServiceByMessageId[request->message_id()];
+	auto& messageInfo = gRpcServiceRegistry[request->message_id()];
 
-	SetSessionAndParseBody(*messageInfo.request, request, sessionId);
+	SetSessionAndParseBody(*messageInfo.requestPrototype, request, sessionId);
 	SessionDetails sessionDetils;
 	sessionDetils.set_session_id(sessionId);
-    loginpb::SendLoginServiceLogin(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, *messageInfo.request, { "x-session-detail-bin" }, { sessionDetils.SerializeAsString() });
+
+    if (messageInfo.messageSender)
+    {
+        messageInfo.messageSender(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, *messageInfo.requestPrototype, { "x-session-detail-bin" }, { sessionDetils.SerializeAsString() });
+    }
 
     LOG_TRACE << "Sent LoginC2LRequest, session id: " << sessionId;
 }
@@ -290,7 +294,7 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
 		return;
 	}
 
-	if (request->message_id() >= gRpcServiceByMessageId.size())
+	if (request->message_id() >= gRpcServiceRegistry.size())
 	{
 		LOG_ERROR << "Invalid message ID: " << request->message_id();
 		return;
@@ -301,12 +305,12 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
 	auto& session = sessionIt->second;
     if (!CheckMessageLimit(session, request, conn)) return;
 
-	if (!gAllowedClientMessageIds.contains(request->message_id())) {
+	if (!gClientMessageIdWhitelist.contains(request->message_id())) {
 		LOG_ERROR << "Client sent an invalid message: message ID not allowed - " << request->message_id();
 		return;
 	}
 
-	auto& messageInfo = gRpcServiceByMessageId[request->message_id()];
+	auto& messageInfo = gRpcServiceRegistry[request->message_id()];
     if (messageInfo.protocolType == PROTOCOL_TCP){
 		HandleTcpNodeMessage(session, request, sessionId, conn);
     }else if (messageInfo.protocolType == PROTOCOL_GRPC){
