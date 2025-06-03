@@ -161,13 +161,13 @@ var (
 		"logic/event/",
 		"logic/shared/",
 		"logic/",
-		"logic/",
+		"etcd/",
 		"logic/constants/",
 		"etcd/",
 		"login/",
 		"db/",
 		"centre/",
-		"game/",
+		"scene/",
 		"gate/",
 		"chat/",
 		"team/",
@@ -181,7 +181,7 @@ var (
 	LogicEventProtoDirIndex     = 2
 	LogicSharedProtoDirIndex    = 3
 	ClientPlayerDirIndex        = 4
-	ServerPlayerDirIndex        = 5
+	EtcdDirIndex                = 5
 	ConstantsDirIndex           = 6
 	EtcdProtoDirIndex           = 7
 	LoginProtoDirIndex          = 8
@@ -204,8 +204,8 @@ const (
 	GameNodePlayerPrefixName        = "game_player"
 	CentrePrefixName                = "centre"
 	CentrePlayerPrefixName          = "centre_player"
-	ClientPrefixName                = "Client" // ✅ 新增
-	NodePrefixName                  = "node"   // ✅ 新增
+	ClientPrefixName                = "Client" //
+	NodePrefixName                  = "node"   //
 	TypePlayer                      = "player"
 	DisplayPlayer                   = "Player"
 	ServiceIncludeName              = "service/"

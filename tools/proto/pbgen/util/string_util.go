@@ -23,3 +23,10 @@ func CapitalizeWords(s string) string {
 	// 重新组合单词为字符串
 	return strings.Join(words, " ")
 }
+
+func CapitalizeFirstLetter(s string) string {
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
+}

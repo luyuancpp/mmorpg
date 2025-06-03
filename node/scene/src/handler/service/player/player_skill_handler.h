@@ -1,6 +1,6 @@
 #pragma once
 
-#include "proto/game/player_skill.pb.h"
+#include "proto/scene/player_skill.pb.h"
 
 #include "service/player_service.h"
 

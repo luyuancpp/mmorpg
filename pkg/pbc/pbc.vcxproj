@@ -31,6 +31,7 @@
     <ClCompile Include="src\proto\common\config.pb.cc" />
     <ClCompile Include="src\proto\common\empty.pb.cc" />
     <ClCompile Include="src\proto\common\message.pb.cc" />
+    <ClCompile Include="src\proto\common\node.pb.cc" />
     <ClCompile Include="src\proto\common\session.pb.cc" />
     <ClCompile Include="src\proto\common\statistics.pb.cc" />
     <ClCompile Include="src\proto\common\tip.pb.cc" />
@@ -43,14 +44,6 @@
     <ClCompile Include="src\proto\etcd\etcd.pb.cc" />
     <ClCompile Include="src\proto\etcd\kv.pb.cc" />
     <ClCompile Include="src\proto\etcd\version.pb.cc" />
-    <ClCompile Include="src\proto\game\game_client_player.pb.cc" />
-    <ClCompile Include="src\proto\game\game_player.pb.cc" />
-    <ClCompile Include="src\proto\game\game_player_scene.pb.cc" />
-    <ClCompile Include="src\proto\game\game_scene.pb.cc" />
-    <ClCompile Include="src\proto\game\game_service.pb.cc" />
-    <ClCompile Include="src\proto\game\player_scene.pb.cc" />
-    <ClCompile Include="src\proto\game\player_skill.pb.cc" />
-    <ClCompile Include="src\proto\game\player_state_attribute_sync.pb.cc" />
     <ClCompile Include="src\proto\gate\gate_service.pb.cc" />
     <ClCompile Include="src\proto\logic\client_player\player_common.pb.cc" />
     <ClCompile Include="src\proto\logic\component\actor_attribute_state_comp.pb.cc" />
@@ -76,7 +69,6 @@
     <ClCompile Include="src\proto\logic\component\time_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\constants\etcd_grpc.pb.cc" />
     <ClCompile Include="src\proto\logic\constants\function_switch.pb.cc" />
-    <ClCompile Include="src\proto\logic\constants\node.pb.cc" />
     <ClCompile Include="src\proto\logic\constants\scene.pb.cc" />
     <ClCompile Include="src\proto\logic\constants\test_switch.pb.cc" />
     <ClCompile Include="src\proto\logic\event\actor_combat_state_event.pb.cc" />
@@ -92,6 +84,14 @@
     <ClCompile Include="src\proto\logic\event\skill_event.pb.cc" />
     <ClCompile Include="src\proto\login\login_service.grpc.pb.cc" />
     <ClCompile Include="src\proto\login\login_service.pb.cc" />
+    <ClCompile Include="src\proto\scene\game_client_player.pb.cc" />
+    <ClCompile Include="src\proto\scene\game_player.pb.cc" />
+    <ClCompile Include="src\proto\scene\game_player_scene.pb.cc" />
+    <ClCompile Include="src\proto\scene\game_scene.pb.cc" />
+    <ClCompile Include="src\proto\scene\game_service.pb.cc" />
+    <ClCompile Include="src\proto\scene\player_scene.pb.cc" />
+    <ClCompile Include="src\proto\scene\player_skill.pb.cc" />
+    <ClCompile Include="src\proto\scene\player_state_attribute_sync.pb.cc" />
     <ClCompile Include="src\service_info\service_info.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -107,6 +107,7 @@
     <ClInclude Include="src\proto\common\config.pb.h" />
     <ClInclude Include="src\proto\common\empty.pb.h" />
     <ClInclude Include="src\proto\common\message.pb.h" />
+    <ClInclude Include="src\proto\common\node.pb.h" />
     <ClInclude Include="src\proto\common\session.pb.h" />
     <ClInclude Include="src\proto\common\statistics.pb.h" />
     <ClInclude Include="src\proto\common\tip.pb.h" />
@@ -119,14 +120,6 @@
     <ClInclude Include="src\proto\etcd\etcd.pb.h" />
     <ClInclude Include="src\proto\etcd\kv.pb.h" />
     <ClInclude Include="src\proto\etcd\version.pb.h" />
-    <ClInclude Include="src\proto\game\game_client_player.pb.h" />
-    <ClInclude Include="src\proto\game\game_player.pb.h" />
-    <ClInclude Include="src\proto\game\game_player_scene.pb.h" />
-    <ClInclude Include="src\proto\game\game_scene.pb.h" />
-    <ClInclude Include="src\proto\game\game_service.pb.h" />
-    <ClInclude Include="src\proto\game\player_scene.pb.h" />
-    <ClInclude Include="src\proto\game\player_skill.pb.h" />
-    <ClInclude Include="src\proto\game\player_state_attribute_sync.pb.h" />
     <ClInclude Include="src\proto\gate\gate_service.pb.h" />
     <ClInclude Include="src\proto\logic\client_player\player_common.pb.h" />
     <ClInclude Include="src\proto\logic\component\actor_attribute_state_comp.pb.h" />
@@ -152,7 +145,6 @@
     <ClInclude Include="src\proto\logic\component\time_comp.pb.h" />
     <ClInclude Include="src\proto\logic\constants\etcd_grpc.pb.h" />
     <ClInclude Include="src\proto\logic\constants\function_switch.pb.h" />
-    <ClInclude Include="src\proto\logic\constants\node.pb.h" />
     <ClInclude Include="src\proto\logic\constants\scene.pb.h" />
     <ClInclude Include="src\proto\logic\constants\test_switch.pb.h" />
     <ClInclude Include="src\proto\logic\event\actor_combat_state_event.pb.h" />
@@ -168,6 +160,14 @@
     <ClInclude Include="src\proto\logic\event\skill_event.pb.h" />
     <ClInclude Include="src\proto\login\login_service.grpc.pb.h" />
     <ClInclude Include="src\proto\login\login_service.pb.h" />
+    <ClInclude Include="src\proto\scene\game_client_player.pb.h" />
+    <ClInclude Include="src\proto\scene\game_player.pb.h" />
+    <ClInclude Include="src\proto\scene\game_player_scene.pb.h" />
+    <ClInclude Include="src\proto\scene\game_scene.pb.h" />
+    <ClInclude Include="src\proto\scene\game_service.pb.h" />
+    <ClInclude Include="src\proto\scene\player_scene.pb.h" />
+    <ClInclude Include="src\proto\scene\player_skill.pb.h" />
+    <ClInclude Include="src\proto\scene\player_state_attribute_sync.pb.h" />
     <ClInclude Include="src\service_info\centre_player_scene_service_info.h" />
     <ClInclude Include="src\service_info\centre_player_service_info.h" />
     <ClInclude Include="src\service_info\centre_scene_service_info.h" />

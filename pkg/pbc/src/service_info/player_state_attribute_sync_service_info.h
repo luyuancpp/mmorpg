@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/game/player_state_attribute_sync.pb.h"
+#include "proto/scene/player_state_attribute_sync.pb.h"
 
 
 constexpr uint32_t EntitySyncServiceSyncBaseAttributeMessageId = 60;

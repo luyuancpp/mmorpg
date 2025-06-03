@@ -246,6 +246,11 @@ void GameChannel::HandleResponseMessage(const TcpConnectionPtr& conn, const Game
     if (!IsValidMessageId(rpcMessage.message_id())) return;
 
     const auto& messageInfo = gMessageInfo[rpcMessage.message_id()];
+	if (!messageInfo.serviceImplInstance)
+	{
+		LOG_ERROR << "Message service implementation not found for message ID: " << rpcMessage.message_id();
+		return;
+	}
     MessagePtr response(messageInfo.serviceImplInstance->GetResponsePrototype(
         messageInfo.serviceImplInstance->GetDescriptor()->FindMethodByName(messageInfo.methodName)).New());
 
