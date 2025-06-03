@@ -296,6 +296,7 @@ func writeServiceInfoCppFile() {
 		InitLines            []string
 		ClientMessageIdLines []string
 		MessageIdArraySize   int
+		SenderFunctions      []string
 	}
 
 	const serviceInfoCppTemplate = `#include <array>
@@ -309,6 +310,9 @@ func writeServiceInfoCppFile() {
 {{ . }}
 {{- end }}
 {{range .HandlerClasses}}
+{{ . }}
+{{- end }}
+{{range .SenderFunctions}}
 {{ . }}
 {{- end }}
 
@@ -333,6 +337,7 @@ void InitMessageInfo()
 		handlerClasses      []string
 		initLines           []string
 		clientIdLines       []string
+		senderFunction      []string
 	)
 
 	serviceList := GetSortServiceList()
@@ -385,8 +390,12 @@ void InitMessageInfo()
 					nodeType,
 				)
 			} else {
+				declareFunction := "namespace " + method.Package() + "{void Send" +
+					serviceName + method.MethodName() + "(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}"
+				senderFunction = append(senderFunction, declareFunction)
+				sendName := method.Package() + "::" + "Send" + serviceName + method.MethodName()
 				initLine = fmt.Sprintf(
-					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), nullptr, %d, %s};`,
+					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), nullptr, %d, %s, %s};`,
 					messageId,
 					method.Service(),
 					method.Method(),
@@ -394,6 +403,7 @@ void InitMessageInfo()
 					method.CppResponse(),
 					GetProtocol(basePath),
 					nodeType,
+					sendName,
 				)
 			}
 
@@ -413,6 +423,7 @@ void InitMessageInfo()
 		InitLines:            initLines,
 		ClientMessageIdLines: clientIdLines,
 		MessageIdArraySize:   int(MessageIdLen()),
+		SenderFunctions:      senderFunction,
 	}
 
 	tmpl, err := template.New("serviceInfoCpp").Parse(serviceInfoCppTemplate)
