@@ -82,7 +82,7 @@ void OnGameServiceCentreSendToPlayerViaGameNodeRepliedHandler(const TcpConnectio
 void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeRouteMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	if (replied->message_content().message_id() >= gMessageInfo.size())
+	if (replied->message_content().message_id() >= gRpcServiceByMessageId.size())
 	{
 		LOG_ERROR << "message_id not found " << replied->message_content().message_id() ;
 		return;
@@ -96,7 +96,7 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 	}
 
 	const auto  player_id    = it->second.player_id();
-	const auto& message_info = gMessageInfo.at(replied->message_content().message_id() );
+	const auto& message_info = gRpcServiceByMessageId.at(replied->message_content().message_id() );
 	const auto  player = tlsCommonLogic.GetPlayer(player_id);
 	if (!tls.registry.valid(player))
 	{

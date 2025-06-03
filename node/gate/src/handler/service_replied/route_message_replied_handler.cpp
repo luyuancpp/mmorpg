@@ -27,7 +27,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	}
 	
 	auto& route_data = replied->route_nodes(replied->route_nodes_size() - 1);
-	if ( route_data.message_id() >= gMessageInfo.size())
+	if ( route_data.message_id() >= gRpcServiceByMessageId.size())
 	{
 		LOG_ERROR << "message_id not found " << route_data.message_id();
 		return;

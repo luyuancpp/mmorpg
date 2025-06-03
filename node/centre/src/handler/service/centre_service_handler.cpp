@@ -323,14 +323,14 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	if (request->message_content().message_id() >= gMessageInfo.size())
+	if (request->message_content().message_id() >= gRpcServiceByMessageId.size())
 	{
 		LOG_ERROR << "Message ID not found: " << request->message_content().message_id();
 		SendErrorToClient(*request, *response, kMessageIdNotFound);
 		return;
 	}
 
-	const auto& message_info = gMessageInfo.at(request->message_content().message_id());
+	const auto& message_info = gRpcServiceByMessageId.at(request->message_content().message_id());
 
 	const auto service_it = g_player_service.find(message_info.serviceName);
 	if (service_it == g_player_service.end())
@@ -486,13 +486,13 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 
 	auto& route_data = request->route_nodes(request->route_nodes_size() - 1);
 
-	if (route_data.message_id() >= gMessageInfo.size())
+	if (route_data.message_id() >= gRpcServiceByMessageId.size())
 	{
 		LOG_ERROR << "Message ID not found: " << route_data.message_id();
 		return;
 	}
 
-	const auto& messageInfo = gMessageInfo[route_data.message_id()];
+	const auto& messageInfo = gRpcServiceByMessageId[route_data.message_id()];
 
 	if (!messageInfo.serviceImplInstance)
 	{
