@@ -161,7 +161,7 @@ var (
 		"logic/event/",
 		"logic/shared/",
 		"logic/",
-		"etcd/",
+		"",
 		"logic/constants/",
 		"etcd/",
 		"login/",
@@ -180,7 +180,7 @@ var (
 	LogicComponentProtoDirIndex = 1
 	LogicEventProtoDirIndex     = 2
 	LogicSharedProtoDirIndex    = 3
-	ClientPlayerDirIndex        = 4
+	LogicProtoDirIndex          = 4
 	EtcdDirIndex                = 5
 	ConstantsDirIndex           = 6
 	EtcdProtoDirIndex           = 7

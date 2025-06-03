@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <entt/src/entt/entity/entity.hpp>
 
-#include "proto/game/player_skill.pb.h"
+#include "proto/scene/player_skill.pb.h"
 //https://zhuanlan.zhihu.com/p/149704315
 
 class SkillTable;

@@ -9,7 +9,7 @@
 #include "game_common_logic/comp/session_comp.h"
 #include "game_common_logic/system/session_system.h"
 #include "proto/logic/component/player_network_comp.pb.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 
 void SendMessageToPlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {

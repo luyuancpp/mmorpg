@@ -11,7 +11,7 @@
 #include "thread_local/storage_centre.h"
 #include "thread_local/storage_common_logic.h"
 #include "type_define/type_define.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 
 void SendToGs(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
 {

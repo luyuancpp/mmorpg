@@ -89,8 +89,7 @@ func CppGrpcCallClient() {
 			}
 
 			firstService := serviceInfo[0]
-			if !(strings.Contains(firstService.Path(), config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-				strings.Contains(firstService.Path(), config.ProtoDirectoryNames[config.EtcdProtoDirIndex]) ||
+			if !(strings.Contains(firstService.Path(), config.ProtoDirectoryNames[config.EtcdProtoDirIndex]) ||
 				strings.Contains(firstService.Path(), config.ProtoDirectoryNames[config.LoginProtoDirIndex])) {
 				return
 			}

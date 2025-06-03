@@ -1,6 +1,6 @@
 #pragma once
 
-#include "proto/game/game_player_scene.pb.h"
+#include "proto/scene/game_player_scene.pb.h"
 
 #include "service/player_service.h"
 

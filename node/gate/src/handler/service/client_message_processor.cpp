@@ -15,7 +15,7 @@
 #include "service_info/player_common_service_info.h"
 #include "thread_local/storage_gate.h"
 #include "util/random.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 
 extern std::unordered_set<uint32_t> gClientToServerMessageId;
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 #include "entt/src/entt/entt.hpp"
 
 class NodeSystem

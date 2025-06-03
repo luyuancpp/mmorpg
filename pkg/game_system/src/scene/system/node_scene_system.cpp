@@ -3,7 +3,7 @@
 #include "scene/comp/node_scene_comp.h"
 #include "thread_local/storage.h"
 #include "proto/logic/component/game_node_comp.pb.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 #include "muduo/base/Logging.h"
 
 using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;

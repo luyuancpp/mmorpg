@@ -2,7 +2,7 @@
 
 #include <string>
 #include "proto/etcd/etcd.pb.h"
-#include "logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 #include "proto/common/common.pb.h"
 
 namespace EtcdHelper {

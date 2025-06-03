@@ -20,7 +20,7 @@
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 #include "scene/system/player_change_scene_system.h"
 #include "scene/system/scene_system.h"
 #include "service_info/game_service_service_info.h"

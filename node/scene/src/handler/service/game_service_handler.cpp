@@ -19,7 +19,7 @@
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 #include "scene/system/scene_system.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_common_logic.h"

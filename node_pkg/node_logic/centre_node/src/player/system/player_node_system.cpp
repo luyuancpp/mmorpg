@@ -22,7 +22,7 @@
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"
 #include "util/defer.h"
-#include "proto/logic/constants/node.pb.h"
+#include "proto/common/node.pb.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
 {
