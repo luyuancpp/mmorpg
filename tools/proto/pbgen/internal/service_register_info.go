@@ -285,8 +285,10 @@ func GetProtocol(dirName string) uint32 {
 	return 0
 }
 
-// writeServiceInfoCppFile writes service information to a C++ file.
+// writeServiceInfoCppFile generates C++ code that initializes gRPC service metadata.
 func writeServiceInfoCppFile() {
+	defer util.Wg.Done()
+
 	type ServiceInfoCppData struct {
 		Includes             []string
 		ServiceInfoIncludes  []string
@@ -295,17 +297,18 @@ func writeServiceInfoCppFile() {
 		ClientMessageIdLines []string
 		MessageIdArraySize   int
 	}
+
 	const serviceInfoCppTemplate = `#include <array>
 #include "service_info.h"
-#include "proto/common/node.pb.h"  
+#include "proto/common/node.pb.h"
 
 {{range .Includes -}}
 {{ . }}
 {{- end }}
-{{- range .ServiceInfoIncludes -}}
-{{ . -}}
+{{range .ServiceInfoIncludes -}}
+{{ . }}
 {{- end }}
-{{range .HandlerClasses }}
+{{range .HandlerClasses}}
 {{ . }}
 {{- end }}
 
@@ -324,75 +327,85 @@ void InitMessageInfo()
 }
 `
 
-	defer util.Wg.Done()
+	var (
+		includes            []string
+		serviceInfoIncludes []string
+		handlerClasses      []string
+		initLines           []string
+		clientIdLines       []string
+	)
 
 	serviceList := GetSortServiceList()
 
-	var includes, serviceInfoIncludes, handlerClasses, initLines, clientIdLines []string
-
+	// Step 1: Collect headers and handler classes
 	for _, serviceName := range serviceList {
 		methods := ServiceMethodMap[serviceName]
 		if len(methods) == 0 {
 			continue
 		}
 
-		first := methods[0]
+		firstMethod := methods[0]
 
-		if first.CcGenericServices() {
-			includes = append(includes, first.IncludeName())
-			serviceInfoIncludes = append(serviceInfoIncludes, first.ServiceInfoIncludeName())
-			handlerClass := fmt.Sprintf("class %sImpl final : public %s {};", serviceName, serviceName)
+		if firstMethod.CcGenericServices() {
+			includes = append(includes, firstMethod.IncludeName())
+			serviceInfoIncludes = append(serviceInfoIncludes, firstMethod.ServiceInfoIncludeName())
+
+			handlerClass := fmt.Sprintf(
+				"class %sImpl final : public %s {};",
+				serviceName,
+				serviceName)
 			handlerClasses = append(handlerClasses, handlerClass)
-			continue
+		} else {
+			includes = append(includes, firstMethod.GrpcIncludeHeadName())
+			serviceInfoIncludes = append(serviceInfoIncludes, firstMethod.ServiceInfoIncludeName())
 		}
-
-		includes = append(includes, first.GrpcIncludeHeadName())
-		serviceInfoIncludes = append(serviceInfoIncludes, first.ServiceInfoIncludeName())
 	}
 
+	// Step 2: Generate init lines for RpcService and allowed client message IDs
 	for _, serviceName := range serviceList {
-		methods := ServiceMethodMap[serviceName]
-		for _, method := range methods {
+		for _, method := range ServiceMethodMap[serviceName] {
 			basePath := strings.ToLower(path.Base(method.Path()))
-			rpcId := method.KeyName() + config.MessageIdName
+			messageId := method.KeyName() + config.MessageIdName
 
+			isClientMessage := strings.Contains(serviceName, config.ClientPrefixName)
+			nodeType := fmt.Sprintf("eNodeType::%sNodeService", util.CapitalizeWords(basePath))
+
+			initLine := ""
 			if method.CcGenericServices() {
-				handlerName := serviceName + "Impl"
-				initLine := fmt.Sprintf(
-					"gRpcServiceByMessageId[%s] = RpcService{\"%s\", \"%s\", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), %d, eNodeType::%sNodeService};",
-					rpcId,
+				handler := serviceName + "Impl"
+				initLine = fmt.Sprintf(
+					`gRpcServiceByMessageId[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), %d, %s};`,
+					messageId,
 					method.Service(),
 					method.Method(),
 					method.CppRequest(),
 					method.CppResponse(),
-					handlerName,
+					handler,
 					GetProtocol(basePath),
-					util.CapitalizeWords(basePath))
-				initLines = append(initLines, initLine)
-
-				if strings.Contains(serviceName, config.ClientPrefixName) {
-					clientIdLines = append(clientIdLines, fmt.Sprintf("gAllowedClientMessageIds.emplace(%s);", rpcId))
-				}
-				continue
+					nodeType,
+				)
+			} else {
+				initLine = fmt.Sprintf(
+					`gRpcServiceByMessageId[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), nullptr, %d, %s};`,
+					messageId,
+					method.Service(),
+					method.Method(),
+					method.CppRequest(),
+					method.CppResponse(),
+					GetProtocol(basePath),
+					nodeType,
+				)
 			}
 
-			initLine := fmt.Sprintf(
-				"gRpcServiceByMessageId[%s] = RpcService{\"%s\", \"%s\", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), nullptr, %d, eNodeType::%sNodeService};",
-				rpcId,
-				method.Service(),
-				method.Method(),
-				method.CppRequest(),
-				method.CppResponse(),
-				GetProtocol(basePath),
-				util.CapitalizeWords(basePath))
 			initLines = append(initLines, initLine)
 
-			if strings.Contains(serviceName, config.ClientPrefixName) {
-				clientIdLines = append(clientIdLines, fmt.Sprintf("gAllowedClientMessageIds.emplace(%s);", rpcId))
+			if isClientMessage {
+				clientIdLines = append(clientIdLines, fmt.Sprintf("gAllowedClientMessageIds.emplace(%s);", messageId))
 			}
 		}
 	}
 
+	// Step 3: Fill template data and render
 	tmplData := ServiceInfoCppData{
 		Includes:             includes,
 		ServiceInfoIncludes:  serviceInfoIncludes,

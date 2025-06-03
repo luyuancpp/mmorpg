@@ -1,6 +1,6 @@
 #include <array>
 #include "service_info.h"
-#include "proto/common/node.pb.h"  
+#include "proto/common/node.pb.h"
 
 #include "proto/db/db_service.grpc.pb.h"
 #include "proto/centre/centre_client_player.pb.h"
@@ -22,6 +22,7 @@
 #include "proto/login/login_service.grpc.pb.h"
 #include "proto/db/db_service.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
+
 #include "db_service_service_info.h"
 #include "centre_client_player_service_info.h"
 #include "centre_player_scene_service_info.h"
