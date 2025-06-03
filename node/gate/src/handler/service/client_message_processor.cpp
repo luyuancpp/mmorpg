@@ -128,7 +128,6 @@ bool RpcClientSessionHandler::CheckMessageLimit(Session& session, const RpcClien
 template <typename Message, typename Request>
 void SetSessionAndParseBody(Message& message, const Request& request, const uint64_t sessionId) {
     // 设置会话ID
-    message.mutable_session_info()->set_session_id(sessionId);
 
     // 检查请求体是否有效
     const std::string& requestBody = request->body();
@@ -136,7 +135,7 @@ void SetSessionAndParseBody(Message& message, const Request& request, const uint
         return;
     }
 
-    if (!message.mutable_client_msg_body()->ParseFromArray(requestBody.data(), requestBody.size())) {
+    if (!message.ParseFromArray(requestBody.data(), requestBody.size())) {
         LOG_ERROR << "Failed to parse client message body for session id: " << sessionId;
         return; // 解析失败时，避免发送无效消息
     }
@@ -229,7 +228,6 @@ void SendLoginRequestToLoginNode(entt::entity loginNode, Guid sessionId, const R
 	sessionDetils.set_session_id(sessionId);
 
     SendLoginServiceLogin(tls.GetNodeRegistry(eNodeType::LoginNodeService), loginNode, message, { "x-session-detail-bin" }, { sessionDetils.SerializeAsString() });
-
 
     LOG_TRACE << "Sent LoginC2LRequest, session id: " << sessionId;
 }
