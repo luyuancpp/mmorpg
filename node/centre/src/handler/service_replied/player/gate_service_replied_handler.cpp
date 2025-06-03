@@ -1,0 +1,45 @@
+
+#include "gate_service_replied_handler.h"
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+
+
+
