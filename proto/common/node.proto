@@ -26,6 +26,6 @@ enum eSceneNodeType
 // 定义节点协议类型的枚举
 enum eNodeProtocolType {
   PROTOCOL_TCP = 0;
-  PROTOCOL_HTTP = 1;
-  PROTOCOL_GRPC = 2;
+  PROTOCOL_GRPC = 1;
+  PROTOCOL_HTTP = 2;
 }
