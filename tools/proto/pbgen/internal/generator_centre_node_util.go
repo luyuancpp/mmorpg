@@ -65,13 +65,12 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if !(util.ContainsPlayerKeyword(firstMethodInfo.Service())) {
-		return false
-	}
-
 	if strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
 		return false
 	}
 
+	if util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
+		return false
+	}
 	return true
 }

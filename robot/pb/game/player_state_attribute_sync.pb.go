@@ -379,7 +379,7 @@ var file_proto_scene_player_state_attribute_sync_proto_rawDesc = []byte{
 	0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x36, 0x30, 0x46, 0x72, 0x61, 0x6d,
 	0x65, 0x73, 0x53, 0x32, 0x43, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x5f,
 	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79,
-	0x49, 0x64, 0x32, 0xf8, 0x02, 0x0a, 0x11, 0x45, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x53, 0x79, 0x6e,
+	0x49, 0x64, 0x32, 0xf8, 0x02, 0x0a, 0x11, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x53, 0x79, 0x6e,
 	0x63, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x36, 0x0a, 0x11, 0x53, 0x79, 0x6e, 0x63,
 	0x42, 0x61, 0x73, 0x65, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x12, 0x19, 0x2e,
 	0x42, 0x61, 0x73, 0x65, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x53, 0x79, 0x6e,
@@ -436,18 +436,18 @@ var file_proto_scene_player_state_attribute_sync_proto_depIdxs = []int32{
 	6, // 0: BaseAttributeSyncDataS2C.transform:type_name -> Transform
 	7, // 1: BaseAttributeSyncDataS2C.velocity:type_name -> Velocity
 	8, // 2: BaseAttributeSyncDataS2C.combat_state_flags:type_name -> CombatStateFlagsPbComponent
-	0, // 3: EntitySyncService.SyncBaseAttribute:input_type -> BaseAttributeSyncDataS2C
-	1, // 4: EntitySyncService.SyncAttribute2Frames:input_type -> AttributeDelta2FramesS2C
-	2, // 5: EntitySyncService.SyncAttribute5Frames:input_type -> AttributeDelta5FramesS2C
-	3, // 6: EntitySyncService.SyncAttribute10Frames:input_type -> AttributeDelta10FramesS2C
-	4, // 7: EntitySyncService.SyncAttribute30Frames:input_type -> AttributeDelta30FramesS2C
-	5, // 8: EntitySyncService.SyncAttribute60Frames:input_type -> AttributeDelta60FramesS2C
-	9, // 9: EntitySyncService.SyncBaseAttribute:output_type -> Empty
-	9, // 10: EntitySyncService.SyncAttribute2Frames:output_type -> Empty
-	9, // 11: EntitySyncService.SyncAttribute5Frames:output_type -> Empty
-	9, // 12: EntitySyncService.SyncAttribute10Frames:output_type -> Empty
-	9, // 13: EntitySyncService.SyncAttribute30Frames:output_type -> Empty
-	9, // 14: EntitySyncService.SyncAttribute60Frames:output_type -> Empty
+	0, // 3: PlayerSyncService.SyncBaseAttribute:input_type -> BaseAttributeSyncDataS2C
+	1, // 4: PlayerSyncService.SyncAttribute2Frames:input_type -> AttributeDelta2FramesS2C
+	2, // 5: PlayerSyncService.SyncAttribute5Frames:input_type -> AttributeDelta5FramesS2C
+	3, // 6: PlayerSyncService.SyncAttribute10Frames:input_type -> AttributeDelta10FramesS2C
+	4, // 7: PlayerSyncService.SyncAttribute30Frames:input_type -> AttributeDelta30FramesS2C
+	5, // 8: PlayerSyncService.SyncAttribute60Frames:input_type -> AttributeDelta60FramesS2C
+	9, // 9: PlayerSyncService.SyncBaseAttribute:output_type -> Empty
+	9, // 10: PlayerSyncService.SyncAttribute2Frames:output_type -> Empty
+	9, // 11: PlayerSyncService.SyncAttribute5Frames:output_type -> Empty
+	9, // 12: PlayerSyncService.SyncAttribute10Frames:output_type -> Empty
+	9, // 13: PlayerSyncService.SyncAttribute30Frames:output_type -> Empty
+	9, // 14: PlayerSyncService.SyncAttribute60Frames:output_type -> Empty
 	9, // [9:15] is the sub-list for method output_type
 	3, // [3:9] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name

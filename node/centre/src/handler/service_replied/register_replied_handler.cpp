@@ -1,10 +1,8 @@
 
 void InitRepliedHandler()
 {
-    void InitEntitySyncServiceSyncBaseAttributeRepliedHandler();
-    InitEntitySyncServiceSyncBaseAttributeRepliedHandler();
-    void InitGameSceneServiceTestRepliedHandler();
-    InitGameSceneServiceTestRepliedHandler();
-    void InitGameServicePlayerEnterGameNodeRepliedHandler();
-    InitGameServicePlayerEnterGameNodeRepliedHandler();
+    void InitGameSceneServiceRepliedHandler();
+    InitGameSceneServiceRepliedHandler();
+    void InitGameServiceRepliedHandler();
+    InitGameServiceRepliedHandler();
 }

@@ -71,7 +71,7 @@ func isGsMethodRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if !strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
+	if strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
 		return false
 	}
 

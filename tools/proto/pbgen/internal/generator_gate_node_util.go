@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"log"
 	"pbgen/config"
 	"pbgen/util"
 	"strings"
@@ -42,39 +41,13 @@ func isGateServiceHandler(methodList *RPCMethods) bool {
 func isGateMethodRepliedHandler(methodList *RPCMethods) bool {
 	return checkFirstMethod(methodList,
 		func(m *MethodInfo) bool {
-			return containsDir(m.Path(), config.CommonProtoDirIndex)
-		},
-		func(m *MethodInfo) bool {
 			return m.CcGenericServices()
 		},
+		func(info *MethodInfo) bool {
+			return !(util.ContainsPlayerKeyword(info.Service()))
+		},
 		func(m *MethodInfo) bool {
-			return util.IsPathInOtherProtoDirs(m.Path(), config.GateProtoDirIndex)
+			return !util.IsPathInProtoDirs(m.Path(), config.GateProtoDirIndex)
 		},
 	)
-}
-
-// 通用写文件函数，传入判断条件和文件生成函数
-
-func writeGateMethodFile(
-	methodList RPCMethods,
-	checkFunc func(*RPCMethods) bool,
-	genFileName func(*MethodInfo) string,
-	genData func(string, *RPCMethods) (string, error),
-	outputDir string,
-) {
-	defer util.Wg.Done()
-
-	if !checkFunc(&methodList) || len(methodList) == 0 {
-		return
-	}
-
-	first := methodList[0]
-	fileName := genFileName(first)
-	dstFile := outputDir + fileName
-	data, err := genData(dstFile, &methodList)
-	if err != nil {
-		log.Fatalf("writeGateMethodFile: genData error: %v", err)
-	}
-
-	util.WriteMd5Data2File(dstFile, data)
 }

@@ -12,7 +12,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 
 
-void InitCentreSceneServiceRegisterSceneRepliedHandler()
+void InitCentreSceneServiceRepliedHandler()
 {
     gResponseDispatcher.registerMessageCallback<::RegisterSceneResponse>(CentreSceneServiceRegisterSceneMessageId,
         std::bind(&OnCentreSceneServiceRegisterSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));

@@ -12,7 +12,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 
 
-void InitGameSceneServiceTestRepliedHandler()
+void InitGameSceneServiceRepliedHandler()
 {
     gResponseDispatcher.registerMessageCallback<::Empty>(GameSceneServiceTestMessageId,
         std::bind(&OnGameSceneServiceTestRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));

@@ -17,7 +17,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 
 
-void InitCentreServiceGatePlayerServiceRepliedHandler()
+void InitCentreServiceRepliedHandler()
 {
     gResponseDispatcher.registerMessageCallback<::Empty>(CentreServiceGatePlayerServiceMessageId,
         std::bind(&OnCentreServiceGatePlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));

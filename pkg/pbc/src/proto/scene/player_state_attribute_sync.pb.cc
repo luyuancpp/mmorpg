@@ -282,8 +282,8 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fstate_5fattribute_
     "d\030\001 \001(\004\".\n\031AttributeDelta10FramesS2C\022\021\n\t"
     "entity_id\030\001 \001(\004\".\n\031AttributeDelta30Frame"
     "sS2C\022\021\n\tentity_id\030\001 \001(\004\".\n\031AttributeDelt"
-    "a60FramesS2C\022\021\n\tentity_id\030\001 \001(\0042\370\002\n\021Enti"
-    "tySyncService\0226\n\021SyncBaseAttribute\022\031.Bas"
+    "a60FramesS2C\022\021\n\tentity_id\030\001 \001(\0042\370\002\n\021Play"
+    "erSyncService\0226\n\021SyncBaseAttribute\022\031.Bas"
     "eAttributeSyncDataS2C\032\006.Empty\0229\n\024SyncAtt"
     "ribute2Frames\022\031.AttributeDelta2FramesS2C"
     "\032\006.Empty\0229\n\024SyncAttribute5Frames\022\031.Attri"
@@ -1734,47 +1734,47 @@ void AttributeDelta60FramesS2C::InternalSwap(AttributeDelta60FramesS2C* PROTOBUF
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* EntitySyncService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* PlayerSyncService::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto);
   return file_level_service_descriptors_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* EntitySyncService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* PlayerSyncService::GetDescriptor() {
   return descriptor();
 }
 
-void EntitySyncService::SyncBaseAttribute(::google::protobuf::RpcController* controller,
+void PlayerSyncService::SyncBaseAttribute(::google::protobuf::RpcController* controller,
                          const ::BaseAttributeSyncDataS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncBaseAttribute() not implemented.");
   done->Run();
 }
-void EntitySyncService::SyncAttribute2Frames(::google::protobuf::RpcController* controller,
+void PlayerSyncService::SyncAttribute2Frames(::google::protobuf::RpcController* controller,
                          const ::AttributeDelta2FramesS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncAttribute2Frames() not implemented.");
   done->Run();
 }
-void EntitySyncService::SyncAttribute5Frames(::google::protobuf::RpcController* controller,
+void PlayerSyncService::SyncAttribute5Frames(::google::protobuf::RpcController* controller,
                          const ::AttributeDelta5FramesS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncAttribute5Frames() not implemented.");
   done->Run();
 }
-void EntitySyncService::SyncAttribute10Frames(::google::protobuf::RpcController* controller,
+void PlayerSyncService::SyncAttribute10Frames(::google::protobuf::RpcController* controller,
                          const ::AttributeDelta10FramesS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncAttribute10Frames() not implemented.");
   done->Run();
 }
-void EntitySyncService::SyncAttribute30Frames(::google::protobuf::RpcController* controller,
+void PlayerSyncService::SyncAttribute30Frames(::google::protobuf::RpcController* controller,
                          const ::AttributeDelta30FramesS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncAttribute30Frames() not implemented.");
   done->Run();
 }
-void EntitySyncService::SyncAttribute60Frames(::google::protobuf::RpcController* controller,
+void PlayerSyncService::SyncAttribute60Frames(::google::protobuf::RpcController* controller,
                          const ::AttributeDelta60FramesS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncAttribute60Frames() not implemented.");
   done->Run();
 }
 
-void EntitySyncService::CallMethod(
+void PlayerSyncService::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -1824,7 +1824,7 @@ void EntitySyncService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& EntitySyncService::GetRequestPrototype(
+const ::google::protobuf::Message& PlayerSyncService::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -1848,7 +1848,7 @@ const ::google::protobuf::Message& EntitySyncService::GetRequestPrototype(
   }
 }
 
-const ::google::protobuf::Message& EntitySyncService::GetResponsePrototype(
+const ::google::protobuf::Message& PlayerSyncService::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -1872,51 +1872,51 @@ const ::google::protobuf::Message& EntitySyncService::GetResponsePrototype(
   }
 }
 
-EntitySyncService_Stub::EntitySyncService_Stub(::google::protobuf::RpcChannel* channel)
+PlayerSyncService_Stub::PlayerSyncService_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-EntitySyncService_Stub::EntitySyncService_Stub(
+PlayerSyncService_Stub::PlayerSyncService_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-EntitySyncService_Stub::~EntitySyncService_Stub() {
+PlayerSyncService_Stub::~PlayerSyncService_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void EntitySyncService_Stub::SyncBaseAttribute(::google::protobuf::RpcController* controller,
+void PlayerSyncService_Stub::SyncBaseAttribute(::google::protobuf::RpcController* controller,
                               const ::BaseAttributeSyncDataS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void EntitySyncService_Stub::SyncAttribute2Frames(::google::protobuf::RpcController* controller,
+void PlayerSyncService_Stub::SyncAttribute2Frames(::google::protobuf::RpcController* controller,
                               const ::AttributeDelta2FramesS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
-void EntitySyncService_Stub::SyncAttribute5Frames(::google::protobuf::RpcController* controller,
+void PlayerSyncService_Stub::SyncAttribute5Frames(::google::protobuf::RpcController* controller,
                               const ::AttributeDelta5FramesS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
-void EntitySyncService_Stub::SyncAttribute10Frames(::google::protobuf::RpcController* controller,
+void PlayerSyncService_Stub::SyncAttribute10Frames(::google::protobuf::RpcController* controller,
                               const ::AttributeDelta10FramesS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(3), controller,
                        request, response, done);
 }
-void EntitySyncService_Stub::SyncAttribute30Frames(::google::protobuf::RpcController* controller,
+void PlayerSyncService_Stub::SyncAttribute30Frames(::google::protobuf::RpcController* controller,
                               const ::AttributeDelta30FramesS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(4), controller,
                        request, response, done);
 }
-void EntitySyncService_Stub::SyncAttribute60Frames(::google::protobuf::RpcController* controller,
+void PlayerSyncService_Stub::SyncAttribute60Frames(::google::protobuf::RpcController* controller,
                               const ::AttributeDelta60FramesS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(5), controller,
