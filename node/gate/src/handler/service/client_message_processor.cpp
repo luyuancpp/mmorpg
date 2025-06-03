@@ -302,16 +302,15 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
 	auto& session = sessionIt->second;
     if (!CheckMessageLimit(session, request, conn)) return;
 
+	if (!gClientToServerMessageId.contains(request->message_id())) {
+		LOG_ERROR << "Client sent an invalid message: message ID not allowed - " << request->message_id();
+		return;
+	}
+
 	auto& messageInfo = gMessageInfo[request->message_id()];
     if (messageInfo.protocolType == PROTOCOL_TCP){
 		HandleTcpNodeMessage(session, request, sessionId, conn);
     }else if (messageInfo.protocolType == PROTOCOL_GRPC){
         HandleLoginNodeMessage(sessionId, request, conn);
     }
-
-	
-	if (gClientToServerMessageId.contains(request->message_id())) {
-	}
-	else {
-	}
 }
