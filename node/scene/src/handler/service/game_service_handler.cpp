@@ -25,7 +25,6 @@
 #include "thread_local/storage_common_logic.h"
 #include "thread_local/storage_game.h"
 #include "type_alias/player_session_type_alias.h"
-#include "util/pb.h"
 #include "util/proto_field_checker.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;

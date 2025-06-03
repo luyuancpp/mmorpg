@@ -11,7 +11,6 @@
     <ClCompile Include="src\message_limiter\message_limiter.cpp" />
     <ClCompile Include="src\node\system\node.cpp" />
     <ClCompile Include="src\node\system\node_system.cpp" />
-    <ClCompile Include="src\node\system\grpc_client_system.cpp" />
     <ClCompile Include="src\node\system\etcd_helper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -39,7 +38,8 @@
     <ClInclude Include="src\node\system\node.h" />
     <ClInclude Include="src\node\comp\node_comp.h" />
     <ClInclude Include="src\node\system\node_system.h" />
-    <ClInclude Include="src\node\system\grpc_client_system.h" />
     <ClInclude Include="src\node\system\etcd_helper.h" />
+    <ClInclude Include="src\service\player_service.h" />
+    <ClInclude Include="src\service\player_service_replied.h" />
   </ItemGroup>
 </Project>
