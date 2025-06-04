@@ -220,9 +220,9 @@ func BuildProtoGoLogin(protoPath string) (err error) {
 			continue
 		}
 
-		if !(strings.Contains(protoPath, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-			strings.Contains(protoPath, config.ProtoDirectoryNames[config.LogicComponentProtoDirIndex]) ||
-			strings.Contains(protoPath, config.ProtoDirectoryNames[config.ConstantsDirIndex])) {
+		if !(util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.LoginProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex)) {
 			return
 		}
 
@@ -291,9 +291,10 @@ func BuildProtoGoDb(protoPath string) (err error) {
 		}
 
 		// Skip if the directory path does not match specific criteria
-		if !(strings.Contains(protoPath, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
-			strings.Contains(protoPath, config.ProtoDirectoryNames[config.LogicComponentProtoDirIndex]) ||
-			strings.Contains(protoPath, config.ProtoDirectoryNames[config.ConstantsDirIndex])) {
+		if !(util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.DbProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex)) {
 			return
 		}
 
