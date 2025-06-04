@@ -1,7 +1,9 @@
-package clientplayerloginlogic
+package loginservicelogic
 
 import (
 	"context"
+	"login/data"
+	"strconv"
 
 	"login/internal/svc"
 	"login/pb/game"
@@ -24,7 +26,7 @@ func NewLeaveGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LeaveGa
 }
 
 func (l *LeaveGameLogic) LeaveGame(in *game.LeaveGameC2LRequest) (*game.Empty, error) {
-	// todo: add your logic here and delete this line
-
+	sessionId := strconv.FormatUint(in.SessionId, 10)
+	data.SessionList.Remove(sessionId)
 	return &game.Empty{}, nil
 }
