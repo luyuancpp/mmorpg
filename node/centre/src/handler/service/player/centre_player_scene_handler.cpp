@@ -18,6 +18,7 @@
 ///<<< END WRITING YOUR CODE
 
 
+
 void CentrePlayerSceneServiceHandler::EnterScene(entt::entity player,const ::CentreEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -40,6 +41,7 @@ void CentrePlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Cen
 	LOG_INFO << "EnterScene request processed successfully for player: " << tls.registry.get<Guid>(player);
 ///<<< END WRITING YOUR CODE
 
+
 }
 
 
@@ -49,6 +51,7 @@ void CentrePlayerSceneServiceHandler::LeaveScene(entt::entity player,const ::Cen
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 
 }
 
@@ -95,6 +98,7 @@ void CentrePlayerSceneServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tls.registry.get<Guid>(player);
 ///<<< END WRITING YOUR CODE
 
+
 }
 
 
@@ -113,7 +117,7 @@ void CentrePlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,const ::C
 	SendMessageToPlayer(ClientPlayerSceneServiceNotifySceneInfoMessageId, message, player);
 ///<<< END WRITING YOUR CODE
 
-}
 
+}
 
 

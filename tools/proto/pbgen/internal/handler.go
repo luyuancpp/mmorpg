@@ -25,6 +25,9 @@ func writeHandlerHeadFile(methodList RPCMethods, cfg HandlerConfig) {
 	}
 
 	first := methodList[0]
+	if !first.CcGenericServices() {
+		return
+	}
 	fileName := first.FileNameNoEx() + cfg.HeaderExt
 	fullPath := cfg.Dir + fileName
 
@@ -44,6 +47,9 @@ func writeHandlerCppFile(methodList RPCMethods, cfg HandlerConfig) {
 	}
 
 	first := methodList[0]
+	if !first.CcGenericServices() {
+		return
+	}
 	fileName := strings.ToLower(first.FileNameNoEx()) + cfg.CppExt
 	fullPath := cfg.CppDir + fileName
 
