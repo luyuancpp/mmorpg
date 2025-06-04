@@ -42,6 +42,10 @@ func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
+	if !firstMethodInfo.CcGenericServices() {
+		return false
+	}
+
 	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.CenterProtoDirIndex) {
 		return false
 	}
