@@ -223,6 +223,7 @@ func BuildProtoGoLogin(protoPath string) (err error) {
 		if !(util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
 			util.IsPathInProtoDirs(protoPath, config.LoginProtoDirIndex) ||
 			util.IsPathInProtoDirs(protoPath, config.DbProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.CenterProtoDirIndex) ||
 			util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
 			util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex)) {
 			return
