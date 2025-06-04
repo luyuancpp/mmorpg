@@ -114,7 +114,7 @@ func (s *ReleaseSkill) OnTick(tick *Tick) b3.Status {
 	rq.TargetId = tick.Blackboard.GetUInt64(HatredTargetBoardKey, "", "")
 
 	zap.L().Info("Sending skill release request", zap.Uint32("SkillTableId", rq.SkillTableId))
-	client.Send(rq, game.PlayerSkillServiceReleaseSkillMessageId)
+	client.Send(rq, game.ClientPlayerSkillServiceReleaseSkillMessageId)
 
 	return b3.SUCCESS
 }
