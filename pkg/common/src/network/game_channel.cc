@@ -186,7 +186,7 @@ void GameChannel::CallRemoteMethod(const uint32_t messageId, const ProtobufMessa
         return;
     }
 
-    LOG_DEBUG << "Sending remote method call, message ID: " << messageId;
+    LOG_TRACE << "Sending remote method call, message ID: " << messageId;
     SendGameRpcMessage(rpcMessage);
 }
 
@@ -202,7 +202,6 @@ void GameChannel::RouteMessageToNode(uint32_t messageId, const ProtobufMessage& 
 
 // 处理接收到的消息
 void GameChannel::HandleIncomingMessage(const TcpConnectionPtr& connection, muduo::net::Buffer* buffer, muduo::Timestamp receiveTime) {
-    LOG_DEBUG << "Incoming message from connection: " << connection->getTcpInfoString();
     codec_.onMessage(connection, buffer, receiveTime);
 }
 
@@ -259,7 +258,7 @@ void GameChannel::HandleResponseMessage(const TcpConnectionPtr& conn, const Game
         return;
     }
 
-    LOG_DEBUG << "Dispatching response for message ID: " << rpcMessage.message_id();
+    LOG_TRACE << "Dispatching response for message ID: " << rpcMessage.message_id();
     gResponseDispatcher.onProtobufMessage(rpcMessage.message_id(), conn, response, receiveTime);
 }
 
