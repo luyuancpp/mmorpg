@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"robot/pb/game"
 	"robot/logic/gameobject"
+	"robot/pb/game"
 )
 
-func GameClientPlayerCommonServiceKickPlayerHandler(player *gameobject.Player, response *game.::GameKickPlayerRequest) {
+func GameClientPlayerCommonServiceKickPlayerHandler(player *gameobject.Player, response *game.GameKickPlayerRequest) {
 }

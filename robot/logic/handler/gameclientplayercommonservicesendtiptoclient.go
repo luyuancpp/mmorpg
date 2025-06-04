@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"robot/pb/game"
 	"robot/logic/gameobject"
+	"robot/pb/game"
 )
 
-func GameClientPlayerCommonServiceSendTipToClientHandler(player *gameobject.Player, response *game.::TipInfoMessage) {
+func GameClientPlayerCommonServiceSendTipToClientHandler(player *gameobject.Player, response *game.TipInfoMessage) {
 }
