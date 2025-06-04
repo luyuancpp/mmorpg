@@ -202,3 +202,13 @@ message RegisterNodeSessionResponse {
     TipInfoMessage error_message = 4;  // 错误消息（可选）
     NodeInfo peer_node = 1;              // 对方的节点信息（返回的是对方）
 }
+
+message ClientRequest
+{
+  uint64 id = 1;
+  string service = 2;
+  string method = 3;
+  bytes body = 4;
+  uint32 message_id = 5;
+}
+

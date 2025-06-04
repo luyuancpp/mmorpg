@@ -22,22 +22,22 @@ func NewClientPlayerLoginServer(svcCtx *svc.ServiceContext) *ClientPlayerLoginSe
 	}
 }
 
-func (s *ClientPlayerLoginServer) Login(ctx context.Context, in *game.LoginC2LRequest) (*game.LoginC2LResponse, error) {
+func (s *ClientPlayerLoginServer) Login(ctx context.Context, in *game.LoginRequest) (*game.LoginResponse, error) {
 	l := clientplayerloginlogic.NewLoginLogic(ctx, s.svcCtx)
 	return l.Login(in)
 }
 
-func (s *ClientPlayerLoginServer) CreatePlayer(ctx context.Context, in *game.CreatePlayerC2LRequest) (*game.CreatePlayerC2LResponse, error) {
+func (s *ClientPlayerLoginServer) CreatePlayer(ctx context.Context, in *game.CreatePlayerRequest) (*game.CreatePlayerResponse, error) {
 	l := clientplayerloginlogic.NewCreatePlayerLogic(ctx, s.svcCtx)
 	return l.CreatePlayer(in)
 }
 
-func (s *ClientPlayerLoginServer) EnterGame(ctx context.Context, in *game.EnterGameC2LRequest) (*game.EnterGameC2LResponse, error) {
+func (s *ClientPlayerLoginServer) EnterGame(ctx context.Context, in *game.EnterGameRequest) (*game.EnterGameResponse, error) {
 	l := clientplayerloginlogic.NewEnterGameLogic(ctx, s.svcCtx)
 	return l.EnterGame(in)
 }
 
-func (s *ClientPlayerLoginServer) LeaveGame(ctx context.Context, in *game.LeaveGameC2LRequest) (*game.Empty, error) {
+func (s *ClientPlayerLoginServer) LeaveGame(ctx context.Context, in *game.LeaveGameRequest) (*game.Empty, error) {
 	l := clientplayerloginlogic.NewLeaveGameLogic(ctx, s.svcCtx)
 	return l.LeaveGame(in)
 }

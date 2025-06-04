@@ -242,13 +242,15 @@ func (info *MethodInfo) CppResponse() string {
 }
 
 func (info *MethodInfo) GoRequest() string {
-	// 获取 InputType
+	// 获取 inputType
 	inputType := info.MethodDescriptorProto.GetInputType()
 
-	// 将 InputType 中的点（.）替换为双冒号（::）
-	updatedInputType := strings.Replace(inputType, ".", "", -1)
-
-	return updatedInputType
+	// .package.TypeName => 提取 TypeName
+	lastDot := strings.LastIndex(inputType, ".")
+	if lastDot >= 0 && lastDot < len(inputType)-1 {
+		return inputType[lastDot+1:]
+	}
+	return inputType
 }
 
 func (info *MethodInfo) GoResponse() string {

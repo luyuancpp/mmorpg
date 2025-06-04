@@ -31,7 +31,7 @@ func (c *CreatePlayer) OnTick(tick *Tick) b3.Status {
 	}
 
 	rq := &game.CreatePlayerRequest{}
-	client.Send(rq, game.LoginServiceCreatePlayerMessageId)
+	client.Send(rq, game.ClientPlayerLoginCreatePlayerMessageId)
 	return b3.SUCCESS
 }
 
@@ -96,7 +96,7 @@ func (p *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 
 	// 发送请求
 	rq := &game.EnterGameRequest{PlayerId: playerId}
-	client.Send(rq, game.LoginServiceEnterGameMessageId)
+	client.Send(rq, game.ClientPlayerLoginEnterGameMessageId)
 
 	return b3.SUCCESS
 }

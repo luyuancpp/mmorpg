@@ -36,7 +36,7 @@ void AsyncCompleteGrpcClientPlayerLoginLogin(entt::registry& registry, entt::ent
     }
 }
 
-void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginC2LRequest& request) {
+void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginRequest& request) {
 
     AsyncClientPlayerLoginLoginGrpcClientCall* call = new AsyncClientPlayerLoginLoginGrpcClientCall;
     call->response_reader = registry
@@ -48,7 +48,7 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
 
 }
 
-void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginC2LRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
     AsyncClientPlayerLoginLoginGrpcClientCall* call = new AsyncClientPlayerLoginLoginGrpcClientCall;
 
@@ -67,7 +67,7 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
 }
 
 void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-	const ::loginpb::LoginC2LRequest& derived = static_cast<const ::loginpb::LoginC2LRequest&>(message);
+	const ::loginpb::LoginRequest& derived = static_cast<const ::loginpb::LoginRequest&>(message);
 	SendClientPlayerLoginLogin(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
@@ -105,7 +105,7 @@ void AsyncCompleteGrpcClientPlayerLoginCreatePlayer(entt::registry& registry, en
     }
 }
 
-void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerC2LRequest& request) {
+void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerRequest& request) {
 
     AsyncClientPlayerLoginCreatePlayerGrpcClientCall* call = new AsyncClientPlayerLoginCreatePlayerGrpcClientCall;
     call->response_reader = registry
@@ -117,7 +117,7 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
 
 }
 
-void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerC2LRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
     AsyncClientPlayerLoginCreatePlayerGrpcClientCall* call = new AsyncClientPlayerLoginCreatePlayerGrpcClientCall;
 
@@ -136,7 +136,7 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
 }
 
 void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-	const ::loginpb::CreatePlayerC2LRequest& derived = static_cast<const ::loginpb::CreatePlayerC2LRequest&>(message);
+	const ::loginpb::CreatePlayerRequest& derived = static_cast<const ::loginpb::CreatePlayerRequest&>(message);
 	SendClientPlayerLoginCreatePlayer(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
@@ -174,7 +174,7 @@ void AsyncCompleteGrpcClientPlayerLoginEnterGame(entt::registry& registry, entt:
     }
 }
 
-void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameC2LRequest& request) {
+void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameRequest& request) {
 
     AsyncClientPlayerLoginEnterGameGrpcClientCall* call = new AsyncClientPlayerLoginEnterGameGrpcClientCall;
     call->response_reader = registry
@@ -186,7 +186,7 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
 
 }
 
-void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameC2LRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
     AsyncClientPlayerLoginEnterGameGrpcClientCall* call = new AsyncClientPlayerLoginEnterGameGrpcClientCall;
 
@@ -205,7 +205,7 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
 }
 
 void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-	const ::loginpb::EnterGameC2LRequest& derived = static_cast<const ::loginpb::EnterGameC2LRequest&>(message);
+	const ::loginpb::EnterGameRequest& derived = static_cast<const ::loginpb::EnterGameRequest&>(message);
 	SendClientPlayerLoginEnterGame(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
@@ -243,7 +243,7 @@ void AsyncCompleteGrpcClientPlayerLoginLeaveGame(entt::registry& registry, entt:
     }
 }
 
-void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameC2LRequest& request) {
+void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameRequest& request) {
 
     AsyncClientPlayerLoginLeaveGameGrpcClientCall* call = new AsyncClientPlayerLoginLeaveGameGrpcClientCall;
     call->response_reader = registry
@@ -255,7 +255,7 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
 
 }
 
-void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameC2LRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
     AsyncClientPlayerLoginLeaveGameGrpcClientCall* call = new AsyncClientPlayerLoginLeaveGameGrpcClientCall;
 
@@ -274,7 +274,7 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
 }
 
 void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-	const ::loginpb::LeaveGameC2LRequest& derived = static_cast<const ::loginpb::LeaveGameC2LRequest&>(message);
+	const ::loginpb::LeaveGameRequest& derived = static_cast<const ::loginpb::LeaveGameRequest&>(message);
 	SendClientPlayerLoginLeaveGame(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion

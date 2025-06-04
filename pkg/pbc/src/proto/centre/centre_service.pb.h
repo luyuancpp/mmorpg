@@ -34,8 +34,8 @@
 #include "proto/common/common.pb.h"
 #include "proto/common/empty.pb.h"
 #include "proto/common/session.pb.h"
-#include "proto/common/c2gate.pb.h"
 #include "proto/common/message.pb.h"
+#include "proto/common/tip.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -58,6 +58,15 @@ struct TableStruct_proto_2fcentre_2fcentre_5fservice_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto;
+class CentreEnterGameRequest;
+struct CentreEnterGameRequestDefaultTypeInternal;
+extern CentreEnterGameRequestDefaultTypeInternal _CentreEnterGameRequest_default_instance_;
+class CentreLoginRequest;
+struct CentreLoginRequestDefaultTypeInternal;
+extern CentreLoginRequestDefaultTypeInternal _CentreLoginRequest_default_instance_;
+class CentreLoginResponse;
+struct CentreLoginResponseDefaultTypeInternal;
+extern CentreLoginResponseDefaultTypeInternal _CentreLoginResponse_default_instance_;
 class CentrePlayerGameNodeEntryRequest;
 struct CentrePlayerGameNodeEntryRequestDefaultTypeInternal;
 extern CentrePlayerGameNodeEntryRequestDefaultTypeInternal _CentrePlayerGameNodeEntryRequest_default_instance_;
@@ -290,7 +299,7 @@ class InitSceneNodeRequest final
     return reinterpret_cast<const InitSceneNodeRequest*>(
         &_InitSceneNodeRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 5;
   friend void swap(InitSceneNodeRequest& a, InitSceneNodeRequest& b) { a.Swap(&b); }
   inline void Swap(InitSceneNodeRequest* other) {
     if (other == this) return;
@@ -636,6 +645,412 @@ class EnterGameNodeSuccessRequest final
 };
 // -------------------------------------------------------------------
 
+class CentreLoginRequest final
+    : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:CentreLoginRequest) */ {
+ public:
+  inline CentreLoginRequest() : CentreLoginRequest(nullptr) {}
+  ~CentreLoginRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(CentreLoginRequest* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(CentreLoginRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR CentreLoginRequest(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline CentreLoginRequest(const CentreLoginRequest& from) : CentreLoginRequest(nullptr, from) {}
+  inline CentreLoginRequest(CentreLoginRequest&& from) noexcept
+      : CentreLoginRequest(nullptr, std::move(from)) {}
+  inline CentreLoginRequest& operator=(const CentreLoginRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline CentreLoginRequest& operator=(CentreLoginRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const CentreLoginRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const CentreLoginRequest* internal_default_instance() {
+    return reinterpret_cast<const CentreLoginRequest*>(
+        &_CentreLoginRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 6;
+  friend void swap(CentreLoginRequest& a, CentreLoginRequest& b) { a.Swap(&b); }
+  inline void Swap(CentreLoginRequest* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(CentreLoginRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  CentreLoginRequest* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<CentreLoginRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const CentreLoginRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const CentreLoginRequest& from) { CentreLoginRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(CentreLoginRequest* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "CentreLoginRequest"; }
+
+ protected:
+  explicit CentreLoginRequest(::google::protobuf::Arena* arena);
+  CentreLoginRequest(::google::protobuf::Arena* arena, const CentreLoginRequest& from);
+  CentreLoginRequest(::google::protobuf::Arena* arena, CentreLoginRequest&& from) noexcept
+      : CentreLoginRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kAccountFieldNumber = 1,
+    kPasswordFieldNumber = 2,
+  };
+  // string account = 1;
+  void clear_account() ;
+  const std::string& account() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_account(Arg_&& arg, Args_... args);
+  std::string* mutable_account();
+  PROTOBUF_NODISCARD std::string* release_account();
+  void set_allocated_account(std::string* value);
+
+  private:
+  const std::string& _internal_account() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_account(
+      const std::string& value);
+  std::string* _internal_mutable_account();
+
+  public:
+  // string password = 2;
+  void clear_password() ;
+  const std::string& password() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_password(Arg_&& arg, Args_... args);
+  std::string* mutable_password();
+  PROTOBUF_NODISCARD std::string* release_password();
+  void set_allocated_password(std::string* value);
+
+  private:
+  const std::string& _internal_password() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_password(
+      const std::string& value);
+  std::string* _internal_mutable_password();
+
+  public:
+  // @@protoc_insertion_point(class_scope:CentreLoginRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      1, 2, 0,
+      42, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const CentreLoginRequest& from_msg);
+    ::google::protobuf::internal::ArenaStringPtr account_;
+    ::google::protobuf::internal::ArenaStringPtr password_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcentre_2fcentre_5fservice_2eproto;
+};
+// -------------------------------------------------------------------
+
+class CentreEnterGameRequest final
+    : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:CentreEnterGameRequest) */ {
+ public:
+  inline CentreEnterGameRequest() : CentreEnterGameRequest(nullptr) {}
+  ~CentreEnterGameRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(CentreEnterGameRequest* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(CentreEnterGameRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR CentreEnterGameRequest(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline CentreEnterGameRequest(const CentreEnterGameRequest& from) : CentreEnterGameRequest(nullptr, from) {}
+  inline CentreEnterGameRequest(CentreEnterGameRequest&& from) noexcept
+      : CentreEnterGameRequest(nullptr, std::move(from)) {}
+  inline CentreEnterGameRequest& operator=(const CentreEnterGameRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline CentreEnterGameRequest& operator=(CentreEnterGameRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const CentreEnterGameRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const CentreEnterGameRequest* internal_default_instance() {
+    return reinterpret_cast<const CentreEnterGameRequest*>(
+        &_CentreEnterGameRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 3;
+  friend void swap(CentreEnterGameRequest& a, CentreEnterGameRequest& b) { a.Swap(&b); }
+  inline void Swap(CentreEnterGameRequest* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(CentreEnterGameRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  CentreEnterGameRequest* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<CentreEnterGameRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const CentreEnterGameRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const CentreEnterGameRequest& from) { CentreEnterGameRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(CentreEnterGameRequest* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "CentreEnterGameRequest"; }
+
+ protected:
+  explicit CentreEnterGameRequest(::google::protobuf::Arena* arena);
+  CentreEnterGameRequest(::google::protobuf::Arena* arena, const CentreEnterGameRequest& from);
+  CentreEnterGameRequest(::google::protobuf::Arena* arena, CentreEnterGameRequest&& from) noexcept
+      : CentreEnterGameRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPlayerIdFieldNumber = 1,
+  };
+  // uint64 player_id = 1;
+  void clear_player_id() ;
+  ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:CentreEnterGameRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 0,
+      0, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const CentreEnterGameRequest& from_msg);
+    ::uint64_t player_id_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcentre_2fcentre_5fservice_2eproto;
+};
+// -------------------------------------------------------------------
+
 class GateClientMessageRequest final
     : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:GateClientMessageRequest) */ {
@@ -893,7 +1308,7 @@ class CentrePlayerGameNodeEntryRequest final
     return reinterpret_cast<const CentrePlayerGameNodeEntryRequest*>(
         &_CentrePlayerGameNodeEntryRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(CentrePlayerGameNodeEntryRequest& a, CentrePlayerGameNodeEntryRequest& b) { a.Swap(&b); }
   inline void Swap(CentrePlayerGameNodeEntryRequest* other) {
     if (other == this) return;
@@ -983,19 +1398,19 @@ class CentrePlayerGameNodeEntryRequest final
     kClientMsgBodyFieldNumber = 1,
     kSessionInfoFieldNumber = 2,
   };
-  // .EnterGameRequest client_msg_body = 1;
+  // .CentreEnterGameRequest client_msg_body = 1;
   bool has_client_msg_body() const;
   void clear_client_msg_body() ;
-  const ::EnterGameRequest& client_msg_body() const;
-  PROTOBUF_NODISCARD ::EnterGameRequest* release_client_msg_body();
-  ::EnterGameRequest* mutable_client_msg_body();
-  void set_allocated_client_msg_body(::EnterGameRequest* value);
-  void unsafe_arena_set_allocated_client_msg_body(::EnterGameRequest* value);
-  ::EnterGameRequest* unsafe_arena_release_client_msg_body();
+  const ::CentreEnterGameRequest& client_msg_body() const;
+  PROTOBUF_NODISCARD ::CentreEnterGameRequest* release_client_msg_body();
+  ::CentreEnterGameRequest* mutable_client_msg_body();
+  void set_allocated_client_msg_body(::CentreEnterGameRequest* value);
+  void unsafe_arena_set_allocated_client_msg_body(::CentreEnterGameRequest* value);
+  ::CentreEnterGameRequest* unsafe_arena_release_client_msg_body();
 
   private:
-  const ::EnterGameRequest& _internal_client_msg_body() const;
-  ::EnterGameRequest* _internal_mutable_client_msg_body();
+  const ::CentreEnterGameRequest& _internal_client_msg_body() const;
+  ::CentreEnterGameRequest* _internal_mutable_client_msg_body();
 
   public:
   // .SessionDetails session_info = 2;
@@ -1038,8 +1453,205 @@ class CentrePlayerGameNodeEntryRequest final
                           const CentrePlayerGameNodeEntryRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::EnterGameRequest* client_msg_body_;
+    ::CentreEnterGameRequest* client_msg_body_;
     ::SessionDetails* session_info_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcentre_2fcentre_5fservice_2eproto;
+};
+// -------------------------------------------------------------------
+
+class CentreLoginResponse final
+    : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:CentreLoginResponse) */ {
+ public:
+  inline CentreLoginResponse() : CentreLoginResponse(nullptr) {}
+  ~CentreLoginResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(CentreLoginResponse* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(CentreLoginResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR CentreLoginResponse(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline CentreLoginResponse(const CentreLoginResponse& from) : CentreLoginResponse(nullptr, from) {}
+  inline CentreLoginResponse(CentreLoginResponse&& from) noexcept
+      : CentreLoginResponse(nullptr, std::move(from)) {}
+  inline CentreLoginResponse& operator=(const CentreLoginResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline CentreLoginResponse& operator=(CentreLoginResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const CentreLoginResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const CentreLoginResponse* internal_default_instance() {
+    return reinterpret_cast<const CentreLoginResponse*>(
+        &_CentreLoginResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 7;
+  friend void swap(CentreLoginResponse& a, CentreLoginResponse& b) { a.Swap(&b); }
+  inline void Swap(CentreLoginResponse* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(CentreLoginResponse* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  CentreLoginResponse* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<CentreLoginResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const CentreLoginResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const CentreLoginResponse& from) { CentreLoginResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(CentreLoginResponse* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "CentreLoginResponse"; }
+
+ protected:
+  explicit CentreLoginResponse(::google::protobuf::Arena* arena);
+  CentreLoginResponse(::google::protobuf::Arena* arena, const CentreLoginResponse& from);
+  CentreLoginResponse(::google::protobuf::Arena* arena, CentreLoginResponse&& from) noexcept
+      : CentreLoginResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kErrorMessageFieldNumber = 1,
+  };
+  // .TipInfoMessage error_message = 1;
+  bool has_error_message() const;
+  void clear_error_message() ;
+  const ::TipInfoMessage& error_message() const;
+  PROTOBUF_NODISCARD ::TipInfoMessage* release_error_message();
+  ::TipInfoMessage* mutable_error_message();
+  void set_allocated_error_message(::TipInfoMessage* value);
+  void unsafe_arena_set_allocated_error_message(::TipInfoMessage* value);
+  ::TipInfoMessage* unsafe_arena_release_error_message();
+
+  private:
+  const ::TipInfoMessage& _internal_error_message() const;
+  ::TipInfoMessage* _internal_mutable_error_message();
+
+  public:
+  // @@protoc_insertion_point(class_scope:CentreLoginResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 1,
+      0, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const CentreLoginResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::TipInfoMessage* error_message_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1074,8 +1686,8 @@ class CentreService : public ::google::protobuf::Service {
                         ::Empty* response,
                         ::google::protobuf::Closure* done);
   virtual void LoginNodeAccountLogin(::google::protobuf::RpcController* controller,
-                        const ::LoginRequest* request,
-                        ::LoginResponse* response,
+                        const ::CentreLoginRequest* request,
+                        ::CentreLoginResponse* response,
                         ::google::protobuf::Closure* done);
   virtual void LoginNodeEnterGame(::google::protobuf::RpcController* controller,
                         const ::CentrePlayerGameNodeEntryRequest* request,
@@ -1153,8 +1765,8 @@ class CentreService_Stub final : public CentreService {
                         ::Empty* response,
                         ::google::protobuf::Closure* done) override;
   void LoginNodeAccountLogin(::google::protobuf::RpcController* controller,
-                        const ::LoginRequest* request,
-                        ::LoginResponse* response,
+                        const ::CentreLoginRequest* request,
+                        ::CentreLoginResponse* response,
                         ::google::protobuf::Closure* done) override;
   void LoginNodeEnterGame(::google::protobuf::RpcController* controller,
                         const ::CentrePlayerGameNodeEntryRequest* request,
@@ -1357,29 +1969,60 @@ inline void EnterGameNodeSuccessRequest::_internal_set_scene_node_id(::uint32_t 
 
 // -------------------------------------------------------------------
 
+// CentreEnterGameRequest
+
+// uint64 player_id = 1;
+inline void CentreEnterGameRequest::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+}
+inline ::uint64_t CentreEnterGameRequest::player_id() const {
+  // @@protoc_insertion_point(field_get:CentreEnterGameRequest.player_id)
+  return _internal_player_id();
+}
+inline void CentreEnterGameRequest::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  // @@protoc_insertion_point(field_set:CentreEnterGameRequest.player_id)
+}
+inline ::uint64_t CentreEnterGameRequest::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void CentreEnterGameRequest::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// -------------------------------------------------------------------
+
 // CentrePlayerGameNodeEntryRequest
 
-// .EnterGameRequest client_msg_body = 1;
+// .CentreEnterGameRequest client_msg_body = 1;
 inline bool CentrePlayerGameNodeEntryRequest::has_client_msg_body() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.client_msg_body_ != nullptr);
   return value;
 }
-inline const ::EnterGameRequest& CentrePlayerGameNodeEntryRequest::_internal_client_msg_body() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::EnterGameRequest* p = _impl_.client_msg_body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::EnterGameRequest&>(::_EnterGameRequest_default_instance_);
+inline void CentrePlayerGameNodeEntryRequest::clear_client_msg_body() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.client_msg_body_ != nullptr) _impl_.client_msg_body_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::EnterGameRequest& CentrePlayerGameNodeEntryRequest::client_msg_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::CentreEnterGameRequest& CentrePlayerGameNodeEntryRequest::_internal_client_msg_body() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::CentreEnterGameRequest* p = _impl_.client_msg_body_;
+  return p != nullptr ? *p : reinterpret_cast<const ::CentreEnterGameRequest&>(::_CentreEnterGameRequest_default_instance_);
+}
+inline const ::CentreEnterGameRequest& CentrePlayerGameNodeEntryRequest::client_msg_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:CentrePlayerGameNodeEntryRequest.client_msg_body)
   return _internal_client_msg_body();
 }
-inline void CentrePlayerGameNodeEntryRequest::unsafe_arena_set_allocated_client_msg_body(::EnterGameRequest* value) {
+inline void CentrePlayerGameNodeEntryRequest::unsafe_arena_set_allocated_client_msg_body(::CentreEnterGameRequest* value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.client_msg_body_);
   }
-  _impl_.client_msg_body_ = reinterpret_cast<::EnterGameRequest*>(value);
+  _impl_.client_msg_body_ = reinterpret_cast<::CentreEnterGameRequest*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -1387,11 +2030,11 @@ inline void CentrePlayerGameNodeEntryRequest::unsafe_arena_set_allocated_client_
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:CentrePlayerGameNodeEntryRequest.client_msg_body)
 }
-inline ::EnterGameRequest* CentrePlayerGameNodeEntryRequest::release_client_msg_body() {
+inline ::CentreEnterGameRequest* CentrePlayerGameNodeEntryRequest::release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::EnterGameRequest* released = _impl_.client_msg_body_;
+  ::CentreEnterGameRequest* released = _impl_.client_msg_body_;
   _impl_.client_msg_body_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -1406,38 +2049,38 @@ inline ::EnterGameRequest* CentrePlayerGameNodeEntryRequest::release_client_msg_
   }
   return released;
 }
-inline ::EnterGameRequest* CentrePlayerGameNodeEntryRequest::unsafe_arena_release_client_msg_body() {
+inline ::CentreEnterGameRequest* CentrePlayerGameNodeEntryRequest::unsafe_arena_release_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:CentrePlayerGameNodeEntryRequest.client_msg_body)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::EnterGameRequest* temp = _impl_.client_msg_body_;
+  ::CentreEnterGameRequest* temp = _impl_.client_msg_body_;
   _impl_.client_msg_body_ = nullptr;
   return temp;
 }
-inline ::EnterGameRequest* CentrePlayerGameNodeEntryRequest::_internal_mutable_client_msg_body() {
+inline ::CentreEnterGameRequest* CentrePlayerGameNodeEntryRequest::_internal_mutable_client_msg_body() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.client_msg_body_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::EnterGameRequest>(GetArena());
-    _impl_.client_msg_body_ = reinterpret_cast<::EnterGameRequest*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::CentreEnterGameRequest>(GetArena());
+    _impl_.client_msg_body_ = reinterpret_cast<::CentreEnterGameRequest*>(p);
   }
   return _impl_.client_msg_body_;
 }
-inline ::EnterGameRequest* CentrePlayerGameNodeEntryRequest::mutable_client_msg_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::CentreEnterGameRequest* CentrePlayerGameNodeEntryRequest::mutable_client_msg_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::EnterGameRequest* _msg = _internal_mutable_client_msg_body();
+  ::CentreEnterGameRequest* _msg = _internal_mutable_client_msg_body();
   // @@protoc_insertion_point(field_mutable:CentrePlayerGameNodeEntryRequest.client_msg_body)
   return _msg;
 }
-inline void CentrePlayerGameNodeEntryRequest::set_allocated_client_msg_body(::EnterGameRequest* value) {
+inline void CentrePlayerGameNodeEntryRequest::set_allocated_client_msg_body(::CentreEnterGameRequest* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.client_msg_body_);
+    delete (_impl_.client_msg_body_);
   }
 
   if (value != nullptr) {
-    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    ::google::protobuf::Arena* submessage_arena = (value)->GetArena();
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
@@ -1446,7 +2089,7 @@ inline void CentrePlayerGameNodeEntryRequest::set_allocated_client_msg_body(::En
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.client_msg_body_ = reinterpret_cast<::EnterGameRequest*>(value);
+  _impl_.client_msg_body_ = reinterpret_cast<::CentreEnterGameRequest*>(value);
   // @@protoc_insertion_point(field_set_allocated:CentrePlayerGameNodeEntryRequest.client_msg_body)
 }
 
@@ -1587,6 +2230,201 @@ inline ::uint32_t InitSceneNodeRequest::_internal_scene_node_type() const {
 inline void InitSceneNodeRequest::_internal_set_scene_node_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_node_type_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// CentreLoginRequest
+
+// string account = 1;
+inline void CentreLoginRequest::clear_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.account_.ClearToEmpty();
+}
+inline const std::string& CentreLoginRequest::account() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:CentreLoginRequest.account)
+  return _internal_account();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void CentreLoginRequest::set_account(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.account_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:CentreLoginRequest.account)
+}
+inline std::string* CentreLoginRequest::mutable_account() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_account();
+  // @@protoc_insertion_point(field_mutable:CentreLoginRequest.account)
+  return _s;
+}
+inline const std::string& CentreLoginRequest::_internal_account() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.account_.Get();
+}
+inline void CentreLoginRequest::_internal_set_account(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.account_.Set(value, GetArena());
+}
+inline std::string* CentreLoginRequest::_internal_mutable_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.account_.Mutable( GetArena());
+}
+inline std::string* CentreLoginRequest::release_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:CentreLoginRequest.account)
+  return _impl_.account_.Release();
+}
+inline void CentreLoginRequest::set_allocated_account(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.account_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.account_.IsDefault()) {
+    _impl_.account_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:CentreLoginRequest.account)
+}
+
+// string password = 2;
+inline void CentreLoginRequest::clear_password() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.password_.ClearToEmpty();
+}
+inline const std::string& CentreLoginRequest::password() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:CentreLoginRequest.password)
+  return _internal_password();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void CentreLoginRequest::set_password(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.password_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:CentreLoginRequest.password)
+}
+inline std::string* CentreLoginRequest::mutable_password() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_password();
+  // @@protoc_insertion_point(field_mutable:CentreLoginRequest.password)
+  return _s;
+}
+inline const std::string& CentreLoginRequest::_internal_password() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.password_.Get();
+}
+inline void CentreLoginRequest::_internal_set_password(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.password_.Set(value, GetArena());
+}
+inline std::string* CentreLoginRequest::_internal_mutable_password() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.password_.Mutable( GetArena());
+}
+inline std::string* CentreLoginRequest::release_password() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:CentreLoginRequest.password)
+  return _impl_.password_.Release();
+}
+inline void CentreLoginRequest::set_allocated_password(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.password_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.password_.IsDefault()) {
+    _impl_.password_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:CentreLoginRequest.password)
+}
+
+// -------------------------------------------------------------------
+
+// CentreLoginResponse
+
+// .TipInfoMessage error_message = 1;
+inline bool CentreLoginResponse::has_error_message() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
+  return value;
+}
+inline const ::TipInfoMessage& CentreLoginResponse::_internal_error_message() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::TipInfoMessage* p = _impl_.error_message_;
+  return p != nullptr ? *p : reinterpret_cast<const ::TipInfoMessage&>(::_TipInfoMessage_default_instance_);
+}
+inline const ::TipInfoMessage& CentreLoginResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:CentreLoginResponse.error_message)
+  return _internal_error_message();
+}
+inline void CentreLoginResponse::unsafe_arena_set_allocated_error_message(::TipInfoMessage* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:CentreLoginResponse.error_message)
+}
+inline ::TipInfoMessage* CentreLoginResponse::release_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::TipInfoMessage* released = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::TipInfoMessage* CentreLoginResponse::unsafe_arena_release_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:CentreLoginResponse.error_message)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::TipInfoMessage* temp = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+  return temp;
+}
+inline ::TipInfoMessage* CentreLoginResponse::_internal_mutable_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
+    _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(p);
+  }
+  return _impl_.error_message_;
+}
+inline ::TipInfoMessage* CentreLoginResponse::mutable_error_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::TipInfoMessage* _msg = _internal_mutable_error_message();
+  // @@protoc_insertion_point(field_mutable:CentreLoginResponse.error_message)
+  return _msg;
+}
+inline void CentreLoginResponse::set_allocated_error_message(::TipInfoMessage* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  // @@protoc_insertion_point(field_set_allocated:CentreLoginResponse.error_message)
 }
 
 #ifdef __GNUC__

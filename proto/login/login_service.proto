@@ -3,45 +3,60 @@ syntax = "proto3";
 option go_package = "pb/game";
 
 import "proto/common/empty.proto";
-import "proto/common/c2gate.proto";
 import "proto/common/session.proto";
+import "proto/common/tip.proto";
+import "proto/common/user_accounts.proto";
 
 package loginpb;
 
-message LoginC2LRequest
+message AccountSimplePlayerWrapper
 {
-  LoginRequest client_msg_body = 1;
-  SessionDetails session_info = 2;
+  AccountSimplePlayer player = 1;
 }
 
-message LoginC2LResponse
+message LoginRequest
 {
-  LoginResponse client_msg_body = 1;
-  SessionDetails session_info = 2;
+  string account = 1;
+  string password = 2;
 }
 
-message CreatePlayerC2LRequest
+message LoginResponse
 {
-  CreatePlayerRequest client_msg_body = 1;
-  SessionDetails session_info = 2;
+  TipInfoMessage error_message = 1;
+  repeated AccountSimplePlayerWrapper players = 2;
 }
 
-message EnterGameC2LRequest
+message TestResponse
 {
-  EnterGameRequest client_msg_body = 1;
-  SessionDetails session_info = 2;
+  TipInfoMessage error_message = 1;
+  repeated AccountSimplePlayerWrapper players = 2;
+  repeated string teststring = 3;
+  repeated int32 testint = 4;
 }
 
-message CreatePlayerC2LResponse
+message CreatePlayerRequest
 {
-  CreatePlayerResponse client_msg_body = 1; 
-  SessionDetails session_info = 4;
+	
 }
 
-message EnterGameC2LResponse
+message CreatePlayerResponse
 {
-  EnterGameResponse client_msg_body = 1; 
-  SessionDetails session_info = 4;
+	TipInfoMessage error_message = 1;
+	repeated AccountSimplePlayerWrapper players = 2;
+}
+
+message EnterGameRequest
+{
+	uint64 player_id  = 1;
+}
+
+message EnterGameResponse
+{
+	TipInfoMessage error_message = 1;
+}
+
+message LeaveGameRequest
+{
 }
 
 message LoginNodeDisconnectRequest
@@ -49,15 +64,10 @@ message LoginNodeDisconnectRequest
   uint64 session_id = 1;
 }
 
-message LeaveGameC2LRequest
-{
-  uint64 session_id = 1;
-}
-
 service ClientPlayerLogin  {
-  rpc Login (LoginC2LRequest) returns (LoginC2LResponse);
-  rpc CreatePlayer (CreatePlayerC2LRequest) returns (CreatePlayerC2LResponse);
-  rpc EnterGame (EnterGameC2LRequest) returns (EnterGameC2LResponse);
-  rpc LeaveGame (LeaveGameC2LRequest) returns (Empty);
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc CreatePlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
+  rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
+  rpc LeaveGame (LeaveGameRequest) returns (Empty);
   rpc Disconnect (LoginNodeDisconnectRequest) returns (Empty);
 }

@@ -9,6 +9,8 @@ using GrpcLoginStubPtr = std::unique_ptr<loginpb::ClientPlayerLogin::Stub>;
 void InitGrpcClientPlayerLoginResponseHandler() {
     {
         loginpb::AsyncClientPlayerLoginLoginHandler = [](const std::unique_ptr<loginpb::AsyncClientPlayerLoginLoginGrpcClientCall>& call) {
+            SessionDetails sessionDetails;
+            call->context.GetServerTrailingMetadata();
             auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {

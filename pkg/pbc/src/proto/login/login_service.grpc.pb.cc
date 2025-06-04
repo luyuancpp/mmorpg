@@ -43,92 +43,92 @@ ClientPlayerLogin::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& 
   , rpcmethod_Disconnect_(ClientPlayerLogin_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
-::grpc::Status ClientPlayerLogin::Stub::Login(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::loginpb::LoginC2LResponse* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::loginpb::LoginC2LRequest, ::loginpb::LoginC2LResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Login_, context, request, response);
+::grpc::Status ClientPlayerLogin::Stub::Login(::grpc::ClientContext* context, const ::loginpb::LoginRequest& request, ::loginpb::LoginResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::loginpb::LoginRequest, ::loginpb::LoginResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Login_, context, request, response);
 }
 
-void ClientPlayerLogin::Stub::async::Login(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest* request, ::loginpb::LoginC2LResponse* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::loginpb::LoginC2LRequest, ::loginpb::LoginC2LResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Login_, context, request, response, std::move(f));
+void ClientPlayerLogin::Stub::async::Login(::grpc::ClientContext* context, const ::loginpb::LoginRequest* request, ::loginpb::LoginResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::loginpb::LoginRequest, ::loginpb::LoginResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Login_, context, request, response, std::move(f));
 }
 
-void ClientPlayerLogin::Stub::async::Login(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest* request, ::loginpb::LoginC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+void ClientPlayerLogin::Stub::async::Login(::grpc::ClientContext* context, const ::loginpb::LoginRequest* request, ::loginpb::LoginResponse* response, ::grpc::ClientUnaryReactor* reactor) {
   ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Login_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::loginpb::LoginC2LResponse>* ClientPlayerLogin::Stub::PrepareAsyncLoginRaw(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::loginpb::LoginC2LResponse, ::loginpb::LoginC2LRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Login_, context, request);
+::grpc::ClientAsyncResponseReader< ::loginpb::LoginResponse>* ClientPlayerLogin::Stub::PrepareAsyncLoginRaw(::grpc::ClientContext* context, const ::loginpb::LoginRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::loginpb::LoginResponse, ::loginpb::LoginRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Login_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::loginpb::LoginC2LResponse>* ClientPlayerLogin::Stub::AsyncLoginRaw(::grpc::ClientContext* context, const ::loginpb::LoginC2LRequest& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::loginpb::LoginResponse>* ClientPlayerLogin::Stub::AsyncLoginRaw(::grpc::ClientContext* context, const ::loginpb::LoginRequest& request, ::grpc::CompletionQueue* cq) {
   auto* result =
     this->PrepareAsyncLoginRaw(context, request, cq);
   result->StartCall();
   return result;
 }
 
-::grpc::Status ClientPlayerLogin::Stub::CreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::loginpb::CreatePlayerC2LResponse* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::loginpb::CreatePlayerC2LRequest, ::loginpb::CreatePlayerC2LResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CreatePlayer_, context, request, response);
+::grpc::Status ClientPlayerLogin::Stub::CreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerRequest& request, ::loginpb::CreatePlayerResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::loginpb::CreatePlayerRequest, ::loginpb::CreatePlayerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CreatePlayer_, context, request, response);
 }
 
-void ClientPlayerLogin::Stub::async::CreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest* request, ::loginpb::CreatePlayerC2LResponse* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::loginpb::CreatePlayerC2LRequest, ::loginpb::CreatePlayerC2LResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreatePlayer_, context, request, response, std::move(f));
+void ClientPlayerLogin::Stub::async::CreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerRequest* request, ::loginpb::CreatePlayerResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::loginpb::CreatePlayerRequest, ::loginpb::CreatePlayerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreatePlayer_, context, request, response, std::move(f));
 }
 
-void ClientPlayerLogin::Stub::async::CreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest* request, ::loginpb::CreatePlayerC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+void ClientPlayerLogin::Stub::async::CreatePlayer(::grpc::ClientContext* context, const ::loginpb::CreatePlayerRequest* request, ::loginpb::CreatePlayerResponse* response, ::grpc::ClientUnaryReactor* reactor) {
   ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreatePlayer_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::loginpb::CreatePlayerC2LResponse>* ClientPlayerLogin::Stub::PrepareAsyncCreatePlayerRaw(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::loginpb::CreatePlayerC2LResponse, ::loginpb::CreatePlayerC2LRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CreatePlayer_, context, request);
+::grpc::ClientAsyncResponseReader< ::loginpb::CreatePlayerResponse>* ClientPlayerLogin::Stub::PrepareAsyncCreatePlayerRaw(::grpc::ClientContext* context, const ::loginpb::CreatePlayerRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::loginpb::CreatePlayerResponse, ::loginpb::CreatePlayerRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CreatePlayer_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::loginpb::CreatePlayerC2LResponse>* ClientPlayerLogin::Stub::AsyncCreatePlayerRaw(::grpc::ClientContext* context, const ::loginpb::CreatePlayerC2LRequest& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::loginpb::CreatePlayerResponse>* ClientPlayerLogin::Stub::AsyncCreatePlayerRaw(::grpc::ClientContext* context, const ::loginpb::CreatePlayerRequest& request, ::grpc::CompletionQueue* cq) {
   auto* result =
     this->PrepareAsyncCreatePlayerRaw(context, request, cq);
   result->StartCall();
   return result;
 }
 
-::grpc::Status ClientPlayerLogin::Stub::EnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::loginpb::EnterGameC2LResponse* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::loginpb::EnterGameC2LRequest, ::loginpb::EnterGameC2LResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_EnterGame_, context, request, response);
+::grpc::Status ClientPlayerLogin::Stub::EnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameRequest& request, ::loginpb::EnterGameResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::loginpb::EnterGameRequest, ::loginpb::EnterGameResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_EnterGame_, context, request, response);
 }
 
-void ClientPlayerLogin::Stub::async::EnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest* request, ::loginpb::EnterGameC2LResponse* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::loginpb::EnterGameC2LRequest, ::loginpb::EnterGameC2LResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_EnterGame_, context, request, response, std::move(f));
+void ClientPlayerLogin::Stub::async::EnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameRequest* request, ::loginpb::EnterGameResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::loginpb::EnterGameRequest, ::loginpb::EnterGameResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_EnterGame_, context, request, response, std::move(f));
 }
 
-void ClientPlayerLogin::Stub::async::EnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest* request, ::loginpb::EnterGameC2LResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+void ClientPlayerLogin::Stub::async::EnterGame(::grpc::ClientContext* context, const ::loginpb::EnterGameRequest* request, ::loginpb::EnterGameResponse* response, ::grpc::ClientUnaryReactor* reactor) {
   ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_EnterGame_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::loginpb::EnterGameC2LResponse>* ClientPlayerLogin::Stub::PrepareAsyncEnterGameRaw(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::loginpb::EnterGameC2LResponse, ::loginpb::EnterGameC2LRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_EnterGame_, context, request);
+::grpc::ClientAsyncResponseReader< ::loginpb::EnterGameResponse>* ClientPlayerLogin::Stub::PrepareAsyncEnterGameRaw(::grpc::ClientContext* context, const ::loginpb::EnterGameRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::loginpb::EnterGameResponse, ::loginpb::EnterGameRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_EnterGame_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::loginpb::EnterGameC2LResponse>* ClientPlayerLogin::Stub::AsyncEnterGameRaw(::grpc::ClientContext* context, const ::loginpb::EnterGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::loginpb::EnterGameResponse>* ClientPlayerLogin::Stub::AsyncEnterGameRaw(::grpc::ClientContext* context, const ::loginpb::EnterGameRequest& request, ::grpc::CompletionQueue* cq) {
   auto* result =
     this->PrepareAsyncEnterGameRaw(context, request, cq);
   result->StartCall();
   return result;
 }
 
-::grpc::Status ClientPlayerLogin::Stub::LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::loginpb::LeaveGameC2LRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LeaveGame_, context, request, response);
+::grpc::Status ClientPlayerLogin::Stub::LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameRequest& request, ::Empty* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::loginpb::LeaveGameRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LeaveGame_, context, request, response);
 }
 
-void ClientPlayerLogin::Stub::async::LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest* request, ::Empty* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::loginpb::LeaveGameC2LRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaveGame_, context, request, response, std::move(f));
+void ClientPlayerLogin::Stub::async::LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameRequest* request, ::Empty* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::loginpb::LeaveGameRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaveGame_, context, request, response, std::move(f));
 }
 
-void ClientPlayerLogin::Stub::async::LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
+void ClientPlayerLogin::Stub::async::LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
   ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaveGame_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::Empty>* ClientPlayerLogin::Stub::PrepareAsyncLeaveGameRaw(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::Empty, ::loginpb::LeaveGameC2LRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LeaveGame_, context, request);
+::grpc::ClientAsyncResponseReader< ::Empty>* ClientPlayerLogin::Stub::PrepareAsyncLeaveGameRaw(::grpc::ClientContext* context, const ::loginpb::LeaveGameRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::Empty, ::loginpb::LeaveGameRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LeaveGame_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::Empty>* ClientPlayerLogin::Stub::AsyncLeaveGameRaw(::grpc::ClientContext* context, const ::loginpb::LeaveGameC2LRequest& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::Empty>* ClientPlayerLogin::Stub::AsyncLeaveGameRaw(::grpc::ClientContext* context, const ::loginpb::LeaveGameRequest& request, ::grpc::CompletionQueue* cq) {
   auto* result =
     this->PrepareAsyncLeaveGameRaw(context, request, cq);
   result->StartCall();
@@ -162,40 +162,40 @@ ClientPlayerLogin::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       ClientPlayerLogin_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< ClientPlayerLogin::Service, ::loginpb::LoginC2LRequest, ::loginpb::LoginC2LResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerLogin::Service, ::loginpb::LoginRequest, ::loginpb::LoginResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](ClientPlayerLogin::Service* service,
              ::grpc::ServerContext* ctx,
-             const ::loginpb::LoginC2LRequest* req,
-             ::loginpb::LoginC2LResponse* resp) {
+             const ::loginpb::LoginRequest* req,
+             ::loginpb::LoginResponse* resp) {
                return service->Login(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       ClientPlayerLogin_method_names[1],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< ClientPlayerLogin::Service, ::loginpb::CreatePlayerC2LRequest, ::loginpb::CreatePlayerC2LResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerLogin::Service, ::loginpb::CreatePlayerRequest, ::loginpb::CreatePlayerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](ClientPlayerLogin::Service* service,
              ::grpc::ServerContext* ctx,
-             const ::loginpb::CreatePlayerC2LRequest* req,
-             ::loginpb::CreatePlayerC2LResponse* resp) {
+             const ::loginpb::CreatePlayerRequest* req,
+             ::loginpb::CreatePlayerResponse* resp) {
                return service->CreatePlayer(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       ClientPlayerLogin_method_names[2],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< ClientPlayerLogin::Service, ::loginpb::EnterGameC2LRequest, ::loginpb::EnterGameC2LResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerLogin::Service, ::loginpb::EnterGameRequest, ::loginpb::EnterGameResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](ClientPlayerLogin::Service* service,
              ::grpc::ServerContext* ctx,
-             const ::loginpb::EnterGameC2LRequest* req,
-             ::loginpb::EnterGameC2LResponse* resp) {
+             const ::loginpb::EnterGameRequest* req,
+             ::loginpb::EnterGameResponse* resp) {
                return service->EnterGame(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       ClientPlayerLogin_method_names[3],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< ClientPlayerLogin::Service, ::loginpb::LeaveGameC2LRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerLogin::Service, ::loginpb::LeaveGameRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](ClientPlayerLogin::Service* service,
              ::grpc::ServerContext* ctx,
-             const ::loginpb::LeaveGameC2LRequest* req,
+             const ::loginpb::LeaveGameRequest* req,
              ::Empty* resp) {
                return service->LeaveGame(ctx, req, resp);
              }, this)));
@@ -214,28 +214,28 @@ ClientPlayerLogin::Service::Service() {
 ClientPlayerLogin::Service::~Service() {
 }
 
-::grpc::Status ClientPlayerLogin::Service::Login(::grpc::ServerContext* context, const ::loginpb::LoginC2LRequest* request, ::loginpb::LoginC2LResponse* response) {
+::grpc::Status ClientPlayerLogin::Service::Login(::grpc::ServerContext* context, const ::loginpb::LoginRequest* request, ::loginpb::LoginResponse* response) {
   (void) context;
   (void) request;
   (void) response;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status ClientPlayerLogin::Service::CreatePlayer(::grpc::ServerContext* context, const ::loginpb::CreatePlayerC2LRequest* request, ::loginpb::CreatePlayerC2LResponse* response) {
+::grpc::Status ClientPlayerLogin::Service::CreatePlayer(::grpc::ServerContext* context, const ::loginpb::CreatePlayerRequest* request, ::loginpb::CreatePlayerResponse* response) {
   (void) context;
   (void) request;
   (void) response;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status ClientPlayerLogin::Service::EnterGame(::grpc::ServerContext* context, const ::loginpb::EnterGameC2LRequest* request, ::loginpb::EnterGameC2LResponse* response) {
+::grpc::Status ClientPlayerLogin::Service::EnterGame(::grpc::ServerContext* context, const ::loginpb::EnterGameRequest* request, ::loginpb::EnterGameResponse* response) {
   (void) context;
   (void) request;
   (void) response;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status ClientPlayerLogin::Service::LeaveGame(::grpc::ServerContext* context, const ::loginpb::LeaveGameC2LRequest* request, ::Empty* response) {
+::grpc::Status ClientPlayerLogin::Service::LeaveGame(::grpc::ServerContext* context, const ::loginpb::LeaveGameRequest* request, ::Empty* response) {
   (void) context;
   (void) request;
   (void) response;
