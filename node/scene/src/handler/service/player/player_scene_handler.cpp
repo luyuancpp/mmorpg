@@ -14,6 +14,7 @@
 ///<<< END WRITING YOUR CODE
 
 
+
 void ClientPlayerSceneServiceHandler::EnterScene(entt::entity player,const ::EnterSceneC2SRequest* request,
 	::EnterSceneC2SResponse* response)
 {
@@ -56,6 +57,7 @@ void ClientPlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Ent
 	LOG_TRACE << "EnterSceneC2S request processed successfully for player: " << tls.registry.get<Guid>(player);
 ///<<< END WRITING YOUR CODE
 
+
 }
 
 
@@ -65,6 +67,7 @@ void ClientPlayerSceneServiceHandler::NotifyEnterScene(entt::entity player,const
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 
 }
 
@@ -78,6 +81,7 @@ void ClientPlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,const ::S
     SendToCentrePlayerById(CentrePlayerSceneServiceSceneInfoC2SMessageId, rq, player);
 ///<<< END WRITING YOUR CODE
 
+
 }
 
 
@@ -87,6 +91,7 @@ void ClientPlayerSceneServiceHandler::NotifySceneInfo(entt::entity player,const 
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 
 }
 
@@ -98,6 +103,7 @@ void ClientPlayerSceneServiceHandler::NotifyActorCreate(entt::entity player,cons
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
+
 }
 
 
@@ -107,6 +113,7 @@ void ClientPlayerSceneServiceHandler::NotifyActorDestroy(entt::entity player,con
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 
 }
 
@@ -118,6 +125,7 @@ void ClientPlayerSceneServiceHandler::NotifyActorListCreate(entt::entity player,
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
+
 }
 
 
@@ -128,7 +136,7 @@ void ClientPlayerSceneServiceHandler::NotifyActorListDestroy(entt::entity player
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-}
 
+}
 
 

@@ -11,11 +11,13 @@
 ///<<< END WRITING YOUR CODE
 
 
+
 void ClientPlayerSkillServiceHandler::ReleaseSkill(entt::entity player,const ::ReleaseSkillSkillRequest* request,
 	::ReleaseSkillSkillResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 
 }
 
@@ -27,6 +29,7 @@ void ClientPlayerSkillServiceHandler::NotifySkillUsed(entt::entity player,const 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
+
 }
 
 
@@ -36,6 +39,7 @@ void ClientPlayerSkillServiceHandler::NotifySkillInterrupted(entt::entity player
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 
 }
 
@@ -47,7 +51,7 @@ void ClientPlayerSkillServiceHandler::GetSkillList(entt::entity player,const ::G
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-}
 
+}
 
 

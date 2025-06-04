@@ -19,7 +19,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 
 
-void InitGateServicePlayerEnterGameNodeRepliedHandler()
+void InitGateServiceRepliedHandler()
 {
     gResponseDispatcher.registerMessageCallback<::RegisterGameNodeSessionResponse>(GateServicePlayerEnterGameNodeMessageId,
         std::bind(&OnGateServicePlayerEnterGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
