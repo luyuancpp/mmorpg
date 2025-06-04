@@ -26,7 +26,6 @@
     <ClCompile Include="src\proto\centre\centre_player_scene.pb.cc" />
     <ClCompile Include="src\proto\centre\centre_scene.pb.cc" />
     <ClCompile Include="src\proto\centre\centre_service.pb.cc" />
-    <ClCompile Include="src\proto\common\c2gate.pb.cc" />
     <ClCompile Include="src\proto\common\common.pb.cc" />
     <ClCompile Include="src\proto\common\config.pb.cc" />
     <ClCompile Include="src\proto\common\empty.pb.cc" />
@@ -102,7 +101,6 @@
     <ClInclude Include="src\proto\centre\centre_player_scene.pb.h" />
     <ClInclude Include="src\proto\centre\centre_scene.pb.h" />
     <ClInclude Include="src\proto\centre\centre_service.pb.h" />
-    <ClInclude Include="src\proto\common\c2gate.pb.h" />
     <ClInclude Include="src\proto\common\common.pb.h" />
     <ClInclude Include="src\proto\common\config.pb.h" />
     <ClInclude Include="src\proto\common\empty.pb.h" />

@@ -13,20 +13,22 @@ import (
 )
 
 type (
-	CreatePlayerC2LRequest     = game.CreatePlayerC2LRequest
-	CreatePlayerC2LResponse    = game.CreatePlayerC2LResponse
-	EnterGameC2LRequest        = game.EnterGameC2LRequest
-	EnterGameC2LResponse       = game.EnterGameC2LResponse
-	LeaveGameC2LRequest        = game.LeaveGameC2LRequest
-	LoginC2LRequest            = game.LoginC2LRequest
-	LoginC2LResponse           = game.LoginC2LResponse
+	AccountSimplePlayerWrapper = game.AccountSimplePlayerWrapper
+	CreatePlayerRequest        = game.CreatePlayerRequest
+	CreatePlayerResponse       = game.CreatePlayerResponse
+	EnterGameRequest           = game.EnterGameRequest
+	EnterGameResponse          = game.EnterGameResponse
+	LeaveGameRequest           = game.LeaveGameRequest
 	LoginNodeDisconnectRequest = game.LoginNodeDisconnectRequest
+	LoginRequest               = game.LoginRequest
+	LoginResponse              = game.LoginResponse
+	TestResponse               = game.TestResponse
 
 	ClientPlayerLogin interface {
-		Login(ctx context.Context, in *LoginC2LRequest, opts ...grpc.CallOption) (*LoginC2LResponse, error)
-		CreatePlayer(ctx context.Context, in *CreatePlayerC2LRequest, opts ...grpc.CallOption) (*CreatePlayerC2LResponse, error)
-		EnterGame(ctx context.Context, in *EnterGameC2LRequest, opts ...grpc.CallOption) (*EnterGameC2LResponse, error)
-		LeaveGame(ctx context.Context, in *LeaveGameC2LRequest, opts ...grpc.CallOption) (*Empty, error)
+		Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+		CreatePlayer(ctx context.Context, in *CreatePlayerRequest, opts ...grpc.CallOption) (*CreatePlayerResponse, error)
+		EnterGame(ctx context.Context, in *EnterGameRequest, opts ...grpc.CallOption) (*EnterGameResponse, error)
+		LeaveGame(ctx context.Context, in *LeaveGameRequest, opts ...grpc.CallOption) (*Empty, error)
 		Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*Empty, error)
 	}
 
@@ -41,22 +43,22 @@ func NewClientPlayerLogin(cli zrpc.Client) ClientPlayerLogin {
 	}
 }
 
-func (m *defaultClientPlayerLogin) Login(ctx context.Context, in *LoginC2LRequest, opts ...grpc.CallOption) (*LoginC2LResponse, error) {
+func (m *defaultClientPlayerLogin) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
 	client := game.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.Login(ctx, in, opts...)
 }
 
-func (m *defaultClientPlayerLogin) CreatePlayer(ctx context.Context, in *CreatePlayerC2LRequest, opts ...grpc.CallOption) (*CreatePlayerC2LResponse, error) {
+func (m *defaultClientPlayerLogin) CreatePlayer(ctx context.Context, in *CreatePlayerRequest, opts ...grpc.CallOption) (*CreatePlayerResponse, error) {
 	client := game.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.CreatePlayer(ctx, in, opts...)
 }
 
-func (m *defaultClientPlayerLogin) EnterGame(ctx context.Context, in *EnterGameC2LRequest, opts ...grpc.CallOption) (*EnterGameC2LResponse, error) {
+func (m *defaultClientPlayerLogin) EnterGame(ctx context.Context, in *EnterGameRequest, opts ...grpc.CallOption) (*EnterGameResponse, error) {
 	client := game.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.EnterGame(ctx, in, opts...)
 }
 
-func (m *defaultClientPlayerLogin) LeaveGame(ctx context.Context, in *LeaveGameC2LRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (m *defaultClientPlayerLogin) LeaveGame(ctx context.Context, in *LeaveGameRequest, opts ...grpc.CallOption) (*Empty, error) {
 	client := game.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.LeaveGame(ctx, in, opts...)
 }

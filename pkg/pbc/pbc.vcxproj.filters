@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\proto\common\c2gate.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\common\common.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -239,9 +236,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\proto\common\c2gate.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\proto\common\common.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>

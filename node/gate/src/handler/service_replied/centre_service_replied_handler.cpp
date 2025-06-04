@@ -19,7 +19,7 @@ void InitCentreServiceRepliedHandler()
         std::bind(&OnCentreServiceGatePlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gResponseDispatcher.registerMessageCallback<::Empty>(CentreServiceGateSessionDisconnectMessageId,
         std::bind(&OnCentreServiceGateSessionDisconnectRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::LoginResponse>(CentreServiceLoginNodeAccountLoginMessageId,
+    gResponseDispatcher.registerMessageCallback<::CentreLoginResponse>(CentreServiceLoginNodeAccountLoginMessageId,
         std::bind(&OnCentreServiceLoginNodeAccountLoginRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gResponseDispatcher.registerMessageCallback<::Empty>(CentreServiceLoginNodeEnterGameMessageId,
         std::bind(&OnCentreServiceLoginNodeEnterGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -55,7 +55,7 @@ void OnCentreServiceGateSessionDisconnectRepliedHandler(const TcpConnectionPtr& 
 
 }
 
-void OnCentreServiceLoginNodeAccountLoginRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::LoginResponse>& replied, Timestamp timestamp)
+void OnCentreServiceLoginNodeAccountLoginRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::CentreLoginResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

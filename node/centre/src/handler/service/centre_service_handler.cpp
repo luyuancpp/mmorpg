@@ -161,8 +161,8 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 
 
 
-void CentreServiceHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* controller,const ::LoginRequest* request,
-	::LoginResponse* response,
+void CentreServiceHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* controller,const ::CentreLoginRequest* request,
+	::CentreLoginResponse* response,
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE

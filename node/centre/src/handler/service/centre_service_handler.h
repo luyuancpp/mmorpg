@@ -22,8 +22,8 @@ public:
 
 
 	void LoginNodeAccountLogin(::google::protobuf::RpcController* controller,
-		const ::LoginRequest* request,
-		::LoginResponse* response,
+		const ::CentreLoginRequest* request,
+		::CentreLoginResponse* response,
 		::google::protobuf::Closure* done) override;
 
 
