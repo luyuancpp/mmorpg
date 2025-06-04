@@ -375,16 +375,16 @@ const char descriptor_table_protodef_proto_2flogin_2flogin_5fservice_2eproto[] A
     "se\022%\n\014session_info\030\004 \001(\0132\017.SessionDetail"
     "s\"0\n\032LoginNodeDisconnectRequest\022\022\n\nsessi"
     "on_id\030\001 \001(\004\")\n\023LeaveGameC2LRequest\022\022\n\nse"
-    "ssion_id\030\001 \001(\0042\327\002\n\014LoginService\022<\n\005Login"
-    "\022\030.loginpb.LoginC2LRequest\032\031.loginpb.Log"
-    "inC2LResponse\022Q\n\014CreatePlayer\022\037.loginpb."
-    "CreatePlayerC2LRequest\032 .loginpb.CreateP"
-    "layerC2LResponse\022H\n\tEnterGame\022\034.loginpb."
-    "EnterGameC2LRequest\032\035.loginpb.EnterGameC"
-    "2LResponse\0221\n\tLeaveGame\022\034.loginpb.LeaveG"
-    "ameC2LRequest\032\006.Empty\0229\n\nDisconnect\022#.lo"
-    "ginpb.LoginNodeDisconnectRequest\032\006.Empty"
-    "B\tZ\007pb/gameb\006proto3"
+    "ssion_id\030\001 \001(\0042\334\002\n\021ClientPlayerLogin\022<\n\005"
+    "Login\022\030.loginpb.LoginC2LRequest\032\031.loginp"
+    "b.LoginC2LResponse\022Q\n\014CreatePlayer\022\037.log"
+    "inpb.CreatePlayerC2LRequest\032 .loginpb.Cr"
+    "eatePlayerC2LResponse\022H\n\tEnterGame\022\034.log"
+    "inpb.EnterGameC2LRequest\032\035.loginpb.Enter"
+    "GameC2LResponse\0221\n\tLeaveGame\022\034.loginpb.L"
+    "eaveGameC2LRequest\032\006.Empty\0229\n\nDisconnect"
+    "\022#.loginpb.LoginNodeDisconnectRequest\032\006."
+    "EmptyB\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2flogin_2flogin_5fservice_2eproto_deps[3] =
     {
@@ -396,7 +396,7 @@ static ::absl::once_flag descriptor_table_proto_2flogin_2flogin_5fservice_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogin_2flogin_5fservice_2eproto = {
     false,
     false,
-    1219,
+    1224,
     descriptor_table_protodef_proto_2flogin_2flogin_5fservice_2eproto,
     "proto/login/login_service.proto",
     &descriptor_table_proto_2flogin_2flogin_5fservice_2eproto_once,

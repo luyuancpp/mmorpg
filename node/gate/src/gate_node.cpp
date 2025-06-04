@@ -22,8 +22,8 @@ GateNode::GateNode(EventLoop* loop)
 	GetNodeInfo().set_node_type(GateNodeService);
 	targetNodeTypeWhitelist = { CentreNodeService, SceneNodeService, LoginNodeService };
 
-	void InitGrpcLoginServiceResponseHandler();
-	InitGrpcLoginServiceResponseHandler();
+	void InitGrpcClientPlayerLoginResponseHandler();
+	InitGrpcClientPlayerLoginResponseHandler();
 }
 
 void GateNode::StartRpcServer()
@@ -38,7 +38,7 @@ void GateNode::StartRpcServer()
 	tls_gate.session_id_gen().set_node_id(GetNodeId());
 
 	loginGrpcSelectTimer.RunEvery(0.01, []() {
-		loginpb::HandleLoginServiceCompletedQueueMessage(tls.GetNodeRegistry(eNodeType::LoginNodeService));
+		loginpb::HandleClientPlayerLoginCompletedQueueMessage(tls.GetNodeRegistry(eNodeType::LoginNodeService));
 		});
 
     LOG_INFO << "gate node  start at" << GetNodeInfo().DebugString();
@@ -53,12 +53,12 @@ void GateNode::ProcessGrpcNode(const NodeInfo& nodeInfo)
 	{
 		const auto loginNodeId = entt::entity{ nodeInfo.node_id() };
 		const auto& channel = registry.get<std::shared_ptr<grpc::Channel>>(loginNodeId);
-		registry.emplace < loginpb::LoginServiceStubPtr > (loginNodeId,
-			loginpb::LoginService::NewStub(channel));
+		registry.emplace < loginpb::ClientPlayerLoginStubPtr > (loginNodeId,
+			loginpb::ClientPlayerLogin::NewStub(channel));
 		//todo 如果重连后连上了不同的gate会不会有异步问题
 		tls_gate.login_consistent_node().add(nodeInfo.node_id(),
 			loginNodeId);
-		loginpb::InitLoginServiceCompletedQueue(registry, loginNodeId);
+		loginpb::InitClientPlayerLoginCompletedQueue(registry, loginNodeId);
 		break;
 	}
 	default:

@@ -28,10 +28,10 @@
 
 namespace loginpb {
 
-class LoginService final {
+class ClientPlayerLogin final {
  public:
   static constexpr char const* service_full_name() {
-    return "loginpb.LoginService";
+    return "loginpb.ClientPlayerLogin";
   }
   class StubInterface {
    public:

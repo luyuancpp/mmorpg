@@ -267,37 +267,36 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n-proto/scene/player_state_attribute_syn"
-    "c.proto\032\026proto/common/tip.proto\032 proto/l"
-    "ogic/component/comp.proto\032\030proto/common/"
-    "empty.proto\032&proto/logic/component/skill"
-    "_comp.proto\032&proto/logic/component/actor"
-    "_comp.proto\0326proto/logic/component/actor"
-    "_attribute_state_comp.proto\"\243\001\n\030BaseAttr"
-    "ibuteSyncDataS2C\022\021\n\tentity_id\030\001 \001(\004\022\035\n\tt"
-    "ransform\030\002 \001(\0132\n.Transform\022\033\n\010velocity\030\003"
-    " \001(\0132\t.Velocity\0228\n\022combat_state_flags\030\004 "
-    "\001(\0132\034.CombatStateFlagsPbComponent\"-\n\030Att"
-    "ributeDelta2FramesS2C\022\021\n\tentity_id\030\001 \001(\004"
-    "\"-\n\030AttributeDelta5FramesS2C\022\021\n\tentity_i"
-    "d\030\001 \001(\004\".\n\031AttributeDelta10FramesS2C\022\021\n\t"
-    "entity_id\030\001 \001(\004\".\n\031AttributeDelta30Frame"
+    "c.proto\032 proto/logic/component/comp.prot"
+    "o\032\030proto/common/empty.proto\032&proto/logic"
+    "/component/skill_comp.proto\032&proto/logic"
+    "/component/actor_comp.proto\0326proto/logic"
+    "/component/actor_attribute_state_comp.pr"
+    "oto\"\243\001\n\030BaseAttributeSyncDataS2C\022\021\n\tenti"
+    "ty_id\030\001 \001(\004\022\035\n\ttransform\030\002 \001(\0132\n.Transfo"
+    "rm\022\033\n\010velocity\030\003 \001(\0132\t.Velocity\0228\n\022comba"
+    "t_state_flags\030\004 \001(\0132\034.CombatStateFlagsPb"
+    "Component\"-\n\030AttributeDelta2FramesS2C\022\021\n"
+    "\tentity_id\030\001 \001(\004\"-\n\030AttributeDelta5Frame"
     "sS2C\022\021\n\tentity_id\030\001 \001(\004\".\n\031AttributeDelt"
-    "a60FramesS2C\022\021\n\tentity_id\030\001 \001(\0042\370\002\n\021Play"
-    "erSyncService\0226\n\021SyncBaseAttribute\022\031.Bas"
-    "eAttributeSyncDataS2C\032\006.Empty\0229\n\024SyncAtt"
-    "ribute2Frames\022\031.AttributeDelta2FramesS2C"
-    "\032\006.Empty\0229\n\024SyncAttribute5Frames\022\031.Attri"
-    "buteDelta5FramesS2C\032\006.Empty\022;\n\025SyncAttri"
-    "bute10Frames\022\032.AttributeDelta10FramesS2C"
-    "\032\006.Empty\022;\n\025SyncAttribute30Frames\022\032.Attr"
-    "ibuteDelta30FramesS2C\032\006.Empty\022;\n\025SyncAtt"
-    "ribute60Frames\022\032.AttributeDelta60FramesS"
-    "2C\032\006.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
+    "a10FramesS2C\022\021\n\tentity_id\030\001 \001(\004\".\n\031Attri"
+    "buteDelta30FramesS2C\022\021\n\tentity_id\030\001 \001(\004\""
+    ".\n\031AttributeDelta60FramesS2C\022\021\n\tentity_i"
+    "d\030\001 \001(\0042\370\002\n\021PlayerSyncService\0226\n\021SyncBas"
+    "eAttribute\022\031.BaseAttributeSyncDataS2C\032\006."
+    "Empty\0229\n\024SyncAttribute2Frames\022\031.Attribut"
+    "eDelta2FramesS2C\032\006.Empty\0229\n\024SyncAttribut"
+    "e5Frames\022\031.AttributeDelta5FramesS2C\032\006.Em"
+    "pty\022;\n\025SyncAttribute10Frames\022\032.Attribute"
+    "Delta10FramesS2C\032\006.Empty\022;\n\025SyncAttribut"
+    "e30Frames\022\032.AttributeDelta30FramesS2C\032\006."
+    "Empty\022;\n\025SyncAttribute60Frames\022\032.Attribu"
+    "teDelta60FramesS2C\032\006.EmptyB\014Z\007pb/game\200\001\001"
+    "b\006proto3"
 };
-static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_deps[6] =
+static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_deps[5] =
     {
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
-        &::descriptor_table_proto_2fcommon_2ftip_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2fcomp_2eproto,
@@ -307,12 +306,12 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fstate_5fattri
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto = {
     false,
     false,
-    1072,
+    1048,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto,
     "proto/scene/player_state_attribute_sync.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
     descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_deps,
-    6,
+    5,
     6,
     schemas,
     file_default_instances,

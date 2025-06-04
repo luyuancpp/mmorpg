@@ -4,11 +4,11 @@
 #include "grpc/generator/proto/login/login_service_grpc.h"
 #include "thread_local/storage_gate.h"
 
-using GrpcLoginStubPtr = std::unique_ptr<loginpb::LoginService::Stub>;
+using GrpcLoginStubPtr = std::unique_ptr<loginpb::ClientPlayerLogin::Stub>;
 
-void InitGrpcLoginServiceResponseHandler() {
+void InitGrpcClientPlayerLoginResponseHandler() {
     {
-        loginpb::AsyncLoginServiceLoginHandler = [](const std::unique_ptr<loginpb::AsyncLoginServiceLoginGrpcClientCall>& call) {
+        loginpb::AsyncClientPlayerLoginLoginHandler = [](const std::unique_ptr<loginpb::AsyncClientPlayerLoginLoginGrpcClientCall>& call) {
             auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {
@@ -20,7 +20,7 @@ void InitGrpcLoginServiceResponseHandler() {
     }
 
     {
-        loginpb::AsyncLoginServiceCreatePlayerHandler = [](const std::unique_ptr<loginpb::AsyncLoginServiceCreatePlayerGrpcClientCall>& call) {
+        loginpb::AsyncClientPlayerLoginCreatePlayerHandler = [](const std::unique_ptr<loginpb::AsyncClientPlayerLoginCreatePlayerGrpcClientCall>& call) {
             auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {
@@ -32,7 +32,7 @@ void InitGrpcLoginServiceResponseHandler() {
     }
 
     {
-        loginpb::AsyncLoginServiceEnterGameHandler = [](const std::unique_ptr<loginpb::AsyncLoginServiceEnterGameGrpcClientCall>& call) {
+        loginpb::AsyncClientPlayerLoginEnterGameHandler = [](const std::unique_ptr<loginpb::AsyncClientPlayerLoginEnterGameGrpcClientCall>& call) {
             auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {
@@ -45,7 +45,7 @@ void InitGrpcLoginServiceResponseHandler() {
 
 
     {
-        loginpb::AsyncLoginServiceLeaveGameHandler = [](const std::unique_ptr<loginpb::AsyncLoginServiceLeaveGameGrpcClientCall>& call) {
+        loginpb::AsyncClientPlayerLoginLeaveGameHandler = [](const std::unique_ptr<loginpb::AsyncClientPlayerLoginLeaveGameGrpcClientCall>& call) {
           /*  auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {

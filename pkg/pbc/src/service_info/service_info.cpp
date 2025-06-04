@@ -7,6 +7,7 @@
 #include "proto/centre/centre_player.pb.h"
 #include "proto/centre/centre_scene.pb.h"
 #include "proto/centre/centre_service.pb.h"
+#include "proto/login/login_service.grpc.pb.h"
 #include "proto/scene/player_scene.pb.h"
 #include "proto/scene/player_skill.pb.h"
 #include "proto/scene/game_client_player.pb.h"
@@ -17,7 +18,6 @@
 #include "proto/gate/gate_service.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
-#include "proto/login/login_service.grpc.pb.h"
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 
@@ -26,6 +26,7 @@
 #include "centre_player_service_info.h"
 #include "centre_scene_service_info.h"
 #include "centre_service_service_info.h"
+#include "login_service_service_info.h"
 #include "player_scene_service_info.h"
 #include "player_skill_service_info.h"
 #include "game_client_player_service_info.h"
@@ -36,7 +37,6 @@
 #include "gate_service_service_info.h"
 #include "etcd_service_info.h"
 #include "etcd_service_info.h"
-#include "login_service_service_info.h"
 #include "player_state_attribute_sync_service_info.h"
 #include "etcd_service_info.h"
 
@@ -56,6 +56,11 @@ class GameServiceImpl final : public GameService {};
 class GateServiceImpl final : public GateService {};
 class PlayerSyncServiceImpl final : public PlayerSyncService {};
 
+namespace loginpb{void SendClientPlayerLoginLogin(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace loginpb{void SendClientPlayerLoginCreatePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace loginpb{void SendClientPlayerLoginEnterGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace loginpb{void SendClientPlayerLoginLeaveGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace loginpb{void SendClientPlayerLoginDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVPut(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVDeleteRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -66,11 +71,6 @@ namespace etcdserverpb{void SendLeaseLeaseRevoke(entt::registry& , entt::entity 
 namespace etcdserverpb{void SendLeaseLeaseKeepAlive(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendLeaseLeaseTimeToLive(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendLeaseLeaseLeases(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendLoginServiceLogin(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendLoginServiceCreatePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendLoginServiceEnterGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendLoginServiceLeaveGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendLoginServiceDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendWatchWatch(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
 std::unordered_set<uint32_t> gClientMessageIdWhitelist;
@@ -99,6 +99,11 @@ void InitMessageInfo()
     gRpcServiceRegistry[CentreServiceRoutePlayerStringMsgMessageId] = RpcService{"CentreService", "RoutePlayerStringMsg", std::make_unique_for_overwrite<::RoutePlayerMessageRequest>(), std::make_unique_for_overwrite<::RoutePlayerMessageResponse>(), std::make_unique_for_overwrite<CentreServiceImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentreServiceInitSceneNodeMessageId] = RpcService{"CentreService", "InitSceneNode", std::make_unique_for_overwrite<::InitSceneNodeRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentreServiceImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentreServiceRegisterNodeSessionMessageId] = RpcService{"CentreService", "RegisterNodeSession", std::make_unique_for_overwrite<::RegisterNodeSessionRequest>(), std::make_unique_for_overwrite<::RegisterNodeSessionResponse>(), std::make_unique_for_overwrite<CentreServiceImpl>(), 0, eNodeType::CentreNodeService};
+    gRpcServiceRegistry[ClientPlayerLoginLoginMessageId] = RpcService{"ClientPlayerLogin", "Login", std::make_unique_for_overwrite<::loginpb::LoginC2LRequest>(), std::make_unique_for_overwrite<::loginpb::LoginC2LResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLogin};
+    gRpcServiceRegistry[ClientPlayerLoginCreatePlayerMessageId] = RpcService{"ClientPlayerLogin", "CreatePlayer", std::make_unique_for_overwrite<::loginpb::CreatePlayerC2LRequest>(), std::make_unique_for_overwrite<::loginpb::CreatePlayerC2LResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginCreatePlayer};
+    gRpcServiceRegistry[ClientPlayerLoginEnterGameMessageId] = RpcService{"ClientPlayerLogin", "EnterGame", std::make_unique_for_overwrite<::loginpb::EnterGameC2LRequest>(), std::make_unique_for_overwrite<::loginpb::EnterGameC2LResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginEnterGame};
+    gRpcServiceRegistry[ClientPlayerLoginLeaveGameMessageId] = RpcService{"ClientPlayerLogin", "LeaveGame", std::make_unique_for_overwrite<::loginpb::LeaveGameC2LRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLeaveGame};
+    gRpcServiceRegistry[ClientPlayerLoginDisconnectMessageId] = RpcService{"ClientPlayerLogin", "Disconnect", std::make_unique_for_overwrite<::loginpb::LoginNodeDisconnectRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
     gRpcServiceRegistry[ClientPlayerSceneServiceEnterSceneMessageId] = RpcService{"ClientPlayerSceneService", "EnterScene", std::make_unique_for_overwrite<::EnterSceneC2SRequest>(), std::make_unique_for_overwrite<::EnterSceneC2SResponse>(), std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[ClientPlayerSceneServiceNotifyEnterSceneMessageId] = RpcService{"ClientPlayerSceneService", "NotifyEnterScene", std::make_unique_for_overwrite<::EnterSceneS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[ClientPlayerSceneServiceSceneInfoC2SMessageId] = RpcService{"ClientPlayerSceneService", "SceneInfoC2S", std::make_unique_for_overwrite<::SceneInfoRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>(), 0, eNodeType::SceneNodeService};
@@ -147,11 +152,6 @@ void InitMessageInfo()
     gRpcServiceRegistry[LeaseLeaseKeepAliveMessageId] = RpcService{"Lease", "LeaseKeepAlive", std::make_unique_for_overwrite<::etcdserverpb::LeaseKeepAliveRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseKeepAliveResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseKeepAlive};
     gRpcServiceRegistry[LeaseLeaseTimeToLiveMessageId] = RpcService{"Lease", "LeaseTimeToLive", std::make_unique_for_overwrite<::etcdserverpb::LeaseTimeToLiveRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseTimeToLiveResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseTimeToLive};
     gRpcServiceRegistry[LeaseLeaseLeasesMessageId] = RpcService{"Lease", "LeaseLeases", std::make_unique_for_overwrite<::etcdserverpb::LeaseLeasesRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseLeasesResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseLeases};
-    gRpcServiceRegistry[LoginServiceLoginMessageId] = RpcService{"LoginService", "Login", std::make_unique_for_overwrite<::loginpb::LoginC2LRequest>(), std::make_unique_for_overwrite<::loginpb::LoginC2LResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendLoginServiceLogin};
-    gRpcServiceRegistry[LoginServiceCreatePlayerMessageId] = RpcService{"LoginService", "CreatePlayer", std::make_unique_for_overwrite<::loginpb::CreatePlayerC2LRequest>(), std::make_unique_for_overwrite<::loginpb::CreatePlayerC2LResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendLoginServiceCreatePlayer};
-    gRpcServiceRegistry[LoginServiceEnterGameMessageId] = RpcService{"LoginService", "EnterGame", std::make_unique_for_overwrite<::loginpb::EnterGameC2LRequest>(), std::make_unique_for_overwrite<::loginpb::EnterGameC2LResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendLoginServiceEnterGame};
-    gRpcServiceRegistry[LoginServiceLeaveGameMessageId] = RpcService{"LoginService", "LeaveGame", std::make_unique_for_overwrite<::loginpb::LeaveGameC2LRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendLoginServiceLeaveGame};
-    gRpcServiceRegistry[LoginServiceDisconnectMessageId] = RpcService{"LoginService", "Disconnect", std::make_unique_for_overwrite<::loginpb::LoginNodeDisconnectRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendLoginServiceDisconnect};
     gRpcServiceRegistry[PlayerSyncServiceSyncBaseAttributeMessageId] = RpcService{"PlayerSyncService", "SyncBaseAttribute", std::make_unique_for_overwrite<::BaseAttributeSyncDataS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<PlayerSyncServiceImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[PlayerSyncServiceSyncAttribute2FramesMessageId] = RpcService{"PlayerSyncService", "SyncAttribute2Frames", std::make_unique_for_overwrite<::AttributeDelta2FramesS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<PlayerSyncServiceImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[PlayerSyncServiceSyncAttribute5FramesMessageId] = RpcService{"PlayerSyncService", "SyncAttribute5Frames", std::make_unique_for_overwrite<::AttributeDelta5FramesS2C>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<PlayerSyncServiceImpl>(), 0, eNodeType::SceneNodeService};
@@ -163,6 +163,11 @@ void InitMessageInfo()
 
     gClientMessageIdWhitelist.emplace(CentreClientPlayerCommonServiceSendTipToClientMessageId);
     gClientMessageIdWhitelist.emplace(CentreClientPlayerCommonServiceKickPlayerMessageId);
+    gClientMessageIdWhitelist.emplace(ClientPlayerLoginLoginMessageId);
+    gClientMessageIdWhitelist.emplace(ClientPlayerLoginCreatePlayerMessageId);
+    gClientMessageIdWhitelist.emplace(ClientPlayerLoginEnterGameMessageId);
+    gClientMessageIdWhitelist.emplace(ClientPlayerLoginLeaveGameMessageId);
+    gClientMessageIdWhitelist.emplace(ClientPlayerLoginDisconnectMessageId);
     gClientMessageIdWhitelist.emplace(ClientPlayerSceneServiceEnterSceneMessageId);
     gClientMessageIdWhitelist.emplace(ClientPlayerSceneServiceNotifyEnterSceneMessageId);
     gClientMessageIdWhitelist.emplace(ClientPlayerSceneServiceSceneInfoC2SMessageId);
