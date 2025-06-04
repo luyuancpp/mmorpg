@@ -53,16 +53,6 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageContent) {
 		handleGameClientPlayerCommonServiceSendTipToClient(player, response.SerializedMessage)
 	case game.GameClientPlayerCommonServiceKickPlayerMessageId:
 		handleGameClientPlayerCommonServiceKickPlayer(player, response.SerializedMessage)
-	case game.GamePlayerSceneServiceEnterSceneMessageId:
-		handleGamePlayerSceneServiceEnterScene(player, response.SerializedMessage)
-	case game.GamePlayerSceneServiceLeaveSceneMessageId:
-		handleGamePlayerSceneServiceLeaveScene(player, response.SerializedMessage)
-	case game.GamePlayerSceneServiceEnterSceneS2CMessageId:
-		handleGamePlayerSceneServiceEnterSceneS2C(player, response.SerializedMessage)
-	case game.GamePlayerServiceCentre2GsLoginMessageId:
-		handleGamePlayerServiceCentre2GsLogin(player, response.SerializedMessage)
-	case game.GamePlayerServiceExitGameMessageId:
-		handleGamePlayerServiceExitGame(player, response.SerializedMessage)
 	default:
 		// Handle unknown message IDs
 		zap.L().Info("Unhandled message", zap.Uint32("message_id", response.MessageId), zap.String("response", response.String()))
@@ -195,44 +185,4 @@ func handleGameClientPlayerCommonServiceKickPlayer(player *gameobject.Player, bo
 		return
 	}
 	GameClientPlayerCommonServiceKickPlayerHandler(player, message)
-}
-func handleGamePlayerSceneServiceEnterScene(player *gameobject.Player, body []byte) {
-	message := &game.GsEnterSceneRequest{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal GsEnterSceneRequest", zap.Error(err))
-		return
-	}
-	GamePlayerSceneServiceEnterSceneHandler(player, message)
-}
-func handleGamePlayerSceneServiceLeaveScene(player *gameobject.Player, body []byte) {
-	message := &game.GsLeaveSceneRequest{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal GsLeaveSceneRequest", zap.Error(err))
-		return
-	}
-	GamePlayerSceneServiceLeaveSceneHandler(player, message)
-}
-func handleGamePlayerSceneServiceEnterSceneS2C(player *gameobject.Player, body []byte) {
-	message := &game.EnterScenerS2CResponse{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal EnterScenerS2CResponse", zap.Error(err))
-		return
-	}
-	GamePlayerSceneServiceEnterSceneS2CHandler(player, message)
-}
-func handleGamePlayerServiceCentre2GsLogin(player *gameobject.Player, body []byte) {
-	message := &game.Centre2GsLoginRequest{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal Centre2GsLoginRequest", zap.Error(err))
-		return
-	}
-	GamePlayerServiceCentre2GsLoginHandler(player, message)
-}
-func handleGamePlayerServiceExitGame(player *gameobject.Player, body []byte) {
-	message := &game.GameNodeExitGameRequest{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal GameNodeExitGameRequest", zap.Error(err))
-		return
-	}
-	GamePlayerServiceExitGameHandler(player, message)
 }

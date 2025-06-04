@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"os"
+	"pbgen/util"
 	"strings"
 	"text/template"
 
@@ -71,16 +72,16 @@ func isClientMethodRepliedHandler(methodList *RPCMethods) bool {
 	if len(*methodList) == 0 {
 		return false
 	}
-	firstMethod := (*methodList)[0]
-	return !strings.Contains(firstMethod.Path(), config.ProtoDirectoryNames[config.DbProtoDirIndex])
+	firstMethodInfo := (*methodList)[0]
+	if !strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
+		return false
+	}
+	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
 }
 
 func GoRobotTotalHandlerGenerator() {
-
 	handlerCases := make([]HandlerCase, 0)
-
 	ServiceList := GetSortServiceList()
-
 	for _, key := range ServiceList {
 		serviceMethods, ok := ServiceMethodMap[key]
 		if !ok {
@@ -89,13 +90,10 @@ func GoRobotTotalHandlerGenerator() {
 		if !isClientMethodRepliedHandler(&serviceMethods) {
 			continue
 		}
-
 		for _, method := range serviceMethods {
-
 			if !isRelevantService(method) {
 				continue
 			}
-
 			handlerCases = generateHandlerCases(method, handlerCases)
 		}
 	}
