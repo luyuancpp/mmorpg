@@ -255,9 +255,12 @@ func (info *MethodInfo) GoResponse() string {
 	// 获取 OutputType
 	outputType := info.MethodDescriptorProto.GetOutputType()
 
-	updatedOutputType := strings.Replace(outputType, ".", "", -1)
-
-	return updatedOutputType
+	// .package.TypeName => 提取 TypeName
+	lastDot := strings.LastIndex(outputType, ".")
+	if lastDot >= 0 && lastDot < len(outputType)-1 {
+		return outputType[lastDot+1:]
+	}
+	return outputType
 }
 
 func GetTypeName(fullTypeName string) string {

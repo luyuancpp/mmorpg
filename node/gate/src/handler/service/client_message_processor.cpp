@@ -156,7 +156,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     {
         loginpb::LoginNodeDisconnectRequest request;
         request.set_session_id(sessionId);
-        SendLoginServiceDisconnect(tls.GetNodeRegistry(eNodeType::LoginNodeService), *loginNode , request);
+        SendClientPlayerLoginDisconnect(tls.GetNodeRegistry(eNodeType::LoginNodeService), *loginNode , request);
     }
 
     // 通知中心服务器

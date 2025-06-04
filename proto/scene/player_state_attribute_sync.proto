@@ -2,7 +2,6 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "proto/common/tip.proto";
 import "proto/logic/component/comp.proto";
 import "proto/common/empty.proto";
 import "proto/logic/component/skill_comp.proto";

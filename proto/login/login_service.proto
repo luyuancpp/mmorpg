@@ -54,7 +54,7 @@ message LeaveGameC2LRequest
   uint64 session_id = 1;
 }
 
-service LoginService {
+service ClientPlayerLogin  {
   rpc Login (LoginC2LRequest) returns (LoginC2LResponse);
   rpc CreatePlayer (CreatePlayerC2LRequest) returns (CreatePlayerC2LResponse);
   rpc EnterGame (EnterGameC2LRequest) returns (EnterGameC2LResponse);

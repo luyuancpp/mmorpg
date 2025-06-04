@@ -46,7 +46,7 @@
 45=CentreSceneServiceRegisterScene
 46=CentreServiceLoginNodeAccountLogin
 47=LeaseLeaseRevoke
-48=LoginServiceEnterGame
+48=ClientPlayerLoginEnterGame
 49=GamePlayerServiceCentre2GsLogin
 50=CentreServiceInitSceneNode
 51=ClientPlayerSkillServiceReleaseSkill
@@ -60,7 +60,7 @@
 59=GateServiceRoutePlayerMessage
 60=KVRange
 61=KVPut
-62=LoginServiceLeaveGame
+62=ClientPlayerLoginLeaveGame
 63=LeaseLeaseTimeToLive
 64=GameServiceCentreSendToPlayerViaGameNode
 65=GameServiceRegisterNodeSession
@@ -72,14 +72,14 @@
 71=ClientPlayerSceneServiceNotifyActorDestroy
 72=GamePlayerServiceExitGame
 73=GateServiceBroadcastToPlayers
-74=LoginServiceCreatePlayer
+74=ClientPlayerLoginLogin
 75=KVTxn
 76=ClientPlayerSceneServiceSceneInfoC2S
-77=LoginServiceLogin
+77=ClientPlayerLoginDisconnect
 78=ClientPlayerSceneServiceNotifyEnterScene
 79=PlayerSyncServiceSyncAttribute30Frames
 80=CentrePlayerSceneServiceSceneInfoC2S
 81=PlayerSyncServiceSyncAttribute60Frames
 82=LeaseLeaseLeases
-83=LoginServiceDisconnect
+83=ClientPlayerLoginCreatePlayer
 84=CentrePlayerSceneServiceLeaveSceneAsyncSavePlayerComplete
