@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/zeromicro/go-zero/core/conf"
-	"github.com/zeromicro/go-zero/core/discov"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
@@ -57,7 +56,7 @@ func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	}
 
 	// 注册节点到 etcd
-	loginNode := node.NewNode(uint32(nodeType), host, port, discov.TimeToLive)
+	loginNode := node.NewNode(uint32(nodeType), host, port, 10000)
 	if err := loginNode.KeepAlive(); err != nil {
 		logx.Errorf("Failed to keep node alive: %v", err)
 		return err
