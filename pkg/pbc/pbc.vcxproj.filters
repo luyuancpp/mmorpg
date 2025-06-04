@@ -509,5 +509,14 @@
     <ClInclude Include="src\proto\scene\player_state_attribute_sync.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\service_info\game_client_player_service_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service_info\etcd_service_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service_info\centre_client_player_service_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

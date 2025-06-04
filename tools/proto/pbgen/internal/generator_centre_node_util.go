@@ -42,8 +42,7 @@ func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if !(strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.SceneProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Service(), config.ProtoDirectoryNames[config.SceneProtoDirIndex])) {
+	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.CenterProtoDirIndex) {
 		return false
 	}
 
@@ -73,8 +72,9 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
+	if !util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
 		return false
 	}
+
 	return true
 }
