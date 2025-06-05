@@ -10,7 +10,7 @@ struct KVRangeCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncKVRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncKVRangeGrpcClientCall>&)>;
+using AsyncKVRangeHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::RangeResponse&)>;
 AsyncKVRangeHandlerFunctionType AsyncKVRangeHandler;
 
 void AsyncCompleteGrpcKVRange(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -29,7 +29,7 @@ void AsyncCompleteGrpcKVRange(entt::registry& registry, entt::entity nodeEntity,
         static_cast<AsyncKVRangeGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncKVRangeHandler) {
-            AsyncKVRangeHandler(call);
+            AsyncKVRangeHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -79,7 +79,7 @@ struct KVPutCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncKVPutHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncKVPutGrpcClientCall>&)>;
+using AsyncKVPutHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::PutResponse&)>;
 AsyncKVPutHandlerFunctionType AsyncKVPutHandler;
 
 void AsyncCompleteGrpcKVPut(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -98,7 +98,7 @@ void AsyncCompleteGrpcKVPut(entt::registry& registry, entt::entity nodeEntity, g
         static_cast<AsyncKVPutGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncKVPutHandler) {
-            AsyncKVPutHandler(call);
+            AsyncKVPutHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -148,7 +148,7 @@ struct KVDeleteRangeCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncKVDeleteRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncKVDeleteRangeGrpcClientCall>&)>;
+using AsyncKVDeleteRangeHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::DeleteRangeResponse&)>;
 AsyncKVDeleteRangeHandlerFunctionType AsyncKVDeleteRangeHandler;
 
 void AsyncCompleteGrpcKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -167,7 +167,7 @@ void AsyncCompleteGrpcKVDeleteRange(entt::registry& registry, entt::entity nodeE
         static_cast<AsyncKVDeleteRangeGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncKVDeleteRangeHandler) {
-            AsyncKVDeleteRangeHandler(call);
+            AsyncKVDeleteRangeHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -217,7 +217,7 @@ struct KVTxnCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncKVTxnHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncKVTxnGrpcClientCall>&)>;
+using AsyncKVTxnHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::TxnResponse&)>;
 AsyncKVTxnHandlerFunctionType AsyncKVTxnHandler;
 
 void AsyncCompleteGrpcKVTxn(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -236,7 +236,7 @@ void AsyncCompleteGrpcKVTxn(entt::registry& registry, entt::entity nodeEntity, g
         static_cast<AsyncKVTxnGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncKVTxnHandler) {
-            AsyncKVTxnHandler(call);
+            AsyncKVTxnHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -286,7 +286,7 @@ struct KVCompactCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncKVCompactHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncKVCompactGrpcClientCall>&)>;
+using AsyncKVCompactHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::CompactionResponse&)>;
 AsyncKVCompactHandlerFunctionType AsyncKVCompactHandler;
 
 void AsyncCompleteGrpcKVCompact(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -305,7 +305,7 @@ void AsyncCompleteGrpcKVCompact(entt::registry& registry, entt::entity nodeEntit
         static_cast<AsyncKVCompactGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncKVCompactHandler) {
-            AsyncKVCompactHandler(call);
+            AsyncKVCompactHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -457,7 +457,7 @@ struct LeaseLeaseGrantCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncLeaseLeaseGrantHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLeaseLeaseGrantGrpcClientCall>&)>;
+using AsyncLeaseLeaseGrantHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseGrantResponse&)>;
 AsyncLeaseLeaseGrantHandlerFunctionType AsyncLeaseLeaseGrantHandler;
 
 void AsyncCompleteGrpcLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -476,7 +476,7 @@ void AsyncCompleteGrpcLeaseLeaseGrant(entt::registry& registry, entt::entity nod
         static_cast<AsyncLeaseLeaseGrantGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncLeaseLeaseGrantHandler) {
-            AsyncLeaseLeaseGrantHandler(call);
+            AsyncLeaseLeaseGrantHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -526,7 +526,7 @@ struct LeaseLeaseRevokeCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncLeaseLeaseRevokeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLeaseLeaseRevokeGrpcClientCall>&)>;
+using AsyncLeaseLeaseRevokeHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseRevokeResponse&)>;
 AsyncLeaseLeaseRevokeHandlerFunctionType AsyncLeaseLeaseRevokeHandler;
 
 void AsyncCompleteGrpcLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -545,7 +545,7 @@ void AsyncCompleteGrpcLeaseLeaseRevoke(entt::registry& registry, entt::entity no
         static_cast<AsyncLeaseLeaseRevokeGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncLeaseLeaseRevokeHandler) {
-            AsyncLeaseLeaseRevokeHandler(call);
+            AsyncLeaseLeaseRevokeHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -697,7 +697,7 @@ struct LeaseLeaseTimeToLiveCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncLeaseLeaseTimeToLiveHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLeaseLeaseTimeToLiveGrpcClientCall>&)>;
+using AsyncLeaseLeaseTimeToLiveHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseTimeToLiveResponse&)>;
 AsyncLeaseLeaseTimeToLiveHandlerFunctionType AsyncLeaseLeaseTimeToLiveHandler;
 
 void AsyncCompleteGrpcLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -716,7 +716,7 @@ void AsyncCompleteGrpcLeaseLeaseTimeToLive(entt::registry& registry, entt::entit
         static_cast<AsyncLeaseLeaseTimeToLiveGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncLeaseLeaseTimeToLiveHandler) {
-            AsyncLeaseLeaseTimeToLiveHandler(call);
+            AsyncLeaseLeaseTimeToLiveHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -766,7 +766,7 @@ struct LeaseLeaseLeasesCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncLeaseLeaseLeasesHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLeaseLeaseLeasesGrpcClientCall>&)>;
+using AsyncLeaseLeaseLeasesHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseLeasesResponse&)>;
 AsyncLeaseLeaseLeasesHandlerFunctionType AsyncLeaseLeaseLeasesHandler;
 
 void AsyncCompleteGrpcLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -785,7 +785,7 @@ void AsyncCompleteGrpcLeaseLeaseLeases(entt::registry& registry, entt::entity no
         static_cast<AsyncLeaseLeaseLeasesGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncLeaseLeaseLeasesHandler) {
-            AsyncLeaseLeaseLeasesHandler(call);
+            AsyncLeaseLeaseLeasesHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();

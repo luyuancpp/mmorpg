@@ -43,7 +43,7 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<{{.CppResponse}}>> response_reader;
 };
 
-using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.Service}}{{.Method}}GrpcClientCall>&)>;
+using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const ClientContext&, const {{.CppResponse}}&)>;
 extern Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
 {{end}}
 
@@ -147,7 +147,7 @@ void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::en
     }
 }
 {{ else }}
-using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.Service}}{{.Method}}GrpcClientCall>&)>;
+using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const ClientContext&, const {{.CppResponse}}&)>;
 Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
 
 void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -166,7 +166,7 @@ void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::en
         static_cast<Async{{.Service}}{{.Method}}GrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (Async{{.Service}}{{.Method}}Handler) {
-            Async{{.Service}}{{.Method}}Handler(call);
+            Async{{.Service}}{{.Method}}Handler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();

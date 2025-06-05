@@ -10,7 +10,7 @@ struct ClientPlayerLoginLoginCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncClientPlayerLoginLoginHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncClientPlayerLoginLoginGrpcClientCall>&)>;
+using AsyncClientPlayerLoginLoginHandlerFunctionType = std::function<void(const ClientContext&, const ::loginpb::LoginResponse&)>;
 AsyncClientPlayerLoginLoginHandlerFunctionType AsyncClientPlayerLoginLoginHandler;
 
 void AsyncCompleteGrpcClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -29,7 +29,7 @@ void AsyncCompleteGrpcClientPlayerLoginLogin(entt::registry& registry, entt::ent
         static_cast<AsyncClientPlayerLoginLoginGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncClientPlayerLoginLoginHandler) {
-            AsyncClientPlayerLoginLoginHandler(call);
+            AsyncClientPlayerLoginLoginHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -79,7 +79,7 @@ struct ClientPlayerLoginCreatePlayerCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncClientPlayerLoginCreatePlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncClientPlayerLoginCreatePlayerGrpcClientCall>&)>;
+using AsyncClientPlayerLoginCreatePlayerHandlerFunctionType = std::function<void(const ClientContext&, const ::loginpb::CreatePlayerResponse&)>;
 AsyncClientPlayerLoginCreatePlayerHandlerFunctionType AsyncClientPlayerLoginCreatePlayerHandler;
 
 void AsyncCompleteGrpcClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -98,7 +98,7 @@ void AsyncCompleteGrpcClientPlayerLoginCreatePlayer(entt::registry& registry, en
         static_cast<AsyncClientPlayerLoginCreatePlayerGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncClientPlayerLoginCreatePlayerHandler) {
-            AsyncClientPlayerLoginCreatePlayerHandler(call);
+            AsyncClientPlayerLoginCreatePlayerHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -148,7 +148,7 @@ struct ClientPlayerLoginEnterGameCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncClientPlayerLoginEnterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncClientPlayerLoginEnterGameGrpcClientCall>&)>;
+using AsyncClientPlayerLoginEnterGameHandlerFunctionType = std::function<void(const ClientContext&, const ::loginpb::EnterGameResponse&)>;
 AsyncClientPlayerLoginEnterGameHandlerFunctionType AsyncClientPlayerLoginEnterGameHandler;
 
 void AsyncCompleteGrpcClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -167,7 +167,7 @@ void AsyncCompleteGrpcClientPlayerLoginEnterGame(entt::registry& registry, entt:
         static_cast<AsyncClientPlayerLoginEnterGameGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncClientPlayerLoginEnterGameHandler) {
-            AsyncClientPlayerLoginEnterGameHandler(call);
+            AsyncClientPlayerLoginEnterGameHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -217,7 +217,7 @@ struct ClientPlayerLoginLeaveGameCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncClientPlayerLoginLeaveGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncClientPlayerLoginLeaveGameGrpcClientCall>&)>;
+using AsyncClientPlayerLoginLeaveGameHandlerFunctionType = std::function<void(const ClientContext&, const ::Empty&)>;
 AsyncClientPlayerLoginLeaveGameHandlerFunctionType AsyncClientPlayerLoginLeaveGameHandler;
 
 void AsyncCompleteGrpcClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -236,7 +236,7 @@ void AsyncCompleteGrpcClientPlayerLoginLeaveGame(entt::registry& registry, entt:
         static_cast<AsyncClientPlayerLoginLeaveGameGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncClientPlayerLoginLeaveGameHandler) {
-            AsyncClientPlayerLoginLeaveGameHandler(call);
+            AsyncClientPlayerLoginLeaveGameHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
@@ -286,7 +286,7 @@ struct ClientPlayerLoginDisconnectCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-using AsyncClientPlayerLoginDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncClientPlayerLoginDisconnectGrpcClientCall>&)>;
+using AsyncClientPlayerLoginDisconnectHandlerFunctionType = std::function<void(const ClientContext&, const ::Empty&)>;
 AsyncClientPlayerLoginDisconnectHandlerFunctionType AsyncClientPlayerLoginDisconnectHandler;
 
 void AsyncCompleteGrpcClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -305,7 +305,7 @@ void AsyncCompleteGrpcClientPlayerLoginDisconnect(entt::registry& registry, entt
         static_cast<AsyncClientPlayerLoginDisconnectGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
         if (AsyncClientPlayerLoginDisconnectHandler) {
-            AsyncClientPlayerLoginDisconnectHandler(call);
+            AsyncClientPlayerLoginDisconnectHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
