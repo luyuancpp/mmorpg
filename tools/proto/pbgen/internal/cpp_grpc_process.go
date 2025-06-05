@@ -3,6 +3,7 @@ package internal
 import (
 	"bytes"
 	"fmt"
+	"golang.org/x/exp/maps"
 	"log"
 	"os"
 	"path"
@@ -118,4 +119,46 @@ func CppGrpcCallClient() {
 
 		return true
 	})
+
+	{
+		util.Wg.Add(1)
+
+		go func() {
+			defer util.Wg.Done()
+			m := map[string]string{}
+			serviceList := GetSortServiceList()
+			for _, service := range serviceList {
+				serviceMethods, ok := ServiceMethodMap[service]
+				if !ok {
+					continue
+				}
+				if len(serviceMethods) <= 0 {
+					continue
+				}
+				m[serviceMethods[0].FileBaseName()] = ""
+			}
+			keys := maps.Keys(m)
+			sort.Strings(keys)
+
+			fileList := make([]string, 0, len(keys))
+			for _, k := range keys {
+				fileList = append(fileList, m[k])
+			}
+
+			// 确保目录存在
+			os.MkdirAll(path.Dir(config.GrpcInitFileCppPath), os.FileMode(0777))
+
+			// Prepare the data for C++ source file
+			cppData := struct {
+				FileList []string
+			}{
+				FileList: fileList,
+			}
+			// 生成 .h 文件
+			if err := RenderTemplateToFile("internal/gen/template/grpc_init_total.cpp.tmpl", config.GrpcInitFileCppPath, cppData); err != nil {
+				log.Fatal(err)
+			}
+		}()
+	}
+
 }

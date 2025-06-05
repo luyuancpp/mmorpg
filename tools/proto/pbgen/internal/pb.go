@@ -123,6 +123,11 @@ func BuildProtoGrpc(protoPath string) (err error) {
 	os.MkdirAll(config.GrpcTempDirectory, os.FileMode(0777))
 	os.MkdirAll(config.GrpcOutputDirectory, os.FileMode(0777))
 
+	basePath := strings.ToLower(path.Base(protoPath))
+	if _, ok := config.GrpcServices[basePath]; !ok {
+		return
+	}
+
 	// Process each protobuf file in the directory
 	for _, fd := range fds {
 		if !util.IsProtoFile(fd) {

@@ -294,16 +294,3 @@ void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 void HandleCompletedQueueMessage(entt::registry& registry);
 
 `
-
-const AsyncClientSummaryCppTemplate = `#pragma once
-
-#include <functional>
-#include "entt/src/entt/entity/registry.hpp"
-#include <grpcpp/grpcpp.h>
-
-void SetHandler(const std::function<void(const grpc::ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-void HandleCompletedQueueMessage(entt::registry& registry);
-{{- end }}
-
-`
