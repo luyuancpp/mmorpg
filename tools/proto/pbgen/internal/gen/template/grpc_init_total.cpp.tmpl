@@ -1,0 +1,23 @@
+#pragma once
+
+#include <functional>
+#include "entt/src/entt/entity/registry.hpp"
+#include <grpcpp/grpcpp.h>
+
+void SetHandler(const std::function<void(const grpc::ClientContext&, const ::google::protobuf::Message& reply)>& handler){
+{{range.FileList }}
+    Set{{.}}Handler(handler);
+{{- end }}
+}
+
+void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity){
+{{range.FileList }}
+    Init{{.}}CompletedQueue(registry, nodeEntity);
+{{- end }}
+}
+
+void HandleCompletedQueueMessage(entt::registry& registry){
+{{range  .FileList }}
+    Handle{{.}}CompletedQueueMessage(registry, nodeEntity);
+{{- end }}
+}

@@ -113,10 +113,13 @@ const (
 	ClientLuaDirectory       = ProjectDir + "bin/script/lua/service/"
 	ClientLuaServiceFilePath = ProjectDir + "client/src/handler/service_lua.cpp"
 
+	GrpcGeneratorDirectory = "grpc/generator/"
+
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
 	PlayerStorageSystemDirectory     = ProjectDir + NodePkgLogicSceneNodeDirectory + "src/player/system/"
-	CppGenGrpcDirectory              = ProjectDir + PbcProtoDirectory + "grpc/generator/"
+	CppGenGrpcDirectory              = ProjectDir + PbcProtoDirectory + GrpcGeneratorDirectory
 	PlayerStorageTempDirectory       = TempFileGenerationDir + "/node/game/game_logic/"
+	GrpcInitFileCppPath              = ProjectDir + PbcProtoDirectory + GrpcGeneratorDirectory + "grpc_init.cpp"
 )
 
 // ----------- 文件名 -----------

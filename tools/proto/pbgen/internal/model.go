@@ -159,6 +159,22 @@ func (info *MethodInfo) FileBaseName() string {
 	return filepath.Base(*info.FdSet.GetFile()[0].Name)
 }
 
+func (info *MethodInfo) FileName() string {
+	return filepath.Base(*info.FdSet.GetFile()[0].Name)
+}
+
+func (info *MethodInfo) FileBaseNameCamel() string {
+	// 1. 去掉扩展名
+	base := strings.Replace(info.FileName(), config.ProtoEx, "", 1)
+	// 2. 把下划线替换成空格，方便 Title() 把每个单词首字母大写
+	base = strings.ReplaceAll(base, "_", " ")
+	// 3. 首字母大写处理
+	base = cases.Title(language.English).String(base)
+	// 4. 去掉空格，连接成 CamelCase
+	base = strings.ReplaceAll(base, " ", "")
+	return base
+}
+
 func (info *MethodInfo) Package() string {
 	if nil == info.FdSet.GetFile()[0].Package {
 		return ""
