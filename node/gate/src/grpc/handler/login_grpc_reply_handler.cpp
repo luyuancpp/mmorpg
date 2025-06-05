@@ -8,8 +8,9 @@
 using GrpcLoginStubPtr = std::unique_ptr<loginpb::ClientPlayerLogin::Stub>;
 
 void InitGrpcClientPlayerLoginResponseHandler() {
-	loginpb::AsyncClientPlayerLoginLoginHandler = [](const std::unique_ptr<loginpb::AsyncClientPlayerLoginLoginGrpcClientCall>& call) {
-		auto sessionDetails = GetSessionDetailsByClientContext(call->context);
+
+	auto sendGrpcResponseToClientSession = [](const ClientContext& context, const ::google::protobuf::Message& reply) {
+		auto sessionDetails = GetSessionDetailsByClientContext(context);
 		if (nullptr == sessionDetails) {
 			LOG_ERROR << "Session details not found in context for session id";
 			return;
@@ -20,52 +21,11 @@ void InitGrpcClientPlayerLoginResponseHandler() {
 			LOG_DEBUG << "conn id not found  session id " << "," << sessionDetails->session_id();
 			return;
 		}
-		gGateNode->SendMessageToClient(it->second.conn, call->reply);
+		gGateNode->SendMessageToClient(it->second.conn, reply);
 		};
 
-	loginpb::AsyncClientPlayerLoginCreatePlayerHandler = [](const std::unique_ptr<loginpb::AsyncClientPlayerLoginCreatePlayerGrpcClientCall>& call) {
-		auto sessionDetails = GetSessionDetailsByClientContext(call->context);
-		if (nullptr == sessionDetails) {
-			LOG_ERROR << "Session details not found in context for session id";
-			return;
-		}
-		auto it = tls_gate.sessions().find(sessionDetails->session_id());
-		if (it == tls_gate.sessions().end())
-		{
-			LOG_DEBUG << "conn id not found  session id " << "," << sessionDetails->session_id();
-			return;
-		}
-		gGateNode->SendMessageToClient(it->second.conn, call->reply);
-		};
-
-	loginpb::AsyncClientPlayerLoginEnterGameHandler = [](const std::unique_ptr<loginpb::AsyncClientPlayerLoginEnterGameGrpcClientCall>& call) {
-		auto sessionDetails = GetSessionDetailsByClientContext(call->context);
-		if (nullptr == sessionDetails) {
-			LOG_ERROR << "Session details not found in context for session id";
-			return;
-		}
-		auto it = tls_gate.sessions().find(sessionDetails->session_id());
-		if (it == tls_gate.sessions().end())
-		{
-			LOG_DEBUG << "conn id not found  session id " << "," << sessionDetails->session_id();
-			return;
-		}
-		gGateNode->SendMessageToClient(it->second.conn, call->reply);
-		};
-
-
-	loginpb::AsyncClientPlayerLoginLeaveGameHandler = [](const std::unique_ptr<loginpb::AsyncClientPlayerLoginLeaveGameGrpcClientCall>& call) {
-		auto sessionDetails = GetSessionDetailsByClientContext(call->context);
-		if (nullptr == sessionDetails) {
-			LOG_ERROR << "Session details not found in context for session id";
-			return;
-		}
-		auto it = tls_gate.sessions().find(sessionDetails->session_id());
-		if (it == tls_gate.sessions().end())
-		{
-			LOG_DEBUG << "conn id not found  session id " << "," << sessionDetails->session_id();
-			return;
-		}
-		gGateNode->SendMessageToClient(it->second.conn, call->reply);
-		};
+	loginpb::AsyncClientPlayerLoginLoginHandler = sendGrpcResponseToClientSession;
+	loginpb::AsyncClientPlayerLoginCreatePlayerHandler = sendGrpcResponseToClientSession;
+	loginpb::AsyncClientPlayerLoginEnterGameHandler = sendGrpcResponseToClientSession;
+	loginpb::AsyncClientPlayerLoginLeaveGameHandler = sendGrpcResponseToClientSession;
 }

@@ -178,14 +178,10 @@ void Node::InitGrpcClients() {
 }
 
 void Node::InitGrpcQueues() {
-	etcdserverpb::InitKVCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
-	etcdserverpb::InitWatchCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
-	etcdserverpb::InitLeaseCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+	etcdserverpb::InitEtcdCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
 
 	etcdQueueTimer.RunEvery(0.001, [] {
-		etcdserverpb::HandleKVCompletedQueueMessage(tls.globalNodeRegistry);
-		etcdserverpb::HandleWatchCompletedQueueMessage(tls.globalNodeRegistry);
-		etcdserverpb::HandleLeaseCompletedQueueMessage(tls.globalNodeRegistry);
+		etcdserverpb::HandleEtcdCompletedQueueMessage(tls.globalNodeRegistry);
 		});
 }
 
@@ -424,25 +420,25 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 }
 
 void Node::InitGrpcResponseHandlers() {
-	etcdserverpb::AsyncKVRangeHandler = [this](const std::unique_ptr<etcdserverpb::AsyncKVRangeGrpcClientCall>& call) {
-		for (const auto& kv : call->reply.kvs()) {
+	etcdserverpb::AsyncKVRangeHandler = [this](const ClientContext& context, const ::etcdserverpb::RangeResponse& reply) {
+		for (const auto& kv : reply.kvs()) {
 			HandleServiceNodeStart(kv.key(), kv.value());
 		}
 		};
 
-	etcdserverpb::AsyncKVPutHandler = [this](const std::unique_ptr<etcdserverpb::AsyncKVPutGrpcClientCall>& call) {
-		LOG_DEBUG << "Put response: " << call->reply.DebugString();
+	etcdserverpb::AsyncKVPutHandler = [this](const ClientContext& context, const ::etcdserverpb::PutResponse& reply) {
+		LOG_DEBUG << "Put response: " << reply.DebugString();
 		StartWatchingServiceNodes();
 		};
 
-	etcdserverpb::AsyncKVDeleteRangeHandler = [](const std::unique_ptr<etcdserverpb::AsyncKVDeleteRangeGrpcClientCall>&) {};
+	etcdserverpb::AsyncKVDeleteRangeHandler = [](const ClientContext& context, const ::etcdserverpb::DeleteRangeResponse& reply) {};
 
-	etcdserverpb::AsyncKVTxnHandler = [this](const std::unique_ptr<etcdserverpb::AsyncKVTxnGrpcClientCall>& call) {
-		LOG_DEBUG << "Txn response: " << call->reply.DebugString();
-		call->reply.succeeded() ? StartRpcServer() : AcquireNode();
+	etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext& context, const ::etcdserverpb::TxnResponse& reply) {
+		LOG_DEBUG << "Txn response: " << reply.DebugString();
+		reply.succeeded() ? StartRpcServer() : AcquireNode();
 		};
 
-	etcdserverpb::AsyncWatchWatchHandler = [this](const ::etcdserverpb::WatchResponse& response) {
+	etcdserverpb::AsyncWatchWatchHandler = [this](const ClientContext& context, const ::etcdserverpb::WatchResponse& response) {
 		if (response.created()) {
 			LOG_TRACE << "Watch created.";
 			return;
@@ -466,11 +462,11 @@ void Node::InitGrpcResponseHandlers() {
 		}
 		};
 
-	etcdserverpb::AsyncLeaseLeaseGrantHandler = [this](const std::unique_ptr<etcdserverpb::AsyncLeaseLeaseGrantGrpcClientCall>& call) {
-		GetNodeInfo().set_lease_id(call->reply.id());
+	etcdserverpb::AsyncLeaseLeaseGrantHandler = [this](const ClientContext& context, const ::etcdserverpb::LeaseGrantResponse& reply) {
+		GetNodeInfo().set_lease_id(reply.id());
 		KeepNodeAlive();
 		AcquireNode();
-		LOG_INFO << "Lease granted: " << call->reply.DebugString();
+		LOG_INFO << "Lease granted: " << reply.DebugString();
 		};
 }
 
