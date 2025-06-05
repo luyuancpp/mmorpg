@@ -9,9 +9,10 @@ namespace loginpb{
 struct ClientPlayerLoginLoginCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
 using AsyncClientPlayerLoginLoginHandlerFunctionType = std::function<void(const ClientContext&, const ::loginpb::LoginResponse&)>;
 AsyncClientPlayerLoginLoginHandlerFunctionType AsyncClientPlayerLoginLoginHandler;
+
+
 
 void AsyncCompleteGrpcClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
@@ -78,9 +79,10 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
 struct ClientPlayerLoginCreatePlayerCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
 using AsyncClientPlayerLoginCreatePlayerHandlerFunctionType = std::function<void(const ClientContext&, const ::loginpb::CreatePlayerResponse&)>;
 AsyncClientPlayerLoginCreatePlayerHandlerFunctionType AsyncClientPlayerLoginCreatePlayerHandler;
+
+
 
 void AsyncCompleteGrpcClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
@@ -147,9 +149,10 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
 struct ClientPlayerLoginEnterGameCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
 using AsyncClientPlayerLoginEnterGameHandlerFunctionType = std::function<void(const ClientContext&, const ::loginpb::EnterGameResponse&)>;
 AsyncClientPlayerLoginEnterGameHandlerFunctionType AsyncClientPlayerLoginEnterGameHandler;
+
+
 
 void AsyncCompleteGrpcClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
@@ -216,9 +219,10 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
 struct ClientPlayerLoginLeaveGameCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
 using AsyncClientPlayerLoginLeaveGameHandlerFunctionType = std::function<void(const ClientContext&, const ::Empty&)>;
 AsyncClientPlayerLoginLeaveGameHandlerFunctionType AsyncClientPlayerLoginLeaveGameHandler;
+
+
 
 void AsyncCompleteGrpcClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
@@ -285,9 +289,10 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
 struct ClientPlayerLoginDisconnectCompleteQueue {
     grpc::CompletionQueue cq;
 };
-
 using AsyncClientPlayerLoginDisconnectHandlerFunctionType = std::function<void(const ClientContext&, const ::Empty&)>;
 AsyncClientPlayerLoginDisconnectHandlerFunctionType AsyncClientPlayerLoginDisconnectHandler;
+
+
 
 void AsyncCompleteGrpcClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
@@ -350,7 +355,9 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
 
 
 
-void InitClientPlayerLoginCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+
+
+void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
     registry.emplace<ClientPlayerLoginLoginCompleteQueue>(nodeEntity);
 
     registry.emplace<ClientPlayerLoginCreatePlayerCompleteQueue>(nodeEntity);
@@ -361,7 +368,9 @@ void InitClientPlayerLoginCompletedQueue(entt::registry& registry, entt::entity 
 
     registry.emplace<ClientPlayerLoginDisconnectCompleteQueue>(nodeEntity);
 }
-void HandleClientPlayerLoginCompletedQueueMessage(entt::registry& registry) {
+
+
+void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
     {
         auto&& view = registry.view<ClientPlayerLoginLoginCompleteQueue>();
         for (auto&& [e, completeQueueComp] : view.each()) {
@@ -391,4 +400,16 @@ void HandleClientPlayerLoginCompletedQueueMessage(entt::registry& registry) {
         for (auto&& [e, completeQueueComp] : view.each()) {
             AsyncCompleteGrpcClientPlayerLoginDisconnect(registry, e, completeQueueComp.cq);
         }
-    }}}// namespace loginpb
+    }
+}
+
+
+void SetLoginServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
+   AsyncClientPlayerLoginLoginHandler = handler;
+   AsyncClientPlayerLoginCreatePlayerHandler = handler;
+   AsyncClientPlayerLoginEnterGameHandler = handler;
+   AsyncClientPlayerLoginLeaveGameHandler = handler;
+   AsyncClientPlayerLoginDisconnectHandler = handler;
+}
+
+}// namespace loginpb

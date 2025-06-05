@@ -21,20 +21,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::loginpb::LoginResponse>> response_reader;
 };
 
-using AsyncClientPlayerLoginLoginHandlerFunctionType = std::function<void(const ClientContext&, const ::loginpb::LoginResponse&)>;
-extern AsyncClientPlayerLoginLoginHandlerFunctionType AsyncClientPlayerLoginLoginHandler;
+
 
 
 class ::loginpb::LoginRequest;
-
+using AsyncClientPlayerLoginLoginHandlerFunctionType = std::function<void(const ClientContext&, const ::loginpb::LoginResponse&)>;
+extern AsyncClientPlayerLoginLoginHandlerFunctionType AsyncClientPlayerLoginLoginHandler;
 void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginRequest& request);
 void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleClientPlayerLoginCompletedQueueMessage(entt::registry& registry);
-void InitClientPlayerLoginCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 #pragma region ClientPlayerLoginCreatePlayer
 
@@ -46,20 +42,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::loginpb::CreatePlayerResponse>> response_reader;
 };
 
-using AsyncClientPlayerLoginCreatePlayerHandlerFunctionType = std::function<void(const ClientContext&, const ::loginpb::CreatePlayerResponse&)>;
-extern AsyncClientPlayerLoginCreatePlayerHandlerFunctionType AsyncClientPlayerLoginCreatePlayerHandler;
+
 
 
 class ::loginpb::CreatePlayerRequest;
-
+using AsyncClientPlayerLoginCreatePlayerHandlerFunctionType = std::function<void(const ClientContext&, const ::loginpb::CreatePlayerResponse&)>;
+extern AsyncClientPlayerLoginCreatePlayerHandlerFunctionType AsyncClientPlayerLoginCreatePlayerHandler;
 void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerRequest& request);
 void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleClientPlayerLoginCompletedQueueMessage(entt::registry& registry);
-void InitClientPlayerLoginCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 #pragma region ClientPlayerLoginEnterGame
 
@@ -71,20 +63,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::loginpb::EnterGameResponse>> response_reader;
 };
 
-using AsyncClientPlayerLoginEnterGameHandlerFunctionType = std::function<void(const ClientContext&, const ::loginpb::EnterGameResponse&)>;
-extern AsyncClientPlayerLoginEnterGameHandlerFunctionType AsyncClientPlayerLoginEnterGameHandler;
+
 
 
 class ::loginpb::EnterGameRequest;
-
+using AsyncClientPlayerLoginEnterGameHandlerFunctionType = std::function<void(const ClientContext&, const ::loginpb::EnterGameResponse&)>;
+extern AsyncClientPlayerLoginEnterGameHandlerFunctionType AsyncClientPlayerLoginEnterGameHandler;
 void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameRequest& request);
 void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleClientPlayerLoginCompletedQueueMessage(entt::registry& registry);
-void InitClientPlayerLoginCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 #pragma region ClientPlayerLoginLeaveGame
 
@@ -96,20 +84,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
 
-using AsyncClientPlayerLoginLeaveGameHandlerFunctionType = std::function<void(const ClientContext&, const ::Empty&)>;
-extern AsyncClientPlayerLoginLeaveGameHandlerFunctionType AsyncClientPlayerLoginLeaveGameHandler;
+
 
 
 class ::loginpb::LeaveGameRequest;
-
+using AsyncClientPlayerLoginLeaveGameHandlerFunctionType = std::function<void(const ClientContext&, const ::Empty&)>;
+extern AsyncClientPlayerLoginLeaveGameHandlerFunctionType AsyncClientPlayerLoginLeaveGameHandler;
 void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameRequest& request);
 void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleClientPlayerLoginCompletedQueueMessage(entt::registry& registry);
-void InitClientPlayerLoginCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 #pragma region ClientPlayerLoginDisconnect
 
@@ -121,20 +105,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
 
-using AsyncClientPlayerLoginDisconnectHandlerFunctionType = std::function<void(const ClientContext&, const ::Empty&)>;
-extern AsyncClientPlayerLoginDisconnectHandlerFunctionType AsyncClientPlayerLoginDisconnectHandler;
+
 
 
 class ::loginpb::LoginNodeDisconnectRequest;
-
+using AsyncClientPlayerLoginDisconnectHandlerFunctionType = std::function<void(const ClientContext&, const ::Empty&)>;
+extern AsyncClientPlayerLoginDisconnectHandlerFunctionType AsyncClientPlayerLoginDisconnectHandler;
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request);
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleClientPlayerLoginCompletedQueueMessage(entt::registry& registry);
-void InitClientPlayerLoginCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
 
+void SetLoginServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
 
 
 }// namespace loginpb

@@ -31,9 +31,6 @@ struct {{.RequestName}}Buffer {
 struct {{.RequestName}}WriteInProgress {
     bool isInProgress{false};
 };
-
-using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
-extern Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
 {{else}}
 class Async{{.Service}}{{.Method}}GrpcClientCall {
 public:
@@ -43,22 +40,27 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<{{.CppResponse}}>> response_reader;
 };
 
-using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const ClientContext&, const {{.CppResponse}}&)>;
-extern Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
+
 {{end}}
 
 class {{.CppRequest}};
-
+using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const ClientContext&, const {{.CppResponse}}&)>;
+extern Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
 void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request);
 void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void Handle{{.Service}}CompletedQueueMessage(entt::registry& registry);
-void Init{{.Service}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 {{ end }}
 {{- end }}
+
+{{- range $index, $m := .ServiceInfo }}
+  {{- if eq $index 0 }}
+void Set{{$m.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void Init{{$m.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry);
+  {{- end }}
+{{- end }}
+
 
 }// namespace {{.Package}}
 `
@@ -76,9 +78,9 @@ namespace {{.Package}}{
 struct {{.Service}}{{.Method}}CompleteQueue {
     grpc::CompletionQueue cq;
 };
-{{ if .ClientStreaming }}
-using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const {{.CppResponse}}&)>;
+using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const ClientContext&, const {{.CppResponse}}&)>;
 Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
+{{ if .ClientStreaming }}
 void TryWriteNextNext{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     auto& writeInProgress = registry.get<{{.RequestName}}WriteInProgress>(nodeEntity);
     auto& pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
@@ -130,7 +132,7 @@ void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::en
         case GrpcOperation::READ: {
             auto& response = registry.get<{{.CppResponse}}>(nodeEntity);
             if (Async{{.Service}}{{.Method}}Handler) {
-                Async{{.Service}}{{.Method}}Handler(response);
+                Async{{.Service}}{{.Method}}Handler(client.context, response);
             }
             client.stream->Read(&response, (void*)GrpcOperation::READ);
             TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
@@ -147,8 +149,7 @@ void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::en
     }
 }
 {{ else }}
-using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const ClientContext&, const {{.CppResponse}}&)>;
-Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
+
 
 void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
     void* got_tag = nullptr;
@@ -224,8 +225,12 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
 {{end }}
 {{- end }}
 
+{{range $index, $m := .ServiceInfo }}
+  {{- if eq $index 0 }}
+void Init{{$m.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+  {{- end }}
+{{- end -}}
 {{- range .ServiceInfo }}
-void Init{{.Service}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 {{- range .MethodInfo }}
     registry.emplace<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity);
 {{ if .ClientStreaming }}
@@ -244,11 +249,15 @@ void Init{{.Service}}CompletedQueue(entt::registry& registry, entt::entity nodeE
     }
 {{ end }}
 {{- end -}}
-}
 {{- end -}}
+}
 
+{{range $index, $m := .ServiceInfo }}
+  {{- if eq $index 0 }}
+void Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry) {
+  {{- end }}
+{{- end -}}
 {{- range .ServiceInfo }}
-void Handle{{.Service}}CompletedQueueMessage(entt::registry& registry) {
 {{- range .MethodInfo }}
     {
         auto&& view = registry.view<{{.Service}}{{.Method}}CompleteQueue>();
@@ -257,8 +266,20 @@ void Handle{{.Service}}CompletedQueueMessage(entt::registry& registry) {
         }
     }
 {{- end -}}
+{{- end }}
 }
+
+{{range $index, $m := .ServiceInfo }}
+  {{- if eq $index 0 }}
+void Set{{$m.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
+  {{- end }}
 {{- end -}}
+{{range $index, $m := .ServiceInfo }}
+{{- range $m.MethodInfo }}
+   Async{{$m.Service}}{{.Method}}Handler = handler;
+{{- end -}}
+{{- end }}
+}
 
 }// namespace {{.Package}}
 `

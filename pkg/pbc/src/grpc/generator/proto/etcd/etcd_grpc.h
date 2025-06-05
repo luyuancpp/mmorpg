@@ -21,20 +21,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::RangeResponse>> response_reader;
 };
 
-using AsyncKVRangeHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::RangeResponse&)>;
-extern AsyncKVRangeHandlerFunctionType AsyncKVRangeHandler;
+
 
 
 class ::etcdserverpb::RangeRequest;
-
+using AsyncKVRangeHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::RangeResponse&)>;
+extern AsyncKVRangeHandlerFunctionType AsyncKVRangeHandler;
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request);
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleKVCompletedQueueMessage(entt::registry& registry);
-void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 #pragma region KVPut
 
@@ -46,20 +42,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::PutResponse>> response_reader;
 };
 
-using AsyncKVPutHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::PutResponse&)>;
-extern AsyncKVPutHandlerFunctionType AsyncKVPutHandler;
+
 
 
 class ::etcdserverpb::PutRequest;
-
+using AsyncKVPutHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::PutResponse&)>;
+extern AsyncKVPutHandlerFunctionType AsyncKVPutHandler;
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request);
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleKVCompletedQueueMessage(entt::registry& registry);
-void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 #pragma region KVDeleteRange
 
@@ -71,20 +63,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::DeleteRangeResponse>> response_reader;
 };
 
-using AsyncKVDeleteRangeHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::DeleteRangeResponse&)>;
-extern AsyncKVDeleteRangeHandlerFunctionType AsyncKVDeleteRangeHandler;
+
 
 
 class ::etcdserverpb::DeleteRangeRequest;
-
+using AsyncKVDeleteRangeHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::DeleteRangeResponse&)>;
+extern AsyncKVDeleteRangeHandlerFunctionType AsyncKVDeleteRangeHandler;
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request);
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleKVCompletedQueueMessage(entt::registry& registry);
-void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 #pragma region KVTxn
 
@@ -96,20 +84,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::TxnResponse>> response_reader;
 };
 
-using AsyncKVTxnHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::TxnResponse&)>;
-extern AsyncKVTxnHandlerFunctionType AsyncKVTxnHandler;
+
 
 
 class ::etcdserverpb::TxnRequest;
-
+using AsyncKVTxnHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::TxnResponse&)>;
+extern AsyncKVTxnHandlerFunctionType AsyncKVTxnHandler;
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request);
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleKVCompletedQueueMessage(entt::registry& registry);
-void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 #pragma region KVCompact
 
@@ -121,20 +105,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::CompactionResponse>> response_reader;
 };
 
-using AsyncKVCompactHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::CompactionResponse&)>;
-extern AsyncKVCompactHandlerFunctionType AsyncKVCompactHandler;
+
 
 
 class ::etcdserverpb::CompactionRequest;
-
+using AsyncKVCompactHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::CompactionResponse&)>;
+extern AsyncKVCompactHandlerFunctionType AsyncKVCompactHandler;
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request);
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleKVCompletedQueueMessage(entt::registry& registry);
-void InitKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 using WatchStubPtr = std::unique_ptr<Watch::Stub>;
 #pragma region WatchWatch
@@ -155,20 +135,14 @@ struct WatchRequestWriteInProgress {
     bool isInProgress{false};
 };
 
-using AsyncWatchWatchHandlerFunctionType = std::function<void(const ::etcdserverpb::WatchResponse&)>;
-extern AsyncWatchWatchHandlerFunctionType AsyncWatchWatchHandler;
-
 
 class ::etcdserverpb::WatchRequest;
-
+using AsyncWatchWatchHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::WatchResponse&)>;
+extern AsyncWatchWatchHandlerFunctionType AsyncWatchWatchHandler;
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request);
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleWatchCompletedQueueMessage(entt::registry& registry);
-void InitWatchCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 using LeaseStubPtr = std::unique_ptr<Lease::Stub>;
 #pragma region LeaseLeaseGrant
@@ -181,20 +155,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseGrantResponse>> response_reader;
 };
 
-using AsyncLeaseLeaseGrantHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseGrantResponse&)>;
-extern AsyncLeaseLeaseGrantHandlerFunctionType AsyncLeaseLeaseGrantHandler;
+
 
 
 class ::etcdserverpb::LeaseGrantRequest;
-
+using AsyncLeaseLeaseGrantHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseGrantResponse&)>;
+extern AsyncLeaseLeaseGrantHandlerFunctionType AsyncLeaseLeaseGrantHandler;
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request);
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleLeaseCompletedQueueMessage(entt::registry& registry);
-void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 #pragma region LeaseLeaseRevoke
 
@@ -206,20 +176,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseRevokeResponse>> response_reader;
 };
 
-using AsyncLeaseLeaseRevokeHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseRevokeResponse&)>;
-extern AsyncLeaseLeaseRevokeHandlerFunctionType AsyncLeaseLeaseRevokeHandler;
+
 
 
 class ::etcdserverpb::LeaseRevokeRequest;
-
+using AsyncLeaseLeaseRevokeHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseRevokeResponse&)>;
+extern AsyncLeaseLeaseRevokeHandlerFunctionType AsyncLeaseLeaseRevokeHandler;
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request);
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleLeaseCompletedQueueMessage(entt::registry& registry);
-void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 #pragma region LeaseLeaseKeepAlive
 
@@ -239,20 +205,14 @@ struct LeaseKeepAliveRequestWriteInProgress {
     bool isInProgress{false};
 };
 
-using AsyncLeaseLeaseKeepAliveHandlerFunctionType = std::function<void(const ::etcdserverpb::LeaseKeepAliveResponse&)>;
-extern AsyncLeaseLeaseKeepAliveHandlerFunctionType AsyncLeaseLeaseKeepAliveHandler;
-
 
 class ::etcdserverpb::LeaseKeepAliveRequest;
-
+using AsyncLeaseLeaseKeepAliveHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseKeepAliveResponse&)>;
+extern AsyncLeaseLeaseKeepAliveHandlerFunctionType AsyncLeaseLeaseKeepAliveHandler;
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request);
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleLeaseCompletedQueueMessage(entt::registry& registry);
-void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 #pragma region LeaseLeaseTimeToLive
 
@@ -264,20 +224,16 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseTimeToLiveResponse>> response_reader;
 };
 
-using AsyncLeaseLeaseTimeToLiveHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseTimeToLiveResponse&)>;
-extern AsyncLeaseLeaseTimeToLiveHandlerFunctionType AsyncLeaseLeaseTimeToLiveHandler;
+
 
 
 class ::etcdserverpb::LeaseTimeToLiveRequest;
-
+using AsyncLeaseLeaseTimeToLiveHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseTimeToLiveResponse&)>;
+extern AsyncLeaseLeaseTimeToLiveHandlerFunctionType AsyncLeaseLeaseTimeToLiveHandler;
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request);
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleLeaseCompletedQueueMessage(entt::registry& registry);
-void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
-
 
 #pragma region LeaseLeaseLeases
 
@@ -289,20 +245,20 @@ public:
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseLeasesResponse>> response_reader;
 };
 
-using AsyncLeaseLeaseLeasesHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseLeasesResponse&)>;
-extern AsyncLeaseLeaseLeasesHandlerFunctionType AsyncLeaseLeaseLeasesHandler;
+
 
 
 class ::etcdserverpb::LeaseLeasesRequest;
-
+using AsyncLeaseLeaseLeasesHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseLeasesResponse&)>;
+extern AsyncLeaseLeaseLeasesHandlerFunctionType AsyncLeaseLeaseLeasesHandler;
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request);
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void HandleLeaseCompletedQueueMessage(entt::registry& registry);
-void InitLeaseCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 #pragma endregion
 
+void SetEtcdHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void HandleEtcdCompletedQueueMessage(entt::registry& registry);
 
 
 }// namespace etcdserverpb

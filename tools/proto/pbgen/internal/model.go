@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"path/filepath"
 	"pbgen/config"
@@ -90,6 +92,18 @@ func (info *RPCServiceInfo) HeadName() string {
 // FileBaseName 返回文件基本名
 func (info *RPCServiceInfo) FileBaseName() string {
 	return strings.Replace(info.FileName(), config.ProtoEx, "", 1)
+}
+
+func (info *RPCServiceInfo) FileBaseNameCamel() string {
+	// 1. 去掉扩展名
+	base := strings.Replace(info.FileName(), config.ProtoEx, "", 1)
+	// 2. 把下划线替换成空格，方便 Title() 把每个单词首字母大写
+	base = strings.ReplaceAll(base, "_", " ")
+	// 3. 首字母大写处理
+	base = cases.Title(language.English).String(base)
+	// 4. 去掉空格，连接成 CamelCase
+	base = strings.ReplaceAll(base, " ", "")
+	return base
 }
 
 func (info *RPCServiceInfo) ProtoPathWithFileBaseName() string {
