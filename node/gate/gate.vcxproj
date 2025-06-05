@@ -21,7 +21,6 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\gate_node.cpp" />
-    <ClCompile Include="src\grpc\handler\login_grpc_reply_handler.cpp" />
     <ClCompile Include="src\handler\service\client_message_processor.cpp" />
     <ClCompile Include="src\handler\service\gate_service_handler.cpp" />
     <ClCompile Include="src\handler\service\player\player_service.cpp" />

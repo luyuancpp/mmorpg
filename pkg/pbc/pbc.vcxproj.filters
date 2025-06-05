@@ -234,6 +234,9 @@
     <ClCompile Include="src\proto\scene\game_client_player.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\grpc\generator\grpc_init.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\common\common.pb.h">
