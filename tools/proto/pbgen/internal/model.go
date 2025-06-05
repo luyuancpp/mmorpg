@@ -147,6 +147,10 @@ func (info *MethodInfo) ServiceInfoHeadInclude() string {
 	return info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension
 }
 
+func (info *MethodInfo) GeneratorGrpcFileName() string {
+	return info.FileNameNoEx() + config.GrpcExtension
+}
+
 func (info *MethodInfo) PbcHeadName() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.ProtoPbhEx, 1)
 }
