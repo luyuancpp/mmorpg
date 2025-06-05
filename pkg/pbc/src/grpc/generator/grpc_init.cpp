@@ -4,65 +4,24 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include <grpcpp/grpcpp.h>
 
+
+#include "Etcd"
+#include "LoginService"
+
 void SetHandler(const std::function<void(const grpc::ClientContext&, const ::google::protobuf::Message& reply)>& handler){
 
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
-    SetHandler(handler);
+    SetEtcdHandler(handler);
+    SetLoginServiceHandler(handler);
 }
 
 void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity){
 
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
-    InitCompletedQueue(registry, nodeEntity);
+    InitEtcdCompletedQueue(registry, nodeEntity);
+    InitLoginServiceCompletedQueue(registry, nodeEntity);
 }
 
 void HandleCompletedQueueMessage(entt::registry& registry){
 
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
-    HandleCompletedQueueMessage(registry, nodeEntity);
+    HandleEtcdCompletedQueueMessage(registry, nodeEntity);
+    HandleLoginServiceCompletedQueueMessage(registry, nodeEntity);
 }

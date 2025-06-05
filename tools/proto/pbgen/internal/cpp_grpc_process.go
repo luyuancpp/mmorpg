@@ -126,6 +126,8 @@ func CppGrpcCallClient() {
 		go func() {
 			defer util.Wg.Done()
 			m := map[string]string{}
+			includesSlice := map[string]string{}
+
 			serviceList := GetSortServiceList()
 			for _, service := range serviceList {
 				serviceMethods, ok := ServiceMethodMap[service]
@@ -135,14 +137,29 @@ func CppGrpcCallClient() {
 				if len(serviceMethods) <= 0 {
 					continue
 				}
-				m[serviceMethods[0].FileBaseName()] = ""
-			}
-			keys := maps.Keys(m)
-			sort.Strings(keys)
+				firstMethod := serviceMethods[0]
+				if firstMethod.CcGenericServices() {
+					continue
+				}
+				if util.IsPathInProtoDirs(firstMethod.Path(), config.DbProtoDirIndex) {
+					continue
+				}
 
-			fileList := make([]string, 0, len(keys))
-			for _, k := range keys {
-				fileList = append(fileList, m[k])
+				m[firstMethod.FileBaseNameCamel()] = ""
+				includesSlice[firstMethod.GeneratorGrpcFileName()+config.HeaderExtension] = ""
+			}
+			fileKeys := maps.Keys(m)
+			sort.Strings(fileKeys)
+			fileList := make([]string, 0, len(fileKeys))
+			for _, k := range fileKeys {
+				fileList = append(fileList, k)
+			}
+
+			IncludeKeys := maps.Keys(m)
+			sort.Strings(IncludeKeys)
+			includes := make([]string, 0, len(IncludeKeys))
+			for _, k := range IncludeKeys {
+				includes = append(includes, k)
 			}
 
 			// 确保目录存在
@@ -150,9 +167,11 @@ func CppGrpcCallClient() {
 
 			// Prepare the data for C++ source file
 			cppData := struct {
+				Includes []string
 				FileList []string
 			}{
 				FileList: fileList,
+				Includes: includes,
 			}
 			// 生成 .h 文件
 			if err := RenderTemplateToFile("internal/gen/template/grpc_init_total.cpp.tmpl", config.GrpcInitFileCppPath, cppData); err != nil {
