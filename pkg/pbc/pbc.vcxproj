@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\grpc\generator\grpc_init.cpp" />
     <ClCompile Include="src\grpc\generator\proto\etcd\etcd_grpc.cpp" />
     <ClCompile Include="src\grpc\generator\proto\login\login_service_grpc.cpp" />
     <ClCompile Include="src\proto\centre\centre_client_player.pb.cc" />

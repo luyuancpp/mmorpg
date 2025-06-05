@@ -3,25 +3,29 @@
 #include <functional>
 #include "entt/src/entt/entity/registry.hpp"
 #include <grpcpp/grpcpp.h>
+#include <google/protobuf/message.h>
 
-{{range.Includes }}
-#include "{{.}}"
-{{- end }}
+using grpc::ClientContext;
+using grpc::Status;
+using grpc::ClientAsyncResponseReader;
 
-void SetHandler(const std::function<void(const grpc::ClientContext&, const ::google::protobuf::Message& reply)>& handler){
+void SetHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
 {{range.FileList }}
+    void Set{{.}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     Set{{.}}Handler(handler);
-{{- end }}
+{{end }}
 }
 
 void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity){
 {{range.FileList }}
+    void Init{{.}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
     Init{{.}}CompletedQueue(registry, nodeEntity);
-{{- end }}
+{{ end }}
 }
 
 void HandleCompletedQueueMessage(entt::registry& registry){
 {{range  .FileList }}
-    Handle{{.}}CompletedQueueMessage(registry, nodeEntity);
-{{- end }}
+    void Handle{{.}}CompletedQueueMessage(entt::registry& registry);
+    Handle{{.}}CompletedQueueMessage(registry);
+{{ end }}
 }

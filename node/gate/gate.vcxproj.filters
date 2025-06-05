@@ -18,9 +18,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\grpc\handler\login_grpc_reply_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\service\client_message_processor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
