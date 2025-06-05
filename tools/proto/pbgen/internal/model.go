@@ -34,14 +34,8 @@ type RPCServiceInfo struct {
 
 var FileServiceMap sync.Map
 
-// rpcLineReplacer 用于字符串替换
-var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
-
 // RpcServiceMap 存储RPC服务映射
 var RpcServiceMap sync.Map
-
-// GrpcServiceFileMap 存储gRPC服务文件映射
-var GrpcServiceFileMap sync.Map
 
 // RpcIdMethodMap 存储RPC方法ID映射
 var RpcIdMethodMap = map[uint64]*MethodInfo{}

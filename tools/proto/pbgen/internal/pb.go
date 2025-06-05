@@ -3,6 +3,8 @@ package internal
 import (
 	"bytes"
 	"fmt"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 	"log"
 	"os"
 	"os/exec"
@@ -126,15 +128,31 @@ func BuildProtoGrpc(protoPath string) (err error) {
 		if !util.IsProtoFile(fd) {
 			continue
 		}
-		// Check if the file is listed in the GrpcServiceFileMap (assumed global variable)
-		if _, ok := GrpcServiceFileMap.Load(fd.Name()); !ok {
-			continue
-		}
 
 		// Concurrent execution for each file
 		util.Wg.Add(1)
 		go func(fd os.DirEntry) {
 			defer util.Wg.Done()
+
+			// Construct the path to the descriptor file
+			descFilePath := filepath.Join(config.PbDescDirectory, fd.Name()+config.ProtoDescExtension)
+
+			// Read the descriptor file
+			data, err := os.ReadFile(descFilePath)
+			if err != nil {
+				return
+			}
+
+			// Unmarshal the descriptor set
+			fdSet := &descriptorpb.FileDescriptorSet{}
+			if err := proto.Unmarshal(data, fdSet); err != nil {
+				return
+			}
+
+			files := fdSet.GetFile()
+			if len(files) > 0 && files[0].Options != nil && files[0].Options.CcGenericServices != nil && *files[0].Options.CcGenericServices {
+				return
+			}
 
 			// Construct file paths
 			fileName := protoPath + fd.Name()
@@ -175,7 +193,7 @@ func BuildProtoGrpc(protoPath string) (err error) {
 			md5FileName := strings.Replace(fileName, config.ProtoDir, config.GrpcTempDirectory, 1)
 
 			dir := path.Dir(md5FileName)
-			err := os.MkdirAll(dir, os.FileMode(0777))
+			err = os.MkdirAll(dir, os.FileMode(0777))
 			if err != nil {
 				return
 			}
