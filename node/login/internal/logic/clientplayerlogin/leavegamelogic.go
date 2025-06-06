@@ -1,10 +1,8 @@
-package loginservicelogic
+package clientplayerloginlogic
 
 import (
 	"context"
 	"login/data"
-	"strconv"
-
 	"login/internal/svc"
 	"login/pb/game"
 
@@ -25,8 +23,12 @@ func NewLeaveGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LeaveGa
 	}
 }
 
-func (l *LeaveGameLogic) LeaveGame(in *game.LeaveGameC2LRequest) (*game.Empty, error) {
-	sessionId := strconv.FormatUint(in.SessionId, 10)
-	data.SessionList.Remove(sessionId)
+func (l *LeaveGameLogic) LeaveGame(in *game.LeaveGameRequest) (*game.Empty, error) {
+	sessionId, ok := l.ctx.Value("SessionId").(*string)
+	if !ok {
+		logx.Error("failed to get SessionId from context")
+		return &game.Empty{}, nil
+	}
+	defer data.SessionList.Remove(*sessionId)
 	return &game.Empty{}, nil
 }

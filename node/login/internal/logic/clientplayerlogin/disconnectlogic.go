@@ -1,4 +1,4 @@
-package loginservicelogic
+package clientplayerloginlogic
 
 import (
 	"context"
@@ -29,9 +29,9 @@ func (l *DisconnectLogic) Disconnect(in *game.LoginNodeDisconnectRequest) (*game
 	sessionId := strconv.FormatUint(in.SessionId, 10)
 	data.SessionList.Remove(sessionId)
 
-	//todo centreRequest := &game.GateSessionDisconnectRequest{
-	//	SessionInfo: &game.SessionDetails{SessionId: in.SessionId},
-	//}
-	//todo l.svcCtx.CentreClient.Send(centreRequest, game.CentreServiceLoginNodeSessionDisconnectMessageId)
+	centreRequest := &game.GateSessionDisconnectRequest{
+		SessionInfo: &game.SessionDetails{SessionId: in.SessionId},
+	}
+	l.svcCtx.GetCentreClient().Send(centreRequest, game.CentreServiceLoginNodeSessionDisconnectMessageId)
 	return &game.Empty{}, nil
 }

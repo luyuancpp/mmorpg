@@ -466,6 +466,23 @@ void Node::InitGrpcResponseHandlers() {
 		AcquireNode();
 		LOG_INFO << "Lease granted: " << reply.DebugString();
 		};
+
+	auto emptEtcdHandler = [](const ClientContext& context, const ::google::protobuf::Message& reply) {};
+	if (!etcdserverpb::AsyncKVCompactHandler) {
+		etcdserverpb::AsyncKVCompactHandler = emptEtcdHandler;
+	}
+	if (!etcdserverpb::AsyncLeaseLeaseRevokeHandler) {
+		etcdserverpb::AsyncLeaseLeaseRevokeHandler = emptEtcdHandler;
+	}
+	if (!etcdserverpb::AsyncLeaseLeaseKeepAliveHandler) {
+		etcdserverpb::AsyncLeaseLeaseKeepAliveHandler = emptEtcdHandler;
+	}
+	if (!etcdserverpb::AsyncLeaseLeaseTimeToLiveHandler) {
+		etcdserverpb::AsyncLeaseLeaseTimeToLiveHandler = emptEtcdHandler;
+	}
+	if (!etcdserverpb::AsyncLeaseLeaseLeasesHandler) {
+		etcdserverpb::AsyncLeaseLeaseLeasesHandler = emptEtcdHandler;
+	}
 }
 
 void Node::OnServerConnected(const OnConnected2TcpServerEvent& event) {
