@@ -3,7 +3,6 @@ package internal
 import (
 	"bytes"
 	"fmt"
-	"golang.org/x/exp/maps"
 	"log"
 	"os"
 	"path"
@@ -125,32 +124,26 @@ func CppGrpcCallClient() {
 
 		go func() {
 			defer util.Wg.Done()
-			m := map[string]string{}
-
+			m := map[string]*RPCServiceInfo{}
+			serviceInfoList := make([]*RPCServiceInfo, 0)
 			serviceList := GetSortServiceList()
-			for _, service := range serviceList {
-				serviceMethods, ok := ServiceMethodMap[service]
+			for _, serviceName := range serviceList {
+				result, ok := RpcServiceMap.Load(serviceName)
 				if !ok {
 					continue
 				}
-				if len(serviceMethods) <= 0 {
+				service := result.(*RPCServiceInfo)
+				if service.CcGenericServices() {
 					continue
 				}
-				firstMethod := serviceMethods[0]
-				if firstMethod.CcGenericServices() {
+				if util.IsPathInProtoDirs(service.Path(), config.DbProtoDirIndex) {
 					continue
 				}
-				if util.IsPathInProtoDirs(firstMethod.Path(), config.DbProtoDirIndex) {
+				if _, ok := m[service.FileBaseNameCamel()]; ok {
 					continue
 				}
-
-				m[firstMethod.FileBaseNameCamel()] = ""
-			}
-			fileKeys := maps.Keys(m)
-			sort.Strings(fileKeys)
-			fileList := make([]string, 0, len(fileKeys))
-			for _, k := range fileKeys {
-				fileList = append(fileList, k)
+				m[service.FileBaseNameCamel()] = service
+				serviceInfoList = append(serviceInfoList, service)
 			}
 
 			// 确保目录存在
@@ -158,10 +151,9 @@ func CppGrpcCallClient() {
 
 			// Prepare the data for C++ source file
 			cppData := struct {
-				Includes []string
-				FileList []string
+				ServiceInfo []*RPCServiceInfo
 			}{
-				FileList: fileList,
+				ServiceInfo: serviceInfoList,
 			}
 			// 生成 .h 文件
 			if err := RenderTemplateToFile("internal/gen/template/grpc_init_total.cpp.tmpl", config.GrpcInitFileCppPath, cppData); err != nil {

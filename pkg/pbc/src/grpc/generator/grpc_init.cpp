@@ -9,32 +9,40 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
+
+namespace loginpb {
+    void SetLoginServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+    void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
+}
+
+namespace etcdserverpb {
+    void SetEtcdHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+    void HandleEtcdCompletedQueueMessage(entt::registry& registry);
+}
+
+
 void SetHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
 
-    void SetEtcdHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    SetEtcdHandler(handler);
+    loginpb::SetLoginServiceHandler(handler);
 
-    void SetLoginServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    SetLoginServiceHandler(handler);
+    etcdserverpb::SetEtcdHandler(handler);
 
 }
 
 void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity){
 
-    void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-    InitEtcdCompletedQueue(registry, nodeEntity);
+    loginpb::InitLoginServiceCompletedQueue(registry, nodeEntity);
 
-    void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-    InitLoginServiceCompletedQueue(registry, nodeEntity);
+    etcdserverpb::InitEtcdCompletedQueue(registry, nodeEntity);
 
 }
 
 void HandleCompletedQueueMessage(entt::registry& registry){
 
-    void HandleEtcdCompletedQueueMessage(entt::registry& registry);
-    HandleEtcdCompletedQueueMessage(registry);
+    loginpb::HandleLoginServiceCompletedQueueMessage(registry);
 
-    void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
-    HandleLoginServiceCompletedQueueMessage(registry);
+    etcdserverpb::HandleEtcdCompletedQueueMessage(registry);
 
 }

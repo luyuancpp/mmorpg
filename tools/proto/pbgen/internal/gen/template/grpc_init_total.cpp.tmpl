@@ -9,23 +9,28 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
+{{range.ServiceInfo }}
+namespace {{.Package}} {
+    void Set{{.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void Init{{.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+    void Handle{{.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry);
+}
+{{ end }}
+
 void SetHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
-{{range.FileList }}
-    void Set{{.}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    Set{{.}}Handler(handler);
-{{end }}
+{{range.ServiceInfo }}
+    {{.Package}}::Set{{.FileBaseNameCamel}}Handler(handler);
+{{ end }}
 }
 
 void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity){
-{{range.FileList }}
-    void Init{{.}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-    Init{{.}}CompletedQueue(registry, nodeEntity);
+{{range.ServiceInfo }}
+    {{.Package}}::Init{{.FileBaseNameCamel}}CompletedQueue(registry, nodeEntity);
 {{ end }}
 }
 
 void HandleCompletedQueueMessage(entt::registry& registry){
-{{range  .FileList }}
-    void Handle{{.}}CompletedQueueMessage(entt::registry& registry);
-    Handle{{.}}CompletedQueueMessage(registry);
+{{range  .ServiceInfo }}
+    {{.Package}}::Handle{{.FileBaseNameCamel}}CompletedQueueMessage(registry);
 {{ end }}
 }
