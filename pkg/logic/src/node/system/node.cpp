@@ -167,14 +167,7 @@ void Node::InitGrpcClients() {
 	const std::string& etcdAddr = *tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin();
 	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
 
-	tls.globalNodeRegistry.emplace<etcdserverpb::KVStubPtr>(GetGlobalGrpcNodeEntity()) =
-		etcdserverpb::KV::NewStub(channel);
-
-	tls.globalNodeRegistry.emplace<etcdserverpb::WatchStubPtr>(GetGlobalGrpcNodeEntity()) =
-		etcdserverpb::Watch::NewStub(channel);
-
-	tls.globalNodeRegistry.emplace<etcdserverpb::LeaseStubPtr>(GetGlobalGrpcNodeEntity()) =
-		etcdserverpb::Lease::NewStub(channel);
+	etcdserverpb::InitEtcdStub(channel, tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
 }
 
 void Node::InitGrpcQueues() {

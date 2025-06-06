@@ -259,6 +259,7 @@ void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, con
 void SetEtcdHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 void HandleEtcdCompletedQueueMessage(entt::registry& registry);
+void InitEtcdStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 
 }// namespace etcdserverpb
