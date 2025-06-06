@@ -31,15 +31,13 @@ GateNode::GateNode(EventLoop* loop)
 			return;
 		}
 		auto it = tls_gate.sessions().find(sessionDetails->session_id());
-		if (it == tls_gate.sessions().end())
-		{
+		if (it == tls_gate.sessions().end()){
 			LOG_DEBUG << "conn id not found  session id " << "," << sessionDetails->session_id();
 			return;
 		}
 		gGateNode->SendMessageToClient(it->second.conn, reply);
 		};
-
-	SetHandler(sendGrpcResponseToClientSession);
+	SetIfEmptyHandler(sendGrpcResponseToClientSession);
 }
 
 void GateNode::StartRpcServer()
@@ -52,10 +50,6 @@ void GateNode::StartRpcServer()
 		std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
 
 	tls_gate.session_id_gen().set_node_id(GetNodeId());
-
-	loginGrpcSelectTimer.RunEvery(0.01, []() {
-		loginpb::HandleLoginServiceCompletedQueueMessage(tls.GetNodeRegistry(eNodeType::LoginNodeService));
-		});
 
     LOG_INFO << "gate node  start at" << GetNodeInfo().DebugString();
 }

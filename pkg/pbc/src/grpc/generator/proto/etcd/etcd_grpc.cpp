@@ -979,6 +979,43 @@ void SetEtcdHandler(const std::function<void(const ClientContext&, const ::googl
 }
 
 
+void SetEtcdIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
+	if (!AsyncKVRangeHandler){
+   		AsyncKVRangeHandler = handler;
+	}
+	if (!AsyncKVPutHandler){
+   		AsyncKVPutHandler = handler;
+	}
+	if (!AsyncKVDeleteRangeHandler){
+   		AsyncKVDeleteRangeHandler = handler;
+	}
+	if (!AsyncKVTxnHandler){
+   		AsyncKVTxnHandler = handler;
+	}
+	if (!AsyncKVCompactHandler){
+   		AsyncKVCompactHandler = handler;
+	}
+	if (!AsyncWatchWatchHandler){
+   		AsyncWatchWatchHandler = handler;
+	}
+	if (!AsyncLeaseLeaseGrantHandler){
+   		AsyncLeaseLeaseGrantHandler = handler;
+	}
+	if (!AsyncLeaseLeaseRevokeHandler){
+   		AsyncLeaseLeaseRevokeHandler = handler;
+	}
+	if (!AsyncLeaseLeaseKeepAliveHandler){
+   		AsyncLeaseLeaseKeepAliveHandler = handler;
+	}
+	if (!AsyncLeaseLeaseTimeToLiveHandler){
+   		AsyncLeaseLeaseTimeToLiveHandler = handler;
+	}
+	if (!AsyncLeaseLeaseLeasesHandler){
+   		AsyncLeaseLeaseLeasesHandler = handler;
+	}
+}
+
+
 void InitEtcdStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
 	registry.emplace<KVStubPtr>(nodeEntity, KV::NewStub(channel));
 	registry.emplace<WatchStubPtr>(nodeEntity, Watch::NewStub(channel));
