@@ -3,8 +3,7 @@ package clientplayerloginlogic
 import (
 	"context"
 	"login/data"
-	"strconv"
-
+	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/svc"
 	"login/pb/game"
 
@@ -26,7 +25,12 @@ func NewDisconnectLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Discon
 }
 
 func (l *DisconnectLogic) Disconnect(in *game.LoginNodeDisconnectRequest) (*game.Empty, error) {
-	sessionId := strconv.FormatUint(in.SessionId, 10)
+	sessionId, ok := ctxkeys.GetSessionID(l.ctx)
+	if !ok {
+		logx.Error("failed to get SessionId from context")
+		return &game.Empty{}, nil
+	}
+
 	data.SessionList.Remove(sessionId)
 
 	centreRequest := &game.GateSessionDisconnectRequest{

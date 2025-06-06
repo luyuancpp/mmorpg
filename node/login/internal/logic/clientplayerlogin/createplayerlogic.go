@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/looplab/fsm"
 	"login/data"
+	"login/internal/logic/pkg/ctxkeys"
 	"time"
 
 	"login/internal/svc"
@@ -28,7 +29,7 @@ func NewCreatePlayerLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Crea
 }
 
 func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.CreatePlayerResponse, error) {
-	session, ok := l.ctx.Value("Session").(*data.Session)
+	session, ok := ctxkeys.GetSession(l.ctx)
 	resp := &game.CreatePlayerResponse{
 		ErrorMessage: &game.TipInfoMessage{},
 		Players:      make([]*game.AccountSimplePlayerWrapper, 0)}

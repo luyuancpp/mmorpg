@@ -5,6 +5,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"login/client/playerdbservice"
 	"login/data"
+	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/svc"
 	"login/pb/game"
 	"strconv"
@@ -27,7 +28,7 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 }
 
 func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameResponse, error) {
-	session, ok := l.ctx.Value("Session").(*data.Session)
+	session, ok := ctxkeys.GetSession(l.ctx)
 
 	resp := &game.EnterGameResponse{ErrorMessage: &game.TipInfoMessage{}}
 
@@ -36,13 +37,13 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 		return resp, nil
 	}
 
-	sessionId, ok := l.ctx.Value("SessionId").(*string)
+	sessionId, ok := ctxkeys.GetSessionID(l.ctx)
 	if !ok {
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionIdNotFound)
 		return resp, nil
 	}
 
-	defer data.SessionList.Remove(*sessionId)
+	defer data.SessionList.Remove(sessionId)
 
 	// Validate player ID belongs to the session
 	if !l.isPlayerInSession(session, in.PlayerId) {
