@@ -1,16 +1,15 @@
-package loginservicelogic
+package clientplayerloginlogic
 
 import (
 	"context"
-	"strconv"
-
 	"github.com/golang/protobuf/proto"
-	"github.com/zeromicro/go-zero/core/logx"
-
 	"login/client/playerdbservice"
 	"login/data"
 	"login/internal/svc"
 	"login/pb/game"
+	"strconv"
+
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type EnterGameLogic struct {
@@ -27,27 +26,27 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 	}
 }
 
-func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGameC2LResponse, error) {
-	// Convert session ID to string and ensure cleanup after processing
-	sessionId := strconv.FormatUint(in.SessionInfo.SessionId, 10)
-	defer data.SessionList.Remove(sessionId)
+func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameResponse, error) {
+	session, ok := l.ctx.Value("Session").(*data.Session)
 
-	// Initialize response structure
-	resp := &game.EnterGameC2LResponse{
-		ClientMsgBody: &game.EnterGameResponse{ErrorMessage: &game.TipInfoMessage{}},
-		SessionInfo:   in.SessionInfo,
-	}
+	resp := &game.EnterGameResponse{ErrorMessage: &game.TipInfoMessage{}}
 
-	// Validate session
-	session, ok := data.SessionList.Get(sessionId)
 	if !ok {
-		resp.ClientMsgBody.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionIdNotFound)
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionIdNotFound)
 		return resp, nil
 	}
 
+	sessionId, ok := l.ctx.Value("SessionId").(*string)
+	if !ok {
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionIdNotFound)
+		return resp, nil
+	}
+
+	defer data.SessionList.Remove(*sessionId)
+
 	// Validate player ID belongs to the session
-	if !l.isPlayerInSession(session, in.ClientMsgBody.PlayerId) {
-		resp.ClientMsgBody.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionIdNotFound)
+	if !l.isPlayerInSession(session, in.PlayerId) {
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionIdNotFound)
 		return resp, nil
 	}
 
@@ -58,8 +57,8 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 	}
 
 	// Ensure player data is loaded in Redis
-	if err := l.ensurePlayerDataInRedis(in.ClientMsgBody.PlayerId); err != nil {
-		resp.ClientMsgBody.ErrorMessage.Id = uint32(game.LoginError_kLoginPlayerGuidError)
+	if err := l.ensurePlayerDataInRedis(in.PlayerId); err != nil {
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginPlayerGuidError)
 		logx.Error(err)
 		return resp, err
 	}
@@ -99,10 +98,11 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 }
 
 // Notify central service about player entry
-func (l *EnterGameLogic) notifyCentreService(in *game.EnterGameC2LRequest) {
+func (l *EnterGameLogic) notifyCentreService(in *game.EnterGameRequest) {
 	centreRequest := &game.CentrePlayerGameNodeEntryRequest{
-		ClientMsgBody: in.ClientMsgBody,
-		SessionInfo:   in.SessionInfo,
+		ClientMsgBody: &game.CentreEnterGameRequest{
+			PlayerId: in.PlayerId,
+		},
 	}
 	l.svcCtx.GetCentreClient().Send(centreRequest, game.CentreServiceLoginNodeEnterGameMessageId)
 }

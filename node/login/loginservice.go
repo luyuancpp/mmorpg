@@ -15,11 +15,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
-	"log"
+	"login/data"
 	"login/internal/config"
 	"login/internal/logic/pkg/centre"
 	"login/internal/logic/pkg/node"
-	loginserviceServer "login/internal/server/loginservice"
+	loginserviceServer "login/internal/server/clientplayerlogin"
 	"login/internal/svc"
 	"login/pb/game"
 	"net"
@@ -100,13 +100,18 @@ func SessionInterceptor(
 			// 解码 Base64
 			bin, err := base64.StdEncoding.DecodeString(vals[0])
 			if err != nil {
-				log.Println("Base64 decode error:", err)
+				logx.Error("Base64 decode error:", err)
 			} else {
 				var detail game.SessionDetails
 				if err := proto.Unmarshal(bin, &detail); err != nil {
-					log.Println("Protobuf unmarshal error:", err)
+					logx.Error("Protobuf unmarshal error:", err)
 				} else {
 					// 安全放入 context
+					sessionId := strconv.FormatUint(detail.SessionId, 10)
+					session, _ := data.SessionList.Get(sessionId)
+
+					ctx = context.WithValue(ctx, "Session", &session)
+					ctx = context.WithValue(ctx, "SessionId", &sessionId)
 					ctx = context.WithValue(ctx, "SessionDetailsKey", &detail)
 				}
 			}
@@ -119,7 +124,7 @@ func SessionInterceptor(
 func startServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	server := zrpc.MustNewServer(cfg.RpcServerConf, func(grpcServer *grpc.Server) {
 		// 注册服务
-		game.RegisterLoginServiceServer(grpcServer, loginserviceServer.NewLoginServiceServer(ctx))
+		game.RegisterClientPlayerLoginServer(grpcServer, loginserviceServer.NewClientPlayerLoginServer(ctx))
 
 		// 在开发或测试模式下，启用反射
 		if cfg.Mode == service.DevMode || cfg.Mode == service.TestMode {
