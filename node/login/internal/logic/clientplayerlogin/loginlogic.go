@@ -6,6 +6,7 @@ import (
 	"github.com/looplab/fsm"
 	"login/client/accountdbservice"
 	"login/data"
+	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/svc"
 	"login/pb/game"
 
@@ -32,9 +33,19 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	//todo 登录的时候马上断开连接换了个gate应该可以登录成功
 	//todo 在链接过程中断了，换了gate新的gate 应该是可以上线成功的，消息要发到新的gate上,老的gate正常走断开流程
 	//todo gate异步同时登陆情况,老gate晚于新gate登录到controller会不会导致登录不成功了?这时候怎么处理
-	sessionId, ok := l.ctx.Value("SessionId").(*string)
-
 	resp := &game.LoginResponse{}
+
+	session, ok := data.SessionList.Get(in.Account)
+	if ok {
+		logx.Errorf("Login rejected: account %s already has an active session", in.Account)
+
+		resp.ErrorMessage = &game.TipInfoMessage{
+			Id: uint32(game.LoginError_kLoginInProgress),
+		}
+		return resp, nil
+	}
+
+	sessionId, ok := ctxkeys.GetSessionID(l.ctx)
 	if !ok {
 		logx.Error("SessionId not found in context during login request")
 
@@ -43,10 +54,8 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 		}
 		return resp, nil
 	}
-
-	session := data.NewPlayer(in.Account)
-
-	data.SessionList.Set(*sessionId, session)
+	session = data.NewPlayer(in.Account)
+	data.SessionList.Set(sessionId, session)
 
 	defer func(Fsm *fsm.FSM, ctx context.Context, event string, args ...interface{}) {
 		err := Fsm.Event(ctx, event, args)

@@ -18,6 +18,7 @@ import (
 	"login/data"
 	"login/internal/config"
 	"login/internal/logic/pkg/centre"
+	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/node"
 	loginserviceServer "login/internal/server/clientplayerlogin"
 	"login/internal/svc"
@@ -109,10 +110,9 @@ func SessionInterceptor(
 					// 安全放入 context
 					sessionId := strconv.FormatUint(detail.SessionId, 10)
 					session, _ := data.SessionList.Get(sessionId)
-
-					ctx = context.WithValue(ctx, "Session", &session)
-					ctx = context.WithValue(ctx, "SessionId", &sessionId)
-					ctx = context.WithValue(ctx, "SessionDetailsKey", &detail)
+					ctx = ctxkeys.WithSession(ctx, session)
+					ctx = ctxkeys.WithSessionID(ctx, sessionId)
+					ctx = ctxkeys.WithSessionDetails(ctx, &detail)
 				}
 			}
 		}
