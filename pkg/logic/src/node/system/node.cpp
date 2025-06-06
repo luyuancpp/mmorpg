@@ -228,10 +228,16 @@ void Node::ConnectToGrpcNode(const NodeInfo& info) {
 		return;
 	}
 
-	registry.emplace<std::shared_ptr<grpc::Channel>>(entityId,
+	const auto& channel = registry.emplace<std::shared_ptr<grpc::Channel>>(entityId,
 		grpc::CreateChannel(::FormatIpAndPort(info.endpoint().ip(), info.endpoint().port()),
 			grpc::InsecureChannelCredentials()));
-	ProcessGrpcNode(info);
+
+	InitStub(channel, registry, entityId);
+	InitCompletedQueue(registry, entityId);
+	tls.GetConsistentNode(info.node_type()).add(info.node_id(), entityId);
+
+	//todo 如果重连后连上了不同的gate会不会有异步问题
+
 }
 
 void Node::ConnectToTcpNode(const NodeInfo& info) {
@@ -404,7 +410,8 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		}
 	}
 
-	ProcessNodeStop(nodeType, nodeId);
+	tls.GetConsistentNode(nodeType).remove(nodeId);
+
 	entt::registry& registry = tls.GetNodeRegistry(nodeType);
 	Destroy(registry, entt::entity{ nodeId });
 	LOG_INFO << "Service node stopped, id: " << nodeId;

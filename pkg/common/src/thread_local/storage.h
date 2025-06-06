@@ -2,14 +2,17 @@
 
 #include "util/game_registry.h"
 #include "util/snow_flake.h"
+#include "util/consistent_hash_node.h"
+#include "proto/common/node.pb.h"
 
-constexpr uint32_t kMaxNodeType = 20;
 
 class ThreadLocalStorage
 {
 public:
-	using NodeRgistries = std::array<entt::registry, kMaxNodeType>;
-	using NodeGloabalEntity = std::array<entt::entity, kMaxNodeType>;
+	using NodeRgistries = std::array<entt::registry, eNodeType_ARRAYSIZE>;
+	using NodeGloabalEntity = std::array<entt::entity, eNodeType_ARRAYSIZE>;
+	using ConsistentNode = ConsistentHashNode<uint64_t, entt::entity>;
+	using ConsistentNodes = std::array<ConsistentNode, eNodeType_ARRAYSIZE>;
 
 	ThreadLocalStorage();
 
@@ -41,9 +44,14 @@ public:
 	}
 
 	entt::entity GetNodeGlobalEntity(uint32_t nodeType);
+
+	ConsistentNode& GetConsistentNode(uint32_t nodeType) {
+		return consistentNodes[nodeType];
+	}
 private:
 	NodeRgistries nodeRegistries;
 	NodeGloabalEntity nodeGlobalEntities;
+	ConsistentNodes consistentNodes;
 };
 
 extern thread_local ThreadLocalStorage tls;
