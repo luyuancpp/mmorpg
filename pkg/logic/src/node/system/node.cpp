@@ -45,7 +45,7 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
 	LOG_INFO << "Node created, log file: " << logPath;
 
 	gNode = this;
-	tls.globalNodeRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	tls.nodeGlobalRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 
 	//未实现的节点实现一个空函数
 	void InitPlayerService();
@@ -167,14 +167,13 @@ void Node::InitGrpcClients() {
 	const std::string& etcdAddr = *tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin();
 	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
 
-	etcdserverpb::InitEtcdStub(channel, tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
+	etcdserverpb::InitEtcdStub(channel, tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
 }
 
 void Node::InitGrpcQueues() {
-	etcdserverpb::InitEtcdCompletedQueue(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity());
-
+	etcdserverpb::InitEtcdCompletedQueue(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
 	etcdQueueTimer.RunEvery(0.001, [] {
-		etcdserverpb::HandleEtcdCompletedQueueMessage(tls.globalNodeRegistry);
+		etcdserverpb::HandleEtcdCompletedQueueMessage(tls.GetNodeRegistry(EtcdNodeService));
 		});
 }
 
@@ -220,7 +219,7 @@ void Node::ConnectToNode(const NodeInfo& info) {
 }
 
 void Node::ConnectToGrpcNode(const NodeInfo& info) {
-	auto& nodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& registry = NodeSystem::GetRegistryForNodeType(info.node_type());
 
 	const entt::entity entityId{ info.node_id() };
@@ -321,7 +320,7 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 		return;
 	}
 
-	auto& nodeRegistry = tls.globalNodeRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
 
 	for (const auto& existNode : nodeList) {
@@ -393,7 +392,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		return;
 	}
 
-	auto& nodeRegistry = tls.globalNodeRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
 	for (auto it = nodeList.begin(); it != nodeList.end(); ) {
 		if (it->node_type() == nodeType && it->node_id() == nodeId) {
@@ -535,7 +534,7 @@ void Node::HandleNodeRegistration(
 	LOG_TRACE << "Node registration request: " << request.DebugString();
 
 	auto tryRegister = [&](const TcpConnectionPtr& conn, uint32_t nodeType) -> bool {
-		const auto& nodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+		const auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
 			if (serverNode.lease_id() != peerNode.lease_id()) continue;
 			entt::registry& registry = tls.GetNodeRegistry(nodeType);
@@ -616,7 +615,7 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 }
 
 void Node::AcquireNode() {
-	auto& nodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[GetNodeType()];
+	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[GetNodeType()];
 	auto& protoList = *nodeList.mutable_node_list();
 	uint32_t maxNodeId = 0;
 	UInt32Set usedIds;
@@ -648,7 +647,7 @@ void Node::KeepNodeAlive() {
 	renewLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
 		etcdserverpb::LeaseKeepAliveRequest req;
 		req.set_id(static_cast<int64_t>(GetNodeInfo().lease_id()));
-		SendLeaseLeaseKeepAlive(tls.globalNodeRegistry, GetGlobalGrpcNodeEntity(), req);
+		SendLeaseLeaseKeepAlive(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), req);
 		});
 }
 

@@ -8,13 +8,17 @@ constexpr uint32_t kMaxNodeType = 20;
 class ThreadLocalStorage
 {
 public:
-	using Rggistries = std::array<entt::registry, kMaxNodeType>;
+	using NodeRgistries = std::array<entt::registry, kMaxNodeType>;
+	using NodeGloabalEntity = std::array<entt::entity, kMaxNodeType>;
+
+	ThreadLocalStorage();
+
 	entt::registry globalRegistry;
 	entt::registry registry;
 	entt::registry sceneRegistry;
 	entt::registry itemRegistry;
 	entt::registry sessionRegistry;
-	entt::registry globalNodeRegistry;
+	entt::registry nodeGlobalRegistry;
 
 	entt::dispatcher dispatcher;
 
@@ -28,17 +32,18 @@ public:
 
 	void Clear();
 
-	entt::registry& GetNodeRegistry(uint32_t type) {
-		return nodeRegistries[type];
+	entt::registry& GetNodeRegistry(uint32_t nodeType) {
+		return nodeRegistries[nodeType];
 	}
 
-	const Rggistries& GetNodeRegistry() {
+	const NodeRgistries& GetNodeRegistry() {
 		return nodeRegistries;
 	}
 
-
+	entt::entity GetNodeGlobalEntity(uint32_t nodeType);
 private:
-	Rggistries nodeRegistries;
+	NodeRgistries nodeRegistries;
+	NodeGloabalEntity nodeGlobalEntities;
 };
 
 extern thread_local ThreadLocalStorage tls;

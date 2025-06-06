@@ -2,6 +2,11 @@
 
 thread_local ThreadLocalStorage tls;
 
+ThreadLocalStorage::ThreadLocalStorage()
+{
+	Clear();
+}
+
 void ThreadLocalStorage::Clear()
 {
 	globalRegistry.clear();
@@ -9,11 +14,16 @@ void ThreadLocalStorage::Clear()
 	sceneRegistry.clear();
 	itemRegistry.clear();
 	sessionRegistry.clear();
-	globalNodeRegistry.clear();
-	
+	nodeGlobalRegistry.clear();
+
 	for (auto& registry : nodeRegistries)
 	{
 		registry.clear();
+	}
+
+	for (auto& e : nodeGlobalEntities)
+	{
+		e = entt::null;
 	}
 
 	dispatcher.clear();
@@ -21,4 +31,14 @@ void ThreadLocalStorage::Clear()
 	operatorEntity = entt::null;
 	errorEntity = entt::null;
 	globalEntity = entt::null;
+}
+
+entt::entity ThreadLocalStorage::GetNodeGlobalEntity(uint32_t nodeType)
+{
+	auto& registry = GetNodeRegistry(nodeType);
+	if (nodeGlobalEntities[nodeType] == entt::null)
+	{
+		nodeGlobalEntities[nodeType] = registry.create();
+	}
+	return nodeGlobalEntities[nodeType];
 }
