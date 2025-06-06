@@ -119,6 +119,7 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
 void SetLoginServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
+void InitLoginServiceStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 
 }// namespace loginpb

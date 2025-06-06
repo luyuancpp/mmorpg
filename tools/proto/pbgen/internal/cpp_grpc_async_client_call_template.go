@@ -58,6 +58,7 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
 void Set{{$m.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void Init{{$m.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 void Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry);
+void Init{{$m.FileBaseNameCamel}}Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
   {{- end }}
 {{- end }}
 
@@ -281,16 +282,15 @@ void Set{{$m.FileBaseNameCamel}}Handler(const std::function<void(const ClientCon
 {{- end }}
 }
 
+{{range $index, $m := .ServiceInfo }}
+  {{- if eq $index 0 }}
+void Init{{$m.FileBaseNameCamel}}Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
+  {{- end }}
+{{- end -}}
+{{- range .ServiceInfo }}
+	registry.emplace<{{.Service}}StubPtr>(nodeEntity) =	{{.Service}}::NewStub(channel);
+{{- end }}
+}
+
 }// namespace {{.Package}}
-`
-const AsyncClientSummaryHeaderTemplate = `#pragma once
-
-#include <functional>
-#include "entt/src/entt/entity/registry.hpp"
-#include <grpcpp/grpcpp.h>
-
-void SetHandler(const std::function<void(const grpc::ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-void HandleCompletedQueueMessage(entt::registry& registry);
-
 `
