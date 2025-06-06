@@ -4,12 +4,13 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include <grpcpp/grpcpp.h>
 #include <google/protobuf/message.h>
+#include "node/system/node_system.h"
 
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-{{range.ServiceInfo }}
+{{ range.ServiceInfo }}
 namespace {{.Package}} {
     void Set{{.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void Init{{.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
@@ -18,19 +19,21 @@ namespace {{.Package}} {
 {{ end }}
 
 void SetHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
-{{range.ServiceInfo }}
+{{ range.ServiceInfo }}
     {{.Package}}::Set{{.FileBaseNameCamel}}Handler(handler);
 {{ end }}
 }
 
 void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity){
-{{range.ServiceInfo }}
-    {{.Package}}::Init{{.FileBaseNameCamel}}CompletedQueue(registry, nodeEntity);
+{{ range.ServiceInfo }}
+    if (eNodeType::{{.BasePathForCpp}}NodeService == NodeSystem::GetRegistryType(registry)) {
+        {{.Package}}::Init{{.FileBaseNameCamel}}CompletedQueue(registry, nodeEntity);
+    }
 {{ end }}
 }
 
 void HandleCompletedQueueMessage(entt::registry& registry){
-{{range  .ServiceInfo }}
+{{ range  .ServiceInfo }}
     {{.Package}}::Handle{{.FileBaseNameCamel}}CompletedQueueMessage(registry);
 {{ end }}
 }

@@ -4,8 +4,10 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"path"
 	"path/filepath"
 	"pbgen/config"
+	"pbgen/util"
 	"strings"
 	"sync"
 )
@@ -71,6 +73,10 @@ func (info *RPCServiceInfo) FileName() string {
 
 func (info *RPCServiceInfo) Path() string {
 	return strings.Replace(filepath.Dir(*info.FdSet.GetFile()[0].Name), "\\", "/", -1) + "/"
+}
+
+func (info *RPCServiceInfo) BasePathForCpp() string {
+	return util.CapitalizeWords(path.Base(info.Path()))
 }
 
 // PbcHeadName 返回Proto文件头文件名

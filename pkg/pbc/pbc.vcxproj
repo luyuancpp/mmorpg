@@ -291,7 +291,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>./src/;../../third_party/sol2/include/;../../third_party/lua/;../common/src/;../../third_party/grpc/include/;../../third_party/spdlog/include/;../../third_party/muduo/;../../third_party/boost/;../../third_party/;../../third_party/grpc/third_party/protobuf/src/;../../third_party/grpc/third_party/abseil-cpp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./src/;../../third_party/sol2/include/;../../third_party/lua/;../common/src/;../../third_party/grpc/include/;../../third_party/spdlog/include/;../../third_party/muduo/;../../third_party/boost/;../../third_party/;../../third_party/grpc/third_party/protobuf/src/;../../third_party/grpc/third_party/abseil-cpp/;../logic/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
