@@ -22,22 +22,28 @@ eNodeType NodeSystem::GetServiceTypeFromPrefix(const std::string& prefix) {
 	}
 
 	LOG_ERROR << "Unknown service type for prefix: " << prefix;
-	return eNodeType::CentreNodeService; // 默认返回，可以根据需求改成 Invalid 或抛异常
+	return eNodeType(std::numeric_limits<::int32_t>::max());
 }
-
 
 entt::registry& NodeSystem::GetRegistryForNodeType(uint32_t nodeType) {
 	return tls.GetNodeRegistry(nodeType);
 }
 
-std::string NodeSystem::GetRegistryName(const entt::registry& registry) 
-{
-	for (uint32_t i = 0; i < tls.GetNodeRegistry().size(); ++i)
-	{
+std::string NodeSystem::GetRegistryName(const entt::registry& registry) {
+	for (uint32_t i = 0; i < tls.GetNodeRegistry().size(); ++i){
 		if (&tls.GetNodeRegistry(i) == &registry) {
 			return eNodeType_Name(i);
 		}
 	}
-
 	return "UnknownRegistry";
+}
+
+eNodeType NodeSystem::GetRegistryType(const entt::registry& registry){
+	for (uint32_t i = 0; i < tls.GetNodeRegistry().size(); ++i){
+		if (&tls.GetNodeRegistry(i) == &registry) {
+			return eNodeType(i);
+		}
+	}
+
+	return eNodeType(std::numeric_limits<::int32_t>::max());
 }

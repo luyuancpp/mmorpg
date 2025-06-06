@@ -1,6 +1,7 @@
 package util
 
 import (
+	"pbgen/config"
 	"strings"
 
 	"golang.org/x/text/cases"
@@ -29,4 +30,9 @@ func CapitalizeFirstLetter(s string) string {
 		return s
 	}
 	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+func ContainsPlayerKeyword(service string) bool {
+	return strings.Contains(service, config.TypePlayer) ||
+		strings.Contains(service, config.DisplayPlayer)
 }

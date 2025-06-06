@@ -4,6 +4,7 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include <grpcpp/grpcpp.h>
 #include <google/protobuf/message.h>
+#include "node/system/node_system.h"
 
 using grpc::ClientContext;
 using grpc::Status;
@@ -33,9 +34,13 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
 
 void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity){
 
-    loginpb::InitLoginServiceCompletedQueue(registry, nodeEntity);
+    if (eNodeType::LoginNodeService == NodeSystem::GetRegistryType(registry)) {
+        loginpb::InitLoginServiceCompletedQueue(registry, nodeEntity);
+    }
 
-    etcdserverpb::InitEtcdCompletedQueue(registry, nodeEntity);
+    if (eNodeType::EtcdNodeService == NodeSystem::GetRegistryType(registry)) {
+        etcdserverpb::InitEtcdCompletedQueue(registry, nodeEntity);
+    }
 
 }
 
