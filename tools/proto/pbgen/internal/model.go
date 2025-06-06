@@ -100,6 +100,14 @@ func (info *RPCServiceInfo) FileBaseNameCamel() string {
 	return base
 }
 
+func (info *RPCServiceInfo) CcGenericServices() bool {
+	files := info.FdSet.GetFile()
+	if len(files) == 0 || files[0].Options == nil || files[0].Options.CcGenericServices == nil {
+		return false
+	}
+	return *files[0].Options.CcGenericServices
+}
+
 func (info *RPCServiceInfo) ProtoPathWithFileBaseName() string {
 	return (info.Path()) + info.FileBaseName()
 }
