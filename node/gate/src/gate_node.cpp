@@ -10,6 +10,8 @@
 #include "thread_local/storage_gate.h"
 #include "node/system/node_system.h"
 #include "game_common_logic/system/session_system.h"
+#include "grpc/generator/grpc_init.h"
+
 GateNode* gGateNode = nullptr; 
 
 GateNode::GateNode(EventLoop* loop)
@@ -37,7 +39,6 @@ GateNode::GateNode(EventLoop* loop)
 		gGateNode->SendMessageToClient(it->second.conn, reply);
 		};
 
-	void SetHandler(const std::function<void(const grpc::ClientContext&, const ::google::protobuf::Message & reply)>&handler);
 	SetHandler(sendGrpcResponseToClientSession);
 }
 
@@ -62,18 +63,16 @@ void GateNode::StartRpcServer()
 void GateNode::ProcessGrpcNode(const NodeInfo& nodeInfo)
 {
 	auto& registry = tls.GetNodeRegistry(nodeInfo.node_type());
-	switch (nodeInfo.node_type())
-	{
-	case eNodeType::LoginNodeService:
-	{
+	switch (nodeInfo.node_type()){
+	case eNodeType::LoginNodeService:{
 		const auto loginNodeId = entt::entity{ nodeInfo.node_id() };
 		const auto& channel = registry.get<std::shared_ptr<grpc::Channel>>(loginNodeId);
-		registry.emplace < loginpb::ClientPlayerLoginStubPtr > (loginNodeId,
-			loginpb::ClientPlayerLogin::NewStub(channel));
+		InitStub(channel, registry, loginNodeId);
+		InitCompletedQueue(registry, loginNodeId);
+
 		//todo 如果重连后连上了不同的gate会不会有异步问题
 		tls_gate.login_consistent_node().add(nodeInfo.node_id(),
 			loginNodeId);
-		loginpb::InitLoginServiceCompletedQueue(registry, loginNodeId);
 		break;
 	}
 	default:

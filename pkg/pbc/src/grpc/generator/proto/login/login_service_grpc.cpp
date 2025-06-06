@@ -414,7 +414,7 @@ void SetLoginServiceHandler(const std::function<void(const ClientContext&, const
 
 
 void InitLoginServiceStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
-	registry.emplace<ClientPlayerLoginStubPtr>(nodeEntity) =	ClientPlayerLogin::NewStub(channel);
+	registry.emplace<ClientPlayerLoginStubPtr>(nodeEntity, ClientPlayerLogin::NewStub(channel));
 }
 
 }// namespace loginpb

@@ -34,6 +34,7 @@
 #include <regex>
 #include <ranges>
 #include "log/constants/log_constants.h"
+#include "grpc/generator/grpc_init.h"
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
@@ -83,7 +84,6 @@ void Node::Initialize() {
 	SetupTimeZone();
 	LoadAllConfigData();
 	InitGrpcClients();
-	InitGrpcQueues();
 	RequestEtcdLease();
 	LOG_TRACE << "Node initialization complete.";
 }
@@ -130,7 +130,7 @@ void Node::Shutdown() {
 	logSystem.stop();
 	ReleaseNodeId();
 	renewLeaseTimer.Cancel();
-	etcdQueueTimer.Cancel();
+	grpcHandlerTimer.Cancel();
 	LOG_TRACE << "Node shutdown complete.";
 	tls.Clear();
 }
@@ -166,14 +166,13 @@ void Node::SetupTimeZone() {
 void Node::InitGrpcClients() {
 	const std::string& etcdAddr = *tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin();
 	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
+	InitStub(channel, tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
+	InitCompletedQueue(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
 
-	etcdserverpb::InitEtcdStub(channel, tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
-}
-
-void Node::InitGrpcQueues() {
-	etcdserverpb::InitEtcdCompletedQueue(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
-	etcdQueueTimer.RunEvery(0.001, [] {
-		etcdserverpb::HandleEtcdCompletedQueueMessage(tls.GetNodeRegistry(EtcdNodeService));
+	grpcHandlerTimer.RunEvery(0.005, [] {
+		for (auto&registry : tls.GetNodeRegistry()){
+			HandleCompletedQueueMessage(registry);
+		}
 		});
 }
 

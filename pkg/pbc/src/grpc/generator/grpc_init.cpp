@@ -14,12 +14,14 @@ using grpc::ClientAsyncResponseReader;
 namespace loginpb {
     void SetLoginServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+    void InitLoginServiceStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
     void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
 }
 
 namespace etcdserverpb {
     void SetEtcdHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+    void InitEtcdStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
     void HandleEtcdCompletedQueueMessage(entt::registry& registry);
 }
 
@@ -33,21 +35,32 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
 }
 
 void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity){
-
-    if (eNodeType::LoginNodeService == NodeSystem::GetRegistryType(registry)) {
+    auto nodeType = NodeSystem::GetRegistryType(registry);
+    if (eNodeType::LoginNodeService == nodeType) {
         loginpb::InitLoginServiceCompletedQueue(registry, nodeEntity);
     }
-
-    if (eNodeType::EtcdNodeService == NodeSystem::GetRegistryType(registry)) {
+    else if (eNodeType::EtcdNodeService == nodeType) {
         etcdserverpb::InitEtcdCompletedQueue(registry, nodeEntity);
     }
-
 }
 
 void HandleCompletedQueueMessage(entt::registry& registry){
+    auto nodeType = NodeSystem::GetRegistryType(registry);
+    if (eNodeType::LoginNodeService == nodeType) {
+        loginpb::HandleLoginServiceCompletedQueueMessage(registry);
+    }
+    else if (eNodeType::EtcdNodeService == nodeType) {
+        etcdserverpb::HandleEtcdCompletedQueueMessage(registry);
+    }
+}
 
-    loginpb::HandleLoginServiceCompletedQueueMessage(registry);
 
-    etcdserverpb::HandleEtcdCompletedQueueMessage(registry);
-
+void InitStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
+    auto nodeType = NodeSystem::GetRegistryType(registry);
+    if (eNodeType::LoginNodeService == nodeType) {
+        loginpb::InitLoginServiceStub(channel, registry, nodeEntity);
+    }
+    else if (eNodeType::EtcdNodeService == nodeType) {
+        etcdserverpb::InitEtcdStub(channel, registry, nodeEntity);
+    }
 }

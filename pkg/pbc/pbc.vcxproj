@@ -95,6 +95,7 @@
     <ClCompile Include="src\service_info\service_info.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\grpc\generator\grpc_init.h" />
     <ClInclude Include="src\grpc\generator\proto\etcd\etcd_grpc.h" />
     <ClInclude Include="src\grpc\generator\proto\login\login_service_grpc.h" />
     <ClInclude Include="src\proto\centre\centre_client_player.pb.h" />

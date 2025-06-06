@@ -120,6 +120,7 @@ const (
 	CppGenGrpcDirectory              = ProjectDir + PbcProtoDirectory + GrpcGeneratorDirectory
 	PlayerStorageTempDirectory       = TempFileGenerationDir + "/node/game/game_logic/"
 	GrpcInitFileCppPath              = ProjectDir + PbcProtoDirectory + GrpcGeneratorDirectory + "grpc_init.cpp"
+	GrpcInitFileHeadPath             = ProjectDir + PbcProtoDirectory + GrpcGeneratorDirectory + "grpc_init.h"
 )
 
 // ----------- 文件名 -----------

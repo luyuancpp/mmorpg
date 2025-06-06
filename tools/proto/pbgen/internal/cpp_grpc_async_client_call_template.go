@@ -288,7 +288,7 @@ void Init{{$m.FileBaseNameCamel}}Stub(const std::shared_ptr< ::grpc::ChannelInte
   {{- end }}
 {{- end -}}
 {{- range .ServiceInfo }}
-	registry.emplace<{{.Service}}StubPtr>(nodeEntity) =	{{.Service}}::NewStub(channel);
+	registry.emplace<{{.Service}}StubPtr>(nodeEntity, {{.Service}}::NewStub(channel));
 {{- end }}
 }
 
