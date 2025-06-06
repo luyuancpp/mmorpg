@@ -59,34 +59,3 @@ void GateNode::StartRpcServer()
 
     LOG_INFO << "gate node  start at" << GetNodeInfo().DebugString();
 }
-
-void GateNode::ProcessGrpcNode(const NodeInfo& nodeInfo)
-{
-	auto& registry = tls.GetNodeRegistry(nodeInfo.node_type());
-	switch (nodeInfo.node_type()){
-	case eNodeType::LoginNodeService:{
-		const auto loginNodeId = entt::entity{ nodeInfo.node_id() };
-		const auto& channel = registry.get<std::shared_ptr<grpc::Channel>>(loginNodeId);
-		InitStub(channel, registry, loginNodeId);
-		InitCompletedQueue(registry, loginNodeId);
-
-		//todo 如果重连后连上了不同的gate会不会有异步问题
-		tls_gate.login_consistent_node().add(nodeInfo.node_id(),
-			loginNodeId);
-		break;
-	}
-	default:
-		break;
-	}
-}
-
- void GateNode::ProcessNodeStop(uint32_t nodeType, uint32_t nodeId) 
- {
-	 switch (nodeType)
-	 {
-	 case eNodeType::LoginNodeService:
-		 tls_gate.login_consistent_node().remove(nodeId);
-	 default:
-		 break;
-	 }
-}

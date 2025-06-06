@@ -78,10 +78,6 @@ protected:
     void OnServerConnected(const OnConnected2TcpServerEvent& es);
     void OnClientConnected(const OnTcpClientConnectedEvent& es);
 
-    // 虚函数，供子类扩展
-    virtual void ProcessGrpcNode(const NodeInfo& nodeInfo) {}
-    virtual void ProcessNodeStop(uint32_t nodeType, uint32_t nodeId) {}
-
     // 工具与状态判断
     bool IsNodeRegistered(uint32_t nodeType, const NodeInfo& node) const;
     void Shutdown();
