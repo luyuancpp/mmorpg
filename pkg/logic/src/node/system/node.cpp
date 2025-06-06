@@ -6,35 +6,35 @@
 // 5. 变量、函数命名更直观
 
 #include "node.h"
+#include <ranges>
+#include <regex>
 #include <grpcpp/create_channel.h>
 #include "all_config.h"
+#include "etcd_helper.h"
 #include "config_loader/config.h"
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/message_differencer.h"
+#include "grpc/generator/grpc_init.h"
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
+#include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
-#include "proto/common/node.pb.h"
 #include "logic/event/server_event.pb.h"
 #include "muduo/base/TimeZone.h"
+#include "network/process_info.h"
 #include "network/rpc_session.h"
-#include "service_info/service_info.h"
-#include "thread_local/storage_common_logic.h"
-#include "time/system/time_system.h"
-#include "util/network_utils.h"
 #include "node/comp/node_comp.h"
 #include "node/system/node_system.h"
-#include "network/process_info.h"
-#include "etcd_helper.h"
+#include "pbc/common_error_tip.pb.h"
+#include "proto/common/node.pb.h"
 #include "proto/logic/event/node_event.pb.h"
 #include "service_info/centre_service_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
-#include "pbc/common_error_tip.pb.h"
+#include "service_info/service_info.h"
+#include "thread_local/storage_common_logic.h"
+#include "time/system/time_system.h"
+#include "util/network_utils.h"
 #include "util/random.h"
-#include <regex>
-#include <ranges>
-#include "log/constants/log_constants.h"
-#include "grpc/generator/grpc_init.h"
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 

@@ -9,11 +9,10 @@ class PlayerServiceReplied
 {
 public:
 	PlayerServiceReplied(std::unique_ptr<::google::protobuf::Service>&& pb_service)
-		: pb_service_(std::move(pb_service))
-	{
+		: pb_service_(std::move(pb_service)){}
 
-	}
-
+	virtual ~PlayerServiceReplied(){}
+	
 	virtual void CallMethod(const ::google::protobuf::MethodDescriptor* method,
 		entt::entity player,
 		const ::google::protobuf::Message* request,
