@@ -9,6 +9,8 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
+void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+
 void SetHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 
 void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity);

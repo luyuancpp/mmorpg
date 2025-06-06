@@ -47,7 +47,6 @@ private:
     ProtobufCodec codec_;
     RpcClientSessionHandler rpcClientHandler;
     GateServiceHandler nodeReplyService;
-    TimerTaskComp loginGrpcSelectTimer;
 };
 
 extern GateNode* gGateNode;

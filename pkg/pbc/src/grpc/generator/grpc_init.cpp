@@ -13,6 +13,7 @@ using grpc::ClientAsyncResponseReader;
 
 namespace loginpb {
     void SetLoginServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetLoginServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
     void InitLoginServiceStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
     void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
@@ -20,11 +21,20 @@ namespace loginpb {
 
 namespace etcdserverpb {
     void SetEtcdHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetEtcdIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
     void InitEtcdStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
     void HandleEtcdCompletedQueueMessage(entt::registry& registry);
 }
 
+
+void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
+
+    loginpb::SetLoginServiceIfEmptyHandler(handler);
+
+    etcdserverpb::SetEtcdIfEmptyHandler(handler);
+
+}
 
 void SetHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
 

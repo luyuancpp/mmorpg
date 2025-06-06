@@ -146,16 +146,14 @@ func CppGrpcCallClient() {
 				serviceInfoList = append(serviceInfoList, service)
 			}
 
-			// 确保目录存在
 			os.MkdirAll(path.Dir(config.GrpcInitFileCppPath), os.FileMode(0777))
 
-			// Prepare the data for C++ source file
 			cppData := struct {
 				ServiceInfo []*RPCServiceInfo
 			}{
 				ServiceInfo: serviceInfoList,
 			}
-			// 生成 .h 文件
+
 			if err := RenderTemplateToFile("internal/gen/template/grpc_init_total.cpp.tmpl", config.GrpcInitFileCppPath, cppData); err != nil {
 				log.Fatal(err)
 			}

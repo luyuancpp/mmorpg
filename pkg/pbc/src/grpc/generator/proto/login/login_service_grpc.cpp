@@ -413,6 +413,25 @@ void SetLoginServiceHandler(const std::function<void(const ClientContext&, const
 }
 
 
+void SetLoginServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
+	if (!AsyncClientPlayerLoginLoginHandler){
+   		AsyncClientPlayerLoginLoginHandler = handler;
+	}
+	if (!AsyncClientPlayerLoginCreatePlayerHandler){
+   		AsyncClientPlayerLoginCreatePlayerHandler = handler;
+	}
+	if (!AsyncClientPlayerLoginEnterGameHandler){
+   		AsyncClientPlayerLoginEnterGameHandler = handler;
+	}
+	if (!AsyncClientPlayerLoginLeaveGameHandler){
+   		AsyncClientPlayerLoginLeaveGameHandler = handler;
+	}
+	if (!AsyncClientPlayerLoginDisconnectHandler){
+   		AsyncClientPlayerLoginDisconnectHandler = handler;
+	}
+}
+
+
 void InitLoginServiceStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
 	registry.emplace<ClientPlayerLoginStubPtr>(nodeEntity, ClientPlayerLogin::NewStub(channel));
 }

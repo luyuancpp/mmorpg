@@ -56,6 +56,7 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
 {{- range $index, $m := .ServiceInfo }}
   {{- if eq $index 0 }}
 void Set{{$m.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void Set{{$m.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void Init{{$m.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 void Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry);
 void Init{{$m.FileBaseNameCamel}}Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
@@ -278,6 +279,20 @@ void Set{{$m.FileBaseNameCamel}}Handler(const std::function<void(const ClientCon
 {{range $index, $m := .ServiceInfo }}
 {{- range $m.MethodInfo }}
    Async{{$m.Service}}{{.Method}}Handler = handler;
+{{- end -}}
+{{- end }}
+}
+
+{{range $index, $m := .ServiceInfo }}
+  {{- if eq $index 0 }}
+void Set{{$m.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
+  {{- end }}
+{{- end -}}
+{{range $index, $m := .ServiceInfo }}
+{{- range $m.MethodInfo }}
+	if (!Async{{$m.Service}}{{.Method}}Handler){
+   		Async{{$m.Service}}{{.Method}}Handler = handler;
+	}
 {{- end -}}
 {{- end }}
 }
