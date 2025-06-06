@@ -1,8 +1,6 @@
 ﻿#pragma once
 
 #include <string>
-#include "proto/etcd/etcd.pb.h"
-#include "proto/common/node.pb.h"
 #include "proto/common/common.pb.h"
 
 namespace EtcdHelper {
