@@ -36,7 +36,7 @@ public:
 		return nodeRegistries[nodeType];
 	}
 
-	const NodeRgistries& GetNodeRegistry() {
+	NodeRgistries& GetNodeRegistry() {
 		return nodeRegistries;
 	}
 

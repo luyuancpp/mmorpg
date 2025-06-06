@@ -980,9 +980,9 @@ void SetEtcdHandler(const std::function<void(const ClientContext&, const ::googl
 
 
 void InitEtcdStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
-	registry.emplace<KVStubPtr>(nodeEntity) =	KV::NewStub(channel);
-	registry.emplace<WatchStubPtr>(nodeEntity) =	Watch::NewStub(channel);
-	registry.emplace<LeaseStubPtr>(nodeEntity) =	Lease::NewStub(channel);
+	registry.emplace<KVStubPtr>(nodeEntity, KV::NewStub(channel));
+	registry.emplace<WatchStubPtr>(nodeEntity, Watch::NewStub(channel));
+	registry.emplace<LeaseStubPtr>(nodeEntity, Lease::NewStub(channel));
 }
 
 }// namespace etcdserverpb

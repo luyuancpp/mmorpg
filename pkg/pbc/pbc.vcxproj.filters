@@ -515,5 +515,8 @@
     <ClInclude Include="src\service_info\centre_client_player_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\grpc\generator\grpc_init.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

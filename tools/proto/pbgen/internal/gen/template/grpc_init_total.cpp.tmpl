@@ -14,6 +14,7 @@ using grpc::ClientAsyncResponseReader;
 namespace {{.Package}} {
     void Set{{.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void Init{{.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+    void Init{{.FileBaseNameCamel}}Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
     void Handle{{.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry);
 }
 {{ end }}
@@ -25,15 +26,47 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
 }
 
 void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity){
-{{ range.ServiceInfo }}
-    if (eNodeType::{{.BasePathForCpp}}NodeService == NodeSystem::GetRegistryType(registry)) {
-        {{.Package}}::Init{{.FileBaseNameCamel}}CompletedQueue(registry, nodeEntity);
+    auto nodeType = NodeSystem::GetRegistryType(registry);
+{{- range $index, $m := .ServiceInfo }}
+    {{- if eq $index 0 }}
+    if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
+        {{$m.Package}}::Init{{$m.FileBaseNameCamel}}CompletedQueue(registry, nodeEntity);
     }
-{{ end }}
+    {{- else }}
+    else if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
+        {{$m.Package}}::Init{{$m.FileBaseNameCamel}}CompletedQueue(registry, nodeEntity);
+    }
+    {{- end }}
+{{- end }}
 }
 
 void HandleCompletedQueueMessage(entt::registry& registry){
-{{ range  .ServiceInfo }}
-    {{.Package}}::Handle{{.FileBaseNameCamel}}CompletedQueueMessage(registry);
-{{ end }}
+    auto nodeType = NodeSystem::GetRegistryType(registry);
+{{- range $index, $m := .ServiceInfo }}
+    {{- if eq $index 0 }}
+    if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
+        {{$m.Package}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry);
+    }
+    {{- else }}
+    else if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
+        {{$m.Package}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry);
+    }
+    {{- end }}
+{{- end }}
+}
+
+
+void InitStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
+    auto nodeType = NodeSystem::GetRegistryType(registry);
+{{- range $index, $m := .ServiceInfo }}
+    {{- if eq $index 0 }}
+    if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
+        {{$m.Package}}::Init{{$m.FileBaseNameCamel}}Stub(channel, registry, nodeEntity);
+    }
+    {{- else }}
+    else if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
+        {{$m.Package}}::Init{{$m.FileBaseNameCamel}}Stub(channel, registry, nodeEntity);
+    }
+    {{- end }}
+{{- end }}
 }
