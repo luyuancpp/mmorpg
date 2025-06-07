@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"robot/pb/game"
 	"robot/logic/gameobject"
+	"robot/pb/game"
 )
 
-func ClientPlayerLoginLoginHandler(player *gameobject.Player, response *game.LoginC2LResponse) {
+func ClientPlayerLoginLoginHandler(player *gameobject.Player, response *game.LoginResponse) {
 }

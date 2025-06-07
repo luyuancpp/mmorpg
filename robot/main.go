@@ -50,7 +50,7 @@ func main() {
 
 			// 登录请求
 			rq := &game.LoginRequest{Account: "luhailong" + strconv.Itoa(i), Password: "luhailong"}
-			gameClient.Send(rq, game.LoginServiceLoginMessageId)
+			gameClient.Send(rq, game.ClientPlayerLoginLoginMessageId)
 
 			// 处理消息
 			for {
