@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/zeromicro/go-zero/core/conf"
-	"github.com/zeromicro/go-zero/core/discov"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
@@ -58,7 +57,7 @@ func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	}
 
 	// 注册节点到 etcd
-	loginNode := node.NewNode(uint32(nodeType), host, port, discov.TimeToLive)
+	loginNode := node.NewNode(uint32(nodeType), host, port, 10000)
 	if err := loginNode.KeepAlive(); err != nil {
 		logx.Errorf("Failed to keep node alive: %v", err)
 		return err
@@ -117,7 +116,22 @@ func SessionInterceptor(
 			}
 		}
 	}
-	return handler(ctx, req)
+
+	// 执行实际的 handler
+	resp, err := handler(ctx, req)
+
+	// ---- 在这里加上返回的 session detail header ----
+	if detail, ok := ctxkeys.GetSessionDetails(ctx); ok {
+		if bin, err := proto.Marshal(detail); err == nil {
+			val := base64.StdEncoding.EncodeToString(bin)
+			header := metadata.Pairs("x-session-detail-bin", val)
+			grpc.SendHeader(ctx, header)
+		} else {
+			logx.Error("Protobuf marshal error:", err)
+		}
+	}
+
+	return resp, err
 }
 
 // startServer 启动并配置 gRPC 服务

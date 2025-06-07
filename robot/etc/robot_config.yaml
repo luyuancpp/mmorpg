@@ -1,6 +1,6 @@
 server:
   address: "localhost"
-  ip: "172.23.208.1"
+  ip: "172.27.16.1"
   port: 40000
 robots:
   count: 1
