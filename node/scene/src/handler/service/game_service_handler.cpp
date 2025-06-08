@@ -111,8 +111,8 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	}
 
 	const auto& messageInfo = gRpcServiceRegistry[request->message_content().message_id()];
-	const auto serviceIt = g_player_service.find(messageInfo.serviceName);
-	if (serviceIt == g_player_service.end())
+	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
+	if (serviceIt == gPlayerService.end())
 	{
 		LOG_ERROR << "PlayerService not found for message ID: " << request->message_content().message_id();
 		return;
@@ -163,8 +163,8 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 	}
 
 	const auto& messageInfo = gRpcServiceRegistry.at(request->message_content().message_id());
-	const auto serviceIt = g_player_service.find(messageInfo.serviceName);
-	if (serviceIt == g_player_service.end())
+	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
+	if (serviceIt == gPlayerService.end())
 	{
 		LOG_ERROR << "GatePlayerService message id not found " << request->message_content().message_id();
 		return;
@@ -275,8 +275,8 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 	}
 
 	const auto& messageInfo = gRpcServiceRegistry[request->message_content().message_id()];
-	const auto serviceIt = g_player_service.find(messageInfo.serviceName);
-	if (serviceIt == g_player_service.end())
+	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
+	if (serviceIt == gPlayerService.end())
 	{
 		LOG_ERROR << "PlayerService service not found " << request->header().session_id()
 			<< "," << request->message_content().message_id();

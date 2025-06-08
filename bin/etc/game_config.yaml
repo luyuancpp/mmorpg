@@ -1,7 +1,7 @@
 # gameConfig_server1.yaml
 
 # 游戏场景配置
-SceneNodeType: 1  # 场景节点类型，服务器1的特定配置
+SceneNodeType: 0  
 ZoneId : 0
 
 # Zoneredis 配置

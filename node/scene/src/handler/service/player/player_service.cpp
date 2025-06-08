@@ -9,11 +9,11 @@ class ClientPlayerSceneServiceImpl : public ClientPlayerSceneService {};
 class ClientPlayerSkillServiceImpl : public ClientPlayerSkillService {};
 class GameClientPlayerCommonServiceImpl : public GameClientPlayerCommonService {};
 
-std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;
+std::unordered_map<std::string, std::unique_ptr<PlayerService>> gPlayerService;
 
 void InitPlayerService()
 {
-    g_player_service.emplace("ClientPlayerSceneService", std::make_unique<ClientPlayerSceneServiceHandler>(std::make_unique<ClientPlayerSceneServiceImpl>()));
-    g_player_service.emplace("ClientPlayerSkillService", std::make_unique<ClientPlayerSkillServiceHandler>(std::make_unique<ClientPlayerSkillServiceImpl>()));
-    g_player_service.emplace("GameClientPlayerCommonService", std::make_unique<GameClientPlayerCommonServiceHandler>(std::make_unique<GameClientPlayerCommonServiceImpl>()));
+    gPlayerService.emplace("ClientPlayerSceneService", std::make_unique<ClientPlayerSceneServiceHandler>(std::make_unique<ClientPlayerSceneServiceImpl>()));
+    gPlayerService.emplace("ClientPlayerSkillService", std::make_unique<ClientPlayerSkillServiceHandler>(std::make_unique<ClientPlayerSkillServiceImpl>()));
+    gPlayerService.emplace("GameClientPlayerCommonService", std::make_unique<GameClientPlayerCommonServiceHandler>(std::make_unique<GameClientPlayerCommonServiceImpl>()));
 }

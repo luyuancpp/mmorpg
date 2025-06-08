@@ -42,7 +42,7 @@ TEST(PlayerChangeScene, CreateMainScene)
 		sceneInfo.set_scene_confid(i);
 		for (uint32_t j = 0; j < 2; ++j)
 		{
-			globalSceneList.push_back(SceneUtil::CreateScene2GameNode({ .node = mainSceneNode, .sceneInfo = sceneInfo }));
+			globalSceneList.push_back(SceneUtil::CreateSceneToSceneNode({ .node = mainSceneNode, .sceneInfo = sceneInfo }));
 		}
 	}
 }

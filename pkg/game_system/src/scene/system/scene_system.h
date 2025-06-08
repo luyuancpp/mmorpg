@@ -133,7 +133,7 @@ public:
      * @param param Parameters for creating the scene.
      * @return The entity ID of the created scene.
      */
-    static entt::entity CreateScene2GameNode(const CreateGameNodeSceneParam& param);
+    static entt::entity CreateSceneToSceneNode(const CreateGameNodeSceneParam& param);
 
     /**
      * @brief DestroyScene destroys a scene.

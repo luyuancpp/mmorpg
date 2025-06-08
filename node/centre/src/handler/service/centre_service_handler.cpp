@@ -331,8 +331,8 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 
 	const auto& message_info = gRpcServiceRegistry.at(request->message_content().message_id());
 
-	const auto service_it = g_player_service.find(message_info.serviceName);
-	if (service_it == g_player_service.end())
+	const auto service_it = gPlayerService.find(message_info.serviceName);
+	if (service_it == gPlayerService.end())
 	{
 		LOG_ERROR << "Player service not found: " << message_info.serviceName;
 		return;
