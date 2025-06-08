@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "service/player_service.h"
 #include "centre_player_scene_handler.h"
-#include "centre_client_player_handler.h"
+#include "centre_player_handler.h"
 class CentrePlayerSceneServiceImpl : public CentrePlayerSceneService {};
 class CentrePlayerUtilityImpl : public CentrePlayerUtility {};
 
