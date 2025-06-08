@@ -973,7 +973,7 @@ func WriteMethodFile() {
 
 	// Concurrent operations for game, centre, and gate registers
 	util.Wg.Add(1)
-	go GenRegisterFile(config.GameNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsGsMethodHandler)
+	go GenRegisterFile(config.GameNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsSceneMethodHandler)
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.GameNodeMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, isGsMethodRepliedHandler)
 

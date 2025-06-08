@@ -86,11 +86,11 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fclient_5fplayer_2
     "o\032\026proto/common/tip.proto\032\031proto/common/"
     "common.proto\032\030proto/common/empty.proto\"L"
     "\n\027CentreKickPlayerRequest\022\037\n\006reason\030\001 \001("
-    "\0132\017.TipInfoMessage\022\020\n\010operator\030\002 \001(\t2}\n\037"
-    "CentreClientPlayerCommonService\022*\n\017SendT"
-    "ipToClient\022\017.TipInfoMessage\032\006.Empty\022.\n\nK"
-    "ickPlayer\022\030.CentreKickPlayerRequest\032\006.Em"
-    "ptyB\014Z\007pb/game\200\001\001b\006proto3"
+    "\0132\017.TipInfoMessage\022\020\n\010operator\030\002 \001(\t2q\n\023"
+    "CentrePlayerUtility\022*\n\017SendTipToClient\022\017"
+    ".TipInfoMessage\032\006.Empty\022.\n\nKickPlayer\022\030."
+    "CentreKickPlayerRequest\032\006.EmptyB\014Z\007pb/ga"
+    "me\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcentre_2fcentre_5fclient_5fplayer_2eproto_deps[3] =
     {
@@ -102,7 +102,7 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fclient_5fpla
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fclient_5fplayer_2eproto = {
     false,
     false,
-    345,
+    333,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fclient_5fplayer_2eproto,
     "proto/centre/centre_client_player.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fclient_5fplayer_2eproto_once,
@@ -407,27 +407,27 @@ void CentreKickPlayerRequest::InternalSwap(CentreKickPlayerRequest* PROTOBUF_RES
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* CentreClientPlayerCommonService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* CentrePlayerUtility::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcentre_2fcentre_5fclient_5fplayer_2eproto);
   return file_level_service_descriptors_proto_2fcentre_2fcentre_5fclient_5fplayer_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* CentreClientPlayerCommonService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* CentrePlayerUtility::GetDescriptor() {
   return descriptor();
 }
 
-void CentreClientPlayerCommonService::SendTipToClient(::google::protobuf::RpcController* controller,
+void CentrePlayerUtility::SendTipToClient(::google::protobuf::RpcController* controller,
                          const ::TipInfoMessage*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SendTipToClient() not implemented.");
   done->Run();
 }
-void CentreClientPlayerCommonService::KickPlayer(::google::protobuf::RpcController* controller,
+void CentrePlayerUtility::KickPlayer(::google::protobuf::RpcController* controller,
                          const ::CentreKickPlayerRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method KickPlayer() not implemented.");
   done->Run();
 }
 
-void CentreClientPlayerCommonService::CallMethod(
+void CentrePlayerUtility::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -453,7 +453,7 @@ void CentreClientPlayerCommonService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& CentreClientPlayerCommonService::GetRequestPrototype(
+const ::google::protobuf::Message& CentrePlayerUtility::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -469,7 +469,7 @@ const ::google::protobuf::Message& CentreClientPlayerCommonService::GetRequestPr
   }
 }
 
-const ::google::protobuf::Message& CentreClientPlayerCommonService::GetResponsePrototype(
+const ::google::protobuf::Message& CentrePlayerUtility::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -485,27 +485,27 @@ const ::google::protobuf::Message& CentreClientPlayerCommonService::GetResponseP
   }
 }
 
-CentreClientPlayerCommonService_Stub::CentreClientPlayerCommonService_Stub(::google::protobuf::RpcChannel* channel)
+CentrePlayerUtility_Stub::CentrePlayerUtility_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-CentreClientPlayerCommonService_Stub::CentreClientPlayerCommonService_Stub(
+CentrePlayerUtility_Stub::CentrePlayerUtility_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-CentreClientPlayerCommonService_Stub::~CentreClientPlayerCommonService_Stub() {
+CentrePlayerUtility_Stub::~CentrePlayerUtility_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void CentreClientPlayerCommonService_Stub::SendTipToClient(::google::protobuf::RpcController* controller,
+void CentrePlayerUtility_Stub::SendTipToClient(::google::protobuf::RpcController* controller,
                               const ::TipInfoMessage* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void CentreClientPlayerCommonService_Stub::KickPlayer(::google::protobuf::RpcController* controller,
+void CentrePlayerUtility_Stub::KickPlayer(::google::protobuf::RpcController* controller,
                               const ::CentreKickPlayerRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,

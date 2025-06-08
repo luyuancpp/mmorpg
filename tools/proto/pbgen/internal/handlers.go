@@ -8,7 +8,7 @@ import (
 // ---------------- Game Node ----------------
 
 var GsHandler = HandlerConfig{
-	IsValidFunc:         IsGsMethodHandler,
+	IsValidFunc:         IsSceneMethodHandler,
 	GenerateDataFunc:    getServiceHandlerHeadStr,
 	GenerateCppDataFunc: getServiceHandlerCppStr,
 	Dir:                 config.GameNodeMethodHandlerDirectory,

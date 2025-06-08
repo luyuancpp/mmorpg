@@ -7,7 +7,7 @@ import (
 )
 
 // / game server
-func IsGsMethodHandler(methods *RPCMethods) bool {
+func IsSceneMethodHandler(methods *RPCMethods) bool {
 	if len(*methods) == 0 {
 		return false
 	}
@@ -29,11 +29,7 @@ func IsGsPlayerHandler(methods *RPCMethods) bool {
 		return false
 	}
 
-	if !util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
-		return false
-	}
-
-	return true
+	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
 }
 
 func ReturnNoHandler(methods *RPCMethods) bool {
@@ -51,8 +47,7 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	// Check if the file base name does not contain the GameNodePrefixName
-	return strings.Contains(firstMethodInfo.FileNameNoEx(), config.CentrePlayerPrefixName)
+	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
 }
 
 func isGsMethodRepliedHandler(methodList *RPCMethods) bool {

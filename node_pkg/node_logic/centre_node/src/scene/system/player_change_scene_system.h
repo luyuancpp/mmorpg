@@ -17,7 +17,7 @@ public:
 	static void PopFrontChangeSceneQueue(entt::entity player);
 
 	// 设置当前切换场景信息的切换状态
-	static void SetChangeGsStatus(entt::entity player, ChangeSceneInfoPBComponent::eChangeGsStatus s);
+	static void SetChangeSceneNodeStatus(entt::entity player, ChangeSceneInfoPBComponent::eChangeGsStatus s);
 
 	// 将场景信息复制到切换场景信息中
 	static void CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const SceneInfoPBComponent& sceneInfo);

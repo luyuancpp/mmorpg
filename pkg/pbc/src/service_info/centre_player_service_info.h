@@ -4,8 +4,12 @@
 #include "proto/centre/centre_player.pb.h"
 
 
-constexpr uint32_t CentrePlayerServiceTestMessageId = 10;
-constexpr uint32_t CentrePlayerServiceTestIndex = 0;
-#define CentrePlayerServiceTestMethod  ::CentrePlayerService_Stub::descriptor()->method(0)
+constexpr uint32_t CentrePlayerUtilitySendTipToClientMessageId = 18446744073709551615;
+constexpr uint32_t CentrePlayerUtilitySendTipToClientIndex = 0;
+#define CentrePlayerUtilitySendTipToClientMethod  ::CentrePlayerUtility_Stub::descriptor()->method(0)
+
+constexpr uint32_t CentrePlayerUtilityKickPlayerMessageId = 18446744073709551615;
+constexpr uint32_t CentrePlayerUtilityKickPlayerIndex = 1;
+#define CentrePlayerUtilityKickPlayerMethod  ::CentrePlayerUtility_Stub::descriptor()->method(1)
 
 
