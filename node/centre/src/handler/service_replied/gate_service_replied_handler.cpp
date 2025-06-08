@@ -40,6 +40,22 @@ void InitGateRepliedHandler()
 void OnGatePlayerEnterGameNodeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	///gate 更新gs,相应的gs可以往那个gate上发消息了
+	///todo 中间返回是断开了
+	entt::entity GetPlayerEntityBySessionId(uint64_t session_id);
+	const auto player = GetPlayerEntityBySessionId(replied->session_info().session_id());
+	if (entt::null == player)
+	{
+		LOG_TRACE << "session player not found " << replied->session_info().session_id();
+		return;
+	}
+	
+	PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(player);
+
+	PlayerNodeSystem::ProcessPlayerSessionState(player);
+
+	PlayerChangeSceneUtil::SetChangeSceneNodeStatus(player, ChangeSceneInfoPBComponent::eGateEnterGsSceneSucceed);
+	PlayerChangeSceneUtil::ProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
 
 }

@@ -58,6 +58,13 @@ void OnSceneSendMessageToPlayerRepliedHandler(const TcpConnectionPtr& conn, cons
 void OnSceneClientSendMessageToPlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::ClientSendMessageToPlayerResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    auto it = tls_gate.sessions().find(replied->session_id());
+	if (it == tls_gate.sessions().end())
+	{
+		LOG_ERROR << "conn id not found  session id " << "," << replied->session_id();
+		return;
+	}
+	gGateNode->Codec().send(it->second.conn, replied->message_content());
 ///<<< END WRITING YOUR CODE
 
 }
@@ -65,6 +72,7 @@ void OnSceneClientSendMessageToPlayerRepliedHandler(const TcpConnectionPtr& conn
 void OnSceneCentreSendToPlayerViaGameNodeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+
 ///<<< END WRITING YOUR CODE
 
 }
@@ -72,6 +80,7 @@ void OnSceneCentreSendToPlayerViaGameNodeRepliedHandler(const TcpConnectionPtr& 
 void OnSceneInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeRouteMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+
 ///<<< END WRITING YOUR CODE
 
 }
