@@ -6,7 +6,7 @@
 
 #include "macros/return_define.h"
 
-class EntitySyncServiceHandler : public ::PlayerService
+class PlayerSyncServiceHandler : public ::PlayerService
 {
 public:
     using PlayerService::PlayerService;

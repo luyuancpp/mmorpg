@@ -29,7 +29,7 @@ func IsGsPlayerHandler(methods *RPCMethods) bool {
 		return false
 	}
 
-	if !strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
+	if !util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
 		return false
 	}
 
