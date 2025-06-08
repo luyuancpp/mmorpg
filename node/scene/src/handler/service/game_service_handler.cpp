@@ -39,6 +39,38 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	LOG_INFO << "Handling EnterGs request for player: " << request->player_id()
+		<< ", centre_node_id: " << request->centre_node_id();
+
+	// 1 清除玩家会话，处理连续顶号进入情况
+	PlayerNodeSystem::RemovePlayerSessionSilently(request->player_id());
+
+	const auto& playerList = tlsCommonLogic.GetPlayerList();
+	auto playerIt = playerList.find(request->player_id());
+
+	// 2 检查玩家是否已经在线，若在线则直接进入
+	if (playerIt != playerList.end())
+	{
+		PlayerGameNodeEnteryInfoPBComponent enterInfo;
+		enterInfo.set_centre_node_id(request->centre_node_id());
+		PlayerNodeSystem::EnterGs(playerIt->second, enterInfo);
+		return;
+	}
+
+	PlayerGameNodeEnteryInfoPBComponent enterInfo;
+	enterInfo.set_centre_node_id(request->centre_node_id());
+	auto asyncPlayerIt = tlsGame.playerNodeEntryInfoList.emplace(request->player_id(), enterInfo);
+
+	// 3 异步加载过程中处理玩家断开连接的情况
+	if (!asyncPlayerIt.second)
+	{
+		LOG_ERROR << "Failed to emplace player in asyncPlayerList: " << request->player_id();
+		return;
+	}
+
+	// 4 玩家不在线，加入异步加载列表并尝试异步加载
+
+	tlsGame.playerRedis->AsyncLoad(request->player_id());
 ///<<< END WRITING YOUR CODE
 
 }
@@ -51,7 +83,68 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
+	LOG_TRACE << "Handling message routing for session ID: " << request->header().session_id()
+		<< ", message ID: " << request->message_content().message_id();
+
+	const auto it = tlsSessions.find(request->header().session_id());
+	if (it == tlsSessions.end())
+	{
+		LOG_ERROR << "Session ID not found: " << request->header().session_id()
+			<< ", message ID: " << request->message_content().message_id();
+		return;
+	}
+
+	const auto playerIt = tlsCommonLogic.GetPlayerList().find(it->second.player_id());
+	if (playerIt == tlsCommonLogic.GetPlayerList().end())
+	{
+		LOG_ERROR << "Player ID not found in common logic: " << it->second.player_id();
+		return;
+	}
+
+	const auto& player = playerIt->second;
+
+	if (request->message_content().message_id() >= gRpcServiceRegistry.size())
+	{
+		LOG_ERROR << "Invalid message ID: " << request->message_content().message_id();
+		return;
+	}
+
+	const auto& messageInfo = gRpcServiceRegistry[request->message_content().message_id()];
+	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
+	if (serviceIt == gPlayerService.end())
+	{
+		LOG_ERROR << "PlayerService not found for message ID: " << request->message_content().message_id();
+		return;
+	}
+
+	const auto& serviceHandler = serviceIt->second;
+	google::protobuf::Service* service = serviceHandler->service();
+	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
+	if (nullptr == method)
+	{
+		LOG_ERROR << "Method not found in PlayerService: " << messageInfo.methodName;
+		return;
+	}
+
+	const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
+	if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(), int32_t(request->message_content().serialized_message().size())))
+	{
+		LOG_ERROR << "Failed to parse request message for message ID: " << request->message_content().message_id();
+		return;
+	}
+
+	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
+	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
+    response->mutable_header()->set_session_id(request->header().session_id());
+    response->mutable_message_content()->set_message_id(request->message_content().message_id());
+	if (Empty::GetDescriptor() == playerResponse->GetDescriptor())
+	{
+		return;
+	}
+
+	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
+    ///<<< END WRITING YOUR CODE
 
 }
 
@@ -62,7 +155,61 @@ void SceneHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* 
 	::ClientSendMessageToPlayerResponse* response,
 	::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
+	if (request->message_content().message_id() >= gRpcServiceRegistry.size())
+	{
+		LOG_ERROR << "message_id not found " << request->message_content().message_id();
+		return;
+	}
+
+	const auto& messageInfo = gRpcServiceRegistry.at(request->message_content().message_id());
+	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
+	if (serviceIt == gPlayerService.end())
+	{
+		LOG_ERROR << "GatePlayerService message id not found " << request->message_content().message_id();
+		return;
+	}
+
+	google::protobuf::Service* service = serviceIt->second->service();
+	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
+	if (nullptr == method)
+	{
+		LOG_ERROR << "GatePlayerService message id not found " << request->message_content().message_id();
+		return;
+	}
+
+	const auto it = tlsSessions.find(request->session_id());
+	if (it == tlsSessions.end())
+	{
+		LOG_ERROR << "session id not found " << request->session_id() << ","
+			<< " message id " << request->message_content().message_id();
+		return;
+	}
+
+	const auto player = tlsCommonLogic.GetPlayer(it->second.player_id());
+	if (entt::null == player)
+	{
+		LOG_ERROR << "GatePlayerService player not loading " << request->message_content().message_id()
+			<< "player_id" << it->second.player_id();
+		return;
+	}
+
+	const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
+	playerRequest->ParseFromArray(request->message_content().serialized_message().data(), static_cast<int32_t>(request->message_content().serialized_message().size()));
+
+	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
+	serviceIt->second->CallMethod(method, player, playerRequest.get(), playerResponse.get());
+
+	
+	response->mutable_message_content()->set_message_id(request->message_content().message_id());
+	response->mutable_message_content()->set_id(request->message_content().id());
+	response->set_session_id(request->session_id());
+
+	if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
+		return;
+	}
+
+	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
 ///<<< END WRITING YOUR CODE
 
 }
@@ -75,6 +222,22 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	const auto it = tlsSessions.find(request->header().session_id());
+	if (it == tlsSessions.end())
+	{
+		LOG_ERROR << "session id not found " << request->header().session_id() << ","
+			<< " message id " << request->message_content().message_id();
+		return;
+	}
+
+	const auto player = tlsCommonLogic.GetPlayer(it->second.player_id());
+	if (entt::null == player)
+	{
+		LOG_ERROR << "GatePlayerService player not loading";
+		return;
+	}
+
+	::SendMessageToPlayer(request->message_content().message_id(), request->message_content(), player);
 ///<<< END WRITING YOUR CODE
 
 }
@@ -87,6 +250,102 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	const auto it = tlsSessions.find(request->header().session_id());
+	if (it == tlsSessions.end())
+	{
+		LOG_ERROR << "session id not found " << request->header().session_id() << ","
+			<< " message id " << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kSessionNotFound);
+		return;
+	}
+
+	const auto player = tlsCommonLogic.GetPlayer(it->second.player_id());
+	if (entt::null == player)
+	{
+		LOG_ERROR << "GatePlayerService player not loading";
+		SendErrorToClient(*request, *response, kPlayerNotFoundInSession);
+		return;
+	}
+
+	if (request->message_content().message_id() >= gRpcServiceRegistry.size())
+	{
+		LOG_ERROR << "message_id not found " << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kMessageIdNotFound);
+		return;
+	}
+
+	const auto& messageInfo = gRpcServiceRegistry[request->message_content().message_id()];
+	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
+	if (serviceIt == gPlayerService.end())
+	{
+		LOG_ERROR << "PlayerService service not found " << request->header().session_id()
+			<< "," << request->message_content().message_id();
+		return;
+	}
+
+	const auto& serviceHandler = serviceIt->second;
+	google::protobuf::Service* service = serviceHandler->service();
+	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
+	if (nullptr == method)
+	{
+		LOG_ERROR << "PlayerService method not found " << request->message_content().message_id();
+		return;
+	}
+
+	MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
+	if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(), int32_t(request->message_content().serialized_message().size())))
+	{
+		LOG_ERROR << "ParsePartialFromArray " << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kRequestMessageParseError);
+		return;
+	}
+
+    std::string errorDetails;
+
+    // 检查字段大小
+    if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails)) {
+        LOG_ERROR << errorDetails << " Failed to check request for message ID: "
+            << request->message_content().message_id();
+        SendErrorToClient(*request, *response, kArraySizeTooLargeInMessage);
+        return;
+    }
+
+    // 检查负数
+    if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails)) {
+        LOG_ERROR << errorDetails << " Failed to check request for message ID: "
+            << request->message_content().message_id();
+        SendErrorToClient(*request, *response, kNegativeValueInMessage);
+        return;
+    }
+
+	MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
+	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
+
+
+    response->mutable_header()->set_session_id(request->header().session_id());
+    response->mutable_message_content()->set_message_id(request->message_content().message_id());
+	
+    if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
+        return;
+    }
+
+	if (const auto tipInfoMessage = tls.globalRegistry.try_get<TipInfoMessage>(GlobalEntity());
+		nullptr != tipInfoMessage)
+	{
+		response->mutable_message_content()->mutable_error_message()->CopyFrom(*tipInfoMessage);
+		tipInfoMessage->Clear();
+	}
+	
+	const auto byte_size = playerResponse->ByteSizeLong();
+	response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
+	if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(),
+	                                             static_cast<int32_t>(byte_size)))
+	{
+		LOG_ERROR << "Failed to serialize response for message ID: " << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kResponseMessageParseError);
+		return;
+	}
+        
 ///<<< END WRITING YOUR CODE
 
 }
@@ -123,6 +382,36 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	PlayerNodeSystem::RemovePlayerSession(request->player_id());
+
+	if (const entt::entity gateNodeId{ GetGateNodeId(request->session_id()) };
+		!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
+	{
+		LOG_ERROR << "Gate not found " << GetGateNodeId(request->session_id());
+		return;
+	}
+
+	const auto player = tlsCommonLogic.GetPlayer(request->player_id());
+	if (!tls.registry.valid(player))
+	{
+		LOG_ERROR << "Player not found " << request->player_id();
+		return;
+	}
+
+	PlayerSessionPBComponent sessionInfo;
+	sessionInfo.set_player_id(request->player_id());
+	tlsSessions.emplace(request->session_id(), sessionInfo);
+
+	if (auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player); nullptr == playerNodeInfo)
+	{
+		tls.registry.emplace_or_replace<PlayerNodeInfoPBComponent>(player).set_gate_session_id(request->session_id());
+	}
+	else
+	{
+		playerNodeInfo->set_gate_session_id(request->session_id());
+	}
+
+	PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(player);
 ///<<< END WRITING YOUR CODE
 
 }
@@ -135,6 +424,21 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller,cons
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
+	auto player = tlsCommonLogic.GetPlayer(request->player_id());
+	if (player == entt::null)
+	{
+		LOG_ERROR << "Error: Player entity not found for player_id " << request->player_id();
+		return;
+	}
+
+	LOG_INFO << "Player with ID " << request->player_id() << " entering scene " << request->scene_id();
+
+	entt::entity sceneEntity{ request->scene_id() };
+	SceneUtil::EnterScene({ .scene = sceneEntity, .enter = player });
+	
+	PlayerSceneSystem::HandleEnterScene(player, sceneEntity);
+
 ///<<< END WRITING YOUR CODE
 
 }
@@ -159,6 +463,7 @@ void SceneHandler::RegisterNodeSession(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	gNode->HandleNodeRegistration(*request, *response);
 ///<<< END WRITING YOUR CODE
 
 }
