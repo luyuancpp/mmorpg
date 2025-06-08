@@ -78,7 +78,7 @@ void SceneSceneClientPlayerHandler::SceneInfoC2S(entt::entity player,const ::Sce
 {
 ///<<< BEGIN WRITING YOUR CODE
     SceneInfoRequest rq;
-    SendToCentrePlayerById(CentrePlayerSceneServiceSceneInfoC2SMessageId, rq, player);
+    SendToCentrePlayerById(CentrePlayerSceneSceneInfoC2SMessageId, rq, player);
 ///<<< END WRITING YOUR CODE
 
 
