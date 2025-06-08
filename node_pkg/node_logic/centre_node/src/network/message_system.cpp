@@ -77,7 +77,7 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
     request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
 
     // 发送请求到游戏节点
-    sceneSession->SendRequest(GameServiceSendMessageToPlayerMessageId, request);
+    sceneSession->SendRequest(SceneSendMessageToPlayerMessageId, request);
 }
 
 
@@ -183,7 +183,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), byteSize);
 	request.mutable_header()->set_session_id(sessionId);
 	request.mutable_message_content()->set_message_id(messageId);
-	gate.SendRequest(GateServiceSendMessageToPlayerMessageId, request);
+	gate.SendRequest(GateSendMessageToPlayerMessageId, request);
 }
 
 void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
@@ -267,7 +267,7 @@ void CallScenePlayerMethod(uint32_t messageId, const google::protobuf::Message& 
     request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
 
     // 发送消息
-    sceneSession->CallRemoteMethod(GameServiceInvokePlayerServiceMessageId, request);
+    sceneSession->CallRemoteMethod(SceneInvokePlayerServiceMessageId, request);
 }
 
 void CallGameNodeMethod(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)

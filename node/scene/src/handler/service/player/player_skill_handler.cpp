@@ -12,7 +12,7 @@
 
 
 
-void ClientPlayerSkillServiceHandler::ReleaseSkill(entt::entity player,const ::ReleaseSkillSkillRequest* request,
+void SceneSkillClientPlayerHandler::ReleaseSkill(entt::entity player,const ::ReleaseSkillSkillRequest* request,
 	::ReleaseSkillSkillResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -23,7 +23,7 @@ void ClientPlayerSkillServiceHandler::ReleaseSkill(entt::entity player,const ::R
 
 
 
-void ClientPlayerSkillServiceHandler::NotifySkillUsed(entt::entity player,const ::SkillUsedS2C* request,
+void SceneSkillClientPlayerHandler::NotifySkillUsed(entt::entity player,const ::SkillUsedS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -34,7 +34,7 @@ void ClientPlayerSkillServiceHandler::NotifySkillUsed(entt::entity player,const 
 
 
 
-void ClientPlayerSkillServiceHandler::NotifySkillInterrupted(entt::entity player,const ::SkillInterruptedS2C* request,
+void SceneSkillClientPlayerHandler::NotifySkillInterrupted(entt::entity player,const ::SkillInterruptedS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -45,7 +45,7 @@ void ClientPlayerSkillServiceHandler::NotifySkillInterrupted(entt::entity player
 
 
 
-void ClientPlayerSkillServiceHandler::GetSkillList(entt::entity player,const ::GetSkillListRequest* request,
+void SceneSkillClientPlayerHandler::GetSkillList(entt::entity player,const ::GetSkillListRequest* request,
 	::GetSkillListResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE

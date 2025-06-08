@@ -820,17 +820,17 @@ class EnterScenerS2CResponse final
 
 // -------------------------------------------------------------------
 
-class GamePlayerSceneService_Stub;
-class GamePlayerSceneService : public ::google::protobuf::Service {
+class SceneScenePlayer_Stub;
+class SceneScenePlayer : public ::google::protobuf::Service {
  protected:
-  GamePlayerSceneService() = default;
+  SceneScenePlayer() = default;
 
  public:
-  using Stub = GamePlayerSceneService_Stub;
+  using Stub = SceneScenePlayer_Stub;
 
-  GamePlayerSceneService(const GamePlayerSceneService&) = delete;
-  GamePlayerSceneService& operator=(const GamePlayerSceneService&) = delete;
-  virtual ~GamePlayerSceneService() = default;
+  SceneScenePlayer(const SceneScenePlayer&) = delete;
+  SceneScenePlayer& operator=(const SceneScenePlayer&) = delete;
+  virtual ~SceneScenePlayer() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -863,20 +863,20 @@ class GamePlayerSceneService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class GamePlayerSceneService_Stub final : public GamePlayerSceneService {
+class SceneScenePlayer_Stub final : public SceneScenePlayer {
  public:
-  GamePlayerSceneService_Stub(::google::protobuf::RpcChannel* channel);
-  GamePlayerSceneService_Stub(::google::protobuf::RpcChannel* channel,
+  SceneScenePlayer_Stub(::google::protobuf::RpcChannel* channel);
+  SceneScenePlayer_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  GamePlayerSceneService_Stub(const GamePlayerSceneService_Stub&) = delete;
-  GamePlayerSceneService_Stub& operator=(const GamePlayerSceneService_Stub&) = delete;
+  SceneScenePlayer_Stub(const SceneScenePlayer_Stub&) = delete;
+  SceneScenePlayer_Stub& operator=(const SceneScenePlayer_Stub&) = delete;
 
-  ~GamePlayerSceneService_Stub() override;
+  ~SceneScenePlayer_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements GamePlayerSceneService ------------------------------------------
+  // implements SceneScenePlayer ------------------------------------------
   void EnterScene(::google::protobuf::RpcController* controller,
                         const ::GsEnterSceneRequest* request,
                         ::google::protobuf::Empty* response,

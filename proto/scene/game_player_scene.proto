@@ -30,7 +30,7 @@ message EnterScenerS2CResponse
   TipInfoMessage error_message = 1;
 }
 
-service GamePlayerSceneService 
+service SceneScenePlayer
 {
   rpc EnterScene (GsEnterSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveScene (GsLeaveSceneRequest) returns (google.protobuf.Empty);

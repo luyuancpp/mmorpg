@@ -4,28 +4,28 @@
 #include "proto/scene/player_state_attribute_sync.pb.h"
 
 
-constexpr uint32_t PlayerSyncServiceSyncBaseAttributeMessageId = 7;
-constexpr uint32_t PlayerSyncServiceSyncBaseAttributeIndex = 0;
-#define PlayerSyncServiceSyncBaseAttributeMethod  ::PlayerSyncService_Stub::descriptor()->method(0)
+constexpr uint32_t ScenePlayerSyncSyncBaseAttributeMessageId = 31;
+constexpr uint32_t ScenePlayerSyncSyncBaseAttributeIndex = 0;
+#define ScenePlayerSyncSyncBaseAttributeMethod  ::ScenePlayerSync_Stub::descriptor()->method(0)
 
-constexpr uint32_t PlayerSyncServiceSyncAttribute2FramesMessageId = 55;
-constexpr uint32_t PlayerSyncServiceSyncAttribute2FramesIndex = 1;
-#define PlayerSyncServiceSyncAttribute2FramesMethod  ::PlayerSyncService_Stub::descriptor()->method(1)
+constexpr uint32_t ScenePlayerSyncSyncAttribute2FramesMessageId = 47;
+constexpr uint32_t ScenePlayerSyncSyncAttribute2FramesIndex = 1;
+#define ScenePlayerSyncSyncAttribute2FramesMethod  ::ScenePlayerSync_Stub::descriptor()->method(1)
 
-constexpr uint32_t PlayerSyncServiceSyncAttribute5FramesMessageId = 39;
-constexpr uint32_t PlayerSyncServiceSyncAttribute5FramesIndex = 2;
-#define PlayerSyncServiceSyncAttribute5FramesMethod  ::PlayerSyncService_Stub::descriptor()->method(2)
+constexpr uint32_t ScenePlayerSyncSyncAttribute5FramesMessageId = 74;
+constexpr uint32_t ScenePlayerSyncSyncAttribute5FramesIndex = 2;
+#define ScenePlayerSyncSyncAttribute5FramesMethod  ::ScenePlayerSync_Stub::descriptor()->method(2)
 
-constexpr uint32_t PlayerSyncServiceSyncAttribute10FramesMessageId = 62;
-constexpr uint32_t PlayerSyncServiceSyncAttribute10FramesIndex = 3;
-#define PlayerSyncServiceSyncAttribute10FramesMethod  ::PlayerSyncService_Stub::descriptor()->method(3)
+constexpr uint32_t ScenePlayerSyncSyncAttribute10FramesMessageId = 57;
+constexpr uint32_t ScenePlayerSyncSyncAttribute10FramesIndex = 3;
+#define ScenePlayerSyncSyncAttribute10FramesMethod  ::ScenePlayerSync_Stub::descriptor()->method(3)
 
-constexpr uint32_t PlayerSyncServiceSyncAttribute30FramesMessageId = 74;
-constexpr uint32_t PlayerSyncServiceSyncAttribute30FramesIndex = 4;
-#define PlayerSyncServiceSyncAttribute30FramesMethod  ::PlayerSyncService_Stub::descriptor()->method(4)
+constexpr uint32_t ScenePlayerSyncSyncAttribute30FramesMessageId = 25;
+constexpr uint32_t ScenePlayerSyncSyncAttribute30FramesIndex = 4;
+#define ScenePlayerSyncSyncAttribute30FramesMethod  ::ScenePlayerSync_Stub::descriptor()->method(4)
 
-constexpr uint32_t PlayerSyncServiceSyncAttribute60FramesMessageId = 43;
-constexpr uint32_t PlayerSyncServiceSyncAttribute60FramesIndex = 5;
-#define PlayerSyncServiceSyncAttribute60FramesMethod  ::PlayerSyncService_Stub::descriptor()->method(5)
+constexpr uint32_t ScenePlayerSyncSyncAttribute60FramesMessageId = 61;
+constexpr uint32_t ScenePlayerSyncSyncAttribute60FramesIndex = 5;
+#define ScenePlayerSyncSyncAttribute60FramesMethod  ::ScenePlayerSync_Stub::descriptor()->method(5)
 
 

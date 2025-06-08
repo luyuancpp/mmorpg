@@ -118,7 +118,7 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
     Centre2GsEnterSceneRequest request;
     request.set_scene_id(sceneInfo->guid());
     request.set_player_id(playerId);
-    CallGameNodeMethod(GameServiceEnterSceneMessageId, request, playerNodeInfo->scene_node_id());
+    CallGameNodeMethod(SceneEnterSceneMessageId, request, playerNodeInfo->scene_node_id());
 
     LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << playerNodeInfo->scene_node_id();
 }
@@ -136,7 +136,7 @@ void PlayerSceneSystem::ProcessPlayerEnterSceneNode(entt::entity playerEntity, N
     request.set_player_id(tls.registry.get<Guid>(playerEntity));
     request.set_session_id(info->gate_session_id());
     request.set_centre_node_id(GetNodeInfo().node_id());
-    CallGameNodeMethod(GameServicePlayerEnterGameNodeMessageId, request, nodeId);
+    CallGameNodeMethod(ScenePlayerEnterGameNodeMessageId, request, nodeId);
 }
 
 void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)

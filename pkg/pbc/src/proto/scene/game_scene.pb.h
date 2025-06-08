@@ -218,17 +218,17 @@ class GameSceneTest final
 
 // -------------------------------------------------------------------
 
-class GameSceneService_Stub;
-class GameSceneService : public ::google::protobuf::Service {
+class SceneScene_Stub;
+class SceneScene : public ::google::protobuf::Service {
  protected:
-  GameSceneService() = default;
+  SceneScene() = default;
 
  public:
-  using Stub = GameSceneService_Stub;
+  using Stub = SceneScene_Stub;
 
-  GameSceneService(const GameSceneService&) = delete;
-  GameSceneService& operator=(const GameSceneService&) = delete;
-  virtual ~GameSceneService() = default;
+  SceneScene(const SceneScene&) = delete;
+  SceneScene& operator=(const SceneScene&) = delete;
+  virtual ~SceneScene() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -253,20 +253,20 @@ class GameSceneService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class GameSceneService_Stub final : public GameSceneService {
+class SceneScene_Stub final : public SceneScene {
  public:
-  GameSceneService_Stub(::google::protobuf::RpcChannel* channel);
-  GameSceneService_Stub(::google::protobuf::RpcChannel* channel,
+  SceneScene_Stub(::google::protobuf::RpcChannel* channel);
+  SceneScene_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  GameSceneService_Stub(const GameSceneService_Stub&) = delete;
-  GameSceneService_Stub& operator=(const GameSceneService_Stub&) = delete;
+  SceneScene_Stub(const SceneScene_Stub&) = delete;
+  SceneScene_Stub& operator=(const SceneScene_Stub&) = delete;
 
-  ~GameSceneService_Stub() override;
+  ~SceneScene_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements GameSceneService ------------------------------------------
+  // implements SceneScene ------------------------------------------
   void Test(::google::protobuf::RpcController* controller,
                         const ::GameSceneTest* request,
                         ::Empty* response,

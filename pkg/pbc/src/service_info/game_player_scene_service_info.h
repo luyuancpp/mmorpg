@@ -4,16 +4,16 @@
 #include "proto/scene/game_player_scene.pb.h"
 
 
-constexpr uint32_t GamePlayerSceneServiceEnterSceneMessageId = 82;
-constexpr uint32_t GamePlayerSceneServiceEnterSceneIndex = 0;
-#define GamePlayerSceneServiceEnterSceneMethod  ::GamePlayerSceneService_Stub::descriptor()->method(0)
+constexpr uint32_t SceneScenePlayerEnterSceneMessageId = 78;
+constexpr uint32_t SceneScenePlayerEnterSceneIndex = 0;
+#define SceneScenePlayerEnterSceneMethod  ::SceneScenePlayer_Stub::descriptor()->method(0)
 
-constexpr uint32_t GamePlayerSceneServiceLeaveSceneMessageId = 20;
-constexpr uint32_t GamePlayerSceneServiceLeaveSceneIndex = 1;
-#define GamePlayerSceneServiceLeaveSceneMethod  ::GamePlayerSceneService_Stub::descriptor()->method(1)
+constexpr uint32_t SceneScenePlayerLeaveSceneMessageId = 6;
+constexpr uint32_t SceneScenePlayerLeaveSceneIndex = 1;
+#define SceneScenePlayerLeaveSceneMethod  ::SceneScenePlayer_Stub::descriptor()->method(1)
 
-constexpr uint32_t GamePlayerSceneServiceEnterSceneS2CMessageId = 76;
-constexpr uint32_t GamePlayerSceneServiceEnterSceneS2CIndex = 2;
-#define GamePlayerSceneServiceEnterSceneS2CMethod  ::GamePlayerSceneService_Stub::descriptor()->method(2)
+constexpr uint32_t SceneScenePlayerEnterSceneS2CMessageId = 37;
+constexpr uint32_t SceneScenePlayerEnterSceneS2CIndex = 2;
+#define SceneScenePlayerEnterSceneS2CMethod  ::SceneScenePlayer_Stub::descriptor()->method(2)
 
 

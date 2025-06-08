@@ -50,7 +50,7 @@ message GetSkillListResponse {
   PlayerSkillListPBComponent skill_list = 2;
 }
 
-service ClientPlayerSkillService { 
+service SceneSkillClientPlayer { 
   rpc ReleaseSkill (ReleaseSkillSkillRequest) returns (ReleaseSkillSkillResponse);
   rpc NotifySkillUsed (SkillUsedS2C) returns (Empty);
   rpc NotifySkillInterrupted (SkillInterruptedS2C) returns (Empty);

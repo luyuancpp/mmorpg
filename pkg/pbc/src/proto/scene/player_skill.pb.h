@@ -1380,17 +1380,17 @@ class GetSkillListResponse final
 
 // -------------------------------------------------------------------
 
-class ClientPlayerSkillService_Stub;
-class ClientPlayerSkillService : public ::google::protobuf::Service {
+class SceneSkillClientPlayer_Stub;
+class SceneSkillClientPlayer : public ::google::protobuf::Service {
  protected:
-  ClientPlayerSkillService() = default;
+  SceneSkillClientPlayer() = default;
 
  public:
-  using Stub = ClientPlayerSkillService_Stub;
+  using Stub = SceneSkillClientPlayer_Stub;
 
-  ClientPlayerSkillService(const ClientPlayerSkillService&) = delete;
-  ClientPlayerSkillService& operator=(const ClientPlayerSkillService&) = delete;
-  virtual ~ClientPlayerSkillService() = default;
+  SceneSkillClientPlayer(const SceneSkillClientPlayer&) = delete;
+  SceneSkillClientPlayer& operator=(const SceneSkillClientPlayer&) = delete;
+  virtual ~SceneSkillClientPlayer() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -1427,20 +1427,20 @@ class ClientPlayerSkillService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class ClientPlayerSkillService_Stub final : public ClientPlayerSkillService {
+class SceneSkillClientPlayer_Stub final : public SceneSkillClientPlayer {
  public:
-  ClientPlayerSkillService_Stub(::google::protobuf::RpcChannel* channel);
-  ClientPlayerSkillService_Stub(::google::protobuf::RpcChannel* channel,
+  SceneSkillClientPlayer_Stub(::google::protobuf::RpcChannel* channel);
+  SceneSkillClientPlayer_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  ClientPlayerSkillService_Stub(const ClientPlayerSkillService_Stub&) = delete;
-  ClientPlayerSkillService_Stub& operator=(const ClientPlayerSkillService_Stub&) = delete;
+  SceneSkillClientPlayer_Stub(const SceneSkillClientPlayer_Stub&) = delete;
+  SceneSkillClientPlayer_Stub& operator=(const SceneSkillClientPlayer_Stub&) = delete;
 
-  ~ClientPlayerSkillService_Stub() override;
+  ~SceneSkillClientPlayer_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements ClientPlayerSkillService ------------------------------------------
+  // implements SceneSkillClientPlayer ------------------------------------------
   void ReleaseSkill(::google::protobuf::RpcController* controller,
                         const ::ReleaseSkillSkillRequest* request,
                         ::ReleaseSkillSkillResponse* response,

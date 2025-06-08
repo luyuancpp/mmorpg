@@ -4,32 +4,32 @@
 #include "proto/gate/gate_service.pb.h"
 
 
-constexpr uint32_t GateServicePlayerEnterGameNodeMessageId = 1;
-constexpr uint32_t GateServicePlayerEnterGameNodeIndex = 0;
-#define GateServicePlayerEnterGameNodeMethod  ::GateService_Stub::descriptor()->method(0)
+constexpr uint32_t GatePlayerEnterGameNodeMessageId = 65;
+constexpr uint32_t GatePlayerEnterGameNodeIndex = 0;
+#define GatePlayerEnterGameNodeMethod  ::Gate_Stub::descriptor()->method(0)
 
-constexpr uint32_t GateServiceSendMessageToPlayerMessageId = 52;
-constexpr uint32_t GateServiceSendMessageToPlayerIndex = 1;
-#define GateServiceSendMessageToPlayerMethod  ::GateService_Stub::descriptor()->method(1)
+constexpr uint32_t GateSendMessageToPlayerMessageId = 1;
+constexpr uint32_t GateSendMessageToPlayerIndex = 1;
+#define GateSendMessageToPlayerMethod  ::Gate_Stub::descriptor()->method(1)
 
-constexpr uint32_t GateServiceKickSessionByCentreMessageId = 32;
-constexpr uint32_t GateServiceKickSessionByCentreIndex = 2;
-#define GateServiceKickSessionByCentreMethod  ::GateService_Stub::descriptor()->method(2)
+constexpr uint32_t GateKickSessionByCentreMessageId = 4;
+constexpr uint32_t GateKickSessionByCentreIndex = 2;
+#define GateKickSessionByCentreMethod  ::Gate_Stub::descriptor()->method(2)
 
-constexpr uint32_t GateServiceRouteNodeMessageMessageId = 23;
-constexpr uint32_t GateServiceRouteNodeMessageIndex = 3;
-#define GateServiceRouteNodeMessageMethod  ::GateService_Stub::descriptor()->method(3)
+constexpr uint32_t GateRouteNodeMessageMessageId = 23;
+constexpr uint32_t GateRouteNodeMessageIndex = 3;
+#define GateRouteNodeMessageMethod  ::Gate_Stub::descriptor()->method(3)
 
-constexpr uint32_t GateServiceRoutePlayerMessageMessageId = 65;
-constexpr uint32_t GateServiceRoutePlayerMessageIndex = 4;
-#define GateServiceRoutePlayerMessageMethod  ::GateService_Stub::descriptor()->method(4)
+constexpr uint32_t GateRoutePlayerMessageMessageId = 32;
+constexpr uint32_t GateRoutePlayerMessageIndex = 4;
+#define GateRoutePlayerMessageMethod  ::Gate_Stub::descriptor()->method(4)
 
-constexpr uint32_t GateServiceBroadcastToPlayersMessageId = 40;
-constexpr uint32_t GateServiceBroadcastToPlayersIndex = 5;
-#define GateServiceBroadcastToPlayersMethod  ::GateService_Stub::descriptor()->method(5)
+constexpr uint32_t GateBroadcastToPlayersMessageId = 40;
+constexpr uint32_t GateBroadcastToPlayersIndex = 5;
+#define GateBroadcastToPlayersMethod  ::Gate_Stub::descriptor()->method(5)
 
-constexpr uint32_t GateServiceRegisterNodeSessionMessageId = 54;
-constexpr uint32_t GateServiceRegisterNodeSessionIndex = 6;
-#define GateServiceRegisterNodeSessionMethod  ::GateService_Stub::descriptor()->method(6)
+constexpr uint32_t GateRegisterNodeSessionMessageId = 54;
+constexpr uint32_t GateRegisterNodeSessionIndex = 6;
+#define GateRegisterNodeSessionMethod  ::Gate_Stub::descriptor()->method(6)
 
 

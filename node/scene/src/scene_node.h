@@ -21,7 +21,7 @@ public:
     void StartRpcServer() override;
     
 private:
-    GameServiceHandler nodeReplyService;
+    SceneHandler nodeReplyService;
     TimerTaskComp worldTimer;
 };
 

@@ -107,11 +107,11 @@ const char descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_2eproto[] ABS
     "\n\035proto/scene/game_player.proto\032\033google/"
     "protobuf/empty.proto\".\n\025Centre2GsLoginRe"
     "quest\022\025\n\renter_gs_type\030\001 \001(\r\"\031\n\027GameNode"
-    "ExitGameRequest2\223\001\n\021GamePlayerService\022@\n"
-    "\016Centre2GsLogin\022\026.Centre2GsLoginRequest\032"
-    "\026.google.protobuf.Empty\022<\n\010ExitGame\022\030.Ga"
-    "meNodeExitGameRequest\032\026.google.protobuf."
-    "EmptyB\014Z\007pb/game\200\001\001b\006proto3"
+    "ExitGameRequest2\215\001\n\013ScenePlayer\022@\n\016Centr"
+    "e2GsLogin\022\026.Centre2GsLoginRequest\032\026.goog"
+    "le.protobuf.Empty\022<\n\010ExitGame\022\030.GameNode"
+    "ExitGameRequest\032\026.google.protobuf.EmptyB"
+    "\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto_deps[1] =
     {
@@ -121,7 +121,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto = {
     false,
     false,
-    307,
+    301,
     descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_2eproto,
     "proto/scene/game_player.proto",
     &descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto_once,
@@ -446,27 +446,27 @@ const ::_pbi::TcParseTable<0, 0, 0, 0, 2> GameNodeExitGameRequest::_table_ = {
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* GamePlayerService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* ScenePlayer::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto);
   return file_level_service_descriptors_proto_2fscene_2fgame_5fplayer_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* GamePlayerService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* ScenePlayer::GetDescriptor() {
   return descriptor();
 }
 
-void GamePlayerService::Centre2GsLogin(::google::protobuf::RpcController* controller,
+void ScenePlayer::Centre2GsLogin(::google::protobuf::RpcController* controller,
                          const ::Centre2GsLoginRequest*, ::google::protobuf::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method Centre2GsLogin() not implemented.");
   done->Run();
 }
-void GamePlayerService::ExitGame(::google::protobuf::RpcController* controller,
+void ScenePlayer::ExitGame(::google::protobuf::RpcController* controller,
                          const ::GameNodeExitGameRequest*, ::google::protobuf::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method ExitGame() not implemented.");
   done->Run();
 }
 
-void GamePlayerService::CallMethod(
+void ScenePlayer::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -492,7 +492,7 @@ void GamePlayerService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& GamePlayerService::GetRequestPrototype(
+const ::google::protobuf::Message& ScenePlayer::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -508,7 +508,7 @@ const ::google::protobuf::Message& GamePlayerService::GetRequestPrototype(
   }
 }
 
-const ::google::protobuf::Message& GamePlayerService::GetResponsePrototype(
+const ::google::protobuf::Message& ScenePlayer::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -524,27 +524,27 @@ const ::google::protobuf::Message& GamePlayerService::GetResponsePrototype(
   }
 }
 
-GamePlayerService_Stub::GamePlayerService_Stub(::google::protobuf::RpcChannel* channel)
+ScenePlayer_Stub::ScenePlayer_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-GamePlayerService_Stub::GamePlayerService_Stub(
+ScenePlayer_Stub::ScenePlayer_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-GamePlayerService_Stub::~GamePlayerService_Stub() {
+ScenePlayer_Stub::~ScenePlayer_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void GamePlayerService_Stub::Centre2GsLogin(::google::protobuf::RpcController* controller,
+void ScenePlayer_Stub::Centre2GsLogin(::google::protobuf::RpcController* controller,
                               const ::Centre2GsLoginRequest* request,
                               ::google::protobuf::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void GamePlayerService_Stub::ExitGame(::google::protobuf::RpcController* controller,
+void ScenePlayer_Stub::ExitGame(::google::protobuf::RpcController* controller,
                               const ::GameNodeExitGameRequest* request,
                               ::google::protobuf::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,

@@ -2070,17 +2070,17 @@ class ActorListCreateS2C final
 
 // -------------------------------------------------------------------
 
-class ClientPlayerSceneService_Stub;
-class ClientPlayerSceneService : public ::google::protobuf::Service {
+class SceneSceneClientPlayer_Stub;
+class SceneSceneClientPlayer : public ::google::protobuf::Service {
  protected:
-  ClientPlayerSceneService() = default;
+  SceneSceneClientPlayer() = default;
 
  public:
-  using Stub = ClientPlayerSceneService_Stub;
+  using Stub = SceneSceneClientPlayer_Stub;
 
-  ClientPlayerSceneService(const ClientPlayerSceneService&) = delete;
-  ClientPlayerSceneService& operator=(const ClientPlayerSceneService&) = delete;
-  virtual ~ClientPlayerSceneService() = default;
+  SceneSceneClientPlayer(const SceneSceneClientPlayer&) = delete;
+  SceneSceneClientPlayer& operator=(const SceneSceneClientPlayer&) = delete;
+  virtual ~SceneSceneClientPlayer() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -2133,20 +2133,20 @@ class ClientPlayerSceneService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class ClientPlayerSceneService_Stub final : public ClientPlayerSceneService {
+class SceneSceneClientPlayer_Stub final : public SceneSceneClientPlayer {
  public:
-  ClientPlayerSceneService_Stub(::google::protobuf::RpcChannel* channel);
-  ClientPlayerSceneService_Stub(::google::protobuf::RpcChannel* channel,
+  SceneSceneClientPlayer_Stub(::google::protobuf::RpcChannel* channel);
+  SceneSceneClientPlayer_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  ClientPlayerSceneService_Stub(const ClientPlayerSceneService_Stub&) = delete;
-  ClientPlayerSceneService_Stub& operator=(const ClientPlayerSceneService_Stub&) = delete;
+  SceneSceneClientPlayer_Stub(const SceneSceneClientPlayer_Stub&) = delete;
+  SceneSceneClientPlayer_Stub& operator=(const SceneSceneClientPlayer_Stub&) = delete;
 
-  ~ClientPlayerSceneService_Stub() override;
+  ~SceneSceneClientPlayer_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements ClientPlayerSceneService ------------------------------------------
+  // implements SceneSceneClientPlayer ------------------------------------------
   void EnterScene(::google::protobuf::RpcController* controller,
                         const ::EnterSceneC2SRequest* request,
                         ::EnterSceneC2SResponse* response,

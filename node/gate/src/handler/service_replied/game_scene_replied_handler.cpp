@@ -12,13 +12,13 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 
 
-void InitGameSceneServiceRepliedHandler()
+void InitSceneSceneRepliedHandler()
 {
-    gResponseDispatcher.registerMessageCallback<::Empty>(GameSceneServiceTestMessageId,
-        std::bind(&OnGameSceneServiceTestRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    gResponseDispatcher.registerMessageCallback<::Empty>(SceneSceneTestMessageId,
+        std::bind(&OnSceneSceneTestRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
-void OnGameSceneServiceTestRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
+void OnSceneSceneTestRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

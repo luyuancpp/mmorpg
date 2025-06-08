@@ -6,7 +6,7 @@
 
 
 
-void GameClientPlayerCommonServiceHandler::SendTipToClient(entt::entity player,const ::TipInfoMessage* request,
+void SceneClientPlayerCommonHandler::SendTipToClient(entt::entity player,const ::TipInfoMessage* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -17,7 +17,7 @@ void GameClientPlayerCommonServiceHandler::SendTipToClient(entt::entity player,c
 
 
 
-void GameClientPlayerCommonServiceHandler::KickPlayer(entt::entity player,const ::GameKickPlayerRequest* request,
+void SceneClientPlayerCommonHandler::KickPlayer(entt::entity player,const ::GameKickPlayerRequest* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE

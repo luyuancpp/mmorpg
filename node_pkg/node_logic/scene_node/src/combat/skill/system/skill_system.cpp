@@ -459,7 +459,7 @@ void SkillSystem::BroadcastSkillUsedMessage(const entt::entity casterEntity, con
 
 	ViewSystem::BroadcastMessageToVisiblePlayers(
 		casterEntity,
-		ClientPlayerSkillServiceNotifySkillUsedMessageId,
+		SceneSkillClientPlayerNotifySkillUsedMessageId,
 		skillUsedS2C
 	);
 }
@@ -486,7 +486,7 @@ void SkillSystem::SendSkillInterruptedMessage(const entt::entity casterEntity, c
 
 	ViewSystem::BroadcastMessageToVisiblePlayers(
 		casterEntity,
-		ClientPlayerSkillServiceNotifySkillInterruptedMessageId,
+		SceneSkillClientPlayerNotifySkillInterruptedMessageId,
 		skillInterruptedS2C
 	);
 }

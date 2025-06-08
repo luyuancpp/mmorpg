@@ -62,7 +62,7 @@ message ActorListDestroyS2C
 	repeated uint64 entity = 1;
 }
 
-service ClientPlayerSceneService 
+service SceneSceneClientPlayer
 {
   rpc EnterScene (EnterSceneC2SRequest) returns (EnterSceneC2SResponse);
   rpc NotifyEnterScene (EnterSceneS2C) returns (Empty);

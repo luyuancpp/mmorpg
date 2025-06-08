@@ -2,7 +2,7 @@
 #include "proto/gate/gate_service.pb.h"
 
 
-class GateServiceHandler : public ::GateService
+class GateHandler : public ::Gate
 {
 public:
 

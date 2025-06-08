@@ -187,12 +187,12 @@ const char descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_5fscene_2epro
     "veSceneRequest\022\021\n\tchange_gs\030\001 \001(\010\"\026\n\024Ent"
     "erSceneS2CRequest\"@\n\026EnterScenerS2CRespo"
     "nse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMess"
-    "age2\321\001\n\026GamePlayerSceneService\022:\n\nEnterS"
-    "cene\022\024.GsEnterSceneRequest\032\026.google.prot"
-    "obuf.Empty\022:\n\nLeaveScene\022\024.GsLeaveSceneR"
-    "equest\032\026.google.protobuf.Empty\022\?\n\rEnterS"
-    "ceneS2C\022\025.EnterSceneS2CRequest\032\027.EnterSc"
-    "enerS2CResponseB\014Z\007pb/game\200\001\001b\006proto3"
+    "age2\313\001\n\020SceneScenePlayer\022:\n\nEnterScene\022\024"
+    ".GsEnterSceneRequest\032\026.google.protobuf.E"
+    "mpty\022:\n\nLeaveScene\022\024.GsLeaveSceneRequest"
+    "\032\026.google.protobuf.Empty\022\?\n\rEnterSceneS2"
+    "C\022\025.EnterSceneS2CRequest\032\027.EnterScenerS2"
+    "CResponseB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_2eproto_deps[3] =
     {
@@ -204,7 +204,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_2eproto = {
     false,
     false,
-    557,
+    551,
     descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_5fscene_2eproto,
     "proto/scene/game_player_scene.proto",
     &descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_2eproto_once,
@@ -1024,32 +1024,32 @@ void EnterScenerS2CResponse::InternalSwap(EnterScenerS2CResponse* PROTOBUF_RESTR
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* GamePlayerSceneService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* SceneScenePlayer::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_2eproto);
   return file_level_service_descriptors_proto_2fscene_2fgame_5fplayer_5fscene_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* GamePlayerSceneService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* SceneScenePlayer::GetDescriptor() {
   return descriptor();
 }
 
-void GamePlayerSceneService::EnterScene(::google::protobuf::RpcController* controller,
+void SceneScenePlayer::EnterScene(::google::protobuf::RpcController* controller,
                          const ::GsEnterSceneRequest*, ::google::protobuf::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method EnterScene() not implemented.");
   done->Run();
 }
-void GamePlayerSceneService::LeaveScene(::google::protobuf::RpcController* controller,
+void SceneScenePlayer::LeaveScene(::google::protobuf::RpcController* controller,
                          const ::GsLeaveSceneRequest*, ::google::protobuf::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method LeaveScene() not implemented.");
   done->Run();
 }
-void GamePlayerSceneService::EnterSceneS2C(::google::protobuf::RpcController* controller,
+void SceneScenePlayer::EnterSceneS2C(::google::protobuf::RpcController* controller,
                          const ::EnterSceneS2CRequest*, ::EnterScenerS2CResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method EnterSceneS2C() not implemented.");
   done->Run();
 }
 
-void GamePlayerSceneService::CallMethod(
+void SceneScenePlayer::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -1081,7 +1081,7 @@ void GamePlayerSceneService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& GamePlayerSceneService::GetRequestPrototype(
+const ::google::protobuf::Message& SceneScenePlayer::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -1099,7 +1099,7 @@ const ::google::protobuf::Message& GamePlayerSceneService::GetRequestPrototype(
   }
 }
 
-const ::google::protobuf::Message& GamePlayerSceneService::GetResponsePrototype(
+const ::google::protobuf::Message& SceneScenePlayer::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -1117,33 +1117,33 @@ const ::google::protobuf::Message& GamePlayerSceneService::GetResponsePrototype(
   }
 }
 
-GamePlayerSceneService_Stub::GamePlayerSceneService_Stub(::google::protobuf::RpcChannel* channel)
+SceneScenePlayer_Stub::SceneScenePlayer_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-GamePlayerSceneService_Stub::GamePlayerSceneService_Stub(
+SceneScenePlayer_Stub::SceneScenePlayer_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-GamePlayerSceneService_Stub::~GamePlayerSceneService_Stub() {
+SceneScenePlayer_Stub::~SceneScenePlayer_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void GamePlayerSceneService_Stub::EnterScene(::google::protobuf::RpcController* controller,
+void SceneScenePlayer_Stub::EnterScene(::google::protobuf::RpcController* controller,
                               const ::GsEnterSceneRequest* request,
                               ::google::protobuf::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void GamePlayerSceneService_Stub::LeaveScene(::google::protobuf::RpcController* controller,
+void SceneScenePlayer_Stub::LeaveScene(::google::protobuf::RpcController* controller,
                               const ::GsLeaveSceneRequest* request,
                               ::google::protobuf::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
-void GamePlayerSceneService_Stub::EnterSceneS2C(::google::protobuf::RpcController* controller,
+void SceneScenePlayer_Stub::EnterSceneS2C(::google::protobuf::RpcController* controller,
                               const ::EnterSceneS2CRequest* request,
                               ::EnterScenerS2CResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(2), controller,

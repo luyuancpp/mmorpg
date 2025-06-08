@@ -499,8 +499,8 @@ static uint32_t kNodeTypeToMessageId[eNodeType_MAX] = {
 	0,
 	0,
 	CentreRegisterNodeSessionMessageId,
-	GameServiceRegisterNodeSessionMessageId,
-	GateServiceRegisterNodeSessionMessageId
+	SceneRegisterNodeSessionMessageId,
+	GateRegisterNodeSessionMessageId
 };
 
 void Node::RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn) {

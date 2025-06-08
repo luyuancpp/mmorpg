@@ -123,20 +123,20 @@ const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABS
     "SessionRequest\022\022\n\nsession_id\030\001 \001(\004\"[\n\031Br"
     "oadcastToPlayersRequest\022\024\n\014session_list\030"
     "\001 \003(\004\022(\n\017message_content\030\002 \001(\0132\017.Message"
-    "Content2\360\003\n\013GateService\022X\n\023PlayerEnterGa"
-    "meNode\022\037.RegisterGameNodeSessionRequest\032"
-    " .RegisterGameNodeSessionResponse\0227\n\023Sen"
-    "dMessageToPlayer\022\030.NodeRouteMessageReque"
-    "st\032\006.Empty\0222\n\023KickSessionByCentre\022\023.Kick"
-    "SessionRequest\032\006.Empty\022\?\n\020RouteNodeMessa"
-    "ge\022\024.RouteMessageRequest\032\025.RouteMessageR"
-    "esponse\022M\n\022RoutePlayerMessage\022\032.RoutePla"
-    "yerMessageRequest\032\033.RoutePlayerMessageRe"
-    "sponse\0228\n\022BroadcastToPlayers\022\032.Broadcast"
-    "ToPlayersRequest\032\006.Empty\022P\n\023RegisterNode"
-    "Session\022\033.RegisterNodeSessionRequest\032\034.R"
-    "egisterNodeSessionResponseB\014Z\007pb/game\200\001\001"
-    "b\006proto3"
+    "Content2\351\003\n\004Gate\022X\n\023PlayerEnterGameNode\022"
+    "\037.RegisterGameNodeSessionRequest\032 .Regis"
+    "terGameNodeSessionResponse\0227\n\023SendMessag"
+    "eToPlayer\022\030.NodeRouteMessageRequest\032\006.Em"
+    "pty\0222\n\023KickSessionByCentre\022\023.KickSession"
+    "Request\032\006.Empty\022\?\n\020RouteNodeMessage\022\024.Ro"
+    "uteMessageRequest\032\025.RouteMessageResponse"
+    "\022M\n\022RoutePlayerMessage\022\032.RoutePlayerMess"
+    "ageRequest\032\033.RoutePlayerMessageResponse\022"
+    "8\n\022BroadcastToPlayers\022\032.BroadcastToPlaye"
+    "rsRequest\032\006.Empty\022P\n\023RegisterNodeSession"
+    "\022\033.RegisterNodeSessionRequest\032\034.Register"
+    "NodeSessionResponseB\014Z\007pb/game\200\001\001b\006proto"
+    "3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps[3] =
     {
@@ -148,7 +148,7 @@ static ::absl::once_flag descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgate_2fgate_5fservice_2eproto = {
     false,
     false,
-    768,
+    761,
     descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto,
     "proto/gate/gate_service.proto",
     &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_once,
@@ -669,52 +669,52 @@ void BroadcastToPlayersRequest::InternalSwap(BroadcastToPlayersRequest* PROTOBUF
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* GateService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* Gate::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fgate_2fgate_5fservice_2eproto);
   return file_level_service_descriptors_proto_2fgate_2fgate_5fservice_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* GateService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* Gate::GetDescriptor() {
   return descriptor();
 }
 
-void GateService::PlayerEnterGameNode(::google::protobuf::RpcController* controller,
+void Gate::PlayerEnterGameNode(::google::protobuf::RpcController* controller,
                          const ::RegisterGameNodeSessionRequest*, ::RegisterGameNodeSessionResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method PlayerEnterGameNode() not implemented.");
   done->Run();
 }
-void GateService::SendMessageToPlayer(::google::protobuf::RpcController* controller,
+void Gate::SendMessageToPlayer(::google::protobuf::RpcController* controller,
                          const ::NodeRouteMessageRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SendMessageToPlayer() not implemented.");
   done->Run();
 }
-void GateService::KickSessionByCentre(::google::protobuf::RpcController* controller,
+void Gate::KickSessionByCentre(::google::protobuf::RpcController* controller,
                          const ::KickSessionRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method KickSessionByCentre() not implemented.");
   done->Run();
 }
-void GateService::RouteNodeMessage(::google::protobuf::RpcController* controller,
+void Gate::RouteNodeMessage(::google::protobuf::RpcController* controller,
                          const ::RouteMessageRequest*, ::RouteMessageResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RouteNodeMessage() not implemented.");
   done->Run();
 }
-void GateService::RoutePlayerMessage(::google::protobuf::RpcController* controller,
+void Gate::RoutePlayerMessage(::google::protobuf::RpcController* controller,
                          const ::RoutePlayerMessageRequest*, ::RoutePlayerMessageResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RoutePlayerMessage() not implemented.");
   done->Run();
 }
-void GateService::BroadcastToPlayers(::google::protobuf::RpcController* controller,
+void Gate::BroadcastToPlayers(::google::protobuf::RpcController* controller,
                          const ::BroadcastToPlayersRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method BroadcastToPlayers() not implemented.");
   done->Run();
 }
-void GateService::RegisterNodeSession(::google::protobuf::RpcController* controller,
+void Gate::RegisterNodeSession(::google::protobuf::RpcController* controller,
                          const ::RegisterNodeSessionRequest*, ::RegisterNodeSessionResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RegisterNodeSession() not implemented.");
   done->Run();
 }
 
-void GateService::CallMethod(
+void Gate::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -770,7 +770,7 @@ void GateService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& GateService::GetRequestPrototype(
+const ::google::protobuf::Message& Gate::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -796,7 +796,7 @@ const ::google::protobuf::Message& GateService::GetRequestPrototype(
   }
 }
 
-const ::google::protobuf::Message& GateService::GetResponsePrototype(
+const ::google::protobuf::Message& Gate::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -822,57 +822,57 @@ const ::google::protobuf::Message& GateService::GetResponsePrototype(
   }
 }
 
-GateService_Stub::GateService_Stub(::google::protobuf::RpcChannel* channel)
+Gate_Stub::Gate_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-GateService_Stub::GateService_Stub(
+Gate_Stub::Gate_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-GateService_Stub::~GateService_Stub() {
+Gate_Stub::~Gate_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void GateService_Stub::PlayerEnterGameNode(::google::protobuf::RpcController* controller,
+void Gate_Stub::PlayerEnterGameNode(::google::protobuf::RpcController* controller,
                               const ::RegisterGameNodeSessionRequest* request,
                               ::RegisterGameNodeSessionResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void GateService_Stub::SendMessageToPlayer(::google::protobuf::RpcController* controller,
+void Gate_Stub::SendMessageToPlayer(::google::protobuf::RpcController* controller,
                               const ::NodeRouteMessageRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
-void GateService_Stub::KickSessionByCentre(::google::protobuf::RpcController* controller,
+void Gate_Stub::KickSessionByCentre(::google::protobuf::RpcController* controller,
                               const ::KickSessionRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
-void GateService_Stub::RouteNodeMessage(::google::protobuf::RpcController* controller,
+void Gate_Stub::RouteNodeMessage(::google::protobuf::RpcController* controller,
                               const ::RouteMessageRequest* request,
                               ::RouteMessageResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(3), controller,
                        request, response, done);
 }
-void GateService_Stub::RoutePlayerMessage(::google::protobuf::RpcController* controller,
+void Gate_Stub::RoutePlayerMessage(::google::protobuf::RpcController* controller,
                               const ::RoutePlayerMessageRequest* request,
                               ::RoutePlayerMessageResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(4), controller,
                        request, response, done);
 }
-void GateService_Stub::BroadcastToPlayers(::google::protobuf::RpcController* controller,
+void Gate_Stub::BroadcastToPlayers(::google::protobuf::RpcController* controller,
                               const ::BroadcastToPlayersRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(5), controller,
                        request, response, done);
 }
-void GateService_Stub::RegisterNodeSession(::google::protobuf::RpcController* controller,
+void Gate_Stub::RegisterNodeSession(::google::protobuf::RpcController* controller,
                               const ::RegisterNodeSessionRequest* request,
                               ::RegisterNodeSessionResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(6), controller,

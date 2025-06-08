@@ -412,17 +412,17 @@ class Centre2GsLoginRequest final
 
 // -------------------------------------------------------------------
 
-class GamePlayerService_Stub;
-class GamePlayerService : public ::google::protobuf::Service {
+class ScenePlayer_Stub;
+class ScenePlayer : public ::google::protobuf::Service {
  protected:
-  GamePlayerService() = default;
+  ScenePlayer() = default;
 
  public:
-  using Stub = GamePlayerService_Stub;
+  using Stub = ScenePlayer_Stub;
 
-  GamePlayerService(const GamePlayerService&) = delete;
-  GamePlayerService& operator=(const GamePlayerService&) = delete;
-  virtual ~GamePlayerService() = default;
+  ScenePlayer(const ScenePlayer&) = delete;
+  ScenePlayer& operator=(const ScenePlayer&) = delete;
+  virtual ~ScenePlayer() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -451,20 +451,20 @@ class GamePlayerService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class GamePlayerService_Stub final : public GamePlayerService {
+class ScenePlayer_Stub final : public ScenePlayer {
  public:
-  GamePlayerService_Stub(::google::protobuf::RpcChannel* channel);
-  GamePlayerService_Stub(::google::protobuf::RpcChannel* channel,
+  ScenePlayer_Stub(::google::protobuf::RpcChannel* channel);
+  ScenePlayer_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  GamePlayerService_Stub(const GamePlayerService_Stub&) = delete;
-  GamePlayerService_Stub& operator=(const GamePlayerService_Stub&) = delete;
+  ScenePlayer_Stub(const ScenePlayer_Stub&) = delete;
+  ScenePlayer_Stub& operator=(const ScenePlayer_Stub&) = delete;
 
-  ~GamePlayerService_Stub() override;
+  ~ScenePlayer_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements GamePlayerService ------------------------------------------
+  // implements ScenePlayer ------------------------------------------
   void Centre2GsLogin(::google::protobuf::RpcController* controller,
                         const ::Centre2GsLoginRequest* request,
                         ::google::protobuf::Empty* response,
