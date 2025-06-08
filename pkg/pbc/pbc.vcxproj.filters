@@ -204,9 +204,6 @@
     <ClCompile Include="src\proto\logic\component\comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\centre\centre_client_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\common\node.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -474,9 +471,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\component\comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\centre\centre_client_player.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\common\node.pb.h">

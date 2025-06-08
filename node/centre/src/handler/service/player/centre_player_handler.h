@@ -6,15 +6,18 @@
 
 #include "macros/return_define.h"
 
-class CentrePlayerServiceHandler : public ::PlayerService
+class CentrePlayerUtilityHandler : public ::PlayerService
 {
 public:
     using PlayerService::PlayerService;
 
 
-    static void Test(entt::entity player,
-        const ::google::protobuf::Empty* request,
-        ::google::protobuf::Empty* response);
+    static void SendTipToClient(entt::entity player,
+        const ::TipInfoMessage* request,
+        ::Empty* response);
+    static void KickPlayer(entt::entity player,
+        const ::CentreKickPlayerRequest* request,
+        ::Empty* response);
 
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         entt::entity player,
@@ -24,9 +27,14 @@ public:
         switch (method->index())
         {
         case 0:
-            Test(player,
-                static_cast<const ::google::protobuf::Empty*>(request),
-                static_cast<::google::protobuf::Empty*>(response));
+            SendTipToClient(player,
+                static_cast<const ::TipInfoMessage*>(request),
+                static_cast<::Empty*>(response));
+            break;
+        case 1:
+            KickPlayer(player,
+                static_cast<const ::CentreKickPlayerRequest*>(request),
+                static_cast<::Empty*>(response));
             break;
         default:
             break;
