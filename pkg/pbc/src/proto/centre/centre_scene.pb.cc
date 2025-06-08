@@ -153,11 +153,10 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fscene_2eproto[] A
     "neInfoPBComponent\"\027\n\025RegisterSceneRespon"
     "se\"N\n\026UnRegisterSceneRequest\022\025\n\rscene_no"
     "de_id\030\001 \001(\r\022\r\n\005scene\030\002 \001(\r\022\016\n\006reason\030\003 \001"
-    "(\r2\210\001\n\022CentreSceneService\022>\n\rRegisterSce"
-    "ne\022\025.RegisterSceneRequest\032\026.RegisterScen"
-    "eResponse\0222\n\017UnRegisterScene\022\027.UnRegiste"
-    "rSceneRequest\032\006.EmptyB\014Z\007pb/game\200\001\001b\006pro"
-    "to3"
+    "(\r2\201\001\n\013CentreScene\022>\n\rRegisterScene\022\025.Re"
+    "gisterSceneRequest\032\026.RegisterSceneRespon"
+    "se\0222\n\017UnRegisterScene\022\027.UnRegisterSceneR"
+    "equest\032\006.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcentre_2fcentre_5fscene_2eproto_deps[2] =
     {
@@ -168,7 +167,7 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fscene_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fscene_2eproto = {
     false,
     false,
-    443,
+    436,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fscene_2eproto,
     "proto/centre/centre_scene.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fscene_2eproto_once,
@@ -822,27 +821,27 @@ void UnRegisterSceneRequest::InternalSwap(UnRegisterSceneRequest* PROTOBUF_RESTR
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* CentreSceneService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* CentreScene::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcentre_2fcentre_5fscene_2eproto);
   return file_level_service_descriptors_proto_2fcentre_2fcentre_5fscene_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* CentreSceneService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* CentreScene::GetDescriptor() {
   return descriptor();
 }
 
-void CentreSceneService::RegisterScene(::google::protobuf::RpcController* controller,
+void CentreScene::RegisterScene(::google::protobuf::RpcController* controller,
                          const ::RegisterSceneRequest*, ::RegisterSceneResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RegisterScene() not implemented.");
   done->Run();
 }
-void CentreSceneService::UnRegisterScene(::google::protobuf::RpcController* controller,
+void CentreScene::UnRegisterScene(::google::protobuf::RpcController* controller,
                          const ::UnRegisterSceneRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method UnRegisterScene() not implemented.");
   done->Run();
 }
 
-void CentreSceneService::CallMethod(
+void CentreScene::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -868,7 +867,7 @@ void CentreSceneService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& CentreSceneService::GetRequestPrototype(
+const ::google::protobuf::Message& CentreScene::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -884,7 +883,7 @@ const ::google::protobuf::Message& CentreSceneService::GetRequestPrototype(
   }
 }
 
-const ::google::protobuf::Message& CentreSceneService::GetResponsePrototype(
+const ::google::protobuf::Message& CentreScene::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -900,27 +899,27 @@ const ::google::protobuf::Message& CentreSceneService::GetResponsePrototype(
   }
 }
 
-CentreSceneService_Stub::CentreSceneService_Stub(::google::protobuf::RpcChannel* channel)
+CentreScene_Stub::CentreScene_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-CentreSceneService_Stub::CentreSceneService_Stub(
+CentreScene_Stub::CentreScene_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-CentreSceneService_Stub::~CentreSceneService_Stub() {
+CentreScene_Stub::~CentreScene_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void CentreSceneService_Stub::RegisterScene(::google::protobuf::RpcController* controller,
+void CentreScene_Stub::RegisterScene(::google::protobuf::RpcController* controller,
                               const ::RegisterSceneRequest* request,
                               ::RegisterSceneResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void CentreSceneService_Stub::UnRegisterScene(::google::protobuf::RpcController* controller,
+void CentreScene_Stub::UnRegisterScene(::google::protobuf::RpcController* controller,
                               const ::UnRegisterSceneRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,

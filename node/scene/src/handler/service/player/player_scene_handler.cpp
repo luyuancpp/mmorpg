@@ -52,7 +52,7 @@ void ClientPlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Ent
 
 	CentreEnterSceneRequest rq;
 	rq.mutable_scene_info()->CopyFrom(scene_info);
-	SendToCentrePlayerById(CentrePlayerSceneServiceEnterSceneMessageId, rq, player);
+	SendToCentrePlayerById(CentrePlayerSceneEnterSceneMessageId, rq, player);
 
 	LOG_TRACE << "EnterSceneC2S request processed successfully for player: " << tls.registry.get<Guid>(player);
 ///<<< END WRITING YOUR CODE

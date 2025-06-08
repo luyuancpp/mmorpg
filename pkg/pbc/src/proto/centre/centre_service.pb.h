@@ -1663,17 +1663,17 @@ class CentreLoginResponse final
 
 // -------------------------------------------------------------------
 
-class CentreService_Stub;
-class CentreService : public ::google::protobuf::Service {
+class Centre_Stub;
+class Centre : public ::google::protobuf::Service {
  protected:
-  CentreService() = default;
+  Centre() = default;
 
  public:
-  using Stub = CentreService_Stub;
+  using Stub = Centre_Stub;
 
-  CentreService(const CentreService&) = delete;
-  CentreService& operator=(const CentreService&) = delete;
-  virtual ~CentreService() = default;
+  Centre(const Centre&) = delete;
+  Centre& operator=(const Centre&) = delete;
+  virtual ~Centre() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -1742,20 +1742,20 @@ class CentreService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class CentreService_Stub final : public CentreService {
+class Centre_Stub final : public Centre {
  public:
-  CentreService_Stub(::google::protobuf::RpcChannel* channel);
-  CentreService_Stub(::google::protobuf::RpcChannel* channel,
+  Centre_Stub(::google::protobuf::RpcChannel* channel);
+  Centre_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  CentreService_Stub(const CentreService_Stub&) = delete;
-  CentreService_Stub& operator=(const CentreService_Stub&) = delete;
+  Centre_Stub(const Centre_Stub&) = delete;
+  Centre_Stub& operator=(const Centre_Stub&) = delete;
 
-  ~CentreService_Stub() override;
+  ~Centre_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements CentreService ------------------------------------------
+  // implements Centre ------------------------------------------
   void GatePlayerService(::google::protobuf::RpcController* controller,
                         const ::GateClientMessageRequest* request,
                         ::Empty* response,

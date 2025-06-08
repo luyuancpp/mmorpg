@@ -167,16 +167,16 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_5fscene_2e
     "est\022)\n\nscene_info\030\001 \001(\0132\025.SceneInfoPBCom"
     "ponent\"\031\n\027CentreLeaveSceneRequest\"0\n.Cen"
     "treLeaveSceneAsyncSavePlayerCompleteRequ"
-    "est\"\030\n\026CentreSceneInfoRequest2\311\002\n\030Centre"
-    "PlayerSceneService\022>\n\nEnterScene\022\030.Centr"
-    "eEnterSceneRequest\032\026.google.protobuf.Emp"
-    "ty\022>\n\nLeaveScene\022\030.CentreLeaveSceneReque"
-    "st\032\026.google.protobuf.Empty\022l\n!LeaveScene"
-    "AsyncSavePlayerComplete\022/.CentreLeaveSce"
-    "neAsyncSavePlayerCompleteRequest\032\026.googl"
-    "e.protobuf.Empty\022\?\n\014SceneInfoC2S\022\027.Centr"
-    "eSceneInfoRequest\032\026.google.protobuf.Empt"
-    "yB\014Z\007pb/game\200\001\001b\006proto3"
+    "est\"\030\n\026CentreSceneInfoRequest2\302\002\n\021Centre"
+    "PlayerScene\022>\n\nEnterScene\022\030.CentreEnterS"
+    "ceneRequest\032\026.google.protobuf.Empty\022>\n\nL"
+    "eaveScene\022\030.CentreLeaveSceneRequest\032\026.go"
+    "ogle.protobuf.Empty\022l\n!LeaveSceneAsyncSa"
+    "vePlayerComplete\022/.CentreLeaveSceneAsync"
+    "SavePlayerCompleteRequest\032\026.google.proto"
+    "buf.Empty\022\?\n\014SceneInfoC2S\022\027.CentreSceneI"
+    "nfoRequest\032\026.google.protobuf.EmptyB\014Z\007pb"
+    "/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto_deps[2] =
     {
@@ -187,7 +187,7 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fsce
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto = {
     false,
     false,
-    623,
+    616,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto,
     "proto/centre/centre_player_scene.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto_once,
@@ -766,37 +766,37 @@ const ::_pbi::TcParseTable<0, 0, 0, 0, 2> CentreSceneInfoRequest::_table_ = {
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* CentrePlayerSceneService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* CentrePlayerScene::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto);
   return file_level_service_descriptors_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* CentrePlayerSceneService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* CentrePlayerScene::GetDescriptor() {
   return descriptor();
 }
 
-void CentrePlayerSceneService::EnterScene(::google::protobuf::RpcController* controller,
+void CentrePlayerScene::EnterScene(::google::protobuf::RpcController* controller,
                          const ::CentreEnterSceneRequest*, ::google::protobuf::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method EnterScene() not implemented.");
   done->Run();
 }
-void CentrePlayerSceneService::LeaveScene(::google::protobuf::RpcController* controller,
+void CentrePlayerScene::LeaveScene(::google::protobuf::RpcController* controller,
                          const ::CentreLeaveSceneRequest*, ::google::protobuf::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method LeaveScene() not implemented.");
   done->Run();
 }
-void CentrePlayerSceneService::LeaveSceneAsyncSavePlayerComplete(::google::protobuf::RpcController* controller,
+void CentrePlayerScene::LeaveSceneAsyncSavePlayerComplete(::google::protobuf::RpcController* controller,
                          const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest*, ::google::protobuf::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method LeaveSceneAsyncSavePlayerComplete() not implemented.");
   done->Run();
 }
-void CentrePlayerSceneService::SceneInfoC2S(::google::protobuf::RpcController* controller,
+void CentrePlayerScene::SceneInfoC2S(::google::protobuf::RpcController* controller,
                          const ::CentreSceneInfoRequest*, ::google::protobuf::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SceneInfoC2S() not implemented.");
   done->Run();
 }
 
-void CentrePlayerSceneService::CallMethod(
+void CentrePlayerScene::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -834,7 +834,7 @@ void CentrePlayerSceneService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& CentrePlayerSceneService::GetRequestPrototype(
+const ::google::protobuf::Message& CentrePlayerScene::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -854,7 +854,7 @@ const ::google::protobuf::Message& CentrePlayerSceneService::GetRequestPrototype
   }
 }
 
-const ::google::protobuf::Message& CentrePlayerSceneService::GetResponsePrototype(
+const ::google::protobuf::Message& CentrePlayerScene::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -874,39 +874,39 @@ const ::google::protobuf::Message& CentrePlayerSceneService::GetResponsePrototyp
   }
 }
 
-CentrePlayerSceneService_Stub::CentrePlayerSceneService_Stub(::google::protobuf::RpcChannel* channel)
+CentrePlayerScene_Stub::CentrePlayerScene_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-CentrePlayerSceneService_Stub::CentrePlayerSceneService_Stub(
+CentrePlayerScene_Stub::CentrePlayerScene_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-CentrePlayerSceneService_Stub::~CentrePlayerSceneService_Stub() {
+CentrePlayerScene_Stub::~CentrePlayerScene_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void CentrePlayerSceneService_Stub::EnterScene(::google::protobuf::RpcController* controller,
+void CentrePlayerScene_Stub::EnterScene(::google::protobuf::RpcController* controller,
                               const ::CentreEnterSceneRequest* request,
                               ::google::protobuf::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void CentrePlayerSceneService_Stub::LeaveScene(::google::protobuf::RpcController* controller,
+void CentrePlayerScene_Stub::LeaveScene(::google::protobuf::RpcController* controller,
                               const ::CentreLeaveSceneRequest* request,
                               ::google::protobuf::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
-void CentrePlayerSceneService_Stub::LeaveSceneAsyncSavePlayerComplete(::google::protobuf::RpcController* controller,
+void CentrePlayerScene_Stub::LeaveSceneAsyncSavePlayerComplete(::google::protobuf::RpcController* controller,
                               const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
                               ::google::protobuf::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
-void CentrePlayerSceneService_Stub::SceneInfoC2S(::google::protobuf::RpcController* controller,
+void CentrePlayerScene_Stub::SceneInfoC2S(::google::protobuf::RpcController* controller,
                               const ::CentreSceneInfoRequest* request,
                               ::google::protobuf::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(3), controller,

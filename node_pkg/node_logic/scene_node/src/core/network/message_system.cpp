@@ -91,7 +91,7 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 	request.mutable_message_content()->set_message_id(messageId);
 	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
 	request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
-	centreNode->SendRequest(CentreServicePlayerServiceMessageId, request);
+	centreNode->SendRequest(CentrePlayerServiceMessageId, request);
 }
 
 void SendToCentre(const uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)

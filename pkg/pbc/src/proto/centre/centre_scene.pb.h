@@ -650,17 +650,17 @@ class RegisterSceneRequest final
 
 // -------------------------------------------------------------------
 
-class CentreSceneService_Stub;
-class CentreSceneService : public ::google::protobuf::Service {
+class CentreScene_Stub;
+class CentreScene : public ::google::protobuf::Service {
  protected:
-  CentreSceneService() = default;
+  CentreScene() = default;
 
  public:
-  using Stub = CentreSceneService_Stub;
+  using Stub = CentreScene_Stub;
 
-  CentreSceneService(const CentreSceneService&) = delete;
-  CentreSceneService& operator=(const CentreSceneService&) = delete;
-  virtual ~CentreSceneService() = default;
+  CentreScene(const CentreScene&) = delete;
+  CentreScene& operator=(const CentreScene&) = delete;
+  virtual ~CentreScene() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -689,20 +689,20 @@ class CentreSceneService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class CentreSceneService_Stub final : public CentreSceneService {
+class CentreScene_Stub final : public CentreScene {
  public:
-  CentreSceneService_Stub(::google::protobuf::RpcChannel* channel);
-  CentreSceneService_Stub(::google::protobuf::RpcChannel* channel,
+  CentreScene_Stub(::google::protobuf::RpcChannel* channel);
+  CentreScene_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  CentreSceneService_Stub(const CentreSceneService_Stub&) = delete;
-  CentreSceneService_Stub& operator=(const CentreSceneService_Stub&) = delete;
+  CentreScene_Stub(const CentreScene_Stub&) = delete;
+  CentreScene_Stub& operator=(const CentreScene_Stub&) = delete;
 
-  ~CentreSceneService_Stub() override;
+  ~CentreScene_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements CentreSceneService ------------------------------------------
+  // implements CentreScene ------------------------------------------
   void RegisterScene(::google::protobuf::RpcController* controller,
                         const ::RegisterSceneRequest* request,
                         ::RegisterSceneResponse* response,

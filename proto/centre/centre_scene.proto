@@ -26,7 +26,7 @@ message UnRegisterSceneRequest
 
 //正常或者顶号进入场景
 //断线重连进入场景,断线重连分时间
-service CentreSceneService
+service CentreScene
 {
   rpc RegisterScene (RegisterSceneRequest) returns (RegisterSceneResponse);
   rpc UnRegisterScene (UnRegisterSceneRequest) returns (Empty);

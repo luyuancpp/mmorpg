@@ -353,27 +353,27 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto[]
     "_type\030\002 \001(\r\"7\n\022CentreLoginRequest\022\017\n\007acc"
     "ount\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\"=\n\023CentreLo"
     "ginResponse\022&\n\rerror_message\030\001 \001(\0132\017.Tip"
-    "InfoMessage2\237\006\n\rCentreService\0226\n\021GatePla"
-    "yerService\022\031.GateClientMessageRequest\032\006."
-    "Empty\022>\n\025GateSessionDisconnect\022\035.GateSes"
-    "sionDisconnectRequest\032\006.Empty\022B\n\025LoginNo"
-    "deAccountLogin\022\023.CentreLoginRequest\032\024.Ce"
-    "ntreLoginResponse\022\?\n\022LoginNodeEnterGame\022"
-    "!.CentrePlayerGameNodeEntryRequest\032\006.Emp"
-    "ty\0228\n\022LoginNodeLeaveGame\022\032.LoginNodeLeav"
-    "eGameRequest\032\006.Empty\022C\n\032LoginNodeSession"
-    "Disconnect\022\035.GateSessionDisconnectReques"
-    "t\032\006.Empty\022D\n\rPlayerService\022\030.NodeRouteMe"
-    "ssageRequest\032\031.NodeRouteMessageResponse\022"
-    "6\n\016EnterGsSucceed\022\034.EnterGameNodeSuccess"
-    "Request\032\006.Empty\022A\n\022RouteNodeStringMsg\022\024."
-    "RouteMessageRequest\032\025.RouteMessageRespon"
-    "se\022O\n\024RoutePlayerStringMsg\022\032.RoutePlayer"
-    "MessageRequest\032\033.RoutePlayerMessageRespo"
-    "nse\022.\n\rInitSceneNode\022\025.InitSceneNodeRequ"
-    "est\032\006.Empty\022P\n\023RegisterNodeSession\022\033.Reg"
-    "isterNodeSessionRequest\032\034.RegisterNodeSe"
-    "ssionResponseB\014Z\007pb/game\200\001\001b\006proto3"
+    "InfoMessage2\230\006\n\006Centre\0226\n\021GatePlayerServ"
+    "ice\022\031.GateClientMessageRequest\032\006.Empty\022>"
+    "\n\025GateSessionDisconnect\022\035.GateSessionDis"
+    "connectRequest\032\006.Empty\022B\n\025LoginNodeAccou"
+    "ntLogin\022\023.CentreLoginRequest\032\024.CentreLog"
+    "inResponse\022\?\n\022LoginNodeEnterGame\022!.Centr"
+    "ePlayerGameNodeEntryRequest\032\006.Empty\0228\n\022L"
+    "oginNodeLeaveGame\022\032.LoginNodeLeaveGameRe"
+    "quest\032\006.Empty\022C\n\032LoginNodeSessionDisconn"
+    "ect\022\035.GateSessionDisconnectRequest\032\006.Emp"
+    "ty\022D\n\rPlayerService\022\030.NodeRouteMessageRe"
+    "quest\032\031.NodeRouteMessageResponse\0226\n\016Ente"
+    "rGsSucceed\022\034.EnterGameNodeSuccessRequest"
+    "\032\006.Empty\022A\n\022RouteNodeStringMsg\022\024.RouteMe"
+    "ssageRequest\032\025.RouteMessageResponse\022O\n\024R"
+    "outePlayerStringMsg\022\032.RoutePlayerMessage"
+    "Request\032\033.RoutePlayerMessageResponse\022.\n\r"
+    "InitSceneNode\022\025.InitSceneNodeRequest\032\006.E"
+    "mpty\022P\n\023RegisterNodeSession\022\033.RegisterNo"
+    "deSessionRequest\032\034.RegisterNodeSessionRe"
+    "sponseB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_deps[5] =
     {
@@ -387,7 +387,7 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fservice_2epr
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto = {
     false,
     false,
-    1515,
+    1508,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto,
     "proto/centre/centre_service.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_once,
@@ -2270,77 +2270,77 @@ void CentreLoginResponse::InternalSwap(CentreLoginResponse* PROTOBUF_RESTRICT ot
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* CentreService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* Centre::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto);
   return file_level_service_descriptors_proto_2fcentre_2fcentre_5fservice_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* CentreService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* Centre::GetDescriptor() {
   return descriptor();
 }
 
-void CentreService::GatePlayerService(::google::protobuf::RpcController* controller,
+void Centre::GatePlayerService(::google::protobuf::RpcController* controller,
                          const ::GateClientMessageRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method GatePlayerService() not implemented.");
   done->Run();
 }
-void CentreService::GateSessionDisconnect(::google::protobuf::RpcController* controller,
+void Centre::GateSessionDisconnect(::google::protobuf::RpcController* controller,
                          const ::GateSessionDisconnectRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method GateSessionDisconnect() not implemented.");
   done->Run();
 }
-void CentreService::LoginNodeAccountLogin(::google::protobuf::RpcController* controller,
+void Centre::LoginNodeAccountLogin(::google::protobuf::RpcController* controller,
                          const ::CentreLoginRequest*, ::CentreLoginResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method LoginNodeAccountLogin() not implemented.");
   done->Run();
 }
-void CentreService::LoginNodeEnterGame(::google::protobuf::RpcController* controller,
+void Centre::LoginNodeEnterGame(::google::protobuf::RpcController* controller,
                          const ::CentrePlayerGameNodeEntryRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method LoginNodeEnterGame() not implemented.");
   done->Run();
 }
-void CentreService::LoginNodeLeaveGame(::google::protobuf::RpcController* controller,
+void Centre::LoginNodeLeaveGame(::google::protobuf::RpcController* controller,
                          const ::LoginNodeLeaveGameRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method LoginNodeLeaveGame() not implemented.");
   done->Run();
 }
-void CentreService::LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller,
+void Centre::LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller,
                          const ::GateSessionDisconnectRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method LoginNodeSessionDisconnect() not implemented.");
   done->Run();
 }
-void CentreService::PlayerService(::google::protobuf::RpcController* controller,
+void Centre::PlayerService(::google::protobuf::RpcController* controller,
                          const ::NodeRouteMessageRequest*, ::NodeRouteMessageResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method PlayerService() not implemented.");
   done->Run();
 }
-void CentreService::EnterGsSucceed(::google::protobuf::RpcController* controller,
+void Centre::EnterGsSucceed(::google::protobuf::RpcController* controller,
                          const ::EnterGameNodeSuccessRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method EnterGsSucceed() not implemented.");
   done->Run();
 }
-void CentreService::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
+void Centre::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
                          const ::RouteMessageRequest*, ::RouteMessageResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RouteNodeStringMsg() not implemented.");
   done->Run();
 }
-void CentreService::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
+void Centre::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
                          const ::RoutePlayerMessageRequest*, ::RoutePlayerMessageResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RoutePlayerStringMsg() not implemented.");
   done->Run();
 }
-void CentreService::InitSceneNode(::google::protobuf::RpcController* controller,
+void Centre::InitSceneNode(::google::protobuf::RpcController* controller,
                          const ::InitSceneNodeRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method InitSceneNode() not implemented.");
   done->Run();
 }
-void CentreService::RegisterNodeSession(::google::protobuf::RpcController* controller,
+void Centre::RegisterNodeSession(::google::protobuf::RpcController* controller,
                          const ::RegisterNodeSessionRequest*, ::RegisterNodeSessionResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RegisterNodeSession() not implemented.");
   done->Run();
 }
 
-void CentreService::CallMethod(
+void Centre::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -2426,7 +2426,7 @@ void CentreService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& CentreService::GetRequestPrototype(
+const ::google::protobuf::Message& Centre::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -2462,7 +2462,7 @@ const ::google::protobuf::Message& CentreService::GetRequestPrototype(
   }
 }
 
-const ::google::protobuf::Message& CentreService::GetResponsePrototype(
+const ::google::protobuf::Message& Centre::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -2498,87 +2498,87 @@ const ::google::protobuf::Message& CentreService::GetResponsePrototype(
   }
 }
 
-CentreService_Stub::CentreService_Stub(::google::protobuf::RpcChannel* channel)
+Centre_Stub::Centre_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-CentreService_Stub::CentreService_Stub(
+Centre_Stub::Centre_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-CentreService_Stub::~CentreService_Stub() {
+Centre_Stub::~Centre_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void CentreService_Stub::GatePlayerService(::google::protobuf::RpcController* controller,
+void Centre_Stub::GatePlayerService(::google::protobuf::RpcController* controller,
                               const ::GateClientMessageRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void CentreService_Stub::GateSessionDisconnect(::google::protobuf::RpcController* controller,
+void Centre_Stub::GateSessionDisconnect(::google::protobuf::RpcController* controller,
                               const ::GateSessionDisconnectRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
-void CentreService_Stub::LoginNodeAccountLogin(::google::protobuf::RpcController* controller,
+void Centre_Stub::LoginNodeAccountLogin(::google::protobuf::RpcController* controller,
                               const ::CentreLoginRequest* request,
                               ::CentreLoginResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
-void CentreService_Stub::LoginNodeEnterGame(::google::protobuf::RpcController* controller,
+void Centre_Stub::LoginNodeEnterGame(::google::protobuf::RpcController* controller,
                               const ::CentrePlayerGameNodeEntryRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(3), controller,
                        request, response, done);
 }
-void CentreService_Stub::LoginNodeLeaveGame(::google::protobuf::RpcController* controller,
+void Centre_Stub::LoginNodeLeaveGame(::google::protobuf::RpcController* controller,
                               const ::LoginNodeLeaveGameRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(4), controller,
                        request, response, done);
 }
-void CentreService_Stub::LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller,
+void Centre_Stub::LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller,
                               const ::GateSessionDisconnectRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(5), controller,
                        request, response, done);
 }
-void CentreService_Stub::PlayerService(::google::protobuf::RpcController* controller,
+void Centre_Stub::PlayerService(::google::protobuf::RpcController* controller,
                               const ::NodeRouteMessageRequest* request,
                               ::NodeRouteMessageResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(6), controller,
                        request, response, done);
 }
-void CentreService_Stub::EnterGsSucceed(::google::protobuf::RpcController* controller,
+void Centre_Stub::EnterGsSucceed(::google::protobuf::RpcController* controller,
                               const ::EnterGameNodeSuccessRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(7), controller,
                        request, response, done);
 }
-void CentreService_Stub::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
+void Centre_Stub::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
                               const ::RouteMessageRequest* request,
                               ::RouteMessageResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(8), controller,
                        request, response, done);
 }
-void CentreService_Stub::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
+void Centre_Stub::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
                               const ::RoutePlayerMessageRequest* request,
                               ::RoutePlayerMessageResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(9), controller,
                        request, response, done);
 }
-void CentreService_Stub::InitSceneNode(::google::protobuf::RpcController* controller,
+void Centre_Stub::InitSceneNode(::google::protobuf::RpcController* controller,
                               const ::InitSceneNodeRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(10), controller,
                        request, response, done);
 }
-void CentreService_Stub::RegisterNodeSession(::google::protobuf::RpcController* controller,
+void Centre_Stub::RegisterNodeSession(::google::protobuf::RpcController* controller,
                               const ::RegisterNodeSessionRequest* request,
                               ::RegisterNodeSessionResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(11), controller,

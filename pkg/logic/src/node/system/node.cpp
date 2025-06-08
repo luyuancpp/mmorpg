@@ -498,7 +498,7 @@ void Node::OnServerConnected(const OnConnected2TcpServerEvent& event) {
 static uint32_t kNodeTypeToMessageId[eNodeType_MAX] = {
 	0,
 	0,
-	CentreServiceRegisterNodeSessionMessageId,
+	CentreRegisterNodeSessionMessageId,
 	GameServiceRegisterNodeSessionMessageId,
 	GateServiceRegisterNodeSessionMessageId
 };

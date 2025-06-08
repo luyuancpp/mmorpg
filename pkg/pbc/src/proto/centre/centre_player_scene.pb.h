@@ -717,17 +717,17 @@ class CentreEnterSceneRequest final
 
 // -------------------------------------------------------------------
 
-class CentrePlayerSceneService_Stub;
-class CentrePlayerSceneService : public ::google::protobuf::Service {
+class CentrePlayerScene_Stub;
+class CentrePlayerScene : public ::google::protobuf::Service {
  protected:
-  CentrePlayerSceneService() = default;
+  CentrePlayerScene() = default;
 
  public:
-  using Stub = CentrePlayerSceneService_Stub;
+  using Stub = CentrePlayerScene_Stub;
 
-  CentrePlayerSceneService(const CentrePlayerSceneService&) = delete;
-  CentrePlayerSceneService& operator=(const CentrePlayerSceneService&) = delete;
-  virtual ~CentrePlayerSceneService() = default;
+  CentrePlayerScene(const CentrePlayerScene&) = delete;
+  CentrePlayerScene& operator=(const CentrePlayerScene&) = delete;
+  virtual ~CentrePlayerScene() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -764,20 +764,20 @@ class CentrePlayerSceneService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class CentrePlayerSceneService_Stub final : public CentrePlayerSceneService {
+class CentrePlayerScene_Stub final : public CentrePlayerScene {
  public:
-  CentrePlayerSceneService_Stub(::google::protobuf::RpcChannel* channel);
-  CentrePlayerSceneService_Stub(::google::protobuf::RpcChannel* channel,
+  CentrePlayerScene_Stub(::google::protobuf::RpcChannel* channel);
+  CentrePlayerScene_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  CentrePlayerSceneService_Stub(const CentrePlayerSceneService_Stub&) = delete;
-  CentrePlayerSceneService_Stub& operator=(const CentrePlayerSceneService_Stub&) = delete;
+  CentrePlayerScene_Stub(const CentrePlayerScene_Stub&) = delete;
+  CentrePlayerScene_Stub& operator=(const CentrePlayerScene_Stub&) = delete;
 
-  ~CentrePlayerSceneService_Stub() override;
+  ~CentrePlayerScene_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements CentrePlayerSceneService ------------------------------------------
+  // implements CentrePlayerScene ------------------------------------------
   void EnterScene(::google::protobuf::RpcController* controller,
                         const ::CentreEnterSceneRequest* request,
                         ::google::protobuf::Empty* response,
