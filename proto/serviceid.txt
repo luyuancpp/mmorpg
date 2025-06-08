@@ -8,7 +8,7 @@
 7=PlayerSyncServiceSyncBaseAttribute
 8=ClientPlayerSceneServiceNotifyActorListCreate
 9=CentreServiceLoginNodeSessionDisconnect
-10=CentrePlayerServiceTest
+10=CentrePlayerUtilitySendTipToClient
 11=CentrePlayerSceneServiceEnterScene
 12=GameServiceRouteNodeStringMsg
 13=ClientPlayerLoginDisconnect
@@ -31,7 +31,7 @@
 30=ClientPlayerSceneServiceNotifyEnterScene
 31=GameClientPlayerCommonServiceSendTipToClient
 32=GateServiceKickSessionByCentre
-33=CentreClientPlayerCommonServiceSendTipToClient
+33=CentrePlayerUtilityKickPlayer
 34=CentrePlayerSceneServiceLeaveSceneAsyncSavePlayerComplete
 35=GamePlayerServiceExitGame
 36=CentreServiceLoginNodeLeaveGame
@@ -64,7 +64,6 @@
 63=CentrePlayerSceneServiceSceneInfoC2S
 64=CentreSceneServiceRegisterScene
 65=GateServiceRoutePlayerMessage
-66=CentreClientPlayerCommonServiceKickPlayer
 67=ClientPlayerSceneServiceNotifySceneInfo
 68=AccountDBServiceSave2Redis
 69=KVRange

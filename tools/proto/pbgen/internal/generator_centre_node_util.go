@@ -31,8 +31,16 @@ func isCentrePlayerHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	// 检查文件名是否包含 Centre 前缀名
-	return strings.Contains(firstMethodInfo.FileNameNoEx(), config.CentrePlayerPrefixName)
+	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.DbProtoDirIndex) ||
+		util.IsPathInProtoDirs(firstMethodInfo.Path(), config.LoginProtoDirIndex) {
+		return false
+	}
+
+	if !util.IsPathInProtoDirs(firstMethodInfo.Path(), config.CenterProtoDirIndex) {
+		return false
+	}
+
+	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
 }
 
 func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
@@ -72,11 +80,11 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
+	if !util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
 		return false
 	}
 
-	if !util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
+	if strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
 		return false
 	}
 

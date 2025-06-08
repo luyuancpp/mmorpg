@@ -424,7 +424,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "EnterGsSucceed request received.";
+	LOG_INFO << "Enter Scene Node Succeed request received.";
 
 	const auto playerId = request->player_id();
 	const auto player = tlsCommonLogic.GetPlayer(playerId);
@@ -445,7 +445,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 
 	PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
 
-	PlayerChangeSceneUtil::SetChangeGsStatus(player, ChangeSceneInfoPBComponent::eEnterGsSceneSucceed);
+	PlayerChangeSceneUtil::SetChangeSceneNodeStatus(player, ChangeSceneInfoPBComponent::eEnterGsSceneSucceed);
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(player);
 
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->scene_node_id();

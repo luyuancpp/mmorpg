@@ -2,9 +2,8 @@
 #include "service_info.h"
 #include "proto/common/node.pb.h"
 
-#include "proto/centre/centre_client_player.pb.h"
 #include "proto/centre/centre_player_scene.pb.h"
-#include "proto/centre/centre_player.pb.h"
+#include "proto/centre/centre_client_player.pb.h"
 #include "proto/centre/centre_scene.pb.h"
 #include "proto/centre/centre_service.pb.h"
 #include "proto/login/login_service.grpc.pb.h"
@@ -21,9 +20,8 @@
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 
-#include "centre_client_player_service_info.h"
 #include "centre_player_scene_service_info.h"
-#include "centre_player_service_info.h"
+#include "centre_client_player_service_info.h"
 #include "centre_scene_service_info.h"
 #include "centre_service_service_info.h"
 #include "login_service_service_info.h"
@@ -41,9 +39,8 @@
 #include "etcd_service_info.h"
 
 
-class CentreClientPlayerCommonServiceImpl final : public CentreClientPlayerCommonService {};
 class CentrePlayerSceneServiceImpl final : public CentrePlayerSceneService {};
-class CentrePlayerServiceImpl final : public CentrePlayerService {};
+class CentrePlayerUtilityImpl final : public CentrePlayerUtility {};
 class CentreSceneServiceImpl final : public CentreSceneService {};
 class CentreServiceImpl final : public CentreService {};
 class ClientPlayerSceneServiceImpl final : public ClientPlayerSceneService {};
@@ -78,13 +75,12 @@ std::array<RpcService, 85> gRpcServiceRegistry;
 
 void InitMessageInfo()
 {
-    gRpcServiceRegistry[CentreClientPlayerCommonServiceSendTipToClientMessageId] = RpcService{"CentreClientPlayerCommonService", "SendTipToClient", std::make_unique_for_overwrite<::TipInfoMessage>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentreClientPlayerCommonServiceImpl>(), 0, eNodeType::CentreNodeService};
-    gRpcServiceRegistry[CentreClientPlayerCommonServiceKickPlayerMessageId] = RpcService{"CentreClientPlayerCommonService", "KickPlayer", std::make_unique_for_overwrite<::CentreKickPlayerRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentreClientPlayerCommonServiceImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentrePlayerSceneServiceEnterSceneMessageId] = RpcService{"CentrePlayerSceneService", "EnterScene", std::make_unique_for_overwrite<::CentreEnterSceneRequest>(), std::make_unique_for_overwrite<::google::protobuf::Empty>(), std::make_unique_for_overwrite<CentrePlayerSceneServiceImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentrePlayerSceneServiceLeaveSceneMessageId] = RpcService{"CentrePlayerSceneService", "LeaveScene", std::make_unique_for_overwrite<::CentreLeaveSceneRequest>(), std::make_unique_for_overwrite<::google::protobuf::Empty>(), std::make_unique_for_overwrite<CentrePlayerSceneServiceImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentrePlayerSceneServiceLeaveSceneAsyncSavePlayerCompleteMessageId] = RpcService{"CentrePlayerSceneService", "LeaveSceneAsyncSavePlayerComplete", std::make_unique_for_overwrite<::CentreLeaveSceneAsyncSavePlayerCompleteRequest>(), std::make_unique_for_overwrite<::google::protobuf::Empty>(), std::make_unique_for_overwrite<CentrePlayerSceneServiceImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentrePlayerSceneServiceSceneInfoC2SMessageId] = RpcService{"CentrePlayerSceneService", "SceneInfoC2S", std::make_unique_for_overwrite<::CentreSceneInfoRequest>(), std::make_unique_for_overwrite<::google::protobuf::Empty>(), std::make_unique_for_overwrite<CentrePlayerSceneServiceImpl>(), 0, eNodeType::CentreNodeService};
-    gRpcServiceRegistry[CentrePlayerServiceTestMessageId] = RpcService{"CentrePlayerService", "Test", std::make_unique_for_overwrite<::google::protobuf::Empty>(), std::make_unique_for_overwrite<::google::protobuf::Empty>(), std::make_unique_for_overwrite<CentrePlayerServiceImpl>(), 0, eNodeType::CentreNodeService};
+    gRpcServiceRegistry[CentrePlayerUtilitySendTipToClientMessageId] = RpcService{"CentrePlayerUtility", "SendTipToClient", std::make_unique_for_overwrite<::TipInfoMessage>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentrePlayerUtilityImpl>(), 0, eNodeType::CentreNodeService};
+    gRpcServiceRegistry[CentrePlayerUtilityKickPlayerMessageId] = RpcService{"CentrePlayerUtility", "KickPlayer", std::make_unique_for_overwrite<::CentreKickPlayerRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentrePlayerUtilityImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentreSceneServiceRegisterSceneMessageId] = RpcService{"CentreSceneService", "RegisterScene", std::make_unique_for_overwrite<::RegisterSceneRequest>(), std::make_unique_for_overwrite<::RegisterSceneResponse>(), std::make_unique_for_overwrite<CentreSceneServiceImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentreSceneServiceUnRegisterSceneMessageId] = RpcService{"CentreSceneService", "UnRegisterScene", std::make_unique_for_overwrite<::UnRegisterSceneRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentreSceneServiceImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentreServiceGatePlayerServiceMessageId] = RpcService{"CentreService", "GatePlayerService", std::make_unique_for_overwrite<::GateClientMessageRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentreServiceImpl>(), 0, eNodeType::CentreNodeService};
@@ -161,8 +157,6 @@ void InitMessageInfo()
     gRpcServiceRegistry[WatchWatchMessageId] = RpcService{"Watch", "Watch", std::make_unique_for_overwrite<::etcdserverpb::WatchRequest>(), std::make_unique_for_overwrite<::etcdserverpb::WatchResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendWatchWatch};
 
 
-    gClientMessageIdWhitelist.emplace(CentreClientPlayerCommonServiceSendTipToClientMessageId);
-    gClientMessageIdWhitelist.emplace(CentreClientPlayerCommonServiceKickPlayerMessageId);
     gClientMessageIdWhitelist.emplace(ClientPlayerLoginLoginMessageId);
     gClientMessageIdWhitelist.emplace(ClientPlayerLoginCreatePlayerMessageId);
     gClientMessageIdWhitelist.emplace(ClientPlayerLoginEnterGameMessageId);

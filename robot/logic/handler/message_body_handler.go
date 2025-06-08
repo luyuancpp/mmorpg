@@ -21,10 +21,6 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageContent) {
 
 	// Handle different message types
 	switch response.MessageId {
-	case game.CentreClientPlayerCommonServiceSendTipToClientMessageId:
-		handleCentreClientPlayerCommonServiceSendTipToClient(player, response.SerializedMessage)
-	case game.CentreClientPlayerCommonServiceKickPlayerMessageId:
-		handleCentreClientPlayerCommonServiceKickPlayer(player, response.SerializedMessage)
 	case game.ClientPlayerLoginLoginMessageId:
 		handleClientPlayerLoginLogin(player, response.SerializedMessage)
 	case game.ClientPlayerLoginCreatePlayerMessageId:
@@ -67,22 +63,6 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageContent) {
 		// Handle unknown message IDs
 		zap.L().Info("Unhandled message", zap.Uint32("message_id", response.MessageId), zap.String("response", response.String()))
 	}
-}
-func handleCentreClientPlayerCommonServiceSendTipToClient(player *gameobject.Player, body []byte) {
-	message := &game.TipInfoMessage{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal TipInfoMessage", zap.Error(err))
-		return
-	}
-	CentreClientPlayerCommonServiceSendTipToClientHandler(player, message)
-}
-func handleCentreClientPlayerCommonServiceKickPlayer(player *gameobject.Player, body []byte) {
-	message := &game.CentreKickPlayerRequest{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal CentreKickPlayerRequest", zap.Error(err))
-		return
-	}
-	CentreClientPlayerCommonServiceKickPlayerHandler(player, message)
 }
 func handleClientPlayerLoginLogin(player *gameobject.Player, body []byte) {
 	message := &game.LoginResponse{}

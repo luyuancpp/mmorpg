@@ -288,17 +288,17 @@ class CentreKickPlayerRequest final
 
 // -------------------------------------------------------------------
 
-class CentreClientPlayerCommonService_Stub;
-class CentreClientPlayerCommonService : public ::google::protobuf::Service {
+class CentrePlayerUtility_Stub;
+class CentrePlayerUtility : public ::google::protobuf::Service {
  protected:
-  CentreClientPlayerCommonService() = default;
+  CentrePlayerUtility() = default;
 
  public:
-  using Stub = CentreClientPlayerCommonService_Stub;
+  using Stub = CentrePlayerUtility_Stub;
 
-  CentreClientPlayerCommonService(const CentreClientPlayerCommonService&) = delete;
-  CentreClientPlayerCommonService& operator=(const CentreClientPlayerCommonService&) = delete;
-  virtual ~CentreClientPlayerCommonService() = default;
+  CentrePlayerUtility(const CentrePlayerUtility&) = delete;
+  CentrePlayerUtility& operator=(const CentrePlayerUtility&) = delete;
+  virtual ~CentrePlayerUtility() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -327,20 +327,20 @@ class CentreClientPlayerCommonService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class CentreClientPlayerCommonService_Stub final : public CentreClientPlayerCommonService {
+class CentrePlayerUtility_Stub final : public CentrePlayerUtility {
  public:
-  CentreClientPlayerCommonService_Stub(::google::protobuf::RpcChannel* channel);
-  CentreClientPlayerCommonService_Stub(::google::protobuf::RpcChannel* channel,
+  CentrePlayerUtility_Stub(::google::protobuf::RpcChannel* channel);
+  CentrePlayerUtility_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  CentreClientPlayerCommonService_Stub(const CentreClientPlayerCommonService_Stub&) = delete;
-  CentreClientPlayerCommonService_Stub& operator=(const CentreClientPlayerCommonService_Stub&) = delete;
+  CentrePlayerUtility_Stub(const CentrePlayerUtility_Stub&) = delete;
+  CentrePlayerUtility_Stub& operator=(const CentrePlayerUtility_Stub&) = delete;
 
-  ~CentreClientPlayerCommonService_Stub() override;
+  ~CentrePlayerUtility_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements CentreClientPlayerCommonService ------------------------------------------
+  // implements CentrePlayerUtility ------------------------------------------
   void SendTipToClient(::google::protobuf::RpcController* controller,
                         const ::TipInfoMessage* request,
                         ::Empty* response,

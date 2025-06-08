@@ -168,7 +168,6 @@
     <ClInclude Include="src\proto\scene\player_scene.pb.h" />
     <ClInclude Include="src\proto\scene\player_skill.pb.h" />
     <ClInclude Include="src\proto\scene\player_state_attribute_sync.pb.h" />
-    <ClInclude Include="src\service_info\centre_client_player_service_info.h" />
     <ClInclude Include="src\service_info\centre_player_scene_service_info.h" />
     <ClInclude Include="src\service_info\centre_player_service_info.h" />
     <ClInclude Include="src\service_info\centre_scene_service_info.h" />

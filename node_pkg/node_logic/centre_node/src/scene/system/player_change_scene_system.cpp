@@ -42,7 +42,7 @@ void PlayerChangeSceneUtil::PopFrontChangeSceneQueue(entt::entity player) {
 }
 
 // 设置当前切换场景信息的切换状态
-void PlayerChangeSceneUtil::SetChangeGsStatus(entt::entity player, ChangeSceneInfoPBComponent::eChangeGsStatus s) {
+void PlayerChangeSceneUtil::SetChangeSceneNodeStatus(entt::entity player, ChangeSceneInfoPBComponent::eChangeGsStatus s) {
 	auto* const changeSceneQueue = tls.registry.try_get<ChangeSceneQueuePBComponent>(player);
 	if (!changeSceneQueue) {
 		return;
