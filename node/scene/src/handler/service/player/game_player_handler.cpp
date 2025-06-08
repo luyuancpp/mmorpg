@@ -11,6 +11,7 @@
 ///<<< END WRITING YOUR CODE
 
 
+
 void GamePlayerServiceHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLoginRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -24,6 +25,7 @@ void GamePlayerServiceHandler::Centre2GsLogin(entt::entity player,const ::Centre
 
 	PlayerNodeSystem::OnPlayerLogin(player, request->enter_gs_type());
 	///<<< END WRITING YOUR CODE
+
 
 }
 
@@ -42,7 +44,7 @@ void GamePlayerServiceHandler::ExitGame(entt::entity player,const ::GameNodeExit
 
 ///<<< END WRITING YOUR CODE
 
-}
 
+}
 
 

@@ -12,6 +12,7 @@
 ///<<< END WRITING YOUR CODE
 
 
+
 void GamePlayerSceneServiceHandler::EnterScene(entt::entity player,const ::GsEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -21,6 +22,7 @@ void GamePlayerSceneServiceHandler::EnterScene(entt::entity player,const ::GsEnt
 	// 进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
 	PlayerSceneSystem::HandleEnterScene(player, entt::to_entity(request->scene_id()));
 ///<<< END WRITING YOUR CODE
+
 
 }
 
@@ -41,6 +43,7 @@ void GamePlayerSceneServiceHandler::LeaveScene(entt::entity player,const ::GsLea
 		LOG_INFO << "Player " << tls.registry.get<Guid>(player) << " session cleared after leaving scene.";
 	}
 ///<<< END WRITING YOUR CODE
+
 
 }
 
@@ -64,7 +67,7 @@ void GamePlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,const ::En
 	SendMessageToPlayer(ClientPlayerSceneServiceNotifyEnterSceneMessageId, message, player);
 ///<<< END WRITING YOUR CODE
 
-}
 
+}
 
 
