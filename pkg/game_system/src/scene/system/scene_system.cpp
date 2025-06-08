@@ -123,7 +123,7 @@ bool SceneUtil::ConfigSceneListNotEmpty(uint32_t sceneConfigId) {
 }
 
 // Create a new scene associated with a game node
-entt::entity SceneUtil::CreateScene2GameNode(const CreateGameNodeSceneParam& param) {
+entt::entity SceneUtil::CreateSceneToSceneNode(const CreateGameNodeSceneParam& param) {
 	if (param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters for creating scene";
 		return entt::null;
@@ -347,7 +347,7 @@ void SceneUtil::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
 	if (sceneEntity == entt::null) {
 		CreateGameNodeSceneParam p{ .node = param.destNode };
 		p.sceneInfo.set_scene_confid(param.sceneConfId);
-		sceneEntity = CreateScene2GameNode(p);
+		sceneEntity = CreateSceneToSceneNode(p);
 	}
 
 	LeaveScene({ param.player });
@@ -372,7 +372,7 @@ void SceneUtil::ReplaceCrashGameNode(entt::entity crashNode, entt::entity destNo
 			}
 			CreateGameNodeSceneParam p{ .node = destNode };
 			p.sceneInfo.set_scene_confid(pSceneInfo->scene_confid());
-			CreateScene2GameNode(p);
+			CreateSceneToSceneNode(p);
 		}
 	}
 

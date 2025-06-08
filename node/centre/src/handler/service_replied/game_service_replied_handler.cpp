@@ -105,8 +105,8 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 		return;
 	}
 
-	const auto serviceIt = g_player_service_replied.find(message_info.serviceName);
-	if (serviceIt == g_player_service_replied.end())
+	const auto serviceIt = gPlayerServiceReplied.find(message_info.serviceName);
+	if (serviceIt == gPlayerServiceReplied.end())
 	{
 		LOG_ERROR << "PlayerService service not found " << player_id << ","
 		<< replied->message_content().message_id();

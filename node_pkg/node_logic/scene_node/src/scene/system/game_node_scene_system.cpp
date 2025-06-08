@@ -24,7 +24,7 @@ void GameNodeSceneSystem::InitializeNodeScenes() {
 	for (auto& item : mainSceneConf.data()) {
 		CreateGameNodeSceneParam params{ .node = entt::entity{GetNodeInfo().node_id()}};
 		params.sceneInfo.set_scene_confid(item.id());
-		SceneUtil::CreateScene2GameNode(params);
+		SceneUtil::CreateSceneToSceneNode(params);
 	}
 }
 

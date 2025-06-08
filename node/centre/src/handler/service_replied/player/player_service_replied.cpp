@@ -8,11 +8,11 @@ class GamePlayerSceneServiceImpl : public GamePlayerSceneService {};
 class GamePlayerServiceImpl : public GamePlayerService {};
 class PlayerSyncServiceImpl : public PlayerSyncService {};
 
-std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replied;
+std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> gPlayerServiceReplied;
 
 void InitPlayerServiceReplied()
 {
-    g_player_service_replied.emplace("GamePlayerSceneService", std::make_unique<GamePlayerSceneServiceRepliedHandler>(std::make_unique<GamePlayerSceneServiceImpl>()));
-    g_player_service_replied.emplace("GamePlayerService", std::make_unique<GamePlayerServiceRepliedHandler>(std::make_unique<GamePlayerServiceImpl>()));
-    g_player_service_replied.emplace("PlayerSyncService", std::make_unique<PlayerSyncServiceRepliedHandler>(std::make_unique<PlayerSyncServiceImpl>()));
+    gPlayerServiceReplied.emplace("GamePlayerSceneService", std::make_unique<GamePlayerSceneServiceRepliedHandler>(std::make_unique<GamePlayerSceneServiceImpl>()));
+    gPlayerServiceReplied.emplace("GamePlayerService", std::make_unique<GamePlayerServiceRepliedHandler>(std::make_unique<GamePlayerServiceImpl>()));
+    gPlayerServiceReplied.emplace("PlayerSyncService", std::make_unique<PlayerSyncServiceRepliedHandler>(std::make_unique<PlayerSyncServiceImpl>()));
 }

@@ -7,10 +7,10 @@
 class CentrePlayerSceneServiceImpl : public CentrePlayerSceneService {};
 class CentrePlayerServiceImpl : public CentrePlayerService {};
 
-std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;
+std::unordered_map<std::string, std::unique_ptr<PlayerService>> gPlayerService;
 
 void InitPlayerService()
 {
-    g_player_service.emplace("CentrePlayerSceneService", std::make_unique<CentrePlayerSceneServiceHandler>(std::make_unique<CentrePlayerSceneServiceImpl>()));
-    g_player_service.emplace("CentrePlayerService", std::make_unique<CentrePlayerServiceHandler>(std::make_unique<CentrePlayerServiceImpl>()));
+    gPlayerService.emplace("CentrePlayerSceneService", std::make_unique<CentrePlayerSceneServiceHandler>(std::make_unique<CentrePlayerSceneServiceImpl>()));
+    gPlayerService.emplace("CentrePlayerService", std::make_unique<CentrePlayerServiceHandler>(std::make_unique<CentrePlayerServiceImpl>()));
 }

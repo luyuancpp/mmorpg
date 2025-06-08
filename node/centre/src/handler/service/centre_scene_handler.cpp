@@ -15,7 +15,7 @@ void CentreSceneServiceHandler::RegisterScene(::google::protobuf::RpcController*
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto&& sceneInfo : request->scenes_info())
 	{
-		SceneUtil::CreateScene2GameNode(
+		SceneUtil::CreateSceneToSceneNode(
 			{ .node = entt::entity{request->scene_node_id()}, .sceneInfo = sceneInfo });
 	}
 	///<<< END WRITING YOUR CODE

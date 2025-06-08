@@ -100,10 +100,18 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 
 // Notify central service about player entry
 func (l *EnterGameLogic) notifyCentreService(in *game.EnterGameRequest) {
+	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
+	if !ok {
+		logx.Error("Session not found in context during enter centre ")
+		return
+	}
+
 	centreRequest := &game.CentrePlayerGameNodeEntryRequest{
 		ClientMsgBody: &game.CentreEnterGameRequest{
 			PlayerId: in.PlayerId,
 		},
+		SessionInfo: sessionDetails,
 	}
+
 	l.svcCtx.GetCentreClient().Send(centreRequest, game.CentreServiceLoginNodeEnterGameMessageId)
 }

@@ -439,7 +439,7 @@ func generateInstanceData(serviceList []string, isPlayerHandlerFunc func(*RPCMet
 {{ . }}
 {{- end }}
 
-std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;
+std::unordered_map<std::string, std::unique_ptr<PlayerService>> gPlayerService;
 
 void InitPlayerService()
 {
@@ -470,7 +470,7 @@ void InitPlayerService()
 
 		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileNameNoEx(), config.HandlerHeaderExtension))
 		handlerClasses = append(handlerClasses, fmt.Sprintf("class %s : public %s {};", className, method.Service()))
-		initLines = append(initLines, fmt.Sprintf(`g_player_service.emplace("%s", std::make_unique<%s%s>(std::make_unique<%s>()));`,
+		initLines = append(initLines, fmt.Sprintf(`gPlayerService.emplace("%s", std::make_unique<%s%s>(std::make_unique<%s>()));`,
 			method.Service(), method.Service(), config.HandlerFileName, className))
 	}
 
@@ -508,7 +508,7 @@ func generateRepliedInstanceData(serviceList []string, isPlayerHandlerFunc func(
 {{ . }}
 {{- end }}
 
-std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replied;
+std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> gPlayerServiceReplied;
 
 void InitPlayerServiceReplied()
 {
@@ -539,7 +539,7 @@ void InitPlayerServiceReplied()
 
 		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileNameNoEx(), config.RepliedHandlerHeaderExtension))
 		handlerClasses = append(handlerClasses, fmt.Sprintf("class %s : public %s {};", className, method.Service()))
-		initLines = append(initLines, fmt.Sprintf(`g_player_service_replied.emplace("%s", std::make_unique<%s%s>(std::make_unique<%s>()));`,
+		initLines = append(initLines, fmt.Sprintf(`gPlayerServiceReplied.emplace("%s", std::make_unique<%s%s>(std::make_unique<%s>()));`,
 			method.Service(), method.Service(), config.RepliedHandlerFileName, className))
 	}
 

@@ -125,8 +125,8 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
 
 void PlayerSceneSystem::ProcessPlayerEnterSceneNode(entt::entity playerEntity, NodeId nodeId)
 {
-    const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
-    if (!playerNodeInfo)
+    const auto* info = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
+    if (!info)
     {
         LOG_ERROR << "Player session not valid";
         return;
@@ -134,7 +134,7 @@ void PlayerSceneSystem::ProcessPlayerEnterSceneNode(entt::entity playerEntity, N
 
     PlayerEnterGameNodeRequest request;
     request.set_player_id(tls.registry.get<Guid>(playerEntity));
-    request.set_session_id(playerNodeInfo->gate_session_id());
+    request.set_session_id(info->gate_session_id());
     request.set_centre_node_id(GetNodeInfo().node_id());
     CallGameNodeMethod(GameServicePlayerEnterGameNodeMessageId, request, nodeId);
 }

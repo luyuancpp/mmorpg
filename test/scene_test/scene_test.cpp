@@ -36,7 +36,7 @@ TEST(SceneSystemTests, CreateMainScene)
 		createParams.sceneInfo.set_scene_confid(i);
 		for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
 		{
-			sceneSystem.CreateScene2GameNode(createParams);
+			sceneSystem.CreateSceneToSceneNode(createParams);
 		}
 		EXPECT_EQ(sceneSystem.GetScenesSize(i), kPerSceneConfigSize);
 	}
@@ -58,8 +58,8 @@ TEST(SceneSystemTests, CreateScene2Server)
 	createParams2.sceneInfo.set_scene_confid(3);
 	createParams2.node = node2;
 
-	sceneSystem.CreateScene2GameNode(createParams1);
-	sceneSystem.CreateScene2GameNode(createParams2);
+	sceneSystem.CreateSceneToSceneNode(createParams1);
+	sceneSystem.CreateSceneToSceneNode(createParams2);
 
 	const auto nodeComp1 = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<NodeSceneComp>(node1);
 	if (nodeComp1)
@@ -85,7 +85,7 @@ TEST(SceneSystemTests, DestroyScene)
 
 	CreateGameNodeSceneParam createParams1;
 	createParams1.node = node1;
-	const auto scene = sceneSystem.CreateScene2GameNode(createParams1);
+	const auto scene = sceneSystem.CreateSceneToSceneNode(createParams1);
 
 	EXPECT_EQ(1, sceneSystem.GetScenesSize());
 	EXPECT_EQ(1, sceneSystem.GetScenesSize(createParams1.sceneInfo.scene_confid()));
@@ -121,8 +121,8 @@ TEST(SceneSystemTests, DestroyServer)
 	createParams2.sceneInfo.set_scene_confid(2);
 	createParams2.node = node2;
 
-	auto scene1 = sceneSystem.CreateScene2GameNode(createParams1);
-	auto scene2 = sceneSystem.CreateScene2GameNode(createParams2);
+	auto scene1 = sceneSystem.CreateSceneToSceneNode(createParams1);
+	auto scene2 = sceneSystem.CreateSceneToSceneNode(createParams2);
 
 	EXPECT_EQ(1, tls.GetNodeRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(node1).GetTotalSceneCount());
 	EXPECT_EQ(1, tls.GetNodeRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(node2).GetTotalSceneCount());
@@ -171,8 +171,8 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 	createParams2.sceneInfo.set_scene_confid(2);
 	createParams2.node = node2;
 
-	auto scene1 = sceneSystem.CreateScene2GameNode(createParams1);
-	auto scene2 = sceneSystem.CreateScene2GameNode(createParams2);
+	auto scene1 = sceneSystem.CreateSceneToSceneNode(createParams1);
+	auto scene2 = sceneSystem.CreateSceneToSceneNode(createParams2);
 
 	EnterSceneParam enterParam1;
 	enterParam1.scene = scene1;
@@ -275,7 +275,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 		for (auto& it : serverEntities)
 		{
 			createServerSceneParam.node = it;
-			auto scene = sm.CreateScene2GameNode(createServerSceneParam);
+			auto scene = sm.CreateSceneToSceneNode(createServerSceneParam);
 			if (sceneEntities.empty())
 			{
 				sceneEntities.emplace(scene);
@@ -334,8 +334,8 @@ TEST(GS, CompelToChangeScene)
 	server2Param.sceneInfo.set_scene_confid(2);
 	server2Param.node = node2;
 
-	const auto scene1 = sm.CreateScene2GameNode(server1Param);
-	const auto scene2 = sm.CreateScene2GameNode(server2Param);
+	const auto scene1 = sm.CreateSceneToSceneNode(server1Param);
+	const auto scene2 = sm.CreateSceneToSceneNode(server2Param);
 
 	EnterSceneParam enterParam1;
 	enterParam1.scene = scene1;
@@ -393,7 +393,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 		for (auto& it : serverEntities)
 		{
 			createServerSceneParam.node = it;
-			auto e = sm.CreateScene2GameNode(createServerSceneParam);
+			auto e = sm.CreateSceneToSceneNode(createServerSceneParam);
 			if (sceneEntities.empty())
 			{
 				sceneEntities.emplace(e);
@@ -455,7 +455,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 		for (auto& it : nodeList)
 		{
 			createNodeSceneParam.node = it;
-			auto e = sm.CreateScene2GameNode(createNodeSceneParam);
+			auto e = sm.CreateSceneToSceneNode(createNodeSceneParam);
 			sceneList.emplace(e);
 			if (firstScene == entt::null)
 			{
@@ -517,7 +517,7 @@ TEST(GS, WeightRoundRobinMainScene)
 		for (auto& it : node_list)
 		{
 			create_server_scene_param.node = it;
-			sm.CreateScene2GameNode(create_server_scene_param);
+			sm.CreateSceneToSceneNode(create_server_scene_param);
 		}
 	}
 
@@ -641,7 +641,7 @@ TEST(GS, ServerEnterLeavePressure)
 		for (auto& it : serverEntities)
 		{
 			createServerSceneParam.node = it;
-			sm.CreateScene2GameNode(createServerSceneParam);
+			sm.CreateSceneToSceneNode(createServerSceneParam);
 		}
 	}
 
@@ -697,7 +697,7 @@ TEST(GS, EnterDefaultScene)
 		createGSSceneParam.sceneInfo.set_scene_confid(i);
 		for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
 		{
-			SceneUtil::CreateScene2GameNode(createGSSceneParam);
+			SceneUtil::CreateSceneToSceneNode(createGSSceneParam);
 		}
 	}
 
@@ -746,9 +746,9 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 		for (auto& it : serverEntities)
 		{
 			createServerSceneParam.node = it;
-			auto scene1 = sm.CreateScene2GameNode(createServerSceneParam);
+			auto scene1 = sm.CreateSceneToSceneNode(createServerSceneParam);
 			tls.GetNodeRegistry(eNodeType::SceneNodeService).emplace<TestNodeId>(scene1, tls.GetNodeRegistry(eNodeType::SceneNodeService).get<TestNodeId>(it));
-			auto scene2 = sm.CreateScene2GameNode(createServerSceneParam);
+			auto scene2 = sm.CreateSceneToSceneNode(createServerSceneParam);
 			tls.GetNodeRegistry(eNodeType::SceneNodeService).emplace<TestNodeId>(scene2, tls.GetNodeRegistry(eNodeType::SceneNodeService).get<TestNodeId>(it));
 		}
 	}
@@ -900,7 +900,7 @@ TEST(GS, CheckEnterRoomScene)
 	{
 		sceneInfo.mutable_creators()->emplace(i, false); // Assuming creators are added with a boolean indicating creator status
 	}
-	auto scene = SceneUtil::CreateScene2GameNode({ .node = CreateMainSceneNode(), .sceneInfo = sceneInfo });
+	auto scene = SceneUtil::CreateSceneToSceneNode({ .node = CreateMainSceneNode(), .sceneInfo = sceneInfo });
 
 	// Create players with different GUIDs
 	const auto player1 = tls.registry.create();
