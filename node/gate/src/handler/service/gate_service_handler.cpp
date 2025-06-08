@@ -81,7 +81,7 @@ void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* control
 
 
 
-void GateServiceHandler::RouteNodeMessage(::google::protobuf::RpcController* controller,const ::RouteMessageRequest* request,
+void GateHandler::RouteNodeMessage(::google::protobuf::RpcController* controller,const ::RouteMessageRequest* request,
 	::RouteMessageResponse* response,
 	::google::protobuf::Closure* done)
 {
@@ -93,7 +93,7 @@ void GateServiceHandler::RouteNodeMessage(::google::protobuf::RpcController* con
 
 
 
-void GateServiceHandler::RoutePlayerMessage(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
+void GateHandler::RoutePlayerMessage(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
 	::RoutePlayerMessageResponse* response,
 	::google::protobuf::Closure* done)
 {
