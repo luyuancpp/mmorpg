@@ -1,7 +1,8 @@
 0=ClientPlayerSkillServiceGetSkillList
-1=GateServicePlayerEnterGameNode
+1=GateSendMessageToPlayer
 2=CentreLoginNodeAccountLogin
 3=CentreSceneUnRegisterScene
+4=GateKickSessionByCentre
 5=CentreEnterGsSucceed
 6=ClientPlayerSkillServiceReleaseSkill
 7=PlayerSyncServiceSyncBaseAttribute
@@ -20,7 +21,7 @@
 20=GamePlayerSceneServiceLeaveScene
 21=ClientPlayerSceneServiceEnterScene
 22=GameServicePlayerEnterGameNode
-23=GateServiceRouteNodeMessage
+23=GateRouteNodeMessage
 24=PlayerDBServiceLoad2Redis
 25=GameServiceCentreSendToPlayerViaGameNode
 26=ClientPlayerSceneServiceNotifyActorListDestroy
@@ -29,7 +30,7 @@
 29=KVPut
 30=ClientPlayerSceneServiceNotifyEnterScene
 31=GameClientPlayerCommonServiceSendTipToClient
-32=GateServiceKickSessionByCentre
+32=GateRoutePlayerMessage
 33=CentrePlayerUtilityKickPlayer
 34=CentrePlayerSceneLeaveSceneAsyncSavePlayerComplete
 35=GamePlayerServiceExitGame
@@ -37,7 +38,7 @@
 37=ClientPlayerSceneServiceNotifyActorCreate
 38=GameServiceRoutePlayerStringMsg
 39=PlayerSyncServiceSyncAttribute5Frames
-40=GateServiceBroadcastToPlayers
+40=GateBroadcastToPlayers
 41=ClientPlayerSkillServiceNotifySkillUsed
 42=GameServiceRegisterNodeSession
 43=PlayerSyncServiceSyncAttribute60Frames
@@ -49,9 +50,8 @@
 49=CentreRegisterNodeSession
 50=CentreLoginNodeSessionDisconnect
 51=KVDeleteRange
-52=GateServiceSendMessageToPlayer
 53=GameServiceEnterScene
-54=GateServiceRegisterNodeSession
+54=GateRegisterNodeSession
 55=PlayerSyncServiceSyncAttribute2Frames
 56=GameServiceUpdateSessionDetail
 57=GameServiceCreateScene
@@ -62,7 +62,7 @@
 62=PlayerSyncServiceSyncAttribute10Frames
 63=CentrePlayerSceneSceneInfoC2S
 64=CentreLoginNodeLeaveGame
-65=GateServiceRoutePlayerMessage
+65=GatePlayerEnterGameNode
 66=CentreRoutePlayerStringMsg
 67=ClientPlayerSceneServiceNotifySceneInfo
 68=AccountDBServiceSave2Redis

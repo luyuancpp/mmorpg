@@ -19,7 +19,7 @@ message BroadcastToPlayersRequest
   MessageContent message_content = 2;
 }
 
-service GateService {
+service Gate {
   rpc PlayerEnterGameNode (RegisterGameNodeSessionRequest) returns (RegisterGameNodeSessionResponse);
   rpc SendMessageToPlayer (NodeRouteMessageRequest) returns (Empty);
   rpc KickSessionByCentre (KickSessionRequest) returns (Empty);
@@ -27,5 +27,4 @@ service GateService {
   rpc RoutePlayerMessage (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse);
   rpc BroadcastToPlayers (BroadcastToPlayersRequest) returns (Empty);
   rpc RegisterNodeSession (RegisterNodeSessionRequest) returns (RegisterNodeSessionResponse);
-  
 }
