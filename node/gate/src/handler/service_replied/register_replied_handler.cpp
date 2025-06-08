@@ -1,10 +1,10 @@
 
 void InitRepliedHandler()
 {
-    void InitCentreSceneServiceRepliedHandler();
-    InitCentreSceneServiceRepliedHandler();
-    void InitCentreServiceRepliedHandler();
-    InitCentreServiceRepliedHandler();
+    void InitCentreRepliedHandler();
+    InitCentreRepliedHandler();
+    void InitCentreSceneRepliedHandler();
+    InitCentreSceneRepliedHandler();
     void InitGameSceneServiceRepliedHandler();
     InitGameSceneServiceRepliedHandler();
     void InitGameServiceRepliedHandler();

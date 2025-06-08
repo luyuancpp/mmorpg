@@ -2,7 +2,7 @@
 #include "proto/centre/centre_scene.pb.h"
 
 
-class CentreSceneServiceHandler : public ::CentreSceneService
+class CentreSceneHandler : public ::CentreScene
 {
 public:
 

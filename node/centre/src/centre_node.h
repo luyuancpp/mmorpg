@@ -14,7 +14,7 @@ public:
 	void StartRpcServer() override;
 
 private:
-	CentreServiceHandler nodeReplyService;
+	CentreHandler nodeReplyService;
 };
 
 

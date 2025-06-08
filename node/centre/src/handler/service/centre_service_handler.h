@@ -2,7 +2,7 @@
 #include "proto/centre/centre_service.pb.h"
 
 
-class CentreServiceHandler : public ::CentreService
+class CentreHandler : public ::Centre
 {
 public:
 

@@ -54,7 +54,7 @@ message CentreLoginResponse
   TipInfoMessage error_message = 1;
 }
 
-service CentreService {
+service Centre {
   rpc GatePlayerService (GateClientMessageRequest) returns (Empty);
   rpc GateSessionDisconnect (GateSessionDisconnectRequest) returns (Empty); 
   rpc LoginNodeAccountLogin (CentreLoginRequest) returns (CentreLoginResponse);
