@@ -282,17 +282,17 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fstate_5fattribute_
     "a10FramesS2C\022\021\n\tentity_id\030\001 \001(\004\".\n\031Attri"
     "buteDelta30FramesS2C\022\021\n\tentity_id\030\001 \001(\004\""
     ".\n\031AttributeDelta60FramesS2C\022\021\n\tentity_i"
-    "d\030\001 \001(\0042\370\002\n\021PlayerSyncService\0226\n\021SyncBas"
-    "eAttribute\022\031.BaseAttributeSyncDataS2C\032\006."
-    "Empty\0229\n\024SyncAttribute2Frames\022\031.Attribut"
-    "eDelta2FramesS2C\032\006.Empty\0229\n\024SyncAttribut"
-    "e5Frames\022\031.AttributeDelta5FramesS2C\032\006.Em"
-    "pty\022;\n\025SyncAttribute10Frames\022\032.Attribute"
-    "Delta10FramesS2C\032\006.Empty\022;\n\025SyncAttribut"
-    "e30Frames\022\032.AttributeDelta30FramesS2C\032\006."
-    "Empty\022;\n\025SyncAttribute60Frames\022\032.Attribu"
-    "teDelta60FramesS2C\032\006.EmptyB\014Z\007pb/game\200\001\001"
-    "b\006proto3"
+    "d\030\001 \001(\0042\366\002\n\017ScenePlayerSync\0226\n\021SyncBaseA"
+    "ttribute\022\031.BaseAttributeSyncDataS2C\032\006.Em"
+    "pty\0229\n\024SyncAttribute2Frames\022\031.AttributeD"
+    "elta2FramesS2C\032\006.Empty\0229\n\024SyncAttribute5"
+    "Frames\022\031.AttributeDelta5FramesS2C\032\006.Empt"
+    "y\022;\n\025SyncAttribute10Frames\022\032.AttributeDe"
+    "lta10FramesS2C\032\006.Empty\022;\n\025SyncAttribute3"
+    "0Frames\022\032.AttributeDelta30FramesS2C\032\006.Em"
+    "pty\022;\n\025SyncAttribute60Frames\022\032.Attribute"
+    "Delta60FramesS2C\032\006.EmptyB\014Z\007pb/game\200\001\001b\006"
+    "proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_deps[5] =
     {
@@ -306,7 +306,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fstate_5fattri
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto = {
     false,
     false,
-    1048,
+    1046,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto,
     "proto/scene/player_state_attribute_sync.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
@@ -1733,47 +1733,47 @@ void AttributeDelta60FramesS2C::InternalSwap(AttributeDelta60FramesS2C* PROTOBUF
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* PlayerSyncService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* ScenePlayerSync::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto);
   return file_level_service_descriptors_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* PlayerSyncService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* ScenePlayerSync::GetDescriptor() {
   return descriptor();
 }
 
-void PlayerSyncService::SyncBaseAttribute(::google::protobuf::RpcController* controller,
+void ScenePlayerSync::SyncBaseAttribute(::google::protobuf::RpcController* controller,
                          const ::BaseAttributeSyncDataS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncBaseAttribute() not implemented.");
   done->Run();
 }
-void PlayerSyncService::SyncAttribute2Frames(::google::protobuf::RpcController* controller,
+void ScenePlayerSync::SyncAttribute2Frames(::google::protobuf::RpcController* controller,
                          const ::AttributeDelta2FramesS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncAttribute2Frames() not implemented.");
   done->Run();
 }
-void PlayerSyncService::SyncAttribute5Frames(::google::protobuf::RpcController* controller,
+void ScenePlayerSync::SyncAttribute5Frames(::google::protobuf::RpcController* controller,
                          const ::AttributeDelta5FramesS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncAttribute5Frames() not implemented.");
   done->Run();
 }
-void PlayerSyncService::SyncAttribute10Frames(::google::protobuf::RpcController* controller,
+void ScenePlayerSync::SyncAttribute10Frames(::google::protobuf::RpcController* controller,
                          const ::AttributeDelta10FramesS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncAttribute10Frames() not implemented.");
   done->Run();
 }
-void PlayerSyncService::SyncAttribute30Frames(::google::protobuf::RpcController* controller,
+void ScenePlayerSync::SyncAttribute30Frames(::google::protobuf::RpcController* controller,
                          const ::AttributeDelta30FramesS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncAttribute30Frames() not implemented.");
   done->Run();
 }
-void PlayerSyncService::SyncAttribute60Frames(::google::protobuf::RpcController* controller,
+void ScenePlayerSync::SyncAttribute60Frames(::google::protobuf::RpcController* controller,
                          const ::AttributeDelta60FramesS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncAttribute60Frames() not implemented.");
   done->Run();
 }
 
-void PlayerSyncService::CallMethod(
+void ScenePlayerSync::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -1823,7 +1823,7 @@ void PlayerSyncService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& PlayerSyncService::GetRequestPrototype(
+const ::google::protobuf::Message& ScenePlayerSync::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -1847,7 +1847,7 @@ const ::google::protobuf::Message& PlayerSyncService::GetRequestPrototype(
   }
 }
 
-const ::google::protobuf::Message& PlayerSyncService::GetResponsePrototype(
+const ::google::protobuf::Message& ScenePlayerSync::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -1871,51 +1871,51 @@ const ::google::protobuf::Message& PlayerSyncService::GetResponsePrototype(
   }
 }
 
-PlayerSyncService_Stub::PlayerSyncService_Stub(::google::protobuf::RpcChannel* channel)
+ScenePlayerSync_Stub::ScenePlayerSync_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-PlayerSyncService_Stub::PlayerSyncService_Stub(
+ScenePlayerSync_Stub::ScenePlayerSync_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-PlayerSyncService_Stub::~PlayerSyncService_Stub() {
+ScenePlayerSync_Stub::~ScenePlayerSync_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void PlayerSyncService_Stub::SyncBaseAttribute(::google::protobuf::RpcController* controller,
+void ScenePlayerSync_Stub::SyncBaseAttribute(::google::protobuf::RpcController* controller,
                               const ::BaseAttributeSyncDataS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void PlayerSyncService_Stub::SyncAttribute2Frames(::google::protobuf::RpcController* controller,
+void ScenePlayerSync_Stub::SyncAttribute2Frames(::google::protobuf::RpcController* controller,
                               const ::AttributeDelta2FramesS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
-void PlayerSyncService_Stub::SyncAttribute5Frames(::google::protobuf::RpcController* controller,
+void ScenePlayerSync_Stub::SyncAttribute5Frames(::google::protobuf::RpcController* controller,
                               const ::AttributeDelta5FramesS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
-void PlayerSyncService_Stub::SyncAttribute10Frames(::google::protobuf::RpcController* controller,
+void ScenePlayerSync_Stub::SyncAttribute10Frames(::google::protobuf::RpcController* controller,
                               const ::AttributeDelta10FramesS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(3), controller,
                        request, response, done);
 }
-void PlayerSyncService_Stub::SyncAttribute30Frames(::google::protobuf::RpcController* controller,
+void ScenePlayerSync_Stub::SyncAttribute30Frames(::google::protobuf::RpcController* controller,
                               const ::AttributeDelta30FramesS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(4), controller,
                        request, response, done);
 }
-void PlayerSyncService_Stub::SyncAttribute60Frames(::google::protobuf::RpcController* controller,
+void ScenePlayerSync_Stub::SyncAttribute60Frames(::google::protobuf::RpcController* controller,
                               const ::AttributeDelta60FramesS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(5), controller,

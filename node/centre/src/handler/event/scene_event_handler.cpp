@@ -89,7 +89,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 		// Handle the case where the player is exiting the game
 		GameNodeExitGameRequest exitGameRequest;
 		// Set any required fields for the exit game request here if needed
-		SendToGsPlayer(GamePlayerServiceExitGameMessageId, exitGameRequest, player);
+		SendToGsPlayer(ScenePlayerExitGameMessageId, exitGameRequest, player);
 
 		LOG_TRACE << "Player is exiting the game: "
 			<< tls.registry.get<Guid>(player);
@@ -100,7 +100,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 
 	GsLeaveSceneRequest leaveSceneRequest;
 	leaveSceneRequest.set_change_gs(changeSceneInfo.change_gs_type() == ChangeSceneInfoPBComponent::eDifferentGs);
-	SendToGsPlayer(GamePlayerSceneServiceLeaveSceneMessageId, leaveSceneRequest, player);
+	SendToGsPlayer(SceneScenePlayerLeaveSceneMessageId, leaveSceneRequest, player);
 
 	LOG_TRACE << "Player is leaving scene "
 		<< tls.registry.get<Guid>(player)

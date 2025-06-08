@@ -485,17 +485,17 @@ class BroadcastToPlayersRequest final
 
 // -------------------------------------------------------------------
 
-class GateService_Stub;
-class GateService : public ::google::protobuf::Service {
+class Gate_Stub;
+class Gate : public ::google::protobuf::Service {
  protected:
-  GateService() = default;
+  Gate() = default;
 
  public:
-  using Stub = GateService_Stub;
+  using Stub = Gate_Stub;
 
-  GateService(const GateService&) = delete;
-  GateService& operator=(const GateService&) = delete;
-  virtual ~GateService() = default;
+  Gate(const Gate&) = delete;
+  Gate& operator=(const Gate&) = delete;
+  virtual ~Gate() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -544,20 +544,20 @@ class GateService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class GateService_Stub final : public GateService {
+class Gate_Stub final : public Gate {
  public:
-  GateService_Stub(::google::protobuf::RpcChannel* channel);
-  GateService_Stub(::google::protobuf::RpcChannel* channel,
+  Gate_Stub(::google::protobuf::RpcChannel* channel);
+  Gate_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  GateService_Stub(const GateService_Stub&) = delete;
-  GateService_Stub& operator=(const GateService_Stub&) = delete;
+  Gate_Stub(const Gate_Stub&) = delete;
+  Gate_Stub& operator=(const Gate_Stub&) = delete;
 
-  ~GateService_Stub() override;
+  ~Gate_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements GateService ------------------------------------------
+  // implements Gate ------------------------------------------
   void PlayerEnterGameNode(::google::protobuf::RpcController* controller,
                         const ::RegisterGameNodeSessionRequest* request,
                         ::RegisterGameNodeSessionResponse* response,

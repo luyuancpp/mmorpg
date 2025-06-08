@@ -1288,17 +1288,17 @@ class BaseAttributeSyncDataS2C final
 
 // -------------------------------------------------------------------
 
-class PlayerSyncService_Stub;
-class PlayerSyncService : public ::google::protobuf::Service {
+class ScenePlayerSync_Stub;
+class ScenePlayerSync : public ::google::protobuf::Service {
  protected:
-  PlayerSyncService() = default;
+  ScenePlayerSync() = default;
 
  public:
-  using Stub = PlayerSyncService_Stub;
+  using Stub = ScenePlayerSync_Stub;
 
-  PlayerSyncService(const PlayerSyncService&) = delete;
-  PlayerSyncService& operator=(const PlayerSyncService&) = delete;
-  virtual ~PlayerSyncService() = default;
+  ScenePlayerSync(const ScenePlayerSync&) = delete;
+  ScenePlayerSync& operator=(const ScenePlayerSync&) = delete;
+  virtual ~ScenePlayerSync() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -1343,20 +1343,20 @@ class PlayerSyncService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class PlayerSyncService_Stub final : public PlayerSyncService {
+class ScenePlayerSync_Stub final : public ScenePlayerSync {
  public:
-  PlayerSyncService_Stub(::google::protobuf::RpcChannel* channel);
-  PlayerSyncService_Stub(::google::protobuf::RpcChannel* channel,
+  ScenePlayerSync_Stub(::google::protobuf::RpcChannel* channel);
+  ScenePlayerSync_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  PlayerSyncService_Stub(const PlayerSyncService_Stub&) = delete;
-  PlayerSyncService_Stub& operator=(const PlayerSyncService_Stub&) = delete;
+  ScenePlayerSync_Stub(const ScenePlayerSync_Stub&) = delete;
+  ScenePlayerSync_Stub& operator=(const ScenePlayerSync_Stub&) = delete;
 
-  ~PlayerSyncService_Stub() override;
+  ~ScenePlayerSync_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements PlayerSyncService ------------------------------------------
+  // implements ScenePlayerSync ------------------------------------------
   void SyncBaseAttribute(::google::protobuf::RpcController* controller,
                         const ::BaseAttributeSyncDataS2C* request,
                         ::Empty* response,

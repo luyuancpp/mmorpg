@@ -90,7 +90,7 @@ void PlayerNodeSystem::HandlePlayerLogin(entt::entity playerEntity)
 	Centre2GsLoginRequest message;
 	message.set_enter_gs_type(enterGameFlag->enter_gs_type());
 	
-	SendToGsPlayer(GamePlayerServiceCentre2GsLoginMessageId, message, playerEntity);
+	SendToGsPlayer(ScenePlayerCentre2GsLoginMessageId, message, playerEntity);
 }
 
 void PlayerNodeSystem::HandlePlayerReconnection(entt::entity player)
@@ -124,7 +124,7 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	RegisterGameNodeSessionRequest request;
 	request.mutable_session_info()->set_session_id(playerNodeInfo->gate_session_id());
 	request.set_scene_node_id(playerNodeInfo->scene_node_id());
-	gateNodeScene->CallRemoteMethod(GateServicePlayerEnterGameNodeMessageId, request);
+	gateNodeScene->CallRemoteMethod(GatePlayerEnterGameNodeMessageId, request);
 }
 
 void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
@@ -146,7 +146,7 @@ void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity pla
 	RegisterPlayerSessionRequest request;
 	request.set_session_id(playerNodeInfo->gate_session_id());
 	request.set_player_id(*playerId);
-	SendToGs(GameServiceUpdateSessionDetailMessageId, request, playerNodeInfo->scene_node_id());
+	SendToGs(SceneUpdateSessionDetailMessageId, request, playerNodeInfo->scene_node_id());
 
 	
 }

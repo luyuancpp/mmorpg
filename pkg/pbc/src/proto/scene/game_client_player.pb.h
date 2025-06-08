@@ -288,17 +288,17 @@ class GameKickPlayerRequest final
 
 // -------------------------------------------------------------------
 
-class GameClientPlayerCommonService_Stub;
-class GameClientPlayerCommonService : public ::google::protobuf::Service {
+class SceneClientPlayerCommon_Stub;
+class SceneClientPlayerCommon : public ::google::protobuf::Service {
  protected:
-  GameClientPlayerCommonService() = default;
+  SceneClientPlayerCommon() = default;
 
  public:
-  using Stub = GameClientPlayerCommonService_Stub;
+  using Stub = SceneClientPlayerCommon_Stub;
 
-  GameClientPlayerCommonService(const GameClientPlayerCommonService&) = delete;
-  GameClientPlayerCommonService& operator=(const GameClientPlayerCommonService&) = delete;
-  virtual ~GameClientPlayerCommonService() = default;
+  SceneClientPlayerCommon(const SceneClientPlayerCommon&) = delete;
+  SceneClientPlayerCommon& operator=(const SceneClientPlayerCommon&) = delete;
+  virtual ~SceneClientPlayerCommon() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -327,20 +327,20 @@ class GameClientPlayerCommonService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class GameClientPlayerCommonService_Stub final : public GameClientPlayerCommonService {
+class SceneClientPlayerCommon_Stub final : public SceneClientPlayerCommon {
  public:
-  GameClientPlayerCommonService_Stub(::google::protobuf::RpcChannel* channel);
-  GameClientPlayerCommonService_Stub(::google::protobuf::RpcChannel* channel,
+  SceneClientPlayerCommon_Stub(::google::protobuf::RpcChannel* channel);
+  SceneClientPlayerCommon_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  GameClientPlayerCommonService_Stub(const GameClientPlayerCommonService_Stub&) = delete;
-  GameClientPlayerCommonService_Stub& operator=(const GameClientPlayerCommonService_Stub&) = delete;
+  SceneClientPlayerCommon_Stub(const SceneClientPlayerCommon_Stub&) = delete;
+  SceneClientPlayerCommon_Stub& operator=(const SceneClientPlayerCommon_Stub&) = delete;
 
-  ~GameClientPlayerCommonService_Stub() override;
+  ~SceneClientPlayerCommon_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements GameClientPlayerCommonService ------------------------------------------
+  // implements SceneClientPlayerCommon ------------------------------------------
   void SendTipToClient(::google::protobuf::RpcController* controller,
                         const ::TipInfoMessage* request,
                         ::Empty* response,

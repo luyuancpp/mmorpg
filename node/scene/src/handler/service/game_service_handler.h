@@ -2,7 +2,7 @@
 #include "proto/scene/game_service.pb.h"
 
 
-class GameServiceHandler : public ::GameService
+class SceneHandler : public ::Scene
 {
 public:
 

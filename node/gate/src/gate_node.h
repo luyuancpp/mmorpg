@@ -46,7 +46,7 @@ private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     RpcClientSessionHandler rpcClientHandler;
-    GateServiceHandler nodeReplyService;
+    GateHandler nodeReplyService;
 };
 
 extern GateNode* gGateNode;

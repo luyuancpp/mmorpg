@@ -60,7 +60,7 @@ message CreateSceneResponse
   SceneInfoPBComponent scene_info = 1;
 }
 
-service GameService {
+service Scene {
   rpc PlayerEnterGameNode (PlayerEnterGameNodeRequest) returns (Empty);
   rpc SendMessageToPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc ClientSendMessageToPlayer (ClientSendMessageToPlayerRequest) returns (ClientSendMessageToPlayerResponse);

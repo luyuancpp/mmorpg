@@ -1,10 +1,10 @@
 
 void InitRepliedHandler()
 {
-    void InitGameSceneServiceRepliedHandler();
-    InitGameSceneServiceRepliedHandler();
-    void InitGameServiceRepliedHandler();
-    InitGameServiceRepliedHandler();
-    void InitGateServiceRepliedHandler();
-    InitGateServiceRepliedHandler();
+    void InitGateRepliedHandler();
+    InitGateRepliedHandler();
+    void InitSceneRepliedHandler();
+    InitSceneRepliedHandler();
+    void InitSceneSceneRepliedHandler();
+    InitSceneSceneRepliedHandler();
 }

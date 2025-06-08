@@ -305,14 +305,14 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fskill_2eproto[] AB
     "_stamp\030\005 \001(\004\"\025\n\023GetSkillListRequest\"o\n\024G"
     "etSkillListResponse\022&\n\rerror_message\030\001 \001"
     "(\0132\017.TipInfoMessage\022/\n\nskill_list\030\002 \001(\0132"
-    "\033.PlayerSkillListPBComponent2\200\002\n\030ClientP"
-    "layerSkillService\022E\n\014ReleaseSkill\022\031.Rele"
-    "aseSkillSkillRequest\032\032.ReleaseSkillSkill"
-    "Response\022(\n\017NotifySkillUsed\022\r.SkillUsedS"
-    "2C\032\006.Empty\0226\n\026NotifySkillInterrupted\022\024.S"
-    "killInterruptedS2C\032\006.Empty\022;\n\014GetSkillLi"
-    "st\022\024.GetSkillListRequest\032\025.GetSkillListR"
-    "esponseB\014Z\007pb/game\200\001\001b\006proto3"
+    "\033.PlayerSkillListPBComponent2\376\001\n\026SceneSk"
+    "illClientPlayer\022E\n\014ReleaseSkill\022\031.Releas"
+    "eSkillSkillRequest\032\032.ReleaseSkillSkillRe"
+    "sponse\022(\n\017NotifySkillUsed\022\r.SkillUsedS2C"
+    "\032\006.Empty\0226\n\026NotifySkillInterrupted\022\024.Ski"
+    "llInterruptedS2C\032\006.Empty\022;\n\014GetSkillList"
+    "\022\024.GetSkillListRequest\032\025.GetSkillListRes"
+    "ponseB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto_deps[6] =
     {
@@ -327,7 +327,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto = {
     false,
     false,
-    1109,
+    1107,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fskill_2eproto,
     "proto/scene/player_skill.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto_once,
@@ -2070,37 +2070,37 @@ void GetSkillListResponse::InternalSwap(GetSkillListResponse* PROTOBUF_RESTRICT 
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* ClientPlayerSkillService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* SceneSkillClientPlayer::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto);
   return file_level_service_descriptors_proto_2fscene_2fplayer_5fskill_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* ClientPlayerSkillService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* SceneSkillClientPlayer::GetDescriptor() {
   return descriptor();
 }
 
-void ClientPlayerSkillService::ReleaseSkill(::google::protobuf::RpcController* controller,
+void SceneSkillClientPlayer::ReleaseSkill(::google::protobuf::RpcController* controller,
                          const ::ReleaseSkillSkillRequest*, ::ReleaseSkillSkillResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method ReleaseSkill() not implemented.");
   done->Run();
 }
-void ClientPlayerSkillService::NotifySkillUsed(::google::protobuf::RpcController* controller,
+void SceneSkillClientPlayer::NotifySkillUsed(::google::protobuf::RpcController* controller,
                          const ::SkillUsedS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method NotifySkillUsed() not implemented.");
   done->Run();
 }
-void ClientPlayerSkillService::NotifySkillInterrupted(::google::protobuf::RpcController* controller,
+void SceneSkillClientPlayer::NotifySkillInterrupted(::google::protobuf::RpcController* controller,
                          const ::SkillInterruptedS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method NotifySkillInterrupted() not implemented.");
   done->Run();
 }
-void ClientPlayerSkillService::GetSkillList(::google::protobuf::RpcController* controller,
+void SceneSkillClientPlayer::GetSkillList(::google::protobuf::RpcController* controller,
                          const ::GetSkillListRequest*, ::GetSkillListResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method GetSkillList() not implemented.");
   done->Run();
 }
 
-void ClientPlayerSkillService::CallMethod(
+void SceneSkillClientPlayer::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -2138,7 +2138,7 @@ void ClientPlayerSkillService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& ClientPlayerSkillService::GetRequestPrototype(
+const ::google::protobuf::Message& SceneSkillClientPlayer::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -2158,7 +2158,7 @@ const ::google::protobuf::Message& ClientPlayerSkillService::GetRequestPrototype
   }
 }
 
-const ::google::protobuf::Message& ClientPlayerSkillService::GetResponsePrototype(
+const ::google::protobuf::Message& SceneSkillClientPlayer::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -2178,39 +2178,39 @@ const ::google::protobuf::Message& ClientPlayerSkillService::GetResponsePrototyp
   }
 }
 
-ClientPlayerSkillService_Stub::ClientPlayerSkillService_Stub(::google::protobuf::RpcChannel* channel)
+SceneSkillClientPlayer_Stub::SceneSkillClientPlayer_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-ClientPlayerSkillService_Stub::ClientPlayerSkillService_Stub(
+SceneSkillClientPlayer_Stub::SceneSkillClientPlayer_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-ClientPlayerSkillService_Stub::~ClientPlayerSkillService_Stub() {
+SceneSkillClientPlayer_Stub::~SceneSkillClientPlayer_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void ClientPlayerSkillService_Stub::ReleaseSkill(::google::protobuf::RpcController* controller,
+void SceneSkillClientPlayer_Stub::ReleaseSkill(::google::protobuf::RpcController* controller,
                               const ::ReleaseSkillSkillRequest* request,
                               ::ReleaseSkillSkillResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void ClientPlayerSkillService_Stub::NotifySkillUsed(::google::protobuf::RpcController* controller,
+void SceneSkillClientPlayer_Stub::NotifySkillUsed(::google::protobuf::RpcController* controller,
                               const ::SkillUsedS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
-void ClientPlayerSkillService_Stub::NotifySkillInterrupted(::google::protobuf::RpcController* controller,
+void SceneSkillClientPlayer_Stub::NotifySkillInterrupted(::google::protobuf::RpcController* controller,
                               const ::SkillInterruptedS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
-void ClientPlayerSkillService_Stub::GetSkillList(::google::protobuf::RpcController* controller,
+void SceneSkillClientPlayer_Stub::GetSkillList(::google::protobuf::RpcController* controller,
                               const ::GetSkillListRequest* request,
                               ::GetSkillListResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(3), controller,

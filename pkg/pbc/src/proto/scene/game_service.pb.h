@@ -1924,17 +1924,17 @@ class ClientSendMessageToPlayerRequest final
 
 // -------------------------------------------------------------------
 
-class GameService_Stub;
-class GameService : public ::google::protobuf::Service {
+class Scene_Stub;
+class Scene : public ::google::protobuf::Service {
  protected:
-  GameService() = default;
+  Scene() = default;
 
  public:
-  using Stub = GameService_Stub;
+  using Stub = Scene_Stub;
 
-  GameService(const GameService&) = delete;
-  GameService& operator=(const GameService&) = delete;
-  virtual ~GameService() = default;
+  Scene(const Scene&) = delete;
+  Scene& operator=(const Scene&) = delete;
+  virtual ~Scene() = default;
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
@@ -1999,20 +1999,20 @@ class GameService : public ::google::protobuf::Service {
       const ::google::protobuf::MethodDescriptor* method) const override;
 };
 
-class GameService_Stub final : public GameService {
+class Scene_Stub final : public Scene {
  public:
-  GameService_Stub(::google::protobuf::RpcChannel* channel);
-  GameService_Stub(::google::protobuf::RpcChannel* channel,
+  Scene_Stub(::google::protobuf::RpcChannel* channel);
+  Scene_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
 
-  GameService_Stub(const GameService_Stub&) = delete;
-  GameService_Stub& operator=(const GameService_Stub&) = delete;
+  Scene_Stub(const Scene_Stub&) = delete;
+  Scene_Stub& operator=(const Scene_Stub&) = delete;
 
-  ~GameService_Stub() override;
+  ~Scene_Stub() override;
 
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
-  // implements GameService ------------------------------------------
+  // implements Scene ------------------------------------------
   void PlayerEnterGameNode(::google::protobuf::RpcController* controller,
                         const ::PlayerEnterGameNodeRequest* request,
                         ::Empty* response,

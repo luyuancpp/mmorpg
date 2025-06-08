@@ -428,18 +428,18 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto[] AB
     "\001(\004\"!\n\017ActorDestroyS2C\022\016\n\006entity\030\001 \001(\004\"9"
     "\n\022ActorListCreateS2C\022#\n\nactor_list\030\001 \003(\013"
     "2\017.ActorCreateS2C\"%\n\023ActorListDestroyS2C"
-    "\022\016\n\006entity\030\001 \003(\0042\244\003\n\030ClientPlayerSceneSe"
-    "rvice\022;\n\nEnterScene\022\025.EnterSceneC2SReque"
-    "st\032\026.EnterSceneC2SResponse\022*\n\020NotifyEnte"
-    "rScene\022\016.EnterSceneS2C\032\006.Empty\022)\n\014SceneI"
-    "nfoC2S\022\021.SceneInfoRequest\032\006.Empty\022(\n\017Not"
-    "ifySceneInfo\022\r.SceneInfoS2C\032\006.Empty\022,\n\021N"
-    "otifyActorCreate\022\017.ActorCreateS2C\032\006.Empt"
-    "y\022.\n\022NotifyActorDestroy\022\020.ActorDestroyS2"
-    "C\032\006.Empty\0224\n\025NotifyActorListCreate\022\023.Act"
-    "orListCreateS2C\032\006.Empty\0226\n\026NotifyActorLi"
-    "stDestroy\022\024.ActorListDestroyS2C\032\006.EmptyB"
-    "\014Z\007pb/game\200\001\001b\006proto3"
+    "\022\016\n\006entity\030\001 \003(\0042\242\003\n\026SceneSceneClientPla"
+    "yer\022;\n\nEnterScene\022\025.EnterSceneC2SRequest"
+    "\032\026.EnterSceneC2SResponse\022*\n\020NotifyEnterS"
+    "cene\022\016.EnterSceneS2C\032\006.Empty\022)\n\014SceneInf"
+    "oC2S\022\021.SceneInfoRequest\032\006.Empty\022(\n\017Notif"
+    "ySceneInfo\022\r.SceneInfoS2C\032\006.Empty\022,\n\021Not"
+    "ifyActorCreate\022\017.ActorCreateS2C\032\006.Empty\022"
+    ".\n\022NotifyActorDestroy\022\020.ActorDestroyS2C\032"
+    "\006.Empty\0224\n\025NotifyActorListCreate\022\023.Actor"
+    "ListCreateS2C\032\006.Empty\0226\n\026NotifyActorList"
+    "Destroy\022\024.ActorListDestroyS2C\032\006.EmptyB\014Z"
+    "\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_deps[5] =
     {
@@ -453,7 +453,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto = {
     false,
     false,
-    1221,
+    1219,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto,
     "proto/scene/player_scene.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_once,
@@ -2883,57 +2883,57 @@ void ActorListDestroyS2C::InternalSwap(ActorListDestroyS2C* PROTOBUF_RESTRICT ot
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* ClientPlayerSceneService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* SceneSceneClientPlayer::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto);
   return file_level_service_descriptors_proto_2fscene_2fplayer_5fscene_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* ClientPlayerSceneService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* SceneSceneClientPlayer::GetDescriptor() {
   return descriptor();
 }
 
-void ClientPlayerSceneService::EnterScene(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer::EnterScene(::google::protobuf::RpcController* controller,
                          const ::EnterSceneC2SRequest*, ::EnterSceneC2SResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method EnterScene() not implemented.");
   done->Run();
 }
-void ClientPlayerSceneService::NotifyEnterScene(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer::NotifyEnterScene(::google::protobuf::RpcController* controller,
                          const ::EnterSceneS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method NotifyEnterScene() not implemented.");
   done->Run();
 }
-void ClientPlayerSceneService::SceneInfoC2S(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer::SceneInfoC2S(::google::protobuf::RpcController* controller,
                          const ::SceneInfoRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SceneInfoC2S() not implemented.");
   done->Run();
 }
-void ClientPlayerSceneService::NotifySceneInfo(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer::NotifySceneInfo(::google::protobuf::RpcController* controller,
                          const ::SceneInfoS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method NotifySceneInfo() not implemented.");
   done->Run();
 }
-void ClientPlayerSceneService::NotifyActorCreate(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer::NotifyActorCreate(::google::protobuf::RpcController* controller,
                          const ::ActorCreateS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method NotifyActorCreate() not implemented.");
   done->Run();
 }
-void ClientPlayerSceneService::NotifyActorDestroy(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer::NotifyActorDestroy(::google::protobuf::RpcController* controller,
                          const ::ActorDestroyS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method NotifyActorDestroy() not implemented.");
   done->Run();
 }
-void ClientPlayerSceneService::NotifyActorListCreate(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer::NotifyActorListCreate(::google::protobuf::RpcController* controller,
                          const ::ActorListCreateS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method NotifyActorListCreate() not implemented.");
   done->Run();
 }
-void ClientPlayerSceneService::NotifyActorListDestroy(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer::NotifyActorListDestroy(::google::protobuf::RpcController* controller,
                          const ::ActorListDestroyS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method NotifyActorListDestroy() not implemented.");
   done->Run();
 }
 
-void ClientPlayerSceneService::CallMethod(
+void SceneSceneClientPlayer::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -2995,7 +2995,7 @@ void ClientPlayerSceneService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& ClientPlayerSceneService::GetRequestPrototype(
+const ::google::protobuf::Message& SceneSceneClientPlayer::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -3023,7 +3023,7 @@ const ::google::protobuf::Message& ClientPlayerSceneService::GetRequestPrototype
   }
 }
 
-const ::google::protobuf::Message& ClientPlayerSceneService::GetResponsePrototype(
+const ::google::protobuf::Message& SceneSceneClientPlayer::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -3051,63 +3051,63 @@ const ::google::protobuf::Message& ClientPlayerSceneService::GetResponsePrototyp
   }
 }
 
-ClientPlayerSceneService_Stub::ClientPlayerSceneService_Stub(::google::protobuf::RpcChannel* channel)
+SceneSceneClientPlayer_Stub::SceneSceneClientPlayer_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-ClientPlayerSceneService_Stub::ClientPlayerSceneService_Stub(
+SceneSceneClientPlayer_Stub::SceneSceneClientPlayer_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-ClientPlayerSceneService_Stub::~ClientPlayerSceneService_Stub() {
+SceneSceneClientPlayer_Stub::~SceneSceneClientPlayer_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void ClientPlayerSceneService_Stub::EnterScene(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer_Stub::EnterScene(::google::protobuf::RpcController* controller,
                               const ::EnterSceneC2SRequest* request,
                               ::EnterSceneC2SResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void ClientPlayerSceneService_Stub::NotifyEnterScene(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer_Stub::NotifyEnterScene(::google::protobuf::RpcController* controller,
                               const ::EnterSceneS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
-void ClientPlayerSceneService_Stub::SceneInfoC2S(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer_Stub::SceneInfoC2S(::google::protobuf::RpcController* controller,
                               const ::SceneInfoRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
-void ClientPlayerSceneService_Stub::NotifySceneInfo(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer_Stub::NotifySceneInfo(::google::protobuf::RpcController* controller,
                               const ::SceneInfoS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(3), controller,
                        request, response, done);
 }
-void ClientPlayerSceneService_Stub::NotifyActorCreate(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer_Stub::NotifyActorCreate(::google::protobuf::RpcController* controller,
                               const ::ActorCreateS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(4), controller,
                        request, response, done);
 }
-void ClientPlayerSceneService_Stub::NotifyActorDestroy(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer_Stub::NotifyActorDestroy(::google::protobuf::RpcController* controller,
                               const ::ActorDestroyS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(5), controller,
                        request, response, done);
 }
-void ClientPlayerSceneService_Stub::NotifyActorListCreate(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer_Stub::NotifyActorListCreate(::google::protobuf::RpcController* controller,
                               const ::ActorListCreateS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(6), controller,
                        request, response, done);
 }
-void ClientPlayerSceneService_Stub::NotifyActorListDestroy(::google::protobuf::RpcController* controller,
+void SceneSceneClientPlayer_Stub::NotifyActorListDestroy(::google::protobuf::RpcController* controller,
                               const ::ActorListDestroyS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(7), controller,

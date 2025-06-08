@@ -86,11 +86,11 @@ const char descriptor_table_protodef_proto_2fscene_2fgame_5fclient_5fplayer_2epr
     "proto/common/tip.proto\032\031proto/common/com"
     "mon.proto\032\030proto/common/empty.proto\"J\n\025G"
     "ameKickPlayerRequest\022\037\n\006reason\030\001 \001(\0132\017.T"
-    "ipInfoMessage\022\020\n\010operator\030\002 \001(\t2y\n\035GameC"
-    "lientPlayerCommonService\022*\n\017SendTipToCli"
-    "ent\022\017.TipInfoMessage\032\006.Empty\022,\n\nKickPlay"
-    "er\022\026.GameKickPlayerRequest\032\006.EmptyB\014Z\007pb"
-    "/game\200\001\001b\006proto3"
+    "ipInfoMessage\022\020\n\010operator\030\002 \001(\t2s\n\027Scene"
+    "ClientPlayerCommon\022*\n\017SendTipToClient\022\017."
+    "TipInfoMessage\032\006.Empty\022,\n\nKickPlayer\022\026.G"
+    "ameKickPlayerRequest\032\006.EmptyB\014Z\007pb/game\200"
+    "\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fscene_2fgame_5fclient_5fplayer_2eproto_deps[3] =
     {
@@ -102,7 +102,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fgame_5fclient_5fplayer
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fgame_5fclient_5fplayer_2eproto = {
     false,
     false,
-    336,
+    330,
     descriptor_table_protodef_proto_2fscene_2fgame_5fclient_5fplayer_2eproto,
     "proto/scene/game_client_player.proto",
     &descriptor_table_proto_2fscene_2fgame_5fclient_5fplayer_2eproto_once,
@@ -407,27 +407,27 @@ void GameKickPlayerRequest::InternalSwap(GameKickPlayerRequest* PROTOBUF_RESTRIC
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* GameClientPlayerCommonService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* SceneClientPlayerCommon::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fgame_5fclient_5fplayer_2eproto);
   return file_level_service_descriptors_proto_2fscene_2fgame_5fclient_5fplayer_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* GameClientPlayerCommonService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* SceneClientPlayerCommon::GetDescriptor() {
   return descriptor();
 }
 
-void GameClientPlayerCommonService::SendTipToClient(::google::protobuf::RpcController* controller,
+void SceneClientPlayerCommon::SendTipToClient(::google::protobuf::RpcController* controller,
                          const ::TipInfoMessage*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SendTipToClient() not implemented.");
   done->Run();
 }
-void GameClientPlayerCommonService::KickPlayer(::google::protobuf::RpcController* controller,
+void SceneClientPlayerCommon::KickPlayer(::google::protobuf::RpcController* controller,
                          const ::GameKickPlayerRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method KickPlayer() not implemented.");
   done->Run();
 }
 
-void GameClientPlayerCommonService::CallMethod(
+void SceneClientPlayerCommon::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -453,7 +453,7 @@ void GameClientPlayerCommonService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& GameClientPlayerCommonService::GetRequestPrototype(
+const ::google::protobuf::Message& SceneClientPlayerCommon::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -469,7 +469,7 @@ const ::google::protobuf::Message& GameClientPlayerCommonService::GetRequestProt
   }
 }
 
-const ::google::protobuf::Message& GameClientPlayerCommonService::GetResponsePrototype(
+const ::google::protobuf::Message& SceneClientPlayerCommon::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -485,27 +485,27 @@ const ::google::protobuf::Message& GameClientPlayerCommonService::GetResponsePro
   }
 }
 
-GameClientPlayerCommonService_Stub::GameClientPlayerCommonService_Stub(::google::protobuf::RpcChannel* channel)
+SceneClientPlayerCommon_Stub::SceneClientPlayerCommon_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-GameClientPlayerCommonService_Stub::GameClientPlayerCommonService_Stub(
+SceneClientPlayerCommon_Stub::SceneClientPlayerCommon_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-GameClientPlayerCommonService_Stub::~GameClientPlayerCommonService_Stub() {
+SceneClientPlayerCommon_Stub::~SceneClientPlayerCommon_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void GameClientPlayerCommonService_Stub::SendTipToClient(::google::protobuf::RpcController* controller,
+void SceneClientPlayerCommon_Stub::SendTipToClient(::google::protobuf::RpcController* controller,
                               const ::TipInfoMessage* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void GameClientPlayerCommonService_Stub::KickPlayer(::google::protobuf::RpcController* controller,
+void SceneClientPlayerCommon_Stub::KickPlayer(::google::protobuf::RpcController* controller,
                               const ::GameKickPlayerRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,

@@ -69,9 +69,9 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fscene_2fgame_5fscene_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\034proto/scene/game_scene.proto\032\030proto/co"
-    "mmon/empty.proto\"\017\n\rGameSceneTest22\n\020Gam"
-    "eSceneService\022\036\n\004Test\022\016.GameSceneTest\032\006."
-    "EmptyB\014Z\007pb/game\200\001\001b\006proto3"
+    "mmon/empty.proto\"\017\n\rGameSceneTest2,\n\nSce"
+    "neScene\022\036\n\004Test\022\016.GameSceneTest\032\006.EmptyB"
+    "\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fscene_2fgame_5fscene_2eproto_deps[1] =
     {
@@ -81,7 +81,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fgame_5fscene_2eproto_o
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fgame_5fscene_2eproto = {
     false,
     false,
-    147,
+    141,
     descriptor_table_protodef_proto_2fscene_2fgame_5fscene_2eproto,
     "proto/scene/game_scene.proto",
     &descriptor_table_proto_2fscene_2fgame_5fscene_2eproto_once,
@@ -199,22 +199,22 @@ const ::_pbi::TcParseTable<0, 0, 0, 0, 2> GameSceneTest::_table_ = {
 }
 // ===================================================================
 
-const ::google::protobuf::ServiceDescriptor* GameSceneService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* SceneScene::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fgame_5fscene_2eproto);
   return file_level_service_descriptors_proto_2fscene_2fgame_5fscene_2eproto[0];
 }
 
-const ::google::protobuf::ServiceDescriptor* GameSceneService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* SceneScene::GetDescriptor() {
   return descriptor();
 }
 
-void GameSceneService::Test(::google::protobuf::RpcController* controller,
+void SceneScene::Test(::google::protobuf::RpcController* controller,
                          const ::GameSceneTest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method Test() not implemented.");
   done->Run();
 }
 
-void GameSceneService::CallMethod(
+void SceneScene::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
     ::google::protobuf::RpcController* controller,
     const ::google::protobuf::Message* request,
@@ -234,7 +234,7 @@ void GameSceneService::CallMethod(
   }
 }
 
-const ::google::protobuf::Message& GameSceneService::GetRequestPrototype(
+const ::google::protobuf::Message& SceneScene::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -248,7 +248,7 @@ const ::google::protobuf::Message& GameSceneService::GetRequestPrototype(
   }
 }
 
-const ::google::protobuf::Message& GameSceneService::GetResponsePrototype(
+const ::google::protobuf::Message& SceneScene::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
@@ -262,21 +262,21 @@ const ::google::protobuf::Message& GameSceneService::GetResponsePrototype(
   }
 }
 
-GameSceneService_Stub::GameSceneService_Stub(::google::protobuf::RpcChannel* channel)
+SceneScene_Stub::SceneScene_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
-GameSceneService_Stub::GameSceneService_Stub(
+SceneScene_Stub::SceneScene_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
                     ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
-GameSceneService_Stub::~GameSceneService_Stub() {
+SceneScene_Stub::~SceneScene_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void GameSceneService_Stub::Test(::google::protobuf::RpcController* controller,
+void SceneScene_Stub::Test(::google::protobuf::RpcController* controller,
                               const ::GameSceneTest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,

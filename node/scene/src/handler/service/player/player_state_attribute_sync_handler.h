@@ -6,7 +6,7 @@
 
 #include "macros/return_define.h"
 
-class PlayerSyncServiceHandler : public ::PlayerService
+class ScenePlayerSyncHandler : public ::PlayerService
 {
 public:
     using PlayerService::PlayerService;

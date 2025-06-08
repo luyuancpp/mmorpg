@@ -13,7 +13,7 @@ message GameKickPlayerRequest {
   string operator = 2;
 }
 
-service GameClientPlayerCommonService 
+service SceneClientPlayerCommon 
 {
   rpc SendTipToClient (TipInfoMessage) returns (Empty);
   rpc KickPlayer (GameKickPlayerRequest) returns (Empty);

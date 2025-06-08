@@ -31,34 +31,34 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageContent) {
 		handleClientPlayerLoginLeaveGame(player, response.SerializedMessage)
 	case game.ClientPlayerLoginDisconnectMessageId:
 		handleClientPlayerLoginDisconnect(player, response.SerializedMessage)
-	case game.ClientPlayerSceneServiceEnterSceneMessageId:
-		handleClientPlayerSceneServiceEnterScene(player, response.SerializedMessage)
-	case game.ClientPlayerSceneServiceNotifyEnterSceneMessageId:
-		handleClientPlayerSceneServiceNotifyEnterScene(player, response.SerializedMessage)
-	case game.ClientPlayerSceneServiceSceneInfoC2SMessageId:
-		handleClientPlayerSceneServiceSceneInfoC2S(player, response.SerializedMessage)
-	case game.ClientPlayerSceneServiceNotifySceneInfoMessageId:
-		handleClientPlayerSceneServiceNotifySceneInfo(player, response.SerializedMessage)
-	case game.ClientPlayerSceneServiceNotifyActorCreateMessageId:
-		handleClientPlayerSceneServiceNotifyActorCreate(player, response.SerializedMessage)
-	case game.ClientPlayerSceneServiceNotifyActorDestroyMessageId:
-		handleClientPlayerSceneServiceNotifyActorDestroy(player, response.SerializedMessage)
-	case game.ClientPlayerSceneServiceNotifyActorListCreateMessageId:
-		handleClientPlayerSceneServiceNotifyActorListCreate(player, response.SerializedMessage)
-	case game.ClientPlayerSceneServiceNotifyActorListDestroyMessageId:
-		handleClientPlayerSceneServiceNotifyActorListDestroy(player, response.SerializedMessage)
-	case game.ClientPlayerSkillServiceReleaseSkillMessageId:
-		handleClientPlayerSkillServiceReleaseSkill(player, response.SerializedMessage)
-	case game.ClientPlayerSkillServiceNotifySkillUsedMessageId:
-		handleClientPlayerSkillServiceNotifySkillUsed(player, response.SerializedMessage)
-	case game.ClientPlayerSkillServiceNotifySkillInterruptedMessageId:
-		handleClientPlayerSkillServiceNotifySkillInterrupted(player, response.SerializedMessage)
-	case game.ClientPlayerSkillServiceGetSkillListMessageId:
-		handleClientPlayerSkillServiceGetSkillList(player, response.SerializedMessage)
-	case game.GameClientPlayerCommonServiceSendTipToClientMessageId:
-		handleGameClientPlayerCommonServiceSendTipToClient(player, response.SerializedMessage)
-	case game.GameClientPlayerCommonServiceKickPlayerMessageId:
-		handleGameClientPlayerCommonServiceKickPlayer(player, response.SerializedMessage)
+	case game.SceneClientPlayerCommonSendTipToClientMessageId:
+		handleSceneClientPlayerCommonSendTipToClient(player, response.SerializedMessage)
+	case game.SceneClientPlayerCommonKickPlayerMessageId:
+		handleSceneClientPlayerCommonKickPlayer(player, response.SerializedMessage)
+	case game.SceneSceneClientPlayerEnterSceneMessageId:
+		handleSceneSceneClientPlayerEnterScene(player, response.SerializedMessage)
+	case game.SceneSceneClientPlayerNotifyEnterSceneMessageId:
+		handleSceneSceneClientPlayerNotifyEnterScene(player, response.SerializedMessage)
+	case game.SceneSceneClientPlayerSceneInfoC2SMessageId:
+		handleSceneSceneClientPlayerSceneInfoC2S(player, response.SerializedMessage)
+	case game.SceneSceneClientPlayerNotifySceneInfoMessageId:
+		handleSceneSceneClientPlayerNotifySceneInfo(player, response.SerializedMessage)
+	case game.SceneSceneClientPlayerNotifyActorCreateMessageId:
+		handleSceneSceneClientPlayerNotifyActorCreate(player, response.SerializedMessage)
+	case game.SceneSceneClientPlayerNotifyActorDestroyMessageId:
+		handleSceneSceneClientPlayerNotifyActorDestroy(player, response.SerializedMessage)
+	case game.SceneSceneClientPlayerNotifyActorListCreateMessageId:
+		handleSceneSceneClientPlayerNotifyActorListCreate(player, response.SerializedMessage)
+	case game.SceneSceneClientPlayerNotifyActorListDestroyMessageId:
+		handleSceneSceneClientPlayerNotifyActorListDestroy(player, response.SerializedMessage)
+	case game.SceneSkillClientPlayerReleaseSkillMessageId:
+		handleSceneSkillClientPlayerReleaseSkill(player, response.SerializedMessage)
+	case game.SceneSkillClientPlayerNotifySkillUsedMessageId:
+		handleSceneSkillClientPlayerNotifySkillUsed(player, response.SerializedMessage)
+	case game.SceneSkillClientPlayerNotifySkillInterruptedMessageId:
+		handleSceneSkillClientPlayerNotifySkillInterrupted(player, response.SerializedMessage)
+	case game.SceneSkillClientPlayerGetSkillListMessageId:
+		handleSceneSkillClientPlayerGetSkillList(player, response.SerializedMessage)
 	default:
 		// Handle unknown message IDs
 		zap.L().Info("Unhandled message", zap.Uint32("message_id", response.MessageId), zap.String("response", response.String()))
@@ -104,115 +104,115 @@ func handleClientPlayerLoginDisconnect(player *gameobject.Player, body []byte) {
 	}
 	ClientPlayerLoginDisconnectHandler(player, message)
 }
-func handleClientPlayerSceneServiceEnterScene(player *gameobject.Player, body []byte) {
-	message := &game.EnterSceneC2SResponse{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal EnterSceneC2SResponse", zap.Error(err))
-		return
-	}
-	ClientPlayerSceneServiceEnterSceneHandler(player, message)
-}
-func handleClientPlayerSceneServiceNotifyEnterScene(player *gameobject.Player, body []byte) {
-	message := &game.EnterSceneS2C{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal EnterSceneS2C", zap.Error(err))
-		return
-	}
-	ClientPlayerSceneServiceNotifyEnterSceneHandler(player, message)
-}
-func handleClientPlayerSceneServiceSceneInfoC2S(player *gameobject.Player, body []byte) {
-	message := &game.SceneInfoRequest{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal SceneInfoRequest", zap.Error(err))
-		return
-	}
-	ClientPlayerSceneServiceSceneInfoC2SHandler(player, message)
-}
-func handleClientPlayerSceneServiceNotifySceneInfo(player *gameobject.Player, body []byte) {
-	message := &game.SceneInfoS2C{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal SceneInfoS2C", zap.Error(err))
-		return
-	}
-	ClientPlayerSceneServiceNotifySceneInfoHandler(player, message)
-}
-func handleClientPlayerSceneServiceNotifyActorCreate(player *gameobject.Player, body []byte) {
-	message := &game.ActorCreateS2C{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal ActorCreateS2C", zap.Error(err))
-		return
-	}
-	ClientPlayerSceneServiceNotifyActorCreateHandler(player, message)
-}
-func handleClientPlayerSceneServiceNotifyActorDestroy(player *gameobject.Player, body []byte) {
-	message := &game.ActorDestroyS2C{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal ActorDestroyS2C", zap.Error(err))
-		return
-	}
-	ClientPlayerSceneServiceNotifyActorDestroyHandler(player, message)
-}
-func handleClientPlayerSceneServiceNotifyActorListCreate(player *gameobject.Player, body []byte) {
-	message := &game.ActorListCreateS2C{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal ActorListCreateS2C", zap.Error(err))
-		return
-	}
-	ClientPlayerSceneServiceNotifyActorListCreateHandler(player, message)
-}
-func handleClientPlayerSceneServiceNotifyActorListDestroy(player *gameobject.Player, body []byte) {
-	message := &game.ActorListDestroyS2C{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal ActorListDestroyS2C", zap.Error(err))
-		return
-	}
-	ClientPlayerSceneServiceNotifyActorListDestroyHandler(player, message)
-}
-func handleClientPlayerSkillServiceReleaseSkill(player *gameobject.Player, body []byte) {
-	message := &game.ReleaseSkillSkillResponse{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal ReleaseSkillSkillResponse", zap.Error(err))
-		return
-	}
-	ClientPlayerSkillServiceReleaseSkillHandler(player, message)
-}
-func handleClientPlayerSkillServiceNotifySkillUsed(player *gameobject.Player, body []byte) {
-	message := &game.SkillUsedS2C{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal SkillUsedS2C", zap.Error(err))
-		return
-	}
-	ClientPlayerSkillServiceNotifySkillUsedHandler(player, message)
-}
-func handleClientPlayerSkillServiceNotifySkillInterrupted(player *gameobject.Player, body []byte) {
-	message := &game.SkillInterruptedS2C{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal SkillInterruptedS2C", zap.Error(err))
-		return
-	}
-	ClientPlayerSkillServiceNotifySkillInterruptedHandler(player, message)
-}
-func handleClientPlayerSkillServiceGetSkillList(player *gameobject.Player, body []byte) {
-	message := &game.GetSkillListResponse{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal GetSkillListResponse", zap.Error(err))
-		return
-	}
-	ClientPlayerSkillServiceGetSkillListHandler(player, message)
-}
-func handleGameClientPlayerCommonServiceSendTipToClient(player *gameobject.Player, body []byte) {
+func handleSceneClientPlayerCommonSendTipToClient(player *gameobject.Player, body []byte) {
 	message := &game.TipInfoMessage{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal TipInfoMessage", zap.Error(err))
 		return
 	}
-	GameClientPlayerCommonServiceSendTipToClientHandler(player, message)
+	SceneClientPlayerCommonSendTipToClientHandler(player, message)
 }
-func handleGameClientPlayerCommonServiceKickPlayer(player *gameobject.Player, body []byte) {
+func handleSceneClientPlayerCommonKickPlayer(player *gameobject.Player, body []byte) {
 	message := &game.GameKickPlayerRequest{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal GameKickPlayerRequest", zap.Error(err))
 		return
 	}
-	GameClientPlayerCommonServiceKickPlayerHandler(player, message)
+	SceneClientPlayerCommonKickPlayerHandler(player, message)
+}
+func handleSceneSceneClientPlayerEnterScene(player *gameobject.Player, body []byte) {
+	message := &game.EnterSceneC2SResponse{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal EnterSceneC2SResponse", zap.Error(err))
+		return
+	}
+	SceneSceneClientPlayerEnterSceneHandler(player, message)
+}
+func handleSceneSceneClientPlayerNotifyEnterScene(player *gameobject.Player, body []byte) {
+	message := &game.EnterSceneS2C{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal EnterSceneS2C", zap.Error(err))
+		return
+	}
+	SceneSceneClientPlayerNotifyEnterSceneHandler(player, message)
+}
+func handleSceneSceneClientPlayerSceneInfoC2S(player *gameobject.Player, body []byte) {
+	message := &game.SceneInfoRequest{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal SceneInfoRequest", zap.Error(err))
+		return
+	}
+	SceneSceneClientPlayerSceneInfoC2SHandler(player, message)
+}
+func handleSceneSceneClientPlayerNotifySceneInfo(player *gameobject.Player, body []byte) {
+	message := &game.SceneInfoS2C{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal SceneInfoS2C", zap.Error(err))
+		return
+	}
+	SceneSceneClientPlayerNotifySceneInfoHandler(player, message)
+}
+func handleSceneSceneClientPlayerNotifyActorCreate(player *gameobject.Player, body []byte) {
+	message := &game.ActorCreateS2C{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal ActorCreateS2C", zap.Error(err))
+		return
+	}
+	SceneSceneClientPlayerNotifyActorCreateHandler(player, message)
+}
+func handleSceneSceneClientPlayerNotifyActorDestroy(player *gameobject.Player, body []byte) {
+	message := &game.ActorDestroyS2C{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal ActorDestroyS2C", zap.Error(err))
+		return
+	}
+	SceneSceneClientPlayerNotifyActorDestroyHandler(player, message)
+}
+func handleSceneSceneClientPlayerNotifyActorListCreate(player *gameobject.Player, body []byte) {
+	message := &game.ActorListCreateS2C{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal ActorListCreateS2C", zap.Error(err))
+		return
+	}
+	SceneSceneClientPlayerNotifyActorListCreateHandler(player, message)
+}
+func handleSceneSceneClientPlayerNotifyActorListDestroy(player *gameobject.Player, body []byte) {
+	message := &game.ActorListDestroyS2C{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal ActorListDestroyS2C", zap.Error(err))
+		return
+	}
+	SceneSceneClientPlayerNotifyActorListDestroyHandler(player, message)
+}
+func handleSceneSkillClientPlayerReleaseSkill(player *gameobject.Player, body []byte) {
+	message := &game.ReleaseSkillSkillResponse{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal ReleaseSkillSkillResponse", zap.Error(err))
+		return
+	}
+	SceneSkillClientPlayerReleaseSkillHandler(player, message)
+}
+func handleSceneSkillClientPlayerNotifySkillUsed(player *gameobject.Player, body []byte) {
+	message := &game.SkillUsedS2C{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal SkillUsedS2C", zap.Error(err))
+		return
+	}
+	SceneSkillClientPlayerNotifySkillUsedHandler(player, message)
+}
+func handleSceneSkillClientPlayerNotifySkillInterrupted(player *gameobject.Player, body []byte) {
+	message := &game.SkillInterruptedS2C{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal SkillInterruptedS2C", zap.Error(err))
+		return
+	}
+	SceneSkillClientPlayerNotifySkillInterruptedHandler(player, message)
+}
+func handleSceneSkillClientPlayerGetSkillList(player *gameobject.Player, body []byte) {
+	message := &game.GetSkillListResponse{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal GetSkillListResponse", zap.Error(err))
+		return
+	}
+	SceneSkillClientPlayerGetSkillListHandler(player, message)
 }

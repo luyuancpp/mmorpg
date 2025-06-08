@@ -5,7 +5,7 @@
 #include "service/player_service_replied.h"
 
 
-class GamePlayerServiceRepliedHandler : public ::PlayerServiceReplied
+class ScenePlayerRepliedHandler : public ::PlayerServiceReplied
 {
 public:
     using PlayerServiceReplied::PlayerServiceReplied;
