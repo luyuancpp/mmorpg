@@ -4,35 +4,103 @@
 #include "proto/scene/player_scene.pb.h"
 
 
-constexpr uint32_t SceneSceneClientPlayerEnterSceneMessageId = 43;
+constexpr uint32_t SceneSceneClientPlayerEnterSceneMessageId = 36;
 constexpr uint32_t SceneSceneClientPlayerEnterSceneIndex = 0;
 #define SceneSceneClientPlayerEnterSceneMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(0)
 
-constexpr uint32_t SceneSceneClientPlayerNotifyEnterSceneMessageId = 38;
+constexpr uint32_t SceneSceneClientPlayerNotifyEnterSceneMessageId = 80;
 constexpr uint32_t SceneSceneClientPlayerNotifyEnterSceneIndex = 1;
 #define SceneSceneClientPlayerNotifyEnterSceneMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(1)
 
-constexpr uint32_t SceneSceneClientPlayerSceneInfoC2SMessageId = 39;
+constexpr uint32_t SceneSceneClientPlayerSceneInfoC2SMessageId = 43;
 constexpr uint32_t SceneSceneClientPlayerSceneInfoC2SIndex = 2;
 #define SceneSceneClientPlayerSceneInfoC2SMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(2)
 
-constexpr uint32_t SceneSceneClientPlayerNotifySceneInfoMessageId = 62;
+constexpr uint32_t SceneSceneClientPlayerNotifySceneInfoMessageId = 0;
 constexpr uint32_t SceneSceneClientPlayerNotifySceneInfoIndex = 3;
 #define SceneSceneClientPlayerNotifySceneInfoMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(3)
 
-constexpr uint32_t SceneSceneClientPlayerNotifyActorCreateMessageId = 67;
+constexpr uint32_t SceneSceneClientPlayerNotifyActorCreateMessageId = 52;
 constexpr uint32_t SceneSceneClientPlayerNotifyActorCreateIndex = 4;
 #define SceneSceneClientPlayerNotifyActorCreateMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(4)
 
-constexpr uint32_t SceneSceneClientPlayerNotifyActorDestroyMessageId = 8;
+constexpr uint32_t SceneSceneClientPlayerNotifyActorDestroyMessageId = 82;
 constexpr uint32_t SceneSceneClientPlayerNotifyActorDestroyIndex = 5;
 #define SceneSceneClientPlayerNotifyActorDestroyMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(5)
 
-constexpr uint32_t SceneSceneClientPlayerNotifyActorListCreateMessageId = 21;
+constexpr uint32_t SceneSceneClientPlayerNotifyActorListCreateMessageId = 11;
 constexpr uint32_t SceneSceneClientPlayerNotifyActorListCreateIndex = 6;
 #define SceneSceneClientPlayerNotifyActorListCreateMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(6)
 
-constexpr uint32_t SceneSceneClientPlayerNotifyActorListDestroyMessageId = 56;
+constexpr uint32_t SceneSceneClientPlayerNotifyActorListDestroyMessageId = 26;
+constexpr uint32_t SceneSceneClientPlayerNotifyActorListDestroyIndex = 7;
+#define SceneSceneClientPlayerNotifyActorListDestroyMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(7)
+
+
+
+constexpr uint32_t SceneSceneClientPlayerEnterSceneMessageId = 18446744073709551615;
+constexpr uint32_t SceneSceneClientPlayerEnterSceneIndex = 0;
+#define SceneSceneClientPlayerEnterSceneMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(0)
+
+constexpr uint32_t SceneSceneClientPlayerNotifyEnterSceneMessageId = 18446744073709551615;
+constexpr uint32_t SceneSceneClientPlayerNotifyEnterSceneIndex = 1;
+#define SceneSceneClientPlayerNotifyEnterSceneMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(1)
+
+constexpr uint32_t SceneSceneClientPlayerSceneInfoC2SMessageId = 18446744073709551615;
+constexpr uint32_t SceneSceneClientPlayerSceneInfoC2SIndex = 2;
+#define SceneSceneClientPlayerSceneInfoC2SMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(2)
+
+constexpr uint32_t SceneSceneClientPlayerNotifySceneInfoMessageId = 18446744073709551615;
+constexpr uint32_t SceneSceneClientPlayerNotifySceneInfoIndex = 3;
+#define SceneSceneClientPlayerNotifySceneInfoMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(3)
+
+constexpr uint32_t SceneSceneClientPlayerNotifyActorCreateMessageId = 18446744073709551615;
+constexpr uint32_t SceneSceneClientPlayerNotifyActorCreateIndex = 4;
+#define SceneSceneClientPlayerNotifyActorCreateMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(4)
+
+constexpr uint32_t SceneSceneClientPlayerNotifyActorDestroyMessageId = 18446744073709551615;
+constexpr uint32_t SceneSceneClientPlayerNotifyActorDestroyIndex = 5;
+#define SceneSceneClientPlayerNotifyActorDestroyMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(5)
+
+constexpr uint32_t SceneSceneClientPlayerNotifyActorListCreateMessageId = 18446744073709551615;
+constexpr uint32_t SceneSceneClientPlayerNotifyActorListCreateIndex = 6;
+#define SceneSceneClientPlayerNotifyActorListCreateMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(6)
+
+constexpr uint32_t SceneSceneClientPlayerNotifyActorListDestroyMessageId = 18446744073709551615;
+constexpr uint32_t SceneSceneClientPlayerNotifyActorListDestroyIndex = 7;
+#define SceneSceneClientPlayerNotifyActorListDestroyMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(7)
+
+
+
+constexpr uint32_t SceneSceneClientPlayerEnterSceneMessageId = 36;
+constexpr uint32_t SceneSceneClientPlayerEnterSceneIndex = 0;
+#define SceneSceneClientPlayerEnterSceneMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(0)
+
+constexpr uint32_t SceneSceneClientPlayerNotifyEnterSceneMessageId = 80;
+constexpr uint32_t SceneSceneClientPlayerNotifyEnterSceneIndex = 1;
+#define SceneSceneClientPlayerNotifyEnterSceneMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(1)
+
+constexpr uint32_t SceneSceneClientPlayerSceneInfoC2SMessageId = 43;
+constexpr uint32_t SceneSceneClientPlayerSceneInfoC2SIndex = 2;
+#define SceneSceneClientPlayerSceneInfoC2SMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(2)
+
+constexpr uint32_t SceneSceneClientPlayerNotifySceneInfoMessageId = 0;
+constexpr uint32_t SceneSceneClientPlayerNotifySceneInfoIndex = 3;
+#define SceneSceneClientPlayerNotifySceneInfoMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(3)
+
+constexpr uint32_t SceneSceneClientPlayerNotifyActorCreateMessageId = 52;
+constexpr uint32_t SceneSceneClientPlayerNotifyActorCreateIndex = 4;
+#define SceneSceneClientPlayerNotifyActorCreateMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(4)
+
+constexpr uint32_t SceneSceneClientPlayerNotifyActorDestroyMessageId = 82;
+constexpr uint32_t SceneSceneClientPlayerNotifyActorDestroyIndex = 5;
+#define SceneSceneClientPlayerNotifyActorDestroyMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(5)
+
+constexpr uint32_t SceneSceneClientPlayerNotifyActorListCreateMessageId = 11;
+constexpr uint32_t SceneSceneClientPlayerNotifyActorListCreateIndex = 6;
+#define SceneSceneClientPlayerNotifyActorListCreateMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(6)
+
+constexpr uint32_t SceneSceneClientPlayerNotifyActorListDestroyMessageId = 26;
 constexpr uint32_t SceneSceneClientPlayerNotifyActorListDestroyIndex = 7;
 #define SceneSceneClientPlayerNotifyActorListDestroyMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(7)
 

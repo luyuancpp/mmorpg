@@ -162,7 +162,7 @@ func WriteServiceIdFile() {
 			}
 			data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
 		}
-		util.WriteMd5Data2File(config.ServiceIdFilePath, data)
+		WriteFileIfChanged(config.ServiceIdFilePath, []byte(data))
 	}()
 }
 
@@ -404,7 +404,7 @@ void InitMessageInfo()
 		panic(err)
 	}
 
-	util.WriteMd5Data2File(config.ServiceCppFilePath, output.String())
+	WriteFileIfChanged(config.ServiceCppFilePath, output.Bytes())
 }
 
 // writeServiceInfoHeadFile writes service information to a header file.
@@ -491,7 +491,7 @@ void InitPlayerService()
 		panic(err)
 	}
 
-	util.WriteMd5Data2File(handlerDir+serviceName, output.String())
+	WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
 	return output.String()
 }
 
@@ -560,7 +560,7 @@ void InitPlayerServiceReplied()
 		panic(err)
 	}
 
-	util.WriteMd5Data2File(handlerDir+serviceName, output.String())
+	WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
 	return output.String()
 }
 

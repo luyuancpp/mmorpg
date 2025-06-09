@@ -95,7 +95,7 @@ func CppPlayerDataLoadGenerator() {
 
 			destFilePath := config.PlayerStorageSystemDirectory + "player_" + messageDescName + config.CppSystemExtension
 
-			_, err = util.CopyFileByMd5(destFilePath, md5FilePath)
+			err = CopyFileIfChanged(md5FilePath, destFilePath)
 			if err != nil {
 				log.Fatal(err)
 				return

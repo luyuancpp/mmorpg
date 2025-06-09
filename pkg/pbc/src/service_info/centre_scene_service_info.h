@@ -4,11 +4,31 @@
 #include "proto/centre/centre_scene.pb.h"
 
 
-constexpr uint32_t CentreSceneRegisterSceneMessageId = 36;
+constexpr uint32_t CentreSceneRegisterSceneMessageId = 1;
 constexpr uint32_t CentreSceneRegisterSceneIndex = 0;
 #define CentreSceneRegisterSceneMethod  ::CentreScene_Stub::descriptor()->method(0)
 
-constexpr uint32_t CentreSceneUnRegisterSceneMessageId = 3;
+constexpr uint32_t CentreSceneUnRegisterSceneMessageId = 16;
+constexpr uint32_t CentreSceneUnRegisterSceneIndex = 1;
+#define CentreSceneUnRegisterSceneMethod  ::CentreScene_Stub::descriptor()->method(1)
+
+
+
+constexpr uint32_t CentreSceneRegisterSceneMessageId = 18446744073709551615;
+constexpr uint32_t CentreSceneRegisterSceneIndex = 0;
+#define CentreSceneRegisterSceneMethod  ::CentreScene_Stub::descriptor()->method(0)
+
+constexpr uint32_t CentreSceneUnRegisterSceneMessageId = 18446744073709551615;
+constexpr uint32_t CentreSceneUnRegisterSceneIndex = 1;
+#define CentreSceneUnRegisterSceneMethod  ::CentreScene_Stub::descriptor()->method(1)
+
+
+
+constexpr uint32_t CentreSceneRegisterSceneMessageId = 1;
+constexpr uint32_t CentreSceneRegisterSceneIndex = 0;
+#define CentreSceneRegisterSceneMethod  ::CentreScene_Stub::descriptor()->method(0)
+
+constexpr uint32_t CentreSceneUnRegisterSceneMessageId = 16;
 constexpr uint32_t CentreSceneUnRegisterSceneIndex = 1;
 #define CentreSceneUnRegisterSceneMethod  ::CentreScene_Stub::descriptor()->method(1)
 
