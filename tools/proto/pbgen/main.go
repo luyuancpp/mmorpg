@@ -3,11 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"path"
 	"pbgen/config"
 	"pbgen/internal"
 	"pbgen/util"
+	"time"
 )
 
 func MakeProjectMd5Dir(src string, dst string) error {
@@ -51,6 +54,10 @@ func MakeProjectDir() {
 }
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:11111", nil)) // 启动 pprof HTTP 服务
+	}()
+
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
@@ -58,34 +65,52 @@ func main() {
 
 	fmt.Println("Current working directory:", dir)
 
-	MakeProjectDir()
-	//开始读所有的proto文件
-	internal.ReadServiceIdFile()
-	internal.BuildProtocDesc()
-	util.Wg.Wait()
-	internal.ReadAllProtoFileServices()
-	util.Wg.Wait()
-	internal.BuildAllProtoc()
-	util.Wg.Wait()
+	for {
+		MakeProjectDir()
+		//开始读所有的proto文件
+		internal.ReadServiceIdFile()
+		util.Wg.Wait()
 
-	internal.GenerateAllEventHandlers()
-	//internal.WriteSol2LuaFile()
-	util.Wg.Wait()
-	//所有文件的proto读完以后
-	internal.InitServiceId()
-	internal.WriteServiceIdFile()
-	internal.WriteMethodFile()
-	internal.GenerateServiceConstants()
-	util.Wg.Wait()
-	//所有service初始化完以后
-	internal.WriteGoMessageId()
-	internal.WriteServiceRegisterInfoFile()
-	//internal.WriteLuaServiceHeadHandlerFile()
-	//internal.WriteClientServiceHeadHandlerFile()
-	internal.GoRobotHandlerGenerator()
-	util.Wg.Wait()
-	internal.GoRobotTotalHandlerGenerator()
-	internal.CppPlayerDataLoadGenerator()
-	internal.CppGrpcCallClient()
-	util.Wg.Wait()
+		internal.BuildProtocDesc()
+		util.Wg.Wait()
+		internal.ReadAllProtoFileServices()
+		util.Wg.Wait()
+		internal.BuildAllProtoc()
+		util.Wg.Wait()
+
+		internal.GenerateAllEventHandlers()
+		//internal.WriteSol2LuaFile()
+		util.Wg.Wait()
+		//所有文件的proto读完以后
+		internal.InitServiceId()
+		util.Wg.Wait()
+
+		internal.WriteServiceIdFile()
+		util.Wg.Wait()
+
+		internal.WriteMethodFile()
+		util.Wg.Wait()
+
+		internal.GenerateServiceConstants()
+		util.Wg.Wait()
+		//所有service初始化完以后
+		internal.WriteGoMessageId()
+		util.Wg.Wait()
+
+		internal.WriteServiceRegisterInfoFile()
+		util.Wg.Wait()
+
+		//internal.WriteLuaServiceHeadHandlerFile()
+		//internal.WriteClientServiceHeadHandlerFile()
+		internal.GoRobotHandlerGenerator()
+		util.Wg.Wait()
+		internal.GoRobotTotalHandlerGenerator()
+		util.Wg.Wait()
+		internal.CppPlayerDataLoadGenerator()
+		util.Wg.Wait()
+		internal.CppGrpcCallClient()
+		util.Wg.Wait()
+
+		time.Sleep(time.Duration(time.Second * 2))
+	}
 }

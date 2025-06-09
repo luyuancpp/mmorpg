@@ -40,8 +40,8 @@ void InitGateRepliedHandler()
 void OnGatePlayerEnterGameNodeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	///gate æ›´æ–°gs,ç›¸åº”çš„gså¯ä»¥å¾€é‚£ä¸ªgateä¸Šå‘æ¶ˆæ¯äº†
-	///todo ä¸­é—´è¿”å›žæ˜¯æ–­å¼€äº†
+	///gate ¸üÐÂgs,ÏàÓ¦µÄgs¿ÉÒÔÍùÄÇ¸ögateÉÏ·¢ÏûÏ¢ÁË
+	///todo ÖÐ¼ä·µ»ØÊÇ¶Ï¿ªÁË
 	entt::entity GetPlayerEntityBySessionId(uint64_t session_id);
 	const auto player = GetPlayerEntityBySessionId(replied->session_info().session_id());
 	if (entt::null == player)
