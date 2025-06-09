@@ -238,4 +238,5 @@ var GrpcServices = map[string]bool{
 	"team":  true,
 	"mail":  true,
 	"chat":  true,
+	"etcd":  true,
 }

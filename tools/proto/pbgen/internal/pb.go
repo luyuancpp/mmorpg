@@ -3,8 +3,6 @@ package internal
 import (
 	"bytes"
 	"fmt"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"log"
 	"os"
 	"os/exec"
@@ -14,10 +12,10 @@ import (
 	"pbgen/util"
 	"runtime"
 	"strings"
-	"sync"
 )
 
-func BuildProto(protoPath string) (err error) {
+func BuildProto(protoPath string) error {
+	// 读取 proto 文件夹内容
 	fds, err := os.ReadDir(protoPath)
 	if err != nil {
 		return err
@@ -25,74 +23,72 @@ func BuildProto(protoPath string) (err error) {
 
 	os.MkdirAll(config.PbcProtoOutputDirectory, os.FileMode(0777))
 
-	var wg sync.WaitGroup
-
+	var protoFiles []string
 	for _, fd := range fds {
-
-		// Execute processing in a goroutine
-		wg.Add(1)
-		go func(fd os.DirEntry) {
-			defer wg.Done()
-
-			if !util.IsProtoFile(fd) {
-				return
-			}
-
-			fileName := protoPath + fd.Name()
-
-			dstFileName := strings.Replace(fileName, config.ProtoDir, config.PbcProtoOutputDirectory, 1)
-			dstFileHeadName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbhEx, 1)
-			dstFileCppName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
-
-			protoRelativePath := strings.Replace(protoPath, config.ProjectDir, "", -1)
-			newBaseDir := path.Dir(config.PbcTempDirectory + protoRelativePath)
-			tempHeadFileName := filepath.Join(newBaseDir, filepath.Base(dstFileHeadName))
-			tempCppFileName := filepath.Join(newBaseDir, filepath.Base(dstFileCppName))
-
-			err := os.MkdirAll(newBaseDir, os.FileMode(0777))
-			if err != nil {
-				return
-			}
-
-			if err := generateCppFiles(fileName, config.PbcTempDirectory); err != nil {
-				log.Fatal(err)
-			}
-
-			err = CopyFileIfChanged(dstFileCppName, tempCppFileName)
-			if err != nil {
-				log.Fatal(err)
-				return
-			}
-			err = CopyFileIfChanged(dstFileHeadName, tempHeadFileName)
-			if err != nil {
-				log.Fatal(err)
-				return
-			}
-		}(fd)
+		if util.IsProtoFile(fd) {
+			fullPath := filepath.ToSlash(filepath.Join(protoPath, fd.Name()))
+			protoFiles = append(protoFiles, fullPath)
+		}
 	}
 
-	// Wait for all goroutines to finish
-	wg.Wait()
+	if len(protoFiles) == 0 {
+		log.Println("No .proto files found in:", protoPath)
+		return nil
+	}
+
+	// 调用 protoc 执行批量生成
+	if err := generateCppFiles(protoFiles, config.PbcTempDirectory); err != nil {
+		return err
+	}
+
+	// 复制生成的 .pb.h 和 .pb.cc 文件到目标目录（若有变化）
+	for _, protoFile := range protoFiles {
+		dstFileName := strings.Replace(protoFile, config.ProtoDir, config.PbcProtoOutputDirectory, 1)
+		dstFileHeadName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbhEx, 1)
+		dstFileCppName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
+
+		protoRelativePath := strings.Replace(protoPath, config.ProjectDir, "", 1)
+		newBaseDir := filepath.ToSlash(path.Dir(config.PbcTempDirectory + protoRelativePath))
+
+		tempHeadFileName := filepath.Join(newBaseDir, filepath.Base(dstFileHeadName))
+		tempCppFileName := filepath.Join(newBaseDir, filepath.Base(dstFileCppName))
+
+		if err := os.MkdirAll(newBaseDir, os.FileMode(0777)); err != nil {
+			log.Println("mkdir failed:", err)
+			continue
+		}
+
+		if err := CopyFileIfChanged(dstFileCppName, tempCppFileName); err != nil {
+			log.Println("copy .cc failed:", err)
+			continue
+		}
+		if err := CopyFileIfChanged(dstFileHeadName, tempHeadFileName); err != nil {
+			log.Println("copy .h failed:", err)
+			continue
+		}
+	}
+
 	return nil
 }
 
 // Function to generate C++ files using protoc
-func generateCppFiles(fileName, outputDir string) error {
+func generateCppFiles(protoFiles []string, outputDir string) error {
 	sysType := runtime.GOOS
 	var cmd *exec.Cmd
 
+	args := []string{
+		"--cpp_out=" + outputDir,
+	}
+	args = append(args, protoFiles...) // 多个 .proto 文件一起处理
+	args = append(args,
+		"-I="+config.ProtoParentIncludePathDir,
+		"--proto_path="+config.ProtoBufferDirectory,
+	)
+
 	if sysType == "linux" {
-		cmd = exec.Command("protoc",
-			"--cpp_out="+outputDir,
-			fileName,
-			"-I="+config.ProtoParentIncludePathDir,
-			"--proto_path="+config.ProtoBufferDirectory)
+		cmd = exec.Command("protoc", args...)
 	} else {
-		cmd = exec.Command("./protoc.exe",
-			"--cpp_out="+outputDir,
-			fileName,
-			"-I="+config.ProtoParentIncludePathDir,
-			"--proto_path="+config.ProtoBufferDirectory)
+		cmd = exec.Command("./protoc.exe", args...)
 	}
 
 	var out bytes.Buffer
@@ -100,19 +96,19 @@ func generateCppFiles(fileName, outputDir string) error {
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
 
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
+	log.Println("Running:", cmd.String())
+	if err := cmd.Run(); err != nil {
+		fmt.Println("protoc error:", stderr.String())
 		return err
 	}
 
 	return nil
 }
 
-func BuildProtoGrpc(protoPath string) (err error) {
-	// Read directory entries
-	var fds []os.DirEntry
-	if fds, err = os.ReadDir(protoPath); err != nil {
+func BuildProtoGrpc(protoPath string) error {
+	// 读取 proto 目录文件
+	fds, err := os.ReadDir(protoPath)
+	if err != nil {
 		return err
 	}
 
@@ -121,429 +117,399 @@ func BuildProtoGrpc(protoPath string) (err error) {
 
 	basePath := strings.ToLower(path.Base(protoPath))
 	if _, ok := config.GrpcServices[basePath]; !ok {
-		return
+		return nil
 	}
 
-	// Process each protobuf file in the directory
+	var protoFiles []string
 	for _, fd := range fds {
-
-		// Concurrent execution for each file
-		util.Wg.Add(1)
-		go func(fd os.DirEntry) {
-			defer util.Wg.Done()
-
-			if !util.IsProtoFile(fd) {
-				return
-			}
-
-			// Construct the path to the descriptor file
-			descFilePath := filepath.Join(config.PbDescDirectory, fd.Name()+config.ProtoDescExtension)
-
-			// Read the descriptor file
-			data, err := os.ReadFile(descFilePath)
-			if err != nil {
-				return
-			}
-
-			// Unmarshal the descriptor set
-			fdSet := &descriptorpb.FileDescriptorSet{}
-			if err := proto.Unmarshal(data, fdSet); err != nil {
-				return
-			}
-
-			files := fdSet.GetFile()
-			if len(files) > 0 && files[0].Options != nil && files[0].Options.CcGenericServices != nil && *files[0].Options.CcGenericServices {
-				return
-			}
-
-			// Construct file paths
-			fileName := protoPath + fd.Name()
-
-			md5FileName := strings.Replace(fileName, config.ProtoDir, config.GrpcTempDirectory+config.ProtoDirName, 1)
-
-			dir := path.Dir(md5FileName)
-			err = os.MkdirAll(dir, os.FileMode(0777))
-			if err != nil {
-				return
-			}
-
-			// Determine the operating system type
-			sysType := runtime.GOOS
-			var cmd *exec.Cmd
-			if sysType == `linux` {
-				// Command for Linux
-				cmd = exec.Command("protoc",
-					"--grpc_out="+config.GrpcTempDirectory,
-					"--plugin=protoc-gen-grpc=grpc_cpp_plugin",
-					fileName,
-					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoBufferDirectory)
-			} else {
-				// Command for other systems (presumably Windows)
-				cmd = exec.Command("./protoc.exe",
-					"--grpc_out="+config.GrpcTempDirectory,
-					"--plugin=protoc-gen-grpc=grpc_cpp_plugin.exe",
-					fileName,
-					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoBufferDirectory)
-			}
-
-			// Execute the command and handle errors
-			var out bytes.Buffer
-			var stderr bytes.Buffer
-			cmd.Stdout = &out
-			cmd.Stderr = &stderr
-			err = cmd.Run()
-			fmt.Println(cmd.String())
-			if err != nil {
-				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-				log.Fatal(err)
-			}
-
-			md5FileName = strings.Replace(md5FileName, config.ProtoEx, config.GrpcPbcEx, 1)
-
-			dstFileName := strings.Replace(fileName, config.ProtoDir, config.GrpcProtoOutputDirectory, 1)
-			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.GrpcPbcEx, 1)
-
-			err = CopyFileIfChanged(md5FileName, dstFileName)
-			if err != nil {
-				log.Fatal(err)
-				return
-			}
-		}(fd)
+		if util.IsProtoFile(fd) {
+			protoFiles = append(protoFiles, filepath.Join(protoPath, fd.Name()))
+		}
 	}
-	return err
+
+	if len(protoFiles) == 0 {
+		log.Println("No .proto files found in", protoPath)
+		return nil
+	}
+
+	// 构造 protoc 命令
+	sysType := runtime.GOOS
+	var cmd *exec.Cmd
+	if sysType == `linux` {
+		args := []string{
+			"--grpc_out=" + config.GrpcTempDirectory,
+			"--plugin=protoc-gen-grpc=grpc_cpp_plugin",
+		}
+		args = append(args, protoFiles...)
+		args = append(args,
+			"--proto_path="+config.ProtoParentIncludePathDir,
+			"--proto_path="+config.ProtoBufferDirectory,
+		)
+		cmd = exec.Command("protoc", args...)
+	} else {
+		args := []string{
+			"--grpc_out=" + config.GrpcTempDirectory,
+			"--plugin=protoc-gen-grpc=grpc_cpp_plugin.exe",
+		}
+		args = append(args, protoFiles...)
+		args = append(args,
+			"--proto_path="+config.ProtoParentIncludePathDir,
+			"--proto_path="+config.ProtoBufferDirectory,
+		)
+		cmd = exec.Command("./protoc.exe", args...)
+	}
+
+	// 执行命令
+	var out, stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+	log.Println("Running command:", cmd.String())
+	if err := cmd.Run(); err != nil {
+		log.Println("protoc error:", stderr.String())
+		return fmt.Errorf("failed to run protoc: %w", err)
+	}
+
+	// 拷贝生成文件（按文件列表）
+	for _, protoFile := range protoFiles {
+		protoFile = filepath.ToSlash(protoFile)
+
+		// 源 .proto 替换为 .pb.cc/.pb.h（你的扩展名设定）
+		md5FileName := strings.Replace(protoFile, config.ProtoDir, config.GrpcTempDirectory+config.ProtoDirName, 1)
+		md5FileName = strings.Replace(md5FileName, config.ProtoEx, config.GrpcPbcEx, 1)
+
+		dstFileName := strings.Replace(protoFile, config.ProtoDir, config.GrpcProtoOutputDirectory, 1)
+		dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.GrpcPbcEx, 1)
+
+		// 创建目录
+		dir := path.Dir(md5FileName)
+		if err := os.MkdirAll(dir, os.FileMode(0777)); err != nil {
+			log.Fatal(err)
+			return err
+		}
+
+		// 拷贝文件（如内容有变）
+		if err := CopyFileIfChanged(md5FileName, dstFileName); err != nil {
+			log.Fatal("Failed to copy:", err)
+		}
+	}
+
+	return nil
 }
 
-func BuildProtoGoLogin(protoPath string) (err error) {
-	// Read directory entries
-	var fds []os.DirEntry
-	if fds, err = os.ReadDir(protoPath); err != nil {
+func generateLoginGoProto(protoFiles []string, outputDir string) error {
+	sysType := runtime.GOOS
+	var cmd *exec.Cmd
+
+	args := []string{
+		"--go_out=" + outputDir,
+	}
+	args = append(args, protoFiles...)
+	args = append(args,
+		"--proto_path="+config.ProtoParentIncludePathDir,
+		"--proto_path="+config.ProtoBufferDirectory,
+	)
+
+	if sysType == "linux" {
+		cmd = exec.Command("protoc", args...)
+	} else {
+		cmd = exec.Command("./protoc.exe", args...)
+	}
+
+	var out, stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	log.Println("Running:", cmd.String())
+	if err := cmd.Run(); err != nil {
+		fmt.Println("protoc error:", stderr.String())
 		return err
 	}
 
-	// Process each protobuf file in the directory
-	for _, fd := range fds {
-
-		// Concurrent execution for each file
-		util.Wg.Add(1)
-		go func(fd os.DirEntry) {
-			defer util.Wg.Done()
-
-			if !util.IsProtoFile(fd) {
-				return
-			}
-			// Skip the DbProtoName and check for specific directories
-			if fd.Name() == config.DbProtoFileName {
-				return
-			}
-
-			if !(util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
-				util.IsPathInProtoDirs(protoPath, config.LoginProtoDirIndex) ||
-				util.IsPathInProtoDirs(protoPath, config.DbProtoDirIndex) ||
-				util.IsPathInProtoDirs(protoPath, config.CenterProtoDirIndex) ||
-				util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
-				util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex)) {
-				return
-			}
-
-			// Construct file paths
-			fileName := protoPath + fd.Name()
-			dstFileName := config.LoginGoGameDirectory + fd.Name()
-			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
-
-			// Determine the operating system type
-			sysType := runtime.GOOS
-			var cmd *exec.Cmd
-			if sysType == `linux` {
-				// Command for Linux
-				cmd = exec.Command("protoc",
-					"--go_out="+config.LoginDirectory,
-					fileName,
-					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoBufferDirectory)
-			} else {
-				// Command for other systems (presumably Windows)
-				cmd = exec.Command("./protoc.exe",
-					"--go_out="+config.LoginDirectory,
-					fileName,
-					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoBufferDirectory)
-			}
-
-			// Execute the command and handle errors
-			var out bytes.Buffer
-			var stderr bytes.Buffer
-			cmd.Stdout = &out
-			cmd.Stderr = &stderr
-			err = cmd.Run()
-			if err != nil {
-				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-				log.Fatal(err)
-			}
-
-		}(fd)
-	}
-	return err
+	return nil
 }
 
-func BuildProtoGoDb(protoPath string) (err error) {
-	// Read directory entries
-	var fds []os.DirEntry
-	if fds, err = os.ReadDir(protoPath); err != nil {
+func BuildProtoGoLogin(protoPath string) error {
+	// 读取 proto 目录
+	fds, err := os.ReadDir(protoPath)
+	if err != nil {
 		return err
 	}
 
-	// Process each protobuf file in the directory
+	var protoFiles []string
 	for _, fd := range fds {
-		util.Wg.Add(1)
-		go func(fd os.DirEntry) {
-			defer util.Wg.Done()
+		if !util.IsProtoFile(fd) {
+			continue
+		}
+		if fd.Name() == config.DbProtoFileName {
+			continue
+		}
 
-			if !util.IsProtoFile(fd) {
-				return
-			}
+		if !(util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.LoginProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.DbProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.CenterProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex)) {
+			continue
+		}
 
-			// Skip the file if it matches the DBProtoName configuration
-			if fd.Name() == config.DbProtoFileName {
-				return
-			}
-
-			// Skip if the directory path does not match specific criteria
-			if !(util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
-				util.IsPathInProtoDirs(protoPath, config.DbProtoDirIndex) ||
-				util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
-				util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex)) {
-				return
-			}
-
-			fileName := protoPath + fd.Name()
-
-			// Determine the operating system type
-			sysType := runtime.GOOS
-			var cmd *exec.Cmd
-			if sysType == `linux` {
-				// Command for Linux
-				cmd = exec.Command("protoc",
-					"--go_out="+config.DbGoDirectory,
-					fileName,
-					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoBufferDirectory)
-			} else {
-				// Command for other systems (presumably Windows)
-				cmd = exec.Command("./protoc.exe",
-					"--go_out="+config.DbGoDirectory,
-					fileName,
-					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoBufferDirectory)
-			}
-
-			var out bytes.Buffer
-			var stderr bytes.Buffer
-			cmd.Stdout = &out
-			cmd.Stderr = &stderr
-			err = cmd.Run()
-
-			if err != nil {
-				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-				log.Fatal(err)
-			}
-
-		}(fd)
+		fullPath := filepath.ToSlash(filepath.Join(protoPath, fd.Name()))
+		protoFiles = append(protoFiles, fullPath)
 	}
 
-	return err
+	if len(protoFiles) == 0 {
+		log.Println("No proto files to process for login:", protoPath)
+		return nil
+	}
+
+	return generateLoginGoProto(protoFiles, config.LoginDirectory)
 }
 
-func BuildProtoDesc(protoPath string) (err error) {
-	// Read directory entries
+func generateGoDbProto(protoFiles []string, outputDir string) error {
+	sysType := runtime.GOOS
+	var cmd *exec.Cmd
 
-	var fds []os.DirEntry
-	if fds, err = os.ReadDir(protoPath); err != nil {
+	args := []string{
+		"--go_out=" + outputDir,
+	}
+	args = append(args, protoFiles...)
+	args = append(args,
+		"--proto_path="+config.ProtoParentIncludePathDir,
+		"--proto_path="+config.ProtoBufferDirectory,
+	)
+
+	if sysType == "linux" {
+		cmd = exec.Command("protoc", args...)
+	} else {
+		cmd = exec.Command("./protoc.exe", args...)
+	}
+
+	var out, stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	log.Println("Running:", cmd.String())
+	if err := cmd.Run(); err != nil {
+		fmt.Println("protoc error:", stderr.String())
+		return err
+	}
+
+	return nil
+}
+
+func BuildProtoGoDb(protoPath string) error {
+	// 读取 protoPath 下所有文件
+	fds, err := os.ReadDir(protoPath)
+	if err != nil {
+		return err
+	}
+
+	var protoFiles []string
+
+	for _, fd := range fds {
+		if !util.IsProtoFile(fd) {
+			continue
+		}
+		if fd.Name() == config.DbProtoFileName {
+			continue
+		}
+		if !(util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.DbProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex)) {
+			continue
+		}
+
+		fullPath := filepath.ToSlash(filepath.Join(protoPath, fd.Name()))
+		protoFiles = append(protoFiles, fullPath)
+	}
+
+	if len(protoFiles) == 0 {
+		log.Println("No proto files matched for Go DB generation in:", protoPath)
+		return nil
+	}
+
+	return generateGoDbProto(protoFiles, config.DbGoDirectory)
+}
+
+func BuildProtoDesc(protoPath string) error {
+	// 读取 proto 文件
+	fds, err := os.ReadDir(protoPath)
+	if err != nil {
 		return err
 	}
 
 	os.MkdirAll(config.PbDescDirectory, os.FileMode(0777))
 
-	// Process each protobuf file in the directory
+	var protoFiles []string
 	for _, fd := range fds {
-		// Add a goroutine for each protobuf file processing
-		util.Wg.Add(1)
-		go func(fd os.DirEntry) {
-			defer util.Wg.Done()
-
-			if !util.IsProtoFile(fd) {
-				return
-			}
-
-			// Construct file paths
-			fileName := protoPath + fd.Name()
-
-			// Determine the operating system type
-			sysType := runtime.GOOS
-			var cmd *exec.Cmd
-
-			if sysType == `linux` {
-				// Command for Linux
-				cmd = exec.Command("protoc",
-					"--descriptor_set_out="+config.PbDescDirectory+fd.Name()+config.ProtoDescExtension,
-					fileName,
-					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoBufferDirectory)
-			} else {
-				// Command for other systems (presumably Windows)
-				cmd = exec.Command("./protoc.exe",
-					"--descriptor_set_out="+config.PbDescDirectory+fd.Name()+config.ProtoDescExtension,
-					fileName,
-					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoBufferDirectory)
-			}
-
-			// Execute the command and capture output/error
-			var out bytes.Buffer
-			var stderr bytes.Buffer
-			cmd.Stdout = &out
-			cmd.Stderr = &stderr
-			err = cmd.Run()
-			if err != nil {
-				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-				log.Fatal(err)
-			}
-
-		}(fd)
+		if util.IsProtoFile(fd) {
+			protoFiles = append(protoFiles, filepath.ToSlash(filepath.Join(protoPath, fd.Name())))
+		}
 	}
 
-	return err
+	// 按文件处理（顺序执行，避免并发 fork）
+	for _, fileName := range protoFiles {
+		// 构造输出路径
+		baseName := filepath.Base(fileName)
+		descOut := filepath.ToSlash(filepath.Join(config.PbDescDirectory, baseName+config.ProtoDescExtension))
+
+		var cmd *exec.Cmd
+		if runtime.GOOS == "linux" {
+			cmd = exec.Command("protoc",
+				"--descriptor_set_out="+descOut,
+				fileName,
+				"--proto_path="+config.ProtoParentIncludePathDir,
+				"--proto_path="+config.ProtoBufferDirectory)
+		} else {
+			cmd = exec.Command("./protoc.exe",
+				"--descriptor_set_out="+descOut,
+				fileName,
+				"--proto_path="+config.ProtoParentIncludePathDir,
+				"--proto_path="+config.ProtoBufferDirectory)
+		}
+
+		var out, stderr bytes.Buffer
+		cmd.Stdout = &out
+		cmd.Stderr = &stderr
+
+		log.Println("Running:", cmd.String())
+		if err := cmd.Run(); err != nil {
+			fmt.Println("protoc error:", stderr.String())
+			return fmt.Errorf("failed to run protoc: %w", err)
+		}
+	}
+
+	return nil
 }
 
-func BuildProtoRobotGo(protoPath string) (err error) {
-	// Read directory entries
-	var fds []os.DirEntry
-	if fds, err = os.ReadDir(protoPath); err != nil {
+func generateRobotGoProto(protoFiles []string, outputDir string) error {
+	sysType := runtime.GOOS
+	var cmd *exec.Cmd
+
+	args := []string{
+		"--go_out=" + outputDir,
+	}
+	args = append(args, protoFiles...)
+	args = append(args,
+		"--proto_path="+config.ProtoParentIncludePathDir,
+		"--proto_path="+config.ProtoBufferDirectory,
+	)
+
+	if sysType == "linux" {
+		cmd = exec.Command("protoc", args...)
+	} else {
+		cmd = exec.Command("./protoc.exe", args...)
+	}
+
+	var out, stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	log.Println("Running:", cmd.String())
+	if err := cmd.Run(); err != nil {
+		fmt.Println("protoc error:", stderr.String())
 		return err
 	}
 
-	// Process each protobuf file in the directory
-	for _, fd := range fds {
-
-		// Add a goroutine for each protobuf file processing
-		util.Wg.Add(1)
-		go func(fd os.DirEntry) {
-			defer util.Wg.Done()
-
-			// Skip non-protobuf files
-			if !util.IsProtoFile(fd) {
-				return
-			}
-
-			// Skip the file if it matches the DbProtoName configuration
-			if fd.Name() == config.DbProtoFileName {
-				return
-			}
-
-			// Construct file paths
-			fileName := protoPath + fd.Name()
-
-			// Determine the operating system type
-			sysType := runtime.GOOS
-			var cmd *exec.Cmd
-			if sysType == `linux` {
-				// Command for Linux
-				cmd = exec.Command("protoc",
-					"--go_out="+config.RobotGoOutputDirectory,
-					fileName,
-					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoBufferDirectory)
-			} else {
-				// Command for other systems (presumably Windows)
-				cmd = exec.Command("./protoc.exe",
-					"--go_out="+config.RobotGoOutputDirectory,
-					fileName,
-					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoBufferDirectory)
-			}
-
-			// Execute the command and capture output/error
-			var out bytes.Buffer
-			var stderr bytes.Buffer
-			cmd.Stdout = &out
-			cmd.Stderr = &stderr
-			err = cmd.Run()
-			if err != nil {
-				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-				log.Fatal(err)
-			}
-
-		}(fd)
-	}
-
-	return err
+	return nil
 }
 
-func BuildProtoGoDeploy(protoPath string) (err error) {
-	// Read directory entries
-	var fds []os.DirEntry
-	if fds, err = os.ReadDir(protoPath); err != nil {
+func BuildProtoRobotGo(protoPath string) error {
+	// 读取目录下所有文件
+	fds, err := os.ReadDir(protoPath)
+	if err != nil {
 		return err
 	}
 
-	// Process each protobuf file in the directory
+	var protoFiles []string
 	for _, fd := range fds {
 		if !util.IsProtoFile(fd) {
 			continue
 		}
-		// Skip the DbProtoName and check for specific directories
+		if fd.Name() == config.DbProtoFileName {
+			continue
+		}
+
+		fullPath := filepath.ToSlash(filepath.Join(protoPath, fd.Name()))
+		protoFiles = append(protoFiles, fullPath)
+	}
+
+	if len(protoFiles) == 0 {
+		log.Println("No proto files found for robot go generation in:", protoPath)
+		return nil
+	}
+
+	return generateRobotGoProto(protoFiles, config.RobotGoOutputDirectory)
+}
+
+func generateDeployGoProto(protoFiles []string, outputDir string) error {
+	sysType := runtime.GOOS
+	var cmd *exec.Cmd
+
+	args := []string{
+		"--go_out=" + outputDir,
+	}
+	args = append(args, protoFiles...)
+	args = append(args,
+		"--proto_path="+config.ProtoParentIncludePathDir,
+		"--proto_path="+config.ProtoBufferDirectory,
+	)
+
+	if sysType == "linux" {
+		cmd = exec.Command("protoc", args...)
+	} else {
+		cmd = exec.Command("./protoc.exe", args...)
+	}
+
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	log.Println("Running:", cmd.String())
+	if err := cmd.Run(); err != nil {
+		fmt.Println("protoc error:", stderr.String())
+		return err
+	}
+
+	return nil
+}
+
+func BuildProtoGoDeploy(protoPath string) error {
+	// 读取目录下所有文件
+	fds, err := os.ReadDir(protoPath)
+	if err != nil {
+		return err
+	}
+
+	var protoFiles []string
+
+	for _, fd := range fds {
+		if !util.IsProtoFile(fd) {
+			continue
+		}
+
 		if fd.Name() == config.DbProtoFileName ||
 			fd.Name() == config.GameMysqlDBProtoFileName ||
 			fd.Name() == config.LoginServiceProtoFileName {
 			continue
 		}
 
-		if !(strings.Contains(protoPath, config.ProtoDirectoryNames[config.CommonProtoDirIndex])) {
-			return
+		if !strings.Contains(protoPath, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) {
+			continue // 修复 return 错误
 		}
 
-		// Concurrent execution for each file
-		util.Wg.Add(1)
-		go func(fd os.DirEntry) {
-			defer util.Wg.Done()
-
-			// Construct file paths
-			fileName := protoPath + fd.Name()
-
-			// Determine the operating system type
-			sysType := runtime.GOOS
-			var cmd *exec.Cmd
-			if sysType == `linux` {
-				// Command for Linux
-				cmd = exec.Command("protoc",
-					"--go_out="+config.DeployDirectory,
-					fileName,
-					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoBufferDirectory)
-			} else {
-				// Command for other systems (presumably Windows)
-				cmd = exec.Command("./protoc.exe",
-					"--go_out="+config.DeployDirectory,
-					fileName,
-					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoBufferDirectory)
-			}
-
-			// Execute the command and handle errors
-			var out bytes.Buffer
-			var stderr bytes.Buffer
-			cmd.Stdout = &out
-			cmd.Stderr = &stderr
-			err = cmd.Run()
-			if err != nil {
-				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-				log.Fatal(err)
-			}
-
-		}(fd)
+		fullPath := filepath.ToSlash(filepath.Join(protoPath, fd.Name()))
+		protoFiles = append(protoFiles, fullPath)
 	}
-	return err
+
+	if len(protoFiles) == 0 {
+		log.Println("No proto files to deploy for:", protoPath)
+		return nil
+	}
+
+	return generateDeployGoProto(protoFiles, config.DeployDirectory)
 }
 
 func BuildProtocDesc() {
