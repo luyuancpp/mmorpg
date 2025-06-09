@@ -332,14 +332,15 @@ func BuildProtoGoDb(protoPath string) error {
 	return generateGoDbProto(protoFiles, config.DbGoDirectory)
 }
 
-func BuildProtoDesc(protoPath string) error {
-	// 读取 proto 文件
+func BuildProtoDescBatch(protoPath string) error {
 	fds, err := os.ReadDir(protoPath)
 	if err != nil {
 		return err
 	}
 
-	os.MkdirAll(config.PbDescDirectory, os.FileMode(0777))
+	if err := os.MkdirAll(config.PbDescDirectory, 0777); err != nil {
+		return err
+	}
 
 	var protoFiles []string
 	for _, fd := range fds {
@@ -348,38 +349,41 @@ func BuildProtoDesc(protoPath string) error {
 		}
 	}
 
-	// 按文件处理（顺序执行，避免并发 fork）
-	for _, fileName := range protoFiles {
-		// 构造输出路径
-		baseName := filepath.Base(fileName)
-		descOut := filepath.ToSlash(filepath.Join(config.PbDescDirectory, baseName+config.ProtoDescExtension))
-
-		var cmd *exec.Cmd
-		if runtime.GOOS == "linux" {
-			cmd = exec.Command("protoc",
-				"--descriptor_set_out="+descOut,
-				fileName,
-				"--proto_path="+config.ProtoParentIncludePathDir,
-				"--proto_path="+config.ProtoBufferDirectory)
-		} else {
-			cmd = exec.Command("./protoc.exe",
-				"--descriptor_set_out="+descOut,
-				fileName,
-				"--proto_path="+config.ProtoParentIncludePathDir,
-				"--proto_path="+config.ProtoBufferDirectory)
-		}
-
-		var out, stderr bytes.Buffer
-		cmd.Stdout = &out
-		cmd.Stderr = &stderr
-
-		log.Println("Running:", cmd.String())
-		if err := cmd.Run(); err != nil {
-			fmt.Println("protoc error:", stderr.String())
-			return fmt.Errorf("failed to run protoc: %w", err)
-		}
+	if len(protoFiles) == 0 {
+		log.Println("No proto files to process in", protoPath)
+		return nil
 	}
 
+	// 批量生成一个 .desc 文件
+	descOut := filepath.ToSlash(filepath.Join(config.PbDescDirectory, "all_in_one.pb.desc"))
+
+	args := append([]string{
+		"--descriptor_set_out=" + descOut,
+		"--include_imports",
+	}, protoFiles...)
+	args = append(args,
+		"--proto_path="+config.ProtoParentIncludePathDir,
+		"--proto_path="+config.ProtoBufferDirectory,
+	)
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "linux" {
+		cmd = exec.Command("protoc", args...)
+	} else {
+		cmd = exec.Command("./protoc.exe", args...)
+	}
+
+	var out, stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	log.Println("Running:", cmd.String())
+	if err := cmd.Run(); err != nil {
+		fmt.Println("protoc error:", stderr.String())
+		return fmt.Errorf("failed to run protoc: %w", err)
+	}
+
+	log.Println("Descriptor file generated at:", descOut)
 	return nil
 }
 
@@ -515,7 +519,7 @@ func BuildProtoGoDeploy(protoPath string) error {
 func BuildProtocDesc() {
 	for i := 0; i < len(config.ProtoDirs); i++ {
 		go func(i int) {
-			err := BuildProtoDesc(config.ProtoDirs[i])
+			err := BuildProtoDescBatch(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}
