@@ -110,5 +110,6 @@ func main() {
 	util.Wg.Wait()
 
 	// 打印总耗时
-	fmt.Printf("Total execution time: %s\n", time.Since(start))
+	log.Printf("Total execution time: %s\n", time.Since(start))
+
 }
