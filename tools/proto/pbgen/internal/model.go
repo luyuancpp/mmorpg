@@ -18,7 +18,7 @@ type EmptyStruct struct{}
 type MethodInfo struct {
 	Id                     uint64
 	Index                  uint64
-	FdSet                  *descriptorpb.FileDescriptorSet
+	Fd                     *descriptorpb.FileDescriptorProto
 	MethodDescriptorProto  *descriptorpb.MethodDescriptorProto
 	ServiceDescriptorProto *descriptorpb.ServiceDescriptorProto
 }
@@ -29,7 +29,7 @@ type RPCMethods []*MethodInfo
 // RPCServiceInfo 定义RPC服务信息
 type RPCServiceInfo struct {
 	MethodInfo             RPCMethods
-	FdSet                  *descriptorpb.FileDescriptorSet
+	Fd                     *descriptorpb.FileDescriptorProto
 	ServiceDescriptorProto *descriptorpb.ServiceDescriptorProto
 	FileServiceIndex       uint32
 }
@@ -68,11 +68,11 @@ func (info *RPCServiceInfo) IncludeName() string {
 }
 
 func (info *RPCServiceInfo) FileName() string {
-	return filepath.Base(*info.FdSet.GetFile()[0].Name)
+	return filepath.Base(*info.Fd.Name)
 }
 
 func (info *RPCServiceInfo) Path() string {
-	return strings.Replace(filepath.Dir(*info.FdSet.GetFile()[0].Name), "\\", "/", -1) + "/"
+	return strings.Replace(filepath.Dir(*info.Fd.Name), "\\", "/", -1) + "/"
 }
 
 func (info *RPCServiceInfo) BasePathForCpp() string {
@@ -107,11 +107,10 @@ func (info *RPCServiceInfo) FileBaseNameCamel() string {
 }
 
 func (info *RPCServiceInfo) CcGenericServices() bool {
-	files := info.FdSet.GetFile()
-	if len(files) == 0 || files[0].Options == nil || files[0].Options.CcGenericServices == nil {
+	if info.Fd.Options.CcGenericServices == nil {
 		return false
 	}
-	return *files[0].Options.CcGenericServices
+	return *info.Fd.Options.CcGenericServices
 }
 
 func (info *RPCServiceInfo) ProtoPathWithFileBaseName() string {
@@ -142,10 +141,10 @@ func (info *RPCServiceInfo) Service() string {
 }
 
 func (info *RPCServiceInfo) Package() string {
-	if nil == info.FdSet.GetFile()[0].Package {
+	if nil == info.Fd.Package {
 		return ""
 	}
-	return *info.FdSet.GetFile()[0].Package
+	return *info.Fd.Package
 }
 
 func (info *RPCServiceInfo) ServiceInfoHeadInclude() string {
@@ -174,11 +173,11 @@ func (info *MethodInfo) MethodName() string {
 }
 
 func (info *MethodInfo) FileBaseName() string {
-	return filepath.Base(*info.FdSet.GetFile()[0].Name)
+	return filepath.Base(*info.Fd.Name)
 }
 
 func (info *MethodInfo) FileName() string {
-	return filepath.Base(*info.FdSet.GetFile()[0].Name)
+	return filepath.Base(*info.Fd.Name)
 }
 
 func (info *MethodInfo) FileBaseNameCamel() string {
@@ -194,10 +193,10 @@ func (info *MethodInfo) FileBaseNameCamel() string {
 }
 
 func (info *MethodInfo) Package() string {
-	if nil == info.FdSet.GetFile()[0].Package {
+	if nil == info.Fd.Package {
 		return ""
 	}
-	return *info.FdSet.GetFile()[0].Package
+	return *info.Fd.Package
 }
 
 func (info *MethodInfo) GrpcHeadName() string {
@@ -217,7 +216,7 @@ func (info *MethodInfo) IncludeName() string {
 }
 
 func (info *MethodInfo) Path() string {
-	return strings.Replace(filepath.Dir(*info.FdSet.GetFile()[0].Name), "\\", "/", -1) + "/"
+	return strings.Replace(filepath.Dir(*info.Fd.Name), "\\", "/", -1) + "/"
 }
 
 func (info *MethodInfo) ServiceInfoIncludeName() string {
@@ -245,11 +244,10 @@ func (info *MethodInfo) CppRepliedHandlerClassName() string {
 }
 
 func (info *MethodInfo) CcGenericServices() bool {
-	files := info.FdSet.GetFile()
-	if len(files) == 0 || files[0].Options == nil || files[0].Options.CcGenericServices == nil {
+	if info.Fd.Options.CcGenericServices == nil {
 		return false
 	}
-	return *files[0].Options.CcGenericServices
+	return *info.Fd.Options.CcGenericServices
 }
 
 func (info *MethodInfo) GetServiceFullNameWithColon() string {
