@@ -328,61 +328,6 @@ func BuildProtoGoDb(protoPath string) error {
 	return generateGoDbProto(protoFiles, config.DbGoDirectory)
 }
 
-func BuildProtoDescBatch(protoPath string) error {
-	fds, err := os.ReadDir(protoPath)
-	if err != nil {
-		return err
-	}
-
-	if err := os.MkdirAll(config.PbDescDirectory, 0777); err != nil {
-		return err
-	}
-
-	var protoFiles []string
-	for _, fd := range fds {
-		if util.IsProtoFile(fd) {
-			protoFiles = append(protoFiles, filepath.ToSlash(filepath.Join(protoPath, fd.Name())))
-		}
-	}
-
-	if len(protoFiles) == 0 {
-		log.Println("No proto files to process in", protoPath)
-		return nil
-	}
-
-	// 批量生成一个 .desc 文件
-	descOut := filepath.ToSlash(filepath.Join(config.PbDescDirectory, "all_in_one.pb.desc"))
-
-	args := append([]string{
-		"--descriptor_set_out=" + descOut,
-		"--include_imports",
-	}, protoFiles...)
-	args = append(args,
-		"--proto_path="+config.ProtoParentIncludePathDir,
-		"--proto_path="+config.ProtoBufferDirectory,
-	)
-
-	var cmd *exec.Cmd
-	if runtime.GOOS == "linux" {
-		cmd = exec.Command("protoc", args...)
-	} else {
-		cmd = exec.Command("./protoc.exe", args...)
-	}
-
-	var out, stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	log.Println("Running:", cmd.String())
-	if err := cmd.Run(); err != nil {
-		fmt.Println("protoc error:", stderr.String())
-		return fmt.Errorf("failed to run protoc: %w", err)
-	}
-
-	log.Println("Descriptor file generated at:", descOut)
-	return nil
-}
-
 func generateRobotGoProto(protoFiles []string, outputDir string) error {
 	sysType := runtime.GOOS
 	var cmd *exec.Cmd
@@ -512,15 +457,59 @@ func BuildProtoGoDeploy(protoPath string) error {
 	return generateDeployGoProto(protoFiles, config.DeployDirectory)
 }
 
-func BuildProtocDesc() {
-	for i := 0; i < len(config.ProtoDirs); i++ {
-		go func(i int) {
-			err := BuildProtoDescBatch(config.ProtoDirs[i])
+func BuildProtocDescAllInOne() {
+	util.Wg.Add(1)
+
+	go func() {
+		defer util.Wg.Done()
+
+		var allProtoFiles []string
+
+		for _, dir := range config.ProtoDirs {
+			fds, err := os.ReadDir(dir)
 			if err != nil {
-				log.Fatal(err)
 			}
-		}(i)
-	}
+			for _, fd := range fds {
+				if util.IsProtoFile(fd) {
+					protoFile := filepath.ToSlash(filepath.Join(dir, fd.Name()))
+					allProtoFiles = append(allProtoFiles, protoFile)
+				}
+			}
+		}
+
+		if len(allProtoFiles) == 0 {
+			log.Println("No proto files found in any directory")
+			return
+		}
+
+		descOut := filepath.ToSlash(config.AllInOneProtoDescFile)
+		args := append([]string{
+			"--descriptor_set_out=" + descOut,
+			"--include_imports",
+		}, allProtoFiles...)
+		args = append(args,
+			"--proto_path="+config.ProtoParentIncludePathDir,
+			"--proto_path="+config.ProtoBufferDirectory,
+		)
+
+		var cmd *exec.Cmd
+		if runtime.GOOS == "linux" {
+			cmd = exec.Command("protoc", args...)
+		} else {
+			cmd = exec.Command("./protoc.exe", args...)
+		}
+
+		var out, stderr bytes.Buffer
+		cmd.Stdout = &out
+		cmd.Stderr = &stderr
+
+		log.Println("Running:", cmd.String())
+		if err := cmd.Run(); err != nil {
+			log.Fatal("protoc error:", stderr.String())
+		}
+
+		log.Println("Descriptor file generated at:", descOut)
+	}()
 }
 
 func BuildAllProtoc() {
