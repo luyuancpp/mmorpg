@@ -16,6 +16,7 @@ void SceneSkillClientPlayerHandler::ReleaseSkill(entt::entity player,const ::Rel
 	::ReleaseSkillSkillResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	CHECK_PLAYER_REQUEST(request, SkillSystem::ReleaseSkill);
 ///<<< END WRITING YOUR CODE
 
 
@@ -49,6 +50,7 @@ void SceneSkillClientPlayerHandler::GetSkillList(entt::entity player,const ::Get
 	::GetSkillListResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	response->mutable_skill_list()->CopyFrom(tls.registry.get<PlayerSkillListPBComponent>(player));
 ///<<< END WRITING YOUR CODE
 
 
