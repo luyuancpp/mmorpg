@@ -132,30 +132,26 @@ func BuildProtoGrpc(protoPath string) error {
 		return nil
 	}
 
-	// 构造 protoc 命令
-	sysType := runtime.GOOS
+	// 构造 protoc 命令参数
+	args := []string{
+		"--grpc_out=" + config.GrpcTempDirectory,
+	}
+	if runtime.GOOS == "linux" {
+		args = append(args, "--plugin=protoc-gen-grpc=grpc_cpp_plugin")
+	} else {
+		args = append(args, "--plugin=protoc-gen-grpc=grpc_cpp_plugin.exe")
+	}
+	args = append(args, protoFiles...)
+	args = append(args,
+		"--proto_path="+config.ProtoParentIncludePathDir,
+		"--proto_path="+config.ProtoBufferDirectory,
+	)
+
+	// 构造最终命令
 	var cmd *exec.Cmd
-	if sysType == `linux` {
-		args := []string{
-			"--grpc_out=" + config.GrpcTempDirectory,
-			"--plugin=protoc-gen-grpc=grpc_cpp_plugin",
-		}
-		args = append(args, protoFiles...)
-		args = append(args,
-			"--proto_path="+config.ProtoParentIncludePathDir,
-			"--proto_path="+config.ProtoBufferDirectory,
-		)
+	if runtime.GOOS == "linux" {
 		cmd = exec.Command("protoc", args...)
 	} else {
-		args := []string{
-			"--grpc_out=" + config.GrpcTempDirectory,
-			"--plugin=protoc-gen-grpc=grpc_cpp_plugin.exe",
-		}
-		args = append(args, protoFiles...)
-		args = append(args,
-			"--proto_path="+config.ProtoParentIncludePathDir,
-			"--proto_path="+config.ProtoBufferDirectory,
-		)
 		cmd = exec.Command("./protoc.exe", args...)
 	}
 
