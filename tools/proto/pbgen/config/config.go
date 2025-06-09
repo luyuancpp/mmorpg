@@ -83,6 +83,7 @@ const (
 	ToolDir               = "tools/"
 	TempFileGenerationDir = ProjectDir + ToolDir + "generated/temp/files/"
 	PbDescDirectory       = TempFileGenerationDir + "proto_desc/"
+	AllInOneProtoDescFile = PbDescDirectory + "all_in_one.pb.desc"
 
 	PbcProtoOutputDirectory  = ProjectDir + PbcProtoDirectory + ProtoDirName
 	PbcOutputDirectory       = ProjectDir + PbcProtoDirectory

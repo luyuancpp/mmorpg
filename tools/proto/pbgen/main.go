@@ -72,7 +72,7 @@ func main() {
 	internal.ReadServiceIdFile()
 	util.Wg.Wait()
 
-	internal.BuildProtocDesc()
+	internal.BuildProtocDescAllInOne()
 	util.Wg.Wait()
 	internal.ReadAllProtoFileServices()
 	util.Wg.Wait()

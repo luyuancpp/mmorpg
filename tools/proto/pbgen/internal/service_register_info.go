@@ -21,21 +21,12 @@ import (
 )
 
 // ReadProtoFileService reads service information from a protobuf descriptor file.
-func ReadProtoFileService(fd os.DirEntry) error {
+func ReadProtoFileService() error {
 
-	// Check if the file is a proto file
-	if !util.IsProtoFile(fd) {
-		return fmt.Errorf("not a proto file: %s", fd.Name())
-	}
-
-	// Initialize the index for services in the file
 	fileServiceIndex := uint32(0)
 
-	// Construct the path to the descriptor file
-	descFilePath := filepath.Join(config.PbDescDirectory, fd.Name()+config.ProtoDescExtension)
-
 	// Read the descriptor file
-	data, err := os.ReadFile(descFilePath)
+	data, err := os.ReadFile(config.AllInOneProtoDescFile)
 	if err != nil {
 		return fmt.Errorf("failed to read descriptor set file: %v", err)
 	}
@@ -97,17 +88,12 @@ func ReadProtoFileService(fd os.DirEntry) error {
 
 // ReadAllProtoFileServices reads all service information from protobuf files in configured directories.
 func ReadAllProtoFileServices() {
-	for i := 0; i < len(config.ProtoDirs); i++ {
-		fds, _ := os.ReadDir(config.ProtoDirs[i])
-		for _, v := range fds {
-			util.Wg.Add(1)
-			fd := v
-			go func(i int, fd os.DirEntry) {
-				defer util.Wg.Done()
-				_ = ReadProtoFileService(fd)
-			}(i, fd)
-		}
-	}
+	util.Wg.Add(1)
+
+	go func() {
+		defer util.Wg.Done()
+		_ = ReadProtoFileService()
+	}()
 }
 
 // ReadServiceIdFile reads service IDs from a file asynchronously.

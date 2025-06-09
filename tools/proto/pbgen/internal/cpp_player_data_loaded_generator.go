@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"pbgen/util"
 	"strings"
 	"text/template"
@@ -47,16 +46,11 @@ type DescData struct {
 
 // 从 Descriptor Set 文件中读取消息结构
 func CppPlayerDataLoadGenerator() {
-	// 生成文件路径
-	descFilePath := filepath.Join(
-		config.PbDescDirectory,
-		config.GameMysqlDBProtoFileName+config.ProtoDescExtension,
-	)
 
 	os.MkdirAll(config.PlayerStorageTempDirectory, os.FileMode(0777))
 
 	// 读取 Descriptor Set 文件
-	data, err := os.ReadFile(descFilePath)
+	data, err := os.ReadFile(config.AllInOneProtoDescFile)
 	if err != nil {
 		log.Fatalf("Failed to read descriptor set file: %v", err)
 	}
