@@ -9,15 +9,3 @@ constexpr uint32_t SceneSceneTestIndex = 0;
 #define SceneSceneTestMethod  ::SceneScene_Stub::descriptor()->method(0)
 
 
-
-constexpr uint32_t SceneSceneTestMessageId = 18446744073709551615;
-constexpr uint32_t SceneSceneTestIndex = 0;
-#define SceneSceneTestMethod  ::SceneScene_Stub::descriptor()->method(0)
-
-
-
-constexpr uint32_t SceneSceneTestMessageId = 83;
-constexpr uint32_t SceneSceneTestIndex = 0;
-#define SceneSceneTestMethod  ::SceneScene_Stub::descriptor()->method(0)
-
-
