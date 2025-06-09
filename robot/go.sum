@@ -11,9 +11,12 @@ github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+o
 github.com/luyuancpp/dbprotooption v0.0.4/go.mod h1:jHa9XWA9OsUULiYFAtN+N0iQMiiq8pRjMxFhrWxrCqs=
 github.com/luyuancpp/dbprotooption v0.0.8 h1:JJuO91gyldnewQA5iEG0xoi9CjBXB4XsUfNvi5JbUE8=
 github.com/luyuancpp/dbprotooption v0.0.8/go.mod h1:jHa9XWA9OsUULiYFAtN+N0iQMiiq8pRjMxFhrWxrCqs=
+github.com/luyuancpp/muduoclient v0.0.9 h1:LLS0RiGma9sU5DUJ+kzcOsElKWuXsAtWkJUscdhnM04=
 github.com/luyuancpp/muduoclient v0.0.9/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
 github.com/luyuancpp/muduoclient v0.0.10 h1:vawVcvf10WjST1r3i6q/exB2bmAe4z0ZTL0mL4L79YM=
 github.com/luyuancpp/muduoclient v0.0.10/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
+github.com/luyuancpp/muduoclient v0.0.11 h1:DF0ma+2k3vOA6NlBeQAsvMbdLiwxIcHMUFefpf517AQ=
+github.com/luyuancpp/muduoclient v0.0.11/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
 github.com/magicsea/behavior3go v0.0.4 h1:QevJQq57g5DBn3nGEfnYcIXqZmaasw4YPkwiO2ekPwM=
 github.com/magicsea/behavior3go v0.0.4/go.mod h1:jDMiRk3AHXArNjiIvfAjh6er8GY77zQpy6t7DuNQ/3Q=
 github.com/orcaman/concurrent-map/v2 v2.0.1 h1:jOJ5Pg2w1oeB6PeDurIYf6k9PQ+aTITr/6lP/L/zp6c=
