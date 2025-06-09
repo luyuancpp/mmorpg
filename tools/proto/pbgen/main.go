@@ -10,6 +10,7 @@ import (
 	"pbgen/config"
 	"pbgen/internal"
 	"pbgen/util"
+	"time"
 )
 
 func MakeProjectMd5Dir(src string, dst string) error {
@@ -53,6 +54,8 @@ func MakeProjectDir() {
 }
 
 func main() {
+	start := time.Now() // 记录开始时间
+
 	go func() {
 		log.Println(http.ListenAndServe("localhost:11111", nil)) // 启动 pprof HTTP 服务
 	}()
@@ -65,7 +68,7 @@ func main() {
 	fmt.Println("Current working directory:", dir)
 
 	MakeProjectDir()
-	//开始读所有的proto文件
+	// 开始读所有的proto文件
 	internal.ReadServiceIdFile()
 	util.Wg.Wait()
 
@@ -78,7 +81,7 @@ func main() {
 
 	internal.GenerateAllEventHandlers()
 	util.Wg.Wait()
-	//所有文件的proto读完以后
+	// 所有文件的proto读完以后
 	internal.InitServiceId()
 	util.Wg.Wait()
 
@@ -90,7 +93,7 @@ func main() {
 
 	internal.GenerateServiceConstants()
 	util.Wg.Wait()
-	//所有service初始化完以后
+	// 所有service初始化完以后
 	internal.WriteGoMessageId()
 	util.Wg.Wait()
 
@@ -106,4 +109,6 @@ func main() {
 	internal.CppGrpcCallClient()
 	util.Wg.Wait()
 
+	// 打印总耗时
+	fmt.Printf("Total execution time: %s\n", time.Since(start))
 }
