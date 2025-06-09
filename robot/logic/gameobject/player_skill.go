@@ -5,5 +5,5 @@ import "robot/pb/game"
 func (player *Player) SetupPlayerSkillsOnLogin() {
 	rq := &game.GetSkillListRequest{}
 
-	player.Send(rq, game.ClientPlayerSkillServiceGetSkillListMessageId)
+	player.Send(rq, game.SceneSkillClientPlayerGetSkillListMessageId)
 }

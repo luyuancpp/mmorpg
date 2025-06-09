@@ -47,7 +47,7 @@ func (res *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 		rq.SceneInfo = sceneInfo[randomIndex]
 	}
 
-	client.Send(rq, game.ClientPlayerSceneServiceEnterSceneMessageId)
+	client.Send(rq, game.SceneSceneClientPlayerEnterSceneMessageId)
 
 	tick.Blackboard.SetMem(SceneInformationBoardKey, nil)
 
