@@ -42,7 +42,7 @@ func ReadProtoFileService() error {
 		for _, service := range file.Service {
 			// Create an RPCServiceInfo object for each service
 			rpcServiceInfo := RPCServiceInfo{
-				FdSet:                  fdSet,
+				Fd:                     file,
 				FileServiceIndex:       fileServiceIndex,
 				ServiceDescriptorProto: service,
 			}
@@ -53,7 +53,7 @@ func ReadProtoFileService() error {
 				rpcMethodInfo := MethodInfo{
 					Id:                     math.MaxUint64,
 					Index:                  uint64(index),
-					FdSet:                  fdSet,
+					Fd:                     file,
 					ServiceDescriptorProto: service,
 					MethodDescriptorProto:  method,
 				}
