@@ -36,6 +36,6 @@ func (l *DisconnectLogic) Disconnect(in *game.LoginNodeDisconnectRequest) (*game
 	centreRequest := &game.GateSessionDisconnectRequest{
 		SessionInfo: &game.SessionDetails{SessionId: in.SessionId},
 	}
-	l.svcCtx.GetCentreClient().Send(centreRequest, game.CentreServiceLoginNodeSessionDisconnectMessageId)
+	l.svcCtx.GetCentreClient().Send(centreRequest, game.CentreLoginNodeSessionDisconnectMessageId)
 	return &game.Empty{}, nil
 }
