@@ -22,8 +22,7 @@ import (
 
 // ReadProtoFileService reads service information from a protobuf descriptor file.
 func ReadProtoFileService() error {
-
-	fileServiceIndex := uint32(0)
+	serviceIndex := uint32(0)
 
 	// Read the descriptor file
 	data, err := os.ReadFile(config.AllInOneProtoDescFile)
@@ -43,7 +42,7 @@ func ReadProtoFileService() error {
 			// Create an RPCServiceInfo object for each service
 			rpcServiceInfo := RPCServiceInfo{
 				Fd:                     file,
-				FileServiceIndex:       fileServiceIndex,
+				ServiceIndex:           serviceIndex,
 				ServiceDescriptorProto: service,
 			}
 
@@ -65,8 +64,7 @@ func ReadProtoFileService() error {
 				atomic.AddUint64(&MaxMessageId, 1)
 			}
 
-			// Store the service info in the global RpcServiceMap
-			RpcServiceMap.Store(service.GetName(), &rpcServiceInfo)
+			GlobalRPCServiceList = append(GlobalRPCServiceList, &rpcServiceInfo)
 
 			result, ok := FileServiceMap.Load(file.GetName())
 			if ok {
@@ -78,7 +76,7 @@ func ReadProtoFileService() error {
 				serviceList = append(serviceList, &rpcServiceInfo)
 				FileServiceMap.Store(file.GetName(), serviceList)
 			}
-			fileServiceIndex++
+			serviceIndex++
 		}
 	}
 
@@ -157,15 +155,8 @@ func InitServiceId() {
 	var unUseServiceId = make(map[uint64]EmptyStruct)
 	var useServiceId = make(map[uint64]EmptyStruct)
 
-	RpcServiceMap.Range(func(k, v interface{}) bool {
-		key := k.(string)
-		methodInfo := v.(*RPCServiceInfo).MethodInfo
-		ServiceMethodMap[key] = methodInfo
-		return true
-	})
-
-	for _, methodList := range ServiceMethodMap {
-		for _, mv := range methodList {
+	for _, service := range GlobalRPCServiceList {
+		for _, mv := range service.MethodInfo {
 			id, ok := ServiceIdMap[mv.KeyName()]
 			if !ok {
 				//Id文件未找到则是新消息,或者已经改名，新消息后面处理，这里不处理
@@ -185,8 +176,8 @@ func InitServiceId() {
 		}
 	}
 
-	for _, methodList := range ServiceMethodMap {
-		for _, mv := range methodList {
+	for _, service := range GlobalRPCServiceList {
+		for _, mv := range service.MethodInfo {
 			if len(unUseServiceId) > 0 && mv.Id == math.MaxUint64 {
 				for uk := range unUseServiceId {
 					mv.Id = uk
@@ -206,16 +197,6 @@ func InitServiceId() {
 			}
 		}
 	}
-}
-
-// GetSortServiceList returns a sorted list of service names.
-func GetSortServiceList() []string {
-	var ServiceList []string
-	for k, _ := range ServiceMethodMap {
-		ServiceList = append(ServiceList, k)
-	}
-	sort.Strings(ServiceList)
-	return ServiceList
 }
 
 func GetProtocol(dirName string) uint32 {
@@ -280,16 +261,13 @@ void InitMessageInfo()
 		senderFunction      []string
 	)
 
-	serviceList := GetSortServiceList()
-
 	// Step 1: Collect headers and handler classes
-	for _, serviceName := range serviceList {
-		methods := ServiceMethodMap[serviceName]
-		if len(methods) == 0 {
+	for _, service := range GlobalRPCServiceList {
+		if len(service.MethodInfo) == 0 {
 			continue
 		}
 
-		firstMethod := methods[0]
+		firstMethod := service.MethodInfo[0]
 
 		if util.IsPathInProtoDirs(firstMethod.Path(), config.DbProtoDirIndex) {
 			continue
@@ -301,8 +279,8 @@ void InitMessageInfo()
 
 			handlerClass := fmt.Sprintf(
 				"class %sImpl final : public %s {};",
-				serviceName,
-				serviceName)
+				service.GetServiceName(),
+				service.GetServiceName())
 			handlerClasses = append(handlerClasses, handlerClass)
 		} else {
 			includes = append(includes, firstMethod.GrpcIncludeHeadName())
@@ -311,27 +289,26 @@ void InitMessageInfo()
 	}
 
 	// Step 2: Generate init lines for RpcService and allowed client message IDs
-	for _, serviceName := range serviceList {
-		methods := ServiceMethodMap[serviceName]
-		if len(methods) == 0 {
+	for _, service := range GlobalRPCServiceList {
+		if len(service.MethodInfo) == 0 {
 			continue
 		}
 
-		firstMethod := methods[0]
+		firstMethod := service.MethodInfo[0]
 		if util.IsPathInProtoDirs(firstMethod.Path(), config.DbProtoDirIndex) {
 			continue
 		}
 
-		for _, method := range ServiceMethodMap[serviceName] {
+		for _, method := range service.MethodInfo {
 			basePath := strings.ToLower(path.Base(method.Path()))
 			messageId := method.KeyName() + config.MessageIdName
 
-			isClientMessage := strings.Contains(serviceName, config.ClientPrefixName)
+			isClientMessage := strings.Contains(service.GetServiceName(), config.ClientPrefixName)
 			nodeType := fmt.Sprintf("eNodeType::%sNodeService", util.CapitalizeWords(basePath))
 
 			initLine := ""
 			if method.CcGenericServices() {
-				handler := serviceName + "Impl"
+				handler := service.GetServiceName() + "Impl"
 				initLine = fmt.Sprintf(
 					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), %d, %s};`,
 					messageId,
@@ -345,9 +322,9 @@ void InitMessageInfo()
 				)
 			} else {
 				declareFunction := "namespace " + method.Package() + "{void Send" +
-					serviceName + method.MethodName() + "(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}"
+					service.GetServiceName() + method.MethodName() + "(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}"
 				senderFunction = append(senderFunction, declareFunction)
-				sendName := method.Package() + "::" + "Send" + serviceName + method.MethodName()
+				sendName := method.Package() + "::" + "Send" + service.GetServiceName() + method.MethodName()
 				initLine = fmt.Sprintf(
 					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), nullptr, %d, %s, %s};`,
 					messageId,
@@ -445,13 +422,11 @@ void InitPlayerService()
 
 	var includes, handlerClasses, initLines []string
 
-	for _, key := range serviceList {
-		methodList, ok := ServiceMethodMap[key]
-		if !ok || !isPlayerHandlerFunc(&methodList) {
+	for _, service := range GlobalRPCServiceList {
+		if !isPlayerHandlerFunc(&service.MethodInfo) {
 			continue
 		}
-
-		method := methodList[0]
+		method := service.MethodInfo[0]
 		className := method.Service() + "Impl"
 
 		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileNameNoEx(), config.HandlerHeaderExtension))
@@ -514,13 +489,12 @@ void InitPlayerServiceReplied()
 
 	var includes, handlerClasses, initLines []string
 
-	for _, key := range serviceList {
-		methodList, ok := ServiceMethodMap[key]
-		if !ok || !isPlayerHandlerFunc(&methodList) {
+	for _, service := range GlobalRPCServiceList {
+		if !isPlayerHandlerFunc(&service.MethodInfo) {
 			continue
 		}
 
-		method := methodList[0]
+		method := service.MethodInfo[0]
 		className := method.Service() + "Impl"
 
 		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileNameNoEx(), config.RepliedHandlerHeaderExtension))
@@ -552,7 +526,12 @@ void InitPlayerServiceReplied()
 
 func writePlayerServiceInstanceFiles(serviceType string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir, serviceName string) {
 	defer util.Wg.Done()
-	ServiceList := GetSortServiceList()
+	ServiceList := make([]string, 0, len(GlobalRPCServiceList))
+
+	for _, service := range GlobalRPCServiceList {
+		ServiceList = append(ServiceList, service.GetServiceName())
+	}
+
 	var generatorFunc func([]string, func(*RPCMethods) bool, string, string) string
 
 	if serviceType == "instance" {

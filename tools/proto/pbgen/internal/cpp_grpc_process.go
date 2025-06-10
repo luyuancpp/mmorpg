@@ -95,7 +95,7 @@ func CppGrpcCallClient() {
 			}
 
 			sort.Slice(serviceInfo, func(i, j int) bool {
-				return serviceInfo[i].FileServiceIndex < serviceInfo[j].FileServiceIndex
+				return serviceInfo[i].ServiceIndex < serviceInfo[j].ServiceIndex
 			})
 
 			// 确保目录存在
@@ -126,13 +126,7 @@ func CppGrpcCallClient() {
 			defer util.Wg.Done()
 			m := map[string]*RPCServiceInfo{}
 			serviceInfoList := make([]*RPCServiceInfo, 0)
-			serviceList := GetSortServiceList()
-			for _, serviceName := range serviceList {
-				result, ok := RpcServiceMap.Load(serviceName)
-				if !ok {
-					continue
-				}
-				service := result.(*RPCServiceInfo)
+			for _, service := range GlobalRPCServiceList {
 				if service.CcGenericServices() {
 					continue
 				}

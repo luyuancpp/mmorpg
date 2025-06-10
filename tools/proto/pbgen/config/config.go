@@ -140,7 +140,7 @@ const (
 
 // ----------- 代码相关字符串常量 -----------
 const (
-	GoogleMethodController   = "::google::protobuf::RpcController* controller,"
+	GoogleMethodController   = "::google::protobuf::RpcController* controller, "
 	PlayerMethodController   = "entt::entity player,"
 	IncludeEndLine           = "\"\n"
 	IncludeBegin             = "#include \""

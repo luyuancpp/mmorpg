@@ -7,7 +7,7 @@ class SceneSceneHandler : public ::SceneScene
 public:
 
 
-	void Test(::google::protobuf::RpcController* controller,
+	void Test(::google::protobuf::RpcController* controller, 
 		const ::GameSceneTest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done) override;

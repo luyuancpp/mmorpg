@@ -1,4 +1,4 @@
-﻿
+
 #include "centre_service_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -74,7 +74,7 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 ///<<< END WRITING YOUR CODE
 
 
-void CentreHandler::GatePlayerService(::google::protobuf::RpcController* controller,const ::GateClientMessageRequest* request,
+void CentreHandler::GatePlayerService(::google::protobuf::RpcController* controller, const ::GateClientMessageRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
@@ -86,7 +86,7 @@ void CentreHandler::GatePlayerService(::google::protobuf::RpcController* control
 
 
 
-void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* controller,const ::GateSessionDisconnectRequest* request,
+void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* controller, const ::GateSessionDisconnectRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
@@ -161,7 +161,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 
 
 
-void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* controller,const ::CentreLoginRequest* request,
+void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* controller, const ::CentreLoginRequest* request,
 	::CentreLoginResponse* response,
 	::google::protobuf::Closure* done)
 {
@@ -184,7 +184,7 @@ void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* con
 
 
 
-void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* controller,const ::CentrePlayerGameNodeEntryRequest* request,
+void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* controller, const ::CentrePlayerGameNodeEntryRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
@@ -269,7 +269,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 
 
 
-void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* controller,const ::LoginNodeLeaveGameRequest* request,
+void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* controller, const ::LoginNodeLeaveGameRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
@@ -284,7 +284,7 @@ void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* contro
 
 
 
-void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller,const ::GateSessionDisconnectRequest* request,
+void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller, const ::GateSessionDisconnectRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
@@ -300,7 +300,7 @@ void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController
 
 
 
-void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
+void CentreHandler::PlayerService(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
 	::NodeRouteMessageResponse* response,
 	::google::protobuf::Closure* done)
 {
@@ -419,7 +419,7 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 
 
 
-void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,const ::EnterGameNodeSuccessRequest* request,
+void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller, const ::EnterGameNodeSuccessRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
@@ -457,7 +457,7 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 
 
 
-void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,const ::RouteMessageRequest* request,
+void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
 	::RouteMessageResponse* response,
 	::google::protobuf::Closure* done)
 {
@@ -603,7 +603,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 
 
 
-void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
+void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
 	::RoutePlayerMessageResponse* response,
 	::google::protobuf::Closure* done)
 {
@@ -615,7 +615,7 @@ void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* cont
 
 
 
-void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,const ::InitSceneNodeRequest* request,
+void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller, const ::InitSceneNodeRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
@@ -658,7 +658,7 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 
 
 
-void CentreHandler::RegisterNodeSession(::google::protobuf::RpcController* controller,const ::RegisterNodeSessionRequest* request,
+void CentreHandler::RegisterNodeSession(::google::protobuf::RpcController* controller, const ::RegisterNodeSessionRequest* request,
 	::RegisterNodeSessionResponse* response,
 	::google::protobuf::Closure* done)
 {

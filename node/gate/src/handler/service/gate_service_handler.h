@@ -7,49 +7,49 @@ class GateHandler : public ::Gate
 public:
 
 
-	void PlayerEnterGameNode(::google::protobuf::RpcController* controller,
+	void PlayerEnterGameNode(::google::protobuf::RpcController* controller, 
 		const ::RegisterGameNodeSessionRequest* request,
 		::RegisterGameNodeSessionResponse* response,
 		::google::protobuf::Closure* done) override;
 
 
 
-	void SendMessageToPlayer(::google::protobuf::RpcController* controller,
+	void SendMessageToPlayer(::google::protobuf::RpcController* controller, 
 		const ::NodeRouteMessageRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done) override;
 
 
 
-	void KickSessionByCentre(::google::protobuf::RpcController* controller,
+	void KickSessionByCentre(::google::protobuf::RpcController* controller, 
 		const ::KickSessionRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done) override;
 
 
 
-	void RouteNodeMessage(::google::protobuf::RpcController* controller,
+	void RouteNodeMessage(::google::protobuf::RpcController* controller, 
 		const ::RouteMessageRequest* request,
 		::RouteMessageResponse* response,
 		::google::protobuf::Closure* done) override;
 
 
 
-	void RoutePlayerMessage(::google::protobuf::RpcController* controller,
+	void RoutePlayerMessage(::google::protobuf::RpcController* controller, 
 		const ::RoutePlayerMessageRequest* request,
 		::RoutePlayerMessageResponse* response,
 		::google::protobuf::Closure* done) override;
 
 
 
-	void BroadcastToPlayers(::google::protobuf::RpcController* controller,
+	void BroadcastToPlayers(::google::protobuf::RpcController* controller, 
 		const ::BroadcastToPlayersRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done) override;
 
 
 
-	void RegisterNodeSession(::google::protobuf::RpcController* controller,
+	void RegisterNodeSession(::google::protobuf::RpcController* controller, 
 		const ::RegisterNodeSessionRequest* request,
 		::RegisterNodeSessionResponse* response,
 		::google::protobuf::Closure* done) override;

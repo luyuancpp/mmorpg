@@ -61,12 +61,10 @@ std::optional<entt::entity> FindNodeForSession(uint64_t sessionId, uint32_t node
 void RpcClientSessionHandler::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
     // todo如果我没登录就发送其他协议到controller game server 怎么办
-    if (conn->connected())
-    {
+    if (conn->connected()){
         HandleConnectionEstablished(conn);
     }
-    else
-    {
+    else{
         HandleConnectionDisconnection(conn);
     }
 }
@@ -162,7 +160,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     // 通知中心服务器
     GateSessionDisconnectRequest request;
     request.mutable_session_info()->set_session_id(sessionId);
-    gGateNode->GetZoneCentreNode().CallRemoteMethod(CentreGateSessionDisconnectMessageId, request);
+	gGateNode->CallRemoteMethodZoneCenter(CentreGateSessionDisconnectMessageId, request);
 
     // 删除会话
     tls_gate.sessions().erase(sessionId);

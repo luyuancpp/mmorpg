@@ -30,15 +30,15 @@ type ServiceData struct {
 func GoRobotHandlerGenerator() {
 	// Track the handlers that should exist based on the current service mappings
 
-	for _, v := range ServiceMethodMap {
+	for _, service := range GlobalRPCServiceList {
 		util.Wg.Add(1)
-		go func() {
+		go func(methods RPCMethods) {
 			defer util.Wg.Done()
-			if !isClientMethodRepliedHandler(&v) {
+			if !isClientMethodRepliedHandler(&methods) {
 				return
 			}
 
-			for _, method := range v {
+			for _, method := range methods {
 				serviceName := method.Service()
 
 				if !isRelevantService(method) {
@@ -69,7 +69,7 @@ func GoRobotHandlerGenerator() {
 
 				fmt.Printf("Generated %s for service %s\n", filePath, fileName)
 			}
-		}()
+		}(service.MethodInfo)
 
 	}
 }

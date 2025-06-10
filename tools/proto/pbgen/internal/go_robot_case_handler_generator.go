@@ -81,16 +81,11 @@ func isClientMethodRepliedHandler(methodList *RPCMethods) bool {
 
 func GoRobotTotalHandlerGenerator() {
 	handlerCases := make([]HandlerCase, 0)
-	ServiceList := GetSortServiceList()
-	for _, key := range ServiceList {
-		serviceMethods, ok := ServiceMethodMap[key]
-		if !ok {
+	for _, service := range GlobalRPCServiceList {
+		if !isClientMethodRepliedHandler(&service.MethodInfo) {
 			continue
 		}
-		if !isClientMethodRepliedHandler(&serviceMethods) {
-			continue
-		}
-		for _, method := range serviceMethods {
+		for _, method := range service.MethodInfo {
 			if !isRelevantService(method) {
 				continue
 			}
