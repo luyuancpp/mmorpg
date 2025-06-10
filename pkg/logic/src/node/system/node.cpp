@@ -308,6 +308,16 @@ uint32_t Node::GetPort() {
 	return GetNodeInfo().endpoint().port();
 }
 
+void Node::CallRemoteMethodZoneCenter(uint32_t message_id, const ::google::protobuf::Message& request)
+{
+	if (nullptr == GetZoneCentreNode())
+	{
+		return;
+	}
+	
+	GetZoneCentreNode()->CallRemoteMethod(message_id, request);
+}
+
 void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	LOG_INFO << "Add service node type " << nodeType << " JSON: " << nodeJson;
 
@@ -360,11 +370,11 @@ bool Node::IsNodeRegistered(uint32_t nodeType, const NodeInfo& node) const {
 	return false;
 }
 
-inline bool IsTcpNodeType(int nodeType) {
+inline bool IsTcpNodeType(uint32_t nodeType) {
 	static const std::unordered_set<int> validTypes = {
 		CentreNodeService,
 		SceneNodeService,
-		GateNodeService
+		GateNodeService,
 	};
 	return validTypes.contains(nodeType);
 }
@@ -381,24 +391,35 @@ void Node::HandleServiceNodeStart(const std::string& key, const std::string& val
 
 void Node::HandleServiceNodeStop(const std::string& key, const std::string& value) {
 	LOG_DEBUG << "Service node stop, key: " << key << ", value: " << value;
-	const auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key);
+
+	std::regex pattern(R"(.*?/zone/(\d+)/node_type/(\d+)/node_id/(\d+))");
+	std::smatch match;
+	if (!std::regex_match(key, match, pattern)) {
+		LOG_ERROR << "Key format invalid: " << key;
+		return;
+	}
+
+
+	uint32_t zoneId = std::stoul(match[1]);
+	uint32_t nodeType = std::stoul(match[2]);
+	uint32_t nodeId = std::stoul(match[3]);
+
 	if (!eNodeType_IsValid(nodeType)) {
 		LOG_TRACE << "Unknown service type for key: " << key;
 		return;
 	}
 
-	std::regex pattern(R"(.*?/node_type/(\d+)/node_id/(\d+))");
-	std::smatch match;
-	if (!std::regex_match(key, match, pattern)) return;
-
-	uint32_t nodeId = std::stoul(match[2]);
 	if (nodeId > std::numeric_limits<uint32_t>::max()) {
 		LOG_ERROR << "NodeId exceeds uint32_t.";
 		return;
 	}
 
+	LOG_INFO << "Parsed zoneId=" << zoneId << ", nodeType=" << nodeType << ", nodeId=" << nodeId;
+
+	// 下面是你的节点处理代码
 	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
+
 	for (auto it = nodeList.begin(); it != nodeList.end(); ) {
 		if (it->node_type() == nodeType && it->node_id() == nodeId) {
 			LOG_INFO << "Remove node lease_id: " << it->lease_id();
@@ -411,6 +432,11 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 	}
 
 	tls.GetConsistentNode(nodeType).remove(nodeId);
+
+	if (nodeType == CentreNodeService &&
+		zoneId == tlsCommonLogic.GetGameConfig().zone_id()) {
+		zoneCentreNode = nullptr;
+	}
 
 	entt::registry& registry = tls.GetNodeRegistry(nodeType);
 	Destroy(registry, entt::entity{ nodeId });

@@ -30,10 +30,12 @@ public:
     virtual std::string GetServiceName(uint32_t nodeType) const;
     virtual ::google::protobuf::Service* GetNodeReplyService() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return logSystem; }
-    [[nodiscard]] RpcClient& GetZoneCentreNode() { return *zoneCentreNode; }
+    [[nodiscard]] RpcClient* GetZoneCentreNode() { return zoneCentreNode; }
     std::string FormatIpAndPort();
     std::string GetIp();
     uint32_t GetPort();
+
+    void CallRemoteMethodZoneCenter(uint32_t message_id, const ::google::protobuf::Message& request);
 
     // 节点注册与服务处理
     void HandleServiceNodeStart(const std::string& key, const std::string& value);

@@ -856,21 +856,14 @@ void InitServiceHandler()
 
 	defer util.Wg.Done()
 
-	ServiceList := GetSortServiceList()
-
 	var includes []string
 	var initLines []string
 
-	for _, key := range ServiceList {
-		methods, ok := ServiceMethodMap[key]
-		if !ok {
+	for _, service := range GlobalRPCServiceList {
+		if !cb(&service.MethodInfo) {
 			continue
 		}
-		if !cb(&methods) {
-			continue
-		}
-
-		first := methods[0]
+		first := service.MethodInfo[0]
 		includes = append(includes, first.CppHandlerIncludeName())
 		initLines = append(initLines, fmt.Sprintf("%sgNodeService.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());",
 			config.Tab, first.Service(), first.Service(), config.HandlerFileName))
@@ -911,17 +904,13 @@ void InitRepliedHandler()
 
 	defer util.Wg.Done()
 
-	ServiceList := GetSortServiceList()
-
 	var initFuncList []string
 
-	for _, key := range ServiceList {
-		methods, ok := ServiceMethodMap[key]
-		if !ok || !cb(&methods) {
+	for _, service := range GlobalRPCServiceList {
+		if !cb(&service.MethodInfo) {
 			continue
 		}
-
-		first := methods[0]
+		first := service.MethodInfo[0]
 		initFuncList = append(initFuncList, "Init"+first.Service()+config.RepliedHandlerFileName)
 	}
 
@@ -955,7 +944,7 @@ func GenerateServiceConstants() {
 			}
 
 			sort.Slice(serviceInfo, func(i, j int) bool {
-				return serviceInfo[i].FileServiceIndex < serviceInfo[j].FileServiceIndex
+				return serviceInfo[i].ServiceIndex < serviceInfo[j].ServiceIndex
 			})
 
 			writeServiceIdHeadFile(serviceInfo)
@@ -967,8 +956,8 @@ func GenerateServiceConstants() {
 }
 
 func WriteMethodFile() {
-	for _, v := range ServiceMethodMap {
-		ProcessAllHandlers(v)
+	for _, service := range GlobalRPCServiceList {
+		ProcessAllHandlers(service.MethodInfo)
 	}
 
 	// Concurrent operations for game, centre, and gate registers

@@ -1,12 +1,12 @@
 
 void InitRepliedHandler()
 {
-    void InitCentreRepliedHandler();
-    InitCentreRepliedHandler();
     void InitCentreSceneRepliedHandler();
     InitCentreSceneRepliedHandler();
-    void InitSceneRepliedHandler();
-    InitSceneRepliedHandler();
+    void InitCentreRepliedHandler();
+    InitCentreRepliedHandler();
     void InitSceneSceneRepliedHandler();
     InitSceneSceneRepliedHandler();
+    void InitSceneRepliedHandler();
+    InitSceneRepliedHandler();
 }

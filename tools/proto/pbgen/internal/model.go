@@ -31,22 +31,34 @@ type RPCServiceInfo struct {
 	MethodInfo             RPCMethods
 	Fd                     *descriptorpb.FileDescriptorProto
 	ServiceDescriptorProto *descriptorpb.ServiceDescriptorProto
-	FileServiceIndex       uint32
+	ServiceIndex           uint32
 }
 
-var FileServiceMap sync.Map
+// RPCServiceInfoList 是用于排序的类型
+type RPCServiceInfoList []*RPCServiceInfo
 
-// RpcServiceMap 存储RPC服务映射
-var RpcServiceMap sync.Map
+func (s RPCServiceInfoList) Len() int {
+	return len(s)
+}
+
+func (s RPCServiceInfoList) Less(i, j int) bool {
+	// 升序排序：ServiceIndex 小的在前
+	return s[i].ServiceIndex < s[j].ServiceIndex
+}
+
+func (s RPCServiceInfoList) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+var GlobalRPCServiceList RPCServiceInfoList
+
+var FileServiceMap sync.Map
 
 // RpcIdMethodMap 存储RPC方法ID映射
 var RpcIdMethodMap = map[uint64]*MethodInfo{}
 
 // ServiceIdMap 存储服务ID映射
 var ServiceIdMap = map[string]uint64{}
-
-// ServiceMethodMap 存储服务方法映射
-var ServiceMethodMap = map[string]RPCMethods{}
 
 // MaxMessageId 存储最大消息ID
 var MaxMessageId = uint64(0)
@@ -73,6 +85,10 @@ func (info *RPCServiceInfo) FileName() string {
 
 func (info *RPCServiceInfo) Path() string {
 	return strings.Replace(filepath.Dir(*info.Fd.Name), "\\", "/", -1) + "/"
+}
+
+func (info *RPCServiceInfo) GetServiceName() string {
+	return info.ServiceDescriptorProto.GetName()
 }
 
 func (info *RPCServiceInfo) BasePathForCpp() string {
