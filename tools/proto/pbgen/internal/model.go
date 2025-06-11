@@ -34,6 +34,8 @@ type RPCServiceInfo struct {
 	ServiceIndex           uint32
 }
 
+var FdSet = &descriptorpb.FileDescriptorSet{}
+
 // RPCServiceInfoList 是用于排序的类型
 type RPCServiceInfoList []*RPCServiceInfo
 

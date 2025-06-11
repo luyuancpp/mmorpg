@@ -120,15 +120,10 @@ public:
 func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
 
 	const methodTemplate = `
-{{.Tab}}void {{.Method}}({{.GoogleMethodController}}
-{{.Tab2}}const {{.CppRequest}}* request,
-{{.Tab2}}{{.CppResponse}}* response,
-{{.Tab2}}::google::protobuf::Closure* done) override;
+	void {{.Method}}({{.GoogleMethodController}} const {{.CppRequest}}* request, {{.CppResponse}}* response, ::google::protobuf::Closure* done) override;
 `
 
 	type MethodData struct {
-		Tab                    string
-		Tab2                   string
 		Method                 string
 		GoogleMethodController string
 		CppRequest             string
@@ -136,8 +131,6 @@ func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
 	}
 	// 填充模板所需的数据
 	data := MethodData{
-		Tab:                    config.Tab,
-		Tab2:                   config.Tab2,
 		Method:                 method.Method(),
 		GoogleMethodController: config.GoogleMethodController,
 		CppRequest:             method.CppRequest(),
@@ -577,8 +570,8 @@ func getServiceHandlerCppStr(dst string, methods RPCMethods, className string, i
 {{- range .Methods }}
 {{ if .HasCode }}
 void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* request,
-{{ $.Tab }}{{ .CppResponse }}* response,
-{{ $.Tab }}::google::protobuf::Closure* done)
+	{{ .CppResponse }}* response,
+	::google::protobuf::Closure* done)
 {
 {{ .Code }}
 }
@@ -602,7 +595,6 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 		GoogleMethodController string
 		FirstCode              string
 		YourCodePair           string
-		Tab                    string
 		Methods                []HandlerMethod
 	}
 
@@ -636,7 +628,6 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 		GoogleMethodController: config.GoogleMethodController,
 		FirstCode:              firstCode,
 		YourCodePair:           config.YourCodePair,
-		Tab:                    config.Tab,
 		Methods:                methodList,
 	}
 
@@ -761,7 +752,7 @@ func getPlayerServiceHandlerCppStr(dst string, methods RPCMethods, className str
 {{- range .Methods }}
 
 void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* request,
-{{ $.Tab }}{{ .CppResponse }}* response)
+	{{ .CppResponse }}* response)
 {
 {{- if .HasCode }}
 {{ .Code }}
@@ -784,7 +775,6 @@ void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* re
 		IncludeName            string
 		FirstCode              string
 		PlayerMethodController string
-		Tab                    string
 		YourCodePair           string
 		Methods                []PlayerHandlerMethod
 	}
@@ -812,7 +802,6 @@ void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* re
 		IncludeName:            includeName,
 		FirstCode:              firstCode,
 		PlayerMethodController: config.PlayerMethodController,
-		Tab:                    config.Tab,
 		YourCodePair:           config.YourCodePair,
 		Methods:                methodList,
 	}
@@ -865,8 +854,8 @@ void InitServiceHandler()
 		}
 		first := service.MethodInfo[0]
 		includes = append(includes, first.CppHandlerIncludeName())
-		initLines = append(initLines, fmt.Sprintf("%sgNodeService.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());",
-			config.Tab, first.Service(), first.Service(), config.HandlerFileName))
+		initLines = append(initLines, fmt.Sprintf(" gNodeService.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());",
+			first.Service(), first.Service(), config.HandlerFileName))
 	}
 
 	templateData := RegisterFileData{
