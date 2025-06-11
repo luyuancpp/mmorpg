@@ -58,11 +58,11 @@ func BuildProto(protoPath string) error {
 			continue
 		}
 
-		if err := CopyFileIfChanged(dstFileCppName, tempCppFileName); err != nil {
+		if err := CopyFileIfChanged(tempCppFileName, dstFileCppName); err != nil {
 			log.Println("copy .cc failed:", err)
 			continue
 		}
-		if err := CopyFileIfChanged(dstFileHeadName, tempHeadFileName); err != nil {
+		if err := CopyFileIfChanged(tempHeadFileName, dstFileHeadName); err != nil {
 			log.Println("copy .h failed:", err)
 			continue
 		}

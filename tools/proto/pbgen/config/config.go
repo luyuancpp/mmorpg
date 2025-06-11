@@ -54,11 +54,13 @@ const (
 	GateNodeDirectory              = "node/gate/"
 	RobotDirectory                 = "robot/"
 	PbcProtoDirectory              = "pkg/pbc/src/"
-	ServiceIdFilePath              = ProtoDir + "serviceid.txt"
-	HandlerSourceDirectory         = "src/handler/service/"
-	RepliedHandlerSourceDirectory  = "src/handler/service_replied/"
-	EventHandlerSourceDirectory    = "src/handler/event/"
-	PbcLuaDirectory                = PbcOutputDirectory + "lua/"
+	CommonSrcDirectory             = "pkg/common/src/"
+
+	ServiceIdFilePath             = ProtoDir + "serviceid.txt"
+	HandlerSourceDirectory        = "src/handler/service/"
+	RepliedHandlerSourceDirectory = "src/handler/service_replied/"
+	EventHandlerSourceDirectory   = "src/handler/event/"
+	PbcLuaDirectory               = PbcOutputDirectory + "lua/"
 )
 
 // ----------- 方法处理目录 -----------
@@ -125,8 +127,8 @@ const (
 
 	GeneratorDirectory     = "generator/"
 	UtilGeneratorDirectory = GeneratorDirectory + "util/"
-	GenUtilFileCppPath     = ProjectDir + PbcProtoDirectory + UtilGeneratorDirectory + "gen_util.cpp"
-	GenUtilFileHeadPath    = ProjectDir + PbcProtoDirectory + UtilGeneratorDirectory + "gen_util.h"
+	GenUtilFileCppPath     = ProjectDir + CommonSrcDirectory + UtilGeneratorDirectory + "gen_util.cpp"
+	GenUtilFileHeadPath    = ProjectDir + CommonSrcDirectory + UtilGeneratorDirectory + "gen_util.h"
 )
 
 // ----------- 文件名 -----------
@@ -202,7 +204,6 @@ var (
 )
 
 // ----------- 其他业务相关常量 -----------
-// ----------- 其他业务相关常量 -----------
 const (
 	LoginPrefixName                 = "login"
 	DeployPrefixName                = "deploy"
@@ -212,7 +213,6 @@ const (
 	CentrePrefixName                = "centre"
 	CentrePlayerPrefixName          = "centre_player"
 	ClientPrefixName                = "Client" //
-	NodePrefixName                  = "node"   //
 	TypePlayer                      = "player"
 	DisplayPlayer                   = "Player"
 	ServiceIncludeName              = "service/"
@@ -222,6 +222,8 @@ const (
 	ClientLuaProjectRelative        = "script/lua/service/"
 	GatePrefixName                  = "gate"
 	ClassNameSuffix                 = "Handler"
+	NodeEnumName                    = "eNodeType"
+	NodeServiceSuffix               = "nodeservice"
 )
 
 // ----------- 事件处理目录 -----------
@@ -243,3 +245,9 @@ var GrpcServices = map[string]bool{
 	"chat":  true,
 	"etcd":  true,
 }
+
+const (
+	TcpNode  = 0
+	GrpcNode = 1
+	HttpNode = 2
+)

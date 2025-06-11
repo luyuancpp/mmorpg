@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="src\config_expression\config_expression.h" />
     <ClInclude Include="src\config_loader\config.h" />
+    <ClInclude Include="src\generator\util\gen_util.h" />
     <ClInclude Include="src\global_data\async_log_file.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\network\codec\codec.h" />
@@ -57,6 +58,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\config_loader\config.cpp" />
+    <ClCompile Include="src\generator\util\gen_util.cpp" />
     <ClCompile Include="src\global_data\async_log_file.cpp" />
     <ClCompile Include="src\network\codec\codec.cc" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
