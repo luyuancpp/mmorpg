@@ -77,12 +77,12 @@ std::string Node::GetServiceName(uint32_t type) const {
 
 void Node::Initialize() {
 	LOG_TRACE << "Node initializing...";
+    SetupTimeZone();
 	RegisterHandlers();
 	RegisterEventHandlers();
 	LoadConfigs();
 	InitRpcServer();
 	InitLogSystem();
-	SetupTimeZone();
 	LoadAllConfigData();
 	InitGrpcClients();
 	RequestEtcdLease();
@@ -741,21 +741,35 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 }
 
 void Node::AcquireNode() {
-	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[GetNodeType()];
-	auto& protoList = *nodeList.mutable_node_list();
-	uint32_t maxNodeId = 0;
-	UInt32Set usedIds;
-	for (const auto& node : protoList) {
-		maxNodeId = std::max(maxNodeId, node.node_id());
-		usedIds.insert(node.node_id());
-	}
+    auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[GetNodeType()];
+    auto& existingNodes = *nodeList.mutable_node_list();
 
-	GetNodeInfo().set_node_id(maxNodeId);
+    UInt32Set allocatedIds;
+    uint32_t highestUsedId = 0;
 
-	constexpr uint32_t kPortRangePerNodeType = 10000;
-	GetNodeInfo().mutable_endpoint()->set_port(GetNodeType() * kPortRangePerNodeType + maxNodeId);
+    for (const auto& node : existingNodes) {
+        allocatedIds.insert(node.node_id());
+        highestUsedId = std::max(highestUsedId, node.node_id());
+    }
 
-	RegisterNodeService();
+    constexpr uint32_t kRandomOffset = 5;
+    const uint32_t searchUpperBound = highestUsedId + tlsCommonLogic.GetRng().Rand<uint32_t>(0, kRandomOffset);
+
+    uint32_t selectedNodeId = highestUsedId;
+    for (uint32_t id = 0; id < searchUpperBound; ++id) {
+        if (!allocatedIds.contains(id)) {
+            selectedNodeId = id;
+            break;
+        }
+    }
+
+    GetNodeInfo().set_node_id(selectedNodeId);
+
+    constexpr uint32_t kPortStepPerNodeType = 10000;
+    uint32_t assignedPort = GetNodeType() * kPortStepPerNodeType + selectedNodeId;
+    GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
+
+    RegisterNodeService();
 }
 
 void Node::KeepNodeAlive() {
@@ -767,7 +781,7 @@ void Node::KeepNodeAlive() {
 }
 
 void Node::StartServiceHealthMonitor(){
-	serviceHealthMonitorTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().keep_alive_interval(), [this]() {
+	serviceHealthMonitorTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().health_check_interval(), [this]() {
 		if (nullptr != FindNodeInfo(GetNodeInfo().node_type(), GetNodeInfo().node_id())){
 			return;
 		}
