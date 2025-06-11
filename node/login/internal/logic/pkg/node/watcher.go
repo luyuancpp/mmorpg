@@ -2,7 +2,6 @@ package node
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -11,6 +10,7 @@ import (
 	"go.etcd.io/etcd/client/v3/namespace"
 	"log"
 	"login/pb/game"
+	"strings"
 	"sync"
 	"time"
 )
@@ -44,30 +44,42 @@ func NewNodeWatcher(client *clientv3.Client, prefix string) *NodeWatcher {
 func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 	events := make(chan NodeEvent)
 
-	// 使用命名空间客户端限定在前缀范围内
-	watch := namespace.NewWatcher(nw.client, nw.prefix)
-
 	go func(prefix string) {
 		defer close(events)
-		rch := watch.Watch(ctx, prefix, clientv3.WithPrefix())
+
+		// 直接用 etcd client 的 Watch 方法
+		rch := nw.client.Watch(ctx, prefix, clientv3.WithPrefix(), clientv3.WithPrevKV())
 
 		for wresp := range rch {
 			for _, ev := range wresp.Events {
 				key := string(ev.Kv.Key)
 				var info game.NodeInfo
-				if err := json.Unmarshal(ev.Kv.Value, &info); err != nil {
-					log.Printf("Invalid NodeInfo JSON for key=%s: %v", key, err)
+				var data []byte
+
+				switch ev.Type {
+				case clientv3.EventTypePut:
+					data = ev.Kv.Value
+				case clientv3.EventTypeDelete:
+					data = ev.PrevKv.Value
+				}
+
+				if len(data) == 0 {
+					logx.Debugf("Empty data for key=%s, event=%s", key, ev.Type)
 					continue
 				}
 
-				// 打印日志，输出事件的相关信息
-				log.Printf("Event Type: %s, Key: %s, NodeInfo: %v", ev.Type, key, info)
+				unmarshaler := jsonpb.Unmarshaler{}
+				if err := unmarshaler.Unmarshal(strings.NewReader(string(data)), &info); err != nil {
+					logx.Infof("Invalid protobuf JSON for key=%s: %v", key, err)
+					continue
+				}
+
+				logx.Infof("Event Type: %s, Key: %s, NodeInfo: %+v", ev.Type, key, info)
 
 				switch ev.Type {
 				case clientv3.EventTypePut:
 					events <- NodeEvent{Type: NodeAdded, Info: &info}
 				case clientv3.EventTypeDelete:
-
 					events <- NodeEvent{Type: NodeRemoved, Info: &info}
 				}
 			}
