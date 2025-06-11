@@ -8,46 +8,56 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 	YAML::Node root = YAML::LoadFile(filename);
 
 	// 解析 Etcd 配置
-	for (const auto& host : root["Etcd"]["Hosts"]) {
-		baseConfig.add_etcd_hosts(host.as<std::string>());
+	if (root["Etcd"]["Hosts"]) {
+		for (const auto& host : root["Etcd"]["Hosts"]) {
+			baseConfig.add_etcd_hosts(host.as<std::string>());
+		}
 	}
 
-	// 可选解析：节点续约间隔
+	// 节点续约间隔
 	if (root["Etcd"]["KeepaliveInterval"]) {
-		baseConfig.set_lease_renew_interval(root["Etcd"]["KeepaliveInterval"].as<uint32_t>());
+		baseConfig.set_keep_alive_interval(root["Etcd"]["KeepaliveInterval"].as<uint32_t>());
 	}
 
-	// 解析日志级别配置 (uint32 类型)
+	// 日志级别配置 (uint32 类型)
 	if (root["LogLevel"]) {
 		baseConfig.set_log_level(root["LogLevel"].as<uint32_t>());
 	}
 
-	// 解析服务列表
-	for (const auto& service : root["services"]) {
-		auto* s = baseConfig.add_services();
-		s->set_name(service["name"].as<std::string>());
-		s->set_url(service["url"].as<std::string>());
+	// 服务列表
+	if (root["services"]) {
+		for (const auto& service : root["services"]) {
+			auto* s = baseConfig.add_services();
+			s->set_name(service["name"].as<std::string>());
+			s->set_url(service["url"].as<std::string>());
+		}
 	}
 
-	// 解析服务前缀列表
+	// 服务前缀列表
 	if (root["service_discovery_prefixes"]) {
 		for (const auto& prefix : root["service_discovery_prefixes"]) {
 			baseConfig.mutable_service_discovery_prefixes()->Add(prefix.as<std::string>());
 		}
 	}
 
-	// 解析单独的 deployservice_prefix 字段
+	// 单独的 deployservice_prefix 字段
 	if (root["deployservice_prefix"]) {
 		baseConfig.set_deployservice_prefix(root["deployservice_prefix"].as<std::string>());
 	}
 
-	// 解析节点 TTL 配置 (node_ttl_seconds)
+	// 节点 TTL 配置
 	if (root["Etcd"]["NodeTTLSeconds"]) {
 		baseConfig.set_node_ttl_seconds(root["Etcd"]["NodeTTLSeconds"].as<uint32_t>());
 	}
 
+	// 新增：健康检查间隔
+	if (root["HealthCheckInterval"]) {
+		baseConfig.set_health_check_interval(root["HealthCheckInterval"].as<uint32_t>());
+	}
+
 	return true;
 }
+
 
 // 读取游戏配置
 bool readGameConfig(const std::string& filename, GameConfig& gameConfig) {

@@ -759,7 +759,7 @@ void Node::AcquireNode() {
 }
 
 void Node::KeepNodeAlive() {
-	renewLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
+	renewLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().keep_alive_interval(), [this]() {
 		etcdserverpb::LeaseKeepAliveRequest req;
 		req.set_id(static_cast<int64_t>(GetNodeInfo().lease_id()));
 		SendLeaseLeaseKeepAlive(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), req);
@@ -767,7 +767,7 @@ void Node::KeepNodeAlive() {
 }
 
 void Node::StartServiceHealthMonitor(){
-	serviceHealthMonitorTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
+	serviceHealthMonitorTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().keep_alive_interval(), [this]() {
 		if (nullptr != FindNodeInfo(GetNodeInfo().node_type(), GetNodeInfo().node_id())){
 			return;
 		}
