@@ -429,7 +429,7 @@ bool Node::IsNodeRegistered(uint32_t nodeType, const NodeInfo& node) const {
 }
 
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
-	LOG_DEBUG << "Service node start, key: " << key << ", value: " << value;
+	LOG_TRACE << "Service node start, key: " << key << ", value: " << value;
 	if (const auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key); eNodeType_IsValid(nodeType)) {
 		AddServiceNode(value, nodeType);
 	}
@@ -495,14 +495,14 @@ void Node::InitGrpcResponseHandlers() {
 		};
 
 	etcdserverpb::AsyncKVPutHandler = [this](const ClientContext& context, const ::etcdserverpb::PutResponse& reply) {
-		LOG_DEBUG << "Put response: " << reply.DebugString();
+		LOG_TRACE << "Put response: " << reply.DebugString();
 		StartWatchingServiceNodes();
 		};
 
 	etcdserverpb::AsyncKVDeleteRangeHandler = [](const ClientContext& context, const ::etcdserverpb::DeleteRangeResponse& reply) {};
 
 	etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext& context, const ::etcdserverpb::TxnResponse& reply) {
-		LOG_DEBUG << "Txn response: " << reply.DebugString();
+		LOG_TRACE << "Txn response: " << reply.DebugString();
 		reply.succeeded() ? StartRpcServer() : AcquireNode();
 		};
 
