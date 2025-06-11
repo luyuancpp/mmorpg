@@ -788,7 +788,6 @@ NodeInfo* Node::FindNodeInfo(uint32_t nodeType, uint32_t nodeId){
 	NodeInfo nodeInfo;
 	for (auto it = nodeList.begin(); it != nodeList.end(); ++it) {
 		if (it->node_type() == nodeType && it->node_id() == nodeId) {
-			LOG_INFO << "Remove node lease_id: " << it->lease_id();
 			return &*it; 
 		}
 	}
