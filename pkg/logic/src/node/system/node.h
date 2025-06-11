@@ -59,6 +59,11 @@ protected:
     void ConnectToGrpcNode(const NodeInfo& nodeInfo);
     void ConnectToTcpNode(const NodeInfo& nodeInfo);
     void ConnectToHttpNode(const NodeInfo& nodeInfo);
+	void DisconnectFromNode(const NodeInfo& nodeInfo);
+	void DisconnectFromGrpcNode(const NodeInfo& nodeInfo);
+	void DisconnectFromTcpNode(const NodeInfo& nodeInfo);
+	void DisconnectFromHttpNode(const NodeInfo& nodeInfo);
+
     void ReleaseNodeId();
     void RegisterHandlers();
     void StopWatchingServiceNodes();
@@ -70,10 +75,13 @@ protected:
     void InitGrpcResponseHandlers();
     void InitGrpcClients();
     void TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const;
+	void TryUnRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn);
     void AcquireNode();
     static void RequestEtcdLease();
     void KeepNodeAlive();
-
+    void StartServiceHealthMonitor();
+    void RegisterNodeService();
+	NodeInfo* FindNodeInfo(uint32_t nodeType, uint32_t nodeId) ;
 
     // 事件处理
     void OnServerConnected(const OnConnected2TcpServerEvent& es);
@@ -89,6 +97,7 @@ protected:
     RpcServerPtr rpcServer;
     TimerTaskComp renewLeaseTimer;
     TimerTaskComp grpcHandlerTimer;
+    TimerTaskComp serviceHealthMonitorTimer;
     RpcClient* zoneCentreNode{nullptr};
     CanConnectNodeTypeList targetNodeTypeWhitelist;
 };

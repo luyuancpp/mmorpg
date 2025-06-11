@@ -107,22 +107,30 @@ void Node::InitRpcServer() {
 }
 
 void Node::StartRpcServer() {
-	NodeInfo& info = GetNodeInfo();
+	if (rpcServer) {
+		LOG_TRACE << "RPC server already started, skipping.";
+		return;
+	}
 
+	NodeInfo& info = GetNodeInfo();
 	InetAddress addr(info.endpoint().ip(), info.endpoint().port());
+
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, addr);
 	rpcServer->start();
 	rpcServer->registerService(GetNodeReplyService());
-	for (auto& val : gNodeService | std::views::values)
-	{
+
+	for (auto& val : gNodeService | std::views::values) {
 		rpcServer->registerService(val.get());
 	}
 
 	FetchServiceNodes();
 	StartWatchingServiceNodes();
+	StartServiceHealthMonitor();
+
 	tls.dispatcher.trigger<OnServerStart>();
 	LOG_TRACE << "RPC server started: " << GetNodeInfo().DebugString();
 }
+
 
 void Node::Shutdown() {
 	LOG_TRACE << "Node shutting down...";
@@ -218,6 +226,42 @@ void Node::ConnectToNode(const NodeInfo& info) {
 	}
 }
 
+void Node::DisconnectFromNode(const NodeInfo& info) {
+	switch (info.protocol_type()) {
+	case PROTOCOL_GRPC:
+		DisconnectFromGrpcNode(info);
+		break;
+	case PROTOCOL_TCP:
+		DisconnectFromTcpNode(info);
+		break;
+	case PROTOCOL_HTTP:
+		DisconnectFromHttpNode(info);
+		break;
+	default:
+		LOG_ERROR << "Unsupported protocol for disconnect: " << info.protocol_type()
+			<< " node: " << info.DebugString();
+		break;
+	}
+}
+
+
+void Node::DisconnectFromGrpcNode(const NodeInfo& nodeInfo){
+	entt::registry& registry = tls.GetNodeRegistry(nodeInfo.node_type());
+	//这里和muduo机制有关,连接在下一帧才会断开,这里删除的话连接不在了,底层连接没有删除
+	tls.GetConsistentNode(nodeInfo.node_id()).remove(nodeInfo.node_id());
+	Destroy(registry, entt::entity{ nodeInfo.node_id() });
+}
+
+void Node::DisconnectFromTcpNode(const NodeInfo& nodeInfo)
+{
+
+}
+
+void Node::DisconnectFromHttpNode(const NodeInfo& nodeInfo)
+{
+
+}
+
 void Node::ConnectToGrpcNode(const NodeInfo& info) {
 	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& registry = NodeSystem::GetRegistryForNodeType(info.node_type());
@@ -255,6 +299,19 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 			LOG_TRACE << "Node exists but info mismatch: " << info.node_id();
 			return;
 		}
+	}
+
+	if (registry.valid(entityId))
+	{
+		auto& client = registry.get<RpcClient>(entityId);
+		if (client.connected())
+		{
+			LOG_ERROR << "Node already connected: " << info.node_id()
+				<< ", IP: " << info.endpoint().ip()
+				<< ", Port: " << info.endpoint().port();
+			return;
+		}
+		Destroy(registry, entityId);
 	}
 
 	const auto createdId = registry.create(entityId);
@@ -391,7 +448,6 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		return;
 	}
 
-
 	uint32_t zoneId = std::stoul(match[1]);
 	uint32_t nodeType = std::stoul(match[2]);
 	uint32_t nodeId = std::stoul(match[3]);
@@ -400,21 +456,20 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		LOG_TRACE << "Unknown service type for key: " << key;
 		return;
 	}
-
 	if (nodeId > std::numeric_limits<uint32_t>::max()) {
 		LOG_ERROR << "NodeId exceeds uint32_t.";
 		return;
 	}
-
 	LOG_TRACE << "Parsed zoneId=" << zoneId << ", nodeType=" << nodeType << ", nodeId=" << nodeId;
 
 	// 下面是你的节点处理代码
 	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
-
+	NodeInfo nodeInfo;
 	for (auto it = nodeList.begin(); it != nodeList.end(); ) {
 		if (it->node_type() == nodeType && it->node_id() == nodeId) {
 			LOG_INFO << "Remove node lease_id: " << it->lease_id();
+			nodeInfo = *it; // 保存要删除的节点信息
 			it = nodeList.erase(it);
 			break;
 		}
@@ -423,16 +478,12 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		}
 	}
 
-	tls.GetConsistentNode(nodeType).remove(nodeId);
-
-	if (nodeType == CentreNodeService &&
-		zoneId == tlsCommonLogic.GetGameConfig().zone_id()) {
-		zoneCentreNode = nullptr;
+	if (nodeInfo.lease_id() <= 0) {
+		LOG_ERROR << "Node not found for key: " << key;
+		return;
 	}
 
-	entt::registry& registry = tls.GetNodeRegistry(nodeType);
-	Destroy(registry, entt::entity{ nodeId });
-
+	DisconnectFromNode(nodeInfo);
 	LOG_INFO << "Service node stopped, id: " << nodeId;
 }
 
@@ -480,9 +531,19 @@ void Node::InitGrpcResponseHandlers() {
 		};
 
 	etcdserverpb::AsyncLeaseLeaseGrantHandler = [this](const ClientContext& context, const ::etcdserverpb::LeaseGrantResponse& reply) {
-		GetNodeInfo().set_lease_id(reply.id());
-		KeepNodeAlive();
-		AcquireNode();
+		// 如果原来没有租约，说明是第一次获取，需要初始化节点信息
+		if (GetNodeInfo().lease_id() <= 0) {
+			GetNodeInfo().set_lease_id(reply.id());
+			KeepNodeAlive();
+			AcquireNode();  // 获取节点ID或其他信息
+		}
+		else {
+			// 租约过期后重新获取，需要重新注册服务节点
+			GetNodeInfo().set_lease_id(reply.id());
+			KeepNodeAlive();
+			RegisterNodeService();
+		}
+
 		LOG_INFO << "Lease granted: " << reply.DebugString();
 		};
 
@@ -508,6 +569,11 @@ void Node::OnServerConnected(const OnConnected2TcpServerEvent& event) {
 	auto& conn = event.conn_;
 	if (!conn->connected()) {
 		LOG_INFO << "Client disconnected: " << conn->peerAddress().toIpPort();
+
+		for (uint32_t i = 0; i < eNodeType_ARRAYSIZE; ++i)
+		{
+			TryUnRegisterNodeSession(i, conn);
+		}
 		return;
 	}
 	LOG_INFO << "Connected to server: " << conn->peerAddress().toIpPort();
@@ -538,6 +604,27 @@ void Node::TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnec
 			req.mutable_endpoint()->set_port(conn->localAddress().port());
 			client.CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
 			});
+		return;
+	}
+}
+
+void Node::TryUnRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn)  {
+	entt::registry& registry = tls.GetNodeRegistry(nodeType);
+	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
+		if (!IsSameAddress(client.peer_addr(), conn->peerAddress())) continue;
+		LOG_INFO << "Peer address match in " << NodeSystem::GetRegistryName(registry)
+			<< ": " << conn->peerAddress().toIpPort();
+
+		tls.GetConsistentNode(nodeInfo.node_type()).remove(nodeInfo.node_id());
+
+		if (nodeType == CentreNodeService &&
+			nodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
+			zoneCentreNode = nullptr;
+		}
+
+		entt::registry& registry = tls.GetNodeRegistry(nodeType);
+		//这里和muduo机制有关,连接在下一帧才会断开,这里删除的话连接不在了,底层连接没有删除
+		Destroy(registry, entt::entity{ nodeInfo.node_id() });
 		return;
 	}
 }
@@ -662,24 +749,13 @@ void Node::AcquireNode() {
 		maxNodeId = std::max(maxNodeId, node.node_id());
 		usedIds.insert(node.node_id());
 	}
-	constexpr uint32_t randomOffset = 5;
-	uint32_t searchLimit = maxNodeId + tlsCommonLogic.GetRng().Rand<uint32_t>(0, randomOffset);
-	uint32_t assignedId = 0;
-	for (uint32_t id = 0; id < searchLimit; ++id) {
-		if (!usedIds.contains(id)) {
-			assignedId = id;
-			break;
-		}
-	}
 
-	auto& info = GetNodeInfo();
-	GetNodeInfo().set_node_id(assignedId);
+	GetNodeInfo().set_node_id(maxNodeId);
 
 	constexpr uint32_t kPortRangePerNodeType = 10000;
-	info.mutable_endpoint()->set_port(GetNodeType() * kPortRangePerNodeType + assignedId);
+	GetNodeInfo().mutable_endpoint()->set_port(GetNodeType() * kPortRangePerNodeType + maxNodeId);
 
-	const auto serviceKey = MakeEtcdKey(info);
-	EtcdHelper::PutIfAbsent(serviceKey, info);
+	RegisterNodeService();
 }
 
 void Node::KeepNodeAlive() {
@@ -688,6 +764,36 @@ void Node::KeepNodeAlive() {
 		req.set_id(static_cast<int64_t>(GetNodeInfo().lease_id()));
 		SendLeaseLeaseKeepAlive(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), req);
 		});
+}
+
+void Node::StartServiceHealthMonitor(){
+	serviceHealthMonitorTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().lease_renew_interval(), [this]() {
+		if (nullptr != FindNodeInfo(GetNodeInfo().node_type(), GetNodeInfo().node_id())){
+			return;
+		}
+		//如果没有找到节点信息，说明可能是节点掉线了，重写获取租约
+		RequestEtcdLease();
+		}
+	);
+}
+
+void Node::RegisterNodeService(){
+	const auto serviceKey = MakeEtcdKey(GetNodeInfo());
+	EtcdHelper::PutIfAbsent(serviceKey, GetNodeInfo());
+}
+
+NodeInfo* Node::FindNodeInfo(uint32_t nodeType, uint32_t nodeId){
+	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
+	NodeInfo nodeInfo;
+	for (auto it = nodeList.begin(); it != nodeList.end(); ++it) {
+		if (it->node_type() == nodeType && it->node_id() == nodeId) {
+			LOG_INFO << "Remove node lease_id: " << it->lease_id();
+			return &*it; 
+		}
+	}
+
+	return nullptr;
 }
 
 void Node::RequestEtcdLease() {
