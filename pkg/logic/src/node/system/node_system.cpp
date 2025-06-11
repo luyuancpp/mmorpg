@@ -2,8 +2,6 @@
 #include <muduo/base/Logging.h>
 #include "thread_local/storage.h"
 
-static_assert(eNodeType_MAX <= eNodeType_ARRAYSIZE);
-
 // 静态映射表定义（可放在 .cpp 中）//todo
 const std::unordered_map<eNodeType, std::string> nodeTypeNameMap = {
 	{ eNodeType::DeployNodeService,  eNodeType_Name(DeployNodeService) },

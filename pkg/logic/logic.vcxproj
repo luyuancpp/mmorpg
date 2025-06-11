@@ -166,6 +166,7 @@
     <ClCompile Include="src\time\comp\duration_funtion.cpp" />
     <ClCompile Include="src\time\comp\duration_manager.cpp" />
     <ClCompile Include="src\time\comp\timer_duration.cpp" />
+    <ClCompile Include="src\time\comp\timer_task_boost_comp.cpp" />
     <ClCompile Include="src\time\comp\timer_task_comp.cpp" />
     <ClCompile Include="src\log\system\console_log_system.cpp" />
     <ClCompile Include="src\game_common_logic\system\session_system.cpp" />

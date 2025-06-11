@@ -212,9 +212,7 @@ void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& req
     LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 }
 
-
-void HandleLoginNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn)
-{
+void HandleLoginNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn){
     auto loginNode = FindNodeForSession(sessionId, eNodeType::LoginNodeService);
     if (!loginNode)
     {
