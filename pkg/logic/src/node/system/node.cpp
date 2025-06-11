@@ -35,6 +35,7 @@
 #include "time/system/time_system.h"
 #include "util/network_utils.h"
 #include "util/random.h"
+#include "generator/util/gen_util.h"
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
@@ -368,15 +369,6 @@ bool Node::IsNodeRegistered(uint32_t nodeType, const NodeInfo& node) const {
 		}
 	}
 	return false;
-}
-
-inline bool IsTcpNodeType(uint32_t nodeType) {
-	static const std::unordered_set<int> validTypes = {
-		CentreNodeService,
-		SceneNodeService,
-		GateNodeService,
-	};
-	return validTypes.contains(nodeType);
 }
 
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {

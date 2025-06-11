@@ -32,23 +32,32 @@ static constexpr ::_pbi::MigrationSchema* schemas = nullptr;
 static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_proto_2fcommon_2fnode_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\027proto/common/node.proto*\270\001\n\teNodeType\022"
+    "\n\027proto/common/node.proto*\235\004\n\teNodeType\022"
     "\025\n\021DeployNodeService\020\000\022\021\n\rDbNodeService\020"
     "\001\022\025\n\021CentreNodeService\020\002\022\024\n\020SceneNodeSer"
     "vice\020\003\022\023\n\017GateNodeService\020\004\022\024\n\020LoginNode"
     "Service\020\005\022\024\n\020RedisNodeService\020\006\022\023\n\017EtcdN"
-    "odeService\020\007*e\n\016eSceneNodeType\022\022\n\016kMainS"
-    "ceneNode\020\000\022\r\n\tkRoomNode\020\001\022\027\n\023kMainSceneC"
-    "rossNode\020\002\022\027\n\023kRoomSceneCrossNode\020\003*K\n\021e"
-    "NodeProtocolType\022\020\n\014PROTOCOL_TCP\020\000\022\021\n\rPR"
-    "OTOCOL_GRPC\020\001\022\021\n\rPROTOCOL_HTTP\020\002B\tZ\007pb/g"
-    "ameb\006proto3"
+    "odeService\020\007\022\023\n\017MailNodeService\020\010\022\023\n\017Cha"
+    "tNodeService\020\t\022\023\n\017TeamNodeService\020\n\022\027\n\023A"
+    "ctivityNodeService\020\013\022\024\n\020TradeNodeService"
+    "\020\014\022\023\n\017RankNodeService\020\r\022\023\n\017TaskNodeServi"
+    "ce\020\016\022\024\n\020GuildNodeService\020\017\022\024\n\020MatchNodeS"
+    "ervice\020\020\022\021\n\rAiNodeService\020\021\022\022\n\016LogNodeSe"
+    "rvice\020\022\022\026\n\022PaymentNodeService\020\023\022\027\n\023Secur"
+    "ityNodeService\020\024\022\032\n\026CrossServerNodeServi"
+    "ce\020\025\022\030\n\024AnalyticsNodeService\020\026\022\021\n\rGmNode"
+    "Service\020\027*e\n\016eSceneNodeType\022\022\n\016kMainScen"
+    "eNode\020\000\022\r\n\tkRoomNode\020\001\022\027\n\023kMainSceneCros"
+    "sNode\020\002\022\027\n\023kRoomSceneCrossNode\020\003*K\n\021eNod"
+    "eProtocolType\022\020\n\014PROTOCOL_TCP\020\000\022\021\n\rPROTO"
+    "COL_GRPC\020\001\022\021\n\rPROTOCOL_HTTP\020\002B\tZ\007pb/game"
+    "b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fnode_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fnode_2eproto = {
     false,
     false,
-    411,
+    768,
     descriptor_table_protodef_proto_2fcommon_2fnode_2eproto,
     "proto/common/node.proto",
     &descriptor_table_proto_2fcommon_2fnode_2eproto_once,
@@ -66,9 +75,9 @@ const ::google::protobuf::EnumDescriptor* eNodeType_descriptor() {
   return file_level_enum_descriptors_proto_2fcommon_2fnode_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t eNodeType_internal_data_[] = {
-    524288u, 0u, };
+    1572864u, 0u, };
 bool eNodeType_IsValid(int value) {
-  return 0 <= value && value <= 7;
+  return 0 <= value && value <= 23;
 }
 const ::google::protobuf::EnumDescriptor* eSceneNodeType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcommon_2fnode_2eproto);

@@ -6,6 +6,7 @@ import (
 	"path"
 	"pbgen/config"
 	"pbgen/util"
+	"strings"
 )
 
 func GenNodeUtil() {
@@ -18,9 +19,12 @@ func GenNodeUtil() {
 		nodeList := make([]string, 0, len(config.ProtoDirectoryNames))
 		for _, file := range FdSet.File {
 			for _, enumDesc := range file.EnumType {
-				if enumDesc.GetName() == "eNodeType" {
-					// 找到了 eNodeType 枚举，遍历它的所有值
+				if enumDesc.GetName() == config.NodeEnumName {
 					for _, val := range enumDesc.Value {
+						nodeName := strings.ReplaceAll(strings.ToLower(val.GetName()), config.NodeServiceSuffix, "")
+						if !IsTcpNode(nodeName) {
+							continue
+						}
 						nodeList = append(nodeList, val.GetName())
 					}
 				}
