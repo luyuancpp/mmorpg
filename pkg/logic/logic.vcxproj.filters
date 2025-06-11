@@ -12,6 +12,7 @@
     <ClCompile Include="src\node\system\node.cpp" />
     <ClCompile Include="src\node\system\node_system.cpp" />
     <ClCompile Include="src\node\system\etcd_helper.cpp" />
+    <ClCompile Include="src\time\comp\timer_task_boost_comp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\node\constants\node_constants.h" />

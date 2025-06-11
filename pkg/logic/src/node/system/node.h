@@ -73,7 +73,6 @@ protected:
     void AcquireNode();
     static void RequestEtcdLease();
     void KeepNodeAlive();
-    void RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn);
 
 
     // 事件处理

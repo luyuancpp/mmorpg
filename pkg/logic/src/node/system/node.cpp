@@ -406,7 +406,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		return;
 	}
 
-	LOG_INFO << "Parsed zoneId=" << zoneId << ", nodeType=" << nodeType << ", nodeId=" << nodeId;
+	LOG_TRACE << "Parsed zoneId=" << zoneId << ", nodeType=" << nodeType << ", nodeId=" << nodeId;
 
 	// 下面是你的节点处理代码
 	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
@@ -432,6 +432,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 
 	entt::registry& registry = tls.GetNodeRegistry(nodeType);
 	Destroy(registry, entt::entity{ nodeId });
+
 	LOG_INFO << "Service node stopped, id: " << nodeId;
 }
 
@@ -510,22 +511,19 @@ void Node::OnServerConnected(const OnConnected2TcpServerEvent& event) {
 		return;
 	}
 	LOG_INFO << "Connected to server: " << conn->peerAddress().toIpPort();
-	RegisterNodeSessions(conn);
+	for (uint32_t i = 0; i < eNodeType_ARRAYSIZE; ++i)
+	{
+		TryRegisterNodeSession(i, conn);
+	}
 }
 
-static uint32_t kNodeTypeToMessageId[eNodeType_MAX] = {
+static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 	0,
 	0,
 	CentreRegisterNodeSessionMessageId,
 	SceneRegisterNodeSessionMessageId,
 	GateRegisterNodeSessionMessageId
 };
-
-void Node::RegisterNodeSessions(const muduo::net::TcpConnectionPtr& conn) {
-	TryRegisterNodeSession(CentreNodeService, conn);
-	TryRegisterNodeSession(SceneNodeService, conn);
-	TryRegisterNodeSession(GateNodeService, conn);
-}
 
 void Node::TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const {
 	entt::registry& registry = tls.GetNodeRegistry(nodeType);
@@ -595,7 +593,7 @@ void Node::HandleNodeRegistration(
 	for (const auto& [entity, session] : tls.sessionRegistry.view<RpcSession>().each()) {
 		auto& conn = session.connection;
 		if (!IsSameAddress(conn->peerAddress(), muduo::net::InetAddress(request.endpoint().ip(), request.endpoint().port()))) continue;
-		for (uint32_t nodeType = eNodeType_MIN; nodeType < eNodeType_MAX; ++nodeType) {
+		for (uint32_t nodeType = eNodeType_MIN; nodeType < eNodeType_ARRAYSIZE; ++nodeType) {
 			if (GetNodeType() == nodeType || !IsTcpNodeType(nodeType)) continue;
 			if (tryRegister(conn, nodeType)) {
 				tls.sessionRegistry.destroy(entity);
