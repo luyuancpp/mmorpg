@@ -31,13 +31,13 @@ func ReadProtoFileService() error {
 	}
 
 	// Unmarshal the descriptor set
-	fdSet := &descriptorpb.FileDescriptorSet{}
-	if err := proto.Unmarshal(data, fdSet); err != nil {
+	FdSet = &descriptorpb.FileDescriptorSet{}
+	if err := proto.Unmarshal(data, FdSet); err != nil {
 		return fmt.Errorf("failed to unmarshal descriptor set: %v", err)
 	}
 
 	// Iterate through each file in the descriptor set
-	for _, file := range fdSet.File {
+	for _, file := range FdSet.File {
 		for _, service := range file.Service {
 			// Create an RPCServiceInfo object for each service
 			rpcServiceInfo := RPCServiceInfo{
@@ -87,7 +87,6 @@ func ReadProtoFileService() error {
 // ReadAllProtoFileServices reads all service information from protobuf files in configured directories.
 func ReadAllProtoFileServices() {
 	util.Wg.Add(1)
-
 	go func() {
 		defer util.Wg.Done()
 		_ = ReadProtoFileService()

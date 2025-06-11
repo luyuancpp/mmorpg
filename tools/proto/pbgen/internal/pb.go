@@ -516,7 +516,9 @@ func BuildAllProtoc() {
 	// Iterate over configured proto directories
 	for i := 0; i < len(config.ProtoDirs); i++ {
 
+		util.Wg.Add(1)
 		go func(i int) {
+			defer util.Wg.Done()
 			// Execute functions concurrently for each directory
 			err := BuildProto(config.ProtoDirs[i])
 			if err != nil {
@@ -524,35 +526,45 @@ func BuildAllProtoc() {
 			}
 		}(i)
 
+		util.Wg.Add(1)
 		go func(i int) {
+			defer util.Wg.Done()
 			err := BuildProtoGrpc(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}
 		}(i)
 
+		util.Wg.Add(1)
 		go func(i int) {
+			defer util.Wg.Done()
 			err := BuildProtoRobotGo(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}
 		}(i)
 
+		util.Wg.Add(1)
 		go func(i int) {
+			defer util.Wg.Done()
 			err := BuildProtoGoLogin(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}
 		}(i)
 
+		util.Wg.Add(1)
 		go func(i int) {
+			defer util.Wg.Done()
 			err := BuildProtoGoDb(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}
 		}(i)
 
+		util.Wg.Add(1)
 		go func(i int) {
+			defer util.Wg.Done()
 			err := BuildProtoGoDeploy(config.ProtoDirs[i])
 			if err != nil {
 				log.Fatal(err)

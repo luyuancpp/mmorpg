@@ -122,6 +122,11 @@ const (
 	PlayerStorageTempDirectory       = TempFileGenerationDir + "/node/game/game_logic/"
 	GrpcInitFileCppPath              = ProjectDir + PbcProtoDirectory + GrpcGeneratorDirectory + "grpc_init.cpp"
 	GrpcInitFileHeadPath             = ProjectDir + PbcProtoDirectory + GrpcGeneratorDirectory + "grpc_init.h"
+
+	GeneratorDirectory     = "generator/"
+	UtilGeneratorDirectory = GeneratorDirectory + "util/"
+	GenUtilFileCppPath     = ProjectDir + PbcProtoDirectory + UtilGeneratorDirectory + "gen_util.cpp"
+	GenUtilFileHeadPath    = ProjectDir + PbcProtoDirectory + UtilGeneratorDirectory + "gen_util.h"
 )
 
 // ----------- 文件名 -----------
@@ -145,9 +150,6 @@ const (
 	IncludeEndLine           = "\"\n"
 	IncludeBegin             = "#include \""
 	Tab                      = "	"
-	Tab2                     = Tab + Tab
-	Tab3                     = Tab + Tab + Tab
-	Tab4                     = Tab + Tab + Tab + Tab
 	YourCodeBegin            = "///<<< BEGIN WRITING YOUR CODE"
 	YourCodeEnd              = "///<<< END WRITING YOUR CODE"
 	YourCodePair             = YourCodeBegin + "\n" + YourCodeEnd + "\n"

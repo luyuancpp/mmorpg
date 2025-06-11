@@ -79,6 +79,9 @@ func main() {
 	internal.BuildAllProtoc()
 	util.Wg.Wait()
 
+	internal.GenNodeUtil()
+	util.Wg.Wait()
+
 	internal.GenerateAllEventHandlers()
 	util.Wg.Wait()
 	// 所有文件的proto读完以后

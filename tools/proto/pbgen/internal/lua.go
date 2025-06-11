@@ -261,15 +261,15 @@ func writeLuaServiceMethodCppFile(methodList RPCMethods) {
 
 	data += "void Init" + methodList[0].Service() + "Lua()\n{\n"
 	for i := 0; i < len(methodList); i++ {
-		data += config.Tab + "tls_lua_state[\"" + methodList[i].KeyName() + config.MessageIdName + "\"] = " +
+		data += "tls_lua_state[\"" + methodList[i].KeyName() + config.MessageIdName + "\"] = " +
 			strconv.FormatUint(methodList[i].Id, 10) + ";\n"
-		data += config.Tab + "tls_lua_state[\"" + methodList[i].KeyName() + config.MethodIndexName + "\"] = " +
+		data += "tls_lua_state[\"" + methodList[i].KeyName() + config.MethodIndexName + "\"] = " +
 			strconv.FormatUint(methodList[i].Index, 10) + ";\n"
-		data += config.Tab + "tls_lua_state[\"" + methodList[i].KeyName() +
+		data += "tls_lua_state[\"" + methodList[i].KeyName() +
 			"\"] = []()-> const ::google::protobuf::MethodDescriptor* {\n" +
-			config.Tab2 + "return " + methodList[i].Service() + "_Stub::descriptor()->method(" +
+			"return " + methodList[i].Service() + "_Stub::descriptor()->method(" +
 			strconv.FormatUint(methodList[i].Index, 10) + ");\n" +
-			config.Tab + "};\n\n"
+			"};\n\n"
 	}
 	data += "}\n"
 }
@@ -282,8 +282,8 @@ func writeInitLuaServiceFile() {
 			continue
 		}
 		firstMethodInfo := service.MethodInfo[0]
-		data += config.Tab + "void Init" + firstMethodInfo.Service() + "Lua();\n"
-		data += config.Tab + "Init" + firstMethodInfo.Service() + "Lua();\n\n"
+		data += "void Init" + firstMethodInfo.Service() + "Lua();\n"
+		data += "Init" + firstMethodInfo.Service() + "Lua();\n\n"
 	}
 	data += "}\n"
 }
