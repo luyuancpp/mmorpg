@@ -522,7 +522,7 @@ func BuildAllProtoc() {
 			// Execute functions concurrently for each directory
 			err := BuildProto(config.ProtoDirs[i])
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			}
 		}(i)
 
@@ -531,7 +531,7 @@ func BuildAllProtoc() {
 			defer util.Wg.Done()
 			err := BuildProtoGrpc(config.ProtoDirs[i])
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			}
 		}(i)
 
@@ -540,7 +540,7 @@ func BuildAllProtoc() {
 			defer util.Wg.Done()
 			err := BuildProtoRobotGo(config.ProtoDirs[i])
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			}
 		}(i)
 
@@ -549,7 +549,7 @@ func BuildAllProtoc() {
 			defer util.Wg.Done()
 			err := BuildProtoGoLogin(config.ProtoDirs[i])
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			}
 		}(i)
 
@@ -558,7 +558,7 @@ func BuildAllProtoc() {
 			defer util.Wg.Done()
 			err := BuildProtoGoDb(config.ProtoDirs[i])
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			}
 		}(i)
 
@@ -567,7 +567,7 @@ func BuildAllProtoc() {
 			defer util.Wg.Done()
 			err := BuildProtoGoDeploy(config.ProtoDirs[i])
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			}
 		}(i)
 
