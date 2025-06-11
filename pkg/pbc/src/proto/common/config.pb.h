@@ -902,8 +902,9 @@ class BaseDeployConfig final
     kServiceDiscoveryPrefixesFieldNumber = 4,
     kDeployservicePrefixFieldNumber = 6,
     kLogLevelFieldNumber = 2,
-    kLeaseRenewIntervalFieldNumber = 5,
+    kKeepAliveIntervalFieldNumber = 5,
     kNodeTtlSecondsFieldNumber = 7,
+    kHealthCheckIntervalFieldNumber = 8,
   };
   // repeated string etcd_hosts = 1;
   int etcd_hosts_size() const;
@@ -992,14 +993,14 @@ class BaseDeployConfig final
   void _internal_set_log_level(::uint32_t value);
 
   public:
-  // uint32 lease_renew_interval = 5;
-  void clear_lease_renew_interval() ;
-  ::uint32_t lease_renew_interval() const;
-  void set_lease_renew_interval(::uint32_t value);
+  // uint32 keep_alive_interval = 5;
+  void clear_keep_alive_interval() ;
+  ::uint32_t keep_alive_interval() const;
+  void set_keep_alive_interval(::uint32_t value);
 
   private:
-  ::uint32_t _internal_lease_renew_interval() const;
-  void _internal_set_lease_renew_interval(::uint32_t value);
+  ::uint32_t _internal_keep_alive_interval() const;
+  void _internal_set_keep_alive_interval(::uint32_t value);
 
   public:
   // uint32 node_ttl_seconds = 7;
@@ -1012,13 +1013,23 @@ class BaseDeployConfig final
   void _internal_set_node_ttl_seconds(::uint32_t value);
 
   public:
+  // uint32 health_check_interval = 8;
+  void clear_health_check_interval() ;
+  ::uint32_t health_check_interval() const;
+  void set_health_check_interval(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_health_check_interval() const;
+  void _internal_set_health_check_interval(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:BaseDeployConfig)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 7, 1,
-      81, 2>
+      3, 8, 1,
+      89, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -1040,8 +1051,9 @@ class BaseDeployConfig final
     ::google::protobuf::RepeatedPtrField<std::string> service_discovery_prefixes_;
     ::google::protobuf::internal::ArenaStringPtr deployservice_prefix_;
     ::uint32_t log_level_;
-    ::uint32_t lease_renew_interval_;
+    ::uint32_t keep_alive_interval_;
     ::uint32_t node_ttl_seconds_;
+    ::uint32_t health_check_interval_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1364,26 +1376,26 @@ BaseDeployConfig::_internal_mutable_service_discovery_prefixes() {
   return &_impl_.service_discovery_prefixes_;
 }
 
-// uint32 lease_renew_interval = 5;
-inline void BaseDeployConfig::clear_lease_renew_interval() {
+// uint32 keep_alive_interval = 5;
+inline void BaseDeployConfig::clear_keep_alive_interval() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.lease_renew_interval_ = 0u;
+  _impl_.keep_alive_interval_ = 0u;
 }
-inline ::uint32_t BaseDeployConfig::lease_renew_interval() const {
-  // @@protoc_insertion_point(field_get:BaseDeployConfig.lease_renew_interval)
-  return _internal_lease_renew_interval();
+inline ::uint32_t BaseDeployConfig::keep_alive_interval() const {
+  // @@protoc_insertion_point(field_get:BaseDeployConfig.keep_alive_interval)
+  return _internal_keep_alive_interval();
 }
-inline void BaseDeployConfig::set_lease_renew_interval(::uint32_t value) {
-  _internal_set_lease_renew_interval(value);
-  // @@protoc_insertion_point(field_set:BaseDeployConfig.lease_renew_interval)
+inline void BaseDeployConfig::set_keep_alive_interval(::uint32_t value) {
+  _internal_set_keep_alive_interval(value);
+  // @@protoc_insertion_point(field_set:BaseDeployConfig.keep_alive_interval)
 }
-inline ::uint32_t BaseDeployConfig::_internal_lease_renew_interval() const {
+inline ::uint32_t BaseDeployConfig::_internal_keep_alive_interval() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.lease_renew_interval_;
+  return _impl_.keep_alive_interval_;
 }
-inline void BaseDeployConfig::_internal_set_lease_renew_interval(::uint32_t value) {
+inline void BaseDeployConfig::_internal_set_keep_alive_interval(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.lease_renew_interval_ = value;
+  _impl_.keep_alive_interval_ = value;
 }
 
 // string deployservice_prefix = 6;
@@ -1454,6 +1466,28 @@ inline ::uint32_t BaseDeployConfig::_internal_node_ttl_seconds() const {
 inline void BaseDeployConfig::_internal_set_node_ttl_seconds(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.node_ttl_seconds_ = value;
+}
+
+// uint32 health_check_interval = 8;
+inline void BaseDeployConfig::clear_health_check_interval() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.health_check_interval_ = 0u;
+}
+inline ::uint32_t BaseDeployConfig::health_check_interval() const {
+  // @@protoc_insertion_point(field_get:BaseDeployConfig.health_check_interval)
+  return _internal_health_check_interval();
+}
+inline void BaseDeployConfig::set_health_check_interval(::uint32_t value) {
+  _internal_set_health_check_interval(value);
+  // @@protoc_insertion_point(field_set:BaseDeployConfig.health_check_interval)
+}
+inline ::uint32_t BaseDeployConfig::_internal_health_check_interval() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.health_check_interval_;
+}
+inline void BaseDeployConfig::_internal_set_health_check_interval(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.health_check_interval_ = value;
 }
 
 // -------------------------------------------------------------------

@@ -8,15 +8,15 @@ message ServiceConfig {
     string url = 2;   // 服务的健康检查或访问URL
 }
 
-// 基础部署配置
 message BaseDeployConfig {
-    repeated string etcd_hosts = 1;      // Etcd 主机列表
-    uint32 log_level = 2;                 // 日志级别，使用 uint32
-    repeated ServiceConfig services = 3;  // 服务列表
-    repeated string service_discovery_prefixes = 4; // etcd 服务前缀
-    uint32 lease_renew_interval = 5;      // 节点续约间隔（单位：秒）
-    string deployservice_prefix = 6;      // 单独的 deployservice.rpc 前缀字段
-    uint32 node_ttl_seconds = 7;          // 节点的租约TTL（单位：秒）
+    repeated string etcd_hosts = 1;                   // Etcd 主机列表
+    uint32 log_level = 2;                             // 日志级别
+    repeated ServiceConfig services = 3;              // 服务列表
+    repeated string service_discovery_prefixes = 4;   // etcd 服务前缀
+    uint32 keep_alive_interval = 5;                   // 节点续约间隔（单位：秒）
+    string deployservice_prefix = 6;                   // deployservice.rpc 前缀
+    uint32 node_ttl_seconds = 7;                       // 节点租约TTL（单位：秒）
+    uint32 health_check_interval = 8;                  // 新增：服务健康检查间隔（单位：秒）
 }
 
 // 游戏配置
