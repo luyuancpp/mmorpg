@@ -226,42 +226,6 @@ void Node::ConnectToNode(const NodeInfo& info) {
 	}
 }
 
-void Node::DisconnectFromNode(const NodeInfo& info) {
-	switch (info.protocol_type()) {
-	case PROTOCOL_GRPC:
-		DisconnectFromGrpcNode(info);
-		break;
-	case PROTOCOL_TCP:
-		DisconnectFromTcpNode(info);
-		break;
-	case PROTOCOL_HTTP:
-		DisconnectFromHttpNode(info);
-		break;
-	default:
-		LOG_ERROR << "Unsupported protocol for disconnect: " << info.protocol_type()
-			<< " node: " << info.DebugString();
-		break;
-	}
-}
-
-
-void Node::DisconnectFromGrpcNode(const NodeInfo& nodeInfo){
-	entt::registry& registry = tls.GetNodeRegistry(nodeInfo.node_type());
-	//这里和muduo机制有关,连接在下一帧才会断开,这里删除的话连接不在了,底层连接没有删除
-	tls.GetConsistentNode(nodeInfo.node_id()).remove(nodeInfo.node_id());
-	Destroy(registry, entt::entity{ nodeInfo.node_id() });
-}
-
-void Node::DisconnectFromTcpNode(const NodeInfo& nodeInfo)
-{
-
-}
-
-void Node::DisconnectFromHttpNode(const NodeInfo& nodeInfo)
-{
-
-}
-
 void Node::ConnectToGrpcNode(const NodeInfo& info) {
 	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& registry = NodeSystem::GetRegistryForNodeType(info.node_type());
@@ -301,19 +265,6 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 		}
 	}
 
-	if (registry.valid(entityId))
-	{
-		auto& client = registry.get<RpcClient>(entityId);
-		if (client.connected())
-		{
-			LOG_ERROR << "Node already connected: " << info.node_id()
-				<< ", IP: " << info.endpoint().ip()
-				<< ", Port: " << info.endpoint().port();
-			return;
-		}
-		Destroy(registry, entityId);
-	}
-
 	const auto createdId = registry.create(entityId);
 	if (createdId != entityId) {
 		LOG_ERROR << "Create node entity failed: " << entt::to_integral(createdId);
@@ -321,14 +272,14 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 	}
 
 	InetAddress endpoint(info.endpoint().ip(), info.endpoint().port());
-	auto& client = registry.emplace<RpcClient>(createdId, eventLoop, endpoint);
+	auto& client = registry.emplace<RpcClientPtr>(createdId, std::make_shared<RpcClientPtr::element_type>(eventLoop, endpoint));
 	registry.emplace<NodeInfo>(entityId, info);
-	client.registerService(GetNodeReplyService());
-	client.connect();
+	client->registerService(GetNodeReplyService());
+	client->connect();
 
 	if (info.node_type() == CentreNodeService &&
 		info.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
-		zoneCentreNode = &client;
+		zoneCentreNode = client;
 	}
 }
 
@@ -417,7 +368,7 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 
 bool Node::IsNodeRegistered(uint32_t nodeType, const NodeInfo& node) const {
 	entt::registry& registry = tls.GetNodeRegistry(nodeType);
-	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
+	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
 		if (nodeInfo.endpoint().ip() == node.endpoint().ip() &&
 			nodeInfo.endpoint().port() == node.endpoint().port()) {
 			LOG_INFO << "Node already registered, IP: " << nodeInfo.endpoint().ip()
@@ -483,7 +434,28 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		return;
 	}
 
-	DisconnectFromNode(nodeInfo);
+	//这里统一删除，包括tcp grpc http
+	tls.GetConsistentNode(nodeInfo.node_type()).remove(nodeInfo.node_id());
+
+	auto nodeEntity = entt::entity{ nodeInfo.node_id() };
+	entt::registry& registry = tls.GetNodeRegistry(nodeInfo.node_type());
+	if (!registry.valid(nodeEntity))
+	{
+		LOG_TRACE << "Node entity not valid, nodeId: " << nodeId
+			<< ", nodeType: " << eNodeType_Name(nodeInfo.node_type());
+		return;
+	}
+
+	auto client = registry.try_get<RpcClientPtr>(nodeEntity);
+	if (nullptr != client)
+	{
+		// muduo tcp
+		//这里和muduo机制有关,连接在下一帧才会断开,这里删除的话连接不在了,底层连接没有删除
+		registry.get_or_emplace<std::vector<RpcClientPtr>>(tls.GetNodeGlobalEntity(nodeType)).push_back(*client);
+	}
+
+	Destroy(registry, nodeEntity);
+
 	LOG_INFO << "Service node stopped, id: " << nodeId;
 }
 
@@ -570,10 +542,7 @@ void Node::OnServerConnected(const OnConnected2TcpServerEvent& event) {
 	if (!conn->connected()) {
 		LOG_INFO << "Client disconnected: " << conn->peerAddress().toIpPort();
 
-		for (uint32_t i = 0; i < eNodeType_ARRAYSIZE; ++i)
-		{
-			TryUnRegisterNodeSession(i, conn);
-		}
+
 		return;
 	}
 	LOG_INFO << "Connected to server: " << conn->peerAddress().toIpPort();
@@ -593,8 +562,8 @@ static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 
 void Node::TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const {
 	entt::registry& registry = tls.GetNodeRegistry(nodeType);
-	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
-		if (!IsSameAddress(client.peer_addr(), conn->peerAddress())) continue;
+	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
+		if (!IsSameAddress(client->peer_addr(), conn->peerAddress())) continue;
 		LOG_INFO << "Peer address match in " << NodeSystem::GetRegistryName(registry)
 			<< ": " << conn->peerAddress().toIpPort();
 		registry.emplace<TimerTaskComp>(entity).RunAfter(0.5, [conn, this, nodeType, &client]() {
@@ -602,29 +571,8 @@ void Node::TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnec
 			req.mutable_self_node()->CopyFrom(GetNodeInfo());
 			req.mutable_endpoint()->set_ip(conn->localAddress().toIp());
 			req.mutable_endpoint()->set_port(conn->localAddress().port());
-			client.CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
+			client->CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
 			});
-		return;
-	}
-}
-
-void Node::TryUnRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn)  {
-	entt::registry& registry = tls.GetNodeRegistry(nodeType);
-	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
-		if (!IsSameAddress(client.peer_addr(), conn->peerAddress())) continue;
-		LOG_INFO << "Peer address match in " << NodeSystem::GetRegistryName(registry)
-			<< ": " << conn->peerAddress().toIpPort();
-
-		tls.GetConsistentNode(nodeInfo.node_type()).remove(nodeInfo.node_id());
-
-		if (nodeType == CentreNodeService &&
-			nodeInfo.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
-			zoneCentreNode = nullptr;
-		}
-
-		entt::registry& registry = tls.GetNodeRegistry(nodeType);
-		//这里和muduo机制有关,连接在下一帧才会断开,这里删除的话连接不在了,底层连接没有删除
-		Destroy(registry, entt::entity{ nodeInfo.node_id() });
 		return;
 	}
 }
@@ -693,9 +641,9 @@ void Node::HandleNodeRegistration(
 }
 
 void TriggerNodeConnectionEvent(entt::registry& registry, const RegisterNodeSessionResponse& response) {
-	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
-		if (client.peer_addr().toIp() != response.peer_node().endpoint().ip() ||
-			client.peer_addr().port() != response.peer_node().endpoint().port()) {
+	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
+		if (client->peer_addr().toIp() != response.peer_node().endpoint().ip() ||
+			client->peer_addr().port() != response.peer_node().endpoint().port()) {
 			continue;
 		}
 		ConnectToNodePbEvent connectEvent;
@@ -719,16 +667,16 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 	entt::registry& registry = tls.GetNodeRegistry(nodeType);
 	if (response.error_message().id() != kCommon_errorOK) {
 		LOG_TRACE << "Registration failed: " << response.DebugString();
-		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClient, NodeInfo>().each()) {
-			if (!IsSameAddress(client.peer_addr(), muduo::net::InetAddress(
+		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
+			if (!IsSameAddress(client->peer_addr(), muduo::net::InetAddress(
 				response.peer_node().endpoint().ip(),
 				response.peer_node().endpoint().port()))) continue;
 			registry.get<TimerTaskComp>(entity).RunAfter(0.5, [this, &client, nodeType]() {
 				RegisterNodeSessionRequest req;
 				*req.mutable_self_node() = GetNodeInfo();
-				req.mutable_endpoint()->set_ip(client.local_addr().toIp());
-				req.mutable_endpoint()->set_port(client.local_addr().port());
-				client.CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
+				req.mutable_endpoint()->set_ip(client->local_addr().toIp());
+				req.mutable_endpoint()->set_port(client->local_addr().port());
+				client->CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
 				});
 			return;
 		}
