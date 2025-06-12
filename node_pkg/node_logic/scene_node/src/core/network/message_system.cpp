@@ -60,29 +60,25 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 
 void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity)
 {
-	if (!tls.registry.valid(playerEntity))
-	{
+	if (!tls.registry.valid(playerEntity)){
 		LOG_ERROR << "Player entity is not valid";
 		return;
 	}
 
 	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
-	if (!playerNodeInfo)
-	{
+	if (!playerNodeInfo){
 		LOG_ERROR << "Player node info not found for player entity";
 		return;
 	}
 
 	entt::entity centreNodeId{ playerNodeInfo->centre_node_id() };
-	if (!tls.GetNodeRegistry(eNodeType::CentreNodeService).valid(centreNodeId))
-	{
+	if (!tls.GetNodeRegistry(eNodeType::CentreNodeService).valid(centreNodeId)){
 		LOG_ERROR << "Central node not found for player";
 		return;
 	}
 
-	const auto centreNode = tls.GetNodeRegistry(eNodeType::CentreNodeService).try_get<RpcClient>(centreNodeId);
-	if (!centreNode)
-	{
+	const auto node = tls.GetNodeRegistry(eNodeType::CentreNodeService).try_get<RpcClientPtr>(centreNodeId);
+	if (!node){
 		LOG_ERROR << "RpcClientPtr not found for central node";
 		return;
 	}
@@ -91,7 +87,7 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 	request.mutable_message_content()->set_message_id(messageId);
 	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
 	request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
-	centreNode->SendRequest(CentrePlayerServiceMessageId, request);
+	(*node)->SendRequest(CentrePlayerServiceMessageId, request);
 }
 
 void SendToCentre(const uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
@@ -103,14 +99,14 @@ void SendToCentre(const uint32_t messageId, const google::protobuf::Message& mes
 		return;
 	}
 
-	const auto centreNode = tls.GetNodeRegistry(eNodeType::CentreNodeService).try_get<RpcClient>(centreNodeId);
-	if (!centreNode)
+	const auto node = tls.GetNodeRegistry(eNodeType::CentreNodeService).try_get<RpcClientPtr>(centreNodeId);
+	if (!node)
 	{
 		LOG_ERROR << "RpcClientPtr not found for central node: " << nodeId;
 		return;
 	}
 
-	centreNode->SendRequest(messageId, message);
+	(*node)->SendRequest(messageId, message);
 }
 
 void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
@@ -134,28 +130,28 @@ void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& 
 
 void CallCentreNodeMethod(uint32_t messageId, const google::protobuf::Message& message, const NodeId nodeId)
 {
-	entt::entity centreNodeId{ nodeId };
-	if (!tls.GetNodeRegistry(eNodeType::CentreNodeService).valid(centreNodeId))
+	entt::entity nodeEntity{ nodeId };
+	if (!tls.GetNodeRegistry(eNodeType::CentreNodeService).valid(nodeEntity))
 	{
 		LOG_ERROR << "Central node not found: " << nodeId;
 		return;
 	}
 
-	const auto centreNode = tls.GetNodeRegistry(eNodeType::CentreNodeService).try_get<RpcClient>(centreNodeId);
-	if (!centreNode)
+	const auto node = tls.GetNodeRegistry(eNodeType::CentreNodeService).try_get<RpcClientPtr>(nodeEntity);
+	if (!node)
 	{
 		LOG_ERROR << "RpcClientPtr not found for central node: " << nodeId;
 		return;
 	}
 
-	centreNode->CallRemoteMethod(messageId, message);
+	(*node)->CallRemoteMethod(messageId, message);
 }
 
 void BroadCastToCentre(uint32_t messageId, const google::protobuf::Message& message)
 {
-	for (auto&& [_, node] : tls.GetNodeRegistry(eNodeType::CentreNodeService).view<RpcClient>().each())
+	for (auto&& [_, node] : tls.GetNodeRegistry(eNodeType::CentreNodeService).view<RpcClientPtr>().each())
 	{
-		node.CallRemoteMethod(messageId, message);
+		node->CallRemoteMethod(messageId, message);
 	}
 }
 
