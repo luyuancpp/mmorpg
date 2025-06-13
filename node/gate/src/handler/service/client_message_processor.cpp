@@ -229,7 +229,11 @@ void HandleLoginNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, 
 
 	if (messageInfo.messageSender)
 	{
-		messageInfo.messageSender(tls.GetNodeRegistry(messageInfo.targetNodeType), *loginNode, *messageInfo.requestPrototype, { "x-session-detail-bin" }, { sessionDetils.SerializeAsString() });
+		messageInfo.messageSender(tls.GetNodeRegistry(messageInfo.targetNodeType), 
+            *loginNode, 
+            *messageInfo.requestPrototype, 
+            { "x-session-detail-bin" }, 
+            { sessionDetils.SerializeAsString() });
 	}
 }
 

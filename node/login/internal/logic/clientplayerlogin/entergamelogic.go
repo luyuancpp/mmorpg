@@ -112,6 +112,9 @@ func (l *EnterGameLogic) notifyCentreService(in *game.EnterGameRequest) {
 		},
 		SessionInfo: sessionDetails,
 	}
-
-	l.svcCtx.GetCentreClient().Send(centreRequest, game.CentreLoginNodeEnterGameMessageId)
+	node := l.svcCtx.GetCentreClient()
+	if nil == node {
+		return
+	}
+	node.Send(centreRequest, game.CentreLoginNodeEnterGameMessageId)
 }

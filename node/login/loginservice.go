@@ -209,11 +209,11 @@ func connectToCentreNodes(ctx *svc.ServiceContext, loginNode *node.Node) error {
 			case node.NodeRemoved:
 				if event.Info.ZoneId == zoneId {
 					logx.Infof("Centre node removed: %+v", event.Info.String())
-					client := ctx.GetCentreClient()
-					if client != nil {
-						err := client.Close()
+					node := ctx.GetCentreClient()
+					if node != nil {
+						err := node.Close()
 						if err != nil {
-							logx.Errorf("Failed to close centre client: %v", err)
+							logx.Errorf("Failed to close centre node: %v", err)
 							return
 						}
 					}
