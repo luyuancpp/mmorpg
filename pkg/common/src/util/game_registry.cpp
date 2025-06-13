@@ -50,3 +50,32 @@ void Destroy(entt::registry& registry, entt::entity entity)
     }
     registry.destroy(entity);
 }
+
+entt::entity TryCreateEntity(entt::registry& registry, entt::entity id) {
+	if (registry.valid(id)) {
+		return entt::null; // 已存在，无法创建
+	}
+
+	entt::entity created = registry.create(id);
+	if (created != id) {
+		Destroy(registry, created); // 清理失败创建
+		return entt::null;
+	}
+
+	return created;
+}
+
+
+entt::entity ResetEntity(entt::registry& registry, entt::entity id) {
+	if (registry.valid(id)) {
+		Destroy(registry, id); // 先删除旧实体
+	}
+
+	entt::entity created = registry.create(id);
+	if (created != id) {
+		Destroy(registry, created); // 清理异常创建
+		return entt::null;
+	}
+
+	return created;
+}

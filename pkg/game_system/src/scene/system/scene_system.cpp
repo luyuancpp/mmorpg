@@ -134,7 +134,7 @@ entt::entity SceneUtil::CreateSceneToSceneNode(const CreateGameNodeSceneParam& p
 		sceneInfo.set_guid(GenSceneGuid());
 	}
 
-	const auto scene = tls.sceneRegistry.create(entt::entity{ sceneInfo.guid() });
+	const auto scene = TryCreateEntity(tls.sceneRegistry, entt::entity{ sceneInfo.guid() });
 	if (scene == entt::null) {
 		LOG_ERROR << "Failed to create scene in registry";
 		return entt::null;

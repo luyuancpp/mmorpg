@@ -19,31 +19,14 @@ private:
 	entt::entity event_owner_{ entt::null };
 };
 
-namespace entt
-{
+namespace entt{
 	[[nodiscard]] static constexpr entt::entity to_entity(uint64_t value)  {
 		return entt::entity{ value };
 	}
 }//namespace entt
 
 void Destroy(entt::registry& registry, entt::entity entity);
+entt::entity TryCreateEntity(entt::registry& registry, entt::entity entity);
+entt::entity ResetEntity(entt::registry& registry, entt::entity entity);
 
-struct EntityDeleter {
-	entt::registry& registry;
 
-	explicit EntityDeleter(entt::registry& registry) : registry(registry) {}
-
-	void operator()(const entt::entity* entity) const {
-		if (entity) {
-			Destroy(registry, *entity);
-			delete entity;
-		}
-	}
-};
-
-using EntityPtr = std::shared_ptr<entt::entity>;
-
-inline EntityPtr CreateEntityPtr(entt::registry& registry) {
-	const entt::entity entity = registry.create();
-	return EntityPtr(new entt::entity(entity), EntityDeleter(registry));
-}

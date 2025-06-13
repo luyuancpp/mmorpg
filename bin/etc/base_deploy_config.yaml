@@ -9,7 +9,7 @@ Etcd:
 LogLevel: 1               # 2表示info级别日志
 
 # 健康检查相关配置
-HealthCheckInterval: 20  # 服务健康检查间隔，单位秒
+HealthCheckInterval: 3  # 服务健康检查间隔，单位秒
 
 # 服务列表，存储所有需要连接的服务
 services:
