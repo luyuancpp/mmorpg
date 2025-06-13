@@ -231,8 +231,8 @@ void Node::ConnectToGrpcNode(const NodeInfo& info) {
 	auto& registry = NodeSystem::GetRegistryForNodeType(info.node_type());
 
 	const entt::entity entityId{ info.node_id() };
-	auto createdId = registry.create(entityId);
-	if (createdId != entityId) {
+	auto createdId = ResetEntity(registry, entityId);
+	if (createdId == entt::null) {
 		LOG_ERROR << "Login node not found: " << entt::to_integral(createdId);
 		return;
 	}
@@ -265,8 +265,8 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 		}
 	}
 
-	const auto createdId = registry.create(entityId);
-	if (createdId != entityId) {
+	const auto createdId = ResetEntity(registry, entityId);
+	if (createdId == entt::null) {
 		LOG_ERROR << "Create node entity failed: " << entt::to_integral(createdId);
 		return;
 	}
@@ -357,6 +357,11 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 
 	*nodeList.Add() = newNode;
 	LOG_INFO << "Node added, type: " << nodeType << ", info: " << newNode.DebugString();
+
+	if (GetNodeInfo().lease_id() == newNode.lease_id()) {
+		LOG_TRACE << "Node has same lease_id as self, skip adding node. Self lease_id: " << GetNodeInfo().lease_id();
+		return;
+	}
 
 	if (!targetNodeTypeWhitelist.contains(nodeType)) return;
 
@@ -612,12 +617,13 @@ void Node::HandleNodeRegistration(
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
 			if (serverNode.lease_id() != peerNode.lease_id()) continue;
 			entt::registry& registry = tls.GetNodeRegistry(nodeType);
-			entt::entity entity = registry.create(entt::entity{ peerNode.node_id() });
-			if (entity != entt::entity{ peerNode.node_id() }) {
+			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
+			entt::entity created = ResetEntity(registry, nodeEntity); 
+			if (created == entt::null) {
 				LOG_ERROR << "Create node entity failed in " << NodeSystem::GetRegistryName(registry);
 				return false;
 			}
-			registry.emplace<RpcSession>(entity, RpcSession{ conn });
+			registry.emplace<RpcSession>(created, RpcSession{ conn });
 			LOG_INFO << "Node registered, id: " << peerNode.node_id()
 				<< " in " << NodeSystem::GetRegistryName(registry);
 			return true;
@@ -753,7 +759,6 @@ NodeInfo* Node::FindNodeInfo(uint32_t nodeType, uint32_t nodeId){
 			return &*it; 
 		}
 	}
-
 	return nullptr;
 }
 
