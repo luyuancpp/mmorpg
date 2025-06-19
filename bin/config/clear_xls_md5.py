@@ -3,17 +3,17 @@
 
 import os
 import logging
+from config import XLSX_DIR
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-xls_dir = "xlsx/"
 
 def main():
     try:
-        for filename in os.listdir(xls_dir):
-            full_path = os.path.join(xls_dir, filename)
+        for filename in os.listdir(XLSX_DIR):
+            full_path = os.path.join(XLSX_DIR, filename)
             if os.path.isfile(full_path) and (filename.endswith('.xlsx') or filename.endswith('.xls')):
                 md5_file_path = full_path + ".md5"
                 if os.path.exists(md5_file_path):

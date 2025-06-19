@@ -9,11 +9,13 @@ from openpyxl import load_workbook
 import gen_common  # Assuming gen_common contains the necessary functions
 from common import constants
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from config import XLSX_DIR
+
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Path to your Excel file
-excel_file_path = 'xlsx/tip/Tip.xlsx'
+excel_file_path = XLSX_DIR +'/tip/Tip.xlsx'
 
 # Output directory for Proto files
 output_dir = 'generated/proto/tip'

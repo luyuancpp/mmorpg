@@ -6,12 +6,12 @@ import logging
 import md5tool
 import gen_common
 from concurrent.futures import ThreadPoolExecutor
+from config import XLSX_DIR
 
 # Set up logging configuration
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname=s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-xls_dir = "xlsx/"
 
 supported_extensions = {'.xlsx', '.xls'}
 
@@ -64,7 +64,7 @@ def main():
     if not os.path.exists(gen_common.md5_output_dir):
         os.makedirs(gen_common.md5_output_dir)
 
-    generate_md5_files(xls_dir, gen_common.md5_output_dir)
+    generate_md5_files(XLSX_DIR, gen_common.md5_output_dir)
 
 if __name__ == "__main__":
     main()

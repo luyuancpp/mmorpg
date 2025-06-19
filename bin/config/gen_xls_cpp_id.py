@@ -8,12 +8,13 @@ import logging
 from os import listdir
 from os.path import isfile, join
 
+from config import XLSX_DIR
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 cpp_dir = "generated/cpp/"
-xlsx_dir = "xlsx/"
 gen_file_list = ["global_variable"]
 
 def generate_id_enum(sheet):
@@ -46,8 +47,8 @@ def main():
     if not os.path.exists(cpp_dir):
         os.makedirs(cpp_dir)
 
-    for filename in listdir(xlsx_dir):
-        full_path = os.path.join(xlsx_dir, filename)
+    for filename in listdir(XLSX_DIR):
+        full_path = os.path.join(XLSX_DIR, filename)
         if isfile(full_path) and filename.endswith('.xlsx'):
             try:
                 workbook = openpyxl.load_workbook(full_path)
