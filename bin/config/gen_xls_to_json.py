@@ -12,10 +12,10 @@ from typing import Any, Union
 import openpyxl
 import gen_common  # Assuming gen_common contains the necessary functions
 from common import constants
+from config import XLSX_DIR
 
 # Configuration Constants
 JSON_DIR = "generated/json/"
-XLSX_DIR = "xlsx/"
 
 
 # Setup Logging
