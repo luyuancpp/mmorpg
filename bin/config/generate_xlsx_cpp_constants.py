@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+#!/usr/bin/env python
 # coding=utf-8
 
 import os
@@ -6,14 +6,18 @@ import logging
 import openpyxl
 from typing import Optional
 from jinja2 import Environment, FileSystemLoader
+import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 import utils
 import generate_common
 from common import constants
 
-# 设置日志
+# Set up logging
 logging.basicConfig(
-    level=logging.DEBUG,  # 提高日志级别便于调试
+    level=logging.DEBUG,  # Increase log level for debugging
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -28,20 +32,20 @@ class ExcelToCppConverter:
             self.worksheet = self.workbook[self.sheet]
             self.constants_name_index = self._find_constants_name_index()
         except Exception as e:
-            logger.error(f"加载 Excel 文件失败: {excel_file}, 错误: {e}")
+            logger.error(f"Failed to load Excel file: {excel_file}, error: {e}")
             raise
 
     def _find_constants_name_index(self) -> Optional[int]:
         try:
             if not self.worksheet or self.worksheet.max_row < 1:
-                logger.warning(f"工作表 '{self.sheet}' 为空或没有数据")
+                logger.warning(f"Worksheet '{self.sheet}' is empty or has no data")
                 return None
 
             first_row = self.worksheet[1]
             headers = [str(cell.value).strip() if cell.value else '' for cell in first_row]
             return headers.index('constants_name') if 'constants_name' in headers else None
         except Exception as e:
-            logger.error(f"查找 constants_name 列时发生错误: {e}")
+            logger.error(f"Error finding 'constants_name' column: {e}")
             return None
 
     def should_process(self) -> bool:
@@ -56,7 +60,7 @@ class ExcelToCppConverter:
             constant_name = self._generate_constant_name(row, id_value)
             constants_list.append({'name': constant_name, 'value': id_value})
 
-        # ✅ 显式指定模板文件编码为 UTF-8，防止 gbk 解码失败
+        # Explicitly specify UTF-8 encoding for templates to avoid decoding errors
         env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'))
         template = env.get_template("constants.h.j2")
         return template.render(constants=constants_list)
@@ -80,10 +84,10 @@ class ExcelToCppConverter:
 
 
 def process_file(file_path: str):
-    logger.info(f"开始处理文件: {file_path}")
+    logger.info(f"Start processing file: {file_path}")
 
     if not os.path.isfile(file_path):
-        logger.error(f"文件不存在: {file_path}")
+        logger.error(f"File not found: {file_path}")
         return
 
     try:
@@ -91,11 +95,11 @@ def process_file(file_path: str):
         if converter.should_process():
             cpp_code = converter.generate_cpp_constants()
             converter.save_cpp_constants_to_file(cpp_code)
-            logger.info(f"处理完成: {file_path}")
+            logger.info(f"Finished processing: {file_path}")
         else:
-            logger.info(f"跳过文件 (无 constants_name 列): {file_path}")
+            logger.info(f"Skipped file (no 'constants_name' column): {file_path}")
     except Exception as e:
-        logger.error(f"处理文件出错: {file_path}，错误: {e}")
+        logger.error(f"Error processing file: {file_path}, error: {e}")
     finally:
         if 'converter' in locals():
             converter.close()
@@ -107,14 +111,14 @@ def main():
 
         xlsx_files = utils.get_xlsx_files(constants.XLSX_DIR)
         if not xlsx_files:
-            logger.warning("没有找到需要处理的Excel文件")
+            logger.warning("No Excel files found to process")
             return
 
         for file in xlsx_files:
             process_file(file)
 
     except Exception as e:
-        logger.error(f"程序执行过程中发生错误: {e}")
+        logger.error(f"Error during program execution: {e}")
     finally:
         logging.shutdown()
 
