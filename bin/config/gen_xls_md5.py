@@ -4,7 +4,7 @@
 import os
 import logging
 import md5tool
-import gen_common
+import generate_common
 from concurrent.futures import ThreadPoolExecutor
 from config import XLSX_DIR
 
@@ -61,10 +61,10 @@ def generate_md5_files(directory, output_dir):
 
 def main():
     # Ensure output directory exists
-    if not os.path.exists(gen_common.md5_output_dir):
-        os.makedirs(gen_common.md5_output_dir)
+    if not os.path.exists(generate_common.md5_output_dir):
+        os.makedirs(generate_common.md5_output_dir)
 
-    generate_md5_files(XLSX_DIR, gen_common.md5_output_dir)
+    generate_md5_files(XLSX_DIR, generate_common.md5_output_dir)
 
 if __name__ == "__main__":
     main()

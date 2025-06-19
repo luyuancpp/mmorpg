@@ -11,7 +11,7 @@ import openpyxl
 import multiprocessing
 from typing import List, Optional, Dict
 
-import gen_common  # Assuming gen_common contains the necessary functions
+import generate_common  # Assuming generate_common contains the necessary functions
 from common import constants
 from jinja2 import Environment, FileSystemLoader
 
@@ -32,7 +32,7 @@ class ExcelToCppConverter:
 
         # Initialize Jinja2 environment
         self.template_env = Environment(
-            loader=FileSystemLoader(gen_common.TEMPLATE_DIR),  # Path to your template folder
+            loader=FileSystemLoader(generate_common.TEMPLATE_DIR),  # Path to your template folder
             autoescape=True
         )
 
@@ -40,7 +40,7 @@ class ExcelToCppConverter:
         """Find the index of the column where the 7th row contains 'bit_index'."""
         headers = [cell.value for cell in self.worksheet[1]]
         for col_idx in range(len(headers)):
-            cell_value = self.worksheet.cell(row=gen_common.XLSX_TABLE_BIT_BEGIN_INDEX, column=col_idx + 1).value
+            cell_value = self.worksheet.cell(row=generate_common.XLSX_TABLE_BIT_BEGIN_INDEX, column=col_idx + 1).value
             if cell_value is not None and cell_value.strip().lower() == 'bit_index':
                 return col_idx
         return None

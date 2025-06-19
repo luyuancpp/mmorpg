@@ -13,12 +13,12 @@ import utils
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
 
-import gen_common
+import generate_common
 from common import constants
 
 # 设置日志配置
 logging.basicConfig(
-    level=logging.WARNING,
+    level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -33,8 +33,40 @@ class ExcelToCppConverter:
         self.constants_name_index = self._find_constants_name_index()
 
     def _find_constants_name_index(self) -> Optional[int]:
-        headers = [cell.value for cell in self.worksheet[1]]
-        return headers.index('constants_name') if 'constants_name' in headers else None
+        """
+        查找 constants_name 列的索引
+        返回: 如果找到返回索引值，否则返回 None
+        """
+        try:
+            # 确保第一行存在且有数据
+            if not self.worksheet or self.worksheet.max_row < 1:
+                logger.warning(f"工作表 '{self.sheet}' 为空或没有数据")
+                return None
+
+            # 获取第一行的所有单元格
+            first_row = self.worksheet[1]
+            if not first_row:
+                logger.warning(f"工作表 '{self.sheet}' 第一行为空")
+                return None
+
+            # 获取所有列标题
+            headers = []
+            for cell in first_row:
+                if cell.value is None:
+                    headers.append('')
+                else:
+                    headers.append(str(cell.value).strip())
+
+            # 查找 constants_name 列
+            try:
+                return headers.index('constants_name')
+            except ValueError:
+                logger.info(f"工作表 '{self.sheet}' 中未找到 'constants_name' 列")
+                return None
+
+        except Exception as e:
+            logger.error(f"查找 constants_name 列时发生错误: {str(e)}")
+            return None
 
     def should_process(self) -> bool:
         return self.constants_name_index is not None
@@ -48,7 +80,7 @@ class ExcelToCppConverter:
             constant_name = self._generate_constant_name(row, id_value)
             constants_list.append({'name': constant_name, 'value': id_value})
 
-        env = Environment(loader=FileSystemLoader(gen_common.TEMPLATE_DIR))
+        env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR))
         template = env.get_template("constants.h.j2")
         return template.render(constants=constants_list)
 
@@ -75,8 +107,19 @@ class ExcelToCppConverter:
 
 def process_file(file_path: str) -> None:
     """处理单个Excel文件并生成对应的C++常量文件"""
+    if not os.path.isfile(file_path):
+        logger.error(f"文件不存在: {file_path}")
+        return
+
     try:
-        with ExcelToCppConverter(file_path) as converter:
+        # 在上下文语法前尝试初始化
+        converter = ExcelToCppConverter(file_path)
+    except Exception as e:
+        logger.error(f"初始化 ExcelToCppConverter 时发生错误: {file_path}, 错误: {str(e)}")
+        return
+
+    try:
+        with converter:
             if converter.should_process():
                 cpp_code = converter.generate_cpp_constants()
                 converter.save_cpp_constants_to_file(cpp_code)
@@ -85,6 +128,7 @@ def process_file(file_path: str) -> None:
                 logger.info(f"已跳过 (无constants_name): {file_path}")
     except Exception as e:
         logger.error(f"处理文件 {file_path} 时发生错误: {str(e)}")
+
 
 
 def process_files_with_executor(files: List[str]) -> None:

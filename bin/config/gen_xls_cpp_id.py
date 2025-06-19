@@ -3,7 +3,7 @@
 
 import os
 import openpyxl
-import gen_common  # Ensure gen_common provides BEGIN_ROW_IDX and mywrite functions
+import generate_common  # Ensure generate_common provides BEGIN_ROW_IDX and mywrite functions
 import logging
 from os import listdir
 from os.path import isfile, join
@@ -24,7 +24,7 @@ def generate_id_enum(sheet):
     file_str = "#pragma once\n"
     file_str += f"enum e_{name}_configid : uint32_t\n{{\n"
 
-    for idx in range(gen_common.BEGIN_ROW_IDX, n_rows + 1):
+    for idx in range(generate_common.BEGIN_ROW_IDX, n_rows + 1):
         cell_value = sheet.cell(row=idx, column=1).value
         if cell_value is not None:
             file_str += f"    {name}_config_id_{int(cell_value)},\n"
@@ -55,7 +55,7 @@ def main():
                 workbook_data = generate_id_cpp(workbook)
                 for sheet_name, data in workbook_data.items():
                     output_file_path = os.path.join(cpp_dir, f"{sheet_name}_config_id.h")
-                    gen_common.mywrite(data, output_file_path)
+                    generate_common.mywrite(data, output_file_path)
                     logger.info(f"Generated C++ enum file: {output_file_path}")
             except Exception as e:
                 logger.error(f"Failed to process file {full_path}: {e}")

@@ -9,7 +9,7 @@ import multiprocessing
 from typing import Dict, List, Optional
 from os import listdir
 from os.path import isfile, join
-import gen_common
+import generate_common
 from config import XLSX_DIR
 
 # Configuration Constants
@@ -26,9 +26,9 @@ def get_workbook_data(workbook: openpyxl.Workbook) -> Dict[str, Dict]:
         sheet_name = workbook.sheetnames[0]
         sheet = workbook[sheet_name]
         if validate_sheet(sheet):
-            column_names = gen_common.get_column_names(sheet)
+            column_names = generate_common.get_column_names(sheet)
             if column_names:
-                sheet_data = gen_common.get_sheet_data(sheet, column_names)
+                sheet_data = generate_common.get_sheet_data(sheet, column_names)
                 data[sheet_name] = sheet_data
     else:
         logger.error("No sheets found in the workbook.")
@@ -45,7 +45,7 @@ def generate_proto_file(data: Dict, sheet_name: str) -> Optional[str]:
     """Generate .proto file content based on sheet data."""
     try:
         proto_content = create_proto_header()
-        column_names = data[gen_common.SHEET_COLUM_NAME_INDEX]
+        column_names = data[generate_common.SHEET_COLUM_NAME_INDEX]
 
         proto_content += generate_group_messages(sheet_name, data, column_names)
         proto_content += generate_row_message(sheet_name, data, column_names)
@@ -66,10 +66,10 @@ def create_proto_header() -> str:
 def generate_group_messages(sheet_name: str, data: Dict, column_names: List[str]) -> str:
     """Generate messages for grouped data."""
     proto_content = ''
-    group_data = data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX]
+    group_data = data[generate_common.SHEET_GROUP_ARRAY_DATA_INDEX]
     for k, v in group_data.items():
-        obj_name = sheet_name + gen_common.set_to_string(
-            gen_common.find_common_words(column_names[v[0]], column_names[v[1]], '_')
+        obj_name = sheet_name + generate_common.set_to_string(
+            generate_common.find_common_words(column_names[v[0]], column_names[v[1]], '_')
         )
         proto_content += f'message {obj_name} {{\n'
         for i, column in enumerate(v):
@@ -84,7 +84,7 @@ def generate_row_message(sheet_name: str, data: Dict, column_names: List[str]) -
     field_index = 1
 
     for key, _ in data[0].items():
-        if not is_excluded_owner(data[gen_common.OWNER_INDEX], key):
+        if not is_excluded_owner(data[generate_common.OWNER_INDEX], key):
             field_content = format_field(sheet_name, data, key, column_names, field_index)
             if field_content:
                 proto_content += field_content
@@ -99,37 +99,37 @@ def is_excluded_owner(owner_data: Dict, key: str) -> bool:
 
 def format_field(sheet_name: str, data: Dict, key: str, column_names: List[str], field_index: int) -> str:
     """Format a field for the .proto file based on its type."""
-    if key in data[gen_common.MAP_TYPE_INDEX]:
+    if key in data[generate_common.MAP_TYPE_INDEX]:
         return format_map_field(data, key, column_names, field_index)
-    elif key in data[gen_common.SHEET_ARRAY_DATA_INDEX]:
+    elif key in data[generate_common.SHEET_ARRAY_DATA_INDEX]:
         return f'\trepeated {data[0][key]} {key} = {field_index};\n'
-    elif gen_common.is_key_in_group_array(data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX], key, column_names):
+    elif generate_common.is_key_in_group_array(data[generate_common.SHEET_GROUP_ARRAY_DATA_INDEX], key, column_names):
         return format_group_array_field(sheet_name, data, key, column_names, field_index)
     else:
         return f'\t{data[0][key]} {key} = {field_index};\n'
 
 def format_map_field(data: Dict, key: str, column_names: List[str], field_index: int) -> str:
     """Format a map field for the .proto file."""
-    map_type = data[gen_common.MAP_TYPE_INDEX][key]
-    if map_type == gen_common.SET_CELL:
+    map_type = data[generate_common.MAP_TYPE_INDEX][key]
+    if map_type == generate_common.SET_CELL:
         return f'\tmap <{data[0][key]}, bool> {key} = {field_index};\n'
-    elif map_type == gen_common.MAP_KEY_CELL:
-        value_type = data[gen_common.FILE_TYPE_INDEX]
-        if key in data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX]:
-            value = data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX][key]
+    elif map_type == generate_common.MAP_KEY_CELL:
+        value_type = data[generate_common.FILE_TYPE_INDEX]
+        if key in data[generate_common.SHEET_GROUP_ARRAY_DATA_INDEX]:
+            value = data[generate_common.SHEET_GROUP_ARRAY_DATA_INDEX][key]
             key_name = column_names[value[0]]
             value_name = column_names[value[1]]
-            obj_name = gen_common.column_name_to_obj_name(key_name, '_')
+            obj_name = generate_common.column_name_to_obj_name(key_name, '_')
             return f'\tmap <{value_type[key_name]}, {value_type[value_name]}> {obj_name} = {field_index};\n'
     return ''
 
 def format_group_array_field(sheet_name: str, data: Dict, key: str, column_names: List[str], field_index: int) -> str:
     """Format a group array field for the .proto file."""
-    if key not in data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX]:
+    if key not in data[generate_common.SHEET_GROUP_ARRAY_DATA_INDEX]:
         return ''
-    value = data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX][key]
+    value = data[generate_common.SHEET_GROUP_ARRAY_DATA_INDEX][key]
     key_name = column_names[value[0]]
-    obj_name = gen_common.column_name_to_obj_name(key_name, '_')
+    obj_name = generate_common.column_name_to_obj_name(key_name, '_')
     return f'\trepeated {sheet_name}{obj_name} {obj_name} = {field_index};\n'
 
 def generate_table_message(sheet_name: str) -> str:
