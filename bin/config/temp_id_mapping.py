@@ -14,7 +14,7 @@ def read_temp_id_mapping():
 
 def write_temp_id_mapping(mapping):
     """写入临时ID映射文件"""
-    with open(temp_file_path, 'w') as f:
+    with open(temp_file_path, 'w', encoding='utf-8') as f:
         json.dump(mapping, f, indent=2)
 
 def allocate_new_id(mapping):

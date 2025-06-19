@@ -40,7 +40,7 @@ def write_temp_id_mapping(mapping):
     """Writes ID mappings to temp file."""
     try:
         with file_lock:
-            with open(temp_file_path, 'w') as f:
+            with open(temp_file_path, 'w', encoding='utf-8') as f:
                 json.dump(mapping, f, indent=2)
     except Exception as e:
         logging.error(f"Error writing ID mapping file: {str(e)}")

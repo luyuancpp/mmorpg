@@ -87,7 +87,7 @@ def check_against_md5_file(filename, md5_filename):
 def generate_md5_file_for(filename, md5_filename):
     """This function generates an md5 file for an existing file."""
     try:
-        output_file = open(md5_filename, 'w')
+        output_file = open(md5_filename, 'w', encoding='utf-8')
     except IOError:
         sys.stdout.write("ERROR: can't write to file {0}\n".format(md5_filename))
 

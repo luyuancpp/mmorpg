@@ -60,7 +60,7 @@ class ExcelToCppConverter:
 
     def _save_mapping(self, mapping: Dict[int, int]) -> None:
         """Save the ID to index mapping to a JSON file."""
-        with open(self.mapping_file, 'w') as file:
+        with open(self.mapping_file, 'w', encoding='utf-8') as file:
             json.dump(mapping, file, indent=4)
 
     def _find_unused_indexes(self, id_to_index: Dict[int, int]) -> List[int]:
@@ -119,7 +119,7 @@ class ExcelToCppConverter:
     def save_cpp_constants_to_file(self, cpp_constants: str) -> None:
         """Save the generated C++ constants to a file."""
         output_file = join(constants.GENERATOR_TABLE_INDEX_DIR, f"{self.sheet.lower()}_table_id_bit_index.h")
-        with open(output_file, 'w') as file:
+        with open(output_file, 'w', encoding='utf-8') as file:
             file.write(cpp_constants)
 
 

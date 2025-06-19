@@ -14,17 +14,17 @@ void {{ sheetname }}ConfigurationTable::Load() {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
         {%- for data in datastring %}
-            {%- if data and data[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.TABLE_KEY_CELL %}
-        kv_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}data_.emplace(row_data.{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}(), &row_data);
+            {%- if data and data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL %}
+        kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_.emplace(row_data.{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}(), &row_data);
             {%- endif %}
         {%- endfor %}
     }
 
     {%- for data in datastring %}
-        {%- if data and data[gen_common.COL_OBJ_TABLE_EXPRESSION_PARAM_NAMES_INDEX] is not none %}
-            {%- set word_count, word_list = gen_common.count_words_by_comma(data[gen_common.COL_OBJ_TABLE_EXPRESSION_PARAM_NAMES_INDEX]) %}
+        {%- if data and data[generate_common.COL_OBJ_TABLE_EXPRESSION_PARAM_NAMES_INDEX] is not none %}
+            {%- set word_count, word_list = generate_common.count_words_by_comma(data[generate_common.COL_OBJ_TABLE_EXPRESSION_PARAM_NAMES_INDEX]) %}
                 {%- if word_count > 0 %}
-    expression_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}_.Init({
+    expression_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}_.Init({
           {%- for word in word_list %}
             "{{ word }}"{%- if not loop.last %}, {% endif %}
           {%- endfor %}
@@ -52,10 +52,10 @@ std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}ConfigurationTab
 }
 
 {%- for data in datastring %}
-    {%- if data and data[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.TABLE_KEY_CELL %}
-std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}ConfigurationTable::GetBy{{ data[gen_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const {
-    const auto it = kv_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}data_.find(tableId);
-    if (it == kv_{{ data[gen_common.COL_OBJ_COLUMN_NAME] }}data_.end()) {
+    {%- if data and data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL %}
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}ConfigurationTable::GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const {
+    const auto it = kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_.find(tableId);
+    if (it == kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_.end()) {
         LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId;
         return { nullptr, kInvalidTableId };
     }

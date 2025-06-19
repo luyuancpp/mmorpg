@@ -56,7 +56,8 @@ class ExcelToCppConverter:
             constant_name = self._generate_constant_name(row, id_value)
             constants_list.append({'name': constant_name, 'value': id_value})
 
-        env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR))
+        # ✅ 显式指定模板文件编码为 UTF-8，防止 gbk 解码失败
+        env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'))
         template = env.get_template("constants.h.j2")
         return template.render(constants=constants_list)
 
