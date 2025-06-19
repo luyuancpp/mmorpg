@@ -6,7 +6,7 @@ import json
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from openpyxl import load_workbook
-import gen_common  # Assuming gen_common contains the necessary functions
+import generate_common  # Assuming generate_common contains the necessary functions
 from common import constants
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from config import XLSX_DIR
@@ -93,7 +93,7 @@ def generate_proto_file(group_name, group_data):
     """Generate a Proto file for a given group using Jinja2 template."""
     try:
         template_env = Environment(
-            loader=FileSystemLoader(gen_common.TEMPLATE_DIR),  # 你的模板目录
+            loader=FileSystemLoader(generate_common.TEMPLATE_DIR),  # 你的模板目录
             autoescape=select_autoescape(['proto'])  # 可选
         )
         template = template_env.get_template("tip_enum.proto.j2")

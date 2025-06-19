@@ -4,7 +4,7 @@
 import concurrent.futures
 import os
 import openpyxl
-import gen_common
+import generate_common
 import concurrent.futures
 from pathlib import Path
 from multiprocessing import cpu_count
@@ -43,7 +43,7 @@ def get_workbook_data(workbook):
         # Check if A5 cell value is 'multi' or None
         cell_value = sheet['A5'].value
         use_flat_multimap = cell_value is not None and cell_value.lower() == 'multi'
-        first_19_rows_per_column = gen_common.get_first_19_rows_per_column(sheet)
+        first_19_rows_per_column = generate_common.get_first_19_rows_per_column(sheet)
         workbook_data[sheet_names[0]] = {
             'multi': use_flat_multimap,
             'get_first_19_rows_per_column': first_19_rows_per_column
@@ -78,7 +78,7 @@ def process_workbook(filename):
             cpp_filename = f"{sheetname.lower()}_config.cpp"
 
             # Create a Jinja2 environment and load the templates
-            env = Environment(loader=FileSystemLoader(gen_common.TEMPLATE_DIR), auto_reload=True)
+            env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR), auto_reload=True)
 
             # Render the header templates
             header_template = env.get_template('config_template.h.jinja')
@@ -86,25 +86,25 @@ def process_workbook(filename):
                 datastring=data['get_first_19_rows_per_column'],
                 sheetname=sheetname,
                 use_flat_multimap=data['multi'],
-                gen_common=gen_common,
+                generate_common=generate_common,
                 get_cpp_type_param_name_with_ref=get_cpp_type_param_name_with_ref,
                 get_cpp_type_name=get_cpp_type_name
             )
 
-            gen_common.mywrite(header_content, CPP_DIR / header_filename)
+            generate_common.mywrite(header_content, CPP_DIR / header_filename)
 
             # Render the implementation templates
             implementation_template = env.get_template('config_template.cpp.jinja')
             implementation_content = implementation_template.render(
                 datastring=data['get_first_19_rows_per_column'],
                 sheetname=sheetname,
-                gen_common=gen_common,
+                generate_common=generate_common,
                 get_cpp_type_param_name_with_ref=get_cpp_type_param_name_with_ref,
                 get_cpp_type_name=get_cpp_type_name
 
             )
 
-            gen_common.mywrite(implementation_content, CPP_DIR / cpp_filename)
+            generate_common.mywrite(implementation_content, CPP_DIR / cpp_filename)
     except Exception as e:
         logging.error(f"Failed to load or process workbook {filename}: {e}")
 
@@ -125,7 +125,7 @@ def generate_all_config():
     cpucount = cpu_count()
 
     # 初始化模板引擎
-    env = Environment(loader=FileSystemLoader(gen_common.TEMPLATE_DIR))
+    env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR))
     header_template = env.get_template("all_config.h.jinja")
     cpp_template = env.get_template("all_config.cpp.jinja")
 
@@ -147,8 +147,8 @@ def main():
 
     # Generate header and implementation files for all configurations
     header_content, cpp_content = generate_all_config()
-    gen_common.mywrite(header_content, CPP_DIR / "all_config.h")
-    gen_common.mywrite(cpp_content, CPP_DIR / "all_config.cpp")
+    generate_common.mywrite(header_content, CPP_DIR / "all_config.h")
+    generate_common.mywrite(cpp_content, CPP_DIR / "all_config.cpp")
 
 
 if __name__ == "__main__":
