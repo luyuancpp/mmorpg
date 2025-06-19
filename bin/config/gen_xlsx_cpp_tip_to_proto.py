@@ -115,14 +115,25 @@ def generate_proto_file(group_name, group_data):
 
 def generate_proto_files(groups):
     """Generate Proto files for all groups using ThreadPoolExecutor."""
-    with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(generate_proto_file, group_name, group_data) for group_name, group_data in groups.items()]
-
-        for future in as_completed(futures):
+    try:
+        with ThreadPoolExecutor() as executor:
             try:
-                future.result()
+                futures = [
+                    executor.submit(generate_proto_file, group_name, group_data)
+                    for group_name, group_data in groups.items()
+                ]
+
+                for future in as_completed(futures):
+                    try:
+                        future.result()
+                    except Exception as e:
+                        logging.error(f"任务执行失败: {e}")
             except Exception as e:
-                logging.error(f"Error occurred: {str(e)}")
+                logging.error(f"线程池执行失败: {e}")
+            finally:
+                executor.shutdown(wait=True)
+    except Exception as e:
+        logging.error(f"Proto文件生成失败: {e}")
 
 
 def main():

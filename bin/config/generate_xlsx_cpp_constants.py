@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 # coding=utf-8
 
 import os
@@ -9,16 +9,20 @@ from os.path import isfile, join
 import openpyxl
 import multiprocessing
 from typing import List, Optional
-import  utils
+import utils
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
 
-import gen_common  # Assuming gen_common contains the necessary functions
+import gen_common
 from common import constants
 
-# Setup Logging
-logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
+# 设置日志配置
+logging.basicConfig(
+    level=logging.WARNING,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
+
 
 class ExcelToCppConverter:
     def __init__(self, excel_file: str):
@@ -37,12 +41,10 @@ class ExcelToCppConverter:
 
     def generate_cpp_constants(self) -> str:
         constants_list = []
-
         for row in self.worksheet.iter_rows(min_row=20, values_only=True):
             id_value = row[0]
             if id_value is None:
                 continue
-
             constant_name = self._generate_constant_name(row, id_value)
             constants_list.append({'name': constant_name, 'value': id_value})
 
@@ -56,47 +58,76 @@ class ExcelToCppConverter:
         return f'k{self.sheet}_{id_value}'
 
     def save_cpp_constants_to_file(self, cpp_code: str) -> None:
-        output_path = os.path.join(constants.GENERATOR_CONSTANTS_NAME_DIR,
-                                   f"{self.sheet.lower()}_table_id_constants.h")
+        output_path = os.path.join(
+            constants.GENERATOR_CONSTANTS_NAME_DIR,
+            f"{self.sheet.lower()}_table_id_constants.h"
+        )
         with open(output_path, 'w') as f:
             f.write(cpp_code)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if hasattr(self, 'workbook'):
+            self.workbook.close()
 
 
-def get_xlsx_files(directory: str) -> List[str]:
-    """List all .xlsx files in the specified directory."""
-    return [join(directory, filename) for filename in listdir(directory)
-            if isfile(join(directory, filename)) and filename.endswith('.xlsx')]
-
-def process_file(file_path: str):
-    converter = ExcelToCppConverter(file_path)
-    if converter.should_process():
-        cpp_code = converter.generate_cpp_constants()
-        converter.save_cpp_constants_to_file(cpp_code)
-        logger.info(f"Processed: {file_path}")
-    else:
-        logger.info(f"Skipped (no constants_name): {file_path}")
-
-def main():
-    os.makedirs(constants.GENERATOR_CONSTANTS_NAME_DIR, exist_ok=True)
-
+def process_file(file_path: str) -> None:
+    """处理单个Excel文件并生成对应的C++常量文件"""
     try:
-        xlsx_files = utils.get_xlsx_files(constants.XLSX_DIR)
+        with ExcelToCppConverter(file_path) as converter:
+            if converter.should_process():
+                cpp_code = converter.generate_cpp_constants()
+                converter.save_cpp_constants_to_file(cpp_code)
+                logger.info(f"已处理: {file_path}")
+            else:
+                logger.info(f"已跳过 (无constants_name): {file_path}")
     except Exception as e:
-        logger.error(f"Failed to list files: {e}")
-        return
+        logger.error(f"处理文件 {file_path} 时发生错误: {str(e)}")
 
-    num_threads = min(multiprocessing.cpu_count(), len(xlsx_files))
+
+def process_files_with_executor(files: List[str]) -> None:
+    """使用线程池处理多个文件"""
+    num_threads = min(multiprocessing.cpu_count(), len(files))
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-        futures = [executor.submit(process_file, f) for f in xlsx_files]
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                future.result()
-            except Exception as e:
-                logger.error(f"Error during processing: {e}")
+        try:
+            # 提交所有任务
+            futures = [executor.submit(process_file, f) for f in files]
 
-if __name__ == "__main__":
-    main()
+            # 等待所有任务完成并处理结果
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    logger.error(f"任务执行失败: {str(e)}")
+        except Exception as e:
+            logger.error(f"线程池执行过程中发生错误: {str(e)}")
+        finally:
+            # 确保所有任务都完成
+            executor.shutdown(wait=True)
+
+
+def main() -> None:
+    """主函数：处理所有Excel文件并生成C++常量文件"""
+    try:
+        # 确保输出目录存在
+        os.makedirs(constants.GENERATOR_CONSTANTS_NAME_DIR, exist_ok=True)
+
+        # 获取所有需要处理的Excel文件
+        xlsx_files = utils.get_xlsx_files(constants.XLSX_DIR)
+        if not xlsx_files:
+            logger.warning("没有找到需要处理的Excel文件")
+            return
+
+        # 使用线程池处理文件
+        process_files_with_executor(xlsx_files)
+
+    except Exception as e:
+        logger.error(f"程序执行过程中发生错误: {str(e)}")
+    finally:
+        # 确保日志系统正确关闭
+        logging.shutdown()
 
 
 if __name__ == "__main__":

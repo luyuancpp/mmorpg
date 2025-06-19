@@ -137,25 +137,32 @@ def process_file(excel_file: str) -> None:
     else:
         logger.debug(f"Skipping file {excel_file} as it does not contain a valid 'bit_index' value in the 7th row.")
 
+
 def main() -> None:
     """Main function to process all Excel files."""
     os.makedirs(constants.GENERATOR_TABLE_INDEX_DIR, exist_ok=True)
     os.makedirs(constants.GENERATOR_TABLE_INDEX_MAPPING_DIR, exist_ok=True)
+
     try:
         xlsx_files = get_xlsx_files(constants.XLSX_DIR)
-    except Exception as e:
-        logger.error(f"Failed to list .xlsx files: {e}")
-        return
+        num_threads = min(multiprocessing.cpu_count(), len(xlsx_files))
 
-    num_threads = min(multiprocessing.cpu_count(), len(xlsx_files))
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-        futures = [executor.submit(process_file, file_path) for file_path in xlsx_files]
-        for future in concurrent.futures.as_completed(futures):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
             try:
-                future.result()
+                futures = [executor.submit(process_file, file_path) for file_path in xlsx_files]
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        future.result()
+                    except Exception as e:
+                        logger.error(f"任务执行失败: {str(e)}")
             except Exception as e:
-                logger.error(f"An error occurred during processing: {e}")
+                logger.error(f"线程池执行失败: {str(e)}")
+            finally:
+                # 确保所有任务都完成
+                executor.shutdown(wait=True)
+    except Exception as e:
+        logger.error(f"主程序执行失败: {str(e)}")
+
 
 if __name__ == "__main__":
     main()
