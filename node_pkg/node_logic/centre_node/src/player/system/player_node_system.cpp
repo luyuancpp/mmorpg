@@ -4,7 +4,6 @@
 #include "scene/comp/scene_comp.h"
 #include "thread_local/storage.h"
 
-#include "globalvariable_config.h"
 #include "cpp_table_id_constants_name/globalvariable_table_id_constants.h"
 #include "game_common_logic/system/session_system.h"
 #include "network/message_system.h"
@@ -23,6 +22,8 @@
 #include "type_alias/player_loading.h"
 #include "util/defer.h"
 #include "proto/common/node.pb.h"
+#include "cpp_table_id_constants_name/global_abnormal_logout_table_id_constants.h"
+#include "globalvariable_config.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
 {

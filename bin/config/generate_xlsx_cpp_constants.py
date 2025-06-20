@@ -120,7 +120,7 @@ class ExcelToCppConverter:
             for key, const_list in constants_map.items():
                 first, second = key
                 cpp_code = template.render(constants=const_list)
-                filename = f"global_{first}_{second}.h".lower()
+                filename = f"global_{first}_{second}_table_id_constants.h".lower()
                 output_path = os.path.join(constants.GENERATOR_CONSTANTS_NAME_DIR, filename)
                 with open(output_path, 'w', encoding='utf-8') as f:
                     f.write(cpp_code)

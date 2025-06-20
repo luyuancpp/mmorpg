@@ -85,7 +85,7 @@
     <ClInclude Include="src\cpp_table_id_constants_name\actoractioncombatstate_table_id_constants.h" />
     <ClInclude Include="src\cpp_table_id_constants_name\actoractionstate_table_id_constants.h" />
     <ClInclude Include="src\cpp_table_id_constants_name\globalvariable_table_id_constants.h" />
-    <ClInclude Include="src\cpp_table_id_constants_name\global_abnormal_logout.h" />
+    <ClInclude Include="src\cpp_table_id_constants_name\global_abnormal_logout_table_id_constants.h" />
     <ClInclude Include="src\globalvariable_config.h" />
     <ClInclude Include="src\item_config.h" />
     <ClInclude Include="src\mainscene_config.h" />
