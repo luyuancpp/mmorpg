@@ -88,62 +88,69 @@ class ExcelToCppConverter:
             logger.info(f"No 'constants_name' column found, skipping file: {self.excel_file}")
             return
 
+        env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'))
+        template = env.get_template("constants.h.j2")
+
         if self.is_global_file:
-            # 按 constants_name 拆分生成多个文件
-            constants_map = {}  # key: (first_word, second_word), value: list of constants
+            constants_map = {}  # key: (first, second), value: list
+            single_list = []
+
             for row in self.worksheet.iter_rows(min_row=20, values_only=True):
                 id_value = row[0]
-                if id_value is None:
+                const_raw = row[self.constants_name_index]
+                if id_value is None or not const_raw:
                     continue
-                if not row[self.constants_name_index]:
-                    continue
-                const_name_full = str(row[self.constants_name_index])
-                parts = const_name_full.split('_')
-                if len(parts) < 2:
-                    logger.warning(f"Invalid constants_name format (need at least two parts): {const_name_full}")
-                    continue
-                key = (parts[0], parts[1])
-                constant_name = f'k{self.sheet}_{const_name_full}'
-                if key not in constants_map:
-                    constants_map[key] = []
-                constants_map[key].append({'name': constant_name, 'value': id_value})
 
-            env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'))
-            template = env.get_template("constants.h.j2")
+                const_name = str(const_raw)
+                parts = const_name.split('_')
 
+                if len(parts) >= 2:
+                    key = (parts[0], parts[1])
+                    cpp_name = f'k{self.sheet}_{const_name}'
+                    constants_map.setdefault(key, []).append({'name': cpp_name, 'value': id_value})
+                else:
+                    # Treat as "normal"
+                    cpp_name = f'k{self.sheet}_{const_name}'
+                    single_list.append({'name': cpp_name, 'value': id_value})
+
+            # Generate split global_x_y.h files
             for key, const_list in constants_map.items():
-                first_word, second_word = key
+                first, second = key
                 cpp_code = template.render(constants=const_list)
-                filename = f"global_{first_word}_{second_word}.h".lower()  # 👈 转小写
+                filename = f"global_{first}_{second}.h".lower()
                 output_path = os.path.join(constants.GENERATOR_CONSTANTS_NAME_DIR, filename)
                 with open(output_path, 'w', encoding='utf-8') as f:
                     f.write(cpp_code)
                 logger.info(f"Generated file: {output_path}")
 
+            # Generate one file for the "non-underscore" constants
+            if single_list:
+                cpp_code = template.render(constants=single_list)
+                filename = f"{self.sheet.lower()}_table_id_constants.h"
+                output_path = os.path.join(constants.GENERATOR_CONSTANTS_NAME_DIR, filename)
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(cpp_code)
+                logger.info(f"Generated fallback file: {output_path}")
+
         else:
-            # 普通文件处理逻辑
+            # Non-global file (standard table)
             constants_list = []
             for row in self.worksheet.iter_rows(min_row=20, values_only=True):
                 id_value = row[0]
                 if id_value is None:
                     continue
-                constant_name = self._generate_constant_name(row, id_value)
-                constants_list.append({'name': constant_name, 'value': id_value})
+                const_raw = row[self.constants_name_index]
+                if not const_raw:
+                    continue
+                cpp_name = f'k{self.sheet}_{const_raw}'
+                constants_list.append({'name': cpp_name, 'value': id_value})
 
-            env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'))
-            template = env.get_template("constants.h.j2")
             cpp_code = template.render(constants=constants_list)
-
-            output_path = os.path.join(
-                constants.GENERATOR_CONSTANTS_NAME_DIR,
-                f"{self.sheet.lower()}_table_id_constants.h"
-            )
+            output_path = os.path.join(constants.GENERATOR_CONSTANTS_NAME_DIR,
+                                       f"{self.sheet.lower()}_table_id_constants.h")
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(cpp_code)
             logger.info(f"Generated file: {output_path}")
-
-    # 处理函数改成调用这个新方法
-
 
 def process_file(file_path: str):
     logger.info(f"Start processing file: {file_path}")
