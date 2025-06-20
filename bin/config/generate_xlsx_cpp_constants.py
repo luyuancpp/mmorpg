@@ -8,6 +8,8 @@ from typing import Optional
 from jinja2 import Environment, FileSystemLoader
 import sys
 import io
+
+# Ensure console output supports UTF-8
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
@@ -15,9 +17,9 @@ import utils
 import generate_common
 from common import constants
 
-# Set up logging
+# Set up logging configuration
 logging.basicConfig(
-    level=logging.DEBUG,  # Increase log level for debugging
+    level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -61,7 +63,6 @@ class ExcelToCppConverter:
             constant_name = self._generate_constant_name(row, id_value)
             constants_list.append({'name': constant_name, 'value': id_value})
 
-        # Explicitly specify UTF-8 encoding for templates to avoid decoding errors
         env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'))
         template = env.get_template("constants.h.j2")
         return template.render(constants=constants_list)
@@ -92,28 +93,30 @@ class ExcelToCppConverter:
         template = env.get_template("constants.h.j2")
 
         if self.is_global_file:
-            constants_map = {}  # key: (first, second), value: list
+            constants_map = {}  # key: (first, second), value: list of constants
             single_list = []
 
             for row in self.worksheet.iter_rows(min_row=20, values_only=True):
                 id_value = row[0]
                 const_raw = row[self.constants_name_index]
-                if id_value is None or not const_raw:
+                if id_value is None:
                     continue
 
-                const_name = str(const_raw)
-                parts = const_name.split('_')
+                const_name = str(const_raw) if const_raw else str(id_value)  # 若为空，用 id 当名称
 
-                if len(parts) >= 2:
-                    key = (parts[0], parts[1])
-                    cpp_name = f'k{self.sheet}_{const_name}'
-                    constants_map.setdefault(key, []).append({'name': cpp_name, 'value': id_value})
+                if '_' in const_name:
+                    parts = const_name.split('_')
+                    if len(parts) >= 2:
+                        key = (parts[0], parts[1])
+                        cpp_name = f'k{self.sheet}_{const_name}'
+                        constants_map.setdefault(key, []).append({'name': cpp_name, 'value': id_value})
+                    else:
+                        logger.warning(f"Invalid underscore format in: {const_name}")
                 else:
-                    # Treat as "normal"
                     cpp_name = f'k{self.sheet}_{const_name}'
                     single_list.append({'name': cpp_name, 'value': id_value})
 
-            # Generate split global_x_y.h files
+            # Generate files grouped by first and second part of constants_name
             for key, const_list in constants_map.items():
                 first, second = key
                 cpp_code = template.render(constants=const_list)
@@ -123,7 +126,7 @@ class ExcelToCppConverter:
                     f.write(cpp_code)
                 logger.info(f"Generated file: {output_path}")
 
-            # Generate one file for the "non-underscore" constants
+            # Generate fallback file for constants without underscores
             if single_list:
                 cpp_code = template.render(constants=single_list)
                 filename = f"{self.sheet.lower()}_table_id_constants.h"
@@ -133,7 +136,7 @@ class ExcelToCppConverter:
                 logger.info(f"Generated fallback file: {output_path}")
 
         else:
-            # Non-global file (standard table)
+            # Normal table processing
             constants_list = []
             for row in self.worksheet.iter_rows(min_row=20, values_only=True):
                 id_value = row[0]
@@ -152,6 +155,7 @@ class ExcelToCppConverter:
                 f.write(cpp_code)
             logger.info(f"Generated file: {output_path}")
 
+
 def process_file(file_path: str):
     logger.info(f"Start processing file: {file_path}")
 
@@ -168,6 +172,7 @@ def process_file(file_path: str):
     finally:
         if 'converter' in locals():
             converter.close()
+
 
 def main():
     try:
