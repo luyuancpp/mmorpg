@@ -341,5 +341,11 @@
     <ClInclude Include="src\pbc\reward_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\cpp_table_id_constants_name\actoractioncombatstate_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cpp_table_id_constants_name\global_abnormal_logout.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
