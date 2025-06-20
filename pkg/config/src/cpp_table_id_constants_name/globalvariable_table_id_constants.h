@@ -1,8 +1,6 @@
 #pragma once
 
 
-constexpr uint32_t kGlobalVariable_Abnormal_logout = 1;
-
 constexpr uint32_t kGlobalVariable_2 = 2;
 
 constexpr uint32_t kGlobalVariable_3 = 3;
