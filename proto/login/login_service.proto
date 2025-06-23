@@ -53,6 +53,7 @@ message EnterGameRequest
 message EnterGameResponse
 {
 	TipInfoMessage error_message = 1;
+	uint64 player_id  = 2;
 }
 
 message LeaveGameRequest

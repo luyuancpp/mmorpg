@@ -4,7 +4,6 @@ import (
 	b3 "github.com/magicsea/behavior3go"
 	"go.uber.org/zap"
 	"robot/interfaces"
-	"robot/logic/gameobject"
 	"robot/pb/game"
 
 	//. "github.com/magicsea/behavior3go/actions"
@@ -91,8 +90,6 @@ func (p *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 
 	// 处理玩家数据
 	playerId := playerList[0].Player.PlayerId
-	zap.L().Info("Player login", zap.Uint64("player id", playerId))
-	gameobject.PlayerList.Set(playerId, gameobject.NewMainPlayer(playerId, client))
 
 	// 发送请求
 	rq := &game.EnterGameRequest{PlayerId: playerId}
