@@ -8,6 +8,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"robot/config"
+	"robot/logic/gameobject"
 	"robot/logic/handler"
 	"robot/pb/game"
 	"robot/pkg"
@@ -69,17 +70,24 @@ func main() {
 					case "EnterGameResponse":
 						resp := msg.(*game.EnterGameResponse)
 						handler.ClientPlayerLoginEnterGameHandler(gameClient, resp)
-						gameClient.TickBehaviorTree()
 					case "MessageContent":
 						resp := msg.(*game.MessageContent)
 						handler.MessageBodyHandler(gameClient, resp)
-						gameClient.TickBehaviorTree()
+						player, ok := gameobject.PlayerList.Get(gameClient.PlayerId)
+						if ok {
+							player.TickBehaviorTree()
+						}
 					default:
 						zap.L().Warn("Unhandled message type", zap.String("message_type", string(d.Name())))
 
 					}
 				case <-time.After(20 * time.Millisecond):
 					gameClient.TickBehaviorTree()
+				case <-time.After(20 * time.Millisecond):
+					player, ok := gameobject.PlayerList.Get(gameClient.PlayerId)
+					if ok {
+						player.TickBehaviorTree()
+					}
 				}
 			}
 		}(i)

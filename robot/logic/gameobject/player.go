@@ -45,7 +45,8 @@ func NewMainPlayer(playerId uint64, clientI interface{}) *Player {
 	}
 	client.SetPlayerId(playerId)
 
-	player := &Player{Client: client}
+	player := &Player{Client: client,
+		Blackboard: NewBlackboard()}
 
 	PlayerList.Set(playerId, player)
 	zap.L().Info("Player created successfully", zap.Uint64("player id", playerId))
@@ -59,4 +60,12 @@ func (player *Player) Send(message proto.Message, messageId uint32) {
 
 func (player *Player) GetClient() interfaces.GameClientInterface {
 	return player.Client
+}
+
+func (player *Player) TickBehaviorTree() {
+	if player.CurrentTree != nil {
+		player.CurrentTree.Tick(0, player.Blackboard)
+	} else {
+		zap.L().Warn("No behavior tree to tick")
+	}
 }
