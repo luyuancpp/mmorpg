@@ -1,9 +1,11 @@
 package handler
 
 import (
-	"robot/logic/gameobject"
+	"robot/logic/behaviortree"
 	"robot/pb/game"
+	"robot/pkg"
 )
 
-func ClientPlayerLoginLoginHandler(player *gameobject.Player, response *game.LoginResponse) {
+func ClientPlayerLoginLoginHandler(client *pkg.GameClient, response *game.LoginResponse) {
+	client.Blackboard.SetMem(behaviortree.PlayerListBoardKey, response.Players)
 }

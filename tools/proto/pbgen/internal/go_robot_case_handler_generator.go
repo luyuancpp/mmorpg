@@ -85,6 +85,11 @@ func GoRobotTotalHandlerGenerator() {
 		if !isClientMethodRepliedHandler(&service.MethodInfo) {
 			continue
 		}
+
+		if util.IsPathInProtoDirs(service.Path(), config.LoginProtoDirIndex) {
+			continue
+		}
+
 		for _, method := range service.MethodInfo {
 			if !isRelevantService(method) {
 				continue

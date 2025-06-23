@@ -21,16 +21,6 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageContent) {
 
 	// Handle different message types
 	switch response.MessageId {
-	case game.ClientPlayerLoginLoginMessageId:
-		handleClientPlayerLoginLogin(player, response.SerializedMessage)
-	case game.ClientPlayerLoginCreatePlayerMessageId:
-		handleClientPlayerLoginCreatePlayer(player, response.SerializedMessage)
-	case game.ClientPlayerLoginEnterGameMessageId:
-		handleClientPlayerLoginEnterGame(player, response.SerializedMessage)
-	case game.ClientPlayerLoginLeaveGameMessageId:
-		handleClientPlayerLoginLeaveGame(player, response.SerializedMessage)
-	case game.ClientPlayerLoginDisconnectMessageId:
-		handleClientPlayerLoginDisconnect(player, response.SerializedMessage)
 	case game.SceneClientPlayerCommonSendTipToClientMessageId:
 		handleSceneClientPlayerCommonSendTipToClient(player, response.SerializedMessage)
 	case game.SceneClientPlayerCommonKickPlayerMessageId:
@@ -63,46 +53,6 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageContent) {
 		// Handle unknown message IDs
 		zap.L().Info("Unhandled message", zap.Uint32("message_id", response.MessageId), zap.String("response", response.String()))
 	}
-}
-func handleClientPlayerLoginLogin(player *gameobject.Player, body []byte) {
-	message := &game.LoginResponse{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal LoginResponse", zap.Error(err))
-		return
-	}
-	ClientPlayerLoginLoginHandler(player, message)
-}
-func handleClientPlayerLoginCreatePlayer(player *gameobject.Player, body []byte) {
-	message := &game.CreatePlayerResponse{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal CreatePlayerResponse", zap.Error(err))
-		return
-	}
-	ClientPlayerLoginCreatePlayerHandler(player, message)
-}
-func handleClientPlayerLoginEnterGame(player *gameobject.Player, body []byte) {
-	message := &game.EnterGameResponse{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal EnterGameResponse", zap.Error(err))
-		return
-	}
-	ClientPlayerLoginEnterGameHandler(player, message)
-}
-func handleClientPlayerLoginLeaveGame(player *gameobject.Player, body []byte) {
-	message := &game.LeaveGameRequest{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal LeaveGameRequest", zap.Error(err))
-		return
-	}
-	ClientPlayerLoginLeaveGameHandler(player, message)
-}
-func handleClientPlayerLoginDisconnect(player *gameobject.Player, body []byte) {
-	message := &game.LoginNodeDisconnectRequest{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal LoginNodeDisconnectRequest", zap.Error(err))
-		return
-	}
-	ClientPlayerLoginDisconnectHandler(player, message)
 }
 func handleSceneClientPlayerCommonSendTipToClient(player *gameobject.Player, body []byte) {
 	message := &game.TipInfoMessage{}
