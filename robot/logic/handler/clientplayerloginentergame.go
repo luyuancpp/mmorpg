@@ -2,6 +2,7 @@ package handler
 
 import (
 	"go.uber.org/zap"
+	"robot/logic/behaviortree"
 	"robot/logic/btree"
 	"robot/logic/gameobject"
 	"robot/pb/game"
@@ -23,4 +24,6 @@ func ClientPlayerLoginEnterGameHandler(client *pkg.GameClient, response *game.En
 	player.BehaviorTree = behaviorTree
 	player.CurrentTree = currentTree
 	btree.InitializePlayerBehaviorTreeBlackboard(player.Blackboard)
+	player.Blackboard.SetMem(behaviortree.ClientBoardKey, client)
+	player.Blackboard.SetMem(behaviortree.PlayerBoardKey, player)
 }

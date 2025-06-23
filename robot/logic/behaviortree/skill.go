@@ -3,7 +3,7 @@ package behaviortree
 import (
 	b3 "github.com/magicsea/behavior3go"
 	"go.uber.org/zap"
-	"robot/interfaces"
+	"robot/logic/gameobject"
 	"robot/pb/game"
 
 	//. "github.com/magicsea/behavior3go/actions"
@@ -94,10 +94,9 @@ func (s *ReleaseSkill) Initialize(setting *BTNodeCfg) {
 }
 
 func (s *ReleaseSkill) OnTick(tick *Tick) b3.Status {
-	// 从黑板中获取客户端
-	client, ok := tick.Blackboard.GetMem(ClientBoardKey).(interfaces.GameClientInterface)
+	player, ok := tick.Blackboard.GetMem(PlayerBoardKey).(gameobject.Player)
 	if !ok {
-		zap.L().Error("Failed to cast client from blackboard", zap.String("Key", ClientBoardKey), zap.Any("Value", tick.Blackboard.GetMem(ClientBoardKey)))
+		zap.L().Error("Failed to get player player id :", zap.Any(PlayerBoardKey, tick.Blackboard.GetMem(PlayerBoardKey)))
 		return b3.FAILURE
 	}
 
@@ -114,7 +113,6 @@ func (s *ReleaseSkill) OnTick(tick *Tick) b3.Status {
 	rq.TargetId = tick.Blackboard.GetUInt64(HatredTargetBoardKey, "", "")
 
 	zap.L().Info("Sending skill release request", zap.Uint32("SkillTableId", rq.SkillTableId))
-	client.Send(rq, game.SceneSkillClientPlayerReleaseSkillMessageId)
-
+	player.Send(rq, game.SceneSkillClientPlayerReleaseSkillMessageId)
 	return b3.SUCCESS
 }

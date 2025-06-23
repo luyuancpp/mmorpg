@@ -11,4 +11,5 @@ const (
 	SkillListBoardKey        = "SkillList"        // 技能列表
 	SkillIDBoardKey          = "SkillID"          //当前的技能ID
 	TargetPosBoardKey        = "TargetPos"        //目标位置
+	PlayerBoardKey           = "Player"
 )
