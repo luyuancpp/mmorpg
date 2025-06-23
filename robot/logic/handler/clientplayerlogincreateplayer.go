@@ -6,4 +6,5 @@ import (
 )
 
 func ClientPlayerLoginCreatePlayerHandler(player *gameobject.Player, response *game.CreatePlayerResponse) {
+
 }
