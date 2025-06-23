@@ -20,6 +20,17 @@
 #include "node/system/node_system.h"
 #include "google/protobuf/descriptor.h"
 
+constexpr char kSessionBinMetaKey[] = "x-session-detail-bin";
+
+std::vector<std::string> SerializeSessionDetails(const SessionDetails& sessionDetails) {
+	std::vector<std::string> result;
+	std::string serialized;
+	if (sessionDetails.SerializeToString(&serialized)) {
+		result.push_back(std::move(serialized));
+	}
+	return result;
+}
+
 RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
     ProtobufDispatcher& dispatcher)
     : protobufCodec(codec),
@@ -154,7 +165,9 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     {
         loginpb::LoginNodeDisconnectRequest request;
         request.set_session_id(sessionId);
-        SendClientPlayerLoginDisconnect(tls.GetNodeRegistry(eNodeType::LoginNodeService), *loginNode , request);
+        SessionDetails sessionDetails;
+        sessionDetails.set_session_id(sessionId);
+        loginpb::SendClientPlayerLoginDisconnect(tls.GetNodeRegistry(eNodeType::LoginNodeService), *loginNode, request, { kSessionBinMetaKey }, SerializeSessionDetails(sessionDetails));
     }
 
     // 通知中心服务器
@@ -224,16 +237,16 @@ void HandleLoginNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, 
 	auto& messageInfo = gRpcServiceRegistry[request->message_id()];
 
 	SetSessionAndParseBody(*messageInfo.requestPrototype, request, sessionId);
-	SessionDetails sessionDetils;
-	sessionDetils.set_session_id(sessionId);
+	SessionDetails sessionDetails;
+	sessionDetails.set_session_id(sessionId);
 
 	if (messageInfo.messageSender)
 	{
 		messageInfo.messageSender(tls.GetNodeRegistry(messageInfo.targetNodeType), 
             *loginNode, 
             *messageInfo.requestPrototype, 
-            { "x-session-detail-bin" }, 
-            { sessionDetils.SerializeAsString() });
+            { kSessionBinMetaKey }, 
+            SerializeSessionDetails(sessionDetails));
 	}
 }
 

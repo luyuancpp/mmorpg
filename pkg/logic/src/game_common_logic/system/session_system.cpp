@@ -13,7 +13,6 @@ NodeId GetGateNodeId(Guid session_id)
     return static_cast<NodeId>(session_id >> SessionIdGenerator::node_bit());
 }
 
-
 using SessionDetailsPtr = std::unique_ptr<SessionDetails>;
 
 SessionDetailsPtr GetSessionDetailsByClientContext(const grpc::ClientContext& context)
