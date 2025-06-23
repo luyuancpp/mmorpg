@@ -6,7 +6,6 @@ import (
 	. "github.com/magicsea/behavior3go/core"
 	"go.uber.org/zap"
 	"math/rand"
-	"robot/interfaces"
 	"robot/logic/gameobject"
 	"robot/pb/game"
 )
@@ -20,22 +19,15 @@ func (res *RandomEnterScene) Initialize(setting *BTNodeCfg) {
 }
 
 func (res *RandomEnterScene) OnTick(tick *Tick) b3.Status {
-	// 从黑板中获取客户端
-	client, ok := tick.Blackboard.GetMem(ClientBoardKey).(interfaces.GameClientInterface)
-	if !ok {
-		zap.L().Error("Failed to cast client from blackboard", zap.Any(ClientBoardKey, tick.Blackboard.GetMem(ClientBoardKey)))
-		return b3.FAILURE
-	}
-
 	sceneInfo, ok := tick.Blackboard.GetMem(SceneInformationBoardKey).([]*game.SceneInfoPBComponent)
 	if !ok {
 		zap.L().Debug("Failed to cast scene info  from blackboard", zap.Any(PlayerListBoardKey, tick.Blackboard.GetMem(PlayerListBoardKey)))
 		return b3.FAILURE
 	}
 
-	player, ok := gameobject.PlayerList.Get(client.GetPlayerId())
+	player, ok := tick.Blackboard.GetMem(PlayerBoardKey).(gameobject.Player)
 	if !ok {
-		zap.L().Error("Failed to get player player id :", zap.Any(ClientBoardKey, client.GetPlayerId()))
+		zap.L().Error("Failed to get player player id :", zap.Any(PlayerBoardKey, tick.Blackboard.GetMem(PlayerBoardKey)))
 		return b3.FAILURE
 	}
 
@@ -47,7 +39,7 @@ func (res *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 		rq.SceneInfo = sceneInfo[randomIndex]
 	}
 
-	client.Send(rq, game.SceneSceneClientPlayerEnterSceneMessageId)
+	player.Send(rq, game.SceneSceneClientPlayerEnterSceneMessageId)
 
 	tick.Blackboard.SetMem(SceneInformationBoardKey, nil)
 
