@@ -60,7 +60,7 @@ func main() {
 					switch d.Name() {
 					case "LoginResponse":
 						resp := msg.(*game.LoginResponse)
-						handler.LoginHandler(gameClient, resp)
+						handler.ClientPlayerLoginLoginHandler(gameClient, resp)
 						gameClient.TickBehaviorTree()
 					case "CreatePlayerResponse":
 						resp := msg.(*game.CreatePlayerResponse)
