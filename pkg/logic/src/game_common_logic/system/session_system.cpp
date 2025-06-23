@@ -6,6 +6,8 @@
 #include <grpcpp/grpcpp.h>
 #include "util/base64.h"
 
+constexpr char kSessionBinMetaKey[] = "x-session-detail-bin";
+
 NodeId GetGateNodeId(Guid session_id)
 {
     return static_cast<NodeId>(session_id >> SessionIdGenerator::node_bit());
@@ -18,7 +20,7 @@ SessionDetailsPtr GetSessionDetailsByClientContext(const grpc::ClientContext& co
 {
     auto& trailingMetadata = context.GetServerInitialMetadata();
     for (const auto& pair : trailingMetadata) {
-        if (pair.first == "x-session-detail-bin") {
+        if (pair.first == kSessionBinMetaKey) {
             std::string base64Str = std::string(pair.second.data(), pair.second.size());
 
             std::vector<uint8_t> decoded = Base64Decode(base64Str);
