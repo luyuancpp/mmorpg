@@ -64,13 +64,16 @@ func main() {
 						gameClient.TickBehaviorTree()
 					case "CreatePlayerResponse":
 						resp := msg.(*game.CreatePlayerResponse)
-						handler.CreatePlayerHandler(gameClient, resp)
+						handler.ClientPlayerLoginCreatePlayerHandler(gameClient, resp)
+						gameClient.TickBehaviorTree()
+					case "EnterGameResponse":
+						resp := msg.(*game.EnterGameResponse)
+						handler.ClientPlayerLoginEnterGameHandler(gameClient, resp)
 						gameClient.TickBehaviorTree()
 					case "MessageContent":
 						resp := msg.(*game.MessageContent)
 						handler.MessageBodyHandler(gameClient, resp)
 						gameClient.TickBehaviorTree()
-					case "EnterGameResponse":
 					default:
 						zap.L().Warn("Unhandled message type", zap.String("message_type", string(d.Name())))
 

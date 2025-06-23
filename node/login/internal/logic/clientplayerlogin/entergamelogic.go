@@ -64,6 +64,8 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 		return resp, err
 	}
 
+	resp.PlayerId = in.PlayerId
+	
 	// Notify the central service about player entry
 	l.notifyCentreService(in)
 

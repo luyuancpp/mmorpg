@@ -1137,6 +1137,7 @@ class EnterGameResponse final
   // accessors -------------------------------------------------------
   enum : int {
     kErrorMessageFieldNumber = 1,
+    kPlayerIdFieldNumber = 2,
   };
   // .TipInfoMessage error_message = 1;
   bool has_error_message() const;
@@ -1153,12 +1154,22 @@ class EnterGameResponse final
   ::TipInfoMessage* _internal_mutable_error_message();
 
   public:
+  // uint64 player_id = 2;
+  void clear_player_id() ;
+  ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:loginpb.EnterGameResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 1,
+      1, 2, 1,
       0, 2>
       _table_;
 
@@ -1179,6 +1190,7 @@ class EnterGameResponse final
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::TipInfoMessage* error_message_;
+    ::uint64_t player_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2946,6 +2958,28 @@ inline void EnterGameResponse::set_allocated_error_message(::TipInfoMessage* val
 
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
   // @@protoc_insertion_point(field_set_allocated:loginpb.EnterGameResponse.error_message)
+}
+
+// uint64 player_id = 2;
+inline void EnterGameResponse::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+}
+inline ::uint64_t EnterGameResponse::player_id() const {
+  // @@protoc_insertion_point(field_get:loginpb.EnterGameResponse.player_id)
+  return _internal_player_id();
+}
+inline void EnterGameResponse::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  // @@protoc_insertion_point(field_set:loginpb.EnterGameResponse.player_id)
+}
+inline ::uint64_t EnterGameResponse::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void EnterGameResponse::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
 }
 
 // -------------------------------------------------------------------
