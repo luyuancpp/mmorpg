@@ -22,4 +22,5 @@ func ClientPlayerLoginEnterGameHandler(client *pkg.GameClient, response *game.En
 	}
 	player.BehaviorTree = behaviorTree
 	player.CurrentTree = currentTree
+	btree.InitializePlayerBehaviorTreeBlackboard(player.Blackboard)
 }
