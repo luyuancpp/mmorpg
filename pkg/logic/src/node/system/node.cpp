@@ -96,7 +96,7 @@ void Node::InitRpcServer() {
 	info.set_node_type(GetNodeType());
 	info.set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
 	info.set_protocol_type(PROTOCOL_TCP);
-	info.set_launch_time(TimeUtil::NowSecondsUTC());
+	info.set_launch_time(TimeUtil::NowMicrosecondsUTC());
 	info.set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
 
 	InetAddress addr(tlsCommonLogic.GetGameConfig().zone_redis().host(), tlsCommonLogic.GetGameConfig().zone_redis().port());
@@ -255,28 +255,41 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 
 	if (registry.valid(entityId)) {
 		if (auto* existInfo = registry.try_get<NodeInfo>(entityId);
-			existInfo && existInfo->node_id() == info.node_id()) {
+			existInfo && existInfo->node_id() == info.node_id() &&
+			existInfo->launch_time() == info.launch_time()) {
+
 			LOG_TRACE << "Node exists, skip: " << info.node_id();
 			return;
 		}
 		else {
-			LOG_TRACE << "Node exists but info mismatch: " << info.node_id();
-			return;
+			LOG_INFO << "New node detected with same node_id: " << info.node_id()
+				<< ". Replacing old node (launch_time: " << existInfo->launch_time()
+				<< ") with new (launch_time: " << info.launch_time() << ").";
+
+			if (auto* client = registry.try_get<RpcClientPtr>(entityId)) {
+				zombieClientList.push_back(*client);
+			}
 		}
 	}
 
 	const auto createdId = ResetEntity(registry, entityId);
 	if (createdId == entt::null) {
-		LOG_ERROR << "Create node entity failed: " << entt::to_integral(createdId);
+		LOG_ERROR << "Failed to create node entity: " << entt::to_integral(entityId);
 		return;
 	}
 
 	InetAddress endpoint(info.endpoint().ip(), info.endpoint().port());
-	auto& client = registry.emplace<RpcClientPtr>(createdId, std::make_shared<RpcClientPtr::element_type>(eventLoop, endpoint));
-	registry.emplace<NodeInfo>(entityId, info);
+	auto& client = registry.emplace<RpcClientPtr>(
+		createdId,
+		std::make_shared<RpcClientPtr::element_type>(eventLoop, endpoint)
+	);
+
+	registry.emplace<NodeInfo>(createdId, info);
+
 	client->registerService(GetNodeReplyService());
 	client->connect();
 
+	// Step 4: 设置中心节点引用（仅限中心服）
 	if (info.node_type() == CentreNodeService &&
 		info.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
 		zoneCentreNode = client;
@@ -450,15 +463,6 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 			<< ", nodeType: " << eNodeType_Name(nodeInfo.node_type());
 		return;
 	}
-
-	auto client = registry.try_get<RpcClientPtr>(nodeEntity);
-	if (nullptr != client)
-	{
-		// muduo tcp
-		//这里和muduo机制有关,连接在下一帧才会断开,这里删除的话连接不在了,底层连接没有删除
-	}
-
-	Destroy(registry, nodeEntity);
 
 	LOG_INFO << "Service node stopped, id: " << nodeId;
 }

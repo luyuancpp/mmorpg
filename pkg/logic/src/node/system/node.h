@@ -18,6 +18,7 @@ public:
     using RpcServerPtr = std::unique_ptr<muduo::net::RpcServer>;
     using ServiceList = std::vector<::google::protobuf::Service*>;
     using CanConnectNodeTypeList = std::set<uint32_t>;
+	using ClientList = std::vector<RpcClientPtr>;
 
     // 构造与析构
     explicit Node(muduo::net::EventLoop* loop, const std::string& logFilePath);
@@ -95,6 +96,7 @@ protected:
     TimerTaskComp serviceHealthMonitorTimer;
     RpcClientPtr zoneCentreNode;
     CanConnectNodeTypeList targetNodeTypeWhitelist;
+    ClientList zombieClientList;
 };
 
 extern Node* gNode;
