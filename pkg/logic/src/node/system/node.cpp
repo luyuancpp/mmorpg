@@ -464,6 +464,11 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		return;
 	}
 
+	if (nodeInfo.protocol_type() == PROTOCOL_GRPC)
+	{
+		Destroy(registry, nodeEntity);
+	}
+
 	LOG_INFO << "Service node stopped, id: " << nodeId;
 }
 
