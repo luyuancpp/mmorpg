@@ -25,7 +25,7 @@ func (res *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 		return b3.FAILURE
 	}
 
-	player, ok := tick.Blackboard.GetMem(PlayerBoardKey).(gameobject.Player)
+	player, ok := tick.Blackboard.GetMem(PlayerBoardKey).(*gameobject.Player)
 	if !ok {
 		zap.L().Error("Failed to get player player id :", zap.Any(PlayerBoardKey, tick.Blackboard.GetMem(PlayerBoardKey)))
 		return b3.FAILURE
