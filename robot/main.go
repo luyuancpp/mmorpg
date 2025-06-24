@@ -68,10 +68,11 @@ func runClientLoop(gameClient *pkg.GameClient) {
 			zap.L().Error("Recv error, exiting runClientLoop", zap.Error(err))
 			return
 		case <-time.After(20 * time.Millisecond):
-			gameClient.TickBehaviorTree()
 			player, ok := gameobject.PlayerList.Get(gameClient.PlayerId)
 			if ok {
 				player.TickBehaviorTree()
+			} else {
+				gameClient.TickBehaviorTree()
 			}
 		}
 	}
