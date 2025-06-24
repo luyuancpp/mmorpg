@@ -456,7 +456,6 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 	{
 		// muduo tcp
 		//这里和muduo机制有关,连接在下一帧才会断开,这里删除的话连接不在了,底层连接没有删除
-		registry.get_or_emplace<std::vector<RpcClientPtr>>(tls.GetNodeGlobalEntity(nodeType)).push_back(*client);
 	}
 
 	Destroy(registry, nodeEntity);
