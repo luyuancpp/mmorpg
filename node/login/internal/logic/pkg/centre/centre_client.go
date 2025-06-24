@@ -18,8 +18,8 @@ func NewCentreClient(ip string, port uint32) *Client {
 	}
 }
 
-func (c *Client) Close() error {
-	return c.CentreClient.Close()
+func (c *Client) Close() {
+	c.CentreClient.Close()
 }
 
 func (c *Client) Send(m proto.Message, messageId uint32) {

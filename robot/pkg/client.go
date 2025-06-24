@@ -141,11 +141,8 @@ func (client *GameClient) Send(message proto.Message, messageId uint32) {
 
 // Close closes the client connection.
 func (client *GameClient) Close() {
-	if err := client.Client.Close(); err != nil {
-		zap.L().Error("Failed to close client", zap.Error(err))
-	} else {
-		zap.L().Info("Client closed successfully")
-	}
+	client.Client.Close()
+	zap.L().Info("Client closed successfully")
 }
 
 // TickBehaviorTree updates the state of the current behavior tree.

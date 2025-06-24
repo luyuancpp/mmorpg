@@ -135,7 +135,7 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 108,
+              "x": 84,
               "y": 0
             }
           }
@@ -169,6 +169,7 @@
               "y": -132
             },
             "children": [
+              "415b42db-10cd-443b-898e-7e1fe6ed7ba9",
               "d9837df3-b98b-4c0f-8109-4cb51db7b057"
             ]
           },
@@ -185,6 +186,33 @@
               "x": 336,
               "y": 72
             }
+          },
+          "ec2c4b32-ef54-4397-8d3b-16bc6c62b439": {
+            "id": "ec2c4b32-ef54-4397-8d3b-16bc6c62b439",
+            "name": "RandomEnterScene",
+            "category": "action",
+            "title": "RandomEnterScene",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 540,
+              "y": -204
+            }
+          },
+          "415b42db-10cd-443b-898e-7e1fe6ed7ba9": {
+            "id": "415b42db-10cd-443b-898e-7e1fe6ed7ba9",
+            "name": "Repeater",
+            "category": "decorator",
+            "title": "Repeat <maxLoop>x",
+            "description": "",
+            "properties": {
+              "maxLoop": 1000
+            },
+            "display": {
+              "x": 276,
+              "y": -204
+            },
+            "child": "ec2c4b32-ef54-4397-8d3b-16bc6c62b439"
           }
         },
         "display": {
@@ -290,8 +318,8 @@
               "treeTitle": "Scene"
             },
             "display": {
-              "x": 408,
-              "y": 216
+              "x": 384,
+              "y": 180
             }
           },
           "d2045f1d-a8f6-42e5-bfde-1f7b20f75995": {
@@ -560,7 +588,8 @@
         "description": null,
         "properties": {}
       }
-    ]
+    ],
+    "custom_folders": []
   },
-  "path": "F:\\work\\turn-based-game\\robot\\etc\\robot.b3"
+  "path": "D:\\game\\luyuan\\mmorpg\\robot\\etc\\robot.b3"
 }
