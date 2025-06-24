@@ -1,6 +1,7 @@
 #include "game_registry.h"
 
 #include "thread_local/storage.h"
+#include "stacktrace_system.h"
 
 static_assert(sizeof(uint64_t) == sizeof(entt::entity), "sizeof(uint64_t) == sizeof(entt::entity)");
 
@@ -58,13 +59,15 @@ entt::entity TryCreateEntity(entt::registry& registry, entt::entity id) {
 
 	entt::entity created = registry.create(id);
 	if (created != id) {
+		LOG_ERROR << "TryCreateEntity: Failed to create requested entity id=" << entt::to_integral(id)
+			<< ", but created id=" << entt::to_integral(created);
+        PrintDefaultStackTrace();
 		Destroy(registry, created); // 清理失败创建
 		return entt::null;
 	}
 
 	return created;
 }
-
 
 entt::entity ResetEntity(entt::registry& registry, entt::entity id) {
 	if (registry.valid(id)) {
@@ -73,6 +76,9 @@ entt::entity ResetEntity(entt::registry& registry, entt::entity id) {
 
 	entt::entity created = registry.create(id);
 	if (created != id) {
+		LOG_ERROR << "ResetEntity: Failed to reset entity id=" << entt::to_integral(id)
+			<< ", but created id=" << entt::to_integral(created);
+        PrintDefaultStackTrace();
 		Destroy(registry, created); // 清理异常创建
 		return entt::null;
 	}
