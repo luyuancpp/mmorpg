@@ -165,11 +165,11 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 84,
-              "y": -132
+              "x": 0,
+              "y": -72
             },
             "children": [
-              "415b42db-10cd-443b-898e-7e1fe6ed7ba9",
+              "92e916a4-c4cc-443b-adbf-1084f0fbf3c9",
               "d9837df3-b98b-4c0f-8109-4cb51db7b057"
             ]
           },
@@ -183,8 +183,8 @@
               "treeTitle": "Battle"
             },
             "display": {
-              "x": 336,
-              "y": 72
+              "x": 324,
+              "y": 228
             }
           },
           "ec2c4b32-ef54-4397-8d3b-16bc6c62b439": {
@@ -195,12 +195,42 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 540,
-              "y": -204
+              "x": 600,
+              "y": -144
             }
           },
-          "415b42db-10cd-443b-898e-7e1fe6ed7ba9": {
-            "id": "415b42db-10cd-443b-898e-7e1fe6ed7ba9",
+          "acd99f30-93f8-4a68-8a15-42975291e56a": {
+            "id": "acd99f30-93f8-4a68-8a15-42975291e56a",
+            "name": "Sequence",
+            "category": "composite",
+            "title": "Sequence",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 372,
+              "y": -228
+            },
+            "children": [
+              "ec2c4b32-ef54-4397-8d3b-16bc6c62b439",
+              "dbce8ca8-b1b2-47b4-820f-38860b8a30bc"
+            ]
+          },
+          "dbce8ca8-b1b2-47b4-820f-38860b8a30bc": {
+            "id": "dbce8ca8-b1b2-47b4-820f-38860b8a30bc",
+            "name": "SleepNode",
+            "category": "action",
+            "title": "SleepNode(<Duration>)",
+            "description": "",
+            "properties": {
+              "Duration": 1000
+            },
+            "display": {
+              "x": 600,
+              "y": -48
+            }
+          },
+          "92e916a4-c4cc-443b-adbf-1084f0fbf3c9": {
+            "id": "92e916a4-c4cc-443b-adbf-1084f0fbf3c9",
             "name": "Repeater",
             "category": "decorator",
             "title": "Repeat <maxLoop>x",
@@ -209,10 +239,10 @@
               "maxLoop": 1000
             },
             "display": {
-              "x": 276,
-              "y": -204
+              "x": 192,
+              "y": -192
             },
-            "child": "ec2c4b32-ef54-4397-8d3b-16bc6c62b439"
+            "child": "acd99f30-93f8-4a68-8a15-42975291e56a"
           }
         },
         "display": {

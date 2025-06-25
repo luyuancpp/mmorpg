@@ -6,8 +6,6 @@ class AfterEnterScene;
 class BeforeLeaveScene;
 
 struct Hex;
-struct SceneEntityComp;
-class Transform;
 
 class AoiSystem {
 public:
