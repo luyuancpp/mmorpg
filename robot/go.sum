@@ -14,6 +14,8 @@ github.com/luyuancpp/muduoclient v0.0.12 h1:cDRVWj4CbDsk6XKscW4I8U2hQQ7EtrRpwIBk
 github.com/luyuancpp/muduoclient v0.0.12/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
 github.com/luyuancpp/muduoclient v0.0.13 h1:uUsCa9VYcVpJhLbSr/a2oCo3TPSLC2GPL+D/uqVCK+o=
 github.com/luyuancpp/muduoclient v0.0.13/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
+github.com/luyuancpp/muduoclient v0.0.14 h1:nz/+eui8BAnpBRighcKNYlSJ5inDs40cpmf4vreatKU=
+github.com/luyuancpp/muduoclient v0.0.14/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
 github.com/magicsea/behavior3go v0.0.4 h1:QevJQq57g5DBn3nGEfnYcIXqZmaasw4YPkwiO2ekPwM=
 github.com/magicsea/behavior3go v0.0.4/go.mod h1:jDMiRk3AHXArNjiIvfAjh6er8GY77zQpy6t7DuNQ/3Q=
 github.com/orcaman/concurrent-map/v2 v2.0.1 h1:jOJ5Pg2w1oeB6PeDurIYf6k9PQ+aTITr/6lP/L/zp6c=

@@ -49,7 +49,6 @@ func NewMainPlayer(playerId uint64, clientI interface{}) *Player {
 		Blackboard: NewBlackboard()}
 
 	PlayerList.Set(playerId, player)
-	zap.L().Info("Player created successfully", zap.Uint64("player id", playerId))
 	return player
 }
 
