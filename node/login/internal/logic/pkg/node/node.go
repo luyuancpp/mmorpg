@@ -37,6 +37,18 @@ func BuildRpcPath(serviceName string, zoneId, nodeType, nodeId uint32) string {
 }
 
 func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
+	// 初始化 Etcd 客户端
+	client, err := etcd.NewClient([]string{"localhost:2379"})
+	if err != nil {
+		return nil
+	}
+
+	// 创建节点注册表
+	reg, err := etcd.NewNodeRegistry(client, ttl)
+	if err != nil {
+		return nil
+	}
+
 	// 创建节点信息
 	info := &game.NodeInfo{
 		NodeId:   uint32(time.Now().UnixNano()),
@@ -48,18 +60,7 @@ func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
 		ZoneId:       config.AppConfig.ZoneID,
 		LaunchTime:   uint64(time.Now().Unix()),
 		ProtocolType: uint32(game.ENodeProtocolType_PROTOCOL_GRPC),
-	}
-
-	// 初始化 Etcd 客户端
-	client, err := etcd.NewClient([]string{"localhost:2379"})
-	if err != nil {
-		return nil
-	}
-
-	// 创建节点注册表
-	reg, err := etcd.NewNodeRegistry(client, ttl)
-	if err != nil {
-		return nil
+		LeaseId:      uint64(reg.Lease),
 	}
 
 	allocator := NewNodeAllocator(client, GetRpcPrefix(nodeType))

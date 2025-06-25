@@ -255,21 +255,25 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 
 	if (registry.valid(entityId)) {
 		if (auto* existInfo = registry.try_get<NodeInfo>(entityId);
-			existInfo && existInfo->node_id() == info.node_id() &&
-			existInfo->launch_time() == info.launch_time()) {
+			existInfo &&
+			(existInfo->node_id() == info.node_id() &&
+				(existInfo->launch_time() == info.launch_time() || existInfo->lease_id() == info.lease_id()))) {
 
 			LOG_TRACE << "Node exists, skip: " << info.node_id();
 			return;
 		}
 		else {
 			LOG_INFO << "New node detected with same node_id: " << info.node_id()
-				<< ". Replacing old node (launch_time: " << existInfo->launch_time()
-				<< ") with new (launch_time: " << info.launch_time() << ").";
+				<< ". Replacing old node (launch_time: " << (existInfo ? existInfo->launch_time() : 0)
+				<< ", lease_id: " << (existInfo ? existInfo->lease_id() : 0)
+				<< ") with new (launch_time: " << info.launch_time()
+				<< ", lease_id: " << info.lease_id() << ").";
 
 			if (auto* client = registry.try_get<RpcClientPtr>(entityId)) {
 				zombieClientList.push_back(*client);
 			}
 		}
+
 	}
 
 	const auto createdId = ResetEntity(registry, entityId);
@@ -729,7 +733,10 @@ void Node::AcquireNode() {
 
     constexpr uint32_t kPortStepPerNodeType = 10000;
     uint32_t assignedPort = GetNodeType() * kPortStepPerNodeType + selectedNodeId;
-    GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
+	if (nullptr == rpcServer)
+	{
+		GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
+	}
 
     RegisterNodeService();
 }

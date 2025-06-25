@@ -1,2 +1,2 @@
 node:
-  zoneid: 123456  # 以无符号整数的形式存储 Zone ID
+  zoneid: 0  # 以无符号整数的形式存储 Zone ID
