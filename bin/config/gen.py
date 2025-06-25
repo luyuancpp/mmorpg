@@ -6,7 +6,7 @@ import subprocess
 import logging
 
 # Set up logging configuration
-logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # List of directories to create
@@ -49,7 +49,6 @@ commands = [
     "python md5tool.py md5copy ./generated/proto/cpp/ ../../pkg/config/src/pbc/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../node/login/pb/game/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../node/db/pb/game/",
-    "python gen_xls_md5.py"
 ]
 
 # Execute commands and capture return codes

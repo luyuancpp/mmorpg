@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
 import logging
+import os
+import shutil
 
 from pathlib import Path
 
@@ -207,3 +209,16 @@ def lower_first_letter(s):
     if not s:  # 检查字符串是否为空
         return s
     return s[0].lower() + s[1:]  # 将首字母小写并拼接其余部分
+
+def copy_all(src_dir, dst_dir):
+    if not os.path.exists(src_dir):
+        return
+
+    for root, dirs, files in os.walk(src_dir):
+        rel_path = os.path.relpath(root, src_dir)
+        target_dir = os.path.join(dst_dir, rel_path)
+        os.makedirs(target_dir, exist_ok=True)
+        for file in files:
+            src_file = os.path.join(root, file)
+            dst_file = os.path.join(target_dir, file)
+            shutil.copy2(src_file, dst_file)

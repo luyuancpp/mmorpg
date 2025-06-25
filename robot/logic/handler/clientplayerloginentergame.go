@@ -10,6 +10,14 @@ import (
 )
 
 func ClientPlayerLoginEnterGameHandler(client *pkg.GameClient, response *game.EnterGameResponse) {
+	if response.ErrorMessage.Id != 0 {
+		zap.L().Error("received error response",
+			zap.Uint32("error_id", response.ErrorMessage.Id),
+			zap.String("error_message", response.ErrorMessage.String()), // 假设有 Message 字段
+		)
+		return
+	}
+
 	zap.L().Info("Player login", zap.Uint64("player id", response.PlayerId))
 	player := gameobject.NewMainPlayer(response.PlayerId, client)
 	gameobject.PlayerList.Set(response.PlayerId, player)
@@ -26,4 +34,5 @@ func ClientPlayerLoginEnterGameHandler(client *pkg.GameClient, response *game.En
 	btree.InitializePlayerBehaviorTreeBlackboard(player.Blackboard)
 	player.Blackboard.SetMem(behaviortree.ClientBoardKey, client)
 	player.Blackboard.SetMem(behaviortree.PlayerBoardKey, player)
+	client.Blackboard.SetMem(behaviortree.PlayerBoardKey, player)
 }

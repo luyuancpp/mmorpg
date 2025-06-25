@@ -2,8 +2,9 @@ package clientplayerloginlogic
 
 import (
 	"context"
+	"errors"
 	"github.com/looplab/fsm"
-	"go.uber.org/zap"
+	"github.com/redis/go-redis/v9"
 	"login/data"
 	"login/internal/logic/pkg/ctxkeys"
 	"time"
@@ -40,31 +41,31 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		resp.ErrorMessage = &game.TipInfoMessage{
 			Id: uint32(game.LoginError_kLoginSessionIdNotFound),
 		}
-		zap.L().Error("session not found in context")
+		logx.Error("session not found in context")
 		return resp, nil
 	}
 
 	accountKey := "account" + session.Account
 	cmd := l.svcCtx.Redis.Get(l.ctx, accountKey)
 	if err := cmd.Err(); err != nil {
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			resp.ErrorMessage = &game.TipInfoMessage{
 				Id: uint32(game.LoginError_kLoginAccountNotFound),
 			}
-			zap.L().Warn("account not found in redis", zap.String("account", session.Account))
+			logx.Infof("account not found in redis: %s", session.Account)
 			return resp, nil
 		}
 		resp.ErrorMessage = &game.TipInfoMessage{
 			Id: uint32(game.LoginError_kLoginRedisError),
 		}
-		zap.L().Error("redis get failed", zap.String("account", session.Account), zap.Error(err))
+		logx.Errorf("redis get failed, account: %s, err: %v", session.Account, err)
 		return resp, err
 	}
 
 	// FSM 登录流程事件（延迟触发）
 	defer func(fsmIns *fsm.FSM, ctx context.Context, event string, args ...interface{}) {
 		if err := fsmIns.Event(ctx, event, args); err != nil {
-			zap.L().Error("fsm login event failed", zap.Error(err))
+			logx.Errorf("fsm login event failed: %v", err)
 		}
 	}(session.Fsm, context.Background(), data.EventProcessLogin)
 
@@ -73,7 +74,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		resp.ErrorMessage = &game.TipInfoMessage{
 			Id: uint32(game.LoginError_kLoginFsmFailed),
 		}
-		zap.L().Error("fsm create-char event failed", zap.String("account", session.Account), zap.Error(err))
+		logx.Errorf("fsm create-char event failed, account: %s, err: %v", session.Account, err)
 		return resp, nil
 	}
 
@@ -82,34 +83,27 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		resp.ErrorMessage = &game.TipInfoMessage{
 			Id: uint32(game.LoginError_kLoginDataParseFailed),
 		}
-		zap.L().Error("failed to unmarshal user account data",
-			zap.String("account", session.Account),
-			zap.Error(err),
-		)
+		logx.Errorf("failed to unmarshal user account data, account: %s, err: %v", session.Account, err)
 		return resp, nil
 	}
 
-	// 初始化玩家列表
 	if accountData.SimplePlayers == nil {
 		accountData.SimplePlayers = &game.AccountSimplePlayerList{
 			Players: make([]*game.AccountSimplePlayer, 0),
 		}
 	}
 
-	// 玩家已满
 	if len(accountData.SimplePlayers.Players) >= 5 {
 		resp.ErrorMessage = &game.TipInfoMessage{
 			Id: uint32(game.LoginError_kLoginAccountPlayerFull),
 		}
-		zap.L().Info("player slot full", zap.String("account", session.Account))
+		logx.Infof("account player limit reached, account: %s", session.Account)
 		return resp, nil
 	}
 
-	// 创建新角色
 	newPlayerId := uint64(l.svcCtx.SnowFlake.Generate())
 	newPlayer := &game.AccountSimplePlayer{
 		PlayerId: newPlayerId,
-		// 可以加初始化字段，如名字、创建时间等
 	}
 
 	accountData.SimplePlayers.Players = append(accountData.SimplePlayers.Players, newPlayer)
@@ -118,16 +112,12 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		resp.Players = append(resp.Players, &game.AccountSimplePlayerWrapper{Player: p})
 	}
 
-	// 保存数据到 Redis
 	dataBytes, err := proto.Marshal(accountData)
 	if err != nil {
 		resp.ErrorMessage = &game.TipInfoMessage{
 			Id: uint32(game.LoginError_kLoginDataSerializeFailed),
 		}
-		zap.L().Error("failed to marshal account data",
-			zap.String("account", session.Account),
-			zap.Error(err),
-		)
+		logx.Errorf("failed to marshal account data, account: %s, err: %v", session.Account, err)
 		return resp, nil
 	}
 
@@ -136,18 +126,10 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		resp.ErrorMessage = &game.TipInfoMessage{
 			Id: uint32(game.LoginError_kLoginRedisSetFailed),
 		}
-		zap.L().Error("failed to save account data to redis",
-			zap.String("account", session.Account),
-			zap.Error(err),
-		)
+		logx.Errorf("failed to set redis account data, account: %s, err: %v", session.Account, err)
 		return resp, nil
 	}
 
-	// 成功日志
-	zap.L().Info("player created successfully",
-		zap.String("account", session.Account),
-		zap.Uint64("player_id", newPlayerId),
-	)
-
+	logx.Infof("player created successfully, account: %s, player_id: %d", session.Account, newPlayerId)
 	return resp, nil
 }

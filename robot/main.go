@@ -114,6 +114,7 @@ func main() {
 				Account:  "luhailong" + strconv.Itoa(i),
 				Password: "luhailong",
 			}
+			gameClient.Account = rq.Account
 			gameClient.Send(rq, game.ClientPlayerLoginLoginMessageId)
 
 			runClientLoop(gameClient)
