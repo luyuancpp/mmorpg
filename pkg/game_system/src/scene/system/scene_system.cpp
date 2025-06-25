@@ -1,4 +1,4 @@
-#include "scene_system.h"
+﻿#include "scene_system.h"
 #include "muduo/base/Logging.h"
 
 #include "scene/comp/scene_comp.h"
@@ -339,7 +339,7 @@ void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
 	}
 }
 
-// Force a player to change scenes
+// 这里只处理了同gs,如果是跨gs的场景切换，应该别的地方处理
 void SceneUtil::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
 	auto& destNodeScene = tls.GetNodeRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(param.destNode);
 	auto sceneEntity = destNodeScene.GetSceneWithMinPlayerCountByConfigId(param.sceneConfId);
