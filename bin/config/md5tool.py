@@ -182,7 +182,6 @@ def main():
     """Main procedure."""
     operation,dirs,options = parse_args()
     file_info_dicts = get_file_info_dictionaries(dirs, options)
-    logger.info("===============================================================")
 
     if operation == 'check':
         # Check each pair of matching files
@@ -225,7 +224,6 @@ def main():
             destinationdmd5 = generate_md5_hash(destinationfilename)
             if destinationdmd5 != filemd5:
                 shutil.copyfile(filename, destinationfilename)
-                logger.info("copy %s->%s" % (filename, destinationfilename))
 
 if __name__ == "__main__":
     main()

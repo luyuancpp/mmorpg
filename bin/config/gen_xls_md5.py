@@ -59,12 +59,3 @@ def generate_md5_files(directory, output_dir):
     if failed_files > 0:
         logger.warning(f"Failed to process {failed_files} files.")
 
-def main():
-    # Ensure output directory exists
-    if not os.path.exists(generate_common.md5_output_dir):
-        os.makedirs(generate_common.md5_output_dir)
-
-    generate_md5_files(XLSX_DIR, generate_common.md5_output_dir)
-
-if __name__ == "__main__":
-    main()

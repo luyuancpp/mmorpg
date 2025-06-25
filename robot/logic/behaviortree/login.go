@@ -25,12 +25,18 @@ func (c *CreatePlayer) OnTick(tick *Tick) b3.Status {
 
 	client, ok := clientI.(interfaces.GameClientInterface)
 	if !ok {
-		zap.L().Error("Failed to cast client from blackboard", zap.Any("client", clientI))
+		zap.L().Error("failed to cast client from blackboard", zap.Any("client", clientI))
 		return b3.FAILURE
 	}
 
+	account := client.GetAccount()
+	zap.L().Info("attempting to create player",
+		zap.String("account_name", account),
+	)
+
 	rq := &game.CreatePlayerRequest{}
 	client.Send(rq, game.ClientPlayerLoginCreatePlayerMessageId)
+
 	return b3.SUCCESS
 }
 
@@ -90,6 +96,10 @@ func (p *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 
 	// 处理玩家数据
 	playerId := playerList[0].Player.PlayerId
+	account := client.GetAccount()
+	
+	zap.L().Info("send Player login",
+		zap.Uint64("player id", playerId), zap.String("account_name", account))
 
 	// 发送请求
 	rq := &game.EnterGameRequest{PlayerId: playerId}
@@ -108,14 +118,8 @@ func (a *AlreadyLoggedIn) Initialize(setting *BTNodeCfg) {
 
 func (a *AlreadyLoggedIn) OnTick(tick *Tick) b3.Status {
 	// 从黑板中获取客户端
-	clientI := tick.Blackboard.GetMem(ClientBoardKey)
-	client, ok := clientI.(interfaces.GameClientInterface)
-	if !ok {
-		zap.L().Error("Failed to cast client from blackboard", zap.Any("client", clientI))
-		return b3.FAILURE
-	}
-
-	if client.GetPlayerId() <= 0 {
+	clientI := tick.Blackboard.GetMem(PlayerBoardKey)
+	if clientI == nil {
 		return b3.FAILURE
 	}
 

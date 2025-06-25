@@ -39,7 +39,12 @@
         "LoginUnknownError": 26,
         "LoginSessionDisconnect": 27,
         "LoginBeKickByAnOtherAccount": 28,
-        "LoginSessionIdNotFound": 29
+        "LoginSessionIdNotFound": 29,
+        "LoginFsmFailed": 111,
+        "LoginDataSerializeFailed": 112,
+        "LoginRedisError": 113,
+        "LoginDataParseFailed": 114,
+        "LoginRedisSetFailed": 115
     },
     "scene_error": {
         "EnterSceneNotFound": 30,

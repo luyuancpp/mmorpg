@@ -21,6 +21,7 @@ type GameClient struct {
 	CurrentTree       *BehaviorTree
 	Blackboard        *Blackboard
 	MessageSequenceID uint64
+	Account           string
 }
 
 // NewGameClient creates and initializes a new GameClient instance.
@@ -159,9 +160,12 @@ func (client *GameClient) SetPlayerId(playerId uint64) {
 	client.PlayerId = playerId
 }
 
-// GetPlayerId retrieves the player ID for the client.
 func (client *GameClient) GetPlayerId() uint64 {
 	return client.PlayerId
+}
+
+func (client *GameClient) GetAccount() string {
+	return client.Account
 }
 
 // SetSubTree sets the current behavior tree to the specified subtree.

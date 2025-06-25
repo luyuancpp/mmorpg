@@ -62,6 +62,8 @@ def read_excel_data(file_path, existing_ids):
             0
         )   # Start with the next available ID
 
+        global_row_id += 1
+
         for row_idx in range(18, num_rows + 1):  # Adjust for zero-based index
             row_cells = sheet[row_idx]
 
