@@ -47,7 +47,6 @@
     <ClCompile Include="src\pbc\entity_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\globalvariable_config.pb.cc" />
     <ClCompile Include="src\pbc\item_config.pb.cc" />
-    <ClCompile Include="src\pbc\login_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\mainscene_config.pb.cc" />
     <ClCompile Include="src\pbc\messagelimiter_config.pb.cc" />
     <ClCompile Include="src\pbc\mission_config.pb.cc" />
@@ -107,7 +106,6 @@
     <ClInclude Include="src\pbc\entity_error_tip.pb.h" />
     <ClInclude Include="src\pbc\globalvariable_config.pb.h" />
     <ClInclude Include="src\pbc\item_config.pb.h" />
-    <ClInclude Include="src\pbc\login_error_tip.pb.h" />
     <ClInclude Include="src\pbc\mainscene_config.pb.h" />
     <ClInclude Include="src\pbc\messagelimiter_config.pb.h" />
     <ClInclude Include="src\pbc\mission_config.pb.h" />

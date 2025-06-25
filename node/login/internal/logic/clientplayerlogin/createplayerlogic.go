@@ -32,8 +32,7 @@ func NewCreatePlayerLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Crea
 
 func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.CreatePlayerResponse, error) {
 	resp := &game.CreatePlayerResponse{
-		ErrorMessage: &game.TipInfoMessage{},
-		Players:      make([]*game.AccountSimplePlayerWrapper, 0),
+		Players: make([]*game.AccountSimplePlayerWrapper, 0),
 	}
 
 	session, ok := ctxkeys.GetSession(l.ctx)
@@ -78,7 +77,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		return resp, nil
 	}
 
-	accountData := &game.UserAccounts{}
+	accountData := session.UserAccount
 	if err := proto.Unmarshal([]byte(cmd.Val()), accountData); err != nil {
 		resp.ErrorMessage = &game.TipInfoMessage{
 			Id: uint32(game.LoginError_kLoginDataParseFailed),

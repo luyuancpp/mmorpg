@@ -84,9 +84,6 @@
     <ClCompile Include="src\pbc\item_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pbc\login_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pbc\mainscene_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -240,9 +237,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\item_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\login_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\mainscene_config.pb.h">
