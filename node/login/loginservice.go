@@ -109,7 +109,9 @@ func SessionInterceptor(
 					// 安全放入 context
 					sessionId := strconv.FormatUint(detail.SessionId, 10)
 					session, _ := data.SessionList.Get(sessionId)
-					ctx = ctxkeys.WithSession(ctx, session)
+					if nil != session {
+						ctx = ctxkeys.WithSession(ctx, session)
+					}
 					ctx = ctxkeys.WithSessionID(ctx, sessionId)
 					ctx = ctxkeys.WithSessionDetails(ctx, &detail)
 				}

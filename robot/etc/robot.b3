@@ -4,7 +4,7 @@
   "data": {
     "version": "0.3.0",
     "scope": "project",
-    "selectedTree": "a87f1c3e-947b-4e46-8a1f-e4f0af9b5ecb",
+    "selectedTree": "b27d16da-1efb-4291-be1d-3a6e02da27f6",
     "trees": [
       {
         "version": "0.3.0",
@@ -27,9 +27,8 @@
               "y": -264
             },
             "children": [
-              "931be9da-2018-45a1-87e8-5fb7d7fd639a",
               "0a174595-76df-4ca8-84c3-3e1785429e94",
-              "ae9aebdb-68a8-441e-9835-f957a53ee342"
+              "1d34754e-757b-415a-868e-5caf22afdb8d"
             ]
           },
           "0a174595-76df-4ca8-84c3-3e1785429e94": {
@@ -61,18 +60,6 @@
               "y": -324
             }
           },
-          "931be9da-2018-45a1-87e8-5fb7d7fd639a": {
-            "id": "931be9da-2018-45a1-87e8-5fb7d7fd639a",
-            "name": "AlreadyLoggedIn",
-            "category": "condition",
-            "title": "AlreadyLoggedIn",
-            "description": "是否已经登录",
-            "properties": {},
-            "display": {
-              "x": 60,
-              "y": -396
-            }
-          },
           "7f820a24-77b6-4f78-83f4-e8f83af00ec2": {
             "id": "7f820a24-77b6-4f78-83f4-e8f83af00ec2",
             "name": "CreatePlayer",
@@ -93,40 +80,9 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 60,
-              "y": -120
+              "x": 120,
+              "y": -24
             }
-          },
-          "bcd2c3f9-74f7-4574-87bf-e930b92563eb": {
-            "id": "bcd2c3f9-74f7-4574-87bf-e930b92563eb",
-            "name": "SetSubTree",
-            "category": "action",
-            "title": "SetSubTree(<treeTitle>)",
-            "description": "",
-            "properties": {
-              "treeTitle": "Scene"
-            },
-            "display": {
-              "x": 72,
-              "y": 36
-            }
-          },
-          "ae9aebdb-68a8-441e-9835-f957a53ee342": {
-            "id": "ae9aebdb-68a8-441e-9835-f957a53ee342",
-            "name": "Sequence",
-            "category": "composite",
-            "title": "Sequence",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": -132,
-              "y": -180
-            },
-            "children": [
-              "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe",
-              "78bfcdeb-8eee-4e5d-8690-b4f14c00440e",
-              "bcd2c3f9-74f7-4574-87bf-e930b92563eb"
-            ]
           },
           "0ee8bbbf-9a2d-4e64-8abe-45911e946e16": {
             "id": "0ee8bbbf-9a2d-4e64-8abe-45911e946e16",
@@ -142,19 +98,33 @@
               "y": -204
             }
           },
-          "78bfcdeb-8eee-4e5d-8690-b4f14c00440e": {
-            "id": "78bfcdeb-8eee-4e5d-8690-b4f14c00440e",
-            "name": "SleepNode",
-            "category": "action",
-            "title": "SleepNode(<Duration>)",
-            "description": "",
-            "properties": {
-              "Duration": 1000
-            },
+          "28f9bf16-e518-444a-8d5c-913ef6241d84": {
+            "id": "28f9bf16-e518-444a-8d5c-913ef6241d84",
+            "name": "AlreadyLoggedIn",
+            "category": "condition",
+            "title": "AlreadyLoggedIn",
+            "description": "是否已经登录",
+            "properties": {},
             "display": {
-              "x": 60,
-              "y": -36
+              "x": 108,
+              "y": -132
             }
+          },
+          "1d34754e-757b-415a-868e-5caf22afdb8d": {
+            "id": "1d34754e-757b-415a-868e-5caf22afdb8d",
+            "name": "Priority",
+            "category": "composite",
+            "title": "Priority",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -96,
+              "y": -144
+            },
+            "children": [
+              "28f9bf16-e518-444a-8d5c-913ef6241d84",
+              "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe"
+            ]
           }
         },
         "display": {
@@ -186,23 +156,9 @@
               "y": -72
             },
             "children": [
-              "5177e476-eacc-4e98-ae4c-01efbeca44c6",
-              "d9837df3-b98b-4c0f-8109-4cb51db7b057"
+              "ec2c4b32-ef54-4397-8d3b-16bc6c62b439",
+              "dbce8ca8-b1b2-47b4-820f-38860b8a30bc"
             ]
-          },
-          "d9837df3-b98b-4c0f-8109-4cb51db7b057": {
-            "id": "d9837df3-b98b-4c0f-8109-4cb51db7b057",
-            "name": "SetSubTree",
-            "category": "action",
-            "title": "SetSubTree(<treeTitle>)",
-            "description": "",
-            "properties": {
-              "treeTitle": "Battle"
-            },
-            "display": {
-              "x": 324,
-              "y": 228
-            }
           },
           "ec2c4b32-ef54-4397-8d3b-16bc6c62b439": {
             "id": "ec2c4b32-ef54-4397-8d3b-16bc6c62b439",
@@ -212,25 +168,9 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 600,
-              "y": -144
+              "x": 612,
+              "y": -180
             }
-          },
-          "acd99f30-93f8-4a68-8a15-42975291e56a": {
-            "id": "acd99f30-93f8-4a68-8a15-42975291e56a",
-            "name": "Sequence",
-            "category": "composite",
-            "title": "Sequence",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 384,
-              "y": -144
-            },
-            "children": [
-              "ec2c4b32-ef54-4397-8d3b-16bc6c62b439",
-              "dbce8ca8-b1b2-47b4-820f-38860b8a30bc"
-            ]
           },
           "dbce8ca8-b1b2-47b4-820f-38860b8a30bc": {
             "id": "dbce8ca8-b1b2-47b4-820f-38860b8a30bc",
@@ -239,27 +179,12 @@
             "title": "SleepNode(<Duration>)",
             "description": "",
             "properties": {
-              "Duration": 3000
+              "Duration": 1000
             },
             "display": {
-              "x": 600,
-              "y": -48
+              "x": 660,
+              "y": -84
             }
-          },
-          "5177e476-eacc-4e98-ae4c-01efbeca44c6": {
-            "id": "5177e476-eacc-4e98-ae4c-01efbeca44c6",
-            "name": "Repeater",
-            "category": "decorator",
-            "title": "Repeat <maxLoop>x",
-            "description": "",
-            "properties": {
-              "maxLoop": 10000000
-            },
-            "display": {
-              "x": 144,
-              "y": -144
-            },
-            "child": "acd99f30-93f8-4a68-8a15-42975291e56a"
           }
         },
         "display": {
