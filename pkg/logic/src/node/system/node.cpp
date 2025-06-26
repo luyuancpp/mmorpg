@@ -396,9 +396,6 @@ void Node::HandleServiceNodeStart(const std::string& key, const std::string& val
 	if (const auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key); eNodeType_IsValid(nodeType)) {
 		AddServiceNode(value, nodeType);
 	}
-	else {
-		LOG_ERROR << "Unknown service type for key: " << key;
-	}
 }
 
 void Node::HandleServiceNodeStop(const std::string& key, const std::string& value) {
