@@ -133,9 +133,9 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
 		createMessage.mutable_transform()->CopyFrom(*entrantTransform);
 	}
 
-	if (const auto guid = tls.registry.try_get<Guid>(entrant)) {
+	/*if (const auto guid = tls.registry.try_get<Guid>(entrant)) {
 		createMessage.set_guid(*guid);
-	}
+	}*/
 }
 
 void ViewSystem::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver)

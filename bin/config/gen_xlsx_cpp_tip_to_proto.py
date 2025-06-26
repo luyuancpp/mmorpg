@@ -95,7 +95,7 @@ def generate_proto_file(group_name, group_data):
     """Generate a Proto file for a given group using Jinja2 template."""
     try:
         template_env = Environment(
-            loader=FileSystemLoader(generate_common.TEMPLATE_DIR),  # 你的模板目录
+            loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'),  # 你的模板目录
             autoescape=select_autoescape(['proto'])  # 可选
         )
         template = template_env.get_template("tip_enum.proto.j2")

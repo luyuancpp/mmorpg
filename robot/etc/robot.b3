@@ -4,7 +4,7 @@
   "data": {
     "version": "0.3.0",
     "scope": "project",
-    "selectedTree": "b27d16da-1efb-4291-be1d-3a6e02da27f6",
+    "selectedTree": "a87f1c3e-947b-4e46-8a1f-e4f0af9b5ecb",
     "trees": [
       {
         "version": "0.3.0",
@@ -135,7 +135,7 @@
             "title": "SleepNode(<Duration>)",
             "description": "",
             "properties": {
-              "Duration": 2000
+              "Duration": 1000
             },
             "display": {
               "x": 96,
@@ -186,7 +186,7 @@
               "y": -72
             },
             "children": [
-              "2ccf057e-61db-4c98-90df-506f7a34490f",
+              "5177e476-eacc-4e98-ae4c-01efbeca44c6",
               "d9837df3-b98b-4c0f-8109-4cb51db7b057"
             ]
           },
@@ -239,24 +239,24 @@
             "title": "SleepNode(<Duration>)",
             "description": "",
             "properties": {
-              "Duration": 2000
+              "Duration": 3000
             },
             "display": {
               "x": 600,
               "y": -48
             }
           },
-          "2ccf057e-61db-4c98-90df-506f7a34490f": {
-            "id": "2ccf057e-61db-4c98-90df-506f7a34490f",
-            "name": "RepeatUntilFailure",
+          "5177e476-eacc-4e98-ae4c-01efbeca44c6": {
+            "id": "5177e476-eacc-4e98-ae4c-01efbeca44c6",
+            "name": "Repeater",
             "category": "decorator",
-            "title": "Repeat Until Failure",
+            "title": "Repeat <maxLoop>x",
             "description": "",
             "properties": {
-              "maxLoop": 1000000
+              "maxLoop": 10000000
             },
             "display": {
-              "x": 216,
+              "x": 144,
               "y": -144
             },
             "child": "acd99f30-93f8-4a68-8a15-42975291e56a"

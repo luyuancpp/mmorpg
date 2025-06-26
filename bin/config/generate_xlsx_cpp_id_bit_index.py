@@ -32,7 +32,7 @@ class ExcelToCppConverter:
 
         # Initialize Jinja2 environment
         self.template_env = Environment(
-            loader=FileSystemLoader(generate_common.TEMPLATE_DIR),  # Path to your template folder
+            loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'),  # Path to your template folder
             autoescape=True
         )
 
