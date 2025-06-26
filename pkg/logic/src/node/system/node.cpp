@@ -68,7 +68,7 @@ std::string Node::GetServiceName(uint32_t type) const {
 }
 
 void Node::Initialize() {
-	LOG_TRACE << "Node initializing...";
+	LOG_DEBUG << "Node initializing...";
     SetupTimeZone();
 	RegisterHandlers();
 	RegisterEventHandlers();
@@ -78,7 +78,7 @@ void Node::Initialize() {
 	LoadAllConfigData();
 	InitGrpcClients();
 	RequestEtcdLease();
-	LOG_TRACE << "Node initialization complete.";
+	LOG_DEBUG << "Node initialization complete.";
 }
 
 void Node::InitRpcServer() {
@@ -119,19 +119,19 @@ void Node::StartRpcServer() {
 	StartWatchingServiceNodes();
 
 	tls.dispatcher.trigger<OnServerStart>();
-	LOG_TRACE << "RPC server started: " << GetNodeInfo().DebugString();
+	LOG_DEBUG << "RPC server started: " << GetNodeInfo().DebugString();
 }
 
 
 void Node::Shutdown() {
-	LOG_TRACE << "Node shutting down...";
+	LOG_DEBUG << "Node shutting down...";
 	StopWatchingServiceNodes();
 	tls.Clear();
 	logSystem.stop();
 	ReleaseNodeId();
 	renewLeaseTimer.Cancel();
 	grpcHandlerTimer.Cancel();
-	LOG_TRACE << "Node shutdown complete.";
+	LOG_DEBUG << "Node shutdown complete.";
 }
 
 void Node::InitLogSystem() {
@@ -167,6 +167,8 @@ void Node::InitGrpcClients() {
 	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
 	InitStub(channel, tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
 	InitCompletedQueue(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
+
+	LOG_INFO << "Initializing gRPC client to etcd address: " << etcdAddr;
 
 	grpcHandlerTimer.RunEvery(0.005, [] {
 		for (auto&registry : tls.GetNodeRegistry()){
@@ -235,6 +237,12 @@ void Node::ConnectToGrpcNode(const NodeInfo& info) {
 	InitCompletedQueue(registry, entityId);
 	tls.GetConsistentNode(info.node_type()).add(info.node_id(), entityId);
 
+	LOG_INFO << "Connecting to GRPC node, ID: " << info.node_id()
+		<< ", IP: " << info.endpoint().ip()
+		<< ", Port: " << info.endpoint().port()
+		<< ", NodeType: " << info.node_type();
+
+
 	//todo 如果重连后连上了不同的gate会不会有异步问题
 
 }
@@ -282,6 +290,10 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 
 	client->registerService(GetNodeReplyService());
 	client->connect();
+
+	LOG_INFO << "Connecting to TCP node, ID: " << info.node_id()
+		<< ", IP: " << info.endpoint().ip()
+		<< ", Port: " << info.endpoint().port();
 
 	// Step 4: 设置中心节点引用（仅限中心服）
 	if (info.node_type() == CentreNodeService &&
@@ -383,7 +395,7 @@ bool Node::IsNodeRegistered(uint32_t nodeType, const NodeInfo& node) const {
 	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
 		if (nodeInfo.endpoint().ip() == node.endpoint().ip() &&
 			nodeInfo.endpoint().port() == node.endpoint().port()) {
-			LOG_INFO << "Node already registered, IP: " << nodeInfo.endpoint().ip()
+			LOG_DEBUG << "Node already registered, IP: " << nodeInfo.endpoint().ip()
 				<< ", Port: " << nodeInfo.endpoint().port();
 			return true;
 		}
@@ -639,6 +651,7 @@ void Node::HandleNodeRegistration(
 			if (tryRegister(conn, nodeType)) {
 				tls.sessionRegistry.destroy(entity);
 				response.mutable_error_message()->set_id(kCommon_errorOK);
+				LOG_INFO << "Node registration succeeded: " << peerNode.DebugString();
 				return;
 			}
 		}
@@ -748,6 +761,7 @@ void Node::KeepNodeAlive() {
 		etcdserverpb::LeaseKeepAliveRequest req;
 		req.set_id(static_cast<int64_t>(GetNodeInfo().lease_id()));
 		SendLeaseLeaseKeepAlive(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), req);
+		LOG_DEBUG << "Keeping node alive, lease_id: " << GetNodeInfo().lease_id();
 		});
 }
 
