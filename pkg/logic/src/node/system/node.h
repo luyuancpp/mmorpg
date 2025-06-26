@@ -77,6 +77,7 @@ protected:
     void KeepNodeAlive();
     void StartServiceHealthMonitor();
     void RegisterNodeService();
+    NodeInfo* FindNodeInfo(uint32_t nodeType, uint32_t nodeId);
 
     // 事件处理
     void OnServerConnected(const OnConnected2TcpServerEvent& es);

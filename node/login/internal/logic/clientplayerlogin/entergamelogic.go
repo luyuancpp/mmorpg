@@ -53,6 +53,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 
 	// Transition session state to "Enter Game"
 	if err := session.Fsm.Event(context.Background(), data.EventEnterGame); err != nil {
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginInProgress)
 		logx.Error(err)
 		return resp, nil
 	}

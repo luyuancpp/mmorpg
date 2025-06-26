@@ -117,6 +117,7 @@ void Node::StartRpcServer() {
 
 	FetchServiceNodes();
 	StartWatchingServiceNodes();
+	StartServiceHealthMonitor();
 
 	tls.dispatcher.trigger<OnServerStart>();
 	LOG_TRACE << "RPC server started: " << GetNodeInfo().DebugString();
@@ -367,7 +368,6 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 
 	if (GetNodeInfo().lease_id() == newNode.lease_id()) {
 		LOG_TRACE << "Node has same lease_id as self, skip adding node. Self lease_id: " << GetNodeInfo().lease_id();
-		serviceHealthMonitorTimer.Cancel();
 		return;
 	}
 
@@ -440,14 +440,6 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		else {
 			++it;
 		}
-	}
-
-	if (nodeInfo.lease_id() == GetNodeInfo().lease_id())
-	{
-		LOG_INFO << "Detected self node during cleanup (lease_id = " << GetNodeInfo().lease_id()
-			<< "), skipping deletion.";
-		StartServiceHealthMonitor();
-		return;
 	}
 
 	//这里统一删除，包括tcp grpc http
@@ -757,9 +749,25 @@ void Node::KeepNodeAlive() {
 		});
 }
 
+NodeInfo* Node::FindNodeInfo(uint32_t nodeType, uint32_t nodeId) {
+	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
+	NodeInfo nodeInfo;
+	for (auto it = nodeList.begin(); it != nodeList.end(); ++it) {
+		if (it->node_type() == nodeType && it->node_id() == nodeId) {
+			return &*it;
+		}
+	}
+	return nullptr;
+}
+
+
 void Node::StartServiceHealthMonitor(){
 	serviceHealthMonitorTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().health_check_interval(), [this]() {
 		//如果没有找到节点信息，说明可能是节点掉线了，重写获取租约
+		if (nullptr != FindNodeInfo(GetNodeInfo().node_type(), GetNodeInfo().node_id())) {
+			return;
+		}
 		RequestEtcdLease();
 		}
 	);
