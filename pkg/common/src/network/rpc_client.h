@@ -73,7 +73,7 @@ public:
             return;
         }
 
-        LOG_INFO << "Sending request (Message ID: " << message_id << ") to remote method...";
+        LOG_DEBUG << "Sending request (Message ID: " << message_id << ") to remote method...";
         channel_->CallRemoteMethod(message_id, request);
     }
 
@@ -85,7 +85,7 @@ public:
             return;
         }
 
-        LOG_INFO << "Sending request (Message ID: " << message_id << ") with message size: " << message.ByteSizeLong() << " bytes.";
+        LOG_DEBUG << "Sending request (Message ID: " << message_id << ") with message size: " << message.ByteSizeLong() << " bytes.";
         channel_->SendRequest(message_id, message);
     }
 
@@ -97,7 +97,7 @@ public:
             return;
         }
 
-        LOG_INFO << "Routing message (Message ID: " << message_id << ") to node...";
+        LOG_DEBUG << "Routing message (Message ID: " << message_id << ") to node...";
         channel_->RouteMessageToNode(message_id, request);
     }
 
