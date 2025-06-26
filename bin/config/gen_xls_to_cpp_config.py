@@ -78,7 +78,7 @@ def process_workbook(filename):
             cpp_filename = f"{sheetname.lower()}_config.cpp"
 
             # Create a Jinja2 environment and load the templates
-            env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR), auto_reload=True)
+            env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'), auto_reload=True)
 
             # Render the header templates
             header_template = env.get_template('config_template.h.jinja')
@@ -125,7 +125,7 @@ def generate_all_config():
     cpucount = cpu_count()
 
     # 初始化模板引擎
-    env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR))
+    env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'))
     header_template = env.get_template("all_config.h.jinja")
     cpp_template = env.get_template("all_config.cpp.jinja")
 
@@ -145,10 +145,7 @@ def main():
     with concurrent.futures.ProcessPoolExecutor() as executor:
         executor.map(process_workbook, xlsx_files)
 
-    # Generate header and implementation files for all configurations
-    header_content, cpp_content = generate_all_config()
-    generate_common.mywrite(header_content, CPP_DIR / "all_config.h")
-    generate_common.mywrite(cpp_content, CPP_DIR / "all_config.cpp")
+
 
 
 if __name__ == "__main__":

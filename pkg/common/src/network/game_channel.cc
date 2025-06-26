@@ -19,6 +19,15 @@ void HandleUnknownProtobufMessage(const TcpConnectionPtr&, const MessagePtr& mes
     LOG_ERROR << "Unknown Protobuf message received: " << message->GetTypeName().data();
 }
 
+void LogIfMessageTooLarge(const GameRpcMessage& rpcMessage) {
+	if (const size_t messageSize = rpcMessage.ByteSizeLong(); messageSize > kMaxMessageByteSize) {
+		LOG_ERROR << "RPC message size exceeds 2KB, message ID: "
+			<< rpcMessage.message_id()  // 假设所有消息都有这个字段
+			<< ", size: " << messageSize
+			<< ", message content: " << rpcMessage.DebugString();
+	}
+}
+
 // 全局响应分发器
 MessageResponseDispatcher gResponseDispatcher(std::bind(&HandleUnknownProtobufMessage, _1, _2, _3));
 
@@ -74,7 +83,10 @@ void GameChannel::SendRpcRequestMessage(GameMessageType type, uint32_t messageId
         return;
     }
 
+    LogIfMessageTooLarge(rpcMessage);
+
     codec_.send(connection_, rpcMessage);
+
     LogMessageStatistics(rpcMessage);
 }
 
@@ -91,12 +103,10 @@ void GameChannel::SendRpcResponseMessage(GameMessageType type, uint32_t messageI
         return;
     }
 
-    if (const size_t messageSize = rpcMessage.ByteSizeLong(); messageSize > kMaxMessageByteSize) {
-        LOG_ERROR << "RPC message size exceeds 2KB, message ID: " << rpcMessage.message_id() << ", size: " << messageSize
-                  << ", message content: " << rpcMessage.DebugString();  // 输出 Protobuf 消息内容
-    }
-    
+    LogIfMessageTooLarge(rpcMessage);
+
     codec_.send(connection_, rpcMessage);
+
     LogMessageStatistics(rpcMessage);
 }
 
@@ -338,6 +348,8 @@ void GameChannel::SendRouteResponse(uint32_t messageId, uint64_t id, const std::
 }
 
 void GameChannel::SendGameRpcMessage(const GameRpcMessage& message) {
+    LogIfMessageTooLarge(message);
+
     // 使用 codec_ 发送消息
     codec_.send(connection_, message);
 
