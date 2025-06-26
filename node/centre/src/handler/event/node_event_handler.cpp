@@ -30,11 +30,6 @@ void NodeEventHandler::UnRegister()
 void NodeEventHandler::OnSceneNodeAddPbEventHandler(const OnSceneNodeAddPbEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-		// Log that we have received a RegisterGame request
-	LOG_INFO << "Received RegisterGame request.";
-
-
-
 
 ///<<< END WRITING YOUR CODE
 
