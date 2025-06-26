@@ -469,14 +469,14 @@ void Node::InitGrpcResponseHandlers() {
 		};
 
 	etcdserverpb::AsyncKVPutHandler = [this](const ClientContext& context, const ::etcdserverpb::PutResponse& reply) {
-		LOG_TRACE << "Put response: " << reply.DebugString();
+		LOG_INFO << "Put response: " << reply.DebugString();
 		StartWatchingServiceNodes();
 		};
 
 	etcdserverpb::AsyncKVDeleteRangeHandler = [](const ClientContext& context, const ::etcdserverpb::DeleteRangeResponse& reply) {};
 
 	etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext& context, const ::etcdserverpb::TxnResponse& reply) {
-		LOG_TRACE << "Txn response: " << reply.DebugString();
+		LOG_INFO << "Txn response: " << reply.DebugString();
 		if (reply.succeeded()){
 			StartRpcServer();
 			StartServiceHealthMonitor();
@@ -500,12 +500,12 @@ void Node::InitGrpcResponseHandlers() {
 		}
 		for (const auto& event : response.events()) {
 			if (event.type() == mvccpb::Event_EventType::Event_EventType_PUT) {
-				LOG_TRACE << "Key put: " << event.kv().key();
+				LOG_INFO << "Key put: " << event.kv().key();
 				HandleServiceNodeStart(event.kv().key(), event.kv().value());
 			}
 			else if (event.type() == mvccpb::Event_EventType::Event_EventType_DELETE) {
 				HandleServiceNodeStop(event.kv().key(), event.kv().value());
-				LOG_TRACE << "Key deleted: " << event.kv().key();
+				LOG_INFO << "Key deleted: " << event.kv().key();
 			}
 		}
 		};
