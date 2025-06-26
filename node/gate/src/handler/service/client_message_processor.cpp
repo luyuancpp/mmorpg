@@ -13,7 +13,7 @@
 #include "service_info/centre_service_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/login_service_service_info.h"
-#include "service_info/player_common_service_info.h"
+#include "service_info/game_client_player_service_info.h"
 #include "thread_local/storage_gate.h"
 #include "util/random.h"
 #include "proto/common/node.pb.h"
@@ -102,7 +102,7 @@ void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr
     tipMessage.set_id(tipId);
     MessageContent message;
     message.set_serialized_message(tipMessage.SerializeAsString());
-    message.set_message_id(PlayerClientCommonServiceSendTipToClientMessageId);
+    message.set_message_id(SceneClientPlayerCommonSendTipToClientMessageId);
     gGateNode->Codec().send(conn, message);
 
     LOG_ERROR << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;

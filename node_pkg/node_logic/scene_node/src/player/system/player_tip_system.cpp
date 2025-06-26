@@ -2,7 +2,7 @@
 
 #include "core/network/message_system.h"
 #include "muduo/base/Logging.h"
-#include "service_info/player_common_service_info.h"
+#include "service_info/game_client_player_service_info.h"
 #include "thread_local/storage_common_logic.h"
 
 void PlayerTipSystem::SendToPlayer(entt::entity player, uint32_t tipId, const StringVector& strParam)
@@ -14,7 +14,7 @@ void PlayerTipSystem::SendToPlayer(entt::entity player, uint32_t tipId, const St
 		*message.mutable_parameters()->Add() = param;
 	}
 
-	SendMessageToPlayer(PlayerClientCommonServiceSendTipToClientMessageId, message, player);
+	SendMessageToPlayer(SceneClientPlayerCommonSendTipToClientMessageId, message, player);
 }
 
 void PlayerTipSystem::SendToPlayer(const Guid playerId, const uint32_t tipId, const StringVector& strParam)

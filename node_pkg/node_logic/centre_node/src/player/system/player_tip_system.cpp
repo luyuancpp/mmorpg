@@ -1,7 +1,7 @@
 #include "player_tip_system.h"
 
 #include "network//message_system.h"
-#include "service_info/player_common_service_info.h"
+#include "service_info/centre_player_service_info.h"
 #include "thread_local/storage_common_logic.h"
 
 void PlayerTipSystem::SendToPlayer(entt::entity playerEntity, uint32_t tipId, const StringVector& parameters)
@@ -12,7 +12,7 @@ void PlayerTipSystem::SendToPlayer(entt::entity playerEntity, uint32_t tipId, co
 	{
 		*message.mutable_parameters()->Add() = param;
 	}
-	::SendMessageToPlayer(PlayerClientCommonServiceSendTipToClientMessageId, message, playerEntity);
+	::SendMessageToPlayer(CentrePlayerUtilitySendTipToClientMessageId, message, playerEntity);
 }
 
 void PlayerTipSystem::SendToPlayer(Guid playerId, uint32_t tipId, const StringVector& parameters)
