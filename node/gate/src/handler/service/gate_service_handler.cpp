@@ -57,10 +57,6 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 		}
 		return;
 	}
-	if (request->message_content().message_id() == 68)
-	{
-		LOG_ERROR << request->message_content().message_id();
-	}
 	gGateNode->SendMessageToClient(sessionIt->second.conn, request->message_content());
 	//LOG_TRACE << "Player message routed, session ID: " << request->head().session_id();
 	///<<< END WRITING YOUR CODE

@@ -171,7 +171,6 @@
     <ClInclude Include="src\service_info\centre_scene_service_info.h" />
     <ClInclude Include="src\service_info\centre_service_service_info.h" />
     <ClInclude Include="src\service_info\db_service_service_info.h" />
-    <ClInclude Include="src\service_info\deploy_service_service_info.h" />
     <ClInclude Include="src\service_info\etcd_service_info.h" />
     <ClInclude Include="src\service_info\game_client_player_service_info.h" />
     <ClInclude Include="src\service_info\game_player_scene_service_info.h" />
@@ -180,7 +179,6 @@
     <ClInclude Include="src\service_info\game_service_service_info.h" />
     <ClInclude Include="src\service_info\gate_service_service_info.h" />
     <ClInclude Include="src\service_info\login_service_service_info.h" />
-    <ClInclude Include="src\service_info\player_common_service_info.h" />
     <ClInclude Include="src\service_info\player_scene_service_info.h" />
     <ClInclude Include="src\service_info\player_skill_service_info.h" />
     <ClInclude Include="src\service_info\player_state_attribute_sync_service_info.h" />
