@@ -376,6 +376,7 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 
 	if (GetNodeInfo().lease_id() == newNode.lease_id()) {
 		LOG_TRACE << "Node has same lease_id as self, skip adding node. Self lease_id: " << GetNodeInfo().lease_id();
+		serviceHealthMonitorTimer.Cancel();
 		return;
 	}
 
