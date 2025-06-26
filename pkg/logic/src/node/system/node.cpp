@@ -125,7 +125,6 @@ void Node::StartRpcServer() {
 
 	FetchServiceNodes();
 	StartWatchingServiceNodes();
-	StartServiceHealthMonitor();
 
 	tls.dispatcher.trigger<OnServerStart>();
 	LOG_TRACE << "RPC server started: " << GetNodeInfo().DebugString();
@@ -412,7 +411,7 @@ void Node::HandleServiceNodeStart(const std::string& key, const std::string& val
 }
 
 void Node::HandleServiceNodeStop(const std::string& key, const std::string& value) {
-	LOG_DEBUG << "Service node stop, key: " << key << ", value: " << value;
+	LOG_INFO << "Service node stop, key: " << key << ", value: " << value;
 
 	std::regex pattern(R"(.*?/zone/(\d+)/node_type/(\d+)/node_id/(\d+))");
 	std::smatch match;
@@ -451,8 +450,11 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		}
 	}
 
-	if (nodeInfo.lease_id() <= 0) {
-		LOG_ERROR << "Node not found for key: " << key;
+	if (nodeInfo.lease_id() == GetNodeInfo().lease_id())
+	{
+		LOG_INFO << "Detected self node during cleanup (lease_id = " << GetNodeInfo().lease_id()
+			<< "), skipping deletion.";
+		StartServiceHealthMonitor();
 		return;
 	}
 
@@ -509,12 +511,12 @@ void Node::InitGrpcResponseHandlers() {
 		}
 		for (const auto& event : response.events()) {
 			if (event.type() == mvccpb::Event_EventType::Event_EventType_PUT) {
-				LOG_INFO << "Key put: " << event.kv().key();
+				LOG_TRACE << "Key put: " << event.kv().key();
 				HandleServiceNodeStart(event.kv().key(), event.kv().value());
 			}
 			else if (event.type() == mvccpb::Event_EventType::Event_EventType_DELETE) {
 				HandleServiceNodeStop(event.kv().key(), event.kv().value());
-				LOG_INFO << "Key deleted: " << event.kv().key();
+				LOG_TRACE << "Key deleted: " << event.kv().key();
 			}
 		}
 		};
@@ -707,39 +709,53 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 }
 
 void Node::AcquireNode() {
-    auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[GetNodeType()];
-    auto& existingNodes = *nodeList.mutable_node_list();
+	LOG_INFO << "Acquiring node ID for node type: " << GetNodeType();
 
-    UInt32Set allocatedIds;
-    uint32_t highestUsedId = 0;
+	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[GetNodeType()];
+	auto& existingNodes = *nodeList.mutable_node_list();
 
-    for (const auto& node : existingNodes) {
-        allocatedIds.insert(node.node_id());
-        highestUsedId = std::max(highestUsedId, node.node_id());
-    }
+	UInt32Set allocatedIds;
+	uint32_t highestUsedId = 0;
 
-    constexpr uint32_t kRandomOffset = 5;
-    const uint32_t searchUpperBound = highestUsedId + tlsCommonLogic.GetRng().Rand<uint32_t>(0, kRandomOffset);
-
-    uint32_t selectedNodeId = highestUsedId;
-    for (uint32_t id = 0; id < searchUpperBound; ++id) {
-        if (!allocatedIds.contains(id)) {
-            selectedNodeId = id;
-            break;
-        }
-    }
-
-    GetNodeInfo().set_node_id(selectedNodeId);
-
-    constexpr uint32_t kPortStepPerNodeType = 10000;
-    uint32_t assignedPort = GetNodeType() * kPortStepPerNodeType + selectedNodeId;
-	if (nullptr == rpcServer)
-	{
-		GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
+	for (const auto& node : existingNodes) {
+		allocatedIds.insert(node.node_id());
+		highestUsedId = std::max(highestUsedId, node.node_id());
 	}
 
-    RegisterNodeService();
+	LOG_INFO << "Found " << allocatedIds.size() << " existing nodes. Highest used ID: " << highestUsedId;
+
+	constexpr uint32_t kRandomOffset = 5;
+	const uint32_t randomOffset = tlsCommonLogic.GetRng().Rand<uint32_t>(0, kRandomOffset);
+	const uint32_t searchUpperBound = highestUsedId + randomOffset;
+
+	LOG_DEBUG << "Random offset: " << randomOffset << ", search upper bound: " << searchUpperBound;
+
+	uint32_t selectedNodeId = highestUsedId;
+	for (uint32_t id = 0; id < searchUpperBound; ++id) {
+		if (!allocatedIds.contains(id)) {
+			selectedNodeId = id;
+			LOG_INFO << "Selected available node ID: " << selectedNodeId;
+			break;
+		}
+	}
+
+	GetNodeInfo().set_node_id(selectedNodeId);
+
+	constexpr uint32_t kPortStepPerNodeType = 10000;
+	uint32_t assignedPort = GetNodeType() * kPortStepPerNodeType + selectedNodeId;
+
+	if (nullptr == rpcServer) {
+		GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
+		LOG_INFO << "Assigned RPC port: " << assignedPort;
+	}
+	else {
+		LOG_WARN << "RPC server already initialized, skipping port assignment.";
+	}
+
+	LOG_INFO << "Registering node service for node ID: " << selectedNodeId;
+	RegisterNodeService();
 }
+
 
 void Node::KeepNodeAlive() {
 	renewLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().keep_alive_interval(), [this]() {
@@ -751,30 +767,21 @@ void Node::KeepNodeAlive() {
 
 void Node::StartServiceHealthMonitor(){
 	serviceHealthMonitorTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().health_check_interval(), [this]() {
-		if (nullptr != FindNodeInfo(GetNodeInfo().node_type(), GetNodeInfo().node_id())){
-			return;
-		}
 		//如果没有找到节点信息，说明可能是节点掉线了，重写获取租约
 		RequestEtcdLease();
 		}
 	);
 }
 
-void Node::RegisterNodeService(){
+void Node::RegisterNodeService() {
 	const auto serviceKey = MakeEtcdKey(GetNodeInfo());
-	EtcdHelper::PutIfAbsent(serviceKey, GetNodeInfo());
-}
 
-NodeInfo* Node::FindNodeInfo(uint32_t nodeType, uint32_t nodeId){
-	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
-	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
-	NodeInfo nodeInfo;
-	for (auto it = nodeList.begin(); it != nodeList.end(); ++it) {
-		if (it->node_type() == nodeType && it->node_id() == nodeId) {
-			return &*it; 
-		}
-	}
-	return nullptr;
+	LOG_INFO << "Registering node service to etcd with key: " << serviceKey;
+
+	EtcdHelper::PutIfAbsent(serviceKey, GetNodeInfo());
+
+	LOG_INFO << "Registered node to etcd: " << GetNodeInfo().DebugString();
+	
 }
 
 void Node::RequestEtcdLease() {
