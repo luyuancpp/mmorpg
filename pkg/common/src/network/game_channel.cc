@@ -217,7 +217,7 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr& conn, const RpcMessag
                   << ", message content: " << rpcMessage.DebugString();  // 输出 Protobuf 消息内容
     }
 
-    LOG_DEBUG << "RPC message received, type: " << rpcMessage.type() << ", message ID: " << rpcMessage.message_id();
+    LOG_TRACE << "RPC message received, type: " << rpcMessage.type() << ", message ID: " << rpcMessage.message_id();
 
     switch (rpcMessage.type()) {
     case GameMessageType::RESPONSE:
