@@ -1,11 +1,4 @@
-﻿// 重构思路：
-// 1. 精简函数名和变量名，去除冗余逻辑，合并重复代码
-// 2. 拆分过长函数，提炼出小函数
-// 3. 统一风格，提升可读性
-// 4. 删除无用注释和空实现
-// 5. 变量、函数命名更直观
-
-#include "node.h"
+﻿#include "node.h"
 #include <ranges>
 #include <regex>
 #include <grpcpp/create_channel.h>
@@ -63,7 +56,6 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
 }
 
 Node::~Node() {
-	LOG_INFO << "Node destroyed.";
 	Shutdown();
 }
 
@@ -140,7 +132,6 @@ void Node::Shutdown() {
 	renewLeaseTimer.Cancel();
 	grpcHandlerTimer.Cancel();
 	LOG_TRACE << "Node shutdown complete.";
-	tls.Clear();
 }
 
 void Node::InitLogSystem() {
