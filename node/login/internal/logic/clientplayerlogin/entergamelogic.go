@@ -32,7 +32,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 
 	resp := &game.EnterGameResponse{ErrorMessage: &game.TipInfoMessage{}}
 
-	if !ok {
+	if !ok || nil == session {
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionIdNotFound)
 		return resp, nil
 	}
@@ -65,7 +65,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	}
 
 	resp.PlayerId = in.PlayerId
-	
+
 	// Notify the central service about player entry
 	l.notifyCentreService(in)
 

@@ -55,8 +55,11 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 		{
 			LOG_ERROR << "Connection ID not found for PlayerMessage, session ID: " << request->header().session_id() << ", message ID:" << request->message_content().message_id();
 		}
-
 		return;
+	}
+	if (request->message_content().message_id() == 68)
+	{
+		LOG_ERROR << request->message_content().message_id();
 	}
 	gGateNode->SendMessageToClient(sessionIt->second.conn, request->message_content());
 	//LOG_TRACE << "Player message routed, session ID: " << request->head().session_id();

@@ -62,7 +62,6 @@ public:
     {
         channel_->SetServiceMap(&services_);
         client_.connect();
-        //LOG_INFO << "Attempting to connect to server at " << client_.connection()->peerAddress().toIpPort() << "...";
     }
 
     void CallRemoteMethod(uint32_t message_id, const ::google::protobuf::Message& request)

@@ -36,7 +36,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 	}
 
 	session, ok := ctxkeys.GetSession(l.ctx)
-	if !ok {
+	if !ok || nil == session {
 		resp.ErrorMessage = &game.TipInfoMessage{
 			Id: uint32(game.LoginError_kLoginSessionIdNotFound),
 		}
