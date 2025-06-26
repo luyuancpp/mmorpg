@@ -25,7 +25,6 @@
 #include "scene/system/scene_system.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
-#include "service_info/player_common_service_info.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"
@@ -34,6 +33,7 @@
 #include "util/defer.h"
 #include "util/proto_field_checker.h"
 #include "util/stacktrace_system.h"
+#include "player/system/player_tip_system.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -230,9 +230,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 			// Handle session takeover (顶号)
 			LOG_INFO << "Player reconnected: Player ID " << clientMsgBody.player_id();
 
-			TipInfoMessage beKickTip;
-			beKickTip.set_id(kLoginBeKickByAnOtherAccount);
-			SendMessageToPlayer(PlayerClientCommonServiceKickPlayerMessageId, beKickTip, clientMsgBody.player_id());
+			PlayerTipSystem::SendToPlayer(player, kLoginBeKickByAnOtherAccount, {});
 
 			auto oldSessionId = playerNodeInfo->gate_session_id();
 
