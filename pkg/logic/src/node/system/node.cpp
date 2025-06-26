@@ -117,7 +117,6 @@ void Node::StartRpcServer() {
 
 	FetchServiceNodes();
 	StartWatchingServiceNodes();
-	StartServiceHealthMonitor();
 
 	tls.dispatcher.trigger<OnServerStart>();
 	LOG_TRACE << "RPC server started: " << GetNodeInfo().DebugString();
@@ -478,7 +477,13 @@ void Node::InitGrpcResponseHandlers() {
 
 	etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext& context, const ::etcdserverpb::TxnResponse& reply) {
 		LOG_TRACE << "Txn response: " << reply.DebugString();
-		reply.succeeded() ? StartRpcServer() : AcquireNode();
+		if (reply.succeeded()){
+			StartRpcServer();
+			StartServiceHealthMonitor();
+		}
+		else {
+			AcquireNode();
+		}
 		};
 
 	etcdserverpb::AsyncWatchWatchHandler = [this](const ClientContext& context, const ::etcdserverpb::WatchResponse& response) {
@@ -769,6 +774,7 @@ void Node::StartServiceHealthMonitor(){
 			return;
 		}
 		RequestEtcdLease();
+		serviceHealthMonitorTimer.Cancel();
 		}
 	);
 }
