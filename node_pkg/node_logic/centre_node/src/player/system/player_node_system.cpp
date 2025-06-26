@@ -104,21 +104,21 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
 	if (!playerNodeInfo)
 	{
-		LOG_ERROR << "Player session not found for player: " << tls.registry.try_get<Guid>(playerEntity);
+		LOG_WARN << "Player session not found for player: " << tls.registry.try_get<Guid>(playerEntity);
 		return;
 	}
 
 	entt::entity gateNodeId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
 	if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
 	{
-		LOG_ERROR << "Gate crash for session id: " << playerNodeInfo->gate_session_id();
+		LOG_WARN << "Gate crash for session id: " << playerNodeInfo->gate_session_id();
 		return;
 	}
 
 	auto gateNodeScene = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateNodeId);
 	if (!gateNodeScene)
 	{
-		LOG_ERROR << "Gate crash for session id: " << playerNodeInfo->gate_session_id();
+		LOG_WARN << "Gate crash for session id: " << playerNodeInfo->gate_session_id();
 		return;
 	}
 
