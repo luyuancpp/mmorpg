@@ -73,7 +73,17 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
 #include "util/base64.h"
 
+
 namespace {{.Package}}{
+
+{{- range $index, $m := .ServiceInfo }}
+  {{- if eq $index 0 }}
+struct {{$m.FileBaseNameCamel}}CompleteQueue {
+    grpc::CompletionQueue cq;
+};
+  {{- end }}
+{{- end }}
+
 {{- range .ServiceInfo }}
 {{- range .MethodInfo }}
 #pragma region {{.Service}}{{.Method}}

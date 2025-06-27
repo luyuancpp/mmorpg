@@ -4,7 +4,11 @@
 #include "proto/logic/constants/etcd_grpc.pb.h"
 #include "util/base64.h"
 
+
 namespace loginpb{
+struct LoginServiceCompleteQueue {
+    grpc::CompletionQueue cq;
+};
 #pragma region ClientPlayerLoginLogin
 struct ClientPlayerLoginLoginCompleteQueue {
     grpc::CompletionQueue cq;
