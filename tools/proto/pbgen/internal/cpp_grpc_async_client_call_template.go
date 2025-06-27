@@ -73,23 +73,17 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
 #include "util/base64.h"
 
+{{ $root := . }}
 
 namespace {{.Package}}{
-
-{{- range $index, $m := .ServiceInfo }}
-  {{- if eq $index 0 }}
-struct {{$m.FileBaseNameCamel}}CompleteQueue {
+struct {{.GrpcCompleteQueueName}} {
     grpc::CompletionQueue cq;
 };
-  {{- end }}
-{{- end }}
 
 {{- range .ServiceInfo }}
 {{- range .MethodInfo }}
 #pragma region {{.Service}}{{.Method}}
-struct {{.Service}}{{.Method}}CompleteQueue {
-    grpc::CompletionQueue cq;
-};
+
 using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const ClientContext&, const {{.CppResponse}}&)>;
 Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
 {{ if .ClientStreaming }}
@@ -189,7 +183,7 @@ void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::en
 
 void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request) {
 {{ if .ClientStreaming }}
-    auto& cq = registry.get<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity).cq;
+    auto& cq = registry.get< {{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq;
     auto& pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
     pendingWritesBuffer.push_back(request);
     TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
@@ -198,7 +192,7 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
     call->response_reader = registry
         .get<{{.Service}}StubPtr>(nodeEntity)
         ->PrepareAsync{{.Method}}(&call->context, request,
-                                  &registry.get<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity).cq);
+                                  &registry.get< {{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq);
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 {{ end }}
@@ -206,7 +200,7 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
 
 void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 {{ if .ClientStreaming }}
-    auto& cq = registry.get<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity).cq;
+    auto& cq = registry.get< {{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq;
     auto& pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
     pendingWritesBuffer.push_back(request);
     TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
@@ -221,7 +215,7 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
     call->response_reader = registry
         .get<{{.Service}}StubPtr>(nodeEntity)
         ->PrepareAsync{{.Method}}(&call->context, request,
-                                  &registry.get<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity).cq);
+                                  &registry.get< {{ $root.GrpcCompleteQueueName }} >(nodeEntity).cq);
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 {{ end }}
@@ -242,9 +236,9 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
 void Init{{$m.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
   {{- end }}
 {{- end -}}
+    registry.emplace< {{ $root.GrpcCompleteQueueName }} >(nodeEntity);
 {{- range .ServiceInfo }}
 {{- range .MethodInfo }}
-    registry.emplace<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity);
 {{ if .ClientStreaming }}
     {
         auto& client = registry.emplace<Async{{.Service}}{{.Method}}GrpcClient>(nodeEntity);
@@ -256,7 +250,7 @@ void Init{{$m.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::
         client.stream = registry
             .get<{{.Service}}StubPtr>(nodeEntity)
             ->Async{{.Method}}(&client.context,
-                               &registry.get<{{.Service}}{{.Method}}CompleteQueue>(nodeEntity).cq,
+                               &registry.get< {{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq,
                                (void*)(GrpcOperation::INIT));
     }
 {{ end }}
@@ -272,7 +266,7 @@ void Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registr
 {{- range .ServiceInfo }}
 {{- range .MethodInfo }}
     {
-        auto&& view = registry.view<{{.Service}}{{.Method}}CompleteQueue>();
+        auto&& view = registry.view< {{ $root.GrpcCompleteQueueName }}>();
         for (auto&& [e, completeQueueComp] : view.each()) {
             AsyncCompleteGrpc{{.Service}}{{.Method}}(registry, e, completeQueueComp.cq);
         }
