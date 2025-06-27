@@ -151,15 +151,14 @@ const (
 	PlayerMethodController   = "entt::entity player,"
 	IncludeEndLine           = "\"\n"
 	IncludeBegin             = "#include \""
-	Tab                      = "	"
 	YourCodeBegin            = "///<<< BEGIN WRITING YOUR CODE"
 	YourCodeEnd              = "///<<< END WRITING YOUR CODE"
 	YourCodePair             = YourCodeBegin + "\n" + YourCodeEnd + "\n"
-	CcGenericServices        = "cc_generic_services"
 	EmptyResponseName        = "Empty"
 	MysqlName                = "mysql"
 	PlayerServiceName        = "player_service.cpp"
 	PlayerRepliedServiceName = "player_service_replied.cpp"
+	CompleteQueueName        = "CompleteQueue"
 )
 
 // ----------- 项目源目录相关 -----------
