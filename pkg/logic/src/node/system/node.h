@@ -97,6 +97,7 @@ protected:
     RpcClientPtr zoneCentreNode;
     CanConnectNodeTypeList targetNodeTypeWhitelist;
     ClientList zombieClientList;
+    int64_t revision{ 0 };
 };
 
 extern Node* gNode;
