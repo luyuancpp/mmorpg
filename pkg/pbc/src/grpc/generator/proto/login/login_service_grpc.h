@@ -17,6 +17,11 @@ enum class GrpcMethod : uint32_t {
     ClientPlayerLogin_LeaveGame,
     ClientPlayerLogin_Disconnect,
 };
+
+struct GrpcTag {
+    GrpcMethod type;
+    void* valuePtr;
+};
 using ClientPlayerLoginStubPtr = std::unique_ptr<ClientPlayerLogin::Stub>;
 #pragma region ClientPlayerLoginLogin
 

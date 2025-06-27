@@ -31,13 +31,16 @@ void AsyncCompleteGrpcKVRange(entt::registry& registry, entt::entity nodeEntity,
 
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request) {
 
+
     AsyncKVRangeGrpcClientCall* call = new AsyncKVRangeGrpcClientCall;
     call->response_reader = registry
         .get<KVStubPtr>(nodeEntity)
         ->PrepareAsyncRange(&call->context, request,
                                   &registry.get< EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -88,13 +91,16 @@ void AsyncCompleteGrpcKVPut(entt::registry& registry, entt::entity nodeEntity, g
 
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request) {
 
+
     AsyncKVPutGrpcClientCall* call = new AsyncKVPutGrpcClientCall;
     call->response_reader = registry
         .get<KVStubPtr>(nodeEntity)
         ->PrepareAsyncPut(&call->context, request,
                                   &registry.get< EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -145,13 +151,16 @@ void AsyncCompleteGrpcKVDeleteRange(entt::registry& registry, entt::entity nodeE
 
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request) {
 
+
     AsyncKVDeleteRangeGrpcClientCall* call = new AsyncKVDeleteRangeGrpcClientCall;
     call->response_reader = registry
         .get<KVStubPtr>(nodeEntity)
         ->PrepareAsyncDeleteRange(&call->context, request,
                                   &registry.get< EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -202,13 +211,16 @@ void AsyncCompleteGrpcKVTxn(entt::registry& registry, entt::entity nodeEntity, g
 
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request) {
 
+
     AsyncKVTxnGrpcClientCall* call = new AsyncKVTxnGrpcClientCall;
     call->response_reader = registry
         .get<KVStubPtr>(nodeEntity)
         ->PrepareAsyncTxn(&call->context, request,
                                   &registry.get< EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -259,13 +271,16 @@ void AsyncCompleteGrpcKVCompact(entt::registry& registry, entt::entity nodeEntit
 
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request) {
 
+
     AsyncKVCompactGrpcClientCall* call = new AsyncKVCompactGrpcClientCall;
     call->response_reader = registry
         .get<KVStubPtr>(nodeEntity)
         ->PrepareAsyncCompact(&call->context, request,
                                   &registry.get< EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -312,7 +327,9 @@ void TryWriteNextNextWatchWatch(entt::registry& registry, entt::entity nodeEntit
     auto& request = pendingWritesBuffer.front();
 
     writeInProgress.isInProgress = true;
-    client.stream->Write(request, (void*)(GrpcOperation::WRITE));
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)GrpcOperation::WRITE;
+    client.stream->Write(request, (void*)(got_tag));
 }
 
 void AsyncCompleteGrpcWatchWatch(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
@@ -403,13 +420,16 @@ void AsyncCompleteGrpcLeaseLeaseGrant(entt::registry& registry, entt::entity nod
 
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request) {
 
+
     AsyncLeaseLeaseGrantGrpcClientCall* call = new AsyncLeaseLeaseGrantGrpcClientCall;
     call->response_reader = registry
         .get<LeaseStubPtr>(nodeEntity)
         ->PrepareAsyncLeaseGrant(&call->context, request,
                                   &registry.get< EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -460,13 +480,16 @@ void AsyncCompleteGrpcLeaseLeaseRevoke(entt::registry& registry, entt::entity no
 
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request) {
 
+
     AsyncLeaseLeaseRevokeGrpcClientCall* call = new AsyncLeaseLeaseRevokeGrpcClientCall;
     call->response_reader = registry
         .get<LeaseStubPtr>(nodeEntity)
         ->PrepareAsyncLeaseRevoke(&call->context, request,
                                   &registry.get< EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -513,7 +536,9 @@ void TryWriteNextNextLeaseLeaseKeepAlive(entt::registry& registry, entt::entity 
     auto& request = pendingWritesBuffer.front();
 
     writeInProgress.isInProgress = true;
-    client.stream->Write(request, (void*)(GrpcOperation::WRITE));
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)GrpcOperation::WRITE;
+    client.stream->Write(request, (void*)(got_tag));
 }
 
 void AsyncCompleteGrpcLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
@@ -604,13 +629,16 @@ void AsyncCompleteGrpcLeaseLeaseTimeToLive(entt::registry& registry, entt::entit
 
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request) {
 
+
     AsyncLeaseLeaseTimeToLiveGrpcClientCall* call = new AsyncLeaseLeaseTimeToLiveGrpcClientCall;
     call->response_reader = registry
         .get<LeaseStubPtr>(nodeEntity)
         ->PrepareAsyncLeaseTimeToLive(&call->context, request,
                                   &registry.get< EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -661,13 +689,16 @@ void AsyncCompleteGrpcLeaseLeaseLeases(entt::registry& registry, entt::entity no
 
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request) {
 
+
     AsyncLeaseLeaseLeasesGrpcClientCall* call = new AsyncLeaseLeaseLeasesGrpcClientCall;
     call->response_reader = registry
         .get<LeaseStubPtr>(nodeEntity)
         ->PrepareAsyncLeaseLeases(&call->context, request,
                                   &registry.get< EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
