@@ -10,7 +10,7 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace etcdserverpb {
-enum class GrpcMethod {
+enum class GrpcMethod : uint32_t {
     KV_Range,
     KV_Put,
     KV_DeleteRange,
@@ -28,7 +28,7 @@ using KVStubPtr = std::unique_ptr<KV::Stub>;
 
 
 struct AsyncKVRangeGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::KV_Range) };
+    GrpcMethod type{ GrpcMethod::KV_Range };
     ClientContext context;
     Status status;
     ::etcdserverpb::RangeResponse reply;
@@ -51,7 +51,7 @@ void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const google
 
 
 struct AsyncKVPutGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::KV_Put) };
+    GrpcMethod type{ GrpcMethod::KV_Put };
     ClientContext context;
     Status status;
     ::etcdserverpb::PutResponse reply;
@@ -74,7 +74,7 @@ void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const google::
 
 
 struct AsyncKVDeleteRangeGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::KV_DeleteRange) };
+    GrpcMethod type{ GrpcMethod::KV_DeleteRange };
     ClientContext context;
     Status status;
     ::etcdserverpb::DeleteRangeResponse reply;
@@ -97,7 +97,7 @@ void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const 
 
 
 struct AsyncKVTxnGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::KV_Txn) };
+    GrpcMethod type{ GrpcMethod::KV_Txn };
     ClientContext context;
     Status status;
     ::etcdserverpb::TxnResponse reply;
@@ -120,7 +120,7 @@ void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const google::
 
 
 struct AsyncKVCompactGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::KV_Compact) };
+    GrpcMethod type{ GrpcMethod::KV_Compact };
     ClientContext context;
     Status status;
     ::etcdserverpb::CompactionResponse reply;
@@ -144,7 +144,7 @@ using WatchStubPtr = std::unique_ptr<Watch::Stub>;
 
 
 struct AsyncWatchWatchGrpcClient {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::Watch_Watch) };
+    GrpcMethod type{ GrpcMethod::Watch_Watch };
     ClientContext context;
     Status status;
     ::etcdserverpb::WatchResponse reply;
@@ -176,7 +176,7 @@ using LeaseStubPtr = std::unique_ptr<Lease::Stub>;
 
 
 struct AsyncLeaseLeaseGrantGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::Lease_LeaseGrant) };
+    GrpcMethod type{ GrpcMethod::Lease_LeaseGrant };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseGrantResponse reply;
@@ -199,7 +199,7 @@ void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, cons
 
 
 struct AsyncLeaseLeaseRevokeGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::Lease_LeaseRevoke) };
+    GrpcMethod type{ GrpcMethod::Lease_LeaseRevoke };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseRevokeResponse reply;
@@ -222,7 +222,7 @@ void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, con
 
 
 struct AsyncLeaseLeaseKeepAliveGrpcClient {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::Lease_LeaseKeepAlive) };
+    GrpcMethod type{ GrpcMethod::Lease_LeaseKeepAlive };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseKeepAliveResponse reply;
@@ -253,7 +253,7 @@ void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, 
 
 
 struct AsyncLeaseLeaseTimeToLiveGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::Lease_LeaseTimeToLive) };
+    GrpcMethod type{ GrpcMethod::Lease_LeaseTimeToLive };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseTimeToLiveResponse reply;
@@ -276,7 +276,7 @@ void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity,
 
 
 struct AsyncLeaseLeaseLeasesGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::Lease_LeaseLeases) };
+    GrpcMethod type{ GrpcMethod::Lease_LeaseLeases };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseLeasesResponse reply;

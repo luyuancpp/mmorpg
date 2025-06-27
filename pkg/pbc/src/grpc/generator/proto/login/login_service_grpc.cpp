@@ -17,18 +17,7 @@ AsyncClientPlayerLoginLoginHandlerFunctionType AsyncClientPlayerLoginLoginHandle
 
 
 
-void AsyncCompleteGrpcClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncClientPlayerLoginLoginGrpcClientCall> call(
         static_cast<AsyncClientPlayerLoginLoginGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -85,18 +74,7 @@ AsyncClientPlayerLoginCreatePlayerHandlerFunctionType AsyncClientPlayerLoginCrea
 
 
 
-void AsyncCompleteGrpcClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncClientPlayerLoginCreatePlayerGrpcClientCall> call(
         static_cast<AsyncClientPlayerLoginCreatePlayerGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -153,18 +131,7 @@ AsyncClientPlayerLoginEnterGameHandlerFunctionType AsyncClientPlayerLoginEnterGa
 
 
 
-void AsyncCompleteGrpcClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncClientPlayerLoginEnterGameGrpcClientCall> call(
         static_cast<AsyncClientPlayerLoginEnterGameGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -221,18 +188,7 @@ AsyncClientPlayerLoginLeaveGameHandlerFunctionType AsyncClientPlayerLoginLeaveGa
 
 
 
-void AsyncCompleteGrpcClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncClientPlayerLoginLeaveGameGrpcClientCall> call(
         static_cast<AsyncClientPlayerLoginLeaveGameGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -289,18 +245,7 @@ AsyncClientPlayerLoginDisconnectHandlerFunctionType AsyncClientPlayerLoginDiscon
 
 
 
-void AsyncCompleteGrpcClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncClientPlayerLoginDisconnectGrpcClientCall> call(
         static_cast<AsyncClientPlayerLoginDisconnectGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -352,7 +297,8 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
 
 
 
-void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {registry.emplace< LoginServiceCompleteQueue >(nodeEntity);
+void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+    registry.emplace< LoginServiceCompleteQueue >(nodeEntity);
 
 
 
@@ -361,35 +307,49 @@ void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeE
 
 
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
-    {
-        auto&& view = registry.view< LoginServiceCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcClientPlayerLoginLogin(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< LoginServiceCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcClientPlayerLoginCreatePlayer(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< LoginServiceCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcClientPlayerLoginEnterGame(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< LoginServiceCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcClientPlayerLoginLeaveGame(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< LoginServiceCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcClientPlayerLoginDisconnect(registry, e, completeQueueComp.cq);
-        }
+  
+	auto&& view = registry.view< LoginServiceCompleteQueue>();
+    for (auto&& [e, completeQueueComp] : view.each()) {
+		void* got_tag = nullptr;
+		bool ok = false;
+		gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
+		if (grpc::CompletionQueue::GOT_EVENT != completeQueueComp.cq.AsyncNext(&got_tag, &ok, tm)) {
+			return;
+		}
+		if (!ok) {
+			LOG_ERROR << "RPC failed";
+			return;
+		}
+		GrpcMethod type = *reinterpret_cast<GrpcMethod*>(got_tag);
+		switch(type){
+		{
+			case GrpcMethod::ClientPlayerLogin_Login:
+			AsyncCompleteGrpcClientPlayerLoginLogin(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::ClientPlayerLogin_CreatePlayer:
+			AsyncCompleteGrpcClientPlayerLoginCreatePlayer(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::ClientPlayerLogin_EnterGame:
+			AsyncCompleteGrpcClientPlayerLoginEnterGame(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::ClientPlayerLogin_LeaveGame:
+			AsyncCompleteGrpcClientPlayerLoginLeaveGame(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::ClientPlayerLogin_Disconnect:
+			AsyncCompleteGrpcClientPlayerLoginDisconnect(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		default:
+			break;
+		}
     }
 }
 
