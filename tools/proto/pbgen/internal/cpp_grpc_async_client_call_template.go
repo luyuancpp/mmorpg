@@ -11,47 +11,62 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace {{.Package}} {
-{{- range .ServiceInfo }}
-using {{.Service}}StubPtr = std::unique_ptr<{{.Service}}::Stub>;
-{{- range .MethodInfo }}
-#pragma region {{.Service}}{{.Method}}
-{{if .ClientStreaming}}
-class Async{{.Service}}{{.Method}}GrpcClient {
-public:
+enum class GrpcMethod {
+{{- range $svc := .ServiceInfo }}
+    {{- range $method := $svc.MethodInfo }}
+    {{ $svc.Service }}_{{ $method.Method }},
+    {{- end }}
+{{- end }}
+};
+
+{{- range $svc := .ServiceInfo }}
+using {{ $svc.Service }}StubPtr = std::unique_ptr<{{ $svc.Service }}::Stub>;
+
+{{- range $index, $method := $svc.MethodInfo }}
+#pragma region {{ $svc.Service }}{{ $method.Method }}
+{{- $enumValue := printf "%s_%s" $svc.Service $method.Method }}
+{{ if $method.ClientStreaming }}
+
+struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClient {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::{{ $enumValue }}) };
     ClientContext context;
     Status status;
-    {{.CppResponse}} reply;
-    std::unique_ptr<grpc::ClientAsyncReaderWriter<{{.CppRequest}}, {{.CppResponse}}>> stream;
+    {{ $method.CppResponse }} reply;
+    std::unique_ptr<grpc::ClientAsyncReaderWriter<{{ $method.CppRequest }}, {{ $method.CppResponse }}>> stream;
 };
 
-struct {{.RequestName}}Buffer {
-    boost::circular_buffer<{{.CppRequest}}> pendingWritesBuffer{200};
+struct {{ $method.RequestName }}Buffer {
+    boost::circular_buffer<{{ $method.CppRequest }}> pendingWritesBuffer{200};
 };
 
-struct {{.RequestName}}WriteInProgress {
+struct {{ $method.RequestName }}WriteInProgress {
     bool isInProgress{false};
 };
-{{else}}
-class Async{{.Service}}{{.Method}}GrpcClientCall {
-public:
+
+{{ else }}
+
+struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::{{ $enumValue }}) };
     ClientContext context;
     Status status;
-    {{.CppResponse}} reply;
-    std::unique_ptr<ClientAsyncResponseReader<{{.CppResponse}}>> response_reader;
+    {{ $method.CppResponse }} reply;
+    std::unique_ptr<ClientAsyncResponseReader<{{ $method.CppResponse }}>> response_reader;
 };
 
+{{ end }}
 
-{{end}}
+class {{ $method.CppRequest }};
+using Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType = std::function<void(const ClientContext&, const {{ $method.CppResponse }}&)>;
+extern Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType Async{{ $svc.Service }}{{ $method.Method }}Handler;
 
-class {{.CppRequest}};
-using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const ClientContext&, const {{.CppResponse}}&)>;
-extern Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
-void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request);
-void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request);
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
+
 {{ end }}
 {{- end }}
+
 
 {{- range $index, $m := .ServiceInfo }}
   {{- if eq $index 0 }}

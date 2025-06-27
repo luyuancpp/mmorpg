@@ -10,11 +10,25 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace etcdserverpb {
+enum class GrpcMethod {
+    KV_Range,
+    KV_Put,
+    KV_DeleteRange,
+    KV_Txn,
+    KV_Compact,
+    Watch_Watch,
+    Lease_LeaseGrant,
+    Lease_LeaseRevoke,
+    Lease_LeaseKeepAlive,
+    Lease_LeaseTimeToLive,
+    Lease_LeaseLeases,
+};
 using KVStubPtr = std::unique_ptr<KV::Stub>;
 #pragma region KVRange
 
-class AsyncKVRangeGrpcClientCall {
-public:
+
+struct AsyncKVRangeGrpcClientCall {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::KV_Range) };
     ClientContext context;
     Status status;
     ::etcdserverpb::RangeResponse reply;
@@ -23,19 +37,21 @@ public:
 
 
 
-
 class ::etcdserverpb::RangeRequest;
 using AsyncKVRangeHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::RangeResponse&)>;
 extern AsyncKVRangeHandlerFunctionType AsyncKVRangeHandler;
+
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request);
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 
+
 #pragma region KVPut
 
-class AsyncKVPutGrpcClientCall {
-public:
+
+struct AsyncKVPutGrpcClientCall {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::KV_Put) };
     ClientContext context;
     Status status;
     ::etcdserverpb::PutResponse reply;
@@ -44,19 +60,21 @@ public:
 
 
 
-
 class ::etcdserverpb::PutRequest;
 using AsyncKVPutHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::PutResponse&)>;
 extern AsyncKVPutHandlerFunctionType AsyncKVPutHandler;
+
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request);
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 
+
 #pragma region KVDeleteRange
 
-class AsyncKVDeleteRangeGrpcClientCall {
-public:
+
+struct AsyncKVDeleteRangeGrpcClientCall {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::KV_DeleteRange) };
     ClientContext context;
     Status status;
     ::etcdserverpb::DeleteRangeResponse reply;
@@ -65,19 +83,21 @@ public:
 
 
 
-
 class ::etcdserverpb::DeleteRangeRequest;
 using AsyncKVDeleteRangeHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::DeleteRangeResponse&)>;
 extern AsyncKVDeleteRangeHandlerFunctionType AsyncKVDeleteRangeHandler;
+
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request);
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 
+
 #pragma region KVTxn
 
-class AsyncKVTxnGrpcClientCall {
-public:
+
+struct AsyncKVTxnGrpcClientCall {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::KV_Txn) };
     ClientContext context;
     Status status;
     ::etcdserverpb::TxnResponse reply;
@@ -86,19 +106,21 @@ public:
 
 
 
-
 class ::etcdserverpb::TxnRequest;
 using AsyncKVTxnHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::TxnResponse&)>;
 extern AsyncKVTxnHandlerFunctionType AsyncKVTxnHandler;
+
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request);
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 
+
 #pragma region KVCompact
 
-class AsyncKVCompactGrpcClientCall {
-public:
+
+struct AsyncKVCompactGrpcClientCall {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::KV_Compact) };
     ClientContext context;
     Status status;
     ::etcdserverpb::CompactionResponse reply;
@@ -107,20 +129,22 @@ public:
 
 
 
-
 class ::etcdserverpb::CompactionRequest;
 using AsyncKVCompactHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::CompactionResponse&)>;
 extern AsyncKVCompactHandlerFunctionType AsyncKVCompactHandler;
+
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request);
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 
+
 using WatchStubPtr = std::unique_ptr<Watch::Stub>;
 #pragma region WatchWatch
 
-class AsyncWatchWatchGrpcClient {
-public:
+
+struct AsyncWatchWatchGrpcClient {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::Watch_Watch) };
     ClientContext context;
     Status status;
     ::etcdserverpb::WatchResponse reply;
@@ -136,19 +160,23 @@ struct WatchRequestWriteInProgress {
 };
 
 
+
 class ::etcdserverpb::WatchRequest;
 using AsyncWatchWatchHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::WatchResponse&)>;
 extern AsyncWatchWatchHandlerFunctionType AsyncWatchWatchHandler;
+
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request);
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 
+
 using LeaseStubPtr = std::unique_ptr<Lease::Stub>;
 #pragma region LeaseLeaseGrant
 
-class AsyncLeaseLeaseGrantGrpcClientCall {
-public:
+
+struct AsyncLeaseLeaseGrantGrpcClientCall {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::Lease_LeaseGrant) };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseGrantResponse reply;
@@ -157,19 +185,21 @@ public:
 
 
 
-
 class ::etcdserverpb::LeaseGrantRequest;
 using AsyncLeaseLeaseGrantHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseGrantResponse&)>;
 extern AsyncLeaseLeaseGrantHandlerFunctionType AsyncLeaseLeaseGrantHandler;
+
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request);
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 
+
 #pragma region LeaseLeaseRevoke
 
-class AsyncLeaseLeaseRevokeGrpcClientCall {
-public:
+
+struct AsyncLeaseLeaseRevokeGrpcClientCall {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::Lease_LeaseRevoke) };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseRevokeResponse reply;
@@ -178,19 +208,21 @@ public:
 
 
 
-
 class ::etcdserverpb::LeaseRevokeRequest;
 using AsyncLeaseLeaseRevokeHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseRevokeResponse&)>;
 extern AsyncLeaseLeaseRevokeHandlerFunctionType AsyncLeaseLeaseRevokeHandler;
+
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request);
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 
+
 #pragma region LeaseLeaseKeepAlive
 
-class AsyncLeaseLeaseKeepAliveGrpcClient {
-public:
+
+struct AsyncLeaseLeaseKeepAliveGrpcClient {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::Lease_LeaseKeepAlive) };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseKeepAliveResponse reply;
@@ -206,18 +238,22 @@ struct LeaseKeepAliveRequestWriteInProgress {
 };
 
 
+
 class ::etcdserverpb::LeaseKeepAliveRequest;
 using AsyncLeaseLeaseKeepAliveHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseKeepAliveResponse&)>;
 extern AsyncLeaseLeaseKeepAliveHandlerFunctionType AsyncLeaseLeaseKeepAliveHandler;
+
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request);
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 
+
 #pragma region LeaseLeaseTimeToLive
 
-class AsyncLeaseLeaseTimeToLiveGrpcClientCall {
-public:
+
+struct AsyncLeaseLeaseTimeToLiveGrpcClientCall {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::Lease_LeaseTimeToLive) };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseTimeToLiveResponse reply;
@@ -226,19 +262,21 @@ public:
 
 
 
-
 class ::etcdserverpb::LeaseTimeToLiveRequest;
 using AsyncLeaseLeaseTimeToLiveHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseTimeToLiveResponse&)>;
 extern AsyncLeaseLeaseTimeToLiveHandlerFunctionType AsyncLeaseLeaseTimeToLiveHandler;
+
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request);
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 
+
 #pragma region LeaseLeaseLeases
 
-class AsyncLeaseLeaseLeasesGrpcClientCall {
-public:
+
+struct AsyncLeaseLeaseLeasesGrpcClientCall {
+    uint32_t type{ static_cast<uint32_t>(GrpcMethod::Lease_LeaseLeases) };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseLeasesResponse reply;
@@ -247,14 +285,15 @@ public:
 
 
 
-
 class ::etcdserverpb::LeaseLeasesRequest;
 using AsyncLeaseLeaseLeasesHandlerFunctionType = std::function<void(const ClientContext&, const ::etcdserverpb::LeaseLeasesResponse&)>;
 extern AsyncLeaseLeaseLeasesHandlerFunctionType AsyncLeaseLeaseLeasesHandler;
+
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request);
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
+
 
 void SetEtcdHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetEtcdIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
