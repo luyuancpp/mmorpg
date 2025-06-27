@@ -17,18 +17,7 @@ AsyncKVRangeHandlerFunctionType AsyncKVRangeHandler;
 
 
 
-void AsyncCompleteGrpcKVRange(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcKVRange(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncKVRangeGrpcClientCall> call(
         static_cast<AsyncKVRangeGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -85,18 +74,7 @@ AsyncKVPutHandlerFunctionType AsyncKVPutHandler;
 
 
 
-void AsyncCompleteGrpcKVPut(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcKVPut(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncKVPutGrpcClientCall> call(
         static_cast<AsyncKVPutGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -153,18 +131,7 @@ AsyncKVDeleteRangeHandlerFunctionType AsyncKVDeleteRangeHandler;
 
 
 
-void AsyncCompleteGrpcKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncKVDeleteRangeGrpcClientCall> call(
         static_cast<AsyncKVDeleteRangeGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -221,18 +188,7 @@ AsyncKVTxnHandlerFunctionType AsyncKVTxnHandler;
 
 
 
-void AsyncCompleteGrpcKVTxn(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcKVTxn(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncKVTxnGrpcClientCall> call(
         static_cast<AsyncKVTxnGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -289,18 +245,7 @@ AsyncKVCompactHandlerFunctionType AsyncKVCompactHandler;
 
 
 
-void AsyncCompleteGrpcKVCompact(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcKVCompact(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncKVCompactGrpcClientCall> call(
         static_cast<AsyncKVCompactGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -370,20 +315,7 @@ void TryWriteNextNextWatchWatch(entt::registry& registry, entt::entity nodeEntit
     client.stream->Write(request, (void*)(GrpcOperation::WRITE));
 }
 
-void AsyncCompleteGrpcWatchWatch(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcWatchWatch(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     auto& client = registry.get<AsyncWatchWatchGrpcClient>(nodeEntity);
     auto& writeInProgress = registry.get<WatchRequestWriteInProgress>(nodeEntity);
 
@@ -457,18 +389,7 @@ AsyncLeaseLeaseGrantHandlerFunctionType AsyncLeaseLeaseGrantHandler;
 
 
 
-void AsyncCompleteGrpcLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncLeaseLeaseGrantGrpcClientCall> call(
         static_cast<AsyncLeaseLeaseGrantGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -525,18 +446,7 @@ AsyncLeaseLeaseRevokeHandlerFunctionType AsyncLeaseLeaseRevokeHandler;
 
 
 
-void AsyncCompleteGrpcLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncLeaseLeaseRevokeGrpcClientCall> call(
         static_cast<AsyncLeaseLeaseRevokeGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -606,20 +516,7 @@ void TryWriteNextNextLeaseLeaseKeepAlive(entt::registry& registry, entt::entity 
     client.stream->Write(request, (void*)(GrpcOperation::WRITE));
 }
 
-void AsyncCompleteGrpcLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     auto& client = registry.get<AsyncLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
     auto& writeInProgress = registry.get<LeaseKeepAliveRequestWriteInProgress>(nodeEntity);
 
@@ -693,18 +590,7 @@ AsyncLeaseLeaseTimeToLiveHandlerFunctionType AsyncLeaseLeaseTimeToLiveHandler;
 
 
 
-void AsyncCompleteGrpcLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncLeaseLeaseTimeToLiveGrpcClientCall> call(
         static_cast<AsyncLeaseLeaseTimeToLiveGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -761,18 +647,7 @@ AsyncLeaseLeaseLeasesHandlerFunctionType AsyncLeaseLeaseLeasesHandler;
 
 
 
-void AsyncCompleteGrpcLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpcLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<AsyncLeaseLeaseLeasesGrpcClientCall> call(
         static_cast<AsyncLeaseLeaseLeasesGrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -824,7 +699,8 @@ void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, con
 
 
 
-void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {registry.emplace< EtcdCompleteQueue >(nodeEntity);
+void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+    registry.emplace< EtcdCompleteQueue >(nodeEntity);
 
 
 
@@ -867,71 +743,79 @@ void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 
 
 void HandleEtcdCompletedQueueMessage(entt::registry& registry) {
-    {
-        auto&& view = registry.view< EtcdCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcKVRange(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< EtcdCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcKVPut(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< EtcdCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcKVDeleteRange(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< EtcdCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcKVTxn(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< EtcdCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcKVCompact(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< EtcdCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcWatchWatch(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< EtcdCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcLeaseLeaseGrant(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< EtcdCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcLeaseLeaseRevoke(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< EtcdCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcLeaseLeaseKeepAlive(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< EtcdCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcLeaseLeaseTimeToLive(registry, e, completeQueueComp.cq);
-        }
-    }
-    {
-        auto&& view = registry.view< EtcdCompleteQueue>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpcLeaseLeaseLeases(registry, e, completeQueueComp.cq);
-        }
+  
+	auto&& view = registry.view< EtcdCompleteQueue>();
+    for (auto&& [e, completeQueueComp] : view.each()) {
+		void* got_tag = nullptr;
+		bool ok = false;
+		gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
+		if (grpc::CompletionQueue::GOT_EVENT != completeQueueComp.cq.AsyncNext(&got_tag, &ok, tm)) {
+			return;
+		}
+		if (!ok) {
+			LOG_ERROR << "RPC failed";
+			return;
+		}
+		GrpcMethod type = *reinterpret_cast<GrpcMethod*>(got_tag);
+		switch(type){
+		{
+			case GrpcMethod::KV_Range:
+			AsyncCompleteGrpcKVRange(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::KV_Put:
+			AsyncCompleteGrpcKVPut(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::KV_DeleteRange:
+			AsyncCompleteGrpcKVDeleteRange(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::KV_Txn:
+			AsyncCompleteGrpcKVTxn(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::KV_Compact:
+			AsyncCompleteGrpcKVCompact(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::Watch_Watch:
+			AsyncCompleteGrpcWatchWatch(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::Lease_LeaseGrant:
+			AsyncCompleteGrpcLeaseLeaseGrant(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::Lease_LeaseRevoke:
+			AsyncCompleteGrpcLeaseLeaseRevoke(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::Lease_LeaseKeepAlive:
+			AsyncCompleteGrpcLeaseLeaseKeepAlive(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::Lease_LeaseTimeToLive:
+			AsyncCompleteGrpcLeaseLeaseTimeToLive(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		{
+			case GrpcMethod::Lease_LeaseLeases:
+			AsyncCompleteGrpcLeaseLeaseLeases(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
+		default:
+			break;
+		}
     }
 }
 

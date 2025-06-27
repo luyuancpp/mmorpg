@@ -10,7 +10,7 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace loginpb {
-enum class GrpcMethod {
+enum class GrpcMethod : uint32_t {
     ClientPlayerLogin_Login,
     ClientPlayerLogin_CreatePlayer,
     ClientPlayerLogin_EnterGame,
@@ -22,7 +22,7 @@ using ClientPlayerLoginStubPtr = std::unique_ptr<ClientPlayerLogin::Stub>;
 
 
 struct AsyncClientPlayerLoginLoginGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::ClientPlayerLogin_Login) };
+    GrpcMethod type{ GrpcMethod::ClientPlayerLogin_Login };
     ClientContext context;
     Status status;
     ::loginpb::LoginResponse reply;
@@ -45,7 +45,7 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
 
 
 struct AsyncClientPlayerLoginCreatePlayerGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::ClientPlayerLogin_CreatePlayer) };
+    GrpcMethod type{ GrpcMethod::ClientPlayerLogin_CreatePlayer };
     ClientContext context;
     Status status;
     ::loginpb::CreatePlayerResponse reply;
@@ -68,7 +68,7 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
 
 
 struct AsyncClientPlayerLoginEnterGameGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::ClientPlayerLogin_EnterGame) };
+    GrpcMethod type{ GrpcMethod::ClientPlayerLogin_EnterGame };
     ClientContext context;
     Status status;
     ::loginpb::EnterGameResponse reply;
@@ -91,7 +91,7 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
 
 
 struct AsyncClientPlayerLoginLeaveGameGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::ClientPlayerLogin_LeaveGame) };
+    GrpcMethod type{ GrpcMethod::ClientPlayerLogin_LeaveGame };
     ClientContext context;
     Status status;
     ::Empty reply;
@@ -114,7 +114,7 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
 
 
 struct AsyncClientPlayerLoginDisconnectGrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::ClientPlayerLogin_Disconnect) };
+    GrpcMethod type{ GrpcMethod::ClientPlayerLogin_Disconnect };
     ClientContext context;
     Status status;
     ::Empty reply;

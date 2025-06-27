@@ -11,7 +11,7 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace {{.Package}} {
-enum class GrpcMethod {
+enum class GrpcMethod : uint32_t {
 {{- range $svc := .ServiceInfo }}
     {{- range $method := $svc.MethodInfo }}
     {{ $svc.Service }}_{{ $method.Method }},
@@ -28,7 +28,7 @@ using {{ $svc.Service }}StubPtr = std::unique_ptr<{{ $svc.Service }}::Stub>;
 {{ if $method.ClientStreaming }}
 
 struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClient {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::{{ $enumValue }}) };
+    GrpcMethod type{ GrpcMethod::{{ $enumValue }} };
     ClientContext context;
     Status status;
     {{ $method.CppResponse }} reply;
@@ -46,7 +46,7 @@ struct {{ $method.RequestName }}WriteInProgress {
 {{ else }}
 
 struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall {
-    uint32_t type{ static_cast<uint32_t>(GrpcMethod::{{ $enumValue }}) };
+    GrpcMethod type{ GrpcMethod::{{ $enumValue }} };
     ClientContext context;
     Status status;
     {{ $method.CppResponse }} reply;
@@ -117,20 +117,7 @@ void TryWriteNextNext{{.Service}}{{.Method}}(entt::registry& registry, entt::ent
     client.stream->Write(request, (void*)(GrpcOperation::WRITE));
 }
 
-void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     auto& client = registry.get<Async{{.Service}}{{.Method}}GrpcClient>(nodeEntity);
     auto& writeInProgress = registry.get<{{.RequestName}}WriteInProgress>(nodeEntity);
 
@@ -172,18 +159,7 @@ void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::en
 {{ else }}
 
 
-void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    void* got_tag = nullptr;
-    bool ok = false;
-    gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm)) {
-        return;
-    }
-    if (!ok) {
-        LOG_ERROR << "RPC failed";
-        return;
-    }
-
+void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     std::unique_ptr<Async{{.Service}}{{.Method}}GrpcClientCall> call(
         static_cast<Async{{.Service}}{{.Method}}GrpcClientCall*>(got_tag));
     if (call->status.ok()) {
@@ -250,7 +226,7 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
   {{- if eq $index 0 }}
 void Init{{$m.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
   {{- end }}
-{{- end -}}
+{{- end }}
     registry.emplace< {{ $root.GrpcCompleteQueueName }} >(nodeEntity);
 {{- range .ServiceInfo }}
 {{- range .MethodInfo }}
@@ -277,17 +253,36 @@ void Init{{$m.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::
   {{- if eq $index 0 }}
 void Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry) {
   {{- end }}
-{{- end -}}
-{{- range .ServiceInfo }}
-{{- range .MethodInfo }}
-    {
-        auto&& view = registry.view< {{ $root.GrpcCompleteQueueName }}>();
-        for (auto&& [e, completeQueueComp] : view.each()) {
-            AsyncCompleteGrpc{{.Service}}{{.Method}}(registry, e, completeQueueComp.cq);
-        }
-    }
+{{- end }}
+  
+	auto&& view = registry.view< {{ $root.GrpcCompleteQueueName }}>();
+    for (auto&& [e, completeQueueComp] : view.each()) {
+		void* got_tag = nullptr;
+		bool ok = false;
+		gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
+		if (grpc::CompletionQueue::GOT_EVENT != completeQueueComp.cq.AsyncNext(&got_tag, &ok, tm)) {
+			return;
+		}
+		if (!ok) {
+			LOG_ERROR << "RPC failed";
+			return;
+		}
+		GrpcMethod type = *reinterpret_cast<GrpcMethod*>(got_tag);
+		switch(type){
+	{{- range $svc := .ServiceInfo }}
+    {{- range $method := $svc.MethodInfo }}
+		{{- $enumValue := printf "%s_%s" $svc.Service $method.Method }}
+		{
+			case GrpcMethod::{{ $enumValue }}:
+			AsyncCompleteGrpc{{$method.Service}}{{$method.Method}}(registry, e, completeQueueComp.cq, got_tag);
+		}
+		break;
 {{- end -}}
 {{- end }}
+		default:
+			break;
+		}
+    }
 }
 
 {{range $index, $m := .ServiceInfo }}
