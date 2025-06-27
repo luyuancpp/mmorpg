@@ -23,6 +23,11 @@ enum class GrpcMethod : uint32_t {
     Lease_LeaseTimeToLive,
     Lease_LeaseLeases,
 };
+
+struct GrpcTag {
+    GrpcMethod type;
+    void* valuePtr;
+};
 using KVStubPtr = std::unique_ptr<KV::Stub>;
 #pragma region KVRange
 

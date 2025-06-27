@@ -19,6 +19,11 @@ enum class GrpcMethod : uint32_t {
 {{- end }}
 };
 
+struct GrpcTag {
+    GrpcMethod type;
+    void* valuePtr;
+};
+
 {{- range $svc := .ServiceInfo }}
 using {{ $svc.Service }}StubPtr = std::unique_ptr<{{ $svc.Service }}::Stub>;
 
@@ -114,7 +119,9 @@ void TryWriteNextNext{{.Service}}{{.Method}}(entt::registry& registry, entt::ent
     auto& request = pendingWritesBuffer.front();
 
     writeInProgress.isInProgress = true;
-    client.stream->Write(request, (void*)(GrpcOperation::WRITE));
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)GrpcOperation::WRITE;
+    client.stream->Write(request, (void*)(got_tag));
 }
 
 void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
@@ -132,7 +139,9 @@ void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::en
             break;
         }
         case GrpcOperation::WRITES_DONE:
-            client.stream->Finish(&client.status, (void*)(GrpcOperation::FINISH));
+			GrpcTag* got_tag(new GrpcTag);
+			got_tag.value =  (void*)GrpcOperation::FINISH;
+            client.stream->Finish(&client.status, (void*)(got_tag));
             break;
         case GrpcOperation::FINISH:
             cq.Shutdown();
@@ -142,13 +151,17 @@ void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::en
             if (Async{{.Service}}{{.Method}}Handler) {
                 Async{{.Service}}{{.Method}}Handler(client.context, response);
             }
-            client.stream->Read(&response, (void*)GrpcOperation::READ);
+			GrpcTag* got_tag(new GrpcTag);
+			got_tag.value =  (void*)GrpcOperation::READ;
+            client.stream->Read(&response, (void*)got_tag);
             TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
             break;
         }
         case GrpcOperation::INIT: {
+			GrpcTag* got_tag(new GrpcTag);
+			got_tag.value =  (void*)GrpcOperation::READ;
             auto& response = registry.get<{{.CppResponse}}>(nodeEntity);
-            client.stream->Read(&response, (void*)GrpcOperation::READ);
+            client.stream->Read(&response, (void*)got_tag);
             TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
             break;
         }
@@ -179,13 +192,16 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
     pendingWritesBuffer.push_back(request);
     TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
 {{ else }}
+
     Async{{.Service}}{{.Method}}GrpcClientCall* call = new Async{{.Service}}{{.Method}}GrpcClientCall;
     call->response_reader = registry
         .get<{{.Service}}StubPtr>(nodeEntity)
         ->PrepareAsync{{.Method}}(&call->context, request,
                                   &registry.get< {{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 {{ end }}
 }
 
@@ -232,6 +248,9 @@ void Init{{$m.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::
 {{- range .MethodInfo }}
 {{ if .ClientStreaming }}
     {
+		GrpcTag* got_tag(new GrpcTag);
+		got_tag.value =  (void*)GrpcOperation::INIT;
+
         auto& client = registry.emplace<Async{{.Service}}{{.Method}}GrpcClient>(nodeEntity);
         registry.emplace<{{.RequestName}}Buffer>(nodeEntity);
         registry.emplace<{{.RequestName}}WriteInProgress>(nodeEntity);
@@ -242,7 +261,7 @@ void Init{{$m.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::
             .get<{{.Service}}StubPtr>(nodeEntity)
             ->Async{{.Method}}(&client.context,
                                &registry.get< {{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq,
-                               (void*)(GrpcOperation::INIT));
+                               (void*)(got_tag));
     }
 {{ end }}
 {{- end -}}

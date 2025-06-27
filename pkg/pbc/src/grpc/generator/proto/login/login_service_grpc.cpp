@@ -31,13 +31,16 @@ void AsyncCompleteGrpcClientPlayerLoginLogin(entt::registry& registry, entt::ent
 
 void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginRequest& request) {
 
+
     AsyncClientPlayerLoginLoginGrpcClientCall* call = new AsyncClientPlayerLoginLoginGrpcClientCall;
     call->response_reader = registry
         .get<ClientPlayerLoginStubPtr>(nodeEntity)
         ->PrepareAsyncLogin(&call->context, request,
                                   &registry.get< LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -88,13 +91,16 @@ void AsyncCompleteGrpcClientPlayerLoginCreatePlayer(entt::registry& registry, en
 
 void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerRequest& request) {
 
+
     AsyncClientPlayerLoginCreatePlayerGrpcClientCall* call = new AsyncClientPlayerLoginCreatePlayerGrpcClientCall;
     call->response_reader = registry
         .get<ClientPlayerLoginStubPtr>(nodeEntity)
         ->PrepareAsyncCreatePlayer(&call->context, request,
                                   &registry.get< LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -145,13 +151,16 @@ void AsyncCompleteGrpcClientPlayerLoginEnterGame(entt::registry& registry, entt:
 
 void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameRequest& request) {
 
+
     AsyncClientPlayerLoginEnterGameGrpcClientCall* call = new AsyncClientPlayerLoginEnterGameGrpcClientCall;
     call->response_reader = registry
         .get<ClientPlayerLoginStubPtr>(nodeEntity)
         ->PrepareAsyncEnterGame(&call->context, request,
                                   &registry.get< LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -202,13 +211,16 @@ void AsyncCompleteGrpcClientPlayerLoginLeaveGame(entt::registry& registry, entt:
 
 void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameRequest& request) {
 
+
     AsyncClientPlayerLoginLeaveGameGrpcClientCall* call = new AsyncClientPlayerLoginLeaveGameGrpcClientCall;
     call->response_reader = registry
         .get<ClientPlayerLoginStubPtr>(nodeEntity)
         ->PrepareAsyncLeaveGame(&call->context, request,
                                   &registry.get< LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -259,13 +271,16 @@ void AsyncCompleteGrpcClientPlayerLoginDisconnect(entt::registry& registry, entt
 
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request) {
 
+
     AsyncClientPlayerLoginDisconnectGrpcClientCall* call = new AsyncClientPlayerLoginDisconnectGrpcClientCall;
     call->response_reader = registry
         .get<ClientPlayerLoginStubPtr>(nodeEntity)
         ->PrepareAsyncDisconnect(&call->context, request,
                                   &registry.get< LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+	GrpcTag* got_tag(new GrpcTag);
+	got_tag.value =  (void*)call;
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
