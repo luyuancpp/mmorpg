@@ -37,18 +37,22 @@ void EtcdHelper::RangeQuery(const std::string& prefix) {
 	SendKVRange(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), request);
 }
 
-void EtcdHelper::StartWatchingPrefix(const std::string& prefix) {
+void EtcdHelper::StartWatchingPrefix(const std::string& prefix, int64_t revision) {
 	etcdserverpb::WatchRequest request;
 	auto& createReq = *request.mutable_create_request();
 
 	createReq.set_key(prefix);
-
 	std::string range_end = prefix;
 	range_end.back() += 1;
 	createReq.set_range_end(range_end);
 
+	if (revision > 0) {
+		createReq.set_start_revision(revision);
+	}
+
 	SendWatchWatch(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), request);
 }
+
 
 void EtcdHelper::StopAllWatching() {
 	// TODO: Add cancel_request implementation if needed
