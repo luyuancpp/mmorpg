@@ -29,6 +29,7 @@
 #include "util/network_utils.h"
 #include "util/random.h"
 #include "generator/util/gen_util.h"
+#include <util/stacktrace_system.h>
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
@@ -783,7 +784,10 @@ NodeInfo* Node::FindNodeInfo(uint32_t nodeType, uint32_t nodeId) {
 
 void Node::StartServiceHealthMonitor(){
 	serviceHealthMonitorTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().health_check_interval(), [this]() {
-		//如果没有找到节点信息，说明可能是节点掉线了，重写获取租约
+		if (nullptr == rpcServer)
+		{
+			return;
+		}
 		if (nullptr != FindNodeInfo(GetNodeInfo().node_type(), GetNodeInfo().node_id())) {
 			return;
 		}
@@ -815,6 +819,7 @@ void Node::RequestEtcdLease() {
 	EtcdHelper::GrantLease(ttlSeconds);
 
 	LOG_INFO << "[EtcdLease] Lease request completed.";
+
 }
 
 
