@@ -27,13 +27,12 @@ struct GrpcTag {
 {{- range $svc := .ServiceInfo }}
 using {{ $svc.Service }}StubPtr = std::unique_ptr<{{ $svc.Service }}::Stub>;
 
-{{- range $index, $method := $svc.MethodInfo }}
+{{- range $method := $svc.MethodInfo }}
 #pragma region {{ $svc.Service }}{{ $method.Method }}
-{{- $enumValue := printf "%s_%s" $svc.Service $method.Method }}
 {{ if $method.ClientStreaming }}
 
 struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClient {
-    GrpcMethod type{ GrpcMethod::{{ $enumValue }} };
+    GrpcMethod type{ GrpcMethod::{{ $svc.Service }}_{{ $method.Method }} };
     ClientContext context;
     Status status;
     {{ $method.CppResponse }} reply;
@@ -51,7 +50,7 @@ struct {{ $method.RequestName }}WriteInProgress {
 {{ else }}
 
 struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall {
-    GrpcMethod type{ GrpcMethod::{{ $enumValue }} };
+    GrpcMethod type{ GrpcMethod::{{ $svc.Service }}_{{ $method.Method }} };
     ClientContext context;
     Status status;
     {{ $method.CppResponse }} reply;
@@ -61,7 +60,8 @@ struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall {
 {{ end }}
 
 class {{ $method.CppRequest }};
-using Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType = std::function<void(const ClientContext&, const {{ $method.CppResponse }}&)>;
+using Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType =
+    std::function<void(const ClientContext&, const {{ $method.CppResponse }}&)>;
 extern Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType Async{{ $svc.Service }}{{ $method.Method }}Handler;
 
 void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request);
@@ -69,22 +69,21 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
 void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 
-{{ end }}
+{{- end }}
 {{- end }}
 
-
-{{- range $index, $m := .ServiceInfo }}
+{{- range $index, $svc := .ServiceInfo }}
   {{- if eq $index 0 }}
-void Set{{$m.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void Set{{$m.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void Init{{$m.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-void Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry);
-void Init{{$m.FileBaseNameCamel}}Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+void Set{{$svc.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void Set{{$svc.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void Init{{$svc.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void Handle{{$svc.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry);
+void Init{{$svc.FileBaseNameCamel}}Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
   {{- end }}
 {{- end }}
 
-
 }// namespace {{.Package}}
+
 `
 
 const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
@@ -95,126 +94,128 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 
 {{ $root := . }}
 
-namespace {{.Package}}{
+namespace {{.Package}} {
 struct {{.GrpcCompleteQueueName}} {
     grpc::CompletionQueue cq;
 };
 
-{{- range .ServiceInfo }}
-{{- range .MethodInfo }}
-#pragma region {{.Service}}{{.Method}}
+{{- range $svc := .ServiceInfo }}
+{{- range $method := $svc.MethodInfo }}
+#pragma region {{ $svc.Service }}{{ $method.Method }}
 
-using Async{{.Service}}{{.Method}}HandlerFunctionType = std::function<void(const ClientContext&, const {{.CppResponse}}&)>;
-Async{{.Service}}{{.Method}}HandlerFunctionType Async{{.Service}}{{.Method}}Handler;
-{{ if .ClientStreaming }}
-void TryWriteNextNext{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    auto& writeInProgress = registry.get<{{.RequestName}}WriteInProgress>(nodeEntity);
-    auto& pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
+using Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType =
+    std::function<void(const ClientContext&, const {{ $method.CppResponse }}&)>;
+Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType Async{{ $svc.Service }}{{ $method.Method }}Handler;
+
+{{ if $method.ClientStreaming }}
+
+void TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
+    auto& writeInProgress = registry.get<{{ $method.RequestName }}WriteInProgress>(nodeEntity);
+    auto& pendingWritesBuffer = registry.get<{{ $method.RequestName }}Buffer>(nodeEntity).pendingWritesBuffer;
 
     if (writeInProgress.isInProgress || pendingWritesBuffer.empty()) {
         return;
     }
 
-    auto& client = registry.get<Async{{.Service}}{{.Method}}GrpcClient>(nodeEntity);
+    auto& client = registry.get<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient>(nodeEntity);
     auto& request = pendingWritesBuffer.front();
 
     writeInProgress.isInProgress = true;
-	GrpcTag* got_tag(new GrpcTag);
-	got_tag->valuePtr =  (void*)GrpcOperation::WRITE;
+    GrpcTag* got_tag(new GrpcTag);
+    got_tag->valuePtr = (void*)GrpcOperation::WRITE;
     client.stream->Write(request, (void*)(got_tag));
 }
-
-void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto& client = registry.get<Async{{.Service}}{{.Method}}GrpcClient>(nodeEntity);
-    auto& writeInProgress = registry.get<{{.RequestName}}WriteInProgress>(nodeEntity);
+void AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto& client = registry.get<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient>(nodeEntity);
+    auto& writeInProgress = registry.get<{{ $method.RequestName }}WriteInProgress>(nodeEntity);
 
     switch (static_cast<GrpcOperation>(reinterpret_cast<intptr_t>(got_tag))) {
         case GrpcOperation::WRITE: {
-            auto& pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
+            auto& pendingWritesBuffer = registry.get<{{ $method.RequestName }}Buffer>(nodeEntity).pendingWritesBuffer;
             if (!pendingWritesBuffer.empty()) {
                 pendingWritesBuffer.pop_front();
             }
             writeInProgress.isInProgress = false;
-            TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
+            TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
             break;
         }
-        case GrpcOperation::WRITES_DONE:
-			{
-				GrpcTag* got_tag(new GrpcTag);
-				got_tag->valuePtr =  (void*)GrpcOperation::FINISH;
-            	client.stream->Finish(&client.status, (void*)(got_tag));
-			}
+        case GrpcOperation::WRITES_DONE: {
+            GrpcTag* got_tag(new GrpcTag);
+            got_tag->valuePtr = (void*)GrpcOperation::FINISH;
+            client.stream->Finish(&client.status, (void*)(got_tag));
             break;
+        }
         case GrpcOperation::FINISH:
             cq.Shutdown();
             break;
         case GrpcOperation::READ: {
-            auto& response = registry.get<{{.CppResponse}}>(nodeEntity);
-            if (Async{{.Service}}{{.Method}}Handler) {
-                Async{{.Service}}{{.Method}}Handler(client.context, response);
+            auto& response = registry.get<{{ $method.CppResponse }}>(nodeEntity);
+            if (Async{{ $svc.Service }}{{ $method.Method }}Handler) {
+                Async{{ $svc.Service }}{{ $method.Method }}Handler(client.context, response);
             }
-			GrpcTag* got_tag(new GrpcTag);
-			got_tag->valuePtr =  (void*)GrpcOperation::READ;
+            GrpcTag* got_tag(new GrpcTag);
+            got_tag->valuePtr = (void*)GrpcOperation::READ;
             client.stream->Read(&response, (void*)got_tag);
-            TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
+            TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
+            break;
         }
-		break;
         case GrpcOperation::INIT: {
-			GrpcTag* got_tag(new GrpcTag);
-			got_tag->valuePtr =  (void*)GrpcOperation::READ;
-            auto& response = registry.get<{{.CppResponse}}>(nodeEntity);
+            GrpcTag* got_tag(new GrpcTag);
+            got_tag->valuePtr = (void*)GrpcOperation::READ;
+            auto& response = registry.get<{{ $method.CppResponse }}>(nodeEntity);
             client.stream->Read(&response, (void*)got_tag);
-            TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
+            TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
             break;
         }
         default:
             break;
     }
 }
+
 {{ else }}
 
-
-void AsyncCompleteGrpc{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<Async{{.Service}}{{.Method}}GrpcClientCall> call(
-        static_cast<Async{{.Service}}{{.Method}}GrpcClientCall*>(got_tag));
+void AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    std::unique_ptr<Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall> call(
+        static_cast<Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall*>(got_tag));
     if (call->status.ok()) {
-        if (Async{{.Service}}{{.Method}}Handler) {
-            Async{{.Service}}{{.Method}}Handler(call->context, call->reply);
+        if (Async{{ $svc.Service }}{{ $method.Method }}Handler) {
+            Async{{ $svc.Service }}{{ $method.Method }}Handler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
     }
 }
-{{- end }}
 
-void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request) {
-{{ if .ClientStreaming }}
-    auto& cq = registry.get< {{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq;
-    auto& pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
+{{ end }}
+
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request) {
+{{ if $method.ClientStreaming }}
+    auto& cq = registry.get<{{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq;
+    auto& pendingWritesBuffer = registry.get<{{ $method.RequestName }}Buffer>(nodeEntity).pendingWritesBuffer;
     pendingWritesBuffer.push_back(request);
-    TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
+    TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
 {{ else }}
-
-    Async{{.Service}}{{.Method}}GrpcClientCall* call = new Async{{.Service}}{{.Method}}GrpcClientCall;
+    Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall* call = new Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall;
     call->response_reader = registry
-        .get<{{.Service}}StubPtr>(nodeEntity)
-        ->PrepareAsync{{.Method}}(&call->context, request,
-                                  &registry.get< {{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq);
+        .get<{{ $svc.Service }}StubPtr>(nodeEntity)
+        ->PrepareAsync{{ $method.Method }}(&call->context, request,
+                                           &registry.get<{{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq);
     call->response_reader->StartCall();
-	GrpcTag* got_tag(new GrpcTag);
-	got_tag->valuePtr =  (void*)call;
+    GrpcTag* got_tag(new GrpcTag);
+    got_tag->valuePtr = (void*)call;
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 {{ end }}
 }
 
-void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.CppRequest}}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-{{ if .ClientStreaming }}
-    auto& cq = registry.get< {{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq;
-    auto& pendingWritesBuffer = registry.get<{{.RequestName}}Buffer>(nodeEntity).pendingWritesBuffer;
+
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+{{ if $method.ClientStreaming }}
+    auto& cq = registry.get<{{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq;
+    auto& pendingWritesBuffer = registry.get<{{ $method.RequestName }}Buffer>(nodeEntity).pendingWritesBuffer;
     pendingWritesBuffer.push_back(request);
-    TryWriteNextNext{{.Service}}{{.Method}}(registry, nodeEntity, cq);
+    TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
 {{ else }}
-    Async{{.Service}}{{.Method}}GrpcClientCall* call = new Async{{.Service}}{{.Method}}GrpcClientCall;
+    Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall* call = new Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall;
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -222,23 +223,22 @@ void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
     }
 
     call->response_reader = registry
-        .get<{{.Service}}StubPtr>(nodeEntity)
-        ->PrepareAsync{{.Method}}(&call->context, request,
-                                  &registry.get< {{ $root.GrpcCompleteQueueName }} >(nodeEntity).cq);
+        .get<{{ $svc.Service }}StubPtr>(nodeEntity)
+        ->PrepareAsync{{ $method.Method }}(&call->context, request,
+                                           &registry.get<{{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq);
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 {{ end }}
 }
 
-void Send{{.Service}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-	const {{.CppRequest}}& derived = static_cast<const {{.CppRequest}}&>(message);
-	Send{{.Service}}{{.Method}}(registry, nodeEntity, derived, metaKeys, metaValues);
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const {{ $method.CppRequest }}& derived = static_cast<const {{ $method.CppRequest }}&>(message);
+    Send{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
-
-
-{{end }}
 {{- end }}
+{{- end }}
+
 
 {{range $index, $m := .ServiceInfo }}
   {{- if eq $index 0 }}
