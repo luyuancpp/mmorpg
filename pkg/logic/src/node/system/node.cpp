@@ -193,7 +193,7 @@ void Node::FetchServiceNodes() {
 
 void Node::StartWatchingServiceNodes() {
 	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
-		EtcdHelper::StartWatchingPrefix(prefix, revision);
+		EtcdHelper::StartWatchingPrefix(prefix, revision + 1);
 	}
 }
 
