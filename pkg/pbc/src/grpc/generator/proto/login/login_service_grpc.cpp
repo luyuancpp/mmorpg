@@ -39,7 +39,7 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
                                   &registry.get< LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
 	GrpcTag* got_tag(new GrpcTag);
-	got_tag.value =  (void*)call;
+	got_tag->valuePtr =  (void*)call;
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -99,7 +99,7 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
                                   &registry.get< LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
 	GrpcTag* got_tag(new GrpcTag);
-	got_tag.value =  (void*)call;
+	got_tag->valuePtr =  (void*)call;
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -159,7 +159,7 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
                                   &registry.get< LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
 	GrpcTag* got_tag(new GrpcTag);
-	got_tag.value =  (void*)call;
+	got_tag->valuePtr =  (void*)call;
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -219,7 +219,7 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
                                   &registry.get< LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
 	GrpcTag* got_tag(new GrpcTag);
-	got_tag.value =  (void*)call;
+	got_tag->valuePtr =  (void*)call;
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -279,7 +279,7 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
                                   &registry.get< LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
 	GrpcTag* got_tag(new GrpcTag);
-	got_tag.value =  (void*)call;
+	got_tag->valuePtr =  (void*)call;
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -335,31 +335,32 @@ void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
 			LOG_ERROR << "RPC failed";
 			return;
 		}
-		GrpcMethod type = *reinterpret_cast<GrpcMethod*>(got_tag);
-		switch(type){
+		std::unique_ptr<GrpcTag> grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
+		
+		switch(grpcTag->type){
 		{
 			case GrpcMethod::ClientPlayerLogin_Login:
-			AsyncCompleteGrpcClientPlayerLoginLogin(registry, e, completeQueueComp.cq, got_tag);
+			AsyncCompleteGrpcClientPlayerLoginLogin(registry, e, completeQueueComp.cq, grpcTag->valuePtr);
 		}
 		break;
 		{
 			case GrpcMethod::ClientPlayerLogin_CreatePlayer:
-			AsyncCompleteGrpcClientPlayerLoginCreatePlayer(registry, e, completeQueueComp.cq, got_tag);
+			AsyncCompleteGrpcClientPlayerLoginCreatePlayer(registry, e, completeQueueComp.cq, grpcTag->valuePtr);
 		}
 		break;
 		{
 			case GrpcMethod::ClientPlayerLogin_EnterGame:
-			AsyncCompleteGrpcClientPlayerLoginEnterGame(registry, e, completeQueueComp.cq, got_tag);
+			AsyncCompleteGrpcClientPlayerLoginEnterGame(registry, e, completeQueueComp.cq, grpcTag->valuePtr);
 		}
 		break;
 		{
 			case GrpcMethod::ClientPlayerLogin_LeaveGame:
-			AsyncCompleteGrpcClientPlayerLoginLeaveGame(registry, e, completeQueueComp.cq, got_tag);
+			AsyncCompleteGrpcClientPlayerLoginLeaveGame(registry, e, completeQueueComp.cq, grpcTag->valuePtr);
 		}
 		break;
 		{
 			case GrpcMethod::ClientPlayerLogin_Disconnect:
-			AsyncCompleteGrpcClientPlayerLoginDisconnect(registry, e, completeQueueComp.cq, got_tag);
+			AsyncCompleteGrpcClientPlayerLoginDisconnect(registry, e, completeQueueComp.cq, grpcTag->valuePtr);
 		}
 		break;
 		default:
