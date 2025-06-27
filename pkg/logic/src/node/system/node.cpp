@@ -806,6 +806,15 @@ void Node::RegisterNodeService() {
 
 void Node::RequestEtcdLease() {
 	uint64_t ttlSeconds = tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds();
+
+	LOG_INFO << "[EtcdLease] Requesting lease with TTL: " << ttlSeconds
+		<< " seconds. Time: " << muduo::Timestamp::now().toFormattedString();
+
+	LOG_DEBUG << "[EtcdLease] Calling EtcdHelper::GrantLease...";
+
 	EtcdHelper::GrantLease(ttlSeconds);
+
+	LOG_INFO << "[EtcdLease] Lease request completed.";
 }
+
 
