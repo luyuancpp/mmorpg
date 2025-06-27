@@ -77,6 +77,7 @@ void Node::Initialize() {
 	InitLogSystem();
 	LoadAllConfigData();
 	InitGrpcClients();
+	FetchServiceNodes();
 	RequestEtcdLease();
 	LOG_DEBUG << "Node initialization complete.";
 }
@@ -115,7 +116,6 @@ void Node::StartRpcServer() {
 		rpcServer->registerService(val.get());
 	}
 
-	FetchServiceNodes();
 	StartWatchingServiceNodes();
 
 	tls.dispatcher.trigger<OnServerStart>();
@@ -479,7 +479,6 @@ void Node::InitGrpcResponseHandlers() {
 
 	etcdserverpb::AsyncKVPutHandler = [this](const ClientContext& context, const ::etcdserverpb::PutResponse& reply) {
 		LOG_INFO << "Put response: " << reply.DebugString();
-		StartWatchingServiceNodes();
 		};
 
 	etcdserverpb::AsyncKVDeleteRangeHandler = [](const ClientContext& context, const ::etcdserverpb::DeleteRangeResponse& reply) {};

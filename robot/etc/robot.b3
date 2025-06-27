@@ -81,7 +81,7 @@
             "properties": {},
             "display": {
               "x": 120,
-              "y": -24
+              "y": -48
             }
           },
           "0ee8bbbf-9a2d-4e64-8abe-45911e946e16": {
@@ -123,8 +123,23 @@
             },
             "children": [
               "28f9bf16-e518-444a-8d5c-913ef6241d84",
-              "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe"
+              "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe",
+              "859bcc4d-4706-41af-8709-e4645709673a"
             ]
+          },
+          "859bcc4d-4706-41af-8709-e4645709673a": {
+            "id": "859bcc4d-4706-41af-8709-e4645709673a",
+            "name": "SleepNode",
+            "category": "action",
+            "title": "SleepNode(<Duration>)",
+            "description": "",
+            "properties": {
+              "Duration": 1000
+            },
+            "display": {
+              "x": 108,
+              "y": 36
+            }
           }
         },
         "display": {
