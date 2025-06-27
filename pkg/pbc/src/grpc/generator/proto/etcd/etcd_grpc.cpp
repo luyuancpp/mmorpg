@@ -4,7 +4,11 @@
 #include "proto/logic/constants/etcd_grpc.pb.h"
 #include "util/base64.h"
 
+
 namespace etcdserverpb{
+struct EtcdCompleteQueue {
+    grpc::CompletionQueue cq;
+};
 #pragma region KVRange
 struct KVRangeCompleteQueue {
     grpc::CompletionQueue cq;

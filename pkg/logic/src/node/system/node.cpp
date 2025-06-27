@@ -523,11 +523,13 @@ void Node::InitGrpcResponseHandlers() {
 	etcdserverpb::AsyncLeaseLeaseGrantHandler = [this](const ClientContext& context, const ::etcdserverpb::LeaseGrantResponse& reply) {
 		// 如果原来没有租约，说明是第一次获取，需要初始化节点信息
 		if (GetNodeInfo().lease_id() <= 0) {
+			LOG_INFO << "Acquiring new lease, ID: " << reply.id();
 			GetNodeInfo().set_lease_id(reply.id());
 			KeepNodeAlive();
 			AcquireNode();  // 获取节点ID或其他信息
 		}
 		else {
+			LOG_INFO << "Lease already exists, updating lease_id: " << reply.id();
 			// 租约过期后重新获取，需要重新注册服务节点
 			GetNodeInfo().set_lease_id(reply.id());
 			KeepNodeAlive();
