@@ -32,7 +32,7 @@ using KVStubPtr = std::unique_ptr<KV::Stub>;
 #pragma region KVRange
 
 
-struct AsyncKVRangeGrpcClientCall {
+struct AsyncKVRangeGrpcClient {
     GrpcMethod type{ GrpcMethod::KV_Range };
     ClientContext context;
     Status status;
@@ -54,7 +54,7 @@ void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const google
 #pragma region KVPut
 
 
-struct AsyncKVPutGrpcClientCall {
+struct AsyncKVPutGrpcClient {
     GrpcMethod type{ GrpcMethod::KV_Put };
     ClientContext context;
     Status status;
@@ -76,7 +76,7 @@ void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const google::
 #pragma region KVDeleteRange
 
 
-struct AsyncKVDeleteRangeGrpcClientCall {
+struct AsyncKVDeleteRangeGrpcClient {
     GrpcMethod type{ GrpcMethod::KV_DeleteRange };
     ClientContext context;
     Status status;
@@ -98,7 +98,7 @@ void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const 
 #pragma region KVTxn
 
 
-struct AsyncKVTxnGrpcClientCall {
+struct AsyncKVTxnGrpcClient {
     GrpcMethod type{ GrpcMethod::KV_Txn };
     ClientContext context;
     Status status;
@@ -120,7 +120,7 @@ void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const google::
 #pragma region KVCompact
 
 
-struct AsyncKVCompactGrpcClientCall {
+struct AsyncKVCompactGrpcClient {
     GrpcMethod type{ GrpcMethod::KV_Compact };
     ClientContext context;
     Status status;
@@ -174,7 +174,7 @@ using LeaseStubPtr = std::unique_ptr<Lease::Stub>;
 #pragma region LeaseLeaseGrant
 
 
-struct AsyncLeaseLeaseGrantGrpcClientCall {
+struct AsyncLeaseLeaseGrantGrpcClient {
     GrpcMethod type{ GrpcMethod::Lease_LeaseGrant };
     ClientContext context;
     Status status;
@@ -196,7 +196,7 @@ void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, cons
 #pragma region LeaseLeaseRevoke
 
 
-struct AsyncLeaseLeaseRevokeGrpcClientCall {
+struct AsyncLeaseLeaseRevokeGrpcClient {
     GrpcMethod type{ GrpcMethod::Lease_LeaseRevoke };
     ClientContext context;
     Status status;
@@ -248,7 +248,7 @@ void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, 
 #pragma region LeaseLeaseTimeToLive
 
 
-struct AsyncLeaseLeaseTimeToLiveGrpcClientCall {
+struct AsyncLeaseLeaseTimeToLiveGrpcClient {
     GrpcMethod type{ GrpcMethod::Lease_LeaseTimeToLive };
     ClientContext context;
     Status status;
@@ -270,7 +270,7 @@ void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity,
 #pragma region LeaseLeaseLeases
 
 
-struct AsyncLeaseLeaseLeasesGrpcClientCall {
+struct AsyncLeaseLeaseLeasesGrpcClient {
     GrpcMethod type{ GrpcMethod::Lease_LeaseLeases };
     ClientContext context;
     Status status;

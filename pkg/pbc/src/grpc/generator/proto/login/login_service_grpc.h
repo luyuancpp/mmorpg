@@ -26,7 +26,7 @@ using ClientPlayerLoginStubPtr = std::unique_ptr<ClientPlayerLogin::Stub>;
 #pragma region ClientPlayerLoginLogin
 
 
-struct AsyncClientPlayerLoginLoginGrpcClientCall {
+struct AsyncClientPlayerLoginLoginGrpcClient {
     GrpcMethod type{ GrpcMethod::ClientPlayerLogin_Login };
     ClientContext context;
     Status status;
@@ -48,7 +48,7 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
 #pragma region ClientPlayerLoginCreatePlayer
 
 
-struct AsyncClientPlayerLoginCreatePlayerGrpcClientCall {
+struct AsyncClientPlayerLoginCreatePlayerGrpcClient {
     GrpcMethod type{ GrpcMethod::ClientPlayerLogin_CreatePlayer };
     ClientContext context;
     Status status;
@@ -70,7 +70,7 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
 #pragma region ClientPlayerLoginEnterGame
 
 
-struct AsyncClientPlayerLoginEnterGameGrpcClientCall {
+struct AsyncClientPlayerLoginEnterGameGrpcClient {
     GrpcMethod type{ GrpcMethod::ClientPlayerLogin_EnterGame };
     ClientContext context;
     Status status;
@@ -92,7 +92,7 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
 #pragma region ClientPlayerLoginLeaveGame
 
 
-struct AsyncClientPlayerLoginLeaveGameGrpcClientCall {
+struct AsyncClientPlayerLoginLeaveGameGrpcClient {
     GrpcMethod type{ GrpcMethod::ClientPlayerLogin_LeaveGame };
     ClientContext context;
     Status status;
@@ -114,7 +114,7 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
 #pragma region ClientPlayerLoginDisconnect
 
 
-struct AsyncClientPlayerLoginDisconnectGrpcClientCall {
+struct AsyncClientPlayerLoginDisconnectGrpcClient {
     GrpcMethod type{ GrpcMethod::ClientPlayerLogin_Disconnect };
     ClientContext context;
     Status status;

@@ -14,16 +14,14 @@ struct EtcdCompleteQueue {
 
 boost::object_pool<GrpcTag> pool;
 #pragma region KVRange
-
+boost::object_pool<AsyncKVRangeGrpcClient> KVRangePool;
 using AsyncKVRangeHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::RangeResponse&)>;
 AsyncKVRangeHandlerFunctionType AsyncKVRangeHandler;
 
-
-
 void AsyncCompleteGrpcKVRange(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncKVRangeGrpcClientCall> call(
-        static_cast<AsyncKVRangeGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncKVRangeGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncKVRangeHandler) {
             AsyncKVRangeHandler(call->context, call->reply);
@@ -31,13 +29,15 @@ void AsyncCompleteGrpcKVRange(entt::registry& registry, entt::entity nodeEntity,
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	KVRangePool.destroy(call);
 }
 
 
 
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request) {
 
-    AsyncKVRangeGrpcClientCall* call = new AsyncKVRangeGrpcClientCall;
+    auto call(KVRangePool.construct());
     call->response_reader = registry
         .get<KVStubPtr>(nodeEntity)
         ->PrepareAsyncRange(&call->context, request,
@@ -51,7 +51,7 @@ void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcd
 
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncKVRangeGrpcClientCall* call = new AsyncKVRangeGrpcClientCall;
+    auto call(KVRangePool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -73,16 +73,14 @@ void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const google
 }
 #pragma endregion
 #pragma region KVPut
-
+boost::object_pool<AsyncKVPutGrpcClient> KVPutPool;
 using AsyncKVPutHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::PutResponse&)>;
 AsyncKVPutHandlerFunctionType AsyncKVPutHandler;
 
-
-
 void AsyncCompleteGrpcKVPut(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncKVPutGrpcClientCall> call(
-        static_cast<AsyncKVPutGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncKVPutGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncKVPutHandler) {
             AsyncKVPutHandler(call->context, call->reply);
@@ -90,13 +88,15 @@ void AsyncCompleteGrpcKVPut(entt::registry& registry, entt::entity nodeEntity, g
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	KVPutPool.destroy(call);
 }
 
 
 
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request) {
 
-    AsyncKVPutGrpcClientCall* call = new AsyncKVPutGrpcClientCall;
+    auto call(KVPutPool.construct());
     call->response_reader = registry
         .get<KVStubPtr>(nodeEntity)
         ->PrepareAsyncPut(&call->context, request,
@@ -110,7 +110,7 @@ void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdse
 
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncKVPutGrpcClientCall* call = new AsyncKVPutGrpcClientCall;
+    auto call(KVPutPool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -132,16 +132,14 @@ void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const google::
 }
 #pragma endregion
 #pragma region KVDeleteRange
-
+boost::object_pool<AsyncKVDeleteRangeGrpcClient> KVDeleteRangePool;
 using AsyncKVDeleteRangeHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::DeleteRangeResponse&)>;
 AsyncKVDeleteRangeHandlerFunctionType AsyncKVDeleteRangeHandler;
 
-
-
 void AsyncCompleteGrpcKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncKVDeleteRangeGrpcClientCall> call(
-        static_cast<AsyncKVDeleteRangeGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncKVDeleteRangeGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncKVDeleteRangeHandler) {
             AsyncKVDeleteRangeHandler(call->context, call->reply);
@@ -149,13 +147,15 @@ void AsyncCompleteGrpcKVDeleteRange(entt::registry& registry, entt::entity nodeE
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	KVDeleteRangePool.destroy(call);
 }
 
 
 
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request) {
 
-    AsyncKVDeleteRangeGrpcClientCall* call = new AsyncKVDeleteRangeGrpcClientCall;
+    auto call(KVDeleteRangePool.construct());
     call->response_reader = registry
         .get<KVStubPtr>(nodeEntity)
         ->PrepareAsyncDeleteRange(&call->context, request,
@@ -169,7 +169,7 @@ void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const 
 
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncKVDeleteRangeGrpcClientCall* call = new AsyncKVDeleteRangeGrpcClientCall;
+    auto call(KVDeleteRangePool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -191,16 +191,14 @@ void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const 
 }
 #pragma endregion
 #pragma region KVTxn
-
+boost::object_pool<AsyncKVTxnGrpcClient> KVTxnPool;
 using AsyncKVTxnHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::TxnResponse&)>;
 AsyncKVTxnHandlerFunctionType AsyncKVTxnHandler;
 
-
-
 void AsyncCompleteGrpcKVTxn(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncKVTxnGrpcClientCall> call(
-        static_cast<AsyncKVTxnGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncKVTxnGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncKVTxnHandler) {
             AsyncKVTxnHandler(call->context, call->reply);
@@ -208,13 +206,15 @@ void AsyncCompleteGrpcKVTxn(entt::registry& registry, entt::entity nodeEntity, g
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	KVTxnPool.destroy(call);
 }
 
 
 
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request) {
 
-    AsyncKVTxnGrpcClientCall* call = new AsyncKVTxnGrpcClientCall;
+    auto call(KVTxnPool.construct());
     call->response_reader = registry
         .get<KVStubPtr>(nodeEntity)
         ->PrepareAsyncTxn(&call->context, request,
@@ -228,7 +228,7 @@ void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdse
 
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncKVTxnGrpcClientCall* call = new AsyncKVTxnGrpcClientCall;
+    auto call(KVTxnPool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -250,16 +250,14 @@ void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const google::
 }
 #pragma endregion
 #pragma region KVCompact
-
+boost::object_pool<AsyncKVCompactGrpcClient> KVCompactPool;
 using AsyncKVCompactHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::CompactionResponse&)>;
 AsyncKVCompactHandlerFunctionType AsyncKVCompactHandler;
 
-
-
 void AsyncCompleteGrpcKVCompact(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncKVCompactGrpcClientCall> call(
-        static_cast<AsyncKVCompactGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncKVCompactGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncKVCompactHandler) {
             AsyncKVCompactHandler(call->context, call->reply);
@@ -267,13 +265,15 @@ void AsyncCompleteGrpcKVCompact(entt::registry& registry, entt::entity nodeEntit
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	KVCompactPool.destroy(call);
 }
 
 
 
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request) {
 
-    AsyncKVCompactGrpcClientCall* call = new AsyncKVCompactGrpcClientCall;
+    auto call(KVCompactPool.construct());
     call->response_reader = registry
         .get<KVStubPtr>(nodeEntity)
         ->PrepareAsyncCompact(&call->context, request,
@@ -287,7 +287,7 @@ void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::et
 
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncKVCompactGrpcClientCall* call = new AsyncKVCompactGrpcClientCall;
+    auto call(KVCompactPool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -309,11 +309,10 @@ void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const goog
 }
 #pragma endregion
 #pragma region WatchWatch
-
+boost::object_pool<AsyncWatchWatchGrpcClient> WatchWatchPool;
 using AsyncWatchWatchHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::WatchResponse&)>;
 AsyncWatchWatchHandlerFunctionType AsyncWatchWatchHandler;
-
 
 
 void TryWriteNextNextWatchWatch(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -376,7 +375,6 @@ void AsyncCompleteGrpcWatchWatch(entt::registry& registry, entt::entity nodeEnti
 }
 
 
-
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request) {
 
     auto& cq = registry.get<EtcdCompleteQueue>(nodeEntity).cq;
@@ -402,16 +400,14 @@ void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const goo
 }
 #pragma endregion
 #pragma region LeaseLeaseGrant
-
+boost::object_pool<AsyncLeaseLeaseGrantGrpcClient> LeaseLeaseGrantPool;
 using AsyncLeaseLeaseGrantHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::LeaseGrantResponse&)>;
 AsyncLeaseLeaseGrantHandlerFunctionType AsyncLeaseLeaseGrantHandler;
 
-
-
 void AsyncCompleteGrpcLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncLeaseLeaseGrantGrpcClientCall> call(
-        static_cast<AsyncLeaseLeaseGrantGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncLeaseLeaseGrantGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncLeaseLeaseGrantHandler) {
             AsyncLeaseLeaseGrantHandler(call->context, call->reply);
@@ -419,13 +415,15 @@ void AsyncCompleteGrpcLeaseLeaseGrant(entt::registry& registry, entt::entity nod
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	LeaseLeaseGrantPool.destroy(call);
 }
 
 
 
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request) {
 
-    AsyncLeaseLeaseGrantGrpcClientCall* call = new AsyncLeaseLeaseGrantGrpcClientCall;
+    auto call(LeaseLeaseGrantPool.construct());
     call->response_reader = registry
         .get<LeaseStubPtr>(nodeEntity)
         ->PrepareAsyncLeaseGrant(&call->context, request,
@@ -439,7 +437,7 @@ void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, cons
 
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncLeaseLeaseGrantGrpcClientCall* call = new AsyncLeaseLeaseGrantGrpcClientCall;
+    auto call(LeaseLeaseGrantPool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -461,16 +459,14 @@ void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, cons
 }
 #pragma endregion
 #pragma region LeaseLeaseRevoke
-
+boost::object_pool<AsyncLeaseLeaseRevokeGrpcClient> LeaseLeaseRevokePool;
 using AsyncLeaseLeaseRevokeHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::LeaseRevokeResponse&)>;
 AsyncLeaseLeaseRevokeHandlerFunctionType AsyncLeaseLeaseRevokeHandler;
 
-
-
 void AsyncCompleteGrpcLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncLeaseLeaseRevokeGrpcClientCall> call(
-        static_cast<AsyncLeaseLeaseRevokeGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncLeaseLeaseRevokeGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncLeaseLeaseRevokeHandler) {
             AsyncLeaseLeaseRevokeHandler(call->context, call->reply);
@@ -478,13 +474,15 @@ void AsyncCompleteGrpcLeaseLeaseRevoke(entt::registry& registry, entt::entity no
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	LeaseLeaseRevokePool.destroy(call);
 }
 
 
 
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request) {
 
-    AsyncLeaseLeaseRevokeGrpcClientCall* call = new AsyncLeaseLeaseRevokeGrpcClientCall;
+    auto call(LeaseLeaseRevokePool.construct());
     call->response_reader = registry
         .get<LeaseStubPtr>(nodeEntity)
         ->PrepareAsyncLeaseRevoke(&call->context, request,
@@ -498,7 +496,7 @@ void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, con
 
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncLeaseLeaseRevokeGrpcClientCall* call = new AsyncLeaseLeaseRevokeGrpcClientCall;
+    auto call(LeaseLeaseRevokePool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -520,11 +518,10 @@ void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, con
 }
 #pragma endregion
 #pragma region LeaseLeaseKeepAlive
-
+boost::object_pool<AsyncLeaseLeaseKeepAliveGrpcClient> LeaseLeaseKeepAlivePool;
 using AsyncLeaseLeaseKeepAliveHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::LeaseKeepAliveResponse&)>;
 AsyncLeaseLeaseKeepAliveHandlerFunctionType AsyncLeaseLeaseKeepAliveHandler;
-
 
 
 void TryWriteNextNextLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -587,7 +584,6 @@ void AsyncCompleteGrpcLeaseLeaseKeepAlive(entt::registry& registry, entt::entity
 }
 
 
-
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request) {
 
     auto& cq = registry.get<EtcdCompleteQueue>(nodeEntity).cq;
@@ -613,16 +609,14 @@ void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, 
 }
 #pragma endregion
 #pragma region LeaseLeaseTimeToLive
-
+boost::object_pool<AsyncLeaseLeaseTimeToLiveGrpcClient> LeaseLeaseTimeToLivePool;
 using AsyncLeaseLeaseTimeToLiveHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::LeaseTimeToLiveResponse&)>;
 AsyncLeaseLeaseTimeToLiveHandlerFunctionType AsyncLeaseLeaseTimeToLiveHandler;
 
-
-
 void AsyncCompleteGrpcLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncLeaseLeaseTimeToLiveGrpcClientCall> call(
-        static_cast<AsyncLeaseLeaseTimeToLiveGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncLeaseLeaseTimeToLiveGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncLeaseLeaseTimeToLiveHandler) {
             AsyncLeaseLeaseTimeToLiveHandler(call->context, call->reply);
@@ -630,13 +624,15 @@ void AsyncCompleteGrpcLeaseLeaseTimeToLive(entt::registry& registry, entt::entit
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	LeaseLeaseTimeToLivePool.destroy(call);
 }
 
 
 
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request) {
 
-    AsyncLeaseLeaseTimeToLiveGrpcClientCall* call = new AsyncLeaseLeaseTimeToLiveGrpcClientCall;
+    auto call(LeaseLeaseTimeToLivePool.construct());
     call->response_reader = registry
         .get<LeaseStubPtr>(nodeEntity)
         ->PrepareAsyncLeaseTimeToLive(&call->context, request,
@@ -650,7 +646,7 @@ void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity,
 
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncLeaseLeaseTimeToLiveGrpcClientCall* call = new AsyncLeaseLeaseTimeToLiveGrpcClientCall;
+    auto call(LeaseLeaseTimeToLivePool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -672,16 +668,14 @@ void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity,
 }
 #pragma endregion
 #pragma region LeaseLeaseLeases
-
+boost::object_pool<AsyncLeaseLeaseLeasesGrpcClient> LeaseLeaseLeasesPool;
 using AsyncLeaseLeaseLeasesHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::LeaseLeasesResponse&)>;
 AsyncLeaseLeaseLeasesHandlerFunctionType AsyncLeaseLeaseLeasesHandler;
 
-
-
 void AsyncCompleteGrpcLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncLeaseLeaseLeasesGrpcClientCall> call(
-        static_cast<AsyncLeaseLeaseLeasesGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncLeaseLeaseLeasesGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncLeaseLeaseLeasesHandler) {
             AsyncLeaseLeaseLeasesHandler(call->context, call->reply);
@@ -689,13 +683,15 @@ void AsyncCompleteGrpcLeaseLeaseLeases(entt::registry& registry, entt::entity no
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	LeaseLeaseLeasesPool.destroy(call);
 }
 
 
 
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request) {
 
-    AsyncLeaseLeaseLeasesGrpcClientCall* call = new AsyncLeaseLeaseLeasesGrpcClientCall;
+    auto call(LeaseLeaseLeasesPool.construct());
     call->response_reader = registry
         .get<LeaseStubPtr>(nodeEntity)
         ->PrepareAsyncLeaseLeases(&call->context, request,
@@ -709,7 +705,7 @@ void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, con
 
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncLeaseLeaseLeasesGrpcClientCall* call = new AsyncLeaseLeaseLeasesGrpcClientCall;
+    auto call(LeaseLeaseLeasesPool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -920,11 +916,8 @@ void InitEtcdStub(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt
 
 
     registry.emplace<KVStubPtr>(nodeEntity, KV::NewStub(channel));
-	pool.set_next_size(32);
     registry.emplace<WatchStubPtr>(nodeEntity, Watch::NewStub(channel));
-	pool.set_next_size(32);
     registry.emplace<LeaseStubPtr>(nodeEntity, Lease::NewStub(channel));
-	pool.set_next_size(32);
 }
 
 
