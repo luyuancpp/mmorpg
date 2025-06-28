@@ -49,7 +49,7 @@ struct {{ $method.RequestName }}WriteInProgress {
 
 {{ else }}
 
-struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall {
+struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClient {
     GrpcMethod type{ GrpcMethod::{{ $svc.Service }}_{{ $method.Method }} };
     ClientContext context;
     Status status;
@@ -105,11 +105,10 @@ boost::object_pool<GrpcTag> pool;
 {{- range $svc := .ServiceInfo }}
 {{- range $method := $svc.MethodInfo }}
 #pragma region {{ $svc.Service }}{{ $method.Method }}
-
+boost::object_pool<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient> {{ $svc.Service }}{{ $method.Method }}Pool;
 using Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType =
     std::function<void(const ClientContext&, const {{ $method.CppResponse }}&)>;
 Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType Async{{ $svc.Service }}{{ $method.Method }}Handler;
-
 {{ if $method.ClientStreaming }}
 
 void TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
@@ -170,12 +169,10 @@ void AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(entt::registry& reg
             break;
     }
 }
-
 {{ else }}
-
 void AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall> call(
-        static_cast<Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (Async{{ $svc.Service }}{{ $method.Method }}Handler) {
             Async{{ $svc.Service }}{{ $method.Method }}Handler(call->context, call->reply);
@@ -183,6 +180,8 @@ void AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(entt::registry& reg
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	{{ $svc.Service }}{{ $method.Method }}Pool.destroy(call);
 }
 
 {{ end }}
@@ -194,7 +193,7 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
     pendingWritesBuffer.push_back(request);
     TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
 {{ else }}
-    Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall* call = new Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall;
+    auto call({{ $svc.Service }}{{ $method.Method }}Pool.construct());
     call->response_reader = registry
         .get<{{ $svc.Service }}StubPtr>(nodeEntity)
         ->PrepareAsync{{ $method.Method }}(&call->context, request,
@@ -213,7 +212,7 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
     pendingWritesBuffer.push_back(request);
     TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
 {{ else }}
-    Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall* call = new Async{{ $svc.Service }}{{ $method.Method }}GrpcClientCall;
+    auto call({{ $svc.Service }}{{ $method.Method }}Pool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -336,7 +335,6 @@ void Init{{ $m.FileBaseNameCamel }}Stub(const std::shared_ptr<::grpc::ChannelInt
 {{ end }}
 {{- range $svc := .ServiceInfo }}
     registry.emplace<{{ $svc.Service }}StubPtr>(nodeEntity, {{ $svc.Service }}::NewStub(channel));
-	pool.set_next_size(32);
 {{- end }}
 }
 

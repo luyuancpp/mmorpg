@@ -14,16 +14,14 @@ struct LoginServiceCompleteQueue {
 
 boost::object_pool<GrpcTag> pool;
 #pragma region ClientPlayerLoginLogin
-
+boost::object_pool<AsyncClientPlayerLoginLoginGrpcClient> ClientPlayerLoginLoginPool;
 using AsyncClientPlayerLoginLoginHandlerFunctionType =
     std::function<void(const ClientContext&, const ::loginpb::LoginResponse&)>;
 AsyncClientPlayerLoginLoginHandlerFunctionType AsyncClientPlayerLoginLoginHandler;
 
-
-
 void AsyncCompleteGrpcClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncClientPlayerLoginLoginGrpcClientCall> call(
-        static_cast<AsyncClientPlayerLoginLoginGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncClientPlayerLoginLoginGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncClientPlayerLoginLoginHandler) {
             AsyncClientPlayerLoginLoginHandler(call->context, call->reply);
@@ -31,13 +29,15 @@ void AsyncCompleteGrpcClientPlayerLoginLogin(entt::registry& registry, entt::ent
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	ClientPlayerLoginLoginPool.destroy(call);
 }
 
 
 
 void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginRequest& request) {
 
-    AsyncClientPlayerLoginLoginGrpcClientCall* call = new AsyncClientPlayerLoginLoginGrpcClientCall;
+    auto call(ClientPlayerLoginLoginPool.construct());
     call->response_reader = registry
         .get<ClientPlayerLoginStubPtr>(nodeEntity)
         ->PrepareAsyncLogin(&call->context, request,
@@ -51,7 +51,7 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
 
 void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncClientPlayerLoginLoginGrpcClientCall* call = new AsyncClientPlayerLoginLoginGrpcClientCall;
+    auto call(ClientPlayerLoginLoginPool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -73,16 +73,14 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
 }
 #pragma endregion
 #pragma region ClientPlayerLoginCreatePlayer
-
+boost::object_pool<AsyncClientPlayerLoginCreatePlayerGrpcClient> ClientPlayerLoginCreatePlayerPool;
 using AsyncClientPlayerLoginCreatePlayerHandlerFunctionType =
     std::function<void(const ClientContext&, const ::loginpb::CreatePlayerResponse&)>;
 AsyncClientPlayerLoginCreatePlayerHandlerFunctionType AsyncClientPlayerLoginCreatePlayerHandler;
 
-
-
 void AsyncCompleteGrpcClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncClientPlayerLoginCreatePlayerGrpcClientCall> call(
-        static_cast<AsyncClientPlayerLoginCreatePlayerGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncClientPlayerLoginCreatePlayerGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncClientPlayerLoginCreatePlayerHandler) {
             AsyncClientPlayerLoginCreatePlayerHandler(call->context, call->reply);
@@ -90,13 +88,15 @@ void AsyncCompleteGrpcClientPlayerLoginCreatePlayer(entt::registry& registry, en
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	ClientPlayerLoginCreatePlayerPool.destroy(call);
 }
 
 
 
 void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerRequest& request) {
 
-    AsyncClientPlayerLoginCreatePlayerGrpcClientCall* call = new AsyncClientPlayerLoginCreatePlayerGrpcClientCall;
+    auto call(ClientPlayerLoginCreatePlayerPool.construct());
     call->response_reader = registry
         .get<ClientPlayerLoginStubPtr>(nodeEntity)
         ->PrepareAsyncCreatePlayer(&call->context, request,
@@ -110,7 +110,7 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
 
 void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncClientPlayerLoginCreatePlayerGrpcClientCall* call = new AsyncClientPlayerLoginCreatePlayerGrpcClientCall;
+    auto call(ClientPlayerLoginCreatePlayerPool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -132,16 +132,14 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
 }
 #pragma endregion
 #pragma region ClientPlayerLoginEnterGame
-
+boost::object_pool<AsyncClientPlayerLoginEnterGameGrpcClient> ClientPlayerLoginEnterGamePool;
 using AsyncClientPlayerLoginEnterGameHandlerFunctionType =
     std::function<void(const ClientContext&, const ::loginpb::EnterGameResponse&)>;
 AsyncClientPlayerLoginEnterGameHandlerFunctionType AsyncClientPlayerLoginEnterGameHandler;
 
-
-
 void AsyncCompleteGrpcClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncClientPlayerLoginEnterGameGrpcClientCall> call(
-        static_cast<AsyncClientPlayerLoginEnterGameGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncClientPlayerLoginEnterGameGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncClientPlayerLoginEnterGameHandler) {
             AsyncClientPlayerLoginEnterGameHandler(call->context, call->reply);
@@ -149,13 +147,15 @@ void AsyncCompleteGrpcClientPlayerLoginEnterGame(entt::registry& registry, entt:
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	ClientPlayerLoginEnterGamePool.destroy(call);
 }
 
 
 
 void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameRequest& request) {
 
-    AsyncClientPlayerLoginEnterGameGrpcClientCall* call = new AsyncClientPlayerLoginEnterGameGrpcClientCall;
+    auto call(ClientPlayerLoginEnterGamePool.construct());
     call->response_reader = registry
         .get<ClientPlayerLoginStubPtr>(nodeEntity)
         ->PrepareAsyncEnterGame(&call->context, request,
@@ -169,7 +169,7 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
 
 void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncClientPlayerLoginEnterGameGrpcClientCall* call = new AsyncClientPlayerLoginEnterGameGrpcClientCall;
+    auto call(ClientPlayerLoginEnterGamePool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -191,16 +191,14 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
 }
 #pragma endregion
 #pragma region ClientPlayerLoginLeaveGame
-
+boost::object_pool<AsyncClientPlayerLoginLeaveGameGrpcClient> ClientPlayerLoginLeaveGamePool;
 using AsyncClientPlayerLoginLeaveGameHandlerFunctionType =
     std::function<void(const ClientContext&, const ::Empty&)>;
 AsyncClientPlayerLoginLeaveGameHandlerFunctionType AsyncClientPlayerLoginLeaveGameHandler;
 
-
-
 void AsyncCompleteGrpcClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncClientPlayerLoginLeaveGameGrpcClientCall> call(
-        static_cast<AsyncClientPlayerLoginLeaveGameGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncClientPlayerLoginLeaveGameGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncClientPlayerLoginLeaveGameHandler) {
             AsyncClientPlayerLoginLeaveGameHandler(call->context, call->reply);
@@ -208,13 +206,15 @@ void AsyncCompleteGrpcClientPlayerLoginLeaveGame(entt::registry& registry, entt:
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	ClientPlayerLoginLeaveGamePool.destroy(call);
 }
 
 
 
 void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameRequest& request) {
 
-    AsyncClientPlayerLoginLeaveGameGrpcClientCall* call = new AsyncClientPlayerLoginLeaveGameGrpcClientCall;
+    auto call(ClientPlayerLoginLeaveGamePool.construct());
     call->response_reader = registry
         .get<ClientPlayerLoginStubPtr>(nodeEntity)
         ->PrepareAsyncLeaveGame(&call->context, request,
@@ -228,7 +228,7 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
 
 void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncClientPlayerLoginLeaveGameGrpcClientCall* call = new AsyncClientPlayerLoginLeaveGameGrpcClientCall;
+    auto call(ClientPlayerLoginLeaveGamePool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -250,16 +250,14 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
 }
 #pragma endregion
 #pragma region ClientPlayerLoginDisconnect
-
+boost::object_pool<AsyncClientPlayerLoginDisconnectGrpcClient> ClientPlayerLoginDisconnectPool;
 using AsyncClientPlayerLoginDisconnectHandlerFunctionType =
     std::function<void(const ClientContext&, const ::Empty&)>;
 AsyncClientPlayerLoginDisconnectHandlerFunctionType AsyncClientPlayerLoginDisconnectHandler;
 
-
-
 void AsyncCompleteGrpcClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    std::unique_ptr<AsyncClientPlayerLoginDisconnectGrpcClientCall> call(
-        static_cast<AsyncClientPlayerLoginDisconnectGrpcClientCall*>(got_tag));
+    auto call(
+        static_cast<AsyncClientPlayerLoginDisconnectGrpcClient*>(got_tag));
     if (call->status.ok()) {
         if (AsyncClientPlayerLoginDisconnectHandler) {
             AsyncClientPlayerLoginDisconnectHandler(call->context, call->reply);
@@ -267,13 +265,15 @@ void AsyncCompleteGrpcClientPlayerLoginDisconnect(entt::registry& registry, entt
     } else {
         LOG_ERROR << call->status.error_message();
     }
+
+	ClientPlayerLoginDisconnectPool.destroy(call);
 }
 
 
 
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request) {
 
-    AsyncClientPlayerLoginDisconnectGrpcClientCall* call = new AsyncClientPlayerLoginDisconnectGrpcClientCall;
+    auto call(ClientPlayerLoginDisconnectPool.construct());
     call->response_reader = registry
         .get<ClientPlayerLoginStubPtr>(nodeEntity)
         ->PrepareAsyncDisconnect(&call->context, request,
@@ -287,7 +287,7 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
 
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    AsyncClientPlayerLoginDisconnectGrpcClientCall* call = new AsyncClientPlayerLoginDisconnectGrpcClientCall;
+    auto call(ClientPlayerLoginDisconnectPool.construct());
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -402,7 +402,6 @@ void SetLoginServiceIfEmptyHandler(const std::function<void(const ClientContext&
 void InitLoginServiceStub(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
 
     registry.emplace<ClientPlayerLoginStubPtr>(nodeEntity, ClientPlayerLogin::NewStub(channel));
-	pool.set_next_size(32);
 }
 
 
