@@ -220,7 +220,8 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
         ->PrepareAsync{{ $method.Method }}(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct({{ $svc.Service }}{{ $method.Method }}MessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 {{ end }}
 }
 
