@@ -747,12 +747,6 @@ void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, con
 #pragma endregion
 
 
-void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
-
-
-}
-
-
 void HandleEtcdCompletedQueueMessage(entt::registry& registry) {
 
 
@@ -874,25 +868,13 @@ void SetEtcdIfEmptyHandler(const std::function<void(const ClientContext&, const 
 }
 
 
-void InitEtcdStub(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
+void InitEtcdGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
 
 
 
     registry.emplace<KVStubPtr>(nodeEntity, KV::NewStub(channel));
     registry.emplace<WatchStubPtr>(nodeEntity, Watch::NewStub(channel));
     registry.emplace<LeaseStubPtr>(nodeEntity, Lease::NewStub(channel));
-
-
-
-
-
-
-
-
-
-
-
-
     {
         GrpcTag* got_tag(tagPool.construct(WatchWatchMessageId, (void*)GrpcOperation::INIT));
 
@@ -908,14 +890,6 @@ void InitEtcdStub(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt
                                         &registry.get<grpc::CompletionQueue>(nodeEntity),
                                         (void*)(got_tag));
     }
-
-
-
-
-
-
-
-
     {
         GrpcTag* got_tag(tagPool.construct(LeaseLeaseKeepAliveMessageId, (void*)GrpcOperation::INIT));
 
@@ -931,13 +905,6 @@ void InitEtcdStub(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt
                                         &registry.get<grpc::CompletionQueue>(nodeEntity),
                                         (void*)(got_tag));
     }
-
-
-
-
-
-
-
 
 }
 

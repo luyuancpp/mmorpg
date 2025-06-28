@@ -15,7 +15,7 @@ namespace {{.Package}} {
     void Set{{.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void Set{{.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void Init{{.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-    void Init{{.FileBaseNameCamel}}Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+    void Init{{.FileBaseNameCamel}}GrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
     void Handle{{.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry);
 }
 {{ end }}
@@ -30,10 +30,6 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
 {{ range.ServiceInfo }}
     {{.Package}}::Set{{.FileBaseNameCamel}}Handler(handler);
 {{ end }}
-}
-
-void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity){
-
 }
 
 void HandleCompletedQueueMessage(entt::registry& registry){
@@ -52,17 +48,17 @@ void HandleCompletedQueueMessage(entt::registry& registry){
 }
 
 
-void InitStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
+void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
     auto nodeType = NodeSystem::GetRegistryType(registry);
     registry.emplace<grpc::CompletionQueue>(nodeEntity);
 {{- range $index, $m := .ServiceInfo }}
     {{- if eq $index 0 }}
     if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
-        {{$m.Package}}::Init{{$m.FileBaseNameCamel}}Stub(channel, registry, nodeEntity);
+        {{$m.Package}}::Init{{$m.FileBaseNameCamel}}GrpcNode(channel, registry, nodeEntity);
     }
     {{- else }}
     else if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
-        {{$m.Package}}::Init{{$m.FileBaseNameCamel}}Stub(channel, registry, nodeEntity);
+        {{$m.Package}}::Init{{$m.FileBaseNameCamel}}GrpcNode(channel, registry, nodeEntity);
     }
     {{- end }}
 {{- end }}

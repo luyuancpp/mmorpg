@@ -73,9 +73,8 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
   {{- if eq $index 0 }}
 void Set{{$svc.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void Set{{$svc.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void Init{{$svc.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 void Handle{{$svc.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry);
-void Init{{$svc.FileBaseNameCamel}}Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+void Init{{$svc.FileBaseNameCamel}}GrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
   {{- end }}
 {{- end }}
 
@@ -238,15 +237,6 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
 
 {{ range $index, $m := .ServiceInfo }}
   {{- if eq $index 0 }}
-void Init{{ $m.FileBaseNameCamel }}CompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
-  {{- end }}
-{{- end }}
-
-
-}
-
-{{ range $index, $m := .ServiceInfo }}
-  {{- if eq $index 0 }}
 void Handle{{ $m.FileBaseNameCamel }}CompletedQueueMessage(entt::registry& registry) {
   {{- end }}
 {{ end }}
@@ -310,7 +300,7 @@ void Set{{ $m.FileBaseNameCamel }}IfEmptyHandler(const std::function<void(const 
 
 {{ range $index, $m := .ServiceInfo }}
   {{- if eq $index 0 }}
-void Init{{ $m.FileBaseNameCamel }}Stub(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
+void Init{{ $m.FileBaseNameCamel }}GrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
   {{- end }}
 {{ end }}
 {{- range $svc := .ServiceInfo }}
@@ -318,8 +308,8 @@ void Init{{ $m.FileBaseNameCamel }}Stub(const std::shared_ptr<::grpc::ChannelInt
 {{- end }}
 
 
-{{- range $svc := .ServiceInfo }}
-{{- range $method := $svc.MethodInfo }}
+{{- range $svc := .ServiceInfo -}}
+{{- range $method := $svc.MethodInfo -}}
 {{ if $method.ClientStreaming }}
     {
         GrpcTag* got_tag(tagPool.construct({{ $svc.Service }}{{ $method.Method }}MessageId, (void*)GrpcOperation::INIT));
@@ -336,8 +326,8 @@ void Init{{ $m.FileBaseNameCamel }}Stub(const std::shared_ptr<::grpc::ChannelInt
                                         &registry.get<grpc::CompletionQueue>(nodeEntity),
                                         (void*)(got_tag));
     }
-{{ end }}
-{{ end }}
+{{- end -}}
+{{- end -}}
 {{ end }}
 
 }

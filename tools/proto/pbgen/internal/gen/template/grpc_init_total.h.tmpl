@@ -13,8 +13,6 @@ void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::go
 
 void SetHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 
-void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
-
 void HandleCompletedQueueMessage(entt::registry& registry);
 
-void InitStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
