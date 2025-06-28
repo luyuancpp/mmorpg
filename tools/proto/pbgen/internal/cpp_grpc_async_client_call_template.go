@@ -4,6 +4,8 @@ const AsyncClientHeaderTemplate = `#pragma once
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
+#include "grpc/grpc_tag.h"
+
 {{.GrpcIncludeHeadName}}
 {{ range $index, $m := .ServiceInfo }}
   {{- if eq $index 0 }}
@@ -16,11 +18,6 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace {{.Package}} {
-struct GrpcTag {
-    uint32_t messageId;
-    void* valuePtr;
-};
-
 {{- range $svc := .ServiceInfo }}
 using {{ $svc.Service }}StubPtr = std::unique_ptr<{{ $svc.Service }}::Stub>;
 
@@ -73,7 +70,7 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
   {{- if eq $index 0 }}
 void Set{{$svc.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void Set{{$svc.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void Handle{{$svc.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry);
+void Handle{{$svc.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 void Init{{$svc.FileBaseNameCamel}}GrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
   {{- end }}
 {{- end }}
@@ -237,38 +234,21 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
 
 {{ range $index, $m := .ServiceInfo }}
   {{- if eq $index 0 }}
-void Handle{{ $m.FileBaseNameCamel }}CompletedQueueMessage(entt::registry& registry) {
-  {{- end }}
-{{ end }}
-
-    auto&& view = registry.view<grpc::CompletionQueue>();
-    for (auto&& [e, completeQueueComp] : view.each()) {
-        void* got_tag = nullptr;
-        bool ok = false;
-        gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-        if (grpc::CompletionQueue::GOT_EVENT != completeQueueComp.AsyncNext(&got_tag, &ok, tm)) {
-            return;
-        }
-        if (!ok) {
-            LOG_ERROR << "RPC failed";
-            return;
-        }
-        GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
-
+void Handle{{ $m.FileBaseNameCamel }}CompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
+  {{- end -}}
+{{- end }}
         switch (grpcTag->messageId) {
 {{- range $svc := .ServiceInfo }}
 {{- range $method := $svc.MethodInfo }}
         case {{ $svc.Service }}{{ $method.Method }}MessageId:
-            AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
 {{- end }}
 {{- end }}
         default:
             break;
         }
-
-		tagPool.destroy(grpcTag);
-    }
 }
 
 

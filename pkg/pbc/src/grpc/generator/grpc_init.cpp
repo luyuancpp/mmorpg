@@ -5,6 +5,8 @@
 #include <grpcpp/grpcpp.h>
 #include <google/protobuf/message.h>
 #include "node/system/node_system.h"
+#include "muduo/base/Logging.h"
+#include "grpc/grpc_tag.h"
 
 using grpc::ClientContext;
 using grpc::Status;
@@ -14,17 +16,15 @@ using grpc::ClientAsyncResponseReader;
 namespace etcdserverpb {
     void SetEtcdHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void SetEtcdIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
     void InitEtcdGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
-    void HandleEtcdCompletedQueueMessage(entt::registry& registry);
+    void HandleEtcdCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 }
 
 namespace loginpb {
     void SetLoginServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void SetLoginServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
     void InitLoginServiceGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
-    void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
+    void HandleLoginServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 }
 
 
@@ -46,12 +46,27 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
 
 void HandleCompletedQueueMessage(entt::registry& registry){
     auto nodeType = NodeSystem::GetRegistryType(registry);
-    if (eNodeType::EtcdNodeService == nodeType) {
-        etcdserverpb::HandleEtcdCompletedQueueMessage(registry);
-    }
-    else if (eNodeType::LoginNodeService == nodeType) {
-        loginpb::HandleLoginServiceCompletedQueueMessage(registry);
-    }
+    auto&& view = registry.view<grpc::CompletionQueue>();
+    for (auto&& [e, completeQueueComp] : view.each()) {
+        void* got_tag = nullptr;
+        bool ok = false;
+        gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
+        if (grpc::CompletionQueue::GOT_EVENT != completeQueueComp.AsyncNext(&got_tag, &ok, tm)) {
+            return;
+        }
+        if (!ok) {
+            LOG_ERROR << "RPC failed";
+            return;
+        }
+        GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
+        if (eNodeType::EtcdNodeService == nodeType) {
+            etcdserverpb::HandleEtcdCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+        }
+        else if (eNodeType::LoginNodeService == nodeType) {
+            loginpb::HandleLoginServiceCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+        }
+     }
+
 }
 
 

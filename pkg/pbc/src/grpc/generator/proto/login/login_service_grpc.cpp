@@ -321,45 +321,31 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
 #pragma endregion
 
 
-void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
-
-
-    auto&& view = registry.view<grpc::CompletionQueue>();
-    for (auto&& [e, completeQueueComp] : view.each()) {
-        void* got_tag = nullptr;
-        bool ok = false;
-        gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-        if (grpc::CompletionQueue::GOT_EVENT != completeQueueComp.AsyncNext(&got_tag, &ok, tm)) {
-            return;
-        }
-        if (!ok) {
-            LOG_ERROR << "RPC failed";
-            return;
-        }
-        GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
-
+void HandleLoginServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
         switch (grpcTag->messageId) {
         case ClientPlayerLoginLoginMessageId:
-            AsyncCompleteGrpcClientPlayerLoginLogin(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcClientPlayerLoginLogin(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case ClientPlayerLoginCreatePlayerMessageId:
-            AsyncCompleteGrpcClientPlayerLoginCreatePlayer(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcClientPlayerLoginCreatePlayer(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case ClientPlayerLoginEnterGameMessageId:
-            AsyncCompleteGrpcClientPlayerLoginEnterGame(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcClientPlayerLoginEnterGame(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case ClientPlayerLoginLeaveGameMessageId:
-            AsyncCompleteGrpcClientPlayerLoginLeaveGame(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcClientPlayerLoginLeaveGame(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case ClientPlayerLoginDisconnectMessageId:
-            AsyncCompleteGrpcClientPlayerLoginDisconnect(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcClientPlayerLoginDisconnect(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         default:
             break;
         }
-
-		tagPool.destroy(grpcTag);
-    }
 }
 
 

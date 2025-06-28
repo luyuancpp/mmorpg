@@ -2,6 +2,8 @@
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
+#include "grpc/grpc_tag.h"
+
 #include "proto/login/login_service.grpc.pb.h"
 
 
@@ -13,10 +15,6 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace loginpb {
-struct GrpcTag {
-    uint32_t messageId;
-    void* valuePtr;
-};
 using ClientPlayerLoginStubPtr = std::unique_ptr<ClientPlayerLogin::Stub>;
 #pragma region ClientPlayerLoginLogin
 
@@ -130,7 +128,7 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
 #pragma endregion
 void SetLoginServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetLoginServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void HandleLoginServiceCompletedQueueMessage(entt::registry& registry);
+void HandleLoginServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 void InitLoginServiceGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace loginpb

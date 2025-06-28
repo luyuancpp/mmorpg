@@ -97,6 +97,7 @@
     <ClInclude Include="src\grpc\generator\grpc_init.h" />
     <ClInclude Include="src\grpc\generator\proto\etcd\etcd_grpc.h" />
     <ClInclude Include="src\grpc\generator\proto\login\login_service_grpc.h" />
+    <ClInclude Include="src\grpc\grpc_tag.h" />
     <ClInclude Include="src\proto\centre\centre_player.pb.h" />
     <ClInclude Include="src\proto\centre\centre_player_scene.pb.h" />
     <ClInclude Include="src\proto\centre\centre_scene.pb.h" />
