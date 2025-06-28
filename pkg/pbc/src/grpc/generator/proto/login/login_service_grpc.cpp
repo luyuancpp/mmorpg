@@ -66,7 +66,8 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
         ->PrepareAsyncLogin(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerLoginLoginMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -127,7 +128,8 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
         ->PrepareAsyncCreatePlayer(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerLoginCreatePlayerMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -188,7 +190,8 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
         ->PrepareAsyncEnterGame(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerLoginEnterGameMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -249,7 +252,8 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
         ->PrepareAsyncLeaveGame(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerLoginLeaveGameMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -310,7 +314,8 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
         ->PrepareAsyncDisconnect(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerLoginDisconnectMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 

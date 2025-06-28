@@ -66,7 +66,8 @@ void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcd
         ->PrepareAsyncRange(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(KVRangeMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -127,7 +128,8 @@ void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdse
         ->PrepareAsyncPut(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(KVPutMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -188,7 +190,8 @@ void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const 
         ->PrepareAsyncDeleteRange(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(KVDeleteRangeMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -249,7 +252,8 @@ void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdse
         ->PrepareAsyncTxn(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(KVTxnMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -310,7 +314,8 @@ void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::et
         ->PrepareAsyncCompact(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(KVCompactMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -462,7 +467,8 @@ void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, cons
         ->PrepareAsyncLeaseGrant(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(LeaseLeaseGrantMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -523,7 +529,8 @@ void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, con
         ->PrepareAsyncLeaseRevoke(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(LeaseLeaseRevokeMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -675,7 +682,8 @@ void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity,
         ->PrepareAsyncLeaseTimeToLive(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(LeaseLeaseTimeToLiveMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
@@ -736,7 +744,8 @@ void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, con
         ->PrepareAsyncLeaseLeases(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    GrpcTag* got_tag(tagPool.construct(LeaseLeaseLeasesMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
