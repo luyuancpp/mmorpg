@@ -1,4 +1,6 @@
 #include "muduo/base/Logging.h"
+
+
 #include "login_service_grpc.h"
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
@@ -6,13 +8,12 @@
 #include <boost/pool/object_pool.hpp>
 
 
-
 namespace loginpb {
 struct LoginServiceCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
-boost::object_pool<GrpcTag> pool;
+boost::object_pool<GrpcTag> tagPool;
 #pragma region ClientPlayerLoginLogin
 boost::object_pool<AsyncClientPlayerLoginLoginGrpcClient> ClientPlayerLoginLoginPool;
 using AsyncClientPlayerLoginLoginHandlerFunctionType =
@@ -43,7 +44,7 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
         ->PrepareAsyncLogin(&call->context, request,
                                            &registry.get<LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(pool.construct(GrpcMethod::ClientPlayerLogin_Login, (void*)call));
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerLoginLoginMessageId, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -102,7 +103,7 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
         ->PrepareAsyncCreatePlayer(&call->context, request,
                                            &registry.get<LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(pool.construct(GrpcMethod::ClientPlayerLogin_CreatePlayer, (void*)call));
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerLoginCreatePlayerMessageId, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -161,7 +162,7 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
         ->PrepareAsyncEnterGame(&call->context, request,
                                            &registry.get<LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(pool.construct(GrpcMethod::ClientPlayerLogin_EnterGame, (void*)call));
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerLoginEnterGameMessageId, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -220,7 +221,7 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
         ->PrepareAsyncLeaveGame(&call->context, request,
                                            &registry.get<LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(pool.construct(GrpcMethod::ClientPlayerLogin_LeaveGame, (void*)call));
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerLoginLeaveGameMessageId, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -279,7 +280,7 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
         ->PrepareAsyncDisconnect(&call->context, request,
                                            &registry.get<LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(pool.construct(GrpcMethod::ClientPlayerLogin_Disconnect, (void*)call));
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerLoginDisconnectMessageId, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -343,27 +344,27 @@ void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
         }
         GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
 
-        switch (grpcTag->type) {
-        case GrpcMethod::ClientPlayerLogin_Login:
+        switch (grpcTag->messageId) {
+        case ClientPlayerLoginLoginMessageId:
             AsyncCompleteGrpcClientPlayerLoginLogin(registry, e, completeQueueComp.cq, grpcTag->valuePtr);
             break;
-        case GrpcMethod::ClientPlayerLogin_CreatePlayer:
+        case ClientPlayerLoginCreatePlayerMessageId:
             AsyncCompleteGrpcClientPlayerLoginCreatePlayer(registry, e, completeQueueComp.cq, grpcTag->valuePtr);
             break;
-        case GrpcMethod::ClientPlayerLogin_EnterGame:
+        case ClientPlayerLoginEnterGameMessageId:
             AsyncCompleteGrpcClientPlayerLoginEnterGame(registry, e, completeQueueComp.cq, grpcTag->valuePtr);
             break;
-        case GrpcMethod::ClientPlayerLogin_LeaveGame:
+        case ClientPlayerLoginLeaveGameMessageId:
             AsyncCompleteGrpcClientPlayerLoginLeaveGame(registry, e, completeQueueComp.cq, grpcTag->valuePtr);
             break;
-        case GrpcMethod::ClientPlayerLogin_Disconnect:
+        case ClientPlayerLoginDisconnectMessageId:
             AsyncCompleteGrpcClientPlayerLoginDisconnect(registry, e, completeQueueComp.cq, grpcTag->valuePtr);
             break;
         default:
             break;
         }
 
-		pool.destroy(grpcTag);
+		tagPool.destroy(grpcTag);
     }
 }
 

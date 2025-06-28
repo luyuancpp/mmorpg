@@ -107,6 +107,15 @@ func (info *RPCServiceInfo) HeadName() string {
 	return strings.Replace(info.FileName(), config.ProtoEx, config.HeaderExtension, 1)
 }
 
+func (info *RPCServiceInfo) ServiceInfoIncludeName() string {
+	return config.IncludeBegin + config.ServiceInfoName + info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
+}
+
+// FileNameNoEx 返回文件基本名
+func (info *RPCServiceInfo) FileNameNoEx() string {
+	return strings.Replace(info.FileBaseName(), config.ProtoEx, "", 1)
+}
+
 // FileBaseName 返回文件基本名
 func (info *RPCServiceInfo) FileBaseName() string {
 	return strings.Replace(info.FileName(), config.ProtoEx, "", 1)

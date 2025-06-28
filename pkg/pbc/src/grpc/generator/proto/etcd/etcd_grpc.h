@@ -5,27 +5,16 @@
 #include "proto/etcd/etcd.grpc.pb.h"
 
 
+#include "service_info/etcd_service_info.h"
+
+
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace etcdserverpb {
-enum class GrpcMethod : uint32_t {
-    KV_Range,
-    KV_Put,
-    KV_DeleteRange,
-    KV_Txn,
-    KV_Compact,
-    Watch_Watch,
-    Lease_LeaseGrant,
-    Lease_LeaseRevoke,
-    Lease_LeaseKeepAlive,
-    Lease_LeaseTimeToLive,
-    Lease_LeaseLeases,
-};
-
 struct GrpcTag {
-    GrpcMethod type;
+    uint32_t messageId;
     void* valuePtr;
 };
 using KVStubPtr = std::unique_ptr<KV::Stub>;
@@ -33,7 +22,7 @@ using KVStubPtr = std::unique_ptr<KV::Stub>;
 
 
 struct AsyncKVRangeGrpcClient {
-    GrpcMethod type{ GrpcMethod::KV_Range };
+    uint32_t messageId{ KVRangeMessageId };
     ClientContext context;
     Status status;
     ::etcdserverpb::RangeResponse reply;
@@ -55,7 +44,7 @@ void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const google
 
 
 struct AsyncKVPutGrpcClient {
-    GrpcMethod type{ GrpcMethod::KV_Put };
+    uint32_t messageId{ KVPutMessageId };
     ClientContext context;
     Status status;
     ::etcdserverpb::PutResponse reply;
@@ -77,7 +66,7 @@ void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const google::
 
 
 struct AsyncKVDeleteRangeGrpcClient {
-    GrpcMethod type{ GrpcMethod::KV_DeleteRange };
+    uint32_t messageId{ KVDeleteRangeMessageId };
     ClientContext context;
     Status status;
     ::etcdserverpb::DeleteRangeResponse reply;
@@ -99,7 +88,7 @@ void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const 
 
 
 struct AsyncKVTxnGrpcClient {
-    GrpcMethod type{ GrpcMethod::KV_Txn };
+    uint32_t messageId{ KVTxnMessageId };
     ClientContext context;
     Status status;
     ::etcdserverpb::TxnResponse reply;
@@ -121,7 +110,7 @@ void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const google::
 
 
 struct AsyncKVCompactGrpcClient {
-    GrpcMethod type{ GrpcMethod::KV_Compact };
+    uint32_t messageId{ KVCompactMessageId };
     ClientContext context;
     Status status;
     ::etcdserverpb::CompactionResponse reply;
@@ -144,7 +133,7 @@ using WatchStubPtr = std::unique_ptr<Watch::Stub>;
 
 
 struct AsyncWatchWatchGrpcClient {
-    GrpcMethod type{ GrpcMethod::Watch_Watch };
+    uint32_t messageId{ WatchWatchMessageId };
     ClientContext context;
     Status status;
     ::etcdserverpb::WatchResponse reply;
@@ -175,7 +164,7 @@ using LeaseStubPtr = std::unique_ptr<Lease::Stub>;
 
 
 struct AsyncLeaseLeaseGrantGrpcClient {
-    GrpcMethod type{ GrpcMethod::Lease_LeaseGrant };
+    uint32_t messageId{ LeaseLeaseGrantMessageId };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseGrantResponse reply;
@@ -197,7 +186,7 @@ void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, cons
 
 
 struct AsyncLeaseLeaseRevokeGrpcClient {
-    GrpcMethod type{ GrpcMethod::Lease_LeaseRevoke };
+    uint32_t messageId{ LeaseLeaseRevokeMessageId };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseRevokeResponse reply;
@@ -219,7 +208,7 @@ void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, con
 
 
 struct AsyncLeaseLeaseKeepAliveGrpcClient {
-    GrpcMethod type{ GrpcMethod::Lease_LeaseKeepAlive };
+    uint32_t messageId{ LeaseLeaseKeepAliveMessageId };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseKeepAliveResponse reply;
@@ -249,7 +238,7 @@ void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, 
 
 
 struct AsyncLeaseLeaseTimeToLiveGrpcClient {
-    GrpcMethod type{ GrpcMethod::Lease_LeaseTimeToLive };
+    uint32_t messageId{ LeaseLeaseTimeToLiveMessageId };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseTimeToLiveResponse reply;
@@ -271,7 +260,7 @@ void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity,
 
 
 struct AsyncLeaseLeaseLeasesGrpcClient {
-    GrpcMethod type{ GrpcMethod::Lease_LeaseLeases };
+    uint32_t messageId{ LeaseLeaseLeasesMessageId };
     ClientContext context;
     Status status;
     ::etcdserverpb::LeaseLeasesResponse reply;
