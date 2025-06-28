@@ -33,18 +33,7 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
 }
 
 void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity){
-    auto nodeType = NodeSystem::GetRegistryType(registry);
-{{- range $index, $m := .ServiceInfo }}
-    {{- if eq $index 0 }}
-    if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
-        {{$m.Package}}::Init{{$m.FileBaseNameCamel}}CompletedQueue(registry, nodeEntity);
-    }
-    {{- else }}
-    else if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
-        {{$m.Package}}::Init{{$m.FileBaseNameCamel}}CompletedQueue(registry, nodeEntity);
-    }
-    {{- end }}
-{{- end }}
+
 }
 
 void HandleCompletedQueueMessage(entt::registry& registry){
@@ -65,6 +54,7 @@ void HandleCompletedQueueMessage(entt::registry& registry){
 
 void InitStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
     auto nodeType = NodeSystem::GetRegistryType(registry);
+    registry.emplace<grpc::CompletionQueue>(nodeEntity);
 {{- range $index, $m := .ServiceInfo }}
     {{- if eq $index 0 }}
     if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {

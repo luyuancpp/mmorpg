@@ -45,13 +45,7 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
 }
 
 void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity){
-    auto nodeType = NodeSystem::GetRegistryType(registry);
-    if (eNodeType::EtcdNodeService == nodeType) {
-        etcdserverpb::InitEtcdCompletedQueue(registry, nodeEntity);
-    }
-    else if (eNodeType::LoginNodeService == nodeType) {
-        loginpb::InitLoginServiceCompletedQueue(registry, nodeEntity);
-    }
+
 }
 
 void HandleCompletedQueueMessage(entt::registry& registry){
@@ -67,6 +61,7 @@ void HandleCompletedQueueMessage(entt::registry& registry){
 
 void InitStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
     auto nodeType = NodeSystem::GetRegistryType(registry);
+    registry.emplace<grpc::CompletionQueue>(nodeEntity);
     if (eNodeType::EtcdNodeService == nodeType) {
         etcdserverpb::InitEtcdStub(channel, registry, nodeEntity);
     }
