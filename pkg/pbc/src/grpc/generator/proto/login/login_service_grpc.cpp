@@ -321,12 +321,6 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
 #pragma endregion
 
 
-void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
-
-
-}
-
-
 void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
 
 
@@ -400,20 +394,9 @@ void SetLoginServiceIfEmptyHandler(const std::function<void(const ClientContext&
 }
 
 
-void InitLoginServiceStub(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
+void InitLoginServiceGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
 
     registry.emplace<ClientPlayerLoginStubPtr>(nodeEntity, ClientPlayerLogin::NewStub(channel));
-
-
-
-
-
-
-
-
-
-
-
 
 }
 

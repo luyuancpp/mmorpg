@@ -167,8 +167,7 @@ void Node::SetupTimeZone() {
 void Node::InitGrpcClients() {
 	const std::string& etcdAddr = *tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin();
 	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
-	InitStub(channel, tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
-	InitCompletedQueue(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
+	InitGrpcNode(channel, tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
 
 	LOG_INFO << "Initializing gRPC client to etcd address: " << etcdAddr;
 
@@ -235,8 +234,7 @@ void Node::ConnectToGrpcNode(const NodeInfo& info) {
 		grpc::CreateChannel(::FormatIpAndPort(info.endpoint().ip(), info.endpoint().port()),
 			grpc::InsecureChannelCredentials()));
 
-	InitStub(channel, registry, entityId);
-	InitCompletedQueue(registry, entityId);
+	InitGrpcNode(channel, registry, entityId);
 	tls.GetConsistentNode(info.node_type()).add(info.node_id(), entityId);
 
 	LOG_INFO << "Connecting to GRPC node, ID: " << info.node_id()
