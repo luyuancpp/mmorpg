@@ -3,6 +3,7 @@
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
 #include "util/base64.h"
+#include <boost/pool/object_pool.hpp>
 
 
 
@@ -10,6 +11,8 @@ namespace etcdserverpb {
 struct EtcdCompleteQueue {
     grpc::CompletionQueue cq;
 };
+
+boost::object_pool<GrpcTag> pool;
 #pragma region KVRange
 
 using AsyncKVRangeHandlerFunctionType =
@@ -40,7 +43,7 @@ void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcd
         ->PrepareAsyncRange(&call->context, request,
                                            &registry.get<EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::KV_Range, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::KV_Range, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -99,7 +102,7 @@ void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdse
         ->PrepareAsyncPut(&call->context, request,
                                            &registry.get<EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::KV_Put, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::KV_Put, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -158,7 +161,7 @@ void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const 
         ->PrepareAsyncDeleteRange(&call->context, request,
                                            &registry.get<EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::KV_DeleteRange, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::KV_DeleteRange, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -217,7 +220,7 @@ void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdse
         ->PrepareAsyncTxn(&call->context, request,
                                            &registry.get<EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::KV_Txn, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::KV_Txn, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -276,7 +279,7 @@ void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::et
         ->PrepareAsyncCompact(&call->context, request,
                                            &registry.get<EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::KV_Compact, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::KV_Compact, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -325,7 +328,7 @@ void TryWriteNextNextWatchWatch(entt::registry& registry, entt::entity nodeEntit
     auto& request = pendingWritesBuffer.front();
 
     writeInProgress.isInProgress = true;
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::Watch_Watch,  (void*)GrpcOperation::WRITE});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::Watch_Watch,  (void*)GrpcOperation::WRITE));
     client.stream->Write(request, (void*)(got_tag));
 }
 void AsyncCompleteGrpcWatchWatch(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
@@ -343,7 +346,7 @@ void AsyncCompleteGrpcWatchWatch(entt::registry& registry, entt::entity nodeEnti
             break;
         }
         case GrpcOperation::WRITES_DONE: {
-            GrpcTag* got_tag(new GrpcTag{GrpcMethod::Watch_Watch,  (void*)GrpcOperation::READ});
+            GrpcTag* got_tag(pool.construct(GrpcMethod::Watch_Watch,  (void*)GrpcOperation::READ));
             client.stream->Finish(&client.status, (void*)(got_tag));
             break;
         }
@@ -355,13 +358,13 @@ void AsyncCompleteGrpcWatchWatch(entt::registry& registry, entt::entity nodeEnti
             if (AsyncWatchWatchHandler) {
                 AsyncWatchWatchHandler(client.context, response);
             }
-            GrpcTag* got_tag(new GrpcTag{GrpcMethod::Watch_Watch, (void*)GrpcOperation::READ});
+            GrpcTag* got_tag(pool.construct(GrpcMethod::Watch_Watch, (void*)GrpcOperation::READ));
             client.stream->Read(&response, (void*)got_tag);
             TryWriteNextNextWatchWatch(registry, nodeEntity, cq);
             break;
         }
         case GrpcOperation::INIT: {
-            GrpcTag* got_tag(new GrpcTag{GrpcMethod::Watch_Watch, (void*)GrpcOperation::READ});
+            GrpcTag* got_tag(pool.construct(GrpcMethod::Watch_Watch, (void*)GrpcOperation::READ));
             auto& response = registry.get<::etcdserverpb::WatchResponse>(nodeEntity);
             client.stream->Read(&response, (void*)got_tag);
             TryWriteNextNextWatchWatch(registry, nodeEntity, cq);
@@ -428,7 +431,7 @@ void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, cons
         ->PrepareAsyncLeaseGrant(&call->context, request,
                                            &registry.get<EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::Lease_LeaseGrant, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::Lease_LeaseGrant, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -487,7 +490,7 @@ void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, con
         ->PrepareAsyncLeaseRevoke(&call->context, request,
                                            &registry.get<EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::Lease_LeaseRevoke, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::Lease_LeaseRevoke, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -536,7 +539,7 @@ void TryWriteNextNextLeaseLeaseKeepAlive(entt::registry& registry, entt::entity 
     auto& request = pendingWritesBuffer.front();
 
     writeInProgress.isInProgress = true;
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::Lease_LeaseKeepAlive,  (void*)GrpcOperation::WRITE});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::Lease_LeaseKeepAlive,  (void*)GrpcOperation::WRITE));
     client.stream->Write(request, (void*)(got_tag));
 }
 void AsyncCompleteGrpcLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
@@ -554,7 +557,7 @@ void AsyncCompleteGrpcLeaseLeaseKeepAlive(entt::registry& registry, entt::entity
             break;
         }
         case GrpcOperation::WRITES_DONE: {
-            GrpcTag* got_tag(new GrpcTag{GrpcMethod::Lease_LeaseKeepAlive,  (void*)GrpcOperation::READ});
+            GrpcTag* got_tag(pool.construct(GrpcMethod::Lease_LeaseKeepAlive,  (void*)GrpcOperation::READ));
             client.stream->Finish(&client.status, (void*)(got_tag));
             break;
         }
@@ -566,13 +569,13 @@ void AsyncCompleteGrpcLeaseLeaseKeepAlive(entt::registry& registry, entt::entity
             if (AsyncLeaseLeaseKeepAliveHandler) {
                 AsyncLeaseLeaseKeepAliveHandler(client.context, response);
             }
-            GrpcTag* got_tag(new GrpcTag{GrpcMethod::Lease_LeaseKeepAlive, (void*)GrpcOperation::READ});
+            GrpcTag* got_tag(pool.construct(GrpcMethod::Lease_LeaseKeepAlive, (void*)GrpcOperation::READ));
             client.stream->Read(&response, (void*)got_tag);
             TryWriteNextNextLeaseLeaseKeepAlive(registry, nodeEntity, cq);
             break;
         }
         case GrpcOperation::INIT: {
-            GrpcTag* got_tag(new GrpcTag{GrpcMethod::Lease_LeaseKeepAlive, (void*)GrpcOperation::READ});
+            GrpcTag* got_tag(pool.construct(GrpcMethod::Lease_LeaseKeepAlive, (void*)GrpcOperation::READ));
             auto& response = registry.get<::etcdserverpb::LeaseKeepAliveResponse>(nodeEntity);
             client.stream->Read(&response, (void*)got_tag);
             TryWriteNextNextLeaseLeaseKeepAlive(registry, nodeEntity, cq);
@@ -639,7 +642,7 @@ void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity,
         ->PrepareAsyncLeaseTimeToLive(&call->context, request,
                                            &registry.get<EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::Lease_LeaseTimeToLive, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::Lease_LeaseTimeToLive, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -698,7 +701,7 @@ void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, con
         ->PrepareAsyncLeaseLeases(&call->context, request,
                                            &registry.get<EtcdCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::Lease_LeaseLeases, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::Lease_LeaseLeases, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -744,7 +747,7 @@ void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 
 
     {
-        GrpcTag* got_tag(new GrpcTag{GrpcMethod::Watch_Watch, (void*)GrpcOperation::INIT});
+        GrpcTag* got_tag(pool.construct(GrpcMethod::Watch_Watch, (void*)GrpcOperation::INIT));
 
         auto& client = registry.emplace<AsyncWatchWatchGrpcClient>(nodeEntity);
         registry.emplace<WatchRequestBuffer>(nodeEntity);
@@ -767,7 +770,7 @@ void InitEtcdCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 
 
     {
-        GrpcTag* got_tag(new GrpcTag{GrpcMethod::Lease_LeaseKeepAlive, (void*)GrpcOperation::INIT});
+        GrpcTag* got_tag(pool.construct(GrpcMethod::Lease_LeaseKeepAlive, (void*)GrpcOperation::INIT));
 
         auto& client = registry.emplace<AsyncLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
         registry.emplace<LeaseKeepAliveRequestBuffer>(nodeEntity);
@@ -808,7 +811,7 @@ void HandleEtcdCompletedQueueMessage(entt::registry& registry) {
             LOG_ERROR << "RPC failed";
             return;
         }
-        std::unique_ptr<GrpcTag> grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
+        GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
 
         switch (grpcTag->type) {
         case GrpcMethod::KV_Range:
@@ -847,6 +850,8 @@ void HandleEtcdCompletedQueueMessage(entt::registry& registry) {
         default:
             break;
         }
+
+		pool.destroy(grpcTag);
     }
 }
 
@@ -915,8 +920,11 @@ void InitEtcdStub(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt
 
 
     registry.emplace<KVStubPtr>(nodeEntity, KV::NewStub(channel));
+	pool.set_next_size(32);
     registry.emplace<WatchStubPtr>(nodeEntity, Watch::NewStub(channel));
+	pool.set_next_size(32);
     registry.emplace<LeaseStubPtr>(nodeEntity, Lease::NewStub(channel));
+	pool.set_next_size(32);
 }
 
 

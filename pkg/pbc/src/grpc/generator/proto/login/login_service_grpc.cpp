@@ -3,6 +3,7 @@
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
 #include "util/base64.h"
+#include <boost/pool/object_pool.hpp>
 
 
 
@@ -10,6 +11,8 @@ namespace loginpb {
 struct LoginServiceCompleteQueue {
     grpc::CompletionQueue cq;
 };
+
+boost::object_pool<GrpcTag> pool;
 #pragma region ClientPlayerLoginLogin
 
 using AsyncClientPlayerLoginLoginHandlerFunctionType =
@@ -40,7 +43,7 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
         ->PrepareAsyncLogin(&call->context, request,
                                            &registry.get<LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::ClientPlayerLogin_Login, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::ClientPlayerLogin_Login, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -99,7 +102,7 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
         ->PrepareAsyncCreatePlayer(&call->context, request,
                                            &registry.get<LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::ClientPlayerLogin_CreatePlayer, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::ClientPlayerLogin_CreatePlayer, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -158,7 +161,7 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
         ->PrepareAsyncEnterGame(&call->context, request,
                                            &registry.get<LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::ClientPlayerLogin_EnterGame, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::ClientPlayerLogin_EnterGame, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -217,7 +220,7 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
         ->PrepareAsyncLeaveGame(&call->context, request,
                                            &registry.get<LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::ClientPlayerLogin_LeaveGame, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::ClientPlayerLogin_LeaveGame, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -276,7 +279,7 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
         ->PrepareAsyncDisconnect(&call->context, request,
                                            &registry.get<LoginServiceCompleteQueue>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::ClientPlayerLogin_Disconnect, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::ClientPlayerLogin_Disconnect, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
@@ -338,7 +341,7 @@ void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
             LOG_ERROR << "RPC failed";
             return;
         }
-        std::unique_ptr<GrpcTag> grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
+        GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
 
         switch (grpcTag->type) {
         case GrpcMethod::ClientPlayerLogin_Login:
@@ -359,6 +362,8 @@ void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
         default:
             break;
         }
+
+		pool.destroy(grpcTag);
     }
 }
 
@@ -397,6 +402,7 @@ void SetLoginServiceIfEmptyHandler(const std::function<void(const ClientContext&
 void InitLoginServiceStub(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
 
     registry.emplace<ClientPlayerLoginStubPtr>(nodeEntity, ClientPlayerLogin::NewStub(channel));
+	pool.set_next_size(32);
 }
 
 
