@@ -91,6 +91,7 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 #include "thread_local/storage.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
 #include "util/base64.h"
+#include <boost/pool/object_pool.hpp>
 
 {{ $root := . }}
 
@@ -98,6 +99,8 @@ namespace {{.Package}} {
 struct {{.GrpcCompleteQueueName}} {
     grpc::CompletionQueue cq;
 };
+
+boost::object_pool<GrpcTag> pool;
 
 {{- range $svc := .ServiceInfo }}
 {{- range $method := $svc.MethodInfo }}
@@ -121,7 +124,7 @@ void TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(entt::registry& regi
     auto& request = pendingWritesBuffer.front();
 
     writeInProgress.isInProgress = true;
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::{{ $svc.Service }}_{{ $method.Method }},  (void*)GrpcOperation::WRITE});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::{{ $svc.Service }}_{{ $method.Method }},  (void*)GrpcOperation::WRITE));
     client.stream->Write(request, (void*)(got_tag));
 }
 void AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
@@ -139,7 +142,7 @@ void AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(entt::registry& reg
             break;
         }
         case GrpcOperation::WRITES_DONE: {
-            GrpcTag* got_tag(new GrpcTag{GrpcMethod::{{ $svc.Service }}_{{ $method.Method }},  (void*)GrpcOperation::READ});
+            GrpcTag* got_tag(pool.construct(GrpcMethod::{{ $svc.Service }}_{{ $method.Method }},  (void*)GrpcOperation::READ));
             client.stream->Finish(&client.status, (void*)(got_tag));
             break;
         }
@@ -151,13 +154,13 @@ void AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(entt::registry& reg
             if (Async{{ $svc.Service }}{{ $method.Method }}Handler) {
                 Async{{ $svc.Service }}{{ $method.Method }}Handler(client.context, response);
             }
-            GrpcTag* got_tag(new GrpcTag{GrpcMethod::{{ $svc.Service }}_{{ $method.Method }}, (void*)GrpcOperation::READ});
+            GrpcTag* got_tag(pool.construct(GrpcMethod::{{ $svc.Service }}_{{ $method.Method }}, (void*)GrpcOperation::READ));
             client.stream->Read(&response, (void*)got_tag);
             TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
             break;
         }
         case GrpcOperation::INIT: {
-            GrpcTag* got_tag(new GrpcTag{GrpcMethod::{{ $svc.Service }}_{{ $method.Method }}, (void*)GrpcOperation::READ});
+            GrpcTag* got_tag(pool.construct(GrpcMethod::{{ $svc.Service }}_{{ $method.Method }}, (void*)GrpcOperation::READ));
             auto& response = registry.get<{{ $method.CppResponse }}>(nodeEntity);
             client.stream->Read(&response, (void*)got_tag);
             TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
@@ -197,7 +200,7 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
         ->PrepareAsync{{ $method.Method }}(&call->context, request,
                                            &registry.get<{{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(new GrpcTag{GrpcMethod::{{ $svc.Service }}_{{ $method.Method }}, (void*)call});
+    GrpcTag* got_tag(pool.construct(GrpcMethod::{{ $svc.Service }}_{{ $method.Method }}, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 {{ end }}
 }
@@ -244,7 +247,7 @@ void Init{{ $m.FileBaseNameCamel }}CompletedQueue(entt::registry& registry, entt
 {{- range $method := $svc.MethodInfo }}
 {{ if $method.ClientStreaming }}
     {
-        GrpcTag* got_tag(new GrpcTag{GrpcMethod::{{ $svc.Service }}_{{ $method.Method }}, (void*)GrpcOperation::INIT});
+        GrpcTag* got_tag(pool.construct(GrpcMethod::{{ $svc.Service }}_{{ $method.Method }}, (void*)GrpcOperation::INIT));
 
         auto& client = registry.emplace<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient>(nodeEntity);
         registry.emplace<{{ $method.RequestName }}Buffer>(nodeEntity);
@@ -281,7 +284,7 @@ void Handle{{ $m.FileBaseNameCamel }}CompletedQueueMessage(entt::registry& regis
             LOG_ERROR << "RPC failed";
             return;
         }
-        std::unique_ptr<GrpcTag> grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
+        GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
 
         switch (grpcTag->type) {
 {{- range $svc := .ServiceInfo }}
@@ -294,6 +297,8 @@ void Handle{{ $m.FileBaseNameCamel }}CompletedQueueMessage(entt::registry& regis
         default:
             break;
         }
+
+		pool.destroy(grpcTag);
     }
 }
 
@@ -331,6 +336,7 @@ void Init{{ $m.FileBaseNameCamel }}Stub(const std::shared_ptr<::grpc::ChannelInt
 {{ end }}
 {{- range $svc := .ServiceInfo }}
     registry.emplace<{{ $svc.Service }}StubPtr>(nodeEntity, {{ $svc.Service }}::NewStub(channel));
+	pool.set_next_size(32);
 {{- end }}
 }
 
