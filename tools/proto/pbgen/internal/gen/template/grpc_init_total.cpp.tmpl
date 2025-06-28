@@ -5,6 +5,8 @@
 #include <grpcpp/grpcpp.h>
 #include <google/protobuf/message.h>
 #include "node/system/node_system.h"
+#include "muduo/base/Logging.h"
+#include "grpc/grpc_tag.h"
 
 using grpc::ClientContext;
 using grpc::Status;
@@ -14,9 +16,8 @@ using grpc::ClientAsyncResponseReader;
 namespace {{.Package}} {
     void Set{{.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void Set{{.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    void Init{{.FileBaseNameCamel}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
     void Init{{.FileBaseNameCamel}}GrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
-    void Handle{{.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry);
+    void Handle{{.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 }
 {{ end }}
 
@@ -34,17 +35,33 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
 
 void HandleCompletedQueueMessage(entt::registry& registry){
     auto nodeType = NodeSystem::GetRegistryType(registry);
+    auto&& view = registry.view<grpc::CompletionQueue>();
+    for (auto&& [e, completeQueueComp] : view.each()) {
+        void* got_tag = nullptr;
+        bool ok = false;
+        gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
+        if (grpc::CompletionQueue::GOT_EVENT != completeQueueComp.AsyncNext(&got_tag, &ok, tm)) {
+            return;
+        }
+        if (!ok) {
+            LOG_ERROR << "RPC failed";
+            return;
+        }
+        GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
+
 {{- range $index, $m := .ServiceInfo }}
     {{- if eq $index 0 }}
-    if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
-        {{$m.Package}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry);
-    }
+        if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
+            {{$m.Package}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+        }
     {{- else }}
-    else if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
-        {{$m.Package}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry);
-    }
+        else if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
+            {{$m.Package}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+        }
     {{- end }}
 {{- end }}
+     }
+
 }
 
 

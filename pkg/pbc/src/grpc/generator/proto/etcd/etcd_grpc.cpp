@@ -747,65 +747,55 @@ void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, con
 #pragma endregion
 
 
-void HandleEtcdCompletedQueueMessage(entt::registry& registry) {
-
-
-
-
-    auto&& view = registry.view<grpc::CompletionQueue>();
-    for (auto&& [e, completeQueueComp] : view.each()) {
-        void* got_tag = nullptr;
-        bool ok = false;
-        gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-        if (grpc::CompletionQueue::GOT_EVENT != completeQueueComp.AsyncNext(&got_tag, &ok, tm)) {
-            return;
-        }
-        if (!ok) {
-            LOG_ERROR << "RPC failed";
-            return;
-        }
-        GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
-
+void HandleEtcdCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
         switch (grpcTag->messageId) {
         case KVRangeMessageId:
-            AsyncCompleteGrpcKVRange(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcKVRange(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case KVPutMessageId:
-            AsyncCompleteGrpcKVPut(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcKVPut(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case KVDeleteRangeMessageId:
-            AsyncCompleteGrpcKVDeleteRange(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcKVDeleteRange(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case KVTxnMessageId:
-            AsyncCompleteGrpcKVTxn(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcKVTxn(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case KVCompactMessageId:
-            AsyncCompleteGrpcKVCompact(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcKVCompact(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case WatchWatchMessageId:
-            AsyncCompleteGrpcWatchWatch(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcWatchWatch(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case LeaseLeaseGrantMessageId:
-            AsyncCompleteGrpcLeaseLeaseGrant(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcLeaseLeaseGrant(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case LeaseLeaseRevokeMessageId:
-            AsyncCompleteGrpcLeaseLeaseRevoke(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcLeaseLeaseRevoke(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case LeaseLeaseKeepAliveMessageId:
-            AsyncCompleteGrpcLeaseLeaseKeepAlive(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcLeaseLeaseKeepAlive(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case LeaseLeaseTimeToLiveMessageId:
-            AsyncCompleteGrpcLeaseLeaseTimeToLive(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcLeaseLeaseTimeToLive(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         case LeaseLeaseLeasesMessageId:
-            AsyncCompleteGrpcLeaseLeaseLeases(registry, e, completeQueueComp, grpcTag->valuePtr);
+            AsyncCompleteGrpcLeaseLeaseLeases(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
             break;
         default:
             break;
         }
-
-		tagPool.destroy(grpcTag);
-    }
 }
 
 

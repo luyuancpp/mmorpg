@@ -2,6 +2,8 @@
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
+#include "grpc/grpc_tag.h"
+
 #include "proto/etcd/etcd.grpc.pb.h"
 
 
@@ -13,10 +15,6 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace etcdserverpb {
-struct GrpcTag {
-    uint32_t messageId;
-    void* valuePtr;
-};
 using KVStubPtr = std::unique_ptr<KV::Stub>;
 #pragma region KVRange
 
@@ -280,7 +278,7 @@ void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, con
 #pragma endregion
 void SetEtcdHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetEtcdIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void HandleEtcdCompletedQueueMessage(entt::registry& registry);
+void HandleEtcdCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 void InitEtcdGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace etcdserverpb
