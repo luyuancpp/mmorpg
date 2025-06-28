@@ -186,16 +186,17 @@ void AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(entt::registry& reg
 
 void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request) {
 {{ if $method.ClientStreaming }}
-    auto& cq = registry.get<{{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq;
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
     auto& pendingWritesBuffer = registry.get<{{ $method.RequestName }}Buffer>(nodeEntity).pendingWritesBuffer;
     pendingWritesBuffer.push_back(request);
     TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
 {{ else }}
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
     auto call({{ $svc.Service }}{{ $method.Method }}Pool.construct());
     call->response_reader = registry
         .get<{{ $svc.Service }}StubPtr>(nodeEntity)
         ->PrepareAsync{{ $method.Method }}(&call->context, request,
-                                           &registry.get<{{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq);
+                                           &cq);
     call->response_reader->StartCall();
     GrpcTag* got_tag(tagPool.construct({{ $svc.Service }}{{ $method.Method }}MessageId, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
@@ -205,12 +206,13 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
 
 void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 {{ if $method.ClientStreaming }}
-    auto& cq = registry.get<{{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq;
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
     auto& pendingWritesBuffer = registry.get<{{ $method.RequestName }}Buffer>(nodeEntity).pendingWritesBuffer;
     pendingWritesBuffer.push_back(request);
     TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
 {{ else }}
     auto call({{ $svc.Service }}{{ $method.Method }}Pool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     for (size_t i = 0; i < count; ++i) {
@@ -220,7 +222,7 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
     call->response_reader = registry
         .get<{{ $svc.Service }}StubPtr>(nodeEntity)
         ->PrepareAsync{{ $method.Method }}(&call->context, request,
-                                           &registry.get<{{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq);
+                                           &cq);
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 {{ end }}
@@ -239,28 +241,8 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
 void Init{{ $m.FileBaseNameCamel }}CompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
   {{- end }}
 {{- end }}
-    registry.emplace<{{ $root.GrpcCompleteQueueName }}>(nodeEntity);
-{{- range $svc := .ServiceInfo }}
-{{- range $method := $svc.MethodInfo }}
-{{ if $method.ClientStreaming }}
-    {
-        GrpcTag* got_tag(tagPool.construct({{ $svc.Service }}{{ $method.Method }}MessageId, (void*)GrpcOperation::INIT));
 
-        auto& client = registry.emplace<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient>(nodeEntity);
-        registry.emplace<{{ $method.RequestName }}Buffer>(nodeEntity);
-        registry.emplace<{{ $method.RequestName }}WriteInProgress>(nodeEntity);
-        registry.emplace<{{ $method.CppResponse }}>(nodeEntity);
-        registry.emplace<{{ $method.CppRequest }}>(nodeEntity);
 
-        client.stream = registry
-            .get<{{ $svc.Service }}StubPtr>(nodeEntity)
-            ->Async{{ $method.Method }}(&client.context,
-                                        &registry.get<{{ $root.GrpcCompleteQueueName }}>(nodeEntity).cq,
-                                        (void*)(got_tag));
-    }
-{{ end }}
-{{ end }}
-{{ end }}
 }
 
 {{ range $index, $m := .ServiceInfo }}
@@ -269,12 +251,12 @@ void Handle{{ $m.FileBaseNameCamel }}CompletedQueueMessage(entt::registry& regis
   {{- end }}
 {{ end }}
 
-    auto&& view = registry.view<{{ $root.GrpcCompleteQueueName }}>();
+    auto&& view = registry.view<grpc::CompletionQueue>();
     for (auto&& [e, completeQueueComp] : view.each()) {
         void* got_tag = nullptr;
         bool ok = false;
         gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-        if (grpc::CompletionQueue::GOT_EVENT != completeQueueComp.cq.AsyncNext(&got_tag, &ok, tm)) {
+        if (grpc::CompletionQueue::GOT_EVENT != completeQueueComp.AsyncNext(&got_tag, &ok, tm)) {
             return;
         }
         if (!ok) {
@@ -287,7 +269,7 @@ void Handle{{ $m.FileBaseNameCamel }}CompletedQueueMessage(entt::registry& regis
 {{- range $svc := .ServiceInfo }}
 {{- range $method := $svc.MethodInfo }}
         case {{ $svc.Service }}{{ $method.Method }}MessageId:
-            AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(registry, e, completeQueueComp.cq, grpcTag->valuePtr);
+            AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(registry, e, completeQueueComp, grpcTag->valuePtr);
             break;
 {{- end }}
 {{- end }}
@@ -334,6 +316,30 @@ void Init{{ $m.FileBaseNameCamel }}Stub(const std::shared_ptr<::grpc::ChannelInt
 {{- range $svc := .ServiceInfo }}
     registry.emplace<{{ $svc.Service }}StubPtr>(nodeEntity, {{ $svc.Service }}::NewStub(channel));
 {{- end }}
+
+
+{{- range $svc := .ServiceInfo }}
+{{- range $method := $svc.MethodInfo }}
+{{ if $method.ClientStreaming }}
+    {
+        GrpcTag* got_tag(tagPool.construct({{ $svc.Service }}{{ $method.Method }}MessageId, (void*)GrpcOperation::INIT));
+
+        auto& client = registry.emplace<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient>(nodeEntity);
+        registry.emplace<{{ $method.RequestName }}Buffer>(nodeEntity);
+        registry.emplace<{{ $method.RequestName }}WriteInProgress>(nodeEntity);
+        registry.emplace<{{ $method.CppResponse }}>(nodeEntity);
+        registry.emplace<{{ $method.CppRequest }}>(nodeEntity);
+
+        client.stream = registry
+            .get<{{ $svc.Service }}StubPtr>(nodeEntity)
+            ->Async{{ $method.Method }}(&client.context,
+                                        &registry.get<grpc::CompletionQueue>(nodeEntity),
+                                        (void*)(got_tag));
+    }
+{{ end }}
+{{ end }}
+{{ end }}
+
 }
 
 
