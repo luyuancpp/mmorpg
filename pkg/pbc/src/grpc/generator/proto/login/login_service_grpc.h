@@ -5,21 +5,16 @@
 #include "proto/login/login_service.grpc.pb.h"
 
 
+#include "service_info/login_service_service_info.h"
+
+
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace loginpb {
-enum class GrpcMethod : uint32_t {
-    ClientPlayerLogin_Login,
-    ClientPlayerLogin_CreatePlayer,
-    ClientPlayerLogin_EnterGame,
-    ClientPlayerLogin_LeaveGame,
-    ClientPlayerLogin_Disconnect,
-};
-
 struct GrpcTag {
-    GrpcMethod type;
+    uint32_t messageId;
     void* valuePtr;
 };
 using ClientPlayerLoginStubPtr = std::unique_ptr<ClientPlayerLogin::Stub>;
@@ -27,7 +22,7 @@ using ClientPlayerLoginStubPtr = std::unique_ptr<ClientPlayerLogin::Stub>;
 
 
 struct AsyncClientPlayerLoginLoginGrpcClient {
-    GrpcMethod type{ GrpcMethod::ClientPlayerLogin_Login };
+    uint32_t messageId{ ClientPlayerLoginLoginMessageId };
     ClientContext context;
     Status status;
     ::loginpb::LoginResponse reply;
@@ -49,7 +44,7 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
 
 
 struct AsyncClientPlayerLoginCreatePlayerGrpcClient {
-    GrpcMethod type{ GrpcMethod::ClientPlayerLogin_CreatePlayer };
+    uint32_t messageId{ ClientPlayerLoginCreatePlayerMessageId };
     ClientContext context;
     Status status;
     ::loginpb::CreatePlayerResponse reply;
@@ -71,7 +66,7 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
 
 
 struct AsyncClientPlayerLoginEnterGameGrpcClient {
-    GrpcMethod type{ GrpcMethod::ClientPlayerLogin_EnterGame };
+    uint32_t messageId{ ClientPlayerLoginEnterGameMessageId };
     ClientContext context;
     Status status;
     ::loginpb::EnterGameResponse reply;
@@ -93,7 +88,7 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
 
 
 struct AsyncClientPlayerLoginLeaveGameGrpcClient {
-    GrpcMethod type{ GrpcMethod::ClientPlayerLogin_LeaveGame };
+    uint32_t messageId{ ClientPlayerLoginLeaveGameMessageId };
     ClientContext context;
     Status status;
     ::Empty reply;
@@ -115,7 +110,7 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
 
 
 struct AsyncClientPlayerLoginDisconnectGrpcClient {
-    GrpcMethod type{ GrpcMethod::ClientPlayerLogin_Disconnect };
+    uint32_t messageId{ ClientPlayerLoginDisconnectMessageId };
     ClientContext context;
     Status status;
     ::Empty reply;
