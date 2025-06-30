@@ -93,6 +93,7 @@ protected:
     TimerTaskComp renewLeaseTimer;
     TimerTaskComp grpcHandlerTimer;
     TimerTaskComp serviceHealthMonitorTimer;
+    TimerTaskComp acquireNodeTimer;
     RpcClientPtr zoneCentreNode;
     CanConnectNodeTypeList targetNodeTypeWhitelist;
     ClientList zombieClientList;

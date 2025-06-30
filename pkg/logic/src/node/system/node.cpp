@@ -505,7 +505,7 @@ void Node::InitGrpcResponseHandlers() {
 			StartRpcServer();
 		}
 		else {
-			AcquireNode();
+			acquireNodeTimer.RunAfter(0.5, [this]() {AcquireNode(); });
 		}
 		};
 
