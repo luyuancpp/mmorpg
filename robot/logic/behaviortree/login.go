@@ -5,12 +5,37 @@ import (
 	"go.uber.org/zap"
 	"robot/interfaces"
 	"robot/pb/game"
-
 	//. "github.com/magicsea/behavior3go/actions"
 	//. "github.com/magicsea/behavior3go/composites"
 	. "github.com/magicsea/behavior3go/config"
 	. "github.com/magicsea/behavior3go/core"
 )
+
+type Login struct {
+	Action
+}
+
+func (c *Login) Initialize(setting *BTNodeCfg) {
+	c.Action.Initialize(setting)
+}
+
+func (c *Login) OnTick(tick *Tick) b3.Status {
+
+	clientI := tick.Blackboard.GetMem(ClientBoardKey)
+
+	client, ok := clientI.(interfaces.GameClientInterface)
+	if !ok {
+		zap.L().Error("failed to cast client from blackboard", zap.Any("client", clientI))
+		return b3.FAILURE
+	}
+
+	rq := &game.LoginRequest{
+		Account:  client.GetAccount(),
+		Password: client.GetAccount(),
+	}
+	client.Send(rq, game.ClientPlayerLoginLoginMessageId)
+	return b3.SUCCESS
+}
 
 type CreatePlayer struct {
 	Action
@@ -97,7 +122,7 @@ func (p *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 	// 处理玩家数据
 	playerId := playerList[0].Player.PlayerId
 	account := client.GetAccount()
-	
+
 	zap.L().Info("send Player login",
 		zap.Uint64("player id", playerId), zap.String("account_name", account))
 
@@ -117,6 +142,24 @@ func (a *AlreadyLoggedIn) Initialize(setting *BTNodeCfg) {
 }
 
 func (a *AlreadyLoggedIn) OnTick(tick *Tick) b3.Status {
+	// 从黑板中获取客户端
+	clientI := tick.Blackboard.GetMem(PlayerListBoardKey)
+	if clientI == nil {
+		return b3.FAILURE
+	}
+
+	return b3.SUCCESS
+}
+
+type IsInGame struct {
+	Action
+}
+
+func (a *IsInGame) Initialize(setting *BTNodeCfg) {
+	a.Action.Initialize(setting)
+}
+
+func (a *IsInGame) OnTick(tick *Tick) b3.Status {
 	// 从黑板中获取客户端
 	clientI := tick.Blackboard.GetMem(PlayerBoardKey)
 	if clientI == nil {

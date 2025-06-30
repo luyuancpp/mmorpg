@@ -70,7 +70,7 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 		service := accountdbservice.NewAccountDBService(*l.svcCtx.DbClient)
 		_, err := service.Load2Redis(l.ctx, &game.LoadAccountRequest{Account: in.Account})
 		if err != nil {
-			resp.ErrorMessage = &game.TipInfoMessage{Id: 1005}
+			resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginRedisSetFailed)}
 			return resp, err
 		}
 		cmd = l.svcCtx.Redis.Get(l.ctx, rdKey)

@@ -41,6 +41,8 @@ func RegisterGameNodes(maps *b3.RegisterStructMaps) {
 	maps.Register("GetSkillID", new(behaviortree.GetSkillID))
 	maps.Register("ReleaseSkill", new(behaviortree.ReleaseSkill))
 	maps.Register("SleepNode", new(behaviortree.SleepNode))
+	maps.Register("Login", new(behaviortree.Login))
+	maps.Register("IsInGame", new(behaviortree.IsInGame))
 }
 
 func InitPlayerBehaviorTree(configPath string) (map[string]*BehaviorTree, *BehaviorTree, bool) {

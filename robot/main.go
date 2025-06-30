@@ -110,12 +110,7 @@ func main() {
 			gameClient := pkg.NewGameClient(client)
 			defer gameClient.Close()
 
-			rq := &game.LoginRequest{
-				Account:  "luhailong" + strconv.Itoa(i),
-				Password: "luhailong",
-			}
-			gameClient.Account = rq.Account
-			gameClient.Send(rq, game.ClientPlayerLoginLoginMessageId)
+			gameClient.Account = "luhailong" + strconv.Itoa(i)
 
 			runClientLoop(gameClient)
 		}(i)
