@@ -34,6 +34,7 @@
 #include "util/proto_field_checker.h"
 #include "util/stacktrace_system.h"
 #include "player/system/player_tip_system.h"
+#include "service_info/centre_player_scene_service_info.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -306,8 +307,11 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 	const auto it = tlsSessions.find(request->header().session_id());
 	if (it == tlsSessions.end())
 	{
-		LOG_ERROR << "Session not found: " << request->header().session_id() << " message id :" << request->message_content().message_id();
-        SendErrorToClient(*request, *response, kSessionNotFound);
+		if (request->message_content().message_id() != CentrePlayerSceneLeaveSceneAsyncSavePlayerCompleteMessageId)
+		{
+			LOG_ERROR << "Session not found: " << request->header().session_id() << " message id :" << request->message_content().message_id();
+			SendErrorToClient(*request, *response, kSessionNotFound);
+		}
 		return;
 	}
 

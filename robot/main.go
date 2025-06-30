@@ -96,7 +96,7 @@ func main() {
 	var wg sync.WaitGroup
 
 	for i := 0; i < config.AppConfig.Robots.Count; i++ {
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 		wg.Add(1)
 
 		go func(i int) {
