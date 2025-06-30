@@ -14,6 +14,7 @@ func ClientPlayerLoginEnterGameHandler(client *pkg.GameClient, response *game.En
 		zap.L().Error("received error response",
 			zap.Uint32("error_id", response.ErrorMessage.Id),
 			zap.String("error_message", response.ErrorMessage.String()), // 假设有 Message 字段
+			zap.String("error_message", client.Account),
 		)
 		return
 	}

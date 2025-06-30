@@ -34,6 +34,8 @@ func (c *Login) OnTick(tick *Tick) b3.Status {
 		Password: client.GetAccount(),
 	}
 	client.Send(rq, game.ClientPlayerLoginLoginMessageId)
+	zap.L().Info("send Player login",
+		zap.String("account_name", client.GetAccount()))
 	return b3.SUCCESS
 }
 
@@ -123,7 +125,7 @@ func (p *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 	playerId := playerList[0].Player.PlayerId
 	account := client.GetAccount()
 
-	zap.L().Info("send Player login",
+	zap.L().Info("send Player enter game",
 		zap.Uint64("player id", playerId), zap.String("account_name", account))
 
 	// 发送请求

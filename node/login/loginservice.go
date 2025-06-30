@@ -125,6 +125,7 @@ func SessionInterceptor(
 	// ---- 在这里加上返回的 session detail header ----
 	if detail, ok := ctxkeys.GetSessionDetails(ctx); ok {
 		if bin, err := proto.Marshal(detail); err == nil {
+			logx.Infof("Session info: %+v", detail)
 			val := base64.StdEncoding.EncodeToString(bin)
 			header := metadata.Pairs("x-session-detail-bin", val)
 			grpc.SendHeader(ctx, header)

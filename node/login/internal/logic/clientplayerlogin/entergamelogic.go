@@ -47,7 +47,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 
 	// Validate player ID belongs to the session
 	if !l.isPlayerInSession(session, in.PlayerId) {
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionIdNotFound)
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginEnterGameGuid)
 		return resp, nil
 	}
 
