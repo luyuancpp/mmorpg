@@ -3,6 +3,7 @@ package main
 
 import (
 	"encoding/base64"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/golang/protobuf/proto"
@@ -58,6 +59,12 @@ func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) error {
 
 	// 注册节点到 etcd
 	loginNode := node.NewNode(uint32(nodeType), host, port, 5)
+	if loginNode == nil {
+		err = errors.New("failed to create node")
+		logx.Errorf("Failed to create node: %v", err)
+		return err
+	}
+
 	if err := loginNode.KeepAlive(); err != nil {
 		logx.Errorf("Failed to keep node alive: %v", err)
 		return err
