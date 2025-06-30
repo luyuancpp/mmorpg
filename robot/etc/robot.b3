@@ -12,42 +12,9 @@
         "id": "b27d16da-1efb-4291-be1d-3a6e02da27f6",
         "title": "Login",
         "description": "",
-        "root": "2a05af7d-e29b-45b8-8438-fe2c9ba21b79",
+        "root": "4e45ada9-b5e6-4a4b-b779-9679115cbcd4",
         "properties": {},
         "nodes": {
-          "2a05af7d-e29b-45b8-8438-fe2c9ba21b79": {
-            "id": "2a05af7d-e29b-45b8-8438-fe2c9ba21b79",
-            "name": "Priority",
-            "category": "composite",
-            "title": "Priority",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": -252,
-              "y": -264
-            },
-            "children": [
-              "0a174595-76df-4ca8-84c3-3e1785429e94",
-              "1d34754e-757b-415a-868e-5caf22afdb8d"
-            ]
-          },
-          "0a174595-76df-4ca8-84c3-3e1785429e94": {
-            "id": "0a174595-76df-4ca8-84c3-3e1785429e94",
-            "name": "MemSequence",
-            "category": "composite",
-            "title": "MemSequence",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": -72,
-              "y": -276
-            },
-            "children": [
-              "ec0ebf0c-60da-4c3e-8d90-1f4918e43157",
-              "7f820a24-77b6-4f78-83f4-e8f83af00ec2",
-              "0ee8bbbf-9a2d-4e64-8abe-45911e946e16"
-            ]
-          },
           "ec0ebf0c-60da-4c3e-8d90-1f4918e43157": {
             "id": "ec0ebf0c-60da-4c3e-8d90-1f4918e43157",
             "name": "IsRoleListEmpty",
@@ -56,8 +23,8 @@
             "description": "登录的时候角色列表是否为空",
             "properties": {},
             "display": {
-              "x": 72,
-              "y": -324
+              "x": 120,
+              "y": -168
             }
           },
           "7f820a24-77b6-4f78-83f4-e8f83af00ec2": {
@@ -68,8 +35,8 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 96,
-              "y": -264
+              "x": 108,
+              "y": -60
             }
           },
           "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe": {
@@ -80,8 +47,8 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 120,
-              "y": -48
+              "x": 156,
+              "y": 300
             }
           },
           "0ee8bbbf-9a2d-4e64-8abe-45911e946e16": {
@@ -94,8 +61,8 @@
               "Duration": 1000
             },
             "display": {
-              "x": 96,
-              "y": -204
+              "x": 108,
+              "y": 36
             }
           },
           "28f9bf16-e518-444a-8d5c-913ef6241d84": {
@@ -106,26 +73,9 @@
             "description": "是否已经登录",
             "properties": {},
             "display": {
-              "x": 108,
-              "y": -132
+              "x": 204,
+              "y": 240
             }
-          },
-          "1d34754e-757b-415a-868e-5caf22afdb8d": {
-            "id": "1d34754e-757b-415a-868e-5caf22afdb8d",
-            "name": "Priority",
-            "category": "composite",
-            "title": "Priority",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": -96,
-              "y": -144
-            },
-            "children": [
-              "28f9bf16-e518-444a-8d5c-913ef6241d84",
-              "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe",
-              "859bcc4d-4706-41af-8709-e4645709673a"
-            ]
           },
           "859bcc4d-4706-41af-8709-e4645709673a": {
             "id": "859bcc4d-4706-41af-8709-e4645709673a",
@@ -137,9 +87,154 @@
               "Duration": 1000
             },
             "display": {
-              "x": 108,
-              "y": 36
+              "x": 144,
+              "y": 408
             }
+          },
+          "123a6ee8-408b-417e-8d76-f79cb82ef133": {
+            "id": "123a6ee8-408b-417e-8d76-f79cb82ef133",
+            "name": "Sequence",
+            "category": "composite",
+            "title": "Sequence",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -108,
+              "y": 12
+            },
+            "children": [
+              "ec0ebf0c-60da-4c3e-8d90-1f4918e43157",
+              "7f820a24-77b6-4f78-83f4-e8f83af00ec2",
+              "0ee8bbbf-9a2d-4e64-8abe-45911e946e16"
+            ]
+          },
+          "fc894e47-a2a3-44b5-9317-cb9cead79235": {
+            "id": "fc894e47-a2a3-44b5-9317-cb9cead79235",
+            "name": "Sequence",
+            "category": "composite",
+            "title": "Sequence",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -84,
+              "y": 264
+            },
+            "children": [
+              "26cf0e2c-8132-45db-8978-fdec99896301",
+              "28f9bf16-e518-444a-8d5c-913ef6241d84",
+              "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe",
+              "859bcc4d-4706-41af-8709-e4645709673a"
+            ]
+          },
+          "4e45ada9-b5e6-4a4b-b779-9679115cbcd4": {
+            "id": "4e45ada9-b5e6-4a4b-b779-9679115cbcd4",
+            "name": "Priority",
+            "category": "composite",
+            "title": "Priority",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -288,
+              "y": -264
+            },
+            "children": [
+              "43500301-1d69-4863-9af7-3e69a3dcfbe8",
+              "123a6ee8-408b-417e-8d76-f79cb82ef133",
+              "fc894e47-a2a3-44b5-9317-cb9cead79235"
+            ]
+          },
+          "1a0352a1-808b-400e-93fa-bbf5649086c1": {
+            "id": "1a0352a1-808b-400e-93fa-bbf5649086c1",
+            "name": "Login",
+            "category": "action",
+            "title": "Login",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 192,
+              "y": -288
+            }
+          },
+          "f6ef4f06-134e-41d3-84b2-ac51d6623800": {
+            "id": "f6ef4f06-134e-41d3-84b2-ac51d6623800",
+            "name": "SleepNode",
+            "category": "action",
+            "title": "SleepNode(<Duration>)",
+            "description": "",
+            "properties": {
+              "Duration": 1000
+            },
+            "display": {
+              "x": 204,
+              "y": -228
+            }
+          },
+          "43500301-1d69-4863-9af7-3e69a3dcfbe8": {
+            "id": "43500301-1d69-4863-9af7-3e69a3dcfbe8",
+            "name": "Sequence",
+            "category": "composite",
+            "title": "Sequence",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -132,
+              "y": -276
+            },
+            "children": [
+              "505b7a0b-2084-4b3e-8d4e-4bf1fb61cc8f",
+              "1a0352a1-808b-400e-93fa-bbf5649086c1",
+              "f6ef4f06-134e-41d3-84b2-ac51d6623800"
+            ]
+          },
+          "5e1eb0c4-d6b7-40f8-982f-e344a21bb7c3": {
+            "id": "5e1eb0c4-d6b7-40f8-982f-e344a21bb7c3",
+            "name": "AlreadyLoggedIn",
+            "category": "condition",
+            "title": "AlreadyLoggedIn",
+            "description": "是否已经登录",
+            "properties": {},
+            "display": {
+              "x": 204,
+              "y": -348
+            }
+          },
+          "505b7a0b-2084-4b3e-8d4e-4bf1fb61cc8f": {
+            "id": "505b7a0b-2084-4b3e-8d4e-4bf1fb61cc8f",
+            "name": "Inverter",
+            "category": "decorator",
+            "title": "Inverter",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 36,
+              "y": -348
+            },
+            "child": "5e1eb0c4-d6b7-40f8-982f-e344a21bb7c3"
+          },
+          "5b887a50-b9d4-4c7e-9ffa-4b43af13071d": {
+            "id": "5b887a50-b9d4-4c7e-9ffa-4b43af13071d",
+            "name": "IsInGame",
+            "category": "condition",
+            "title": "IsInGame",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 228,
+              "y": 132
+            }
+          },
+          "26cf0e2c-8132-45db-8978-fdec99896301": {
+            "id": "26cf0e2c-8132-45db-8978-fdec99896301",
+            "name": "Inverter",
+            "category": "decorator",
+            "title": "Inverter",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 24,
+              "y": 144
+            },
+            "child": "5b887a50-b9d4-4c7e-9ffa-4b43af13071d"
           }
         },
         "display": {
@@ -574,6 +669,26 @@
         "title": "ResetTestCount()",
         "description": null,
         "properties": {}
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "Login",
+        "category": "action",
+        "title": "Login",
+        "description": null,
+        "properties": {},
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "IsInGame",
+        "category": "condition",
+        "title": "IsInGame",
+        "description": null,
+        "properties": {},
+        "parent": null
       }
     ],
     "custom_folders": []
