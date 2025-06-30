@@ -68,7 +68,6 @@ protected:
     void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
     void FetchServiceNodes();
-    void StartWatchingServiceNodes();
     void InitGrpcResponseHandlers();
     void InitGrpcClients();
     void TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const;
@@ -97,7 +96,9 @@ protected:
     RpcClientPtr zoneCentreNode;
     CanConnectNodeTypeList targetNodeTypeWhitelist;
     ClientList zombieClientList;
-    int64_t revision{ 0 };
+    std::unordered_map<std::string,int64_t> revision;
+    bool hasSentRange{ false };
+    bool hasSentWatch{ false };
 };
 
 extern Node* gNode;

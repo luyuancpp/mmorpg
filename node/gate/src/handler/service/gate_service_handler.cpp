@@ -13,7 +13,7 @@
 bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
 {
 	// 在这里定义所有需要记录错误日志的有效 message_id
-	return (message_id != 47 && message_id != 21 && message_id != 37);
+	return true;// (message_id != 47 && message_id != 21 && message_id != 37);
 }
 
 ///<<< END WRITING YOUR CODE

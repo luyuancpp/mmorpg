@@ -35,6 +35,14 @@ std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gN
 
 Node* gNode;
 
+std::string ExtractPrefix(const std::string& fullKey) {
+	size_t pos = fullKey.find('/');
+	if (pos == std::string::npos) {
+		// 没有斜杠，直接返回原串
+		return fullKey;
+	}
+	return fullKey.substr(0, pos);
+}
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
 	: eventLoop(loop), logSystem(logPath, kMaxLogFileRollSize, 1) {
@@ -79,7 +87,6 @@ void Node::Initialize() {
 	LoadAllConfigData();
 	InitGrpcClients();
 	FetchServiceNodes();
-	RequestEtcdLease();
 	LOG_DEBUG << "Node initialization complete.";
 }
 
@@ -117,7 +124,6 @@ void Node::StartRpcServer() {
 		rpcServer->registerService(val.get());
 	}
 
-	StartWatchingServiceNodes();
 	StartServiceHealthMonitor();
 
 	tls.dispatcher.trigger<OnServerStart>();
@@ -188,12 +194,6 @@ std::string Node::MakeEtcdKey(const NodeInfo& info) {
 void Node::FetchServiceNodes() {
 	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
 		EtcdHelper::RangeQuery(prefix);
-	}
-}
-
-void Node::StartWatchingServiceNodes() {
-	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
-		EtcdHelper::StartWatchingPrefix(prefix, revision + 1);
 	}
 }
 
@@ -472,10 +472,25 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 
 void Node::InitGrpcResponseHandlers() {
 	etcdserverpb::AsyncKVRangeHandler = [this](const ClientContext& context, const ::etcdserverpb::RangeResponse& reply) {
+		std::string firstKey;
 		for (const auto& kv : reply.kvs()) {
 			HandleServiceNodeStart(kv.key(), kv.value());
+			firstKey = kv.key();
 		}
-		revision = reply.header().revision();
+
+		if (!firstKey.empty())
+		{
+			revision[ExtractPrefix(firstKey)] =  reply.header().revision() + 1;
+		}
+
+		if (!hasSentRange)
+		{
+			for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
+				EtcdHelper::StartWatchingPrefix(prefix, revision[prefix]);
+			}
+			hasSentRange = true;
+		}
+
 		};
 
 	etcdserverpb::AsyncKVPutHandler = [this](const ClientContext& context, const ::etcdserverpb::PutResponse& reply) {
@@ -488,7 +503,6 @@ void Node::InitGrpcResponseHandlers() {
 		LOG_INFO << "Txn response: " << reply.DebugString();
 		if (reply.succeeded()){
 			StartRpcServer();
-
 		}
 		else {
 			AcquireNode();
@@ -496,6 +510,11 @@ void Node::InitGrpcResponseHandlers() {
 		};
 
 	etcdserverpb::AsyncWatchWatchHandler = [this](const ClientContext& context, const ::etcdserverpb::WatchResponse& response) {
+		if (!hasSentWatch)
+		{
+			RequestEtcdLease();
+			hasSentWatch = true;
+		}
 		if (response.created()) {
 			LOG_TRACE << "Watch created.";
 			return;
