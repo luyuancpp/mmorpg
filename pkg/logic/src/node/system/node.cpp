@@ -254,9 +254,7 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 	if (registry.valid(entityId)) {
 		if (auto* existInfo = registry.try_get<NodeInfo>(entityId);
 			existInfo &&
-			(existInfo->node_id() == info.node_id() &&
-				(existInfo->launch_time() == info.launch_time() || existInfo->lease_id() == info.lease_id()))) {
-
+			(IsSameNode(*existInfo, info))) {
 			LOG_TRACE << "Node exists, skip: " << info.node_id();
 			return;
 		}
@@ -367,9 +365,10 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
 
 	for (const auto& existNode : nodeList) {
-		if (existNode.lease_id() == newNode.lease_id()) {
+		if (IsSameNode(existNode, newNode)) {
 			LOG_INFO << "Node exists, IP: " << existNode.endpoint().ip()
 				<< ", Port: " << existNode.endpoint().port();
+			newNode = existNode;
 			return;
 		}
 	}
@@ -384,23 +383,49 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 
 	if (!targetNodeTypeWhitelist.contains(nodeType)) return;
 
-	if (IsNodeRegistered(nodeType, newNode)) return;
+	if (IsNodeConnected(nodeType, newNode)) return;
 
 	ConnectToNode(newNode);
 	LOG_INFO << "Connected to node: " << newNode.DebugString();
 }
 
-bool Node::IsNodeRegistered(uint32_t nodeType, const NodeInfo& node) const {
-	entt::registry& registry = tls.GetNodeRegistry(nodeType);
-	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
-		if (nodeInfo.endpoint().ip() == node.endpoint().ip() &&
-			nodeInfo.endpoint().port() == node.endpoint().port()) {
-			LOG_DEBUG << "Node already registered, IP: " << nodeInfo.endpoint().ip()
-				<< ", Port: " << nodeInfo.endpoint().port();
-			return true;
+bool Node::IsNodeConnected(uint32_t nodeType, const NodeInfo& info) const {
+	switch (info.protocol_type()) {
+	case PROTOCOL_TCP:
+	{
+		entt::registry& registry = tls.GetNodeRegistry(nodeType);
+		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
+			if (nodeInfo.endpoint().ip() == info.endpoint().ip() &&
+				nodeInfo.endpoint().port() == info.endpoint().port()) {
+				LOG_DEBUG << "Node already registered, IP: " << nodeInfo.endpoint().ip()
+					<< ", Port: " << nodeInfo.endpoint().port();
+				return true;
+			}
 		}
 	}
+	break;
+	default:
+		break;
+	}
+	
 	return false;
+}
+
+bool Node::IsSameNode(const NodeInfo& node1, const NodeInfo& node2) const
+{
+	return (node1.zone_id() == node2.zone_id() &&
+		node1.node_type() == node2.node_type() &&
+		node1.node_id() == node2.node_id() &&
+		node1.endpoint().ip() == node2.endpoint().ip() &&
+		node1.endpoint().port() == node2.endpoint().port() && 
+		node1.launch_time() == node2.launch_time());
+}
+
+bool Node::IsSameNode(const NodeInfo& node, uint32_t zoneId, uint32_t nodeType, uint32_t nodeId) const
+{
+	return (node.zone_id() == zoneId &&
+		node.node_type() == nodeType &&
+		node.node_id() == nodeId);
 }
 
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
@@ -439,10 +464,8 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
 	NodeInfo nodeInfo;
 	for (auto it = nodeList.begin(); it != nodeList.end(); ) {
-		if (it->node_type() == nodeType && it->node_id() == nodeId) {
-			LOG_INFO << "Remove node lease_id: " << it->lease_id();
-			nodeInfo = *it; // 保存要删除的节点信息
-			it = nodeList.erase(it);
+		if (IsSameNode(*it, zoneId, nodeType, nodeId)) {
+			nodeInfo = *it; 
 			break;
 		}
 		else {
@@ -450,21 +473,12 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 		}
 	}
 
-	//这里统一删除，包括tcp grpc http
-	tls.GetConsistentNode(nodeInfo.node_type()).remove(nodeInfo.node_id());
-
-	auto nodeEntity = entt::entity{ nodeInfo.node_id() };
-	entt::registry& registry = tls.GetNodeRegistry(nodeInfo.node_type());
-	if (!registry.valid(nodeEntity))
-	{
-		LOG_TRACE << "Node entity not valid, nodeId: " << nodeId
-			<< ", nodeType: " << eNodeType_Name(nodeInfo.node_type());
-		return;
-	}
-
 	if (nodeInfo.protocol_type() == PROTOCOL_GRPC)
 	{
+		auto nodeEntity = entt::entity{ nodeInfo.node_id() };
+		entt::registry& registry = tls.GetNodeRegistry(nodeInfo.node_type());
 		Destroy(registry, nodeEntity);
+		tls.GetConsistentNode(nodeInfo.node_type()).remove(nodeInfo.node_id());
 	}
 
 	LOG_INFO << "Service node stopped, id: " << nodeId;
@@ -645,10 +659,10 @@ void Node::HandleNodeRegistration(
 	response.mutable_peer_node()->CopyFrom(GetNodeInfo());
 	LOG_TRACE << "Node registration request: " << request.DebugString();
 
-	auto tryRegister = [&](const TcpConnectionPtr& conn, uint32_t nodeType) -> bool {
+	auto tryRegister = [&, this](const TcpConnectionPtr& conn, uint32_t nodeType) -> bool {
 		const auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
-			if (serverNode.lease_id() != peerNode.lease_id()) continue;
+			if (!IsSameNode(serverNode, peerNode)) continue;
 			entt::registry& registry = tls.GetNodeRegistry(nodeType);
 			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
 			entt::entity created = ResetEntity(registry, nodeEntity); 
@@ -668,7 +682,7 @@ void Node::HandleNodeRegistration(
 		auto& conn = session.connection;
 		if (!IsSameAddress(conn->peerAddress(), muduo::net::InetAddress(request.endpoint().ip(), request.endpoint().port()))) continue;
 		for (uint32_t nodeType = eNodeType_MIN; nodeType < eNodeType_ARRAYSIZE; ++nodeType) {
-			if (GetNodeType() == nodeType || !IsTcpNodeType(nodeType)) continue;
+			if (peerNode.node_type() != nodeType || !IsTcpNodeType(nodeType)) continue;
 			if (tryRegister(conn, nodeType)) {
 				tls.sessionRegistry.destroy(entity);
 				response.mutable_error_message()->set_id(kCommon_errorOK);
@@ -786,12 +800,12 @@ void Node::KeepNodeAlive() {
 		});
 }
 
-NodeInfo* Node::FindNodeInfo(uint32_t nodeType, uint32_t nodeId) {
+NodeInfo* Node::FindNodeInfo(uint32_t zoneId, uint32_t nodeType, uint32_t nodeId) {
 	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
 	NodeInfo nodeInfo;
 	for (auto it = nodeList.begin(); it != nodeList.end(); ++it) {
-		if (it->node_type() == nodeType && it->node_id() == nodeId) {
+		if (IsSameNode(*it, zoneId, nodeType, nodeId)) {
 			return &*it;
 		}
 	}
@@ -805,7 +819,7 @@ void Node::StartServiceHealthMonitor(){
 		{
 			return;
 		}
-		if (nullptr != FindNodeInfo(GetNodeInfo().node_type(), GetNodeInfo().node_id())) {
+		if (nullptr != FindNodeInfo(GetNodeInfo().zone_id(), GetNodeInfo().node_type(), GetNodeInfo().node_id())) {
 			return;
 		}
 		RequestEtcdLease();
