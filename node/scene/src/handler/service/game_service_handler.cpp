@@ -39,7 +39,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "Handling EnterGs request for player: " << request->player_id()
+	LOG_DEBUG << "Handling EnterGs request for player: " << request->player_id()
 		<< ", centre_node_id: " << request->centre_node_id();
 
 	// 1 清除玩家会话，处理连续顶号进入情况
