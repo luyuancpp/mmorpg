@@ -21,9 +21,9 @@ type RobotsConfig struct {
 
 // Config holds the entire configuration
 type Config struct {
-	Server   ServerConfig `yaml:"server"`
-	Robots   RobotsConfig `yaml:"robots"`
-	LogLevel int          `yaml:"loglevel"`
+	Servers  []ServerConfig `yaml:"servers"` // 支持多个 server
+	Robots   RobotsConfig   `yaml:"robots"`
+	LogLevel int            `yaml:"loglevel"`
 }
 
 // AppConfig is a package-level variable to hold the configuration
