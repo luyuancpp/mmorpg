@@ -76,14 +76,17 @@ protected:
     void KeepNodeAlive();
     void StartServiceHealthMonitor();
     void RegisterNodeService();
-    NodeInfo* FindNodeInfo(uint32_t nodeType, uint32_t nodeId);
+    NodeInfo* FindNodeInfo(uint32_t zoneId, uint32_t nodeType, uint32_t nodeId);
 
     // 事件处理
     void OnServerConnected(const OnConnected2TcpServerEvent& es);
     void OnClientConnected(const OnTcpClientConnectedEvent& es);
 
     // 工具与状态判断
-    bool IsNodeRegistered(uint32_t nodeType, const NodeInfo& node) const;
+    bool IsNodeConnected(uint32_t nodeType, const NodeInfo& node) const;
+	bool IsSameNode(const NodeInfo& node1, const NodeInfo& node2) const;
+	bool IsSameNode(const NodeInfo& node, uint32_t zoneId, uint32_t nodeType, uint32_t nodeId) const;
+
     void Shutdown();
 
     // 成员变量
