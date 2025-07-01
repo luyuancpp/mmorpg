@@ -60,6 +60,7 @@ protected:
     void ConnectToGrpcNode(const NodeInfo& nodeInfo);
     void ConnectToTcpNode(const NodeInfo& nodeInfo);
     void ConnectToHttpNode(const NodeInfo& nodeInfo);
+    void ConnectAllNodes();
 
     void ReleaseNodeId();
     void RegisterHandlers();
@@ -86,6 +87,7 @@ protected:
     bool IsNodeConnected(uint32_t nodeType, const NodeInfo& node) const;
 	bool IsSameNode(const NodeInfo& node1, const NodeInfo& node2) const;
 	bool IsSameNode(const NodeInfo& node, uint32_t zoneId, uint32_t nodeType, uint32_t nodeId) const;
+    bool IsServiceStarted() { return rpcServer != nullptr; }
 
     void Shutdown();
 

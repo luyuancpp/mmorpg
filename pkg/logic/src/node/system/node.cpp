@@ -376,11 +376,36 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 
 	if (!targetNodeTypeWhitelist.contains(nodeType)) return;
 
-	if (IsNodeConnected(nodeType, newNode)) return;
-
-	ConnectToNode(newNode);
-	LOG_INFO << "Connected to node: " << newNode.DebugString();
+	// **如果服务已经启动，并且没连接，则连接**
+	if (IsServiceStarted() && !IsNodeConnected(nodeType, newNode)) {
+		ConnectToNode(newNode);
+		LOG_INFO << "Connected to node: " << newNode.DebugString();
+	}
+	else {
+		LOG_INFO << "Service not started or node already connected, skip connecting for now.";
+	}
 }
+
+// 启动后调用，统一连接当前所有节点
+void Node::ConnectAllNodes() {
+
+	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+
+	for (uint32_t nodeType = 0; nodeType < eNodeType_ARRAYSIZE; ++nodeType)
+	{
+		if (!targetNodeTypeWhitelist.contains(nodeType)) continue;
+
+		for (const auto& node : nodeRegistry[nodeType].node_list()) {
+			if (GetNodeInfo().lease_id() == node.lease_id()) continue;
+			if (IsNodeConnected(nodeType, node)) continue;
+
+			ConnectToNode(node);
+			LOG_INFO << "Connected to node from ConnectAllNodes: " << node.DebugString();
+		}
+	}
+}
+
+
 
 bool Node::IsNodeConnected(uint32_t nodeType, const NodeInfo& info) const {
 	switch (info.protocol_type()) {
