@@ -143,7 +143,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 {
     auto playerId = tls.registry.get<Guid>(playerEntity);
 
-	LOG_INFO << "Processing change scene queue for player: " << playerId;
+	LOG_DEBUG << "Processing change scene queue for player: " << playerId;
 
 	auto* changeSceneQueue = tls.registry.try_get<ChangeSceneQueuePBComponent>(playerEntity);
 	if (!changeSceneQueue)
@@ -242,7 +242,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 		changeSceneInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs);
 	}
 
-	LOG_INFO << "Change scene queue processed successfully for player: " << playerId;
+	LOG_DEBUG << "Change scene queue processed successfully for player: " << playerId;
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
 }
 

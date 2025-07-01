@@ -278,7 +278,7 @@ void SceneUtil::EnterScene(const EnterSceneParam& param) {
 	tls.dispatcher.trigger(afterEnterScene);
 
 	if (tls.registry.any_of<Guid>(param.enter)) {
-		LOG_INFO << "Player entered scene - Player GUID: " << tls.registry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(param.scene);
+		LOG_DEBUG << "Player entered scene - Player GUID: " << tls.registry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(param.scene);
 	}
 }
 
@@ -308,6 +308,11 @@ void SceneUtil::EnterDefaultScene(const EnterDefaultSceneParam& param) {
 void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
 	if (param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters when leaving scene";
+		return;
+	}
+
+	if (!tls.registry.valid(param.leaver)) {
+		LOG_ERROR << "Invalid player entity when leaving scene - Player GUID: " << tls.registry.get<Guid>(param.leaver);
 		return;
 	}
 

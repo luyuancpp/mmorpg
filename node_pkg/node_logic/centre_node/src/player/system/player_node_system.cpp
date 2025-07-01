@@ -189,4 +189,5 @@ void PlayerNodeSystem::Logout(Guid playerID)
 		SceneUtil::LeaveScene({ playerEntity });
 	}
 	
+	Destroy(tls.registry, playerEntity);
 }

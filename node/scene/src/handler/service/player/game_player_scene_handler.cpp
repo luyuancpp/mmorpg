@@ -32,7 +32,7 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "Handling GsLeaveSceneRequest for player: " << tls.registry.get<Guid>(player);
+	LOG_DEBUG << "Handling GsLeaveSceneRequest for player: " << tls.registry.get<Guid>(player);
 
 	PlayerSceneSystem::HandleLeaveScene(player);
 	SceneUtil::LeaveScene({ .leaver = player });
@@ -40,7 +40,7 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 	{
 		// 离开gs 清除session
 		PlayerNodeSystem::HandleExitGameNode(player);
-		LOG_INFO << "Player " << tls.registry.get<Guid>(player) << " session cleared after leaving scene.";
+		LOG_DEBUG << "Player " << tls.registry.get<Guid>(player) << " session cleared after leaving scene.";
 	}
 ///<<< END WRITING YOUR CODE
 

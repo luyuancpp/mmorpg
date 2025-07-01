@@ -426,7 +426,7 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "Enter Scene Node Succeed request received.";
+	LOG_TRACE << "Enter Scene Node Succeed request received.";
 
 	const auto playerId = request->player_id();
 	const auto player = tlsCommonLogic.GetPlayer(playerId);

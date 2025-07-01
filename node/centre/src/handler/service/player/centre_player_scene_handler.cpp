@@ -24,7 +24,7 @@ void CentrePlayerSceneHandler::EnterScene(entt::entity player,const ::CentreEnte
 {
 	///<<< BEGIN WRITING YOUR CODE
 		//正在切换场景中，不能马上切换，gs崩溃了怎么办
-	LOG_INFO << "EnterScene request received for player: " << tls.registry.get<Guid>(player)
+	LOG_DEBUG << "EnterScene request received for player: " << tls.registry.get<Guid>(player)
 		<< ", scene_info: " << request->scene_info().DebugString();
 
 	ChangeSceneInfoPBComponent changeSceneInfo;
@@ -38,7 +38,7 @@ void CentrePlayerSceneHandler::EnterScene(entt::entity player,const ::CentreEnte
 
 	PlayerSceneSystem::AttemptEnterNextScene(player);
 
-	LOG_INFO << "EnterScene request processed successfully for player: " << tls.registry.get<Guid>(player);
+	LOG_DEBUG << "EnterScene request processed successfully for player: " << tls.registry.get<Guid>(player);
 	///<<< END WRITING YOUR CODE
 
 
