@@ -175,7 +175,9 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 	{
 		GetSceneParams getSceneParams;
 		getSceneParams.sceneConfigurationId = changeSceneInfo.scene_confid();
-		toScene = NodeSceneSystem::FindNotFullScene(getSceneParams);
+		toScene = NodeSceneSystem::FindSceneWithMinPlayerCount(getSceneParams);
+		//toScene = NodeSceneSystem::FindNotFullScene(getSceneParams);
+
 		if (toScene == entt::null)
 		{
 			LOG_WARN << "No available scene found for player: " << playerId;
