@@ -244,7 +244,6 @@ void Node::ConnectToGrpcNode(const NodeInfo& info) {
 
 
 	//todo 如果重连后连上了不同的gate会不会有异步问题
-
 }
 
 void Node::ConnectToTcpNode(const NodeInfo& info) {
@@ -253,12 +252,7 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 
 	if (registry.valid(entityId)) {
 		if (auto* existInfo = registry.try_get<NodeInfo>(entityId);
-			existInfo &&
-			(IsSameNode(*existInfo, info))) {
-			LOG_TRACE << "Node exists, skip: " << info.node_id();
-			return;
-		}
-		else {
+			existInfo ) {
 			LOG_INFO << "New node detected with same node_id: " << info.node_id()
 				<< ". Replacing old node (launch_time: " << (existInfo ? existInfo->launch_time() : 0)
 				<< ", lease_id: " << (existInfo ? existInfo->lease_id() : 0)
@@ -269,7 +263,6 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 				zombieClientList.push_back(*client);
 			}
 		}
-
 	}
 
 	const auto createdId = ResetEntity(registry, entityId);
@@ -364,11 +357,11 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
 
-	for (const auto& existNode : nodeList) {
+	for (auto& existNode : nodeList) {
 		if (IsSameNode(existNode, newNode)) {
 			LOG_INFO << "Node exists, IP: " << existNode.endpoint().ip()
 				<< ", Port: " << existNode.endpoint().port();
-			newNode = existNode;
+			existNode = newNode;
 			return;
 		}
 	}
