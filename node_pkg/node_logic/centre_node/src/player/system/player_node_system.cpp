@@ -32,17 +32,21 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	const auto it = loadingList.find(playerId);
 	if (it == loadingList.end())
 	{
-		LOG_ERROR << "Failed to load player: " << playerId;
+		LOG_ERROR << "Failed to load player: " << playerId << ", not found in loading list";
 		return;
 	}
 
+	LOG_INFO << "Handling async load for player: " << playerId;
+
 	auto playerEntity = tls.registry.create();
+	LOG_DEBUG << "Created player entity: " << static_cast<uint32_t>(playerEntity);
 
 	if (const auto [first, success] = tlsCommonLogic.GetPlayerList().emplace(playerId, playerEntity); !success)
 	{
-		LOG_ERROR << "Error emplacing server: " << playerId;
+		LOG_ERROR << "Error emplacing player in player list: " << playerId;
 		return;
 	}
+	LOG_INFO << "Player inserted into player list: " << playerId;
 
 	tls.registry.emplace_or_replace<PlayerNodeInfoPBComponent>(playerEntity).set_gate_session_id(it->second.session_info().session_id());
 	tls.registry.emplace<Player>(playerEntity);
@@ -50,23 +54,28 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	tls.registry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
 
 	PlayerChangeSceneUtil::InitChangeSceneQueue(playerEntity);
+	LOG_DEBUG << "Initialized change scene queue for player: " << playerId;
 
-	// Set flag for first login
 	tls.registry.emplace<EnterGameNodeInfoPBComponent>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
 	PlayerSceneSystem::HandleLoginEnterScene(playerEntity);
-	// On database loaded
+	LOG_INFO << "Player login enter scene handled: " << playerId;
 }
 
 void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_centre_database& playerData)
 {
+	LOG_INFO << "Handling async save for player: " << playerId;
 	// Placeholder for handling saved player data asynchronously
 }
 
 void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
 {
+	LOG_INFO << "Processing player session state for entity: " << static_cast<uint32_t>(player);
+
 	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComponent>(player))
 	{
+		LOG_DEBUG << "EnterGameNodeInfoPBComponent found with type: " << enterGameFlag->enter_gs_type();
+
 		if (enterGameFlag->enter_gs_type() != LOGIN_NONE && enterGameFlag->enter_gs_type() != LOGIN_RECONNECT)
 		{
 			PlayerNodeSystem::HandlePlayerLogin(player);
@@ -77,6 +86,11 @@ void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
 		}
 
 		tls.registry.remove<EnterGameNodeInfoPBComponent>(player);
+		LOG_DEBUG << "Removed EnterGameNodeInfoPBComponent from player";
+	}
+	else
+	{
+		LOG_WARN << "EnterGameNodeInfoPBComponent not found for player entity: " << static_cast<uint32_t>(player);
 	}
 }
 
@@ -85,18 +99,22 @@ void PlayerNodeSystem::HandlePlayerLogin(entt::entity playerEntity)
 	const auto enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComponent>(playerEntity);
 	if (!enterGameFlag)
 	{
+		LOG_WARN << "HandlePlayerLogin called but EnterGameNodeInfoPBComponent not found";
 		return;
 	}
 
+	LOG_INFO << "Handling player login for entity: " << static_cast<uint32_t>(playerEntity);
+
 	Centre2GsLoginRequest message;
 	message.set_enter_gs_type(enterGameFlag->enter_gs_type());
-	
+
 	SendToGsPlayer(ScenePlayerCentre2GsLoginMessageId, message, playerEntity);
+	LOG_DEBUG << "Sent Centre2GsLoginRequest to game scene";
 }
 
 void PlayerNodeSystem::HandlePlayerReconnection(entt::entity player)
 {
-
+	LOG_INFO << "Handling player reconnection for entity: " << static_cast<uint32_t>(player);
 }
 
 void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
@@ -104,21 +122,23 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
 	if (!playerNodeInfo)
 	{
-		LOG_WARN << "Player session not found for player: " << tls.registry.try_get<Guid>(playerEntity);
+		LOG_WARN << "PlayerNodeInfoPBComponent not found for player: " << tls.registry.try_get<Guid>(playerEntity);
 		return;
 	}
+
+	LOG_INFO << "Adding game node player to gate node, session_id: " << playerNodeInfo->gate_session_id();
 
 	entt::entity gateNodeId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
 	if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
 	{
-		LOG_WARN << "Gate crash for session id: " << playerNodeInfo->gate_session_id();
+		LOG_WARN << "Gate node invalid for session_id: " << playerNodeInfo->gate_session_id();
 		return;
 	}
 
 	auto gateNodeScene = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateNodeId);
 	if (!gateNodeScene)
 	{
-		LOG_WARN << "Gate crash for session id: " << playerNodeInfo->gate_session_id();
+		LOG_WARN << "Gate node RpcSession not found for session_id: " << playerNodeInfo->gate_session_id();
 		return;
 	}
 
@@ -126,6 +146,8 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	request.mutable_session_info()->set_session_id(playerNodeInfo->gate_session_id());
 	request.set_scene_node_id(playerNodeInfo->scene_node_id());
 	gateNodeScene->CallRemoteMethod(GatePlayerEnterGameNodeMessageId, request);
+
+	LOG_DEBUG << "Called remote method GatePlayerEnterGameNodeMessageId for session_id: " << playerNodeInfo->gate_session_id();
 }
 
 void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
@@ -133,42 +155,50 @@ void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity pla
 	const auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
 	if (!playerNodeInfo)
 	{
-		LOG_ERROR << "Invalid player session";
+		LOG_ERROR << "Invalid player session in HandleGameNodePlayerRegisteredAtGateNode";
 		return;
 	}
 
 	const auto* const playerId = tls.registry.try_get<Guid>(playerEntity);
 	if (!playerId)
 	{
-		LOG_ERROR << "Player not found";
+		LOG_ERROR << "Player ID not found in HandleGameNodePlayerRegisteredAtGateNode";
 		return;
 	}
+
+	LOG_INFO << "Player registered at gate node, session: " << playerNodeInfo->gate_session_id() << ", playerId: " << *playerId;
 
 	RegisterPlayerSessionRequest request;
 	request.set_session_id(playerNodeInfo->gate_session_id());
 	request.set_player_id(*playerId);
 	SendToGs(SceneUpdateSessionDetailMessageId, request, playerNodeInfo->scene_node_id());
-
-	
+	LOG_DEBUG << "Sent session update to scene node";
 }
 
 void PlayerNodeSystem::HandleNormalExit(Guid playerID)
 {
+	LOG_INFO << "Handling normal exit for player: " << playerID;
 	Logout(playerID);
 }
 
 void PlayerNodeSystem::HandleAbnormalExit(Guid playerID)
 {
+	LOG_INFO << "Handling abnormal exit for player: " << playerID;
+
 	const auto playerEntity = tlsCommonLogic.GetPlayer(playerID);
 	if (!tls.registry.valid(playerEntity))
 	{
-		LOG_ERROR << "Player not found: " << playerID;
+		LOG_ERROR << "Player entity not valid for abnormal exit: " << playerID;
 		return;
 	}
 
 	FetchGlobalVariableTableOrReturnVoid(kGlobalVariable_Abnormal_logout);
 
-	tls.registry.emplace_or_replace<AbnormalExitTimer>(playerEntity).timer.RunAfter(globalVariableTable->todouble(), [playerID]() {Logout(playerID); });
+	LOG_DEBUG << "Starting abnormal logout timer for player: " << playerID;
+	tls.registry.emplace_or_replace<AbnormalExitTimer>(playerEntity).timer.RunAfter(globalVariableTable->todouble(), [playerID]() {
+		LOG_INFO << "Abnormal exit timeout reached for player: " << playerID;
+		Logout(playerID);
+		});
 }
 
 void PlayerNodeSystem::Logout(Guid playerID)
@@ -176,18 +206,23 @@ void PlayerNodeSystem::Logout(Guid playerID)
 	// TODO: Handle leave during login
 	// TODO: Immediate logout on disconnect will be revisited later
 	// TODO: Handle cases where player didn't enter any scene yet (e.g., login process or scene switch)
+	LOG_INFO << "Logging out player: " << playerID;
+
 	defer(tlsCommonLogic.GetPlayerList().erase(playerID));
 
 	const auto playerEntity = tlsCommonLogic.GetPlayer(playerID);
 	if (!tls.registry.valid(playerEntity))
 	{
+		LOG_WARN << "Logout skipped, player entity invalid: " << playerID;
 		return;
 	}
 
 	if (tls.registry.try_get<SceneEntityComp>(playerEntity))
 	{
+		LOG_DEBUG << "Player in scene, removing from scene: " << playerID;
 		SceneUtil::LeaveScene({ playerEntity });
 	}
-	
+
 	Destroy(tls.registry, playerEntity);
+	LOG_INFO << "Destroyed player entity: " << playerID;
 }
