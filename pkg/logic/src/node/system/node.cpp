@@ -124,6 +124,8 @@ void Node::StartRpcServer() {
 		rpcServer->registerService(val.get());
 	}
 
+	ConnectAllNodes();
+
 	StartServiceHealthMonitor();
 
 	tls.dispatcher.trigger<OnServerStart>();
