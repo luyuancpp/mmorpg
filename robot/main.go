@@ -102,9 +102,13 @@ func main() {
 		go func(i int) {
 			defer wg.Done()
 
-			client, err := muduo.NewClient(config.AppConfig.Server.IP, config.AppConfig.Server.Port, &muduo.TcpCodec{})
+			// 每个机器人分配一个服务器（轮询）
+			serverIndex := i % len(config.AppConfig.Servers)
+			server := config.AppConfig.Servers[serverIndex]
+
+			client, err := muduo.NewClient(server.IP, server.Port, &muduo.TcpCodec{})
 			if err != nil {
-				zap.L().Error("Failed to create client", zap.Error(err))
+				zap.L().Error("Failed to create client", zap.String("ip", server.IP), zap.Int("port", server.Port), zap.Error(err))
 				return
 			}
 			gameClient := pkg.NewGameClient(client)
