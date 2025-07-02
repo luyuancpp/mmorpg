@@ -194,60 +194,61 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
 	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
-	auto& clientMsgBody = request->client_msg_body();
-	auto sessionId = request->session_info().session_id();
 
-	LOG_INFO << "Player login attempt: Player ID " << clientMsgBody.player_id() << ", Session ID " << sessionId;
+	const auto& clientMsg = request->client_msg_body();
+	const auto& sessionInfo = request->session_info();
+	auto playerId = clientMsg.player_id();
+	auto sessionId = sessionInfo.session_id();
 
-	tlsSessions.emplace(sessionId, clientMsgBody.player_id());
+	LOG_INFO << "Login request: PlayerID=" << playerId << ", SessionID=" << sessionId;
 
-	if (const auto playerIt = tlsCommonLogic.GetPlayerList().find(clientMsgBody.player_id());
-		playerIt == tlsCommonLogic.GetPlayerList().end())
-	{
-		LOG_INFO << "New player login: Player ID " << clientMsgBody.player_id();
+	// 记录当前 session
+	tlsSessions[sessionId] = playerId;
 
-		tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity()).emplace(
-			clientMsgBody.player_id(), *request);
-		tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(clientMsgBody.player_id());
+	auto& playerList = tlsCommonLogic.GetPlayerList();
+	auto it = playerList.find(playerId);
+
+	if (it == playerList.end()) {
+		// 玩家未登录过，首次加载
+		tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity()).emplace(playerId, *request);
+		tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(playerId);
 	}
-	else
-	{
-		auto player = playerIt->second;
+	else {
+		auto player = it->second;
+
 		//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 		//顶号的时候已经在场景里面了,不用再进入场景了
 		//todo换场景的过程中被顶了
 		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 		//区分顶号和断线重连
-		// 
-		// Handle session takeover (顶号) or reconnect scenario
-		if (auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
-			playerSessionSnapshotPB != nullptr)
-		{
-			// Handle session takeover (顶号)
-			LOG_INFO << "Player reconnected: Player ID " << clientMsgBody.player_id();
-
-			PlayerTipSystem::SendToPlayer(player, kLoginBeKickByAnOtherAccount, {});
-
-			auto oldSessionId = playerSessionSnapshotPB->gate_session_id();
+		
+		// 清除旧 session
+		auto* sessionComp = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
+		if (sessionComp) {
+			auto oldSessionId = sessionComp->gate_session_id();
 			defer(tlsSessions.erase(oldSessionId));
-
-			KickSessionRequest message;
-			message.set_session_id(oldSessionId);
-			SendMessageToGateById(GateKickSessionByCentreMessageId, message, GetGateNodeId(oldSessionId));
-
-			playerSessionSnapshotPB->set_gate_session_id(sessionId);
+			if (oldSessionId != sessionId) {
+				PlayerTipSystem::SendToPlayer(player, kLoginBeKickByAnOtherAccount, {});
+				LOG_INFO << "Kicking old session: Player ID " << playerId << ", Old Session ID " << oldSessionId;
+				// 踢掉旧 session
+				KickSessionRequest msg;
+				msg.set_session_id(oldSessionId);
+				SendMessageToGateById(GateKickSessionByCentreMessageId, msg, GetGateNodeId(oldSessionId));
+			}
 		}
 		else
 		{
-			LOG_INFO << "Existing player login: Player ID " << clientMsgBody.player_id();
+			LOG_INFO << "Existing player login: Player ID " << clientMsg.player_id();
 			tls.registry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(sessionId);
 		}
 
-		//连续顶几次,所以用emplace_or_replace
-		LOG_INFO << "Player login type: " << (tls.registry.any_of<PlayerEnterGameStatePbComp>(player) ? "Replace" : "New");
+		// 更新为新 session
+		tls.registry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(sessionId);
 
+		// 标记玩家状态
 		tls.registry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_REPLACE);
 
+		// 进入场景
 		PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
 		PlayerNodeSystem::ProcessPlayerSessionState(player);
 	}
