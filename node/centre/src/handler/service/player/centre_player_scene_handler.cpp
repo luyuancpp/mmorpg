@@ -83,7 +83,7 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 		return;
 	}
 
-	auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+	auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "PlayerNodeInfo not found for player: " << tls.registry.get<Guid>(player);

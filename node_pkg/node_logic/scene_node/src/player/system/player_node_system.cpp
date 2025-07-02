@@ -64,7 +64,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 	}
 
 	tls.registry.emplace<ViewRadius>(player).set_radius(10);
-	tls.registry.emplace<PlayerSessionSnapshotPB>(player).set_centre_node_id(asyncIt->second.centre_node_id());
+	tls.registry.emplace<PlayerSessionSnapshotPBComp>(player).set_centre_node_id(asyncIt->second.centre_node_id());
 
 	LOG_INFO << "PlayerNodeInfo set with CentreNodeId: " << asyncIt->second.centre_node_id();
 
@@ -121,11 +121,11 @@ void PlayerNodeSystem::EnterGs(const entt::entity player, const PlayerGameNodeEn
 {
 	LOG_INFO << "EnterGs: Player " << tls.registry.get<Guid>(player) << " entering Game Node";
 
-	auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+	auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (playerSessionSnapshotPB == nullptr)
 	{
 		LOG_ERROR << "Player node info not found for player: " << tls.registry.get<Guid>(player);
-		playerSessionSnapshotPB = &tls.registry.emplace<PlayerSessionSnapshotPB>(player);
+		playerSessionSnapshotPB = &tls.registry.emplace<PlayerSessionSnapshotPBComp>(player);
 	}
 
 	playerSessionSnapshotPB->set_centre_node_id(enterInfo.centre_node_id());
@@ -193,7 +193,7 @@ void PlayerNodeSystem::RemovePlayerSession(const Guid playerId)
 
 void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
 {
-	auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+	auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (playerSessionSnapshotPB == nullptr)
 	{
 		LOG_ERROR << "RemovePlayerSession: PlayerNodeInfoPBComponent not found for player: " << entt::to_integral(player);

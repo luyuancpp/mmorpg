@@ -401,7 +401,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 
 	tlsSessions.emplace(request->session_id(), request->player_id());
 
-	tls.registry.get_or_emplace<PlayerSessionSnapshotPB>(player).set_gate_session_id(request->session_id());
+	tls.registry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(request->session_id());
 
 	PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(player);
 ///<<< END WRITING YOUR CODE

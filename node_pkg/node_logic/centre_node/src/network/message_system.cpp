@@ -42,7 +42,7 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
     }
 
     // 获取玩家的节点信息
-    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
     if (!playerSessionSnapshotPB)
     {
         LOG_ERROR << "PlayerNodeInfo not found for player -> " << entt::to_integral(player);
@@ -101,7 +101,7 @@ void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Messag
     }
 
     // 获取玩家的节点信息
-    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
     if (!playerSessionSnapshotPB)
     {
         LOG_ERROR << "PlayerNodeInfo not found for player -> " << entt::to_integral(player);
@@ -147,7 +147,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
     }
 
     // Retrieve player node info from the registry
-    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
     if (!playerSessionSnapshotPB)
     {
         LOG_WARN << "Player node info not found for player entity " << entt::to_integral(player);
@@ -226,7 +226,7 @@ void CallScenePlayerMethod(uint32_t messageId, const google::protobuf::Message& 
     }
 
     // 获取玩家节点信息
-    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
     if (!playerSessionSnapshotPB)
     {
         LOG_ERROR << "PlayerNodeInfo not found for player -> " << entt::to_integral(player);

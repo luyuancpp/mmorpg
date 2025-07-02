@@ -48,7 +48,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	}
 	LOG_INFO << "Player inserted into player list: " << playerId;
 
-	tls.registry.emplace_or_replace<PlayerSessionSnapshotPB>(playerEntity).set_gate_session_id(it->second.session_info().session_id());
+	tls.registry.emplace_or_replace<PlayerSessionSnapshotPBComp>(playerEntity).set_gate_session_id(it->second.session_info().session_id());
 	tls.registry.emplace<Player>(playerEntity);
 	tls.registry.emplace<Guid>(playerEntity, playerId);
 	tls.registry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
@@ -119,7 +119,7 @@ void PlayerNodeSystem::HandlePlayerReconnection(entt::entity player)
 
 void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 {
-	auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(playerEntity);
+	auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_WARN << "PlayerSessionSnapshotPB not found for player: " << tls.registry.try_get<Guid>(playerEntity);
@@ -152,7 +152,7 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 
 void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
 {
-	const auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(playerEntity);
+	const auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "Invalid player session in HandleGameNodePlayerRegisteredAtGateNode";
