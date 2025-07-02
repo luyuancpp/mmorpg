@@ -227,7 +227,6 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
         loginpb::SendClientPlayerLoginDisconnect(tls.GetNodeRegistry(eNodeType::LoginNodeService), *loginNode, request, { kSessionBinMetaKey }, SerializeSessionDetails(sessionDetails));
     }
 
-    // 通知中心服务器
     GateSessionDisconnectRequest request;
     request.mutable_session_info()->set_session_id(sessionId);
 	gGateNode->CallRemoteMethodZoneCenter(CentreGateSessionDisconnectMessageId, request);

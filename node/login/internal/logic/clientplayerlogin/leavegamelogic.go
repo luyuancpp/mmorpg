@@ -30,6 +30,24 @@ func (l *LeaveGameLogic) LeaveGame(in *game.LeaveGameRequest) (*game.Empty, erro
 		logx.Error("failed to get SessionId from context")
 		return &game.Empty{}, nil
 	}
+
+	node := l.svcCtx.GetCentreClient()
+	if nil == node {
+		return &game.Empty{}, nil
+	}
+
+	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
+	if !ok {
+		logx.Error("Session not found in context during leave game ")
+		return &game.Empty{}, nil
+	}
+
+	centreRequest := &game.LoginNodeLeaveGameRequest{
+		SessionInfo: sessionDetails,
+	}
+
+	node.Send(centreRequest, game.CentreLoginNodeLeaveGameMessageId)
+
 	defer data.SessionList.Remove(sessionId)
 	return &game.Empty{}, nil
 }

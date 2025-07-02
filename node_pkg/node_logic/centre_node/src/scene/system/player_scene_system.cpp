@@ -108,8 +108,8 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
-    if (!playerNodeInfo)
+    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(playerEntity);
+    if (!playerSessionSnapshotPB)
     {
         LOG_ERROR << "Player session not valid for player: " << playerId;
         return;
@@ -118,14 +118,14 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
     Centre2GsEnterSceneRequest request;
     request.set_scene_id(sceneInfo->guid());
     request.set_player_id(playerId);
-    CallGameNodeMethod(SceneEnterSceneMessageId, request, playerNodeInfo->scene_node_id());
+    CallGameNodeMethod(SceneEnterSceneMessageId, request, playerSessionSnapshotPB->scene_node_id());
 
-    LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << playerNodeInfo->scene_node_id();
+    LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << playerSessionSnapshotPB->scene_node_id();
 }
 
 void PlayerSceneSystem::ProcessPlayerEnterSceneNode(entt::entity playerEntity, NodeId nodeId)
 {
-    const auto* info = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
+    const auto* info = tls.registry.try_get<PlayerSessionSnapshotPB>(playerEntity);
     if (!info)
     {
         LOG_ERROR << "Player session not valid";
