@@ -764,6 +764,16 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 	LOG_INFO << "Node registration success.";
 }
 
+NodeInfo* Node::FindZoneUniqueNodeInfo(uint32_t zoneId, uint32_t nodeType) {
+	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
+
+	if (!nodeList.empty()) {
+		return &nodeList[0];  // 假设始终只有一个
+	}
+	return nullptr;
+}
+
 void Node::AcquireNode() {
 	LOG_INFO << "Acquiring node ID for node type: " << GetNodeType();
 
