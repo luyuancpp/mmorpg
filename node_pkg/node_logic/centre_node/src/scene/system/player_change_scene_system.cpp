@@ -91,6 +91,42 @@ void PlayerChangeSceneUtil::ProcessDifferentGsChangeScene(entt::entity player, c
 	}
 }
 
+
+//ChangeSceneQueueComponent
+//└─ std::deque<ChangeSceneTask>    ← 可读写的任务队列
+//
+//ChangeSceneTask
+//├─ 原始PB结构（ChangeSceneInfoPB）
+//├─ 当前状态（ChangeState枚举）
+//├─ 时间戳
+//└─ 回调指针或上下文信息（可选）
+//
+//PlayerChangeSceneUtil::Tick()
+//└─ 对每个玩家调用 AdvanceSceneChangeState(player)
+//
+//AdvanceSceneChangeState(entt::entity)
+//└─ 根据状态决定做什么：
+//- ePendingLeave → LeaveScene() → 状态转 eLeaving
+//- eLeaving → 等通知回调（或继续轮询）
+//- eLeaveComplete → 通知目标GS
+//- eEnterOK → 调用 EnterScene()
+//- eDone → PopFront，进入下一个任务
+
+//
+//ePendingLeave
+//↓ （调用 LeaveScene）
+//eLeaving
+//↓ （存储完成回调）
+//eWaitingEnter
+//↓ （目标节点确认已接收并处理完毕）
+//eEnterGsSceneSucceed
+//↓ （调用 EnterScene）
+//eGateEnterGsSceneSucceed
+//↓
+//DONE(PopFront)
+
+
+
 // 确认玩家成功进入场景后的操作
 void PlayerChangeSceneUtil::OnEnterSceneOk(entt::entity player) {
 	S2CEnterScene ev;
@@ -98,26 +134,16 @@ void PlayerChangeSceneUtil::OnEnterSceneOk(entt::entity player) {
 	tls.dispatcher.trigger(ev);
 }
 
-enum ChangeSceneState : uint32_t {
-	PendingLeave,
-	Leaving,
-	WaitingEnter,
-	EnterSucceed,
-	GateEnterSucceed,
-	Done
-};
-
 void PlayerChangeSceneUtil::AdvanceSceneChangeState(entt::entity player) {
 	auto& queue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (queue.empty()) return;
 
 	auto& task = *queue.front();
-	const auto& info = task;
 
-	switch (task.change_gs_status()) {
-	case ChangeSceneState::PendingLeave:
-		if (info.change_gs_type() == ChangeSceneInfoPBComponent::eSameGs) {
-			auto destScene = entt::entity{ info.guid() };
+	switch (task.state()) {
+	case ChangeSceneInfoPBComponent::ePendingLeave:
+		if (task.change_gs_type() == ChangeSceneInfoPBComponent::eSameGs) {
+			auto destScene = entt::entity{ task.guid() };
 			if (destScene == entt::null) {
 				queue.dequeue();
 				return;
@@ -134,29 +160,31 @@ void PlayerChangeSceneUtil::AdvanceSceneChangeState(entt::entity player) {
 			/*SimulateAsyncStore(player, [&]() {
 				task.state = ChangeSceneState::WaitingEnter;
 				LOG_INFO << "[SceneChange] Store complete for Player " << entt::to_integral(player);
-				});
+				});*/
 
-			task.state = ChangeSceneState::Leaving;*/
+			task.set_state(ChangeSceneInfoPBComponent::eLeaving);
 		}
 		break;
-
-	case ChangeSceneState::WaitingEnter:
+	case ChangeSceneInfoPBComponent::eLeaving:
+		// 等待中心节点收到【离开成功的通知】，再调用 SetState(player, eWaitingEnter);
+		break;
+	case ChangeSceneInfoPBComponent::eWaitingEnter:
 		// 等待中心服务器或目标节点 RPC 通知我们切换完成
 		break;
 
-	case ChangeSceneState::EnterSucceed: {
-		auto destScene = entt::entity{ info.guid() };
+	case ChangeSceneInfoPBComponent::eEnterSucceed: {
+		auto destScene = entt::entity{ task.guid() };
 		if (destScene == entt::null) {
 			SceneUtil::EnterDefaultScene({ player });
 		}
 		else {
 			SceneUtil::EnterScene({ destScene, player });
 		}
-		/*task.state = ChangeSceneState::GateEnterSucceed;*/
+		task.set_state(ChangeSceneInfoPBComponent::eGateEnterSucceed);
 		break;
 	}
 
-	case ChangeSceneState::GateEnterSucceed:
+	case ChangeSceneInfoPBComponent::eGateEnterSucceed:
 		queue.dequeue();
 		OnEnterSceneOk(player);
 		break;

@@ -24,6 +24,7 @@ public:
 	// 处理玩家的场景切换队列
 	static void ProcessChangeSceneQueue(entt::entity player);
 
+	static void AdvanceSceneChangeState(entt::entity player);
 private:
 	// 处理同一游戏服务器内的场景切换
 	static void ProcessSameGsChangeScene(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo);
@@ -34,7 +35,6 @@ private:
 	// 确认玩家成功进入场景后的操作
 	static void OnEnterSceneOk(entt::entity player);
 
-	static void AdvanceSceneChangeState(entt::entity player);
 
 private:
 	// 玩家场景切换队列结构

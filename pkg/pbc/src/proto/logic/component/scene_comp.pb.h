@@ -127,6 +127,43 @@ inline bool ChangeSceneInfoPBComponent_eChangeGsType_Parse(absl::string_view nam
   return ::google::protobuf::internal::ParseNamedEnum<ChangeSceneInfoPBComponent_eChangeGsType>(
       ChangeSceneInfoPBComponent_eChangeGsType_descriptor(), name, value);
 }
+enum ChangeSceneInfoPBComponent_eChangeSceneState : int {
+  ChangeSceneInfoPBComponent_eChangeSceneState_ePendingLeave = 0,
+  ChangeSceneInfoPBComponent_eChangeSceneState_eLeaving = 1,
+  ChangeSceneInfoPBComponent_eChangeSceneState_eWaitingEnter = 2,
+  ChangeSceneInfoPBComponent_eChangeSceneState_eEnterSucceed = 3,
+  ChangeSceneInfoPBComponent_eChangeSceneState_eGateEnterSucceed = 4,
+  ChangeSceneInfoPBComponent_eChangeSceneState_eDone = 5,
+  ChangeSceneInfoPBComponent_eChangeSceneState_ChangeSceneInfoPBComponent_eChangeSceneState_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      std::numeric_limits<::int32_t>::min(),
+  ChangeSceneInfoPBComponent_eChangeSceneState_ChangeSceneInfoPBComponent_eChangeSceneState_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      std::numeric_limits<::int32_t>::max(),
+};
+
+bool ChangeSceneInfoPBComponent_eChangeSceneState_IsValid(int value);
+extern const uint32_t ChangeSceneInfoPBComponent_eChangeSceneState_internal_data_[];
+constexpr ChangeSceneInfoPBComponent_eChangeSceneState ChangeSceneInfoPBComponent_eChangeSceneState_eChangeSceneState_MIN = static_cast<ChangeSceneInfoPBComponent_eChangeSceneState>(0);
+constexpr ChangeSceneInfoPBComponent_eChangeSceneState ChangeSceneInfoPBComponent_eChangeSceneState_eChangeSceneState_MAX = static_cast<ChangeSceneInfoPBComponent_eChangeSceneState>(5);
+constexpr int ChangeSceneInfoPBComponent_eChangeSceneState_eChangeSceneState_ARRAYSIZE = 5 + 1;
+const ::google::protobuf::EnumDescriptor*
+ChangeSceneInfoPBComponent_eChangeSceneState_descriptor();
+template <typename T>
+const std::string& ChangeSceneInfoPBComponent_eChangeSceneState_Name(T value) {
+  static_assert(std::is_same<T, ChangeSceneInfoPBComponent_eChangeSceneState>::value ||
+                    std::is_integral<T>::value,
+                "Incorrect type passed to eChangeSceneState_Name().");
+  return ChangeSceneInfoPBComponent_eChangeSceneState_Name(static_cast<ChangeSceneInfoPBComponent_eChangeSceneState>(value));
+}
+template <>
+inline const std::string& ChangeSceneInfoPBComponent_eChangeSceneState_Name(ChangeSceneInfoPBComponent_eChangeSceneState value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<ChangeSceneInfoPBComponent_eChangeSceneState_descriptor,
+                                                 0, 5>(
+      static_cast<int>(value));
+}
+inline bool ChangeSceneInfoPBComponent_eChangeSceneState_Parse(absl::string_view name, ChangeSceneInfoPBComponent_eChangeSceneState* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<ChangeSceneInfoPBComponent_eChangeSceneState>(
+      ChangeSceneInfoPBComponent_eChangeSceneState_descriptor(), name, value);
+}
 
 // ===================================================================
 
@@ -316,6 +353,29 @@ class ChangeSceneInfoPBComponent final
   static inline bool eChangeGsType_Parse(absl::string_view name, eChangeGsType* value) {
     return ChangeSceneInfoPBComponent_eChangeGsType_Parse(name, value);
   }
+  using eChangeSceneState = ChangeSceneInfoPBComponent_eChangeSceneState;
+  static constexpr eChangeSceneState ePendingLeave = ChangeSceneInfoPBComponent_eChangeSceneState_ePendingLeave;
+  static constexpr eChangeSceneState eLeaving = ChangeSceneInfoPBComponent_eChangeSceneState_eLeaving;
+  static constexpr eChangeSceneState eWaitingEnter = ChangeSceneInfoPBComponent_eChangeSceneState_eWaitingEnter;
+  static constexpr eChangeSceneState eEnterSucceed = ChangeSceneInfoPBComponent_eChangeSceneState_eEnterSucceed;
+  static constexpr eChangeSceneState eGateEnterSucceed = ChangeSceneInfoPBComponent_eChangeSceneState_eGateEnterSucceed;
+  static constexpr eChangeSceneState eDone = ChangeSceneInfoPBComponent_eChangeSceneState_eDone;
+  static inline bool eChangeSceneState_IsValid(int value) {
+    return ChangeSceneInfoPBComponent_eChangeSceneState_IsValid(value);
+  }
+  static constexpr eChangeSceneState eChangeSceneState_MIN = ChangeSceneInfoPBComponent_eChangeSceneState_eChangeSceneState_MIN;
+  static constexpr eChangeSceneState eChangeSceneState_MAX = ChangeSceneInfoPBComponent_eChangeSceneState_eChangeSceneState_MAX;
+  static constexpr int eChangeSceneState_ARRAYSIZE = ChangeSceneInfoPBComponent_eChangeSceneState_eChangeSceneState_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor* eChangeSceneState_descriptor() {
+    return ChangeSceneInfoPBComponent_eChangeSceneState_descriptor();
+  }
+  template <typename T>
+  static inline const std::string& eChangeSceneState_Name(T value) {
+    return ChangeSceneInfoPBComponent_eChangeSceneState_Name(value);
+  }
+  static inline bool eChangeSceneState_Parse(absl::string_view name, eChangeSceneState* value) {
+    return ChangeSceneInfoPBComponent_eChangeSceneState_Parse(name, value);
+  }
 
   // accessors -------------------------------------------------------
   enum : int {
@@ -329,6 +389,7 @@ class ChangeSceneInfoPBComponent final
     kChangeGsStatusFieldNumber = 7,
     kIgnoreFullFieldNumber = 9,
     kProcessingFieldNumber = 10,
+    kStateFieldNumber = 11,
   };
   // uint32 scene_confid = 1;
   void clear_scene_confid() ;
@@ -430,12 +491,22 @@ class ChangeSceneInfoPBComponent final
   void _internal_set_processing(bool value);
 
   public:
+  // uint32 state = 11;
+  void clear_state() ;
+  ::uint32_t state() const;
+  void set_state(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_state() const;
+  void _internal_set_state(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:ChangeSceneInfoPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      4, 10, 0,
+      4, 11, 0,
       0, 2>
       _table_;
 
@@ -463,6 +534,7 @@ class ChangeSceneInfoPBComponent final
     ::uint32_t change_gs_status_;
     bool ignore_full_;
     bool processing_;
+    ::uint32_t state_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -706,6 +778,28 @@ inline void ChangeSceneInfoPBComponent::_internal_set_processing(bool value) {
   _impl_.processing_ = value;
 }
 
+// uint32 state = 11;
+inline void ChangeSceneInfoPBComponent::clear_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = 0u;
+}
+inline ::uint32_t ChangeSceneInfoPBComponent::state() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.state)
+  return _internal_state();
+}
+inline void ChangeSceneInfoPBComponent::set_state(::uint32_t value) {
+  _internal_set_state(value);
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.state)
+}
+inline ::uint32_t ChangeSceneInfoPBComponent::_internal_state() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.state_;
+}
+inline void ChangeSceneInfoPBComponent::_internal_set_state(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = value;
+}
+
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif  // __GNUC__
@@ -727,6 +821,12 @@ struct is_proto_enum<::ChangeSceneInfoPBComponent_eChangeGsType> : std::true_typ
 template <>
 inline const EnumDescriptor* GetEnumDescriptor<::ChangeSceneInfoPBComponent_eChangeGsType>() {
   return ::ChangeSceneInfoPBComponent_eChangeGsType_descriptor();
+}
+template <>
+struct is_proto_enum<::ChangeSceneInfoPBComponent_eChangeSceneState> : std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor<::ChangeSceneInfoPBComponent_eChangeSceneState>() {
+  return ::ChangeSceneInfoPBComponent_eChangeSceneState_descriptor();
 }
 
 }  // namespace protobuf
