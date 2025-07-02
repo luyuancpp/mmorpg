@@ -48,7 +48,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	}
 	LOG_INFO << "Player inserted into player list: " << playerId;
 
-	tls.registry.emplace_or_replace<PlayerSessionSnapshotPBComp>(playerEntity).set_gate_session_id(it->second.session_info().session_id());
+	tls.registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity).set_gate_session_id(it->second.session_info().session_id());
 	tls.registry.emplace<Player>(playerEntity);
 	tls.registry.emplace<Guid>(playerEntity, playerId);
 	tls.registry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
@@ -56,7 +56,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	PlayerChangeSceneUtil::InitChangeSceneQueue(playerEntity);
 	LOG_DEBUG << "Initialized change scene queue for player: " << playerId;
 
-	tls.registry.emplace<EnterGameNodeInfoPBComponent>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
+	tls.registry.emplace<PlayerEnterGameStatePbComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
 	PlayerSceneSystem::HandleLoginEnterScene(playerEntity);
 	LOG_INFO << "Player login enter scene handled: " << playerId;
@@ -72,7 +72,7 @@ void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
 {
 	LOG_INFO << "Processing player session state for entity: " << static_cast<uint32_t>(player);
 
-	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComponent>(player))
+	if (const auto* const enterGameFlag = tls.registry.try_get<PlayerEnterGameStatePbComp>(player))
 	{
 		LOG_DEBUG << "EnterGameNodeInfoPBComponent found with type: " << enterGameFlag->enter_gs_type();
 
@@ -85,7 +85,7 @@ void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
 			PlayerNodeSystem::HandlePlayerReconnection(player);
 		}
 
-		tls.registry.remove<EnterGameNodeInfoPBComponent>(player);
+		tls.registry.remove<PlayerEnterGameStatePbComp>(player);
 		LOG_DEBUG << "Removed EnterGameNodeInfoPBComponent from player";
 	}
 	else
@@ -96,7 +96,7 @@ void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
 
 void PlayerNodeSystem::HandlePlayerLogin(entt::entity playerEntity)
 {
-	const auto enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComponent>(playerEntity);
+	const auto enterGameFlag = tls.registry.try_get<PlayerEnterGameStatePbComp>(playerEntity);
 	if (!enterGameFlag)
 	{
 		LOG_WARN << "HandlePlayerLogin called but EnterGameNodeInfoPBComponent not found";
@@ -195,7 +195,7 @@ void PlayerNodeSystem::HandleAbnormalExit(Guid playerID)
 	FetchGlobalVariableTableOrReturnVoid(kGlobalVariable_Abnormal_logout);
 
 	LOG_DEBUG << "Starting abnormal logout timer for player: " << playerID;
-	tls.registry.emplace_or_replace<AbnormalExitTimer>(playerEntity).timer.RunAfter(globalVariableTable->todouble(), [playerID]() {
+	tls.registry.get_or_emplace<AbnormalExitTimer>(playerEntity).timer.RunAfter(globalVariableTable->todouble(), [playerID]() {
 		LOG_INFO << "Abnormal exit timeout reached for player: " << playerID;
 		Logout(playerID);
 		});

@@ -35,7 +35,7 @@ tls.globalRegistry.remove<TipInfoMessage>(GlobalEntity()); \
 { \
 auto err = fn(request); \
 if (err != kSuccess) { \
-tls.globalRegistry.emplace_or_replace<TipInfoMessage>(GlobalEntity()).set_id(err); \
+tls.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity()).set_id(err); \
 return; \
 } \
 }
@@ -44,7 +44,7 @@ return; \
 { \
 auto err = fn(player, request); \
 if (err != kSuccess) { \
-tls.globalRegistry.emplace_or_replace<TipInfoMessage>(GlobalEntity()).set_id(err); \
+tls.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity()).set_id(err); \
 return; \
 } \
 }

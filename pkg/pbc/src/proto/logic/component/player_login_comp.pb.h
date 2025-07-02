@@ -52,9 +52,9 @@ struct TableStruct_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto;
-class EnterGameNodeInfoPBComponent;
-struct EnterGameNodeInfoPBComponentDefaultTypeInternal;
-extern EnterGameNodeInfoPBComponentDefaultTypeInternal _EnterGameNodeInfoPBComponent_default_instance_;
+class PlayerEnterGameStatePbComp;
+struct PlayerEnterGameStatePbCompDefaultTypeInternal;
+extern PlayerEnterGameStatePbCompDefaultTypeInternal _PlayerEnterGameStatePbComp_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -101,32 +101,32 @@ inline bool EnterGsType_Parse(absl::string_view name, EnterGsType* value) {
 
 // -------------------------------------------------------------------
 
-class EnterGameNodeInfoPBComponent final
+class PlayerEnterGameStatePbComp final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:EnterGameNodeInfoPBComponent) */ {
+/* @@protoc_insertion_point(class_definition:PlayerEnterGameStatePbComp) */ {
  public:
-  inline EnterGameNodeInfoPBComponent() : EnterGameNodeInfoPBComponent(nullptr) {}
-  ~EnterGameNodeInfoPBComponent() PROTOBUF_FINAL;
+  inline PlayerEnterGameStatePbComp() : PlayerEnterGameStatePbComp(nullptr) {}
+  ~PlayerEnterGameStatePbComp() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(EnterGameNodeInfoPBComponent* msg, std::destroying_delete_t) {
+  void operator delete(PlayerEnterGameStatePbComp* msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(EnterGameNodeInfoPBComponent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerEnterGameStatePbComp));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR EnterGameNodeInfoPBComponent(
+  explicit PROTOBUF_CONSTEXPR PlayerEnterGameStatePbComp(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline EnterGameNodeInfoPBComponent(const EnterGameNodeInfoPBComponent& from) : EnterGameNodeInfoPBComponent(nullptr, from) {}
-  inline EnterGameNodeInfoPBComponent(EnterGameNodeInfoPBComponent&& from) noexcept
-      : EnterGameNodeInfoPBComponent(nullptr, std::move(from)) {}
-  inline EnterGameNodeInfoPBComponent& operator=(const EnterGameNodeInfoPBComponent& from) {
+  inline PlayerEnterGameStatePbComp(const PlayerEnterGameStatePbComp& from) : PlayerEnterGameStatePbComp(nullptr, from) {}
+  inline PlayerEnterGameStatePbComp(PlayerEnterGameStatePbComp&& from) noexcept
+      : PlayerEnterGameStatePbComp(nullptr, std::move(from)) {}
+  inline PlayerEnterGameStatePbComp& operator=(const PlayerEnterGameStatePbComp& from) {
     CopyFrom(from);
     return *this;
   }
-  inline EnterGameNodeInfoPBComponent& operator=(EnterGameNodeInfoPBComponent&& from) noexcept {
+  inline PlayerEnterGameStatePbComp& operator=(PlayerEnterGameStatePbComp&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -154,16 +154,16 @@ class EnterGameNodeInfoPBComponent final
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const EnterGameNodeInfoPBComponent& default_instance() {
+  static const PlayerEnterGameStatePbComp& default_instance() {
     return *internal_default_instance();
   }
-  static inline const EnterGameNodeInfoPBComponent* internal_default_instance() {
-    return reinterpret_cast<const EnterGameNodeInfoPBComponent*>(
-        &_EnterGameNodeInfoPBComponent_default_instance_);
+  static inline const PlayerEnterGameStatePbComp* internal_default_instance() {
+    return reinterpret_cast<const PlayerEnterGameStatePbComp*>(
+        &_PlayerEnterGameStatePbComp_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(EnterGameNodeInfoPBComponent& a, EnterGameNodeInfoPBComponent& b) { a.Swap(&b); }
-  inline void Swap(EnterGameNodeInfoPBComponent* other) {
+  friend void swap(PlayerEnterGameStatePbComp& a, PlayerEnterGameStatePbComp& b) { a.Swap(&b); }
+  inline void Swap(PlayerEnterGameStatePbComp* other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -171,7 +171,7 @@ class EnterGameNodeInfoPBComponent final
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(EnterGameNodeInfoPBComponent* other) {
+  void UnsafeArenaSwap(PlayerEnterGameStatePbComp* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -179,13 +179,13 @@ class EnterGameNodeInfoPBComponent final
 
   // implements Message ----------------------------------------------
 
-  EnterGameNodeInfoPBComponent* New(::google::protobuf::Arena* arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<EnterGameNodeInfoPBComponent>(arena);
+  PlayerEnterGameStatePbComp* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerEnterGameStatePbComp>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const EnterGameNodeInfoPBComponent& from);
+  void CopyFrom(const PlayerEnterGameStatePbComp& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const EnterGameNodeInfoPBComponent& from) { EnterGameNodeInfoPBComponent::MergeImpl(*this, from); }
+  void MergeFrom(const PlayerEnterGameStatePbComp& from) { PlayerEnterGameStatePbComp::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -222,18 +222,18 @@ class EnterGameNodeInfoPBComponent final
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(EnterGameNodeInfoPBComponent* other);
+  void InternalSwap(PlayerEnterGameStatePbComp* other);
  private:
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "EnterGameNodeInfoPBComponent"; }
+  static ::absl::string_view FullMessageName() { return "PlayerEnterGameStatePbComp"; }
 
  protected:
-  explicit EnterGameNodeInfoPBComponent(::google::protobuf::Arena* arena);
-  EnterGameNodeInfoPBComponent(::google::protobuf::Arena* arena, const EnterGameNodeInfoPBComponent& from);
-  EnterGameNodeInfoPBComponent(::google::protobuf::Arena* arena, EnterGameNodeInfoPBComponent&& from) noexcept
-      : EnterGameNodeInfoPBComponent(arena) {
+  explicit PlayerEnterGameStatePbComp(::google::protobuf::Arena* arena);
+  PlayerEnterGameStatePbComp(::google::protobuf::Arena* arena, const PlayerEnterGameStatePbComp& from);
+  PlayerEnterGameStatePbComp(::google::protobuf::Arena* arena, PlayerEnterGameStatePbComp&& from) noexcept
+      : PlayerEnterGameStatePbComp(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
@@ -260,7 +260,7 @@ class EnterGameNodeInfoPBComponent final
   void _internal_set_enter_gs_type(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:EnterGameNodeInfoPBComponent)
+  // @@protoc_insertion_point(class_scope:PlayerEnterGameStatePbComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -282,7 +282,7 @@ class EnterGameNodeInfoPBComponent final
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
-                          const EnterGameNodeInfoPBComponent& from_msg);
+                          const PlayerEnterGameStatePbComp& from_msg);
     ::uint32_t enter_gs_type_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -305,26 +305,26 @@ class EnterGameNodeInfoPBComponent final
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// EnterGameNodeInfoPBComponent
+// PlayerEnterGameStatePbComp
 
 // uint32 enter_gs_type = 1;
-inline void EnterGameNodeInfoPBComponent::clear_enter_gs_type() {
+inline void PlayerEnterGameStatePbComp::clear_enter_gs_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enter_gs_type_ = 0u;
 }
-inline ::uint32_t EnterGameNodeInfoPBComponent::enter_gs_type() const {
-  // @@protoc_insertion_point(field_get:EnterGameNodeInfoPBComponent.enter_gs_type)
+inline ::uint32_t PlayerEnterGameStatePbComp::enter_gs_type() const {
+  // @@protoc_insertion_point(field_get:PlayerEnterGameStatePbComp.enter_gs_type)
   return _internal_enter_gs_type();
 }
-inline void EnterGameNodeInfoPBComponent::set_enter_gs_type(::uint32_t value) {
+inline void PlayerEnterGameStatePbComp::set_enter_gs_type(::uint32_t value) {
   _internal_set_enter_gs_type(value);
-  // @@protoc_insertion_point(field_set:EnterGameNodeInfoPBComponent.enter_gs_type)
+  // @@protoc_insertion_point(field_set:PlayerEnterGameStatePbComp.enter_gs_type)
 }
-inline ::uint32_t EnterGameNodeInfoPBComponent::_internal_enter_gs_type() const {
+inline ::uint32_t PlayerEnterGameStatePbComp::_internal_enter_gs_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.enter_gs_type_;
 }
-inline void EnterGameNodeInfoPBComponent::_internal_set_enter_gs_type(::uint32_t value) {
+inline void PlayerEnterGameStatePbComp::_internal_set_enter_gs_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enter_gs_type_ = value;
 }

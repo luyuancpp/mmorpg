@@ -581,7 +581,7 @@ TEST(MissionsComponent, AbandonMission)
 	EXPECT_EQ(1, typeMissions.find(static_cast<uint32_t>(eCondtionType::kConditionKillMonster))->second.size());
 
 	// Set mission as rewardable
-	tls.registry.emplace_or_replace<RewardListPBComponent>(playerEntity).mutable_can_reward_mission_id()->insert({ missionId, true });
+	tls.registry.get_or_emplace<RewardListPBComponent>(playerEntity).mutable_can_reward_mission_id()->insert({ missionId, true });
 
 	// Prepare abandon mission parameters
 	AbandonParam abandonParam;

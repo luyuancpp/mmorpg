@@ -235,7 +235,7 @@ void SkillSystem::HandleSkillRecovery(const entt::entity casterEntity, uint64_t 
 
 	FetchSkillTableOrReturnVoid(skillContentIt->second->skilltableid());
 
-	auto& recoveryTimer = tls.registry.emplace_or_replace<RecoveryTimerComp>(casterEntity).timer;
+	auto& recoveryTimer = tls.registry.get_or_emplace<RecoveryTimerComp>(casterEntity).timer;
 	recoveryTimer.RunAfter(skillTable->recoverytime(), [casterEntity, skillId] {
 		return HandleSkillFinish(casterEntity, skillId);
 		});
@@ -273,12 +273,12 @@ void SkillSystem::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t sk
 
 	HandleSkillSpell(casterEntity, skillId);
 
-	auto& channelFinishTimer = tls.registry.emplace_or_replace<ChannelFinishTimerComp>(casterEntity).timer;
+	auto& channelFinishTimer = tls.registry.get_or_emplace<ChannelFinishTimerComp>(casterEntity).timer;
 	channelFinishTimer.RunAfter(skillTable->channelfinish(), [casterEntity, skillId] {
 		return HandleChannelFinish(casterEntity, skillId);
 		});
 
-	auto& channelIntervalTimer = tls.registry.emplace_or_replace<ChannelIntervalTimerComp>(casterEntity).timer;
+	auto& channelIntervalTimer = tls.registry.get_or_emplace<ChannelIntervalTimerComp>(casterEntity).timer;
 	channelIntervalTimer.RunEvery(skillTable->channelthink(), [casterEntity, skillId] {
 		return HandleChannelThink(casterEntity, skillId);
 		});
@@ -465,7 +465,7 @@ void SkillSystem::BroadcastSkillUsedMessage(const entt::entity casterEntity, con
 }
 
 void SkillSystem::SetupCastingTimer(entt::entity casterEntity, const SkillTable* skillTable, uint64_t skillId) {
-	auto& castingTimer = tls.registry.emplace_or_replace<CastingTimerComp>(casterEntity).timer;
+	auto& castingTimer = tls.registry.get_or_emplace<CastingTimerComp>(casterEntity).timer;
 	if (IsSkillOfType(skillTable->id(), kGeneralSkill)) {
 		castingTimer.RunAfter(skillTable->castpoint(), [casterEntity, skillId] {
 			return HandleGeneralSkillSpell(casterEntity, skillId);

@@ -163,7 +163,7 @@ void TestScenario() {
         tls.registry.destroy(entity);
 
         auto entity = tls.registry.create();
-        auto& t = tls.registry.emplace_or_replace<CastingTimerCompTest>(entity);
+        auto& t = tls.registry.get_or_emplace<CastingTimerCompTest>(entity);
 
         };
 
