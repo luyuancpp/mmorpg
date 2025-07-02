@@ -229,28 +229,26 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 			PlayerTipSystem::SendToPlayer(player, kLoginBeKickByAnOtherAccount, {});
 
 			auto oldSessionId = playerSessionSnapshotPB->gate_session_id();
-
 			defer(tlsSessions.erase(oldSessionId));
 
 			KickSessionRequest message;
-			message.set_session_id(sessionId);
-			SendMessageToGateById(GateKickSessionByCentreMessageId, message, GetGateNodeId(playerSessionSnapshotPB->gate_session_id()));
+			message.set_session_id(oldSessionId);
+			SendMessageToGateById(GateKickSessionByCentreMessageId, message, GetGateNodeId(oldSessionId));
 
 			playerSessionSnapshotPB->set_gate_session_id(sessionId);
 		}
 		else
 		{
 			LOG_INFO << "Existing player login: Player ID " << clientMsgBody.player_id();
-			tls.registry.emplace_or_replace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(sessionId);
+			tls.registry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(sessionId);
 		}
 
 		//连续顶几次,所以用emplace_or_replace
-		LOG_INFO << "Player login type: " << (tls.registry.any_of<EnterGameNodeInfoPBComponent>(player) ? "Replace" : "New");
+		LOG_INFO << "Player login type: " << (tls.registry.any_of<PlayerEnterGameStatePbComp>(player) ? "Replace" : "New");
 
-		// Register player to gate node
-		tls.registry.emplace_or_replace<EnterGameNodeInfoPBComponent>(player).set_enter_gs_type(LOGIN_REPLACE);
+		tls.registry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_REPLACE);
+
 		PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
-
 		PlayerNodeSystem::ProcessPlayerSessionState(player);
 	}
 

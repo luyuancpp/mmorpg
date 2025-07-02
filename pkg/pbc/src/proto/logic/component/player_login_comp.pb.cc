@@ -25,13 +25,13 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr EnterGameNodeInfoPBComponent::Impl_::Impl_(
+inline constexpr PlayerEnterGameStatePbComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : enter_gs_type_{0u},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR EnterGameNodeInfoPBComponent::EnterGameNodeInfoPBComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR PlayerEnterGameStatePbComp::PlayerEnterGameStatePbComp(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
@@ -39,16 +39,16 @@ PROTOBUF_CONSTEXPR EnterGameNodeInfoPBComponent::EnterGameNodeInfoPBComponent(::
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct EnterGameNodeInfoPBComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR EnterGameNodeInfoPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~EnterGameNodeInfoPBComponentDefaultTypeInternal() {}
+struct PlayerEnterGameStatePbCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerEnterGameStatePbCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerEnterGameStatePbCompDefaultTypeInternal() {}
   union {
-    EnterGameNodeInfoPBComponent _instance;
+    PlayerEnterGameStatePbComp _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnterGameNodeInfoPBComponentDefaultTypeInternal _EnterGameNodeInfoPBComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerEnterGameStatePbCompDefaultTypeInternal _PlayerEnterGameStatePbComp_default_instance_;
 static const ::_pb::EnumDescriptor* file_level_enum_descriptors_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto[1];
 static constexpr const ::_pb::ServiceDescriptor**
     file_level_service_descriptors_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto = nullptr;
@@ -56,37 +56,37 @@ const ::uint32_t
     TableStruct_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::EnterGameNodeInfoPBComponent, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::PlayerEnterGameStatePbComp, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::EnterGameNodeInfoPBComponent, _impl_.enter_gs_type_),
+        PROTOBUF_FIELD_OFFSET(::PlayerEnterGameStatePbComp, _impl_.enter_gs_type_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::EnterGameNodeInfoPBComponent)},
+        {0, -1, -1, sizeof(::PlayerEnterGameStatePbComp)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_EnterGameNodeInfoPBComponent_default_instance_._instance,
+    &::_PlayerEnterGameStatePbComp_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n-proto/logic/component/player_login_com"
-    "p.proto\"5\n\034EnterGameNodeInfoPBComponent\022"
-    "\025\n\renter_gs_type\030\001 \001(\r*V\n\013EnterGsType\022\016\n"
-    "\nLOGIN_NONE\020\000\022\017\n\013LOGIN_FIRST\020\001\022\021\n\rLOGIN_"
-    "REPLACE\020\002\022\023\n\017LOGIN_RECONNECT\020\003B\tZ\007pb/gam"
-    "eb\006proto3"
+    "p.proto\"3\n\032PlayerEnterGameStatePbComp\022\025\n"
+    "\renter_gs_type\030\001 \001(\r*V\n\013EnterGsType\022\016\n\nL"
+    "OGIN_NONE\020\000\022\017\n\013LOGIN_FIRST\020\001\022\021\n\rLOGIN_RE"
+    "PLACE\020\002\022\023\n\017LOGIN_RECONNECT\020\003B\tZ\007pb/gameb"
+    "\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto = {
     false,
     false,
-    209,
+    207,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto,
     "proto/logic/component/player_login_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto_once,
@@ -110,81 +110,81 @@ bool EnterGsType_IsValid(int value) {
 }
 // ===================================================================
 
-class EnterGameNodeInfoPBComponent::_Internal {
+class PlayerEnterGameStatePbComp::_Internal {
  public:
 };
 
-EnterGameNodeInfoPBComponent::EnterGameNodeInfoPBComponent(::google::protobuf::Arena* arena)
+PlayerEnterGameStatePbComp::PlayerEnterGameStatePbComp(::google::protobuf::Arena* arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(arena, _class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:EnterGameNodeInfoPBComponent)
+  // @@protoc_insertion_point(arena_constructor:PlayerEnterGameStatePbComp)
 }
-EnterGameNodeInfoPBComponent::EnterGameNodeInfoPBComponent(
-    ::google::protobuf::Arena* arena, const EnterGameNodeInfoPBComponent& from)
-    : EnterGameNodeInfoPBComponent(arena) {
+PlayerEnterGameStatePbComp::PlayerEnterGameStatePbComp(
+    ::google::protobuf::Arena* arena, const PlayerEnterGameStatePbComp& from)
+    : PlayerEnterGameStatePbComp(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE EnterGameNodeInfoPBComponent::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE PlayerEnterGameStatePbComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void EnterGameNodeInfoPBComponent::SharedCtor(::_pb::Arena* arena) {
+inline void PlayerEnterGameStatePbComp::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.enter_gs_type_ = {};
 }
-EnterGameNodeInfoPBComponent::~EnterGameNodeInfoPBComponent() {
-  // @@protoc_insertion_point(destructor:EnterGameNodeInfoPBComponent)
+PlayerEnterGameStatePbComp::~PlayerEnterGameStatePbComp() {
+  // @@protoc_insertion_point(destructor:PlayerEnterGameStatePbComp)
   SharedDtor(*this);
 }
-inline void EnterGameNodeInfoPBComponent::SharedDtor(MessageLite& self) {
-  EnterGameNodeInfoPBComponent& this_ = static_cast<EnterGameNodeInfoPBComponent&>(self);
+inline void PlayerEnterGameStatePbComp::SharedDtor(MessageLite& self) {
+  PlayerEnterGameStatePbComp& this_ = static_cast<PlayerEnterGameStatePbComp&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* EnterGameNodeInfoPBComponent::PlacementNew_(const void*, void* mem,
+inline void* PlayerEnterGameStatePbComp::PlacementNew_(const void*, void* mem,
                                         ::google::protobuf::Arena* arena) {
-  return ::new (mem) EnterGameNodeInfoPBComponent(arena);
+  return ::new (mem) PlayerEnterGameStatePbComp(arena);
 }
-constexpr auto EnterGameNodeInfoPBComponent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(EnterGameNodeInfoPBComponent),
-                                            alignof(EnterGameNodeInfoPBComponent));
+constexpr auto PlayerEnterGameStatePbComp::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(PlayerEnterGameStatePbComp),
+                                            alignof(PlayerEnterGameStatePbComp));
 }
 PROTOBUF_CONSTINIT
 PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::google::protobuf::internal::ClassDataFull EnterGameNodeInfoPBComponent::_class_data_ = {
+const ::google::protobuf::internal::ClassDataFull PlayerEnterGameStatePbComp::_class_data_ = {
     ::google::protobuf::internal::ClassData{
-        &_EnterGameNodeInfoPBComponent_default_instance_._instance,
+        &_PlayerEnterGameStatePbComp_default_instance_._instance,
         &_table_.header,
         nullptr,  // OnDemandRegisterArenaDtor
         nullptr,  // IsInitialized
-        &EnterGameNodeInfoPBComponent::MergeImpl,
-        ::google::protobuf::Message::GetNewImpl<EnterGameNodeInfoPBComponent>(),
+        &PlayerEnterGameStatePbComp::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<PlayerEnterGameStatePbComp>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-        &EnterGameNodeInfoPBComponent::SharedDtor,
-        ::google::protobuf::Message::GetClearImpl<EnterGameNodeInfoPBComponent>(), &EnterGameNodeInfoPBComponent::ByteSizeLong,
-            &EnterGameNodeInfoPBComponent::_InternalSerialize,
+        &PlayerEnterGameStatePbComp::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<PlayerEnterGameStatePbComp>(), &PlayerEnterGameStatePbComp::ByteSizeLong,
+            &PlayerEnterGameStatePbComp::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-        PROTOBUF_FIELD_OFFSET(EnterGameNodeInfoPBComponent, _impl_._cached_size_),
+        PROTOBUF_FIELD_OFFSET(PlayerEnterGameStatePbComp, _impl_._cached_size_),
         false,
     },
-    &EnterGameNodeInfoPBComponent::kDescriptorMethods,
+    &PlayerEnterGameStatePbComp::kDescriptorMethods,
     &descriptor_table_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto,
     nullptr,  // tracker
 };
-const ::google::protobuf::internal::ClassData* EnterGameNodeInfoPBComponent::GetClassData() const {
+const ::google::protobuf::internal::ClassData* PlayerEnterGameStatePbComp::GetClassData() const {
   ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
   ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> EnterGameNodeInfoPBComponent::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerEnterGameStatePbComp::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -199,17 +199,17 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> EnterGameNodeInfoPBComponent::_table_ 
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::EnterGameNodeInfoPBComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::PlayerEnterGameStatePbComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint32 enter_gs_type = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(EnterGameNodeInfoPBComponent, _impl_.enter_gs_type_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(EnterGameNodeInfoPBComponent, _impl_.enter_gs_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerEnterGameStatePbComp, _impl_.enter_gs_type_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerEnterGameStatePbComp, _impl_.enter_gs_type_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 enter_gs_type = 1;
-    {PROTOBUF_FIELD_OFFSET(EnterGameNodeInfoPBComponent, _impl_.enter_gs_type_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(PlayerEnterGameStatePbComp, _impl_.enter_gs_type_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
@@ -217,8 +217,8 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> EnterGameNodeInfoPBComponent::_table_ 
   }},
 };
 
-PROTOBUF_NOINLINE void EnterGameNodeInfoPBComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:EnterGameNodeInfoPBComponent)
+PROTOBUF_NOINLINE void PlayerEnterGameStatePbComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:PlayerEnterGameStatePbComp)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -229,17 +229,17 @@ PROTOBUF_NOINLINE void EnterGameNodeInfoPBComponent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-        ::uint8_t* EnterGameNodeInfoPBComponent::_InternalSerialize(
+        ::uint8_t* PlayerEnterGameStatePbComp::_InternalSerialize(
             const MessageLite& base, ::uint8_t* target,
             ::google::protobuf::io::EpsCopyOutputStream* stream) {
-          const EnterGameNodeInfoPBComponent& this_ = static_cast<const EnterGameNodeInfoPBComponent&>(base);
+          const PlayerEnterGameStatePbComp& this_ = static_cast<const PlayerEnterGameStatePbComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-        ::uint8_t* EnterGameNodeInfoPBComponent::_InternalSerialize(
+        ::uint8_t* PlayerEnterGameStatePbComp::_InternalSerialize(
             ::uint8_t* target,
             ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-          const EnterGameNodeInfoPBComponent& this_ = *this;
+          const PlayerEnterGameStatePbComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:EnterGameNodeInfoPBComponent)
+          // @@protoc_insertion_point(serialize_to_array_start:PlayerEnterGameStatePbComp)
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
 
@@ -255,18 +255,18 @@ PROTOBUF_NOINLINE void EnterGameNodeInfoPBComponent::Clear() {
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
                     this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
           }
-          // @@protoc_insertion_point(serialize_to_array_end:EnterGameNodeInfoPBComponent)
+          // @@protoc_insertion_point(serialize_to_array_end:PlayerEnterGameStatePbComp)
           return target;
         }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-        ::size_t EnterGameNodeInfoPBComponent::ByteSizeLong(const MessageLite& base) {
-          const EnterGameNodeInfoPBComponent& this_ = static_cast<const EnterGameNodeInfoPBComponent&>(base);
+        ::size_t PlayerEnterGameStatePbComp::ByteSizeLong(const MessageLite& base) {
+          const PlayerEnterGameStatePbComp& this_ = static_cast<const PlayerEnterGameStatePbComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-        ::size_t EnterGameNodeInfoPBComponent::ByteSizeLong() const {
-          const EnterGameNodeInfoPBComponent& this_ = *this;
+        ::size_t PlayerEnterGameStatePbComp::ByteSizeLong() const {
+          const PlayerEnterGameStatePbComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:EnterGameNodeInfoPBComponent)
+          // @@protoc_insertion_point(message_byte_size_start:PlayerEnterGameStatePbComp)
           ::size_t total_size = 0;
 
           ::uint32_t cached_has_bits = 0;
@@ -284,10 +284,10 @@ PROTOBUF_NOINLINE void EnterGameNodeInfoPBComponent::Clear() {
                                                      &this_._impl_._cached_size_);
         }
 
-void EnterGameNodeInfoPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<EnterGameNodeInfoPBComponent*>(&to_msg);
-  auto& from = static_cast<const EnterGameNodeInfoPBComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:EnterGameNodeInfoPBComponent)
+void PlayerEnterGameStatePbComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerEnterGameStatePbComp*>(&to_msg);
+  auto& from = static_cast<const PlayerEnterGameStatePbComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerEnterGameStatePbComp)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -298,21 +298,21 @@ void EnterGameNodeInfoPBComponent::MergeImpl(::google::protobuf::MessageLite& to
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void EnterGameNodeInfoPBComponent::CopyFrom(const EnterGameNodeInfoPBComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:EnterGameNodeInfoPBComponent)
+void PlayerEnterGameStatePbComp::CopyFrom(const PlayerEnterGameStatePbComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:PlayerEnterGameStatePbComp)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void EnterGameNodeInfoPBComponent::InternalSwap(EnterGameNodeInfoPBComponent* PROTOBUF_RESTRICT other) {
+void PlayerEnterGameStatePbComp::InternalSwap(PlayerEnterGameStatePbComp* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
         swap(_impl_.enter_gs_type_, other->_impl_.enter_gs_type_);
 }
 
-::google::protobuf::Metadata EnterGameNodeInfoPBComponent::GetMetadata() const {
+::google::protobuf::Metadata PlayerEnterGameStatePbComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)
