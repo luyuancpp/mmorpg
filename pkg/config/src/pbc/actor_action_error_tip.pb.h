@@ -56,7 +56,7 @@ namespace protobuf {
 
 enum actor_action_error : int {
   kActor_action_errorOK = 0,
-  kActorActionStateActionCannotBePerformedWhileInTeamFollowMode = 103,
+  kActorActionStateActionCannotBePerformedWhileInTeamFollowMode = 118,
   actor_action_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   actor_action_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -66,8 +66,8 @@ enum actor_action_error : int {
 bool actor_action_error_IsValid(int value);
 extern const uint32_t actor_action_error_internal_data_[];
 constexpr actor_action_error actor_action_error_MIN = static_cast<actor_action_error>(0);
-constexpr actor_action_error actor_action_error_MAX = static_cast<actor_action_error>(103);
-constexpr int actor_action_error_ARRAYSIZE = 103 + 1;
+constexpr actor_action_error actor_action_error_MAX = static_cast<actor_action_error>(118);
+constexpr int actor_action_error_ARRAYSIZE = 118 + 1;
 const ::google::protobuf::EnumDescriptor*
 actor_action_error_descriptor();
 template <typename T>

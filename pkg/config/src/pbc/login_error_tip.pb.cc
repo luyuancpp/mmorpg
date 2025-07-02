@@ -34,23 +34,23 @@ const char descriptor_table_protodef_login_5ferror_5ftip_2eproto[] ABSL_ATTRIBUT
     protodesc_cold) = {
     "\n\025login_error_tip.proto*\315\005\n\013login_error\022"
     "\022\n\016kLogin_errorOK\020\000\022\031\n\025kLoginAccountNotF"
-    "ound\020\013\022\033\n\027kLoginAccountPlayerFull\020\014\022#\n\037k"
-    "LoginCreatePlayerUnLoadAccount\020\r\022-\n)kLog"
-    "inCreatePlayerConnectionHasNotAccount\020\016\022"
-    "\021\n\rkLoginUnLogin\020\017\022\024\n\020kLoginInProgress\020\020"
-    "\022\031\n\025kLoginPlayerGuidError\020\021\022\026\n\022kLoginEnt"
-    "eringGame\020\022\022\021\n\rkLoginPlaying\020\023\022\030\n\024kLogin"
-    "CreatingPlayer\020\024\022\032\n\026kLoginWaitingEnterGa"
-    "me\020\025\022\027\n\023kLoginEnterGameGuid\020\026\022\032\n\026kLoginA"
-    "ccountNameEmpty\020\027\022&\n\"kLoginCreateConnect"
-    "ionAccountEmpty\020\030\022)\n%kLoginEnterGameConn"
-    "ectionAccountEmpty\020\031\022\026\n\022kLoginUnknownErr"
-    "or\020\032\022\033\n\027kLoginSessionDisconnect\020\033\022 \n\034kLo"
-    "ginBeKickByAnOtherAccount\020\034\022\033\n\027kLoginSes"
-    "sionIdNotFound\020\035\022\023\n\017kLoginFsmFailed\020o\022\035\n"
-    "\031kLoginDataSerializeFailed\020p\022\024\n\020kLoginRe"
-    "disError\020q\022\031\n\025kLoginDataParseFailed\020r\022\030\n"
-    "\024kLoginRedisSetFailed\020sB\tZ\007pb/gameb\006prot"
+    "ound\020\024\022\033\n\027kLoginAccountPlayerFull\020\025\022#\n\037k"
+    "LoginCreatePlayerUnLoadAccount\020\026\022-\n)kLog"
+    "inCreatePlayerConnectionHasNotAccount\020\027\022"
+    "\021\n\rkLoginUnLogin\020\030\022\024\n\020kLoginInProgress\020\031"
+    "\022\031\n\025kLoginPlayerGuidError\020\032\022\026\n\022kLoginEnt"
+    "eringGame\020\033\022\021\n\rkLoginPlaying\020\034\022\030\n\024kLogin"
+    "CreatingPlayer\020\035\022\032\n\026kLoginWaitingEnterGa"
+    "me\020\036\022\027\n\023kLoginEnterGameGuid\020\037\022\032\n\026kLoginA"
+    "ccountNameEmpty\020 \022&\n\"kLoginCreateConnect"
+    "ionAccountEmpty\020!\022)\n%kLoginEnterGameConn"
+    "ectionAccountEmpty\020\"\022\026\n\022kLoginUnknownErr"
+    "or\020#\022\033\n\027kLoginSessionDisconnect\020$\022 \n\034kLo"
+    "ginBeKickByAnOtherAccount\020%\022\033\n\027kLoginSes"
+    "sionIdNotFound\020&\022\023\n\017kLoginFsmFailed\020\'\022\035\n"
+    "\031kLoginDataSerializeFailed\020(\022\024\n\020kLoginRe"
+    "disError\020)\022\031\n\025kLoginDataParseFailed\020*\022\030\n"
+    "\024kLoginRedisSetFailed\020+B\tZ\007pb/gameb\006prot"
     "o3"
 };
 static ::absl::once_flag descriptor_table_login_5ferror_5ftip_2eproto_once;
@@ -75,9 +75,9 @@ const ::google::protobuf::EnumDescriptor* login_error_descriptor() {
   return file_level_enum_descriptors_login_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t login_error_internal_data_[] = {
-    65536u, 128u, 536869888u, 0u, 0u, 507904u, };
+    65536u, 64u, 4294443008u, 2047u, };
 bool login_error_IsValid(int value) {
-  return ::_pbi::ValidateEnum(value, login_error_internal_data_);
+  return 0 <= value && value <= 43 && ((17592184995841u >> value) & 1) != 0;
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

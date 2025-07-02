@@ -3,8 +3,6 @@
 
 #include "scene/comp/scene_comp.h"
 #include "thread_local/storage.h"
-
-#include "cpp_table_id_constants_name/globalvariable_table_id_constants.h"
 #include "game_common_logic/system/session_system.h"
 #include "network/message_system.h"
 #include "player/comp/player_comp.h"
@@ -17,7 +15,6 @@
 #include "service_info/game_player_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
-#include "thread_local/storage_centre.h"
 #include "thread_local/storage_common_logic.h"
 #include "util/defer.h"
 #include "proto/common/node.pb.h"
@@ -29,24 +26,20 @@
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
 {
 	LOG_INFO << "Handling async load for player: " << playerId;
+	assert(GlobalPlayerList().find(playerId) == GlobalPlayerList().end());
 
 	auto playerEntity = tls.registry.create();
-	LOG_DEBUG << "Created player entity: " << static_cast<uint32_t>(playerEntity);
-
-	if (const auto [first, success] = tlsCommonLogic.GetPlayerList().emplace(playerId, playerEntity); !success)
+	if (const auto [first, success] = GlobalPlayerList().emplace(playerId, playerEntity); !success)
 	{
 		LOG_ERROR << "Error emplacing player in player list: " << playerId;
 		return;
 	}
-	LOG_INFO << "Player inserted into player list: " << playerId;
 
 	tls.registry.emplace<Player>(playerEntity);
 	tls.registry.emplace<Guid>(playerEntity, playerId);
 	tls.registry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
 
 	PlayerChangeSceneUtil::InitChangeSceneQueue(playerEntity);
-	LOG_DEBUG << "Initialized change scene queue for player: " << playerId;
-
 	tls.registry.emplace<PlayerEnterGameStatePbComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
 	PlayerSceneSystem::HandleLoginEnterScene(playerEntity);

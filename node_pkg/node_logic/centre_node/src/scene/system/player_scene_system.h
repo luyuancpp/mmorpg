@@ -4,6 +4,8 @@
 
 #include "type_define/type_define.h"
 
+class PlayerSceneContextPBComponent;
+
 class PlayerSceneSystem
 {
 public:
@@ -12,6 +14,9 @@ public:
     static void ProcessPlayerEnterSceneNode(entt::entity player, NodeId node_id);
     static void AttemptEnterNextScene(entt::entity player);
     static uint32_t GetDefaultSceneConfigurationId();
+    static entt::entity FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext);
+    static void ProcessEnterGameNode(entt::entity playerEntity, entt::entity sceneEntity);
+    static void PushInitialChangeSceneInfo(entt::entity playerEntity, entt::entity sceneEntity);
 };
 
 
