@@ -276,7 +276,7 @@ uint32_t PlayerSceneSystem::GetDefaultSceneConfigurationId()
 
 void PlayerSceneSystem::ProcessEnterGameNode(entt::entity playerEntity, entt::entity sceneEntity)
 {
-	const auto nodeId = SceneUtil::GetGameNodeId(sceneEntity);
+	const auto nodeId = SceneUtil::GetGameNodeIdFromSceneEntity(sceneEntity);
 	ProcessPlayerEnterSceneNode(playerEntity, nodeId);
 }
 

@@ -9,7 +9,7 @@ struct EnterSceneParam
 {
     inline bool CheckValid() const
     {
-        return scene == entt::null || enter == entt::null;
+        return scene != entt::null && enter != entt::null;
     }
 
     entt::entity scene{ entt::null };
@@ -20,7 +20,7 @@ struct EnterDefaultSceneParam
 {
     inline bool CheckValid() const
     {
-        return enter == entt::null;
+        return enter != entt::null;
     }
 
     entt::entity enter{ entt::null };
@@ -30,7 +30,7 @@ struct LeaveSceneParam
 {
     inline bool CheckValid() const
     {
-        return leaver == entt::null;
+        return leaver != entt::null;
     }
 
     entt::entity leaver{ entt::null };
@@ -40,7 +40,7 @@ struct CreateGameNodeSceneParam
 {
     inline bool CheckValid() const
     {
-        return node == entt::null;
+        return node != entt::null;
     }
 
     entt::entity node{ entt::null };
@@ -51,7 +51,7 @@ struct DestroySceneParam
 {
     inline bool CheckValid() const
     {
-        return node == entt::null || scene == entt::null;
+        return node != entt::null && scene != entt::null;
     }
 
     entt::entity node{ entt::null };
@@ -80,14 +80,14 @@ public:
      * @param scene_id The scene ID to convert.
      * @return The corresponding Game Node ID.
      */
-    static NodeId GetGameNodeId(uint64_t scene_id);
+    static NodeId GetGameNodeIdFromGuid(uint64_t scene_id);
 
     /**
      * @brief GetGameNodeId retrieves the Game Node ID associated with a scene entity.
      * @param scene The entity ID of the scene.
      * @return The Game Node ID.
      */
-    static NodeId GetGameNodeId(entt::entity scene);
+    static NodeId GetGameNodeIdFromSceneEntity(entt::entity scene);
 
     /**
      * @brief get_game_node_eid retrieves the entity ID of a game node based on its scene ID.
