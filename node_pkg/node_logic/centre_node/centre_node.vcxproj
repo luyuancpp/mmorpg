@@ -182,7 +182,6 @@
     <ClInclude Include="src\scene\system\player_change_scene_system.h" />
     <ClInclude Include="src\scene\system\player_scene_system.h" />
     <ClInclude Include="src\thread_local\storage_centre.h" />
-    <ClInclude Include="src\type_alias\player_loading.h" />
     <ClInclude Include="src\type_alias\player_redis.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

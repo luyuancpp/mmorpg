@@ -27,14 +27,13 @@
 #include "service_info/gate_service_service_info.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_common_logic.h"
-#include "type_alias/player_loading.h"
-#include "type_alias/player_redis.h"
 #include "type_alias/player_session_type_alias.h"
 #include "util/defer.h"
 #include "util/proto_field_checker.h"
 #include "util/stacktrace_system.h"
 #include "player/system/player_tip_system.h"
 #include "service_info/centre_player_scene_service_info.h"
+#include "type_alias/player_redis.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -209,19 +208,18 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	auto it = playerList.find(playerId);
 
 	if (it == playerList.end()) {
-		// 玩家未登录过，首次加载
-		tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity()).emplace(playerId, *request);
+		// 玩家未登录过，首次加载,底层已经判断重复加载
 		tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(playerId);
 	}
 	else {
 		auto player = it->second;
-
+		
 		//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 		//顶号的时候已经在场景里面了,不用再进入场景了
 		//todo换场景的过程中被顶了
 		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 		//区分顶号和断线重连
-		
+
 		// 清除旧 session
 		auto* sessionComp = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
 		if (sessionComp) {
