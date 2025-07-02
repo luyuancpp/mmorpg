@@ -34,6 +34,8 @@ private:
 	// 确认玩家成功进入场景后的操作
 	static void OnEnterSceneOk(entt::entity player);
 
+	static void AdvanceSceneChangeState(entt::entity player);
+
 private:
 	// 玩家场景切换队列结构
 };

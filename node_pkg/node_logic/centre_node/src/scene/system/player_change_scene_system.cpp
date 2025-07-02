@@ -12,30 +12,24 @@
 // 添加切换场景信息到队列
 uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo) {
 	auto& changeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
-	if (changeSceneQueue.changeSceneQueue.full()) {
-		return kEnterSceneChangingGs;  // 进入场景切换中的游戏服务器
-	}
-	changeSceneQueue.changeSceneQueue.push_back(changeInfo);
-	changeSceneQueue.changeSceneQueue.back().set_change_time(TimeUtil::NowSecondsUTC());
+	changeSceneQueue.enqueue(changeInfo);
+	changeSceneQueue.front()->set_change_time(TimeUtil::NowSecondsUTC());
 	return kSuccess;
 }
 
 // 移除队列中首个切换场景信息
 void PlayerChangeSceneUtil::PopFrontChangeSceneQueue(entt::entity player) {
 	auto& changeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
-	if (changeSceneQueue.changeSceneQueue.empty()) {
-		return;
-	}
-	changeSceneQueue.changeSceneQueue.pop_front();
+	changeSceneQueue.dequeue();
 }
 
 // 设置当前切换场景信息的切换状态
 void PlayerChangeSceneUtil::SetChangeSceneNodeStatus(entt::entity player, ChangeSceneInfoPBComponent::eChangeGsStatus s) {
 	auto& changeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
-	if (changeSceneQueue.changeSceneQueue.empty()) {
+	if (changeSceneQueue.empty()) {
 		return;
 	}
-	changeSceneQueue.changeSceneQueue.front().set_change_gs_status(s);
+	changeSceneQueue.front()->set_change_gs_status(s);
 }
 
 // 将场景信息复制到切换场景信息中
@@ -49,16 +43,16 @@ void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent
 // 处理玩家的场景切换队列
 void PlayerChangeSceneUtil::ProcessChangeSceneQueue(entt::entity player) {
 	auto& getChangeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
-	auto& changeSceneQueue = getChangeSceneQueue.changeSceneQueue;
+	auto& changeSceneQueue = getChangeSceneQueue;
 	if (changeSceneQueue.empty()) {
 		return;
 	}
-	const auto& changeInfo = changeSceneQueue.front();
-	if (changeInfo.change_gs_type() == ChangeSceneInfoPBComponent::eSameGs) {
-		ProcessSameGsChangeScene(player, changeInfo);
+	const auto changeInfo = changeSceneQueue.front();
+	if (changeInfo->change_gs_type() == ChangeSceneInfoPBComponent::eSameGs) {
+		ProcessSameGsChangeScene(player, *changeInfo);
 	}
-	else if (changeInfo.change_gs_type() == ChangeSceneInfoPBComponent::eDifferentGs) {
-		ProcessDifferentGsChangeScene(player, changeInfo);
+	else if (changeInfo->change_gs_type() == ChangeSceneInfoPBComponent::eDifferentGs) {
+		ProcessDifferentGsChangeScene(player, *changeInfo);
 	}
 }
 
@@ -102,4 +96,72 @@ void PlayerChangeSceneUtil::OnEnterSceneOk(entt::entity player) {
 	S2CEnterScene ev;
 	ev.set_entity(entt::to_integral(player));
 	tls.dispatcher.trigger(ev);
+}
+
+enum ChangeSceneState : uint32_t {
+	PendingLeave,
+	Leaving,
+	WaitingEnter,
+	EnterSucceed,
+	GateEnterSucceed,
+	Done
+};
+
+void PlayerChangeSceneUtil::AdvanceSceneChangeState(entt::entity player) {
+	auto& queue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	if (queue.empty()) return;
+
+	auto& task = *queue.front();
+	const auto& info = task;
+
+	switch (task.change_gs_status()) {
+	case ChangeSceneState::PendingLeave:
+		if (info.change_gs_type() == ChangeSceneInfoPBComponent::eSameGs) {
+			auto destScene = entt::entity{ info.guid() };
+			if (destScene == entt::null) {
+				queue.dequeue();
+				return;
+			}
+
+			SceneUtil::LeaveScene({ player });
+			SceneUtil::EnterScene({ destScene, player });
+			queue.dequeue();
+			OnEnterSceneOk(player);
+		}
+		else {
+			SceneUtil::LeaveScene({ player });
+
+			/*SimulateAsyncStore(player, [&]() {
+				task.state = ChangeSceneState::WaitingEnter;
+				LOG_INFO << "[SceneChange] Store complete for Player " << entt::to_integral(player);
+				});
+
+			task.state = ChangeSceneState::Leaving;*/
+		}
+		break;
+
+	case ChangeSceneState::WaitingEnter:
+		// 等待中心服务器或目标节点 RPC 通知我们切换完成
+		break;
+
+	case ChangeSceneState::EnterSucceed: {
+		auto destScene = entt::entity{ info.guid() };
+		if (destScene == entt::null) {
+			SceneUtil::EnterDefaultScene({ player });
+		}
+		else {
+			SceneUtil::EnterScene({ destScene, player });
+		}
+		/*task.state = ChangeSceneState::GateEnterSucceed;*/
+		break;
+	}
+
+	case ChangeSceneState::GateEnterSucceed:
+		queue.dequeue();
+		OnEnterSceneOk(player);
+		break;
+
+	default:
+		break;
+	}
 }

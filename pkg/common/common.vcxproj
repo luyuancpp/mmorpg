@@ -46,6 +46,7 @@
     <ClInclude Include="src\util\base64.h" />
     <ClInclude Include="src\util\consistent_hash_node.h" />
     <ClInclude Include="src\util\defer.h" />
+    <ClInclude Include="src\util\fast_queue.h" />
     <ClInclude Include="src\util\file2string.h" />
     <ClInclude Include="src\util\game_registry.h" />
     <ClInclude Include="src\util\network_utils.h" />

@@ -37,6 +37,7 @@
     <ClInclude Include="src\network\codec\message_response_dispatcher.h" />
     <ClInclude Include="src\util\base64.h" />
     <ClInclude Include="src\generator\util\gen_util.h" />
+    <ClInclude Include="src\util\fast_queue.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\network\game_rpc.pb.cc" />
