@@ -445,7 +445,8 @@ bool Node::IsSameNode(const NodeInfo& node, uint32_t zoneId, uint32_t nodeType, 
 {
 	return (node.zone_id() == zoneId &&
 		node.node_type() == nodeType &&
-		node.node_id() == nodeId);
+		node.node_id() == nodeId && 
+		node.lease_id() > 0);
 }
 
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
@@ -485,6 +486,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& valu
 	NodeInfo nodeInfo;
 	for (auto it = nodeList.begin(); it != nodeList.end(); ) {
 		if (IsSameNode(*it, zoneId, nodeType, nodeId)) {
+			it->clear_lease_id();
 			nodeInfo = *it; 
 			break;
 		}
@@ -843,7 +845,6 @@ void Node::StartServiceHealthMonitor(){
 			return;
 		}
 		RequestEtcdLease();
-		serviceHealthMonitorTimer.Cancel();
 		}
 	);
 }
