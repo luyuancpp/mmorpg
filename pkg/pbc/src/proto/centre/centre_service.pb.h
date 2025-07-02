@@ -20,7 +20,6 @@
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/arena.h"
 #include "google/protobuf/arenastring.h"
-#include "google/protobuf/generated_message_bases.h"
 #include "google/protobuf/generated_message_tctable_decl.h"
 #include "google/protobuf/generated_message_util.h"
 #include "google/protobuf/metadata_lite.h"
@@ -91,152 +90,6 @@ namespace protobuf {
 // ===================================================================
 
 
-// -------------------------------------------------------------------
-
-class LoginNodeLeaveGameRequest final
-    : public ::google::protobuf::internal::ZeroFieldsBase
-/* @@protoc_insertion_point(class_definition:LoginNodeLeaveGameRequest) */ {
- public:
-  inline LoginNodeLeaveGameRequest() : LoginNodeLeaveGameRequest(nullptr) {}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(LoginNodeLeaveGameRequest* msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(LoginNodeLeaveGameRequest));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR LoginNodeLeaveGameRequest(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline LoginNodeLeaveGameRequest(const LoginNodeLeaveGameRequest& from) : LoginNodeLeaveGameRequest(nullptr, from) {}
-  inline LoginNodeLeaveGameRequest(LoginNodeLeaveGameRequest&& from) noexcept
-      : LoginNodeLeaveGameRequest(nullptr, std::move(from)) {}
-  inline LoginNodeLeaveGameRequest& operator=(const LoginNodeLeaveGameRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline LoginNodeLeaveGameRequest& operator=(LoginNodeLeaveGameRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const LoginNodeLeaveGameRequest& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const LoginNodeLeaveGameRequest* internal_default_instance() {
-    return reinterpret_cast<const LoginNodeLeaveGameRequest*>(
-        &_LoginNodeLeaveGameRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 1;
-  friend void swap(LoginNodeLeaveGameRequest& a, LoginNodeLeaveGameRequest& b) { a.Swap(&b); }
-  inline void Swap(LoginNodeLeaveGameRequest* other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(LoginNodeLeaveGameRequest* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  LoginNodeLeaveGameRequest* New(::google::protobuf::Arena* arena = nullptr) const {
-    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<LoginNodeLeaveGameRequest>(arena);
-  }
-  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
-  inline void CopyFrom(const LoginNodeLeaveGameRequest& from) {
-    ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
-  }
-  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
-  void MergeFrom(const LoginNodeLeaveGameRequest& from) {
-    ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
-  }
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
- private:
-  template <typename T>
-  friend ::absl::string_view(
-      ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "LoginNodeLeaveGameRequest"; }
-
- protected:
-  explicit LoginNodeLeaveGameRequest(::google::protobuf::Arena* arena);
-  LoginNodeLeaveGameRequest(::google::protobuf::Arena* arena, const LoginNodeLeaveGameRequest& from);
-  LoginNodeLeaveGameRequest(::google::protobuf::Arena* arena, LoginNodeLeaveGameRequest&& from) noexcept
-      : LoginNodeLeaveGameRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
-  static void* PlacementNew_(const void*, void* mem,
-                             ::google::protobuf::Arena* arena);
-  static constexpr auto InternalNewImpl_();
-  static const ::google::protobuf::internal::ClassDataFull _class_data_;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  // @@protoc_insertion_point(class_scope:LoginNodeLeaveGameRequest)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      0, 0, 0,
-      0, 2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from,
-                          const LoginNodeLeaveGameRequest& from_msg);
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  friend struct ::TableStruct_proto_2fcentre_2fcentre_5fservice_2eproto;
-};
 // -------------------------------------------------------------------
 
 class InitSceneNodeRequest final
@@ -1044,6 +897,203 @@ class CentreEnterGameRequest final
                           const CentreEnterGameRequest& from_msg);
     ::uint64_t player_id_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcentre_2fcentre_5fservice_2eproto;
+};
+// -------------------------------------------------------------------
+
+class LoginNodeLeaveGameRequest final
+    : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:LoginNodeLeaveGameRequest) */ {
+ public:
+  inline LoginNodeLeaveGameRequest() : LoginNodeLeaveGameRequest(nullptr) {}
+  ~LoginNodeLeaveGameRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(LoginNodeLeaveGameRequest* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(LoginNodeLeaveGameRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR LoginNodeLeaveGameRequest(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline LoginNodeLeaveGameRequest(const LoginNodeLeaveGameRequest& from) : LoginNodeLeaveGameRequest(nullptr, from) {}
+  inline LoginNodeLeaveGameRequest(LoginNodeLeaveGameRequest&& from) noexcept
+      : LoginNodeLeaveGameRequest(nullptr, std::move(from)) {}
+  inline LoginNodeLeaveGameRequest& operator=(const LoginNodeLeaveGameRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline LoginNodeLeaveGameRequest& operator=(LoginNodeLeaveGameRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const LoginNodeLeaveGameRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const LoginNodeLeaveGameRequest* internal_default_instance() {
+    return reinterpret_cast<const LoginNodeLeaveGameRequest*>(
+        &_LoginNodeLeaveGameRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 1;
+  friend void swap(LoginNodeLeaveGameRequest& a, LoginNodeLeaveGameRequest& b) { a.Swap(&b); }
+  inline void Swap(LoginNodeLeaveGameRequest* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(LoginNodeLeaveGameRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  LoginNodeLeaveGameRequest* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<LoginNodeLeaveGameRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const LoginNodeLeaveGameRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const LoginNodeLeaveGameRequest& from) { LoginNodeLeaveGameRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(LoginNodeLeaveGameRequest* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "LoginNodeLeaveGameRequest"; }
+
+ protected:
+  explicit LoginNodeLeaveGameRequest(::google::protobuf::Arena* arena);
+  LoginNodeLeaveGameRequest(::google::protobuf::Arena* arena, const LoginNodeLeaveGameRequest& from);
+  LoginNodeLeaveGameRequest(::google::protobuf::Arena* arena, LoginNodeLeaveGameRequest&& from) noexcept
+      : LoginNodeLeaveGameRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kSessionInfoFieldNumber = 1,
+  };
+  // .SessionDetails session_info = 1;
+  bool has_session_info() const;
+  void clear_session_info() ;
+  const ::SessionDetails& session_info() const;
+  PROTOBUF_NODISCARD ::SessionDetails* release_session_info();
+  ::SessionDetails* mutable_session_info();
+  void set_allocated_session_info(::SessionDetails* value);
+  void unsafe_arena_set_allocated_session_info(::SessionDetails* value);
+  ::SessionDetails* unsafe_arena_release_session_info();
+
+  private:
+  const ::SessionDetails& _internal_session_info() const;
+  ::SessionDetails* _internal_mutable_session_info();
+
+  public:
+  // @@protoc_insertion_point(class_scope:LoginNodeLeaveGameRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 1,
+      0, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const LoginNodeLeaveGameRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::SessionDetails* session_info_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1918,6 +1968,97 @@ inline void GateClientMessageRequest::set_allocated_rpc_client(::NetworkAddress*
 // -------------------------------------------------------------------
 
 // LoginNodeLeaveGameRequest
+
+// .SessionDetails session_info = 1;
+inline bool LoginNodeLeaveGameRequest::has_session_info() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.session_info_ != nullptr);
+  return value;
+}
+inline const ::SessionDetails& LoginNodeLeaveGameRequest::_internal_session_info() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::SessionDetails* p = _impl_.session_info_;
+  return p != nullptr ? *p : reinterpret_cast<const ::SessionDetails&>(::_SessionDetails_default_instance_);
+}
+inline const ::SessionDetails& LoginNodeLeaveGameRequest::session_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:LoginNodeLeaveGameRequest.session_info)
+  return _internal_session_info();
+}
+inline void LoginNodeLeaveGameRequest::unsafe_arena_set_allocated_session_info(::SessionDetails* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.session_info_);
+  }
+  _impl_.session_info_ = reinterpret_cast<::SessionDetails*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:LoginNodeLeaveGameRequest.session_info)
+}
+inline ::SessionDetails* LoginNodeLeaveGameRequest::release_session_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::SessionDetails* released = _impl_.session_info_;
+  _impl_.session_info_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::SessionDetails* LoginNodeLeaveGameRequest::unsafe_arena_release_session_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:LoginNodeLeaveGameRequest.session_info)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::SessionDetails* temp = _impl_.session_info_;
+  _impl_.session_info_ = nullptr;
+  return temp;
+}
+inline ::SessionDetails* LoginNodeLeaveGameRequest::_internal_mutable_session_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.session_info_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::SessionDetails>(GetArena());
+    _impl_.session_info_ = reinterpret_cast<::SessionDetails*>(p);
+  }
+  return _impl_.session_info_;
+}
+inline ::SessionDetails* LoginNodeLeaveGameRequest::mutable_session_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::SessionDetails* _msg = _internal_mutable_session_info();
+  // @@protoc_insertion_point(field_mutable:LoginNodeLeaveGameRequest.session_info)
+  return _msg;
+}
+inline void LoginNodeLeaveGameRequest::set_allocated_session_info(::SessionDetails* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.session_info_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.session_info_ = reinterpret_cast<::SessionDetails*>(value);
+  // @@protoc_insertion_point(field_set_allocated:LoginNodeLeaveGameRequest.session_info)
+}
 
 // -------------------------------------------------------------------
 

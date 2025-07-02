@@ -95,7 +95,7 @@ void OnSceneInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn, cons
 		return;
 	}
 
-	const auto  player_id    = it->second.player_id();
+	const auto  player_id    = it->second;
 	const auto& message_info = gRpcServiceRegistry.at(replied->message_content().message_id() );
 	const auto  player = tlsCommonLogic.GetPlayer(player_id);
 	if (!tls.registry.valid(player))

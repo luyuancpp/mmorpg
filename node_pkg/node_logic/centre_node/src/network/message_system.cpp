@@ -42,20 +42,20 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
     }
 
     // 获取玩家的节点信息
-    const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
-    if (!playerNodeInfo)
+    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+    if (!playerSessionSnapshotPB)
     {
         LOG_ERROR << "PlayerNodeInfo not found for player -> " << entt::to_integral(player);
         return;
     }
 
     // 获取游戏节点实体
-    entt::entity gameNodeEntity{ playerNodeInfo->scene_node_id() };
+    entt::entity gameNodeEntity{ playerSessionSnapshotPB->scene_node_id() };
 
     // 检查游戏节点是否有效
     if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(gameNodeEntity))
     {
-        LOG_ERROR << "Game node not found for player -> " << playerNodeInfo->scene_node_id();
+        LOG_ERROR << "Game node not found for player -> " << playerSessionSnapshotPB->scene_node_id();
         return;
     }
 
@@ -63,7 +63,7 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
     auto sceneSession = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<RpcSession>(gameNodeEntity);
     if (!sceneSession)
     {
-        LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->scene_node_id()
+        LOG_ERROR << "RpcSession not found for game node -> " << playerSessionSnapshotPB->scene_node_id()
             << " with message ID -> " << messageId;
         return;
     }
@@ -74,7 +74,7 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
     request.mutable_message_content()->mutable_serialized_message()->resize(byteSize);
     message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), byteSize);
     request.mutable_message_content()->set_message_id(messageId);
-    request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
+    request.mutable_header()->set_session_id(playerSessionSnapshotPB->gate_session_id());
 
     // 发送请求到游戏节点
     sceneSession->SendRequest(SceneSendMessageToPlayerMessageId, request);
@@ -101,20 +101,20 @@ void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Messag
     }
 
     // 获取玩家的节点信息
-    const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
-    if (!playerNodeInfo)
+    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+    if (!playerSessionSnapshotPB)
     {
         LOG_ERROR << "PlayerNodeInfo not found for player -> " << entt::to_integral(player);
         return;
     }
 
     // 获取游戏节点实体
-    entt::entity gameNodeEntity{ playerNodeInfo->scene_node_id() };
+    entt::entity gameNodeEntity{ playerSessionSnapshotPB->scene_node_id() };
 
     // 检查游戏节点是否有效
     if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(gameNodeEntity))
     {
-        LOG_ERROR << "Game node not found for player -> " << playerNodeInfo->scene_node_id();
+        LOG_ERROR << "Game node not found for player -> " << playerSessionSnapshotPB->scene_node_id();
         return;
     }
 
@@ -122,7 +122,7 @@ void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Messag
     auto sceneSession = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<RpcSession>(gameNodeEntity);
     if (!sceneSession)
     {
-        LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->scene_node_id();
+        LOG_ERROR << "RpcSession not found for game node -> " << playerSessionSnapshotPB->scene_node_id();
         return;
     }
 
@@ -131,7 +131,7 @@ void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Messag
     const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
     request.mutable_message_content()->mutable_serialized_message()->resize(byteSize);
     message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), byteSize);
-    request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
+    request.mutable_header()->set_session_id(playerSessionSnapshotPB->gate_session_id());
 
     // 发送请求到游戏节点
     sceneSession->SendRequest(messageId, request);
@@ -147,18 +147,18 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
     }
 
     // Retrieve player node info from the registry
-    const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
-    if (!playerNodeInfo)
+    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+    if (!playerSessionSnapshotPB)
     {
         LOG_WARN << "Player node info not found for player entity " << entt::to_integral(player);
         return;
     }
 
     // Retrieve the gate session ID associated with the player
-    entt::entity gateSessionId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
+    entt::entity gateSessionId{ GetGateNodeId(playerSessionSnapshotPB->gate_session_id()) };
     if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateSessionId))
     {
-        LOG_ERROR << "Gate session not found for player with session ID " << playerNodeInfo->gate_session_id();
+        LOG_ERROR << "Gate session not found for player with session ID " << playerSessionSnapshotPB->gate_session_id();
         return;
     }
 
@@ -166,12 +166,12 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
     const auto gateSessionPtr = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateSessionId);
     if (!gateSessionPtr)
     {
-        LOG_ERROR << "RpcSession not found for gate with session ID " << playerNodeInfo->gate_session_id();
+        LOG_ERROR << "RpcSession not found for gate with session ID " << playerSessionSnapshotPB->gate_session_id();
         return;
     }
 
     // Send the message to the player via the associated gate session
-    SendMessageToPlayer(messageId, message, *gateSessionPtr, playerNodeInfo->gate_session_id());
+    SendMessageToPlayer(messageId, message, *gateSessionPtr, playerSessionSnapshotPB->gate_session_id());
 }
 
 
@@ -226,20 +226,20 @@ void CallScenePlayerMethod(uint32_t messageId, const google::protobuf::Message& 
     }
 
     // 获取玩家节点信息
-    const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
-    if (!playerNodeInfo)
+    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+    if (!playerSessionSnapshotPB)
     {
         LOG_ERROR << "PlayerNodeInfo not found for player -> " << entt::to_integral(player);
         return;
     }
 
     // 获取对应的游戏节点 ID
-    entt::entity sceneNodeEntity{ playerNodeInfo->scene_node_id() };
+    entt::entity sceneNodeEntity{ playerSessionSnapshotPB->scene_node_id() };
 
     // 如果游戏节点无效，返回
     if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(sceneNodeEntity))
     {
-        LOG_ERROR << "Game node not valid for player -> " << entt::to_integral(player) << ", game_node_id: " << playerNodeInfo->scene_node_id();
+        LOG_ERROR << "Game node not valid for player -> " << entt::to_integral(player) << ", game_node_id: " << playerSessionSnapshotPB->scene_node_id();
         return;
     }
 
@@ -247,7 +247,7 @@ void CallScenePlayerMethod(uint32_t messageId, const google::protobuf::Message& 
     const auto sceneSession = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<RpcSession>(sceneNodeEntity);
     if (!sceneSession)
     {
-        LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->scene_node_id();
+        LOG_ERROR << "RpcSession not found for game node -> " << playerSessionSnapshotPB->scene_node_id();
         return;
     }
 
@@ -264,7 +264,7 @@ void CallScenePlayerMethod(uint32_t messageId, const google::protobuf::Message& 
 
     // 设置消息 ID 和会话 ID
     request.mutable_message_content()->set_message_id(messageId);
-    request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
+    request.mutable_header()->set_session_id(playerSessionSnapshotPB->gate_session_id());
 
     // 发送消息
     sceneSession->CallRemoteMethod(SceneInvokePlayerServiceMessageId, request);

@@ -64,7 +64,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 	}
 
 	tls.registry.emplace<ViewRadius>(player).set_radius(10);
-	tls.registry.emplace<PlayerNodeInfoPBComponent>(player).set_centre_node_id(asyncIt->second.centre_node_id());
+	tls.registry.emplace<PlayerSessionSnapshotPB>(player).set_centre_node_id(asyncIt->second.centre_node_id());
 
 	LOG_INFO << "PlayerNodeInfo set with CentreNodeId: " << asyncIt->second.centre_node_id();
 
@@ -121,14 +121,14 @@ void PlayerNodeSystem::EnterGs(const entt::entity player, const PlayerGameNodeEn
 {
 	LOG_INFO << "EnterGs: Player " << tls.registry.get<Guid>(player) << " entering Game Node";
 
-	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
-	if (playerNodeInfo == nullptr)
+	auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+	if (playerSessionSnapshotPB == nullptr)
 	{
 		LOG_ERROR << "Player node info not found for player: " << tls.registry.get<Guid>(player);
-		playerNodeInfo = &tls.registry.emplace<PlayerNodeInfoPBComponent>(player);
+		playerSessionSnapshotPB = &tls.registry.emplace<PlayerSessionSnapshotPB>(player);
 	}
 
-	playerNodeInfo->set_centre_node_id(enterInfo.centre_node_id());
+	playerSessionSnapshotPB->set_centre_node_id(enterInfo.centre_node_id());
 	LOG_INFO << "Updated PlayerNodeInfo with CentreNodeId: " << enterInfo.centre_node_id();
 
 	// Notify Centre that player has entered the game node successfully
@@ -193,17 +193,17 @@ void PlayerNodeSystem::RemovePlayerSession(const Guid playerId)
 
 void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
 {
-	auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
-	if (playerNodeInfo == nullptr)
+	auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+	if (playerSessionSnapshotPB == nullptr)
 	{
 		LOG_ERROR << "RemovePlayerSession: PlayerNodeInfoPBComponent not found for player: " << entt::to_integral(player);
 		return;
 	}
 
-	LOG_INFO << "Removing player session: sessionId = " << playerNodeInfo->gate_session_id();
+	LOG_INFO << "Removing player session: sessionId = " << playerSessionSnapshotPB->gate_session_id();
 
-	defer(tlsSessions.erase(playerNodeInfo->gate_session_id()));
-	playerNodeInfo->set_gate_session_id(kInvalidSessionId);
+	defer(tlsSessions.erase(playerSessionSnapshotPB->gate_session_id()));
+	playerSessionSnapshotPB->set_gate_session_id(kInvalidSessionId);
 }
 
 void PlayerNodeSystem::RemovePlayerSessionSilently(Guid player_id)

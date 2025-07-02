@@ -83,15 +83,15 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 		return;
 	}
 
-	auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
-	if (!playerNodeInfo)
+	auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "PlayerNodeInfo not found for player: " << tls.registry.get<Guid>(player);
 		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(player);
 		return;
 	}
 
-	playerNodeInfo->set_scene_node_id(kInvalidNodeId);
+	playerSessionSnapshotPB->set_scene_node_id(kInvalidNodeId);
 
 	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, SceneUtil::GetGameNodeId(toScene));
 

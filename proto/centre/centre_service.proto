@@ -17,6 +17,7 @@ message GateClientMessageRequest
 
 message LoginNodeLeaveGameRequest
 {
+  SessionDetails session_info = 1;
 }
 
 message EnterGameNodeSuccessRequest

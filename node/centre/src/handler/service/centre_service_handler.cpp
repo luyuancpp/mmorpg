@@ -51,7 +51,7 @@ Guid GetPlayerIDBySessionId(const uint64_t session_id)
 		LOG_DEBUG << "Cannot find session ID " << session_id << GetStackTraceAsString();
 		return kInvalidGuid;
 	}
-	return session_it->second.player_id();
+	return session_it->second;
 }
 
 entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
@@ -121,21 +121,21 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 
 	auto playerEntity =  player_it->second;
 
-	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
-	if (playerNodeInfo == nullptr)
+	const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(playerEntity);
+	if (playerSessionSnapshotPB == nullptr)
 	{
 		LOG_ERROR << "PlayerNodeInfo not found for player entity: " << tls.registry.get<Guid>(playerEntity);
 		return;
 	}
 
-	if (playerNodeInfo->gate_session_id() != session_id)
+	if (playerSessionSnapshotPB->gate_session_id() != session_id)
 	{
-		LOG_ERROR << "Mismatched gate session ID for player: " << playerNodeInfo->gate_session_id()
+		LOG_ERROR << "Mismatched gate session ID for player: " << playerSessionSnapshotPB->gate_session_id()
 			<< ", expected session ID: " << session_id;
 		return;
 	}
 
-	const entt::entity gameNodeId{ playerNodeInfo->scene_node_id() };
+	const entt::entity gameNodeId{ playerSessionSnapshotPB->scene_node_id() };
 	if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(gameNodeId))
 	{
 		LOG_ERROR << "Invalid game node ID found for player: " << tls.registry.get<Guid>(playerEntity);
@@ -145,7 +145,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	const auto gameNode = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<RpcSession>(gameNodeId);
 	if (gameNode == nullptr)
 	{
-		LOG_ERROR << "RpcSession not found for game node ID: " << playerNodeInfo->scene_node_id();
+		LOG_ERROR << "RpcSession not found for game node ID: " << playerSessionSnapshotPB->scene_node_id();
 		return;
 	}
 
@@ -199,12 +199,8 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 
 	LOG_INFO << "Player login attempt: Player ID " << clientMsgBody.player_id() << ", Session ID " << sessionId;
 
-	PlayerSessionPBComponent playerSessionPBComponent;
-	playerSessionPBComponent.set_player_id(clientMsgBody.player_id());
-	tlsSessions.emplace(sessionId, playerSessionPBComponent);
+	tlsSessions.emplace(sessionId, clientMsgBody.player_id());
 
-	// TODO: Disconnect old connection
-	// todo 快速登录两次
 	if (const auto playerIt = tlsCommonLogic.GetPlayerList().find(clientMsgBody.player_id());
 		playerIt == tlsCommonLogic.GetPlayerList().end())
 	{
@@ -220,34 +216,32 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 		//顶号的时候已经在场景里面了,不用再进入场景了
 		//todo换场景的过程中被顶了
-		//告诉账号被顶
 		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 		//区分顶号和断线重连
 		// 
 		// Handle session takeover (顶号) or reconnect scenario
-		if (auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
-			playerNodeInfo != nullptr)
+		if (auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+			playerSessionSnapshotPB != nullptr)
 		{
 			// Handle session takeover (顶号)
 			LOG_INFO << "Player reconnected: Player ID " << clientMsgBody.player_id();
 
 			PlayerTipSystem::SendToPlayer(player, kLoginBeKickByAnOtherAccount, {});
 
-			auto oldSessionId = playerNodeInfo->gate_session_id();
+			auto oldSessionId = playerSessionSnapshotPB->gate_session_id();
 
 			defer(tlsSessions.erase(oldSessionId));
 
 			KickSessionRequest message;
 			message.set_session_id(sessionId);
-			SendMessageToGateById(GateKickSessionByCentreMessageId, message, GetGateNodeId(playerNodeInfo->gate_session_id()));
+			SendMessageToGateById(GateKickSessionByCentreMessageId, message, GetGateNodeId(playerSessionSnapshotPB->gate_session_id()));
 
-			playerNodeInfo->set_gate_session_id(sessionId);
+			playerSessionSnapshotPB->set_gate_session_id(sessionId);
 		}
 		else
 		{
 			LOG_INFO << "Existing player login: Player ID " << clientMsgBody.player_id();
-
-			tls.registry.emplace_or_replace<PlayerNodeInfoPBComponent>(player).set_gate_session_id(sessionId);
+			tls.registry.emplace_or_replace<PlayerSessionSnapshotPB>(player).set_gate_session_id(sessionId);
 		}
 
 		//连续顶几次,所以用emplace_or_replace
@@ -273,8 +267,13 @@ void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	//todo error
-	PlayerNodeSystem::HandleNormalExit(GetPlayerIDBySessionId(tlsCommonLogic.GetSessionId()));
+	if (tlsSessions.find(request->session_info().session_id()) == tlsSessions.end()) {
+		return;
+	}
+
+	defer(tlsSessions.erase(request->session_info().session_id()));
+	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
+	PlayerNodeSystem::HandleNormalExit(player_id);
 	//todo statistics
 ///<<< END WRITING YOUR CODE
 
@@ -289,6 +288,10 @@ void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController
 {
 ///<<< BEGIN WRITING YOUR CODE
 	
+	if (tlsSessions.find(request->session_info().session_id()) == tlsSessions.end()){
+		return;
+	}
+
 	defer(tlsSessions.erase(request->session_info().session_id()));
 	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
 	PlayerNodeSystem::HandleNormalExit(player_id);
@@ -315,7 +318,7 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 		return;
 	}
 
-	const auto playerId = it->second.player_id();
+	const auto playerId = it->second;
 	const auto player = tlsCommonLogic.GetPlayer(playerId);
 	if (!tls.registry.valid(player))
 	{
@@ -436,14 +439,14 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 		return;
 	}
 
-	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
-	if (!playerNodeInfo)
+	auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "Player session info not found for player: " << playerId;
 		return;
 	}
 
-	playerNodeInfo->set_scene_node_id(request->scene_node_id());
+	playerSessionSnapshotPB->set_scene_node_id(request->scene_node_id());
 
 	PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
 

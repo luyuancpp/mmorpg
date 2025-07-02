@@ -95,10 +95,10 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	const auto playerIt = tlsCommonLogic.GetPlayerList().find(it->second.player_id());
+	const auto playerIt = tlsCommonLogic.GetPlayerList().find(it->second);
 	if (playerIt == tlsCommonLogic.GetPlayerList().end())
 	{
-		LOG_ERROR << "Player ID not found in common logic: " << it->second.player_id();
+		LOG_ERROR << "Player ID not found in common logic: " << it->second;
 		return;
 	}
 
@@ -186,11 +186,11 @@ void SceneHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* 
 		return;
 	}
 
-	const auto player = tlsCommonLogic.GetPlayer(it->second.player_id());
+	const auto player = tlsCommonLogic.GetPlayer(it->second);
 	if (entt::null == player)
 	{
 		LOG_ERROR << "GatePlayerService player not loading " << request->message_content().message_id()
-			<< "player_id" << it->second.player_id();
+			<< "player_id" << it->second;
 		return;
 	}
 
@@ -230,7 +230,7 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 		return;
 	}
 
-	const auto player = tlsCommonLogic.GetPlayer(it->second.player_id());
+	const auto player = tlsCommonLogic.GetPlayer(it->second);
 	if (entt::null == player)
 	{
 		LOG_ERROR << "GatePlayerService player not loading";
@@ -259,7 +259,7 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	const auto player = tlsCommonLogic.GetPlayer(it->second.player_id());
+	const auto player = tlsCommonLogic.GetPlayer(it->second);
 	if (entt::null == player)
 	{
 		LOG_ERROR << "GatePlayerService player not loading";
@@ -398,18 +398,10 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	PlayerSessionPBComponent sessionInfo;
-	sessionInfo.set_player_id(request->player_id());
-	tlsSessions.emplace(request->session_id(), sessionInfo);
 
-	if (auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player); nullptr == playerNodeInfo)
-	{
-		tls.registry.emplace_or_replace<PlayerNodeInfoPBComponent>(player).set_gate_session_id(request->session_id());
-	}
-	else
-	{
-		playerNodeInfo->set_gate_session_id(request->session_id());
-	}
+	tlsSessions.emplace(request->session_id(), request->player_id());
+
+	tls.registry.get_or_emplace<PlayerSessionSnapshotPB>(player).set_gate_session_id(request->session_id());
 
 	PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(player);
 ///<<< END WRITING YOUR CODE

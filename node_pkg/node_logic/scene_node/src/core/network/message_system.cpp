@@ -24,14 +24,14 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 		return;
 	}
 
-	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
-	if (!playerNodeInfo)
+	const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(playerEntity);
+	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "Player node info not found for player entity";
 		return;
 	}
 
-	entt::entity gateNodeId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
+	entt::entity gateNodeId{ GetGateNodeId(playerSessionSnapshotPB->gate_session_id()) };
 	if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
 	{
 		LOG_ERROR << "Gate node not found for player";
@@ -48,7 +48,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	NodeRouteMessageRequest request;
 	request.mutable_message_content()->set_message_id(messageId);
 	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
-	request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
+	request.mutable_header()->set_session_id(playerSessionSnapshotPB->gate_session_id());
 
 	gateNode->SendRequest(GateSendMessageToPlayerMessageId, request);
 }
@@ -65,13 +65,13 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 		return;
 	}
 
-	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
-	if (!playerNodeInfo){
+	const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(playerEntity);
+	if (!playerSessionSnapshotPB){
 		LOG_ERROR << "Player node info not found for player entity";
 		return;
 	}
 
-	entt::entity centreNodeId{ playerNodeInfo->centre_node_id() };
+	entt::entity centreNodeId{ playerSessionSnapshotPB->centre_node_id() };
 	if (!tls.GetNodeRegistry(eNodeType::CentreNodeService).valid(centreNodeId)){
 		LOG_ERROR << "Central node not found for player";
 		return;
@@ -86,7 +86,7 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 	NodeRouteMessageRequest request;
 	request.mutable_message_content()->set_message_id(messageId);
 	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
-	request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
+	request.mutable_header()->set_session_id(playerSessionSnapshotPB->gate_session_id());
 	(*node)->SendRequest(CentrePlayerServiceMessageId, request);
 }
 
@@ -167,21 +167,21 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 			continue;
 		}
 
-		const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
-		if (!playerNodeInfo)
+		const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+		if (!playerSessionSnapshotPB)
 		{
 			LOG_ERROR << "Player node info not found for player entity: " << tls.registry.get<Guid>(player);
 			continue;
 		}
 
-		entt::entity gateNodeId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
+		entt::entity gateNodeId{ GetGateNodeId(playerSessionSnapshotPB->gate_session_id()) };
 		if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
 		{
-			LOG_ERROR << "Gate node not found for player session ID: " << playerNodeInfo->gate_session_id();
+			LOG_ERROR << "Gate node not found for player session ID: " << playerSessionSnapshotPB->gate_session_id();
 			continue;
 		}
 
-		gateList[gateNodeId].emplace(playerNodeInfo->gate_session_id());
+		gateList[gateNodeId].emplace(playerSessionSnapshotPB->gate_session_id());
 	}
 
 	BroadcastToPlayersRequest request;
@@ -217,21 +217,21 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 			continue;
 		}
 
-		const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
-		if (!playerNodeInfo)
+		const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+		if (!playerSessionSnapshotPB)
 		{
 			LOG_ERROR << "Player node info not found for player entity: " << tls.registry.get<Guid>(player);
 			continue;
 		}
 
-		entt::entity gateNodeId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
+		entt::entity gateNodeId{ GetGateNodeId(playerSessionSnapshotPB->gate_session_id()) };
 		if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
 		{
-			LOG_ERROR << "Gate node not found for player session ID: " << playerNodeInfo->gate_session_id();
+			LOG_ERROR << "Gate node not found for player session ID: " << playerSessionSnapshotPB->gate_session_id();
 			continue;
 		}
 
-		gateList[gateNodeId].emplace(playerNodeInfo->gate_session_id());
+		gateList[gateNodeId].emplace(playerSessionSnapshotPB->gate_session_id());
 	}
 
 	BroadcastToPlayersRequest request;

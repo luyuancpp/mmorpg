@@ -24,24 +24,6 @@ PROTOBUF_PRAGMA_INIT_SEG
 namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
-              template <typename>
-PROTOBUF_CONSTEXPR LoginNodeLeaveGameRequest::LoginNodeLeaveGameRequest(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(_class_data_.base()){}
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::internal::ZeroFieldsBase() {
-}
-#endif  // PROTOBUF_CUSTOM_VTABLE
-struct LoginNodeLeaveGameRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR LoginNodeLeaveGameRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~LoginNodeLeaveGameRequestDefaultTypeInternal() {}
-  union {
-    LoginNodeLeaveGameRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LoginNodeLeaveGameRequestDefaultTypeInternal _LoginNodeLeaveGameRequest_default_instance_;
 
 inline constexpr InitSceneNodeRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -150,6 +132,31 @@ struct CentreEnterGameRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CentreEnterGameRequestDefaultTypeInternal _CentreEnterGameRequest_default_instance_;
 
+inline constexpr LoginNodeLeaveGameRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        session_info_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LoginNodeLeaveGameRequest::LoginNodeLeaveGameRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LoginNodeLeaveGameRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LoginNodeLeaveGameRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LoginNodeLeaveGameRequestDefaultTypeInternal() {}
+  union {
+    LoginNodeLeaveGameRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LoginNodeLeaveGameRequestDefaultTypeInternal _LoginNodeLeaveGameRequest_default_instance_;
+
 inline constexpr GateClientMessageRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -242,7 +249,7 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::GateClientMessageRequest, _impl_.rpc_client_),
         0,
-        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::LoginNodeLeaveGameRequest, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::LoginNodeLeaveGameRequest, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
@@ -250,6 +257,8 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::LoginNodeLeaveGameRequest, _impl_.session_info_),
+        0,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::EnterGameNodeSuccessRequest, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -316,13 +325,13 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, 9, -1, sizeof(::GateClientMessageRequest)},
-        {10, -1, -1, sizeof(::LoginNodeLeaveGameRequest)},
-        {18, -1, -1, sizeof(::EnterGameNodeSuccessRequest)},
-        {28, -1, -1, sizeof(::CentreEnterGameRequest)},
-        {37, 47, -1, sizeof(::CentrePlayerGameNodeEntryRequest)},
-        {49, -1, -1, sizeof(::InitSceneNodeRequest)},
-        {59, -1, -1, sizeof(::CentreLoginRequest)},
-        {69, 78, -1, sizeof(::CentreLoginResponse)},
+        {10, 19, -1, sizeof(::LoginNodeLeaveGameRequest)},
+        {20, -1, -1, sizeof(::EnterGameNodeSuccessRequest)},
+        {30, -1, -1, sizeof(::CentreEnterGameRequest)},
+        {39, 49, -1, sizeof(::CentrePlayerGameNodeEntryRequest)},
+        {51, -1, -1, sizeof(::InitSceneNodeRequest)},
+        {61, -1, -1, sizeof(::CentreLoginRequest)},
+        {71, 80, -1, sizeof(::CentreLoginResponse)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_GateClientMessageRequest_default_instance_._instance,
@@ -341,39 +350,40 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto[]
     "ty.proto\032\032proto/common/session.proto\032\032pr"
     "oto/common/message.proto\032\026proto/common/t"
     "ip.proto\"\?\n\030GateClientMessageRequest\022#\n\n"
-    "rpc_client\030\001 \001(\0132\017.NetworkAddress\"\033\n\031Log"
-    "inNodeLeaveGameRequest\"G\n\033EnterGameNodeS"
-    "uccessRequest\022\021\n\tplayer_id\030\001 \001(\004\022\025\n\rscen"
-    "e_node_id\030\002 \001(\r\"+\n\026CentreEnterGameReques"
-    "t\022\021\n\tplayer_id\030\001 \001(\004\"{\n CentrePlayerGame"
-    "NodeEntryRequest\0220\n\017client_msg_body\030\001 \001("
-    "\0132\027.CentreEnterGameRequest\022%\n\014session_in"
-    "fo\030\002 \001(\0132\017.SessionDetails\"@\n\024InitSceneNo"
-    "deRequest\022\017\n\007node_id\030\001 \001(\r\022\027\n\017scene_node"
-    "_type\030\002 \001(\r\"7\n\022CentreLoginRequest\022\017\n\007acc"
-    "ount\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\"=\n\023CentreLo"
-    "ginResponse\022&\n\rerror_message\030\001 \001(\0132\017.Tip"
-    "InfoMessage2\230\006\n\006Centre\0226\n\021GatePlayerServ"
-    "ice\022\031.GateClientMessageRequest\032\006.Empty\022>"
-    "\n\025GateSessionDisconnect\022\035.GateSessionDis"
-    "connectRequest\032\006.Empty\022B\n\025LoginNodeAccou"
-    "ntLogin\022\023.CentreLoginRequest\032\024.CentreLog"
-    "inResponse\022\?\n\022LoginNodeEnterGame\022!.Centr"
-    "ePlayerGameNodeEntryRequest\032\006.Empty\0228\n\022L"
-    "oginNodeLeaveGame\022\032.LoginNodeLeaveGameRe"
-    "quest\032\006.Empty\022C\n\032LoginNodeSessionDisconn"
-    "ect\022\035.GateSessionDisconnectRequest\032\006.Emp"
-    "ty\022D\n\rPlayerService\022\030.NodeRouteMessageRe"
-    "quest\032\031.NodeRouteMessageResponse\0226\n\016Ente"
-    "rGsSucceed\022\034.EnterGameNodeSuccessRequest"
-    "\032\006.Empty\022A\n\022RouteNodeStringMsg\022\024.RouteMe"
-    "ssageRequest\032\025.RouteMessageResponse\022O\n\024R"
-    "outePlayerStringMsg\022\032.RoutePlayerMessage"
-    "Request\032\033.RoutePlayerMessageResponse\022.\n\r"
-    "InitSceneNode\022\025.InitSceneNodeRequest\032\006.E"
-    "mpty\022P\n\023RegisterNodeSession\022\033.RegisterNo"
-    "deSessionRequest\032\034.RegisterNodeSessionRe"
-    "sponseB\014Z\007pb/game\200\001\001b\006proto3"
+    "rpc_client\030\001 \001(\0132\017.NetworkAddress\"B\n\031Log"
+    "inNodeLeaveGameRequest\022%\n\014session_info\030\001"
+    " \001(\0132\017.SessionDetails\"G\n\033EnterGameNodeSu"
+    "ccessRequest\022\021\n\tplayer_id\030\001 \001(\004\022\025\n\rscene"
+    "_node_id\030\002 \001(\r\"+\n\026CentreEnterGameRequest"
+    "\022\021\n\tplayer_id\030\001 \001(\004\"{\n CentrePlayerGameN"
+    "odeEntryRequest\0220\n\017client_msg_body\030\001 \001(\013"
+    "2\027.CentreEnterGameRequest\022%\n\014session_inf"
+    "o\030\002 \001(\0132\017.SessionDetails\"@\n\024InitSceneNod"
+    "eRequest\022\017\n\007node_id\030\001 \001(\r\022\027\n\017scene_node_"
+    "type\030\002 \001(\r\"7\n\022CentreLoginRequest\022\017\n\007acco"
+    "unt\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\"=\n\023CentreLog"
+    "inResponse\022&\n\rerror_message\030\001 \001(\0132\017.TipI"
+    "nfoMessage2\230\006\n\006Centre\0226\n\021GatePlayerServi"
+    "ce\022\031.GateClientMessageRequest\032\006.Empty\022>\n"
+    "\025GateSessionDisconnect\022\035.GateSessionDisc"
+    "onnectRequest\032\006.Empty\022B\n\025LoginNodeAccoun"
+    "tLogin\022\023.CentreLoginRequest\032\024.CentreLogi"
+    "nResponse\022\?\n\022LoginNodeEnterGame\022!.Centre"
+    "PlayerGameNodeEntryRequest\032\006.Empty\0228\n\022Lo"
+    "ginNodeLeaveGame\022\032.LoginNodeLeaveGameReq"
+    "uest\032\006.Empty\022C\n\032LoginNodeSessionDisconne"
+    "ct\022\035.GateSessionDisconnectRequest\032\006.Empt"
+    "y\022D\n\rPlayerService\022\030.NodeRouteMessageReq"
+    "uest\032\031.NodeRouteMessageResponse\0226\n\016Enter"
+    "GsSucceed\022\034.EnterGameNodeSuccessRequest\032"
+    "\006.Empty\022A\n\022RouteNodeStringMsg\022\024.RouteMes"
+    "sageRequest\032\025.RouteMessageResponse\022O\n\024Ro"
+    "utePlayerStringMsg\022\032.RoutePlayerMessageR"
+    "equest\032\033.RoutePlayerMessageResponse\022.\n\rI"
+    "nitSceneNode\022\025.InitSceneNodeRequest\032\006.Em"
+    "pty\022P\n\023RegisterNodeSession\022\033.RegisterNod"
+    "eSessionRequest\032\034.RegisterNodeSessionRes"
+    "ponseB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_deps[5] =
     {
@@ -387,7 +397,7 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fservice_2epr
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto = {
     false,
     false,
-    1508,
+    1547,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto,
     "proto/centre/centre_service.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_once,
@@ -659,30 +669,71 @@ void GateClientMessageRequest::InternalSwap(GateClientMessageRequest* PROTOBUF_R
 
 class LoginNodeLeaveGameRequest::_Internal {
  public:
+  using HasBits =
+      decltype(std::declval<LoginNodeLeaveGameRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(LoginNodeLeaveGameRequest, _impl_._has_bits_);
 };
 
+void LoginNodeLeaveGameRequest::clear_session_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.session_info_ != nullptr) _impl_.session_info_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
 LoginNodeLeaveGameRequest::LoginNodeLeaveGameRequest(::google::protobuf::Arena* arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena, _class_data_.base()) {
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:LoginNodeLeaveGameRequest)
 }
+inline PROTOBUF_NDEBUG_INLINE LoginNodeLeaveGameRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::LoginNodeLeaveGameRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
 LoginNodeLeaveGameRequest::LoginNodeLeaveGameRequest(
     ::google::protobuf::Arena* arena,
     const LoginNodeLeaveGameRequest& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena, _class_data_.base()) {
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   LoginNodeLeaveGameRequest* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.session_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::SessionDetails>(
+                              arena, *from._impl_.session_info_)
+                        : nullptr;
 
   // @@protoc_insertion_point(copy_constructor:LoginNodeLeaveGameRequest)
+}
+inline PROTOBUF_NDEBUG_INLINE LoginNodeLeaveGameRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void LoginNodeLeaveGameRequest::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.session_info_ = {};
+}
+LoginNodeLeaveGameRequest::~LoginNodeLeaveGameRequest() {
+  // @@protoc_insertion_point(destructor:LoginNodeLeaveGameRequest)
+  SharedDtor(*this);
+}
+inline void LoginNodeLeaveGameRequest::SharedDtor(MessageLite& self) {
+  LoginNodeLeaveGameRequest& this_ = static_cast<LoginNodeLeaveGameRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.session_info_;
+  this_._impl_.~Impl_();
 }
 
 inline void* LoginNodeLeaveGameRequest::PlacementNew_(const void*, void* mem,
@@ -702,10 +753,10 @@ const ::google::protobuf::internal::ClassDataFull LoginNodeLeaveGameRequest::_cl
         nullptr,  // OnDemandRegisterArenaDtor
         nullptr,  // IsInitialized
         &LoginNodeLeaveGameRequest::MergeImpl,
-        ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<LoginNodeLeaveGameRequest>(),
+        ::google::protobuf::Message::GetNewImpl<LoginNodeLeaveGameRequest>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
         &LoginNodeLeaveGameRequest::SharedDtor,
-        ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<LoginNodeLeaveGameRequest>(), &LoginNodeLeaveGameRequest::ByteSizeLong,
+        ::google::protobuf::Message::GetClearImpl<LoginNodeLeaveGameRequest>(), &LoginNodeLeaveGameRequest::ByteSizeLong,
             &LoginNodeLeaveGameRequest::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
         PROTOBUF_FIELD_OFFSET(LoginNodeLeaveGameRequest, _impl_._cached_size_),
@@ -721,17 +772,17 @@ const ::google::protobuf::internal::ClassData* LoginNodeLeaveGameRequest::GetCla
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 0, 0, 0, 2> LoginNodeLeaveGameRequest::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2> LoginNodeLeaveGameRequest::_table_ = {
   {
-    0,  // no _has_bits_
+    PROTOBUF_FIELD_OFFSET(LoginNodeLeaveGameRequest, _impl_._has_bits_),
     0, // no _extensions_
-    0, 0,  // max_field_number, fast_idx_mask
+    1, 0,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967295,  // skipmap
-    offsetof(decltype(_table_), field_names),  // no field_entries
-    0,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
     _class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
@@ -739,24 +790,135 @@ const ::_pbi::TcParseTable<0, 0, 0, 0, 2> LoginNodeLeaveGameRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::LoginNodeLeaveGameRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // .SessionDetails session_info = 1;
+    {::_pbi::TcParser::FastMtS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(LoginNodeLeaveGameRequest, _impl_.session_info_)}},
   }}, {{
     65535, 65535
-  }},
-  // no field_entries, or aux_entries
-  {{
+  }}, {{
+    // .SessionDetails session_info = 1;
+    {PROTOBUF_FIELD_OFFSET(LoginNodeLeaveGameRequest, _impl_.session_info_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::SessionDetails>()},
+  }}, {{
   }},
 };
 
+PROTOBUF_NOINLINE void LoginNodeLeaveGameRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:LoginNodeLeaveGameRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.session_info_ != nullptr);
+    _impl_.session_info_->Clear();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LoginNodeLeaveGameRequest::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LoginNodeLeaveGameRequest& this_ = static_cast<const LoginNodeLeaveGameRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LoginNodeLeaveGameRequest::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LoginNodeLeaveGameRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:LoginNodeLeaveGameRequest)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          cached_has_bits = this_._impl_._has_bits_[0];
+          // .SessionDetails session_info = 1;
+          if (cached_has_bits & 0x00000001u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                1, *this_._impl_.session_info_, this_._impl_.session_info_->GetCachedSize(), target,
+                stream);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:LoginNodeLeaveGameRequest)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LoginNodeLeaveGameRequest::ByteSizeLong(const MessageLite& base) {
+          const LoginNodeLeaveGameRequest& this_ = static_cast<const LoginNodeLeaveGameRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LoginNodeLeaveGameRequest::ByteSizeLong() const {
+          const LoginNodeLeaveGameRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:LoginNodeLeaveGameRequest)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+           {
+            // .SessionDetails session_info = 1;
+            cached_has_bits = this_._impl_._has_bits_[0];
+            if (cached_has_bits & 0x00000001u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.session_info_);
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LoginNodeLeaveGameRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LoginNodeLeaveGameRequest*>(&to_msg);
+  auto& from = static_cast<const LoginNodeLeaveGameRequest&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:LoginNodeLeaveGameRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.session_info_ != nullptr);
+    if (_this->_impl_.session_info_ == nullptr) {
+      _this->_impl_.session_info_ =
+          ::google::protobuf::Message::CopyConstruct<::SessionDetails>(arena, *from._impl_.session_info_);
+    } else {
+      _this->_impl_.session_info_->MergeFrom(*from._impl_.session_info_);
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LoginNodeLeaveGameRequest::CopyFrom(const LoginNodeLeaveGameRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:LoginNodeLeaveGameRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
 
 
-
-
-
-
+void LoginNodeLeaveGameRequest::InternalSwap(LoginNodeLeaveGameRequest* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.session_info_, other->_impl_.session_info_);
+}
 
 ::google::protobuf::Metadata LoginNodeLeaveGameRequest::GetMetadata() const {
-  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
