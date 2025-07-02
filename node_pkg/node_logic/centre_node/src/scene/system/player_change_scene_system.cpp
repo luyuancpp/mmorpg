@@ -24,7 +24,7 @@ void PlayerChangeSceneUtil::PopFrontChangeSceneQueue(entt::entity player) {
 }
 
 // 设置当前切换场景信息的切换状态
-void PlayerChangeSceneUtil::SetChangeSceneNodeStatus(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState s) {
+void PlayerChangeSceneUtil::SetCurrentChangeSceneState(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState s) {
 	auto& changeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (changeSceneQueue.empty()) {
 		return;
@@ -86,9 +86,21 @@ void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent
 //			↓ 玩家进入成功回调[由目标GS 或 Gate 发回中心]
 //			✅ 发客户端通知（OnEnterSceneOk）
 
+//
+//ePendingLeave
+//↓ 调用 LeaveScene()（如果目标是其他 GS）
+//eLeaving
+//↓ 收到 GS 离开完成回调 → 设置为 eWaitingEnter
+//eWaitingEnter
+//↓ 目标 GS 加载完 → 设置为 eEnterSucceed
+//eEnterSucceed
+//↓ 调用 EnterScene() → 玩家实体加载到目标场景
+//eGateEnterSucceed
+//↓ 通知客户端场景进入成功 → 出队
+
 
 // 目标GS或Gate回调中心
-void PlayerChangeSceneUtil::OnPlayerFullyEnteredScene(entt::entity player) {
+void PlayerChangeSceneUtil::OnTargetGsEnterComplete(entt::entity player) {
 	auto& queue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (queue.empty()) return;
 
@@ -107,7 +119,7 @@ void PlayerChangeSceneUtil::OnEnterSceneOk(entt::entity player) {
 	tls.dispatcher.trigger(ev);
 }
 
-void PlayerChangeSceneUtil::AdvanceSceneChangeState(entt::entity player) {
+void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {
 	auto& queue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (queue.empty()) return;
 
@@ -134,6 +146,12 @@ void PlayerChangeSceneUtil::AdvanceSceneChangeState(entt::entity player) {
 		break;
 	case ChangeSceneInfoPBComponent::eLeaving:
 		// 等待中心节点收到【离开成功的通知】，再调用 SetState(player, eWaitingEnter);
+		//当前的系统没有处理因网络/RPC超时卡在某个状态的逻辑，例如：
+		//todo 
+		//❗ 可能卡住的状态：
+		//	eLeaving：玩家调用 LeaveScene() 后，迟迟未收到回调。
+
+		//	eWaitingEnter：目标GS没有及时回复“我加载好了”。
 		break;
 	case ChangeSceneInfoPBComponent::eWaitingEnter:
 		// 等待中心服务器或目标节点 RPC 通知我们切换完成

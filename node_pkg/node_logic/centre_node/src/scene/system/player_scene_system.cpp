@@ -246,7 +246,7 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 	else
 		changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs);
 
-	PlayerChangeSceneUtil::AdvanceSceneChangeState(playerEntity);
+	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
 }
 
 void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
