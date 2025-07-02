@@ -56,7 +56,7 @@ namespace protobuf {
 
 enum entity_error : int {
   kEntity_errorOK = 0,
-  kEntityTransformNotFound = 102,
+  kEntityTransformNotFound = 117,
   entity_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   entity_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -66,8 +66,8 @@ enum entity_error : int {
 bool entity_error_IsValid(int value);
 extern const uint32_t entity_error_internal_data_[];
 constexpr entity_error entity_error_MIN = static_cast<entity_error>(0);
-constexpr entity_error entity_error_MAX = static_cast<entity_error>(102);
-constexpr int entity_error_ARRAYSIZE = 102 + 1;
+constexpr entity_error entity_error_MAX = static_cast<entity_error>(117);
+constexpr int entity_error_ARRAYSIZE = 117 + 1;
 const ::google::protobuf::EnumDescriptor*
 entity_error_descriptor();
 template <typename T>

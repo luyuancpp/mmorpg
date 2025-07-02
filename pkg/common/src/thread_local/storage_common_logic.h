@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "config_loader/config.h"
 #include "proto/common/message.pb.h"
@@ -22,8 +22,8 @@ public:
     uint64_t GetSessionId() const { return current_session_id_; }
 
     entt::entity GetPlayer(Guid player_uid);
-    PlayerListMap& GetPlayerList() { return playerList; }
-    const PlayerListMap& GetPlayerList() const { return playerList; }
+    inline PlayerListMap& GetPlayerList() { return playerList; }
+    inline const PlayerListMap& GetPlayerList() const { return playerList; }
     
     [[nodiscard]] ::BaseDeployConfig& GetBaseDeployConfig()
     {
@@ -70,3 +70,9 @@ private:
 };
 
 extern thread_local ThreadLocalStorageCommonLogic tlsCommonLogic;
+
+// 在某个全局头文件，比如 common_accessor.h 中定义：
+inline auto& GlobalPlayerList() {
+	return tlsCommonLogic.GetPlayerList();
+}
+

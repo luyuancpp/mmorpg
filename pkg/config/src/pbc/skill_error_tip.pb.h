@@ -56,13 +56,13 @@ namespace protobuf {
 
 enum skill_error : int {
   kSkill_errorOK = 0,
-  kSkillUnInterruptible = 93,
-  kSkillInvalidTargetId = 94,
-  kSkillInvalidTarget = 95,
-  kSkillCooldownNotReady = 96,
-  kSkillCannotBeCastInCurrentState = 97,
-  kSkillCannotBeCastSilenceRestriction = 98,
-  kSkillCannotBeCastStunRestriction = 99,
+  kSkillUnInterruptible = 108,
+  kSkillInvalidTargetId = 109,
+  kSkillInvalidTarget = 110,
+  kSkillCooldownNotReady = 111,
+  kSkillCannotBeCastInCurrentState = 112,
+  kSkillCannotBeCastSilenceRestriction = 113,
+  kSkillCannotBeCastStunRestriction = 114,
   skill_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   skill_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -72,8 +72,8 @@ enum skill_error : int {
 bool skill_error_IsValid(int value);
 extern const uint32_t skill_error_internal_data_[];
 constexpr skill_error skill_error_MIN = static_cast<skill_error>(0);
-constexpr skill_error skill_error_MAX = static_cast<skill_error>(99);
-constexpr int skill_error_ARRAYSIZE = 99 + 1;
+constexpr skill_error skill_error_MAX = static_cast<skill_error>(114);
+constexpr int skill_error_ARRAYSIZE = 114 + 1;
 const ::google::protobuf::EnumDescriptor*
 skill_error_descriptor();
 template <typename T>

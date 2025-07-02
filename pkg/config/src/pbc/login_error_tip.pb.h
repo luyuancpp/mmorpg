@@ -56,30 +56,30 @@ namespace protobuf {
 
 enum login_error : int {
   kLogin_errorOK = 0,
-  kLoginAccountNotFound = 11,
-  kLoginAccountPlayerFull = 12,
-  kLoginCreatePlayerUnLoadAccount = 13,
-  kLoginCreatePlayerConnectionHasNotAccount = 14,
-  kLoginUnLogin = 15,
-  kLoginInProgress = 16,
-  kLoginPlayerGuidError = 17,
-  kLoginEnteringGame = 18,
-  kLoginPlaying = 19,
-  kLoginCreatingPlayer = 20,
-  kLoginWaitingEnterGame = 21,
-  kLoginEnterGameGuid = 22,
-  kLoginAccountNameEmpty = 23,
-  kLoginCreateConnectionAccountEmpty = 24,
-  kLoginEnterGameConnectionAccountEmpty = 25,
-  kLoginUnknownError = 26,
-  kLoginSessionDisconnect = 27,
-  kLoginBeKickByAnOtherAccount = 28,
-  kLoginSessionIdNotFound = 29,
-  kLoginFsmFailed = 111,
-  kLoginDataSerializeFailed = 112,
-  kLoginRedisError = 113,
-  kLoginDataParseFailed = 114,
-  kLoginRedisSetFailed = 115,
+  kLoginAccountNotFound = 20,
+  kLoginAccountPlayerFull = 21,
+  kLoginCreatePlayerUnLoadAccount = 22,
+  kLoginCreatePlayerConnectionHasNotAccount = 23,
+  kLoginUnLogin = 24,
+  kLoginInProgress = 25,
+  kLoginPlayerGuidError = 26,
+  kLoginEnteringGame = 27,
+  kLoginPlaying = 28,
+  kLoginCreatingPlayer = 29,
+  kLoginWaitingEnterGame = 30,
+  kLoginEnterGameGuid = 31,
+  kLoginAccountNameEmpty = 32,
+  kLoginCreateConnectionAccountEmpty = 33,
+  kLoginEnterGameConnectionAccountEmpty = 34,
+  kLoginUnknownError = 35,
+  kLoginSessionDisconnect = 36,
+  kLoginBeKickByAnOtherAccount = 37,
+  kLoginSessionIdNotFound = 38,
+  kLoginFsmFailed = 39,
+  kLoginDataSerializeFailed = 40,
+  kLoginRedisError = 41,
+  kLoginDataParseFailed = 42,
+  kLoginRedisSetFailed = 43,
   login_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   login_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -89,8 +89,8 @@ enum login_error : int {
 bool login_error_IsValid(int value);
 extern const uint32_t login_error_internal_data_[];
 constexpr login_error login_error_MIN = static_cast<login_error>(0);
-constexpr login_error login_error_MAX = static_cast<login_error>(115);
-constexpr int login_error_ARRAYSIZE = 115 + 1;
+constexpr login_error login_error_MAX = static_cast<login_error>(43);
+constexpr int login_error_ARRAYSIZE = 43 + 1;
 const ::google::protobuf::EnumDescriptor*
 login_error_descriptor();
 template <typename T>
@@ -98,7 +98,13 @@ const std::string& login_error_Name(T value) {
   static_assert(std::is_same<T, login_error>::value ||
                     std::is_integral<T>::value,
                 "Incorrect type passed to login_error_Name().");
-  return ::google::protobuf::internal::NameOfEnum(login_error_descriptor(), value);
+  return login_error_Name(static_cast<login_error>(value));
+}
+template <>
+inline const std::string& login_error_Name(login_error value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<login_error_descriptor,
+                                                 0, 43>(
+      static_cast<int>(value));
 }
 inline bool login_error_Parse(absl::string_view name, login_error* value) {
   return ::google::protobuf::internal::ParseNamedEnum<login_error>(

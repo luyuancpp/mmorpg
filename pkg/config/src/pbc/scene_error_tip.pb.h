@@ -56,29 +56,30 @@ namespace protobuf {
 
 enum scene_error : int {
   kScene_errorOK = 0,
-  kEnterSceneNotFound = 30,
-  kEnterSceneNotFull = 31,
-  kEnterSceneMainFull = 32,
-  kEnterGameNodeCrash = 33,
-  kEnterSceneServerType = 34,
-  kEnterSceneParamError = 35,
-  kEnterSceneSceneFull = 36,
-  kEnterSceneSceneNotFound = 37,
-  kEnterSceneYouInCurrentScene = 38,
-  kEnterSceneEnterCrossRoomScene = 39,
-  kEnterSceneGsInfoNull = 40,
-  kEnterSceneGsFull = 41,
-  kEnterSceneYourSceneIsNull = 42,
-  kEnterSceneChangeSceneOffLine = 43,
-  kEnterSceneChangingScene = 44,
-  kEnterSceneChangingGs = 45,
-  kChangeScenePlayerQueueNotFound = 46,
-  kChangeScenePlayerQueueFull = 47,
-  kChangeScenePlayerQueueComponentGsNull = 48,
-  kChangeScenePlayerQueueComponentEmpty = 49,
-  kChangeSceneEnQueueNotSameGs = 50,
-  kInvalidEnterSceneParameters = 51,
-  kCheckEnterSceneCreator = 52,
+  kEnterSceneNotFound = 44,
+  kEnterSceneNotFull = 45,
+  kEnterSceneMainFull = 46,
+  kEnterGameNodeCrash = 47,
+  kEnterSceneServerType = 48,
+  kEnterSceneParamError = 49,
+  kEnterSceneSceneFull = 50,
+  kEnterSceneSceneNotFound = 51,
+  kEnterSceneYouInCurrentScene = 52,
+  kEnterSceneEnterCrossRoomScene = 53,
+  kEnterSceneGsInfoNull = 54,
+  kEnterSceneGsFull = 55,
+  kEnterSceneYourSceneIsNull = 56,
+  kEnterSceneChangeSceneOffLine = 57,
+  kEnterSceneChangingScene = 58,
+  kEnterSceneChangingGs = 59,
+  kChangeScenePlayerQueueNotFound = 60,
+  kChangeScenePlayerQueueFull = 61,
+  kChangeScenePlayerQueueComponentGsNull = 62,
+  kChangeScenePlayerQueueComponentEmpty = 63,
+  kChangeSceneEnQueueNotSameGs = 64,
+  kInvalidEnterSceneParameters = 65,
+  kCheckEnterSceneCreator = 66,
+  kEnterSceneFailed = 67,
   scene_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   scene_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -88,8 +89,8 @@ enum scene_error : int {
 bool scene_error_IsValid(int value);
 extern const uint32_t scene_error_internal_data_[];
 constexpr scene_error scene_error_MIN = static_cast<scene_error>(0);
-constexpr scene_error scene_error_MAX = static_cast<scene_error>(52);
-constexpr int scene_error_ARRAYSIZE = 52 + 1;
+constexpr scene_error scene_error_MAX = static_cast<scene_error>(67);
+constexpr int scene_error_ARRAYSIZE = 67 + 1;
 const ::google::protobuf::EnumDescriptor*
 scene_error_descriptor();
 template <typename T>

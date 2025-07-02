@@ -33,8 +33,8 @@ static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_buff_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\024buff_error_tip.proto*S\n\nbuff_error\022\021\n\r"
-    "kBuff_errorOK\020\000\022\025\n\021kBuffMaxBuffStack\020d\022\033"
-    "\n\027kBuffTargetImmuneToBuff\020eB\tZ\007pb/gameb\006"
+    "kBuff_errorOK\020\000\022\025\n\021kBuffMaxBuffStack\020s\022\033"
+    "\n\027kBuffTargetImmuneToBuff\020tB\tZ\007pb/gameb\006"
     "proto3"
 };
 static ::absl::once_flag descriptor_table_buff_5ferror_5ftip_2eproto_once;
@@ -59,7 +59,7 @@ const ::google::protobuf::EnumDescriptor* buff_error_descriptor() {
   return file_level_enum_descriptors_buff_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t buff_error_internal_data_[] = {
-    65536u, 131072u, 101u, 100u, };
+    65536u, 131072u, 116u, 115u, };
 bool buff_error_IsValid(int value) {
   return ::_pbi::ValidateEnum(value, buff_error_internal_data_);
 }

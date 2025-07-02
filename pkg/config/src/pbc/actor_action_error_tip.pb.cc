@@ -35,7 +35,7 @@ const char descriptor_table_protodef_actor_5faction_5ferror_5ftip_2eproto[] ABSL
     "\n\034actor_action_error_tip.proto*r\n\022actor_"
     "action_error\022\031\n\025kActor_action_errorOK\020\000\022"
     "A\n=kActorActionStateActionCannotBePerfor"
-    "medWhileInTeamFollowMode\020gB\tZ\007pb/gameb\006p"
+    "medWhileInTeamFollowMode\020vB\tZ\007pb/gameb\006p"
     "roto3"
 };
 static ::absl::once_flag descriptor_table_actor_5faction_5ferror_5ftip_2eproto_once;
@@ -60,7 +60,7 @@ const ::google::protobuf::EnumDescriptor* actor_action_error_descriptor() {
   return file_level_enum_descriptors_actor_5faction_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t actor_action_error_internal_data_[] = {
-    65536u, 65536u, 103u, };
+    65536u, 65536u, 118u, };
 bool actor_action_error_IsValid(int value) {
   return ::_pbi::ValidateEnum(value, actor_action_error_internal_data_);
 }
