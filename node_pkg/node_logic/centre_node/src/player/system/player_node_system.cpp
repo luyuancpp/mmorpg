@@ -19,23 +19,15 @@
 #include "service_info/gate_service_service_info.h"
 #include "thread_local/storage_centre.h"
 #include "thread_local/storage_common_logic.h"
-#include "type_alias/player_loading.h"
 #include "util/defer.h"
 #include "proto/common/node.pb.h"
 #include "cpp_table_id_constants_name/global_abnormal_logout_table_id_constants.h"
 #include "globalvariable_config.h"
+#include "proto/logic/component/player_scene_comp.pb.h"
+#include "proto/db/mysql_database_table.pb.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
 {
-	auto& loadingList = tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity());
-	defer(loadingList.erase(playerId));
-	const auto it = loadingList.find(playerId);
-	if (it == loadingList.end())
-	{
-		LOG_ERROR << "Failed to load player: " << playerId << ", not found in loading list";
-		return;
-	}
-
 	LOG_INFO << "Handling async load for player: " << playerId;
 
 	auto playerEntity = tls.registry.create();
@@ -48,7 +40,6 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	}
 	LOG_INFO << "Player inserted into player list: " << playerId;
 
-	tls.registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity).set_gate_session_id(it->second.session_info().session_id());
 	tls.registry.emplace<Player>(playerEntity);
 	tls.registry.emplace<Guid>(playerEntity, playerId);
 	tls.registry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
