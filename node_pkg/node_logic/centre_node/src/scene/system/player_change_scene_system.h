@@ -1,5 +1,7 @@
 #pragma once
 
+#include <entt/src/entt/entity/entity.hpp>
+
 #include "scene/comp/player_scene.h"
 
 class SceneInfoPBComponent;
@@ -7,9 +9,6 @@ class SceneInfoPBComponent;
 // PlayerChangeSceneSystem 类定义
 class PlayerChangeSceneUtil {
 public:
-	// 初始化场景切换队列
-	static void InitChangeSceneQueue(entt::entity player);
-
 	// 添加切换场景信息到队列
 	static uint32_t PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo);
 

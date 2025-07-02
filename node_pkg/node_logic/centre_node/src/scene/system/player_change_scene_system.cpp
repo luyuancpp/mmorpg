@@ -8,50 +8,34 @@
 #include "proto/logic/event/scene_event.pb.h"
 #include "time/system/time_system.h"
 
-//todo 各种服务器崩溃// 初始化场景切换队列
-void PlayerChangeSceneUtil::InitChangeSceneQueue(entt::entity player) {
-	tls.registry.emplace<ChangeSceneQueuePBComponent>(player);
-}
 
 // 添加切换场景信息到队列
 uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo) {
-	auto* const changeSceneQueue = tls.registry.try_get<ChangeSceneQueuePBComponent>(player);
-	if (!changeSceneQueue) {
-		return kChangeScenePlayerQueueNotFound;  // 玩家队列组件为空
-	}
-	if (changeSceneQueue->changeSceneQueue.full()) {
+	auto& changeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	if (changeSceneQueue.changeSceneQueue.full()) {
 		return kEnterSceneChangingGs;  // 进入场景切换中的游戏服务器
 	}
-
-	changeSceneQueue->changeSceneQueue.push_back(changeInfo);
-	changeSceneQueue->changeSceneQueue.back().set_change_time(TimeUtil::NowSecondsUTC());
+	changeSceneQueue.changeSceneQueue.push_back(changeInfo);
+	changeSceneQueue.changeSceneQueue.back().set_change_time(TimeUtil::NowSecondsUTC());
 	return kSuccess;
 }
 
 // 移除队列中首个切换场景信息
 void PlayerChangeSceneUtil::PopFrontChangeSceneQueue(entt::entity player) {
-	auto* const changeSceneQueue = tls.registry.try_get<ChangeSceneQueuePBComponent>(player);
-	if (!changeSceneQueue) {
+	auto& changeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	if (changeSceneQueue.changeSceneQueue.empty()) {
 		return;
 	}
-	if (changeSceneQueue->changeSceneQueue.empty()) {
-		return;
-	}
-
-	changeSceneQueue->changeSceneQueue.pop_front();
+	changeSceneQueue.changeSceneQueue.pop_front();
 }
 
 // 设置当前切换场景信息的切换状态
 void PlayerChangeSceneUtil::SetChangeSceneNodeStatus(entt::entity player, ChangeSceneInfoPBComponent::eChangeGsStatus s) {
-	auto* const changeSceneQueue = tls.registry.try_get<ChangeSceneQueuePBComponent>(player);
-	if (!changeSceneQueue) {
+	auto& changeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	if (changeSceneQueue.changeSceneQueue.empty()) {
 		return;
 	}
-	if (changeSceneQueue->changeSceneQueue.empty()) {
-		return;
-	}
-
-	changeSceneQueue->changeSceneQueue.front().set_change_gs_status(s);
+	changeSceneQueue.changeSceneQueue.front().set_change_gs_status(s);
 }
 
 // 将场景信息复制到切换场景信息中
@@ -64,15 +48,11 @@ void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent
 
 // 处理玩家的场景切换队列
 void PlayerChangeSceneUtil::ProcessChangeSceneQueue(entt::entity player) {
-	auto* const tryChangeSceneQueue = tls.registry.try_get<ChangeSceneQueuePBComponent>(player);
-	if (!tryChangeSceneQueue) {
-		return;
-	}
-	auto& changeSceneQueue = tryChangeSceneQueue->changeSceneQueue;
+	auto& getChangeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	auto& changeSceneQueue = getChangeSceneQueue.changeSceneQueue;
 	if (changeSceneQueue.empty()) {
 		return;
 	}
-
 	const auto& changeInfo = changeSceneQueue.front();
 	if (changeInfo.change_gs_type() == ChangeSceneInfoPBComponent::eSameGs) {
 		ProcessSameGsChangeScene(player, changeInfo);

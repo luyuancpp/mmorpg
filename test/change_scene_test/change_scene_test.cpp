@@ -22,7 +22,6 @@ entt::entity CreatePlayerEntity()
 {
 	// Create a player entity and initialize change scene queue
 	auto playerEntity = tls.registry.create();
-	PlayerChangeSceneUtil::InitChangeSceneQueue(playerEntity);
 	return playerEntity;
 }
 
