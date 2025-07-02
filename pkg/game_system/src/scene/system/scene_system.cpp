@@ -43,7 +43,7 @@ SceneUtil::~SceneUtil() {
 	Clear();
 }
 
-NodeId SceneUtil::GetGameNodeId(uint64_t scene_id)
+NodeId SceneUtil::GetGameNodeIdFromGuid(uint64_t scene_id)
 {
 	return nodeSequence.node_id(static_cast<NodeId>(scene_id));
 }
@@ -63,10 +63,10 @@ void SceneUtil::Clear() {
 }
 
 // Get game node ID associated with a scene entity
-NodeId SceneUtil::GetGameNodeId(entt::entity scene) {
+NodeId SceneUtil::GetGameNodeIdFromSceneEntity(entt::entity scene) {
 	auto* sceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(scene);
 	if (sceneInfo) {
-		return GetGameNodeId(sceneInfo->guid());
+		return GetGameNodeIdFromGuid(sceneInfo->guid());
 	}
 	else {
 		LOG_ERROR << "SceneInfo not found for entity: " << entt::to_integral(scene);
@@ -121,10 +121,23 @@ bool SceneUtil::ConfigSceneListNotEmpty(uint32_t sceneConfigId) {
 	LOG_TRACE << "No non-empty scene list found for config ID: " << sceneConfigId;
 	return false;
 }
+//
+//✅ 2. 多节点负载均衡
+//你在 CompelPlayerChangeScene 中如果找不到场景就直接创建了：
+//
+//cpp
+//复制
+//编辑
+//sceneEntity = CreateSceneToSceneNode(p);
+//更好的做法是考虑负载均衡，比如：
+//
+//查找资源空闲的节点（CPU / 玩家少）。
+//
+//优先选择已有场景，再决定是否创建。
 
 // Create a new scene associated with a game node
 entt::entity SceneUtil::CreateSceneToSceneNode(const CreateGameNodeSceneParam& param) {
-	if (param.CheckValid()) {
+	if (!param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters for creating scene";
 		return entt::null;
 	}
@@ -163,7 +176,7 @@ entt::entity SceneUtil::CreateSceneToSceneNode(const CreateGameNodeSceneParam& p
 
 // Destroy a scene
 void SceneUtil::DestroyScene(const DestroySceneParam& param) {
-	if (param.CheckValid()) {
+	if (!param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters for destroying scene";
 		return;
 	}
@@ -259,7 +272,7 @@ uint32_t SceneUtil::CheckScenePlayerSize(entt::entity scene) {
 
 // Enter a player into a scene
 void SceneUtil::EnterScene(const EnterSceneParam& param) {
-	if (param.CheckValid()) {
+	if (!param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters when entering scene";
 		return;
 	}
@@ -297,7 +310,7 @@ void SceneUtil::EnterScene(const EnterSceneParam& param) {
 
 // Enter a player into the default scene
 void SceneUtil::EnterDefaultScene(const EnterDefaultSceneParam& param) {
-	if (param.CheckValid()) {
+	if (!param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters when entering default scene";
 		return;
 	}
@@ -318,7 +331,7 @@ void SceneUtil::EnterDefaultScene(const EnterDefaultSceneParam& param) {
 
 // Remove a player from a scene
 void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
-	if (param.CheckValid()) {
+	if (!param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters when leaving scene";
 		return;
 	}
