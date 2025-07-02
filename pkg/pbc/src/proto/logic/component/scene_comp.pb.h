@@ -60,40 +60,6 @@ namespace protobuf {
 }  // namespace protobuf
 }  // namespace google
 
-enum ChangeSceneInfoPBComponent_eChangeGsStatus : int {
-  ChangeSceneInfoPBComponent_eChangeGsStatus_eLeaveGsScene = 0,
-  ChangeSceneInfoPBComponent_eChangeGsStatus_eEnterGsSceneSucceed = 1,
-  ChangeSceneInfoPBComponent_eChangeGsStatus_eGateEnterGsSceneSucceed = 2,
-  ChangeSceneInfoPBComponent_eChangeGsStatus_ChangeSceneInfoPBComponent_eChangeGsStatus_INT_MIN_SENTINEL_DO_NOT_USE_ =
-      std::numeric_limits<::int32_t>::min(),
-  ChangeSceneInfoPBComponent_eChangeGsStatus_ChangeSceneInfoPBComponent_eChangeGsStatus_INT_MAX_SENTINEL_DO_NOT_USE_ =
-      std::numeric_limits<::int32_t>::max(),
-};
-
-bool ChangeSceneInfoPBComponent_eChangeGsStatus_IsValid(int value);
-extern const uint32_t ChangeSceneInfoPBComponent_eChangeGsStatus_internal_data_[];
-constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent_eChangeGsStatus_eChangeGsStatus_MIN = static_cast<ChangeSceneInfoPBComponent_eChangeGsStatus>(0);
-constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent_eChangeGsStatus_eChangeGsStatus_MAX = static_cast<ChangeSceneInfoPBComponent_eChangeGsStatus>(2);
-constexpr int ChangeSceneInfoPBComponent_eChangeGsStatus_eChangeGsStatus_ARRAYSIZE = 2 + 1;
-const ::google::protobuf::EnumDescriptor*
-ChangeSceneInfoPBComponent_eChangeGsStatus_descriptor();
-template <typename T>
-const std::string& ChangeSceneInfoPBComponent_eChangeGsStatus_Name(T value) {
-  static_assert(std::is_same<T, ChangeSceneInfoPBComponent_eChangeGsStatus>::value ||
-                    std::is_integral<T>::value,
-                "Incorrect type passed to eChangeGsStatus_Name().");
-  return ChangeSceneInfoPBComponent_eChangeGsStatus_Name(static_cast<ChangeSceneInfoPBComponent_eChangeGsStatus>(value));
-}
-template <>
-inline const std::string& ChangeSceneInfoPBComponent_eChangeGsStatus_Name(ChangeSceneInfoPBComponent_eChangeGsStatus value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<ChangeSceneInfoPBComponent_eChangeGsStatus_descriptor,
-                                                 0, 2>(
-      static_cast<int>(value));
-}
-inline bool ChangeSceneInfoPBComponent_eChangeGsStatus_Parse(absl::string_view name, ChangeSceneInfoPBComponent_eChangeGsStatus* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<ChangeSceneInfoPBComponent_eChangeGsStatus>(
-      ChangeSceneInfoPBComponent_eChangeGsStatus_descriptor(), name, value);
-}
 enum ChangeSceneInfoPBComponent_eChangeGsType : int {
   ChangeSceneInfoPBComponent_eChangeGsType_eSameGs = 0,
   ChangeSceneInfoPBComponent_eChangeGsType_eDifferentGs = 1,
@@ -314,26 +280,6 @@ class ChangeSceneInfoPBComponent final
  public:
   ::google::protobuf::Metadata GetMetadata() const;
   // nested types ----------------------------------------------------
-  using eChangeGsStatus = ChangeSceneInfoPBComponent_eChangeGsStatus;
-  static constexpr eChangeGsStatus eLeaveGsScene = ChangeSceneInfoPBComponent_eChangeGsStatus_eLeaveGsScene;
-  static constexpr eChangeGsStatus eEnterGsSceneSucceed = ChangeSceneInfoPBComponent_eChangeGsStatus_eEnterGsSceneSucceed;
-  static constexpr eChangeGsStatus eGateEnterGsSceneSucceed = ChangeSceneInfoPBComponent_eChangeGsStatus_eGateEnterGsSceneSucceed;
-  static inline bool eChangeGsStatus_IsValid(int value) {
-    return ChangeSceneInfoPBComponent_eChangeGsStatus_IsValid(value);
-  }
-  static constexpr eChangeGsStatus eChangeGsStatus_MIN = ChangeSceneInfoPBComponent_eChangeGsStatus_eChangeGsStatus_MIN;
-  static constexpr eChangeGsStatus eChangeGsStatus_MAX = ChangeSceneInfoPBComponent_eChangeGsStatus_eChangeGsStatus_MAX;
-  static constexpr int eChangeGsStatus_ARRAYSIZE = ChangeSceneInfoPBComponent_eChangeGsStatus_eChangeGsStatus_ARRAYSIZE;
-  static inline const ::google::protobuf::EnumDescriptor* eChangeGsStatus_descriptor() {
-    return ChangeSceneInfoPBComponent_eChangeGsStatus_descriptor();
-  }
-  template <typename T>
-  static inline const std::string& eChangeGsStatus_Name(T value) {
-    return ChangeSceneInfoPBComponent_eChangeGsStatus_Name(value);
-  }
-  static inline bool eChangeGsStatus_Parse(absl::string_view name, eChangeGsStatus* value) {
-    return ChangeSceneInfoPBComponent_eChangeGsStatus_Parse(name, value);
-  }
   using eChangeGsType = ChangeSceneInfoPBComponent_eChangeGsType;
   static constexpr eChangeGsType eSameGs = ChangeSceneInfoPBComponent_eChangeGsType_eSameGs;
   static constexpr eChangeGsType eDifferentGs = ChangeSceneInfoPBComponent_eChangeGsType_eDifferentGs;
@@ -385,11 +331,10 @@ class ChangeSceneInfoPBComponent final
     kMirrorConfidFieldNumber = 4,
     kChangeSequenceFieldNumber = 5,
     kChangeGsTypeFieldNumber = 6,
-    kChangeTimeFieldNumber = 8,
-    kChangeGsStatusFieldNumber = 7,
-    kIgnoreFullFieldNumber = 9,
-    kProcessingFieldNumber = 10,
-    kStateFieldNumber = 11,
+    kChangeTimeFieldNumber = 7,
+    kIgnoreFullFieldNumber = 8,
+    kProcessingFieldNumber = 9,
+    kStateFieldNumber = 10,
   };
   // uint32 scene_confid = 1;
   void clear_scene_confid() ;
@@ -451,7 +396,7 @@ class ChangeSceneInfoPBComponent final
   void _internal_set_change_gs_type(::uint32_t value);
 
   public:
-  // uint64 change_time = 8;
+  // uint64 change_time = 7;
   void clear_change_time() ;
   ::uint64_t change_time() const;
   void set_change_time(::uint64_t value);
@@ -461,17 +406,7 @@ class ChangeSceneInfoPBComponent final
   void _internal_set_change_time(::uint64_t value);
 
   public:
-  // uint32 change_gs_status = 7;
-  void clear_change_gs_status() ;
-  ::uint32_t change_gs_status() const;
-  void set_change_gs_status(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_change_gs_status() const;
-  void _internal_set_change_gs_status(::uint32_t value);
-
-  public:
-  // bool ignore_full = 9;
+  // bool ignore_full = 8;
   void clear_ignore_full() ;
   bool ignore_full() const;
   void set_ignore_full(bool value);
@@ -481,7 +416,7 @@ class ChangeSceneInfoPBComponent final
   void _internal_set_ignore_full(bool value);
 
   public:
-  // bool processing = 10;
+  // bool processing = 9;
   void clear_processing() ;
   bool processing() const;
   void set_processing(bool value);
@@ -491,7 +426,7 @@ class ChangeSceneInfoPBComponent final
   void _internal_set_processing(bool value);
 
   public:
-  // uint32 state = 11;
+  // uint32 state = 10;
   void clear_state() ;
   ::uint32_t state() const;
   void set_state(::uint32_t value);
@@ -506,7 +441,7 @@ class ChangeSceneInfoPBComponent final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      4, 11, 0,
+      4, 10, 0,
       0, 2>
       _table_;
 
@@ -531,7 +466,6 @@ class ChangeSceneInfoPBComponent final
     ::uint32_t change_sequence_;
     ::uint32_t change_gs_type_;
     ::uint64_t change_time_;
-    ::uint32_t change_gs_status_;
     bool ignore_full_;
     bool processing_;
     ::uint32_t state_;
@@ -690,29 +624,7 @@ inline void ChangeSceneInfoPBComponent::_internal_set_change_gs_type(::uint32_t 
   _impl_.change_gs_type_ = value;
 }
 
-// uint32 change_gs_status = 7;
-inline void ChangeSceneInfoPBComponent::clear_change_gs_status() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.change_gs_status_ = 0u;
-}
-inline ::uint32_t ChangeSceneInfoPBComponent::change_gs_status() const {
-  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.change_gs_status)
-  return _internal_change_gs_status();
-}
-inline void ChangeSceneInfoPBComponent::set_change_gs_status(::uint32_t value) {
-  _internal_set_change_gs_status(value);
-  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.change_gs_status)
-}
-inline ::uint32_t ChangeSceneInfoPBComponent::_internal_change_gs_status() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.change_gs_status_;
-}
-inline void ChangeSceneInfoPBComponent::_internal_set_change_gs_status(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.change_gs_status_ = value;
-}
-
-// uint64 change_time = 8;
+// uint64 change_time = 7;
 inline void ChangeSceneInfoPBComponent::clear_change_time() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.change_time_ = ::uint64_t{0u};
@@ -734,7 +646,7 @@ inline void ChangeSceneInfoPBComponent::_internal_set_change_time(::uint64_t val
   _impl_.change_time_ = value;
 }
 
-// bool ignore_full = 9;
+// bool ignore_full = 8;
 inline void ChangeSceneInfoPBComponent::clear_ignore_full() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.ignore_full_ = false;
@@ -756,7 +668,7 @@ inline void ChangeSceneInfoPBComponent::_internal_set_ignore_full(bool value) {
   _impl_.ignore_full_ = value;
 }
 
-// bool processing = 10;
+// bool processing = 9;
 inline void ChangeSceneInfoPBComponent::clear_processing() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.processing_ = false;
@@ -778,7 +690,7 @@ inline void ChangeSceneInfoPBComponent::_internal_set_processing(bool value) {
   _impl_.processing_ = value;
 }
 
-// uint32 state = 11;
+// uint32 state = 10;
 inline void ChangeSceneInfoPBComponent::clear_state() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.state_ = 0u;
@@ -810,12 +722,6 @@ inline void ChangeSceneInfoPBComponent::_internal_set_state(::uint32_t value) {
 namespace google {
 namespace protobuf {
 
-template <>
-struct is_proto_enum<::ChangeSceneInfoPBComponent_eChangeGsStatus> : std::true_type {};
-template <>
-inline const EnumDescriptor* GetEnumDescriptor<::ChangeSceneInfoPBComponent_eChangeGsStatus>() {
-  return ::ChangeSceneInfoPBComponent_eChangeGsStatus_descriptor();
-}
 template <>
 struct is_proto_enum<::ChangeSceneInfoPBComponent_eChangeGsType> : std::true_type {};
 template <>

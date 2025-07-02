@@ -34,7 +34,6 @@ inline constexpr ChangeSceneInfoPBComponent::Impl_::Impl_(
         change_sequence_{0u},
         change_gs_type_{0u},
         change_time_{::uint64_t{0u}},
-        change_gs_status_{0u},
         ignore_full_{false},
         processing_{false},
         state_{0u},
@@ -59,7 +58,7 @@ struct ChangeSceneInfoPBComponentDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ChangeSceneInfoPBComponentDefaultTypeInternal _ChangeSceneInfoPBComponent_default_instance_;
-static const ::_pb::EnumDescriptor* file_level_enum_descriptors_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto[3];
+static const ::_pb::EnumDescriptor* file_level_enum_descriptors_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto[2];
 static constexpr const ::_pb::ServiceDescriptor**
     file_level_service_descriptors_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto = nullptr;
 const ::uint32_t
@@ -79,7 +78,6 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.mirror_confid_),
         PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.change_sequence_),
         PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.change_gs_type_),
-        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.change_gs_status_),
         PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.change_time_),
         PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.ignore_full_),
         PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.processing_),
@@ -96,15 +94,12 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n&proto/logic/component/scene_comp.proto"
-    "\"\222\004\n\032ChangeSceneInfoPBComponent\022\024\n\014scene"
+    "\"\232\003\n\032ChangeSceneInfoPBComponent\022\024\n\014scene"
     "_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rdungen_co"
     "nfid\030\003 \001(\r\022\025\n\rmirror_confid\030\004 \001(\r\022\027\n\017cha"
     "nge_sequence\030\005 \001(\r\022\026\n\016change_gs_type\030\006 \001"
-    "(\r\022\030\n\020change_gs_status\030\007 \001(\r\022\023\n\013change_t"
-    "ime\030\010 \001(\004\022\023\n\013ignore_full\030\t \001(\010\022\022\n\nproces"
-    "sing\030\n \001(\010\022\r\n\005state\030\013 \001(\r\"\\\n\017eChangeGsSt"
-    "atus\022\021\n\reLeaveGsScene\020\000\022\030\n\024eEnterGsScene"
-    "Succeed\020\001\022\034\n\030eGateEnterGsSceneSucceed\020\002\""
+    "(\r\022\023\n\013change_time\030\007 \001(\004\022\023\n\013ignore_full\030\010"
+    " \001(\010\022\022\n\nprocessing\030\t \001(\010\022\r\n\005state\030\n \001(\r\""
     ".\n\reChangeGsType\022\013\n\007eSameGs\020\000\022\020\n\014eDiffer"
     "entGs\020\001\"|\n\021eChangeSceneState\022\021\n\rePending"
     "Leave\020\000\022\014\n\010eLeaving\020\001\022\021\n\reWaitingEnter\020\002"
@@ -115,7 +110,7 @@ static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fscene_5fco
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto = {
     false,
     false,
-    592,
+    472,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto,
     "proto/logic/component/scene_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto_once,
@@ -128,30 +123,9 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_
     file_level_enum_descriptors_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto,
     file_level_service_descriptors_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto,
 };
-const ::google::protobuf::EnumDescriptor* ChangeSceneInfoPBComponent_eChangeGsStatus_descriptor() {
-  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto);
-  return file_level_enum_descriptors_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto[0];
-}
-PROTOBUF_CONSTINIT const uint32_t ChangeSceneInfoPBComponent_eChangeGsStatus_internal_data_[] = {
-    196608u, 0u, };
-bool ChangeSceneInfoPBComponent_eChangeGsStatus_IsValid(int value) {
-  return 0 <= value && value <= 2;
-}
-#if (__cplusplus < 201703) && \
-  (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
-
-constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent::eLeaveGsScene;
-constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent::eEnterGsSceneSucceed;
-constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent::eGateEnterGsSceneSucceed;
-constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent::eChangeGsStatus_MIN;
-constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent::eChangeGsStatus_MAX;
-constexpr int ChangeSceneInfoPBComponent::eChangeGsStatus_ARRAYSIZE;
-
-#endif  // (__cplusplus < 201703) &&
-        // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 const ::google::protobuf::EnumDescriptor* ChangeSceneInfoPBComponent_eChangeGsType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto);
-  return file_level_enum_descriptors_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto[1];
+  return file_level_enum_descriptors_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t ChangeSceneInfoPBComponent_eChangeGsType_internal_data_[] = {
     131072u, 0u, };
@@ -171,7 +145,7 @@ constexpr int ChangeSceneInfoPBComponent::eChangeGsType_ARRAYSIZE;
         // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 const ::google::protobuf::EnumDescriptor* ChangeSceneInfoPBComponent_eChangeSceneState_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto);
-  return file_level_enum_descriptors_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto[2];
+  return file_level_enum_descriptors_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto[1];
 }
 PROTOBUF_CONSTINIT const uint32_t ChangeSceneInfoPBComponent_eChangeSceneState_internal_data_[] = {
     393216u, 0u, };
@@ -274,15 +248,15 @@ const ::google::protobuf::internal::ClassData* ChangeSceneInfoPBComponent::GetCl
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 11, 0, 0, 2> ChangeSceneInfoPBComponent::_table_ = {
+const ::_pbi::TcParseTable<4, 10, 0, 0, 2> ChangeSceneInfoPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    11, 120,  // max_field_number, fast_idx_mask
+    10, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294965248,  // skipmap
+    4294966272,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    11,  // num_field_entries
+    10,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     _class_data_.base(),
@@ -311,21 +285,19 @@ const ::_pbi::TcParseTable<4, 11, 0, 0, 2> ChangeSceneInfoPBComponent::_table_ =
     // uint32 change_gs_type = 6;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.change_gs_type_), 63>(),
      {48, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_gs_type_)}},
-    // uint32 change_gs_status = 7;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.change_gs_status_), 63>(),
-     {56, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_gs_status_)}},
-    // uint64 change_time = 8;
+    // uint64 change_time = 7;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ChangeSceneInfoPBComponent, _impl_.change_time_), 63>(),
-     {64, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_time_)}},
-    // bool ignore_full = 9;
+     {56, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_time_)}},
+    // bool ignore_full = 8;
     {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ChangeSceneInfoPBComponent, _impl_.ignore_full_), 63>(),
-     {72, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.ignore_full_)}},
-    // bool processing = 10;
+     {64, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.ignore_full_)}},
+    // bool processing = 9;
     {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ChangeSceneInfoPBComponent, _impl_.processing_), 63>(),
-     {80, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.processing_)}},
-    // uint32 state = 11;
+     {72, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.processing_)}},
+    // uint32 state = 10;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.state_), 63>(),
-     {88, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.state_)}},
+     {80, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.state_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -351,19 +323,16 @@ const ::_pbi::TcParseTable<4, 11, 0, 0, 2> ChangeSceneInfoPBComponent::_table_ =
     // uint32 change_gs_type = 6;
     {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_gs_type_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 change_gs_status = 7;
-    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_gs_status_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint64 change_time = 8;
+    // uint64 change_time = 7;
     {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_time_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-    // bool ignore_full = 9;
+    // bool ignore_full = 8;
     {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.ignore_full_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBool)},
-    // bool processing = 10;
+    // bool processing = 9;
     {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.processing_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBool)},
-    // uint32 state = 11;
+    // uint32 state = 10;
     {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.state_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
@@ -442,39 +411,32 @@ PROTOBUF_NOINLINE void ChangeSceneInfoPBComponent::Clear() {
                 6, this_._internal_change_gs_type(), target);
           }
 
-          // uint32 change_gs_status = 7;
-          if (this_._internal_change_gs_status() != 0) {
-            target = stream->EnsureSpace(target);
-            target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-                7, this_._internal_change_gs_status(), target);
-          }
-
-          // uint64 change_time = 8;
+          // uint64 change_time = 7;
           if (this_._internal_change_time() != 0) {
             target = stream->EnsureSpace(target);
             target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-                8, this_._internal_change_time(), target);
+                7, this_._internal_change_time(), target);
           }
 
-          // bool ignore_full = 9;
+          // bool ignore_full = 8;
           if (this_._internal_ignore_full() != 0) {
             target = stream->EnsureSpace(target);
             target = ::_pbi::WireFormatLite::WriteBoolToArray(
-                9, this_._internal_ignore_full(), target);
+                8, this_._internal_ignore_full(), target);
           }
 
-          // bool processing = 10;
+          // bool processing = 9;
           if (this_._internal_processing() != 0) {
             target = stream->EnsureSpace(target);
             target = ::_pbi::WireFormatLite::WriteBoolToArray(
-                10, this_._internal_processing(), target);
+                9, this_._internal_processing(), target);
           }
 
-          // uint32 state = 11;
+          // uint32 state = 10;
           if (this_._internal_state() != 0) {
             target = stream->EnsureSpace(target);
             target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-                11, this_._internal_state(), target);
+                10, this_._internal_state(), target);
           }
 
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -532,25 +494,20 @@ PROTOBUF_NOINLINE void ChangeSceneInfoPBComponent::Clear() {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
                   this_._internal_change_gs_type());
             }
-            // uint64 change_time = 8;
+            // uint64 change_time = 7;
             if (this_._internal_change_time() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
                   this_._internal_change_time());
             }
-            // uint32 change_gs_status = 7;
-            if (this_._internal_change_gs_status() != 0) {
-              total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-                  this_._internal_change_gs_status());
-            }
-            // bool ignore_full = 9;
+            // bool ignore_full = 8;
             if (this_._internal_ignore_full() != 0) {
               total_size += 2;
             }
-            // bool processing = 10;
+            // bool processing = 9;
             if (this_._internal_processing() != 0) {
               total_size += 2;
             }
-            // uint32 state = 11;
+            // uint32 state = 10;
             if (this_._internal_state() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
                   this_._internal_state());
@@ -588,9 +545,6 @@ void ChangeSceneInfoPBComponent::MergeImpl(::google::protobuf::MessageLite& to_m
   }
   if (from._internal_change_time() != 0) {
     _this->_impl_.change_time_ = from._impl_.change_time_;
-  }
-  if (from._internal_change_gs_status() != 0) {
-    _this->_impl_.change_gs_status_ = from._impl_.change_gs_status_;
   }
   if (from._internal_ignore_full() != 0) {
     _this->_impl_.ignore_full_ = from._impl_.ignore_full_;

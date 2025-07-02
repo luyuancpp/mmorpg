@@ -24,12 +24,12 @@ void PlayerChangeSceneUtil::PopFrontChangeSceneQueue(entt::entity player) {
 }
 
 // 设置当前切换场景信息的切换状态
-void PlayerChangeSceneUtil::SetChangeSceneNodeStatus(entt::entity player, ChangeSceneInfoPBComponent::eChangeGsStatus s) {
+void PlayerChangeSceneUtil::SetChangeSceneNodeStatus(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState s) {
 	auto& changeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (changeSceneQueue.empty()) {
 		return;
 	}
-	changeSceneQueue.front()->set_change_gs_status(s);
+	changeSceneQueue.front()->set_state(s);
 }
 
 // 将场景信息复制到切换场景信息中
@@ -38,57 +38,6 @@ void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent
 	changeInfo.set_dungen_confid(sceneInfo.dungen_confid());
 	changeInfo.set_guid(sceneInfo.guid());
 	changeInfo.set_mirror_confid(sceneInfo.mirror_confid());
-}
-
-// 处理玩家的场景切换队列
-void PlayerChangeSceneUtil::ProcessChangeSceneQueue(entt::entity player) {
-	auto& getChangeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
-	auto& changeSceneQueue = getChangeSceneQueue;
-	if (changeSceneQueue.empty()) {
-		return;
-	}
-	const auto changeInfo = changeSceneQueue.front();
-	if (changeInfo->change_gs_type() == ChangeSceneInfoPBComponent::eSameGs) {
-		ProcessSameGsChangeScene(player, *changeInfo);
-	}
-	else if (changeInfo->change_gs_type() == ChangeSceneInfoPBComponent::eDifferentGs) {
-		ProcessDifferentGsChangeScene(player, *changeInfo);
-	}
-}
-
-// 处理同一游戏服务器内的场景切换
-void PlayerChangeSceneUtil::ProcessSameGsChangeScene(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo) {
-	const auto& destScene = entt::entity{ changeInfo.guid() };
-	if (entt::null == destScene) {
-		// 场景不存在，移除消息
-		PopFrontChangeSceneQueue(player);
-		return;
-	}
-
-	SceneUtil::LeaveScene({ player });
-	SceneUtil::EnterScene({ destScene , player });
-	PopFrontChangeSceneQueue(player);
-	OnEnterSceneOk(player);
-}
-
-// 处理不同游戏服务器间的场景切换
-void PlayerChangeSceneUtil::ProcessDifferentGsChangeScene(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo) {
-	if (changeInfo.change_gs_status() == ChangeSceneInfoPBComponent::eLeaveGsScene) {
-		SceneUtil::LeaveScene({ player });
-	}
-	else if (changeInfo.change_gs_status() == ChangeSceneInfoPBComponent::eEnterGsSceneSucceed) {
-		const auto destScene = entt::entity{ changeInfo.guid() };
-		if (entt::null == destScene) {
-			SceneUtil::EnterDefaultScene({ player });
-		}
-		else {
-			SceneUtil::EnterScene({ destScene, player });
-		}
-	}
-	else if (changeInfo.change_gs_status() == ChangeSceneInfoPBComponent::eGateEnterGsSceneSucceed) {
-		PopFrontChangeSceneQueue(player);
-		OnEnterSceneOk(player);
-	}
 }
 
 
@@ -125,6 +74,30 @@ void PlayerChangeSceneUtil::ProcessDifferentGsChangeScene(entt::entity player, c
 //↓
 //DONE(PopFront)
 
+//ePendingLeave
+//↓ LeaveScene()[由中心调用]
+//	eLeaving
+//		↓ 离开完成回调[由 GS 发回中心]
+//		eWaitingEnter
+//		↓ 目标服加载完成通知[由目标GS通知中心]
+//		eEnterSucceed
+//			↓ 玩家实体进入场景[由中心调用 EnterScene()]
+//			eGateEnterSucceed
+//			↓ 玩家进入成功回调[由目标GS 或 Gate 发回中心]
+//			✅ 发客户端通知（OnEnterSceneOk）
+
+
+// 目标GS或Gate回调中心
+void PlayerChangeSceneUtil::OnPlayerFullyEnteredScene(entt::entity player) {
+	auto& queue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	if (queue.empty()) return;
+
+	auto& task = *queue.front();
+	if (task.state() == ChangeSceneInfoPBComponent::eEnterSucceed) {
+		task.set_state(ChangeSceneInfoPBComponent::eGateEnterSucceed);
+		LOG_INFO << "[SceneChange] Player " << entt::to_integral(player) << " fully entered target scene";
+	}
+}
 
 
 // 确认玩家成功进入场景后的操作
@@ -156,12 +129,6 @@ void PlayerChangeSceneUtil::AdvanceSceneChangeState(entt::entity player) {
 		}
 		else {
 			SceneUtil::LeaveScene({ player });
-
-			/*SimulateAsyncStore(player, [&]() {
-				task.state = ChangeSceneState::WaitingEnter;
-				LOG_INFO << "[SceneChange] Store complete for Player " << entt::to_integral(player);
-				});*/
-
 			task.set_state(ChangeSceneInfoPBComponent::eLeaving);
 		}
 		break;
@@ -180,7 +147,6 @@ void PlayerChangeSceneUtil::AdvanceSceneChangeState(entt::entity player) {
 		else {
 			SceneUtil::EnterScene({ destScene, player });
 		}
-		task.set_state(ChangeSceneInfoPBComponent::eGateEnterSucceed);
 		break;
 	}
 
