@@ -1,7 +1,5 @@
 #pragma once
 
-#include "entt/src/entt/entity/entity.hpp"
-
 #include <boost/circular_buffer.hpp>
 
 #include "proto/logic/component/scene_comp.pb.h"

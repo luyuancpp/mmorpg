@@ -17,6 +17,10 @@ public:
     static entt::entity FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext);
     static void ProcessEnterGameNode(entt::entity playerEntity, entt::entity sceneEntity);
     static void PushInitialChangeSceneInfo(entt::entity playerEntity, entt::entity sceneEntity);
+    static bool VerifyChangeSceneRequest(entt::entity playerEntity);
+    static entt::entity ResolveTargetScene(entt::entity playerEntity);
+    static bool ValidateSceneSwitch(entt::entity playerEntity, entt::entity toScene);
+    static void ProcessSceneChange(entt::entity playerEntity, entt::entity toScene);
 };
 
 
