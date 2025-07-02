@@ -246,7 +246,7 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 	else
 		changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs);
 
-	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
+	PlayerChangeSceneUtil::AdvanceSceneChangeState(playerEntity);
 }
 
 void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
@@ -287,7 +287,7 @@ void PlayerSceneSystem::PushInitialChangeSceneInfo(entt::entity playerEntity, en
 	ChangeSceneInfoPBComponent changeInfo;
 	PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeInfo, sceneInfo);
 	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs);
-	changeInfo.set_change_gs_status(ChangeSceneInfoPBComponent::eEnterGsSceneSucceed);
+	changeInfo.set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
 
 	PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo);
 }

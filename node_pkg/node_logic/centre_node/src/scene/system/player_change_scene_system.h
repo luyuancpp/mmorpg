@@ -16,21 +16,16 @@ public:
 	static void PopFrontChangeSceneQueue(entt::entity player);
 
 	// 设置当前切换场景信息的切换状态
-	static void SetChangeSceneNodeStatus(entt::entity player, ChangeSceneInfoPBComponent::eChangeGsStatus s);
+	static void SetChangeSceneNodeStatus(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState s);
 
 	// 将场景信息复制到切换场景信息中
 	static void CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const SceneInfoPBComponent& sceneInfo);
 
 	// 处理玩家的场景切换队列
-	static void ProcessChangeSceneQueue(entt::entity player);
-
 	static void AdvanceSceneChangeState(entt::entity player);
-private:
-	// 处理同一游戏服务器内的场景切换
-	static void ProcessSameGsChangeScene(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo);
 
-	// 处理不同游戏服务器间的场景切换
-	static void ProcessDifferentGsChangeScene(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo);
+	static void OnPlayerFullyEnteredScene(entt::entity player);
+private:
 
 	// 确认玩家成功进入场景后的操作
 	static void OnEnterSceneOk(entt::entity player);

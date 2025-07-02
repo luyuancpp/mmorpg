@@ -83,7 +83,7 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 	PlayerChangeSceneUtil::AdvanceSceneChangeState(playerEntity);
 	EXPECT_FALSE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eGateEnterSucceed);
+	PlayerChangeSceneUtil::OnPlayerFullyEnteredScene(playerEntity);
 
 	PlayerChangeSceneUtil::AdvanceSceneChangeState(playerEntity);
 	EXPECT_TRUE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
@@ -107,7 +107,7 @@ TEST(PlayerChangeScene, DiffGs)
 	PlayerChangeSceneUtil::AdvanceSceneChangeState(playerEntity);
 	EXPECT_FALSE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eGateEnterSucceed);
+	PlayerChangeSceneUtil::OnPlayerFullyEnteredScene(playerEntity);
 
 	PlayerChangeSceneUtil::AdvanceSceneChangeState(playerEntity);
 	EXPECT_TRUE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
@@ -146,7 +146,7 @@ TEST(PlayerChangeScene, CrossServerDiffGs)
 	PlayerChangeSceneUtil::AdvanceSceneChangeState(playerEntity);
 	EXPECT_FALSE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eGateEnterSucceed);
+	PlayerChangeSceneUtil::OnPlayerFullyEnteredScene(playerEntity);
 	PlayerChangeSceneUtil::AdvanceSceneChangeState(playerEntity);
 	EXPECT_TRUE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 }
@@ -175,7 +175,7 @@ TEST(PlayerChangeScene, ServerCrush)
 	PlayerChangeSceneUtil::AdvanceSceneChangeState(playerEntity);
 	EXPECT_FALSE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eGateEnterSucceed);
+	PlayerChangeSceneUtil::OnPlayerFullyEnteredScene(playerEntity);
 	PlayerChangeSceneUtil::AdvanceSceneChangeState(playerEntity);
 	EXPECT_TRUE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 }

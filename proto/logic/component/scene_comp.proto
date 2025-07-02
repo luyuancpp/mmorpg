@@ -4,12 +4,7 @@ option go_package = "pb/game";
 
 message ChangeSceneInfoPBComponent
 {
-  enum eChangeGsStatus
-  {
-      eLeaveGsScene = 0;//等待老gs保存完毕
-      eEnterGsSceneSucceed = 1;//不同服务器要走完这步
-      eGateEnterGsSceneSucceed = 2;//todo换的时候gate断线了
-  };
+
   enum eChangeGsType
   {
       eSameGs = 0;//同服务器间切换
@@ -33,9 +28,8 @@ message ChangeSceneInfoPBComponent
   uint32 mirror_confid = 4;
   uint32 change_sequence = 5;
   uint32 change_gs_type = 6;
-  uint32 change_gs_status = 7;//eChangeGsStatus
-  uint64 change_time = 8;//设置超时，超时代表服务器崩溃了,或者网络延时
-  bool ignore_full = 9;//忽略人数满了
-  bool processing = 10;
-  uint32 state = 11;
+  uint64 change_time = 7;//设置超时，超时代表服务器崩溃了,或者网络延时
+  bool ignore_full = 8;//忽略人数满了
+  bool processing = 9;
+  uint32 state = 10;
 }
