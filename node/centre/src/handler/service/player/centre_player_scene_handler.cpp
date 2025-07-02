@@ -67,13 +67,13 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request received for player: " << tls.registry.get<Guid>(player);
 
 	auto* const changeSceneQueue = tls.registry.try_get<ChangeSceneQueuePBComponent>(player);
-	if (!changeSceneQueue || changeSceneQueue->changeSceneQueue.empty())
+	if (!changeSceneQueue || changeSceneQueue->empty())
 	{
 		LOG_WARN << "Change scene queue is empty for player: " << tls.registry.get<Guid>(player);
 		return;
 	}
 
-	const auto& changeSceneInfo = changeSceneQueue->changeSceneQueue.front();
+	const auto& changeSceneInfo = *changeSceneQueue->front();
 	LOG_INFO << "Processing change scene info: " << changeSceneInfo.processing();
 
 	const auto toScene = entt::to_entity(changeSceneInfo.guid());

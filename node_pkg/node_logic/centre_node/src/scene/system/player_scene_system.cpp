@@ -129,13 +129,13 @@ bool PlayerSceneSystem::VerifyChangeSceneRequest(entt::entity playerEntity)
 {
 	auto playerId = tls.registry.get<Guid>(playerEntity);
 	auto* queue = tls.registry.try_get<ChangeSceneQueuePBComponent>(playerEntity);
-	if (!queue || queue->changeSceneQueue.empty())
+	if (!queue || queue->empty())
 	{
 		LOG_WARN << "Change scene queue is empty for player: " << playerId;
 		return false;
 	}
 
-	auto& info = queue->changeSceneQueue.front();
+	auto& info = *queue->front();
 	if (info.processing())
 	{
 		LOG_WARN << "Scene change already in progress for player: " << playerId;
@@ -159,7 +159,7 @@ entt::entity PlayerSceneSystem::ResolveTargetScene(entt::entity playerEntity)
 {
 	auto playerId = tls.registry.get<Guid>(playerEntity);
 	auto& queue = tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity);
-	auto& info = queue.changeSceneQueue.front();
+	auto& info = *queue.front();
 
 	entt::entity toScene = entt::null;
 
@@ -220,7 +220,7 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 		return false;
 	}
 
-	const auto& changeInfo = tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.front();
+	const auto& changeInfo = *tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 	if (!changeInfo.ignore_full() &&
 		SceneUtil::CheckScenePlayerSize(toScene) != kSuccess)
 	{
@@ -235,7 +235,7 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 
 void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::entity toScene)
 {
-	auto& changeInfo = tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.front();
+	auto& changeInfo = *tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 	auto* fromSceneComp = tls.registry.try_get<SceneEntityComp>(playerEntity);
 
 	const auto fromNode = SceneUtil::get_game_node_eid(tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneComp->sceneEntity).guid());

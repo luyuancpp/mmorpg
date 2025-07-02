@@ -83,20 +83,20 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 
 	// If the change scene queue component is not found, the queue is empty, or the scene change type is 'DifferentGs'
 	if (!changeSceneQueue ||
-		changeSceneQueue->changeSceneQueue.empty())
+		changeSceneQueue->empty())
 	{
-		// 处理玩家直接退出游戏的情况
-		// Handle the case where the player is exiting the game
-		GameNodeExitGameRequest exitGameRequest;
-		// Set any required fields for the exit game request here if needed
-		SendToGsPlayer(ScenePlayerExitGameMessageId, exitGameRequest, player);
+		//// 处理玩家直接退出游戏的情况
+		//// Handle the case where the player is exiting the game
+		//GameNodeExitGameRequest exitGameRequest;
+		//// Set any required fields for the exit game request here if needed
+		//SendToGsPlayer(ScenePlayerExitGameMessageId, exitGameRequest, player);
 
-		LOG_TRACE << "Player is exiting the game: "
-			<< tls.registry.get<Guid>(player);
+		//LOG_TRACE << "Player is exiting the game: "
+		//	<< tls.registry.get<Guid>(player);
 		return;
 	}
 
-	const auto& changeSceneInfo = changeSceneQueue->changeSceneQueue.front();
+	const auto& changeSceneInfo = *changeSceneQueue->front();
 
 	GsLeaveSceneRequest leaveSceneRequest;
 	leaveSceneRequest.set_change_gs(changeSceneInfo.change_gs_type() == ChangeSceneInfoPBComponent::eDifferentGs);
