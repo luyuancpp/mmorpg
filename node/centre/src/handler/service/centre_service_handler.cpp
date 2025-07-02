@@ -121,7 +121,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 
 	auto playerEntity =  player_it->second;
 
-	const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(playerEntity);
+	const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (playerSessionSnapshotPB == nullptr)
 	{
 		LOG_ERROR << "PlayerNodeInfo not found for player entity: " << tls.registry.get<Guid>(playerEntity);
@@ -220,7 +220,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		//区分顶号和断线重连
 		// 
 		// Handle session takeover (顶号) or reconnect scenario
-		if (auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+		if (auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
 			playerSessionSnapshotPB != nullptr)
 		{
 			// Handle session takeover (顶号)
@@ -241,7 +241,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		else
 		{
 			LOG_INFO << "Existing player login: Player ID " << clientMsgBody.player_id();
-			tls.registry.emplace_or_replace<PlayerSessionSnapshotPB>(player).set_gate_session_id(sessionId);
+			tls.registry.emplace_or_replace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(sessionId);
 		}
 
 		//连续顶几次,所以用emplace_or_replace
@@ -439,7 +439,7 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 		return;
 	}
 
-	auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+	auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "Player session info not found for player: " << playerId;

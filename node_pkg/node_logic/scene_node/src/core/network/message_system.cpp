@@ -24,7 +24,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 		return;
 	}
 
-	const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(playerEntity);
+	const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "Player node info not found for player entity";
@@ -65,7 +65,7 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 		return;
 	}
 
-	const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(playerEntity);
+	const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!playerSessionSnapshotPB){
 		LOG_ERROR << "Player node info not found for player entity";
 		return;
@@ -167,7 +167,7 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 			continue;
 		}
 
-		const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+		const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
 		if (!playerSessionSnapshotPB)
 		{
 			LOG_ERROR << "Player node info not found for player entity: " << tls.registry.get<Guid>(player);
@@ -217,7 +217,7 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 			continue;
 		}
 
-		const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPB>(player);
+		const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
 		if (!playerSessionSnapshotPB)
 		{
 			LOG_ERROR << "Player node info not found for player entity: " << tls.registry.get<Guid>(player);

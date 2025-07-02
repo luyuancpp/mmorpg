@@ -51,9 +51,9 @@ struct TableStruct_proto_2flogic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto;
-class PlayerSessionSnapshotPB;
-struct PlayerSessionSnapshotPBDefaultTypeInternal;
-extern PlayerSessionSnapshotPBDefaultTypeInternal _PlayerSessionSnapshotPB_default_instance_;
+class PlayerSessionSnapshotPBComp;
+struct PlayerSessionSnapshotPBCompDefaultTypeInternal;
+extern PlayerSessionSnapshotPBCompDefaultTypeInternal _PlayerSessionSnapshotPBComp_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -65,32 +65,32 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class PlayerSessionSnapshotPB final
+class PlayerSessionSnapshotPBComp final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:PlayerSessionSnapshotPB) */ {
+/* @@protoc_insertion_point(class_definition:PlayerSessionSnapshotPBComp) */ {
  public:
-  inline PlayerSessionSnapshotPB() : PlayerSessionSnapshotPB(nullptr) {}
-  ~PlayerSessionSnapshotPB() PROTOBUF_FINAL;
+  inline PlayerSessionSnapshotPBComp() : PlayerSessionSnapshotPBComp(nullptr) {}
+  ~PlayerSessionSnapshotPBComp() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(PlayerSessionSnapshotPB* msg, std::destroying_delete_t) {
+  void operator delete(PlayerSessionSnapshotPBComp* msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerSessionSnapshotPB));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerSessionSnapshotPBComp));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerSessionSnapshotPB(
+  explicit PROTOBUF_CONSTEXPR PlayerSessionSnapshotPBComp(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline PlayerSessionSnapshotPB(const PlayerSessionSnapshotPB& from) : PlayerSessionSnapshotPB(nullptr, from) {}
-  inline PlayerSessionSnapshotPB(PlayerSessionSnapshotPB&& from) noexcept
-      : PlayerSessionSnapshotPB(nullptr, std::move(from)) {}
-  inline PlayerSessionSnapshotPB& operator=(const PlayerSessionSnapshotPB& from) {
+  inline PlayerSessionSnapshotPBComp(const PlayerSessionSnapshotPBComp& from) : PlayerSessionSnapshotPBComp(nullptr, from) {}
+  inline PlayerSessionSnapshotPBComp(PlayerSessionSnapshotPBComp&& from) noexcept
+      : PlayerSessionSnapshotPBComp(nullptr, std::move(from)) {}
+  inline PlayerSessionSnapshotPBComp& operator=(const PlayerSessionSnapshotPBComp& from) {
     CopyFrom(from);
     return *this;
   }
-  inline PlayerSessionSnapshotPB& operator=(PlayerSessionSnapshotPB&& from) noexcept {
+  inline PlayerSessionSnapshotPBComp& operator=(PlayerSessionSnapshotPBComp&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -118,16 +118,16 @@ class PlayerSessionSnapshotPB final
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const PlayerSessionSnapshotPB& default_instance() {
+  static const PlayerSessionSnapshotPBComp& default_instance() {
     return *internal_default_instance();
   }
-  static inline const PlayerSessionSnapshotPB* internal_default_instance() {
-    return reinterpret_cast<const PlayerSessionSnapshotPB*>(
-        &_PlayerSessionSnapshotPB_default_instance_);
+  static inline const PlayerSessionSnapshotPBComp* internal_default_instance() {
+    return reinterpret_cast<const PlayerSessionSnapshotPBComp*>(
+        &_PlayerSessionSnapshotPBComp_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(PlayerSessionSnapshotPB& a, PlayerSessionSnapshotPB& b) { a.Swap(&b); }
-  inline void Swap(PlayerSessionSnapshotPB* other) {
+  friend void swap(PlayerSessionSnapshotPBComp& a, PlayerSessionSnapshotPBComp& b) { a.Swap(&b); }
+  inline void Swap(PlayerSessionSnapshotPBComp* other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -135,7 +135,7 @@ class PlayerSessionSnapshotPB final
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(PlayerSessionSnapshotPB* other) {
+  void UnsafeArenaSwap(PlayerSessionSnapshotPBComp* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -143,13 +143,13 @@ class PlayerSessionSnapshotPB final
 
   // implements Message ----------------------------------------------
 
-  PlayerSessionSnapshotPB* New(::google::protobuf::Arena* arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<PlayerSessionSnapshotPB>(arena);
+  PlayerSessionSnapshotPBComp* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerSessionSnapshotPBComp>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const PlayerSessionSnapshotPB& from);
+  void CopyFrom(const PlayerSessionSnapshotPBComp& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const PlayerSessionSnapshotPB& from) { PlayerSessionSnapshotPB::MergeImpl(*this, from); }
+  void MergeFrom(const PlayerSessionSnapshotPBComp& from) { PlayerSessionSnapshotPBComp::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -186,18 +186,18 @@ class PlayerSessionSnapshotPB final
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(PlayerSessionSnapshotPB* other);
+  void InternalSwap(PlayerSessionSnapshotPBComp* other);
  private:
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "PlayerSessionSnapshotPB"; }
+  static ::absl::string_view FullMessageName() { return "PlayerSessionSnapshotPBComp"; }
 
  protected:
-  explicit PlayerSessionSnapshotPB(::google::protobuf::Arena* arena);
-  PlayerSessionSnapshotPB(::google::protobuf::Arena* arena, const PlayerSessionSnapshotPB& from);
-  PlayerSessionSnapshotPB(::google::protobuf::Arena* arena, PlayerSessionSnapshotPB&& from) noexcept
-      : PlayerSessionSnapshotPB(arena) {
+  explicit PlayerSessionSnapshotPBComp(::google::protobuf::Arena* arena);
+  PlayerSessionSnapshotPBComp(::google::protobuf::Arena* arena, const PlayerSessionSnapshotPBComp& from);
+  PlayerSessionSnapshotPBComp(::google::protobuf::Arena* arena, PlayerSessionSnapshotPBComp&& from) noexcept
+      : PlayerSessionSnapshotPBComp(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
@@ -257,7 +257,7 @@ class PlayerSessionSnapshotPB final
   void _internal_set_centre_node_id(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:PlayerSessionSnapshotPB)
+  // @@protoc_insertion_point(class_scope:PlayerSessionSnapshotPBComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -279,7 +279,7 @@ class PlayerSessionSnapshotPB final
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
-                          const PlayerSessionSnapshotPB& from_msg);
+                          const PlayerSessionSnapshotPBComp& from_msg);
     ::uint64_t player_id_;
     ::uint64_t gate_session_id_;
     ::uint32_t scene_node_id_;
@@ -305,92 +305,92 @@ class PlayerSessionSnapshotPB final
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// PlayerSessionSnapshotPB
+// PlayerSessionSnapshotPBComp
 
 // uint64 player_id = 1;
-inline void PlayerSessionSnapshotPB::clear_player_id() {
+inline void PlayerSessionSnapshotPBComp::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
 }
-inline ::uint64_t PlayerSessionSnapshotPB::player_id() const {
-  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPB.player_id)
+inline ::uint64_t PlayerSessionSnapshotPBComp::player_id() const {
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.player_id)
   return _internal_player_id();
 }
-inline void PlayerSessionSnapshotPB::set_player_id(::uint64_t value) {
+inline void PlayerSessionSnapshotPBComp::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPB.player_id)
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.player_id)
 }
-inline ::uint64_t PlayerSessionSnapshotPB::_internal_player_id() const {
+inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_player_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.player_id_;
 }
-inline void PlayerSessionSnapshotPB::_internal_set_player_id(::uint64_t value) {
+inline void PlayerSessionSnapshotPBComp::_internal_set_player_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = value;
 }
 
 // uint64 gate_session_id = 2;
-inline void PlayerSessionSnapshotPB::clear_gate_session_id() {
+inline void PlayerSessionSnapshotPBComp::clear_gate_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.gate_session_id_ = ::uint64_t{0u};
 }
-inline ::uint64_t PlayerSessionSnapshotPB::gate_session_id() const {
-  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPB.gate_session_id)
+inline ::uint64_t PlayerSessionSnapshotPBComp::gate_session_id() const {
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.gate_session_id)
   return _internal_gate_session_id();
 }
-inline void PlayerSessionSnapshotPB::set_gate_session_id(::uint64_t value) {
+inline void PlayerSessionSnapshotPBComp::set_gate_session_id(::uint64_t value) {
   _internal_set_gate_session_id(value);
-  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPB.gate_session_id)
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.gate_session_id)
 }
-inline ::uint64_t PlayerSessionSnapshotPB::_internal_gate_session_id() const {
+inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_gate_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.gate_session_id_;
 }
-inline void PlayerSessionSnapshotPB::_internal_set_gate_session_id(::uint64_t value) {
+inline void PlayerSessionSnapshotPBComp::_internal_set_gate_session_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.gate_session_id_ = value;
 }
 
 // uint32 scene_node_id = 3;
-inline void PlayerSessionSnapshotPB::clear_scene_node_id() {
+inline void PlayerSessionSnapshotPBComp::clear_scene_node_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_node_id_ = 0u;
 }
-inline ::uint32_t PlayerSessionSnapshotPB::scene_node_id() const {
-  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPB.scene_node_id)
+inline ::uint32_t PlayerSessionSnapshotPBComp::scene_node_id() const {
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.scene_node_id)
   return _internal_scene_node_id();
 }
-inline void PlayerSessionSnapshotPB::set_scene_node_id(::uint32_t value) {
+inline void PlayerSessionSnapshotPBComp::set_scene_node_id(::uint32_t value) {
   _internal_set_scene_node_id(value);
-  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPB.scene_node_id)
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.scene_node_id)
 }
-inline ::uint32_t PlayerSessionSnapshotPB::_internal_scene_node_id() const {
+inline ::uint32_t PlayerSessionSnapshotPBComp::_internal_scene_node_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.scene_node_id_;
 }
-inline void PlayerSessionSnapshotPB::_internal_set_scene_node_id(::uint32_t value) {
+inline void PlayerSessionSnapshotPBComp::_internal_set_scene_node_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_node_id_ = value;
 }
 
 // uint32 centre_node_id = 4;
-inline void PlayerSessionSnapshotPB::clear_centre_node_id() {
+inline void PlayerSessionSnapshotPBComp::clear_centre_node_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.centre_node_id_ = 0u;
 }
-inline ::uint32_t PlayerSessionSnapshotPB::centre_node_id() const {
-  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPB.centre_node_id)
+inline ::uint32_t PlayerSessionSnapshotPBComp::centre_node_id() const {
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.centre_node_id)
   return _internal_centre_node_id();
 }
-inline void PlayerSessionSnapshotPB::set_centre_node_id(::uint32_t value) {
+inline void PlayerSessionSnapshotPBComp::set_centre_node_id(::uint32_t value) {
   _internal_set_centre_node_id(value);
-  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPB.centre_node_id)
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.centre_node_id)
 }
-inline ::uint32_t PlayerSessionSnapshotPB::_internal_centre_node_id() const {
+inline ::uint32_t PlayerSessionSnapshotPBComp::_internal_centre_node_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.centre_node_id_;
 }
-inline void PlayerSessionSnapshotPB::_internal_set_centre_node_id(::uint32_t value) {
+inline void PlayerSessionSnapshotPBComp::_internal_set_centre_node_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.centre_node_id_ = value;
 }

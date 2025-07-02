@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message PlayerSessionSnapshotPB {
+message PlayerSessionSnapshotPBComp {
     uint64 player_id = 1;
     uint64 gate_session_id = 2;
     uint32 scene_node_id = 3;
