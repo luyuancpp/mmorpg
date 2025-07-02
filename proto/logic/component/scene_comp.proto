@@ -2,9 +2,6 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-
-
-
 message ChangeSceneInfoPBComponent
 {
   enum eChangeGsStatus
@@ -19,6 +16,17 @@ message ChangeSceneInfoPBComponent
       eDifferentGs = 1;//不同服务器间切换
   };
   
+  enum eChangeSceneState  
+  {
+	ePendingLeave = 0;
+	eLeaving = 1;
+	eWaitingEnter =2;
+	eEnterSucceed = 3;
+	eGateEnterSucceed = 4;
+	eDone = 5;
+  };
+
+  
   uint32 scene_confid = 1;
   uint32 guid = 2;//场景id
   uint32 dungen_confid = 3;
@@ -29,4 +37,5 @@ message ChangeSceneInfoPBComponent
   uint64 change_time = 8;//设置超时，超时代表服务器崩溃了,或者网络延时
   bool ignore_full = 9;//忽略人数满了
   bool processing = 10;
+  uint32 state = 11;
 }
