@@ -27,7 +27,7 @@ public:
     void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& message) const;
 
     // 处理来自客户端的 RPC 消息
-    void HandleRpcRequest(const muduo::net::TcpConnectionPtr& conn,
+    void DispatchClientRpcMessage(const muduo::net::TcpConnectionPtr& conn,
         const RpcClientMessagePtr& message,
         muduo::Timestamp);
 
@@ -40,6 +40,8 @@ public:
     bool CheckMessageSize(const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const;
 
     bool CheckMessageLimit(Session& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn)const;
+
+    bool ValidateClientMessage(Session& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const;
 
 private:
 

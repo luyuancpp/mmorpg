@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "message_limiter/message_limiter.h"
 #include "muduo/net/TcpConnection.h"
@@ -6,39 +6,36 @@
 #include "proto/common/node.pb.h"
 #include <muduo/base/Logging.h>
 
-struct Session
-{
-	[[nodiscard]] bool HasNodeId(uint32_t nodeType) const { return GetNodeId(nodeType) != kInvalidNodeId; }
-	using NodeIds = std::array<NodeId, eNodeType_ARRAYSIZE>;
+#include <unordered_map>
 
-	Session() {
-		nodeIds.fill(kInvalidNodeId);
-	}
+struct Session {
+	using NodeMap = std::unordered_map<uint32_t, NodeId>;
 
-	NodeId GetNodeId(uint32_t nodeType) const
-	{
-		if (nodeType >= nodeIds.size())
-		{
-			LOG_ERROR << "Invalid node type: " << nodeType;
-			return kInvalidNodeId;
-		}
-		return nodeIds[nodeType];
-	}
+	Session() = default;
 
-	void SetNodeId(uint32_t nodeType, NodeId nodeId)
-	{
-		if (nodeType >= nodeIds.size())
-		{
-			LOG_ERROR << "Invalid node type: " << nodeType;
-			return;
-		}
+	void SetNodeId(uint32_t nodeType, NodeId nodeId) {
 		nodeIds[nodeType] = nodeId;
+	}
+
+	NodeId GetNodeId(uint32_t nodeType) const {
+		auto it = nodeIds.find(nodeType);
+		if (it != nodeIds.end()) {
+			return it->second;
+		}
+		return kInvalidNodeId;
+	}
+
+	bool HasNodeId(uint32_t nodeType) const {
+		return nodeIds.find(nodeType) != nodeIds.end();
 	}
 
 	Guid playerGuild{ kInvalidGuid };
 	muduo::net::TcpConnectionPtr conn;
 	MessageLimiter messageLimiter;
-	NodeIds nodeIds;
+
+private:
+	NodeMap nodeIds; // 稀疏结构，只保存设置过的 node
 };
+
 
 
