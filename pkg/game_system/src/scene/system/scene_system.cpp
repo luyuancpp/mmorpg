@@ -285,7 +285,7 @@ void SceneUtil::EnterScene(const EnterSceneParam& param) {
 
 	if (!tls.registry.valid(param.enter))
 	{
-		LOG_ERROR << "Invalid player entity when entering scene - Player GUID: " << tls.registry.get<Guid>(param.enter);
+		LOG_ERROR << "Invalid player entity when entering scene - Player : " << entt::to_integral(param.enter);
 		return;
 	}
 
@@ -337,20 +337,20 @@ void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
 	}
 
 	if (!tls.registry.valid(param.leaver)) {
-		LOG_ERROR << "Invalid player entity when leaving scene - Player GUID: " << tls.registry.get<Guid>(param.leaver);
+		LOG_ERROR << "Invalid player entity when leaving scene - Player GUID: " << entt::to_integral(param.leaver);
 		return;
 	}
 
 	auto sceneEntityComp = tls.registry.try_get<SceneEntityComp>(param.leaver);
 	if (nullptr == sceneEntityComp)
 	{
-		LOG_ERROR << "SceneEntityComp not found for player when leaving scene - Player GUID: " << tls.registry.get<Guid>(param.leaver);
+		LOG_ERROR << "SceneEntityComp not found for player when leaving scene - Player : " << entt::to_integral(param.leaver);
 		return;
 	}
 
 	auto sceneEntity = sceneEntityComp->sceneEntity;
 	if (!tls.sceneRegistry.valid(sceneEntity)) {
-		LOG_ERROR << "Invalid scene entity when leaving scene - Player GUID: " << tls.registry.get<Guid>(param.leaver);
+		LOG_ERROR << "Invalid scene entity when leaving scene - Player : " << entt::to_integral(param.leaver);
 		return;
 	}
 
