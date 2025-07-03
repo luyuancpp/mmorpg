@@ -212,8 +212,9 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 		return false;
 	}
 
-	if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(SceneUtil::get_game_node_eid(fromSceneInfo->guid())) ||
-		!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(SceneUtil::get_game_node_eid(toSceneInfo->guid())))
+	auto& sceneNodeRegistry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
+	if (!sceneNodeRegistry.valid(SceneUtil::get_game_node_eid(fromSceneInfo->guid())) ||
+		!sceneNodeRegistry.valid(SceneUtil::get_game_node_eid(toSceneInfo->guid())))
 	{
 		LOG_ERROR << "Invalid game node info for scene change";
 		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);

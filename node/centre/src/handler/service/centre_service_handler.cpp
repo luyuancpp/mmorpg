@@ -134,13 +134,14 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	}
 
 	const entt::entity gameNodeId{ playerSessionSnapshotPB->scene_node_id() };
-	if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(gameNodeId))
+	auto& registry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
+	if (!registry.valid(gameNodeId))
 	{
 		LOG_ERROR << "Invalid game node ID found for player: " << tls.registry.get<Guid>(playerEntity);
 		return;
 	}
 
-	const auto gameNode = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<RpcSession>(gameNodeId);
+	const auto gameNode = registry.try_get<RpcSession>(gameNodeId);
 	if (gameNode == nullptr)
 	{
 		LOG_ERROR << "RpcSession not found for game node ID: " << playerSessionSnapshotPB->scene_node_id();
@@ -560,12 +561,13 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	case GateNodeService:
 	{
 		entt::entity gate_node_id{ tlsCommonLogic.GetNextRouteNodeId() };
-		if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gate_node_id))
+		auto& registry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
+		if (!registry.valid(gate_node_id))
 		{
 			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.GetNextRouteNodeId();
 			return;
 		}
-		const auto sceneNodeSession = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gate_node_id);
+		const auto sceneNodeSession = registry.try_get<RpcSession>(gate_node_id);
 		if (!sceneNodeSession)
 		{
 			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.GetNextRouteNodeId();
@@ -577,12 +579,13 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	case SceneNodeService:
 	{
 		entt::entity game_node_id{ tlsCommonLogic.GetNextRouteNodeId() };
-		if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(game_node_id))
+		auto& registry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
+		if (!registry.valid(game_node_id))
 		{
 			LOG_ERROR << "Game node not found: " << tlsCommonLogic.GetNextRouteNodeId() << ", " << request->DebugString();
 			return;
 		}
-		const auto sceneNodeSession = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<RpcSession>(game_node_id);
+		const auto sceneNodeSession = registry.try_get<RpcSession>(game_node_id);
 		if (!sceneNodeSession)
 		{
 			LOG_ERROR << "Game node not found: " << tlsCommonLogic.GetNextRouteNodeId() << ", " << request->DebugString();
@@ -621,35 +624,35 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
- 
     auto sceneNodeId = entt::entity{ request->node_id() };
+	auto& registry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
 
     // Check if the scene node ID is valid
-    if (!tls.GetNodeRegistry(eNodeType::SceneNodeService).valid(sceneNodeId))
+    if (!registry.valid(sceneNodeId))
     {
         LOG_ERROR << "Invalid scene node ID: " << request->node_id();
         return;
     }
 
 	// Search for a matching client connection and register the game node
-    AddMainSceneNodeComponent(tls.GetNodeRegistry(eNodeType::SceneNodeService), sceneNodeId);
+    AddMainSceneNodeComponent(registry, sceneNodeId);
 
     if (request->scene_node_type() == eSceneNodeType::kMainSceneCrossNode)
     {
-    	tls.GetNodeRegistry(eNodeType::SceneNodeService).remove<MainSceneNode>(sceneNodeId);
-    	tls.GetNodeRegistry(eNodeType::SceneNodeService).emplace<CrossMainSceneNode>(sceneNodeId);
+		registry.remove<MainSceneNode>(sceneNodeId);
+		registry.emplace<CrossMainSceneNode>(sceneNodeId);
     	LOG_INFO << "Scene node " << request->node_id() << " updated to CrossMainSceneNode.";
     }
     else if (request->scene_node_type() == eSceneNodeType::kRoomNode)
     {
-    	tls.GetNodeRegistry(eNodeType::SceneNodeService).remove<MainSceneNode>(sceneNodeId);
-    	tls.GetNodeRegistry(eNodeType::SceneNodeService).emplace<RoomSceneNode>(sceneNodeId);
+		registry.remove<MainSceneNode>(sceneNodeId);
+		registry.emplace<RoomSceneNode>(sceneNodeId);
     	LOG_INFO << "Scene node " << request->node_id() << " updated to RoomSceneNode.";
     }
     else if (request->scene_node_type() == eSceneNodeType::kRoomSceneCrossNode)
     {
-    	tls.GetNodeRegistry(eNodeType::SceneNodeService).remove<MainSceneNode>(sceneNodeId);
-    	tls.GetNodeRegistry(eNodeType::SceneNodeService).emplace<CrossRoomSceneNode>(sceneNodeId);
+		registry.remove<MainSceneNode>(sceneNodeId);
+		registry.emplace<CrossRoomSceneNode>(sceneNodeId);
     	LOG_INFO << "Scene node " << request->node_id() << " updated to CrossRoomSceneNode.";
     }
 ///<<< END WRITING YOUR CODE
