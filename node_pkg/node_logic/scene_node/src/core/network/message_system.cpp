@@ -32,13 +32,14 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	}
 
 	entt::entity gateNodeId{ GetGateNodeId(playerSessionSnapshotPB->gate_session_id()) };
-	if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
+	auto& gateNodeRegistry = tls.GetNodeRegistry(eNodeType::GateNodeService);
+	if (!gateNodeRegistry.valid(gateNodeId))
 	{
 		LOG_ERROR << "Gate node not found for player";
 		return;
 	}
 
-	const auto gateNode = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateNodeId);
+	const auto gateNode = gateNodeRegistry.try_get<RpcSession>(gateNodeId);
 	if (!gateNode)
 	{
 		LOG_ERROR << "RpcSession not found for gate node";
@@ -72,12 +73,13 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 	}
 
 	entt::entity centreNodeId{ playerSessionSnapshotPB->centre_node_id() };
-	if (!tls.GetNodeRegistry(eNodeType::CentreNodeService).valid(centreNodeId)){
+	auto& centreNodeRegistry = tls.GetNodeRegistry(eNodeType::CentreNodeService);
+	if (!centreNodeRegistry.valid(centreNodeId)){
 		LOG_ERROR << "Central node not found for player";
 		return;
 	}
 
-	const auto node = tls.GetNodeRegistry(eNodeType::CentreNodeService).try_get<RpcClientPtr>(centreNodeId);
+	const auto node = centreNodeRegistry.try_get<RpcClientPtr>(centreNodeId);
 	if (!node){
 		LOG_ERROR << "RpcClientPtr not found for central node";
 		return;
@@ -93,13 +95,14 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 void SendToCentre(const uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
 {
 	entt::entity centreNodeId{ nodeId };
-	if (!tls.GetNodeRegistry(eNodeType::CentreNodeService).valid(centreNodeId))
+	auto& centreNodeRegistry = tls.GetNodeRegistry(eNodeType::CentreNodeService);
+	if (!centreNodeRegistry.valid(centreNodeId))
 	{
 		LOG_ERROR << "Central node not found: " << nodeId;
 		return;
 	}
 
-	const auto node = tls.GetNodeRegistry(eNodeType::CentreNodeService).try_get<RpcClientPtr>(centreNodeId);
+	const auto node = centreNodeRegistry.try_get<RpcClientPtr>(centreNodeId);
 	if (!node)
 	{
 		LOG_ERROR << "RpcClientPtr not found for central node: " << nodeId;

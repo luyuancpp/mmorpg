@@ -13,7 +13,7 @@
 #include "type_define/type_define.h"
 #include "proto/common/node.pb.h"
 
-void SendToGs(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
+void SendToSceneNode(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
 {
 	entt::entity gameNodeId{ nodeId };
 	auto& registry = tls.GetNodeRegistry(eNodeType::SceneNodeService);

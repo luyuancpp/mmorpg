@@ -11,7 +11,7 @@
 * 必须得replied返回给gs后再在gs返回给客户。
 */
 
-void SendToGs(uint32_t messageId, const google::protobuf::Message& message, NodeId gameNodeId);
+void SendToSceneNode(uint32_t messageId, const google::protobuf::Message& message, NodeId gameNodeId);
 void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
 void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
 void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);

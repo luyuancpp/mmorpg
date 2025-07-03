@@ -112,13 +112,14 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	LOG_INFO << "Adding game node player to gate node, session_id: " << playerSessionSnapshotPB->gate_session_id();
 
 	entt::entity gateNodeId{ GetGateNodeId(playerSessionSnapshotPB->gate_session_id()) };
-	if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateNodeId))
+	auto& registry = tls.GetNodeRegistry(eNodeType::GateNodeService);
+	if (!registry.valid(gateNodeId))
 	{
 		LOG_WARN << "Gate node invalid for session_id: " << playerSessionSnapshotPB->gate_session_id();
 		return;
 	}
 
-	auto gateNodeScene = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateNodeId);
+	auto gateNodeScene = registry.try_get<RpcSession>(gateNodeId);
 	if (!gateNodeScene)
 	{
 		LOG_WARN << "Gate node RpcSession not found for session_id: " << playerSessionSnapshotPB->gate_session_id();
@@ -154,7 +155,7 @@ void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity pla
 	RegisterPlayerSessionRequest request;
 	request.set_session_id(playerSessionSnapshotPB->gate_session_id());
 	request.set_player_id(*playerId);
-	SendToGs(SceneUpdateSessionDetailMessageId, request, playerSessionSnapshotPB->scene_node_id());
+	SendToSceneNode(SceneUpdateSessionDetailMessageId, request, playerSessionSnapshotPB->scene_node_id());
 	LOG_DEBUG << "Sent session update to scene node";
 }
 
