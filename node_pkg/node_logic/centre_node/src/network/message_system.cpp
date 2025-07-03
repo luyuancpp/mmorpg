@@ -160,14 +160,15 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 
     // Retrieve the gate session ID associated with the player
     entt::entity gateSessionId{ GetGateNodeId(playerSessionSnapshotPB->gate_session_id()) };
-    if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateSessionId))
+	auto& gateNodeRegistry = tls.GetNodeRegistry(eNodeType::GateNodeService);
+    if (!gateNodeRegistry.valid(gateSessionId))
     {
         LOG_ERROR << "Gate session not found for player with session ID " << playerSessionSnapshotPB->gate_session_id();
         return;
     }
 
     // Retrieve the RpcSession for the gate node (rename to gateSessionPtr for clarity)
-    const auto gateSessionPtr = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateSessionId);
+    const auto gateSessionPtr = gateNodeRegistry.try_get<RpcSession>(gateSessionId);
     if (!gateSessionPtr)
     {
         LOG_ERROR << "RpcSession not found for gate with session ID " << playerSessionSnapshotPB->gate_session_id();
@@ -200,14 +201,15 @@ void SendMessageToGateById(const uint32_t messageId, const google::protobuf::Mes
     // 尝试获取 gateNodeId 对应的 gate 实体
     entt::entity gateEntity{ gateNodeId };
 
-    if (!tls.GetNodeRegistry(eNodeType::GateNodeService).valid(gateEntity))
+	auto& gateNodeRegistry = tls.GetNodeRegistry(eNodeType::GateNodeService);
+    if (!gateNodeRegistry.valid(gateEntity))
     {
         LOG_ERROR << "Gate not found for NodeId -> " << gateNodeId;
         return;
     }
 
     // 尝试从注册表中获取 gate 的会话对象
-    const auto gateSessionPtr = tls.GetNodeRegistry(eNodeType::GateNodeService).try_get<RpcSession>(gateEntity);
+    const auto gateSessionPtr = gateNodeRegistry.try_get<RpcSession>(gateEntity);
 
     if (!gateSessionPtr)
     {

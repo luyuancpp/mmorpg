@@ -112,8 +112,9 @@ bool SceneUtil::IsSceneEmpty() {
 
 // Check if there are non-empty scene lists for a specific configuration
 bool SceneUtil::ConfigSceneListNotEmpty(uint32_t sceneConfigId) {
-	for (auto nodeEid : tls.GetNodeRegistry(eNodeType::SceneNodeService).view<NodeSceneComp>()) {
-		auto& nodeSceneComp = tls.GetNodeRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(nodeEid);
+	auto& sceneNodeRegistry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
+	for (auto nodeEid : sceneNodeRegistry.view<NodeSceneComp>()) {
+		auto& nodeSceneComp = sceneNodeRegistry.get<NodeSceneComp>(nodeEid);
 		if (!nodeSceneComp.GetScenesByConfig(sceneConfigId).empty()) {
 			LOG_TRACE << "Non-empty scene list found for config ID: " << sceneConfigId;
 			return true;
@@ -402,7 +403,8 @@ void SceneUtil::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
 
 // Replace a crashed server node with a new node
 void SceneUtil::ReplaceCrashGameNode(entt::entity crashNode, entt::entity destNode) {
-	auto& crashNodeScene = tls.GetNodeRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(crashNode);
+	auto& sceneRegistry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
+	auto& crashNodeScene = sceneRegistry.get<NodeSceneComp>(crashNode);
 	auto sceneLists = crashNodeScene.GetSceneLists();
 
 	for (auto& confIdSceneList : sceneLists | std::views::values) {
@@ -417,6 +419,6 @@ void SceneUtil::ReplaceCrashGameNode(entt::entity crashNode, entt::entity destNo
 		}
 	}
 
-	Destroy(tls.GetNodeRegistry(eNodeType::SceneNodeService), crashNode);
+	Destroy(sceneRegistry, crashNode);
 	LOG_INFO << "Replaced crashed server with new node: " << entt::to_integral(destNode);
 }

@@ -682,10 +682,10 @@ void Node::HandleNodeRegistration(
 	LOG_TRACE << "Node registration request: " << request.DebugString();
 
 	auto tryRegister = [&, this](const TcpConnectionPtr& conn, uint32_t nodeType) -> bool {
+		entt::registry& registry = tls.GetNodeRegistry(nodeType);
 		const auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
 			if (!IsSameNode(serverNode, peerNode)) continue;
-			entt::registry& registry = tls.GetNodeRegistry(nodeType);
 			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
 			entt::entity created = ResetEntity(registry, nodeEntity); 
 			if (created == entt::null) {
