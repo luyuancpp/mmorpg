@@ -186,7 +186,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto playerEntity = tls.GetNodeRegistry(eNodeType::SceneNodeService).create();
+		auto playerEntity = tls.registry.create();
 
 		if (i % 2 == 0)
 		{
@@ -293,7 +293,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 	{
 		for (auto&& sceneEntity : sceneEntities)
 		{
-			enterParam1.enter = tls.GetNodeRegistry(eNodeType::SceneNodeService).create();
+			enterParam1.enter = tls.registry.create();
 			enterParam1.scene = sceneEntity;
 			playerScene1.emplace(enterParam1.enter, enterParam1.scene);
 			sm.EnterScene(enterParam1);
@@ -347,7 +347,7 @@ TEST(GS, CompelToChangeScene)
 	EntityUnorderedSet playerList1;
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto player = tls.GetNodeRegistry(eNodeType::SceneNodeService).create();
+		auto player = tls.registry.create();
 		playerList1.emplace(player);
 		enterParam1.enter = player;
 		sm.EnterScene(enterParam1);
@@ -411,7 +411,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 	{
 		for (auto it : sceneEntities)
 		{
-			auto pE = tls.GetNodeRegistry(eNodeType::SceneNodeService).create();
+			auto pE = tls.registry.create();
 			enterParam1.enter = pE;
 			enterParam1.scene = it;
 			playerScene1.emplace(enterParam1.enter, enterParam1.scene);
@@ -472,7 +472,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto player = tls.GetNodeRegistry(eNodeType::SceneNodeService).create();
+		auto player = tls.registry.create();
 		enterParam1.enter = player;
 		enterParam1.scene = firstScene;
 		playerScene1.emplace(enterParam1.enter, enterParam1.scene);
@@ -538,7 +538,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
 				auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
-				auto p_e = tls.GetNodeRegistry(eNodeType::SceneNodeService).create();
+				auto p_e = tls.registry.create();
 				enter_param1.enter = p_e;
 				enter_param1.scene = can_enter;
 				player_scene1.emplace(enter_param1.enter, can_enter);
@@ -559,7 +559,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
 				auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
-				auto player = tls.GetNodeRegistry(eNodeType::SceneNodeService).create();
+				auto player = tls.registry.create();
 				enter_param1.enter = player;
 				enter_param1.scene = can_enter;
 				player_scene2.emplace(enter_param1.enter, enter_param1.scene);
@@ -661,7 +661,7 @@ TEST(GS, ServerEnterLeavePressure)
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
 		auto canEnter = nsSys.FindSceneWithMinPlayerCount(weightRoundRobinScene);
-		auto playerEntity = tls.GetNodeRegistry(eNodeType::SceneNodeService).create();
+		auto playerEntity = tls.registry.create();
 		enterParam1.enter = playerEntity;
 		enterParam1.scene = canEnter;
 		playerScene1.emplace(enterParam1.enter, enterParam1.scene);
@@ -678,7 +678,7 @@ TEST(GS, ServerEnterLeavePressure)
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
 		auto canEnter = nsSys.FindSceneWithMinPlayerCount(weightRoundRobinScene);
-		auto playerEntity = tls.GetNodeRegistry(eNodeType::SceneNodeService).create();
+		auto playerEntity = tls.registry.create();
 		enterParam1.enter = playerEntity;
 		enterParam1.scene = canEnter;
 		playerScene2.emplace(enterParam1.enter, enterParam1.scene);
@@ -702,7 +702,7 @@ TEST(GS, EnterDefaultScene)
 	}
 
 	// Create a player entity
-	const auto player = tls.GetNodeRegistry(eNodeType::SceneNodeService).create();
+	const auto player = tls.registry.create();
 
 	// Enter the default scene with the player
 	const EnterDefaultSceneParam enterParam{ player };
@@ -775,7 +775,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 				{
 					continue;
 				}
-				auto playerEntity = tls.GetNodeRegistry(eNodeType::SceneNodeService).create();
+				auto playerEntity = tls.registry.create();
 				enterParam1.enter = playerEntity;
 				enterParam1.scene = canEnter;
 				playerScene1.emplace(enterParam1.enter, canEnter);
@@ -801,7 +801,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 				{
 					continue;
 				}
-				auto playerEntity = tls.GetNodeRegistry(eNodeType::SceneNodeService).create();
+				auto playerEntity = tls.registry.create();
 				enterParam1.enter = playerEntity;
 				enterParam1.scene = canEnter;
 				playerScene2.emplace(enterParam1.enter, enterParam1.scene);
