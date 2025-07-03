@@ -87,8 +87,9 @@ uint32_t SceneUtil::GenSceneGuid() {
 // Get total number of scenes associated with a specific configuration ID
 std::size_t SceneUtil::GetScenesSize(uint32_t sceneConfigId) {
 	std::size_t sceneSize = 0;
-	for (auto node : tls.GetNodeRegistry(eNodeType::SceneNodeService).view<NodeSceneComp>()) {
-		auto& nodeSceneComp = tls.GetNodeRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(node);
+	auto& registry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
+	for (auto node : registry.view<NodeSceneComp>()) {
+		auto& nodeSceneComp = registry.get<NodeSceneComp>(node);
 		sceneSize += nodeSceneComp.GetScenesByConfig(sceneConfigId).size();
 	}
 	LOG_TRACE << "Total scenes size for config ID " << sceneConfigId << ": " << sceneSize;
@@ -156,12 +157,13 @@ entt::entity SceneUtil::CreateSceneToSceneNode(const CreateGameNodeSceneParam& p
 	tls.sceneRegistry.emplace<SceneInfoPBComponent>(scene, std::move(sceneInfo));
 	tls.sceneRegistry.emplace<ScenePlayers>(scene);
 
-	auto* serverPlayerInfo = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<GameNodePlayerInfoPtrPBComponent>(param.node);
+	auto& registry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
+	auto* serverPlayerInfo = registry.try_get<GameNodePlayerInfoPtrPBComponent>(param.node);
 	if (serverPlayerInfo) {
 		tls.sceneRegistry.emplace<GameNodePlayerInfoPtrPBComponent>(scene, *serverPlayerInfo);
 	}
 
-	auto* pServerComp = tls.GetNodeRegistry(eNodeType::SceneNodeService).try_get<NodeSceneComp>(param.node);
+	auto* pServerComp = registry.try_get<NodeSceneComp>(param.node);
 	if (pServerComp) {
 		pServerComp->AddScene(scene);
 	}
@@ -204,7 +206,9 @@ void SceneUtil::DestroyScene(const DestroySceneParam& param) {
 
 // Handle server node destruction
 void SceneUtil::HandleDestroyGameNode(entt::entity node) {
-	auto& nodeSceneComp = tls.GetNodeRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(node);
+	auto& registry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
+
+	auto& nodeSceneComp = registry.get<NodeSceneComp>(node);
 	auto sceneLists = nodeSceneComp.GetSceneLists();
 
 	// Destroy all scenes associated with the server node
@@ -215,7 +219,7 @@ void SceneUtil::HandleDestroyGameNode(entt::entity node) {
 	}
 
 	// Destroy the server node itself
-	Destroy(tls.GetNodeRegistry(eNodeType::SceneNodeService), node);
+	Destroy(registry, node);
 
 	// Log server destruction
 	LOG_INFO << "Destroyed server with ID: " << entt::to_integral(node);
