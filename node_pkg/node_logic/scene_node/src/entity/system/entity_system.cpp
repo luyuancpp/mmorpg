@@ -6,21 +6,21 @@
 
 bool EntitySystem::IsPlayer(const entt::entity entityId)
 {
-    return  tls.registry.any_of<Player>(entityId);
+    return  tls.actorRegistry.any_of<Player>(entityId);
 }
 
 bool EntitySystem::IsNotPlayer(const entt::entity entityId)
 {
-    return  !tls.registry.any_of<Player>(entityId);
+    return  !tls.actorRegistry.any_of<Player>(entityId);
 }
 
 bool EntitySystem::IsNpc(const entt::entity entityId)
 {
-    return  tls.registry.any_of<Npc>(entityId);
+    return  tls.actorRegistry.any_of<Npc>(entityId);
 }
 
 bool EntitySystem::IsNotNpc(const entt::entity entityId)
 {
-    return  !tls.registry.any_of<Npc>(entityId);
+    return  !tls.actorRegistry.any_of<Npc>(entityId);
 }
 

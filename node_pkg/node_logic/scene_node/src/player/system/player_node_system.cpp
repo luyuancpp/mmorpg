@@ -37,7 +37,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 
 	defer(tlsGame.playerNodeEntryInfoList.erase(playerId));
 
-	auto player = tls.registry.create();
+	auto player = tls.actorRegistry.create();
 	LOG_INFO << "Created entity for player: " << entt::to_integral(player);
 
 	if (const auto [first, second] = tlsCommonLogic.GetPlayerList().emplace(playerId, player); !second)
@@ -47,15 +47,15 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 	}
 
 	LOG_INFO << "Deserializing player data from database";
-	tls.registry.emplace<Player>(player);
-	tls.registry.emplace<Guid>(player, message.player_id());
+	tls.actorRegistry.emplace<Player>(player);
+	tls.actorRegistry.emplace<Guid>(player, message.player_id());
 	Player_databaseMessageFieldsUnmarshal(player, message);
 
 	if (message.uint64_pb_component().registration_timestamp() <= 0)
 	{
 		LOG_INFO << "Player is new, initializing default registration time and level";
-		tls.registry.get<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeUtil::NowSecondsUTC());
-		tls.registry.get<LevelPbComponent>(player).set_level(1);
+		tls.actorRegistry.get<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeUtil::NowSecondsUTC());
+		tls.actorRegistry.get<LevelPbComponent>(player).set_level(1);
 
 		RegisterPlayerEvent registerPlayer;
 		registerPlayer.set_actor_entity(entt::to_integral(player));
@@ -63,8 +63,8 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 		LOG_INFO << "Triggered RegisterPlayerEvent";
 	}
 
-	tls.registry.emplace<ViewRadius>(player).set_radius(10);
-	tls.registry.emplace<PlayerSessionSnapshotPBComp>(player).set_centre_node_id(asyncIt->second.centre_node_id());
+	tls.actorRegistry.emplace<ViewRadius>(player).set_radius(10);
+	tls.actorRegistry.emplace<PlayerSessionSnapshotPBComp>(player).set_centre_node_id(asyncIt->second.centre_node_id());
 
 	LOG_INFO << "PlayerNodeInfo set with CentreNodeId: " << asyncIt->second.centre_node_id();
 
@@ -90,7 +90,7 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& me
 	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
 	SendToCentrePlayerById(CentrePlayerSceneLeaveSceneAsyncSavePlayerCompleteMessageId, request, playerId);
 
-	if (tls.registry.any_of<UnregisterPlayer>(tlsCommonLogic.GetPlayer(playerId)))
+	if (tls.actorRegistry.any_of<UnregisterPlayer>(tlsCommonLogic.GetPlayer(playerId)))
 	{
 		LOG_INFO << "Player marked for unregistration: " << playerId;
 
@@ -105,27 +105,27 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& me
 
 void PlayerNodeSystem::SavePlayer(entt::entity player)
 {
-	LOG_INFO << "SavePlayer: Saving player guid: " << tls.registry.get<Guid>(player);
+	LOG_INFO << "SavePlayer: Saving player guid: " << tls.actorRegistry.get<Guid>(player);
 	using SaveMessage = PlayerRedis::element_type::MessageValuePtr;
 	SaveMessage pb = std::make_shared<SaveMessage::element_type>();
 
-	pb->set_player_id(tls.registry.get<Guid>(player));
+	pb->set_player_id(tls.actorRegistry.get<Guid>(player));
 	Player_databaseMessageFieldsMarshal(player, *pb);
 
 	LOG_INFO << "Player data marshaled, sending to Redis";
-	tlsGame.playerRedis->Save(pb, tls.registry.get<Guid>(player));
+	tlsGame.playerRedis->Save(pb, tls.actorRegistry.get<Guid>(player));
 }
 
 //考虑: 没load 完再次进入别的gs
 void PlayerNodeSystem::EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo)
 {
-	LOG_INFO << "EnterGs: Player " << tls.registry.get<Guid>(player) << " entering Game Node";
+	LOG_INFO << "EnterGs: Player " << tls.actorRegistry.get<Guid>(player) << " entering Game Node";
 
-	auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
+	auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (playerSessionSnapshotPB == nullptr)
 	{
-		LOG_ERROR << "Player node info not found for player: " << tls.registry.get<Guid>(player);
-		playerSessionSnapshotPB = &tls.registry.emplace<PlayerSessionSnapshotPBComp>(player);
+		LOG_ERROR << "Player node info not found for player: " << tls.actorRegistry.get<Guid>(player);
+		playerSessionSnapshotPB = &tls.actorRegistry.emplace<PlayerSessionSnapshotPBComp>(player);
 	}
 
 	playerSessionSnapshotPB->set_centre_node_id(enterInfo.centre_node_id());
@@ -142,7 +142,7 @@ void PlayerNodeSystem::EnterGs(const entt::entity player, const PlayerGameNodeEn
 void PlayerNodeSystem::NotifyEnterGsSucceed(entt::entity player, NodeId centreNodeId)
 {
 	EnterGameNodeSuccessRequest request;
-	request.set_player_id(tls.registry.get<Guid>(player));
+	request.set_player_id(tls.actorRegistry.get<Guid>(player));
 	request.set_scene_node_id(GetNodeInfo().node_id());
 	CallCentreNodeMethod(CentreEnterGsSucceedMessageId, request, centreNodeId);
 
@@ -193,7 +193,7 @@ void PlayerNodeSystem::RemovePlayerSession(const Guid playerId)
 
 void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
 {
-	auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
+	auto* const playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (playerSessionSnapshotPB == nullptr)
 	{
 		LOG_ERROR << "RemovePlayerSession: PlayerNodeInfoPBComponent not found for player: " << entt::to_integral(player);
@@ -221,19 +221,19 @@ void PlayerNodeSystem::DestroyPlayer(Guid playerId)
 	LOG_INFO << "Destroying player: " << playerId;
 
 	defer(tlsCommonLogic.GetPlayerList().erase(playerId));
-	Destroy(tls.registry, tlsCommonLogic.GetPlayer(playerId));
+	Destroy(tls.actorRegistry, tlsCommonLogic.GetPlayer(playerId));
 }
 
 void PlayerNodeSystem::HandleExitGameNode(entt::entity player)
 {
-	LOG_INFO << "HandleExitGameNode: Player " << tls.registry.get<Guid>(player) << " is exiting the Game Node";
+	LOG_INFO << "HandleExitGameNode: Player " << tls.actorRegistry.get<Guid>(player) << " is exiting the Game Node";
 
 	// 离开gs 清除session
 	PlayerNodeSystem::SavePlayer(player);
 
 	LOG_INFO << "Player data saved before unregistering";
 
-	tls.registry.emplace<UnregisterPlayer>(player);
+	tls.actorRegistry.emplace<UnregisterPlayer>(player);
 	//todo 存完之后center 才能再次登录
 
 	LOG_INFO << "Marked player as UnregisterPlayer";

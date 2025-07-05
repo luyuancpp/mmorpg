@@ -16,16 +16,16 @@ void ActorAttributeCalculatorSystem::Initialize() {}
 
 // 初始化给定实体的属性组件
 void ActorAttributeCalculatorSystem::InitializeActorComponents(entt::entity entity) {
-    tls.registry.emplace<ActorAttributeBitSetComp>(entity);
+    tls.actorRegistry.emplace<ActorAttributeBitSetComp>(entity);
 }
 
 // 更新速度属性
 void UpdateVelocity(entt::entity entity) {
     return;
-    auto& velocity = tls.registry.get<Velocity>(entity);
+    auto& velocity = tls.actorRegistry.get<Velocity>(entity);
     velocity.Clear();
 
-    for (const auto& buffCompPb : tls.registry.get<BuffListComp>(entity) | std::views::values) {
+    for (const auto& buffCompPb : tls.actorRegistry.get<BuffListComp>(entity) | std::views::values) {
         FetchBuffTableOrContinue(buffCompPb.buffPb.buff_table_id());
 
         velocity.set_x(velocity.x() + buffTable->movement_speed_boost());
@@ -37,7 +37,7 @@ void UpdateVelocity(entt::entity entity) {
         velocity.set_z(velocity.z() - buffTable->movement_speed_reduction());
     }
 
-    tls.registry.get<BaseAttributeSyncDataS2C>(entity).mutable_velocity()->CopyFrom(velocity);
+    tls.actorRegistry.get<BaseAttributeSyncDataS2C>(entity).mutable_velocity()->CopyFrom(velocity);
 }
 
 // 更新生命值属性
@@ -57,10 +57,10 @@ void UpdateStatusEffects(entt::entity actorEntityId) {
 
 void ResetCombatStateFlags(entt::entity actorEntity) {
     // 获取 combatStateCollection 组件（包含所有状态）
-    const auto& combatStates = tls.registry.get<CombatStateCollectionPbComponent>(actorEntity);
+    const auto& combatStates = tls.actorRegistry.get<CombatStateCollectionPbComponent>(actorEntity);
 
     // 获取基础属性的同步数据
-    auto& syncData = tls.registry.get<BaseAttributeSyncDataS2C>(actorEntity);
+    auto& syncData = tls.actorRegistry.get<BaseAttributeSyncDataS2C>(actorEntity);
 
     // 获取指向状态标志的指针
     auto* stateFlags = syncData.mutable_combat_state_flags()->mutable_state_flags();
@@ -86,7 +86,7 @@ std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttributeConfigs
 
 // 标记属性需要更新的位
 void ActorAttributeCalculatorSystem::MarkAttributeForUpdate(const entt::entity actorEntity, const uint32_t attributeBit) {
-    auto& attributeBits = tls.registry.get<ActorAttributeBitSetComp>(actorEntity).attributeBits;
+    auto& attributeBits = tls.actorRegistry.get<ActorAttributeBitSetComp>(actorEntity).attributeBits;
     attributeBits.set(attributeBit);  // 设置指定位，表示该属性需要更新
 }
 
@@ -96,7 +96,7 @@ void ActorAttributeCalculatorSystem::ImmediateCalculateAttributes(const entt::en
         return;
     }
 
-    if (const auto& attributeBits = tls.registry.get<ActorAttributeBitSetComp>(actorEntity).attributeBits;
+    if (const auto& attributeBits = tls.actorRegistry.get<ActorAttributeBitSetComp>(actorEntity).attributeBits;
         !attributeBits.test(attributeBit)) {
         return;
     }
@@ -114,7 +114,7 @@ extern  std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttribut
 
 void ActorAttributeCalculatorSystem::Update(double delta)
 {
-    for (auto&& [entity, actorAttributeBitSetComp] : tls.registry.view<ActorAttributeBitSetComp>().each())
+    for (auto&& [entity, actorAttributeBitSetComp] : tls.actorRegistry.view<ActorAttributeBitSetComp>().each())
     {
         auto& attributeBits = actorAttributeBitSetComp.attributeBits;
         for (const auto& [attributeIndex, updateFunction] : kAttributeConfigs) {

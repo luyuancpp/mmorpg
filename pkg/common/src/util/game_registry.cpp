@@ -5,7 +5,6 @@
 
 static_assert(sizeof(uint64_t) == sizeof(entt::entity), "sizeof(uint64_t) == sizeof(entt::entity)");
 
-//todo 注意这里如果调用的registry的话，这个全局变量应该也要跟着清空
 entt::entity ErrorEntity()
 {
     if (tls.errorEntity == entt::null)

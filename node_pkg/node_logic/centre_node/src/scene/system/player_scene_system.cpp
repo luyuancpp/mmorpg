@@ -48,12 +48,12 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 
 void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
 {
-	if (!tls.registry.valid(playerEntity)) {
+	if (!tls.actorRegistry.valid(playerEntity)) {
 		LOG_ERROR << "Player entity is not valid";
 		return;
 	}
 
-	const auto* playerSceneInfo = tls.registry.try_get<PlayerSceneContextPBComponent>(playerEntity);
+	const auto* playerSceneInfo = tls.actorRegistry.try_get<PlayerSceneContextPBComponent>(playerEntity);
 	if (!playerSceneInfo) {
 		LOG_ERROR << "Player scene info not found";
 		return;
@@ -79,8 +79,8 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* playerSceneEntity = tls.registry.try_get<SceneEntityComp>(playerEntity);
-    const auto playerId = tls.registry.get<Guid>(playerEntity);
+    const auto* playerSceneEntity = tls.actorRegistry.try_get<SceneEntityComp>(playerEntity);
+    const auto playerId = tls.actorRegistry.get<Guid>(playerEntity);
     if (!playerSceneEntity)
     {
         LOG_ERROR << "Player has not entered a scene: " << playerId;
@@ -94,7 +94,7 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+    const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
     if (!playerSessionSnapshotPB)
     {
         LOG_ERROR << "Player session not valid for player: " << playerId;
@@ -111,7 +111,7 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
 
 void PlayerSceneSystem::ProcessPlayerEnterSceneNode(entt::entity playerEntity, NodeId nodeId)
 {
-    const auto* info = tls.registry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+    const auto* info = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
     if (!info)
     {
         LOG_ERROR << "Player session not valid";
@@ -119,7 +119,7 @@ void PlayerSceneSystem::ProcessPlayerEnterSceneNode(entt::entity playerEntity, N
     }
 
     PlayerEnterGameNodeRequest request;
-    request.set_player_id(tls.registry.get<Guid>(playerEntity));
+    request.set_player_id(tls.actorRegistry.get<Guid>(playerEntity));
     request.set_session_id(info->gate_session_id());
     request.set_centre_node_id(GetNodeInfo().node_id());
     CallGameNodeMethod(ScenePlayerEnterGameNodeMessageId, request, nodeId);
@@ -127,8 +127,8 @@ void PlayerSceneSystem::ProcessPlayerEnterSceneNode(entt::entity playerEntity, N
 
 bool PlayerSceneSystem::VerifyChangeSceneRequest(entt::entity playerEntity)
 {
-	auto playerId = tls.registry.get<Guid>(playerEntity);
-	auto* queue = tls.registry.try_get<ChangeSceneQueuePBComponent>(playerEntity);
+	auto playerId = tls.actorRegistry.get<Guid>(playerEntity);
+	auto* queue = tls.actorRegistry.try_get<ChangeSceneQueuePBComponent>(playerEntity);
 	if (!queue || queue->empty())
 	{
 		LOG_WARN << "Change scene queue is empty for player: " << playerId;
@@ -144,7 +144,7 @@ bool PlayerSceneSystem::VerifyChangeSceneRequest(entt::entity playerEntity)
 
 	info.set_processing(true);
 
-	if (!tls.registry.try_get<SceneEntityComp>(playerEntity))
+	if (!tls.actorRegistry.try_get<SceneEntityComp>(playerEntity))
 	{
 		LOG_ERROR << "SceneEntityComp missing for player: " << playerId;
 		PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneYourSceneIsNull, {});
@@ -157,8 +157,8 @@ bool PlayerSceneSystem::VerifyChangeSceneRequest(entt::entity playerEntity)
 
 entt::entity PlayerSceneSystem::ResolveTargetScene(entt::entity playerEntity)
 {
-	auto playerId = tls.registry.get<Guid>(playerEntity);
-	auto& queue = tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity);
+	auto playerId = tls.actorRegistry.get<Guid>(playerEntity);
+	auto& queue = tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity);
 	auto& info = *queue.front();
 
 	entt::entity toScene = entt::null;
@@ -192,8 +192,8 @@ entt::entity PlayerSceneSystem::ResolveTargetScene(entt::entity playerEntity)
 
 bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::entity toScene)
 {
-	auto playerId = tls.registry.get<Guid>(playerEntity);
-	auto* fromSceneEntity = tls.registry.try_get<SceneEntityComp>(playerEntity);
+	auto playerId = tls.actorRegistry.get<Guid>(playerEntity);
+	auto* fromSceneEntity = tls.actorRegistry.try_get<SceneEntityComp>(playerEntity);
 	const auto* fromSceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(fromSceneEntity->sceneEntity);
 	const auto* toSceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(toScene);
 
@@ -221,7 +221,7 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 		return false;
 	}
 
-	const auto& changeInfo = *tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
+	const auto& changeInfo = *tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 	if (!changeInfo.ignore_full() &&
 		SceneUtil::CheckScenePlayerSize(toScene) != kSuccess)
 	{
@@ -236,8 +236,8 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 
 void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::entity toScene)
 {
-	auto& changeInfo = *tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
-	auto* fromSceneComp = tls.registry.try_get<SceneEntityComp>(playerEntity);
+	auto& changeInfo = *tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
+	auto* fromSceneComp = tls.actorRegistry.try_get<SceneEntityComp>(playerEntity);
 
 	const auto fromNode = SceneUtil::get_game_node_eid(tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneComp->sceneEntity).guid());
 	const auto toNode = SceneUtil::get_game_node_eid(tls.sceneRegistry.get<SceneInfoPBComponent>(toScene).guid());

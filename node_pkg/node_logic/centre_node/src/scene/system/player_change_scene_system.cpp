@@ -11,7 +11,7 @@
 
 // 添加切换场景信息到队列
 uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo) {
-	auto& changeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	auto& changeSceneQueue = tls.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	changeSceneQueue.enqueue(changeInfo);
 	changeSceneQueue.front()->set_change_time(TimeUtil::NowSecondsUTC());
 	return kSuccess;
@@ -19,13 +19,13 @@ uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const C
 
 // 移除队列中首个切换场景信息
 void PlayerChangeSceneUtil::PopFrontChangeSceneQueue(entt::entity player) {
-	auto& changeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	auto& changeSceneQueue = tls.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	changeSceneQueue.dequeue();
 }
 
 // 设置当前切换场景信息的切换状态
 void PlayerChangeSceneUtil::SetCurrentChangeSceneState(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState s) {
-	auto& changeSceneQueue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	auto& changeSceneQueue = tls.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (changeSceneQueue.empty()) {
 		return;
 	}
@@ -101,7 +101,7 @@ void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent
 
 // 目标GS或Gate回调中心
 void PlayerChangeSceneUtil::OnTargetGsEnterComplete(entt::entity player) {
-	auto& queue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	auto& queue = tls.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (queue.empty()) return;
 
 	auto& task = *queue.front();
@@ -120,7 +120,7 @@ void PlayerChangeSceneUtil::OnEnterSceneOk(entt::entity player) {
 }
 
 void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {
-	auto& queue = tls.registry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	auto& queue = tls.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (queue.empty()) return;
 
 	auto& task = *queue.front();

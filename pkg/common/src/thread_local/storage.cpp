@@ -10,7 +10,7 @@ ThreadLocalStorage::ThreadLocalStorage()
 void ThreadLocalStorage::Clear()
 {
 	globalRegistry.clear();
-	registry.clear();
+	actorRegistry.clear();
 	sceneRegistry.clear();
 	itemRegistry.clear();
 	sessionRegistry.clear();

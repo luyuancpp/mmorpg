@@ -41,12 +41,12 @@ bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity e
 
 bool ViewSystem::BothAreNpcs(entt::entity observer, entt::entity entrant)
 {
-	return tls.registry.any_of<Npc>(observer) && tls.registry.any_of<Npc>(entrant);
+	return tls.actorRegistry.any_of<Npc>(observer) && tls.actorRegistry.any_of<Npc>(entrant);
 }
 
 bool ViewSystem::EntrantIsNpc(entt::entity entrant)
 {
-	return tls.registry.any_of<Npc>(entrant);
+	return tls.actorRegistry.any_of<Npc>(entrant);
 }
 
 bool ViewSystem::ShouldRefreshView()
@@ -59,7 +59,7 @@ double ViewSystem::GetMaxViewRadius(entt::entity observer)
 {
 	double viewRadius = kMaxViewRadius;
 
-	if (const auto observerViewRadius = tls.registry.try_get<ViewRadius>(observer)) {
+	if (const auto observerViewRadius = tls.actorRegistry.try_get<ViewRadius>(observer)) {
 		viewRadius = observerViewRadius->radius();
 	}
 
@@ -68,8 +68,8 @@ double ViewSystem::GetMaxViewRadius(entt::entity observer)
 
 bool ViewSystem::IsWithinViewRadius(entt::entity viewer, entt::entity targetEntity, double visionRadius)
 {
-	const auto viewerTransform = tls.registry.try_get<Transform>(viewer);
-	const auto targetTransform = tls.registry.try_get<Transform>(targetEntity);
+	const auto viewerTransform = tls.actorRegistry.try_get<Transform>(viewer);
+	const auto targetTransform = tls.actorRegistry.try_get<Transform>(targetEntity);
 
 	// 如果缺少位置数据，返回 false，表示不在视野内
 	if (!viewerTransform || !targetTransform) {
@@ -101,8 +101,8 @@ bool ViewSystem::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
 
 double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2)
 {
-	const auto transform1 = tls.registry.try_get<Transform>(entity1);
-	const auto transform2 = tls.registry.try_get<Transform>(entity2);
+	const auto transform1 = tls.actorRegistry.try_get<Transform>(entity1);
+	const auto transform2 = tls.actorRegistry.try_get<Transform>(entity2);
 
 	// 如果任一实体缺少位置数据，返回 -1 表示距离不可计算
 	if (!transform1 || !transform2) {
@@ -129,7 +129,7 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
 {
 	createMessage.set_entity(entt::to_integral(entrant));
 
-	if (const auto entrantTransform = tls.registry.try_get<Transform>(entrant)) {
+	if (const auto entrantTransform = tls.actorRegistry.try_get<Transform>(entrant)) {
 		createMessage.mutable_transform()->CopyFrom(*entrantTransform);
 	}
 
@@ -161,7 +161,7 @@ void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uin
 }
 
 void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
-    auto transform = tls.registry.try_get<Transform>(entity);
+    auto transform = tls.actorRegistry.try_get<Transform>(entity);
 	if (nullptr == transform)
 	{
 		return;

@@ -36,14 +36,14 @@ void SendToSceneNode(uint32_t messageId, const google::protobuf::Message& messag
 void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player)
 {
     // 检查玩家实体是否有效
-    if (!tls.registry.valid(player))
+    if (!tls.actorRegistry.valid(player))
     {
         LOG_ERROR << "Invalid player entity -> " << entt::to_integral(player);
         return;
     }
 
     // 获取玩家的节点信息
-    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
+    const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
     if (!playerSessionSnapshotPB)
     {
         LOG_ERROR << "PlayerNodeInfo not found for player -> " << entt::to_integral(player);
@@ -97,14 +97,14 @@ void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Messag
 void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Message& message, entt::entity player)
 {
     // 检查玩家实体是否有效
-    if (!tls.registry.valid(player))
+    if (!tls.actorRegistry.valid(player))
     {
         LOG_ERROR << "Invalid player entity -> " << entt::to_integral(player);
         return;
     }
 
     // 获取玩家的节点信息
-    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
+    const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
     if (!playerSessionSnapshotPB)
     {
         LOG_ERROR << "PlayerNodeInfo not found for player -> " << entt::to_integral(player);
@@ -144,14 +144,14 @@ void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Messag
 void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player)
 {
     // Check if player entity is valid
-    if (!tls.registry.valid(player))
+    if (!tls.actorRegistry.valid(player))
     {
         LOG_WARN << "Invalid player entity.";
         return;
     }
 
     // Retrieve player node info from the registry
-    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
+    const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
     if (!playerSessionSnapshotPB)
     {
         LOG_WARN << "Player node info not found for player entity " << entt::to_integral(player);
@@ -225,14 +225,14 @@ void SendMessageToGateById(const uint32_t messageId, const google::protobuf::Mes
 void CallScenePlayerMethod(uint32_t messageId, const google::protobuf::Message& message, entt::entity player)
 {
     // 检查玩家是否有效
-    if (!tls.registry.valid(player))
+    if (!tls.actorRegistry.valid(player))
     {
         LOG_ERROR << "Player entity is not valid.";
         return;
     }
 
     // 获取玩家节点信息
-    const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
+    const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
     if (!playerSessionSnapshotPB)
     {
         LOG_ERROR << "PlayerNodeInfo not found for player -> " << entt::to_integral(player);

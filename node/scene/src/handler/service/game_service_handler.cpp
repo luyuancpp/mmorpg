@@ -393,7 +393,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 	}
 
 	const auto player = tlsCommonLogic.GetPlayer(request->player_id());
-	if (!tls.registry.valid(player))
+	if (!tls.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found " << request->player_id();
 		return;
@@ -402,7 +402,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 
 	tlsSessions.emplace(request->session_id(), request->player_id());
 
-	tls.registry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(request->session_id());
+	tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(request->session_id());
 
 	PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(player);
 ///<<< END WRITING YOUR CODE

@@ -12,7 +12,7 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 {
 	const auto playerEntity = entt::to_entity(message.entity());
 
-	if (!tls.registry.valid(playerEntity))
+	if (!tls.actorRegistry.valid(playerEntity))
 	{
 		LOG_ERROR << "Player entity not found";
 		return;
@@ -24,10 +24,10 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 		return;
 	}
 
-	auto transform = tls.registry.try_get<Transform>(playerEntity);
+	auto transform = tls.actorRegistry.try_get<Transform>(playerEntity);
 	if (transform == nullptr)
 	{
-		LOG_ERROR << "Transform component not found for player with GUID: " << tls.registry.get<Guid>(playerEntity);
+		LOG_ERROR << "Transform component not found for player with GUID: " << tls.actorRegistry.get<Guid>(playerEntity);
 		return;
 	}
 

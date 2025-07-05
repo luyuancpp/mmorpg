@@ -26,7 +26,7 @@ void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent& e
 ///<<< BEGIN WRITING YOUR CODE
 	auto player = entt::to_entity(event.actor_entity());
 
-	if (!tls.registry.valid(player))
+	if (!tls.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player Not Found :" << event.actor_entity();
 		return;
@@ -50,7 +50,7 @@ void PlayerEventHandler::InitializePlayerComponentsEventHandler(const Initialize
 ///<<< BEGIN WRITING YOUR CODE
 	auto player = entt::to_entity(event.actor_entity());
 
-	if (!tls.registry.valid(player))
+	if (!tls.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player Not Found :" << event.actor_entity();
 		return;

@@ -7,13 +7,13 @@
 
 void NpcSystem::InitializeNpcComponents(entt::entity npc)
 {
-    tls.registry.emplace<BaseAttributesPbComponent>(npc);
-    tls.registry.emplace<LevelPbComponent>(npc);
+    tls.actorRegistry.emplace<BaseAttributesPbComponent>(npc);
+    tls.actorRegistry.emplace<LevelPbComponent>(npc);
 }
 
 void NpcSystem::CreateNpc()
 {
-    auto npc = tls.registry.create();
+    auto npc = tls.actorRegistry.create();
 
     InitializeActorComponentsEvent initializeActorComponentsEvent;
     initializeActorComponentsEvent.set_actor_entity(entt::to_integral(npc));
@@ -23,5 +23,5 @@ void NpcSystem::CreateNpc()
     initializeNpcComponents.set_actor_entity(entt::to_integral(npc));
     tls.dispatcher.trigger(initializeNpcComponents);
 
-    tls.registry.get<LevelPbComponent>(npc).set_level(1);
+    tls.actorRegistry.get<LevelPbComponent>(npc).set_level(1);
 }

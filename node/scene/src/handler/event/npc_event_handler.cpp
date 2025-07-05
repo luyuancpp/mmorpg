@@ -22,7 +22,7 @@ void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcCom
 ///<<< BEGIN WRITING YOUR CODE
     auto npc = entt::to_entity(event.actor_entity());
 
-    if (!tls.registry.valid(npc))
+    if (!tls.actorRegistry.valid(npc))
     {
         LOG_ERROR << "Npc Not Found :" << event.actor_entity();
         return;

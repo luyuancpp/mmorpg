@@ -16,7 +16,7 @@ void ScenePlayerHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLog
 	::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "Handling Centre2GsLoginRequest for player: " << tls.registry.get<Guid>(player) << ", enter_gs_type: " << request->enter_gs_type();
+	LOG_INFO << "Handling Centre2GsLoginRequest for player: " << tls.actorRegistry.get<Guid>(player) << ", enter_gs_type: " << request->enter_gs_type();
 
 	if (request->enter_gs_type() == LOGIN_NONE) // 登录，不是普通切换场景
 	{
@@ -36,7 +36,7 @@ void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRe
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "ExitGame: Received player exit request. Player entity = " << entt::to_integral(player)
-		<< ", playerId = " << tls.registry.get<Guid>(player);
+		<< ", playerId = " << tls.actorRegistry.get<Guid>(player);
 
 	// 1. 通知 PlayerSceneSystem 离开场景
 	PlayerSceneSystem::HandleLeaveScene(player);

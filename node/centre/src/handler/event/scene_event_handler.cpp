@@ -79,7 +79,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 	const auto player = entt::to_entity(event.entity());
 
 	// Try to get the change scene queue component for the player
-	auto* const changeSceneQueue = tls.registry.try_get<ChangeSceneQueuePBComponent>(player);
+	auto* const changeSceneQueue = tls.actorRegistry.try_get<ChangeSceneQueuePBComponent>(player);
 
 	// If the change scene queue component is not found, the queue is empty, or the scene change type is 'DifferentGs'
 	if (!changeSceneQueue ||
@@ -103,9 +103,9 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 	SendToGsPlayer(SceneScenePlayerLeaveSceneMessageId, leaveSceneRequest, player);
 
 	LOG_TRACE << "Player is leaving scene "
-		<< tls.registry.get<Guid>(player)
+		<< tls.actorRegistry.get<Guid>(player)
 		<< ", Scene GUID: "
-		<< tls.sceneRegistry.get<SceneInfoPBComponent>(tls.registry.get<SceneEntityComp>(player).sceneEntity).guid();
+		<< tls.sceneRegistry.get<SceneInfoPBComponent>(tls.actorRegistry.get<SceneEntityComp>(player).sceneEntity).guid();
 	///<<< END WRITING YOUR CODE
 
 }

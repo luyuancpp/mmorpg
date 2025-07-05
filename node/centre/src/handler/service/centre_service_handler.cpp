@@ -119,10 +119,10 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 
 	auto playerEntity =  player_it->second;
 
-	const auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (playerSessionSnapshotPB == nullptr)
 	{
-		LOG_ERROR << "PlayerNodeInfo not found for player entity: " << tls.registry.get<Guid>(playerEntity);
+		LOG_ERROR << "PlayerNodeInfo not found for player entity: " << tls.actorRegistry.get<Guid>(playerEntity);
 		return;
 	}
 
@@ -137,7 +137,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	auto& registry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
 	if (!registry.valid(gameNodeId))
 	{
-		LOG_ERROR << "Invalid game node ID found for player: " << tls.registry.get<Guid>(playerEntity);
+		LOG_ERROR << "Invalid game node ID found for player: " << tls.actorRegistry.get<Guid>(playerEntity);
 		return;
 	}
 
@@ -148,7 +148,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 		return;
 	}
 
-	const auto playerId = tls.registry.get<Guid>(playerEntity);
+	const auto playerId = tls.actorRegistry.get<Guid>(playerEntity);
 
 	LOG_INFO << "Handling disconnect for player: " << playerId;
 
@@ -221,7 +221,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		//区分顶号和断线重连
 
 		// 清除旧 session
-		auto* sessionComp = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
+		auto* sessionComp = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 		if (sessionComp) {
 			auto oldSessionId = sessionComp->gate_session_id();
 			defer(tlsSessions.erase(oldSessionId));
@@ -237,14 +237,14 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		else
 		{
 			LOG_INFO << "Existing player login: Player ID " << clientMsg.player_id();
-			tls.registry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(sessionId);
+			tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(sessionId);
 		}
 
 		// 更新为新 session
-		tls.registry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(sessionId);
+		tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(sessionId);
 
 		// 标记玩家状态
-		tls.registry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_REPLACE);
+		tls.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_REPLACE);
 
 		// 进入场景
 		PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
@@ -317,7 +317,7 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 
 	const auto playerId = it->second;
 	const auto player = tlsCommonLogic.GetPlayer(playerId);
-	if (!tls.registry.valid(player))
+	if (!tls.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << playerId;
 		SendErrorToClient(*request, *response, kPlayerNotFoundInSession);
@@ -430,13 +430,13 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 
 	const auto playerId = request->player_id();
 	const auto player = tlsCommonLogic.GetPlayer(playerId);
-	if (!tls.registry.valid(player))
+	if (!tls.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << playerId;
 		return;
 	}
 
-	auto* playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
+	auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "Player session info not found for player: " << playerId;

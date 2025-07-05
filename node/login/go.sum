@@ -89,6 +89,8 @@ github.com/looplab/fsm v1.0.3 h1:qtxBsa2onOs0qFOtkqwf5zE0uP0+Te+wlIvXctPKpcw=
 github.com/looplab/fsm v1.0.3/go.mod h1:PmD3fFvQEIsjMEfvZdrCDZ6y8VwKTwWNjlpEr6IKPO4=
 github.com/luyuancpp/dbprotooption v0.0.8 h1:JJuO91gyldnewQA5iEG0xoi9CjBXB4XsUfNvi5JbUE8=
 github.com/luyuancpp/dbprotooption v0.0.8/go.mod h1:jHa9XWA9OsUULiYFAtN+N0iQMiiq8pRjMxFhrWxrCqs=
+github.com/luyuancpp/muduoclient v0.0.10 h1:vawVcvf10WjST1r3i6q/exB2bmAe4z0ZTL0mL4L79YM=
+github.com/luyuancpp/muduoclient v0.0.10/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
 github.com/luyuancpp/muduoclient v0.0.14 h1:nz/+eui8BAnpBRighcKNYlSJ5inDs40cpmf4vreatKU=
 github.com/luyuancpp/muduoclient v0.0.14/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
 github.com/mailru/easyjson v0.7.7 h1:UGYAvKxe3sBsEDzO8ZeWOSlIQfWFlxbzLZe7hwFURr0=
@@ -127,6 +129,8 @@ github.com/prometheus/common v0.62.0 h1:xasJaQlnWAeyHdUBeGjXmutelfJHWMRr+Fg4QszZ
 github.com/prometheus/common v0.62.0/go.mod h1:vyBcEuLSvWos9B1+CyL7JZ2up+uFzXhkqml0W5zIY1I=
 github.com/prometheus/procfs v0.15.1 h1:YagwOFzUgYfKKHX6Dr+sHT7km/hxC76UB0learggepc=
 github.com/prometheus/procfs v0.15.1/go.mod h1:fB45yRUv8NstnjriLhBQLuOUt+WW4BsoGhij/e3PBqk=
+github.com/redis/go-redis/v9 v9.10.0 h1:FxwK3eV8p/CQa0Ch276C7u2d0eNC9kCmAYQ7mCXCzVs=
+github.com/redis/go-redis/v9 v9.10.0/go.mod h1:huWgSWd8mW6+m0VPhJjSSQ+d6Nh1VICQ6Q5lHuCH/Iw=
 github.com/redis/go-redis/v9 v9.11.0 h1:E3S08Gl/nJNn5vkxd2i78wZxWAPNZgUNTp8WIJUAiIs=
 github.com/redis/go-redis/v9 v9.11.0/go.mod h1:huWgSWd8mW6+m0VPhJjSSQ+d6Nh1VICQ6Q5lHuCH/Iw=
 github.com/rogpeppe/go-internal v1.13.1 h1:KvO1DLK/DRN07sQ1LQKScxyZJuNnedQ5/wKSR38lUII=
@@ -153,6 +157,8 @@ github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9dec
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yuin/gopher-lua v1.1.1 h1:kYKnWBjvbNP4XLT3+bPEwAXJx262OhaHDWDVOPjL46M=
 github.com/yuin/gopher-lua v1.1.1/go.mod h1:GBR0iDaNXjAgGg9zfCvksxSRnQx76gclCIb7kdAd1Pw=
+github.com/zeromicro/go-zero v1.8.3 h1:AwpBJQLAsZAt4OOnK0eR8UU1Ja2RFBIXfKkHdnXQKfc=
+github.com/zeromicro/go-zero v1.8.3/go.mod h1:EnuEA3XdIQvAvc4WWTskRTO0jM2/aQi7OXv1gKWRNJ0=
 github.com/zeromicro/go-zero v1.8.4 h1:3s7kOoThCnkDoqCafsqSX58Y9osYTBIa5QEmomw07TE=
 github.com/zeromicro/go-zero v1.8.4/go.mod h1:eM5f6If/RF+jG1wSCmlvfXD2h2l23vJwETI8oDpjYt4=
 go.etcd.io/etcd/api/v3 v3.6.1 h1:yJ9WlDih9HT457QPuHt/TH/XtsdN2tubyxyQHSHPsEo=
