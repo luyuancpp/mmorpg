@@ -15,7 +15,6 @@
 #include "service_info/login_service_service_info.h"
 #include "service_info/game_client_player_service_info.h"
 #include "thread_local/storage_gate.h"
-#include "util/random.h"
 #include "proto/common/node.pb.h"
 #include "node/system/node_system.h"
 #include "google/protobuf/descriptor.h"
@@ -287,25 +286,25 @@ void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& req
 }
 
 void HandleLoginNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn){
-    auto loginNode = ResolveSessionTargetNode(sessionId, eNodeType::LoginNodeService);
-    if (!loginNode)
+    auto node = ResolveSessionTargetNode(sessionId, eNodeType::LoginNodeService);
+    if (!node)
     {
         LOG_ERROR << "Login node not found for session id: " << sessionId << ", message id: " << request->message_id();
         // TODO: Handle connection closure logic here.
         return;
     }
 
-	auto& messageInfo = gRpcServiceRegistry[request->message_id()];
+	auto& rpcHandlerMeta  = gRpcServiceRegistry[request->message_id()];
 
-	ParseMessageFromRequestBody(*messageInfo.requestPrototype, request, sessionId);
+	ParseMessageFromRequestBody(*rpcHandlerMeta .requestPrototype, request, sessionId);
 	SessionDetails sessionDetails;
 	sessionDetails.set_session_id(sessionId);
 
-	if (messageInfo.messageSender)
+	if (rpcHandlerMeta .messageSender)
 	{
-		messageInfo.messageSender(tls.GetNodeRegistry(messageInfo.targetNodeType), 
-            *loginNode, 
-            *messageInfo.requestPrototype, 
+		rpcHandlerMeta .messageSender(tls.GetNodeRegistry(rpcHandlerMeta .targetNodeType), 
+            *node, 
+            *rpcHandlerMeta .requestPrototype, 
             { kSessionBinMetaKey }, 
             SerializeSessionDetails(sessionDetails));
 	}
@@ -345,9 +344,6 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
     if (messageInfo.protocolType == PROTOCOL_TCP){
 		HandleTcpNodeMessage(session, request, sessionId, conn);
     }else if (messageInfo.protocolType == PROTOCOL_GRPC){
-        if (messageInfo.targetNodeType == LoginNodeService)
-        {
-			HandleLoginNodeMessage(sessionId, request, conn);
-        }
+    	HandleLoginNodeMessage(sessionId, request, conn);
     }
 }

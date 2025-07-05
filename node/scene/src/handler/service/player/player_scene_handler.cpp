@@ -50,9 +50,9 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 		}
 	}
 
-	CentreEnterSceneRequest rq;
-	rq.mutable_scene_info()->CopyFrom(scene_info);
-	SendToCentrePlayerById(CentrePlayerSceneEnterSceneMessageId, rq, player);
+	CentreEnterSceneRequest enterSceneReq;
+	enterSceneReq.mutable_scene_info()->CopyFrom(scene_info);
+	SendToCentrePlayerById(CentrePlayerSceneEnterSceneMessageId, enterSceneReq, player);
 
 	LOG_TRACE << "EnterSceneC2S request processed successfully for player: " << tls.actorRegistry.get<Guid>(player);
 ///<<< END WRITING YOUR CODE
