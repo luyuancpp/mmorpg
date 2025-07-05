@@ -17,7 +17,7 @@ void SceneScenePlayerHandler::EnterScene(entt::entity player,const ::GsEnterScen
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "Handling GsEnterSceneRequest for player: " << tls.registry.get<Guid>(player) << ", scene_id: " << request->scene_id();
+	LOG_INFO << "Handling GsEnterSceneRequest for player: " << tls.actorRegistry.get<Guid>(player) << ", scene_id: " << request->scene_id();
 
 	// 进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
 	PlayerSceneSystem::HandleEnterScene(player, entt::to_entity(request->scene_id()));
@@ -32,7 +32,7 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_DEBUG << "Handling GsLeaveSceneRequest for player: " << tls.registry.get<Guid>(player);
+	LOG_DEBUG << "Handling GsLeaveSceneRequest for player: " << tls.actorRegistry.get<Guid>(player);
 
 	PlayerSceneSystem::HandleLeaveScene(player);
 	SceneUtil::LeaveScene({ .leaver = player });
@@ -40,7 +40,7 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 	{
 		// 离开gs 清除session
 		PlayerNodeSystem::HandleExitGameNode(player);
-		LOG_DEBUG << "Player " << tls.registry.get<Guid>(player) << " session cleared after leaving scene.";
+		LOG_DEBUG << "Player " << tls.actorRegistry.get<Guid>(player) << " session cleared after leaving scene.";
 	}
 ///<<< END WRITING YOUR CODE
 
@@ -53,17 +53,17 @@ void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSce
 	::EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "Handling EnterSceneS2CRequest for player: " << tls.registry.get<Guid>(player);
+	LOG_INFO << "Handling EnterSceneS2CRequest for player: " << tls.actorRegistry.get<Guid>(player);
 
-	const auto sceneEntity = tls.registry.try_get<SceneEntityComp>(player);
+	const auto sceneEntity = tls.actorRegistry.try_get<SceneEntityComp>(player);
 	if (sceneEntity == nullptr)
 	{
-		LOG_ERROR << "Player " << tls.registry.get<Guid>(player) << " has not entered any scene.";
+		LOG_ERROR << "Player " << tls.actorRegistry.get<Guid>(player) << " has not entered any scene.";
 		return;
 	}
 
 	::EnterSceneS2C message;
-	message.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfoPBComponent>(sceneEntity->sceneEntity));
+	message.mutable_scene_info()->CopyFrom(tls.actorRegistry.get<SceneInfoPBComponent>(sceneEntity->sceneEntity));
 	SendMessageToPlayer(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 ///<<< END WRITING YOUR CODE
 

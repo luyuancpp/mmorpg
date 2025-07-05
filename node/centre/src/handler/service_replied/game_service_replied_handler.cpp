@@ -98,7 +98,7 @@ void OnSceneInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn, cons
 	const auto  player_id    = it->second;
 	const auto& message_info = gRpcServiceRegistry.at(replied->message_content().message_id() );
 	const auto  player = tlsCommonLogic.GetPlayer(player_id);
-	if (!tls.registry.valid(player))
+	if (!tls.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"
 			<< replied->message_content().message_id();

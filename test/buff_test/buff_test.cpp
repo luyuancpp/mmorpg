@@ -16,18 +16,18 @@ class BuffUtilTest : public ::testing::Test {
 protected:
 	void SetUp() override {
 		// Setup code here, if needed
-		tls.registry.clear(); // 清空线程局部存储
+		tls.actorRegistry.clear(); // 清空线程局部存储
 	}
 
 	void TearDown() override {
 		// Cleanup code here, if needed
-		tls.registry.clear(); // 清空线程局部存储
+		tls.actorRegistry.clear(); // 清空线程局部存储
 	}
 };
 
 TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 	uint32_t buffTableId = 1;
-	entt::entity parent = tls.registry.create();
+	entt::entity parent = tls.actorRegistry.create();
 	auto abilityContext = std::make_shared<SkillContextPBComponent>();
 
 	// Mock BuffTable
@@ -40,7 +40,7 @@ TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 	// AddBuffTableToRegistry(buffTableId, mockBuffTable);
 
 	// Set up a BuffListComp for the parent entity
-	BuffListComp& buffListComp = tls.registry.emplace<BuffListComp>(parent);
+	BuffListComp& buffListComp = tls.actorRegistry.emplace<BuffListComp>(parent);
 	buffListComp.clear(); // Ensure it's empty for this test
 
 	// Call the AddOrUpdateBuff method
@@ -50,13 +50,13 @@ TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 	EXPECT_EQ(result, kSuccess);
 
 	// Verify that the Buff was added to the BuffListComp
-	const auto& buffList = tls.registry.get<BuffListComp>(parent);
+	const auto& buffList = tls.actorRegistry.get<BuffListComp>(parent);
 	EXPECT_FALSE(buffList.empty());
 }
 
 TEST_F(BuffUtilTest, CanCreateBuffSuccess) {
 	uint32_t buffTableId = 1;
-	entt::entity parent = tls.registry.create();
+	entt::entity parent = tls.actorRegistry.create();
 
 	// Mock BuffTable
 	BuffTable mockBuffTable;
@@ -66,7 +66,7 @@ TEST_F(BuffUtilTest, CanCreateBuffSuccess) {
 	// AddBuffTableToRegistry(buffTableId, mockBuffTable);
 
 	// Set up a BuffListComp for the parent entity
-	BuffListComp& buffListComp = tls.registry.emplace<BuffListComp>(parent);
+	BuffListComp& buffListComp = tls.actorRegistry.emplace<BuffListComp>(parent);
 	buffListComp.clear(); // Ensure it's empty for this test
 
 	// Call the CanCreateBuff method
@@ -84,6 +84,6 @@ int main(int argc, char** argv) {
 	::testing::InitGoogleTest(&argc, argv);
 	BuffConfigurationTable::Instance().Load();
 	int ret = RUN_ALL_TESTS();
-	tls.registry.clear(); // Clean up thread-local storage after all tests
+	tls.actorRegistry.clear(); // Clean up thread-local storage after all tests
 	return ret;
 }

@@ -58,7 +58,7 @@ void SceneUtil::SetSequenceNodeId(const uint32_t node_id) { nodeSequence.set_nod
 void SceneUtil::Clear() {
 	LOG_TRACE << "Clearing scene system data";
 	tls.sceneRegistry.clear();
-	tls.registry.clear();
+	tls.actorRegistry.clear();
 	tls.GetNodeRegistry(eNodeType::SceneNodeService).clear();
 }
 
@@ -240,7 +240,7 @@ uint32_t SceneUtil::CheckPlayerEnterScene(const EnterSceneParam& param) {
 		return kInvalidEnterSceneParameters;
 	}
 
-	auto creatorId = tls.registry.get<Guid>(param.enter);
+	auto creatorId = tls.actorRegistry.get<Guid>(param.enter);
 	if (sceneInfo->creators().find(creatorId) == sceneInfo->creators().end()) {
 		LOG_WARN << "Player cannot enter scene due to creator restriction - Scene ID: " << entt::to_integral(param.scene);
 		return kCheckEnterSceneCreator;
@@ -288,7 +288,7 @@ void SceneUtil::EnterScene(const EnterSceneParam& param) {
 		return;
 	}
 
-	if (!tls.registry.valid(param.enter))
+	if (!tls.actorRegistry.valid(param.enter))
 	{
 		LOG_ERROR << "Invalid player entity when entering scene - Player : " << entt::to_integral(param.enter);
 		return;
@@ -296,7 +296,7 @@ void SceneUtil::EnterScene(const EnterSceneParam& param) {
 
 	auto& scenePlayers = tls.sceneRegistry.get<ScenePlayers>(param.scene);
 	scenePlayers.emplace(param.enter);
-	tls.registry.emplace<SceneEntityComp>(param.enter, param.scene);
+	tls.actorRegistry.emplace<SceneEntityComp>(param.enter, param.scene);
 
 	auto* gsPlayerInfo = tls.sceneRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(param.scene);
 	if (gsPlayerInfo) {
@@ -307,8 +307,8 @@ void SceneUtil::EnterScene(const EnterSceneParam& param) {
 	afterEnterScene.set_entity(entt::to_integral(param.enter));
 	tls.dispatcher.trigger(afterEnterScene);
 
-	if (tls.registry.any_of<Guid>(param.enter)) {
-		LOG_DEBUG << "Player entered scene - Player GUID: " << tls.registry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(param.scene);
+	if (tls.actorRegistry.any_of<Guid>(param.enter)) {
+		LOG_DEBUG << "Player entered scene - Player GUID: " << tls.actorRegistry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(param.scene);
 	}
 }
 
@@ -327,9 +327,9 @@ void SceneUtil::EnterDefaultScene(const EnterDefaultSceneParam& param) {
 	EnterScene({ defaultScene, param.enter });
 
 	// Log the entry into the default scene
-	if (tls.registry.any_of<Guid>(param.enter))
+	if (tls.actorRegistry.any_of<Guid>(param.enter))
 	{
-		LOG_INFO << "Player entered default scene - Player GUID: " << tls.registry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(defaultScene);
+		LOG_INFO << "Player entered default scene - Player GUID: " << tls.actorRegistry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(defaultScene);
 	}	
 }
 
@@ -341,12 +341,12 @@ void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
 		return;
 	}
 
-	if (!tls.registry.valid(param.leaver)) {
+	if (!tls.actorRegistry.valid(param.leaver)) {
 		LOG_ERROR << "Invalid player entity when leaving scene - Player GUID: " << entt::to_integral(param.leaver);
 		return;
 	}
 
-	auto sceneEntityComp = tls.registry.try_get<SceneEntityComp>(param.leaver);
+	auto sceneEntityComp = tls.actorRegistry.try_get<SceneEntityComp>(param.leaver);
 	if (nullptr == sceneEntityComp)
 	{
 		LOG_ERROR << "SceneEntityComp not found for player when leaving scene - Player : " << entt::to_integral(param.leaver);
@@ -365,7 +365,7 @@ void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
 
 	auto& scenePlayers = tls.sceneRegistry.get<ScenePlayers>(sceneEntity);
 	scenePlayers.erase(param.leaver);
-	tls.registry.remove<SceneEntityComp>(param.leaver);
+	tls.actorRegistry.remove<SceneEntityComp>(param.leaver);
 
 	auto* gsPlayerInfo = tls.sceneRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(sceneEntity);
 	if (gsPlayerInfo) {
@@ -376,8 +376,8 @@ void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
 	afterLeaveScene.set_entity(entt::to_integral(param.leaver));
 	tls.dispatcher.trigger(afterLeaveScene);*/
 
-	if (tls.registry.any_of<Guid>(param.leaver)) {
-		LOG_INFO << "Player left scene - Player GUID: " << tls.registry.get<Guid>(param.leaver) << ", Scene ID: " << entt::to_integral(sceneEntity);
+	if (tls.actorRegistry.any_of<Guid>(param.leaver)) {
+		LOG_INFO << "Player left scene - Player GUID: " << tls.actorRegistry.get<Guid>(param.leaver) << ", Scene ID: " << entt::to_integral(sceneEntity);
 	}
 }
 

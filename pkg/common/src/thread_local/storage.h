@@ -17,7 +17,7 @@ public:
 	ThreadLocalStorage();
 
 	entt::registry globalRegistry;
-	entt::registry registry;
+	entt::registry actorRegistry;
 	entt::registry sceneRegistry;
 	entt::registry itemRegistry;
 	entt::registry sessionRegistry;

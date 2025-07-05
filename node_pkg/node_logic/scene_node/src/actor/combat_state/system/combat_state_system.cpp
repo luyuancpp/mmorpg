@@ -13,7 +13,7 @@
 
 // 初始化实体的战斗状态组件
 void CombatStateSystem::InitializeCombatStateComponent(entt::entity entity) {
-    tls.registry.emplace<CombatStateCollectionPbComponent>(entity); // 添加战斗状态集合组件
+    tls.actorRegistry.emplace<CombatStateCollectionPbComponent>(entity); // 添加战斗状态集合组件
 }
 
 // 添加战斗状态
@@ -22,7 +22,7 @@ void CombatStateSystem::AddCombatState(const CombatStateAddedPbEvent& addEvent) 
     const auto entityId = entt::to_entity(addEvent.actor_entity());
 
     // 获取战斗状态集合组件
-    auto& combatStateCollection = tls.registry.get<CombatStateCollectionPbComponent>(entityId);
+    auto& combatStateCollection = tls.actorRegistry.get<CombatStateCollectionPbComponent>(entityId);
 
     // 检查状态类型是否合法
     if (addEvent.state_type() >= kActorMaxCombatStateType) {
@@ -54,7 +54,7 @@ void CombatStateSystem::RemoveCombatState(const CombatStateRemovedPbEvent& remov
     const auto entityId = entt::to_entity(removeEvent.actor_entity());
 
     // 获取战斗状态集合组件
-    auto& combatStateCollection = tls.registry.get<CombatStateCollectionPbComponent>(entityId);
+    auto& combatStateCollection = tls.actorRegistry.get<CombatStateCollectionPbComponent>(entityId);
 
     // 检查状态类型是否合法
     if (removeEvent.state_type() >= kActorMaxCombatStateType) {
@@ -82,7 +82,7 @@ void CombatStateSystem::RemoveCombatState(const CombatStateRemovedPbEvent& remov
 uint32_t CombatStateSystem::ValidateSkillUsage(const entt::entity entityId, const uint32_t combatAction)
 {
     // 获取实体的战斗状态集合
-    const auto& combatStateCollection = tls.registry.get<CombatStateCollectionPbComponent>(entityId);
+    const auto& combatStateCollection = tls.actorRegistry.get<CombatStateCollectionPbComponent>(entityId);
 
     // 如果没有战斗状态，技能使用成功
     if (combatStateCollection.states().empty()) {

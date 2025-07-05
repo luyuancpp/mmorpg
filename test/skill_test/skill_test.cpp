@@ -34,7 +34,7 @@ protected:
     }
 
     void TearDown() override {
-        tls.registry.clear(); // Clean up the thread-local storage after each test
+        tls.actorRegistry.clear(); // Clean up the thread-local storage after each test
     }
 
     std::unique_ptr<SkillSystem> skillUtil;
@@ -55,7 +55,7 @@ TEST_F(SkillUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
 }
 
 TEST_F(SkillUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
-    entt::entity target = tls.registry.create(); // Create a valid target in the registry
+    entt::entity target = tls.actorRegistry.create(); // Create a valid target in the registry
  
     ::ReleaseSkillSkillRequest request;
     request.set_skill_table_id(10);
@@ -72,7 +72,7 @@ TEST_F(SkillUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
 }
 
 TEST_F(SkillUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
 
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_cooldown_id(1);
@@ -83,7 +83,7 @@ TEST_F(SkillUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
     EXPECT_CALL(*mockCooldownTimeUtil, IsInCooldown(_))
         .WillRepeatedly(Return(true));
 
-    auto & cooldownList = tls.registry.emplace<CooldownTimeListComp>(caster);
+    auto & cooldownList = tls.actorRegistry.emplace<CooldownTimeListComp>(caster);
     cooldownTimeComp.set_cooldown_table_id(1);
     CoolDownTimeMillisecondSystem::Reset(cooldownTimeComp);
     cooldownList.mutable_cooldown_list()->emplace(1, cooldownTimeComp);
@@ -93,7 +93,7 @@ TEST_F(SkillUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
 }
 
 TEST_F(SkillUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
 
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_cooldown_id(1);
@@ -104,7 +104,7 @@ TEST_F(SkillUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
     EXPECT_CALL(*mockCooldownTimeUtil, IsInCooldown(_))
         .WillRepeatedly(Return(false));
 
-    auto& cooldownList = tls.registry.emplace<CooldownTimeListComp>(caster);
+    auto& cooldownList = tls.actorRegistry.emplace<CooldownTimeListComp>(caster);
     cooldownList.mutable_cooldown_list()->emplace(1, cooldownTimeComp);
 
     uint32_t result = skillUtil->CheckCooldown(caster, tableSkill.get());
@@ -112,7 +112,7 @@ TEST_F(SkillUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
 }
 
 TEST_F(SkillUtilTest, HandleCastingTimer_ImmediateSkill_ReturnsOk) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_immediately(true);
     tableSkill->set_castpoint(1000); // Set cast point to 1000ms
@@ -125,7 +125,7 @@ TEST_F(SkillUtilTest, HandleCastingTimer_ImmediateSkill_ReturnsOk) {
 }
 
 TEST_F(SkillUtilTest, HandleRecoveryTimeTimer_ImmediateSkill_ReturnsOk) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_immediately(true);
     tableSkill->set_recoverytime(1000); // Set recovery time to 1000ms
@@ -138,7 +138,7 @@ TEST_F(SkillUtilTest, HandleRecoveryTimeTimer_ImmediateSkill_ReturnsOk) {
 }
 
 TEST_F(SkillUtilTest, HandleChannelTimeTimer_ImmediateSkill_ReturnsOk) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_immediately(true);
     tableSkill->set_channelfinish(1000); // Set channel finish time to 1000ms
@@ -152,7 +152,7 @@ TEST_F(SkillUtilTest, HandleChannelTimeTimer_ImmediateSkill_ReturnsOk) {
 }
 
 TEST_F(SkillUtilTest, BroadcastSkillUsedMessage_CreatesMessage) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
     ::ReleaseSkillSkillRequest request;
     request.set_skill_table_id(1);
     request.set_target_id(2);
@@ -165,7 +165,7 @@ TEST_F(SkillUtilTest, BroadcastSkillUsedMessage_CreatesMessage) {
 }
 
 TEST_F(SkillUtilTest, SetupCastingTimer_SetsTimer) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
     tableSkill->set_castpoint(1); // Set cast point to 1000ms
@@ -178,13 +178,13 @@ TEST_F(SkillUtilTest, SetupCastingTimer_SetsTimer) {
 
     skillUtil->SetupCastingTimer(caster, tableSkill.get(), 2);
 
-    auto* castingTimerComp = tls.registry.try_get<CastingTimerComp>(caster);
+    auto* castingTimerComp = tls.actorRegistry.try_get<CastingTimerComp>(caster);
     ASSERT_NE(castingTimerComp, nullptr);  // Check if the component was created
     EXPECT_TRUE(castingTimerComp->timer.IsActive());  // Check if the timer is active
 }
 
 TEST_F(SkillUtilTest, HandleSkillSpell_TriggersEffect) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
 
     SkillSystem::InitializeActorComponents(caster);
 
@@ -198,7 +198,7 @@ TEST_F(SkillUtilTest, HandleSkillSpell_TriggersEffect) {
 }
 
 TEST_F(SkillUtilTest, HandleSkillRecovery_SetsRecoveryTimer) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
 
     SkillSystem::InitializeActorComponents(caster);
 
@@ -212,7 +212,7 @@ TEST_F(SkillUtilTest, HandleSkillRecovery_SetsRecoveryTimer) {
 }
 
 TEST_F(SkillUtilTest, HandleSkillToggleOn_TriggersEffect) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
 
     SkillSystem::InitializeActorComponents(caster);
 
@@ -226,7 +226,7 @@ TEST_F(SkillUtilTest, HandleSkillToggleOn_TriggersEffect) {
 }
 
 TEST_F(SkillUtilTest, HandleSkillToggleOff_RemovesEffect) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
     
     SkillSystem::InitializeActorComponents(caster);
     
@@ -240,7 +240,7 @@ TEST_F(SkillUtilTest, HandleSkillToggleOff_RemovesEffect) {
 }
 
 TEST_F(SkillUtilTest, HandleSkillActivate_TriggersEffect) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
 
     SkillSystem::InitializeActorComponents(caster);
 
@@ -254,7 +254,7 @@ TEST_F(SkillUtilTest, HandleSkillActivate_TriggersEffect) {
 }
 
 TEST_F(SkillUtilTest, HandleSkillDeactivate_RemovesEffect) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
 
     SkillSystem::InitializeActorComponents(caster);
     
@@ -268,7 +268,7 @@ TEST_F(SkillUtilTest, HandleSkillDeactivate_RemovesEffect) {
 }
 
 TEST_F(SkillUtilTest, SendSkillInterruptedMessage_SendsMessage) {
-    entt::entity caster = tls.registry.create();
+    entt::entity caster = tls.actorRegistry.create();
     uint32_t skillId = 1;
 
     EXPECT_NO_THROW(skillUtil->SendSkillInterruptedMessage(caster, skillId));
@@ -283,6 +283,6 @@ int main(int argc, char** argv) {
     SkillConfigurationTable::Instance().Load();
 
     int ret = RUN_ALL_TESTS();
-    tls.registry.clear(); // Clean up thread-local storage after all tests
+    tls.actorRegistry.clear(); // Clean up thread-local storage after all tests
     return ret;
 }

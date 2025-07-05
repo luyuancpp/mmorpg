@@ -153,17 +153,17 @@ struct CastingTimerCompTest
 
 void TestScenario() {
 
-    auto entity = tls.registry.create();
+    auto entity = tls.actorRegistry.create();
 
-    auto& t = tls.registry.emplace<CastingTimerCompTest>(entity);
+    auto& t = tls.actorRegistry.emplace<CastingTimerCompTest>(entity);
 
     auto fn = [entity]() {
         std::cout << "TestCoreDump : new callback executed." << std::endl;
 
-        tls.registry.destroy(entity);
+        tls.actorRegistry.destroy(entity);
 
-        auto entity = tls.registry.create();
-        auto& t = tls.registry.get_or_emplace<CastingTimerCompTest>(entity);
+        auto entity = tls.actorRegistry.create();
+        auto& t = tls.actorRegistry.get_or_emplace<CastingTimerCompTest>(entity);
 
         };
 

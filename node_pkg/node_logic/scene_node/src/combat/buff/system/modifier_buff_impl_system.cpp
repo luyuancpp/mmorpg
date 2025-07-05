@@ -60,9 +60,9 @@ static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffComp&
     }
 
     //todo 及时计算 max_health
-    auto& baseAttributesPbComponent = tls.registry.get<BaseAttributesPbComponent>(parent);
-    const auto& derivedAttributesPbComponent = tls.registry.get<DerivedAttributesPbComponent>(parent);
-    const auto& levelComponent = tls.registry.get<LevelPbComponent>(parent);
+    auto& baseAttributesPbComponent = tls.actorRegistry.get<BaseAttributesPbComponent>(parent);
+    const auto& derivedAttributesPbComponent = tls.actorRegistry.get<DerivedAttributesPbComponent>(parent);
+    const auto& levelComponent = tls.actorRegistry.get<LevelPbComponent>(parent);
 
     const auto lostHealth = derivedAttributesPbComponent.max_health() - baseAttributesPbComponent.health();  // 计算已损失生命值
 

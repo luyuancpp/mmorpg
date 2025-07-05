@@ -24,21 +24,21 @@ void CentrePlayerSceneHandler::EnterScene(entt::entity player,const ::CentreEnte
 {
 	///<<< BEGIN WRITING YOUR CODE
 		//正在切换场景中，不能马上切换，gs崩溃了怎么办
-	LOG_DEBUG << "EnterScene request received for player: " << tls.registry.get<Guid>(player)
+	LOG_DEBUG << "EnterScene request received for player: " << tls.actorRegistry.get<Guid>(player)
 		<< ", scene_info: " << request->scene_info().DebugString();
 
 	ChangeSceneInfoPBComponent changeSceneInfo;
 	PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeSceneInfo, request->scene_info());
 	if (const auto ret = PlayerChangeSceneUtil::PushChangeSceneInfo(player, changeSceneInfo); ret != kSuccess)
 	{
-		LOG_ERROR << "Failed to push change scene info for player " << tls.registry.get<Guid>(player) << ": " << ret;
+		LOG_ERROR << "Failed to push change scene info for player " << tls.actorRegistry.get<Guid>(player) << ": " << ret;
 		PlayerTipSystem::SendToPlayer(player, ret, {});
 		return;
 	}
 
 	PlayerSceneSystem::AttemptEnterNextScene(player);
 
-	LOG_DEBUG << "EnterScene request processed successfully for player: " << tls.registry.get<Guid>(player);
+	LOG_DEBUG << "EnterScene request processed successfully for player: " << tls.actorRegistry.get<Guid>(player);
 	///<<< END WRITING YOUR CODE
 
 
@@ -64,12 +64,12 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 		//异步切换考虑消息队列
 		//todo异步加载完场景已经不在了scene了
 		//todo 场景崩溃了要去新的场景
-	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request received for player: " << tls.registry.get<Guid>(player);
+	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request received for player: " << tls.actorRegistry.get<Guid>(player);
 
-	auto* const changeSceneQueue = tls.registry.try_get<ChangeSceneQueuePBComponent>(player);
+	auto* const changeSceneQueue = tls.actorRegistry.try_get<ChangeSceneQueuePBComponent>(player);
 	if (!changeSceneQueue || changeSceneQueue->empty())
 	{
-		LOG_WARN << "Change scene queue is empty for player: " << tls.registry.get<Guid>(player);
+		LOG_WARN << "Change scene queue is empty for player: " << tls.actorRegistry.get<Guid>(player);
 		return;
 	}
 
@@ -79,14 +79,14 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 	const auto toScene = entt::to_entity(changeSceneInfo.guid());
 	if (entt::null == toScene)
 	{
-		LOG_ERROR << "Destination scene not found or destroyed for player: " << tls.registry.get<Guid>(player);
+		LOG_ERROR << "Destination scene not found or destroyed for player: " << tls.actorRegistry.get<Guid>(player);
 		return;
 	}
 
-	auto* const playerSessionSnapshotPB = tls.registry.try_get<PlayerSessionSnapshotPBComp>(player);
+	auto* const playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (!playerSessionSnapshotPB)
 	{
-		LOG_ERROR << "PlayerNodeInfo not found for player: " << tls.registry.get<Guid>(player);
+		LOG_ERROR << "PlayerNodeInfo not found for player: " << tls.actorRegistry.get<Guid>(player);
 		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(player);
 		return;
 	}
@@ -95,7 +95,7 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 
 	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, SceneUtil::GetGameNodeIdFromGuid(toScene));
 
-	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tls.registry.get<Guid>(player);
+	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tls.actorRegistry.get<Guid>(player);
 	///<<< END WRITING YOUR CODE
 
 
