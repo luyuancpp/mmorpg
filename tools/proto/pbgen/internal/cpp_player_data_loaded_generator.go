@@ -20,7 +20,7 @@ const playerLoaderTemplate = `
 void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const player_database& message){
 	{{- range .Fields }}
 	{{- if .TypeName }}
-	tls.registry.emplace<{{.TypeName}}>(player, message.{{.Name}}());
+	tls.actorRegistry.emplace<{{.TypeName}}>(player, message.{{.Name}}());
 	{{- end }}
 	{{- end }}
 }
@@ -28,7 +28,7 @@ void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const player_da
 void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, player_database& message){
 	{{- range .Fields }}
 	{{- if .TypeName }}
-	message.mutable_{{.Name}}()->CopyFrom(tls.registry.get<{{.TypeName}}>(player));
+	message.mutable_{{.Name}}()->CopyFrom(tls.actorRegistry.get<{{.TypeName}}>(player));
 	{{- end }}
 	{{- end }}
 }

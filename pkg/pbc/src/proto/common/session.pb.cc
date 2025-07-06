@@ -28,6 +28,7 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 inline constexpr SessionDetails::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : session_id_{::uint64_t{0u}},
+        player_id_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
@@ -65,6 +66,7 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::SessionDetails, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::SessionDetails, _impl_.player_id_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -76,15 +78,15 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_proto_2fcommon_2fsession_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\032proto/common/session.proto\"$\n\016SessionD"
-    "etails\022\022\n\nsession_id\030\001 \001(\004B\tZ\007pb/gameb\006p"
-    "roto3"
+    "\n\032proto/common/session.proto\"7\n\016SessionD"
+    "etails\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030"
+    "\002 \001(\004B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fsession_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fsession_2eproto = {
     false,
     false,
-    85,
+    104,
     descriptor_table_protodef_proto_2fcommon_2fsession_2eproto,
     "proto/common/session.proto",
     &descriptor_table_proto_2fcommon_2fsession_2eproto_once,
@@ -124,7 +126,12 @@ inline PROTOBUF_NDEBUG_INLINE SessionDetails::Impl_::Impl_(
 
 inline void SessionDetails::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.session_id_ = {};
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, session_id_),
+           0,
+           offsetof(Impl_, player_id_) -
+               offsetof(Impl_, session_id_) +
+               sizeof(Impl_::player_id_));
 }
 SessionDetails::~SessionDetails() {
   // @@protoc_insertion_point(destructor:SessionDetails)
@@ -173,15 +180,15 @@ const ::google::protobuf::internal::ClassData* SessionDetails::GetClassData() co
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> SessionDetails::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> SessionDetails::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967292,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
+    2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     _class_data_.base(),
@@ -191,6 +198,9 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> SessionDetails::_table_ = {
     ::_pbi::TcParser::GetTable<::SessionDetails>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
+    // uint64 player_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SessionDetails, _impl_.player_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SessionDetails, _impl_.player_id_)}},
     // uint64 session_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SessionDetails, _impl_.session_id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(SessionDetails, _impl_.session_id_)}},
@@ -199,6 +209,9 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> SessionDetails::_table_ = {
   }}, {{
     // uint64 session_id = 1;
     {PROTOBUF_FIELD_OFFSET(SessionDetails, _impl_.session_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 player_id = 2;
+    {PROTOBUF_FIELD_OFFSET(SessionDetails, _impl_.player_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -213,7 +226,9 @@ PROTOBUF_NOINLINE void SessionDetails::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.session_id_ = ::uint64_t{0u};
+  ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.player_id_) -
+      reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.player_id_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -239,6 +254,13 @@ PROTOBUF_NOINLINE void SessionDetails::Clear() {
                 1, this_._internal_session_id(), target);
           }
 
+          // uint64 player_id = 2;
+          if (this_._internal_player_id() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+                2, this_._internal_player_id(), target);
+          }
+
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
             target =
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -262,11 +284,17 @@ PROTOBUF_NOINLINE void SessionDetails::Clear() {
           // Prevent compiler warnings about cached_has_bits being unused
           (void)cached_has_bits;
 
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
            {
             // uint64 session_id = 1;
             if (this_._internal_session_id() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
                   this_._internal_session_id());
+            }
+            // uint64 player_id = 2;
+            if (this_._internal_player_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+                  this_._internal_player_id());
             }
           }
           return this_.MaybeComputeUnknownFieldsSize(total_size,
@@ -284,6 +312,9 @@ void SessionDetails::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::
   if (from._internal_session_id() != 0) {
     _this->_impl_.session_id_ = from._impl_.session_id_;
   }
+  if (from._internal_player_id() != 0) {
+    _this->_impl_.player_id_ = from._impl_.player_id_;
+  }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -298,7 +329,12 @@ void SessionDetails::CopyFrom(const SessionDetails& from) {
 void SessionDetails::InternalSwap(SessionDetails* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-        swap(_impl_.session_id_, other->_impl_.session_id_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(SessionDetails, _impl_.player_id_)
+      + sizeof(SessionDetails::_impl_.player_id_)
+      - PROTOBUF_FIELD_OFFSET(SessionDetails, _impl_.session_id_)>(
+          reinterpret_cast<char*>(&_impl_.session_id_),
+          reinterpret_cast<char*>(&other->_impl_.session_id_));
 }
 
 ::google::protobuf::Metadata SessionDetails::GetMetadata() const {
