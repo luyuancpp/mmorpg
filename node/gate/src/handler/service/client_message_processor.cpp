@@ -18,45 +18,7 @@
 #include "proto/common/node.pb.h"
 #include "node/system/node_system.h"
 #include "google/protobuf/descriptor.h"
-
-constexpr char kSessionBinMetaKey[] = "x-session-detail-bin";
-
-inline bool IsZoneSingletonNodeType(uint32_t nodeType) {
-	switch (nodeType) {
-	case DeployNodeService:
-	case DbNodeService:
-	case CentreNodeService:
-	case GateNodeService:
-	case RedisNodeService:
-	case EtcdNodeService:
-	case MailNodeService:
-	case ChatNodeService:
-	case TeamNodeService:
-	case ActivityNodeService:
-	case TradeNodeService:
-	case RankNodeService:
-	case TaskNodeService:
-	case GuildNodeService:
-	case MatchNodeService:
-	case AiNodeService:
-	case LogNodeService:
-	case PaymentNodeService:
-	case SecurityNodeService:
-	case CrossServerNodeService:
-	case AnalyticsNodeService:
-	case GmNodeService:
-		return true;
-
-		// 非 zone-singleton 的 nodeType：
-	case LoginNodeService:
-	case SceneNodeService:
-		return false;
-
-	default:
-		// 明确没有列出的类型，统一默认 false，防止未来添加类型误判
-		return false;
-	}
-}
+#include "util/network_utils.h"
 
 inline NodeId GetEffectiveNodeId(
 	const Session& session,
@@ -74,15 +36,6 @@ inline NodeId GetEffectiveNodeId(
 	else {
 		return session.GetNodeId(nodeType);
 	}
-}
-
-std::vector<std::string> SerializeSessionDetails(const SessionDetails& sessionDetails) {
-	std::vector<std::string> result;
-	std::string serialized;
-	if (sessionDetails.SerializeToString(&serialized)) {
-		result.push_back(std::move(serialized));
-	}
-	return result;
 }
 
 RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
@@ -257,17 +210,17 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 // Handle messages related to the game node
 void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
 {
-    auto& messageInfo = gRpcServiceRegistry[request->message_id()];
+    auto& handlerMeta = gRpcServiceRegistry[request->message_id()];
 
 	// 玩家没登录直接发其他消息，乱发消息
-    entt::entity tcpNodeId = entt::entity{ GetEffectiveNodeId(session, messageInfo.targetNodeType) };
-	auto& registry = tls.GetNodeRegistry(messageInfo.targetNodeType);
+    entt::entity tcpNodeId = entt::entity{ GetEffectiveNodeId(session, handlerMeta.targetNodeType) };
+	auto& registry = tls.GetNodeRegistry(handlerMeta.targetNodeType);
 	if (!registry.valid(tcpNodeId))
 	{
 		LOG_ERROR << "[TCP Node Error] Invalid tcp node id: " << static_cast<uint32_t>(tcpNodeId)
 			<< ", message_id: " << request->message_id()
 			<< ", session_id: " << sessionId
-			<< ", node_type: " << messageInfo.targetNodeType
+			<< ", node_type: " << handlerMeta.targetNodeType
 			<< ", registry: " << NodeSystem::GetRegistryName(registry);
 
 		RpcClientSessionHandler::SendTipToClient(conn, kServerCrashed);
@@ -285,23 +238,23 @@ void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& req
     LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 }
 
-void HandleLoginNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn){
-    auto node = ResolveSessionTargetNode(sessionId, eNodeType::LoginNodeService);
-    if (!node)
-    {
-        LOG_ERROR << "Login node not found for session id: " << sessionId << ", message id: " << request->message_id();
-        // TODO: Handle connection closure logic here.
-        return;
-    }
-
+void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn){
 	auto& rpcHandlerMeta  = gRpcServiceRegistry[request->message_id()];
 
 	ParseMessageFromRequestBody(*rpcHandlerMeta .requestPrototype, request, sessionId);
 	SessionDetails sessionDetails;
 	sessionDetails.set_session_id(sessionId);
 
-	if (rpcHandlerMeta .messageSender)
-	{
+	if (rpcHandlerMeta .messageSender){
+		auto node = ResolveSessionTargetNode(sessionId, rpcHandlerMeta .targetNodeType);
+		if (!node)
+		{
+			LOG_ERROR << "Login node not found for session id: " << sessionId << ", message id: " << request->message_id();
+			// TODO: Handle connection closure logic here.
+			return;
+		}
+
+		
 		rpcHandlerMeta .messageSender(tls.GetNodeRegistry(rpcHandlerMeta .targetNodeType), 
             *node, 
             *rpcHandlerMeta .requestPrototype, 
@@ -344,6 +297,6 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
     if (messageInfo.protocolType == PROTOCOL_TCP){
 		HandleTcpNodeMessage(session, request, sessionId, conn);
     }else if (messageInfo.protocolType == PROTOCOL_GRPC){
-    	HandleLoginNodeMessage(sessionId, request, conn);
+    	HandleGrpcNodeMessage(sessionId, request, conn);
     }
 }

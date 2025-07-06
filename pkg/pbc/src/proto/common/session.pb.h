@@ -213,6 +213,7 @@ class SessionDetails final
   // accessors -------------------------------------------------------
   enum : int {
     kSessionIdFieldNumber = 1,
+    kPlayerIdFieldNumber = 2,
   };
   // uint64 session_id = 1;
   void clear_session_id() ;
@@ -224,12 +225,22 @@ class SessionDetails final
   void _internal_set_session_id(::uint64_t value);
 
   public:
+  // uint64 player_id = 2;
+  void clear_player_id() ;
+  ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:SessionDetails)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 0,
+      1, 2, 0,
       0, 2>
       _table_;
 
@@ -248,6 +259,7 @@ class SessionDetails final
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const SessionDetails& from_msg);
     ::uint64_t session_id_;
+    ::uint64_t player_id_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -291,6 +303,28 @@ inline ::uint64_t SessionDetails::_internal_session_id() const {
 inline void SessionDetails::_internal_set_session_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
+}
+
+// uint64 player_id = 2;
+inline void SessionDetails::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+}
+inline ::uint64_t SessionDetails::player_id() const {
+  // @@protoc_insertion_point(field_get:SessionDetails.player_id)
+  return _internal_player_id();
+}
+inline void SessionDetails::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  // @@protoc_insertion_point(field_set:SessionDetails.player_id)
+}
+inline ::uint64_t SessionDetails::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void SessionDetails::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
 }
 
 #ifdef __GNUC__
