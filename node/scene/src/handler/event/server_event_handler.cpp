@@ -32,7 +32,7 @@ void ServerEventHandler::OnConnect2CentrePbEventHandler(const OnConnect2CentrePb
 	InitSceneNodeRequest request;
 	request.set_node_id(gNode->GetNodeId());
 	request.set_scene_node_type(gNode->GetNodeInfo().scene_node_type());
-    CallRemoteMethodOnSession(CentreInitSceneNodeMessageId, request, entt::to_integral(event.entity()), eNodeType::CentreNodeService);
+    CallRemoteMethodOnClient(CentreInitSceneNodeMessageId, request, entt::to_integral(event.entity()), eNodeType::CentreNodeService);
 
 	entt::entity centreNodeId = entt::to_entity(event.entity());
 	GameNodeSceneSystem::RegisterAllSceneToCentre(centreNodeId);

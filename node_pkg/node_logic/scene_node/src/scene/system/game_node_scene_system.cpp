@@ -50,7 +50,7 @@ void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 		request.mutable_scenes_info()->Add()->CopyFrom(sceneInfo);
 	}
 
-	CallRemoteMethodOnSession(CentreSceneRegisterSceneMessageId, request, entt::to_integral(centre), eNodeType::CentreNodeService);
+	CallRemoteMethodOnClient(CentreSceneRegisterSceneMessageId, request, entt::to_integral(centre), eNodeType::CentreNodeService);
 }
 
 void GameNodeSceneSystem::HandleSceneCreation(const OnSceneCreate& message) {
