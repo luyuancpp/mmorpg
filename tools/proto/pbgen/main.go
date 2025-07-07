@@ -6,41 +6,11 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"path"
 	"pbgen/config"
 	"pbgen/internal"
 	"pbgen/util"
 	"time"
 )
-
-func MakeProjectMd5Dir(src string, dst string) error {
-	var err error
-	var fds []os.DirEntry
-	var srcFileInfo os.FileInfo
-
-	if srcFileInfo, err = os.Stat(src); err != nil {
-		return err
-	}
-
-	if err = os.MkdirAll(dst, srcFileInfo.Mode()); err != nil {
-		return err
-	}
-
-	if fds, err = os.ReadDir(src); err != nil {
-		return err
-	}
-	for _, fd := range fds {
-		if !fd.IsDir() {
-			continue
-		}
-		srcFp := path.Join(src, fd.Name())
-		dstFp := path.Join(dst, fd.Name())
-		if err = MakeProjectMd5Dir(srcFp, dstFp); err != nil {
-			fmt.Println(err)
-		}
-	}
-	return nil
-}
 
 func MakeProjectDir() {
 	os.MkdirAll(config.PbcOutputDirectory, os.FileMode(0777))

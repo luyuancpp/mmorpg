@@ -133,8 +133,15 @@ void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId,
 		return;
 	}
 
-	entt::entity nodeEntity{ nodeType == eNodeType::CentreNodeService ? sessionPB->centre_node_id() :
-							 entt::null }; // 可扩展支持更多类型
+	const auto& nodeIdMap = sessionPB->node_id();
+	auto it = nodeIdMap.find(nodeType);
+	if (it == nodeIdMap.end()) {
+		LOG_ERROR << "Node type not found in player session snapshot: " << nodeType
+			<< ", player entity: " << entt::to_integral(playerEntity);
+		return;
+	}
+
+	entt::entity nodeEntity{ it->second };
 
 	auto& registry = tls.GetNodeRegistry(nodeType);
 	if (!registry.valid(nodeEntity)) {

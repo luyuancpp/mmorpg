@@ -64,19 +64,22 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 	}
 
 	tls.actorRegistry.emplace<ViewRadius>(player).set_radius(10);
-	tls.actorRegistry.emplace<PlayerSessionSnapshotPBComp>(player).set_centre_node_id(asyncIt->second.centre_node_id());
+
+	auto& playerSessionSnapshotPB = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
+	auto& nodeIdMap = *playerSessionSnapshotPB.mutable_node_id();
+	nodeIdMap[eNodeType::CentreNodeService] = asyncIt->second.centre_node_id();
 
 	LOG_INFO << "PlayerNodeInfo set with CentreNodeId: " << asyncIt->second.centre_node_id();
 
 	InitializeActorComponentsEvent initializeActorComponentsEvent;
 	initializeActorComponentsEvent.set_actor_entity(entt::to_integral(player));
 	tls.dispatcher.trigger(initializeActorComponentsEvent);
-	LOG_INFO << "Triggered InitializeActorComponentsEvent";
+	LOG_TRACE << "Triggered InitializeActorComponentsEvent";
 
 	InitializePlayerComponentsEvent initializePlayerComponents;
 	initializePlayerComponents.set_actor_entity(entt::to_integral(player));
 	tls.dispatcher.trigger(initializePlayerComponents);
-	LOG_INFO << "Triggered InitializePlayerComponentsEvent";
+	LOG_TRACE << "Triggered InitializePlayerComponentsEvent";
 
 	EnterGs(player, asyncIt->second);
 }
@@ -128,7 +131,8 @@ void PlayerNodeSystem::EnterGs(const entt::entity player, const PlayerGameNodeEn
 		playerSessionSnapshotPB = &tls.actorRegistry.emplace<PlayerSessionSnapshotPBComp>(player);
 	}
 
-	playerSessionSnapshotPB->set_centre_node_id(enterInfo.centre_node_id());
+	auto& nodeIdMap = *playerSessionSnapshotPB->mutable_node_id();
+	nodeIdMap[eNodeType::CentreNodeService] = enterInfo.centre_node_id();
 	LOG_INFO << "Updated PlayerNodeInfo with CentreNodeId: " << enterInfo.centre_node_id();
 
 	// Notify Centre that player has entered the game node successfully
