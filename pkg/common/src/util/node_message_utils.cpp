@@ -6,6 +6,7 @@
 #include <network/rpc_client.h>
 #include "thread_local/storage_common_logic.h"
 #include "proto/logic/component/player_network_comp.pb.h"
+#include "service_info/centre_service_service_info.h"
 
 
 template <typename SessionType>
