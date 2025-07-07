@@ -220,7 +220,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		PlayerSessionSnapshotPBComp sessionPB;
 		sessionPB.set_gate_session_id(sessionId);
 		// 玩家未登录过，首次加载,底层已经判断重复加载
-		tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(playerId);
+		tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(playerId, sessionPB);
 	}
 	else {
 		auto player = it->second;

@@ -141,7 +141,7 @@ void PlayerNodeSystem::NotifyEnterGsSucceed(entt::entity player, NodeId centreNo
 	EnterGameNodeSuccessRequest request;
 	request.set_player_id(tls.actorRegistry.get<Guid>(player));
 	request.set_scene_node_id(GetNodeInfo().node_id());
-	CallRemoteMethodOnSession(CentreEnterGsSucceedMessageId, request, centreNodeId, eNodeType::CentreNodeService);
+	CallRemoteMethodOnClient(CentreEnterGsSucceedMessageId, request, centreNodeId, eNodeType::CentreNodeService);
 
 	// TODO: Handle game node update corresponding to gate before sending client messages
 	// Example: Ensure gate updates are done before client messages can be sent
