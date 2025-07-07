@@ -39,6 +39,8 @@
     <ClInclude Include="src\generator\util\gen_util.h" />
     <ClInclude Include="src\util\fast_queue.h" />
     <ClInclude Include="src\util\player_message_utils.h" />
+    <ClInclude Include="src\util\node_message_utils.h" />
+    <ClInclude Include="src\util\node_utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\network\game_rpc.pb.cc" />
@@ -63,6 +65,8 @@
     <ClCompile Include="src\util\base64.cpp" />
     <ClCompile Include="src\generator\util\gen_util.cpp" />
     <ClCompile Include="src\util\player_message_utils.cpp" />
+    <ClCompile Include="src\util\node_message_utils.cpp" />
+    <ClCompile Include="src\util\node_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\network\autogen.bat" />

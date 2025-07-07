@@ -23,6 +23,8 @@
 #include "proto/logic/component/player_scene_comp.pb.h"
 #include "proto/db/mysql_database_table.pb.h"
 #include "util/network_utils.h"
+#include "util/node_message_utils.h"
+#include <network/rpc_session.h>
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
 {
@@ -156,7 +158,7 @@ void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity pla
 	RegisterPlayerSessionRequest request;
 	request.set_session_id(playerSessionSnapshotPB->gate_session_id());
 	request.set_player_id(*playerId);
-	SendToSceneNode(SceneUpdateSessionDetailMessageId, request, playerSessionSnapshotPB->scene_node_id());
+	SendMessageToSessionNode(SceneUpdateSessionDetailMessageId, request, playerSessionSnapshotPB->scene_node_id(), eNodeType::SceneNodeService);
 	LOG_DEBUG << "Sent session update to scene node";
 }
 

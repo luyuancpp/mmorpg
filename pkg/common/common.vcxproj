@@ -51,6 +51,8 @@
     <ClInclude Include="src\util\game_registry.h" />
     <ClInclude Include="src\util\network_utils.h" />
     <ClInclude Include="src\util\node_id_generator.h" />
+    <ClInclude Include="src\util\node_message_utils.h" />
+    <ClInclude Include="src\util\node_utils.h" />
     <ClInclude Include="src\util\player_message_utils.h" />
     <ClInclude Include="src\util\proto_field_checker.h" />
     <ClInclude Include="src\util\random.h" />
@@ -78,6 +80,8 @@
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\util\game_registry.cpp" />
     <ClCompile Include="src\util\network_utils.cpp" />
+    <ClCompile Include="src\util\node_message_utils.cpp" />
+    <ClCompile Include="src\util\node_utils.cpp" />
     <ClCompile Include="src\util\player_message_utils.cpp" />
     <ClCompile Include="src\util\proto_field_checker.cpp" />
     <ClCompile Include="src\util\utility.cpp" />

@@ -15,7 +15,6 @@
 #include "muduo/base/TimeZone.h"
 #include "network/process_info.h"
 #include "network/rpc_session.h"
-#include "node/comp/node_comp.h"
 #include "node/system/node_system.h"
 #include "pbc/common_error_tip.pb.h"
 #include "proto/common/node.pb.h"
@@ -29,7 +28,8 @@
 #include "util/network_utils.h"
 #include "util/random.h"
 #include "generator/util/gen_util.h"
-#include <util/stacktrace_system.h>
+#include "util/stacktrace_system.h"
+#include "util/node_utils.h"
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 

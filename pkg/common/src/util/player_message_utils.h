@@ -13,3 +13,6 @@ void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& 
 
 void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Message& message, const EntityUnorderedSet& playerList);
 void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Message& message, const EntityVector& playerList);
+
+void SendMessageToGrpcPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
+void SendMessageToGrpcPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);

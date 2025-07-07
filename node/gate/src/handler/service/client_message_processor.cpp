@@ -19,14 +19,14 @@
 #include "node/system/node_system.h"
 #include "google/protobuf/descriptor.h"
 #include "util/network_utils.h"
-#include "node/system/node_system.h"
+#include "util/node_utils.h"
 
 inline NodeId GetEffectiveNodeId(
 	const Session& session,
 	uint32_t nodeType)
 {
 	if (IsZoneSingletonNodeType(nodeType)) {
-        auto node = NodeSystem::FindZoneUniqueNodeInfo(gGateNode->GetNodeInfo().zone_id(), nodeType);
+        auto node = FindZoneUniqueNodeInfo(gGateNode->GetNodeInfo().zone_id(), nodeType);
         if (node == nullptr) {
             LOG_ERROR << "Node not found for type: " << nodeType;
             return kInvalidNodeId;

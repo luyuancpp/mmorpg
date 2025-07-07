@@ -2,7 +2,6 @@
 
 #include "google/protobuf/message.h"
 #include "entt/src/entt/entt.hpp"
-#include "network/rpc_session.h"
 #include "type_define/type_define.h"
 
 /*注意，centre发给player消息和gs发给player的消息是异步的，不能保证ms gs 的消息哪个先到player
@@ -11,14 +10,10 @@
 * 必须得replied返回给gs后再在gs返回给客户。
 */
 
-void SendToSceneNode(uint32_t messageId, const google::protobuf::Message& message, NodeId gameNodeId);
 void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
 void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
 void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
 void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
 
-
 void CallScenePlayerMethod(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
-void CallGameNodeMethod(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId);
 
-void BroadCastToGame(uint32_t messageId, const google::protobuf::Message& message);

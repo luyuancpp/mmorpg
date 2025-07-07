@@ -1,6 +1,5 @@
 #include "game_node_scene_system.h"
 
-#include "node/scene_node_info.h"
 #include "mainscene_config.h"
 #include "core/network/message_system.h"
 #include "player/system/player_scene_system.h"
@@ -12,7 +11,8 @@
 #include "service_info/centre_scene_service_info.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
-
+#include "util/node_utils.h"
+#include "util/node_message_utils.h"
 
 void GameNodeSceneSystem::InitializeNodeScenes() {
 	if (!(GetNodeInfo().scene_node_type() == eSceneNodeType::kMainSceneNode ||
@@ -38,7 +38,7 @@ void GameNodeSceneSystem::RegisterSceneToAllCentre(entt::entity scene) {
 	request.set_scene_node_id(GetNodeInfo().node_id());
 	request.mutable_scenes_info()->Add()->CopyFrom(*sceneInfo);
 
-	BroadCastToCentre(CentreSceneRegisterSceneMessageId, request);
+	BroadcastToNodes(CentreSceneRegisterSceneMessageId, request, eNodeType::CentreNodeService);
 }
 
 void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
@@ -50,7 +50,7 @@ void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 		request.mutable_scenes_info()->Add()->CopyFrom(sceneInfo);
 	}
 
-	CallCentreNodeMethod(CentreSceneRegisterSceneMessageId, request, entt::to_integral(centre));
+	CallRemoteMethodOnSession(CentreSceneRegisterSceneMessageId, request, entt::to_integral(centre), eNodeType::CentreNodeService);
 }
 
 void GameNodeSceneSystem::HandleSceneCreation(const OnSceneCreate& message) {
