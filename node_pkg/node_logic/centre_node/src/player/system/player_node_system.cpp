@@ -26,7 +26,7 @@
 #include "network/rpc_session.h"
 #include "util/player_message_utils.h"
 
-void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
+void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData, const std::any& extra)
 {
 	LOG_INFO << "Handling async load for player: " << playerId;
 	assert(GlobalPlayerList().find(playerId) == GlobalPlayerList().end());
@@ -37,6 +37,8 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 		LOG_ERROR << "Error emplacing player in player list: " << playerId;
 		return;
 	}
+
+	auto& sessionPB = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity, std::any_cast<PlayerSessionSnapshotPBComp>(extra));
 
 	tls.actorRegistry.emplace<Player>(playerEntity);
 	tls.actorRegistry.emplace<Guid>(playerEntity, playerId);

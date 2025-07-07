@@ -217,6 +217,8 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	auto it = playerList.find(playerId);
 
 	if (it == playerList.end()) {
+		PlayerSessionSnapshotPBComp sessionPB;
+		sessionPB.set_gate_session_id(sessionId);
 		// 玩家未登录过，首次加载,底层已经判断重复加载
 		tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(playerId);
 	}
