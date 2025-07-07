@@ -66,7 +66,7 @@ void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSce
 
 	::EnterSceneS2C message;
 	message.mutable_scene_info()->CopyFrom(tls.actorRegistry.get<SceneInfoPBComponent>(sceneEntity->sceneEntity));
-	SendMessageToPlayer(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
+	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 ///<<< END WRITING YOUR CODE
 
 

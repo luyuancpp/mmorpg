@@ -22,7 +22,7 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 
 	EnterSceneS2C message;
 	message.mutable_scene_info()->CopyFrom(*sceneInfo);
-	SendMessageToPlayer(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
+	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 }
 
 void PlayerSceneSystem::HandleLeaveScene(entt::entity player)

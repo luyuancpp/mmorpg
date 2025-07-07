@@ -8,7 +8,6 @@
 #include "muduo/base/Logging.h"
 
 #include "scene/comp/scene_comp.h"
-#include "network/message_system.h"
 #include "service_info/game_player_scene_service_info.h"
 #include "scene/system/player_change_scene_system.h"
 #include "scene/system/player_scene_system.h"
@@ -16,6 +15,7 @@
 #include "type_define/type_define.h"
 #include "service_info/game_player_service_info.h"
 #include "proto/logic/component/scene_comp.pb.h"
+#include "util/player_message_utils.h"
 
 ///<<< END WRITING YOUR CODE
 
@@ -100,7 +100,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 
 	GsLeaveSceneRequest leaveSceneRequest;
 	leaveSceneRequest.set_change_gs(changeSceneInfo.change_gs_type() == ChangeSceneInfoPBComponent::eDifferentGs);
-	SendToGsPlayer(SceneScenePlayerLeaveSceneMessageId, leaveSceneRequest, player);
+	SendMessageToPlayerOnSceneNode(SceneScenePlayerLeaveSceneMessageId, leaveSceneRequest, player);
 
 	LOG_TRACE << "Player is leaving scene "
 		<< tls.actorRegistry.get<Guid>(player)

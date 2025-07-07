@@ -9,13 +9,14 @@
 #include "network/rpc_session.h"
 #include "service_info/service_info.h"
 #include "node_utils.h"
+#include <service_info/game_service_service_info.h>
 
-void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
+void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
-	SendMessageToPlayer(messageId, message, tlsCommonLogic.GetPlayer(playerId));
+	SendMessageToClientViaGate(messageId, message, tlsCommonLogic.GetPlayer(playerId));
 }
 
-void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity)
+void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity)
 {
 	if (!tls.actorRegistry.valid(playerEntity))
 	{
@@ -45,10 +46,10 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 		return;
 	}
 
-	SendMessageToPlayer(messageId, message, *gateSessionPtr, playerSessionSnapshotPB->gate_session_id());
+	SendMessageToClientViaGate(messageId, message, *gateSessionPtr, playerSessionSnapshotPB->gate_session_id());
 }
 
-void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, RpcSession& gate, uint64_t sessionId)
+void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, RpcSession& gate, uint64_t sessionId)
 {
 	NodeRouteMessageRequest request;
 	const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
@@ -146,8 +147,8 @@ void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Messa
 	InternalBroadcast(messageId, message, playerList);
 }
 
-void SendMessageToGrpcPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId) {
-	SendMessageToGrpcPlayer(messageId, message, tlsCommonLogic.GetPlayer(playerId));
+void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message& message, Guid playerId) {
+	SendMessageToPlayerOnGrpcNode(messageId, message, tlsCommonLogic.GetPlayer(playerId));
 }
 
 inline NodeId GetEffectiveNodeId(
@@ -166,7 +167,7 @@ inline NodeId GetEffectiveNodeId(
 	return kInvalidNodeId;
 }
 
-void SendMessageToGrpcPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity) {
+void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity) {
 	if (!tls.actorRegistry.valid(playerEntity))
 	{
 		LOG_ERROR << "Player entity is not valid";
@@ -202,4 +203,170 @@ void SendMessageToGrpcPlayer(uint32_t messageId, const google::protobuf::Message
 		*rpcHandlerMeta.requestPrototype,
 		{ kSessionBinMetaKey },
 		SerializeSessionDetails(sessionDetails));
+}
+
+
+void SendMessageToPlayerOnSceneNode(uint32_t messageId,
+	const google::protobuf::Message& message,
+	entt::entity playerEntity)
+{
+	SendMessageToPlayerOnNode(
+		/* wrappedMessageId */ SceneSendMessageToPlayerMessageId,
+		/* nodeType */ eNodeType::SceneNodeService,
+		/* messageId */ messageId,
+		message,
+		playerEntity);
+}
+
+void SendMessageToPlayerOnSceneNode(uint32_t messageId,
+	const google::protobuf::Message& message,
+	Guid playerId)
+{
+	SendMessageToPlayerOnSceneNode(messageId, message, tlsCommonLogic.GetPlayer(playerId));
+}
+
+
+void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
+	uint32_t nodeType,
+	uint32_t messageId,
+	const google::protobuf::Message& message,
+	Guid playerId) {
+	SendMessageToPlayerOnNode(wrappedMessageId, nodeType, messageId, message, tlsCommonLogic.GetPlayer(playerId));
+}
+
+
+void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
+	uint32_t nodeType,
+	uint32_t messageId,
+	const google::protobuf::Message& message,
+	entt::entity playerEntity)
+{
+	if (!tls.actorRegistry.valid(playerEntity))
+	{
+		LOG_ERROR << "Invalid player entity -> " << entt::to_integral(playerEntity);
+		return;
+	}
+
+	const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	if (!playerSessionSnapshotPB)
+	{
+		LOG_ERROR << "Player session info not found -> " << entt::to_integral(playerEntity);
+		return;
+	}
+
+	entt::entity nodeEntity = entt::null;
+
+	switch (nodeType)
+	{
+	case eNodeType::SceneNodeService:
+		nodeEntity = entt::entity{ playerSessionSnapshotPB->scene_node_id() };
+		break;
+	case eNodeType::CentreNodeService:
+		nodeEntity = entt::entity{ playerSessionSnapshotPB->centre_node_id() };
+		break;
+		// 可拓展更多 node 类型
+	default:
+		LOG_ERROR << "Unsupported node type: " << nodeType;
+		return;
+	}
+
+	auto& registry = tls.GetNodeRegistry(nodeType);
+	if (!registry.valid(nodeEntity))
+	{
+		LOG_ERROR << "Node entity invalid for player -> " << entt::to_integral(playerEntity)
+			<< ", node ID: " << entt::to_integral(nodeEntity);
+		return;
+	}
+
+	const auto session = registry.try_get<RpcSession>(nodeEntity);
+	if (!session)
+	{
+		LOG_ERROR << "RpcSession not found for node: " << entt::to_integral(nodeEntity);
+		return;
+	}
+
+	NodeRouteMessageRequest request;
+	request.mutable_message_content()->set_message_id(messageId);
+	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
+	request.mutable_header()->set_session_id(playerSessionSnapshotPB->gate_session_id());
+
+	session->SendRequest(wrappedMessageId, request);
+}
+
+
+void CallMethodOnPlayerNode(
+	uint32_t remoteMethodId,
+	uint32_t nodeType,
+	uint32_t messageId,
+	const google::protobuf::Message& message,
+	Guid playerId) {
+	CallMethodOnPlayerNode(remoteMethodId, nodeType, messageId, message, tlsCommonLogic.GetPlayer(playerId));
+}
+
+void CallMethodOnPlayerNode(
+	uint32_t remoteMethodId,
+	uint32_t nodeType,
+	uint32_t messageId,
+	const google::protobuf::Message& message,
+	entt::entity player)
+{
+	if (!tls.actorRegistry.valid(player))
+	{
+		LOG_ERROR << "Invalid player entity.";
+		return;
+	}
+
+	const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
+	if (!playerSessionSnapshotPB)
+	{
+		LOG_ERROR << "PlayerSessionSnapshotPBComp not found for player -> " << entt::to_integral(player);
+		return;
+	}
+
+	entt::entity targetNodeEntity = entt::null;
+
+	switch (nodeType)
+	{
+	case eNodeType::SceneNodeService:
+		targetNodeEntity = entt::entity{ playerSessionSnapshotPB->scene_node_id() };
+		break;
+	case eNodeType::CentreNodeService:
+		targetNodeEntity = entt::entity{ playerSessionSnapshotPB->centre_node_id() };
+		break;
+		// 可拓展更多 node 类型
+	default:
+		LOG_ERROR << "Unsupported node type: " << nodeType;
+		return;
+	}
+
+	auto& registry = tls.GetNodeRegistry(nodeType);
+
+	if (!registry.valid(targetNodeEntity))
+	{
+		LOG_ERROR << "Invalid target node for player -> " << entt::to_integral(player)
+			<< ", node_id: " << playerSessionSnapshotPB->scene_node_id();
+		return;
+	}
+
+	const auto session = registry.try_get<RpcSession>(targetNodeEntity);
+	if (!session)
+	{
+		LOG_ERROR << "RpcSession not found for node -> " << playerSessionSnapshotPB->scene_node_id();
+		return;
+	}
+
+	NodeRouteMessageRequest request;
+	const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
+	request.mutable_message_content()->mutable_serialized_message()->resize(byteSize);
+
+	if (!message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), byteSize))
+	{
+		LOG_ERROR << "Failed to serialize message.";
+		return;
+	}
+
+	request.mutable_message_content()->set_message_id(messageId);
+	request.mutable_header()->set_session_id(playerSessionSnapshotPB->gate_session_id());
+
+	session->CallRemoteMethod(remoteMethodId, request);
 }
