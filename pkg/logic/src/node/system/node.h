@@ -44,8 +44,6 @@ public:
     void HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response) const;
     void HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const;
 
-	NodeInfo* FindZoneUniqueNodeInfo(uint32_t zoneId, uint32_t nodeType);
-
 protected:
     // 初始化相关
     void InitRpcServer();

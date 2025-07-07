@@ -14,6 +14,7 @@
 #include "proto/common/node.pb.h"
 #include "service_info/service_info.h"
 #include "util/network_utils.h"
+#include "node/system/node_system.h"
 
 void SendMessageToPlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
@@ -62,24 +63,11 @@ void SendMessageToGrpcPlayer(uint32_t messageId, const google::protobuf::Message
 	SendMessageToGrpcPlayer(messageId, message, tlsCommonLogic.GetPlayer(playerId));
 }
 
-NodeInfo* FindZoneUniqueNodeInfo(uint32_t zoneId, uint32_t nodeType) {
-	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
-	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
-	for (auto& node : nodeList)
-	{
-		if (node.zone_id() == zoneId)
-		{
-			return &node;
-		}
-	}
-	return nullptr;
-}
-
 inline NodeId GetEffectiveNodeId(
 	uint32_t nodeType)
 {
 	if (IsZoneSingletonNodeType(nodeType)) {
-		auto node = FindZoneUniqueNodeInfo(GetNodeInfo().zone_id(), nodeType);
+		auto node = NodeSystem::FindZoneUniqueNodeInfo(GetNodeInfo().zone_id(), nodeType);
 		if (node == nullptr) {
 			LOG_ERROR << "Node not found for type: " << nodeType;
 			return kInvalidNodeId;
@@ -111,16 +99,22 @@ void SendMessageToGrpcPlayer(uint32_t messageId, const google::protobuf::Message
 	sessionDetails.set_session_id(playerSessionSnapshotPB->gate_session_id());
 	sessionDetails.set_player_id(tls.actorRegistry.get<Guid>(playerEntity));
 	
-	if (rpcHandlerMeta .messageSender){
-		auto nodeId = GetEffectiveNodeId(rpcHandlerMeta.targetNodeType);
-		entt::entity node{entt::to_entity(nodeId)};
-		
-		rpcHandlerMeta .messageSender(tls.GetNodeRegistry(rpcHandlerMeta .targetNodeType), 
-			node, 
-			*rpcHandlerMeta .requestPrototype, 
-			{ kSessionBinMetaKey }, 
-			SerializeSessionDetails(sessionDetails));
+	if (!rpcHandlerMeta.messageSender){
+		LOG_ERROR << "Message sender not found for message ID: " << messageId;
+		return;
 	}
+
+	auto nodeId = GetEffectiveNodeId(rpcHandlerMeta.targetNodeType);
+	entt::entity node{ entt::to_entity(nodeId) };
+	if (!tls.GetNodeRegistry(rpcHandlerMeta.targetNodeType).valid(node)) {
+		LOG_ERROR << "Node not found for type: " << rpcHandlerMeta.targetNodeType;
+		return;
+	}
+	rpcHandlerMeta.messageSender(tls.GetNodeRegistry(rpcHandlerMeta.targetNodeType),
+		node,
+		*rpcHandlerMeta.requestPrototype,
+		{ kSessionBinMetaKey },
+		SerializeSessionDetails(sessionDetails));
 }
 
 void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
