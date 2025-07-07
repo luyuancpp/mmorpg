@@ -191,16 +191,15 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 		return;
 	}
 
-	entt::entity nodeEntity = entt::null;
-	switch (nodeType) {
-	case eNodeType::SceneNodeService:
-		nodeEntity = entt::entity{ entt::to_entity(sessionPB->scene_node_id()) };
-		break;
-		// 可以继续扩展 case
-	default:
-		LOG_ERROR << "Unsupported nodeType for RpcSession: " << nodeType;
+	const auto& nodeIdMap = sessionPB->node_id();
+	auto it = nodeIdMap.find(nodeType);
+	if (it == nodeIdMap.end()) {
+		LOG_ERROR << "Node type not found in player session snapshot: " << nodeType
+			<< ", player entity: " << entt::to_integral(playerEntity);
 		return;
 	}
+
+	entt::entity nodeEntity{ it->second };
 
 	auto& registry = tls.GetNodeRegistry(nodeType);
 	if (!registry.valid(nodeEntity)) {

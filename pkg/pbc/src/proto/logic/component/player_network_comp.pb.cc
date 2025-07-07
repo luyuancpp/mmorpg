@@ -48,7 +48,6 @@ inline constexpr PlayerSessionSnapshotPBComp::Impl_::Impl_(
       : node_id_{},
         player_id_{::uint64_t{0u}},
         gate_session_id_{::uint64_t{0u}},
-        scene_node_id_{0u},
         _cached_size_{0} {}
 
 template <typename>
@@ -99,7 +98,6 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::PlayerSessionSnapshotPBComp, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerSessionSnapshotPBComp, _impl_.gate_session_id_),
-        PROTOBUF_FIELD_OFFSET(::PlayerSessionSnapshotPBComp, _impl_.scene_node_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerSessionSnapshotPBComp, _impl_.node_id_),
 };
 
@@ -115,18 +113,18 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n/proto/logic/component/player_network_c"
-    "omp.proto\"\312\001\n\033PlayerSessionSnapshotPBCom"
+    "omp.proto\"\263\001\n\033PlayerSessionSnapshotPBCom"
     "p\022\021\n\tplayer_id\030\001 \001(\004\022\027\n\017gate_session_id\030"
-    "\002 \001(\004\022\025\n\rscene_node_id\030\003 \001(\r\0229\n\007node_id\030"
-    "\005 \003(\0132(.PlayerSessionSnapshotPBComp.Node"
-    "IdEntry\032-\n\013NodeIdEntry\022\013\n\003key\030\001 \001(\r\022\r\n\005v"
-    "alue\030\002 \001(\r:\0028\001B\tZ\007pb/gameb\006proto3"
+    "\002 \001(\004\0229\n\007node_id\030\005 \003(\0132(.PlayerSessionSn"
+    "apshotPBComp.NodeIdEntry\032-\n\013NodeIdEntry\022"
+    "\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\r:\0028\001B\tZ\007pb/ga"
+    "meb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto = {
     false,
     false,
-    273,
+    250,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto,
     "proto/logic/component/player_network_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto_once,
@@ -264,9 +262,9 @@ PlayerSessionSnapshotPBComp::PlayerSessionSnapshotPBComp(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, scene_node_id_) -
+           offsetof(Impl_, gate_session_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::scene_node_id_));
+               sizeof(Impl_::gate_session_id_));
 
   // @@protoc_insertion_point(copy_constructor:PlayerSessionSnapshotPBComp)
 }
@@ -281,9 +279,9 @@ inline void PlayerSessionSnapshotPBComp::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, scene_node_id_) -
+           offsetof(Impl_, gate_session_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::scene_node_id_));
+               sizeof(Impl_::gate_session_id_));
 }
 PlayerSessionSnapshotPBComp::~PlayerSessionSnapshotPBComp() {
   // @@protoc_insertion_point(destructor:PlayerSessionSnapshotPBComp)
@@ -348,15 +346,15 @@ const ::google::protobuf::internal::ClassData* PlayerSessionSnapshotPBComp::GetC
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 1, 0, 2> PlayerSessionSnapshotPBComp::_table_ = {
+const ::_pbi::TcParseTable<1, 3, 1, 0, 2> PlayerSessionSnapshotPBComp::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    5, 24,  // max_field_number, fast_idx_mask
+    5, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967272,  // skipmap
+    4294967276,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    4,  // num_field_entries
+    3,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     _class_data_.base(),
@@ -366,16 +364,12 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> PlayerSessionSnapshotPBComp::_table_ =
     ::_pbi::TcParser::GetTable<::PlayerSessionSnapshotPBComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
-    // uint64 player_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerSessionSnapshotPBComp, _impl_.player_id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotPBComp, _impl_.player_id_)}},
     // uint64 gate_session_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerSessionSnapshotPBComp, _impl_.gate_session_id_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotPBComp, _impl_.gate_session_id_)}},
-    // uint32 scene_node_id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSessionSnapshotPBComp, _impl_.scene_node_id_), 63>(),
-     {24, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotPBComp, _impl_.scene_node_id_)}},
+    // uint64 player_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerSessionSnapshotPBComp, _impl_.player_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotPBComp, _impl_.player_id_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -385,9 +379,6 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> PlayerSessionSnapshotPBComp::_table_ =
     // uint64 gate_session_id = 2;
     {PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotPBComp, _impl_.gate_session_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-    // uint32 scene_node_id = 3;
-    {PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotPBComp, _impl_.scene_node_id_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // map<uint32, uint32> node_id = 5;
     {PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotPBComp, _impl_.node_id_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
@@ -409,8 +400,8 @@ PROTOBUF_NOINLINE void PlayerSessionSnapshotPBComp::Clear() {
 
   _impl_.node_id_.Clear();
   ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.scene_node_id_) -
-      reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.scene_node_id_));
+      reinterpret_cast<char*>(&_impl_.gate_session_id_) -
+      reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.gate_session_id_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -441,13 +432,6 @@ PROTOBUF_NOINLINE void PlayerSessionSnapshotPBComp::Clear() {
             target = stream->EnsureSpace(target);
             target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
                 2, this_._internal_gate_session_id(), target);
-          }
-
-          // uint32 scene_node_id = 3;
-          if (this_._internal_scene_node_id() != 0) {
-            target = stream->EnsureSpace(target);
-            target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-                3, this_._internal_scene_node_id(), target);
           }
 
           // map<uint32, uint32> node_id = 5;
@@ -518,11 +502,6 @@ PROTOBUF_NOINLINE void PlayerSessionSnapshotPBComp::Clear() {
               total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
                   this_._internal_gate_session_id());
             }
-            // uint32 scene_node_id = 3;
-            if (this_._internal_scene_node_id() != 0) {
-              total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-                  this_._internal_scene_node_id());
-            }
           }
           return this_.MaybeComputeUnknownFieldsSize(total_size,
                                                      &this_._impl_._cached_size_);
@@ -543,9 +522,6 @@ void PlayerSessionSnapshotPBComp::MergeImpl(::google::protobuf::MessageLite& to_
   if (from._internal_gate_session_id() != 0) {
     _this->_impl_.gate_session_id_ = from._impl_.gate_session_id_;
   }
-  if (from._internal_scene_node_id() != 0) {
-    _this->_impl_.scene_node_id_ = from._impl_.scene_node_id_;
-  }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -562,8 +538,8 @@ void PlayerSessionSnapshotPBComp::InternalSwap(PlayerSessionSnapshotPBComp* PROT
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.node_id_.InternalSwap(&other->_impl_.node_id_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotPBComp, _impl_.scene_node_id_)
-      + sizeof(PlayerSessionSnapshotPBComp::_impl_.scene_node_id_)
+      PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotPBComp, _impl_.gate_session_id_)
+      + sizeof(PlayerSessionSnapshotPBComp::_impl_.gate_session_id_)
       - PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotPBComp, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));

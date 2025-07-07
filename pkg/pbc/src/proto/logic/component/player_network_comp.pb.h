@@ -260,7 +260,6 @@ class PlayerSessionSnapshotPBComp final
     kNodeIdFieldNumber = 5,
     kPlayerIdFieldNumber = 1,
     kGateSessionIdFieldNumber = 2,
-    kSceneNodeIdFieldNumber = 3,
   };
   // map<uint32, uint32> node_id = 5;
   int node_id_size() const;
@@ -297,22 +296,12 @@ class PlayerSessionSnapshotPBComp final
   void _internal_set_gate_session_id(::uint64_t value);
 
   public:
-  // uint32 scene_node_id = 3;
-  void clear_scene_node_id() ;
-  ::uint32_t scene_node_id() const;
-  void set_scene_node_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_scene_node_id() const;
-  void _internal_set_scene_node_id(::uint32_t value);
-
-  public:
   // @@protoc_insertion_point(class_scope:PlayerSessionSnapshotPBComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 1,
+      1, 3, 1,
       0, 2>
       _table_;
 
@@ -336,7 +325,6 @@ class PlayerSessionSnapshotPBComp final
         node_id_;
     ::uint64_t player_id_;
     ::uint64_t gate_session_id_;
-    ::uint32_t scene_node_id_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -404,28 +392,6 @@ inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_gate_session_id() const
 inline void PlayerSessionSnapshotPBComp::_internal_set_gate_session_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.gate_session_id_ = value;
-}
-
-// uint32 scene_node_id = 3;
-inline void PlayerSessionSnapshotPBComp::clear_scene_node_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.scene_node_id_ = 0u;
-}
-inline ::uint32_t PlayerSessionSnapshotPBComp::scene_node_id() const {
-  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.scene_node_id)
-  return _internal_scene_node_id();
-}
-inline void PlayerSessionSnapshotPBComp::set_scene_node_id(::uint32_t value) {
-  _internal_set_scene_node_id(value);
-  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.scene_node_id)
-}
-inline ::uint32_t PlayerSessionSnapshotPBComp::_internal_scene_node_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.scene_node_id_;
-}
-inline void PlayerSessionSnapshotPBComp::_internal_set_scene_node_id(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.scene_node_id_ = value;
 }
 
 // map<uint32, uint32> node_id = 5;

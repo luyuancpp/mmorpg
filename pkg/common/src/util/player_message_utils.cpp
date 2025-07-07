@@ -332,14 +332,14 @@ void CallMethodOnPlayerNode(
 	if (!registry.valid(targetNodeEntity))
 	{
 		LOG_ERROR << "Invalid target node for player -> " << entt::to_integral(player)
-			<< ", node_id: " << playerSessionSnapshotPB->scene_node_id();
+			<< ", node_id: " << it->second;
 		return;
 	}
 
 	const auto session = registry.try_get<RpcSession>(targetNodeEntity);
 	if (!session)
 	{
-		LOG_ERROR << "RpcSession not found for node -> " << playerSessionSnapshotPB->scene_node_id();
+		LOG_ERROR << "RpcSession not found for node -> " << it->second;
 		return;
 	}
 
