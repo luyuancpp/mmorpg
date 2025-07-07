@@ -33,6 +33,8 @@
 #include "player/system/player_tip_system.h"
 #include "service_info/centre_player_scene_service_info.h"
 #include "type_alias/player_redis.h"
+#include "util/network_utils.h"
+#include "util/player_message_utils.h"
 
 using namespace muduo;
 using namespace muduo::net;

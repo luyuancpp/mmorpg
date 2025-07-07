@@ -6,6 +6,11 @@
 #include "proto/common/session.pb.h"
 #include "thread_local/storage.h"
 
+NodeId GetGateNodeId(Guid session_id)
+{
+	return static_cast<NodeId>(session_id >> SessionIdGenerator::node_bit());
+}
+
 uint16_t get_available_port(uint16_t start_port, uint16_t max_port) {
 	boost::asio::io_context io_context;  // 使用 io_context 替代 io_service
 	boost::asio::ip::tcp::acceptor acceptor(io_context);

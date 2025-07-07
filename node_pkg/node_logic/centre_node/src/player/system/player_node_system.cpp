@@ -22,6 +22,7 @@
 #include "globalvariable_config.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
 #include "proto/db/mysql_database_table.pb.h"
+#include "util/network_utils.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
 {

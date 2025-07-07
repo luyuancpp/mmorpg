@@ -16,10 +16,7 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
 void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
 void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
 void SendToPlayerViaSceneNode(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
-void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
-void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, RpcSession& gate, uint64_t sessionId);
-void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
-void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId gateNodeId);
+
 
 void CallScenePlayerMethod(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
 void CallGameNodeMethod(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId);

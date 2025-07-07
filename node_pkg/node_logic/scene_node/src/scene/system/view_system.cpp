@@ -10,6 +10,7 @@
 #include "proto/logic/component/npc_comp.pb.h"
 #include "thread_local/storage.h"
 #include "type_define/type_define.h"
+#include "util/player_message_utils.h"
 
 void ViewSystem::Initialize()
 {
@@ -149,7 +150,7 @@ const google::protobuf::Message& message, bool excludingSel)
 {
 	EntityUnorderedSet entites;
 	GridSystem::GetEntitiesInGridAndNeighbors(entity, entites, excludingSel);
-	BroadCastToPlayer(message_id, message, entites);
+	BroadcastMessageToPlayers(message_id, message, entites);
 }
 
 void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
@@ -157,7 +158,7 @@ void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uin
 {
 	EntityUnorderedSet entites;
 	GridSystem::GetEntitiesInViewAndNearby(entity, entites);
-	BroadCastToPlayer(message_id, message, entites);
+	BroadcastMessageToPlayers(message_id, message, entites);
 }
 
 void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
