@@ -109,13 +109,13 @@ void BroadcastToNodes(uint32_t messageId, const google::protobuf::Message& messa
 	}
 }
 
-void SendMessageToPlayerViaNode(uint32_t wrappedMessageId, uint32_t nodeType, uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
+void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId, uint32_t nodeType, uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
-	SendMessageToPlayerViaNode(wrappedMessageId, nodeType, messageId, message, tlsCommonLogic.GetPlayer(playerId));
+	SendMessageToPlayerViaClientNode(wrappedMessageId, nodeType, messageId, message, tlsCommonLogic.GetPlayer(playerId));
 }
 
 
-void SendMessageToPlayerViaNode(uint32_t wrappedMessageId,
+void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId,
 	uint32_t nodeType,
 	uint32_t messageId,
 	const google::protobuf::Message& message,
@@ -153,4 +153,68 @@ void SendMessageToPlayerViaNode(uint32_t wrappedMessageId,
 	request.mutable_header()->set_session_id(sessionPB->gate_session_id());
 
 	(*rpcClient)->SendRequest(wrappedMessageId, request);
+}
+
+
+void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
+	uint32_t nodeType,
+	uint32_t messageId,
+	const google::protobuf::Message& message,
+	Guid playerId)
+{
+	SendMessageToPlayerViaSessionNode(wrappedMessageId, nodeType, messageId, message, tlsCommonLogic.GetPlayer(playerId));
+}
+
+
+void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
+	uint32_t nodeType,
+	uint32_t messageId,
+	const google::protobuf::Message& message,
+	entt::entity playerEntity)
+{
+	if (!tls.actorRegistry.valid(playerEntity)) {
+		LOG_ERROR << "Invalid player entity";
+		return;
+	}
+
+	const auto* sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	if (!sessionPB) {
+		LOG_ERROR << "Player session info not found for entity";
+		return;
+	}
+
+	entt::entity nodeEntity = entt::null;
+	switch (nodeType) {
+	case eNodeType::SceneNodeService:
+		nodeEntity = entt::entity{ entt::to_entity(sessionPB->scene_node_id()) };
+		break;
+		// 可以继续扩展 case
+	default:
+		LOG_ERROR << "Unsupported nodeType for RpcSession: " << nodeType;
+		return;
+	}
+
+	auto& registry = tls.GetNodeRegistry(nodeType);
+	if (!registry.valid(nodeEntity)) {
+		LOG_ERROR << "Node not found for player, type = " << nodeType;
+		return;
+	}
+
+	const auto session = registry.try_get<RpcSession>(nodeEntity);
+	if (!session) {
+		LOG_ERROR << "RpcSession not found for node, type = " << nodeType;
+		return;
+	}
+
+	NodeRouteMessageRequest request;
+	request.mutable_message_content()->set_message_id(messageId);
+	auto* serialized = request.mutable_message_content()->mutable_serialized_message();
+	serialized->resize(message.ByteSizeLong());
+	if (!message.SerializePartialToArray(serialized->data(), serialized->size())) {
+		LOG_ERROR << "Failed to serialize message";
+		return;
+	}
+	request.mutable_header()->set_session_id(sessionPB->gate_session_id());
+
+	session->SendRequest(wrappedMessageId, request);
 }
