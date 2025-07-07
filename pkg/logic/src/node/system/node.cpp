@@ -359,15 +359,6 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
 
-	for (auto& existNode : nodeList) {
-		if (IsSameNode(existNode, newNode)) {
-			LOG_INFO << "Node exists, IP: " << existNode.endpoint().ip()
-				<< ", Port: " << existNode.endpoint().port();
-			existNode = newNode;
-			return;
-		}
-	}
-
 	*nodeList.Add() = newNode;
 	LOG_INFO << "Node added, type: " << nodeType << ", info: " << newNode.DebugString();
 
@@ -438,15 +429,17 @@ bool Node::IsSameNode(const NodeInfo& node1, const NodeInfo& node2) const
 		node1.node_id() == node2.node_id() &&
 		node1.endpoint().ip() == node2.endpoint().ip() &&
 		node1.endpoint().port() == node2.endpoint().port() && 
-		node1.launch_time() == node2.launch_time());
+		node1.launch_time() == node2.launch_time() && 
+		node1.lease_id() == node2.lease_id());
 }
 
-bool Node::IsSameNode(const NodeInfo& node, uint32_t zoneId, uint32_t nodeType, uint32_t nodeId) const
-{
-	return (node.zone_id() == zoneId &&
-		node.node_type() == nodeType &&
-		node.node_id() == nodeId && 
-		node.lease_id() > 0);
+bool Node::IsSameNode(const NodeInfo& node1, const NodeInfo& node2, std::false_type) const {
+	return (node1.zone_id() == node2.zone_id() &&
+		node1.node_type() == node2.node_type() &&
+		node1.node_id() == node2.node_id() &&
+		node1.endpoint().ip() == node2.endpoint().ip() &&
+		node1.endpoint().port() == node2.endpoint().port() &&
+		node1.launch_time() == node2.launch_time());
 }
 
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
@@ -456,54 +449,37 @@ void Node::HandleServiceNodeStart(const std::string& key, const std::string& val
 	}
 }
 
-void Node::HandleServiceNodeStop(const std::string& key, const std::string& value) {
-	LOG_INFO << "Service node stop, key: " << key << ", value: " << value;
+void Node::HandleServiceNodeStop(const std::string& key, const std::string& nodeJson) {
+	LOG_INFO << "Service node stop, key: " << key << ", value: " << nodeJson;
 
-	std::regex pattern(R"(.*?/zone/(\d+)/node_type/(\d+)/node_id/(\d+))");
-	std::smatch match;
-	if (!std::regex_match(key, match, pattern)) {
-		LOG_ERROR << "Key format invalid: " << key;
+	NodeInfo deleteNode;
+	auto parseResult = google::protobuf::util::JsonStringToMessage(nodeJson, &deleteNode);
+	if (!parseResult.ok()) {
+		LOG_ERROR << "Parse node JSON failed, key: " << key
+			<< ", JSON: " << nodeJson
+			<< ", Error: " << parseResult.message().data();
 		return;
 	}
 
-	uint32_t zoneId = std::stoul(match[1]);
-	uint32_t nodeType = std::stoul(match[2]);
-	uint32_t nodeId = std::stoul(match[3]);
 
-	if (!eNodeType_IsValid(nodeType)) {
+	if (!eNodeType_IsValid(deleteNode.node_type())) {
 		LOG_TRACE << "Unknown service type for key: " << key;
 		return;
 	}
-	if (nodeId > std::numeric_limits<uint32_t>::max()) {
-		LOG_ERROR << "NodeId exceeds uint32_t.";
-		return;
-	}
-	LOG_TRACE << "Parsed zoneId=" << zoneId << ", nodeType=" << nodeType << ", nodeId=" << nodeId;
+
 
 	// 下面是你的节点处理代码
 	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
-	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
-	NodeInfo nodeInfo;
-	for (auto it = nodeList.begin(); it != nodeList.end(); ) {
-		if (IsSameNode(*it, zoneId, nodeType, nodeId)) {
-			it->clear_lease_id();
-			nodeInfo = *it; 
-			break;
-		}
-		else {
-			++it;
-		}
-	}
-
-	if (nodeInfo.protocol_type() == PROTOCOL_GRPC)
+	auto& nodeList = *nodeRegistry[deleteNode.node_type()].mutable_node_list();
+	if (deleteNode.protocol_type() == PROTOCOL_GRPC)
 	{
-		auto nodeEntity = entt::entity{ nodeInfo.node_id() };
-		entt::registry& registry = tls.GetNodeRegistry(nodeInfo.node_type());
+		auto nodeEntity = entt::entity{ deleteNode.node_id() };
+		entt::registry& registry = tls.GetNodeRegistry(deleteNode.node_type());
 		Destroy(registry, nodeEntity);
-		tls.GetConsistentNode(nodeInfo.node_type()).remove(nodeInfo.node_id());
+		tls.GetConsistentNode(deleteNode.node_type()).remove(deleteNode.node_id());
 	}
 
-	LOG_INFO << "Service node stopped, id: " << nodeId;
+	LOG_INFO << "Service node stopped : " << deleteNode.DebugString();
 }
 
 void Node::InitGrpcResponseHandlers() {
@@ -568,7 +544,7 @@ void Node::InitGrpcResponseHandlers() {
 				HandleServiceNodeStart(event.kv().key(), event.kv().value());
 			}
 			else if (event.type() == mvccpb::Event_EventType::Event_EventType_DELETE) {
-				HandleServiceNodeStop(event.kv().key(), event.kv().value());
+				HandleServiceNodeStop(event.kv().key(), event.prev_kv().value());
 				LOG_INFO << "Key deleted: " << event.kv().key();
 			}
 		}
@@ -685,7 +661,7 @@ void Node::HandleNodeRegistration(
 		entt::registry& registry = tls.GetNodeRegistry(nodeType);
 		const auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
-			if (!IsSameNode(serverNode, peerNode)) continue;
+			if (!IsSameNode(serverNode, peerNode, std::false_type{})) continue;
 			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
 			entt::entity created = ResetEntity(registry, nodeEntity); 
 			if (created == entt::null) {
@@ -820,18 +796,6 @@ void Node::KeepNodeAlive() {
 		SendLeaseLeaseKeepAlive(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), req);
 		LOG_DEBUG << "Keeping node alive, lease_id: " << GetNodeInfo().lease_id();
 		});
-}
-
-NodeInfo* Node::FindNodeInfo(uint32_t zoneId, uint32_t nodeType, uint32_t nodeId) {
-	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
-	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
-	NodeInfo nodeInfo;
-	for (auto it = nodeList.begin(); it != nodeList.end(); ++it) {
-		if (IsSameNode(*it, zoneId, nodeType, nodeId)) {
-			return &*it;
-		}
-	}
-	return nullptr;
 }
 
 
