@@ -39,7 +39,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlay
 	msgCentrePlayer.PlayerId = in.PlayerId
 
 	playerIdStr := strconv.FormatUint(in.PlayerId, 10)
-	keyPlayer := string(proto.MessageReflect(msgPlayer).Descriptor().FullName()) + playerIdStr
+	keyPlayer := string(proto.MessageReflect(msgPlayer).Descriptor().FullName()) + ":" + playerIdStr
 	cmdPlayer := l.svcCtx.Redis.Get(l.ctx, keyPlayer)
 	if len(cmdPlayer.Val()) > 0 {
 		resp.PlayerId = in.PlayerId
@@ -68,7 +68,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlay
 
 	channelCentrePlayer := put(msgCentrePlayer)
 
-	keyCentrePlayer := string(proto.MessageReflect(msgCentrePlayer).Descriptor().FullName()) + playerIdStr
+	keyCentrePlayer := string(proto.MessageReflect(msgCentrePlayer).Descriptor().FullName()) + ":" + playerIdStr
 	cmd := l.svcCtx.Redis.Get(l.ctx, keyCentrePlayer)
 	if len(cmd.Val()) > 0 {
 		resp.PlayerId = in.PlayerId

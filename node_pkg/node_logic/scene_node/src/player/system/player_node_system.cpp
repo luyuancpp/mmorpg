@@ -120,18 +120,11 @@ void PlayerNodeSystem::SavePlayer(entt::entity player)
 }
 
 //考虑: 没load 完再次进入别的gs
-void PlayerNodeSystem::EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo)
-{
+void PlayerNodeSystem::EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo){
 	LOG_INFO << "EnterGs: Player " << tls.actorRegistry.get<Guid>(player) << " entering Game Node";
 
-	auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
-	if (playerSessionSnapshotPB == nullptr)
-	{
-		LOG_ERROR << "Player node info not found for player: " << tls.actorRegistry.get<Guid>(player);
-		playerSessionSnapshotPB = &tls.actorRegistry.emplace<PlayerSessionSnapshotPBComp>(player);
-	}
-
-	auto& nodeIdMap = *playerSessionSnapshotPB->mutable_node_id();
+	auto& playerSessionSnapshotPB = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
+	auto& nodeIdMap = *playerSessionSnapshotPB.mutable_node_id();
 	nodeIdMap[eNodeType::CentreNodeService] = enterInfo.centre_node_id();
 	LOG_INFO << "Updated PlayerNodeInfo with CentreNodeId: " << enterInfo.centre_node_id();
 

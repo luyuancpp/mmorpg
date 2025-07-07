@@ -89,7 +89,7 @@ func (l *EnterGameLogic) isPlayerInSession(session *data.Session, playerId uint6
 
 // Ensure player data is loaded in Redis
 func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
-	key := string(proto.MessageReflect(&game.PlayerDatabase{}).Descriptor().FullName()) + strconv.FormatUint(playerId, 10)
+	key := string(proto.MessageReflect(&game.PlayerDatabase{}).Descriptor().FullName()) + ":" + strconv.FormatUint(playerId, 10)
 	playerData := l.svcCtx.Redis.Get(l.ctx, key).Val()
 
 	if len(playerData) == 0 {

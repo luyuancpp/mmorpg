@@ -14,6 +14,6 @@ void RedisSystem::Initialize()
 {
     auto& playerRedis = tls.globalRegistry.emplace<PlayerRedis>(GlobalEntity());
     playerRedis = std::make_unique<PlayerRedis::element_type>(*tlsCommonLogic.GetZoneRedis());
-    playerRedis->SetLoadCallback(PlayerNodeSystem::HandlePlayerAsyncLoaded);
+    playerRedis->SetLoadCallbackWithExtra(PlayerNodeSystem::HandlePlayerAsyncLoaded);
     playerRedis->SetSaveCallback(PlayerNodeSystem::HandlePlayerAsyncSaved);
 }
