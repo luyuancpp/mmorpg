@@ -220,7 +220,7 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 	session->SendRequest(wrappedMessageId, request);
 }
 
-inline void SendToCentrePlayerByClientNode(
+void SendToCentrePlayerByClientNode(
 	uint32_t messageId,
 	const google::protobuf::Message& message,
 	Guid playerId)
@@ -228,7 +228,7 @@ inline void SendToCentrePlayerByClientNode(
 	SendMessageToPlayerViaClientNode(CentrePlayerServiceMessageId, eNodeType::CentreNodeService, messageId, message, playerId);
 }
 
-inline void SendToCentrePlayerByClientNode(
+void SendToCentrePlayerByClientNode(
 	uint32_t messageId,
 	const google::protobuf::Message& message,
 	entt::entity playerEntity)
