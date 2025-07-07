@@ -120,21 +120,29 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 
 	auto playerEntity =  player_it->second;
 
-	const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
-	if (playerSessionSnapshotPB == nullptr)
+	const auto* sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	if (sessionPB == nullptr)
 	{
 		LOG_ERROR << "PlayerNodeInfo not found for player entity: " << tls.actorRegistry.get<Guid>(playerEntity);
 		return;
 	}
 
-	if (playerSessionSnapshotPB->gate_session_id() != session_id)
+	if (sessionPB->gate_session_id() != session_id)
 	{
-		LOG_ERROR << "Mismatched gate session ID for player: " << playerSessionSnapshotPB->gate_session_id()
+		LOG_ERROR << "Mismatched gate session ID for player: " << sessionPB->gate_session_id()
 			<< ", expected session ID: " << session_id;
 		return;
 	}
 
-	const entt::entity gameNodeId{ playerSessionSnapshotPB->scene_node_id() };
+	const auto& nodeIdMap = sessionPB->node_id();
+	auto it = nodeIdMap.find(eNodeType::SceneNodeService);
+	if (it == nodeIdMap.end()) {
+		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::SceneNodeService
+			<< ", player entity: " << entt::to_integral(playerEntity);
+		return;
+	}
+
+	const entt::entity gameNodeId{ it->second };
 	auto& registry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
 	if (!registry.valid(gameNodeId))
 	{
@@ -145,7 +153,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	const auto gameNode = registry.try_get<RpcSession>(gameNodeId);
 	if (gameNode == nullptr)
 	{
-		LOG_ERROR << "RpcSession not found for game node ID: " << playerSessionSnapshotPB->scene_node_id();
+		LOG_ERROR << "RpcSession not found for game node ID: " << it->second;
 		return;
 	}
 
@@ -437,14 +445,15 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 		return;
 	}
 
-	auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
-	if (!playerSessionSnapshotPB)
+	auto* sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
+	if (!sessionPB)
 	{
 		LOG_ERROR << "Player session info not found for player: " << playerId;
 		return;
 	}
 
-	playerSessionSnapshotPB->set_scene_node_id(request->scene_node_id());
+	auto& nodeIdMap = *sessionPB->mutable_node_id();
+	nodeIdMap[eNodeType::SceneNodeService] = request->scene_node_id();
 
 	PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
 

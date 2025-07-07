@@ -93,19 +93,27 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
-    if (!playerSessionSnapshotPB)
+    const auto* sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+    if (!sessionPB)
     {
         LOG_ERROR << "Player session not valid for player: " << playerId;
         return;
     }
 
+	const auto& nodeIdMap = sessionPB->node_id();
+	auto it = nodeIdMap.find(eNodeType::SceneNodeService);
+	if (it == nodeIdMap.end()) {
+		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::SceneNodeService
+			<< ", player entity: " << entt::to_integral(playerEntity);
+		return;
+	}
+
     Centre2GsEnterSceneRequest request;
     request.set_scene_id(sceneInfo->guid());
     request.set_player_id(playerId);
-	CallRemoteMethodOnSession(SceneEnterSceneMessageId, request, playerSessionSnapshotPB->scene_node_id(), eNodeType::SceneNodeService);
+	CallRemoteMethodOnSession(SceneEnterSceneMessageId, request, it->second, eNodeType::SceneNodeService);
 
-    LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << playerSessionSnapshotPB->scene_node_id();
+    LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << it->second;
 }
 
 void PlayerSceneSystem::ProcessPlayerEnterSceneNode(entt::entity playerEntity, NodeId nodeId)

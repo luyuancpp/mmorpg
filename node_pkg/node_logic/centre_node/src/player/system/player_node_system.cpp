@@ -105,60 +105,75 @@ void PlayerNodeSystem::HandlePlayerReconnection(entt::entity player)
 
 void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 {
-	auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
-	if (!playerSessionSnapshotPB)
+	auto* sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	if (!sessionPB)
 	{
 		LOG_WARN << "PlayerSessionSnapshotPB not found for player: " << tls.actorRegistry.try_get<Guid>(playerEntity);
 		return;
 	}
 
-	LOG_INFO << "Adding game node player to gate node, session_id: " << playerSessionSnapshotPB->gate_session_id();
+	LOG_INFO << "Adding game node player to gate node, session_id: " << sessionPB->gate_session_id();
 
-	entt::entity gateNodeId{ GetGateNodeId(playerSessionSnapshotPB->gate_session_id()) };
+	entt::entity gateNodeId{ GetGateNodeId(sessionPB->gate_session_id()) };
 	auto& registry = tls.GetNodeRegistry(eNodeType::GateNodeService);
 	if (!registry.valid(gateNodeId))
 	{
-		LOG_WARN << "Gate node invalid for session_id: " << playerSessionSnapshotPB->gate_session_id();
+		LOG_WARN << "Gate node invalid for session_id: " << sessionPB->gate_session_id();
 		return;
 	}
 
 	auto gateNodeScene = registry.try_get<RpcSession>(gateNodeId);
 	if (!gateNodeScene)
 	{
-		LOG_WARN << "Gate node RpcSession not found for session_id: " << playerSessionSnapshotPB->gate_session_id();
+		LOG_WARN << "Gate node RpcSession not found for session_id: " << sessionPB->gate_session_id();
+		return;
+	}
+
+	const auto& nodeIdMap = sessionPB->node_id();
+	auto it = nodeIdMap.find(eNodeType::SceneNodeService);
+	if (it == nodeIdMap.end()) {
+		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::SceneNodeService
+			<< ", player entity: " << entt::to_integral(playerEntity);
 		return;
 	}
 
 	RegisterGameNodeSessionRequest request;
-	request.mutable_session_info()->set_session_id(playerSessionSnapshotPB->gate_session_id());
-	request.set_scene_node_id(playerSessionSnapshotPB->scene_node_id());
+	request.mutable_session_info()->set_session_id(sessionPB->gate_session_id());
+	request.set_scene_node_id(it->second);
 	gateNodeScene->CallRemoteMethod(GatePlayerEnterGameNodeMessageId, request);
 
-	LOG_DEBUG << "Called remote method GatePlayerEnterGameNodeMessageId for session_id: " << playerSessionSnapshotPB->gate_session_id();
+	LOG_DEBUG << "Called remote method GatePlayerEnterGameNodeMessageId for session_id: " << sessionPB->gate_session_id();
 }
 
 void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
 {
-	const auto* const playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
-	if (!playerSessionSnapshotPB)
+	const auto* const sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	if (!sessionPB)
 	{
 		LOG_ERROR << "Invalid player session in HandleGameNodePlayerRegisteredAtGateNode";
 		return;
 	}
-
 	const auto* const playerId = tls.actorRegistry.try_get<Guid>(playerEntity);
 	if (!playerId)
 	{
 		LOG_ERROR << "Player ID not found in HandleGameNodePlayerRegisteredAtGateNode";
 		return;
 	}
+	const auto& nodeIdMap = sessionPB->node_id();
+	auto it = nodeIdMap.find(eNodeType::SceneNodeService);
+	if (it == nodeIdMap.end()) {
+		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::SceneNodeService
+			<< ", player entity: " << entt::to_integral(playerEntity);
+		return;
+	}
 
-	LOG_INFO << "Player registered at gate node, session: " << playerSessionSnapshotPB->gate_session_id() << ", playerId: " << *playerId;
+
+	LOG_INFO << "Player registered at gate node, session: " << sessionPB->gate_session_id() << ", playerId: " << *playerId;
 
 	RegisterPlayerSessionRequest request;
-	request.set_session_id(playerSessionSnapshotPB->gate_session_id());
+	request.set_session_id(sessionPB->gate_session_id());
 	request.set_player_id(*playerId);
-	SendMessageToSessionNode(SceneUpdateSessionDetailMessageId, request, playerSessionSnapshotPB->scene_node_id(), eNodeType::SceneNodeService);
+	SendMessageToSessionNode(SceneUpdateSessionDetailMessageId, request, it->second, eNodeType::SceneNodeService);
 	LOG_DEBUG << "Sent session update to scene node";
 }
 

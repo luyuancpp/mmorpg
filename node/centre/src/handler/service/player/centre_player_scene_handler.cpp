@@ -90,7 +90,7 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 		return;
 	}
 
-	playerSessionSnapshotPB->set_scene_node_id(kInvalidNodeId);
+	playerSessionSnapshotPB->mutable_node_id()->erase(eNodeType::SceneNodeService);
 
 	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, SceneUtil::GetGameNodeIdFromGuid(toScene));
 
