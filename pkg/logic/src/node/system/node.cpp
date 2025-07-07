@@ -841,9 +841,17 @@ void Node::StartServiceHealthMonitor(){
 		{
 			return;
 		}
-		if (nullptr != FindNodeInfo(GetNodeInfo().zone_id(), GetNodeInfo().node_type(), GetNodeInfo().node_id())) {
-			return;
+		auto& myNode = GetNodeInfo();
+
+		auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+		auto& nodeList = *nodeRegistry[GetNodeInfo().node_type()].mutable_node_list();
+		NodeInfo nodeInfo;
+		for (auto it = nodeList.begin(); it != nodeList.end(); ++it) {
+			if (IsSameNode(*it, GetNodeInfo())) {
+				return ;
+			}
 		}
+
 		RequestEtcdLease();
 		}
 	);
