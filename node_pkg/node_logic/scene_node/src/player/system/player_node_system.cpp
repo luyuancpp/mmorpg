@@ -88,7 +88,7 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& me
 	//todo session 啥时候删除？
 	//告诉Centre 保存完毕，可以切换场景了,或者再登录可以重新上线了
 	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
-	SendToCentrePlayerById(CentrePlayerSceneLeaveSceneAsyncSavePlayerCompleteMessageId, request, playerId);
+	SendToCentrePlayerByClientNode(CentrePlayerSceneLeaveSceneAsyncSavePlayerCompleteMessageId, request, playerId);
 
 	if (tls.actorRegistry.any_of<UnregisterPlayer>(tlsCommonLogic.GetPlayer(playerId)))
 	{
