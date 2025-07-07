@@ -14,26 +14,6 @@
 #include "proto/common/node.pb.h"
 #include "util/network_utils.h"
 
-void SendToSceneNode(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
-{
-	entt::entity gameNodeId{ nodeId };
-	auto& registry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
-	if (!registry.valid(gameNodeId))
-	{
-		LOG_ERROR << "Game node not found -> " << entt::to_integral(nodeId);
-		return;
-	}
-
-	const auto sceneSession = registry.try_get<RpcSession>(gameNodeId);
-	if (!sceneSession)
-	{
-		LOG_ERROR << "RpcSession not found for game node -> " << entt::to_integral(nodeId);
-		return;
-	}
-
-	sceneSession->SendRequest(messageId, message);
-}
-
 void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player)
 {
     // 检查玩家实体是否有效
@@ -195,34 +175,4 @@ void CallScenePlayerMethod(uint32_t messageId, const google::protobuf::Message& 
 
     // 发送消息
     sceneSession->CallRemoteMethod(SceneInvokePlayerServiceMessageId, request);
-}
-
-void CallGameNodeMethod(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
-{
-    // 获取对应的游戏节点实体
-    entt::entity sceneNodeEntity{ nodeId };
-	auto& registry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
-
-    // 如果游戏节点无效，直接返回
-    if (!registry.valid(sceneNodeEntity))
-    {
-        LOG_ERROR << "Game node entity is not valid for nodeId -> " << nodeId;
-        return;
-    }
-
-    // 获取游戏节点的 RPC 会话
-    const auto sceneNodeSession = registry.try_get<RpcSession>(sceneNodeEntity);
-    if (!sceneNodeSession)
-    {
-        LOG_ERROR << "RpcSession not found for game node -> " << nodeId;
-        return;
-    }
-
-    // 调用游戏节点的远程方法
-    sceneNodeSession->CallRemoteMethod(messageId, message);
-}
-
-void BroadCastToGame(uint32_t messageId, const google::protobuf::Message& message)
-{
-
 }

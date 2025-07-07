@@ -5,7 +5,6 @@
 #include "pbc/common_error_tip.pb.h"
 #include "pbc/scene_error_tip.pb.h"
 #include "node/comp/game_node_comp.h"
-#include "node/centre_node_info.h"
 #include "network/message_system.h"
 #include "service_info/game_player_scene_service_info.h"
 #include "service_info/game_service_service_info.h"
@@ -13,7 +12,8 @@
 #include "player/system/player_tip_system.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
-#include "proto/common/node.pb.h"
+#include "util/node_message_utils.h"
+#include "util/node_utils.h"
 
 entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext)
 {
@@ -104,7 +104,7 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
     Centre2GsEnterSceneRequest request;
     request.set_scene_id(sceneInfo->guid());
     request.set_player_id(playerId);
-    CallGameNodeMethod(SceneEnterSceneMessageId, request, playerSessionSnapshotPB->scene_node_id());
+	CallRemoteMethodOnClient(SceneEnterSceneMessageId, request, playerSessionSnapshotPB->scene_node_id(), eNodeType::SceneNodeService);
 
     LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << playerSessionSnapshotPB->scene_node_id();
 }
@@ -122,7 +122,7 @@ void PlayerSceneSystem::ProcessPlayerEnterSceneNode(entt::entity playerEntity, N
     request.set_player_id(tls.actorRegistry.get<Guid>(playerEntity));
     request.set_session_id(info->gate_session_id());
     request.set_centre_node_id(GetNodeInfo().node_id());
-    CallGameNodeMethod(ScenePlayerEnterGameNodeMessageId, request, nodeId);
+	CallRemoteMethodOnClient(ScenePlayerEnterGameNodeMessageId, request, nodeId, eNodeType::SceneNodeService);
 }
 
 bool PlayerSceneSystem::VerifyChangeSceneRequest(entt::entity playerEntity)

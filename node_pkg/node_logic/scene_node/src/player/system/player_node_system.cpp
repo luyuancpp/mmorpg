@@ -1,6 +1,4 @@
 #include "player_node_system.h"
-
-#include "node/scene_node_info.h"
 #include "proto/logic/event/actor_event.pb.h"
 #include "core/network/message_system.h"
 #include "proto/centre/centre_service.pb.h"
@@ -17,6 +15,8 @@
 #include "time/system/time_system.h"
 #include "type_alias/player_session_type_alias.h"
 #include "util/defer.h"
+#include "util/node_utils.h"
+#include "util/node_message_utils.h"
 
 void Player_databaseMessageFieldsUnmarshal(entt::entity player, const player_database& message);
 void Player_databaseMessageFieldsMarshal(entt::entity player, player_database& message);
@@ -144,7 +144,7 @@ void PlayerNodeSystem::NotifyEnterGsSucceed(entt::entity player, NodeId centreNo
 	EnterGameNodeSuccessRequest request;
 	request.set_player_id(tls.actorRegistry.get<Guid>(player));
 	request.set_scene_node_id(GetNodeInfo().node_id());
-	CallCentreNodeMethod(CentreEnterGsSucceedMessageId, request, centreNodeId);
+	CallRemoteMethodOnSession(CentreEnterGsSucceedMessageId, request, centreNodeId, eNodeType::CentreNodeService);
 
 	// TODO: Handle game node update corresponding to gate before sending client messages
 	// Example: Ensure gate updates are done before client messages can be sent

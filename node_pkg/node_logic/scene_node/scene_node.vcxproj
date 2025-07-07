@@ -187,7 +187,6 @@
     <ClInclude Include="src\core\system\redis_system.h" />
     <ClInclude Include="src\entity\system\entity_system.h" />
     <ClInclude Include="src\mount\system\mount_system.h" />
-    <ClInclude Include="src\node\scene_node_info.h" />
     <ClInclude Include="src\npc\system\npc_system.h" />
     <ClInclude Include="src\player\system\player_node_system.h" />
     <ClInclude Include="src\player\system\player_scene_system.h" />
@@ -233,7 +232,6 @@
     <ClCompile Include="src\core\system\redis_system.cpp" />
     <ClCompile Include="src\entity\system\entity_system.cpp" />
     <ClCompile Include="src\mount\system\mount_system.cpp" />
-    <ClCompile Include="src\node\scene_node_info.cpp" />
     <ClCompile Include="src\npc\system\npc_system.cpp" />
     <ClCompile Include="src\player\system\player_node_system.cpp" />
     <ClCompile Include="src\player\system\player_player_database_1_system.cpp" />

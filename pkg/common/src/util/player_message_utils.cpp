@@ -7,6 +7,8 @@
 #include "muduo/base/Logging.h"
 #include "util/network_utils.h"
 #include "network/rpc_session.h"
+#include "service_info/service_info.h"
+#include "node_utils.h"
 
 void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
@@ -142,4 +144,62 @@ void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Messa
 void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Message& message, const EntityVector& playerList)
 {
 	InternalBroadcast(messageId, message, playerList);
+}
+
+void SendMessageToGrpcPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId) {
+	SendMessageToGrpcPlayer(messageId, message, tlsCommonLogic.GetPlayer(playerId));
+}
+
+inline NodeId GetEffectiveNodeId(
+	uint32_t nodeType)
+{
+	if (IsZoneSingletonNodeType(nodeType)) {
+		auto node = FindZoneUniqueNodeInfo(GetNodeInfo().zone_id(), nodeType);
+		if (node == nullptr) {
+			LOG_ERROR << "Node not found for type: " << nodeType;
+			return kInvalidNodeId;
+		}
+
+		return node->node_id();
+	}
+
+	return kInvalidNodeId;
+}
+
+void SendMessageToGrpcPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity) {
+	if (!tls.actorRegistry.valid(playerEntity))
+	{
+		LOG_ERROR << "Player entity is not valid";
+		return;
+	}
+
+	auto& rpcHandlerMeta = gRpcServiceRegistry[messageId];
+
+	const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	if (!playerSessionSnapshotPB)
+	{
+		LOG_ERROR << "Player node info not found for player entity";
+		return;
+	}
+
+	SessionDetails sessionDetails;
+	sessionDetails.set_session_id(playerSessionSnapshotPB->gate_session_id());
+	sessionDetails.set_player_id(tls.actorRegistry.get<Guid>(playerEntity));
+
+	if (!rpcHandlerMeta.messageSender) {
+		LOG_ERROR << "Message sender not found for message ID: " << messageId;
+		return;
+	}
+
+	auto nodeId = GetEffectiveNodeId(rpcHandlerMeta.targetNodeType);
+	entt::entity node{ entt::to_entity(nodeId) };
+	if (!tls.GetNodeRegistry(rpcHandlerMeta.targetNodeType).valid(node)) {
+		LOG_ERROR << "Node not found for type: " << rpcHandlerMeta.targetNodeType;
+		return;
+	}
+	rpcHandlerMeta.messageSender(tls.GetNodeRegistry(rpcHandlerMeta.targetNodeType),
+		node,
+		*rpcHandlerMeta.requestPrototype,
+		{ kSessionBinMetaKey },
+		SerializeSessionDetails(sessionDetails));
 }

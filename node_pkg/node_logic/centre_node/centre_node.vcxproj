@@ -161,7 +161,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\network\message_system.cpp" />
-    <ClCompile Include="src\node\centre_node_info.cpp" />
     <ClCompile Include="src\player\system\player_node_system.cpp" />
     <ClCompile Include="src\player\system\player_session_system.cpp" />
     <ClCompile Include="src\player\system\player_tip_system.cpp" />
@@ -173,7 +172,6 @@
   <ItemGroup>
     <ClInclude Include="src\network\message_system.h" />
     <ClInclude Include="src\node\comp\game_node_comp.h" />
-    <ClInclude Include="src\node\centre_node_info.h" />
     <ClInclude Include="src\player\comp\player_comp.h" />
     <ClInclude Include="src\player\system\player_node_system.h" />
     <ClInclude Include="src\player\system\player_session_system.h" />
