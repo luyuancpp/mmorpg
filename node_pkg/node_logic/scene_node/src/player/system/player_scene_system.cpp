@@ -8,6 +8,7 @@
 
 #include "service_info/player_scene_service_info.h"
 #include "thread_local/storage.h"
+#include "util/player_message_utils.h"
 
 
 void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene)

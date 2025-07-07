@@ -2,8 +2,7 @@
 
 #include "comp/gate_session.h"
 #include "util/consistent_hash_node.h"
-
-#include "type_alias/session_id_gen.h"
+#include "util/network_utils.h"
 
 using SessionList = std::unordered_map<Guid, Session>;
 

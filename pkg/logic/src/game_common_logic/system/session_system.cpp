@@ -1,6 +1,5 @@
 ﻿#include "session_system.h"
 
-#include "type_alias/session_id_gen.h"
 #include "proto/common/session.pb.h"
 #include <muduo/base/Logging.h>
 #include <grpcpp/grpcpp.h>
@@ -8,10 +7,6 @@
 
 constexpr char kSessionBinMetaKey[] = "x-session-detail-bin";
 
-NodeId GetGateNodeId(Guid session_id)
-{
-    return static_cast<NodeId>(session_id >> SessionIdGenerator::node_bit());
-}
 
 using SessionDetailsPtr = std::unique_ptr<SessionDetails>;
 

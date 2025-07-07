@@ -13,6 +13,7 @@
 #include "thread_local/storage.h"
 #include "actor/attribute/system/actor_state_attribute_sync_system.h"
 #include "thread_local/storage_game.h"
+#include "util/player_message_utils.h"
 
 // 定义帧同步频率的配置数组大小
 constexpr uint32_t kSyncFrequencyArraySize = 5;
@@ -161,7 +162,7 @@ void ActorStateAttributeSyncSystem::SyncBasicAttributes(entt::entity entity) {
 
     // 获取当前实体的增量同步消息
     auto& syncMessage = tls.actorRegistry.get<BaseAttributeSyncDataS2C>(entity);
-    BroadCastToPlayer(ScenePlayerSyncSyncBaseAttributeMessageId, syncMessage, aoiListComp->aoiList);
+    BroadcastMessageToPlayers(ScenePlayerSyncSyncBaseAttributeMessageId, syncMessage, aoiListComp->aoiList);
 
     // 发送后清空消息，准备下一次增量数据
     syncMessage.Clear();
@@ -180,7 +181,7 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
                 return;
             }
 
-            BroadCastToPlayer(ScenePlayerSyncSyncAttribute2FramesMessageId, syncMessage, nearbyEntities);
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute2FramesMessageId, syncMessage, nearbyEntities);
 
             syncMessage.Clear();
         }
@@ -195,7 +196,7 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
                 return;
             }
 
-            BroadCastToPlayer(ScenePlayerSyncSyncAttribute5FramesMessageId, syncMessage, nearbyEntities);
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute5FramesMessageId, syncMessage, nearbyEntities);
 
             syncMessage.Clear();
         }
@@ -210,7 +211,7 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
                 return;
             }
 
-            BroadCastToPlayer(ScenePlayerSyncSyncAttribute10FramesMessageId, syncMessage, nearbyEntities);
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute10FramesMessageId, syncMessage, nearbyEntities);
 
             syncMessage.Clear();
         }
@@ -225,7 +226,7 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
                 return;
             }
 
-            BroadCastToPlayer(ScenePlayerSyncSyncAttribute30FramesMessageId, syncMessage, nearbyEntities);
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute30FramesMessageId, syncMessage, nearbyEntities);
 
             syncMessage.Clear();
         }
@@ -240,7 +241,7 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
                 return;
             }
 
-            BroadCastToPlayer(ScenePlayerSyncSyncAttribute60FramesMessageId, syncMessage, nearbyEntities);
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute60FramesMessageId, syncMessage, nearbyEntities);
 
             syncMessage.Clear();
         }

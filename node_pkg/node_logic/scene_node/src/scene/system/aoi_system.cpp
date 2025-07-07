@@ -15,6 +15,7 @@
 #include "test/test.h"
 #include "thread_local/storage.h"
 #include "type_alias/actor.h"
+#include "util/player_message_utils.h"
 
 void AoiSystem::Update(double delta) {
     for (auto&& [entity, transform, sceneComp] : tls.actorRegistry.view<Transform, SceneEntityComp>().each()) {
@@ -189,5 +190,5 @@ void AoiSystem::BroadcastEntityLeave(const SceneGridListComp& gridList, entt::en
         }
     }
 
-    BroadCastToPlayer(SceneSceneClientPlayerNotifyActorDestroyMessageId, actorDestroyMessage, observersToNotify);
+    BroadcastMessageToPlayers(SceneSceneClientPlayerNotifyActorDestroyMessageId, actorDestroyMessage, observersToNotify);
 }
