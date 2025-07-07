@@ -4,7 +4,6 @@
 #include "scene/comp/scene_comp.h"
 #include "thread_local/storage.h"
 #include "game_common_logic/system/session_system.h"
-#include "network/message_system.h"
 #include "player/comp/player_comp.h"
 #include "scene/system/player_change_scene_system.h"
 #include "scene/system/player_scene_system.h"
@@ -24,7 +23,8 @@
 #include "proto/db/mysql_database_table.pb.h"
 #include "util/network_utils.h"
 #include "util/node_message_utils.h"
-#include <network/rpc_session.h>
+#include "network/rpc_session.h"
+#include "util/player_message_utils.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
 {
@@ -94,7 +94,7 @@ void PlayerNodeSystem::HandlePlayerLogin(entt::entity playerEntity)
 	Centre2GsLoginRequest message;
 	message.set_enter_gs_type(enterGameFlag->enter_gs_type());
 
-	SendToGsPlayer(ScenePlayerCentre2GsLoginMessageId, message, playerEntity);
+	SendMessageToPlayerOnSceneNode(ScenePlayerCentre2GsLoginMessageId, message, playerEntity);
 	LOG_DEBUG << "Sent Centre2GsLoginRequest to game scene";
 }
 

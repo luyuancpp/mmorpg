@@ -240,7 +240,7 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 		return;
 	}
 
-	::SendMessageToPlayer(request->message_content().message_id(), request->message_content(), player);
+	::SendMessageToClientViaGate(request->message_content().message_id(), request->message_content(), player);
 ///<<< END WRITING YOUR CODE
 
 }

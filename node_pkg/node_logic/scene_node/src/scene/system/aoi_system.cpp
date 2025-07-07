@@ -126,7 +126,7 @@ void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity,
         for (auto& otherEntity : enteringEntities) {
             ViewSystem::FillActorCreateMessageInfo(entity, otherEntity, *actorListCreateMessage.add_actor_list());
         }
-        SendMessageToPlayer(SceneSceneClientPlayerNotifyActorListCreateMessageId, actorListCreateMessage, entity);
+        SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListCreateMessageId, actorListCreateMessage, entity);
     }
 
     // 通知离开视野的实体
@@ -135,7 +135,7 @@ void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity,
         for (auto& otherEntity : leavingEntities) {
             actorListDestroyMessage.add_entity(entt::to_integral(otherEntity));
         }
-        SendMessageToPlayer(SceneSceneClientPlayerNotifyActorListDestroyMessageId, actorListDestroyMessage, entity);
+        SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListDestroyMessageId, actorListDestroyMessage, entity);
     }
 }
 

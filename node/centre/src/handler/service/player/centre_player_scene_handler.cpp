@@ -11,7 +11,6 @@
 #include "scene/system/player_scene_system.h"
 #include "player/system/player_tip_system.h"
 #include "scene/system/player_change_scene_system.h"
-#include "network/message_system.h"
 #include "service_info/player_scene_service_info.h"
 #include "util/player_message_utils.h"
 #include "proto/logic/component/player_network_comp.pb.h"
@@ -114,7 +113,7 @@ void CentrePlayerSceneHandler::SceneInfoC2S(entt::entity player,const ::CentreSc
 		message.mutable_scene_info()->Add()->CopyFrom(info);
 	}
 
-	SendMessageToPlayer(SceneSceneClientPlayerNotifySceneInfoMessageId, message, player);
+	SendMessageToClientViaGate(SceneSceneClientPlayerNotifySceneInfoMessageId, message, player);
 	///<<< END WRITING YOUR CODE
 
 
