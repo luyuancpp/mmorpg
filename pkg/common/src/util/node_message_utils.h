@@ -12,8 +12,20 @@ void CallRemoteMethodOnClient(uint32_t messageId, const google::protobuf::Messag
 
 void BroadcastToNodes(uint32_t messageId, const google::protobuf::Message& message, uint32_t nodeType);
 
-void SendMessageToPlayerViaNode(uint32_t wrappedMessageId, uint32_t nodeType, uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
-void SendMessageToPlayerViaNode(uint32_t wrappedMessageId,
+void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId, uint32_t nodeType, uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
+void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId,
+	uint32_t nodeType,
+	uint32_t messageId,
+	const google::protobuf::Message& message,
+	entt::entity playerEntity);
+
+void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
+	uint32_t nodeType,
+	uint32_t messageId,
+	const google::protobuf::Message& message,
+	Guid playerId);
+
+void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 	uint32_t nodeType,
 	uint32_t messageId,
 	const google::protobuf::Message& message,
