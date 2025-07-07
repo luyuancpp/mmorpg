@@ -16,3 +16,4 @@ bool IsZoneSingletonNodeType(uint32_t nodeType);
 
 class SessionDetails;
 std::vector<std::string> SerializeSessionDetails(const SessionDetails& sessionDetails) ;
+

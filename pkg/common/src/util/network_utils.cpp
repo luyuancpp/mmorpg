@@ -4,6 +4,7 @@
 #include <iostream>
 #include "proto/common/node.pb.h"
 #include "proto/common/session.pb.h"
+#include "thread_local/storage.h"
 
 uint16_t get_available_port(uint16_t start_port, uint16_t max_port) {
 	boost::asio::io_context io_context;  // 使用 io_context 替代 io_service

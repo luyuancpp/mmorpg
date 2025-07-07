@@ -19,13 +19,14 @@
 #include "node/system/node_system.h"
 #include "google/protobuf/descriptor.h"
 #include "util/network_utils.h"
+#include "node/system/node_system.h"
 
 inline NodeId GetEffectiveNodeId(
 	const Session& session,
 	uint32_t nodeType)
 {
 	if (IsZoneSingletonNodeType(nodeType)) {
-        auto node = gGateNode->FindZoneUniqueNodeInfo(gGateNode->GetNodeInfo().zone_id(), nodeType);
+        auto node = NodeSystem::FindZoneUniqueNodeInfo(gGateNode->GetNodeInfo().zone_id(), nodeType);
         if (node == nullptr) {
             LOG_ERROR << "Node not found for type: " << nodeType;
             return kInvalidNodeId;
@@ -69,13 +70,13 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
         session.SetNodeId(nodeType, entt::to_integral(nodeIt->second));
     }
 
-    const auto loginNodeIt = tls.GetConsistentNode(nodeType).GetNodeValue(GetEffectiveNodeId(session, nodeType));
-    if (tls.GetConsistentNode(nodeType).end() == loginNodeIt) {
+    const auto nodeIt = tls.GetConsistentNode(nodeType).GetNodeValue(GetEffectiveNodeId(session, nodeType));
+    if (tls.GetConsistentNode(nodeType).end() == nodeIt) {
         LOG_ERROR << "Login server crashed for session id: " << sessionId;
         session.SetNodeId(nodeType, kInvalidNodeId);
         return std::nullopt;
     }
-    return loginNodeIt->second;
+    return nodeIt->second;
 }
 
 void RpcClientSessionHandler::OnConnection(const muduo::net::TcpConnectionPtr& conn)
@@ -240,16 +241,22 @@ void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& req
 
 void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn){
 	auto& rpcHandlerMeta  = gRpcServiceRegistry[request->message_id()];
-
 	ParseMessageFromRequestBody(*rpcHandlerMeta .requestPrototype, request, sessionId);
+
 	SessionDetails sessionDetails;
 	sessionDetails.set_session_id(sessionId);
+	const auto sessionIt = tls_gate.sessions().find(sessionId);
+	if (sessionIt == tls_gate.sessions().end()) {
+		LOG_ERROR << "Session not found for session id: " << sessionId;
+		return ;
+	}
+    sessionDetails.set_player_id(sessionIt->second.playerGuild);
 
 	if (rpcHandlerMeta .messageSender){
 		auto node = ResolveSessionTargetNode(sessionId, rpcHandlerMeta .targetNodeType);
 		if (!node)
 		{
-			LOG_ERROR << "Login node not found for session id: " << sessionId << ", message id: " << request->message_id();
+			LOG_ERROR << "Node not found for session id: " << sessionId << ", message id: " << request->message_id();
 			// TODO: Handle connection closure logic here.
 			return;
 		}
