@@ -30,3 +30,13 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 	uint32_t messageId,
 	const google::protobuf::Message& message,
 	entt::entity playerEntity);
+
+
+void SendToCentrePlayerByClientNode(
+	uint32_t messageId,
+	const google::protobuf::Message& message,
+	Guid playerId);
+void SendToCentrePlayerByClientNode(
+	uint32_t messageId,
+	const google::protobuf::Message& message,
+	entt::entity playerEntity);

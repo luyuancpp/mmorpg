@@ -11,6 +11,7 @@
 #include "service_info/centre_player_scene_service_info.h"
 
 #include "proto/common/node.pb.h"
+#include "util/node_message_utils.h"
 ///<<< END WRITING YOUR CODE
 
 
@@ -52,7 +53,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 
 	CentreEnterSceneRequest enterSceneReq;
 	enterSceneReq.mutable_scene_info()->CopyFrom(scene_info);
-	SendToCentrePlayerById(CentrePlayerSceneEnterSceneMessageId, enterSceneReq, player);
+	SendToCentrePlayerByClientNode(CentrePlayerSceneEnterSceneMessageId, enterSceneReq, player);
 
 	LOG_TRACE << "EnterSceneC2S request processed successfully for player: " << tls.actorRegistry.get<Guid>(player);
 ///<<< END WRITING YOUR CODE
@@ -77,8 +78,8 @@ void SceneSceneClientPlayerHandler::SceneInfoC2S(entt::entity player,const ::Sce
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    SceneInfoRequest rq;
-    SendToCentrePlayerById(CentrePlayerSceneSceneInfoC2SMessageId, rq, player);
+    SceneInfoRequest req;
+	SendToCentrePlayerByClientNode(CentrePlayerSceneSceneInfoC2SMessageId, req, player);
 ///<<< END WRITING YOUR CODE
 
 
