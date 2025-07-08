@@ -36,9 +36,8 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 
 	auto sessionPbComp = std::any_cast<PlayerSessionSnapshotPBComp>(extra);
 
-	if (GlobalSessionList().find(sessionPbComp.gate_session_id()) != GlobalSessionList().end())
+	if (GlobalSessionList().find(sessionPbComp.gate_session_id()) == GlobalSessionList().end())
 	{
-		LOG_ERROR << "Session ID already exists for player: " << playerId;
 		return;
 	}
 	

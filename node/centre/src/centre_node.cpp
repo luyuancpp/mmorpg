@@ -22,7 +22,7 @@ CentreNode::CentreNode(muduo::net::EventLoop* loop)
 void CentreNode::StartRpcServer(){
 	Node::StartRpcServer();
 
-	LOG_INFO << "centre start at " << GetNodeInfo().DebugString();
+	LOG_INFO << "centre start at ------------->>>>>>>>>>>>>>" << GetNodeInfo().DebugString();
 }
 
 

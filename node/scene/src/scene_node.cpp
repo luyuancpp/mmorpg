@@ -44,7 +44,7 @@ void SceneNode::StartRpcServer()
 	World::ReadyForGame();
 	worldTimer.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
 	
-    LOG_INFO << "game node  start at " << GetNodeInfo().DebugString();
+    LOG_INFO << "game node  start at ------------->>>>>>>>>>>>>>" << GetNodeInfo().DebugString();
 }
 
 
