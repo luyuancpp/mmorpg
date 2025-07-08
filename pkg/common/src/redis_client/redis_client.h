@@ -122,6 +122,19 @@ public:
 			format.c_str());
 	}
 
+	bool UpdateExtraData(const MessageKey& key, std::any new_extra_data)
+	{
+		std::string redis_key = full_name() + ":" + std::to_string(key);
+		auto it = loading_queue_.find(redis_key);
+		if (it == loading_queue_.end())
+		{
+			return false; // 未找到，说明不在加载中
+		}
+
+		it->second->extra_data = std::move(new_extra_data);
+		return true;
+	}
+
 
 	MessageValuePtr CreateMessage() { return std::make_shared<MessageValue>(); }
 
