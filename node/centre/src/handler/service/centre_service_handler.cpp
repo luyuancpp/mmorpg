@@ -222,6 +222,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		sessionPB.set_gate_session_id(sessionId);
 		// 玩家未登录过，首次加载,底层已经判断重复加载
 		GetGlobalPlayerRedis()->AsyncLoad(playerId, sessionPB);
+		GetGlobalPlayerRedis()->UpdateExtraData(playerId, sessionPB);
 	}
 	else {
 		auto player = it->second;
@@ -235,8 +236,8 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		bool hasOldSession = tls.actorRegistry.any_of<PlayerSessionSnapshotPBComp>(player);
 
 		// 清除旧 session
-		auto& sessionComp = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
-		auto oldSessionId = sessionComp.gate_session_id();
+		auto& sessionPB = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
+		auto oldSessionId = sessionPB.gate_session_id();
 		defer(GlobalSessionList().erase(oldSessionId));
 		if (hasOldSession && oldSessionId != sessionId) {
 			PlayerTipSystem::SendToPlayer(player, kLoginBeKickByAnOtherAccount, {});
@@ -247,9 +248,9 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 			SendMessageToGateById(GateKickSessionByCentreMessageId, msg, GetGateNodeId(oldSessionId));
 		}
 
-		sessionComp.set_gate_session_id(sessionId);
+		sessionPB.set_gate_session_id(sessionId);
 
-		GetGlobalPlayerRedis()->UpdateExtraData(playerId, sessionComp);
+		GetGlobalPlayerRedis()->UpdateExtraData(playerId, sessionPB);
 
 		// 标记玩家状态
 		tls.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_REPLACE);

@@ -32,7 +32,7 @@ void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* control
 	}
 	// Handle potential asynchronous issue if the GS sends while Gate is updating GS
 	sessionIt->second.SetNodeId(SceneNodeService, request->scene_node_id());
-	response->mutable_session_info()->set_session_id(request->session_info().session_id());
+	response->mutable_session_info()->CopyFrom(request->session_info());
 	LOG_INFO << "Player entered GS, session ID: " << request->session_info().session_id()
 		<< ", game node ID: " << request->scene_node_id();
 	///<<< END WRITING YOUR CODE

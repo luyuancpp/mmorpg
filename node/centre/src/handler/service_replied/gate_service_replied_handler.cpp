@@ -50,7 +50,7 @@ void OnGatePlayerEnterGameNodeRepliedHandler(const TcpConnectionPtr& conn, const
 		return;
 	}
 	
-	PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(player);
+	PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(player);
 	PlayerNodeSystem::ProcessPlayerSessionState(player);
 	PlayerChangeSceneUtil::OnTargetGsEnterComplete(player);
 	PlayerChangeSceneUtil::ProgressSceneChangeState(player);
