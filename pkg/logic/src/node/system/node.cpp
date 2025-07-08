@@ -2,6 +2,7 @@
 #include <ranges>
 #include <regex>
 #include <grpcpp/create_channel.h>
+#include <boost/uuid/uuid_io.hpp>
 #include "all_config.h"
 #include "etcd_helper.h"
 #include "config_loader/config.h"
@@ -99,6 +100,9 @@ void Node::InitRpcServer() {
 	info.set_protocol_type(PROTOCOL_TCP);
 	info.set_launch_time(TimeUtil::NowMicrosecondsUTC());
 	info.set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
+
+	nodeUuid = gen();
+	info.set_node_uuid(boost::uuids::to_string(nodeUuid));
 
 	InetAddress addr(tlsCommonLogic.GetGameConfig().zone_redis().host(), tlsCommonLogic.GetGameConfig().zone_redis().port());
 	tlsCommonLogic.GetZoneRedis() = std::make_unique<ThreadLocalStorageCommonLogic::HiredisPtr::element_type>(eventLoop, addr);
@@ -204,6 +208,12 @@ void Node::StopWatchingServiceNodes() {
 }
 
 void Node::ConnectToNode(const NodeInfo& info) {
+	if (IsMyNode(info)) {
+		LOG_INFO << "Skipping connection to self node: " << info.DebugString();
+		return;
+	}
+
+
 	switch (info.protocol_type()) {
 	case PROTOCOL_GRPC:
 		ConnectToGrpcNode(info);
@@ -253,13 +263,14 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 	entt::entity entityId{ info.node_id() };
 
 	if (registry.valid(entityId)) {
-		if (auto* existInfo = registry.try_get<NodeInfo>(entityId);
+		if (auto* existInfo = registry.try_get<boost::uuids::uuid>(entityId);
 			existInfo ) {
-			LOG_INFO << "New node detected with same node_id: " << info.node_id()
-				<< ". Replacing old node (launch_time: " << (existInfo ? existInfo->launch_time() : 0)
-				<< ", lease_id: " << (existInfo ? existInfo->lease_id() : 0)
-				<< ") with new (launch_time: " << info.launch_time()
-				<< ", lease_id: " << info.lease_id() << ").";
+
+			if (IsSameNode(info, *existInfo)) {
+				LOG_INFO << "Node already registered, IP: " << info.endpoint().ip()
+					<< ", Port: " << info.endpoint().port();
+				return;
+			}
 
 			if (auto* client = registry.try_get<RpcClientPtr>(entityId)) {
 				zombieClientList.push_back(*client);
@@ -280,6 +291,7 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 	);
 
 	registry.emplace<NodeInfo>(createdId, info);
+	registry.emplace<boost::uuids::uuid>(createdId, stringGen(info.node_uuid()));
 
 	client->registerService(GetNodeReplyService());
 	client->connect();
@@ -300,7 +312,7 @@ void Node::ConnectToHttpNode(const NodeInfo&) {
 }
 
 void Node::ReleaseNodeId() {
-	EtcdHelper::RevokeLeaseAndCleanup(static_cast<int64_t>(GetNodeInfo().lease_id()));
+	EtcdHelper::RevokeLeaseAndCleanup(leaseId);
 }
 
 void InitRepliedHandler();
@@ -362,8 +374,8 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 	*nodeList.Add() = newNode;
 	LOG_INFO << "Node added, type: " << nodeType << ", info: " << newNode.DebugString();
 
-	if (GetNodeInfo().lease_id() == newNode.lease_id()) {
-		LOG_TRACE << "Node has same lease_id as self, skip adding node. Self lease_id: " << GetNodeInfo().lease_id();
+	if (IsMyNode(newNode)) {
+		LOG_TRACE << "Node has same lease_id as self, skip adding node. Self uuid: " << newNode.node_uuid();
 		return;
 	}
 
@@ -381,7 +393,6 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 
 // 启动后调用，统一连接当前所有节点
 void Node::ConnectAllNodes() {
-
 	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 
 	for (uint32_t nodeType = 0; nodeType < eNodeType_ARRAYSIZE; ++nodeType)
@@ -389,7 +400,6 @@ void Node::ConnectAllNodes() {
 		if (!targetNodeTypeWhitelist.contains(nodeType)) continue;
 
 		for (const auto& node : nodeRegistry[nodeType].node_list()) {
-			if (GetNodeInfo().lease_id() == node.lease_id()) continue;
 			if (IsNodeConnected(nodeType, node)) continue;
 
 			ConnectToNode(node);
@@ -406,9 +416,8 @@ bool Node::IsNodeConnected(uint32_t nodeType, const NodeInfo& info) const {
 	{
 		entt::registry& registry = tls.GetNodeRegistry(nodeType);
 		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
-			if (nodeInfo.endpoint().ip() == info.endpoint().ip() &&
-				nodeInfo.endpoint().port() == info.endpoint().port()) {
-				LOG_DEBUG << "Node already registered, IP: " << nodeInfo.endpoint().ip()
+			if (IsSameNode(info, nodeInfo)) {
+				LOG_INFO << "Node already registered, IP: " << nodeInfo.endpoint().ip()
 					<< ", Port: " << nodeInfo.endpoint().port();
 				return true;
 			}
@@ -424,22 +433,17 @@ bool Node::IsNodeConnected(uint32_t nodeType, const NodeInfo& info) const {
 
 bool Node::IsSameNode(const NodeInfo& node1, const NodeInfo& node2) const
 {
-	return (node1.zone_id() == node2.zone_id() &&
-		node1.node_type() == node2.node_type() &&
-		node1.node_id() == node2.node_id() &&
-		node1.endpoint().ip() == node2.endpoint().ip() &&
-		node1.endpoint().port() == node2.endpoint().port() && 
-		node1.launch_time() == node2.launch_time() && 
-		node1.lease_id() == node2.lease_id());
+	return node1.node_uuid() == node2.node_uuid();
 }
 
-bool Node::IsSameNode(const NodeInfo& node1, const NodeInfo& node2, std::false_type) const {
-	return (node1.zone_id() == node2.zone_id() &&
-		node1.node_type() == node2.node_type() &&
-		node1.node_id() == node2.node_id() &&
-		node1.endpoint().ip() == node2.endpoint().ip() &&
-		node1.endpoint().port() == node2.endpoint().port() &&
-		node1.launch_time() == node2.launch_time());
+bool Node::IsMyNode(const NodeInfo& node) const
+{
+	return IsSameNode(node, nodeUuid);
+}
+
+bool Node::IsSameNode(const NodeInfo& node, boost::uuids::uuid uuid) const
+{
+	return uuid == stringGen(node.node_uuid());
 }
 
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
@@ -552,16 +556,16 @@ void Node::InitGrpcResponseHandlers() {
 
 	etcdserverpb::AsyncLeaseLeaseGrantHandler = [this](const ClientContext& context, const ::etcdserverpb::LeaseGrantResponse& reply) {
 		// 如果原来没有租约，说明是第一次获取，需要初始化节点信息
-		if (GetNodeInfo().lease_id() <= 0) {
+		if (leaseId <= 0) {
 			LOG_INFO << "Acquiring new lease, ID: " << reply.id();
-			GetNodeInfo().set_lease_id(reply.id());
+			leaseId = reply.id();
 			KeepNodeAlive();
 			AcquireNode();  // 获取节点ID或其他信息
 		}
 		else {
 			LOG_INFO << "Lease already exists, updating lease_id: " << reply.id();
 			// 租约过期后重新获取，需要重新注册服务节点
-			GetNodeInfo().set_lease_id(reply.id());
+			leaseId = reply.id();
 			KeepNodeAlive();
 			RegisterNodeService();
 		}
@@ -661,7 +665,7 @@ void Node::HandleNodeRegistration(
 		entt::registry& registry = tls.GetNodeRegistry(nodeType);
 		const auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
-			if (!IsSameNode(serverNode, peerNode, std::false_type{})) continue;
+			if (!IsSameNode(serverNode, peerNode)) continue;
 			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
 			entt::entity created = ResetEntity(registry, nodeEntity); 
 			if (created == entt::null) {
@@ -792,9 +796,9 @@ void Node::AcquireNode() {
 void Node::KeepNodeAlive() {
 	renewLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().keep_alive_interval(), [this]() {
 		etcdserverpb::LeaseKeepAliveRequest req;
-		req.set_id(static_cast<int64_t>(GetNodeInfo().lease_id()));
+		req.set_id(leaseId);
 		SendLeaseLeaseKeepAlive(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), req);
-		LOG_DEBUG << "Keeping node alive, lease_id: " << GetNodeInfo().lease_id();
+		LOG_DEBUG << "Keeping node alive, lease_id: " << leaseId;
 		});
 }
 
@@ -808,10 +812,9 @@ void Node::StartServiceHealthMonitor(){
 		auto& myNode = GetNodeInfo();
 
 		auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
-		auto& nodeList = *nodeRegistry[GetNodeInfo().node_type()].mutable_node_list();
-		NodeInfo nodeInfo;
+		auto& nodeList = *nodeRegistry[myNode.node_type()].mutable_node_list();
 		for (auto it = nodeList.begin(); it != nodeList.end(); ++it) {
-			if (IsSameNode(*it, GetNodeInfo())) {
+			if (IsMyNode(*it)) {
 				return ;
 			}
 		}
@@ -826,7 +829,7 @@ void Node::RegisterNodeService() {
 
 	LOG_INFO << "Registering node service to etcd with key: " << serviceKey;
 
-	EtcdHelper::PutIfAbsent(serviceKey, GetNodeInfo());
+	EtcdHelper::PutIfAbsent(serviceKey, GetNodeInfo(), leaseId);
 
 	LOG_INFO << "Registered node to etcd: " << GetNodeInfo().DebugString();
 	

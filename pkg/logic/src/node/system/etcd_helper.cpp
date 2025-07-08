@@ -85,7 +85,7 @@ void EtcdHelper::PutIfAbsent(const std::string& key, const std::string& newValue
 	SendKVTxn(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), txn);
 }
 
-void EtcdHelper::PutIfAbsent(const std::string& key, const NodeInfo& nodeInfo)
+void EtcdHelper::PutIfAbsent(const std::string& key, const NodeInfo& nodeInfo, int64_t lease)
 {
 	std::string jsonValue;
 	auto status = google::protobuf::util::MessageToJsonString(nodeInfo, &jsonValue);
@@ -95,7 +95,7 @@ void EtcdHelper::PutIfAbsent(const std::string& key, const NodeInfo& nodeInfo)
 		return;
 	}
 
-	PutIfAbsent(key, jsonValue, 0, nodeInfo.lease_id());
+	PutIfAbsent(key, jsonValue, 0, lease);
 }
 
 void EtcdHelper::RevokeLeaseAndCleanup(int64_t leaseId)

@@ -8,6 +8,9 @@
 #include "proto/common/common.pb.h"
 #include "time/comp/timer_task_comp.h"
 #include "type_define/type_define.h"
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+
 
 class RegisterNodeSessionRequest;
 class RegisterNodeSessionResponse;
@@ -85,7 +88,8 @@ protected:
     // 工具与状态判断
     bool IsNodeConnected(uint32_t nodeType, const NodeInfo& node) const;
 	bool IsSameNode(const NodeInfo& node1, const NodeInfo& node2) const;
-    bool IsSameNode(const NodeInfo& node1, const NodeInfo& node2, std::false_type) const;
+	bool IsSameNode(const NodeInfo& node, boost::uuids::uuid uuid) const;
+    bool IsMyNode(const NodeInfo& node ) const;
     bool IsServiceStarted() { return rpcServer != nullptr; }
 
     void Shutdown();
@@ -104,6 +108,10 @@ protected:
     std::unordered_map<std::string,int64_t> revision;
     bool hasSentRange{ false };
     bool hasSentWatch{ false };
+	int64_t leaseId{ 0 };
+    boost::uuids::uuid nodeUuid;
+	boost::uuids::random_generator gen;
+    boost::uuids::string_generator stringGen;
 };
 
 extern Node* gNode;

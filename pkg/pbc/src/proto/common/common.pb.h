@@ -935,16 +935,32 @@ class NodeInfo final
 
   // accessors -------------------------------------------------------
   enum : int {
-    kEndpointFieldNumber = 6,
+    kNodeUuidFieldNumber = 8,
+    kEndpointFieldNumber = 5,
     kNodeIdFieldNumber = 1,
     kNodeTypeFieldNumber = 2,
     kLaunchTimeFieldNumber = 3,
-    kLeaseIdFieldNumber = 5,
     kSceneNodeTypeFieldNumber = 4,
-    kZoneIdFieldNumber = 7,
-    kProtocolTypeFieldNumber = 8,
+    kZoneIdFieldNumber = 6,
+    kProtocolTypeFieldNumber = 7,
   };
-  // .EndpointPBComponent endpoint = 6;
+  // string node_uuid = 8;
+  void clear_node_uuid() ;
+  const std::string& node_uuid() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_node_uuid(Arg_&& arg, Args_... args);
+  std::string* mutable_node_uuid();
+  PROTOBUF_NODISCARD std::string* release_node_uuid();
+  void set_allocated_node_uuid(std::string* value);
+
+  private:
+  const std::string& _internal_node_uuid() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_node_uuid(
+      const std::string& value);
+  std::string* _internal_mutable_node_uuid();
+
+  public:
+  // .EndpointPBComponent endpoint = 5;
   bool has_endpoint() const;
   void clear_endpoint() ;
   const ::EndpointPBComponent& endpoint() const;
@@ -989,16 +1005,6 @@ class NodeInfo final
   void _internal_set_launch_time(::uint64_t value);
 
   public:
-  // uint64 lease_id = 5;
-  void clear_lease_id() ;
-  ::uint64_t lease_id() const;
-  void set_lease_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_lease_id() const;
-  void _internal_set_lease_id(::uint64_t value);
-
-  public:
   // uint32 scene_node_type = 4;
   void clear_scene_node_type() ;
   ::uint32_t scene_node_type() const;
@@ -1009,7 +1015,7 @@ class NodeInfo final
   void _internal_set_scene_node_type(::uint32_t value);
 
   public:
-  // uint32 zone_id = 7;
+  // uint32 zone_id = 6;
   void clear_zone_id() ;
   ::uint32_t zone_id() const;
   void set_zone_id(::uint32_t value);
@@ -1019,7 +1025,7 @@ class NodeInfo final
   void _internal_set_zone_id(::uint32_t value);
 
   public:
-  // uint32 protocol_type = 8;
+  // uint32 protocol_type = 7;
   void clear_protocol_type() ;
   ::uint32_t protocol_type() const;
   void set_protocol_type(::uint32_t value);
@@ -1035,7 +1041,7 @@ class NodeInfo final
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
       3, 8, 1,
-      0, 2>
+      34, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -1054,11 +1060,11 @@ class NodeInfo final
                           const NodeInfo& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr node_uuid_;
     ::EndpointPBComponent* endpoint_;
     ::uint32_t node_id_;
     ::uint32_t node_type_;
     ::uint64_t launch_time_;
-    ::uint64_t lease_id_;
     ::uint32_t scene_node_type_;
     ::uint32_t zone_id_;
     ::uint32_t protocol_type_;
@@ -1444,29 +1450,7 @@ inline void NodeInfo::_internal_set_scene_node_type(::uint32_t value) {
   _impl_.scene_node_type_ = value;
 }
 
-// uint64 lease_id = 5;
-inline void NodeInfo::clear_lease_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.lease_id_ = ::uint64_t{0u};
-}
-inline ::uint64_t NodeInfo::lease_id() const {
-  // @@protoc_insertion_point(field_get:NodeInfo.lease_id)
-  return _internal_lease_id();
-}
-inline void NodeInfo::set_lease_id(::uint64_t value) {
-  _internal_set_lease_id(value);
-  // @@protoc_insertion_point(field_set:NodeInfo.lease_id)
-}
-inline ::uint64_t NodeInfo::_internal_lease_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.lease_id_;
-}
-inline void NodeInfo::_internal_set_lease_id(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.lease_id_ = value;
-}
-
-// .EndpointPBComponent endpoint = 6;
+// .EndpointPBComponent endpoint = 5;
 inline bool NodeInfo::has_endpoint() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.endpoint_ != nullptr);
@@ -1562,7 +1546,7 @@ inline void NodeInfo::set_allocated_endpoint(::EndpointPBComponent* value) {
   // @@protoc_insertion_point(field_set_allocated:NodeInfo.endpoint)
 }
 
-// uint32 zone_id = 7;
+// uint32 zone_id = 6;
 inline void NodeInfo::clear_zone_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.zone_id_ = 0u;
@@ -1584,7 +1568,7 @@ inline void NodeInfo::_internal_set_zone_id(::uint32_t value) {
   _impl_.zone_id_ = value;
 }
 
-// uint32 protocol_type = 8;
+// uint32 protocol_type = 7;
 inline void NodeInfo::clear_protocol_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.protocol_type_ = 0u;
@@ -1604,6 +1588,54 @@ inline ::uint32_t NodeInfo::_internal_protocol_type() const {
 inline void NodeInfo::_internal_set_protocol_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.protocol_type_ = value;
+}
+
+// string node_uuid = 8;
+inline void NodeInfo::clear_node_uuid() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_uuid_.ClearToEmpty();
+}
+inline const std::string& NodeInfo::node_uuid() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NodeInfo.node_uuid)
+  return _internal_node_uuid();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void NodeInfo::set_node_uuid(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_uuid_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:NodeInfo.node_uuid)
+}
+inline std::string* NodeInfo::mutable_node_uuid() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_node_uuid();
+  // @@protoc_insertion_point(field_mutable:NodeInfo.node_uuid)
+  return _s;
+}
+inline const std::string& NodeInfo::_internal_node_uuid() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.node_uuid_.Get();
+}
+inline void NodeInfo::_internal_set_node_uuid(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_uuid_.Set(value, GetArena());
+}
+inline std::string* NodeInfo::_internal_mutable_node_uuid() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.node_uuid_.Mutable( GetArena());
+}
+inline std::string* NodeInfo::release_node_uuid() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:NodeInfo.node_uuid)
+  return _impl_.node_uuid_.Release();
+}
+inline void NodeInfo::set_allocated_node_uuid(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_uuid_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.node_uuid_.IsDefault()) {
+    _impl_.node_uuid_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:NodeInfo.node_uuid)
 }
 
 // -------------------------------------------------------------------
