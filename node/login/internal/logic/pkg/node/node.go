@@ -4,6 +4,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"login/internal/config"
@@ -60,7 +61,7 @@ func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
 		ZoneId:       config.AppConfig.ZoneID,
 		LaunchTime:   uint64(time.Now().Unix()),
 		ProtocolType: uint32(game.ENodeProtocolType_PROTOCOL_GRPC),
-		LeaseId:      uint64(reg.Lease),
+		NodeUuid:     uuid.New().String(),
 	}
 
 	allocator := NewNodeAllocator(client, GetRpcPrefix(nodeType))
