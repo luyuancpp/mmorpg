@@ -123,6 +123,7 @@ void Node::StartRpcServer() {
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, addr);
 	rpcServer->start();
 	rpcServer->registerService(GetNodeReplyService());
+	tls.OnNodeStart(info.node_id());
 
 	for (auto& val : gNodeService | std::views::values) {
 		rpcServer->registerService(val.get());

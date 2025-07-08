@@ -42,3 +42,8 @@ entt::entity ThreadLocalStorage::GetNodeGlobalEntity(uint32_t nodeType)
 	}
 	return nodeGlobalEntities[nodeType];
 }
+
+void ThreadLocalStorage::OnNodeStart(uint32_t nodeId)
+{
+	itemIdGenerator.set_node_id(nodeId);
+}
