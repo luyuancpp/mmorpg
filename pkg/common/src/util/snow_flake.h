@@ -6,8 +6,6 @@
 
 #include "muduo/base/Logging.h"
 
-#include "muduo/base/Logging.h"
-
 #include "type_define/type_define.h"
 
 //https://github.com/yitter/IdGenerator
