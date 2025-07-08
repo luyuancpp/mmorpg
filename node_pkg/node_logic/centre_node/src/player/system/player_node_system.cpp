@@ -157,7 +157,7 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	LOG_DEBUG << "Called remote method GatePlayerEnterGameNodeMessageId for session_id: " << sessionPB->gate_session_id();
 }
 
-void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
+void PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
 {
 	const auto* const sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!sessionPB)

@@ -402,12 +402,11 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 		return;
 	}
 
-
 	GlobalSessionList().emplace(request->session_id(), request->player_id());
 
 	tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(request->session_id());
 
-	PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(player);
+	PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(player);
 ///<<< END WRITING YOUR CODE
 
 }
