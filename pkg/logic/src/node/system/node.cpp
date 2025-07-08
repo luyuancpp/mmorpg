@@ -762,14 +762,14 @@ void Node::AcquireNode() {
 	}
 
 	static constexpr uint32_t kMaxNodeId = (1U << kNodeBits) - 1;
-
-	uint32_t nextNodeId = 0;
+	uint32_t nextNodeId;
 
 	if (maxUsedId < kMaxNodeId) {
+		// 还有空间，优先用 maxUsedId + 1
 		nextNodeId = maxUsedId + 1;
 	}
 	else {
-		// 找未被使用的ID
+		// 空间满了，从头找未使用的（包括 0）
 		bool found = false;
 		for (uint32_t id = 0; id <= kMaxNodeId; ++id) {
 			if (usedIds.find(id) == usedIds.end()) {
@@ -798,7 +798,6 @@ void Node::AcquireNode() {
 
 	RegisterNodeService();
 }
-
 
 
 void Node::KeepNodeAlive() {
