@@ -3,7 +3,7 @@ Etcd:
   Hosts:
     - "127.0.0.1:2379"    # Etcd 服务的主机地址
   KeepaliveInterval: 1    # 保活间隔（秒）
-  NodeTTLSeconds: 5000      # 节点的TTL时间，单位为秒
+  NodeTTLSeconds: 600      # 节点的TTL时间，单位为秒
 
 # 日志配置，控制日志输出的级别
 LogLevel: 2               # 2表示info级别日志

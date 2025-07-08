@@ -88,8 +88,8 @@ void OnSceneInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn, cons
 		return;
 	}
 
-	const auto it = tlsSessions.find(replied->header().session_id());
-	if (it == tlsSessions.end())
+	const auto it = GlobalSessionList().find(replied->header().session_id());
+	if (it == GlobalSessionList().end())
 	{
 		LOG_ERROR << "can not find session id " << replied->header().session_id();
 		return;

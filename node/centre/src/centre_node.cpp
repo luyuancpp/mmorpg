@@ -6,7 +6,6 @@
 #include "handler/event/event_handler.h"
 #include "muduo/net/EventLoop.h"
 #include "network/rpc_session.h"
-#include "player/system/player_session_system.h"
 #include "proto/common/node.pb.h"
 #include "thread_local/storage_centre.h"
 
@@ -16,7 +15,6 @@ using namespace net;
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
 	: Node(loop, "logs/centre"){
 	GetNodeInfo().set_node_type(CentreNodeService);
-	PlayerSessionSystem::Initialize();
 	EventHandler::Register();
 	tls_centre.GetRedisSystem().Initialize();
 }

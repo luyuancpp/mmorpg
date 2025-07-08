@@ -40,13 +40,12 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 	auto player = tls.actorRegistry.create();
 	LOG_INFO << "Created entity for player: " << entt::to_integral(player);
 
-	if (const auto [first, second] = tlsCommonLogic.GetPlayerList().emplace(playerId, player); !second)
+	if (const auto [first, second] = GlobalPlayerList().emplace(playerId, player); !second)
 	{
 		LOG_ERROR << "Failed to emplace player into GetPlayerList: " << playerId;
 		return;
 	}
 
-	LOG_INFO << "Deserializing player data from database";
 	tls.actorRegistry.emplace<Player>(player);
 	tls.actorRegistry.emplace<Guid>(player, message.player_id());
 	Player_databaseMessageFieldsUnmarshal(player, message);
@@ -74,12 +73,10 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 	InitializeActorComponentsEvent initializeActorComponentsEvent;
 	initializeActorComponentsEvent.set_actor_entity(entt::to_integral(player));
 	tls.dispatcher.trigger(initializeActorComponentsEvent);
-	LOG_TRACE << "Triggered InitializeActorComponentsEvent";
 
 	InitializePlayerComponentsEvent initializePlayerComponents;
 	initializePlayerComponents.set_actor_entity(entt::to_integral(player));
 	tls.dispatcher.trigger(initializePlayerComponents);
-	LOG_TRACE << "Triggered InitializePlayerComponentsEvent";
 
 	EnterGs(player, asyncIt->second);
 }
@@ -179,8 +176,8 @@ void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity pla
 //todo 检测
 void PlayerNodeSystem::RemovePlayerSession(const Guid playerId)
 {
-	auto playerIt = tlsCommonLogic.GetPlayerList().find(playerId);
-	if (playerIt == tlsCommonLogic.GetPlayerList().end())
+	auto playerIt = GlobalPlayerList().find(playerId);
+	if (playerIt == GlobalPlayerList().end())
 	{
 		LOG_ERROR << "RemovePlayerSession: PlayerNodeInfoPBComponent not found for player: " << playerId;
 		return;
@@ -199,14 +196,14 @@ void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
 
 	LOG_INFO << "Removing player session: sessionId = " << playerSessionSnapshotPB->gate_session_id();
 
-	defer(tlsSessions.erase(playerSessionSnapshotPB->gate_session_id()));
+	defer(GlobalSessionList().erase(playerSessionSnapshotPB->gate_session_id()));
 	playerSessionSnapshotPB->set_gate_session_id(kInvalidSessionId);
 }
 
 void PlayerNodeSystem::RemovePlayerSessionSilently(Guid player_id)
 {
-	auto playerIt = tlsCommonLogic.GetPlayerList().find(player_id);
-	if (playerIt == tlsCommonLogic.GetPlayerList().end())
+	auto playerIt = GlobalPlayerList().find(player_id);
+	if (playerIt == GlobalPlayerList().end())
 	{
 		return;
 	}
@@ -217,7 +214,7 @@ void PlayerNodeSystem::DestroyPlayer(Guid playerId)
 {
 	LOG_INFO << "Destroying player: " << playerId;
 
-	defer(tlsCommonLogic.GetPlayerList().erase(playerId));
+	defer(GlobalPlayerList().erase(playerId));
 	Destroy(tls.actorRegistry, tlsCommonLogic.GetPlayer(playerId));
 }
 

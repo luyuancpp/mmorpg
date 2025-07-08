@@ -44,8 +44,8 @@ extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Servi
 
 Guid GetPlayerIDBySessionId(const uint64_t session_id)
 {
-	const auto session_it = tlsSessions.find(session_id);
-	if (session_it == tlsSessions.end())
+	const auto session_it = GlobalSessionList().find(session_id);
+	if (session_it == GlobalSessionList().end())
 	{
 		LOG_DEBUG << "Cannot find session ID " << session_id << GetStackTraceAsString();
 		return kInvalidGuid;
@@ -59,8 +59,8 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 
 	LOG_TRACE << "Getting player entity for session ID: " << session_id << ", player ID: " << player_id;
 
-	const auto player_it = tlsCommonLogic.GetPlayerList().find(player_id);
-	if (player_it == tlsCommonLogic.GetPlayerList().end())
+	const auto player_it = GlobalPlayerList().find(player_id);
+	if (player_it == GlobalPlayerList().end())
 	{
 		LOG_ERROR << "Player not found for session ID: " << session_id << ", player ID: " << player_id;
 		return entt::null;
@@ -101,7 +101,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	// Notice: Asynchronous process: If the gate reconnects first and then disconnects, it might
 	// inadvertently disconnect a newly arrived connection. Extreme cases need testing to see
 
-	defer(tlsSessions.erase(request->session_info().session_id()));
+	defer(GlobalSessionList().erase(request->session_info().session_id()));
 
 	auto session_id = request->session_info().session_id();
 
@@ -109,8 +109,8 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 
 	LOG_TRACE << "Getting player entity for session ID: " << session_id << ", player ID: " << player_id;
 
-	const auto player_it = tlsCommonLogic.GetPlayerList().find(player_id);
-	if (player_it == tlsCommonLogic.GetPlayerList().end())
+	const auto player_it = GlobalPlayerList().find(player_id);
+	if (player_it == GlobalPlayerList().end())
 	{
 		LOG_TRACE << "Player not found for session ID: " << session_id << ", player ID: " << player_id;
 		return ;
@@ -176,7 +176,7 @@ void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* con
 {
 ///<<< BEGIN WRITING YOUR CODE
     
-	if (tlsCommonLogic.GetPlayerList().size() >= kMaxPlayerSize)
+	if (GlobalPlayerList().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error_message()->set_id(kLoginAccountPlayerFull);
@@ -211,9 +211,9 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	LOG_INFO << "Login request: PlayerID=" << playerId << ", SessionID=" << sessionId;
 
 	// 记录当前 session
-	tlsSessions[sessionId] = playerId;
+	GlobalSessionList()[sessionId] = playerId;
 
-	auto& playerList = tlsCommonLogic.GetPlayerList();
+	auto& playerList = GlobalPlayerList();
 	auto it = playerList.find(playerId);
 
 	if (it == playerList.end()) {
@@ -235,7 +235,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		auto* sessionComp = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 		if (sessionComp) {
 			auto oldSessionId = sessionComp->gate_session_id();
-			defer(tlsSessions.erase(oldSessionId));
+			defer(GlobalSessionList().erase(oldSessionId));
 			if (oldSessionId != sessionId) {
 				PlayerTipSystem::SendToPlayer(player, kLoginBeKickByAnOtherAccount, {});
 				LOG_INFO << "Kicking old session: Player ID " << playerId << ", Old Session ID " << oldSessionId;
@@ -275,11 +275,11 @@ void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	if (tlsSessions.find(request->session_info().session_id()) == tlsSessions.end()) {
+	if (GlobalSessionList().find(request->session_info().session_id()) == GlobalSessionList().end()) {
 		return;
 	}
 
-	defer(tlsSessions.erase(request->session_info().session_id()));
+	defer(GlobalSessionList().erase(request->session_info().session_id()));
 	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
 	PlayerNodeSystem::HandleNormalExit(player_id);
 	//todo statistics
@@ -296,11 +296,11 @@ void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController
 {
 ///<<< BEGIN WRITING YOUR CODE
 	
-	if (tlsSessions.find(request->session_info().session_id()) == tlsSessions.end()){
+	if (GlobalSessionList().find(request->session_info().session_id()) == GlobalSessionList().end()){
 		return;
 	}
 
-	defer(tlsSessions.erase(request->session_info().session_id()));
+	defer(GlobalSessionList().erase(request->session_info().session_id()));
 	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
 	PlayerNodeSystem::HandleNormalExit(player_id);
 ///<<< END WRITING YOUR CODE
@@ -315,8 +315,8 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	const auto it = tlsSessions.find(request->header().session_id());
-	if (it == tlsSessions.end())
+	const auto it = GlobalSessionList().find(request->header().session_id());
+	if (it == GlobalSessionList().end())
 	{
 		if (request->message_content().message_id() != CentrePlayerSceneLeaveSceneAsyncSavePlayerCompleteMessageId)
 		{

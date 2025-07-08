@@ -212,7 +212,7 @@ void PlayerNodeSystem::Logout(Guid playerID)
 	// TODO: Handle cases where player didn't enter any scene yet (e.g., login process or scene switch)
 	LOG_INFO << "Logging out player: " << playerID;
 
-	defer(tlsCommonLogic.GetPlayerList().erase(playerID));
+	defer(GlobalPlayerList().erase(playerID));
 
 	const auto playerEntity = tlsCommonLogic.GetPlayer(playerID);
 	if (!tls.actorRegistry.valid(playerEntity))
