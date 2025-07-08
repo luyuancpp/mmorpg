@@ -296,7 +296,7 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 	client->registerService(GetNodeReplyService());
 	client->connect();
 
-	LOG_INFO << "Connecting to TCP node, ID: " << info.node_id()
+	LOG_INFO << "Connecting to TCP node, Uuid: " << info.node_uuid()
 		<< ", IP: " << info.endpoint().ip()
 		<< ", Port: " << info.endpoint().port();
 
@@ -750,37 +750,44 @@ void Node::AcquireNode() {
 	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[GetNodeType()];
 	auto& existingNodes = *nodeList.mutable_node_list();
 
-	UInt32Set allocatedIds;
-	uint32_t highestUsedId = 0;
+	std::unordered_set<uint32_t> usedIds;
+	uint32_t maxUsedId = 0;
 
 	for (const auto& node : existingNodes) {
-		allocatedIds.insert(node.node_id());
-		highestUsedId = std::max(highestUsedId, node.node_id());
-	}
-
-	LOG_INFO << "Found " << allocatedIds.size() << " existing nodes. Highest used ID: " << highestUsedId;
-
-	constexpr uint32_t kRandomOffset = 5;
-	const uint32_t randomOffset = tlsCommonLogic.GetRng().Rand<uint32_t>(0, kRandomOffset);
-	const uint32_t searchUpperBound = highestUsedId + randomOffset;
-
-	LOG_DEBUG << "Random offset: " << randomOffset << ", search upper bound: " << searchUpperBound;
-
-	uint32_t selectedNodeId = highestUsedId;
-	for (uint32_t id = 0; id < searchUpperBound; ++id) {
-		if (!allocatedIds.contains(id)) {
-			selectedNodeId = id;
-			LOG_INFO << "Selected available node ID: " << selectedNodeId;
-			break;
+		usedIds.insert(node.node_id());
+		if (node.node_id() > maxUsedId) {
+			maxUsedId = node.node_id();
 		}
 	}
 
-	GetNodeInfo().set_node_id(selectedNodeId);
+	static constexpr uint32_t kMaxNodeId = (1U << kNodeBits) - 1;
 
-	constexpr uint32_t kPortStepPerNodeType = 10000;
-	uint32_t assignedPort = GetNodeType() * kPortStepPerNodeType + selectedNodeId;
+	uint32_t nextNodeId = 0;
 
-	if (nullptr == rpcServer) {
+	if (maxUsedId < kMaxNodeId) {
+		nextNodeId = maxUsedId + 1;
+	}
+	else {
+		// 找未被使用的ID
+		bool found = false;
+		for (uint32_t id = 0; id <= kMaxNodeId; ++id) {
+			if (usedIds.find(id) == usedIds.end()) {
+				nextNodeId = id;
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			LOG_FATAL << "No available node ID (max " << kMaxNodeId << ")";
+			throw std::runtime_error("Node ID space exhausted");
+		}
+	}
+
+	GetNodeInfo().set_node_id(nextNodeId);
+
+	if (rpcServer == nullptr) {
+		constexpr uint32_t PORT_STEP = 10000;
+		uint32_t assignedPort = GetNodeType() * PORT_STEP + nextNodeId;
 		GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
 		LOG_INFO << "Assigned RPC port: " << assignedPort;
 	}
@@ -788,9 +795,9 @@ void Node::AcquireNode() {
 		LOG_WARN << "RPC server already initialized, skipping port assignment.";
 	}
 
-	LOG_INFO << "Registering node service for node ID: " << selectedNodeId;
 	RegisterNodeService();
 }
+
 
 
 void Node::KeepNodeAlive() {
