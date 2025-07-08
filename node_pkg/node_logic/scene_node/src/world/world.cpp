@@ -28,8 +28,6 @@ void World::InitializeSystemBeforeConnect()
     tlsGame.frameTime.set_target_fps(kTargetFPS);
     tlsGame.frameTime.set_delta_time(1.0 / tlsGame.frameTime.target_fps());
 
-	tls.globalRegistry.emplace<SessionList>(GlobalEntity());
-
     ViewSystem::Initialize();
 }
 

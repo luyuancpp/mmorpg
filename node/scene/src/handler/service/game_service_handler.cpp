@@ -48,7 +48,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// 1 清除玩家会话，处理连续顶号进入情况
 	PlayerNodeSystem::RemovePlayerSessionSilently(request->player_id());
 
-	const auto& playerList = tlsCommonLogic.GetPlayerList();
+	const auto& playerList = GlobalPlayerList();
 	auto playerIt = playerList.find(request->player_id());
 
 	// 2 检查玩家是否已经在线，若在线则直接进入
@@ -90,16 +90,16 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 	LOG_TRACE << "Handling message routing for session ID: " << request->header().session_id()
 		<< ", message ID: " << request->message_content().message_id();
 
-	const auto it = tlsSessions.find(request->header().session_id());
-	if (it == tlsSessions.end())
+	const auto it = GlobalSessionList().find(request->header().session_id());
+	if (it == GlobalSessionList().end())
 	{
 		LOG_ERROR << "Session ID not found: " << request->header().session_id()
 			<< ", message ID: " << request->message_content().message_id();
 		return;
 	}
 
-	const auto playerIt = tlsCommonLogic.GetPlayerList().find(it->second);
-	if (playerIt == tlsCommonLogic.GetPlayerList().end())
+	const auto playerIt = GlobalPlayerList().find(it->second);
+	if (playerIt == GlobalPlayerList().end())
 	{
 		LOG_ERROR << "Player ID not found in common logic: " << it->second;
 		return;
@@ -181,8 +181,8 @@ void SceneHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* 
 		return;
 	}
 
-	const auto it = tlsSessions.find(request->session_id());
-	if (it == tlsSessions.end())
+	const auto it = GlobalSessionList().find(request->session_id());
+	if (it == GlobalSessionList().end())
 	{
 		LOG_ERROR << "session id not found " << request->session_id() << ","
 			<< " message id " << request->message_content().message_id();
@@ -225,8 +225,8 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto it = tlsSessions.find(request->header().session_id());
-	if (it == tlsSessions.end())
+	const auto it = GlobalSessionList().find(request->header().session_id());
+	if (it == GlobalSessionList().end())
 	{
 		LOG_ERROR << "session id not found " << request->header().session_id() << ","
 			<< " message id " << request->message_content().message_id();
@@ -253,8 +253,8 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto it = tlsSessions.find(request->header().session_id());
-	if (it == tlsSessions.end())
+	const auto it = GlobalSessionList().find(request->header().session_id());
+	if (it == GlobalSessionList().end())
 	{
 		LOG_ERROR << "session id not found " << request->header().session_id() << ","
 			<< " message id " << request->message_content().message_id();
@@ -403,7 +403,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 	}
 
 
-	tlsSessions.emplace(request->session_id(), request->player_id());
+	GlobalSessionList().emplace(request->session_id(), request->player_id());
 
 	tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(request->session_id());
 
