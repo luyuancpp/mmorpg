@@ -131,11 +131,13 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr NodeInfo::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        node_uuid_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         endpoint_{nullptr},
         node_id_{0u},
         node_type_{0u},
         launch_time_{::uint64_t{0u}},
-        lease_id_{::uint64_t{0u}},
         scene_node_type_{0u},
         zone_id_{0u},
         protocol_type_{0u} {}
@@ -213,16 +215,16 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.node_type_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.launch_time_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.scene_node_type_),
-        PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.lease_id_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.endpoint_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.zone_id_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.protocol_type_),
-        ~0u,
+        PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.node_uuid_),
         ~0u,
         ~0u,
         ~0u,
         ~0u,
         0,
+        ~0u,
         ~0u,
         ~0u,
         ~0u,  // no _has_bits_
@@ -292,20 +294,20 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_2eproto[] ABSL_ATTR
     protodesc_cold) = {
     "\n\031proto/common/common.proto\032\026proto/commo"
     "n/tip.proto\"/\n\023EndpointPBComponent\022\n\n\002ip"
-    "\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\276\001\n\010NodeInfo\022\017\n\007nod"
+    "\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\277\001\n\010NodeInfo\022\017\n\007nod"
     "e_id\030\001 \001(\r\022\021\n\tnode_type\030\002 \001(\r\022\023\n\013launch_"
-    "time\030\003 \001(\004\022\027\n\017scene_node_type\030\004 \001(\r\022\020\n\010l"
-    "ease_id\030\005 \001(\004\022&\n\010endpoint\030\006 \001(\0132\024.Endpoi"
-    "ntPBComponent\022\017\n\007zone_id\030\007 \001(\r\022\025\n\rprotoc"
-    "ol_type\030\010 \001(\r\"7\n\027NodeInfoListPBComponent"
-    "\022\034\n\tnode_list\030\001 \003(\0132\t.NodeInfo\"*\n\016Networ"
-    "kAddress\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\320\001\n\024S"
-    "ceneInfoPBComponent\022\024\n\014scene_confid\030\001 \001("
-    "\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rmirror_confid\030\003 \001(\r\022\025"
-    "\n\rdungen_confid\030\004 \001(\r\0225\n\010creators\030\005 \003(\0132"
-    "#.SceneInfoPBComponent.CreatorsEntry\032/\n\r"
-    "CreatorsEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001("
-    "\010:\0028\001B\tZ\007pb/gameb\006proto3"
+    "time\030\003 \001(\004\022\027\n\017scene_node_type\030\004 \001(\r\022&\n\010e"
+    "ndpoint\030\005 \001(\0132\024.EndpointPBComponent\022\017\n\007z"
+    "one_id\030\006 \001(\r\022\025\n\rprotocol_type\030\007 \001(\r\022\021\n\tn"
+    "ode_uuid\030\010 \001(\t\"7\n\027NodeInfoListPBComponen"
+    "t\022\034\n\tnode_list\030\001 \003(\0132\t.NodeInfo\"*\n\016Netwo"
+    "rkAddress\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\320\001\n\024"
+    "SceneInfoPBComponent\022\024\n\014scene_confid\030\001 \001"
+    "(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rmirror_confid\030\003 \001(\r\022"
+    "\025\n\rdungen_confid\030\004 \001(\r\0225\n\010creators\030\005 \003(\013"
+    "2#.SceneInfoPBComponent.CreatorsEntry\032/\n"
+    "\rCreatorsEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001"
+    "(\010:\0028\001B\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_2eproto_deps[1] =
     {
@@ -315,7 +317,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_2eproto = {
     false,
     false,
-    624,
+    625,
     descriptor_table_protodef_proto_2fcommon_2fcommon_2eproto,
     "proto/common/common.proto",
     &descriptor_table_proto_2fcommon_2fcommon_2eproto_once,
@@ -608,7 +610,8 @@ inline PROTOBUF_NDEBUG_INLINE NodeInfo::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from, const ::NodeInfo& from_msg)
       : _has_bits_{from._has_bits_},
-        _cached_size_{0} {}
+        _cached_size_{0},
+        node_uuid_(arena, from.node_uuid_) {}
 
 NodeInfo::NodeInfo(
     ::google::protobuf::Arena* arena,
@@ -640,7 +643,8 @@ NodeInfo::NodeInfo(
 inline PROTOBUF_NDEBUG_INLINE NodeInfo::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        node_uuid_(arena) {}
 
 inline void NodeInfo::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -659,6 +663,7 @@ inline void NodeInfo::SharedDtor(MessageLite& self) {
   NodeInfo& this_ = static_cast<NodeInfo&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.node_uuid_.Destroy();
   delete this_._impl_.endpoint_;
   this_._impl_.~Impl_();
 }
@@ -668,7 +673,7 @@ inline void* NodeInfo::PlacementNew_(const void*, void* mem,
   return ::new (mem) NodeInfo(arena);
 }
 constexpr auto NodeInfo::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(NodeInfo),
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(NodeInfo),
                                             alignof(NodeInfo));
 }
 PROTOBUF_CONSTINIT
@@ -699,7 +704,7 @@ const ::google::protobuf::internal::ClassData* NodeInfo::GetClassData() const {
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 8, 1, 0, 2> NodeInfo::_table_ = {
+const ::_pbi::TcParseTable<3, 8, 1, 34, 2> NodeInfo::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_._has_bits_),
     0, // no _extensions_
@@ -717,9 +722,9 @@ const ::_pbi::TcParseTable<3, 8, 1, 0, 2> NodeInfo::_table_ = {
     ::_pbi::TcParser::GetTable<::NodeInfo>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint32 protocol_type = 8;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.protocol_type_), 63>(),
-     {64, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.protocol_type_)}},
+    // string node_uuid = 8;
+    {::_pbi::TcParser::FastUS1,
+     {66, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_uuid_)}},
     // uint32 node_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.node_id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_id_)}},
@@ -732,15 +737,15 @@ const ::_pbi::TcParseTable<3, 8, 1, 0, 2> NodeInfo::_table_ = {
     // uint32 scene_node_type = 4;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.scene_node_type_), 63>(),
      {32, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.scene_node_type_)}},
-    // uint64 lease_id = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(NodeInfo, _impl_.lease_id_), 63>(),
-     {40, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.lease_id_)}},
-    // .EndpointPBComponent endpoint = 6;
+    // .EndpointPBComponent endpoint = 5;
     {::_pbi::TcParser::FastMtS1,
-     {50, 0, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.endpoint_)}},
-    // uint32 zone_id = 7;
+     {42, 0, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.endpoint_)}},
+    // uint32 zone_id = 6;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.zone_id_), 63>(),
-     {56, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.zone_id_)}},
+     {48, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.zone_id_)}},
+    // uint32 protocol_type = 7;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.protocol_type_), 63>(),
+     {56, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.protocol_type_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -756,21 +761,24 @@ const ::_pbi::TcParseTable<3, 8, 1, 0, 2> NodeInfo::_table_ = {
     // uint32 scene_node_type = 4;
     {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.scene_node_type_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint64 lease_id = 5;
-    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.lease_id_), -1, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-    // .EndpointPBComponent endpoint = 6;
+    // .EndpointPBComponent endpoint = 5;
     {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.endpoint_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // uint32 zone_id = 7;
+    // uint32 zone_id = 6;
     {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.zone_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 protocol_type = 8;
+    // uint32 protocol_type = 7;
     {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.protocol_type_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // string node_uuid = 8;
+    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_uuid_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }}, {{
     {::_pbi::TcParser::GetTable<::EndpointPBComponent>()},
   }}, {{
+    "\10\0\0\0\0\0\0\0\11\0\0\0\0\0\0\0"
+    "NodeInfo"
+    "node_uuid"
   }},
 };
 
@@ -781,6 +789,7 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  _impl_.node_uuid_.ClearToEmpty();
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     ABSL_DCHECK(_impl_.endpoint_ != nullptr);
@@ -836,33 +845,34 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
                 4, this_._internal_scene_node_type(), target);
           }
 
-          // uint64 lease_id = 5;
-          if (this_._internal_lease_id() != 0) {
-            target = stream->EnsureSpace(target);
-            target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-                5, this_._internal_lease_id(), target);
-          }
-
           cached_has_bits = this_._impl_._has_bits_[0];
-          // .EndpointPBComponent endpoint = 6;
+          // .EndpointPBComponent endpoint = 5;
           if (cached_has_bits & 0x00000001u) {
             target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-                6, *this_._impl_.endpoint_, this_._impl_.endpoint_->GetCachedSize(), target,
+                5, *this_._impl_.endpoint_, this_._impl_.endpoint_->GetCachedSize(), target,
                 stream);
           }
 
-          // uint32 zone_id = 7;
+          // uint32 zone_id = 6;
           if (this_._internal_zone_id() != 0) {
             target = stream->EnsureSpace(target);
             target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-                7, this_._internal_zone_id(), target);
+                6, this_._internal_zone_id(), target);
           }
 
-          // uint32 protocol_type = 8;
+          // uint32 protocol_type = 7;
           if (this_._internal_protocol_type() != 0) {
             target = stream->EnsureSpace(target);
             target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-                8, this_._internal_protocol_type(), target);
+                7, this_._internal_protocol_type(), target);
+          }
+
+          // string node_uuid = 8;
+          if (!this_._internal_node_uuid().empty()) {
+            const std::string& _s = this_._internal_node_uuid();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "NodeInfo.node_uuid");
+            target = stream->WriteStringMaybeAliased(8, _s, target);
           }
 
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -890,7 +900,14 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
 
           ::_pbi::Prefetch5LinesFrom7Lines(&this_);
            {
-            // .EndpointPBComponent endpoint = 6;
+            // string node_uuid = 8;
+            if (!this_._internal_node_uuid().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_node_uuid());
+            }
+          }
+           {
+            // .EndpointPBComponent endpoint = 5;
             cached_has_bits = this_._impl_._has_bits_[0];
             if (cached_has_bits & 0x00000001u) {
               total_size += 1 +
@@ -913,22 +930,17 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
               total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
                   this_._internal_launch_time());
             }
-            // uint64 lease_id = 5;
-            if (this_._internal_lease_id() != 0) {
-              total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-                  this_._internal_lease_id());
-            }
             // uint32 scene_node_type = 4;
             if (this_._internal_scene_node_type() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
                   this_._internal_scene_node_type());
             }
-            // uint32 zone_id = 7;
+            // uint32 zone_id = 6;
             if (this_._internal_zone_id() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
                   this_._internal_zone_id());
             }
-            // uint32 protocol_type = 8;
+            // uint32 protocol_type = 7;
             if (this_._internal_protocol_type() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
                   this_._internal_protocol_type());
@@ -947,6 +959,9 @@ void NodeInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
+  if (!from._internal_node_uuid().empty()) {
+    _this->_internal_set_node_uuid(from._internal_node_uuid());
+  }
   cached_has_bits = from._impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     ABSL_DCHECK(from._impl_.endpoint_ != nullptr);
@@ -965,9 +980,6 @@ void NodeInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google
   }
   if (from._internal_launch_time() != 0) {
     _this->_impl_.launch_time_ = from._impl_.launch_time_;
-  }
-  if (from._internal_lease_id() != 0) {
-    _this->_impl_.lease_id_ = from._impl_.lease_id_;
   }
   if (from._internal_scene_node_type() != 0) {
     _this->_impl_.scene_node_type_ = from._impl_.scene_node_type_;
@@ -992,8 +1004,11 @@ void NodeInfo::CopyFrom(const NodeInfo& from) {
 
 void NodeInfo::InternalSwap(NodeInfo* PROTOBUF_RESTRICT other) {
   using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.node_uuid_, &other->_impl_.node_uuid_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.protocol_type_)
       + sizeof(NodeInfo::_impl_.protocol_type_)
