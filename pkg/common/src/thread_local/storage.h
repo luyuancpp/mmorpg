@@ -48,6 +48,8 @@ public:
 	ConsistentNode& GetConsistentNode(uint32_t nodeType) {
 		return consistentNodes[nodeType];
 	}
+
+	void OnNodeStart(uint32_t nodeId);
 private:
 	NodeRgistries nodeRegistries;
 	NodeGloabalEntity nodeGlobalEntities;
