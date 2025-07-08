@@ -34,6 +34,7 @@
 #include "type_alias/player_redis.h"
 #include "util/network_utils.h"
 #include "util/player_message_utils.h"
+#include "type_alias/player_redis.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -220,7 +221,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		PlayerSessionSnapshotPBComp sessionPB;
 		sessionPB.set_gate_session_id(sessionId);
 		// 玩家未登录过，首次加载,底层已经判断重复加载
-		tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(playerId, sessionPB);
+		GetGlobalPlayerRedis()->AsyncLoad(playerId, sessionPB);
 	}
 	else {
 		auto player = it->second;
@@ -231,28 +232,24 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 		//区分顶号和断线重连
 
+		bool hasOldSession = tls.actorRegistry.any_of<PlayerSessionSnapshotPBComp>(player);
+
 		// 清除旧 session
-		auto* sessionComp = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
-		if (sessionComp) {
-			auto oldSessionId = sessionComp->gate_session_id();
-			defer(GlobalSessionList().erase(oldSessionId));
-			if (oldSessionId != sessionId) {
-				PlayerTipSystem::SendToPlayer(player, kLoginBeKickByAnOtherAccount, {});
-				LOG_INFO << "Kicking old session: Player ID " << playerId << ", Old Session ID " << oldSessionId;
-				// 踢掉旧 session
-				KickSessionRequest msg;
-				msg.set_session_id(oldSessionId);
-				SendMessageToGateById(GateKickSessionByCentreMessageId, msg, GetGateNodeId(oldSessionId));
-			}
-		}
-		else
-		{
-			LOG_INFO << "Existing player login: Player ID " << clientMsg.player_id();
-			tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(sessionId);
+		auto& sessionComp = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
+		auto oldSessionId = sessionComp.gate_session_id();
+		defer(GlobalSessionList().erase(oldSessionId));
+		if (hasOldSession && oldSessionId != sessionId) {
+			PlayerTipSystem::SendToPlayer(player, kLoginBeKickByAnOtherAccount, {});
+			LOG_INFO << "Kicking old session: Player ID " << playerId << ", Old Session ID " << oldSessionId;
+			// 踢掉旧 session
+			KickSessionRequest msg;
+			msg.set_session_id(oldSessionId);
+			SendMessageToGateById(GateKickSessionByCentreMessageId, msg, GetGateNodeId(oldSessionId));
 		}
 
-		// 更新为新 session
-		tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(sessionId);
+		sessionComp.set_gate_session_id(sessionId);
+
+		GetGlobalPlayerRedis()->UpdateExtraData(playerId, sessionComp);
 
 		// 标记玩家状态
 		tls.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_REPLACE);

@@ -1,4 +1,4 @@
-#include "player_node_system.h"
+﻿#include "player_node_system.h"
 #include "muduo/base/Logging.h"
 
 #include "scene/comp/scene_comp.h"
@@ -25,12 +25,23 @@
 #include "util/node_message_utils.h"
 #include "network/rpc_session.h"
 #include "util/player_message_utils.h"
+#include "type_alias/player_session_type_alias.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData, const std::any& extra)
 {
+	//load 回来之前断开连接了,然后又加到redis了 这种怎么办,session id 变了咋办
+
 	LOG_INFO << "Handling async load for player: " << playerId;
 	assert(GlobalPlayerList().find(playerId) == GlobalPlayerList().end());
 
+	auto sessionPbComp = std::any_cast<PlayerSessionSnapshotPBComp>(extra);
+
+	if (GlobalSessionList().find(sessionPbComp.gate_session_id()) != GlobalSessionList().end())
+	{
+		LOG_ERROR << "Session ID already exists for player: " << playerId;
+		return;
+	}
+	
 	auto playerEntity = tls.actorRegistry.create();
 	if (const auto [first, success] = GlobalPlayerList().emplace(playerId, playerEntity); !success)
 	{
@@ -38,7 +49,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 		return;
 	}
 
-	auto& sessionPB = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity, std::any_cast<PlayerSessionSnapshotPBComp>(extra));
+	auto& sessionPB = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity, std::move(sessionPbComp));
 
 	tls.actorRegistry.emplace<Player>(playerEntity);
 	tls.actorRegistry.emplace<Guid>(playerEntity, playerId);
