@@ -201,7 +201,11 @@ func connectToCentreNodes(ctx *svc.ServiceContext, loginNode *node.Node) error {
 	for _, n := range nodes {
 		if n.ZoneId == zoneId {
 			logx.Infof("Connecting to centre node: %+v", n.String())
-			ctx.SetCentreClient(centre.NewCentreClient(n.Endpoint.Ip, n.Endpoint.Port))
+			client, err := centre.NewCentreClient(n.Endpoint.Ip, n.Endpoint.Port, n.NodeUuid)
+			if err != nil {
+				logx.Errorf("Failed to connect to centre node: %v", err)
+			}
+			ctx.SetCentreClient(client)
 			break // 只连接一个，如需多连接可移除 break
 		}
 	}
@@ -214,7 +218,11 @@ func connectToCentreNodes(ctx *svc.ServiceContext, loginNode *node.Node) error {
 			case node.NodeAdded:
 				if event.Info.ZoneId == zoneId {
 					logx.Infof("New centre node detected: %+v", event.Info.String())
-					ctx.SetCentreClient(centre.NewCentreClient(event.Info.Endpoint.Ip, event.Info.Endpoint.Port))
+					client, err := centre.NewCentreClient(event.Info.Endpoint.Ip, event.Info.Endpoint.Port, event.Info.NodeUuid)
+					if err != nil {
+						logx.Errorf("Failed to connect to centre node: %v", err)
+					}
+					ctx.SetCentreClient(client)
 				}
 			case node.NodeRemoved:
 				if event.Info.ZoneId == zoneId {

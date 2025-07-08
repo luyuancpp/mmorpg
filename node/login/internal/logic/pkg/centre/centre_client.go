@@ -1,7 +1,9 @@
 package centre
 
 import (
+	"fmt"
 	"github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
 	"github.com/luyuancpp/muduoclient/muduo"
 	"github.com/zeromicro/go-zero/core/logx"
 	"login/pb/game"
@@ -9,13 +11,24 @@ import (
 
 type Client struct {
 	CentreClient *muduo.Client
+	NodeUuid     uuid.UUID
 }
 
-func NewCentreClient(ip string, port uint32) *Client {
-	client, _ := muduo.NewClient(ip, int(port), &muduo.RpcCodec{RpcMsgType: &game.GameRpcMessage{}})
+func NewCentreClient(ip string, port uint32, uuidStr string) (*Client, error) {
+	parsedUUID, err := uuid.Parse(uuidStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID string: %w", err)
+	}
+
+	client, err := muduo.NewClient(ip, int(port), &muduo.RpcCodec{RpcMsgType: &game.GameRpcMessage{}})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create muduo client: %w", err)
+	}
+
 	return &Client{
 		CentreClient: client,
-	}
+		NodeUuid:     parsedUUID,
+	}, nil
 }
 
 func (c *Client) Close() {
