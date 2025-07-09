@@ -2,18 +2,6 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message OnSceneNodeAddPbEvent
-{
-  uint64 entity = 1;
-  uint32 scenenode_type =2;
-}
-
-message OnSceneNodeRemovePbEvent {
-  uint64 entity = 1;
-  uint32 node_type = 2;
-  uint32 scenenode_type = 3;
-}
-
 message OnNodeAddPbEvent {
   uint64 entity = 1;
   uint32 node_type = 2;
