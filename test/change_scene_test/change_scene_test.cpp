@@ -83,7 +83,7 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	PlayerChangeSceneUtil::OnTargetGsEnterComplete(playerEntity);
+	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(playerEntity);
 
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_TRUE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
@@ -107,7 +107,7 @@ TEST(PlayerChangeScene, DiffGs)
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	PlayerChangeSceneUtil::OnTargetGsEnterComplete(playerEntity);
+	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(playerEntity);
 
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_TRUE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
@@ -146,7 +146,7 @@ TEST(PlayerChangeScene, CrossServerDiffGs)
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	PlayerChangeSceneUtil::OnTargetGsEnterComplete(playerEntity);
+	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(playerEntity);
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_TRUE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 }
@@ -175,7 +175,7 @@ TEST(PlayerChangeScene, ServerCrush)
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	PlayerChangeSceneUtil::OnTargetGsEnterComplete(playerEntity);
+	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(playerEntity);
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_TRUE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 }

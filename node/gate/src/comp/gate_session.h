@@ -26,7 +26,12 @@ struct Session {
 	}
 
 	bool HasNodeId(uint32_t nodeType) const {
-		return nodeIds.find(nodeType) != nodeIds.end();
+		auto it = nodeIds.find(nodeType);
+		if (it == nodeIds.end())
+		{
+			return false;
+		}
+		return it->second != kInvalidNodeId;
 	}
 
 	Guid playerGuild{ kInvalidGuid };

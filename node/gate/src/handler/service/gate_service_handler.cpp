@@ -71,7 +71,7 @@ void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* control
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	Destroy(tls.sceneRegistry, entt::entity{ request->session_id() });
+	tls_gate.sessions().erase(request->session_id());
 	LOG_INFO << "Session ID kicked by Centre: " << request->session_id();
 	///<<< END WRITING YOUR CODE
 

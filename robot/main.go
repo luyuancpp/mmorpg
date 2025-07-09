@@ -23,7 +23,10 @@ func runClientLoop(gameClient *pkg.GameClient) {
 	errCh := make(chan error)
 
 	go func() {
-		defer close(msgCh)
+		defer func() {
+			zap.L().Info("Recv goroutine is closing")
+			close(msgCh)
+		}()
 		for {
 			msg, err := gameClient.Client.Recv()
 			if err != nil {

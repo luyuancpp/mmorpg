@@ -38,20 +38,7 @@ void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRe
 	LOG_INFO << "ExitGame: Received player exit request. Player entity = " << entt::to_integral(player)
 		<< ", playerId = " << tls.actorRegistry.get<Guid>(player);
 
-	// 1. 通知 PlayerSceneSystem 离开场景
-	PlayerSceneSystem::HandleLeaveScene(player);
-	LOG_INFO << "ExitGame: PlayerSceneSystem::HandleLeaveScene called";
-
-	// 2. 实际离开当前 Scene
-	SceneUtil::LeaveScene({ .leaver = player });
-	LOG_INFO << "ExitGame: SceneUtil::LeaveScene executed";
-
-	// 3. 通知 PlayerNodeSystem 保存玩家数据并标记离开
 	PlayerNodeSystem::HandleExitGameNode(player);
-	LOG_INFO << "ExitGame: PlayerNodeSystem::HandleExitGameNode called";
-
-	// Exit complete
-	LOG_INFO << "ExitGame: Player exit completed for entity = " << entt::to_integral(player);
 
 ///<<< END WRITING YOUR CODE
 
