@@ -76,36 +76,25 @@ void SceneEventHandler::AfterEnterSceneHandler(const AfterEnterScene& event)
 void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	const auto player = entt::to_entity(event.entity());
+		const auto player = entt::to_entity(event.entity());
 
-	// Try to get the change scene queue component for the player
 	auto* const changeSceneQueue = tls.actorRegistry.try_get<ChangeSceneQueuePBComponent>(player);
 
-	// If the change scene queue component is not found, the queue is empty, or the scene change type is 'DifferentGs'
-	if (!changeSceneQueue ||
-		changeSceneQueue->empty())
-	{
-		//// 处理玩家直接退出游戏的情况
-		//// Handle the case where the player is exiting the game
-		//GameNodeExitGameRequest exitGameRequest;
-		//// Set any required fields for the exit game request here if needed
-		//SendToGsPlayer(ScenePlayerExitGameMessageId, exitGameRequest, player);
-
-		//LOG_TRACE << "Player is exiting the game: "
-		//	<< tls.registry.get<Guid>(player);
-		return;
-	}
-
-	const auto& changeSceneInfo = *changeSceneQueue->front();
-
 	GsLeaveSceneRequest leaveSceneRequest;
-	leaveSceneRequest.set_change_gs(changeSceneInfo.change_gs_type() == ChangeSceneInfoPBComponent::eDifferentGs);
+
+	if (changeSceneQueue && !changeSceneQueue->empty())
+	{
+		const auto& changeSceneInfo = *changeSceneQueue->front();
+		leaveSceneRequest.set_change_gs(changeSceneInfo.change_gs_type() == ChangeSceneInfoPBComponent::eDifferentGs);
+	}
+	
 	SendMessageToPlayerOnSceneNode(SceneScenePlayerLeaveSceneMessageId, leaveSceneRequest, player);
 
-	LOG_TRACE << "Player is leaving scene "
+	LOG_INFO << "Player is leaving scene "
 		<< tls.actorRegistry.get<Guid>(player)
 		<< ", Scene GUID: "
 		<< tls.sceneRegistry.get<SceneInfoPBComponent>(tls.actorRegistry.get<SceneEntityComp>(player).sceneEntity).guid();
+
 	///<<< END WRITING YOUR CODE
 
 }

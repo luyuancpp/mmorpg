@@ -24,7 +24,7 @@ public:
 	// 处理玩家的场景切换队列
 	static void ProgressSceneChangeState(entt::entity player);
 
-	static void OnTargetGsEnterComplete(entt::entity player);
+	static void OnTargetSceneNodeEnterComplete(entt::entity player);
 private:
 
 	// 确认玩家成功进入场景后的操作

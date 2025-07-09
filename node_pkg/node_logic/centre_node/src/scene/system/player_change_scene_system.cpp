@@ -100,7 +100,7 @@ void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent
 
 
 // 目标GS或Gate回调中心
-void PlayerChangeSceneUtil::OnTargetGsEnterComplete(entt::entity player) {
+void PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(entt::entity player) {
 	auto& queue = tls.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (queue.empty()) return;
 

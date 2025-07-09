@@ -296,6 +296,10 @@ void SceneUtil::EnterScene(const EnterSceneParam& param) {
 
 	auto& scenePlayers = tls.sceneRegistry.get<ScenePlayers>(param.scene);
 	scenePlayers.emplace(param.enter);
+	if (tls.actorRegistry.any_of<SceneEntityComp>(param.enter))
+	{
+		LOG_FATAL << tls.actorRegistry.get<Guid>(param.enter);
+	}
 	tls.actorRegistry.emplace<SceneEntityComp>(param.enter, param.scene);
 
 	auto* gsPlayerInfo = tls.sceneRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(param.scene);
@@ -308,7 +312,7 @@ void SceneUtil::EnterScene(const EnterSceneParam& param) {
 	tls.dispatcher.trigger(afterEnterScene);
 
 	if (tls.actorRegistry.any_of<Guid>(param.enter)) {
-		LOG_DEBUG << "Player entered scene - Player GUID: " << tls.actorRegistry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(param.scene);
+		LOG_INFO << "Player entered scene - Player GUID: " << tls.actorRegistry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(param.scene);
 	}
 }
 
