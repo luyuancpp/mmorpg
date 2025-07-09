@@ -480,8 +480,15 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 	{
 		auto nodeEntity = entt::entity{ deleteNode.node_id() };
 		entt::registry& registry = tls.GetNodeRegistry(deleteNode.node_type());
+
+		OnNodeRemovePbEvent onNodeRemovePbEvent;
+		onNodeRemovePbEvent.set_entity(entt::to_integral(nodeEntity));
+		onNodeRemovePbEvent.set_node_type(deleteNode.node_type());
+		tls.dispatcher.trigger(onNodeRemovePbEvent);
+
 		Destroy(registry, nodeEntity);
 		tls.GetConsistentNode(deleteNode.node_type()).remove(deleteNode.node_id());
+
 	}
 
 	LOG_INFO << "Service node stopped : " << deleteNode.DebugString();
