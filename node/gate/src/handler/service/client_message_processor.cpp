@@ -20,6 +20,7 @@
 #include "google/protobuf/descriptor.h"
 #include "util/network_utils.h"
 #include "util/node_utils.h"
+#include "proto/logic/event/node_event.pb.h"
 
 inline NodeId GetEffectiveNodeId(
 	const Session& session,
@@ -47,6 +48,9 @@ RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
     // 注册客户端请求消息回调
     messageDispatcher.registerMessageCallback<ClientRequest>(
         std::bind(&RpcClientSessionHandler::DispatchClientRpcMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
+	tls.dispatcher.sink<OnNodeRemovePbEvent>().connect<&RpcClientSessionHandler::OnNodeRemovePbEventHandler>(*this);
+
 }
 
 //todo 考虑中间一个login服务关了，原来的login服务器处理到一半，新的login处理不了
@@ -306,4 +310,14 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
     }else if (messageInfo.protocolType == PROTOCOL_GRPC){
     	HandleGrpcNodeMessage(sessionId, request, conn);
     }
+}
+
+
+void RpcClientSessionHandler::OnNodeRemovePbEventHandler(const OnNodeRemovePbEvent& pb)
+{
+	auto& registry = tls.GetNodeRegistry(pb.node_type());
+	for (auto& session : tls_gate.sessions())
+	{
+		session.second.SetNodeId(pb.node_type(), kInvalidNodeId);
+	}
 }
