@@ -20,124 +20,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type OnSceneNodeAddPbEvent struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Entity        uint64 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	ScenenodeType uint32 `protobuf:"varint,2,opt,name=scenenode_type,json=scenenodeType,proto3" json:"scenenode_type,omitempty"`
-}
-
-func (x *OnSceneNodeAddPbEvent) Reset() {
-	*x = OnSceneNodeAddPbEvent{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_logic_event_node_event_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *OnSceneNodeAddPbEvent) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OnSceneNodeAddPbEvent) ProtoMessage() {}
-
-func (x *OnSceneNodeAddPbEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_event_node_event_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use OnSceneNodeAddPbEvent.ProtoReflect.Descriptor instead.
-func (*OnSceneNodeAddPbEvent) Descriptor() ([]byte, []int) {
-	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *OnSceneNodeAddPbEvent) GetEntity() uint64 {
-	if x != nil {
-		return x.Entity
-	}
-	return 0
-}
-
-func (x *OnSceneNodeAddPbEvent) GetScenenodeType() uint32 {
-	if x != nil {
-		return x.ScenenodeType
-	}
-	return 0
-}
-
-type OnSceneNodeRemovePbEvent struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Entity        uint64 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	NodeType      uint32 `protobuf:"varint,2,opt,name=node_type,json=nodeType,proto3" json:"node_type,omitempty"`
-	ScenenodeType uint32 `protobuf:"varint,3,opt,name=scenenode_type,json=scenenodeType,proto3" json:"scenenode_type,omitempty"`
-}
-
-func (x *OnSceneNodeRemovePbEvent) Reset() {
-	*x = OnSceneNodeRemovePbEvent{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_logic_event_node_event_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *OnSceneNodeRemovePbEvent) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OnSceneNodeRemovePbEvent) ProtoMessage() {}
-
-func (x *OnSceneNodeRemovePbEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_event_node_event_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use OnSceneNodeRemovePbEvent.ProtoReflect.Descriptor instead.
-func (*OnSceneNodeRemovePbEvent) Descriptor() ([]byte, []int) {
-	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *OnSceneNodeRemovePbEvent) GetEntity() uint64 {
-	if x != nil {
-		return x.Entity
-	}
-	return 0
-}
-
-func (x *OnSceneNodeRemovePbEvent) GetNodeType() uint32 {
-	if x != nil {
-		return x.NodeType
-	}
-	return 0
-}
-
-func (x *OnSceneNodeRemovePbEvent) GetScenenodeType() uint32 {
-	if x != nil {
-		return x.ScenenodeType
-	}
-	return 0
-}
-
 type OnNodeAddPbEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -151,7 +33,7 @@ type OnNodeAddPbEvent struct {
 func (x *OnNodeAddPbEvent) Reset() {
 	*x = OnNodeAddPbEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_logic_event_node_event_proto_msgTypes[2]
+		mi := &file_proto_logic_event_node_event_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -164,7 +46,7 @@ func (x *OnNodeAddPbEvent) String() string {
 func (*OnNodeAddPbEvent) ProtoMessage() {}
 
 func (x *OnNodeAddPbEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_event_node_event_proto_msgTypes[2]
+	mi := &file_proto_logic_event_node_event_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -177,7 +59,7 @@ func (x *OnNodeAddPbEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnNodeAddPbEvent.ProtoReflect.Descriptor instead.
 func (*OnNodeAddPbEvent) Descriptor() ([]byte, []int) {
-	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{2}
+	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *OnNodeAddPbEvent) GetEntity() uint64 {
@@ -214,7 +96,7 @@ type OnNodeRemovePbEvent struct {
 func (x *OnNodeRemovePbEvent) Reset() {
 	*x = OnNodeRemovePbEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_logic_event_node_event_proto_msgTypes[3]
+		mi := &file_proto_logic_event_node_event_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -227,7 +109,7 @@ func (x *OnNodeRemovePbEvent) String() string {
 func (*OnNodeRemovePbEvent) ProtoMessage() {}
 
 func (x *OnNodeRemovePbEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_event_node_event_proto_msgTypes[3]
+	mi := &file_proto_logic_event_node_event_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -240,7 +122,7 @@ func (x *OnNodeRemovePbEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnNodeRemovePbEvent.ProtoReflect.Descriptor instead.
 func (*OnNodeRemovePbEvent) Descriptor() ([]byte, []int) {
-	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{3}
+	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *OnNodeRemovePbEvent) GetEntity() uint64 {
@@ -276,7 +158,7 @@ type ConnectToNodePbEvent struct {
 func (x *ConnectToNodePbEvent) Reset() {
 	*x = ConnectToNodePbEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_logic_event_node_event_proto_msgTypes[4]
+		mi := &file_proto_logic_event_node_event_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -289,7 +171,7 @@ func (x *ConnectToNodePbEvent) String() string {
 func (*ConnectToNodePbEvent) ProtoMessage() {}
 
 func (x *ConnectToNodePbEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_event_node_event_proto_msgTypes[4]
+	mi := &file_proto_logic_event_node_event_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -302,7 +184,7 @@ func (x *ConnectToNodePbEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectToNodePbEvent.ProtoReflect.Descriptor instead.
 func (*ConnectToNodePbEvent) Descriptor() ([]byte, []int) {
-	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{4}
+	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ConnectToNodePbEvent) GetEntity() uint32 {
@@ -328,7 +210,7 @@ type OnNodeConnectedPbEvent struct {
 func (x *OnNodeConnectedPbEvent) Reset() {
 	*x = OnNodeConnectedPbEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_logic_event_node_event_proto_msgTypes[5]
+		mi := &file_proto_logic_event_node_event_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -341,7 +223,7 @@ func (x *OnNodeConnectedPbEvent) String() string {
 func (*OnNodeConnectedPbEvent) ProtoMessage() {}
 
 func (x *OnNodeConnectedPbEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_event_node_event_proto_msgTypes[5]
+	mi := &file_proto_logic_event_node_event_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -354,7 +236,7 @@ func (x *OnNodeConnectedPbEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnNodeConnectedPbEvent.ProtoReflect.Descriptor instead.
 func (*OnNodeConnectedPbEvent) Descriptor() ([]byte, []int) {
-	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{5}
+	return file_proto_logic_event_node_event_proto_rawDescGZIP(), []int{3}
 }
 
 var File_proto_logic_event_node_event_proto protoreflect.FileDescriptor
@@ -362,20 +244,7 @@ var File_proto_logic_event_node_event_proto protoreflect.FileDescriptor
 var file_proto_logic_event_node_event_proto_rawDesc = []byte{
 	0x0a, 0x22, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x2f, 0x65, 0x76,
 	0x65, 0x6e, 0x74, 0x2f, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x22, 0x56, 0x0a, 0x15, 0x4f, 0x6e, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x4e,
-	0x6f, 0x64, 0x65, 0x41, 0x64, 0x64, 0x50, 0x62, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x16, 0x0a,
-	0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65,
-	0x6e, 0x74, 0x69, 0x74, 0x79, 0x12, 0x25, 0x0a, 0x0e, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x6e, 0x6f,
-	0x64, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x73,
-	0x63, 0x65, 0x6e, 0x65, 0x6e, 0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65, 0x22, 0x76, 0x0a, 0x18,
-	0x4f, 0x6e, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x6d, 0x6f, 0x76,
-	0x65, 0x50, 0x62, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69,
-	0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79,
-	0x12, 0x1b, 0x0a, 0x09, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x0d, 0x52, 0x08, 0x6e, 0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65, 0x12, 0x25, 0x0a,
-	0x0e, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x6e, 0x6f, 0x64, 0x65,
-	0x54, 0x79, 0x70, 0x65, 0x22, 0x6e, 0x0a, 0x10, 0x4f, 0x6e, 0x4e, 0x6f, 0x64, 0x65, 0x41, 0x64,
+	0x72, 0x6f, 0x74, 0x6f, 0x22, 0x6e, 0x0a, 0x10, 0x4f, 0x6e, 0x4e, 0x6f, 0x64, 0x65, 0x41, 0x64,
 	0x64, 0x50, 0x62, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69,
 	0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79,
 	0x12, 0x1b, 0x0a, 0x09, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20,
@@ -412,14 +281,12 @@ func file_proto_logic_event_node_event_proto_rawDescGZIP() []byte {
 	return file_proto_logic_event_node_event_proto_rawDescData
 }
 
-var file_proto_logic_event_node_event_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_logic_event_node_event_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_logic_event_node_event_proto_goTypes = []any{
-	(*OnSceneNodeAddPbEvent)(nil),    // 0: OnSceneNodeAddPbEvent
-	(*OnSceneNodeRemovePbEvent)(nil), // 1: OnSceneNodeRemovePbEvent
-	(*OnNodeAddPbEvent)(nil),         // 2: OnNodeAddPbEvent
-	(*OnNodeRemovePbEvent)(nil),      // 3: OnNodeRemovePbEvent
-	(*ConnectToNodePbEvent)(nil),     // 4: ConnectToNodePbEvent
-	(*OnNodeConnectedPbEvent)(nil),   // 5: OnNodeConnectedPbEvent
+	(*OnNodeAddPbEvent)(nil),       // 0: OnNodeAddPbEvent
+	(*OnNodeRemovePbEvent)(nil),    // 1: OnNodeRemovePbEvent
+	(*ConnectToNodePbEvent)(nil),   // 2: ConnectToNodePbEvent
+	(*OnNodeConnectedPbEvent)(nil), // 3: OnNodeConnectedPbEvent
 }
 var file_proto_logic_event_node_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -436,30 +303,6 @@ func file_proto_logic_event_node_event_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_proto_logic_event_node_event_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*OnSceneNodeAddPbEvent); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_logic_event_node_event_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*OnSceneNodeRemovePbEvent); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_logic_event_node_event_proto_msgTypes[2].Exporter = func(v any, i int) any {
 			switch v := v.(*OnNodeAddPbEvent); i {
 			case 0:
 				return &v.state
@@ -471,7 +314,7 @@ func file_proto_logic_event_node_event_proto_init() {
 				return nil
 			}
 		}
-		file_proto_logic_event_node_event_proto_msgTypes[3].Exporter = func(v any, i int) any {
+		file_proto_logic_event_node_event_proto_msgTypes[1].Exporter = func(v any, i int) any {
 			switch v := v.(*OnNodeRemovePbEvent); i {
 			case 0:
 				return &v.state
@@ -483,7 +326,7 @@ func file_proto_logic_event_node_event_proto_init() {
 				return nil
 			}
 		}
-		file_proto_logic_event_node_event_proto_msgTypes[4].Exporter = func(v any, i int) any {
+		file_proto_logic_event_node_event_proto_msgTypes[2].Exporter = func(v any, i int) any {
 			switch v := v.(*ConnectToNodePbEvent); i {
 			case 0:
 				return &v.state
@@ -495,7 +338,7 @@ func file_proto_logic_event_node_event_proto_init() {
 				return nil
 			}
 		}
-		file_proto_logic_event_node_event_proto_msgTypes[5].Exporter = func(v any, i int) any {
+		file_proto_logic_event_node_event_proto_msgTypes[3].Exporter = func(v any, i int) any {
 			switch v := v.(*OnNodeConnectedPbEvent); i {
 			case 0:
 				return &v.state
@@ -514,7 +357,7 @@ func file_proto_logic_event_node_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_logic_event_node_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

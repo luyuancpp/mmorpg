@@ -8,8 +8,6 @@
 
 void NodeEventHandler::Register()
 {
-    tls.dispatcher.sink<OnSceneNodeAddPbEvent>().connect<&NodeEventHandler::OnSceneNodeAddPbEventHandler>();
-    tls.dispatcher.sink<OnSceneNodeRemovePbEvent>().connect<&NodeEventHandler::OnSceneNodeRemovePbEventHandler>();
     tls.dispatcher.sink<OnNodeAddPbEvent>().connect<&NodeEventHandler::OnNodeAddPbEventHandler>();
     tls.dispatcher.sink<OnNodeRemovePbEvent>().connect<&NodeEventHandler::OnNodeRemovePbEventHandler>();
     tls.dispatcher.sink<ConnectToNodePbEvent>().connect<&NodeEventHandler::ConnectToNodePbEventHandler>();
@@ -18,27 +16,10 @@ void NodeEventHandler::Register()
 
 void NodeEventHandler::UnRegister()
 {
-    tls.dispatcher.sink<OnSceneNodeAddPbEvent>().disconnect<&NodeEventHandler::OnSceneNodeAddPbEventHandler>();
-    tls.dispatcher.sink<OnSceneNodeRemovePbEvent>().disconnect<&NodeEventHandler::OnSceneNodeRemovePbEventHandler>();
     tls.dispatcher.sink<OnNodeAddPbEvent>().disconnect<&NodeEventHandler::OnNodeAddPbEventHandler>();
     tls.dispatcher.sink<OnNodeRemovePbEvent>().disconnect<&NodeEventHandler::OnNodeRemovePbEventHandler>();
     tls.dispatcher.sink<ConnectToNodePbEvent>().disconnect<&NodeEventHandler::ConnectToNodePbEventHandler>();
     tls.dispatcher.sink<OnNodeConnectedPbEvent>().disconnect<&NodeEventHandler::OnNodeConnectedPbEventHandler>();
-}
-
-void NodeEventHandler::OnSceneNodeAddPbEventHandler(const OnSceneNodeAddPbEvent& event)
-{
-///<<< BEGIN WRITING YOUR CODE
-    
-///<<< END WRITING YOUR CODE
-
-}
-
-void NodeEventHandler::OnSceneNodeRemovePbEventHandler(const OnSceneNodeRemovePbEvent& event)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-
 }
 
 void NodeEventHandler::OnNodeAddPbEventHandler(const OnNodeAddPbEvent& event)
