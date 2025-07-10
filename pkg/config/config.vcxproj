@@ -233,7 +233,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../common/;../../third_party/muduo/contrib/windows/include/;../../third_party/muduo;./src/pbc/;../../third_party/spdlog/include/;../../third_party/boost/;../common/src/;../../third_party/exprtk/;../../third_party/;../../third_party/grpc/third_party/protobuf/src/;../../third_party/grpc/third_party/abseil-cpp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../common/;../../third_party/muduo/contrib/windows/include/;../../third_party/muduo;./src/pbc/;../../third_party/spdlog/include/;../../third_party/boost/;../common/src/;../../third_party/exprtk/;../../third_party/;../../third_party/grpc/third_party/protobuf/src/;../../third_party/grpc/third_party/abseil-cpp/;../../third_party/xxhash/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>

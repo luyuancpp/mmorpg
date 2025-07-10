@@ -4,9 +4,22 @@
 #include <set>
 #include <functional> 
 #include <algorithm>
-
+#include "xxhash.h"
 //https://github.com/ioriiod0/consistent_hash/blob/master/test.cpp
 //https://zhuanlan.zhihu.com/p/482549860
+
+
+inline uint64_t StableHash64(const std::string& data) {
+	return XXH64(data.data(), data.size(), 0); // seed 可以设为固定值
+}
+
+inline uint64_t StableHash64(uint32_t val) {
+	return XXH64(&val, sizeof(val), 0);
+}
+
+inline uint64_t StableHash64(uint64_t val) {
+	return XXH64(&val, sizeof(val), 0);
+}
 
 template <typename Key,
     typename Value>
