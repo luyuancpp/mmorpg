@@ -57,3 +57,7 @@
 [submodule "third_party/cppcodec"]
 	path = third_party/cppcodec
 	url = https://github.com/tplgy/cppcodec.git
+[submodule "third_party/xxhash"]
+	path = third_party/xxhash
+	url = https://github.com/Cyan4973/xxHash.git
+	branch = release

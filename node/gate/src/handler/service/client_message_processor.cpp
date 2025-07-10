@@ -22,6 +22,30 @@
 #include "util/node_utils.h"
 #include "proto/logic/event/node_event.pb.h"
 
+
+std::optional<entt::entity> PickRandomLoginNode(uint32_t nodeType, uint32_t targetNodeType) {
+	std::vector<entt::entity> candidates;
+	auto& registry = tls.GetNodeRegistry(nodeType);
+	auto view = registry.view<NodeInfo>();
+	for (auto entity : view) {
+		const auto& node = view.get<NodeInfo>(entity);
+		if (node.zone_id() == GetNodeInfo().zone_id()) {
+			candidates.push_back(entity);
+		}
+	}
+
+	if (candidates.empty()) {
+		return std::nullopt;
+	}
+
+	// 随机选一个
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> dis(0, candidates.size() - 1);
+	return candidates[dis(gen)];
+}
+
+
 inline NodeId GetEffectiveNodeId(
 	const Session& session,
 	uint32_t nodeType)
@@ -56,32 +80,54 @@ RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
 //todo 考虑中间一个login服务关了，原来的login服务器处理到一半，新的login处理不了
 std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_t nodeType)
 {
-    const auto sessionIt = tls_gate.sessions().find(sessionId);
-    if (sessionIt == tls_gate.sessions().end()) {
-        LOG_ERROR << "Session not found for session id: " << sessionId;
-        return std::nullopt;
-    }
-
-    auto& session = sessionIt->second;
-    if (!session.HasNodeId(nodeType)) {
-        const auto nodeIt = tls.GetConsistentNode(nodeType).GetByHash(sessionId);
-		if (tls.GetConsistentNode(nodeType).end() == nodeIt) {
-			LOG_ERROR << "[Node Crash] Node crashed or unregistered. nodeType: " << nodeType
-				<< ", sessionId: " << sessionId << ", previous nodeId: " << session.GetNodeId(nodeType);
+	// 先判断是否是 zone 单例类型（全局唯一逻辑）
+	if (IsZoneSingletonNodeType(nodeType)) {
+		auto nodeInfo = FindZoneUniqueNodeInfo(gGateNode->GetNodeInfo().zone_id(), nodeType);
+		if (!nodeInfo) {
+			LOG_ERROR << "Singleton node not found for nodeType: " << nodeType;
 			return std::nullopt;
 		}
 
-        session.SetNodeId(nodeType, entt::to_integral(nodeIt->second));
-    }
+		auto& registry = tls.GetNodeRegistry(nodeType);
+		entt::entity entity = entt::entity{ nodeInfo->node_id() };
 
-    const auto nodeIt = tls.GetConsistentNode(nodeType).GetNodeValue(GetEffectiveNodeId(session, nodeType));
-    if (tls.GetConsistentNode(nodeType).end() == nodeIt) {
-        LOG_ERROR << "Login server crashed for session id: " << sessionId;
-        session.SetNodeId(nodeType, kInvalidNodeId);
-        return std::nullopt;
-    }
-    return nodeIt->second;
+		if (!registry.valid(entity)) {
+			LOG_ERROR << "[SingletonNode] Entity invalid. nodeType: " << nodeType;
+			return std::nullopt;
+		}
+
+		return entity;
+	}
+
+	// 普通节点：需要 session 绑定
+	const auto sessionIt = tls_gate.sessions().find(sessionId);
+	if (sessionIt == tls_gate.sessions().end()) {
+		LOG_ERROR << "Session not found for session id: " << sessionId;
+		return std::nullopt;
+	}
+
+	auto& session = sessionIt->second;
+
+	if (!session.HasNodeId(nodeType)) {
+		auto randomNode = PickRandomLoginNode(nodeType, nodeType);
+		if (!randomNode) {
+			LOG_ERROR << "[LoginNode] No available login node for session id: " << sessionId;
+			return std::nullopt;
+		}
+		session.SetNodeId(nodeType, entt::to_integral(*randomNode));
+	}
+
+	const auto& registry = tls.GetNodeRegistry(nodeType);
+	entt::entity nodeEntity = entt::entity{ GetEffectiveNodeId(session, nodeType) };
+	if (!registry.valid(nodeEntity)) {
+		LOG_ERROR << "[LoginNode] Bound login node is invalid. session id: " << sessionId;
+		session.SetNodeId(nodeType, kInvalidNodeId);
+		return std::nullopt;
+	}
+
+	return nodeEntity;
 }
+
 
 void RpcClientSessionHandler::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
@@ -318,6 +364,7 @@ void RpcClientSessionHandler::OnNodeRemovePbEventHandler(const OnNodeRemovePbEve
 	auto& registry = tls.GetNodeRegistry(pb.node_type());
 	for (auto& session : tls_gate.sessions())
 	{
+		if (session.second.GetNodeId(pb.node_type()) != pb.entity()) continue;
 		session.second.SetNodeId(pb.node_type(), kInvalidNodeId);
 	}
 }

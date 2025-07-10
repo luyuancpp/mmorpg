@@ -248,7 +248,7 @@ void Node::ConnectToGrpcNode(const NodeInfo& info) {
 			grpc::InsecureChannelCredentials()));
 
 	InitGrpcNode(channel, registry, entityId);
-	tls.GetConsistentNode(info.node_type()).add(info.node_id(), entityId);
+	registry.emplace<NodeInfo>(entityId, info);
 
 	LOG_INFO << "Connecting to GRPC node, ID: " << info.node_id()
 		<< ", IP: " << info.endpoint().ip()
@@ -487,7 +487,6 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		tls.dispatcher.trigger(onNodeRemovePbEvent);
 
 		Destroy(registry, nodeEntity);
-		tls.GetConsistentNode(deleteNode.node_type()).remove(deleteNode.node_id());
 
 	}
 
