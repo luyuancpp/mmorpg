@@ -250,16 +250,16 @@ func connectToCentreNodes(ctx *svc.ServiceContext, loginNode *node.Node) error {
 
 			case node.NodeRemoved:
 				if event.Info.ZoneId == zoneId {
-					node := ctx.GetCentreClient()
+					centreNode := ctx.GetCentreClient()
 					nodeUuid, err := uuid.Parse(event.Info.NodeUuid)
 					if err != nil {
 						logx.Errorf("Invalid UUID in event: %v", event.Info.NodeUuid)
 						continue
 					}
 
-					if node != nil && node.NodeUuid == nodeUuid {
-						logx.Infof("Centre node removed: %+v", event.Info.String())
-						node.Close()
+					if centreNode != nil && centreNode.NodeUuid == nodeUuid {
+						logx.Infof("Centre centreNode removed: %+v", event.Info.String())
+						centreNode.Close()
 						ctx.SetCentreClient(nil)
 					}
 				}

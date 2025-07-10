@@ -37,19 +37,11 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 	});
 }
 
-void SceneNode::StartRpcServer()
-{
-	World::ReadyForGame();
-	worldTimer.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
-
+void SceneNode::StartRpcServer(){
 	Node::StartRpcServer();
 
-	LOG_INFO << "\n\n"
-         << "=============================================================\n"
-         << "🟢 SCENE NODE STARTED SUCCESSFULLY\n"
-         << "🔧 Node Info:\n" << GetNodeInfo().DebugString() << "\n"
-         << "=============================================================\n";
-
+	World::ReadyForGame();
+	worldTimer.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
 }
 
 
