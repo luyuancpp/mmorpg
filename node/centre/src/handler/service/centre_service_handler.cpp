@@ -647,23 +647,23 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 	// Search for a matching client connection and register the game node
     AddMainSceneNodeComponent(registry, sceneNodeId);
 
+	LOG_INFO << "Add Scene node " << request->node_id() << " SceneNodeType : " << eSceneNodeType_Name(request->scene_node_type());
+
     if (request->scene_node_type() == eSceneNodeType::kMainSceneCrossNode)
     {
 		registry.remove<MainSceneNode>(sceneNodeId);
 		registry.emplace<CrossMainSceneNode>(sceneNodeId);
-    	LOG_INFO << "Scene node " << request->node_id() << " updated to CrossMainSceneNode.";
+    	
     }
     else if (request->scene_node_type() == eSceneNodeType::kRoomNode)
     {
 		registry.remove<MainSceneNode>(sceneNodeId);
 		registry.emplace<RoomSceneNode>(sceneNodeId);
-    	LOG_INFO << "Scene node " << request->node_id() << " updated to RoomSceneNode.";
     }
     else if (request->scene_node_type() == eSceneNodeType::kRoomSceneCrossNode)
     {
 		registry.remove<MainSceneNode>(sceneNodeId);
 		registry.emplace<CrossRoomSceneNode>(sceneNodeId);
-    	LOG_INFO << "Scene node " << request->node_id() << " updated to CrossRoomSceneNode.";
     }
 ///<<< END WRITING YOUR CODE
 

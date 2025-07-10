@@ -17,7 +17,13 @@ void CentreSceneHandler::RegisterScene(::google::protobuf::RpcController* contro
 	{
 		SceneUtil::CreateSceneToSceneNode(
 			{ .node = entt::entity{request->scene_node_id()}, .sceneInfo = sceneInfo });
+
+		LOG_INFO << "Scene " << sceneInfo.DebugString()
+			<< " successfully created and attached to SceneNode ["
+			<< request->scene_node_id() << "].";
 	}
+
+	
 	///<<< END WRITING YOUR CODE
 
 }

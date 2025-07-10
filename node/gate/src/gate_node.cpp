@@ -51,10 +51,4 @@ void GateNode::StartRpcServer()
 
 	tls_gate.session_id_gen().set_node_id(GetNodeId());
 
-	LOG_INFO << "\n\n"
-		<< "=============================================================\n"
-		<< "🟢 GATE NODE STARTED SUCCESSFULLY\n"
-		<< "🔧 Node Info:\n" << GetNodeInfo().DebugString() << "\n"
-		<< "=============================================================\n";
-
 }

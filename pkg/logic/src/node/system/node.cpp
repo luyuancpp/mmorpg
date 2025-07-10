@@ -31,6 +31,7 @@
 #include "generator/util/gen_util.h"
 #include "util/stacktrace_system.h"
 #include "util/node_utils.h"
+#include <boost/algorithm/string.hpp>
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
@@ -135,10 +136,11 @@ void Node::StartRpcServer() {
 
 	tls.dispatcher.trigger<OnServerStart>();
 
+	auto nodeTypeName = boost::to_upper_copy(eNodeType_Name(GetNodeInfo().node_type()));
 	LOG_INFO << "\n\n"
 		<< "=============================================================\n"
-		<< "🟢 NODE STARTED SUCCESSFULLY\n"
-		<< "🔧 Node Info:\n" << GetNodeInfo().DebugString() << "\n"
+		<< "	" << nodeTypeName << " NODE STARTED SUCCESSFULLY\n"
+		<< "	Node Info:\n" << GetNodeInfo().DebugString() << "\n"
 		<< "=============================================================\n";
 }
 
