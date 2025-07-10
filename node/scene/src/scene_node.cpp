@@ -1,4 +1,4 @@
-#include "scene_node.h"
+﻿#include "scene_node.h"
 
 #include <ranges>
 
@@ -39,12 +39,17 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 
 void SceneNode::StartRpcServer()
 {
-	Node::StartRpcServer();
-
 	World::ReadyForGame();
 	worldTimer.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
-	
-    LOG_INFO << "game node  start at ------------->>>>>>>>>>>>>>" << GetNodeInfo().DebugString();
+
+	Node::StartRpcServer();
+
+	LOG_INFO << "\n\n"
+         << "=============================================================\n"
+         << "🟢 SCENE NODE STARTED SUCCESSFULLY\n"
+         << "🔧 Node Info:\n" << GetNodeInfo().DebugString() << "\n"
+         << "=============================================================\n";
+
 }
 
 

@@ -11,7 +11,6 @@ public:
 
 	::google::protobuf::Service* GetNodeReplyService() override { return &nodeReplyService; }
 
-	void StartRpcServer() override;
 
 private:
 	CentreHandler nodeReplyService;
