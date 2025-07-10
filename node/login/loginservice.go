@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/service"
@@ -204,8 +205,9 @@ func connectToCentreNodes(ctx *svc.ServiceContext, loginNode *node.Node) error {
 			client, err := centre.NewCentreClient(n.Endpoint.Ip, n.Endpoint.Port, n.NodeUuid)
 			if err != nil {
 				logx.Errorf("Failed to connect to centre node: %v", err)
+			} else {
+				ctx.SetCentreClient(client)
 			}
-			ctx.SetCentreClient(client)
 			break // 只连接一个，如需多连接可移除 break
 		}
 	}
@@ -215,21 +217,50 @@ func connectToCentreNodes(ctx *svc.ServiceContext, loginNode *node.Node) error {
 		events := watcher.Watch(context.Background())
 		for event := range events {
 			switch event.Type {
+
 			case node.NodeAdded:
 				if event.Info.ZoneId == zoneId {
-					logx.Infof("New centre node detected: %+v", event.Info.String())
+					old := ctx.GetCentreClient()
+
+					// 若已经是同一个 UUID，则跳过
+					nodeUuid, err := uuid.Parse(event.Info.NodeUuid)
+					if err != nil {
+						logx.Errorf("Invalid UUID in event: %v", event.Info.NodeUuid)
+						continue
+					}
+
+					if old != nil && old.NodeUuid == nodeUuid {
+						continue
+					}
+
+					logx.Infof("New centre node detected: uuid=%s, info=%+v", event.Info.NodeUuid, event.Info)
+
 					client, err := centre.NewCentreClient(event.Info.Endpoint.Ip, event.Info.Endpoint.Port, event.Info.NodeUuid)
 					if err != nil {
 						logx.Errorf("Failed to connect to centre node: %v", err)
+						continue
 					}
+
+					if old != nil {
+						old.Close()
+					}
+
 					ctx.SetCentreClient(client)
 				}
+
 			case node.NodeRemoved:
 				if event.Info.ZoneId == zoneId {
-					logx.Infof("Centre node removed: %+v", event.Info.String())
 					node := ctx.GetCentreClient()
-					if node != nil {
+					nodeUuid, err := uuid.Parse(event.Info.NodeUuid)
+					if err != nil {
+						logx.Errorf("Invalid UUID in event: %v", event.Info.NodeUuid)
+						continue
+					}
+
+					if node != nil && node.NodeUuid == nodeUuid {
+						logx.Infof("Centre node removed: %+v", event.Info.String())
 						node.Close()
+						ctx.SetCentreClient(nil)
 					}
 				}
 			}

@@ -1,4 +1,4 @@
-#include "centre_node.h"
+﻿#include "centre_node.h"
 
 #include <ranges>
 #include <grpcpp/grpcpp.h>
@@ -17,12 +17,6 @@ CentreNode::CentreNode(muduo::net::EventLoop* loop)
 	GetNodeInfo().set_node_type(CentreNodeService);
 	EventHandler::Register();
 	tls_centre.GetRedisSystem().Initialize();
-}
-
-void CentreNode::StartRpcServer(){
-	Node::StartRpcServer();
-
-	LOG_INFO << "centre start at ------------->>>>>>>>>>>>>>" << GetNodeInfo().DebugString();
 }
 
 

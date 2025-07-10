@@ -134,7 +134,12 @@ void Node::StartRpcServer() {
 	StartServiceHealthMonitor();
 
 	tls.dispatcher.trigger<OnServerStart>();
-	LOG_DEBUG << "RPC server started: " << GetNodeInfo().DebugString();
+
+	LOG_INFO << "\n\n"
+		<< "=============================================================\n"
+		<< "🟢 NODE STARTED SUCCESSFULLY\n"
+		<< "🔧 Node Info:\n" << GetNodeInfo().DebugString() << "\n"
+		<< "=============================================================\n";
 }
 
 
