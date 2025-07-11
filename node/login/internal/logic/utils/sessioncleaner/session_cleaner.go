@@ -2,9 +2,9 @@ package sessioncleaner
 
 import (
 	"context"
-	"fmt"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
+	"login/internal/constants"
 	"login/internal/logic/pkg/fsmstore"
 	"login/internal/logic/pkg/loginsessionstore"
 )
@@ -30,7 +30,7 @@ func CleanupSessionAndNotify(
 		}
 
 		// 删除设备集合
-		deviceKey := fmt.Sprintf("login_account_sessions:%s", account)
+		deviceKey := constants.GenerateSessionKey(account)
 		_ = redisClient.SRem(ctx, deviceKey, sessionId).Err()
 	}
 

@@ -37,7 +37,7 @@ func main() {
 	// 加载配置文件
 	conf.MustLoad(*configFile, &config.AppConfig)
 
-	ctx := svc.NewServiceContext(config.AppConfig)
+	ctx := svc.NewServiceContext()
 
 	// 启动 gRPC 服务
 	if err := startGRPCServer(config.AppConfig, ctx); err != nil {
@@ -49,7 +49,7 @@ func main() {
 func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) error {
 
 	// 获取地址并启动 gRPC 服务
-	host, port, err := splitHostPort(ctx.Config.ListenOn)
+	host, port, err := splitHostPort(config.AppConfig.ListenOn)
 	if err != nil {
 		logx.Errorf("Failed to parse listen address: %v", err)
 		return err

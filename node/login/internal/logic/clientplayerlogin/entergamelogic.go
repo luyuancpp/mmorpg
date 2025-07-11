@@ -5,6 +5,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"login/client/playerdbservice"
 	"login/data"
+	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/fsmstore"
 	"login/internal/logic/pkg/loginsessionstore"
@@ -49,7 +50,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	}
 
 	// 2. 获取 UserAccount
-	accountKey := "account" + session.Account
+	accountKey := constants.GetAccountDataKey(session.Account)
 	cmd := l.svcCtx.Redis.Get(l.ctx, accountKey)
 	if err := cmd.Err(); err != nil {
 		logx.Errorf("Redis Get user account failed: %v", err)

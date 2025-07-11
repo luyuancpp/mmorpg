@@ -3,14 +3,16 @@ package clientplayerloginlogic
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/redis/go-redis/v9"
 	"login/data"
+	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/fsmstore"
+	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/svc"
 	"login/pb/game"
+	"strconv"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -43,8 +45,15 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		return resp, nil
 	}
 
-	// 假设 sessionKey 是 "login_account_sessions:{session_id}"，可以通过 sessionId 获取到 account
-	accountKey := fmt.Sprintf("login_account_sessions:%s", sessionDetails.SessionId)
+	// 1. 获取 LoginSessionInfo（含 Account）
+	session, err := loginsessionstore.GetLoginSession(l.ctx, l.svcCtx.Redis, sessionDetails.SessionId)
+	if err != nil {
+		logx.Errorf("GetLoginSession failed: %v", err)
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionNotFound)
+		return resp, nil
+	}
+
+	accountKey := constants.GenerateSessionKey(session.Account)
 	accountCmd := l.svcCtx.Redis.Get(l.ctx, accountKey)
 	account, err := accountCmd.Result()
 	if err != nil {
@@ -56,7 +65,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 	logx.Infof("Retrieved account from session: %s", account)
 
 	// 2. 加载账户数据
-	accountDataKey := "account" + account
+	accountDataKey := constants.GetAccountDataKey(account)
 	cmd := l.svcCtx.Redis.Get(l.ctx, accountDataKey)
 	if err := cmd.Err(); err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -69,12 +78,14 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		return resp, err
 	}
 
+	sessionId := strconv.FormatUint(sessionDetails.SessionId, 10)
+
 	// 3. FSM 状态管理
 	f := data.InitPlayerFSM()
-	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.Redis, f, account, ""); err != nil {
+	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.Redis, f, sessionId, ""); err != nil {
 		logx.Errorf("Failed to load FSM state: %v", err)
 	}
-	if err := f.Event(context.Background(), "create_char"); err != nil {
+	if err := f.Event(context.Background(), data.CreatingCharacter); err != nil {
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginFsmFailed)}
 		logx.Errorf("FSM create_char failed, account: %s, err: %v", account, err)
 		return resp, nil
