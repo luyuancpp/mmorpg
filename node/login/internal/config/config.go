@@ -5,32 +5,31 @@ import (
 )
 
 type Config struct {
-	zrpc.RpcServerConf `yaml:",inline"`
-
+	zrpc.RpcServerConf
+	Node      NodeConfig         `json:"Node"`
+	Snowflake SnowflakeConf      `json:"Snowflake"`
 	DbClient  zrpc.RpcClientConf `json:"DbClient"`
-	Node      NodeConfig         `yaml:"Node"`
-	Snowflake SnowflakeConf      `yaml:"Snowflake"`
 }
 
 type RedisConf struct {
-	Host     string `yaml:"Host"`
-	Password string `yaml:"Password"`
-	DB       int    `yaml:"DB"`
-	PoolSize int    `yaml:"PoolSize"`
+	Host     string `json:"Host"`
+	Password string `json:"Password"`
+	DB       int    `json:"DB"`
+	PoolSize int    `json:"PoolSize"`
 }
 
 type NodeConfig struct {
-	ZoneId           uint32    `yaml:"zoneid"`
-	SessionExpireMin int       `yaml:"session_expire_minutes"`
-	FsmExpireMin     int       `yaml:"fsm_expire_minutes"`
-	MaxLoginDevices  int       `yaml:"max_login_devices"`
-	Redis            RedisConf `yaml:"Redis"`
+	ZoneId           uint32    `json:"zoneid"`
+	SessionExpireMin int       `json:"session_expire_minutes"`
+	FsmExpireMin     int       `json:"fsm_expire_minutes"`
+	MaxLoginDevices  int       `json:"max_login_devices"`
+	Redis            RedisConf `json:"Redis"`
 }
 
 type SnowflakeConf struct {
-	Epoch    int64 `yaml:"Epoch"`
-	NodeBits int   `yaml:"NodeBits"`
-	StepBits int   `yaml:"StepBits"`
+	Epoch    int64 `json:"Epoch"`
+	NodeBits int   `json:"NodeBits"`
+	StepBits int   `json:"StepBits"`
 }
 
 // 用于存储配置数据的全局变量

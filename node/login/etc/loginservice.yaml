@@ -1,21 +1,21 @@
 Name: loginservice.rpc
 ListenOn: 127.0.0.1:50000
+
 Etcd:
   Hosts:
     - 127.0.0.1:2379
   Key: loginservice.rpc
-
-Redis:
-  Host: 127.0.0.1:6379
-  Password: ""
-  DB: 0
-  PoolSize: 10
 
 Node:
   zoneid: 1
   session_expire_minutes: 30
   fsm_expire_minutes: 60
   max_login_devices: 1
+  Redis:
+    Host: 127.0.0.1:6379
+    Password: ""
+    DB: 0
+    PoolSize: 10
 
 Snowflake:
   Epoch: 1721473263000   # 自定义时间起点（Unix 毫秒时间戳）
@@ -28,4 +28,3 @@ DbClient:
       - "127.0.0.1:2379"
     Key: "dbservice.rpc"
   Timeout: 3000
-
