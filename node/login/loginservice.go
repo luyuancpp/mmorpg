@@ -35,14 +35,12 @@ func main() {
 	flag.Parse()
 
 	// 加载配置文件
-	var cfg config.Config
-	conf.MustLoad(*configFile, &cfg)
+	conf.MustLoad(*configFile, &config.AppConfig)
 
-	// 初始化服务上下文
-	ctx := svc.NewServiceContext(cfg)
+	ctx := svc.NewServiceContext(config.AppConfig)
 
 	// 启动 gRPC 服务
-	if err := startGRPCServer(cfg, ctx); err != nil {
+	if err := startGRPCServer(config.AppConfig, ctx); err != nil {
 		logx.Errorf("Failed to start GRPC server: %v", err)
 	}
 }

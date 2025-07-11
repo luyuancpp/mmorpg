@@ -1,18 +1,14 @@
 package svc
 
 import (
-	"flag"
 	"github.com/bwmarrin/snowflake"
 	"github.com/redis/go-redis/v9"
-	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/zrpc"
 	"login/internal/config"
 	"login/internal/logic/pkg/centre"
 	"login/pb/game"
 	"sync/atomic"
 )
-
-var dbConfigFile = flag.String("db_rpc_client", "etc/db_client.yaml", "the config file")
 
 type ServiceContext struct {
 	Config    config.Config
@@ -25,13 +21,12 @@ type ServiceContext struct {
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
-	var dbRpc zrpc.RpcClientConf
-	conf.MustLoad(*dbConfigFile, &dbRpc)
-	dbClient := zrpc.MustNewClient(dbRpc)
+	cc := zrpc.RpcClientConf{}
+	dbClient := zrpc.MustNewClient(cc)
 
 	return &ServiceContext{
 		Config:   c,
-		Redis:    redis.NewClient(&redis.Options{Addr: config.RedisConfig.Addr}),
+		Redis:    redis.NewClient(&redis.Options{Addr: config.AppConfig.Redis.Host}),
 		DbClient: &dbClient,
 	}
 }
@@ -42,9 +37,9 @@ func (c *ServiceContext) SetNodeId(nodeId int64) {
 		return
 	}
 
-	snowflake.Epoch = config.SnowFlakeConfig.Epoch
-	snowflake.NodeBits = config.SnowFlakeConfig.NodeBits
-	snowflake.StepBits = config.SnowFlakeConfig.NodeBits
+	snowflake.Epoch = config.AppConfig.Snowflake.Epoch
+	snowflake.NodeBits = uint8(config.AppConfig.Snowflake.NodeBits)
+	snowflake.StepBits = uint8(config.AppConfig.Snowflake.StepBits)
 
 	c.SnowFlake = node
 }
