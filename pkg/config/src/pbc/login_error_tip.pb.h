@@ -86,6 +86,7 @@ enum login_error : int {
   kLoginAccountDataLoadFaile = 124,
   kLoginSessionNotFound = 125,
   kLoginAccountDataLoadFailed = 126,
+  kLoginFsmInvalidEvent = 127,
   login_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   login_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -95,8 +96,8 @@ enum login_error : int {
 bool login_error_IsValid(int value);
 extern const uint32_t login_error_internal_data_[];
 constexpr login_error login_error_MIN = static_cast<login_error>(0);
-constexpr login_error login_error_MAX = static_cast<login_error>(126);
-constexpr int login_error_ARRAYSIZE = 126 + 1;
+constexpr login_error login_error_MAX = static_cast<login_error>(127);
+constexpr int login_error_ARRAYSIZE = 127 + 1;
 const ::google::protobuf::EnumDescriptor*
 login_error_descriptor();
 template <typename T>

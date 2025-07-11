@@ -9,6 +9,7 @@ import (
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/fsmstore"
+	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/svc"
 	"login/pb/game"
@@ -37,34 +38,34 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		Players: make([]*game.AccountSimplePlayerWrapper, 0),
 	}
 
-	// 1. 获取 SessionId 并从 Redis 获取 account
-	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx) // 获取当前 session 详情
+	// 1. 获取 Session 详情
+	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or invalid during player creation")
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
 	}
 
-	// 1. 获取 LoginSessionInfo（含 Account）
+	// 2. 获取 LoginSessionInfo（含账号）
 	session, err := loginsessionstore.GetLoginSession(l.ctx, l.svcCtx.Redis, sessionDetails.SessionId)
 	if err != nil {
 		logx.Errorf("GetLoginSession failed: %v", err)
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionNotFound)
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginSessionNotFound)}
 		return resp, nil
 	}
+	account := session.Account
 
-	accountKey := constants.GenerateSessionKey(session.Account)
-	accountCmd := l.svcCtx.Redis.Get(l.ctx, accountKey)
-	account, err := accountCmd.Result()
-	if err != nil {
-		logx.Errorf("Failed to retrieve account by sessionId, err: %v", err)
-		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginAccountNotFound)}
-		return resp, err
+	// 3. 加锁（防止并发创建角色）
+	locker := locker.NewAccountLocker(l.svcCtx.Redis, 5*time.Second)
+	ok, err = locker.AcquireCreate(l.ctx, account)
+	if err != nil || !ok {
+		logx.Errorf("CreatePlayer lock acquire failed for account=%s: %v", account, err)
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginInProgress)}
+		return resp, nil
 	}
+	defer locker.ReleaseCreate(l.ctx, account)
 
-	logx.Infof("Retrieved account from session: %s", account)
-
-	// 2. 加载账户数据
+	// 4. 加载账户数据
 	accountDataKey := constants.GetAccountDataKey(account)
 	cmd := l.svcCtx.Redis.Get(l.ctx, accountDataKey)
 	if err := cmd.Err(); err != nil {
@@ -78,20 +79,21 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		return resp, err
 	}
 
-	sessionId := strconv.FormatUint(sessionDetails.SessionId, 10)
-
-	// 3. FSM 状态管理
+	// 5. FSM 状态管理（基于 sessionId）
+	sessionIdStr := strconv.FormatUint(sessionDetails.SessionId, 10)
 	f := data.InitPlayerFSM()
-	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.Redis, f, sessionId, ""); err != nil {
-		logx.Errorf("Failed to load FSM state: %v", err)
+	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.Redis, f, sessionIdStr, ""); err != nil {
+		logx.Errorf("Failed to load FSM state for session %s: %v", sessionIdStr, err)
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginFSMLoadFailed)}
+		return resp, nil
 	}
-	if err := f.Event(context.Background(), data.CreatingCharacter); err != nil {
+	if err := f.Event(l.ctx, data.CreatingCharacter); err != nil {
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginFsmFailed)}
 		logx.Errorf("FSM create_char failed, account: %s, err: %v", account, err)
 		return resp, nil
 	}
 
-	// 4. 解码账户数据
+	// 6. 解码账户数据
 	userAccount := &game.UserAccounts{}
 	if err := proto.Unmarshal([]byte(cmd.Val()), userAccount); err != nil {
 		logx.Errorf("Failed to unmarshal user account, err: %v", err)
@@ -99,45 +101,38 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		return resp, nil
 	}
 	if userAccount.SimplePlayers == nil {
-		userAccount.SimplePlayers = &game.AccountSimplePlayerList{
-			Players: make([]*game.AccountSimplePlayer, 0),
-		}
+		userAccount.SimplePlayers = &game.AccountSimplePlayerList{Players: make([]*game.AccountSimplePlayer, 0)}
 	}
 
-	// 5. 创建角色
+	// 7. 创建角色
 	if len(userAccount.SimplePlayers.Players) >= 5 {
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginAccountPlayerFull)}
 		logx.Infof("Account player limit reached: %s", account)
 		return resp, nil
 	}
-
-	// 新角色 ID
 	newPlayerId := uint64(l.svcCtx.SnowFlake.Generate())
-	newPlayer := &game.AccountSimplePlayer{
-		PlayerId: newPlayerId,
-	}
+	newPlayer := &game.AccountSimplePlayer{PlayerId: newPlayerId}
 	userAccount.SimplePlayers.Players = append(userAccount.SimplePlayers.Players, newPlayer)
 
-	// 6. 回写 Redis
+	// 8. 回写 Redis
 	dataBytes, err := proto.Marshal(userAccount)
 	if err != nil {
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginDataSerializeFailed)}
 		logx.Errorf("Failed to marshal user account, err: %v", err)
 		return resp, nil
 	}
-
 	if err := l.svcCtx.Redis.Set(l.ctx, accountDataKey, dataBytes, 12*time.Hour).Err(); err != nil {
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginRedisSetFailed)}
 		logx.Errorf("Failed to set user account in Redis, account: %s, err: %v", account, err)
 		return resp, nil
 	}
 
-	// 7. 保存 FSM 状态
-	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.Redis, f, account, ""); err != nil {
-		logx.Errorf("Failed to save FSM state, account: %s, err: %v", account, err)
+	// 9. 保存 FSM 状态（用 sessionId）
+	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.Redis, f, sessionIdStr, ""); err != nil {
+		logx.Errorf("Failed to save FSM state, sessionId: %s, err: %v", sessionIdStr, err)
 	}
 
-	// 8. 返回角色信息
+	// 10. 返回角色信息
 	for _, p := range userAccount.SimplePlayers.Players {
 		resp.Players = append(resp.Players, &game.AccountSimplePlayerWrapper{Player: p})
 	}
