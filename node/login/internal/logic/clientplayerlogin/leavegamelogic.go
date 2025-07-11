@@ -2,8 +2,8 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"login/data"
 	"login/internal/logic/pkg/ctxkeys"
+	"login/internal/logic/utils/sessioncleaner"
 	"login/internal/svc"
 	"login/pb/game"
 
@@ -25,29 +25,35 @@ func NewLeaveGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LeaveGa
 }
 
 func (l *LeaveGameLogic) LeaveGame(in *game.LeaveGameRequest) (*game.Empty, error) {
-	sessionId, ok := ctxkeys.GetSessionID(l.ctx)
-	if !ok {
-		logx.Error("failed to get SessionId from context")
-		return &game.Empty{}, nil
-	}
-
-	node := l.svcCtx.GetCentreClient()
-	if nil == node {
-		return &game.Empty{}, nil
-	}
+	resp := &game.Empty{}
 
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok {
-		logx.Error("Session not found in context during leave game ")
-		return &game.Empty{}, nil
+		logx.Error("Session not found in context during leave game")
+		return resp, nil
 	}
 
-	centreRequest := &game.LoginNodeLeaveGameRequest{
-		SessionInfo: sessionDetails,
+	// ✅ 统一 session 清理
+	err := sessioncleaner.CleanupSessionAndNotify(
+		l.ctx,
+		l.svcCtx.Redis,
+		sessionDetails.SessionId,
+		"leave",
+	)
+	if err != nil {
+		logx.Errorf("LeaveGame cleanup failed: %v", err)
 	}
 
-	node.Send(centreRequest, game.CentreLoginNodeLeaveGameMessageId)
+	// 6. 通知中心服务
+	node := l.svcCtx.GetCentreClient()
+	if node != nil {
+		centreRequest := &game.LoginNodeLeaveGameRequest{
+			SessionInfo: sessionDetails,
+		}
+		node.Send(centreRequest, game.CentreLoginNodeLeaveGameMessageId)
+	} else {
+		logx.Error("Centre client is nil during leave")
+	}
 
-	defer data.SessionList.Remove(sessionId)
-	return &game.Empty{}, nil
+	return resp, nil
 }

@@ -2,7 +2,6 @@ package ctxkeys
 
 import (
 	"context"
-	"login/data"
 	"login/pb/game"
 )
 
@@ -38,16 +37,4 @@ func GetSessionDetails(ctx context.Context) (*game.SessionDetails, bool) {
 // 放 SessionDetails 的辅助函数
 func WithSessionDetails(ctx context.Context, detail *game.SessionDetails) context.Context {
 	return context.WithValue(ctx, SessionDetailsKey, detail)
-}
-
-// 放 Session
-func WithSession(ctx context.Context, session *data.Session) context.Context {
-	return context.WithValue(ctx, SessionKey, session)
-}
-
-// 取 Session
-func GetSession(ctx context.Context) (*data.Session, bool) {
-	v := ctx.Value(SessionKey)
-	session, ok := v.(*data.Session)
-	return session, ok
 }

@@ -44,7 +44,13 @@
         "LoginDataSerializeFailed": 40,
         "LoginRedisError": 41,
         "LoginDataParseFailed": 42,
-        "LoginRedisSetFailed": 43
+        "LoginRedisSetFailed": 43,
+        "TooManyDevices": 121,
+        "LoginFSMLoadFailed": 122,
+        "LoginFSMEventFailed": 123,
+        "LoginAccountDataLoadFaile": 124,
+        "LoginSessionNotFound": 125,
+        "LoginAccountDataLoadFailed": 126
     },
     "scene_error": {
         "EnterSceneNotFound": 44,

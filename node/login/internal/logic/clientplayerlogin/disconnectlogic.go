@@ -2,8 +2,8 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"login/data"
 	"login/internal/logic/pkg/ctxkeys"
+	"login/internal/logic/utils/sessioncleaner"
 	"login/internal/svc"
 	"login/pb/game"
 
@@ -25,13 +25,18 @@ func NewDisconnectLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Discon
 }
 
 func (l *DisconnectLogic) Disconnect(in *game.LoginNodeDisconnectRequest) (*game.Empty, error) {
-	sessionId, ok := ctxkeys.GetSessionID(l.ctx)
+	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok {
-		logx.Error("failed to get SessionId from context")
+		logx.Error("Session not found in context during leave game")
 		return &game.Empty{}, nil
 	}
 
-	data.SessionList.Remove(sessionId)
+	_ = sessioncleaner.CleanupSessionAndNotify(
+		l.ctx,
+		l.svcCtx.Redis,
+		sessionDetails.SessionId,
+		"disconnect",
+	)
 
 	centreRequest := &game.GateSessionDisconnectRequest{
 		SessionInfo: &game.SessionDetails{SessionId: in.SessionId},

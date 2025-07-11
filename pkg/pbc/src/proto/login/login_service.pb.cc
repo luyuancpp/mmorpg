@@ -26,6 +26,43 @@ namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 namespace loginpb {
 
+inline constexpr LoginSessionInfo::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : account_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        device_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        fsm_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        role_id_{::uint64_t{0u}},
+        session_id_{::uint64_t{0u}},
+        gate_id_{::uint64_t{0u}},
+        login_time_{::int64_t{0}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LoginSessionInfo::LoginSessionInfo(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LoginSessionInfoDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LoginSessionInfoDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LoginSessionInfoDefaultTypeInternal() {}
+  union {
+    LoginSessionInfo _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LoginSessionInfoDefaultTypeInternal _LoginSessionInfo_default_instance_;
+
 inline constexpr LoginRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : account_(
@@ -281,6 +318,21 @@ static constexpr const ::_pb::ServiceDescriptor**
 const ::uint32_t
     TableStruct_proto_2flogin_2flogin_5fservice_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginSessionInfo, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginSessionInfo, _impl_.account_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginSessionInfo, _impl_.role_id_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginSessionInfo, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginSessionInfo, _impl_.gate_id_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginSessionInfo, _impl_.device_id_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginSessionInfo, _impl_.login_time_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::LoginSessionInfo, _impl_.fsm_),
         PROTOBUF_FIELD_OFFSET(::loginpb::AccountSimplePlayerWrapper, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::loginpb::AccountSimplePlayerWrapper, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -391,18 +443,20 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, 9, -1, sizeof(::loginpb::AccountSimplePlayerWrapper)},
-        {10, -1, -1, sizeof(::loginpb::LoginRequest)},
-        {20, 30, -1, sizeof(::loginpb::LoginResponse)},
-        {32, 44, -1, sizeof(::loginpb::TestResponse)},
-        {48, -1, -1, sizeof(::loginpb::CreatePlayerRequest)},
-        {56, 66, -1, sizeof(::loginpb::CreatePlayerResponse)},
-        {68, -1, -1, sizeof(::loginpb::EnterGameRequest)},
-        {77, 87, -1, sizeof(::loginpb::EnterGameResponse)},
-        {89, -1, -1, sizeof(::loginpb::LeaveGameRequest)},
-        {97, -1, -1, sizeof(::loginpb::LoginNodeDisconnectRequest)},
+        {0, -1, -1, sizeof(::loginpb::LoginSessionInfo)},
+        {15, 24, -1, sizeof(::loginpb::AccountSimplePlayerWrapper)},
+        {25, -1, -1, sizeof(::loginpb::LoginRequest)},
+        {35, 45, -1, sizeof(::loginpb::LoginResponse)},
+        {47, 59, -1, sizeof(::loginpb::TestResponse)},
+        {63, -1, -1, sizeof(::loginpb::CreatePlayerRequest)},
+        {71, 81, -1, sizeof(::loginpb::CreatePlayerResponse)},
+        {83, -1, -1, sizeof(::loginpb::EnterGameRequest)},
+        {92, 102, -1, sizeof(::loginpb::EnterGameResponse)},
+        {104, -1, -1, sizeof(::loginpb::LeaveGameRequest)},
+        {112, -1, -1, sizeof(::loginpb::LoginNodeDisconnectRequest)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
+    &::loginpb::_LoginSessionInfo_default_instance_._instance,
     &::loginpb::_AccountSimplePlayerWrapper_default_instance_._instance,
     &::loginpb::_LoginRequest_default_instance_._instance,
     &::loginpb::_LoginResponse_default_instance_._instance,
@@ -419,34 +473,37 @@ const char descriptor_table_protodef_proto_2flogin_2flogin_5fservice_2eproto[] A
     "\n\037proto/login/login_service.proto\022\007login"
     "pb\032\030proto/common/empty.proto\032\032proto/comm"
     "on/session.proto\032\026proto/common/tip.proto"
-    "\032 proto/common/user_accounts.proto\"B\n\032Ac"
-    "countSimplePlayerWrapper\022$\n\006player\030\001 \001(\013"
-    "2\024.AccountSimplePlayer\"1\n\014LoginRequest\022\017"
-    "\n\007account\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\"m\n\rLog"
-    "inResponse\022&\n\rerror_message\030\001 \001(\0132\017.TipI"
-    "nfoMessage\0224\n\007players\030\002 \003(\0132#.loginpb.Ac"
-    "countSimplePlayerWrapper\"\221\001\n\014TestRespons"
-    "e\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessag"
-    "e\0224\n\007players\030\002 \003(\0132#.loginpb.AccountSimp"
-    "lePlayerWrapper\022\022\n\nteststring\030\003 \003(\t\022\017\n\007t"
-    "estint\030\004 \003(\005\"\025\n\023CreatePlayerRequest\"t\n\024C"
-    "reatePlayerResponse\022&\n\rerror_message\030\001 \001"
-    "(\0132\017.TipInfoMessage\0224\n\007players\030\002 \003(\0132#.l"
-    "oginpb.AccountSimplePlayerWrapper\"%\n\020Ent"
-    "erGameRequest\022\021\n\tplayer_id\030\001 \001(\004\"N\n\021Ente"
-    "rGameResponse\022&\n\rerror_message\030\001 \001(\0132\017.T"
-    "ipInfoMessage\022\021\n\tplayer_id\030\002 \001(\004\"\022\n\020Leav"
-    "eGameRequest\"0\n\032LoginNodeDisconnectReque"
-    "st\022\022\n\nsession_id\030\001 \001(\0042\307\002\n\021ClientPlayerL"
-    "ogin\0226\n\005Login\022\025.loginpb.LoginRequest\032\026.l"
-    "oginpb.LoginResponse\022K\n\014CreatePlayer\022\034.l"
-    "oginpb.CreatePlayerRequest\032\035.loginpb.Cre"
-    "atePlayerResponse\022B\n\tEnterGame\022\031.loginpb"
-    ".EnterGameRequest\032\032.loginpb.EnterGameRes"
-    "ponse\022.\n\tLeaveGame\022\031.loginpb.LeaveGameRe"
-    "quest\032\006.Empty\0229\n\nDisconnect\022#.loginpb.Lo"
-    "ginNodeDisconnectRequest\032\006.EmptyB\tZ\007pb/g"
-    "ameb\006proto3"
+    "\032 proto/common/user_accounts.proto\"\215\001\n\020L"
+    "oginSessionInfo\022\017\n\007account\030\001 \001(\t\022\017\n\007role"
+    "_id\030\002 \001(\004\022\022\n\nsession_id\030\003 \001(\004\022\017\n\007gate_id"
+    "\030\004 \001(\004\022\021\n\tdevice_id\030\005 \001(\t\022\022\n\nlogin_time\030"
+    "\006 \001(\003\022\013\n\003fsm\030\007 \001(\t\"B\n\032AccountSimplePlaye"
+    "rWrapper\022$\n\006player\030\001 \001(\0132\024.AccountSimple"
+    "Player\"1\n\014LoginRequest\022\017\n\007account\030\001 \001(\t\022"
+    "\020\n\010password\030\002 \001(\t\"m\n\rLoginResponse\022&\n\rer"
+    "ror_message\030\001 \001(\0132\017.TipInfoMessage\0224\n\007pl"
+    "ayers\030\002 \003(\0132#.loginpb.AccountSimplePlaye"
+    "rWrapper\"\221\001\n\014TestResponse\022&\n\rerror_messa"
+    "ge\030\001 \001(\0132\017.TipInfoMessage\0224\n\007players\030\002 \003"
+    "(\0132#.loginpb.AccountSimplePlayerWrapper\022"
+    "\022\n\nteststring\030\003 \003(\t\022\017\n\007testint\030\004 \003(\005\"\025\n\023"
+    "CreatePlayerRequest\"t\n\024CreatePlayerRespo"
+    "nse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMess"
+    "age\0224\n\007players\030\002 \003(\0132#.loginpb.AccountSi"
+    "mplePlayerWrapper\"%\n\020EnterGameRequest\022\021\n"
+    "\tplayer_id\030\001 \001(\004\"N\n\021EnterGameResponse\022&\n"
+    "\rerror_message\030\001 \001(\0132\017.TipInfoMessage\022\021\n"
+    "\tplayer_id\030\002 \001(\004\"\022\n\020LeaveGameRequest\"0\n\032"
+    "LoginNodeDisconnectRequest\022\022\n\nsession_id"
+    "\030\001 \001(\0042\307\002\n\021ClientPlayerLogin\0226\n\005Login\022\025."
+    "loginpb.LoginRequest\032\026.loginpb.LoginResp"
+    "onse\022K\n\014CreatePlayer\022\034.loginpb.CreatePla"
+    "yerRequest\032\035.loginpb.CreatePlayerRespons"
+    "e\022B\n\tEnterGame\022\031.loginpb.EnterGameReques"
+    "t\032\032.loginpb.EnterGameResponse\022.\n\tLeaveGa"
+    "me\022\031.loginpb.LeaveGameRequest\032\006.Empty\0229\n"
+    "\nDisconnect\022#.loginpb.LoginNodeDisconnec"
+    "tRequest\032\006.EmptyB\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2flogin_2flogin_5fservice_2eproto_deps[4] =
     {
@@ -459,13 +516,13 @@ static ::absl::once_flag descriptor_table_proto_2flogin_2flogin_5fservice_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogin_2flogin_5fservice_2eproto = {
     false,
     false,
-    1211,
+    1355,
     descriptor_table_protodef_proto_2flogin_2flogin_5fservice_2eproto,
     "proto/login/login_service.proto",
     &descriptor_table_proto_2flogin_2flogin_5fservice_2eproto_once,
     descriptor_table_proto_2flogin_2flogin_5fservice_2eproto_deps,
     4,
-    10,
+    11,
     schemas,
     file_default_instances,
     TableStruct_proto_2flogin_2flogin_5fservice_2eproto::offsets,
@@ -473,6 +530,401 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogin_
     file_level_service_descriptors_proto_2flogin_2flogin_5fservice_2eproto,
 };
 namespace loginpb {
+// ===================================================================
+
+class LoginSessionInfo::_Internal {
+ public:
+};
+
+LoginSessionInfo::LoginSessionInfo(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:loginpb.LoginSessionInfo)
+}
+inline PROTOBUF_NDEBUG_INLINE LoginSessionInfo::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::loginpb::LoginSessionInfo& from_msg)
+      : account_(arena, from.account_),
+        device_id_(arena, from.device_id_),
+        fsm_(arena, from.fsm_),
+        _cached_size_{0} {}
+
+LoginSessionInfo::LoginSessionInfo(
+    ::google::protobuf::Arena* arena,
+    const LoginSessionInfo& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  LoginSessionInfo* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, role_id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, role_id_),
+           offsetof(Impl_, login_time_) -
+               offsetof(Impl_, role_id_) +
+               sizeof(Impl_::login_time_));
+
+  // @@protoc_insertion_point(copy_constructor:loginpb.LoginSessionInfo)
+}
+inline PROTOBUF_NDEBUG_INLINE LoginSessionInfo::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : account_(arena),
+        device_id_(arena),
+        fsm_(arena),
+        _cached_size_{0} {}
+
+inline void LoginSessionInfo::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, role_id_),
+           0,
+           offsetof(Impl_, login_time_) -
+               offsetof(Impl_, role_id_) +
+               sizeof(Impl_::login_time_));
+}
+LoginSessionInfo::~LoginSessionInfo() {
+  // @@protoc_insertion_point(destructor:loginpb.LoginSessionInfo)
+  SharedDtor(*this);
+}
+inline void LoginSessionInfo::SharedDtor(MessageLite& self) {
+  LoginSessionInfo& this_ = static_cast<LoginSessionInfo&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.account_.Destroy();
+  this_._impl_.device_id_.Destroy();
+  this_._impl_.fsm_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* LoginSessionInfo::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LoginSessionInfo(arena);
+}
+constexpr auto LoginSessionInfo::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(LoginSessionInfo),
+                                            alignof(LoginSessionInfo));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LoginSessionInfo::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LoginSessionInfo_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LoginSessionInfo::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LoginSessionInfo>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LoginSessionInfo::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LoginSessionInfo>(), &LoginSessionInfo::ByteSizeLong,
+            &LoginSessionInfo::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_._cached_size_),
+        false,
+    },
+    &LoginSessionInfo::kDescriptorMethods,
+    &descriptor_table_proto_2flogin_2flogin_5fservice_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LoginSessionInfo::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 7, 0, 52, 2> LoginSessionInfo::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    7, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967168,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    7,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::loginpb::LoginSessionInfo>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string account = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.account_)}},
+    // uint64 role_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginSessionInfo, _impl_.role_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.role_id_)}},
+    // uint64 session_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginSessionInfo, _impl_.session_id_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.session_id_)}},
+    // uint64 gate_id = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginSessionInfo, _impl_.gate_id_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.gate_id_)}},
+    // string device_id = 5;
+    {::_pbi::TcParser::FastUS1,
+     {42, 63, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.device_id_)}},
+    // int64 login_time = 6;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginSessionInfo, _impl_.login_time_), 63>(),
+     {48, 63, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.login_time_)}},
+    // string fsm = 7;
+    {::_pbi::TcParser::FastUS1,
+     {58, 63, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.fsm_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string account = 1;
+    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.account_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // uint64 role_id = 2;
+    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.role_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 session_id = 3;
+    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.session_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 gate_id = 4;
+    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.gate_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // string device_id = 5;
+    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.device_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int64 login_time = 6;
+    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.login_time_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // string fsm = 7;
+    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.fsm_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\30\7\0\0\0\11\0\3"
+    "loginpb.LoginSessionInfo"
+    "account"
+    "device_id"
+    "fsm"
+  }},
+};
+
+PROTOBUF_NOINLINE void LoginSessionInfo::Clear() {
+// @@protoc_insertion_point(message_clear_start:loginpb.LoginSessionInfo)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.account_.ClearToEmpty();
+  _impl_.device_id_.ClearToEmpty();
+  _impl_.fsm_.ClearToEmpty();
+  ::memset(&_impl_.role_id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.login_time_) -
+      reinterpret_cast<char*>(&_impl_.role_id_)) + sizeof(_impl_.login_time_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LoginSessionInfo::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LoginSessionInfo& this_ = static_cast<const LoginSessionInfo&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LoginSessionInfo::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LoginSessionInfo& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:loginpb.LoginSessionInfo)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // string account = 1;
+          if (!this_._internal_account().empty()) {
+            const std::string& _s = this_._internal_account();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.LoginSessionInfo.account");
+            target = stream->WriteStringMaybeAliased(1, _s, target);
+          }
+
+          // uint64 role_id = 2;
+          if (this_._internal_role_id() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+                2, this_._internal_role_id(), target);
+          }
+
+          // uint64 session_id = 3;
+          if (this_._internal_session_id() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+                3, this_._internal_session_id(), target);
+          }
+
+          // uint64 gate_id = 4;
+          if (this_._internal_gate_id() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+                4, this_._internal_gate_id(), target);
+          }
+
+          // string device_id = 5;
+          if (!this_._internal_device_id().empty()) {
+            const std::string& _s = this_._internal_device_id();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.LoginSessionInfo.device_id");
+            target = stream->WriteStringMaybeAliased(5, _s, target);
+          }
+
+          // int64 login_time = 6;
+          if (this_._internal_login_time() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<6>(
+                    stream, this_._internal_login_time(), target);
+          }
+
+          // string fsm = 7;
+          if (!this_._internal_fsm().empty()) {
+            const std::string& _s = this_._internal_fsm();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.LoginSessionInfo.fsm");
+            target = stream->WriteStringMaybeAliased(7, _s, target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:loginpb.LoginSessionInfo)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LoginSessionInfo::ByteSizeLong(const MessageLite& base) {
+          const LoginSessionInfo& this_ = static_cast<const LoginSessionInfo&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LoginSessionInfo::ByteSizeLong() const {
+          const LoginSessionInfo& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:loginpb.LoginSessionInfo)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // string account = 1;
+            if (!this_._internal_account().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_account());
+            }
+            // string device_id = 5;
+            if (!this_._internal_device_id().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_device_id());
+            }
+            // string fsm = 7;
+            if (!this_._internal_fsm().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_fsm());
+            }
+            // uint64 role_id = 2;
+            if (this_._internal_role_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+                  this_._internal_role_id());
+            }
+            // uint64 session_id = 3;
+            if (this_._internal_session_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+                  this_._internal_session_id());
+            }
+            // uint64 gate_id = 4;
+            if (this_._internal_gate_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+                  this_._internal_gate_id());
+            }
+            // int64 login_time = 6;
+            if (this_._internal_login_time() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_login_time());
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LoginSessionInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LoginSessionInfo*>(&to_msg);
+  auto& from = static_cast<const LoginSessionInfo&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.LoginSessionInfo)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_account().empty()) {
+    _this->_internal_set_account(from._internal_account());
+  }
+  if (!from._internal_device_id().empty()) {
+    _this->_internal_set_device_id(from._internal_device_id());
+  }
+  if (!from._internal_fsm().empty()) {
+    _this->_internal_set_fsm(from._internal_fsm());
+  }
+  if (from._internal_role_id() != 0) {
+    _this->_impl_.role_id_ = from._impl_.role_id_;
+  }
+  if (from._internal_session_id() != 0) {
+    _this->_impl_.session_id_ = from._impl_.session_id_;
+  }
+  if (from._internal_gate_id() != 0) {
+    _this->_impl_.gate_id_ = from._impl_.gate_id_;
+  }
+  if (from._internal_login_time() != 0) {
+    _this->_impl_.login_time_ = from._impl_.login_time_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LoginSessionInfo::CopyFrom(const LoginSessionInfo& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.LoginSessionInfo)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LoginSessionInfo::InternalSwap(LoginSessionInfo* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.account_, &other->_impl_.account_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.device_id_, &other->_impl_.device_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.fsm_, &other->_impl_.fsm_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.login_time_)
+      + sizeof(LoginSessionInfo::_impl_.login_time_)
+      - PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.role_id_)>(
+          reinterpret_cast<char*>(&_impl_.role_id_),
+          reinterpret_cast<char*>(&other->_impl_.role_id_));
+}
+
+::google::protobuf::Metadata LoginSessionInfo::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
 // ===================================================================
 
 class AccountSimplePlayerWrapper::_Internal {

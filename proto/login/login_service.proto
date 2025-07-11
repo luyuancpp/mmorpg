@@ -9,6 +9,17 @@ import "proto/common/user_accounts.proto";
 
 package loginpb;
 
+message LoginSessionInfo {
+  string account = 1;
+  uint64 role_id = 2;
+  uint64 session_id = 3;
+  uint64 gate_id = 4;
+  string device_id = 5;
+  int64 login_time = 6;
+  string fsm = 7;
+}
+
+
 message AccountSimplePlayerWrapper
 {
   AccountSimplePlayer player = 1;

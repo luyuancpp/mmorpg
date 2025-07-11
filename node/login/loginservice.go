@@ -16,7 +16,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
-	"login/data"
 	"login/internal/config"
 	"login/internal/logic/pkg/centre"
 	"login/internal/logic/pkg/ctxkeys"
@@ -116,10 +115,6 @@ func SessionInterceptor(
 				} else {
 					// 安全放入 context
 					sessionId := strconv.FormatUint(detail.SessionId, 10)
-					session, _ := data.SessionList.Get(sessionId)
-					if nil != session {
-						ctx = ctxkeys.WithSession(ctx, session)
-					}
 					ctx = ctxkeys.WithSessionID(ctx, sessionId)
 					ctx = ctxkeys.WithSessionDetails(ctx, &detail)
 				}
@@ -182,7 +177,7 @@ func splitHostPort(address string) (string, uint32, error) {
 }
 
 func connectToCentreNodes(ctx *svc.ServiceContext, loginNode *node.Node) error {
-	zoneId := config.AppConfig.ZoneID
+	zoneId := config.AppConfig.Node.ZoneId
 	nodeType := uint32(game.ENodeType_CentreNodeService)
 
 	prefix := node.BuildRpcPrefix(
