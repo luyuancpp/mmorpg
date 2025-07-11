@@ -11,7 +11,6 @@ import (
 )
 
 type ServiceContext struct {
-	Config    config.Config
 	Redis     *redis.Client
 	DbClient  *zrpc.Client
 	SnowFlake *snowflake.Node
@@ -20,13 +19,10 @@ type ServiceContext struct {
 	centreClient atomic.Value // 类型为 *centre.CentreClient
 }
 
-func NewServiceContext(c config.Config) *ServiceContext {
-	cc := zrpc.RpcClientConf{}
-	dbClient := zrpc.MustNewClient(cc)
-
+func NewServiceContext() *ServiceContext {
+	dbClient := zrpc.MustNewClient(config.AppConfig.DbClient)
 	return &ServiceContext{
-		Config:   c,
-		Redis:    redis.NewClient(&redis.Options{Addr: config.AppConfig.Redis.Host}),
+		Redis:    redis.NewClient(&redis.Options{Addr: config.AppConfig.Node.Redis.Host}),
 		DbClient: &dbClient,
 	}
 }

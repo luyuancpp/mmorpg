@@ -3,17 +3,18 @@ package clientplayerloginlogic
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/redis/go-redis/v9"
 	"login/client/accountdbservice"
 	"login/data"
+	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/fsmstore"
 	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/svc"
 	"login/pb/game"
+	"strconv"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -53,8 +54,8 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 			lockAcquired = true
 			break
 		}
-		time.Sleep(200 * time.Millisecond)
 	}
+
 	if !lockAcquired {
 		logx.Errorf("Login lock acquire failed after retries for account=%s, err=%v", in.Account, lockErr)
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginInProgress)}
@@ -70,28 +71,39 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 		return resp, nil
 	}
 
+	sessionId := strconv.FormatUint(sessionDetails.SessionId, 10)
+	logx.Infof("Start processing login for account=%s with sessionId=%s", in.Account, sessionId)
+
 	// 3. FSM 加载 + 执行 + 保存，出错立即返回
 	f := data.InitPlayerFSM()
-	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.Redis, f, in.Account, ""); err != nil {
-		logx.Errorf("FSM state load failed for account=%s: %v", in.Account, err)
+	logx.Infof("Attempting to load FSM state for sessionId=%s", sessionId)
+
+	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.Redis, f, sessionId, ""); err != nil {
+		logx.Errorf("FSM state load failed for sessionId=%s, account=%s, error: %v", sessionId, in.Account, err)
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginFSMLoadFailed)}
 		return resp, nil
 	}
-	if err := f.Event(l.ctx, "process_login"); err != nil {
-		logx.Errorf("FSM transition error for account=%s: %v", in.Account, err)
+
+	// 执行 FSM 事件
+	logx.Infof("Processing FSM event for sessionId=%s, account=%s, event=process_login", sessionId, in.Account)
+	if err := f.Event(l.ctx, data.EventProcessLogin); err != nil {
+		logx.Errorf("FSM transition error for sessionId=%s, account=%s, event=process_login, error: %v", sessionId, in.Account, err)
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginFSMEventFailed)}
 		return resp, nil
 	}
-	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.Redis, f, in.Account, ""); err != nil {
-		logx.Errorf("FSM save error for account=%s: %v", in.Account, err)
-		// 不阻断，但记录
+
+	// 保存 FSM 状态
+	logx.Infof("Attempting to save FSM state for sessionId=%s", sessionId)
+	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.Redis, f, sessionId, ""); err != nil {
+		logx.Errorf("FSM save failed for sessionId=%s, account=%s, error: %v", sessionId, in.Account, err)
+		// 不阻断，但记录错误
 	}
 
 	// 4. 限制设备数量
 	const MaxDevicesPerAccount = 3
 
 	// 添加 SessionId 到设备集合
-	sessionKey := fmt.Sprintf("login_account_sessions:%s", in.Account)
+	sessionKey := constants.GenerateSessionKey(in.Account)
 	if err := l.svcCtx.Redis.SAdd(l.ctx, sessionKey, sessionDetails.SessionId).Err(); err != nil {
 		logx.Errorf("Redis SAdd error: %v", err)
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginRedisSetFailed)}
@@ -133,7 +145,7 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	}
 
 	// 6. 加载账户数据（改进 Redis 获取判断方式）
-	rdKey := "account" + in.Account
+	rdKey := constants.GetAccountDataKey(in.Account)
 	cmd := l.svcCtx.Redis.Get(l.ctx, rdKey)
 	valueBytes, err := cmd.Bytes()
 	if err != nil {
