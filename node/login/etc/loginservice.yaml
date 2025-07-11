@@ -4,3 +4,8 @@ Etcd:
   Hosts:
   - 127.0.0.1:2379
   Key: loginservice.rpc
+node:
+  zoneid: 1
+  session_expire_minutes: 30
+  fsm_expire_minutes: 60
+  max_login_devices: 1

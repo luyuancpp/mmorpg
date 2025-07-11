@@ -6,6 +6,8 @@ import (
 	"login/client/playerdbservice"
 	"login/data"
 	"login/internal/logic/pkg/ctxkeys"
+	"login/internal/logic/pkg/fsmstore"
+	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/svc"
 	"login/pb/game"
 	"strconv"
@@ -28,63 +30,79 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 }
 
 func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameResponse, error) {
-	session, ok := ctxkeys.GetSession(l.ctx)
-
 	resp := &game.EnterGameResponse{ErrorMessage: &game.TipInfoMessage{}}
 
-	if !ok || nil == session {
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionIdNotFound)
+	// 2. 获取 Session
+	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
+	if !ok || sessionDetails.SessionId <= 0 {
+		logx.Error("SessionId not found or empty in context during login")
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
 	}
 
-	sessionId, ok := ctxkeys.GetSessionID(l.ctx)
-	if !ok {
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionIdNotFound)
+	// 1. 获取 LoginSessionInfo（含 Account）
+	session, err := loginsessionstore.GetLoginSession(l.ctx, l.svcCtx.Redis, sessionDetails.SessionId)
+	if err != nil {
+		logx.Errorf("GetLoginSession failed: %v", err)
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionNotFound)
 		return resp, nil
 	}
 
-	defer data.SessionList.Remove(sessionId)
+	// 2. 获取 UserAccount
+	accountKey := "account" + session.Account
+	cmd := l.svcCtx.Redis.Get(l.ctx, accountKey)
+	if err := cmd.Err(); err != nil {
+		logx.Errorf("Redis Get user account failed: %v", err)
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginAccountNotFound)
+		return resp, nil
+	}
 
-	// Validate player ID belongs to the session
-	if !l.isPlayerInSession(session, in.PlayerId) {
+	userAccount := &game.UserAccounts{}
+	if err := proto.Unmarshal([]byte(cmd.Val()), userAccount); err != nil {
+		logx.Errorf("Unmarshal user account failed: %v", err)
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginDataParseFailed)
+		return resp, nil
+	}
+
+	// 3. 校验角色归属
+	found := false
+	for _, p := range userAccount.SimplePlayers.Players {
+		if p.PlayerId == in.PlayerId {
+			found = true
+			break
+		}
+	}
+	if !found {
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginEnterGameGuid)
 		return resp, nil
 	}
 
-	// Transition session state to "Enter Game"
-	if err := session.Fsm.Event(context.Background(), data.EventEnterGame); err != nil {
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginInProgress)
-		logx.Error(err)
+	// 4. FSM 状态变更
+	f := data.InitPlayerFSM()
+	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.Redis, f, session.Account, ""); err != nil {
+		logx.Errorf("FSM Load failed: %v", err)
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginFsmFailed)
 		return resp, nil
 	}
+	if err := f.Event(context.Background(), data.EventEnterGame); err != nil {
+		logx.Errorf("FSM Event failed: %v", err)
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginInProgress)
+		return resp, nil
+	}
+	_ = fsmstore.SaveFSMState(l.ctx, l.svcCtx.Redis, f, session.Account, "")
 
-	// Ensure player data is loaded in Redis
+	// 5. 加载 Player 数据
 	if err := l.ensurePlayerDataInRedis(in.PlayerId); err != nil {
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginPlayerGuidError)
-		logx.Error(err)
+		logx.Errorf("Load player data failed: %v", err)
 		return resp, err
 	}
 
-	resp.PlayerId = in.PlayerId
-
-	// Notify the central service about player entry
+	// 6. 通知中心服
 	l.notifyCentreService(in)
 
+	resp.PlayerId = in.PlayerId
 	return resp, nil
-}
-
-// Check if player exists in session
-func (l *EnterGameLogic) isPlayerInSession(session *data.Session, playerId uint64) bool {
-	if session.UserAccount == nil || session.UserAccount.SimplePlayers == nil || session.UserAccount.SimplePlayers.Players == nil {
-		return false
-	}
-
-	for _, player := range session.UserAccount.SimplePlayers.Players {
-		if player.PlayerId == playerId {
-			return true
-		}
-	}
-	return false
 }
 
 // Ensure player data is loaded in Redis

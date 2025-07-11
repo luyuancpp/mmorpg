@@ -80,6 +80,12 @@ enum login_error : int {
   kLoginRedisError = 41,
   kLoginDataParseFailed = 42,
   kLoginRedisSetFailed = 43,
+  kTooManyDevices = 121,
+  kLoginFSMLoadFailed = 122,
+  kLoginFSMEventFailed = 123,
+  kLoginAccountDataLoadFaile = 124,
+  kLoginSessionNotFound = 125,
+  kLoginAccountDataLoadFailed = 126,
   login_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   login_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -89,8 +95,8 @@ enum login_error : int {
 bool login_error_IsValid(int value);
 extern const uint32_t login_error_internal_data_[];
 constexpr login_error login_error_MIN = static_cast<login_error>(0);
-constexpr login_error login_error_MAX = static_cast<login_error>(43);
-constexpr int login_error_ARRAYSIZE = 43 + 1;
+constexpr login_error login_error_MAX = static_cast<login_error>(126);
+constexpr int login_error_ARRAYSIZE = 126 + 1;
 const ::google::protobuf::EnumDescriptor*
 login_error_descriptor();
 template <typename T>
@@ -98,13 +104,7 @@ const std::string& login_error_Name(T value) {
   static_assert(std::is_same<T, login_error>::value ||
                     std::is_integral<T>::value,
                 "Incorrect type passed to login_error_Name().");
-  return login_error_Name(static_cast<login_error>(value));
-}
-template <>
-inline const std::string& login_error_Name(login_error value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<login_error_descriptor,
-                                                 0, 43>(
-      static_cast<int>(value));
+  return ::google::protobuf::internal::NameOfEnum(login_error_descriptor(), value);
 }
 inline bool login_error_Parse(absl::string_view name, login_error* value) {
   return ::google::protobuf::internal::ParseNamedEnum<login_error>(

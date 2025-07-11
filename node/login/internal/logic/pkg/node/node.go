@@ -58,7 +58,7 @@ func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
 			Ip:   ip,
 			Port: port,
 		},
-		ZoneId:       config.AppConfig.ZoneID,
+		ZoneId:       config.AppConfig.Node.ZoneId,
 		LaunchTime:   uint64(time.Now().Unix()),
 		ProtocolType: uint32(game.ENodeProtocolType_PROTOCOL_GRPC),
 		NodeUuid:     uuid.New().String(),

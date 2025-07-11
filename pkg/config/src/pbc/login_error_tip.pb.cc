@@ -32,7 +32,7 @@ static constexpr ::_pbi::MigrationSchema* schemas = nullptr;
 static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_login_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\025login_error_tip.proto*\315\005\n\013login_error\022"
+    "\n\025login_error_tip.proto*\361\006\n\013login_error\022"
     "\022\n\016kLogin_errorOK\020\000\022\031\n\025kLoginAccountNotF"
     "ound\020\024\022\033\n\027kLoginAccountPlayerFull\020\025\022#\n\037k"
     "LoginCreatePlayerUnLoadAccount\020\026\022-\n)kLog"
@@ -50,14 +50,18 @@ const char descriptor_table_protodef_login_5ferror_5ftip_2eproto[] ABSL_ATTRIBUT
     "sionIdNotFound\020&\022\023\n\017kLoginFsmFailed\020\'\022\035\n"
     "\031kLoginDataSerializeFailed\020(\022\024\n\020kLoginRe"
     "disError\020)\022\031\n\025kLoginDataParseFailed\020*\022\030\n"
-    "\024kLoginRedisSetFailed\020+B\tZ\007pb/gameb\006prot"
-    "o3"
+    "\024kLoginRedisSetFailed\020+\022\023\n\017kTooManyDevic"
+    "es\020y\022\027\n\023kLoginFSMLoadFailed\020z\022\030\n\024kLoginF"
+    "SMEventFailed\020{\022\036\n\032kLoginAccountDataLoad"
+    "Faile\020|\022\031\n\025kLoginSessionNotFound\020}\022\037\n\033kL"
+    "oginAccountDataLoadFailed\020~B\tZ\007pb/gameb\006"
+    "proto3"
 };
 static ::absl::once_flag descriptor_table_login_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_login_5ferror_5ftip_2eproto = {
     false,
     false,
-    762,
+    926,
     descriptor_table_protodef_login_5ferror_5ftip_2eproto,
     "login_error_tip.proto",
     &descriptor_table_login_5ferror_5ftip_2eproto_once,
@@ -75,9 +79,9 @@ const ::google::protobuf::EnumDescriptor* login_error_descriptor() {
   return file_level_enum_descriptors_login_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t login_error_internal_data_[] = {
-    65536u, 64u, 4294443008u, 2047u, };
+    65536u, 128u, 4294443008u, 2047u, 0u, 1056964608u, };
 bool login_error_IsValid(int value) {
-  return 0 <= value && value <= 43 && ((17592184995841u >> value) & 1) != 0;
+  return ::_pbi::ValidateEnum(value, login_error_internal_data_);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
