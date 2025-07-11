@@ -50,7 +50,8 @@
         "LoginFSMEventFailed": 123,
         "LoginAccountDataLoadFaile": 124,
         "LoginSessionNotFound": 125,
-        "LoginAccountDataLoadFailed": 126
+        "LoginAccountDataLoadFailed": 126,
+        "LoginFsmInvalidEvent": 127
     },
     "scene_error": {
         "EnterSceneNotFound": 44,

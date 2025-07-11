@@ -43,25 +43,15 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	resp := &game.LoginResponse{}
 
 	// 1. 分布式锁，重试机制
-	locker := locker.NewLoginLocker(l.svcCtx.Redis, 10*time.Second) // 超时改为10秒
-	retryCount := 3
-	lockAcquired := false
-	var lockErr error
-	for i := 0; i < retryCount; i++ {
-		var ok bool
-		ok, lockErr = locker.Acquire(l.ctx, in.Account)
-		if lockErr == nil && ok {
-			lockAcquired = true
-			break
-		}
-	}
+	locker := locker.NewAccountLocker(l.svcCtx.Redis, 10*time.Second)
 
-	if !lockAcquired {
-		logx.Errorf("Login lock acquire failed after retries for account=%s, err=%v", in.Account, lockErr)
+	ok, err := locker.AcquireLogin(l.ctx, in.Account)
+	if err != nil || !ok {
+		logx.Errorf("Login lock acquire failed for account=%s, err=%v", in.Account, err)
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
-	defer locker.Release(l.ctx, in.Account)
+	defer locker.ReleaseLogin(l.ctx, in.Account)
 
 	// 2. 获取 Session
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)

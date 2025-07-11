@@ -31,7 +31,7 @@ func (l *DisconnectLogic) Disconnect(in *game.LoginNodeDisconnectRequest) (*game
 		return &game.Empty{}, nil
 	}
 
-	_ = sessioncleaner.CleanupSessionAndNotify(
+	_ = sessioncleaner.CleanupSession(
 		l.ctx,
 		l.svcCtx.Redis,
 		sessionDetails.SessionId,

@@ -8,10 +8,13 @@ import (
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/fsmstore"
+	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsessionstore"
+	"login/internal/logic/utils/sessioncleaner"
 	"login/internal/svc"
 	"login/pb/game"
 	"strconv"
+	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -33,7 +36,7 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameResponse, error) {
 	resp := &game.EnterGameResponse{ErrorMessage: &game.TipInfoMessage{}}
 
-	// 2. 获取 Session
+	// 1. 获取 Session
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or empty in context during login")
@@ -41,7 +44,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 		return resp, nil
 	}
 
-	// 1. 获取 LoginSessionInfo（含 Account）
+	// 2. 获取 LoginSessionInfo
 	session, err := loginsessionstore.GetLoginSession(l.ctx, l.svcCtx.Redis, sessionDetails.SessionId)
 	if err != nil {
 		logx.Errorf("GetLoginSession failed: %v", err)
@@ -49,25 +52,34 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 		return resp, nil
 	}
 
-	// 2. 获取 UserAccount
+	// 3. 加锁防止同角色并发登录
+	playerLocker := locker.NewPlayerLocker(l.svcCtx.Redis, 5*time.Second)
+	ok, err = playerLocker.Acquire(l.ctx, in.PlayerId)
+	if err != nil || !ok {
+		logx.Errorf("EnterGame lock acquire failed for playerId=%d: %v", in.PlayerId, err)
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginInProgress)}
+		return resp, nil
+	}
+	defer playerLocker.Release(l.ctx, in.PlayerId)
+
+	// 4. 加载账号信息并验证角色归属
 	accountKey := constants.GetAccountDataKey(session.Account)
-	cmd := l.svcCtx.Redis.Get(l.ctx, accountKey)
-	if err := cmd.Err(); err != nil {
+	dataBytes, err := l.svcCtx.Redis.Get(l.ctx, accountKey).Bytes()
+	if err != nil {
 		logx.Errorf("Redis Get user account failed: %v", err)
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginAccountNotFound)
 		return resp, nil
 	}
 
 	userAccount := &game.UserAccounts{}
-	if err := proto.Unmarshal([]byte(cmd.Val()), userAccount); err != nil {
+	if err := proto.Unmarshal(dataBytes, userAccount); err != nil {
 		logx.Errorf("Unmarshal user account failed: %v", err)
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginDataParseFailed)
 		return resp, nil
 	}
 
-	// 3. 校验角色归属
 	found := false
-	for _, p := range userAccount.SimplePlayers.Players {
+	for _, p := range userAccount.SimplePlayers.GetPlayers() {
 		if p.PlayerId == in.PlayerId {
 			found = true
 			break
@@ -78,11 +90,17 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 		return resp, nil
 	}
 
-	// 4. FSM 状态变更
+	// 5. FSM 状态管理（按 sessionId）
+	sessionIdStr := strconv.FormatUint(sessionDetails.SessionId, 10)
 	f := data.InitPlayerFSM()
-	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.Redis, f, session.Account, ""); err != nil {
+	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.Redis, f, sessionIdStr, ""); err != nil {
 		logx.Errorf("FSM Load failed: %v", err)
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginFsmFailed)
+		return resp, nil
+	}
+	if !f.Can(data.EventEnterGame) {
+		logx.Errorf("FSM event not allowed, sessionId=%d", sessionDetails.SessionId)
+		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginFsmInvalidEvent)
 		return resp, nil
 	}
 	if err := f.Event(context.Background(), data.EventEnterGame); err != nil {
@@ -90,29 +108,33 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginInProgress)
 		return resp, nil
 	}
-	_ = fsmstore.SaveFSMState(l.ctx, l.svcCtx.Redis, f, session.Account, "")
 
-	// 5. 加载 Player 数据
+	// 6. 加载 Player 数据（若不在 Redis）
 	if err := l.ensurePlayerDataInRedis(in.PlayerId); err != nil {
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginPlayerGuidError)
 		logx.Errorf("Load player data failed: %v", err)
 		return resp, err
 	}
 
-	// 6. 通知中心服
+	// 7. 通知中心服
 	l.notifyCentreService(in)
+
+	// 8. 清理 Session 和 FSM
+	_ = sessioncleaner.CleanupSession(
+		l.ctx,
+		l.svcCtx.Redis,
+		sessionDetails.SessionId,
+		"enterGame",
+	)
 
 	resp.PlayerId = in.PlayerId
 	return resp, nil
 }
 
-// Ensure player data is loaded in Redis
 func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
-	key := string(proto.MessageReflect(&game.PlayerDatabase{}).Descriptor().FullName()) + ":" + strconv.FormatUint(playerId, 10)
-	playerData := l.svcCtx.Redis.Get(l.ctx, key).Val()
-
-	if len(playerData) == 0 {
-		// Load data from the database if not found in Redis
+	key := constants.GetPlayerDataKey(playerId)
+	playerData, err := l.svcCtx.Redis.Get(l.ctx, key).Bytes()
+	if err != nil || len(playerData) == 0 {
 		dbService := playerdbservice.NewPlayerDBService(*l.svcCtx.DbClient)
 		_, err := dbService.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: playerId})
 		return err
@@ -120,23 +142,22 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 	return nil
 }
 
-// Notify central service about player entry
 func (l *EnterGameLogic) notifyCentreService(in *game.EnterGameRequest) {
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok {
-		logx.Error("Session not found in context during enter centre ")
+		logx.Error("Session not found in context during notify centre")
 		return
 	}
 
-	centreRequest := &game.CentrePlayerGameNodeEntryRequest{
+	req := &game.CentrePlayerGameNodeEntryRequest{
 		ClientMsgBody: &game.CentreEnterGameRequest{
 			PlayerId: in.PlayerId,
 		},
 		SessionInfo: sessionDetails,
 	}
+
 	node := l.svcCtx.GetCentreClient()
-	if nil == node {
-		return
+	if node != nil {
+		node.Send(req, game.CentreLoginNodeEnterGameMessageId)
 	}
-	node.Send(centreRequest, game.CentreLoginNodeEnterGameMessageId)
 }

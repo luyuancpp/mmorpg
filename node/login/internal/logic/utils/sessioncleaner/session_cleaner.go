@@ -13,7 +13,7 @@ type CentreClient interface {
 	Send(msg interface{}, msgId uint32) error
 }
 
-func CleanupSessionAndNotify(
+func CleanupSession(
 	ctx context.Context,
 	redisClient *redis.Client,
 	sessionId uint64,
