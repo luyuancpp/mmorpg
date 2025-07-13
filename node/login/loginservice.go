@@ -111,9 +111,6 @@ func SessionInterceptor(
 				if err := proto.Unmarshal(bin, &detail); err != nil {
 					logx.Error("Protobuf unmarshal error:", err)
 				} else {
-					// 安全放入 context
-					sessionId := strconv.FormatUint(detail.SessionId, 10)
-					ctx = ctxkeys.WithSessionID(ctx, sessionId)
 					ctx = ctxkeys.WithSessionDetails(ctx, &detail)
 				}
 			}

@@ -7,6 +7,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"login/client/accountdbservice"
 	"login/data"
+	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/fsmstore"
@@ -35,15 +36,13 @@ func NewLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogic 
 }
 
 func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
-	//todo 测试用例连接不登录马上断线，
 	//todo 账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
-	//todo 登录的时候马上断开连接换了个gate应该可以登录成功
 	//todo 在链接过程中断了，换了gate新的gate 应该是可以上线成功的，消息要发到新的gate上,老的gate正常走断开流程
 	//todo gate异步同时登陆情况,老gate晚于新gate登录到controller会不会导致登录不成功了?这时候怎么处理
 	resp := &game.LoginResponse{}
 
 	// 1. 分布式锁，重试机制
-	locker := locker.NewAccountLocker(l.svcCtx.Redis, 10*time.Second)
+	locker := locker.NewAccountLocker(l.svcCtx.Redis, time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second)
 
 	ok, err := locker.AcquireLogin(l.ctx, in.Account)
 	if err != nil || !ok {
@@ -66,7 +65,6 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 
 	// 3. FSM 加载 + 执行 + 保存，出错立即返回
 	f := data.InitPlayerFSM()
-	logx.Infof("Attempting to load FSM state for sessionId=%s", sessionId)
 
 	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.Redis, f, sessionId, ""); err != nil {
 		logx.Errorf("FSM state load failed for sessionId=%s, account=%s, error: %v", sessionId, in.Account, err)
@@ -87,10 +85,11 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.Redis, f, sessionId, ""); err != nil {
 		logx.Errorf("FSM save failed for sessionId=%s, account=%s, error: %v", sessionId, in.Account, err)
 		// 不阻断，但记录错误
+		//todo 让客户端重新登录
+		return resp, nil
 	}
 
 	// 4. 限制设备数量
-	const MaxDevicesPerAccount = 3
 
 	// 添加 SessionId 到设备集合
 	sessionKey := constants.GenerateSessionKey(in.Account)
@@ -99,7 +98,8 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginRedisSetFailed)}
 		return resp, nil
 	}
-	_ = l.svcCtx.Redis.Expire(l.ctx, sessionKey, 30*time.Minute)
+	expire := time.Duration(config.AppConfig.Node.SessionExpireMin) * time.Minute
+	_ = l.svcCtx.Redis.Expire(l.ctx, sessionKey, expire)
 
 	// 限制最多 N 个设备
 	count, err := l.svcCtx.Redis.SCard(l.ctx, sessionKey).Result()
@@ -109,8 +109,8 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 		return resp, nil
 	}
 
-	if count > MaxDevicesPerAccount {
-		logx.Infof("Account %s exceeds device limit: %d > %d", in.Account, count, MaxDevicesPerAccount)
+	if count > config.AppConfig.Account.MaxDevicesPerAccount {
+		logx.Infof("Account %s exceeds device limit: %d > %d", in.Account, count, config.AppConfig.Account.MaxDevicesPerAccount)
 
 		// 可选：删除旧的 session（基于 TTL 或先入先出策略）
 		// 或通知客户端“已有设备登录，是否强制顶号”——这需要客户端支持。
@@ -129,7 +129,7 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 		LoginTime: time.Now().Unix(),
 		Fsm:       f.Current(),
 	}
-	if err := loginsessionstore.SaveLoginSession(l.ctx, l.svcCtx.Redis, sessionInfo); err != nil {
+	if err := loginsessionstore.SaveLoginSession(l.ctx, l.svcCtx.Redis, sessionInfo, expire); err != nil {
 		logx.Errorf("Failed to save login session for account=%s: %v", in.Account, err)
 		// 不终止流程
 	}

@@ -8,7 +8,7 @@ Etcd:
 
 Node:
   zoneid: 1
-  session_expire_minutes: 30
+  session_expire_minutes: 10
   fsm_expire_minutes: 60
   max_login_devices: 1
   Redis:
@@ -16,11 +16,11 @@ Node:
     Password: ""
     DB: 0
     PoolSize: 10
-
+    
 Snowflake:
-  Epoch: 1721473263000   # 自定义时间起点（Unix 毫秒时间戳）
-  NodeBits: 13            # 节点 ID 所占位数
-  StepBits: 9             # 每毫秒可生成的 ID 数量（2^9）
+  Epoch: 1721473263000
+  NodeBits: 13
+  StepBits: 9
 
 DbClient:
   Etcd:
@@ -28,3 +28,10 @@ DbClient:
       - "127.0.0.1:2379"
     Key: "dbservice.rpc"
   Timeout: 3000
+
+Locker:
+  AccountLockTTL: 10   # 10秒
+  PlayerLockTTL: 5     # 5秒
+
+Account:
+  MaxDevicesPerAccount: 3
