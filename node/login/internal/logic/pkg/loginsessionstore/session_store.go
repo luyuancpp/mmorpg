@@ -11,20 +11,19 @@ import (
 	"login/pb/game"
 )
 
-const sessionExpire = 30 * time.Minute
-
 func sessionKey(sessionId uint64) string {
 	return fmt.Sprintf("login_session_info:%d", sessionId)
 }
 
 // SaveLoginSession 存储登录会话信息到 Redis
-func SaveLoginSession(ctx context.Context, redisClient *redis.Client, info *game.LoginSessionInfo) error {
+// 修改后的函数签名：
+func SaveLoginSession(ctx context.Context, redisClient *redis.Client, info *game.LoginSessionInfo, ttl time.Duration) error {
 	key := sessionKey(info.SessionId)
 	data, err := proto.Marshal(info)
 	if err != nil {
 		return err
 	}
-	return redisClient.Set(ctx, key, data, sessionExpire).Err()
+	return redisClient.Set(ctx, key, data, ttl).Err()
 }
 
 // LoadLoginSession 通过 sessionId 获取会话信息

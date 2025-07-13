@@ -5,6 +5,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"login/client/playerdbservice"
 	"login/data"
+	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/fsmstore"
@@ -53,7 +54,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	}
 
 	// 3. 加锁防止同角色并发登录
-	playerLocker := locker.NewPlayerLocker(l.svcCtx.Redis, 5*time.Second)
+	playerLocker := locker.NewPlayerLocker(l.svcCtx.Redis, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
 	ok, err = playerLocker.Acquire(l.ctx, in.PlayerId)
 	if err != nil || !ok {
 		logx.Errorf("EnterGame lock acquire failed for playerId=%d: %v", in.PlayerId, err)

@@ -9,23 +9,9 @@ import (
 type contextKey string
 
 const (
-	SessionKey        contextKey = "Session"
-	SessionIDKey      contextKey = "SessionId"
 	SessionDetailsKey contextKey = "SessionDetailsKey"
 	// 这里可以继续添加更多 key
 )
-
-// 取 session id 的辅助函数
-func GetSessionID(ctx context.Context) (string, bool) {
-	v := ctx.Value(SessionIDKey)
-	s, ok := v.(string)
-	return s, ok
-}
-
-// 放 session id 的辅助函数
-func WithSessionID(ctx context.Context, sessionID string) context.Context {
-	return context.WithValue(ctx, SessionIDKey, sessionID)
-}
 
 // 取 SessionDetails 的辅助函数
 func GetSessionDetails(ctx context.Context) (*game.SessionDetails, bool) {
