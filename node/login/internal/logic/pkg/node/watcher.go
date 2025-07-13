@@ -9,6 +9,7 @@ import (
 	"go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/namespace"
 	"log"
+	"login/internal/config"
 	"login/pb/game"
 	"strings"
 	"sync"
@@ -95,7 +96,7 @@ func (nw *NodeWatcher) Range() ([]game.NodeInfo, error) {
 	kv := namespace.NewKV(nw.client, nw.prefix)
 
 	// 设置带有超时的 context，避免长时间阻塞
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(config.AppConfig.Timeouts.ServiceDiscoveryTimeoutMS)*time.Millisecond)
 	defer cancel()
 
 	// 获取所有 key

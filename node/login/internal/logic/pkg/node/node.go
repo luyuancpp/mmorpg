@@ -39,7 +39,7 @@ func BuildRpcPath(serviceName string, zoneId, nodeType, nodeId uint32) string {
 
 func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
 	// 初始化 Etcd 客户端
-	client, err := etcd.NewClient([]string{"localhost:2379"})
+	client, err := etcd.NewClient()
 	if err != nil {
 		return nil
 	}

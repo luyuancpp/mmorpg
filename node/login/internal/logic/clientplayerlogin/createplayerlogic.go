@@ -6,6 +6,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/redis/go-redis/v9"
 	"login/data"
+	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/fsmstore"
@@ -56,7 +57,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 	account := session.Account
 
 	// 3. 加锁（防止并发创建角色）
-	locker := locker.NewAccountLocker(l.svcCtx.Redis, 5*time.Second)
+	locker := locker.NewAccountLocker(l.svcCtx.Redis, time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second)
 	ok, err = locker.AcquireCreate(l.ctx, account)
 	if err != nil || !ok {
 		logx.Errorf("CreatePlayer lock acquire failed for account=%s: %v", account, err)
@@ -121,7 +122,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		logx.Errorf("Failed to marshal user account, err: %v", err)
 		return resp, nil
 	}
-	if err := l.svcCtx.Redis.Set(l.ctx, accountDataKey, dataBytes, 12*time.Hour).Err(); err != nil {
+	if err := l.svcCtx.Redis.Set(l.ctx, accountDataKey, dataBytes, time.Hour*time.Duration(config.AppConfig.Account.CacheExpireHours)).Err(); err != nil {
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginRedisSetFailed)}
 		logx.Errorf("Failed to set user account in Redis, account: %s, err: %v", account, err)
 		return resp, nil

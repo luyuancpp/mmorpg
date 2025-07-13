@@ -4,13 +4,14 @@ package etcd
 import (
 	"go.etcd.io/etcd/client/v3"
 	"log"
+	"login/internal/config"
 	"time"
 )
 
-func NewClient(endpoints []string) (*clientv3.Client, error) {
+func NewClient() (*clientv3.Client, error) {
 	client, err := clientv3.New(clientv3.Config{
-		Endpoints:   endpoints,
-		DialTimeout: 5 * time.Second,
+		Endpoints:   config.AppConfig.Registry.Etcd.Hosts,
+		DialTimeout: time.Duration(config.AppConfig.Registry.Etcd.DialTimeoutMS),
 	})
 	if err != nil {
 		log.Fatalf("Failed to connect to etcd: %v", err)
