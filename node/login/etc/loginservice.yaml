@@ -35,3 +35,15 @@ Locker:
 
 Account:
   MaxDevicesPerAccount: 3
+  CacheExpireHours: 12
+
+Registry:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: loginservice.rpc
+    DialTimeoutMS: 5000
+
+Timeouts:
+  EtcdDialTimeoutMS: 5000         # etcd连接超时（已加过）
+  ServiceDiscoveryTimeoutMS: 10000 # 服务注册/发现使用的 context 超时（如 WithTimeout）
