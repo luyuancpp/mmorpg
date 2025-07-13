@@ -1,7 +1,7 @@
-server:
-  address: "localhost"
-  ip: "172.27.16.1"
-  port: 40000
+servers:
+  - address: "localhost"
+    ip: "172.27.16.1"
+    port: 40001
 robots:
   count: 1
 loglevel: 1

@@ -22,8 +22,7 @@
 #include "util/node_utils.h"
 #include "proto/logic/event/node_event.pb.h"
 
-
-std::optional<entt::entity> PickRandomLoginNode(uint32_t nodeType, uint32_t targetNodeType) {
+static std::optional<entt::entity> PickRandomLoginNode(uint32_t nodeType, uint32_t targetNodeType) {
 	std::vector<entt::entity> candidates;
 	auto& registry = tls.GetNodeRegistry(nodeType);
 	auto view = registry.view<NodeInfo>();
@@ -46,7 +45,7 @@ std::optional<entt::entity> PickRandomLoginNode(uint32_t nodeType, uint32_t targ
 }
 
 
-inline NodeId GetEffectiveNodeId(
+static inline NodeId GetEffectiveNodeId(
 	const Session& session,
 	uint32_t nodeType)
 {
@@ -69,7 +68,6 @@ RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
     : protobufCodec(codec),
     messageDispatcher(dispatcher)
 {
-    // 注册客户端请求消息回调
     messageDispatcher.registerMessageCallback<ClientRequest>(
         std::bind(&RpcClientSessionHandler::DispatchClientRpcMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
@@ -88,8 +86,8 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 			return std::nullopt;
 		}
 
-		auto& registry = tls.GetNodeRegistry(nodeType);
-		entt::entity entity = entt::entity{ nodeInfo->node_id() };
+		const auto& registry = tls.GetNodeRegistry(nodeType);
+		auto entity = entt::entity{ nodeInfo->node_id() };
 
 		if (!registry.valid(entity)) {
 			LOG_ERROR << "[SingletonNode] Entity invalid. nodeType: " << nodeType;

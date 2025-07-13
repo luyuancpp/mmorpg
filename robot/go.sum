@@ -10,6 +10,8 @@ github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/luyuancpp/dbprotooption v0.0.8 h1:JJuO91gyldnewQA5iEG0xoi9CjBXB4XsUfNvi5JbUE8=
 github.com/luyuancpp/dbprotooption v0.0.8/go.mod h1:jHa9XWA9OsUULiYFAtN+N0iQMiiq8pRjMxFhrWxrCqs=
+github.com/luyuancpp/muduoclient v0.0.10 h1:vawVcvf10WjST1r3i6q/exB2bmAe4z0ZTL0mL4L79YM=
+github.com/luyuancpp/muduoclient v0.0.10/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
 github.com/luyuancpp/muduoclient v0.0.12 h1:cDRVWj4CbDsk6XKscW4I8U2hQQ7EtrRpwIBkBr1O9LA=
 github.com/luyuancpp/muduoclient v0.0.12/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
 github.com/luyuancpp/muduoclient v0.0.13 h1:uUsCa9VYcVpJhLbSr/a2oCo3TPSLC2GPL+D/uqVCK+o=
