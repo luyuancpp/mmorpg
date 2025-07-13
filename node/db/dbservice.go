@@ -1,7 +1,6 @@
 package main
 
 import (
-	"db/internal/logic/pkg"
 	"flag"
 	"fmt"
 
@@ -23,21 +22,18 @@ var configFile = flag.String("f", "etc/dbservice.yaml", "the config file")
 func main() {
 	flag.Parse()
 
-	var c config.Config
-	conf.MustLoad(*configFile, &c)
-	ctx := svc.NewServiceContext(c)
+	conf.MustLoad(*configFile, &config.AppConfig)
+	ctx := svc.NewServiceContext()
 
-	pkg.Init()
-
-	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
+	s := zrpc.MustNewServer(config.AppConfig.RpcServerConf, func(grpcServer *grpc.Server) {
 		game.RegisterAccountDBServiceServer(grpcServer, accountdbserviceServer.NewAccountDBServiceServer(ctx))
 		game.RegisterPlayerDBServiceServer(grpcServer, playerdbserviceServer.NewPlayerDBServiceServer(ctx))
-		if c.Mode == service.DevMode || c.Mode == service.TestMode {
+		if config.AppConfig.Mode == service.DevMode || config.AppConfig.Mode == service.TestMode {
 			reflection.Register(grpcServer)
 		}
 	})
 	defer s.Stop()
 
-	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)
+	fmt.Printf("Starting rpc server at %s...\n", config.AppConfig.ListenOn)
 	s.Start()
 }

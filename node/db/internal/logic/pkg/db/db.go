@@ -21,20 +21,20 @@ type GameDB struct {
 
 var DB *GameDB
 
-func newMysqlConfig(conf config.DBConf) *mysql.Config {
+func newMysqlConfig() *mysql.Config {
 	myCnf := mysql.NewConfig()
-	myCnf.User = conf.User
-	myCnf.Passwd = conf.Passwd
-	myCnf.Addr = conf.Addr
-	myCnf.Net = conf.Net
-	myCnf.DBName = conf.DBName
+	myCnf.User = config.AppConfig.ServerConfig.Database.User
+	myCnf.Passwd = config.AppConfig.ServerConfig.Database.Passwd
+	myCnf.Addr = config.AppConfig.ServerConfig.Database.Hosts
+	myCnf.Net = config.AppConfig.ServerConfig.Database.Net
+	myCnf.DBName = config.AppConfig.ServerConfig.Database.DBName
 	return myCnf
 }
 
 // 创建数据库的函数
-func CreateDatabase(conf config.DBConf) error {
+func CreateDatabase() error {
 	// 使用不包含数据库名的连接配置
-	mysqlConfig := newMysqlConfig(conf)
+	mysqlConfig := newMysqlConfig()
 	mysqlConfig.DBName = "" // 确保不指定数据库名
 
 	conn, err := mysql.NewConnector(mysqlConfig)
@@ -51,7 +51,7 @@ func CreateDatabase(conf config.DBConf) error {
 	}()
 
 	// 执行创建数据库的 SQL 语句
-	_, err = tempDB.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", conf.DBName))
+	_, err = tempDB.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.AppConfig.ServerConfig.Database.DBName))
 	if err != nil {
 		logx.Error("error creating database: %w", err)
 		return err
@@ -60,13 +60,13 @@ func CreateDatabase(conf config.DBConf) error {
 	return nil
 }
 
-func openDB(conf config.DBConf) error {
+func openDB() error {
 	// 创建数据库
-	if err := CreateDatabase(conf); err != nil {
+	if err := CreateDatabase(); err != nil {
 		return err
 	}
 
-	mysqlConfig := newMysqlConfig(conf)
+	mysqlConfig := newMysqlConfig()
 	conn, err := mysql.NewConnector(mysqlConfig)
 	if err != nil {
 		log.Fatal(err)
@@ -76,11 +76,11 @@ func openDB(conf config.DBConf) error {
 	DB = &GameDB{
 		DB:       sql.OpenDB(conn),
 		PBDB:     pbmysql.NewPb2DbTables(),
-		MsgQueue: queue.NewMsgQueue(conf.RoutineNum, conf.ChannelBufferNum),
+		MsgQueue: queue.NewMsgQueue(config.AppConfig.ServerConfig.RoutineNum, config.AppConfig.ServerConfig.ChannelBufferNum),
 	}
 
-	DB.DB.SetMaxOpenConns(conf.MaxOpenConn)
-	DB.DB.SetMaxIdleConns(conf.MaxIdleConn)
+	DB.DB.SetMaxOpenConns(config.AppConfig.ServerConfig.Database.MaxOpenConn)
+	DB.DB.SetMaxIdleConns(config.AppConfig.ServerConfig.Database.MaxIdleConn)
 
 	err = DB.PBDB.OpenDB(DB.DB, mysqlConfig.DBName)
 	if err != nil {
@@ -89,8 +89,8 @@ func openDB(conf config.DBConf) error {
 	return nil
 }
 
-func InitDB(conf config.DBConf) {
-	if err := openDB(conf); err != nil {
+func InitDB() {
+	if err := openDB(); err != nil {
 		log.Fatalf("error opening database: %v", err)
 	}
 	createDBTable()
