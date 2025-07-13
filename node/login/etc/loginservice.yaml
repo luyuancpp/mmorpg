@@ -7,7 +7,7 @@ Etcd:
   Key: loginservice.rpc
 
 Node:
-  zoneid: 1
+  zoneid: 0
   session_expire_minutes: 10
   fsm_expire_minutes: 60
   max_login_devices: 1
