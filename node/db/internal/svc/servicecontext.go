@@ -10,9 +10,9 @@ type ServiceContext struct {
 	Redis  *redis.Client
 }
 
-func NewServiceContext(c config.Config) *ServiceContext {
+func NewServiceContext() *ServiceContext {
 	return &ServiceContext{
-		Config: c,
-		Redis:  redis.NewClient(&redis.Options{Addr: config.RedisConfig.Addr}),
+		Config: config.AppConfig,
+		Redis:  redis.NewClient(&redis.Options{Addr: config.AppConfig.ServerConfig.Redis.Hosts}),
 	}
 }
