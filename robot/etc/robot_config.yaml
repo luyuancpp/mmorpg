@@ -1,12 +1,12 @@
 servers:
   - address: "localhost"
     ip: "172.23.208.1"
-    port: 40001
+    port: 40006
   - address: "localhost"
     ip: "172.23.208.1"
-    port: 40002
+    port: 40007
 robots:
-  count: 1
+  count: 2000
   tick: 2000 #毫秒
   login_interval : 200 #毫秒
 loglevel: 1
