@@ -222,13 +222,16 @@ void PlayerNodeSystem::HandleExitGameNode(entt::entity player)
 {
 	LOG_INFO << "HandleExitGameNode: Player " << tls.actorRegistry.get<Guid>(player) << " is exiting the Game Node";
 
-	// 离开gs 清除session
-	PlayerNodeSystem::SavePlayer(player);
-
-	LOG_INFO << "Player data saved before unregistering";
+	if (!tls.actorRegistry.valid(player))
+	{
+		LOG_ERROR << "HandleExitGameNode: Player entity is not valid";
+		return;
+	}
 
 	tls.actorRegistry.emplace<UnregisterPlayer>(player);
+
+	PlayerNodeSystem::SavePlayer(player);
+
 	//todo 存完之后center 才能再次登录
 
-	LOG_INFO << "Marked player as UnregisterPlayer";
 }
