@@ -27,12 +27,10 @@ GateNode::GateNode(EventLoop* loop)
 	auto sendGrpcResponseToClientSession = [](const ClientContext& context, const ::google::protobuf::Message& reply) {
 		auto sessionDetails = GetSessionDetailsByClientContext(context);
 		if (nullptr == sessionDetails) {
-			LOG_ERROR << "Session details not found in context for session id";
 			return;
 		}
 		auto it = tls_gate.sessions().find(sessionDetails->session_id());
 		if (it == tls_gate.sessions().end()){
-			LOG_DEBUG << "conn id not found  session id " << "," << sessionDetails->session_id();
 			return;
 		}
 		gGateNode->SendMessageToClient(it->second.conn, reply);
