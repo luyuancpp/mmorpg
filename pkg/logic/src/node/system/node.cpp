@@ -37,15 +37,6 @@ std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gN
 
 Node* gNode;
 
-std::string ExtractPrefix(const std::string& fullKey) {
-	size_t pos = fullKey.find('/');
-	if (pos == std::string::npos) {
-		// 没有斜杠，直接返回原串
-		return fullKey;
-	}
-	return fullKey.substr(0, pos);
-}
-
 Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
 	: eventLoop(loop), logSystem(logPath, kMaxLogFileRollSize, 1) {
 	LOG_INFO << "Node created, log file: " << logPath;
@@ -503,28 +494,42 @@ void Node::InitGrpcResponseHandlers() {
 	etcdserverpb::AsyncKVRangeHandler = [this](const ClientContext& context, const ::etcdserverpb::RangeResponse& reply) {
 		std::unordered_set<std::string> seenPrefixes;
 
+		// 初始化所有前缀的下次 revision（默认都设为 reply 的 revision + 1）
 		int64_t nextRevision = reply.header().revision() + 1;
 
-		for (const auto& kv : reply.kvs()) {
-			HandleServiceNodeStart(kv.key(), kv.value());
-			seenPrefixes.insert(ExtractPrefix(kv.key()));
+		// 你维护了每个 prefix 是否在本次 Range 中出现
+		std::unordered_map<std::string, bool> prefixSeen;
+
+		// 初始化为 false
+		for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
+			prefixSeen[prefix] = false;
 		}
 
-		// 更新我们要从哪里开始 watch 每个 prefix
-		for (const auto& prefix : seenPrefixes) {
+		// 处理所有 kv
+		for (const auto& kv : reply.kvs()) {
+			HandleServiceNodeStart(kv.key(), kv.value());
+
+			for (const auto& prefix : prefixSeen) {
+				if (kv.key().rfind(prefix.first, 0) == 0) { // prefix match
+					prefixSeen[prefix.first] = true;
+					break;
+				}
+			}
+		}
+
+		// 设置 revision
+		for (const auto& [prefix, seen] : prefixSeen) {
 			revision[prefix] = nextRevision;
 		}
 
+		// 启动 watch
 		if (!hasSentRange) {
 			for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
-				// 如果 Range 没有返回这个 prefix 的 key，也从 nextRevision 开始
-				if (!revision.count(prefix)) {
-					revision[prefix] = nextRevision;
-				}
-
 				EtcdHelper::StartWatchingPrefix(prefix, revision[prefix]);
+				LOG_INFO << "Start watching prefix: " << prefix << " from revision " << revision[prefix];
 			}
 			hasSentRange = true;
+
 		}
 
 		};
