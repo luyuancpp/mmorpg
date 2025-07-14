@@ -70,7 +70,7 @@ func runClientLoop(gameClient *pkg.GameClient) {
 		case err := <-errCh:
 			zap.L().Error("Recv error, exiting runClientLoop", zap.Error(err))
 			return
-		case <-time.After(20 * time.Millisecond):
+		case <-time.After(time.Duration(config.AppConfig.Robots.Tick) * time.Millisecond):
 			player, ok := gameobject.PlayerList.Get(gameClient.PlayerId)
 			if ok {
 				player.TickBehaviorTree()
@@ -99,7 +99,7 @@ func main() {
 	var wg sync.WaitGroup
 
 	for i := 0; i < config.AppConfig.Robots.Count; i++ {
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(time.Duration(config.AppConfig.Robots.LoginInterval) * time.Millisecond)
 		wg.Add(1)
 
 		go func(i int) {
