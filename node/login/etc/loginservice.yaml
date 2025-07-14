@@ -11,6 +11,7 @@ Node:
   session_expire_minutes: 10
   fsm_expire_minutes: 60
   max_login_devices: 1
+  LeaseTTL: 5
   Redis:
     Host: 127.0.0.1:6379
     Password: ""

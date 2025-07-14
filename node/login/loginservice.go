@@ -56,7 +56,7 @@ func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	}
 
 	// 注册节点到 etcd
-	loginNode := node.NewNode(uint32(nodeType), host, port, 5)
+	loginNode := node.NewNode(uint32(nodeType), host, port, config.AppConfig.Node.LeaseTTL)
 	if loginNode == nil {
 		err = errors.New("failed to create node")
 		logx.Errorf("Failed to create node: %v", err)

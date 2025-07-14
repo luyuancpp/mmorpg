@@ -99,11 +99,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginFsmFailed)
 		return resp, nil
 	}
-	if !f.Can(data.EventEnterGame) {
-		logx.Errorf("FSM event not allowed, sessionId=%d", sessionDetails.SessionId)
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginFsmInvalidEvent)
-		return resp, nil
-	}
+
 	if err := f.Event(context.Background(), data.EventEnterGame); err != nil {
 		logx.Errorf("FSM Event failed: %v", err)
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginInProgress)

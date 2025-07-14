@@ -2,15 +2,15 @@ package accountdbservicelogic
 
 import (
 	"context"
+	"db/internal/constants"
 	"db/internal/logic/pkg/db"
 	"db/internal/logic/pkg/queue"
 	"db/internal/svc"
 	"db/pb/game"
+	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 	"hash/fnv"
 	"time"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type Load2RedisLogic struct {
@@ -30,7 +30,7 @@ func NewLoad2RedisLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Load2R
 func (l *Load2RedisLogic) Load2Redis(in *game.LoadAccountRequest) (*game.LoadAccountResponse, error) {
 	//todo 如果这时候存回数据库呢,读存读存
 	resp := &game.LoadAccountResponse{}
-	key := "account" + in.Account
+	key := constants.GetAccountDataKey(in.Account)
 	cmd := l.svcCtx.Redis.Get(l.ctx, key)
 	resp.Account = in.Account
 	if len(cmd.Val()) > 0 {

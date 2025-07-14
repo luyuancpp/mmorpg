@@ -33,6 +33,7 @@ type NodeConfig struct {
 	FsmExpireMin     uint32    `json:"fsm_expire_minutes"`
 	MaxLoginDevices  uint32    `json:"max_login_devices"`
 	Redis            RedisConf `json:"Redis"`
+	LeaseTTL         int64     `json:"LeaseTTL"` // 新增字段
 }
 
 type SnowflakeConf struct {

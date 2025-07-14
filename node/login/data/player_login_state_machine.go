@@ -26,7 +26,7 @@ func InitPlayerFSM() *fsm.FSM {
 		fsm.Events{
 			{Name: EventProcessLogin, Src: []string{LoginProcessing, CreatingCharacter}, Dst: WaitingToEnterGame},
 			{Name: EventCreateChar, Src: []string{WaitingToEnterGame}, Dst: CreatingCharacter},
-			{Name: EventEnterGame, Src: []string{WaitingToEnterGame}, Dst: EnteringGame},
+			{Name: EventEnterGame, Src: []string{WaitingToEnterGame, CreatingCharacter}, Dst: EnteringGame},
 		},
 		fsm.Callbacks{},
 	)

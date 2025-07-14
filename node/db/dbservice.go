@@ -1,6 +1,7 @@
 package main
 
 import (
+	"db/internal/logic/pkg/db"
 	"flag"
 	"fmt"
 
@@ -24,6 +25,8 @@ func main() {
 
 	conf.MustLoad(*configFile, &config.AppConfig)
 	ctx := svc.NewServiceContext()
+
+	db.InitDB()
 
 	s := zrpc.MustNewServer(config.AppConfig.RpcServerConf, func(grpcServer *grpc.Server) {
 		game.RegisterAccountDBServiceServer(grpcServer, accountdbserviceServer.NewAccountDBServiceServer(ctx))
