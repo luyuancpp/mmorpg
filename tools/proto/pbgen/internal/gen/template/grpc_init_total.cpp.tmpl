@@ -40,28 +40,26 @@ void HandleCompletedQueueMessage(entt::registry& registry){
         void* got_tag = nullptr;
         bool ok = false;
         gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-        if (grpc::CompletionQueue::GOT_EVENT != completeQueueComp.AsyncNext(&got_tag, &ok, tm)) {
-            return;
-        }
-        if (!ok) {
-            LOG_ERROR << "RPC failed";
-            return;
-        }
-        GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
+        while (completeQueueComp.AsyncNext(&got_tag, &ok, tm) == grpc::CompletionQueue::GOT_EVENT) {
+            if (!ok) {
+                LOG_ERROR << "RPC failed";
+                return;
+            }
+            GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
 
 {{- range $index, $m := .ServiceInfo }}
     {{- if eq $index 0 }}
-        if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
-            {{$m.Package}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
-        }
+            if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
+                {{$m.Package}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+            }
     {{- else }}
-        else if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
-            {{$m.Package}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
-        }
+            else if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
+                {{$m.Package}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+            }
     {{- end }}
 {{- end }}
-     }
-
+        }
+    }
 }
 
 

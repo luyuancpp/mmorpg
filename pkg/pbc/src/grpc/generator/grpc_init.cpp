@@ -51,22 +51,20 @@ void HandleCompletedQueueMessage(entt::registry& registry){
         void* got_tag = nullptr;
         bool ok = false;
         gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-        if (grpc::CompletionQueue::GOT_EVENT != completeQueueComp.AsyncNext(&got_tag, &ok, tm)) {
-            return;
+        while (completeQueueComp.AsyncNext(&got_tag, &ok, tm) == grpc::CompletionQueue::GOT_EVENT) {
+            if (!ok) {
+                LOG_ERROR << "RPC failed";
+                return;
+            }
+            GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
+            if (eNodeType::EtcdNodeService == nodeType) {
+                etcdserverpb::HandleEtcdCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+            }
+            else if (eNodeType::LoginNodeService == nodeType) {
+                loginpb::HandleLoginServiceCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+            }
         }
-        if (!ok) {
-            LOG_ERROR << "RPC failed";
-            return;
-        }
-        GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
-        if (eNodeType::EtcdNodeService == nodeType) {
-            etcdserverpb::HandleEtcdCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
-        }
-        else if (eNodeType::LoginNodeService == nodeType) {
-            loginpb::HandleLoginServiceCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
-        }
-     }
-
+    }
 }
 
 
