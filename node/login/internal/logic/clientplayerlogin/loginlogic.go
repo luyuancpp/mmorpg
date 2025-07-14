@@ -138,24 +138,19 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	rdKey := constants.GetAccountDataKey(in.Account)
 	cmd := l.svcCtx.Redis.Get(l.ctx, rdKey)
 	valueBytes, err := cmd.Bytes()
-	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			logx.Infof("Account data not found in Redis for %s, loading from DB...", in.Account)
-			service := accountdbservice.NewAccountDBService(*l.svcCtx.DbClient)
-			_, loadErr := service.Load2Redis(l.ctx, &game.LoadAccountRequest{Account: in.Account})
-			if loadErr != nil {
-				logx.Errorf("Load account data from DB failed for %s: %v", in.Account, loadErr)
-				resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginAccountDataLoadFailed)}
-				return resp, loadErr
-			}
-			cmd = l.svcCtx.Redis.Get(l.ctx, rdKey)
-			valueBytes, err = cmd.Bytes()
-			if err != nil {
-				logx.Errorf("Redis re-get account data failed after DB load: %v", err)
-				return nil, err
-			}
-		} else {
-			logx.Errorf("Redis Get account error for %s: %v", in.Account, err)
+	if errors.Is(err, redis.Nil) {
+		logx.Infof("Account data not found in Redis for %s, loading from DB...", in.Account)
+		service := accountdbservice.NewAccountDBService(*l.svcCtx.DbClient)
+		_, loadErr := service.Load2Redis(l.ctx, &game.LoadAccountRequest{Account: in.Account})
+		if loadErr != nil {
+			logx.Errorf("Load account data from DB failed for %s: %v", in.Account, loadErr)
+			resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginAccountDataLoadFailed)}
+			return resp, loadErr
+		}
+		cmd = l.svcCtx.Redis.Get(l.ctx, rdKey)
+		valueBytes, err = cmd.Bytes()
+		if err != nil {
+			logx.Errorf("Redis re-get account data failed after DB load: %v", err)
 			return nil, err
 		}
 	}

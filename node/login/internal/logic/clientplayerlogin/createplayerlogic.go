@@ -88,7 +88,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerRequest) (*game.Cr
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginFSMLoadFailed)}
 		return resp, nil
 	}
-	if err := f.Event(l.ctx, data.CreatingCharacter); err != nil {
+	if err := f.Event(l.ctx, data.EventCreateChar); err != nil {
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginFsmFailed)}
 		logx.Errorf("FSM create_char failed, account: %s, err: %v", account, err)
 		return resp, nil

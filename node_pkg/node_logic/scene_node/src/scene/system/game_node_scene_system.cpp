@@ -50,6 +50,9 @@ void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 		request.mutable_scenes_info()->Add()->CopyFrom(sceneInfo);
 	}
 
+	LOG_INFO << "Registering all scenes to CentreNode: " << entt::to_integral(centre)
+		<< ", " << request.DebugString();
+
 	CallRemoteMethodOnClient(CentreSceneRegisterSceneMessageId, request, entt::to_integral(centre), eNodeType::CentreNodeService);
 }
 
