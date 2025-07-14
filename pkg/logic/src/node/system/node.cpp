@@ -389,13 +389,12 @@ void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
 
 	if (!targetNodeTypeWhitelist.contains(nodeType)) return;
 
-	// **如果服务已经启动，并且没连接，则连接**
-	if (IsServiceStarted() && !IsNodeConnected(nodeType, newNode)) {
+	if (IsServiceStarted()) {
 		ConnectToNode(newNode);
 		LOG_INFO << "Connected to node: " << newNode.DebugString();
 	}
 	else {
-		LOG_INFO << "Service not started or node already connected, skip connecting for now.";
+		LOG_INFO << "Service not started or node already connected. Skipping connection for now: " << newNode.DebugString();
 	}
 }
 
@@ -502,20 +501,27 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 
 void Node::InitGrpcResponseHandlers() {
 	etcdserverpb::AsyncKVRangeHandler = [this](const ClientContext& context, const ::etcdserverpb::RangeResponse& reply) {
-		std::string firstKey;
+		std::unordered_set<std::string> seenPrefixes;
+
+		int64_t nextRevision = reply.header().revision() + 1;
+
 		for (const auto& kv : reply.kvs()) {
 			HandleServiceNodeStart(kv.key(), kv.value());
-			firstKey = kv.key();
+			seenPrefixes.insert(ExtractPrefix(kv.key()));
 		}
 
-		if (!firstKey.empty())
-		{
-			revision[ExtractPrefix(firstKey)] =  reply.header().revision() + 1;
+		// 更新我们要从哪里开始 watch 每个 prefix
+		for (const auto& prefix : seenPrefixes) {
+			revision[prefix] = nextRevision;
 		}
 
-		if (!hasSentRange)
-		{
+		if (!hasSentRange) {
 			for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
+				// 如果 Range 没有返回这个 prefix 的 key，也从 nextRevision 开始
+				if (!revision.count(prefix)) {
+					revision[prefix] = nextRevision;
+				}
+
 				EtcdHelper::StartWatchingPrefix(prefix, revision[prefix]);
 			}
 			hasSentRange = true;

@@ -1,10 +1,9 @@
 package config
 
 import (
+	"gopkg.in/yaml.v3"
 	"log"
 	"os"
-
-	"gopkg.in/yaml.v3"
 )
 
 // ServerConfig defines the structure for server configuration
@@ -15,14 +14,16 @@ type ServerConfig struct {
 }
 
 // RobotsConfig defines the structure for robots configuration
-type RobotsConfig struct {
-	Count int `yaml:"count"`
+type Robots struct {
+	Count         int   `yaml:"count"`
+	Tick          int64 `yaml:"tick"`
+	LoginInterval int64 `yaml:"login_interval"`
 }
 
 // Config holds the entire configuration
 type Config struct {
 	Servers  []ServerConfig `yaml:"servers"` // 支持多个 server
-	Robots   RobotsConfig   `yaml:"robots"`
+	Robots   Robots         `yaml:"robots"`
 	LogLevel int            `yaml:"loglevel"`
 }
 
