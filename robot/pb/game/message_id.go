@@ -84,3 +84,6 @@ const ScenePlayerSyncSyncAttribute60FramesMessageId = 80
 const CentreLoginNodeLeaveGameMessageId = 81
 const ScenePlayerSyncSyncAttribute10FramesMessageId = 82
 const SceneSceneClientPlayerNotifySceneInfoMessageId = 83
+const PlayerLocatorSetLocationMessageId = 84
+const PlayerLocatorGetLocationMessageId = 85
+const PlayerLocatorMarkOfflineMessageId = 86

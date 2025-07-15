@@ -2,6 +2,7 @@
 #include "service_info.h"
 #include "proto/common/node.pb.h"
 
+#include "proto/playerlocator/playerlocator.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
@@ -20,6 +21,7 @@
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/gate/gate_service.pb.h"
 
+#include "playerlocator_service_info.h"
 #include "etcd_service_info.h"
 #include "etcd_service_info.h"
 #include "etcd_service_info.h"
@@ -53,6 +55,9 @@ class SceneSkillClientPlayerImpl final : public SceneSkillClientPlayer {};
 class ScenePlayerSyncImpl final : public ScenePlayerSync {};
 class GateImpl final : public Gate {};
 
+namespace playerlocator{void SendPlayerLocatorSetLocation(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace playerlocator{void SendPlayerLocatorGetLocation(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace playerlocator{void SendPlayerLocatorMarkOffline(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVPut(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVDeleteRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -71,10 +76,13 @@ namespace loginpb{void SendClientPlayerLoginLeaveGame(entt::registry& , entt::en
 namespace loginpb{void SendClientPlayerLoginDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
 std::unordered_set<uint32_t> gClientMessageIdWhitelist;
-std::array<RpcService, 84> gRpcServiceRegistry;
+std::array<RpcService, 87> gRpcServiceRegistry;
 
 void InitMessageInfo()
 {
+    gRpcServiceRegistry[PlayerLocatorSetLocationMessageId] = RpcService{"PlayerLocator", "SetLocation", std::make_unique_for_overwrite<::playerlocator::PlayerLocation>(), std::make_unique_for_overwrite<::playerlocator::Empty>(), nullptr, 1, eNodeType::PlayerlocatorNodeService, playerlocator::SendPlayerLocatorSetLocation};
+    gRpcServiceRegistry[PlayerLocatorGetLocationMessageId] = RpcService{"PlayerLocator", "GetLocation", std::make_unique_for_overwrite<::playerlocator::PlayerId>(), std::make_unique_for_overwrite<::playerlocator::PlayerLocation>(), nullptr, 1, eNodeType::PlayerlocatorNodeService, playerlocator::SendPlayerLocatorGetLocation};
+    gRpcServiceRegistry[PlayerLocatorMarkOfflineMessageId] = RpcService{"PlayerLocator", "MarkOffline", std::make_unique_for_overwrite<::playerlocator::PlayerId>(), std::make_unique_for_overwrite<::playerlocator::Empty>(), nullptr, 1, eNodeType::PlayerlocatorNodeService, playerlocator::SendPlayerLocatorMarkOffline};
     gRpcServiceRegistry[KVRangeMessageId] = RpcService{"KV", "Range", std::make_unique_for_overwrite<::etcdserverpb::RangeRequest>(), std::make_unique_for_overwrite<::etcdserverpb::RangeResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendKVRange};
     gRpcServiceRegistry[KVPutMessageId] = RpcService{"KV", "Put", std::make_unique_for_overwrite<::etcdserverpb::PutRequest>(), std::make_unique_for_overwrite<::etcdserverpb::PutResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendKVPut};
     gRpcServiceRegistry[KVDeleteRangeMessageId] = RpcService{"KV", "DeleteRange", std::make_unique_for_overwrite<::etcdserverpb::DeleteRangeRequest>(), std::make_unique_for_overwrite<::etcdserverpb::DeleteRangeResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendKVDeleteRange};

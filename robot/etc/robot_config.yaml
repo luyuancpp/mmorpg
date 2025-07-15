@@ -7,6 +7,6 @@ servers:
     port: 40002
 robots:
   count: 10000
-  tick: 10000 #毫秒
+  tick: 1000 #毫秒
   login_interval : 200 #毫秒
 loglevel: 1

@@ -3,6 +3,8 @@ package fsmstore
 import (
 	"context"
 	"fmt"
+	"login/internal/config"
+	"time"
 
 	"github.com/looplab/fsm"
 	"github.com/redis/go-redis/v9"
@@ -17,7 +19,8 @@ func redisKey(account, roleId string) string {
 func SaveFSMState(ctx context.Context, redisClient *redis.Client, f *fsm.FSM, account, roleId string) error {
 	key := redisKey(account, roleId)
 	state := f.Current()
-	return redisClient.Set(ctx, key, state, 0).Err()
+	expire := time.Duration(config.AppConfig.Node.SessionExpireMin) * time.Minute
+	return redisClient.Set(ctx, key, state, expire).Err()
 }
 
 // LoadFSMState loads FSM state from Redis and applies it to the FSM

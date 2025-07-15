@@ -1,8 +1,10 @@
 syntax = "proto3";
 
 option go_package = "pb/game";
-option java_package = "com.example.pb.game";
-option java_outer_classname = "InstanceProto";
+
+import "proto/common/tip.proto"
+
+package instance;
 
 service Instance {
   // 创建副本
@@ -11,16 +13,13 @@ service Instance {
 
 message CreateInstanceRequest {
   uint64 player_id = 1;         // 发起者玩家ID
-  int32 level = 2;              // 副本等级（如30）
-  uint32 template_id = 3;       // 副本模板ID，对应副本类型（如 dungeon_001）
-  repeated uint64 team_member_ids = 4; // 队伍成员（多人副本用）
-  map<string, string> metadata = 5;    // 扩展字段：如活动ID、限时等
+  uint32 template_id = 2;       // 副本模板ID，对应副本类型（如 dungeon_001）
+  repeated uint64 team_member_ids = 3; // 队伍成员（多人副本用）
+  map<string, string> metadata = 4;    // 扩展字段：如活动ID、限时等
 }
 
 message CreateInstanceResponse {
   uint64 instance_id = 1;       // 创建成功的副本ID
-  string server_address = 2;    // 副本服务器地址（供客户端连接）
-  int64 expire_time = 3;        // 副本过期时间（Unix时间戳）
-  uint32 status = 4;            // 状态，如 "created"、"failed"
-  uint32 message = 5;           // 错误信息或成功提示
+  int64 expire_time = 2;        // 副本过期时间（Unix时间戳）
+  TipInfoMessage error_message = 4;           // 错误信息或成功提示
 }

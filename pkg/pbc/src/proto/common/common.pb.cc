@@ -292,37 +292,33 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcommon_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\031proto/common/common.proto\032\026proto/commo"
-    "n/tip.proto\"/\n\023EndpointPBComponent\022\n\n\002ip"
-    "\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\277\001\n\010NodeInfo\022\017\n\007nod"
-    "e_id\030\001 \001(\r\022\021\n\tnode_type\030\002 \001(\r\022\023\n\013launch_"
-    "time\030\003 \001(\004\022\027\n\017scene_node_type\030\004 \001(\r\022&\n\010e"
-    "ndpoint\030\005 \001(\0132\024.EndpointPBComponent\022\017\n\007z"
-    "one_id\030\006 \001(\r\022\025\n\rprotocol_type\030\007 \001(\r\022\021\n\tn"
-    "ode_uuid\030\010 \001(\t\"7\n\027NodeInfoListPBComponen"
-    "t\022\034\n\tnode_list\030\001 \003(\0132\t.NodeInfo\"*\n\016Netwo"
-    "rkAddress\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\320\001\n\024"
-    "SceneInfoPBComponent\022\024\n\014scene_confid\030\001 \001"
-    "(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rmirror_confid\030\003 \001(\r\022"
-    "\025\n\rdungen_confid\030\004 \001(\r\0225\n\010creators\030\005 \003(\013"
-    "2#.SceneInfoPBComponent.CreatorsEntry\032/\n"
-    "\rCreatorsEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001"
-    "(\010:\0028\001B\tZ\007pb/gameb\006proto3"
-};
-static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_2eproto_deps[1] =
-    {
-        &::descriptor_table_proto_2fcommon_2ftip_2eproto,
+    "\n\031proto/common/common.proto\"/\n\023EndpointP"
+    "BComponent\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\277\001\n"
+    "\010NodeInfo\022\017\n\007node_id\030\001 \001(\r\022\021\n\tnode_type\030"
+    "\002 \001(\r\022\023\n\013launch_time\030\003 \001(\004\022\027\n\017scene_node"
+    "_type\030\004 \001(\r\022&\n\010endpoint\030\005 \001(\0132\024.Endpoint"
+    "PBComponent\022\017\n\007zone_id\030\006 \001(\r\022\025\n\rprotocol"
+    "_type\030\007 \001(\r\022\021\n\tnode_uuid\030\010 \001(\t\"7\n\027NodeIn"
+    "foListPBComponent\022\034\n\tnode_list\030\001 \003(\0132\t.N"
+    "odeInfo\"*\n\016NetworkAddress\022\n\n\002ip\030\001 \001(\t\022\014\n"
+    "\004port\030\002 \001(\r\"\320\001\n\024SceneInfoPBComponent\022\024\n\014"
+    "scene_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rmirr"
+    "or_confid\030\003 \001(\r\022\025\n\rdungen_confid\030\004 \001(\r\0225"
+    "\n\010creators\030\005 \003(\0132#.SceneInfoPBComponent."
+    "CreatorsEntry\032/\n\rCreatorsEntry\022\013\n\003key\030\001 "
+    "\001(\004\022\r\n\005value\030\002 \001(\010:\0028\001B\tZ\007pb/gameb\006proto"
+    "3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_2eproto = {
     false,
     false,
-    625,
+    601,
     descriptor_table_protodef_proto_2fcommon_2fcommon_2eproto,
     "proto/common/common.proto",
     &descriptor_table_proto_2fcommon_2fcommon_2eproto_once,
-    descriptor_table_proto_2fcommon_2fcommon_2eproto_deps,
-    1,
+    nullptr,
+    0,
     6,
     schemas,
     file_default_instances,

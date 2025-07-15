@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+package transfer;
+
+// 玩家属性结构体（可嵌套更多字段）
+message PlayerState {
+  int64 uid = 1;
+  string name = 2;
+  int32 level = 3;
+  int32 hp = 4;
+  int32 mp = 5;
+  int32 scene_id = 6;
+  int32 pos_x = 7;
+  int32 pos_y = 8;
+
+  // 可拓展字段
+  repeated int64 equipped_item_ids = 20;
+  repeated string active_buffs = 21;
+
+  // token 用于 session 验证
+  string session_token = 100;
+}
+
+// 请求结构：A服 → B服
+message TransferPlayerRequest {
+  PlayerState player = 1;
+}
+
+// 返回结构：B服 → A服
+message TransferPlayerResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+service PlayerTransfer {
+  // 场景服之间的迁移接口
+  rpc TransferPlayer (TransferPlayerRequest) returns (TransferPlayerResponse);
+}

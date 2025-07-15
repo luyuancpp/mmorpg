@@ -169,7 +169,7 @@ var (
 		"logic/event/",
 		"logic/shared/",
 		"logic/",
-		"",
+		"playerlocator/",
 		"logic/constants/",
 		"etcd/",
 		"login/",
@@ -207,10 +207,6 @@ const (
 	LoginPrefixName                 = "login"
 	DeployPrefixName                = "deploy"
 	DatabasePrefixName              = "db"
-	GameNodePrefixName              = "game"
-	GameNodePlayerPrefixName        = "game_player"
-	CentrePrefixName                = "centre"
-	CentrePlayerPrefixName          = "centre_player"
 	ClientPrefixName                = "Client" //
 	TypePlayer                      = "player"
 	DisplayPlayer                   = "Player"
@@ -219,7 +215,6 @@ const (
 	PlayerServiceRepliedIncludeName = "#include \"service/player_service_replied.h\"\n"
 	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
 	ClientLuaProjectRelative        = "script/lua/service/"
-	GatePrefixName                  = "gate"
 	ClassNameSuffix                 = "Handler"
 	NodeEnumName                    = "eNodeType"
 	NodeServiceSuffix               = "nodeservice"
@@ -238,11 +233,12 @@ const (
 )
 
 var GrpcServices = map[string]bool{
-	"login": true,
-	"team":  true,
-	"mail":  true,
-	"chat":  true,
-	"etcd":  true,
+	"login":         true,
+	"team":          true,
+	"mail":          true,
+	"chat":          true,
+	"etcd":          true,
+	"playerlocator": true,
 }
 
 const (
