@@ -30,7 +30,6 @@ type AccountConf struct {
 type NodeConfig struct {
 	ZoneId           uint32    `json:"zoneid"`
 	SessionExpireMin uint32    `json:"session_expire_minutes"`
-	FsmExpireMin     uint32    `json:"fsm_expire_minutes"`
 	MaxLoginDevices  uint32    `json:"max_login_devices"`
 	Redis            RedisConf `json:"Redis"`
 	LeaseTTL         int64     `json:"LeaseTTL"` // 新增字段

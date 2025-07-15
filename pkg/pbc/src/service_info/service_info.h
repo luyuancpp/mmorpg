@@ -23,7 +23,7 @@ struct RpcService {
 	)> messageSender;
 };
 
-constexpr uint32_t kMaxMessageLen = 84;
+constexpr uint32_t kMaxMessageLen = 87;
 
 extern std::array<RpcService, kMaxMessageLen> gRpcServiceRegistry;
 extern std::unordered_set<uint32_t> gClientMessageIdWhitelist;

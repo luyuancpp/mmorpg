@@ -82,3 +82,6 @@
 81=CentreLoginNodeLeaveGame
 82=ScenePlayerSyncSyncAttribute10Frames
 83=SceneSceneClientPlayerNotifySceneInfo
+84=PlayerLocatorSetLocation
+85=PlayerLocatorGetLocation
+86=PlayerLocatorMarkOffline

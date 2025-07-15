@@ -48,16 +48,21 @@ func BuildProto(protoPath string) error {
 		dstFileCppName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
 
 		protoRelativePath := strings.Replace(protoPath, config.ProjectDir, "", 1)
-		newBaseDir := filepath.ToSlash(path.Dir(config.PbcTempDirectory + protoRelativePath))
 
-		tempHeadFileName := filepath.Join(newBaseDir, filepath.Base(dstFileHeadName))
-		tempCppFileName := filepath.Join(newBaseDir, filepath.Base(dstFileCppName))
+		tempBaseDir := filepath.ToSlash(path.Dir(config.PbcTempDirectory + protoRelativePath))
+		newBaseDir := filepath.ToSlash(path.Dir(dstFileCppName))
 
+		tempHeadFileName := filepath.Join(tempBaseDir, filepath.Base(dstFileHeadName))
+		tempCppFileName := filepath.Join(tempBaseDir, filepath.Base(dstFileCppName))
+
+		if err := os.MkdirAll(tempBaseDir, os.FileMode(0777)); err != nil {
+			log.Println("mkdir failed:", err)
+			continue
+		}
 		if err := os.MkdirAll(newBaseDir, os.FileMode(0777)); err != nil {
 			log.Println("mkdir failed:", err)
 			continue
 		}
-
 		if err := CopyFileIfChanged(tempCppFileName, dstFileCppName); err != nil {
 			log.Println("copy .cc failed:", err)
 			continue

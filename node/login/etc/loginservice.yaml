@@ -8,8 +8,7 @@ Etcd:
 
 Node:
   zoneid: 0
-  session_expire_minutes: 10000
-  fsm_expire_minutes: 10000
+  session_expire_minutes: 60
   max_login_devices: 3
   LeaseTTL: 5
   Redis:
