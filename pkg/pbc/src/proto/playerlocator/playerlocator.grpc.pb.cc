@@ -39,23 +39,23 @@ PlayerLocator::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& chan
   , rpcmethod_MarkOffline_(PlayerLocator_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
-::grpc::Status PlayerLocator::Stub::SetLocation(::grpc::ClientContext* context, const ::playerlocator::PlayerLocation& request, ::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::playerlocator::PlayerLocation, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_SetLocation_, context, request, response);
+::grpc::Status PlayerLocator::Stub::SetLocation(::grpc::ClientContext* context, const ::playerlocator::PlayerLocation& request, ::google::protobuf::Empty* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::playerlocator::PlayerLocation, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_SetLocation_, context, request, response);
 }
 
-void PlayerLocator::Stub::async::SetLocation(::grpc::ClientContext* context, const ::playerlocator::PlayerLocation* request, ::Empty* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::playerlocator::PlayerLocation, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_SetLocation_, context, request, response, std::move(f));
+void PlayerLocator::Stub::async::SetLocation(::grpc::ClientContext* context, const ::playerlocator::PlayerLocation* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::playerlocator::PlayerLocation, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_SetLocation_, context, request, response, std::move(f));
 }
 
-void PlayerLocator::Stub::async::SetLocation(::grpc::ClientContext* context, const ::playerlocator::PlayerLocation* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
+void PlayerLocator::Stub::async::SetLocation(::grpc::ClientContext* context, const ::playerlocator::PlayerLocation* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
   ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_SetLocation_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::Empty>* PlayerLocator::Stub::PrepareAsyncSetLocationRaw(::grpc::ClientContext* context, const ::playerlocator::PlayerLocation& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::Empty, ::playerlocator::PlayerLocation, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_SetLocation_, context, request);
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* PlayerLocator::Stub::PrepareAsyncSetLocationRaw(::grpc::ClientContext* context, const ::playerlocator::PlayerLocation& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::playerlocator::PlayerLocation, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_SetLocation_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::Empty>* PlayerLocator::Stub::AsyncSetLocationRaw(::grpc::ClientContext* context, const ::playerlocator::PlayerLocation& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* PlayerLocator::Stub::AsyncSetLocationRaw(::grpc::ClientContext* context, const ::playerlocator::PlayerLocation& request, ::grpc::CompletionQueue* cq) {
   auto* result =
     this->PrepareAsyncSetLocationRaw(context, request, cq);
   result->StartCall();
@@ -85,23 +85,23 @@ void PlayerLocator::Stub::async::GetLocation(::grpc::ClientContext* context, con
   return result;
 }
 
-::grpc::Status PlayerLocator::Stub::MarkOffline(::grpc::ClientContext* context, const ::playerlocator::PlayerId& request, ::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::playerlocator::PlayerId, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_MarkOffline_, context, request, response);
+::grpc::Status PlayerLocator::Stub::MarkOffline(::grpc::ClientContext* context, const ::playerlocator::PlayerId& request, ::google::protobuf::Empty* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::playerlocator::PlayerId, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_MarkOffline_, context, request, response);
 }
 
-void PlayerLocator::Stub::async::MarkOffline(::grpc::ClientContext* context, const ::playerlocator::PlayerId* request, ::Empty* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::playerlocator::PlayerId, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_MarkOffline_, context, request, response, std::move(f));
+void PlayerLocator::Stub::async::MarkOffline(::grpc::ClientContext* context, const ::playerlocator::PlayerId* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::playerlocator::PlayerId, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_MarkOffline_, context, request, response, std::move(f));
 }
 
-void PlayerLocator::Stub::async::MarkOffline(::grpc::ClientContext* context, const ::playerlocator::PlayerId* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
+void PlayerLocator::Stub::async::MarkOffline(::grpc::ClientContext* context, const ::playerlocator::PlayerId* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
   ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_MarkOffline_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::Empty>* PlayerLocator::Stub::PrepareAsyncMarkOfflineRaw(::grpc::ClientContext* context, const ::playerlocator::PlayerId& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::Empty, ::playerlocator::PlayerId, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_MarkOffline_, context, request);
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* PlayerLocator::Stub::PrepareAsyncMarkOfflineRaw(::grpc::ClientContext* context, const ::playerlocator::PlayerId& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::playerlocator::PlayerId, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_MarkOffline_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::Empty>* PlayerLocator::Stub::AsyncMarkOfflineRaw(::grpc::ClientContext* context, const ::playerlocator::PlayerId& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* PlayerLocator::Stub::AsyncMarkOfflineRaw(::grpc::ClientContext* context, const ::playerlocator::PlayerId& request, ::grpc::CompletionQueue* cq) {
   auto* result =
     this->PrepareAsyncMarkOfflineRaw(context, request, cq);
   result->StartCall();
@@ -112,11 +112,11 @@ PlayerLocator::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       PlayerLocator_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< PlayerLocator::Service, ::playerlocator::PlayerLocation, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< PlayerLocator::Service, ::playerlocator::PlayerLocation, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](PlayerLocator::Service* service,
              ::grpc::ServerContext* ctx,
              const ::playerlocator::PlayerLocation* req,
-             ::Empty* resp) {
+             ::google::protobuf::Empty* resp) {
                return service->SetLocation(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
@@ -132,11 +132,11 @@ PlayerLocator::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       PlayerLocator_method_names[2],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< PlayerLocator::Service, ::playerlocator::PlayerId, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< PlayerLocator::Service, ::playerlocator::PlayerId, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](PlayerLocator::Service* service,
              ::grpc::ServerContext* ctx,
              const ::playerlocator::PlayerId* req,
-             ::Empty* resp) {
+             ::google::protobuf::Empty* resp) {
                return service->MarkOffline(ctx, req, resp);
              }, this)));
 }
@@ -144,7 +144,7 @@ PlayerLocator::Service::Service() {
 PlayerLocator::Service::~Service() {
 }
 
-::grpc::Status PlayerLocator::Service::SetLocation(::grpc::ServerContext* context, const ::playerlocator::PlayerLocation* request, ::Empty* response) {
+::grpc::Status PlayerLocator::Service::SetLocation(::grpc::ServerContext* context, const ::playerlocator::PlayerLocation* request, ::google::protobuf::Empty* response) {
   (void) context;
   (void) request;
   (void) response;
@@ -158,7 +158,7 @@ PlayerLocator::Service::~Service() {
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status PlayerLocator::Service::MarkOffline(::grpc::ServerContext* context, const ::playerlocator::PlayerId* request, ::Empty* response) {
+::grpc::Status PlayerLocator::Service::MarkOffline(::grpc::ServerContext* context, const ::playerlocator::PlayerId* request, ::google::protobuf::Empty* response) {
   (void) context;
   (void) request;
   (void) response;

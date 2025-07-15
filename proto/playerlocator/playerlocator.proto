@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "playerlocatorpb";
+option go_package = "pb/game";
 
 package playerlocator;
 
