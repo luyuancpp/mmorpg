@@ -13,7 +13,6 @@ import (
 )
 
 type (
-	Empty          = game.Empty
 	PlayerId       = game.PlayerId
 	PlayerLocation = game.PlayerLocation
 

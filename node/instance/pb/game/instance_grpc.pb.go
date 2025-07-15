@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Instance_CreateInstance_FullMethodName = "/Instance/CreateInstance"
+	Instance_CreateInstance_FullMethodName = "/instance.Instance/CreateInstance"
 )
 
 // InstanceClient is the client API for Instance service.
@@ -110,7 +110,7 @@ func _Instance_CreateInstance_Handler(srv interface{}, ctx context.Context, dec 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Instance_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Instance",
+	ServiceName: "instance.Instance",
 	HandlerType: (*InstanceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
