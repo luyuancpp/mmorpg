@@ -22,6 +22,7 @@ type (
 	LoginNodeDisconnectRequest = game.LoginNodeDisconnectRequest
 	LoginRequest               = game.LoginRequest
 	LoginResponse              = game.LoginResponse
+	LoginSessionInfo           = game.LoginSessionInfo
 	TestResponse               = game.TestResponse
 
 	ClientPlayerLogin interface {
