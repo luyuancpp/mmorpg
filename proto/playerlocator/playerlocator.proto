@@ -2,6 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
+import "proto/common/empty.proto";
 package playerlocator;
 
 // 位置结构体
@@ -18,8 +19,6 @@ message PlayerLocation {
 message PlayerId {
   int64 uid = 1;
 }
-
-message Empty {}
 
 service PlayerLocator {
   rpc SetLocation(PlayerLocation) returns (Empty);
