@@ -229,6 +229,51 @@ func generateLoginGoProto(protoFiles []string, outputDir string) error {
 	return nil
 }
 
+func BuildProtoGoGrpcNode(protoPath string) error {
+	// 读取 proto 目录下的文件
+	files, err := os.ReadDir(protoPath)
+	if err != nil {
+		return err
+	}
+
+	var protoFiles []string
+	basePath := strings.ToLower(filepath.Base(protoPath))
+
+	for _, file := range files {
+		if !util.IsProtoFile(file) {
+			continue
+		}
+		if file.Name() == config.DbProtoFileName {
+			continue
+		}
+
+		isAllowedDir := util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex) ||
+			config.GrpcServices[basePath]
+
+		if !isAllowedDir {
+			continue
+		}
+
+		fullPath := filepath.ToSlash(filepath.Join(protoPath, file.Name()))
+		protoFiles = append(protoFiles, fullPath)
+	}
+
+	if len(protoFiles) == 0 {
+		log.Println("No proto files to process for login:", protoPath)
+		return nil
+	}
+
+	for nodeDir, _ := range config.GrpcServices {
+		err := generateLoginGoProto(protoFiles, config.NodeDirectory+nodeDir)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func BuildProtoGoLogin(protoPath string) error {
 	// 读取 proto 目录
 	fds, err := os.ReadDir(protoPath)
@@ -251,42 +296,6 @@ func BuildProtoGoLogin(protoPath string) error {
 			util.IsPathInProtoDirs(protoPath, config.CenterProtoDirIndex) ||
 			util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
 			util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex)) {
-			continue
-		}
-
-		fullPath := filepath.ToSlash(filepath.Join(protoPath, fd.Name()))
-		protoFiles = append(protoFiles, fullPath)
-	}
-
-	if len(protoFiles) == 0 {
-		log.Println("No proto files to process for login:", protoPath)
-		return nil
-	}
-
-	return generateLoginGoProto(protoFiles, config.LoginDirectory)
-}
-
-func BuildProtoGoGrpcNode(protoPath string) error {
-	// 读取 proto 目录
-	fds, err := os.ReadDir(protoPath)
-	if err != nil {
-		return err
-	}
-
-	var protoFiles []string
-	for _, fd := range fds {
-		if !util.IsProtoFile(fd) {
-			continue
-		}
-		if fd.Name() == config.DbProtoFileName {
-			continue
-		}
-
-		basePath := strings.ToLower(protoPath)
-		if !((util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
-			util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
-			util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex)) ||
-			config.GrpcServices[basePath]) {
 			continue
 		}
 
@@ -519,28 +528,11 @@ func BuildAllProtoc() {
 		util.Wg.Add(1)
 		go func(i int) {
 			defer util.Wg.Done()
-			err := BuildProtoGoLogin(config.ProtoDirs[i])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
-
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
 			err := BuildProtoGoGrpcNode(config.ProtoDirs[i])
 			if err != nil {
 				log.Println(err)
 			}
 		}(i)
 
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			err := BuildProtoGoDb(config.ProtoDirs[i])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
 	}
 }

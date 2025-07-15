@@ -46,6 +46,7 @@ const (
 
 // ----------- 项目目录路径 -----------
 const (
+	NodeDirectory                  = ProjectDir + "node/"
 	NodePkgDirectory               = "node_pkg/"
 	NodePkgLogicDirectory          = NodePkgDirectory + "node_logic/"
 	NodePkgLogicSceneNodeDirectory = NodePkgLogicDirectory + "scene_node/"
