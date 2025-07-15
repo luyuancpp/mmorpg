@@ -110,7 +110,6 @@ entt::entity NodeSceneSystem::FindSceneWithMinPlayerCount(const GetSceneParams& 
 
 	auto bestScene = FindSceneWithMinPlayerCountTemplate<MainSceneNode>(param, filterParam);
 	if (bestScene != entt::null) {
-		LOG_INFO << "Found scene with minimum player count, Scene ID: " << entt::to_integral(bestScene);
 		return bestScene;
 	}
 
@@ -123,7 +122,6 @@ entt::entity NodeSceneSystem::FindNotFullScene(const GetSceneParams& param) {
 
 	auto bestScene = FindNotFullSceneTemplate<MainSceneNode>(param, filterParam);
 	if (bestScene != entt::null) {
-		LOG_INFO << "Found scene that is not full, Scene ID: " << entt::to_integral(bestScene);
 		return bestScene;
 	}
 

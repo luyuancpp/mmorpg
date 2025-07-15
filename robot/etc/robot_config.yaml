@@ -6,7 +6,7 @@ servers:
     ip: "172.23.208.1"
     port: 40002
 robots:
-  count: 1
-  tick: 1000 #毫秒
+  count: 10000
+  tick: 10000 #毫秒
   login_interval : 200 #毫秒
 loglevel: 1

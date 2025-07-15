@@ -68,8 +68,6 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_centre_datab
 
 void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
 {
-	LOG_INFO << "Processing player session state for entity: " << static_cast<uint32_t>(player);
-
 	if (const auto* const enterGameFlag = tls.actorRegistry.try_get<PlayerEnterGameStatePbComp>(player))
 	{
 		LOG_DEBUG << "EnterGameNodeInfoPBComponent found with type: " << enterGameFlag->enter_gs_type();
@@ -85,10 +83,6 @@ void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
 
 		tls.actorRegistry.remove<PlayerEnterGameStatePbComp>(player);
 		LOG_DEBUG << "Removed EnterGameNodeInfoPBComponent from player";
-	}
-	else
-	{
-		LOG_WARN << "EnterGameNodeInfoPBComponent not found for player entity: " << static_cast<uint32_t>(player);
 	}
 }
 
