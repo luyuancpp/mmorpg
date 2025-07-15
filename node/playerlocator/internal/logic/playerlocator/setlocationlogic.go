@@ -2,6 +2,8 @@ package playerlocatorlogic
 
 import (
 	"context"
+	"encoding/json"
+	"playerlocator/internal/keys"
 
 	"playerlocator/internal/svc"
 	"playerlocator/pb/game"
@@ -24,7 +26,12 @@ func NewSetLocationLogic(ctx context.Context, svcCtx *svc.ServiceContext) *SetLo
 }
 
 func (l *SetLocationLogic) SetLocation(in *game.PlayerLocation) (*game.Empty, error) {
-	// todo: add your logic here and delete this line
+	key := keys.PlayerLocationKey(in.Uid)
+	data, _ := json.Marshal(in)
 
-	return &game.Empty{}, nil
+	err := l.svcCtx.Redis.Set(l.ctx, key, data, 0).Err()
+	if err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
 }

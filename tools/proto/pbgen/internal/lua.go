@@ -225,9 +225,6 @@ func WriteSol2LuaFile() {
 				if strings.Contains(fd.Name(), config.MysqlName) {
 					continue
 				}
-				if strings.Contains(fd.Name(), config.DeployPrefixName) {
-					continue
-				}
 				if strings.Contains(fd.Name(), config.DatabasePrefixName) {
 					continue
 				}

@@ -85,24 +85,6 @@ struct PlayerIdDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerIdDefaultTypeInternal _PlayerId_default_instance_;
-              template <typename>
-PROTOBUF_CONSTEXPR Empty::Empty(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(_class_data_.base()){}
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::internal::ZeroFieldsBase() {
-}
-#endif  // PROTOBUF_CUSTOM_VTABLE
-struct EmptyDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR EmptyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~EmptyDefaultTypeInternal() {}
-  union {
-    Empty _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EmptyDefaultTypeInternal _Empty_default_instance_;
 }  // namespace playerlocator
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_proto_2fplayerlocator_2fplayerlocator_2eproto = nullptr;
@@ -135,53 +117,47 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::playerlocator::PlayerId, _impl_.uid_),
-        ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::playerlocator::Empty, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::playerlocator::PlayerLocation)},
         {15, -1, -1, sizeof(::playerlocator::PlayerId)},
-        {24, -1, -1, sizeof(::playerlocator::Empty)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::playerlocator::_PlayerLocation_default_instance_._instance,
     &::playerlocator::_PlayerId_default_instance_._instance,
-    &::playerlocator::_Empty_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fplayerlocator_2fplayerlocator_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\'proto/playerlocator/playerlocator.prot"
-    "o\022\rplayerlocator\"\200\001\n\016PlayerLocation\022\013\n\003u"
-    "id\030\001 \001(\003\022\021\n\tserver_id\030\002 \001(\t\022\016\n\006online\030\003 "
-    "\001(\010\022\021\n\tmigrating\030\004 \001(\010\022\020\n\010scene_id\030\005 \001(\005"
-    "\022\r\n\005token\030\006 \001(\t\022\n\n\002ts\030\007 \001(\003\"\027\n\010PlayerId\022"
-    "\013\n\003uid\030\001 \001(\003\"\007\n\005Empty2\330\001\n\rPlayerLocator\022"
-    "B\n\013SetLocation\022\035.playerlocator.PlayerLoc"
-    "ation\032\024.playerlocator.Empty\022E\n\013GetLocati"
-    "on\022\027.playerlocator.PlayerId\032\035.playerloca"
-    "tor.PlayerLocation\022<\n\013MarkOffline\022\027.play"
-    "erlocator.PlayerId\032\024.playerlocator.Empty"
-    "B\tZ\007pb/gameb\006proto3"
+    "o\022\rplayerlocator\032\030proto/common/empty.pro"
+    "to\"\200\001\n\016PlayerLocation\022\013\n\003uid\030\001 \001(\003\022\021\n\tse"
+    "rver_id\030\002 \001(\t\022\016\n\006online\030\003 \001(\010\022\021\n\tmigrati"
+    "ng\030\004 \001(\010\022\020\n\010scene_id\030\005 \001(\005\022\r\n\005token\030\006 \001("
+    "\t\022\n\n\002ts\030\007 \001(\003\"\027\n\010PlayerId\022\013\n\003uid\030\001 \001(\0032\274"
+    "\001\n\rPlayerLocator\0224\n\013SetLocation\022\035.player"
+    "locator.PlayerLocation\032\006.Empty\022E\n\013GetLoc"
+    "ation\022\027.playerlocator.PlayerId\032\035.playerl"
+    "ocator.PlayerLocation\022.\n\013MarkOffline\022\027.p"
+    "layerlocator.PlayerId\032\006.EmptyB\tZ\007pb/game"
+    "b\006proto3"
+};
+static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fplayerlocator_2fplayerlocator_2eproto_deps[1] =
+    {
+        &::descriptor_table_proto_2fcommon_2fempty_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fplayerlocator_2fplayerlocator_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fplayerlocator_2fplayerlocator_2eproto = {
     false,
     false,
-    459,
+    448,
     descriptor_table_protodef_proto_2fplayerlocator_2fplayerlocator_2eproto,
     "proto/playerlocator/playerlocator.proto",
     &descriptor_table_proto_2fplayerlocator_2fplayerlocator_2eproto_once,
-    nullptr,
-    0,
-    3,
+    descriptor_table_proto_2fplayerlocator_2fplayerlocator_2eproto_deps,
+    1,
+    2,
     schemas,
     file_default_instances,
     TableStruct_proto_2fplayerlocator_2fplayerlocator_2eproto::offsets,
@@ -781,109 +757,6 @@ void PlayerId::InternalSwap(PlayerId* PROTOBUF_RESTRICT other) {
 
 ::google::protobuf::Metadata PlayerId::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
-class Empty::_Internal {
- public:
-};
-
-Empty::Empty(::google::protobuf::Arena* arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena, _class_data_.base()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(arena_constructor:playerlocator.Empty)
-}
-Empty::Empty(
-    ::google::protobuf::Arena* arena,
-    const Empty& from)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena, _class_data_.base()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  Empty* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-
-  // @@protoc_insertion_point(copy_constructor:playerlocator.Empty)
-}
-
-inline void* Empty::PlacementNew_(const void*, void* mem,
-                                        ::google::protobuf::Arena* arena) {
-  return ::new (mem) Empty(arena);
-}
-constexpr auto Empty::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(Empty),
-                                            alignof(Empty));
-}
-PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::google::protobuf::internal::ClassDataFull Empty::_class_data_ = {
-    ::google::protobuf::internal::ClassData{
-        &_Empty_default_instance_._instance,
-        &_table_.header,
-        nullptr,  // OnDemandRegisterArenaDtor
-        nullptr,  // IsInitialized
-        &Empty::MergeImpl,
-        ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<Empty>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-        &Empty::SharedDtor,
-        ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<Empty>(), &Empty::ByteSizeLong,
-            &Empty::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-        PROTOBUF_FIELD_OFFSET(Empty, _impl_._cached_size_),
-        false,
-    },
-    &Empty::kDescriptorMethods,
-    &descriptor_table_proto_2fplayerlocator_2fplayerlocator_2eproto,
-    nullptr,  // tracker
-};
-const ::google::protobuf::internal::ClassData* Empty::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
-  return _class_data_.base();
-}
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 0, 0, 0, 2> Empty::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    0, 0,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967295,  // skipmap
-    offsetof(decltype(_table_), field_names),  // no field_entries
-    0,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    _class_data_.base(),
-    nullptr,  // post_loop_handler
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::playerlocator::Empty>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    {::_pbi::TcParser::MiniParse, {}},
-  }}, {{
-    65535, 65535
-  }},
-  // no field_entries, or aux_entries
-  {{
-  }},
-};
-
-
-
-
-
-
-
-
-::google::protobuf::Metadata Empty::GetMetadata() const {
-  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace playerlocator

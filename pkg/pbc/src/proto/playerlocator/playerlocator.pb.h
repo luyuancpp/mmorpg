@@ -20,7 +20,6 @@
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/arena.h"
 #include "google/protobuf/arenastring.h"
-#include "google/protobuf/generated_message_bases.h"
 #include "google/protobuf/generated_message_tctable_decl.h"
 #include "google/protobuf/generated_message_util.h"
 #include "google/protobuf/metadata_lite.h"
@@ -30,6 +29,7 @@
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
+#include "proto/common/empty.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -53,9 +53,6 @@ struct TableStruct_proto_2fplayerlocator_2fplayerlocator_2eproto {
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_proto_2fplayerlocator_2fplayerlocator_2eproto;
 namespace playerlocator {
-class Empty;
-struct EmptyDefaultTypeInternal;
-extern EmptyDefaultTypeInternal _Empty_default_instance_;
 class PlayerId;
 struct PlayerIdDefaultTypeInternal;
 extern PlayerIdDefaultTypeInternal _PlayerId_default_instance_;
@@ -539,152 +536,6 @@ class PlayerId final
   union { Impl_ _impl_; };
   friend struct ::TableStruct_proto_2fplayerlocator_2fplayerlocator_2eproto;
 };
-// -------------------------------------------------------------------
-
-class Empty final
-    : public ::google::protobuf::internal::ZeroFieldsBase
-/* @@protoc_insertion_point(class_definition:playerlocator.Empty) */ {
- public:
-  inline Empty() : Empty(nullptr) {}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(Empty* msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(Empty));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR Empty(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline Empty(const Empty& from) : Empty(nullptr, from) {}
-  inline Empty(Empty&& from) noexcept
-      : Empty(nullptr, std::move(from)) {}
-  inline Empty& operator=(const Empty& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline Empty& operator=(Empty&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const Empty& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const Empty* internal_default_instance() {
-    return reinterpret_cast<const Empty*>(
-        &_Empty_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 2;
-  friend void swap(Empty& a, Empty& b) { a.Swap(&b); }
-  inline void Swap(Empty* other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(Empty* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  Empty* New(::google::protobuf::Arena* arena = nullptr) const {
-    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<Empty>(arena);
-  }
-  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
-  inline void CopyFrom(const Empty& from) {
-    ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
-  }
-  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
-  void MergeFrom(const Empty& from) {
-    ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
-  }
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
- private:
-  template <typename T>
-  friend ::absl::string_view(
-      ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "playerlocator.Empty"; }
-
- protected:
-  explicit Empty(::google::protobuf::Arena* arena);
-  Empty(::google::protobuf::Arena* arena, const Empty& from);
-  Empty(::google::protobuf::Arena* arena, Empty&& from) noexcept
-      : Empty(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
-  static void* PlacementNew_(const void*, void* mem,
-                             ::google::protobuf::Arena* arena);
-  static constexpr auto InternalNewImpl_();
-  static const ::google::protobuf::internal::ClassDataFull _class_data_;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  // @@protoc_insertion_point(class_scope:playerlocator.Empty)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      0, 0, 0,
-      0, 2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from,
-                          const Empty& from_msg);
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  friend struct ::TableStruct_proto_2fplayerlocator_2fplayerlocator_2eproto;
-};
 
 // ===================================================================
 
@@ -933,10 +784,6 @@ inline void PlayerId::_internal_set_uid(::int64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.uid_ = value;
 }
-
-// -------------------------------------------------------------------
-
-// Empty
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop

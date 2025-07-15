@@ -266,6 +266,42 @@ func BuildProtoGoLogin(protoPath string) error {
 	return generateLoginGoProto(protoFiles, config.LoginDirectory)
 }
 
+func BuildProtoGoGrpcNode(protoPath string) error {
+	// 读取 proto 目录
+	fds, err := os.ReadDir(protoPath)
+	if err != nil {
+		return err
+	}
+
+	var protoFiles []string
+	for _, fd := range fds {
+		if !util.IsProtoFile(fd) {
+			continue
+		}
+		if fd.Name() == config.DbProtoFileName {
+			continue
+		}
+
+		basePath := strings.ToLower(protoPath)
+		if !((util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
+			util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex)) ||
+			config.GrpcServices[basePath]) {
+			continue
+		}
+
+		fullPath := filepath.ToSlash(filepath.Join(protoPath, fd.Name()))
+		protoFiles = append(protoFiles, fullPath)
+	}
+
+	if len(protoFiles) == 0 {
+		log.Println("No proto files to process for login:", protoPath)
+		return nil
+	}
+
+	return generateLoginGoProto(protoFiles, config.LoginDirectory)
+}
+
 func generateGoDbProto(protoFiles []string, outputDir string) error {
 	sysType := runtime.GOOS
 	var cmd *exec.Cmd
@@ -393,75 +429,6 @@ func BuildProtoRobotGo(protoPath string) error {
 	return generateRobotGoProto(protoFiles, config.RobotGoOutputDirectory)
 }
 
-func generateDeployGoProto(protoFiles []string, outputDir string) error {
-	sysType := runtime.GOOS
-	var cmd *exec.Cmd
-
-	args := []string{
-		"--go_out=" + outputDir,
-	}
-	args = append(args, protoFiles...)
-	args = append(args,
-		"--proto_path="+config.ProtoParentIncludePathDir,
-		"--proto_path="+config.ProtoBufferDirectory,
-	)
-
-	if sysType == "linux" {
-		cmd = exec.Command("protoc", args...)
-	} else {
-		cmd = exec.Command("./protoc.exe", args...)
-	}
-
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	log.Println("Running:", cmd.String())
-	if err := cmd.Run(); err != nil {
-		fmt.Println("protoc error:", stderr.String())
-		return err
-	}
-
-	return nil
-}
-
-func BuildProtoGoDeploy(protoPath string) error {
-	// 读取目录下所有文件
-	fds, err := os.ReadDir(protoPath)
-	if err != nil {
-		return err
-	}
-
-	var protoFiles []string
-
-	for _, fd := range fds {
-		if !util.IsProtoFile(fd) {
-			continue
-		}
-
-		if fd.Name() == config.DbProtoFileName ||
-			fd.Name() == config.GameMysqlDBProtoFileName ||
-			fd.Name() == config.LoginServiceProtoFileName {
-			continue
-		}
-
-		if !strings.Contains(protoPath, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) {
-			continue // 修复 return 错误
-		}
-
-		fullPath := filepath.ToSlash(filepath.Join(protoPath, fd.Name()))
-		protoFiles = append(protoFiles, fullPath)
-	}
-
-	if len(protoFiles) == 0 {
-		log.Println("No proto files to deploy for:", protoPath)
-		return nil
-	}
-
-	return generateDeployGoProto(protoFiles, config.DeployDirectory)
-}
-
 func BuildProtocDescAllInOne() {
 	util.Wg.Add(1)
 
@@ -561,7 +528,7 @@ func BuildAllProtoc() {
 		util.Wg.Add(1)
 		go func(i int) {
 			defer util.Wg.Done()
-			err := BuildProtoGoDb(config.ProtoDirs[i])
+			err := BuildProtoGoGrpcNode(config.ProtoDirs[i])
 			if err != nil {
 				log.Println(err)
 			}
@@ -570,11 +537,10 @@ func BuildAllProtoc() {
 		util.Wg.Add(1)
 		go func(i int) {
 			defer util.Wg.Done()
-			err := BuildProtoGoDeploy(config.ProtoDirs[i])
+			err := BuildProtoGoDb(config.ProtoDirs[i])
 			if err != nil {
 				log.Println(err)
 			}
 		}(i)
-
 	}
 }
