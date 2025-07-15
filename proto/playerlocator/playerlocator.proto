@@ -1,11 +1,12 @@
 syntax = "proto3";
 
-option go_package = "pb/game";
+option go_package = "playerlocatorpb";
 
-import "proto/common/empty.proto";
 package playerlocator;
 
-// 位置结构体
+import "google/protobuf/empty.proto";
+
+// 玩家位置结构
 message PlayerLocation {
   int64 uid = 1;
   string server_id = 2;
@@ -21,7 +22,7 @@ message PlayerId {
 }
 
 service PlayerLocator {
-  rpc SetLocation(PlayerLocation) returns (Empty);
+  rpc SetLocation(PlayerLocation) returns (google.protobuf.Empty);
   rpc GetLocation(PlayerId) returns (PlayerLocation);
-  rpc MarkOffline(PlayerId) returns (Empty);
+  rpc MarkOffline(PlayerId) returns (google.protobuf.Empty);
 }

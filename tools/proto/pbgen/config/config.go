@@ -101,7 +101,6 @@ const (
 	RobotMessageIdFilePath = RobotGoGamePbDirectory + MessageIdGoFile
 
 	LoginDirectory       = ProjectDir + "node/login/"
-	DeployDirectory      = ProjectDir + "node/deploy/"
 	LoginGoGameDirectory = LoginDirectory + GoPbGameDirectory
 	LoginMessageIdGoFile = LoginGoGameDirectory + MessageIdGoFile
 	DbGoDirectory        = ProjectDir + "node/db/"
@@ -142,7 +141,6 @@ const (
 	RegisterHandlerCppExtension        = "register" + HandlerCppExtension
 	DbProtoFileName                    = "db_base.proto"
 	GameMysqlDBProtoFileName           = "mysql_database_table.proto"
-	LoginServiceProtoFileName          = "login_service.proto"
 )
 
 // ----------- 代码相关字符串常量 -----------
@@ -189,7 +187,7 @@ var (
 	LogicEventProtoDirIndex     = 2
 	LogicSharedProtoDirIndex    = 3
 	LogicProtoDirIndex          = 4
-	EtcdDirIndex                = 5
+	PlayerLocatorDirIndex       = 5
 	ConstantsDirIndex           = 6
 	EtcdProtoDirIndex           = 7
 	LoginProtoDirIndex          = 8
@@ -204,8 +202,6 @@ var (
 
 // ----------- 其他业务相关常量 -----------
 const (
-	LoginPrefixName                 = "login"
-	DeployPrefixName                = "deploy"
 	DatabasePrefixName              = "db"
 	ClientPrefixName                = "Client" //
 	TypePlayer                      = "player"
@@ -239,6 +235,7 @@ var GrpcServices = map[string]bool{
 	"chat":          true,
 	"etcd":          true,
 	"playerlocator": true,
+	"db":            true,
 }
 
 const (
