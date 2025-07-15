@@ -38,7 +38,6 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 	defer(tlsGame.playerNodeEntryInfoList.erase(playerId));
 
 	auto player = tls.actorRegistry.create();
-	LOG_INFO << "Created entity for player: " << entt::to_integral(player);
 
 	if (const auto [first, second] = GlobalPlayerList().emplace(playerId, player); !second)
 	{
@@ -52,14 +51,12 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 
 	if (message.uint64_pb_component().registration_timestamp() <= 0)
 	{
-		LOG_INFO << "Player is new, initializing default registration time and level";
 		tls.actorRegistry.get<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeUtil::NowSecondsUTC());
 		tls.actorRegistry.get<LevelPbComponent>(player).set_level(1);
 
 		RegisterPlayerEvent registerPlayer;
 		registerPlayer.set_actor_entity(entt::to_integral(player));
 		tls.dispatcher.trigger(registerPlayer);
-		LOG_INFO << "Triggered RegisterPlayerEvent";
 	}
 
 	tls.actorRegistry.emplace<ViewRadius>(player).set_radius(10);
@@ -225,6 +222,12 @@ void PlayerNodeSystem::HandleExitGameNode(entt::entity player)
 	if (!tls.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "HandleExitGameNode: Player entity is not valid";
+		return;
+	}
+
+	if (tls.actorRegistry.all_of<UnregisterPlayer>(player))
+	{
+		LOG_INFO << "Player " << tls.actorRegistry.get<Guid>(player) << " is already marked for unregistration";
 		return;
 	}
 
