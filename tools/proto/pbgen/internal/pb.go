@@ -229,30 +229,25 @@ func generateLoginGoProto(protoFiles []string, outputDir string) error {
 	return nil
 }
 
+// BuildProtoGoGrpcNode processes .proto files in the given directory
+// and generates Go gRPC code for allowed services.
 func BuildProtoGoGrpcNode(protoPath string) error {
-	// 读取 proto 目录下的文件
+	// 1. 读取 protoPath 目录下的所有文件
 	files, err := os.ReadDir(protoPath)
 	if err != nil {
 		return err
 	}
 
 	var protoFiles []string
-	basePath := strings.ToLower(filepath.Base(protoPath))
+	baseDirName := strings.ToLower(filepath.Base(protoPath)) // 提取最后一级目录名作为 key
 
+	// 2. 筛选有效的 .proto 文件
 	for _, file := range files {
-		if !util.IsProtoFile(file) {
-			continue
-		}
-		if file.Name() == config.DbProtoFileName {
+		if !util.IsProtoFile(file) || file.Name() == config.DbProtoFileName {
 			continue
 		}
 
-		isAllowedDir := util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
-			util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
-			util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex) ||
-			config.GrpcServices[basePath]
-
-		if !isAllowedDir {
+		if !isInAllowedProtoDir(protoPath, baseDirName) {
 			continue
 		}
 
@@ -260,18 +255,31 @@ func BuildProtoGoGrpcNode(protoPath string) error {
 		protoFiles = append(protoFiles, fullPath)
 	}
 
+	// 3. 如果没有符合条件的 proto 文件，记录日志并退出
 	if len(protoFiles) == 0 {
 		log.Println("No proto files to process for login:", protoPath)
 		return nil
 	}
 
-	for nodeDir, _ := range config.GrpcServices {
-		err := generateLoginGoProto(protoFiles, config.NodeDirectory+nodeDir)
-		if err != nil {
-			return err
-		}
+	// 4. 为所有注册的 grpc 节点目录生成 Go gRPC 代码
+	for nodeDir := range config.GrpcServices {
+		outputDir := filepath.Join(config.NodeDirectory, nodeDir)
+		generateLoginGoProto(protoFiles, outputDir)
 	}
+
 	return nil
+}
+
+// isInAllowedProtoDir 判断 protoPath 是否是允许处理的目录或 grpc service 目录
+func isInAllowedProtoDir(protoPath, baseDirName string) bool {
+	if util.IsPathInProtoDirs(protoPath, config.DbProtoDirIndex) ||
+		util.IsPathInProtoDirs(protoPath, config.LoginProtoDirIndex) {
+		return false
+	}
+	return util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
+		util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
+		util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex) ||
+		config.GrpcServices[baseDirName]
 }
 
 func BuildProtoGoLogin(protoPath string) error {
@@ -534,5 +542,22 @@ func BuildAllProtoc() {
 			}
 		}(i)
 
+		util.Wg.Add(1)
+		go func(i int) {
+			defer util.Wg.Done()
+			err := BuildProtoGoDb(config.ProtoDirs[i])
+			if err != nil {
+				log.Println(err)
+			}
+		}(i)
+
+		util.Wg.Add(1)
+		go func(i int) {
+			defer util.Wg.Done()
+			err := BuildProtoGoLogin(config.ProtoDirs[i])
+			if err != nil {
+				log.Println(err)
+			}
+		}(i)
 	}
 }
