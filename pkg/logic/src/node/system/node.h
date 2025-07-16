@@ -10,7 +10,8 @@
 #include "type_define/type_define.h"
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
-
+#include <kafka/kafka_consumer.h>
+#include <kafka/kafka_producer.h>
 
 class RegisterNodeSessionRequest;
 class RegisterNodeSessionResponse;
@@ -57,6 +58,8 @@ protected:
     void LoadConfigs();
     void LoadAllConfigData();
     void SetupTimeZone();
+    void InitKafka();
+
 
     // 节点连接与管理
     void ConnectToNode(const NodeInfo& nodeInfo);
@@ -102,6 +105,8 @@ protected:
     TimerTaskComp grpcHandlerTimer;
     TimerTaskComp serviceHealthMonitorTimer;
     TimerTaskComp acquireNodeTimer;
+	TimerTaskComp kafkaProducerTimer;
+	TimerTaskComp kafkaConsumerTimer;
     RpcClientPtr zoneCentreNode;
     CanConnectNodeTypeList targetNodeTypeWhitelist;
     ClientList zombieClientList;
@@ -112,6 +117,8 @@ protected:
     boost::uuids::uuid nodeUuid;
 	boost::uuids::random_generator gen;
     boost::uuids::string_generator stringGen;
+    std::unique_ptr<KafkaProducer> kafkaProducer;
+    std::unique_ptr<KafkaConsumer> kafkaConsumer;
 };
 
 extern Node* gNode;

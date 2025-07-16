@@ -32,6 +32,7 @@
 #include "util/stacktrace_system.h"
 #include "util/node_utils.h"
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
@@ -78,6 +79,7 @@ void Node::Initialize() {
 	InitRpcServer();
 	InitLogSystem();
 	LoadAllConfigData();
+	InitKafka();
 	InitGrpcClients();
 	FetchServiceNodes();
 	LOG_DEBUG << "Node initialization complete.";
@@ -102,6 +104,33 @@ void Node::InitRpcServer() {
 
 	LOG_DEBUG << "Node info: " << info.DebugString();
 }
+
+void Node::InitKafka() {
+	const auto& kafkaConfig = tlsCommonLogic.GetBaseDeployConfig().kafka(); // 假设有配置
+
+	std::vector<std::string> brokersVec;
+	for (const auto& broker : kafkaConfig.brokers()) {
+		brokersVec.push_back(broker);
+	}
+
+	std::vector<std::string> topicsVec;
+	for (const auto& topic : kafkaConfig.topics()) {
+		topicsVec.push_back(topic);
+	}
+
+	std::string brokers = boost::algorithm::join(brokersVec, ",");
+	std::string groupId = kafkaConfig.group_id();
+
+	std::vector<int32_t> partitions;
+
+	kafkaProducer = std::make_unique<KafkaProducer>(brokers);
+	kafkaConsumer = std::make_unique<KafkaConsumer>(brokers, groupId, topicsVec, partitions, [this](const std::string& topic, const std::string& message) {
+		
+	});
+
+	LOG_INFO << "Kafka initialized. :" << kafkaConfig.DebugString();
+}
+
 
 void Node::StartRpcServer() {
 	if (rpcServer) {
@@ -546,7 +575,7 @@ void Node::InitGrpcResponseHandlers() {
 			StartRpcServer();
 		}
 		else {
-			acquireNodeTimer.RunAfter(0.5, [this]() {AcquireNode(); });
+			acquireNodeTimer.RunAfter(1, [this]() {AcquireNode(); });
 		}
 		};
 

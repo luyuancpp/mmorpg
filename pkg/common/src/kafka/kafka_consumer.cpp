@@ -62,7 +62,7 @@ void KafkaConsumer::poll() {
 	if (!running_) return;
 
 	// 非阻塞轮询，每次最多等待 100ms
-	std::unique_ptr<RdKafka::Message> msg{ consumer_->consume(100) };
+	std::unique_ptr<RdKafka::Message> msg{ consumer_->consume(1) };
 	if (!msg) return;
 
 	switch (msg->err()) {
