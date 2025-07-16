@@ -1,26 +1,37 @@
 # Etcd 配置，存储服务发现相关信息
 Etcd:
   Hosts:
-    - "127.0.0.1:2379"    # Etcd 服务的主机地址
-  KeepaliveInterval: 1    # 保活间隔（秒）
-  NodeTTLSeconds: 600      # 节点的TTL时间，单位为秒
+    - "127.0.0.1:2379"
+  KeepaliveInterval: 1
+  NodeTTLSeconds: 600
 
-# 日志配置，控制日志输出的级别
-LogLevel: 2               # 2表示info级别日志
+# 日志配置
+LogLevel: 2
 
 # 健康检查相关配置
-HealthCheckInterval: 1  # 服务健康检查间隔，单位秒
+HealthCheckInterval: 1
 
-# 服务列表，存储所有需要连接的服务
+# 服务列表
 services:
   - name: "service1"
-    url: "http://localhost:8081/v1/health/service/service1"  # 服务1的健康检查URL
+    url: "http://localhost:8081/v1/health/service/service1"
   - name: "service2"
-    url: "http://localhost:8082/v1/catalog/service/service2" # 服务2的健康检查URL
+    url: "http://localhost:8082/v1/catalog/service/service2"
 
-# 其他服务的服务发现前缀
+# 服务发现前缀
 service_discovery_prefixes:
   - "SceneNodeService.rpc"
   - "GateNodeService.rpc"
   - "CentreNodeService.rpc"
   - "LoginNodeService.rpc"
+
+# Kafka 配置
+Kafka:
+  Brokers:
+    - "kafka1.example.com:9092"
+    - "kafka2.example.com:9092"
+    - "kafka3.example.com:9092"
+  Topic: "game-events"               # 默认 topic
+  GroupID: "game-consumer-group"     # 默认 consumer group ID
+  EnableAutoCommit: true
+  AutoOffsetReset: "earliest"        # earliest 或 latest

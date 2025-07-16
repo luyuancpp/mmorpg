@@ -55,6 +55,39 @@ struct ServiceConfigDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ServiceConfigDefaultTypeInternal _ServiceConfig_default_instance_;
 
+inline constexpr KafkaConfig::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : brokers_{},
+        topics_{},
+        group_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        auto_offset_reset_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        enable_auto_commit_{false},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR KafkaConfig::KafkaConfig(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct KafkaConfigDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR KafkaConfigDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~KafkaConfigDefaultTypeInternal() {}
+  union {
+    KafkaConfig _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 KafkaConfigDefaultTypeInternal _KafkaConfig_default_instance_;
+
 inline constexpr GameConfig_ZoneRedisConfig::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : host_(
@@ -116,17 +149,18 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 
 inline constexpr BaseDeployConfig::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : etcd_hosts_{},
+      : _cached_size_{0},
+        etcd_hosts_{},
         services_{},
         service_discovery_prefixes_{},
         deployservice_prefix_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        kafka_{nullptr},
         log_level_{0u},
         keep_alive_interval_{0u},
         node_ttl_seconds_{0u},
-        health_check_interval_{0u},
-        _cached_size_{0} {}
+        health_check_interval_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR BaseDeployConfig::BaseDeployConfig(::_pbi::ConstantInitialized)
@@ -165,6 +199,19 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::ServiceConfig, _impl_.name_),
         PROTOBUF_FIELD_OFFSET(::ServiceConfig, _impl_.url_),
         ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::KafkaConfig, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::KafkaConfig, _impl_.brokers_),
+        PROTOBUF_FIELD_OFFSET(::KafkaConfig, _impl_.topics_),
+        PROTOBUF_FIELD_OFFSET(::KafkaConfig, _impl_.group_id_),
+        PROTOBUF_FIELD_OFFSET(::KafkaConfig, _impl_.enable_auto_commit_),
+        PROTOBUF_FIELD_OFFSET(::KafkaConfig, _impl_.auto_offset_reset_),
+        PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
@@ -180,6 +227,16 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_.deployservice_prefix_),
         PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_.node_ttl_seconds_),
         PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_.health_check_interval_),
+        PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_.kafka_),
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        0,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::GameConfig_ZoneRedisConfig, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -211,12 +268,14 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::ServiceConfig)},
-        {10, -1, -1, sizeof(::BaseDeployConfig)},
-        {26, -1, -1, sizeof(::GameConfig_ZoneRedisConfig)},
-        {38, 49, -1, sizeof(::GameConfig)},
+        {10, -1, -1, sizeof(::KafkaConfig)},
+        {23, 40, -1, sizeof(::BaseDeployConfig)},
+        {49, -1, -1, sizeof(::GameConfig_ZoneRedisConfig)},
+        {61, 72, -1, sizeof(::GameConfig)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_ServiceConfig_default_instance_._instance,
+    &::_KafkaConfig_default_instance_._instance,
     &::_BaseDeployConfig_default_instance_._instance,
     &::_GameConfig_ZoneRedisConfig_default_instance_._instance,
     &::_GameConfig_default_instance_._instance,
@@ -224,30 +283,34 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2fconfig_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\031proto/common/config.proto\"*\n\rServiceCo"
-    "nfig\022\014\n\004name\030\001 \001(\t\022\013\n\003url\030\002 \001(\t\"\363\001\n\020Base"
-    "DeployConfig\022\022\n\netcd_hosts\030\001 \003(\t\022\021\n\tlog_"
-    "level\030\002 \001(\r\022 \n\010services\030\003 \003(\0132\016.ServiceC"
-    "onfig\022\"\n\032service_discovery_prefixes\030\004 \003("
-    "\t\022\033\n\023keep_alive_interval\030\005 \001(\r\022\034\n\024deploy"
-    "service_prefix\030\006 \001(\t\022\030\n\020node_ttl_seconds"
-    "\030\007 \001(\r\022\035\n\025health_check_interval\030\010 \001(\r\"\264\001"
-    "\n\nGameConfig\022\027\n\017scene_node_type\030\001 \001(\r\022\017\n"
-    "\007zone_id\030\002 \001(\r\022/\n\nzone_redis\030\007 \001(\0132\033.Gam"
-    "eConfig.ZoneRedisConfig\032K\n\017ZoneRedisConf"
-    "ig\022\014\n\004host\030\003 \001(\t\022\014\n\004port\030\004 \001(\r\022\020\n\010passwo"
-    "rd\030\005 \001(\t\022\n\n\002db\030\006 \001(\rB\tZ\007pb/gameb\006proto3"
+    "nfig\022\014\n\004name\030\001 \001(\t\022\013\n\003url\030\002 \001(\t\"w\n\013Kafka"
+    "Config\022\017\n\007brokers\030\001 \003(\t\022\016\n\006topics\030\002 \003(\t\022"
+    "\020\n\010group_id\030\003 \001(\t\022\032\n\022enable_auto_commit\030"
+    "\004 \001(\010\022\031\n\021auto_offset_reset\030\005 \001(\t\"\220\002\n\020Bas"
+    "eDeployConfig\022\022\n\netcd_hosts\030\001 \003(\t\022\021\n\tlog"
+    "_level\030\002 \001(\r\022 \n\010services\030\003 \003(\0132\016.Service"
+    "Config\022\"\n\032service_discovery_prefixes\030\004 \003"
+    "(\t\022\033\n\023keep_alive_interval\030\005 \001(\r\022\034\n\024deplo"
+    "yservice_prefix\030\006 \001(\t\022\030\n\020node_ttl_second"
+    "s\030\007 \001(\r\022\035\n\025health_check_interval\030\010 \001(\r\022\033"
+    "\n\005kafka\030\t \001(\0132\014.KafkaConfig\"\264\001\n\nGameConf"
+    "ig\022\027\n\017scene_node_type\030\001 \001(\r\022\017\n\007zone_id\030\002"
+    " \001(\r\022/\n\nzone_redis\030\007 \001(\0132\033.GameConfig.Zo"
+    "neRedisConfig\032K\n\017ZoneRedisConfig\022\014\n\004host"
+    "\030\003 \001(\t\022\014\n\004port\030\004 \001(\r\022\020\n\010password\030\005 \001(\t\022\n"
+    "\n\002db\030\006 \001(\rB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fconfig_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fconfig_2eproto = {
     false,
     false,
-    519,
+    669,
     descriptor_table_protodef_proto_2fcommon_2fconfig_2eproto,
     "proto/common/config.proto",
     &descriptor_table_proto_2fcommon_2fconfig_2eproto_once,
     nullptr,
     0,
-    4,
+    5,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fconfig_2eproto::offsets,
@@ -516,8 +579,375 @@ void ServiceConfig::InternalSwap(ServiceConfig* PROTOBUF_RESTRICT other) {
 }
 // ===================================================================
 
+class KafkaConfig::_Internal {
+ public:
+};
+
+KafkaConfig::KafkaConfig(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:KafkaConfig)
+}
+inline PROTOBUF_NDEBUG_INLINE KafkaConfig::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::KafkaConfig& from_msg)
+      : brokers_{visibility, arena, from.brokers_},
+        topics_{visibility, arena, from.topics_},
+        group_id_(arena, from.group_id_),
+        auto_offset_reset_(arena, from.auto_offset_reset_),
+        _cached_size_{0} {}
+
+KafkaConfig::KafkaConfig(
+    ::google::protobuf::Arena* arena,
+    const KafkaConfig& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  KafkaConfig* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.enable_auto_commit_ = from._impl_.enable_auto_commit_;
+
+  // @@protoc_insertion_point(copy_constructor:KafkaConfig)
+}
+inline PROTOBUF_NDEBUG_INLINE KafkaConfig::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : brokers_{visibility, arena},
+        topics_{visibility, arena},
+        group_id_(arena),
+        auto_offset_reset_(arena),
+        _cached_size_{0} {}
+
+inline void KafkaConfig::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.enable_auto_commit_ = {};
+}
+KafkaConfig::~KafkaConfig() {
+  // @@protoc_insertion_point(destructor:KafkaConfig)
+  SharedDtor(*this);
+}
+inline void KafkaConfig::SharedDtor(MessageLite& self) {
+  KafkaConfig& this_ = static_cast<KafkaConfig&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.group_id_.Destroy();
+  this_._impl_.auto_offset_reset_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* KafkaConfig::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) KafkaConfig(arena);
+}
+constexpr auto KafkaConfig::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_.brokers_) +
+          decltype(KafkaConfig::_impl_.brokers_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+      PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_.topics_) +
+          decltype(KafkaConfig::_impl_.topics_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::CopyInit(
+        sizeof(KafkaConfig), alignof(KafkaConfig), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&KafkaConfig::PlacementNew_,
+                                 sizeof(KafkaConfig),
+                                 alignof(KafkaConfig));
+  }
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull KafkaConfig::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_KafkaConfig_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &KafkaConfig::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<KafkaConfig>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &KafkaConfig::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<KafkaConfig>(), &KafkaConfig::ByteSizeLong,
+            &KafkaConfig::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_._cached_size_),
+        false,
+    },
+    &KafkaConfig::kDescriptorMethods,
+    &descriptor_table_proto_2fcommon_2fconfig_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* KafkaConfig::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 5, 0, 58, 2> KafkaConfig::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    5, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967264,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    5,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::KafkaConfig>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // repeated string brokers = 1;
+    {::_pbi::TcParser::FastUR1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_.brokers_)}},
+    // repeated string topics = 2;
+    {::_pbi::TcParser::FastUR1,
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_.topics_)}},
+    // string group_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_.group_id_)}},
+    // bool enable_auto_commit = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(KafkaConfig, _impl_.enable_auto_commit_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_.enable_auto_commit_)}},
+    // string auto_offset_reset = 5;
+    {::_pbi::TcParser::FastUS1,
+     {42, 63, 0, PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_.auto_offset_reset_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // repeated string brokers = 1;
+    {PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_.brokers_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
+    // repeated string topics = 2;
+    {PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_.topics_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
+    // string group_id = 3;
+    {PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_.group_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // bool enable_auto_commit = 4;
+    {PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_.enable_auto_commit_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
+    // string auto_offset_reset = 5;
+    {PROTOBUF_FIELD_OFFSET(KafkaConfig, _impl_.auto_offset_reset_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\13\7\6\10\0\21\0\0"
+    "KafkaConfig"
+    "brokers"
+    "topics"
+    "group_id"
+    "auto_offset_reset"
+  }},
+};
+
+PROTOBUF_NOINLINE void KafkaConfig::Clear() {
+// @@protoc_insertion_point(message_clear_start:KafkaConfig)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.brokers_.Clear();
+  _impl_.topics_.Clear();
+  _impl_.group_id_.ClearToEmpty();
+  _impl_.auto_offset_reset_.ClearToEmpty();
+  _impl_.enable_auto_commit_ = false;
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* KafkaConfig::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const KafkaConfig& this_ = static_cast<const KafkaConfig&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* KafkaConfig::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const KafkaConfig& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:KafkaConfig)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // repeated string brokers = 1;
+          for (int i = 0, n = this_._internal_brokers_size(); i < n; ++i) {
+            const auto& s = this_._internal_brokers().Get(i);
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "KafkaConfig.brokers");
+            target = stream->WriteString(1, s, target);
+          }
+
+          // repeated string topics = 2;
+          for (int i = 0, n = this_._internal_topics_size(); i < n; ++i) {
+            const auto& s = this_._internal_topics().Get(i);
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "KafkaConfig.topics");
+            target = stream->WriteString(2, s, target);
+          }
+
+          // string group_id = 3;
+          if (!this_._internal_group_id().empty()) {
+            const std::string& _s = this_._internal_group_id();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "KafkaConfig.group_id");
+            target = stream->WriteStringMaybeAliased(3, _s, target);
+          }
+
+          // bool enable_auto_commit = 4;
+          if (this_._internal_enable_auto_commit() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteBoolToArray(
+                4, this_._internal_enable_auto_commit(), target);
+          }
+
+          // string auto_offset_reset = 5;
+          if (!this_._internal_auto_offset_reset().empty()) {
+            const std::string& _s = this_._internal_auto_offset_reset();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "KafkaConfig.auto_offset_reset");
+            target = stream->WriteStringMaybeAliased(5, _s, target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:KafkaConfig)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t KafkaConfig::ByteSizeLong(const MessageLite& base) {
+          const KafkaConfig& this_ = static_cast<const KafkaConfig&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t KafkaConfig::ByteSizeLong() const {
+          const KafkaConfig& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:KafkaConfig)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // repeated string brokers = 1;
+            {
+              total_size +=
+                  1 * ::google::protobuf::internal::FromIntSize(this_._internal_brokers().size());
+              for (int i = 0, n = this_._internal_brokers().size(); i < n; ++i) {
+                total_size += ::google::protobuf::internal::WireFormatLite::StringSize(
+                    this_._internal_brokers().Get(i));
+              }
+            }
+            // repeated string topics = 2;
+            {
+              total_size +=
+                  1 * ::google::protobuf::internal::FromIntSize(this_._internal_topics().size());
+              for (int i = 0, n = this_._internal_topics().size(); i < n; ++i) {
+                total_size += ::google::protobuf::internal::WireFormatLite::StringSize(
+                    this_._internal_topics().Get(i));
+              }
+            }
+          }
+           {
+            // string group_id = 3;
+            if (!this_._internal_group_id().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_group_id());
+            }
+            // string auto_offset_reset = 5;
+            if (!this_._internal_auto_offset_reset().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_auto_offset_reset());
+            }
+            // bool enable_auto_commit = 4;
+            if (this_._internal_enable_auto_commit() != 0) {
+              total_size += 2;
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void KafkaConfig::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<KafkaConfig*>(&to_msg);
+  auto& from = static_cast<const KafkaConfig&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:KafkaConfig)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_brokers()->MergeFrom(from._internal_brokers());
+  _this->_internal_mutable_topics()->MergeFrom(from._internal_topics());
+  if (!from._internal_group_id().empty()) {
+    _this->_internal_set_group_id(from._internal_group_id());
+  }
+  if (!from._internal_auto_offset_reset().empty()) {
+    _this->_internal_set_auto_offset_reset(from._internal_auto_offset_reset());
+  }
+  if (from._internal_enable_auto_commit() != 0) {
+    _this->_impl_.enable_auto_commit_ = from._impl_.enable_auto_commit_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void KafkaConfig::CopyFrom(const KafkaConfig& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:KafkaConfig)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void KafkaConfig::InternalSwap(KafkaConfig* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.brokers_.InternalSwap(&other->_impl_.brokers_);
+  _impl_.topics_.InternalSwap(&other->_impl_.topics_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.group_id_, &other->_impl_.group_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.auto_offset_reset_, &other->_impl_.auto_offset_reset_, arena);
+        swap(_impl_.enable_auto_commit_, other->_impl_.enable_auto_commit_);
+}
+
+::google::protobuf::Metadata KafkaConfig::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
 class BaseDeployConfig::_Internal {
  public:
+  using HasBits =
+      decltype(std::declval<BaseDeployConfig>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_._has_bits_);
 };
 
 BaseDeployConfig::BaseDeployConfig(::google::protobuf::Arena* arena)
@@ -532,11 +962,12 @@ BaseDeployConfig::BaseDeployConfig(::google::protobuf::Arena* arena)
 inline PROTOBUF_NDEBUG_INLINE BaseDeployConfig::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from, const ::BaseDeployConfig& from_msg)
-      : etcd_hosts_{visibility, arena, from.etcd_hosts_},
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        etcd_hosts_{visibility, arena, from.etcd_hosts_},
         services_{visibility, arena, from.services_},
         service_discovery_prefixes_{visibility, arena, from.service_discovery_prefixes_},
-        deployservice_prefix_(arena, from.deployservice_prefix_),
-        _cached_size_{0} {}
+        deployservice_prefix_(arena, from.deployservice_prefix_) {}
 
 BaseDeployConfig::BaseDeployConfig(
     ::google::protobuf::Arena* arena,
@@ -551,6 +982,10 @@ BaseDeployConfig::BaseDeployConfig(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.kafka_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::KafkaConfig>(
+                              arena, *from._impl_.kafka_)
+                        : nullptr;
   ::memcpy(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, log_level_),
            reinterpret_cast<const char *>(&from._impl_) +
@@ -564,19 +999,19 @@ BaseDeployConfig::BaseDeployConfig(
 inline PROTOBUF_NDEBUG_INLINE BaseDeployConfig::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : etcd_hosts_{visibility, arena},
+      : _cached_size_{0},
+        etcd_hosts_{visibility, arena},
         services_{visibility, arena},
         service_discovery_prefixes_{visibility, arena},
-        deployservice_prefix_(arena),
-        _cached_size_{0} {}
+        deployservice_prefix_(arena) {}
 
 inline void BaseDeployConfig::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, log_level_),
+               offsetof(Impl_, kafka_),
            0,
            offsetof(Impl_, health_check_interval_) -
-               offsetof(Impl_, log_level_) +
+               offsetof(Impl_, kafka_) +
                sizeof(Impl_::health_check_interval_));
 }
 BaseDeployConfig::~BaseDeployConfig() {
@@ -588,6 +1023,7 @@ inline void BaseDeployConfig::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.deployservice_prefix_.Destroy();
+  delete this_._impl_.kafka_;
   this_._impl_.~Impl_();
 }
 
@@ -647,16 +1083,16 @@ const ::google::protobuf::internal::ClassData* BaseDeployConfig::GetClassData() 
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 8, 1, 89, 2> BaseDeployConfig::_table_ = {
+const ::_pbi::TcParseTable<4, 9, 2, 89, 2> BaseDeployConfig::_table_ = {
   {
-    0,  // no _has_bits_
+    PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_._has_bits_),
     0, // no _extensions_
-    8, 56,  // max_field_number, fast_idx_mask
+    9, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967040,  // skipmap
+    4294966784,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    8,  // num_field_entries
-    1,  // num_aux_entries
+    9,  // num_field_entries
+    2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     _class_data_.base(),
     nullptr,  // post_loop_handler
@@ -665,9 +1101,7 @@ const ::_pbi::TcParseTable<3, 8, 1, 89, 2> BaseDeployConfig::_table_ = {
     ::_pbi::TcParser::GetTable<::BaseDeployConfig>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint32 health_check_interval = 8;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BaseDeployConfig, _impl_.health_check_interval_), 63>(),
-     {64, 63, 0, PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.health_check_interval_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // repeated string etcd_hosts = 1;
     {::_pbi::TcParser::FastUR1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.etcd_hosts_)}},
@@ -689,35 +1123,51 @@ const ::_pbi::TcParseTable<3, 8, 1, 89, 2> BaseDeployConfig::_table_ = {
     // uint32 node_ttl_seconds = 7;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BaseDeployConfig, _impl_.node_ttl_seconds_), 63>(),
      {56, 63, 0, PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.node_ttl_seconds_)}},
+    // uint32 health_check_interval = 8;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BaseDeployConfig, _impl_.health_check_interval_), 63>(),
+     {64, 63, 0, PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.health_check_interval_)}},
+    // .KafkaConfig kafka = 9;
+    {::_pbi::TcParser::FastMtS1,
+     {74, 0, 1, PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.kafka_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
     // repeated string etcd_hosts = 1;
-    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.etcd_hosts_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.etcd_hosts_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
     // uint32 log_level = 2;
-    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.log_level_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.log_level_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // repeated .ServiceConfig services = 3;
-    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.services_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.services_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
     // repeated string service_discovery_prefixes = 4;
-    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.service_discovery_prefixes_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.service_discovery_prefixes_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
     // uint32 keep_alive_interval = 5;
-    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.keep_alive_interval_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.keep_alive_interval_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // string deployservice_prefix = 6;
-    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.deployservice_prefix_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.deployservice_prefix_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // uint32 node_ttl_seconds = 7;
-    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.node_ttl_seconds_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.node_ttl_seconds_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 health_check_interval = 8;
-    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.health_check_interval_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.health_check_interval_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // .KafkaConfig kafka = 9;
+    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.kafka_), _Internal::kHasBitsOffset + 0, 1,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::ServiceConfig>()},
+    {::_pbi::TcParser::GetTable<::KafkaConfig>()},
   }}, {{
     "\20\12\0\0\32\0\24\0\0\0\0\0\0\0\0\0"
     "BaseDeployConfig"
@@ -738,9 +1188,15 @@ PROTOBUF_NOINLINE void BaseDeployConfig::Clear() {
   _impl_.services_.Clear();
   _impl_.service_discovery_prefixes_.Clear();
   _impl_.deployservice_prefix_.ClearToEmpty();
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.kafka_ != nullptr);
+    _impl_.kafka_->Clear();
+  }
   ::memset(&_impl_.log_level_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.health_check_interval_) -
       reinterpret_cast<char*>(&_impl_.log_level_)) + sizeof(_impl_.health_check_interval_));
+  _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -822,6 +1278,14 @@ PROTOBUF_NOINLINE void BaseDeployConfig::Clear() {
                 8, this_._internal_health_check_interval(), target);
           }
 
+          cached_has_bits = this_._impl_._has_bits_[0];
+          // .KafkaConfig kafka = 9;
+          if (cached_has_bits & 0x00000001u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                9, *this_._impl_.kafka_, this_._impl_.kafka_->GetCachedSize(), target,
+                stream);
+          }
+
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
             target =
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -879,6 +1343,16 @@ PROTOBUF_NOINLINE void BaseDeployConfig::Clear() {
               total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                               this_._internal_deployservice_prefix());
             }
+          }
+           {
+            // .KafkaConfig kafka = 9;
+            cached_has_bits = this_._impl_._has_bits_[0];
+            if (cached_has_bits & 0x00000001u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.kafka_);
+            }
+          }
+           {
             // uint32 log_level = 2;
             if (this_._internal_log_level() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
@@ -907,6 +1381,7 @@ PROTOBUF_NOINLINE void BaseDeployConfig::Clear() {
 void BaseDeployConfig::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
   auto* const _this = static_cast<BaseDeployConfig*>(&to_msg);
   auto& from = static_cast<const BaseDeployConfig&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:BaseDeployConfig)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
@@ -918,6 +1393,16 @@ void BaseDeployConfig::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   _this->_internal_mutable_service_discovery_prefixes()->MergeFrom(from._internal_service_discovery_prefixes());
   if (!from._internal_deployservice_prefix().empty()) {
     _this->_internal_set_deployservice_prefix(from._internal_deployservice_prefix());
+  }
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.kafka_ != nullptr);
+    if (_this->_impl_.kafka_ == nullptr) {
+      _this->_impl_.kafka_ =
+          ::google::protobuf::Message::CopyConstruct<::KafkaConfig>(arena, *from._impl_.kafka_);
+    } else {
+      _this->_impl_.kafka_->MergeFrom(*from._impl_.kafka_);
+    }
   }
   if (from._internal_log_level() != 0) {
     _this->_impl_.log_level_ = from._impl_.log_level_;
@@ -931,6 +1416,7 @@ void BaseDeployConfig::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   if (from._internal_health_check_interval() != 0) {
     _this->_impl_.health_check_interval_ = from._impl_.health_check_interval_;
   }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -947,6 +1433,7 @@ void BaseDeployConfig::InternalSwap(BaseDeployConfig* PROTOBUF_RESTRICT other) {
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.etcd_hosts_.InternalSwap(&other->_impl_.etcd_hosts_);
   _impl_.services_.InternalSwap(&other->_impl_.services_);
   _impl_.service_discovery_prefixes_.InternalSwap(&other->_impl_.service_discovery_prefixes_);
@@ -954,9 +1441,9 @@ void BaseDeployConfig::InternalSwap(BaseDeployConfig* PROTOBUF_RESTRICT other) {
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.health_check_interval_)
       + sizeof(BaseDeployConfig::_impl_.health_check_interval_)
-      - PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.log_level_)>(
-          reinterpret_cast<char*>(&_impl_.log_level_),
-          reinterpret_cast<char*>(&other->_impl_.log_level_));
+      - PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.kafka_)>(
+          reinterpret_cast<char*>(&_impl_.kafka_),
+          reinterpret_cast<char*>(&other->_impl_.kafka_));
 }
 
 ::google::protobuf::Metadata BaseDeployConfig::GetMetadata() const {

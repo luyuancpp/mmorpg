@@ -60,6 +60,9 @@ extern GameConfigDefaultTypeInternal _GameConfig_default_instance_;
 class GameConfig_ZoneRedisConfig;
 struct GameConfig_ZoneRedisConfigDefaultTypeInternal;
 extern GameConfig_ZoneRedisConfigDefaultTypeInternal _GameConfig_ZoneRedisConfig_default_instance_;
+class KafkaConfig;
+struct KafkaConfigDefaultTypeInternal;
+extern KafkaConfigDefaultTypeInternal _KafkaConfig_default_instance_;
 class ServiceConfig;
 struct ServiceConfigDefaultTypeInternal;
 extern ServiceConfigDefaultTypeInternal _ServiceConfig_default_instance_;
@@ -289,6 +292,281 @@ class ServiceConfig final
 };
 // -------------------------------------------------------------------
 
+class KafkaConfig final
+    : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:KafkaConfig) */ {
+ public:
+  inline KafkaConfig() : KafkaConfig(nullptr) {}
+  ~KafkaConfig() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(KafkaConfig* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(KafkaConfig));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR KafkaConfig(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline KafkaConfig(const KafkaConfig& from) : KafkaConfig(nullptr, from) {}
+  inline KafkaConfig(KafkaConfig&& from) noexcept
+      : KafkaConfig(nullptr, std::move(from)) {}
+  inline KafkaConfig& operator=(const KafkaConfig& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline KafkaConfig& operator=(KafkaConfig&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const KafkaConfig& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const KafkaConfig* internal_default_instance() {
+    return reinterpret_cast<const KafkaConfig*>(
+        &_KafkaConfig_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 1;
+  friend void swap(KafkaConfig& a, KafkaConfig& b) { a.Swap(&b); }
+  inline void Swap(KafkaConfig* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(KafkaConfig* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  KafkaConfig* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<KafkaConfig>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const KafkaConfig& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const KafkaConfig& from) { KafkaConfig::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(KafkaConfig* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "KafkaConfig"; }
+
+ protected:
+  explicit KafkaConfig(::google::protobuf::Arena* arena);
+  KafkaConfig(::google::protobuf::Arena* arena, const KafkaConfig& from);
+  KafkaConfig(::google::protobuf::Arena* arena, KafkaConfig&& from) noexcept
+      : KafkaConfig(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kBrokersFieldNumber = 1,
+    kTopicsFieldNumber = 2,
+    kGroupIdFieldNumber = 3,
+    kAutoOffsetResetFieldNumber = 5,
+    kEnableAutoCommitFieldNumber = 4,
+  };
+  // repeated string brokers = 1;
+  int brokers_size() const;
+  private:
+  int _internal_brokers_size() const;
+
+  public:
+  void clear_brokers() ;
+  const std::string& brokers(int index) const;
+  std::string* mutable_brokers(int index);
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_brokers(int index, Arg_&& value, Args_... args);
+  std::string* add_brokers();
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void add_brokers(Arg_&& value, Args_... args);
+  const ::google::protobuf::RepeatedPtrField<std::string>& brokers() const;
+  ::google::protobuf::RepeatedPtrField<std::string>* mutable_brokers();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<std::string>& _internal_brokers() const;
+  ::google::protobuf::RepeatedPtrField<std::string>* _internal_mutable_brokers();
+
+  public:
+  // repeated string topics = 2;
+  int topics_size() const;
+  private:
+  int _internal_topics_size() const;
+
+  public:
+  void clear_topics() ;
+  const std::string& topics(int index) const;
+  std::string* mutable_topics(int index);
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_topics(int index, Arg_&& value, Args_... args);
+  std::string* add_topics();
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void add_topics(Arg_&& value, Args_... args);
+  const ::google::protobuf::RepeatedPtrField<std::string>& topics() const;
+  ::google::protobuf::RepeatedPtrField<std::string>* mutable_topics();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<std::string>& _internal_topics() const;
+  ::google::protobuf::RepeatedPtrField<std::string>* _internal_mutable_topics();
+
+  public:
+  // string group_id = 3;
+  void clear_group_id() ;
+  const std::string& group_id() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_group_id(Arg_&& arg, Args_... args);
+  std::string* mutable_group_id();
+  PROTOBUF_NODISCARD std::string* release_group_id();
+  void set_allocated_group_id(std::string* value);
+
+  private:
+  const std::string& _internal_group_id() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_group_id(
+      const std::string& value);
+  std::string* _internal_mutable_group_id();
+
+  public:
+  // string auto_offset_reset = 5;
+  void clear_auto_offset_reset() ;
+  const std::string& auto_offset_reset() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_auto_offset_reset(Arg_&& arg, Args_... args);
+  std::string* mutable_auto_offset_reset();
+  PROTOBUF_NODISCARD std::string* release_auto_offset_reset();
+  void set_allocated_auto_offset_reset(std::string* value);
+
+  private:
+  const std::string& _internal_auto_offset_reset() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_auto_offset_reset(
+      const std::string& value);
+  std::string* _internal_mutable_auto_offset_reset();
+
+  public:
+  // bool enable_auto_commit = 4;
+  void clear_enable_auto_commit() ;
+  bool enable_auto_commit() const;
+  void set_enable_auto_commit(bool value);
+
+  private:
+  bool _internal_enable_auto_commit() const;
+  void _internal_set_enable_auto_commit(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:KafkaConfig)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      3, 5, 0,
+      58, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const KafkaConfig& from_msg);
+    ::google::protobuf::RepeatedPtrField<std::string> brokers_;
+    ::google::protobuf::RepeatedPtrField<std::string> topics_;
+    ::google::protobuf::internal::ArenaStringPtr group_id_;
+    ::google::protobuf::internal::ArenaStringPtr auto_offset_reset_;
+    bool enable_auto_commit_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fconfig_2eproto;
+};
+// -------------------------------------------------------------------
+
 class GameConfig_ZoneRedisConfig final
     : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:GameConfig.ZoneRedisConfig) */ {
@@ -349,7 +627,7 @@ class GameConfig_ZoneRedisConfig final
     return reinterpret_cast<const GameConfig_ZoneRedisConfig*>(
         &_GameConfig_ZoneRedisConfig_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 3;
   friend void swap(GameConfig_ZoneRedisConfig& a, GameConfig_ZoneRedisConfig& b) { a.Swap(&b); }
   inline void Swap(GameConfig_ZoneRedisConfig* other) {
     if (other == this) return;
@@ -588,7 +866,7 @@ class GameConfig final
     return reinterpret_cast<const GameConfig*>(
         &_GameConfig_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(GameConfig& a, GameConfig& b) { a.Swap(&b); }
   inline void Swap(GameConfig* other) {
     if (other == this) return;
@@ -810,7 +1088,7 @@ class BaseDeployConfig final
     return reinterpret_cast<const BaseDeployConfig*>(
         &_BaseDeployConfig_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 1;
+  static constexpr int kIndexInFileMessages = 2;
   friend void swap(BaseDeployConfig& a, BaseDeployConfig& b) { a.Swap(&b); }
   inline void Swap(BaseDeployConfig* other) {
     if (other == this) return;
@@ -901,6 +1179,7 @@ class BaseDeployConfig final
     kServicesFieldNumber = 3,
     kServiceDiscoveryPrefixesFieldNumber = 4,
     kDeployservicePrefixFieldNumber = 6,
+    kKafkaFieldNumber = 9,
     kLogLevelFieldNumber = 2,
     kKeepAliveIntervalFieldNumber = 5,
     kNodeTtlSecondsFieldNumber = 7,
@@ -983,6 +1262,21 @@ class BaseDeployConfig final
   std::string* _internal_mutable_deployservice_prefix();
 
   public:
+  // .KafkaConfig kafka = 9;
+  bool has_kafka() const;
+  void clear_kafka() ;
+  const ::KafkaConfig& kafka() const;
+  PROTOBUF_NODISCARD ::KafkaConfig* release_kafka();
+  ::KafkaConfig* mutable_kafka();
+  void set_allocated_kafka(::KafkaConfig* value);
+  void unsafe_arena_set_allocated_kafka(::KafkaConfig* value);
+  ::KafkaConfig* unsafe_arena_release_kafka();
+
+  private:
+  const ::KafkaConfig& _internal_kafka() const;
+  ::KafkaConfig* _internal_mutable_kafka();
+
+  public:
   // uint32 log_level = 2;
   void clear_log_level() ;
   ::uint32_t log_level() const;
@@ -1028,7 +1322,7 @@ class BaseDeployConfig final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 8, 1,
+      4, 9, 2,
       89, 2>
       _table_;
 
@@ -1046,15 +1340,17 @@ class BaseDeployConfig final
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const BaseDeployConfig& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedPtrField<std::string> etcd_hosts_;
     ::google::protobuf::RepeatedPtrField< ::ServiceConfig > services_;
     ::google::protobuf::RepeatedPtrField<std::string> service_discovery_prefixes_;
     ::google::protobuf::internal::ArenaStringPtr deployservice_prefix_;
+    ::KafkaConfig* kafka_;
     ::uint32_t log_level_;
     ::uint32_t keep_alive_interval_;
     ::uint32_t node_ttl_seconds_;
     ::uint32_t health_check_interval_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1171,6 +1467,256 @@ inline void ServiceConfig::set_allocated_url(std::string* value) {
     _impl_.url_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:ServiceConfig.url)
+}
+
+// -------------------------------------------------------------------
+
+// KafkaConfig
+
+// repeated string brokers = 1;
+inline int KafkaConfig::_internal_brokers_size() const {
+  return _internal_brokers().size();
+}
+inline int KafkaConfig::brokers_size() const {
+  return _internal_brokers_size();
+}
+inline void KafkaConfig::clear_brokers() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.brokers_.Clear();
+}
+inline std::string* KafkaConfig::add_brokers() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  std::string* _s = _internal_mutable_brokers()->Add();
+  // @@protoc_insertion_point(field_add_mutable:KafkaConfig.brokers)
+  return _s;
+}
+inline const std::string& KafkaConfig::brokers(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:KafkaConfig.brokers)
+  return _internal_brokers().Get(index);
+}
+inline std::string* KafkaConfig::mutable_brokers(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:KafkaConfig.brokers)
+  return _internal_mutable_brokers()->Mutable(index);
+}
+template <typename Arg_, typename... Args_>
+inline void KafkaConfig::set_brokers(int index, Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::AssignToString(
+      *_internal_mutable_brokers()->Mutable(index),
+      std::forward<Arg_>(value), args... );
+  // @@protoc_insertion_point(field_set:KafkaConfig.brokers)
+}
+template <typename Arg_, typename... Args_>
+inline void KafkaConfig::add_brokers(Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::google::protobuf::internal::AddToRepeatedPtrField(*_internal_mutable_brokers(),
+                               std::forward<Arg_>(value),
+                               args... );
+  // @@protoc_insertion_point(field_add:KafkaConfig.brokers)
+}
+inline const ::google::protobuf::RepeatedPtrField<std::string>&
+KafkaConfig::brokers() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:KafkaConfig.brokers)
+  return _internal_brokers();
+}
+inline ::google::protobuf::RepeatedPtrField<std::string>*
+KafkaConfig::mutable_brokers() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:KafkaConfig.brokers)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_brokers();
+}
+inline const ::google::protobuf::RepeatedPtrField<std::string>&
+KafkaConfig::_internal_brokers() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.brokers_;
+}
+inline ::google::protobuf::RepeatedPtrField<std::string>*
+KafkaConfig::_internal_mutable_brokers() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.brokers_;
+}
+
+// repeated string topics = 2;
+inline int KafkaConfig::_internal_topics_size() const {
+  return _internal_topics().size();
+}
+inline int KafkaConfig::topics_size() const {
+  return _internal_topics_size();
+}
+inline void KafkaConfig::clear_topics() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.topics_.Clear();
+}
+inline std::string* KafkaConfig::add_topics() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  std::string* _s = _internal_mutable_topics()->Add();
+  // @@protoc_insertion_point(field_add_mutable:KafkaConfig.topics)
+  return _s;
+}
+inline const std::string& KafkaConfig::topics(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:KafkaConfig.topics)
+  return _internal_topics().Get(index);
+}
+inline std::string* KafkaConfig::mutable_topics(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:KafkaConfig.topics)
+  return _internal_mutable_topics()->Mutable(index);
+}
+template <typename Arg_, typename... Args_>
+inline void KafkaConfig::set_topics(int index, Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::AssignToString(
+      *_internal_mutable_topics()->Mutable(index),
+      std::forward<Arg_>(value), args... );
+  // @@protoc_insertion_point(field_set:KafkaConfig.topics)
+}
+template <typename Arg_, typename... Args_>
+inline void KafkaConfig::add_topics(Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::google::protobuf::internal::AddToRepeatedPtrField(*_internal_mutable_topics(),
+                               std::forward<Arg_>(value),
+                               args... );
+  // @@protoc_insertion_point(field_add:KafkaConfig.topics)
+}
+inline const ::google::protobuf::RepeatedPtrField<std::string>&
+KafkaConfig::topics() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:KafkaConfig.topics)
+  return _internal_topics();
+}
+inline ::google::protobuf::RepeatedPtrField<std::string>*
+KafkaConfig::mutable_topics() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:KafkaConfig.topics)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_topics();
+}
+inline const ::google::protobuf::RepeatedPtrField<std::string>&
+KafkaConfig::_internal_topics() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.topics_;
+}
+inline ::google::protobuf::RepeatedPtrField<std::string>*
+KafkaConfig::_internal_mutable_topics() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.topics_;
+}
+
+// string group_id = 3;
+inline void KafkaConfig::clear_group_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.group_id_.ClearToEmpty();
+}
+inline const std::string& KafkaConfig::group_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:KafkaConfig.group_id)
+  return _internal_group_id();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void KafkaConfig::set_group_id(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.group_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:KafkaConfig.group_id)
+}
+inline std::string* KafkaConfig::mutable_group_id() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_group_id();
+  // @@protoc_insertion_point(field_mutable:KafkaConfig.group_id)
+  return _s;
+}
+inline const std::string& KafkaConfig::_internal_group_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.group_id_.Get();
+}
+inline void KafkaConfig::_internal_set_group_id(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.group_id_.Set(value, GetArena());
+}
+inline std::string* KafkaConfig::_internal_mutable_group_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.group_id_.Mutable( GetArena());
+}
+inline std::string* KafkaConfig::release_group_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:KafkaConfig.group_id)
+  return _impl_.group_id_.Release();
+}
+inline void KafkaConfig::set_allocated_group_id(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.group_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.group_id_.IsDefault()) {
+    _impl_.group_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:KafkaConfig.group_id)
+}
+
+// bool enable_auto_commit = 4;
+inline void KafkaConfig::clear_enable_auto_commit() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enable_auto_commit_ = false;
+}
+inline bool KafkaConfig::enable_auto_commit() const {
+  // @@protoc_insertion_point(field_get:KafkaConfig.enable_auto_commit)
+  return _internal_enable_auto_commit();
+}
+inline void KafkaConfig::set_enable_auto_commit(bool value) {
+  _internal_set_enable_auto_commit(value);
+  // @@protoc_insertion_point(field_set:KafkaConfig.enable_auto_commit)
+}
+inline bool KafkaConfig::_internal_enable_auto_commit() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.enable_auto_commit_;
+}
+inline void KafkaConfig::_internal_set_enable_auto_commit(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enable_auto_commit_ = value;
+}
+
+// string auto_offset_reset = 5;
+inline void KafkaConfig::clear_auto_offset_reset() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.auto_offset_reset_.ClearToEmpty();
+}
+inline const std::string& KafkaConfig::auto_offset_reset() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:KafkaConfig.auto_offset_reset)
+  return _internal_auto_offset_reset();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void KafkaConfig::set_auto_offset_reset(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.auto_offset_reset_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:KafkaConfig.auto_offset_reset)
+}
+inline std::string* KafkaConfig::mutable_auto_offset_reset() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_auto_offset_reset();
+  // @@protoc_insertion_point(field_mutable:KafkaConfig.auto_offset_reset)
+  return _s;
+}
+inline const std::string& KafkaConfig::_internal_auto_offset_reset() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.auto_offset_reset_.Get();
+}
+inline void KafkaConfig::_internal_set_auto_offset_reset(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.auto_offset_reset_.Set(value, GetArena());
+}
+inline std::string* KafkaConfig::_internal_mutable_auto_offset_reset() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.auto_offset_reset_.Mutable( GetArena());
+}
+inline std::string* KafkaConfig::release_auto_offset_reset() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:KafkaConfig.auto_offset_reset)
+  return _impl_.auto_offset_reset_.Release();
+}
+inline void KafkaConfig::set_allocated_auto_offset_reset(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.auto_offset_reset_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.auto_offset_reset_.IsDefault()) {
+    _impl_.auto_offset_reset_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:KafkaConfig.auto_offset_reset)
 }
 
 // -------------------------------------------------------------------
@@ -1488,6 +2034,102 @@ inline ::uint32_t BaseDeployConfig::_internal_health_check_interval() const {
 inline void BaseDeployConfig::_internal_set_health_check_interval(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.health_check_interval_ = value;
+}
+
+// .KafkaConfig kafka = 9;
+inline bool BaseDeployConfig::has_kafka() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.kafka_ != nullptr);
+  return value;
+}
+inline void BaseDeployConfig::clear_kafka() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.kafka_ != nullptr) _impl_.kafka_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::KafkaConfig& BaseDeployConfig::_internal_kafka() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::KafkaConfig* p = _impl_.kafka_;
+  return p != nullptr ? *p : reinterpret_cast<const ::KafkaConfig&>(::_KafkaConfig_default_instance_);
+}
+inline const ::KafkaConfig& BaseDeployConfig::kafka() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BaseDeployConfig.kafka)
+  return _internal_kafka();
+}
+inline void BaseDeployConfig::unsafe_arena_set_allocated_kafka(::KafkaConfig* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.kafka_);
+  }
+  _impl_.kafka_ = reinterpret_cast<::KafkaConfig*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseDeployConfig.kafka)
+}
+inline ::KafkaConfig* BaseDeployConfig::release_kafka() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::KafkaConfig* released = _impl_.kafka_;
+  _impl_.kafka_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::KafkaConfig* BaseDeployConfig::unsafe_arena_release_kafka() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BaseDeployConfig.kafka)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::KafkaConfig* temp = _impl_.kafka_;
+  _impl_.kafka_ = nullptr;
+  return temp;
+}
+inline ::KafkaConfig* BaseDeployConfig::_internal_mutable_kafka() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.kafka_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::KafkaConfig>(GetArena());
+    _impl_.kafka_ = reinterpret_cast<::KafkaConfig*>(p);
+  }
+  return _impl_.kafka_;
+}
+inline ::KafkaConfig* BaseDeployConfig::mutable_kafka() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::KafkaConfig* _msg = _internal_mutable_kafka();
+  // @@protoc_insertion_point(field_mutable:BaseDeployConfig.kafka)
+  return _msg;
+}
+inline void BaseDeployConfig::set_allocated_kafka(::KafkaConfig* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete (_impl_.kafka_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = (value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.kafka_ = reinterpret_cast<::KafkaConfig*>(value);
+  // @@protoc_insertion_point(field_set_allocated:BaseDeployConfig.kafka)
 }
 
 // -------------------------------------------------------------------
