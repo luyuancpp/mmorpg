@@ -2,9 +2,9 @@ package internal
 
 import (
 	"fmt"
+	"github.com/iancoleman/strcase"
 	"log"
 	"os"
-	"pbgen/util"
 	"strings"
 	"text/template"
 
@@ -71,7 +71,7 @@ func CppPlayerDataLoadGenerator() {
 
 			//printMessageFields(messageDesc)
 
-			handleName := util.CapitalizeWords(*messageDesc.Name)
+			handleName := strcase.ToCamel(*messageDesc.Name)
 
 			md5FilePath := config.PlayerStorageTempDirectory + "player_" + messageDescName + config.CppSystemExtension
 

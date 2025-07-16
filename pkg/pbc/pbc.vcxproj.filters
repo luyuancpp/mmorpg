@@ -234,6 +234,15 @@
     <ClCompile Include="src\service_info\service_info.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\grpc\generator\proto\player_locator\player_locator_grpc.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\player_locator\player_locator.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\player_locator\player_locator.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\common\common.pb.h">
@@ -504,6 +513,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\grpc\grpc_tag.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\grpc\generator\proto\player_locator\player_locator_grpc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\player_locator\player_locator.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\player_locator\player_locator.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/iancoleman/strcase"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"log"
@@ -307,7 +308,7 @@ void InitMessageInfo()
 			messageId := method.KeyName() + config.MessageIdName
 
 			isClientMessage := strings.Contains(service.GetServiceName(), config.ClientPrefixName)
-			nodeType := fmt.Sprintf("eNodeType::%sNodeService", util.CapitalizeWords(basePath))
+			nodeType := fmt.Sprintf("eNodeType::%sNodeService", strcase.ToCamel(basePath))
 
 			initLine := ""
 			if method.CcGenericServices() {

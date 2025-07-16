@@ -5,7 +5,7 @@
 #include "service/player_service_replied.h"
 
 
-class CentrePlayerSceneServiceRepliedHandler : public ::PlayerServiceReplied
+class CentrePlayerSceneRepliedHandler : public ::PlayerServiceReplied
 {
 public:
     using PlayerServiceReplied::PlayerServiceReplied;

@@ -22,6 +22,7 @@
     <ClCompile Include="src\grpc\generator\grpc_init.cpp" />
     <ClCompile Include="src\grpc\generator\proto\etcd\etcd_grpc.cpp" />
     <ClCompile Include="src\grpc\generator\proto\login\login_service_grpc.cpp" />
+    <ClCompile Include="src\grpc\generator\proto\player_locator\player_locator_grpc.cpp" />
     <ClCompile Include="src\proto\centre\centre_player.pb.cc" />
     <ClCompile Include="src\proto\centre\centre_player_scene.pb.cc" />
     <ClCompile Include="src\proto\centre\centre_scene.pb.cc" />
@@ -83,6 +84,8 @@
     <ClCompile Include="src\proto\logic\event\skill_event.pb.cc" />
     <ClCompile Include="src\proto\login\login_service.grpc.pb.cc" />
     <ClCompile Include="src\proto\login\login_service.pb.cc" />
+    <ClCompile Include="src\proto\player_locator\player_locator.grpc.pb.cc" />
+    <ClCompile Include="src\proto\player_locator\player_locator.pb.cc" />
     <ClCompile Include="src\proto\scene\game_client_player.pb.cc" />
     <ClCompile Include="src\proto\scene\game_player.pb.cc" />
     <ClCompile Include="src\proto\scene\game_player_scene.pb.cc" />
@@ -97,6 +100,7 @@
     <ClInclude Include="src\grpc\generator\grpc_init.h" />
     <ClInclude Include="src\grpc\generator\proto\etcd\etcd_grpc.h" />
     <ClInclude Include="src\grpc\generator\proto\login\login_service_grpc.h" />
+    <ClInclude Include="src\grpc\generator\proto\player_locator\player_locator_grpc.h" />
     <ClInclude Include="src\grpc\grpc_tag.h" />
     <ClInclude Include="src\proto\centre\centre_player.pb.h" />
     <ClInclude Include="src\proto\centre\centre_player_scene.pb.h" />
@@ -159,6 +163,8 @@
     <ClInclude Include="src\proto\logic\event\skill_event.pb.h" />
     <ClInclude Include="src\proto\login\login_service.grpc.pb.h" />
     <ClInclude Include="src\proto\login\login_service.pb.h" />
+    <ClInclude Include="src\proto\player_locator\player_locator.grpc.pb.h" />
+    <ClInclude Include="src\proto\player_locator\player_locator.pb.h" />
     <ClInclude Include="src\proto\scene\game_client_player.pb.h" />
     <ClInclude Include="src\proto\scene\game_player.pb.h" />
     <ClInclude Include="src\proto\scene\game_player_scene.pb.h" />
