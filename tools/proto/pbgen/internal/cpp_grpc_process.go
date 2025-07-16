@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"pbgen/config"
 	"pbgen/util"
 	"sort"
@@ -93,8 +94,10 @@ func CppGrpcCallClient() {
 			}
 
 			firstService := serviceInfo[0]
-			if !(strings.Contains(firstService.Path(), config.ProtoDirectoryNames[config.EtcdProtoDirIndex]) ||
-				strings.Contains(firstService.Path(), config.ProtoDirectoryNames[config.LoginProtoDirIndex])) {
+			protoPath := firstService.Path()
+			baseDirName := strings.ToLower(filepath.Base(protoPath)) // 提取最后一级目录名作为 key
+
+			if !config.GrpcServices[baseDirName] {
 				return
 			}
 

@@ -2,7 +2,7 @@
 #include "service_info.h"
 #include "proto/common/node.pb.h"
 
-#include "proto/playerlocator/playerlocator.grpc.pb.h"
+#include "proto/player_locator/player_locator.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
@@ -21,7 +21,7 @@
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/gate/gate_service.pb.h"
 
-#include "playerlocator_service_info.h"
+#include "player_locator_service_info.h"
 #include "etcd_service_info.h"
 #include "etcd_service_info.h"
 #include "etcd_service_info.h"
@@ -80,9 +80,9 @@ std::array<RpcService, 87> gRpcServiceRegistry;
 
 void InitMessageInfo()
 {
-    gRpcServiceRegistry[PlayerLocatorSetLocationMessageId] = RpcService{"PlayerLocator", "SetLocation", std::make_unique_for_overwrite<::playerlocator::PlayerLocation>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::PlayerlocatorNodeService, playerlocator::SendPlayerLocatorSetLocation};
-    gRpcServiceRegistry[PlayerLocatorGetLocationMessageId] = RpcService{"PlayerLocator", "GetLocation", std::make_unique_for_overwrite<::playerlocator::PlayerId>(), std::make_unique_for_overwrite<::playerlocator::PlayerLocation>(), nullptr, 1, eNodeType::PlayerlocatorNodeService, playerlocator::SendPlayerLocatorGetLocation};
-    gRpcServiceRegistry[PlayerLocatorMarkOfflineMessageId] = RpcService{"PlayerLocator", "MarkOffline", std::make_unique_for_overwrite<::playerlocator::PlayerId>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::PlayerlocatorNodeService, playerlocator::SendPlayerLocatorMarkOffline};
+    gRpcServiceRegistry[PlayerLocatorSetLocationMessageId] = RpcService{"PlayerLocator", "SetLocation", std::make_unique_for_overwrite<::playerlocator::PlayerLocation>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::Player_locatorNodeService, playerlocator::SendPlayerLocatorSetLocation};
+    gRpcServiceRegistry[PlayerLocatorGetLocationMessageId] = RpcService{"PlayerLocator", "GetLocation", std::make_unique_for_overwrite<::playerlocator::PlayerId>(), std::make_unique_for_overwrite<::playerlocator::PlayerLocation>(), nullptr, 1, eNodeType::Player_locatorNodeService, playerlocator::SendPlayerLocatorGetLocation};
+    gRpcServiceRegistry[PlayerLocatorMarkOfflineMessageId] = RpcService{"PlayerLocator", "MarkOffline", std::make_unique_for_overwrite<::playerlocator::PlayerId>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::Player_locatorNodeService, playerlocator::SendPlayerLocatorMarkOffline};
     gRpcServiceRegistry[KVRangeMessageId] = RpcService{"KV", "Range", std::make_unique_for_overwrite<::etcdserverpb::RangeRequest>(), std::make_unique_for_overwrite<::etcdserverpb::RangeResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendKVRange};
     gRpcServiceRegistry[KVPutMessageId] = RpcService{"KV", "Put", std::make_unique_for_overwrite<::etcdserverpb::PutRequest>(), std::make_unique_for_overwrite<::etcdserverpb::PutResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendKVPut};
     gRpcServiceRegistry[KVDeleteRangeMessageId] = RpcService{"KV", "DeleteRange", std::make_unique_for_overwrite<::etcdserverpb::DeleteRangeRequest>(), std::make_unique_for_overwrite<::etcdserverpb::DeleteRangeResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendKVDeleteRange};

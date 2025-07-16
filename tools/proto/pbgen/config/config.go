@@ -168,7 +168,7 @@ var (
 		"logic/event/",
 		"logic/shared/",
 		"logic/",
-		"playerlocator/",
+		"player_locator/",
 		"logic/constants/",
 		"etcd/",
 		"login/",
@@ -230,13 +230,13 @@ const (
 )
 
 var GrpcServices = map[string]bool{
-	"login":         true,
-	"team":          true,
-	"mail":          true,
-	"chat":          true,
-	"etcd":          true,
-	"playerlocator": true,
-	"db":            true,
+	"login":          true,
+	"team":           true,
+	"mail":           true,
+	"chat":           true,
+	"etcd":           true,
+	"player_locator": true,
+	"db":             true,
 }
 
 const (

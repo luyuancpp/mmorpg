@@ -1,13 +1,13 @@
 package internal
 
 import (
+	"github.com/iancoleman/strcase"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"path"
 	"path/filepath"
 	"pbgen/config"
-	"pbgen/util"
 	"strings"
 	"sync"
 )
@@ -94,7 +94,7 @@ func (info *RPCServiceInfo) GetServiceName() string {
 }
 
 func (info *RPCServiceInfo) BasePathForCpp() string {
-	return util.CapitalizeWords(path.Base(info.Path()))
+	return strcase.ToCamel(path.Base(info.Path()))
 }
 
 // PbcHeadName 返回Proto文件头文件名

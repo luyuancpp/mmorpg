@@ -41,6 +41,7 @@
     <ClInclude Include="src\util\player_message_utils.h" />
     <ClInclude Include="src\util\node_message_utils.h" />
     <ClInclude Include="src\util\node_utils.h" />
+    <ClInclude Include="src\kafka\kafka_producer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\network\game_rpc.pb.cc" />
@@ -67,6 +68,7 @@
     <ClCompile Include="src\util\player_message_utils.cpp" />
     <ClCompile Include="src\util\node_message_utils.cpp" />
     <ClCompile Include="src\util\node_utils.cpp" />
+    <ClCompile Include="src\kafka\kafka_producer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\network\autogen.bat" />
