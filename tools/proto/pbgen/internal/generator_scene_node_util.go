@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"path/filepath"
 	"pbgen/config"
 	"pbgen/util"
 	"strings"
@@ -43,10 +44,19 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if util.IsPathInOtherProtoDirs(firstMethodInfo.Path(), config.SceneProtoDirIndex) {
+	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.SceneProtoDirIndex) {
 		return false
 	}
 
+	if strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
+		return false
+	}
+
+	baseDirName := strings.ToLower(filepath.Base(firstMethodInfo.Path())) // 提取最后一级目录名作为 key
+
+	if config.GrpcServices[baseDirName] {
+		return false
+	}
 	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
 }
 

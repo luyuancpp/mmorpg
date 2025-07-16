@@ -5,43 +5,47 @@
 ///<<< END WRITING YOUR CODE
 
 
-void CentrePlayerSceneServiceRepliedHandler::EnterScene(entt::entity player,const ::CentreEnterSceneRequest* request,
+
+void CentrePlayerSceneRepliedHandler::EnterScene(entt::entity player,const ::CentreEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
+
 }
 
 
 
-void CentrePlayerSceneServiceRepliedHandler::LeaveScene(entt::entity player,const ::CentreLeaveSceneRequest* request,
+void CentrePlayerSceneRepliedHandler::LeaveScene(entt::entity player,const ::CentreLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
+
 }
 
 
 
-void CentrePlayerSceneServiceRepliedHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
+void CentrePlayerSceneRepliedHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
+
 }
 
 
 
-void CentrePlayerSceneServiceRepliedHandler::SceneInfoC2S(entt::entity player,const ::CentreSceneInfoRequest* request,
+void CentrePlayerSceneRepliedHandler::SceneInfoC2S(entt::entity player,const ::CentreSceneInfoRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-}
 
+}
 
 

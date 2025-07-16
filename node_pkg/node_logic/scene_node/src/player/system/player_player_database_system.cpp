@@ -2,7 +2,7 @@
 #include "thread_local/storage.h"
 #include "proto/db/mysql_database_table.pb.h"
 
-void Player_databaseMessageFieldsUnmarshal(entt::entity player, const player_database& message){
+void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_database& message){
 	tls.actorRegistry.emplace<Transform>(player, message.transform());
 	tls.actorRegistry.emplace<PlayerUint64PBComponent>(player, message.uint64_pb_component());
 	tls.actorRegistry.emplace<PlayerSkillListPBComponent>(player, message.skill_list());
@@ -11,7 +11,7 @@ void Player_databaseMessageFieldsUnmarshal(entt::entity player, const player_dat
 	tls.actorRegistry.emplace<LevelPbComponent>(player, message.level_component());
 }
 
-void Player_databaseMessageFieldsMarshal(entt::entity player, player_database& message){
+void PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& message){
 	message.mutable_transform()->CopyFrom(tls.actorRegistry.get<Transform>(player));
 	message.mutable_uint64_pb_component()->CopyFrom(tls.actorRegistry.get<PlayerUint64PBComponent>(player));
 	message.mutable_skill_list()->CopyFrom(tls.actorRegistry.get<PlayerSkillListPBComponent>(player));
