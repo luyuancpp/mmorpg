@@ -12,7 +12,7 @@ public:
 
 	KafkaConsumer(const std::string& brokers, const std::string& groupId,
 		const std::vector<std::string>& topics,
-		const std::vector<int>& partitions,  // 指定需要消费的分区
+		const std::vector<int32_t>& partitions,  // 指定需要消费的分区
 		MessageCallback callback);
 
 	~KafkaConsumer();

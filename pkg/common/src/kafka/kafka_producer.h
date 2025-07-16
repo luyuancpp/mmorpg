@@ -7,13 +7,13 @@
 
 class KafkaProducer : public RdKafka::DeliveryReportCb {
 public:
-	using DeliveryCallback = std::function<void(const std::string& topic, int partition, int64_t offset, const std::string& message)>;
+	using DeliveryCallback = std::function<void(const std::string& topic, int32_t partition, int64_t offset, const std::string& message)>;
 
 	KafkaProducer(const std::string& brokers);
 	~KafkaProducer();
 
 	// 异步发送消息，支持指定分区和消息的 key
-	void send(const std::string& topic, const std::string& message, const std::string& key = "", int partition = RdKafka::Topic::PARTITION_UA);
+	void send(const std::string& topic, const std::string& message, const std::string& key = "", int32_t partition = RdKafka::Topic::PARTITION_UA);
 
 	// 轮询处理消息队列
 	void poll();
