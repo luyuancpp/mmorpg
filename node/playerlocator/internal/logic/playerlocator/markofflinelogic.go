@@ -2,8 +2,7 @@ package playerlocatorlogic
 
 import (
 	"context"
-	"encoding/json"
-	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/encoding/protojson"
 	"playerlocator/internal/keys"
 
 	"playerlocator/internal/svc"
@@ -28,24 +27,29 @@ func NewMarkOfflineLogic(ctx context.Context, svcCtx *svc.ServiceContext) *MarkO
 
 func (l *MarkOfflineLogic) MarkOffline(in *game.PlayerId) (*game.Empty, error) {
 	key := keys.PlayerLocationKey(in.Uid)
-	val, err := l.svcCtx.Redis.Get(l.ctx, key).Result()
+	val, err := l.svcCtx.RedisCluster.Get(l.ctx, key).Result()
 	if err != nil {
-		return &emptypb.Empty{}, nil
+		// Key 不存在时，按业务可能仍返回 Empty
+		return &game.Empty{}, nil
 	}
 
-	var location playerlocatorpb.PlayerLocation
-	if err := json.Unmarshal([]byte(val), &location); err != nil {
+	var location game.PlayerLocation
+	if err := protojson.Unmarshal([]byte(val), &location); err != nil {
 		return nil, err
 	}
 
 	location.Online = false
 	location.Migrating = false
 
-	data, _ := json.Marshal(location)
-	err = l.svcCtx.Redis.Set(l.ctx, key, data, 0).Err()
+	data, err := protojson.Marshal(&location)
 	if err != nil {
 		return nil, err
 	}
 
-	return &emptypb.Empty{}, nil
+	err = l.svcCtx.RedisCluster.Set(l.ctx, key, data, 0).Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return &game.Empty{}, nil
 }

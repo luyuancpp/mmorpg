@@ -273,7 +273,8 @@ func BuildProtoGoGrpcNode(protoPath string) error {
 // isInAllowedProtoDir 判断 protoPath 是否是允许处理的目录或 grpc service 目录
 func isInAllowedProtoDir(protoPath, baseDirName string) bool {
 	if util.IsPathInProtoDirs(protoPath, config.DbProtoDirIndex) ||
-		util.IsPathInProtoDirs(protoPath, config.LoginProtoDirIndex) {
+		util.IsPathInProtoDirs(protoPath, config.LoginProtoDirIndex) ||
+		util.IsPathInProtoDirs(protoPath, config.EtcdProtoDirIndex) {
 		return false
 	}
 	return util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||

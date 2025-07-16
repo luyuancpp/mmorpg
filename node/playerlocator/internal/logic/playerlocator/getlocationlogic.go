@@ -2,9 +2,9 @@ package playerlocatorlogic
 
 import (
 	"context"
-	"encoding/json"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 	"playerlocator/internal/keys"
 
 	"playerlocator/internal/svc"
@@ -29,7 +29,7 @@ func NewGetLocationLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetLo
 
 func (l *GetLocationLogic) GetLocation(in *game.PlayerId) (*game.PlayerLocation, error) {
 	key := keys.PlayerLocationKey(in.Uid)
-	val, err := l.svcCtx.Redis.Get(l.ctx, key).Result()
+	val, err := l.svcCtx.RedisCluster.Get(l.ctx, key).Result()
 
 	if err != nil {
 		if err.Error() == "redis: nil" {
@@ -38,8 +38,8 @@ func (l *GetLocationLogic) GetLocation(in *game.PlayerId) (*game.PlayerLocation,
 		return nil, err
 	}
 
-	var location playerlocatorpb.PlayerLocation
-	if err := json.Unmarshal([]byte(val), &location); err != nil {
+	var location game.PlayerLocation
+	if err := protojson.Unmarshal([]byte(val), &location); err != nil {
 		return nil, err
 	}
 

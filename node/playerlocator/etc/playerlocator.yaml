@@ -2,14 +2,15 @@ Name: playerlocator.rpc
 ListenOn: 0.0.0.0:8080
 Etcd:
   Hosts:
-  - 127.0.0.1:2379
+    - 127.0.0.1:2379
   Key: playerlocator.rpc
 
-Redis:
-  Cluster:
-    Hosts:
-      - 127.0.0.1:6379
-      - 127.0.0.1:6379
-      - ...
-    Type: node
-    Pass: yourpass
+Node:
+  Redis:
+    Cluster:
+      Hosts:
+        - 127.0.0.1:6379
+        - 127.0.0.2:6379
+        - 127.0.0.3:6379
+      Type: node
+      Pass: yourpass

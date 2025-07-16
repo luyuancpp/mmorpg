@@ -2,7 +2,7 @@ package playerlocatorlogic
 
 import (
 	"context"
-	"encoding/json"
+	"google.golang.org/protobuf/encoding/protojson"
 	"playerlocator/internal/keys"
 
 	"playerlocator/internal/svc"
@@ -27,11 +27,16 @@ func NewSetLocationLogic(ctx context.Context, svcCtx *svc.ServiceContext) *SetLo
 
 func (l *SetLocationLogic) SetLocation(in *game.PlayerLocation) (*game.Empty, error) {
 	key := keys.PlayerLocationKey(in.Uid)
-	data, _ := json.Marshal(in)
 
-	err := l.svcCtx.Redis.Set(l.ctx, key, data, 0).Err()
+	data, err := protojson.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, nil
+
+	err = l.svcCtx.RedisCluster.Set(l.ctx, key, data, 0).Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return &game.Empty{}, nil
 }
