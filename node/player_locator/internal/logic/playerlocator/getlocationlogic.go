@@ -5,10 +5,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
-	"playerlocator/internal/keys"
+	"player_locator/internal/keys"
 
-	"playerlocator/internal/svc"
-	"playerlocator/pb/game"
+	"player_locator/internal/svc"
+	"player_locator/pb/game"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

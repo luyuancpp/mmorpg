@@ -2,7 +2,7 @@ package svc
 
 import (
 	"github.com/redis/go-redis/v9"
-	"playerlocator/internal/config"
+	"player_locator/internal/config"
 )
 
 type ServiceContext struct {
