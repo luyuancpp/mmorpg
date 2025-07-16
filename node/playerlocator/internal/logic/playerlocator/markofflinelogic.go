@@ -2,6 +2,9 @@ package playerlocatorlogic
 
 import (
 	"context"
+	"encoding/json"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"playerlocator/internal/keys"
 
 	"playerlocator/internal/svc"
 	"playerlocator/pb/game"
@@ -24,7 +27,25 @@ func NewMarkOfflineLogic(ctx context.Context, svcCtx *svc.ServiceContext) *MarkO
 }
 
 func (l *MarkOfflineLogic) MarkOffline(in *game.PlayerId) (*game.Empty, error) {
-	// todo: add your logic here and delete this line
+	key := keys.PlayerLocationKey(in.Uid)
+	val, err := l.svcCtx.Redis.Get(l.ctx, key).Result()
+	if err != nil {
+		return &emptypb.Empty{}, nil
+	}
 
-	return &game.Empty{}, nil
+	var location playerlocatorpb.PlayerLocation
+	if err := json.Unmarshal([]byte(val), &location); err != nil {
+		return nil, err
+	}
+
+	location.Online = false
+	location.Migrating = false
+
+	data, _ := json.Marshal(location)
+	err = l.svcCtx.Redis.Set(l.ctx, key, data, 0).Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
 }

@@ -4,7 +4,7 @@ option go_package = "pb/game";
 
 package playerlocator;
 
-import "google/protobuf/empty.proto";
+import "proto/common/empty.proto";
 
 // 玩家位置结构
 message PlayerLocation {
@@ -22,7 +22,7 @@ message PlayerId {
 }
 
 service PlayerLocator {
-  rpc SetLocation(PlayerLocation) returns (google.protobuf.Empty);
+  rpc SetLocation(PlayerLocation) returns (Empty);
   rpc GetLocation(PlayerId) returns (PlayerLocation);
-  rpc MarkOffline(PlayerId) returns (google.protobuf.Empty);
+  rpc MarkOffline(PlayerId) returns (Empty);
 }
