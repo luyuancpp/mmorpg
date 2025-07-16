@@ -131,28 +131,27 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fplayerlocator_2fplayerlocator_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\'proto/playerlocator/playerlocator.prot"
-    "o\022\rplayerlocator\032\033google/protobuf/empty."
-    "proto\"\200\001\n\016PlayerLocation\022\013\n\003uid\030\001 \001(\003\022\021\n"
-    "\tserver_id\030\002 \001(\t\022\016\n\006online\030\003 \001(\010\022\021\n\tmigr"
-    "ating\030\004 \001(\010\022\020\n\010scene_id\030\005 \001(\005\022\r\n\005token\030\006"
-    " \001(\t\022\n\n\002ts\030\007 \001(\003\"\027\n\010PlayerId\022\013\n\003uid\030\001 \001("
-    "\0032\334\001\n\rPlayerLocator\022D\n\013SetLocation\022\035.pla"
-    "yerlocator.PlayerLocation\032\026.google.proto"
-    "buf.Empty\022E\n\013GetLocation\022\027.playerlocator"
-    ".PlayerId\032\035.playerlocator.PlayerLocation"
-    "\022>\n\013MarkOffline\022\027.playerlocator.PlayerId"
-    "\032\026.google.protobuf.EmptyB\tZ\007pb/gameb\006pro"
-    "to3"
+    "o\022\rplayerlocator\032\030proto/common/empty.pro"
+    "to\"\200\001\n\016PlayerLocation\022\013\n\003uid\030\001 \001(\003\022\021\n\tse"
+    "rver_id\030\002 \001(\t\022\016\n\006online\030\003 \001(\010\022\021\n\tmigrati"
+    "ng\030\004 \001(\010\022\020\n\010scene_id\030\005 \001(\005\022\r\n\005token\030\006 \001("
+    "\t\022\n\n\002ts\030\007 \001(\003\"\027\n\010PlayerId\022\013\n\003uid\030\001 \001(\0032\274"
+    "\001\n\rPlayerLocator\0224\n\013SetLocation\022\035.player"
+    "locator.PlayerLocation\032\006.Empty\022E\n\013GetLoc"
+    "ation\022\027.playerlocator.PlayerId\032\035.playerl"
+    "ocator.PlayerLocation\022.\n\013MarkOffline\022\027.p"
+    "layerlocator.PlayerId\032\006.EmptyB\tZ\007pb/game"
+    "b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fplayerlocator_2fplayerlocator_2eproto_deps[1] =
     {
-        &::descriptor_table_google_2fprotobuf_2fempty_2eproto,
+        &::descriptor_table_proto_2fcommon_2fempty_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fplayerlocator_2fplayerlocator_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fplayerlocator_2fplayerlocator_2eproto = {
     false,
     false,
-    483,
+    448,
     descriptor_table_protodef_proto_2fplayerlocator_2fplayerlocator_2eproto,
     "proto/playerlocator/playerlocator.proto",
     &descriptor_table_proto_2fplayerlocator_2fplayerlocator_2eproto_once,
