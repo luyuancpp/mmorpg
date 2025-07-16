@@ -111,6 +111,9 @@
     <ClCompile Include="src\handler\service\player_state_attribute_sync_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\handler\service_replied\player\centre_player_replied_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -192,6 +195,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\player_state_attribute_sync_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\service_replied\player\centre_player_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
