@@ -1,13 +1,25 @@
 package svc
 
-import "playerlocator/internal/config"
+import (
+	"github.com/redis/go-redis/v9"
+	"playerlocator/internal/config"
+)
 
 type ServiceContext struct {
-	Config config.Config
+	Config       config.Config
+	RedisCluster *redis.ClusterClient
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
-		Config: c,
+		Config:       c,
+		RedisCluster: NewRedisClusterClient(c.Node.Redis),
 	}
+}
+
+func NewRedisClusterClient(cfg config.RedisClusterConf) *redis.ClusterClient {
+	return redis.NewClusterClient(&redis.ClusterOptions{
+		Addrs:    cfg.Cluster.Hosts,
+		Password: cfg.Cluster.Pass,
+	})
 }
