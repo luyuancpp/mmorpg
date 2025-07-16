@@ -1,11 +1,11 @@
 
 #pragma once
-#include "proto/scene/game_client_player.pb.h"
+#include "proto/centre/centre_player.pb.h"
 
 #include "service/player_service_replied.h"
 
 
-class SceneClientPlayerCommonRepliedHandler : public ::PlayerServiceReplied
+class CentrePlayerUtilityRepliedHandler : public ::PlayerServiceReplied
 {
 public:
     using PlayerServiceReplied::PlayerServiceReplied;
@@ -15,7 +15,7 @@ public:
         const ::TipInfoMessage* request,
         ::Empty* response);
     static void KickPlayer(entt::entity player,
-        const ::GameKickPlayerRequest* request,
+        const ::CentreKickPlayerRequest* request,
         ::Empty* response);
 
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,

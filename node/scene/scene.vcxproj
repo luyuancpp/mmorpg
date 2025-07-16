@@ -150,6 +150,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\handler\event\server_event_handler.cpp" />
     <ClCompile Include="src\handler\service\player\game_client_player_handler.cpp" />
     <ClCompile Include="src\handler\service\player_state_attribute_sync_handler.cpp" />
+    <ClCompile Include="src\handler\service_replied\player\centre_player_replied_handler.cpp" />
     <ClCompile Include="src\scene_node.cpp" />
     <ClCompile Include="src\handler\event\skill_event_handler.cpp" />
     <ClCompile Include="src\handler\service\player\player_common_handler.cpp" />
@@ -183,6 +184,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\handler\event\server_event_handler.h" />
     <ClInclude Include="src\handler\service\player\game_client_player_handler.h" />
     <ClInclude Include="src\handler\service\player_state_attribute_sync_handler.h" />
+    <ClInclude Include="src\handler\service_replied\player\centre_player_replied_handler.h" />
     <ClInclude Include="src\scene_node.h" />
     <ClInclude Include="src\handler\event\skill_event_handler.h" />
     <ClInclude Include="src\handler\service\player\player_common_handler.h" />
