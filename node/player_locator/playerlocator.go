@@ -4,10 +4,10 @@ import (
 	"flag"
 	"fmt"
 
-	"playerlocator/internal/config"
-	playerlocatorServer "playerlocator/internal/server/playerlocator"
-	"playerlocator/internal/svc"
-	"playerlocator/pb/game"
+	"player_locator/internal/config"
+	playerlocatorServer "player_locator/internal/server/playerlocator"
+	"player_locator/internal/svc"
+	"player_locator/pb/game"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"

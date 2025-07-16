@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.26.1
-// source: proto/playerlocator/playerlocator.proto
+// source: proto/player_locator/player_locator.proto
 
 package game
 
@@ -193,5 +193,5 @@ var PlayerLocator_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/playerlocator/playerlocator.proto",
+	Metadata: "proto/player_locator/player_locator.proto",
 }
