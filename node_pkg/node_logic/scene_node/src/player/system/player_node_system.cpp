@@ -18,11 +18,11 @@
 #include "util/node_utils.h"
 #include "util/node_message_utils.h"
 
-void Player_databaseMessageFieldsUnmarshal(entt::entity player, const player_database& message);
-void Player_databaseMessageFieldsMarshal(entt::entity player, player_database& message);
+void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_database& message);
+void PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& message);
 
-void Player_database_1MessageFieldsUnmarshal(entt::entity player, const player_database& message);
-void Player_database_1MessageFieldsMarshal(entt::entity player, player_database& message);
+void PlayerDatabase1MessageFieldsUnmarshal(entt::entity player, const player_database& message);
+void PlayerDatabase1MessageFieldsMarshal(entt::entity player, player_database& message);
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_database& message)
 {
@@ -47,7 +47,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 
 	tls.actorRegistry.emplace<Player>(player);
 	tls.actorRegistry.emplace<Guid>(player, message.player_id());
-	Player_databaseMessageFieldsUnmarshal(player, message);
+	PlayerDatabaseMessageFieldsUnmarshal(player, message);
 
 	if (message.uint64_pb_component().registration_timestamp() <= 0)
 	{
@@ -107,7 +107,7 @@ void PlayerNodeSystem::SavePlayer(entt::entity player)
 	SaveMessage pb = std::make_shared<SaveMessage::element_type>();
 
 	pb->set_player_id(tls.actorRegistry.get<Guid>(player));
-	Player_databaseMessageFieldsMarshal(player, *pb);
+	PlayerDatabaseMessageFieldsMarshal(player, *pb);
 
 	LOG_INFO << "Player data marshaled, sending to Redis";
 	tlsGame.playerRedis->Save(pb, tls.actorRegistry.get<Guid>(player));
