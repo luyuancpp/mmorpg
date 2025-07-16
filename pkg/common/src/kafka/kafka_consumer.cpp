@@ -1,13 +1,14 @@
 ﻿#include "kafka_consumer.h"
 #include "muduo/base/Logging.h"
-#include <iostream>
 
 KafkaConsumer::KafkaConsumer(const std::string& brokers, const std::string& groupId,
 	const std::vector<std::string>& topics,
+	const std::vector<int>& partitions,  // 需要消费的分区
 	MessageCallback callback)
 	: msgCallback_(std::move(callback)) {
 	std::string errstr;
 
+	// 配置 Kafka consumer
 	conf_.reset(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
 	conf_->set("bootstrap.servers", brokers, errstr);
 	conf_->set("group.id", groupId, errstr);
@@ -17,14 +18,27 @@ KafkaConsumer::KafkaConsumer(const std::string& brokers, const std::string& grou
 	consumer_.reset(RdKafka::KafkaConsumer::create(conf_.get(), errstr));
 	if (!consumer_) {
 		LOG_ERROR << "Failed to create KafkaConsumer: " << errstr;
+		return;
 	}
 
-	RdKafka::ErrorCode err = consumer_->subscribe(topics);
-	if (err) {
-		LOG_ERROR << "Failed to subscribe to topics: " << RdKafka::err2str(err);
+	// 如果需要指定消费的分区，使用 assign()
+	if (!partitions.empty()) {
+		std::vector<RdKafka::TopicPartition*> assignedPartitions;
+		for (int partition : partitions) {
+			assignedPartitions.push_back(RdKafka::TopicPartition::create(topics[0], partition));
+		}
+		consumer_->assign(assignedPartitions);
+		LOG_INFO << "Assigned to specific partitions.";
+	}
+	else {
+		// 默认使用订阅方式，如果没有指定分区
+		RdKafka::ErrorCode err = consumer_->subscribe(topics);
+		if (err) {
+			LOG_ERROR << "Failed to subscribe to topics: " << RdKafka::err2str(err);
+		}
 	}
 
-	LOG_INFO << "KafkaConsumer initialized, subscribed to topics.";
+	LOG_INFO << "KafkaConsumer initialized, ready to consume messages.";
 }
 
 KafkaConsumer::~KafkaConsumer() {
@@ -48,7 +62,7 @@ void KafkaConsumer::poll() {
 	if (!running_) return;
 
 	// 非阻塞轮询，每次最多等待 100ms
-	RdKafka::Message* msg = consumer_->consume(100);
+	std::unique_ptr<RdKafka::Message> msg{ consumer_->consume(100) };
 	if (!msg) return;
 
 	switch (msg->err()) {
@@ -66,5 +80,4 @@ void KafkaConsumer::poll() {
 		break;
 	}
 
-	delete msg;
 }
