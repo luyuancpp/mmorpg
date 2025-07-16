@@ -1,6 +1,4 @@
-﻿// KafkaProducer.cpp
-
-#include "kafka_producer.h"
+﻿#include "kafka_producer.h"
 #include "muduo/base/Logging.h"
 
 KafkaProducer::KafkaProducer(const std::string& brokers) {
@@ -21,7 +19,7 @@ KafkaProducer::KafkaProducer(const std::string& brokers) {
 		return;
 	}
 
-	LOG_INFO << "KafkaProducer initialized for brokers: " << brokers ;
+	LOG_INFO << "KafkaProducer initialized for brokers: " << brokers;
 }
 
 KafkaProducer::~KafkaProducer() {
@@ -31,35 +29,44 @@ KafkaProducer::~KafkaProducer() {
 	}
 }
 
-void KafkaProducer::send(const std::string& topic, const std::string& message) {
+void KafkaProducer::send(const std::string& topic, const std::string& message, const std::string& key, int partition) {
 	RdKafka::ErrorCode resp = producer_->produce(
-		topic,
-		RdKafka::Topic::PARTITION_UA,
+		topic,              // 目标 topic
+		partition,          // 指定分区
 		RdKafka::Producer::RK_MSG_COPY,  // 自动拷贝 payload
-		const_cast<char*>(message.c_str()),
-		message.size(),
-		nullptr, 0, 0, nullptr, nullptr);
+		const_cast<char*>(message.c_str()),  // 消息内容
+		message.size(),     // 消息大小
+		key.empty() ? nullptr : const_cast<char*>(key.c_str()),  // 消息的 key
+		key.size(),         // key 的大小
+		0,                  // 时间戳 (如果有的话)
+		nullptr, nullptr);  // 不使用消息头（如果有需要可以扩展）
 
 	if (resp != RdKafka::ERR_NO_ERROR) {
-		LOG_ERROR << "Produce failed: " << RdKafka::err2str(resp) ;
+		LOG_ERROR << "Produce failed: " << RdKafka::err2str(resp);
 		return;
 	}
 	else {
-		// 非阻塞，成功排队即可返回
-		LOG_INFO << "[Kafka] Message queued" ;
+		LOG_INFO << "[Kafka] Message queued to topic " << topic;
 	}
 
-	// 非阻塞，只调用一次 poll()（回调需要）
-	producer_->poll(0);
+	// 非阻塞，调用一次 poll()（回调需要）
+	poll();
 }
 
+// Delivery callback 处理消息送达的状态
 void KafkaProducer::dr_cb(RdKafka::Message& message) {
 	if (message.err()) {
-		LOG_ERROR << "[Kafka] Delivery failed: " << message.errstr() ;
+		LOG_ERROR << "[Kafka] Delivery failed: " << message.errstr();
 	}
 	else {
 		LOG_INFO << "[Kafka] Delivered message to topic " << message.topic_name()
 			<< " [" << message.partition() << "] at offset "
-			<< message.offset() ;
+			<< message.offset();
 	}
+}
+
+// 在主线程调用 poll()，处理消息队列中的所有消息
+void KafkaProducer::poll() {
+	// 轮询消息队列，0 表示非阻塞调用
+	producer_->poll(0);
 }
