@@ -2,10 +2,10 @@
 
 #include <string>
 #include <vector>
-#include <thread>
 #include <atomic>
 #include <functional>
 #include <rdkafkacpp.h>
+#include <memory>
 
 class KafkaConsumer {
 public:
@@ -17,17 +17,15 @@ public:
 
 	~KafkaConsumer();
 
-	void start();   // 启动消费线程
-	void stop();    // 停止消费线程
+	void start();   // 启动消费
+	void stop();    // 停止消费
+	void poll();    // 非阻塞轮询，供外部调用
 
 private:
-	void consumeLoop();
+	void consumeLoop();  // 消费循环（如果需要，可以在此处做具体逻辑）
 
 	std::unique_ptr<RdKafka::KafkaConsumer> consumer_;
 	std::unique_ptr<RdKafka::Conf> conf_;
-	std::unique_ptr<RdKafka::Conf> tconf_;
-
-	std::thread consumerThread_;
 	std::atomic<bool> running_{ false };
 	MessageCallback msgCallback_;
 };

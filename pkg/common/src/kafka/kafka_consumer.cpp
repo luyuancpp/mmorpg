@@ -1,5 +1,6 @@
 ﻿#include "kafka_consumer.h"
 #include "muduo/base/Logging.h"
+#include <iostream>
 
 KafkaConsumer::KafkaConsumer(const std::string& brokers, const std::string& groupId,
 	const std::vector<std::string>& topics,
@@ -23,7 +24,7 @@ KafkaConsumer::KafkaConsumer(const std::string& brokers, const std::string& grou
 		LOG_ERROR << "Failed to subscribe to topics: " << RdKafka::err2str(err);
 	}
 
-	LOG_INFO << "KafkaConsumer initialized, subscribed to topics." ;
+	LOG_INFO << "KafkaConsumer initialized, subscribed to topics.";
 }
 
 KafkaConsumer::~KafkaConsumer() {
@@ -32,42 +33,38 @@ KafkaConsumer::~KafkaConsumer() {
 
 void KafkaConsumer::start() {
 	running_ = true;
-	consumerThread_ = std::thread(&KafkaConsumer::consumeLoop, this);
 }
 
 void KafkaConsumer::stop() {
 	if (running_) {
 		running_ = false;
-		if (consumerThread_.joinable()) {
-			consumerThread_.join();
-		}
-
 		if (consumer_) {
 			consumer_->close();  // 正确关闭 consumer
 		}
 	}
 }
 
-void KafkaConsumer::consumeLoop() {
-	while (running_) {
-		RdKafka::Message* msg = consumer_->consume(100);  // 100ms timeout
-		if (!msg) continue;
+void KafkaConsumer::poll() {
+	if (!running_) return;
 
-		switch (msg->err()) {
-		case RdKafka::ERR_NO_ERROR:
-			if (msgCallback_) {
-				msgCallback_(msg->topic_name(), std::string(static_cast<const char*>(msg->payload()), msg->len()));
-			}
-			break;
+	// 非阻塞轮询，每次最多等待 100ms
+	RdKafka::Message* msg = consumer_->consume(100);
+	if (!msg) return;
 
-		case RdKafka::ERR__TIMED_OUT:
-			break;  // 正常空转等待
-
-		default:
-			LOG_ERROR << "[KafkaConsumer] Error: " << msg->errstr();
-			break;
+	switch (msg->err()) {
+	case RdKafka::ERR_NO_ERROR:
+		if (msgCallback_) {
+			msgCallback_(msg->topic_name(), std::string(static_cast<const char*>(msg->payload()), msg->len()));
 		}
+		break;
 
-		delete msg;
+	case RdKafka::ERR__TIMED_OUT:
+		break;  // 正常空转等待
+
+	default:
+		LOG_ERROR << "[KafkaConsumer] Error: " << msg->errstr();
+		break;
 	}
+
+	delete msg;
 }
