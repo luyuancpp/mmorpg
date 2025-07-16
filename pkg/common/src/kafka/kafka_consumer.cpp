@@ -3,7 +3,7 @@
 
 KafkaConsumer::KafkaConsumer(const std::string& brokers, const std::string& groupId,
 	const std::vector<std::string>& topics,
-	const std::vector<int>& partitions,  // 需要消费的分区
+	const std::vector<int32_t>& partitions,  // 需要消费的分区
 	MessageCallback callback)
 	: msgCallback_(std::move(callback)) {
 	std::string errstr;
@@ -24,7 +24,7 @@ KafkaConsumer::KafkaConsumer(const std::string& brokers, const std::string& grou
 	// 如果需要指定消费的分区，使用 assign()
 	if (!partitions.empty()) {
 		std::vector<RdKafka::TopicPartition*> assignedPartitions;
-		for (int partition : partitions) {
+		for (int32_t partition : partitions) {
 			assignedPartitions.push_back(RdKafka::TopicPartition::create(topics[0], partition));
 		}
 		consumer_->assign(assignedPartitions);

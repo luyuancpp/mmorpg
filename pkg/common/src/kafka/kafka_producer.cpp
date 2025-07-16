@@ -29,7 +29,7 @@ KafkaProducer::~KafkaProducer() {
 	}
 }
 
-void KafkaProducer::send(const std::string& topic, const std::string& message, const std::string& key, int partition) {
+void KafkaProducer::send(const std::string& topic, const std::string& message, const std::string& key, int32_t partition) {
 	RdKafka::ErrorCode resp = producer_->produce(
 		topic,              // 目标 topic
 		partition,          // 指定分区
