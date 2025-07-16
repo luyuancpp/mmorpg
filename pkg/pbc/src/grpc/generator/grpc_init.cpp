@@ -14,10 +14,10 @@ using grpc::ClientAsyncResponseReader;
 
 
 namespace playerlocator {
-    void SetPlayerlocatorHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    void SetPlayerlocatorIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    void InitPlayerlocatorGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
-    void HandlePlayerlocatorCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+    void SetPlayerLocatorHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetPlayerLocatorIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void InitPlayerLocatorGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+    void HandlePlayerLocatorCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 }
 
 namespace etcdserverpb {
@@ -37,7 +37,7 @@ namespace loginpb {
 
 void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
 
-    playerlocator::SetPlayerlocatorIfEmptyHandler(handler);
+    playerlocator::SetPlayerLocatorIfEmptyHandler(handler);
 
     etcdserverpb::SetEtcdIfEmptyHandler(handler);
 
@@ -47,7 +47,7 @@ void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::go
 
 void SetHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
 
-    playerlocator::SetPlayerlocatorHandler(handler);
+    playerlocator::SetPlayerLocatorHandler(handler);
 
     etcdserverpb::SetEtcdHandler(handler);
 
@@ -68,8 +68,8 @@ void HandleCompletedQueueMessage(entt::registry& registry){
                 return;
             }
             GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
-            if (eNodeType::PlayerlocatorNodeService == nodeType) {
-                playerlocator::HandlePlayerlocatorCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+            if (eNodeType::PlayerLocatorNodeService == nodeType) {
+                playerlocator::HandlePlayerLocatorCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
             else if (eNodeType::EtcdNodeService == nodeType) {
                 etcdserverpb::HandleEtcdCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
@@ -85,8 +85,8 @@ void HandleCompletedQueueMessage(entt::registry& registry){
 void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
     auto nodeType = NodeSystem::GetRegistryType(registry);
     registry.emplace<grpc::CompletionQueue>(nodeEntity);
-    if (eNodeType::PlayerlocatorNodeService == nodeType) {
-        playerlocator::InitPlayerlocatorGrpcNode(channel, registry, nodeEntity);
+    if (eNodeType::PlayerLocatorNodeService == nodeType) {
+        playerlocator::InitPlayerLocatorGrpcNode(channel, registry, nodeEntity);
     }
     else if (eNodeType::EtcdNodeService == nodeType) {
         etcdserverpb::InitEtcdGrpcNode(channel, registry, nodeEntity);

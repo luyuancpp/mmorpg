@@ -175,21 +175,27 @@ func BuildProtoGrpc(protoPath string) error {
 		protoFile = filepath.ToSlash(protoFile)
 
 		// 源 .proto 替换为 .pb.cc/.pb.h（你的扩展名设定）
-		md5FileName := strings.Replace(protoFile, config.ProtoDir, config.GrpcTempDirectory+config.ProtoDirName, 1)
-		md5FileName = strings.Replace(md5FileName, config.ProtoEx, config.GrpcPbcEx, 1)
+		tempCpp := strings.Replace(protoFile, config.ProtoDir, config.GrpcTempDirectory+config.ProtoDirName, 1)
+		tempCpp = strings.Replace(tempCpp, config.ProtoEx, config.GrpcPbcEx, 1)
+		tempHead := strings.Replace(tempCpp, config.GrpcPbcEx, config.GrpcPbhEx, 1)
 
-		dstFileName := strings.Replace(protoFile, config.ProtoDir, config.GrpcProtoOutputDirectory, 1)
-		dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.GrpcPbcEx, 1)
+		dstCpp := strings.Replace(protoFile, config.ProtoDir, config.GrpcProtoOutputDirectory, 1)
+		dstCpp = strings.Replace(dstCpp, config.ProtoEx, config.GrpcPbcEx, 1)
+		dstHead := strings.Replace(dstCpp, config.GrpcPbcEx, config.GrpcPbhEx, 1)
 
 		// 创建目录
-		dir := path.Dir(md5FileName)
+		dir := path.Dir(tempCpp)
 		if err := os.MkdirAll(dir, os.FileMode(0777)); err != nil {
 			log.Fatal(err)
 			return err
 		}
 
 		// 拷贝文件（如内容有变）
-		if err := CopyFileIfChanged(md5FileName, dstFileName); err != nil {
+		if err := CopyFileIfChanged(tempCpp, dstCpp); err != nil {
+			log.Fatal("Failed to copy:", err)
+		}
+
+		if err := CopyFileIfChanged(tempHead, dstHead); err != nil {
 			log.Fatal("Failed to copy:", err)
 		}
 	}
@@ -229,9 +235,9 @@ func generateLoginGoProto(protoFiles []string, outputDir string) error {
 	return nil
 }
 
-// BuildProtoGoGrpcNode processes .proto files in the given directory
+// GenerateGoGRPCFromProto processes .proto files in the given directory
 // and generates Go gRPC code for allowed services.
-func BuildProtoGoGrpcNode(protoPath string) error {
+func GenerateGoGRPCFromProto(protoPath string) error {
 	// 1. 读取 protoPath 目录下的所有文件
 	files, err := os.ReadDir(protoPath)
 	if err != nil {
@@ -239,7 +245,6 @@ func BuildProtoGoGrpcNode(protoPath string) error {
 	}
 
 	var protoFiles []string
-	baseDirName := strings.ToLower(filepath.Base(protoPath)) // 提取最后一级目录名作为 key
 
 	// 2. 筛选有效的 .proto 文件
 	for _, file := range files {
@@ -247,7 +252,7 @@ func BuildProtoGoGrpcNode(protoPath string) error {
 			continue
 		}
 
-		if !isInAllowedProtoDir(protoPath, baseDirName) {
+		if !isInAllowedProtoDir(protoPath) {
 			continue
 		}
 
@@ -271,7 +276,9 @@ func BuildProtoGoGrpcNode(protoPath string) error {
 }
 
 // isInAllowedProtoDir 判断 protoPath 是否是允许处理的目录或 grpc service 目录
-func isInAllowedProtoDir(protoPath, baseDirName string) bool {
+func isInAllowedProtoDir(protoPath string) bool {
+	baseDirName := strings.ToLower(filepath.Base(protoPath)) // 提取最后一级目录名作为 key
+
 	if util.IsPathInProtoDirs(protoPath, config.DbProtoDirIndex) ||
 		util.IsPathInProtoDirs(protoPath, config.LoginProtoDirIndex) ||
 		util.IsPathInProtoDirs(protoPath, config.EtcdProtoDirIndex) {
@@ -537,7 +544,7 @@ func BuildAllProtoc() {
 		util.Wg.Add(1)
 		go func(i int) {
 			defer util.Wg.Done()
-			err := BuildProtoGoGrpcNode(config.ProtoDirs[i])
+			err := GenerateGoGRPCFromProto(config.ProtoDirs[i])
 			if err != nil {
 				log.Println(err)
 			}

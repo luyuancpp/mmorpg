@@ -23,6 +23,7 @@
     <ClInclude Include="src\config_loader\config.h" />
     <ClInclude Include="src\generator\util\gen_util.h" />
     <ClInclude Include="src\global_data\async_log_file.h" />
+    <ClInclude Include="src\kafka\kafka_producer.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\network\codec\codec.h" />
     <ClInclude Include="src\network\codec\dispatcher.h" />
@@ -64,6 +65,7 @@
     <ClCompile Include="src\config_loader\config.cpp" />
     <ClCompile Include="src\generator\util\gen_util.cpp" />
     <ClCompile Include="src\global_data\async_log_file.cpp" />
+    <ClCompile Include="src\kafka\kafka_producer.cpp" />
     <ClCompile Include="src\network\codec\codec.cc" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\message_statistics.cpp" />
@@ -164,7 +166,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;NOMINMAX;GOOGLE_CHECK_EQ=ABSL_CHECK_EQ;GOOGLE_LOG=ABSL_LOG;GOOGLE_DCHECK=ABSL_DCHECK;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS;YAML_CPP_STATIC_DEFINE;_WIN32_WINNT=0x0A00</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../third_party/boost/;./src/;../../third_party/muduo/;../..//third_party/redis/;../../third_party/sol2/include/;../../third_party/lua/src/;../../third_party/redis/deps/;../../third_party/muduo/contrib/windows/include;../config/src/;../../third_party/lua/;../../third_party/;../../third_party/zlib/;../../third_party/spdlog/include/;../pbc/src/;../../third_party/grpc/third_party/protobuf/src/;../../third_party/grpc/third_party/abseil-cpp/;../../third_party/yaml-cpp/include/;../../third_party/xxhash/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../third_party/boost/;./src/;../../third_party/muduo/;../..//third_party/redis/;../../third_party/sol2/include/;../../third_party/lua/src/;../../third_party/redis/deps/;../../third_party/muduo/contrib/windows/include;../config/src/;../../third_party/lua/;../../third_party/;../../third_party/zlib/;../../third_party/spdlog/include/;../pbc/src/;../../third_party/grpc/third_party/protobuf/src/;../../third_party/grpc/third_party/abseil-cpp/;../../third_party/yaml-cpp/include/;../../third_party/xxhash/;../../third_party/librdkafka/src-cpp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200;4819;4146;4244;4267;4018;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
