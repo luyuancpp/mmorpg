@@ -8,15 +8,26 @@ message ServiceConfig {
     string url = 2;   // 服务的健康检查或访问URL
 }
 
+message KafkaConfig {
+    repeated string brokers = 1;            // Kafka broker 列表
+    repeated string topics = 2;             // 可配置多个 topic
+    string group_id = 3;                    // consumer group ID
+    bool enable_auto_commit = 4;            // 是否开启自动提交
+    string auto_offset_reset = 5;           // earliest / latest
+}
+
+// 部署基础配置
 message BaseDeployConfig {
-    repeated string etcd_hosts = 1;                   // Etcd 主机列表
-    uint32 log_level = 2;                             // 日志级别
-    repeated ServiceConfig services = 3;              // 服务列表
-    repeated string service_discovery_prefixes = 4;   // etcd 服务前缀
-    uint32 keep_alive_interval = 5;                   // 节点续约间隔（单位：秒）
-    string deployservice_prefix = 6;                   // deployservice.rpc 前缀
-    uint32 node_ttl_seconds = 7;                       // 节点租约TTL（单位：秒）
-    uint32 health_check_interval = 8;                  // 新增：服务健康检查间隔（单位：秒）
+    repeated string etcd_hosts = 1;
+    uint32 log_level = 2;
+    repeated ServiceConfig services = 3;
+    repeated string service_discovery_prefixes = 4;
+    uint32 keep_alive_interval = 5;
+    string deployservice_prefix = 6;
+    uint32 node_ttl_seconds = 7;
+    uint32 health_check_interval = 8;
+
+    KafkaConfig kafka = 9;  // ✅ 新增 Kafka 配置
 }
 
 // 游戏配置
