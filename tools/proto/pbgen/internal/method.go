@@ -754,12 +754,11 @@ void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* re
 	{{ .CppResponse }}* response)
 {
 {{- if .HasCode }}
-{{ .Code }}
+{{ .Code -}}
 {{ else }}
 {{ $.YourCodePair }}
 {{ end }}
 }
-
 {{ end }}
 `
 	type PlayerHandlerMethod struct {

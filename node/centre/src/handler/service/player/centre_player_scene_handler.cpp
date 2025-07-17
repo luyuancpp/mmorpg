@@ -38,9 +38,7 @@ void CentrePlayerSceneHandler::EnterScene(entt::entity player,const ::CentreEnte
 
 	///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void CentrePlayerSceneHandler::LeaveScene(entt::entity player,const ::CentreLeaveSceneRequest* request,
@@ -49,9 +47,7 @@ void CentrePlayerSceneHandler::LeaveScene(entt::entity player,const ::CentreLeav
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
@@ -115,9 +111,7 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tls.actorRegistry.get<Guid>(player);
 	///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void CentrePlayerSceneHandler::SceneInfoC2S(entt::entity player,const ::CentreSceneInfoRequest* request,
@@ -134,7 +128,5 @@ void CentrePlayerSceneHandler::SceneInfoC2S(entt::entity player,const ::CentreSc
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifySceneInfoMessageId, message, player);
 	///<<< END WRITING YOUR CODE
 
-
 }
-
 

@@ -12,9 +12,7 @@ void SceneClientPlayerCommonHandler::SendTipToClient(entt::entity player,const :
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void SceneClientPlayerCommonHandler::KickPlayer(entt::entity player,const ::GameKickPlayerRequest* request,
@@ -23,7 +21,5 @@ void SceneClientPlayerCommonHandler::KickPlayer(entt::entity player,const ::Game
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 

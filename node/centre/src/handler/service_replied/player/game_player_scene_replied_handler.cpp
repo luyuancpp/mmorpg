@@ -12,9 +12,7 @@ void SceneScenePlayerRepliedHandler::EnterScene(entt::entity player,const ::GsEn
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void SceneScenePlayerRepliedHandler::LeaveScene(entt::entity player,const ::GsLeaveSceneRequest* request,
@@ -23,9 +21,7 @@ void SceneScenePlayerRepliedHandler::LeaveScene(entt::entity player,const ::GsLe
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void SceneScenePlayerRepliedHandler::EnterSceneS2C(entt::entity player,const ::EnterSceneS2CRequest* request,
@@ -34,7 +30,5 @@ void SceneScenePlayerRepliedHandler::EnterSceneS2C(entt::entity player,const ::E
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 

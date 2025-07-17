@@ -12,9 +12,7 @@ void ScenePlayerRepliedHandler::Centre2GsLogin(entt::entity player,const ::Centr
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void ScenePlayerRepliedHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,
@@ -23,7 +21,5 @@ void ScenePlayerRepliedHandler::ExitGame(entt::entity player,const ::GameNodeExi
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 
