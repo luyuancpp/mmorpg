@@ -578,7 +578,6 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 {{ else }}
 {{ $.YourCodePair }}
 {{ end }}
-
 {{ end }}
 `
 
