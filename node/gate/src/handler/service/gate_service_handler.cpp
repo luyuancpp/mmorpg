@@ -41,7 +41,6 @@ void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* control
 
 
 
-
 void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -65,7 +64,6 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 
 
 
-
 void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* controller, const ::KickSessionRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -76,7 +74,6 @@ void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* control
 	///<<< END WRITING YOUR CODE
 
 }
-
 
 
 
@@ -91,7 +88,6 @@ void GateHandler::RouteNodeMessage(::google::protobuf::RpcController* controller
 
 
 
-
 void GateHandler::RoutePlayerMessage(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
 	::RoutePlayerMessageResponse* response,
 	::google::protobuf::Closure* done)
@@ -100,7 +96,6 @@ void GateHandler::RoutePlayerMessage(::google::protobuf::RpcController* controll
 	///<<< END WRITING YOUR CODE
 
 }
-
 
 
 
@@ -130,7 +125,6 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 
 
 
-
 void GateHandler::RegisterNodeSession(::google::protobuf::RpcController* controller, const ::RegisterNodeSessionRequest* request,
 	::RegisterNodeSessionResponse* response,
 	::google::protobuf::Closure* done)
@@ -140,6 +134,5 @@ void GateHandler::RegisterNodeSession(::google::protobuf::RpcController* control
 ///<<< END WRITING YOUR CODE
 
 }
-
 
 

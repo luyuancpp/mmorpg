@@ -80,7 +80,6 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 
 
 
-
 void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
 	::NodeRouteMessageResponse* response,
 	::google::protobuf::Closure* done)
@@ -153,7 +152,6 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 
 
 
-
 void SceneHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* controller, const ::ClientSendMessageToPlayerRequest* request,
 	::ClientSendMessageToPlayerResponse* response,
 	::google::protobuf::Closure* done)
@@ -219,7 +217,6 @@ void SceneHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* 
 
 
 
-
 void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -244,7 +241,6 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 ///<<< END WRITING YOUR CODE
 
 }
-
 
 
 
@@ -355,7 +351,6 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 
 
 
-
 void SceneHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
 	::RouteMessageResponse* response,
 	::google::protobuf::Closure* done)
@@ -367,7 +362,6 @@ void SceneHandler::RouteNodeStringMsg(::google::protobuf::RpcController* control
 
 
 
-
 void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
 	::RoutePlayerMessageResponse* response,
 	::google::protobuf::Closure* done)
@@ -376,7 +370,6 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 ///<<< END WRITING YOUR CODE
 
 }
-
 
 
 
@@ -413,7 +406,6 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 
 
 
-
 void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, const ::Centre2GsEnterSceneRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -440,7 +432,6 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
 
 
 
-
 void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, const ::CreateSceneRequest* request,
 	::CreateSceneResponse* response,
 	::google::protobuf::Closure* done)
@@ -449,7 +440,6 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 ///<<< END WRITING YOUR CODE
 
 }
-
 
 
 
@@ -462,6 +452,5 @@ void SceneHandler::RegisterNodeSession(::google::protobuf::RpcController* contro
 ///<<< END WRITING YOUR CODE
 
 }
-
 
 
