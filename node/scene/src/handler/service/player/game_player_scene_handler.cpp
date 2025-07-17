@@ -25,9 +25,7 @@ void SceneScenePlayerHandler::EnterScene(entt::entity player,const ::GsEnterScen
 	PlayerSceneSystem::HandleEnterScene(player, entt::to_entity(request->scene_id()));
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveSceneRequest* request,
@@ -46,9 +44,7 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 	}
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSceneS2CRequest* request,
@@ -69,7 +65,5 @@ void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSce
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 

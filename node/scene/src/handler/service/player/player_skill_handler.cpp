@@ -19,9 +19,7 @@ void SceneSkillClientPlayerHandler::ReleaseSkill(entt::entity player,const ::Rel
 	CHECK_PLAYER_REQUEST(request, SkillSystem::ReleaseSkill);
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void SceneSkillClientPlayerHandler::NotifySkillUsed(entt::entity player,const ::SkillUsedS2C* request,
@@ -30,9 +28,7 @@ void SceneSkillClientPlayerHandler::NotifySkillUsed(entt::entity player,const ::
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void SceneSkillClientPlayerHandler::NotifySkillInterrupted(entt::entity player,const ::SkillInterruptedS2C* request,
@@ -41,9 +37,7 @@ void SceneSkillClientPlayerHandler::NotifySkillInterrupted(entt::entity player,c
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void SceneSkillClientPlayerHandler::GetSkillList(entt::entity player,const ::GetSkillListRequest* request,
@@ -53,7 +47,5 @@ void SceneSkillClientPlayerHandler::GetSkillList(entt::entity player,const ::Get
 	response->mutable_skill_list()->CopyFrom(tls.actorRegistry.get<PlayerSkillListPBComponent>(player));
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 

@@ -19,9 +19,8 @@ void {{ .ClassName }}::UnRegister()
 }
 
 {{- range .EventMessages }}
-
 void {{ $.ClassName }}::{{ . }}Handler(const {{ . }}& event)
 {
-{{ index $.UserCodeBlocks (printf "void %s::%sHandler(const %s& event)\n" $.ClassName . . ) }}
+{{ index $.UserCodeBlocks (printf "void %s::%sHandler(const %s& event)\n" $.ClassName . . ) - }}
 }
 {{- end }}

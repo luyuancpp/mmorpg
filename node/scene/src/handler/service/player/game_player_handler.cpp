@@ -26,9 +26,7 @@ void ScenePlayerHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLog
 	PlayerNodeSystem::OnPlayerLogin(player, request->enter_gs_type());
 	///<<< END WRITING YOUR CODE
 
-
 }
-
 
 
 void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,
@@ -42,7 +40,5 @@ void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRe
 
 ///<<< END WRITING YOUR CODE
 
-
 }
-
 
