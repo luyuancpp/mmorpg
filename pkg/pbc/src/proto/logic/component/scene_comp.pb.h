@@ -332,9 +332,12 @@ class ChangeSceneInfoPBComponent final
     kChangeSequenceFieldNumber = 5,
     kChangeGsTypeFieldNumber = 6,
     kChangeTimeFieldNumber = 7,
+    kStateFieldNumber = 10,
     kIgnoreFullFieldNumber = 8,
     kProcessingFieldNumber = 9,
-    kStateFieldNumber = 10,
+    kIsCrossZoneFieldNumber = 13,
+    kFromZoneIdFieldNumber = 11,
+    kToZoneIdFieldNumber = 12,
   };
   // uint32 scene_confid = 1;
   void clear_scene_confid() ;
@@ -406,6 +409,16 @@ class ChangeSceneInfoPBComponent final
   void _internal_set_change_time(::uint64_t value);
 
   public:
+  // uint32 state = 10;
+  void clear_state() ;
+  ::uint32_t state() const;
+  void set_state(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_state() const;
+  void _internal_set_state(::uint32_t value);
+
+  public:
   // bool ignore_full = 8;
   void clear_ignore_full() ;
   bool ignore_full() const;
@@ -426,14 +439,34 @@ class ChangeSceneInfoPBComponent final
   void _internal_set_processing(bool value);
 
   public:
-  // uint32 state = 10;
-  void clear_state() ;
-  ::uint32_t state() const;
-  void set_state(::uint32_t value);
+  // bool is_cross_zone = 13;
+  void clear_is_cross_zone() ;
+  bool is_cross_zone() const;
+  void set_is_cross_zone(bool value);
 
   private:
-  ::uint32_t _internal_state() const;
-  void _internal_set_state(::uint32_t value);
+  bool _internal_is_cross_zone() const;
+  void _internal_set_is_cross_zone(bool value);
+
+  public:
+  // uint32 from_zone_id = 11;
+  void clear_from_zone_id() ;
+  ::uint32_t from_zone_id() const;
+  void set_from_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_from_zone_id() const;
+  void _internal_set_from_zone_id(::uint32_t value);
+
+  public:
+  // uint32 to_zone_id = 12;
+  void clear_to_zone_id() ;
+  ::uint32_t to_zone_id() const;
+  void set_to_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_to_zone_id() const;
+  void _internal_set_to_zone_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:ChangeSceneInfoPBComponent)
@@ -441,7 +474,7 @@ class ChangeSceneInfoPBComponent final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      4, 10, 0,
+      4, 13, 0,
       0, 2>
       _table_;
 
@@ -466,9 +499,12 @@ class ChangeSceneInfoPBComponent final
     ::uint32_t change_sequence_;
     ::uint32_t change_gs_type_;
     ::uint64_t change_time_;
+    ::uint32_t state_;
     bool ignore_full_;
     bool processing_;
-    ::uint32_t state_;
+    bool is_cross_zone_;
+    ::uint32_t from_zone_id_;
+    ::uint32_t to_zone_id_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -710,6 +746,72 @@ inline ::uint32_t ChangeSceneInfoPBComponent::_internal_state() const {
 inline void ChangeSceneInfoPBComponent::_internal_set_state(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.state_ = value;
+}
+
+// uint32 from_zone_id = 11;
+inline void ChangeSceneInfoPBComponent::clear_from_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.from_zone_id_ = 0u;
+}
+inline ::uint32_t ChangeSceneInfoPBComponent::from_zone_id() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.from_zone_id)
+  return _internal_from_zone_id();
+}
+inline void ChangeSceneInfoPBComponent::set_from_zone_id(::uint32_t value) {
+  _internal_set_from_zone_id(value);
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.from_zone_id)
+}
+inline ::uint32_t ChangeSceneInfoPBComponent::_internal_from_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.from_zone_id_;
+}
+inline void ChangeSceneInfoPBComponent::_internal_set_from_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.from_zone_id_ = value;
+}
+
+// uint32 to_zone_id = 12;
+inline void ChangeSceneInfoPBComponent::clear_to_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.to_zone_id_ = 0u;
+}
+inline ::uint32_t ChangeSceneInfoPBComponent::to_zone_id() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.to_zone_id)
+  return _internal_to_zone_id();
+}
+inline void ChangeSceneInfoPBComponent::set_to_zone_id(::uint32_t value) {
+  _internal_set_to_zone_id(value);
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.to_zone_id)
+}
+inline ::uint32_t ChangeSceneInfoPBComponent::_internal_to_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.to_zone_id_;
+}
+inline void ChangeSceneInfoPBComponent::_internal_set_to_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.to_zone_id_ = value;
+}
+
+// bool is_cross_zone = 13;
+inline void ChangeSceneInfoPBComponent::clear_is_cross_zone() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.is_cross_zone_ = false;
+}
+inline bool ChangeSceneInfoPBComponent::is_cross_zone() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.is_cross_zone)
+  return _internal_is_cross_zone();
+}
+inline void ChangeSceneInfoPBComponent::set_is_cross_zone(bool value) {
+  _internal_set_is_cross_zone(value);
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.is_cross_zone)
+}
+inline bool ChangeSceneInfoPBComponent::_internal_is_cross_zone() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.is_cross_zone_;
+}
+inline void ChangeSceneInfoPBComponent::_internal_set_is_cross_zone(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.is_cross_zone_ = value;
 }
 
 #ifdef __GNUC__

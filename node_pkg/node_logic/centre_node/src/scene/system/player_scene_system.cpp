@@ -13,6 +13,9 @@
 #include "proto/logic/component/player_scene_comp.pb.h"
 #include "util/node_message_utils.h"
 #include "util/node_utils.h"
+#include "util/zone_utils.h"
+#include "proto/logic/event/player_migration_event.pb.h"
+#include "pbc/common_error_tip.pb.h"
 
 entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext)
 {
@@ -246,13 +249,25 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 	auto& changeInfo = *tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 	auto* fromSceneComp = tls.actorRegistry.try_get<SceneEntityComp>(playerEntity);
 
-	const auto fromNode = SceneUtil::get_game_node_eid(tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneComp->sceneEntity).guid());
-	const auto toNode = SceneUtil::get_game_node_eid(tls.sceneRegistry.get<SceneInfoPBComponent>(toScene).guid());
+	auto fromNodeGuid = SceneUtil::GetGameNodeIdFromGuid(tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneComp->sceneEntity).guid());
+	auto toNodeGuid = SceneUtil::GetGameNodeIdFromGuid(tls.sceneRegistry.get<SceneInfoPBComponent>(toScene).guid());
 
-	if (fromNode == toNode)
+	entt::entity fromNode{fromNodeGuid};
+	entt::entity toNode{ toNodeGuid };
+
+	uint16_t fromZone = GetZoneIdFromNodeId(fromNodeGuid);
+	uint16_t toZone = GetZoneIdFromNodeId(toNodeGuid);
+
+	changeInfo.set_to_zone_id(toZone);
+
+	if (fromZone == toZone) {
 		changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eSameGs);
-	else
+		changeInfo.set_is_cross_zone(false);
+	}
+	else {
 		changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs);
+		changeInfo.set_is_cross_zone(true);
+	}
 
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
 }
@@ -286,8 +301,16 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 	if (!ValidateSceneSwitch(playerEntity, toScene))
 		return;
 
+	auto& changeInfo = *tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
+
+	if (changeInfo.is_cross_zone()) {
+		HandleCrossZoneTransfer(playerEntity, changeInfo);
+		return;
+	}
+
 	// 4. 发起切换
 	ProcessSceneChange(playerEntity, toScene);
+
 }
 
 
@@ -312,4 +335,28 @@ void PlayerSceneSystem::PushInitialChangeSceneInfo(entt::entity playerEntity, en
 	changeInfo.set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
 
 	PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo);
+}
+
+void PlayerSceneSystem::HandleCrossZoneTransfer(entt::entity playerEntity, const ChangeSceneInfoPBComponent& changeInfo)
+{
+	auto playerId = tls.actorRegistry.get<Guid>(playerEntity);
+
+	std::string serialized;
+	if (!PlayerTransferUtil::SerializePlayerForTransfer(playerEntity, serialized)) {
+		LOG_ERROR << "Serialize failed for player: " << playerId;
+		return;
+	}
+
+	PlayerMigrationPbEvent request;
+	request.set_player_id(playerId);
+	request.set_from_zone(GetZoneId());
+	request.set_to_zone(changeInfo.to_zone_id());
+	request.mutable_scene_info()->CopyFrom(changeInfo);
+	request.set_serialized_player_data(std::move(serialized));
+
+	GetKafkaProducer()->send("player_migrate", request.SerializeAsString(), std::to_string(playerId), changeInfo.to_zone_id());
+
+	LOG_INFO << "[CrossZone] Sent player transfer to zone " << changeInfo.to_zone_id() << ": " << playerId;
+
+	PlayerTipSystem::SendToPlayer(playerEntity, kSceneTransferInProgress, {});
 }

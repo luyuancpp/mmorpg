@@ -29,6 +29,7 @@
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
+#include "proto/logic/component/scene_comp.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -213,10 +214,13 @@ class PlayerMigrationPbEvent final
   // accessors -------------------------------------------------------
   enum : int {
     kSerializedPlayerDataFieldNumber = 4,
+    kSceneInfoFieldNumber = 8,
     kPlayerIdFieldNumber = 1,
     kSourceSceneIdFieldNumber = 2,
     kTargetSceneIdFieldNumber = 3,
-    kTimestampFieldNumber = 5,
+    kFromZoneFieldNumber = 5,
+    kToZoneFieldNumber = 6,
+    kTimestampFieldNumber = 7,
   };
   // bytes serialized_player_data = 4;
   void clear_serialized_player_data() ;
@@ -232,6 +236,21 @@ class PlayerMigrationPbEvent final
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_serialized_player_data(
       const std::string& value);
   std::string* _internal_mutable_serialized_player_data();
+
+  public:
+  // .ChangeSceneInfoPBComponent scene_info = 8;
+  bool has_scene_info() const;
+  void clear_scene_info() ;
+  const ::ChangeSceneInfoPBComponent& scene_info() const;
+  PROTOBUF_NODISCARD ::ChangeSceneInfoPBComponent* release_scene_info();
+  ::ChangeSceneInfoPBComponent* mutable_scene_info();
+  void set_allocated_scene_info(::ChangeSceneInfoPBComponent* value);
+  void unsafe_arena_set_allocated_scene_info(::ChangeSceneInfoPBComponent* value);
+  ::ChangeSceneInfoPBComponent* unsafe_arena_release_scene_info();
+
+  private:
+  const ::ChangeSceneInfoPBComponent& _internal_scene_info() const;
+  ::ChangeSceneInfoPBComponent* _internal_mutable_scene_info();
 
   public:
   // uint64 player_id = 1;
@@ -264,7 +283,27 @@ class PlayerMigrationPbEvent final
   void _internal_set_target_scene_id(::uint64_t value);
 
   public:
-  // int64 timestamp = 5;
+  // uint32 from_zone = 5;
+  void clear_from_zone() ;
+  ::uint32_t from_zone() const;
+  void set_from_zone(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_from_zone() const;
+  void _internal_set_from_zone(::uint32_t value);
+
+  public:
+  // uint32 to_zone = 6;
+  void clear_to_zone() ;
+  ::uint32_t to_zone() const;
+  void set_to_zone(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_to_zone() const;
+  void _internal_set_to_zone(::uint32_t value);
+
+  public:
+  // int64 timestamp = 7;
   void clear_timestamp() ;
   ::int64_t timestamp() const;
   void set_timestamp(::int64_t value);
@@ -279,7 +318,7 @@ class PlayerMigrationPbEvent final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 5, 0,
+      3, 8, 1,
       0, 2>
       _table_;
 
@@ -297,12 +336,16 @@ class PlayerMigrationPbEvent final
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const PlayerMigrationPbEvent& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr serialized_player_data_;
+    ::ChangeSceneInfoPBComponent* scene_info_;
     ::uint64_t player_id_;
     ::uint64_t source_scene_id_;
     ::uint64_t target_scene_id_;
+    ::uint32_t from_zone_;
+    ::uint32_t to_zone_;
     ::int64_t timestamp_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -439,7 +482,51 @@ inline void PlayerMigrationPbEvent::set_allocated_serialized_player_data(std::st
   // @@protoc_insertion_point(field_set_allocated:PlayerMigrationPbEvent.serialized_player_data)
 }
 
-// int64 timestamp = 5;
+// uint32 from_zone = 5;
+inline void PlayerMigrationPbEvent::clear_from_zone() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.from_zone_ = 0u;
+}
+inline ::uint32_t PlayerMigrationPbEvent::from_zone() const {
+  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.from_zone)
+  return _internal_from_zone();
+}
+inline void PlayerMigrationPbEvent::set_from_zone(::uint32_t value) {
+  _internal_set_from_zone(value);
+  // @@protoc_insertion_point(field_set:PlayerMigrationPbEvent.from_zone)
+}
+inline ::uint32_t PlayerMigrationPbEvent::_internal_from_zone() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.from_zone_;
+}
+inline void PlayerMigrationPbEvent::_internal_set_from_zone(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.from_zone_ = value;
+}
+
+// uint32 to_zone = 6;
+inline void PlayerMigrationPbEvent::clear_to_zone() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.to_zone_ = 0u;
+}
+inline ::uint32_t PlayerMigrationPbEvent::to_zone() const {
+  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.to_zone)
+  return _internal_to_zone();
+}
+inline void PlayerMigrationPbEvent::set_to_zone(::uint32_t value) {
+  _internal_set_to_zone(value);
+  // @@protoc_insertion_point(field_set:PlayerMigrationPbEvent.to_zone)
+}
+inline ::uint32_t PlayerMigrationPbEvent::_internal_to_zone() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.to_zone_;
+}
+inline void PlayerMigrationPbEvent::_internal_set_to_zone(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.to_zone_ = value;
+}
+
+// int64 timestamp = 7;
 inline void PlayerMigrationPbEvent::clear_timestamp() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.timestamp_ = ::int64_t{0};
@@ -459,6 +546,97 @@ inline ::int64_t PlayerMigrationPbEvent::_internal_timestamp() const {
 inline void PlayerMigrationPbEvent::_internal_set_timestamp(::int64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.timestamp_ = value;
+}
+
+// .ChangeSceneInfoPBComponent scene_info = 8;
+inline bool PlayerMigrationPbEvent::has_scene_info() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.scene_info_ != nullptr);
+  return value;
+}
+inline const ::ChangeSceneInfoPBComponent& PlayerMigrationPbEvent::_internal_scene_info() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::ChangeSceneInfoPBComponent* p = _impl_.scene_info_;
+  return p != nullptr ? *p : reinterpret_cast<const ::ChangeSceneInfoPBComponent&>(::_ChangeSceneInfoPBComponent_default_instance_);
+}
+inline const ::ChangeSceneInfoPBComponent& PlayerMigrationPbEvent::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.scene_info)
+  return _internal_scene_info();
+}
+inline void PlayerMigrationPbEvent::unsafe_arena_set_allocated_scene_info(::ChangeSceneInfoPBComponent* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.scene_info_);
+  }
+  _impl_.scene_info_ = reinterpret_cast<::ChangeSceneInfoPBComponent*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerMigrationPbEvent.scene_info)
+}
+inline ::ChangeSceneInfoPBComponent* PlayerMigrationPbEvent::release_scene_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::ChangeSceneInfoPBComponent* released = _impl_.scene_info_;
+  _impl_.scene_info_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::ChangeSceneInfoPBComponent* PlayerMigrationPbEvent::unsafe_arena_release_scene_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:PlayerMigrationPbEvent.scene_info)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::ChangeSceneInfoPBComponent* temp = _impl_.scene_info_;
+  _impl_.scene_info_ = nullptr;
+  return temp;
+}
+inline ::ChangeSceneInfoPBComponent* PlayerMigrationPbEvent::_internal_mutable_scene_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.scene_info_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::ChangeSceneInfoPBComponent>(GetArena());
+    _impl_.scene_info_ = reinterpret_cast<::ChangeSceneInfoPBComponent*>(p);
+  }
+  return _impl_.scene_info_;
+}
+inline ::ChangeSceneInfoPBComponent* PlayerMigrationPbEvent::mutable_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::ChangeSceneInfoPBComponent* _msg = _internal_mutable_scene_info();
+  // @@protoc_insertion_point(field_mutable:PlayerMigrationPbEvent.scene_info)
+  return _msg;
+}
+inline void PlayerMigrationPbEvent::set_allocated_scene_info(::ChangeSceneInfoPBComponent* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.scene_info_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.scene_info_ = reinterpret_cast<::ChangeSceneInfoPBComponent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:PlayerMigrationPbEvent.scene_info)
 }
 
 #ifdef __GNUC__

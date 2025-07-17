@@ -32,4 +32,7 @@ message ChangeSceneInfoPBComponent
   bool ignore_full = 8;//忽略人数满了
   bool processing = 9;
   uint32 state = 10;
+  uint32 from_zone_id = 11;
+  uint32 to_zone_id = 12;   // ✨ 一定要放入结构里！
+  bool is_cross_zone = 13; // 是否跨 Zone
 }

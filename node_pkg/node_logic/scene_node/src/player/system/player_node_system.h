@@ -4,7 +4,7 @@
 
 #include "proto/db/mysql_database_table.pb.h"
 
-using PlayerRedis = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
+using PlayerCentreDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
 
 class PlayerGameNodeEnteryInfoPBComponent;
 

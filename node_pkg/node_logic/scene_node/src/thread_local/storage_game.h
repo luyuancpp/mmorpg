@@ -7,7 +7,7 @@
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "util/node_id_generator.h"
 
-using PlayerRedis = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
+using PlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
 
 using NodeIdGenerator32BitId = NodeIdGenerator<uint64_t, 32>;
 
@@ -15,7 +15,7 @@ class ThreadLocalStorageGame
 {
 public:
 	RedisSystem redis;
-	PlayerRedis playerRedis;
+	PlayerDataRedis playerRedis;
 	std::unordered_map<Guid, PlayerGameNodeEnteryInfoPBComponent> playerNodeEntryInfoList;
 	SceneNavMapComp sceneNav;
 	FrameTime frameTime;
