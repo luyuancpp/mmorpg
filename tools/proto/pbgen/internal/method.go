@@ -576,7 +576,7 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 {{ .Code }}
 }
 {{ else }}
-{{ $.YourCodePair }}
+{{- $.YourCodePair -}}
 {{ end }}
 {{ end }}
 `
