@@ -103,7 +103,7 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& me
 void PlayerNodeSystem::SavePlayer(entt::entity player)
 {
 	LOG_INFO << "SavePlayer: Saving player guid: " << tls.actorRegistry.get<Guid>(player);
-	using SaveMessage = PlayerRedis::element_type::MessageValuePtr;
+	using SaveMessage = PlayerCentreDataRedis::element_type::MessageValuePtr;
 	SaveMessage pb = std::make_shared<SaveMessage::element_type>();
 
 	pb->set_player_id(tls.actorRegistry.get<Guid>(player));

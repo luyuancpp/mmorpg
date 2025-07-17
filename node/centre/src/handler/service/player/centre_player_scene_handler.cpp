@@ -104,10 +104,8 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 			return;
 		}
 	}
-	
 
 	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, SceneUtil::GetGameNodeIdFromGuid(toScene));
-
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tls.actorRegistry.get<Guid>(player);
 	///<<< END WRITING YOUR CODE
 

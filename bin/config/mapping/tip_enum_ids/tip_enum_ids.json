@@ -149,5 +149,8 @@
     },
     "reward_error": {
         "RewardAlreadyClaimed": 120
+    },
+    "cross_server_error": {
+        "SceneTransferInProgress": 128
     }
 }

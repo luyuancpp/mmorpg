@@ -27,14 +27,17 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 
 inline constexpr PlayerMigrationPbEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : serialized_player_data_(
+      : _cached_size_{0},
+        serialized_player_data_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        scene_info_{nullptr},
         player_id_{::uint64_t{0u}},
         source_scene_id_{::uint64_t{0u}},
         target_scene_id_{::uint64_t{0u}},
-        timestamp_{::int64_t{0}},
-        _cached_size_{0} {}
+        from_zone_{0u},
+        to_zone_{0u},
+        timestamp_{::int64_t{0}} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR PlayerMigrationPbEvent::PlayerMigrationPbEvent(::_pbi::ConstantInitialized)
@@ -62,7 +65,7 @@ static constexpr const ::_pb::ServiceDescriptor**
 const ::uint32_t
     TableStruct_proto_2flogic_2fevent_2fplayer_5fmigration_5fevent_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
-        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::PlayerMigrationPbEvent, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::PlayerMigrationPbEvent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
@@ -74,12 +77,23 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::PlayerMigrationPbEvent, _impl_.source_scene_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerMigrationPbEvent, _impl_.target_scene_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerMigrationPbEvent, _impl_.serialized_player_data_),
+        PROTOBUF_FIELD_OFFSET(::PlayerMigrationPbEvent, _impl_.from_zone_),
+        PROTOBUF_FIELD_OFFSET(::PlayerMigrationPbEvent, _impl_.to_zone_),
         PROTOBUF_FIELD_OFFSET(::PlayerMigrationPbEvent, _impl_.timestamp_),
+        PROTOBUF_FIELD_OFFSET(::PlayerMigrationPbEvent, _impl_.scene_info_),
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        0,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::PlayerMigrationPbEvent)},
+        {0, 16, -1, sizeof(::PlayerMigrationPbEvent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_PlayerMigrationPbEvent_default_instance_._instance,
@@ -87,22 +101,29 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2flogic_2fevent_2fplayer_5fmigration_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n.proto/logic/event/player_migration_eve"
-    "nt.proto\"\220\001\n\026PlayerMigrationPbEvent\022\021\n\tp"
+    "nt.proto\032&proto/logic/component/scene_co"
+    "mp.proto\"\345\001\n\026PlayerMigrationPbEvent\022\021\n\tp"
     "layer_id\030\001 \001(\004\022\027\n\017source_scene_id\030\002 \001(\004\022"
     "\027\n\017target_scene_id\030\003 \001(\004\022\036\n\026serialized_p"
-    "layer_data\030\004 \001(\014\022\021\n\ttimestamp\030\005 \001(\003B\tZ\007p"
-    "b/gameb\006proto3"
+    "layer_data\030\004 \001(\014\022\021\n\tfrom_zone\030\005 \001(\r\022\017\n\007t"
+    "o_zone\030\006 \001(\r\022\021\n\ttimestamp\030\007 \001(\003\022/\n\nscene"
+    "_info\030\010 \001(\0132\033.ChangeSceneInfoPBComponent"
+    "B\tZ\007pb/gameb\006proto3"
+};
+static const ::_pbi::DescriptorTable* const descriptor_table_proto_2flogic_2fevent_2fplayer_5fmigration_5fevent_2eproto_deps[1] =
+    {
+        &::descriptor_table_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fevent_2fplayer_5fmigration_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fevent_2fplayer_5fmigration_5fevent_2eproto = {
     false,
     false,
-    214,
+    339,
     descriptor_table_protodef_proto_2flogic_2fevent_2fplayer_5fmigration_5fevent_2eproto,
     "proto/logic/event/player_migration_event.proto",
     &descriptor_table_proto_2flogic_2fevent_2fplayer_5fmigration_5fevent_2eproto_once,
-    nullptr,
-    0,
+    descriptor_table_proto_2flogic_2fevent_2fplayer_5fmigration_5fevent_2eproto_deps,
+    1,
     1,
     schemas,
     file_default_instances,
@@ -114,8 +135,17 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_
 
 class PlayerMigrationPbEvent::_Internal {
  public:
+  using HasBits =
+      decltype(std::declval<PlayerMigrationPbEvent>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_._has_bits_);
 };
 
+void PlayerMigrationPbEvent::clear_scene_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.scene_info_ != nullptr) _impl_.scene_info_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
 PlayerMigrationPbEvent::PlayerMigrationPbEvent(::google::protobuf::Arena* arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(arena, _class_data_.base()) {
@@ -128,8 +158,9 @@ PlayerMigrationPbEvent::PlayerMigrationPbEvent(::google::protobuf::Arena* arena)
 inline PROTOBUF_NDEBUG_INLINE PlayerMigrationPbEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from, const ::PlayerMigrationPbEvent& from_msg)
-      : serialized_player_data_(arena, from.serialized_player_data_),
-        _cached_size_{0} {}
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        serialized_player_data_(arena, from.serialized_player_data_) {}
 
 PlayerMigrationPbEvent::PlayerMigrationPbEvent(
     ::google::protobuf::Arena* arena,
@@ -144,6 +175,10 @@ PlayerMigrationPbEvent::PlayerMigrationPbEvent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::ChangeSceneInfoPBComponent>(
+                              arena, *from._impl_.scene_info_)
+                        : nullptr;
   ::memcpy(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char *>(&from._impl_) +
@@ -157,16 +192,16 @@ PlayerMigrationPbEvent::PlayerMigrationPbEvent(
 inline PROTOBUF_NDEBUG_INLINE PlayerMigrationPbEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : serialized_player_data_(arena),
-        _cached_size_{0} {}
+      : _cached_size_{0},
+        serialized_player_data_(arena) {}
 
 inline void PlayerMigrationPbEvent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, player_id_),
+               offsetof(Impl_, scene_info_),
            0,
            offsetof(Impl_, timestamp_) -
-               offsetof(Impl_, player_id_) +
+               offsetof(Impl_, scene_info_) +
                sizeof(Impl_::timestamp_));
 }
 PlayerMigrationPbEvent::~PlayerMigrationPbEvent() {
@@ -178,6 +213,7 @@ inline void PlayerMigrationPbEvent::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.serialized_player_data_.Destroy();
+  delete this_._impl_.scene_info_;
   this_._impl_.~Impl_();
 }
 
@@ -217,17 +253,17 @@ const ::google::protobuf::internal::ClassData* PlayerMigrationPbEvent::GetClassD
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 5, 0, 0, 2> PlayerMigrationPbEvent::_table_ = {
+const ::_pbi::TcParseTable<3, 8, 1, 0, 2> PlayerMigrationPbEvent::_table_ = {
   {
-    0,  // no _has_bits_
+    PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_._has_bits_),
     0, // no _extensions_
-    5, 56,  // max_field_number, fast_idx_mask
+    8, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967264,  // skipmap
+    4294967040,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    5,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
+    8,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
     _class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
@@ -235,7 +271,9 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> PlayerMigrationPbEvent::_table_ = {
     ::_pbi::TcParser::GetTable<::PlayerMigrationPbEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // .ChangeSceneInfoPBComponent scene_info = 8;
+    {::_pbi::TcParser::FastMtS1,
+     {66, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.scene_info_)}},
     // uint64 player_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerMigrationPbEvent, _impl_.player_id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.player_id_)}},
@@ -248,32 +286,45 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> PlayerMigrationPbEvent::_table_ = {
     // bytes serialized_player_data = 4;
     {::_pbi::TcParser::FastBS1,
      {34, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.serialized_player_data_)}},
-    // int64 timestamp = 5;
+    // uint32 from_zone = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerMigrationPbEvent, _impl_.from_zone_), 63>(),
+     {40, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.from_zone_)}},
+    // uint32 to_zone = 6;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerMigrationPbEvent, _impl_.to_zone_), 63>(),
+     {48, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.to_zone_)}},
+    // int64 timestamp = 7;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerMigrationPbEvent, _impl_.timestamp_), 63>(),
-     {40, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.timestamp_)}},
-    {::_pbi::TcParser::MiniParse, {}},
-    {::_pbi::TcParser::MiniParse, {}},
+     {56, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.timestamp_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 player_id = 1;
-    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.player_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.player_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint64 source_scene_id = 2;
-    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.source_scene_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.source_scene_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint64 target_scene_id = 3;
-    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.target_scene_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.target_scene_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // bytes serialized_player_data = 4;
-    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.serialized_player_data_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.serialized_player_data_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
-    // int64 timestamp = 5;
-    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.timestamp_), 0, 0,
+    // uint32 from_zone = 5;
+    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.from_zone_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // uint32 to_zone = 6;
+    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.to_zone_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // int64 timestamp = 7;
+    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.timestamp_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
-  }},
-  // no aux_entries
-  {{
+    // .ChangeSceneInfoPBComponent scene_info = 8;
+    {PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::ChangeSceneInfoPBComponent>()},
+  }}, {{
   }},
 };
 
@@ -285,9 +336,15 @@ PROTOBUF_NOINLINE void PlayerMigrationPbEvent::Clear() {
   (void) cached_has_bits;
 
   _impl_.serialized_player_data_.ClearToEmpty();
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.scene_info_ != nullptr);
+    _impl_.scene_info_->Clear();
+  }
   ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.timestamp_) -
       reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.timestamp_));
+  _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -333,11 +390,33 @@ PROTOBUF_NOINLINE void PlayerMigrationPbEvent::Clear() {
             target = stream->WriteBytesMaybeAliased(4, _s, target);
           }
 
-          // int64 timestamp = 5;
+          // uint32 from_zone = 5;
+          if (this_._internal_from_zone() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+                5, this_._internal_from_zone(), target);
+          }
+
+          // uint32 to_zone = 6;
+          if (this_._internal_to_zone() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+                6, this_._internal_to_zone(), target);
+          }
+
+          // int64 timestamp = 7;
           if (this_._internal_timestamp() != 0) {
             target = ::google::protobuf::internal::WireFormatLite::
-                WriteInt64ToArrayWithField<5>(
+                WriteInt64ToArrayWithField<7>(
                     stream, this_._internal_timestamp(), target);
+          }
+
+          cached_has_bits = this_._impl_._has_bits_[0];
+          // .ChangeSceneInfoPBComponent scene_info = 8;
+          if (cached_has_bits & 0x00000001u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                8, *this_._impl_.scene_info_, this_._impl_.scene_info_->GetCachedSize(), target,
+                stream);
           }
 
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -370,6 +449,16 @@ PROTOBUF_NOINLINE void PlayerMigrationPbEvent::Clear() {
               total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
                                               this_._internal_serialized_player_data());
             }
+          }
+           {
+            // .ChangeSceneInfoPBComponent scene_info = 8;
+            cached_has_bits = this_._impl_._has_bits_[0];
+            if (cached_has_bits & 0x00000001u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.scene_info_);
+            }
+          }
+           {
             // uint64 player_id = 1;
             if (this_._internal_player_id() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
@@ -385,7 +474,17 @@ PROTOBUF_NOINLINE void PlayerMigrationPbEvent::Clear() {
               total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
                   this_._internal_target_scene_id());
             }
-            // int64 timestamp = 5;
+            // uint32 from_zone = 5;
+            if (this_._internal_from_zone() != 0) {
+              total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+                  this_._internal_from_zone());
+            }
+            // uint32 to_zone = 6;
+            if (this_._internal_to_zone() != 0) {
+              total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+                  this_._internal_to_zone());
+            }
+            // int64 timestamp = 7;
             if (this_._internal_timestamp() != 0) {
               total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
                   this_._internal_timestamp());
@@ -398,6 +497,7 @@ PROTOBUF_NOINLINE void PlayerMigrationPbEvent::Clear() {
 void PlayerMigrationPbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
   auto* const _this = static_cast<PlayerMigrationPbEvent*>(&to_msg);
   auto& from = static_cast<const PlayerMigrationPbEvent&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:PlayerMigrationPbEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
@@ -405,6 +505,16 @@ void PlayerMigrationPbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, 
 
   if (!from._internal_serialized_player_data().empty()) {
     _this->_internal_set_serialized_player_data(from._internal_serialized_player_data());
+  }
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.scene_info_ != nullptr);
+    if (_this->_impl_.scene_info_ == nullptr) {
+      _this->_impl_.scene_info_ =
+          ::google::protobuf::Message::CopyConstruct<::ChangeSceneInfoPBComponent>(arena, *from._impl_.scene_info_);
+    } else {
+      _this->_impl_.scene_info_->MergeFrom(*from._impl_.scene_info_);
+    }
   }
   if (from._internal_player_id() != 0) {
     _this->_impl_.player_id_ = from._impl_.player_id_;
@@ -415,9 +525,16 @@ void PlayerMigrationPbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, 
   if (from._internal_target_scene_id() != 0) {
     _this->_impl_.target_scene_id_ = from._impl_.target_scene_id_;
   }
+  if (from._internal_from_zone() != 0) {
+    _this->_impl_.from_zone_ = from._impl_.from_zone_;
+  }
+  if (from._internal_to_zone() != 0) {
+    _this->_impl_.to_zone_ = from._impl_.to_zone_;
+  }
   if (from._internal_timestamp() != 0) {
     _this->_impl_.timestamp_ = from._impl_.timestamp_;
   }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -434,13 +551,14 @@ void PlayerMigrationPbEvent::InternalSwap(PlayerMigrationPbEvent* PROTOBUF_RESTR
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.serialized_player_data_, &other->_impl_.serialized_player_data_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.timestamp_)
       + sizeof(PlayerMigrationPbEvent::_impl_.timestamp_)
-      - PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.player_id_)>(
-          reinterpret_cast<char*>(&_impl_.player_id_),
-          reinterpret_cast<char*>(&other->_impl_.player_id_));
+      - PROTOBUF_FIELD_OFFSET(PlayerMigrationPbEvent, _impl_.scene_info_)>(
+          reinterpret_cast<char*>(&_impl_.scene_info_),
+          reinterpret_cast<char*>(&other->_impl_.scene_info_));
 }
 
 ::google::protobuf::Metadata PlayerMigrationPbEvent::GetMetadata() const {
