@@ -22,5 +22,4 @@ void OnSceneSceneTestRepliedHandler(const TcpConnectionPtr& conn, const std::sha
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }

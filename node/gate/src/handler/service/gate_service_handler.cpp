@@ -36,7 +36,6 @@ void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* control
 	LOG_INFO << "Player entered GS, session ID: " << request->session_info().session_id()
 		<< ", game node ID: " << request->scene_node_id();
 	///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -59,7 +58,6 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 	gGateNode->SendMessageToClient(sessionIt->second.conn, request->message_content());
 	//LOG_TRACE << "Player message routed, session ID: " << request->head().session_id();
 	///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -72,7 +70,6 @@ void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* control
 	tls_gate.sessions().erase(request->session_id());
 	LOG_INFO << "Session ID kicked by Centre: " << request->session_id();
 	///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -83,7 +80,6 @@ void GateHandler::RouteNodeMessage(::google::protobuf::RpcController* controller
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -94,7 +90,6 @@ void GateHandler::RoutePlayerMessage(::google::protobuf::RpcController* controll
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -120,7 +115,6 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 		//LOG_TRACE << "Broadcast message sent to session ID: " << sessionId;
 	}
 	///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -132,7 +126,6 @@ void GateHandler::RegisterNodeSession(::google::protobuf::RpcController* control
 ///<<< BEGIN WRITING YOUR CODE
 	gGateNode->HandleNodeRegistration(*request, *response);
 ///<<< END WRITING YOUR CODE
-
 }
 
 
