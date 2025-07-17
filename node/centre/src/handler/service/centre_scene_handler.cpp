@@ -30,7 +30,6 @@ void CentreSceneHandler::RegisterScene(::google::protobuf::RpcController* contro
 
 
 
-
 void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* controller, const ::UnRegisterSceneRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -54,6 +53,5 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 	///<<< END WRITING YOUR CODE
 
 }
-
 
 
