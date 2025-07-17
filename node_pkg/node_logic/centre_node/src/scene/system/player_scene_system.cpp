@@ -257,6 +257,20 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
 }
 
+void PlayerSceneSystem::HandleEnterScene(entt::entity playerEntity, const SceneInfoPBComponent& sceneInfo)
+{
+	ChangeSceneInfoPBComponent changeSceneInfo;
+	PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeSceneInfo, sceneInfo);
+	if (const auto ret = PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeSceneInfo); ret != kSuccess)
+	{
+		LOG_ERROR << "Failed to push change scene info for player " << tls.actorRegistry.get<Guid>(playerEntity) << ": " << ret;
+		PlayerTipSystem::SendToPlayer(playerEntity, ret, {});
+		return;
+	}
+
+	PlayerSceneSystem::AttemptEnterNextScene(playerEntity);
+}
+
 void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 {
 	// 1. 检查前置状态（队列、玩家、场景）

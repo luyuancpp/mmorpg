@@ -13,7 +13,7 @@ public:
 	~KafkaProducer();
 
 	// 异步发送消息，支持指定分区和消息的 key
-	void send(const std::string& topic, const std::string& message, const std::string& key = "", int32_t partition = RdKafka::Topic::PARTITION_UA);
+	RdKafka::ErrorCode send(const std::string& topic, const std::string& message, const std::string& key = "", int32_t partition = RdKafka::Topic::PARTITION_UA);
 
 	// 轮询处理消息队列
 	void poll();
