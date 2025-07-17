@@ -105,7 +105,8 @@ void Node::InitRpcServer() {
 	LOG_DEBUG << "Node info: " << info.DebugString();
 }
 
-void Node::InitKafka() {
+void Node::InitKafka()
+{
 	const auto& kafkaConfig = tlsCommonLogic.GetBaseDeployConfig().kafka(); // 假设有配置
 
 	std::vector<std::string> brokersVec;
@@ -124,7 +125,11 @@ void Node::InitKafka() {
 	std::vector<int32_t> partitions;
 
 	kafkaProducer = std::make_unique<KafkaProducer>(brokers);
-	kafkaConsumer = std::make_unique<KafkaConsumer>(brokers, groupId, topicsVec, partitions, [this](const std::string& topic, const std::string& message) {
+	kafkaConsumer = std::make_unique<KafkaConsumer>(brokers,
+		groupId,
+		topicsVec,
+		{tlsCommonLogic.GetGameConfig().zone_id()},
+		[this](const std::string& topic, const std::string& message) {
 		
 	});
 
