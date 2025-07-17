@@ -5,6 +5,7 @@
 #include "type_define/type_define.h"
 
 class PlayerSceneContextPBComponent;
+class SceneInfoPBComponent;
 
 class PlayerSceneSystem
 {
@@ -21,6 +22,7 @@ public:
     static entt::entity ResolveTargetScene(entt::entity playerEntity);
     static bool ValidateSceneSwitch(entt::entity playerEntity, entt::entity toScene);
     static void ProcessSceneChange(entt::entity playerEntity, entt::entity toScene);
+    static void HandleEnterScene(entt::entity playerEntity, const SceneInfoPBComponent& sceneInfo);
 };
 
 

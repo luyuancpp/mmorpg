@@ -29,29 +29,31 @@ KafkaProducer::~KafkaProducer() {
 	}
 }
 
-void KafkaProducer::send(const std::string& topic, const std::string& message, const std::string& key, int32_t partition) {
+RdKafka::ErrorCode KafkaProducer::send(const std::string& topic, const std::string& message,
+	const std::string& key, int32_t partition) {
 	RdKafka::ErrorCode resp = producer_->produce(
-		topic,              // 目标 topic
-		partition,          // 指定分区
-		RdKafka::Producer::RK_MSG_COPY,  // 自动拷贝 payload
-		const_cast<char*>(message.c_str()),  // 消息内容
-		message.size(),     // 消息大小
-		key.empty() ? nullptr : const_cast<char*>(key.c_str()),  // 消息的 key
-		key.size(),         // key 的大小
-		0,                  // 时间戳 (如果有的话)
-		nullptr, nullptr);  // 不使用消息头（如果有需要可以扩展）
+		topic,
+		partition,
+		RdKafka::Producer::RK_MSG_COPY,
+		const_cast<char*>(message.c_str()),
+		message.size(),
+		key.empty() ? nullptr : const_cast<char*>(key.c_str()),
+		key.size(),
+		0,
+		nullptr, nullptr);
 
 	if (resp != RdKafka::ERR_NO_ERROR) {
 		LOG_ERROR << "Produce failed: " << RdKafka::err2str(resp);
-		return;
 	}
 	else {
 		LOG_INFO << "[Kafka] Message queued to topic " << topic;
 	}
 
-	// 非阻塞，调用一次 poll()（回调需要）
-	poll();
+	poll(); // 保证事件分发
+
+	return resp;
 }
+
 
 // Delivery callback 处理消息送达的状态
 void KafkaProducer::dr_cb(RdKafka::Message& message) {

@@ -16,27 +16,9 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "node/system/node_system.h"
 #include "thread_local/storage_common_logic.h"
+#include "util/zone_utils.h"
 
 
-inline uint32_t GetZoneIdFromNodeId(NodeId nodeId) {
-	entt::entity nodeEntity{ nodeId };
-
-	// 获取 SceneNodeService 类型的 registry
-	auto& registry = NodeSystem::GetRegistryForNodeType(eNodeType::SceneNodeService);
-
-	// 尝试获取该节点的 NodeInfo 组件
-	const NodeInfo* nodeInfo = registry.try_get<NodeInfo>(nodeEntity);
-	if (!nodeInfo) {
-		return kInvalidNodeId;
-	}
-
-	return nodeInfo->zone_id();
-}
-
-
-bool IsCrossZone(NodeId  fromNodeId, NodeId toNodeId) {
-    return GetZoneIdFromNodeId(fromNodeId) != GetZoneIdFromNodeId(toNodeId);
-}
 ///<<< END WRITING YOUR CODE
 
 
@@ -45,22 +27,15 @@ void CentrePlayerSceneHandler::EnterScene(entt::entity player,const ::CentreEnte
 	::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
-		//正在切换场景中，不能马上切换，gs崩溃了怎么办
-	LOG_DEBUG << "EnterScene request received for player: " << tls.actorRegistry.get<Guid>(player)
-		<< ", scene_info: " << request->scene_info().DebugString();
+	//正在切换场景中，不能马上切换，gs崩溃了怎么办
 
-	ChangeSceneInfoPBComponent changeSceneInfo;
-	PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeSceneInfo, request->scene_info());
-	if (const auto ret = PlayerChangeSceneUtil::PushChangeSceneInfo(player, changeSceneInfo); ret != kSuccess)
-	{
-		LOG_ERROR << "Failed to push change scene info for player " << tls.actorRegistry.get<Guid>(player) << ": " << ret;
-		PlayerTipSystem::SendToPlayer(player, ret, {});
+	// Handler 只负责参数校验和调用
+	if (!request->has_scene_info()) {
+		LOG_ERROR << "Scene info missing";
 		return;
 	}
+	PlayerSceneSystem::HandleEnterScene(player, request->scene_info());
 
-	PlayerSceneSystem::AttemptEnterNextScene(player);
-
-	LOG_DEBUG << "EnterScene request processed successfully for player: " << tls.actorRegistry.get<Guid>(player);
 	///<<< END WRITING YOUR CODE
 
 
@@ -88,11 +63,12 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 		//todo 场景崩溃了要去新的场景
 
 	auto* const changeSceneQueue = tls.actorRegistry.try_get<ChangeSceneQueuePBComponent>(player);
-	if (!changeSceneQueue || changeSceneQueue->empty())
-	{
-		LOG_WARN << "Change scene queue is empty for player: " << tls.actorRegistry.get<Guid>(player);
+	if (!changeSceneQueue || changeSceneQueue->empty()) {
+		LOG_WARN << " Change scene queue is empty, player: " << tls.actorRegistry.get<Guid>(player);
+		// 可选：通知客户端或重试
 		return;
 	}
+
 
 	const auto& changeSceneInfo = *changeSceneQueue->front();
 	const auto toScene = entt::to_entity(changeSceneInfo.guid());
@@ -123,8 +99,14 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 	if (toZone != fromZone)
 	{
         std::string payload = request->SerializeAsString();
-		gNode->GetKafkaProducer()->send("PlayerMigrationTopic", payload, std::to_string(tls.actorRegistry.get<Guid>(player)),
+
+		auto result = gNode->GetKafkaProducer()->send("PlayerMigrationTopic", payload, std::to_string(tls.actorRegistry.get<Guid>(player)),
 			toZone);
+		if (result != RdKafka::ERR_NO_ERROR) {
+			LOG_ERROR << "Kafka send failed for player: " << tls.actorRegistry.get<Guid>(player);
+			// 可选：重试或降级处理
+			return;
+		}
 	}
 	
 
