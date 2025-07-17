@@ -243,6 +243,9 @@
     <ClCompile Include="src\proto\player_locator\player_locator.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\logic\event\player_migration_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\common\common.pb.h">
@@ -522,6 +525,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\player_locator\player_locator.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\event\player_migration_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

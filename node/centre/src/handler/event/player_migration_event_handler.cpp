@@ -1,0 +1,20 @@
+#include "player_migration_event_handler.h"
+#include "proto/logic/event/player_migration_event.pb.h"
+#include "thread_local/storage.h"
+
+
+
+void PlayerMigrationEventHandler::Register()
+{
+    tls.dispatcher.sink<PlayerMigrationPbEvent>().connect<&PlayerMigrationEventHandler::PlayerMigrationPbEventHandler>();
+}
+
+void PlayerMigrationEventHandler::UnRegister()
+{
+    tls.dispatcher.sink<PlayerMigrationPbEvent>().disconnect<&PlayerMigrationEventHandler::PlayerMigrationPbEventHandler>();
+}
+
+void PlayerMigrationEventHandler::PlayerMigrationPbEventHandler(const PlayerMigrationPbEvent& event)
+{
+
+}

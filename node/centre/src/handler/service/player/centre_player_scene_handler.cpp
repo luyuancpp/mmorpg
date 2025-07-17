@@ -14,6 +14,29 @@
 #include "service_info/player_scene_service_info.h"
 #include "util/player_message_utils.h"
 #include "proto/logic/component/player_network_comp.pb.h"
+#include "node/system/node_system.h"
+#include "thread_local/storage_common_logic.h"
+
+
+inline uint32_t GetZoneIdFromNodeId(NodeId nodeId) {
+	entt::entity nodeEntity{ nodeId };
+
+	// 获取 SceneNodeService 类型的 registry
+	auto& registry = NodeSystem::GetRegistryForNodeType(eNodeType::SceneNodeService);
+
+	// 尝试获取该节点的 NodeInfo 组件
+	const NodeInfo* nodeInfo = registry.try_get<NodeInfo>(nodeEntity);
+	if (!nodeInfo) {
+		return kInvalidNodeId;
+	}
+
+	return nodeInfo->zone_id();
+}
+
+
+bool IsCrossZone(NodeId  fromNodeId, NodeId toNodeId) {
+    return GetZoneIdFromNodeId(fromNodeId) != GetZoneIdFromNodeId(toNodeId);
+}
 ///<<< END WRITING YOUR CODE
 
 
@@ -63,7 +86,6 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 		//异步切换考虑消息队列
 		//todo异步加载完场景已经不在了scene了
 		//todo 场景崩溃了要去新的场景
-	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request received for player: " << tls.actorRegistry.get<Guid>(player);
 
 	auto* const changeSceneQueue = tls.actorRegistry.try_get<ChangeSceneQueuePBComponent>(player);
 	if (!changeSceneQueue || changeSceneQueue->empty())
@@ -73,8 +95,6 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 	}
 
 	const auto& changeSceneInfo = *changeSceneQueue->front();
-	LOG_INFO << "Processing change scene info: " << changeSceneInfo.processing();
-
 	const auto toScene = entt::to_entity(changeSceneInfo.guid());
 	if (entt::null == toScene)
 	{
@@ -90,7 +110,23 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 		return;
 	}
 
-	playerSessionSnapshotPB->mutable_node_id()->erase(eNodeType::SceneNodeService);
+    if (!playerSessionSnapshotPB->node_id().contains(eNodeType::SceneNodeService))
+    {
+        LOG_ERROR << "SceneNodeService not found in player session snapshot for player: "
+            << tls.actorRegistry.get<Guid>(player);
+		return;
+    }
+
+    auto toZone = GetZoneIdFromNodeId(SceneUtil::GetGameNodeIdFromGuid(toScene));
+    auto fromZone = GetZoneIdFromNodeId((*playerSessionSnapshotPB->mutable_node_id())[eNodeType::SceneNodeService]);  
+
+	if (toZone != fromZone)
+	{
+        std::string payload = request->SerializeAsString();
+		gNode->GetKafkaProducer()->send("PlayerMigrationTopic", payload, std::to_string(tls.actorRegistry.get<Guid>(player)),
+			toZone);
+	}
+	
 
 	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, SceneUtil::GetGameNodeIdFromGuid(toScene));
 
