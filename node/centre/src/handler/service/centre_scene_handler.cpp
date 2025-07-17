@@ -25,7 +25,6 @@ void CentreSceneHandler::RegisterScene(::google::protobuf::RpcController* contro
 
 	
 	///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -51,7 +50,6 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 
 	SceneUtil::DestroyScene({ gameNode, scene });
 	///<<< END WRITING YOUR CODE
-
 }
 
 

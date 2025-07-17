@@ -75,7 +75,6 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 
 	tlsGame.playerRedis->AsyncLoad(request->player_id());
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -147,7 +146,6 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 
 	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
     ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -212,7 +210,6 @@ void SceneHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* 
 
 	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -239,7 +236,6 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 
 	::SendMessageToClientViaGate(request->message_content().message_id(), request->message_content(), player);
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -346,7 +342,6 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 	}
         
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -357,7 +352,6 @@ void SceneHandler::RouteNodeStringMsg(::google::protobuf::RpcController* control
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -368,7 +362,6 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -401,7 +394,6 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 
 	PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(player);
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -427,7 +419,6 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
 	PlayerSceneSystem::HandleEnterScene(player, sceneEntity);
 
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -438,7 +429,6 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -450,7 +440,6 @@ void SceneHandler::RegisterNodeSession(::google::protobuf::RpcController* contro
 ///<<< BEGIN WRITING YOUR CODE
 	gNode->HandleNodeRegistration(*request, *response);
 ///<<< END WRITING YOUR CODE
-
 }
 
 

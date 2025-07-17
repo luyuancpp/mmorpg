@@ -11,7 +11,6 @@ void SceneSceneHandler::Test(::google::protobuf::RpcController* controller, cons
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 

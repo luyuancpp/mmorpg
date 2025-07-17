@@ -573,7 +573,7 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 	{{ .CppResponse }}* response,
 	::google::protobuf::Closure* done)
 {
-{{ .Code }}
+{{ .Code -}}
 }
 {{ else }}
 {{- $.YourCodePair -}}
@@ -671,7 +671,7 @@ void Init{{ .InitFuncName }}{{ .RepliedHandlerFileName }}()
 
 void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .CppResponse }}>& replied, Timestamp timestamp)
 {
-{{ .Code }}
+{{ .Code -}}
 }
 {{- end }}
 {{- end }}

@@ -81,7 +81,6 @@ void CentreHandler::GatePlayerService(::google::protobuf::RpcController* control
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -164,7 +163,6 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	PlayerNodeSystem::HandleNormalExit(playerId);
 
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -186,7 +184,6 @@ void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* con
 	//如果不是同一个登录服务器,踢掉已经登录的账号
 	//告诉客户端登录中
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -259,7 +256,6 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 
 
 	///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -278,7 +274,6 @@ void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* contro
 	PlayerNodeSystem::HandleNormalExit(player_id);
 	//todo statistics
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -297,7 +292,6 @@ void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController
 	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
 	PlayerNodeSystem::HandleNormalExit(player_id);
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -418,7 +412,6 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 		<< " for player ID: " << playerId;
 
 	///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -456,7 +449,6 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->scene_node_id();
 
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -603,7 +595,6 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	}
 	}
 	///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -614,7 +605,6 @@ void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* cont
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -656,7 +646,6 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 		registry.emplace<CrossRoomSceneNode>(sceneNodeId);
     }
 ///<<< END WRITING YOUR CODE
-
 }
 
 
@@ -668,7 +657,6 @@ void CentreHandler::RegisterNodeSession(::google::protobuf::RpcController* contr
 ///<<< BEGIN WRITING YOUR CODE
 	gNode->HandleNodeRegistration(*request, *response);
 ///<<< END WRITING YOUR CODE
-
 }
 
 
