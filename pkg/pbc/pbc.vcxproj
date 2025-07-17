@@ -79,6 +79,7 @@
     <ClCompile Include="src\proto\logic\event\node_event.pb.cc" />
     <ClCompile Include="src\proto\logic\event\npc_event.pb.cc" />
     <ClCompile Include="src\proto\logic\event\player_event.pb.cc" />
+    <ClCompile Include="src\proto\logic\event\player_migration_event.pb.cc" />
     <ClCompile Include="src\proto\logic\event\scene_event.pb.cc" />
     <ClCompile Include="src\proto\logic\event\server_event.pb.cc" />
     <ClCompile Include="src\proto\logic\event\skill_event.pb.cc" />
@@ -158,6 +159,7 @@
     <ClInclude Include="src\proto\logic\event\node_event.pb.h" />
     <ClInclude Include="src\proto\logic\event\npc_event.pb.h" />
     <ClInclude Include="src\proto\logic\event\player_event.pb.h" />
+    <ClInclude Include="src\proto\logic\event\player_migration_event.pb.h" />
     <ClInclude Include="src\proto\logic\event\scene_event.pb.h" />
     <ClInclude Include="src\proto\logic\event\server_event.pb.h" />
     <ClInclude Include="src\proto\logic\event\skill_event.pb.h" />

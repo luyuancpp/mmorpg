@@ -99,6 +99,9 @@
     <ClCompile Include="src\handler\service_replied\player\player_state_attribute_sync_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\handler\event\player_migration_event_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -168,6 +171,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service_replied\player\player_state_attribute_sync_replied_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\event\player_migration_event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

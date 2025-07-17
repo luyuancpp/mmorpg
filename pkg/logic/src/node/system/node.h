@@ -23,6 +23,9 @@ public:
     using ServiceList = std::vector<::google::protobuf::Service*>;
     using CanConnectNodeTypeList = std::set<uint32_t>;
 	using ClientList = std::vector<RpcClientPtr>;
+    using KafkaProducerPtr = std::unique_ptr<KafkaProducer>;
+    using KafkaConsumerPtr = std::unique_ptr<KafkaConsumer>;
+    using PartitionClassGuid = std::vector<int32_t>;
 
     // 构造与析构
     explicit Node(muduo::net::EventLoop* loop, const std::string& logFilePath);
@@ -39,6 +42,9 @@ public:
     std::string FormatIpAndPort();
     std::string GetIp();
     uint32_t GetPort();
+    KafkaProducerPtr& GetKafkaProducer() { return kafkaProducer; }
+    KafkaConsumerPtr& GetKafkaConsumer() { return kafkaConsumer; }
+    const PartitionClassGuid& GetPartitionListForZoneId()const {return partitions; }
 
     void CallRemoteMethodZoneCenter(uint32_t message_id, const ::google::protobuf::Message& request);
 
@@ -117,8 +123,9 @@ protected:
     boost::uuids::uuid nodeUuid;
 	boost::uuids::random_generator gen;
     boost::uuids::string_generator stringGen;
-    std::unique_ptr<KafkaProducer> kafkaProducer;
-    std::unique_ptr<KafkaConsumer> kafkaConsumer;
+    KafkaProducerPtr kafkaProducer;
+    KafkaConsumerPtr kafkaConsumer;
+    PartitionClassGuid partitions;
 };
 
 extern Node* gNode;

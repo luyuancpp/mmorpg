@@ -122,13 +122,13 @@ void Node::InitKafka()
 	std::string brokers = boost::algorithm::join(brokersVec, ",");
 	std::string groupId = kafkaConfig.group_id();
 
-	std::vector<int32_t> partitions;
+	partitions.emplace_back(tlsCommonLogic.GetGameConfig().zone_id());
 
 	kafkaProducer = std::make_unique<KafkaProducer>(brokers);
 	kafkaConsumer = std::make_unique<KafkaConsumer>(brokers,
 		groupId,
 		topicsVec,
-		{tlsCommonLogic.GetGameConfig().zone_id()},
+		partitions,
 		[this](const std::string& topic, const std::string& message) {
 		
 	});

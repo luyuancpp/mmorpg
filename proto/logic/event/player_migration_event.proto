@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message PlayerMigrationPbEvent {
+  uint64 player_id = 1;
+  uint64 source_scene_id = 2;
+  uint64 target_scene_id = 3;
+  bytes serialized_player_data = 4;
+  int64 timestamp = 5;  // 事件生成时间
+}
