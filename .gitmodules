@@ -61,6 +61,4 @@
 	path = third_party/xxhash
 	url = https://github.com/Cyan4973/xxHash.git
 	branch = release
-[submodule "third_party/librdkafka"]
-	path = third_party/librdkafka
-	url = https://github.com/confluentinc/librdkafka.git
+
