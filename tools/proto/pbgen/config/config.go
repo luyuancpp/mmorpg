@@ -142,6 +142,7 @@ const (
 	RegisterHandlerCppExtension        = "register" + HandlerCppExtension
 	DbProtoFileName                    = "db_base.proto"
 	GameMysqlDBProtoFileName           = "mysql_database_table.proto"
+	PlayerDataLoaderName               = "player_data_loader_system.h"
 )
 
 // ----------- 代码相关字符串常量 -----------

@@ -123,8 +123,8 @@ void Node::InitKafka()
 
 	partitions.emplace_back(tlsCommonLogic.GetGameConfig().zone_id());
 
-	kafkaProducer = std::make_unique<KafkaProducer>(brokers);
-	kafkaConsumer = std::make_unique<KafkaConsumer>(brokers,
+	tls.GetKafkaProducer() = std::make_unique<KafkaProducer>(brokers);
+	tls.GetKafkaConsumer() = std::make_unique<KafkaConsumer>(brokers,
 		groupId,
 		topicsVec,
 		partitions,

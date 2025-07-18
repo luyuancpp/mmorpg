@@ -10,5 +10,5 @@ class PlayerSceneSystem
 {
 public:
 	static void HandleEnterScene(entt::entity player, entt::entity scene);
-	static void HandleLeaveScene(entt::entity player);
+	static void HandleBeforeLeaveScene(entt::entity player);
 };

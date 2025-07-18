@@ -54,6 +54,7 @@
     <ClInclude Include="src\type_alias\actor.h" />
     <ClInclude Include="src\type_alias\player_redis.h" />
     <ClInclude Include="src\world\world.h" />
+    <ClInclude Include="src\player\system\player_data_loader_system.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\actor\action_state\system\actor_action_state_system.cpp" />

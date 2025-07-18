@@ -17,12 +17,13 @@
 #include "util/defer.h"
 #include "util/node_utils.h"
 #include "util/node_message_utils.h"
-
-void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_database& message);
-void PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& message);
-
-void PlayerDatabase1MessageFieldsUnmarshal(entt::entity player, const player_database& message);
-void PlayerDatabase1MessageFieldsMarshal(entt::entity player, player_database& message);
+#include "player/system/player_data_loader_system.h"
+#include "type_define/type_define.h"
+#include "proto/db/mysql_database_table.pb.h"
+#include "proto/logic/event/player_migration_event.pb.h"
+#include "util/zone_utils.h"
+#include "cross_server_error_tip.pb.h"
+#include "player_tip_system.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_database& message)
 {
@@ -83,11 +84,11 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& me
 	LOG_INFO << "HandlePlayerAsyncSaved: Saving complete for player: " << playerId;
 
 	//todo session 啥时候删除？
-	//告诉Centre 保存完毕，可以切换场景了,或者再登录可以重新上线了
-	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
-	SendToCentrePlayerByClientNode(CentrePlayerSceneLeaveSceneAsyncSavePlayerCompleteMessageId, request, playerId);
 
-	if (tls.actorRegistry.any_of<UnregisterPlayer>(tlsCommonLogic.GetPlayer(playerId)))
+	auto playerEntity = tlsCommonLogic.GetPlayer(playerId);
+	HandleCrossZoneTransfer(playerEntity);
+
+	if (tls.actorRegistry.any_of<UnregisterPlayer>(playerEntity))
 	{
 		LOG_INFO << "Player marked for unregistration: " << playerId;
 
@@ -98,18 +99,21 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& me
 		//存储完毕从gs删除玩家
 		DestroyPlayer(playerId);
 	}
+
+	//告诉Centre 保存完毕，可以切换场景了,或者再登录可以重新上线了
+	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
+	SendToCentrePlayerByClientNode(CentrePlayerSceneLeaveSceneAsyncSavePlayerCompleteMessageId, request, playerId);
 }
 
 void PlayerNodeSystem::SavePlayer(entt::entity player)
 {
 	LOG_INFO << "SavePlayer: Saving player guid: " << tls.actorRegistry.get<Guid>(player);
-	using SaveMessage = PlayerCentreDataRedis::element_type::MessageValuePtr;
+	using SaveMessage = PlayerDataRedis::element_type::MessageValuePtr;
 	SaveMessage pb = std::make_shared<SaveMessage::element_type>();
 
 	pb->set_player_id(tls.actorRegistry.get<Guid>(player));
 	PlayerDatabaseMessageFieldsMarshal(player, *pb);
 
-	LOG_INFO << "Player data marshaled, sending to Redis";
 	tlsGame.playerRedis->Save(pb, tls.actorRegistry.get<Guid>(player));
 }
 
@@ -236,5 +240,61 @@ void PlayerNodeSystem::HandleExitGameNode(entt::entity player)
 	PlayerNodeSystem::SavePlayer(player);
 
 	//todo 存完之后center 才能再次登录
+
+}
+
+void PlayerNodeSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
+{
+	auto changeInfo = tls.actorRegistry.try_get<ChangeSceneInfoPBComponent>(playerEntity);
+	if (!changeInfo)
+	{
+		return;
+	}
+
+	if (!changeInfo->is_cross_zone())
+	{
+		return;
+	}
+	
+	auto playerId = tls.actorRegistry.get<Guid>(playerEntity);
+
+	player_database pb;
+	pb.set_player_id(playerId);
+	PlayerDatabaseMessageFieldsMarshal(playerEntity, pb);
+
+	PlayerMigrationPbEvent request;
+	request.set_player_id(playerId);
+	request.set_from_zone(GetZoneId());
+	request.set_to_zone(changeInfo->to_zone_id());
+	request.mutable_scene_info()->CopyFrom(*changeInfo);
+	request.set_serialized_player_data(std::move(pb.SerializeAsString()));
+
+	tls.GetKafkaProducer()->send("player_migrate", request.SerializeAsString(), std::to_string(playerId), changeInfo->to_zone_id());
+
+	LOG_INFO << "[CrossZone] Sent player transfer to zone " << changeInfo->to_zone_id() << ": " << playerId;
+
+	PlayerTipSystem::SendToPlayer(playerEntity, kSceneTransferInProgress, {});
+
+	tls.actorRegistry.remove<ChangeSceneInfoPBComponent>(playerEntity);
+}
+
+
+void PlayerNodeSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& msg) {
+	const auto& playerId = msg.player_id();
+	const auto& serializedData = msg.serialized_player_data();
+
+	// 1. 反序列化 player_database
+	player_database pb;
+	if (!pb.ParseFromString(serializedData)) {
+		LOG_ERROR << "Failed to parse player_database for: " << playerId;
+		return;
+	}
+
+	// 2. 创建新 player 实体
+	auto player = tls.actorRegistry.create();
+	tls.actorRegistry.emplace<Guid>(player, playerId);
+
+	// 3. 加载各组件
+	PlayerDatabaseMessageFieldsUnmarshal(player, pb);
 
 }

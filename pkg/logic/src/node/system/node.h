@@ -10,8 +10,7 @@
 #include "type_define/type_define.h"
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
-#include <kafka/kafka_consumer.h>
-#include <kafka/kafka_producer.h>
+
 
 class RegisterNodeSessionRequest;
 class RegisterNodeSessionResponse;
@@ -23,8 +22,7 @@ public:
     using ServiceList = std::vector<::google::protobuf::Service*>;
     using CanConnectNodeTypeList = std::set<uint32_t>;
 	using ClientList = std::vector<RpcClientPtr>;
-    using KafkaProducerPtr = std::unique_ptr<KafkaProducer>;
-    using KafkaConsumerPtr = std::unique_ptr<KafkaConsumer>;
+
     using PartitionClassGuid = std::vector<int32_t>;
 
     // 构造与析构
@@ -42,8 +40,7 @@ public:
     std::string FormatIpAndPort();
     std::string GetIp();
     uint32_t GetPort();
-    KafkaProducerPtr& GetKafkaProducer() { return kafkaProducer; }
-    KafkaConsumerPtr& GetKafkaConsumer() { return kafkaConsumer; }
+
     const PartitionClassGuid& GetPartitionListForZoneId()const {return partitions; }
 
     void CallRemoteMethodZoneCenter(uint32_t message_id, const ::google::protobuf::Message& request);
@@ -121,8 +118,7 @@ protected:
     bool hasSentWatch{ false };
 	int64_t leaseId{ 0 };
 	boost::uuids::random_generator gen;
-    KafkaProducerPtr kafkaProducer;
-    KafkaConsumerPtr kafkaConsumer;
+
     PartitionClassGuid partitions;
 };
 

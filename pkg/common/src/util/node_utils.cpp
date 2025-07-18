@@ -21,5 +21,5 @@ NodeInfo& GetNodeInfo()
 
 uint32_t GetZoneId()
 {
-	GetNodeInfo().zone_id();
+	return GetNodeInfo().zone_id();
 }

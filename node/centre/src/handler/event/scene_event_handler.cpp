@@ -85,7 +85,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 	if (changeSceneQueue && !changeSceneQueue->empty())
 	{
 		const auto& changeSceneInfo = *changeSceneQueue->front();
-		leaveSceneRequest.set_change_gs(changeSceneInfo.change_gs_type() == ChangeSceneInfoPBComponent::eDifferentGs);
+		*leaveSceneRequest.mutable_change_scene_info() = changeSceneInfo;
 	}
 	
 	SendMessageToPlayerOnSceneNode(SceneScenePlayerLeaveSceneMessageId, leaveSceneRequest, player);

@@ -25,8 +25,7 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 }
 
-void PlayerSceneSystem::HandleLeaveScene(entt::entity player)
+void PlayerSceneSystem::HandleBeforeLeaveScene(entt::entity player)
 {
 
 }
-

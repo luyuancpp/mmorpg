@@ -4,9 +4,11 @@
 
 #include "proto/db/mysql_database_table.pb.h"
 
-using PlayerCentreDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
+using PlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
 
 class PlayerGameNodeEnteryInfoPBComponent;
+class ChangeSceneInfoPBComponent;
+class PlayerMigrationPbEvent;
 
 class PlayerNodeSystem
 {
@@ -25,5 +27,7 @@ public:
 	static void RemovePlayerSessionSilently(Guid player_id);
 	static void DestroyPlayer(Guid player_id);
 	static void HandleExitGameNode(entt::entity player);
+	static void HandleCrossZoneTransfer(entt::entity playerEntity);
+	static void HandlePlayerMigration(const PlayerMigrationPbEvent& msg);
 };
 

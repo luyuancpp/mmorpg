@@ -79,197 +79,6 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class GsLeaveSceneRequest final
-    : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:GsLeaveSceneRequest) */ {
- public:
-  inline GsLeaveSceneRequest() : GsLeaveSceneRequest(nullptr) {}
-  ~GsLeaveSceneRequest() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(GsLeaveSceneRequest* msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(GsLeaveSceneRequest));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR GsLeaveSceneRequest(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline GsLeaveSceneRequest(const GsLeaveSceneRequest& from) : GsLeaveSceneRequest(nullptr, from) {}
-  inline GsLeaveSceneRequest(GsLeaveSceneRequest&& from) noexcept
-      : GsLeaveSceneRequest(nullptr, std::move(from)) {}
-  inline GsLeaveSceneRequest& operator=(const GsLeaveSceneRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline GsLeaveSceneRequest& operator=(GsLeaveSceneRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const GsLeaveSceneRequest& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const GsLeaveSceneRequest* internal_default_instance() {
-    return reinterpret_cast<const GsLeaveSceneRequest*>(
-        &_GsLeaveSceneRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 1;
-  friend void swap(GsLeaveSceneRequest& a, GsLeaveSceneRequest& b) { a.Swap(&b); }
-  inline void Swap(GsLeaveSceneRequest* other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(GsLeaveSceneRequest* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  GsLeaveSceneRequest* New(::google::protobuf::Arena* arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<GsLeaveSceneRequest>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const GsLeaveSceneRequest& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const GsLeaveSceneRequest& from) { GsLeaveSceneRequest::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* _InternalSerialize(
-      const MessageLite& msg, ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(GsLeaveSceneRequest* other);
- private:
-  template <typename T>
-  friend ::absl::string_view(
-      ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "GsLeaveSceneRequest"; }
-
- protected:
-  explicit GsLeaveSceneRequest(::google::protobuf::Arena* arena);
-  GsLeaveSceneRequest(::google::protobuf::Arena* arena, const GsLeaveSceneRequest& from);
-  GsLeaveSceneRequest(::google::protobuf::Arena* arena, GsLeaveSceneRequest&& from) noexcept
-      : GsLeaveSceneRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
-  static void* PlacementNew_(const void*, void* mem,
-                             ::google::protobuf::Arena* arena);
-  static constexpr auto InternalNewImpl_();
-  static const ::google::protobuf::internal::ClassDataFull _class_data_;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kChangeGsFieldNumber = 1,
-  };
-  // bool change_gs = 1;
-  void clear_change_gs() ;
-  bool change_gs() const;
-  void set_change_gs(bool value);
-
-  private:
-  bool _internal_change_gs() const;
-  void _internal_set_change_gs(bool value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:GsLeaveSceneRequest)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 0,
-      0, 2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from,
-                          const GsLeaveSceneRequest& from_msg);
-    bool change_gs_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fscene_2fgame_5fplayer_5fscene_2eproto;
-};
-// -------------------------------------------------------------------
-
 class GsEnterSceneRequest final
     : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:GsEnterSceneRequest) */ {
@@ -619,6 +428,203 @@ class EnterSceneS2CRequest final
 };
 // -------------------------------------------------------------------
 
+class GsLeaveSceneRequest final
+    : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:GsLeaveSceneRequest) */ {
+ public:
+  inline GsLeaveSceneRequest() : GsLeaveSceneRequest(nullptr) {}
+  ~GsLeaveSceneRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GsLeaveSceneRequest* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GsLeaveSceneRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GsLeaveSceneRequest(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline GsLeaveSceneRequest(const GsLeaveSceneRequest& from) : GsLeaveSceneRequest(nullptr, from) {}
+  inline GsLeaveSceneRequest(GsLeaveSceneRequest&& from) noexcept
+      : GsLeaveSceneRequest(nullptr, std::move(from)) {}
+  inline GsLeaveSceneRequest& operator=(const GsLeaveSceneRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GsLeaveSceneRequest& operator=(GsLeaveSceneRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GsLeaveSceneRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const GsLeaveSceneRequest* internal_default_instance() {
+    return reinterpret_cast<const GsLeaveSceneRequest*>(
+        &_GsLeaveSceneRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 1;
+  friend void swap(GsLeaveSceneRequest& a, GsLeaveSceneRequest& b) { a.Swap(&b); }
+  inline void Swap(GsLeaveSceneRequest* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GsLeaveSceneRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GsLeaveSceneRequest* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GsLeaveSceneRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GsLeaveSceneRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GsLeaveSceneRequest& from) { GsLeaveSceneRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GsLeaveSceneRequest* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "GsLeaveSceneRequest"; }
+
+ protected:
+  explicit GsLeaveSceneRequest(::google::protobuf::Arena* arena);
+  GsLeaveSceneRequest(::google::protobuf::Arena* arena, const GsLeaveSceneRequest& from);
+  GsLeaveSceneRequest(::google::protobuf::Arena* arena, GsLeaveSceneRequest&& from) noexcept
+      : GsLeaveSceneRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kChangeSceneInfoFieldNumber = 2,
+  };
+  // .ChangeSceneInfoPBComponent change_scene_info = 2;
+  bool has_change_scene_info() const;
+  void clear_change_scene_info() ;
+  const ::ChangeSceneInfoPBComponent& change_scene_info() const;
+  PROTOBUF_NODISCARD ::ChangeSceneInfoPBComponent* release_change_scene_info();
+  ::ChangeSceneInfoPBComponent* mutable_change_scene_info();
+  void set_allocated_change_scene_info(::ChangeSceneInfoPBComponent* value);
+  void unsafe_arena_set_allocated_change_scene_info(::ChangeSceneInfoPBComponent* value);
+  ::ChangeSceneInfoPBComponent* unsafe_arena_release_change_scene_info();
+
+  private:
+  const ::ChangeSceneInfoPBComponent& _internal_change_scene_info() const;
+  ::ChangeSceneInfoPBComponent* _internal_mutable_change_scene_info();
+
+  public:
+  // @@protoc_insertion_point(class_scope:GsLeaveSceneRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 1,
+      0, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const GsLeaveSceneRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::ChangeSceneInfoPBComponent* change_scene_info_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fscene_2fgame_5fplayer_5fscene_2eproto;
+};
+// -------------------------------------------------------------------
+
 class EnterScenerS2CResponse final
     : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:EnterScenerS2CResponse) */ {
@@ -957,26 +963,95 @@ inline void GsEnterSceneRequest::_internal_set_scene_id(::uint64_t value) {
 
 // GsLeaveSceneRequest
 
-// bool change_gs = 1;
-inline void GsLeaveSceneRequest::clear_change_gs() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.change_gs_ = false;
+// .ChangeSceneInfoPBComponent change_scene_info = 2;
+inline bool GsLeaveSceneRequest::has_change_scene_info() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.change_scene_info_ != nullptr);
+  return value;
 }
-inline bool GsLeaveSceneRequest::change_gs() const {
-  // @@protoc_insertion_point(field_get:GsLeaveSceneRequest.change_gs)
-  return _internal_change_gs();
-}
-inline void GsLeaveSceneRequest::set_change_gs(bool value) {
-  _internal_set_change_gs(value);
-  // @@protoc_insertion_point(field_set:GsLeaveSceneRequest.change_gs)
-}
-inline bool GsLeaveSceneRequest::_internal_change_gs() const {
+inline const ::ChangeSceneInfoPBComponent& GsLeaveSceneRequest::_internal_change_scene_info() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.change_gs_;
+  const ::ChangeSceneInfoPBComponent* p = _impl_.change_scene_info_;
+  return p != nullptr ? *p : reinterpret_cast<const ::ChangeSceneInfoPBComponent&>(::_ChangeSceneInfoPBComponent_default_instance_);
 }
-inline void GsLeaveSceneRequest::_internal_set_change_gs(bool value) {
+inline const ::ChangeSceneInfoPBComponent& GsLeaveSceneRequest::change_scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:GsLeaveSceneRequest.change_scene_info)
+  return _internal_change_scene_info();
+}
+inline void GsLeaveSceneRequest::unsafe_arena_set_allocated_change_scene_info(::ChangeSceneInfoPBComponent* value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.change_gs_ = value;
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.change_scene_info_);
+  }
+  _impl_.change_scene_info_ = reinterpret_cast<::ChangeSceneInfoPBComponent*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:GsLeaveSceneRequest.change_scene_info)
+}
+inline ::ChangeSceneInfoPBComponent* GsLeaveSceneRequest::release_change_scene_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::ChangeSceneInfoPBComponent* released = _impl_.change_scene_info_;
+  _impl_.change_scene_info_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::ChangeSceneInfoPBComponent* GsLeaveSceneRequest::unsafe_arena_release_change_scene_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:GsLeaveSceneRequest.change_scene_info)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::ChangeSceneInfoPBComponent* temp = _impl_.change_scene_info_;
+  _impl_.change_scene_info_ = nullptr;
+  return temp;
+}
+inline ::ChangeSceneInfoPBComponent* GsLeaveSceneRequest::_internal_mutable_change_scene_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.change_scene_info_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::ChangeSceneInfoPBComponent>(GetArena());
+    _impl_.change_scene_info_ = reinterpret_cast<::ChangeSceneInfoPBComponent*>(p);
+  }
+  return _impl_.change_scene_info_;
+}
+inline ::ChangeSceneInfoPBComponent* GsLeaveSceneRequest::mutable_change_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::ChangeSceneInfoPBComponent* _msg = _internal_mutable_change_scene_info();
+  // @@protoc_insertion_point(field_mutable:GsLeaveSceneRequest.change_scene_info)
+  return _msg;
+}
+inline void GsLeaveSceneRequest::set_allocated_change_scene_info(::ChangeSceneInfoPBComponent* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.change_scene_info_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.change_scene_info_ = reinterpret_cast<::ChangeSceneInfoPBComponent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:GsLeaveSceneRequest.change_scene_info)
 }
 
 // -------------------------------------------------------------------
