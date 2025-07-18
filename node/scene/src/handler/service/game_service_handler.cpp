@@ -51,29 +51,18 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	const auto& playerList = GlobalPlayerList();
 	auto playerIt = playerList.find(request->player_id());
 
+	PlayerGameNodeEnteryInfoPBComponent enterInfo;
+	enterInfo.set_centre_node_id(request->centre_node_id());
+
 	// 2 检查玩家是否已经在线，若在线则直接进入
 	if (playerIt != playerList.end())
 	{
-		PlayerGameNodeEnteryInfoPBComponent enterInfo;
-		enterInfo.set_centre_node_id(request->centre_node_id());
 		PlayerNodeSystem::EnterGs(playerIt->second, enterInfo);
 		return;
 	}
 
-	PlayerGameNodeEnteryInfoPBComponent enterInfo;
-	enterInfo.set_centre_node_id(request->centre_node_id());
-	auto asyncPlayerIt = tlsGame.playerNodeEntryInfoList.emplace(request->player_id(), enterInfo);
-
-	// 3 异步加载过程中处理玩家断开连接的情况
-	if (!asyncPlayerIt.second)
-	{
-		LOG_ERROR << "Failed to emplace player in asyncPlayerList: " << request->player_id();
-		return;
-	}
-
-	// 4 玩家不在线，加入异步加载列表并尝试异步加载
-
-	tlsGame.playerRedis->AsyncLoad(request->player_id());
+	// 3 玩家不在线，加入异步加载列表并尝试异步加载
+	tlsGame.playerRedis->AsyncLoad(request->player_id(), enterInfo);
 ///<<< END WRITING YOUR CODE
 }
 

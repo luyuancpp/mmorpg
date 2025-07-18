@@ -14,7 +14,7 @@ class PlayerNodeSystem
 {
 public:
 	//如果异步加载过程中玩家断开链接了？会不会造成数据覆盖
-	static void HandlePlayerAsyncLoaded(Guid player_id, const player_database& message);
+	static void HandlePlayerAsyncLoaded(Guid player_id, const player_database& message, const std::any& extra);
 	static void HandlePlayerAsyncSaved(Guid player_id, player_database& message);
 	static void SavePlayer(entt::entity player);
 	static void EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enter_info);

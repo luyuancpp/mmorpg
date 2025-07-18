@@ -8,6 +8,7 @@
 #include "network/rpc_session.h"
 #include "proto/common/node.pb.h"
 #include "thread_local/storage_centre.h"
+#include "kafka/system/kafka_system.h"
 
 using namespace muduo;
 using namespace net;
@@ -17,6 +18,8 @@ CentreNode::CentreNode(muduo::net::EventLoop* loop)
 	GetNodeInfo().set_node_type(CentreNodeService);
 	EventHandler::Register();
 	tls_centre.GetRedisSystem().Initialize();
+	kafkaConsumerHandler = KafkaSystem::KafkaMessageHandler;
+
 }
 
 
