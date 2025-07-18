@@ -29,6 +29,7 @@ message EnterGameNodeSuccessRequest
 message CentreEnterGameRequest
 {
 	uint64 player_id  = 1;
+    string login_token = 2;
 }
 
 message CentrePlayerGameNodeEntryRequest

@@ -257,11 +257,12 @@ class PlayerSessionSnapshotPBComp final
 
   // accessors -------------------------------------------------------
   enum : int {
-    kNodeIdFieldNumber = 5,
+    kNodeIdFieldNumber = 3,
+    kLoginTokenFieldNumber = 4,
     kPlayerIdFieldNumber = 1,
     kGateSessionIdFieldNumber = 2,
   };
-  // map<uint32, uint32> node_id = 5;
+  // map<uint32, uint32> node_id = 3;
   int node_id_size() const;
   private:
   int _internal_node_id_size() const;
@@ -274,6 +275,22 @@ class PlayerSessionSnapshotPBComp final
   private:
   const ::google::protobuf::Map<::uint32_t, ::uint32_t>& _internal_node_id() const;
   ::google::protobuf::Map<::uint32_t, ::uint32_t>* _internal_mutable_node_id();
+
+  public:
+  // string login_token = 4;
+  void clear_login_token() ;
+  const std::string& login_token() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_login_token(Arg_&& arg, Args_... args);
+  std::string* mutable_login_token();
+  PROTOBUF_NODISCARD std::string* release_login_token();
+  void set_allocated_login_token(std::string* value);
+
+  private:
+  const std::string& _internal_login_token() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_login_token(
+      const std::string& value);
+  std::string* _internal_mutable_login_token();
 
   public:
   // uint64 player_id = 1;
@@ -301,8 +318,8 @@ class PlayerSessionSnapshotPBComp final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      1, 3, 1,
-      0, 2>
+      2, 4, 1,
+      47, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -323,6 +340,7 @@ class PlayerSessionSnapshotPBComp final
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>
         node_id_;
+    ::google::protobuf::internal::ArenaStringPtr login_token_;
     ::uint64_t player_id_;
     ::uint64_t gate_session_id_;
     ::google::protobuf::internal::CachedSize _cached_size_;
@@ -394,7 +412,7 @@ inline void PlayerSessionSnapshotPBComp::_internal_set_gate_session_id(::uint64_
   _impl_.gate_session_id_ = value;
 }
 
-// map<uint32, uint32> node_id = 5;
+// map<uint32, uint32> node_id = 3;
 inline int PlayerSessionSnapshotPBComp::_internal_node_id_size() const {
   return _internal_node_id().size();
 }
@@ -420,6 +438,54 @@ inline ::google::protobuf::Map<::uint32_t, ::uint32_t>* PlayerSessionSnapshotPBC
 inline ::google::protobuf::Map<::uint32_t, ::uint32_t>* PlayerSessionSnapshotPBComp::mutable_node_id() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_map:PlayerSessionSnapshotPBComp.node_id)
   return _internal_mutable_node_id();
+}
+
+// string login_token = 4;
+inline void PlayerSessionSnapshotPBComp::clear_login_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_token_.ClearToEmpty();
+}
+inline const std::string& PlayerSessionSnapshotPBComp::login_token() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.login_token)
+  return _internal_login_token();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void PlayerSessionSnapshotPBComp::set_login_token(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_token_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.login_token)
+}
+inline std::string* PlayerSessionSnapshotPBComp::mutable_login_token() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_login_token();
+  // @@protoc_insertion_point(field_mutable:PlayerSessionSnapshotPBComp.login_token)
+  return _s;
+}
+inline const std::string& PlayerSessionSnapshotPBComp::_internal_login_token() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.login_token_.Get();
+}
+inline void PlayerSessionSnapshotPBComp::_internal_set_login_token(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_token_.Set(value, GetArena());
+}
+inline std::string* PlayerSessionSnapshotPBComp::_internal_mutable_login_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.login_token_.Mutable( GetArena());
+}
+inline std::string* PlayerSessionSnapshotPBComp::release_login_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:PlayerSessionSnapshotPBComp.login_token)
+  return _impl_.login_token_.Release();
+}
+inline void PlayerSessionSnapshotPBComp::set_allocated_login_token(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_token_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.login_token_.IsDefault()) {
+    _impl_.login_token_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:PlayerSessionSnapshotPBComp.login_token)
 }
 
 #ifdef __GNUC__

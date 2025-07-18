@@ -860,8 +860,25 @@ class CentreEnterGameRequest final
 
   // accessors -------------------------------------------------------
   enum : int {
+    kLoginTokenFieldNumber = 2,
     kPlayerIdFieldNumber = 1,
   };
+  // string login_token = 2;
+  void clear_login_token() ;
+  const std::string& login_token() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_login_token(Arg_&& arg, Args_... args);
+  std::string* mutable_login_token();
+  PROTOBUF_NODISCARD std::string* release_login_token();
+  void set_allocated_login_token(std::string* value);
+
+  private:
+  const std::string& _internal_login_token() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_login_token(
+      const std::string& value);
+  std::string* _internal_mutable_login_token();
+
+  public:
   // uint64 player_id = 1;
   void clear_player_id() ;
   ::uint64_t player_id() const;
@@ -877,8 +894,8 @@ class CentreEnterGameRequest final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 0,
-      0, 2>
+      1, 2, 0,
+      42, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -895,6 +912,7 @@ class CentreEnterGameRequest final
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const CentreEnterGameRequest& from_msg);
+    ::google::protobuf::internal::ArenaStringPtr login_token_;
     ::uint64_t player_id_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -2132,6 +2150,54 @@ inline ::uint64_t CentreEnterGameRequest::_internal_player_id() const {
 inline void CentreEnterGameRequest::_internal_set_player_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = value;
+}
+
+// string login_token = 2;
+inline void CentreEnterGameRequest::clear_login_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_token_.ClearToEmpty();
+}
+inline const std::string& CentreEnterGameRequest::login_token() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:CentreEnterGameRequest.login_token)
+  return _internal_login_token();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void CentreEnterGameRequest::set_login_token(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_token_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:CentreEnterGameRequest.login_token)
+}
+inline std::string* CentreEnterGameRequest::mutable_login_token() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_login_token();
+  // @@protoc_insertion_point(field_mutable:CentreEnterGameRequest.login_token)
+  return _s;
+}
+inline const std::string& CentreEnterGameRequest::_internal_login_token() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.login_token_.Get();
+}
+inline void CentreEnterGameRequest::_internal_set_login_token(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_token_.Set(value, GetArena());
+}
+inline std::string* CentreEnterGameRequest::_internal_mutable_login_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.login_token_.Mutable( GetArena());
+}
+inline std::string* CentreEnterGameRequest::release_login_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:CentreEnterGameRequest.login_token)
+  return _impl_.login_token_.Release();
+}
+inline void CentreEnterGameRequest::set_allocated_login_token(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_token_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.login_token_.IsDefault()) {
+    _impl_.login_token_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:CentreEnterGameRequest.login_token)
 }
 
 // -------------------------------------------------------------------

@@ -5,5 +5,6 @@ option go_package = "pb/game";
 message PlayerSessionSnapshotPBComp {
     uint64 player_id = 1;
     uint64 gate_session_id = 2;
-	map<uint32, uint32> node_id = 5;
+	map<uint32, uint32> node_id = 3;
+	string login_token = 4;
 }
