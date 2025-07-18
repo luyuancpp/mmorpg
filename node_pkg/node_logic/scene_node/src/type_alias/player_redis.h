@@ -8,7 +8,6 @@
 
 using PlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_centre_database>>;
 
-
 inline PlayerDataRedis& GetGlobalPlayerRedis() {
 	return tls.globalRegistry.get<PlayerDataRedis>(GlobalEntity());
 }

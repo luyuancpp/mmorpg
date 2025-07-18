@@ -25,31 +25,6 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr GsLeaveSceneRequest::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : change_gs_{false},
-        _cached_size_{0} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR GsLeaveSceneRequest::GsLeaveSceneRequest(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct GsLeaveSceneRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR GsLeaveSceneRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~GsLeaveSceneRequestDefaultTypeInternal() {}
-  union {
-    GsLeaveSceneRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GsLeaveSceneRequestDefaultTypeInternal _GsLeaveSceneRequest_default_instance_;
-
 inline constexpr GsEnterSceneRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : session_id_{::uint64_t{0u}},
@@ -94,6 +69,31 @@ struct EnterSceneS2CRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnterSceneS2CRequestDefaultTypeInternal _EnterSceneS2CRequest_default_instance_;
 
+inline constexpr GsLeaveSceneRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        change_scene_info_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GsLeaveSceneRequest::GsLeaveSceneRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GsLeaveSceneRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GsLeaveSceneRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GsLeaveSceneRequestDefaultTypeInternal() {}
+  union {
+    GsLeaveSceneRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GsLeaveSceneRequestDefaultTypeInternal _GsLeaveSceneRequest_default_instance_;
+
 inline constexpr EnterScenerS2CResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -135,7 +135,7 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::GsEnterSceneRequest, _impl_.session_id_),
         PROTOBUF_FIELD_OFFSET(::GsEnterSceneRequest, _impl_.scene_id_),
-        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::GsLeaveSceneRequest, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::GsLeaveSceneRequest, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
@@ -143,7 +143,8 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::GsLeaveSceneRequest, _impl_.change_gs_),
+        PROTOBUF_FIELD_OFFSET(::GsLeaveSceneRequest, _impl_.change_scene_info_),
+        0,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::EnterSceneS2CRequest, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -167,9 +168,9 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::GsEnterSceneRequest)},
-        {10, -1, -1, sizeof(::GsLeaveSceneRequest)},
-        {19, -1, -1, sizeof(::EnterSceneS2CRequest)},
-        {27, 36, -1, sizeof(::EnterScenerS2CResponse)},
+        {10, 19, -1, sizeof(::GsLeaveSceneRequest)},
+        {20, -1, -1, sizeof(::EnterSceneS2CRequest)},
+        {28, 37, -1, sizeof(::EnterScenerS2CResponse)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_GsEnterSceneRequest_default_instance_._instance,
@@ -183,16 +184,17 @@ const char descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_5fscene_2epro
     "roto/common/tip.proto\032\033google/protobuf/e"
     "mpty.proto\032&proto/logic/component/scene_"
     "comp.proto\";\n\023GsEnterSceneRequest\022\022\n\nses"
-    "sion_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"(\n\023GsLea"
-    "veSceneRequest\022\021\n\tchange_gs\030\001 \001(\010\"\026\n\024Ent"
-    "erSceneS2CRequest\"@\n\026EnterScenerS2CRespo"
-    "nse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMess"
-    "age2\313\001\n\020SceneScenePlayer\022:\n\nEnterScene\022\024"
-    ".GsEnterSceneRequest\032\026.google.protobuf.E"
-    "mpty\022:\n\nLeaveScene\022\024.GsLeaveSceneRequest"
-    "\032\026.google.protobuf.Empty\022\?\n\rEnterSceneS2"
-    "C\022\025.EnterSceneS2CRequest\032\027.EnterScenerS2"
-    "CResponseB\014Z\007pb/game\200\001\001b\006proto3"
+    "sion_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"M\n\023GsLea"
+    "veSceneRequest\0226\n\021change_scene_info\030\002 \001("
+    "\0132\033.ChangeSceneInfoPBComponent\"\026\n\024EnterS"
+    "ceneS2CRequest\"@\n\026EnterScenerS2CResponse"
+    "\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage"
+    "2\313\001\n\020SceneScenePlayer\022:\n\nEnterScene\022\024.Gs"
+    "EnterSceneRequest\032\026.google.protobuf.Empt"
+    "y\022:\n\nLeaveScene\022\024.GsLeaveSceneRequest\032\026."
+    "google.protobuf.Empty\022\?\n\rEnterSceneS2C\022\025"
+    ".EnterSceneS2CRequest\032\027.EnterScenerS2CRe"
+    "sponseB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_2eproto_deps[3] =
     {
@@ -204,7 +206,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_2eproto = {
     false,
     false,
-    551,
+    588,
     descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_5fscene_2eproto,
     "proto/scene/game_player_scene.proto",
     &descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_2eproto_once,
@@ -462,8 +464,17 @@ void GsEnterSceneRequest::InternalSwap(GsEnterSceneRequest* PROTOBUF_RESTRICT ot
 
 class GsLeaveSceneRequest::_Internal {
  public:
+  using HasBits =
+      decltype(std::declval<GsLeaveSceneRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GsLeaveSceneRequest, _impl_._has_bits_);
 };
 
+void GsLeaveSceneRequest::clear_change_scene_info() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.change_scene_info_ != nullptr) _impl_.change_scene_info_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
 GsLeaveSceneRequest::GsLeaveSceneRequest(::google::protobuf::Arena* arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(arena, _class_data_.base()) {
@@ -473,10 +484,31 @@ GsLeaveSceneRequest::GsLeaveSceneRequest(::google::protobuf::Arena* arena)
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:GsLeaveSceneRequest)
 }
+inline PROTOBUF_NDEBUG_INLINE GsLeaveSceneRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::GsLeaveSceneRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
 GsLeaveSceneRequest::GsLeaveSceneRequest(
-    ::google::protobuf::Arena* arena, const GsLeaveSceneRequest& from)
-    : GsLeaveSceneRequest(arena) {
-  MergeFrom(from);
+    ::google::protobuf::Arena* arena,
+    const GsLeaveSceneRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GsLeaveSceneRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.change_scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::ChangeSceneInfoPBComponent>(
+                              arena, *from._impl_.change_scene_info_)
+                        : nullptr;
+
+  // @@protoc_insertion_point(copy_constructor:GsLeaveSceneRequest)
 }
 inline PROTOBUF_NDEBUG_INLINE GsLeaveSceneRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
@@ -485,7 +517,7 @@ inline PROTOBUF_NDEBUG_INLINE GsLeaveSceneRequest::Impl_::Impl_(
 
 inline void GsLeaveSceneRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.change_gs_ = {};
+  _impl_.change_scene_info_ = {};
 }
 GsLeaveSceneRequest::~GsLeaveSceneRequest() {
   // @@protoc_insertion_point(destructor:GsLeaveSceneRequest)
@@ -495,6 +527,7 @@ inline void GsLeaveSceneRequest::SharedDtor(MessageLite& self) {
   GsLeaveSceneRequest& this_ = static_cast<GsLeaveSceneRequest&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.change_scene_info_;
   this_._impl_.~Impl_();
 }
 
@@ -534,17 +567,17 @@ const ::google::protobuf::internal::ClassData* GsLeaveSceneRequest::GetClassData
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GsLeaveSceneRequest::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2> GsLeaveSceneRequest::_table_ = {
   {
-    0,  // no _has_bits_
+    PROTOBUF_FIELD_OFFSET(GsLeaveSceneRequest, _impl_._has_bits_),
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    2, 0,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967293,  // skipmap
     offsetof(decltype(_table_), field_entries),
     1,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
     _class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
@@ -552,18 +585,18 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GsLeaveSceneRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::GsLeaveSceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // bool change_gs = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GsLeaveSceneRequest, _impl_.change_gs_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(GsLeaveSceneRequest, _impl_.change_gs_)}},
+    // .ChangeSceneInfoPBComponent change_scene_info = 2;
+    {::_pbi::TcParser::FastMtS1,
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(GsLeaveSceneRequest, _impl_.change_scene_info_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // bool change_gs = 1;
-    {PROTOBUF_FIELD_OFFSET(GsLeaveSceneRequest, _impl_.change_gs_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
-  }},
-  // no aux_entries
-  {{
+    // .ChangeSceneInfoPBComponent change_scene_info = 2;
+    {PROTOBUF_FIELD_OFFSET(GsLeaveSceneRequest, _impl_.change_scene_info_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::ChangeSceneInfoPBComponent>()},
+  }}, {{
   }},
 };
 
@@ -574,7 +607,12 @@ PROTOBUF_NOINLINE void GsLeaveSceneRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.change_gs_ = false;
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.change_scene_info_ != nullptr);
+    _impl_.change_scene_info_->Clear();
+  }
+  _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -593,11 +631,12 @@ PROTOBUF_NOINLINE void GsLeaveSceneRequest::Clear() {
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
 
-          // bool change_gs = 1;
-          if (this_._internal_change_gs() != 0) {
-            target = stream->EnsureSpace(target);
-            target = ::_pbi::WireFormatLite::WriteBoolToArray(
-                1, this_._internal_change_gs(), target);
+          cached_has_bits = this_._impl_._has_bits_[0];
+          // .ChangeSceneInfoPBComponent change_scene_info = 2;
+          if (cached_has_bits & 0x00000001u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                2, *this_._impl_.change_scene_info_, this_._impl_.change_scene_info_->GetCachedSize(), target,
+                stream);
           }
 
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -624,9 +663,11 @@ PROTOBUF_NOINLINE void GsLeaveSceneRequest::Clear() {
           (void)cached_has_bits;
 
            {
-            // bool change_gs = 1;
-            if (this_._internal_change_gs() != 0) {
-              total_size += 2;
+            // .ChangeSceneInfoPBComponent change_scene_info = 2;
+            cached_has_bits = this_._impl_._has_bits_[0];
+            if (cached_has_bits & 0x00000001u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.change_scene_info_);
             }
           }
           return this_.MaybeComputeUnknownFieldsSize(total_size,
@@ -636,14 +677,23 @@ PROTOBUF_NOINLINE void GsLeaveSceneRequest::Clear() {
 void GsLeaveSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
   auto* const _this = static_cast<GsLeaveSceneRequest*>(&to_msg);
   auto& from = static_cast<const GsLeaveSceneRequest&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:GsLeaveSceneRequest)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_change_gs() != 0) {
-    _this->_impl_.change_gs_ = from._impl_.change_gs_;
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.change_scene_info_ != nullptr);
+    if (_this->_impl_.change_scene_info_ == nullptr) {
+      _this->_impl_.change_scene_info_ =
+          ::google::protobuf::Message::CopyConstruct<::ChangeSceneInfoPBComponent>(arena, *from._impl_.change_scene_info_);
+    } else {
+      _this->_impl_.change_scene_info_->MergeFrom(*from._impl_.change_scene_info_);
+    }
   }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -658,7 +708,8 @@ void GsLeaveSceneRequest::CopyFrom(const GsLeaveSceneRequest& from) {
 void GsLeaveSceneRequest::InternalSwap(GsLeaveSceneRequest* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-        swap(_impl_.change_gs_, other->_impl_.change_gs_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.change_scene_info_, other->_impl_.change_scene_info_);
 }
 
 ::google::protobuf::Metadata GsLeaveSceneRequest::GetMetadata() const {

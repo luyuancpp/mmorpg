@@ -33,11 +33,10 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_DEBUG << "Handling GsLeaveSceneRequest for player: " << tls.actorRegistry.get<Guid>(player);
-
-	PlayerSceneSystem::HandleLeaveScene(player);
 	SceneUtil::LeaveScene({ .leaver = player });
-	if (request->change_gs()) // 存储完毕以后才能换场景，防止回档
+	if (request->change_scene_info().change_gs_type() == ChangeSceneInfoPBComponent::eDifferentGs) // 存储完毕以后才能换场景，防止回档
 	{
+		tls.actorRegistry.emplace_or_replace<ChangeSceneInfoPBComponent>(player, request->change_scene_info());
 		// 离开gs 清除session
 		PlayerNodeSystem::HandleExitGameNode(player);
 		LOG_DEBUG << "Player " << tls.actorRegistry.get<Guid>(player) << " session cleared after leaving scene.";

@@ -82,29 +82,7 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 		return;
 	}
 
-    if (!playerSessionSnapshotPB->node_id().contains(eNodeType::SceneNodeService))
-    {
-        LOG_ERROR << "SceneNodeService not found in player session snapshot for player: "
-            << tls.actorRegistry.get<Guid>(player);
-		return;
-    }
-
-    auto toZone = GetZoneIdFromNodeId(SceneUtil::GetGameNodeIdFromGuid(toScene));
-    auto fromZone = GetZoneIdFromNodeId((*playerSessionSnapshotPB->mutable_node_id())[eNodeType::SceneNodeService]);  
-
-	if (toZone != fromZone)
-	{
-        std::string payload = request->SerializeAsString();
-
-		auto result = gNode->GetKafkaProducer()->send("PlayerMigrationTopic", payload, std::to_string(tls.actorRegistry.get<Guid>(player)),
-			toZone);
-		if (result != RdKafka::ERR_NO_ERROR) {
-			LOG_ERROR << "Kafka send failed for player: " << tls.actorRegistry.get<Guid>(player);
-			// 可选：重试或降级处理
-			return;
-		}
-	}
-
+	playerSessionSnapshotPB->mutable_node_id()->erase(eNodeType::SceneNodeService);
 	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, SceneUtil::GetGameNodeIdFromGuid(toScene));
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tls.actorRegistry.get<Guid>(player);
 	///<<< END WRITING YOUR CODE

@@ -14,8 +14,6 @@
 #include "util/node_message_utils.h"
 #include "util/node_utils.h"
 #include "util/zone_utils.h"
-#include "proto/logic/event/player_migration_event.pb.h"
-#include "cross_server_error_tip.pb.h"
 
 entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext)
 {
@@ -301,16 +299,8 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 	if (!ValidateSceneSwitch(playerEntity, toScene))
 		return;
 
-	auto& changeInfo = *tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
-
-	if (changeInfo.is_cross_zone()) {
-		HandleCrossZoneTransfer(playerEntity, changeInfo);
-		return;
-	}
-
 	// 4. 发起切换
 	ProcessSceneChange(playerEntity, toScene);
-
 }
 
 
@@ -335,28 +325,4 @@ void PlayerSceneSystem::PushInitialChangeSceneInfo(entt::entity playerEntity, en
 	changeInfo.set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
 
 	PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo);
-}
-
-void PlayerSceneSystem::HandleCrossZoneTransfer(entt::entity playerEntity, const ChangeSceneInfoPBComponent& changeInfo)
-{
-	auto playerId = tls.actorRegistry.get<Guid>(playerEntity);
-
-	std::string serialized;
-	if (!PlayerTransferUtil::SerializePlayerForTransfer(playerEntity, serialized)) {
-		LOG_ERROR << "Serialize failed for player: " << playerId;
-		return;
-	}
-
-	PlayerMigrationPbEvent request;
-	request.set_player_id(playerId);
-	request.set_from_zone(GetZoneId());
-	request.set_to_zone(changeInfo.to_zone_id());
-	request.mutable_scene_info()->CopyFrom(changeInfo);
-	request.set_serialized_player_data(std::move(serialized));
-
-	GetKafkaProducer()->send("player_migrate", request.SerializeAsString(), std::to_string(playerId), changeInfo.to_zone_id());
-
-	LOG_INFO << "[CrossZone] Sent player transfer to zone " << changeInfo.to_zone_id() << ": " << playerId;
-
-	PlayerTipSystem::SendToPlayer(playerEntity, kSceneTransferInProgress, {});
 }

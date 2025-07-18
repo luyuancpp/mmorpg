@@ -17,7 +17,7 @@ const playerLoaderTemplate = `
 #include "thread_local/storage.h"
 #include "proto/db/mysql_database_table.pb.h"
 
-void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const player_database& message){
+void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message){
 	{{- range .Fields }}
 	{{- if .TypeName }}
 	tls.actorRegistry.emplace<{{.TypeName}}>(player, message.{{.Name}}());
@@ -25,7 +25,7 @@ void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const player_da
 	{{- end }}
 }
 
-void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, player_database& message){
+void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message){
 	{{- range .Fields }}
 	{{- if .TypeName }}
 	message.mutable_{{.Name}}()->CopyFrom(tls.actorRegistry.get<{{.TypeName}}>(player));
@@ -42,11 +42,51 @@ type PlayerDBProtoFieldData struct {
 type DescData struct {
 	Fields      []PlayerDBProtoFieldData
 	HandlerName string
+	MessageType string
+}
+
+const playerHeaderTemplate = `#pragma once
+#include "entt/src/entt/entity/registry.hpp"
+
+{{- range .Entries }}
+class  {{.MessageType}};
+void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message);
+void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message);
+
+{{- end }}
+`
+
+type HeaderEntry struct {
+	HandlerName string // 如 "PlayerDatabase1"
+	MessageType string // 如 "player_database1"
+}
+
+type HeaderTemplateInput struct {
+	Entries []HeaderEntry
+}
+
+func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error {
+	tmpl, err := template.New("player_header").Parse(playerHeaderTemplate)
+	if err != nil {
+		return fmt.Errorf("template parse failed: %w", err)
+	}
+
+	f, err := os.Create(outputPath)
+	if err != nil {
+		return fmt.Errorf("failed to create header file: %w", err)
+	}
+	defer f.Close()
+
+	data := HeaderTemplateInput{Entries: entries}
+	if err := tmpl.Execute(f, data); err != nil {
+		return fmt.Errorf("template execute failed: %w", err)
+	}
+
+	return nil
 }
 
 // 从 Descriptor Set 文件中读取消息结构
 func CppPlayerDataLoadGenerator() {
-
 	os.MkdirAll(config.PlayerStorageTempDirectory, os.FileMode(0777))
 
 	// 读取 Descriptor Set 文件
@@ -72,15 +112,15 @@ func CppPlayerDataLoadGenerator() {
 			//printMessageFields(messageDesc)
 
 			handleName := strcase.ToCamel(*messageDesc.Name)
-
 			md5FilePath := config.PlayerStorageTempDirectory + "player_" + messageDescName + config.CppSystemExtension
-
 			filedList := generateDatabaseFiles(messageDesc)
+			messageType := *messageDesc.Name
 
 			err := generateCppDeserializeFromDatabase(
 				md5FilePath,
 				handleName,
-				filedList)
+				filedList,
+				messageType)
 
 			if err != nil {
 				log.Fatal(err)
@@ -97,6 +137,32 @@ func CppPlayerDataLoadGenerator() {
 
 		}
 	}
+
+	var headerEntries []HeaderEntry
+
+	for _, fileDesc := range fdSet.GetFile() {
+		for _, messageDesc := range fileDesc.GetMessageType() {
+			messageDescName := strings.ToLower(*messageDesc.Name)
+			if !(strings.Contains(messageDescName, config.PlayerDatabaseName) || strings.Contains(messageDescName, config.PlayerDatabaseName1)) {
+				continue
+			}
+
+			handleName := strcase.ToCamel(*messageDesc.Name)
+			messageType := *messageDesc.Name
+			// ... 原本生成 .cpp 文件的逻辑 ...
+
+			headerEntries = append(headerEntries, HeaderEntry{
+				HandlerName: handleName,
+				MessageType: messageType,
+			})
+		}
+	}
+
+	err = GenerateCppPlayerHeaderFile(config.PlayerStorageSystemDirectory+config.PlayerDataLoaderName, headerEntries)
+	if err != nil {
+		log.Fatalf("failed to generate header file: %v", err)
+	}
+
 }
 
 // 打印消息字段信息
@@ -125,7 +191,7 @@ func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBP
 }
 
 // generateHandlerFile creates a new handler file with the specified parameters.
-func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData) error {
+func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData, messageType string) error {
 	file, err := os.Create(fileName)
 	if err != nil {
 		return fmt.Errorf("could not create file %s: %w", fileName, err)
@@ -146,6 +212,7 @@ func generateCppDeserializeFromDatabase(fileName string, handlerName string, fie
 	data := DescData{
 		Fields:      fields,
 		HandlerName: handlerName,
+		MessageType: messageType,
 	}
 
 	if err := tmpl.Execute(file, data); err != nil {

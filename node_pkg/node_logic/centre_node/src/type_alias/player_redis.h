@@ -7,6 +7,7 @@
 #include "thread_local/storage.h"
 using PlayerCentreDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_centre_database>>;
 
-inline PlayerCentreDataRedis& GetGlobalPlayerRedis() {
+inline PlayerCentreDataRedis& GetPlayerCentreDataRedis() {
 	return tls.globalRegistry.get<PlayerCentreDataRedis>(GlobalEntity());
 }
+

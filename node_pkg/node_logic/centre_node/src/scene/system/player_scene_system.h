@@ -24,7 +24,6 @@ public:
     static bool ValidateSceneSwitch(entt::entity playerEntity, entt::entity toScene);
     static void ProcessSceneChange(entt::entity playerEntity, entt::entity toScene);
     static void HandleEnterScene(entt::entity playerEntity, const SceneInfoPBComponent& sceneInfo);
-    static void HandleCrossZoneTransfer(entt::entity playerEntity, const ChangeSceneInfoPBComponent& changeInfo);
 };
 
 
