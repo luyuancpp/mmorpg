@@ -228,7 +228,6 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 		//区分顶号和断线重连
 
-		// 是否存在旧会话
 		bool hasOldSession = tls.actorRegistry.any_of<PlayerSessionSnapshotPBComp>(player);
 		auto& sessionPB = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
 		auto oldSessionId = sessionPB.gate_session_id();
@@ -240,7 +239,6 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		bool isSameSession = (sessionId == oldSessionId);
 
 		if (!isSameLogin && hasOldSession) {
-			// ✅ 顶号（新 token，不是重连）
 			PlayerTipSystem::SendToPlayer(player, kLoginBeKickByAnOtherAccount, {});
 			LOG_INFO << "Top-off: Kicking old session for PlayerID=" << playerId << ", OldSessionID=" << oldSessionId;
 
@@ -251,17 +249,14 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 			tls.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_REPLACE);
 		}
 		else if (isSameLogin) {
-			// ✅ 重连
 			LOG_INFO << "Reconnection: PlayerID=" << playerId << ", SessionID=" << sessionId;
 			tls.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_RECONNECT);
 		}
 		else {
-			// fallback
 			LOG_WARN << "Unknown login scenario for PlayerID=" << playerId;
 			tls.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_FIRST);
 		}
 
-		// 更新 sessionId 和 login_token
 		sessionPB.set_gate_session_id(sessionId);
 		sessionPB.set_login_token(loginToken);
 
