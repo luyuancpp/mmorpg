@@ -15,6 +15,7 @@
 #include "world/world.h"
 #include "proto/centre/centre_service.pb.h"
 #include "core/network/message_system.h"
+#include "kafka/system/kafka_system.h"
 
 using namespace muduo::net;
 
@@ -35,6 +36,8 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 	{
 		ConfigSystem::OnConfigLoadSuccessful();
 	});
+
+	kafkaConsumerHandler = KafkaSystem::KafkaMessageHandler;
 }
 
 void SceneNode::StartRpcServer(){

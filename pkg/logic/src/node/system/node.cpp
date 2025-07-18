@@ -128,9 +128,7 @@ void Node::InitKafka()
 		groupId,
 		topicsVec,
 		partitions,
-		[this](const std::string& topic, const std::string& message) {
-		
-	});
+		kafkaConsumerHandler);
 
 	LOG_INFO << "Kafka initialized. :" << kafkaConfig.DebugString();
 }

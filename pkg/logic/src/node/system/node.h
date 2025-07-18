@@ -22,6 +22,7 @@ public:
     using ServiceList = std::vector<::google::protobuf::Service*>;
     using CanConnectNodeTypeList = std::set<uint32_t>;
 	using ClientList = std::vector<RpcClientPtr>;
+    using KafkaConsumerHandler = std::function<void(const std::string& topic, const std::string& message)>;
 
     using PartitionClassGuid = std::vector<int32_t>;
 
@@ -118,7 +119,7 @@ protected:
     bool hasSentWatch{ false };
 	int64_t leaseId{ 0 };
 	boost::uuids::random_generator gen;
-
+	KafkaConsumerHandler kafkaConsumerHandler;
     PartitionClassGuid partitions;
 };
 

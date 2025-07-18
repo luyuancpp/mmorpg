@@ -7,6 +7,7 @@
     <ClCompile Include="src\scene\system\player_change_scene_system.cpp" />
     <ClCompile Include="src\scene\system\player_scene_system.cpp" />
     <ClCompile Include="src\thread_local\storage_centre.cpp" />
+    <ClCompile Include="src\kafka\system\kafka_system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\node\comp\game_node_comp.h" />
@@ -18,5 +19,6 @@
     <ClInclude Include="src\scene\system\player_scene_system.h" />
     <ClInclude Include="src\type_alias\player_redis.h" />
     <ClInclude Include="src\thread_local\storage_centre.h" />
+    <ClInclude Include="src\kafka\system\kafka_system.h" />
   </ItemGroup>
 </Project>

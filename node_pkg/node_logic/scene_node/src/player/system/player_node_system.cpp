@@ -25,18 +25,9 @@
 #include "cross_server_error_tip.pb.h"
 #include "player_tip_system.h"
 
-void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_database& message)
+void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_database& message, const std::any& extra)
 {
 	LOG_INFO << "HandlePlayerAsyncLoaded: Loading player " << playerId;
-
-	const auto asyncIt = tlsGame.playerNodeEntryInfoList.find(playerId);
-	if (asyncIt == tlsGame.playerNodeEntryInfoList.end())
-	{
-		LOG_ERROR << "Async load failed: player not found in playerNodeEntryInfoList: " << playerId;
-		return;
-	}
-
-	defer(tlsGame.playerNodeEntryInfoList.erase(playerId));
 
 	auto player = tls.actorRegistry.create();
 
@@ -45,6 +36,8 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 		LOG_ERROR << "Failed to emplace player into GetPlayerList: " << playerId;
 		return;
 	}
+
+	auto enterInfo = std::any_cast<PlayerGameNodeEnteryInfoPBComponent>(extra);
 
 	tls.actorRegistry.emplace<Player>(player);
 	tls.actorRegistry.emplace<Guid>(player, message.player_id());
@@ -64,9 +57,9 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 
 	auto& playerSessionSnapshotPB = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
 	auto& nodeIdMap = *playerSessionSnapshotPB.mutable_node_id();
-	nodeIdMap[eNodeType::CentreNodeService] = asyncIt->second.centre_node_id();
+	nodeIdMap[eNodeType::CentreNodeService] = enterInfo.centre_node_id();
 
-	LOG_INFO << "PlayerNodeInfo set with CentreNodeId: " << asyncIt->second.centre_node_id();
+	LOG_INFO << "PlayerNodeInfo set with CentreNodeId: " << enterInfo.centre_node_id();
 
 	InitializeActorComponentsEvent initializeActorComponentsEvent;
 	initializeActorComponentsEvent.set_actor_entity(entt::to_integral(player));
@@ -76,7 +69,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 	initializePlayerComponents.set_actor_entity(entt::to_integral(player));
 	tls.dispatcher.trigger(initializePlayerComponents);
 
-	EnterGs(player, asyncIt->second);
+	EnterGs(player, enterInfo);
 }
 
 void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& message)
