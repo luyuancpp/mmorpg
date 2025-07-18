@@ -18,3 +18,8 @@ NodeInfo& GetNodeInfo()
 {
 	return tls.globalRegistry.get_or_emplace<NodeInfo>(GlobalEntity());
 }
+
+uint32_t GetZoneId()
+{
+	GetNodeInfo().zone_id();
+}

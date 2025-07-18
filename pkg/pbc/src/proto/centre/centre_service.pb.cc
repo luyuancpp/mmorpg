@@ -109,7 +109,10 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 
 inline constexpr CentreEnterGameRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : player_id_{::uint64_t{0u}},
+      : login_token_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        player_id_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
@@ -278,6 +281,7 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::CentreEnterGameRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::CentreEnterGameRequest, _impl_.login_token_),
         PROTOBUF_FIELD_OFFSET(::CentrePlayerGameNodeEntryRequest, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::CentrePlayerGameNodeEntryRequest, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -328,10 +332,10 @@ static const ::_pbi::MigrationSchema
         {10, 19, -1, sizeof(::LoginNodeLeaveGameRequest)},
         {20, -1, -1, sizeof(::EnterGameNodeSuccessRequest)},
         {30, -1, -1, sizeof(::CentreEnterGameRequest)},
-        {39, 49, -1, sizeof(::CentrePlayerGameNodeEntryRequest)},
-        {51, -1, -1, sizeof(::InitSceneNodeRequest)},
-        {61, -1, -1, sizeof(::CentreLoginRequest)},
-        {71, 80, -1, sizeof(::CentreLoginResponse)},
+        {40, 50, -1, sizeof(::CentrePlayerGameNodeEntryRequest)},
+        {52, -1, -1, sizeof(::InitSceneNodeRequest)},
+        {62, -1, -1, sizeof(::CentreLoginRequest)},
+        {72, 81, -1, sizeof(::CentreLoginResponse)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_GateClientMessageRequest_default_instance_._instance,
@@ -354,36 +358,37 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto[]
     "inNodeLeaveGameRequest\022%\n\014session_info\030\001"
     " \001(\0132\017.SessionDetails\"G\n\033EnterGameNodeSu"
     "ccessRequest\022\021\n\tplayer_id\030\001 \001(\004\022\025\n\rscene"
-    "_node_id\030\002 \001(\r\"+\n\026CentreEnterGameRequest"
-    "\022\021\n\tplayer_id\030\001 \001(\004\"{\n CentrePlayerGameN"
-    "odeEntryRequest\0220\n\017client_msg_body\030\001 \001(\013"
-    "2\027.CentreEnterGameRequest\022%\n\014session_inf"
-    "o\030\002 \001(\0132\017.SessionDetails\"@\n\024InitSceneNod"
-    "eRequest\022\017\n\007node_id\030\001 \001(\r\022\027\n\017scene_node_"
-    "type\030\002 \001(\r\"7\n\022CentreLoginRequest\022\017\n\007acco"
-    "unt\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\"=\n\023CentreLog"
-    "inResponse\022&\n\rerror_message\030\001 \001(\0132\017.TipI"
-    "nfoMessage2\230\006\n\006Centre\0226\n\021GatePlayerServi"
-    "ce\022\031.GateClientMessageRequest\032\006.Empty\022>\n"
-    "\025GateSessionDisconnect\022\035.GateSessionDisc"
-    "onnectRequest\032\006.Empty\022B\n\025LoginNodeAccoun"
-    "tLogin\022\023.CentreLoginRequest\032\024.CentreLogi"
-    "nResponse\022\?\n\022LoginNodeEnterGame\022!.Centre"
-    "PlayerGameNodeEntryRequest\032\006.Empty\0228\n\022Lo"
-    "ginNodeLeaveGame\022\032.LoginNodeLeaveGameReq"
-    "uest\032\006.Empty\022C\n\032LoginNodeSessionDisconne"
-    "ct\022\035.GateSessionDisconnectRequest\032\006.Empt"
-    "y\022D\n\rPlayerService\022\030.NodeRouteMessageReq"
-    "uest\032\031.NodeRouteMessageResponse\0226\n\016Enter"
-    "GsSucceed\022\034.EnterGameNodeSuccessRequest\032"
-    "\006.Empty\022A\n\022RouteNodeStringMsg\022\024.RouteMes"
-    "sageRequest\032\025.RouteMessageResponse\022O\n\024Ro"
-    "utePlayerStringMsg\022\032.RoutePlayerMessageR"
-    "equest\032\033.RoutePlayerMessageResponse\022.\n\rI"
-    "nitSceneNode\022\025.InitSceneNodeRequest\032\006.Em"
-    "pty\022P\n\023RegisterNodeSession\022\033.RegisterNod"
-    "eSessionRequest\032\034.RegisterNodeSessionRes"
-    "ponseB\014Z\007pb/game\200\001\001b\006proto3"
+    "_node_id\030\002 \001(\r\"@\n\026CentreEnterGameRequest"
+    "\022\021\n\tplayer_id\030\001 \001(\004\022\023\n\013login_token\030\002 \001(\t"
+    "\"{\n CentrePlayerGameNodeEntryRequest\0220\n\017"
+    "client_msg_body\030\001 \001(\0132\027.CentreEnterGameR"
+    "equest\022%\n\014session_info\030\002 \001(\0132\017.SessionDe"
+    "tails\"@\n\024InitSceneNodeRequest\022\017\n\007node_id"
+    "\030\001 \001(\r\022\027\n\017scene_node_type\030\002 \001(\r\"7\n\022Centr"
+    "eLoginRequest\022\017\n\007account\030\001 \001(\t\022\020\n\010passwo"
+    "rd\030\002 \001(\t\"=\n\023CentreLoginResponse\022&\n\rerror"
+    "_message\030\001 \001(\0132\017.TipInfoMessage2\230\006\n\006Cent"
+    "re\0226\n\021GatePlayerService\022\031.GateClientMess"
+    "ageRequest\032\006.Empty\022>\n\025GateSessionDisconn"
+    "ect\022\035.GateSessionDisconnectRequest\032\006.Emp"
+    "ty\022B\n\025LoginNodeAccountLogin\022\023.CentreLogi"
+    "nRequest\032\024.CentreLoginResponse\022\?\n\022LoginN"
+    "odeEnterGame\022!.CentrePlayerGameNodeEntry"
+    "Request\032\006.Empty\0228\n\022LoginNodeLeaveGame\022\032."
+    "LoginNodeLeaveGameRequest\032\006.Empty\022C\n\032Log"
+    "inNodeSessionDisconnect\022\035.GateSessionDis"
+    "connectRequest\032\006.Empty\022D\n\rPlayerService\022"
+    "\030.NodeRouteMessageRequest\032\031.NodeRouteMes"
+    "sageResponse\0226\n\016EnterGsSucceed\022\034.EnterGa"
+    "meNodeSuccessRequest\032\006.Empty\022A\n\022RouteNod"
+    "eStringMsg\022\024.RouteMessageRequest\032\025.Route"
+    "MessageResponse\022O\n\024RoutePlayerStringMsg\022"
+    "\032.RoutePlayerMessageRequest\032\033.RoutePlaye"
+    "rMessageResponse\022.\n\rInitSceneNode\022\025.Init"
+    "SceneNodeRequest\032\006.Empty\022P\n\023RegisterNode"
+    "Session\022\033.RegisterNodeSessionRequest\032\034.R"
+    "egisterNodeSessionResponseB\014Z\007pb/game\200\001\001"
+    "b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_deps[5] =
     {
@@ -397,7 +402,7 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fservice_2epr
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto = {
     false,
     false,
-    1547,
+    1568,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto,
     "proto/centre/centre_service.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_once,
@@ -1176,15 +1181,34 @@ CentreEnterGameRequest::CentreEnterGameRequest(::google::protobuf::Arena* arena)
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:CentreEnterGameRequest)
 }
+inline PROTOBUF_NDEBUG_INLINE CentreEnterGameRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::CentreEnterGameRequest& from_msg)
+      : login_token_(arena, from.login_token_),
+        _cached_size_{0} {}
+
 CentreEnterGameRequest::CentreEnterGameRequest(
-    ::google::protobuf::Arena* arena, const CentreEnterGameRequest& from)
-    : CentreEnterGameRequest(arena) {
-  MergeFrom(from);
+    ::google::protobuf::Arena* arena,
+    const CentreEnterGameRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  CentreEnterGameRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.player_id_ = from._impl_.player_id_;
+
+  // @@protoc_insertion_point(copy_constructor:CentreEnterGameRequest)
 }
 inline PROTOBUF_NDEBUG_INLINE CentreEnterGameRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : _cached_size_{0} {}
+      : login_token_(arena),
+        _cached_size_{0} {}
 
 inline void CentreEnterGameRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -1198,6 +1222,7 @@ inline void CentreEnterGameRequest::SharedDtor(MessageLite& self) {
   CentreEnterGameRequest& this_ = static_cast<CentreEnterGameRequest&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.login_token_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -1206,7 +1231,7 @@ inline void* CentreEnterGameRequest::PlacementNew_(const void*, void* mem,
   return ::new (mem) CentreEnterGameRequest(arena);
 }
 constexpr auto CentreEnterGameRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(CentreEnterGameRequest),
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(CentreEnterGameRequest),
                                             alignof(CentreEnterGameRequest));
 }
 PROTOBUF_CONSTINIT
@@ -1237,15 +1262,15 @@ const ::google::protobuf::internal::ClassData* CentreEnterGameRequest::GetClassD
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> CentreEnterGameRequest::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 42, 2> CentreEnterGameRequest::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967292,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
+    2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     _class_data_.base(),
@@ -1255,6 +1280,9 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> CentreEnterGameRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::CentreEnterGameRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
+    // string login_token = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(CentreEnterGameRequest, _impl_.login_token_)}},
     // uint64 player_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CentreEnterGameRequest, _impl_.player_id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(CentreEnterGameRequest, _impl_.player_id_)}},
@@ -1264,9 +1292,15 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> CentreEnterGameRequest::_table_ = {
     // uint64 player_id = 1;
     {PROTOBUF_FIELD_OFFSET(CentreEnterGameRequest, _impl_.player_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // string login_token = 2;
+    {PROTOBUF_FIELD_OFFSET(CentreEnterGameRequest, _impl_.login_token_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
+    "\26\0\13\0\0\0\0\0"
+    "CentreEnterGameRequest"
+    "login_token"
   }},
 };
 
@@ -1277,6 +1311,7 @@ PROTOBUF_NOINLINE void CentreEnterGameRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  _impl_.login_token_.ClearToEmpty();
   _impl_.player_id_ = ::uint64_t{0u};
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -1303,6 +1338,14 @@ PROTOBUF_NOINLINE void CentreEnterGameRequest::Clear() {
                 1, this_._internal_player_id(), target);
           }
 
+          // string login_token = 2;
+          if (!this_._internal_login_token().empty()) {
+            const std::string& _s = this_._internal_login_token();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "CentreEnterGameRequest.login_token");
+            target = stream->WriteStringMaybeAliased(2, _s, target);
+          }
+
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
             target =
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -1326,7 +1369,13 @@ PROTOBUF_NOINLINE void CentreEnterGameRequest::Clear() {
           // Prevent compiler warnings about cached_has_bits being unused
           (void)cached_has_bits;
 
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
            {
+            // string login_token = 2;
+            if (!this_._internal_login_token().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_login_token());
+            }
             // uint64 player_id = 1;
             if (this_._internal_player_id() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
@@ -1345,6 +1394,9 @@ void CentreEnterGameRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, 
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
+  if (!from._internal_login_token().empty()) {
+    _this->_internal_set_login_token(from._internal_login_token());
+  }
   if (from._internal_player_id() != 0) {
     _this->_impl_.player_id_ = from._impl_.player_id_;
   }
@@ -1361,7 +1413,10 @@ void CentreEnterGameRequest::CopyFrom(const CentreEnterGameRequest& from) {
 
 void CentreEnterGameRequest::InternalSwap(CentreEnterGameRequest* PROTOBUF_RESTRICT other) {
   using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.login_token_, &other->_impl_.login_token_, arena);
         swap(_impl_.player_id_, other->_impl_.player_id_);
 }
 

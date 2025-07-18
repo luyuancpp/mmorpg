@@ -202,8 +202,9 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	const auto& sessionInfo = request->session_info();
 	auto playerId = clientMsg.player_id();
 	auto sessionId = sessionInfo.session_id();
+	const std::string& loginToken = clientMsg.login_token(); // 从客户端请求中获取
 
-	LOG_INFO << "Login request: PlayerID=" << playerId << ", SessionID=" << sessionId;
+	LOG_INFO << "Login request: PlayerID=" << playerId << ", SessionID=" << sessionId << ", Token=" << loginToken;
 
 	// 记录当前 session
 	GlobalSessionList()[sessionId] = playerId;
@@ -212,52 +213,68 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	auto it = playerList.find(playerId);
 
 	if (it == playerList.end()) {
+		// 玩家首次登录，初始化数据
 		PlayerSessionSnapshotPBComp sessionPB;
 		sessionPB.set_gate_session_id(sessionId);
-		// 玩家未登录过，首次加载,底层已经判断重复加载
+		sessionPB.set_login_token(loginToken);  // 保存 token
 		GetGlobalPlayerRedis()->AsyncLoad(playerId, sessionPB);
 		GetGlobalPlayerRedis()->UpdateExtraData(playerId, sessionPB);
 	}
 	else {
 		auto player = it->second;
-		
 		//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 		//顶号的时候已经在场景里面了,不用再进入场景了
 		//todo换场景的过程中被顶了
 		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 		//区分顶号和断线重连
 
+		// 是否存在旧会话
 		bool hasOldSession = tls.actorRegistry.any_of<PlayerSessionSnapshotPBComp>(player);
-
-		// 清除旧 session
 		auto& sessionPB = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
 		auto oldSessionId = sessionPB.gate_session_id();
+		const std::string& oldLoginToken = sessionPB.login_token();
+
 		defer(GlobalSessionList().erase(oldSessionId));
-		if (hasOldSession && oldSessionId != sessionId) {
+
+		bool isSameLogin = (loginToken == oldLoginToken);
+		bool isSameSession = (sessionId == oldSessionId);
+
+		if (!isSameLogin && hasOldSession) {
+			// ✅ 顶号（新 token，不是重连）
 			PlayerTipSystem::SendToPlayer(player, kLoginBeKickByAnOtherAccount, {});
-			LOG_INFO << "Kicking old session: Player ID " << playerId << ", Old Session ID " << oldSessionId;
-			// 踢掉旧 session
+			LOG_INFO << "Top-off: Kicking old session for PlayerID=" << playerId << ", OldSessionID=" << oldSessionId;
+
 			KickSessionRequest msg;
 			msg.set_session_id(oldSessionId);
 			SendMessageToGateById(GateKickSessionByCentreMessageId, msg, GetGateNodeId(oldSessionId));
+
+			tls.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_REPLACE);
+		}
+		else if (isSameLogin) {
+			// ✅ 重连
+			LOG_INFO << "Reconnection: PlayerID=" << playerId << ", SessionID=" << sessionId;
+			tls.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_RECONNECT);
+		}
+		else {
+			// fallback
+			LOG_WARN << "Unknown login scenario for PlayerID=" << playerId;
+			tls.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_FIRST);
 		}
 
+		// 更新 sessionId 和 login_token
 		sessionPB.set_gate_session_id(sessionId);
+		sessionPB.set_login_token(loginToken);
 
 		GetGlobalPlayerRedis()->UpdateExtraData(playerId, sessionPB);
-
-		// 标记玩家状态
-		tls.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player).set_enter_gs_type(LOGIN_REPLACE);
 
 		// 进入场景
 		PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
 		PlayerNodeSystem::ProcessPlayerSessionState(player);
 	}
 
-
 	///<<< END WRITING YOUR CODE
-}
 
+}
 
 
 void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* controller, const ::LoginNodeLeaveGameRequest* request,

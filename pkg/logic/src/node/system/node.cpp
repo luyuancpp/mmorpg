@@ -95,8 +95,7 @@ void Node::InitRpcServer() {
 	info.set_launch_time(TimeUtil::NowMicrosecondsUTC());
 	info.set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
 
-	nodeUuid = gen();
-	info.set_node_uuid(boost::uuids::to_string(nodeUuid));
+	info.set_node_uuid(boost::uuids::to_string(gen()));
 
 	InetAddress addr(tlsCommonLogic.GetGameConfig().zone_redis().host(), tlsCommonLogic.GetGameConfig().zone_redis().port());
 	tlsCommonLogic.GetZoneRedis() = std::make_unique<ThreadLocalStorageCommonLogic::HiredisPtr::element_type>(eventLoop, addr);
@@ -296,7 +295,7 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 	entt::entity entityId{ info.node_id() };
 
 	if (registry.valid(entityId)) {
-		if (auto* existInfo = registry.try_get<boost::uuids::uuid>(entityId);
+		if (auto* existInfo = registry.try_get<NodeInfo>(entityId);
 			existInfo ) {
 
 			if (IsSameNode(info, *existInfo)) {
@@ -324,7 +323,6 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 	);
 
 	registry.emplace<NodeInfo>(createdId, info);
-	registry.emplace<boost::uuids::uuid>(createdId, stringGen(info.node_uuid()));
 
 	client->registerService(GetNodeReplyService());
 	client->connect();
@@ -470,12 +468,12 @@ bool Node::IsSameNode(const NodeInfo& node1, const NodeInfo& node2) const
 
 bool Node::IsMyNode(const NodeInfo& node) const
 {
-	return IsSameNode(node, nodeUuid);
+	return IsSameNode(node, GetNodeInfo().node_uuid());
 }
 
-bool Node::IsSameNode(const NodeInfo& node, boost::uuids::uuid uuid) const
+bool Node::IsSameNode(const NodeInfo& node, const std::string& uuid) const
 {
-	return uuid == stringGen(node.node_uuid());
+	return uuid == node.node_uuid();
 }
 
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {

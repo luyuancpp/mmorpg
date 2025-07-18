@@ -15,7 +15,7 @@
 #include "util/node_utils.h"
 #include "util/zone_utils.h"
 #include "proto/logic/event/player_migration_event.pb.h"
-#include "pbc/common_error_tip.pb.h"
+#include "cross_server_error_tip.pb.h"
 
 entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext)
 {

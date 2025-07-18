@@ -168,6 +168,9 @@
     <ClCompile Include="src\pbc\reward_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\pbc\cross_server_error_tip.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\all_config.h">
@@ -339,6 +342,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\cpp_table_id_constants_name\global_abnormal_logout_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\cross_server_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

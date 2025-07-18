@@ -97,7 +97,7 @@ protected:
     // 工具与状态判断
     bool IsNodeConnected(uint32_t nodeType, const NodeInfo& node) const;
 	bool IsSameNode(const NodeInfo& node1, const NodeInfo& node2) const;
-	bool IsSameNode(const NodeInfo& node, boost::uuids::uuid uuid) const;
+	bool IsSameNode(const NodeInfo& node, const std::string& uuid) const;
     bool IsMyNode(const NodeInfo& node ) const;
     bool IsServiceStarted() { return rpcServer != nullptr; }
 
@@ -120,9 +120,7 @@ protected:
     bool hasSentRange{ false };
     bool hasSentWatch{ false };
 	int64_t leaseId{ 0 };
-    boost::uuids::uuid nodeUuid;
 	boost::uuids::random_generator gen;
-    boost::uuids::string_generator stringGen;
     KafkaProducerPtr kafkaProducer;
     KafkaConsumerPtr kafkaConsumer;
     PartitionClassGuid partitions;
