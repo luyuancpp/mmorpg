@@ -29,48 +29,13 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 {
 	LOG_INFO << "HandlePlayerAsyncLoaded: Loading player " << playerId;
 
-	auto player = tls.actorRegistry.create();
-
-	if (const auto [first, second] = GlobalPlayerList().emplace(playerId, player); !second)
-	{
-		LOG_ERROR << "Failed to emplace player into GetPlayerList: " << playerId;
-		return;
-	}
+	PlayerAllData fullData;
+	*fullData.mutable_player_database_data() = message;
 
 	auto enterInfo = std::any_cast<PlayerGameNodeEnteryInfoPBComponent>(extra);
-
-	tls.actorRegistry.emplace<Player>(player);
-	tls.actorRegistry.emplace<Guid>(player, message.player_id());
-	PlayerDatabaseMessageFieldsUnmarshal(player, message);
-
-	if (message.uint64_pb_component().registration_timestamp() <= 0)
-	{
-		tls.actorRegistry.get<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeUtil::NowSecondsUTC());
-		tls.actorRegistry.get<LevelPbComponent>(player).set_level(1);
-
-		RegisterPlayerEvent registerPlayer;
-		registerPlayer.set_actor_entity(entt::to_integral(player));
-		tls.dispatcher.trigger(registerPlayer);
-	}
-
-	tls.actorRegistry.emplace<ViewRadius>(player).set_radius(10);
-
-	auto& playerSessionSnapshotPB = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
-	auto& nodeIdMap = *playerSessionSnapshotPB.mutable_node_id();
-	nodeIdMap[eNodeType::CentreNodeService] = enterInfo.centre_node_id();
-
-	LOG_INFO << "PlayerNodeInfo set with CentreNodeId: " << enterInfo.centre_node_id();
-
-	InitializeActorComponentsEvent initializeActorComponentsEvent;
-	initializeActorComponentsEvent.set_actor_entity(entt::to_integral(player));
-	tls.dispatcher.trigger(initializeActorComponentsEvent);
-
-	InitializePlayerComponentsEvent initializePlayerComponents;
-	initializePlayerComponents.set_actor_entity(entt::to_integral(player));
-	tls.dispatcher.trigger(initializePlayerComponents);
-
-	EnterGs(player, enterInfo);
+	InitPlayerFromAllData(fullData, enterInfo);
 }
+
 
 void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& message)
 {
@@ -96,18 +61,6 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& me
 	//告诉Centre 保存完毕，可以切换场景了,或者再登录可以重新上线了
 	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
 	SendToCentrePlayerByClientNode(CentrePlayerSceneLeaveSceneAsyncSavePlayerCompleteMessageId, request, playerId);
-}
-
-void PlayerNodeSystem::SavePlayer(entt::entity player)
-{
-	LOG_INFO << "SavePlayer: Saving player guid: " << tls.actorRegistry.get<Guid>(player);
-	using SaveMessage = PlayerDataRedis::element_type::MessageValuePtr;
-	SaveMessage pb = std::make_shared<SaveMessage::element_type>();
-
-	pb->set_player_id(tls.actorRegistry.get<Guid>(player));
-	PlayerDatabaseMessageFieldsMarshal(player, *pb);
-
-	tlsGame.playerRedis->Save(pb, tls.actorRegistry.get<Guid>(player));
 }
 
 //考虑: 没load 完再次进入别的gs
@@ -230,7 +183,7 @@ void PlayerNodeSystem::HandleExitGameNode(entt::entity player)
 
 	tls.actorRegistry.emplace<UnregisterPlayer>(player);
 
-	PlayerNodeSystem::SavePlayer(player);
+	PlayerNodeSystem::SavePlayerToRedis(player);
 
 	//todo 存完之后center 才能再次登录
 
@@ -251,6 +204,9 @@ void PlayerNodeSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	
 	auto playerId = tls.actorRegistry.get<Guid>(playerEntity);
 
+	auto& sessionSnapshot = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity);
+	auto& nodeIdMap = *sessionSnapshot.mutable_node_id();
+
 	PlayerAllData playerAllDataMessage;
 	PlayerAllDataMessageFieldsMarshal(playerEntity, playerAllDataMessage);
 	playerAllDataMessage.mutable_player_database_data()->set_player_id(playerId);
@@ -262,6 +218,7 @@ void PlayerNodeSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	request.set_to_zone(changeInfo->to_zone_id());
 	request.mutable_scene_info()->CopyFrom(*changeInfo);
 	request.set_serialized_player_data(std::move(playerAllDataMessage.SerializeAsString()));
+	request.set_centre_node_id(nodeIdMap[eNodeType::CentreNodeService]);
 
 	tls.GetKafkaProducer()->send("player_migrate", request.SerializeAsString(), std::to_string(playerId), changeInfo->to_zone_id());
 
@@ -274,21 +231,95 @@ void PlayerNodeSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 
 
 void PlayerNodeSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& msg) {
-	const auto& playerId = msg.player_id();
-	const auto& serializedData = msg.serialized_player_data();
-
-	// 1. 反序列化 player_database
 	PlayerAllData playerAllDataMessage;
-	if (!playerAllDataMessage.ParseFromString(serializedData)) {
-		LOG_ERROR << "Failed to parse player_database for: " << playerId;
+	if (!playerAllDataMessage.ParseFromString(msg.serialized_player_data())) {
+		LOG_ERROR << "Parse failed for player migration data";
 		return;
 	}
 
-	// 2. 创建新 player 实体
-	auto playerEntity = tls.actorRegistry.create();
-	tls.actorRegistry.emplace<Guid>(playerEntity, playerId);
+	PlayerGameNodeEnteryInfoPBComponent enterInfo; // 已在消息中带上
+	enterInfo.set_centre_node_id(msg.centre_node_id());
 
-	// 3. 加载各组件
-	PlayerAllData playerAllDataMessage;
-	PlayerAllDataMessageFieldsUnMarshal(playerEntity, playerAllDataMessage);
+	auto player = InitPlayerFromAllData(playerAllDataMessage, enterInfo);
+	SavePlayerToRedis(player);
+}
+
+entt::entity PlayerNodeSystem::InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEnteryInfoPBComponent& enterInfo)
+{
+	auto playerId = playerAllData.player_database_data().player_id();
+
+	LOG_INFO << "[InitPlayerFromAllData] Init player: " << playerId;
+
+	// 1. 创建实体
+	auto player = tls.actorRegistry.create();
+
+	// 2. 注册全局玩家实体映射
+	if (const auto [it, inserted] = GlobalPlayerList().emplace(playerId, player); !inserted)
+	{
+		LOG_ERROR << "[InitPlayerFromAllData] Player already exists in GlobalPlayerList: " << playerId;
+		return entt::null;
+	}
+
+	// 3. 设置基本组件
+	tls.actorRegistry.emplace<Player>(player);
+	tls.actorRegistry.emplace<Guid>(player, playerId);
+
+	// 4. 反序列化全量数据
+	PlayerAllDataMessageFieldsUnMarshal(player, playerAllData);
+
+	// 5. 初始化必要数据（仅首次注册时）
+	if (playerAllData.player_database_data().uint64_pb_component().registration_timestamp() <= 0)
+	{
+		tls.actorRegistry.get<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeUtil::NowSecondsUTC());
+		tls.actorRegistry.get<LevelPbComponent>(player).set_level(1);
+
+		RegisterPlayerEvent registerPlayer;
+		registerPlayer.set_actor_entity(entt::to_integral(player));
+		tls.dispatcher.trigger(registerPlayer);
+	}
+
+	// 6. 设置视野
+	tls.actorRegistry.emplace<ViewRadius>(player).set_radius(10);
+
+	// 7. 设置玩家节点映射（如 Centre NodeId）
+	auto& sessionSnapshot = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
+	auto& nodeIdMap = *sessionSnapshot.mutable_node_id();
+	nodeIdMap[eNodeType::CentreNodeService] = enterInfo.centre_node_id();
+
+	LOG_INFO << "[InitPlayerFromAllData] Set CentreNodeId: " << enterInfo.centre_node_id();
+
+	// 8. 初始化系统组件事件
+	InitializeActorComponentsEvent initActorEvent;
+	initActorEvent.set_actor_entity(entt::to_integral(player));
+	tls.dispatcher.trigger(initActorEvent);
+
+	InitializePlayerComponentsEvent initPlayerEvent;
+	initPlayerEvent.set_actor_entity(entt::to_integral(player));
+	tls.dispatcher.trigger(initPlayerEvent);
+
+	// 9. 进入场景节点
+	EnterGs(player, enterInfo);
+
+	return player;
+}
+
+void PlayerNodeSystem::SavePlayerToRedis(entt::entity player)
+{
+	if (!tls.actorRegistry.valid(player))
+	{
+		LOG_ERROR << "[SavePlayerToRedis] Invalid player entity";
+		return;
+	}
+
+	auto playerId = tls.actorRegistry.get<Guid>(player);
+
+	using SaveMessage = PlayerDataRedis::element_type::MessageValuePtr;
+	SaveMessage pb = std::make_shared<SaveMessage::element_type>();
+
+	pb->set_player_id(playerId);
+	PlayerDatabaseMessageFieldsMarshal(player, *pb);
+
+	tlsGame.playerRedis->Save(pb, playerId);
+
+	LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis";
 }
