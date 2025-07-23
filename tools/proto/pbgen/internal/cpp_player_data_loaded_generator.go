@@ -55,14 +55,14 @@ void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.Messag
 void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message);
 {{ end }}
 
-void PlayerAllDataMessageFieldsMarshal(entt::entity player, const PlayerAllData& message)
+void PlayerAllDataMessageFieldsMarshal(entt::entity player, PlayerAllData& message)
 {
 {{- range .Entries }}
 {{.HandlerName}}MessageFieldsUnmarshal(player, message.{{.MessageType}}_data());
 {{- end }}
 }
 
-void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, PlayerAllData& message)
+void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, const PlayerAllData& message)
 {
 {{- range .Entries }}
 {{.HandlerName}}MessageFieldsUnmarshal(player, message.{{.MessageType}}_data());

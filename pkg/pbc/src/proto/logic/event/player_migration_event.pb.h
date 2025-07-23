@@ -214,13 +214,14 @@ class PlayerMigrationPbEvent final
   // accessors -------------------------------------------------------
   enum : int {
     kSerializedPlayerDataFieldNumber = 4,
-    kSceneInfoFieldNumber = 8,
+    kSceneInfoFieldNumber = 9,
     kPlayerIdFieldNumber = 1,
     kSourceSceneIdFieldNumber = 2,
     kTargetSceneIdFieldNumber = 3,
     kFromZoneFieldNumber = 5,
     kToZoneFieldNumber = 6,
     kTimestampFieldNumber = 7,
+    kCentreNodeIdFieldNumber = 8,
   };
   // bytes serialized_player_data = 4;
   void clear_serialized_player_data() ;
@@ -238,7 +239,7 @@ class PlayerMigrationPbEvent final
   std::string* _internal_mutable_serialized_player_data();
 
   public:
-  // .ChangeSceneInfoPBComponent scene_info = 8;
+  // .ChangeSceneInfoPBComponent scene_info = 9;
   bool has_scene_info() const;
   void clear_scene_info() ;
   const ::ChangeSceneInfoPBComponent& scene_info() const;
@@ -313,12 +314,22 @@ class PlayerMigrationPbEvent final
   void _internal_set_timestamp(::int64_t value);
 
   public:
+  // uint32 centre_node_id = 8;
+  void clear_centre_node_id() ;
+  ::uint32_t centre_node_id() const;
+  void set_centre_node_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_centre_node_id() const;
+  void _internal_set_centre_node_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:PlayerMigrationPbEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 8, 1,
+      4, 9, 1,
       0, 2>
       _table_;
 
@@ -346,6 +357,7 @@ class PlayerMigrationPbEvent final
     ::uint32_t from_zone_;
     ::uint32_t to_zone_;
     ::int64_t timestamp_;
+    ::uint32_t centre_node_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -548,7 +560,29 @@ inline void PlayerMigrationPbEvent::_internal_set_timestamp(::int64_t value) {
   _impl_.timestamp_ = value;
 }
 
-// .ChangeSceneInfoPBComponent scene_info = 8;
+// uint32 centre_node_id = 8;
+inline void PlayerMigrationPbEvent::clear_centre_node_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.centre_node_id_ = 0u;
+}
+inline ::uint32_t PlayerMigrationPbEvent::centre_node_id() const {
+  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.centre_node_id)
+  return _internal_centre_node_id();
+}
+inline void PlayerMigrationPbEvent::set_centre_node_id(::uint32_t value) {
+  _internal_set_centre_node_id(value);
+  // @@protoc_insertion_point(field_set:PlayerMigrationPbEvent.centre_node_id)
+}
+inline ::uint32_t PlayerMigrationPbEvent::_internal_centre_node_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.centre_node_id_;
+}
+inline void PlayerMigrationPbEvent::_internal_set_centre_node_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.centre_node_id_ = value;
+}
+
+// .ChangeSceneInfoPBComponent scene_info = 9;
 inline bool PlayerMigrationPbEvent::has_scene_info() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.scene_info_ != nullptr);

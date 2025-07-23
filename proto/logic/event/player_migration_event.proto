@@ -12,5 +12,6 @@ message PlayerMigrationPbEvent {
   uint32 from_zone = 5;
   uint32 to_zone = 6;
   int64 timestamp = 7;  // 事件生成时间
-  ChangeSceneInfoPBComponent scene_info = 8;
+  uint32 centre_node_id = 8;
+  ChangeSceneInfoPBComponent scene_info = 9;
 }

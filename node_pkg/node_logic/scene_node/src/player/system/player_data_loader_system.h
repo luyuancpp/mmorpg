@@ -8,13 +8,13 @@ void PlayerDatabase1MessageFieldsUnmarshal(entt::entity player, const player_dat
 void PlayerDatabase1MessageFieldsMarshal(entt::entity player, player_database_1& message);
 
 
-void PlayerAllDataMessageFieldsMarshal(entt::entity player, const PlayerAllData& message)
+void PlayerAllDataMessageFieldsMarshal(entt::entity player, PlayerAllData& message)
 {
 PlayerDatabaseMessageFieldsUnmarshal(player, message.player_database_data());
 PlayerDatabase1MessageFieldsUnmarshal(player, message.player_database_1_data());
 }
 
-void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, PlayerAllData& message)
+void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, const PlayerAllData& message)
 {
 PlayerDatabaseMessageFieldsUnmarshal(player, message.player_database_data());
 PlayerDatabase1MessageFieldsUnmarshal(player, message.player_database_1_data());
