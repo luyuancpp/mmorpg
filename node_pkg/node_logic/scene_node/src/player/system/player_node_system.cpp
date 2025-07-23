@@ -25,19 +25,15 @@
 #include "cross_server_error_tip.pb.h"
 #include "player_tip_system.h"
 
-void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_database& message, const std::any& extra)
+void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)
 {
 	LOG_INFO << "HandlePlayerAsyncLoaded: Loading player " << playerId;
-
-	PlayerAllData fullData;
-	*fullData.mutable_player_database_data() = message;
-
 	auto enterInfo = std::any_cast<PlayerGameNodeEnteryInfoPBComponent>(extra);
-	InitPlayerFromAllData(fullData, enterInfo);
+	InitPlayerFromAllData(message, enterInfo);
 }
 
 
-void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& message)
+void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData& message)
 {
 	LOG_INFO << "HandlePlayerAsyncSaved: Saving complete for player: " << playerId;
 
@@ -313,12 +309,11 @@ void PlayerNodeSystem::SavePlayerToRedis(entt::entity player)
 	auto playerId = tls.actorRegistry.get<Guid>(player);
 
 	using SaveMessage = PlayerDataRedis::element_type::MessageValuePtr;
-	SaveMessage pb = std::make_shared<SaveMessage::element_type>();
+	SaveMessage message = std::make_shared<SaveMessage::element_type>();
 
-	pb->set_player_id(playerId);
-	PlayerDatabaseMessageFieldsMarshal(player, *pb);
+	PlayerAllDataMessageFieldsUnMarshal(player, *message);
 
-	tlsGame.playerRedis->Save(pb, playerId);
+	tlsGame.playerRedis->Save(message, playerId);
 
 	LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis";
 }
