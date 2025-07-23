@@ -46,24 +46,34 @@ void MessageSyncRedisClient::Save(const google::protobuf::Message& message, Guid
 
 void MessageSyncRedisClient::Save(const google::protobuf::Message& message, const std::string& key)
 {
-    if (key.empty())
-    {
-        const auto* desc = message.GetDescriptor();
-        LOG_ERROR << "Message Save To Redis Key Empty : " << desc->full_name().data();
-        return;
-    }
+	if (key.empty())
+	{
+		const auto* desc = message.GetDescriptor();
+		LOG_ERROR << "Message Save To Redis Key Empty : " << desc->full_name().data();
+		return;
+	}
 
-    size_t key_len = key.length();
-    MessageCachedArray message_cached_array(message.ByteSizeLong());
-    message.SerializeWithCachedSizesToArray(message_cached_array.data());
-    redisReply* reply = (redisReply*)redisCommand(context_.get(),
-        "SET %b %b",
-        key.c_str(),
-        key_len,
-        message_cached_array.data(),
-        message_cached_array.size());
-    defer(freeReplyObject(reply));
+	MessageCachedArray message_cached_array(message.ByteSizeLong());
+	message.SerializeWithCachedSizesToArray(message_cached_array.data());
+
+	redisReply* reply = (redisReply*)redisCommand(context_.get(),
+		"EVAL %s 1 %b %b",
+		kSaveAndMarkLuaScript,
+		key.c_str(),
+		(size_t)key.length(),
+		message_cached_array.data(),
+		message_cached_array.size()
+	);
+
+	defer(freeReplyObject(reply));
+
+	if (!reply || reply->type == REDIS_REPLY_ERROR)
+	{
+		LOG_ERROR << "Redis EVAL failed for key: " << key;
+		return;
+	}
 }
+
 
 void MessageSyncRedisClient::Load(google::protobuf::Message& message)
 {

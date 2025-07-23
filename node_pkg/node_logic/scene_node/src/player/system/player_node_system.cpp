@@ -32,7 +32,6 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllDat
 	InitPlayerFromAllData(message, enterInfo);
 }
 
-
 void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData& message)
 {
 	LOG_INFO << "HandlePlayerAsyncSaved: Saving complete for player: " << playerId;
