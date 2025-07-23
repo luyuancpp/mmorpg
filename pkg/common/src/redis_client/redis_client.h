@@ -12,6 +12,13 @@
 
 #include "type_define/type_define.h"
 
+static constexpr const char* kSaveAndMarkLuaScript = R"(
+    redis.call('SET', KEYS[1], ARGV[1])
+    redis.call('SADD', 'dirty_keys_set', KEYS[1])
+    return 1
+)";
+
+
 namespace google
 {
     namespace protobuf
@@ -96,10 +103,13 @@ public:
 			return;
 		}
 
+		// 调用 Lua 脚本原子执行 SET 和 SADD
 		hiredis_.command(std::bind(&MessageAsyncClient::OnSaved, this, std::placeholders::_1, std::placeholders::_2, element),
-			"SET %b %b", element->redis_key.c_str(), element->redis_key.length(),
-			message_cached_array.data(),
-			message_cached_array.size());
+			"EVAL %s 1 %b %b",
+			kSaveAndMarkLuaScript,
+			element->redis_key.c_str(), element->redis_key.length(),
+			message_cached_array.data(), message_cached_array.size()
+		);
 	}
 
 	void AsyncLoad(const MessageKey& key, std::any extra_data = {})
