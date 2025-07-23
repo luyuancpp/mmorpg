@@ -57,8 +57,6 @@ message player_database_1
 }
 
 message PlayerAllData {
-  uint64 player_id = 1;
-
-  player_database data = 2;
-  player_database_1 data1 = 3;
+  player_database player_database_data = 2;
+  player_database_1 player_database_1_data = 3;
 }
