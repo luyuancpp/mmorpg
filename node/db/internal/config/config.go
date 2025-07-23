@@ -25,7 +25,8 @@ type DatabaseConfig struct {
 }
 
 type RedisConfig struct {
-	Hosts string `json:"Hosts"`
+	Hosts             string `json:"Hosts"`
+	DefaultTTLSeconds int    `json:"DefaultTTLSeconds"`
 }
 
 var AppConfig Config
