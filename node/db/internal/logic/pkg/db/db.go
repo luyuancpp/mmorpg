@@ -106,6 +106,7 @@ func getTables() []proto.Message {
 		&game.AccountShareDatabase{},
 		&game.PlayerCentreDatabase{},
 		&game.PlayerDatabase{},
+		&game.PlayerDatabase_1{},
 	}
 }
 
