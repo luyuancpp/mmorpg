@@ -229,7 +229,6 @@ void PlayerNodeSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	tls.actorRegistry.remove<ChangeSceneInfoPBComponent>(playerEntity);
 }
 
-
 void PlayerNodeSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& msg) {
 	PlayerAllData playerAllDataMessage;
 	if (!playerAllDataMessage.ParseFromString(msg.serialized_player_data())) {
