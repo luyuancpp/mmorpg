@@ -2,7 +2,7 @@ Name: dbservice.rpc
 ListenOn: 0.0.0.0:6000
 Etcd:
   Hosts:
-  - 127.0.0.1:2379
+    - 127.0.0.1:2379
   Key: dbservice.rpc
 ServerConfig:
   RoutineNum: 10
@@ -17,3 +17,4 @@ ServerConfig:
     Net: ""
   Redis:
     Hosts: "127.0.0.1:6379"
+    DefaultTTLSeconds: 3600  # 💡 默认缓存时间，1 小时

@@ -2,6 +2,7 @@ package playerdbservicelogic
 
 import (
 	"context"
+	"db/internal/config"
 	"db/internal/logic/pkg/utils"
 	"db/internal/svc"
 	"db/pb/game"
@@ -40,6 +41,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlay
 			msgCentre,
 		},
 	)
+
 	if err != nil {
 		logx.Errorf("BatchLoadAndCache error: %v", err)
 		return nil, err
@@ -75,7 +77,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlay
 		func(id uint64) string {
 			return "PlayerAllData:" + strconv.FormatUint(id, 10)
 		},
-		time.Hour,
+		time.Duration(config.AppConfig.ServerConfig.Redis.DefaultTTLSeconds)*time.Second,
 	)
 
 	if err != nil {
