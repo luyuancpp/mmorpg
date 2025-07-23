@@ -7,7 +7,7 @@
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "util/node_id_generator.h"
 
-using PlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
+using PlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, PlayerAllData>>;
 
 using NodeIdGenerator32BitId = NodeIdGenerator<uint64_t, 32>;
 
