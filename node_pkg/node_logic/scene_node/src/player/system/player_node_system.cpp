@@ -251,16 +251,17 @@ void PlayerNodeSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	
 	auto playerId = tls.actorRegistry.get<Guid>(playerEntity);
 
-	player_database pb;
-	pb.set_player_id(playerId);
-	PlayerDatabaseMessageFieldsMarshal(playerEntity, pb);
+	PlayerAllData playerAllDataMessage;
+	PlayerAllDataMessageFieldsMarshal(playerEntity, playerAllDataMessage);
+	playerAllDataMessage.mutable_player_database_data()->set_player_id(playerId);
+	playerAllDataMessage.mutable_player_database_1_data()->set_player_id(playerId);
 
 	PlayerMigrationPbEvent request;
 	request.set_player_id(playerId);
 	request.set_from_zone(GetZoneId());
 	request.set_to_zone(changeInfo->to_zone_id());
 	request.mutable_scene_info()->CopyFrom(*changeInfo);
-	request.set_serialized_player_data(std::move(pb.SerializeAsString()));
+	request.set_serialized_player_data(std::move(playerAllDataMessage.SerializeAsString()));
 
 	tls.GetKafkaProducer()->send("player_migrate", request.SerializeAsString(), std::to_string(playerId), changeInfo->to_zone_id());
 
@@ -277,17 +278,17 @@ void PlayerNodeSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& msg) 
 	const auto& serializedData = msg.serialized_player_data();
 
 	// 1. 反序列化 player_database
-	player_database pb;
-	if (!pb.ParseFromString(serializedData)) {
+	PlayerAllData playerAllDataMessage;
+	if (!playerAllDataMessage.ParseFromString(serializedData)) {
 		LOG_ERROR << "Failed to parse player_database for: " << playerId;
 		return;
 	}
 
 	// 2. 创建新 player 实体
-	auto player = tls.actorRegistry.create();
-	tls.actorRegistry.emplace<Guid>(player, playerId);
+	auto playerEntity = tls.actorRegistry.create();
+	tls.actorRegistry.emplace<Guid>(playerEntity, playerId);
 
 	// 3. 加载各组件
-	PlayerDatabaseMessageFieldsUnmarshal(player, pb);
-
+	PlayerAllData playerAllDataMessage;
+	PlayerAllDataMessageFieldsUnMarshal(playerEntity, playerAllDataMessage);
 }

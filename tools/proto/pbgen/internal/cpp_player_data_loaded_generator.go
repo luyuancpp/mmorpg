@@ -32,6 +32,7 @@ void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}&
 	{{- end }}
 	{{- end }}
 }
+
 `
 
 type PlayerDBProtoFieldData struct {
@@ -43,17 +44,30 @@ type DescData struct {
 	Fields      []PlayerDBProtoFieldData
 	HandlerName string
 	MessageType string
+	Entries     []HeaderEntry
 }
 
 const playerHeaderTemplate = `#pragma once
 #include "entt/src/entt/entity/registry.hpp"
-
+#include "proto/db/mysql_database_table.pb.h"
 {{- range .Entries }}
-class  {{.MessageType}};
 void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message);
 void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message);
+{{ end }}
 
+void PlayerAllDataMessageFieldsMarshal(entt::entity player, const PlayerAllData& message)
+{
+{{- range .Entries }}
+{{.HandlerName}}MessageFieldsUnmarshal(player, message.{{.MessageType}}_data());
 {{- end }}
+}
+
+void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, PlayerAllData& message)
+{
+{{- range .Entries }}
+{{.HandlerName}}MessageFieldsUnmarshal(player, message.{{.MessageType}}_data());
+{{- end }}
+}
 `
 
 type HeaderEntry struct {
@@ -101,6 +115,24 @@ func CppPlayerDataLoadGenerator() {
 		log.Fatalf("Failed to unmarshal descriptor set: %v", err)
 	}
 
+	var headerEntries []HeaderEntry
+
+	for _, fileDesc := range fdSet.GetFile() {
+		for _, messageDesc := range fileDesc.GetMessageType() {
+			messageDescName := strings.ToLower(*messageDesc.Name)
+			if !(strings.Contains(messageDescName, config.PlayerDatabaseName) || strings.Contains(messageDescName, config.PlayerDatabaseName1)) {
+				continue
+			}
+
+			handleName := strcase.ToCamel(*messageDesc.Name)
+			messageType := *messageDesc.Name
+			headerEntries = append(headerEntries, HeaderEntry{
+				HandlerName: handleName,
+				MessageType: messageType,
+			})
+		}
+	}
+
 	// 遍历文件描述符集合并打印消息字段
 	for _, fileDesc := range fdSet.GetFile() {
 		for _, messageDesc := range fileDesc.GetMessageType() {
@@ -120,7 +152,8 @@ func CppPlayerDataLoadGenerator() {
 				md5FilePath,
 				handleName,
 				filedList,
-				messageType)
+				messageType,
+				headerEntries)
 
 			if err != nil {
 				log.Fatal(err)
@@ -135,26 +168,6 @@ func CppPlayerDataLoadGenerator() {
 				return
 			}
 
-		}
-	}
-
-	var headerEntries []HeaderEntry
-
-	for _, fileDesc := range fdSet.GetFile() {
-		for _, messageDesc := range fileDesc.GetMessageType() {
-			messageDescName := strings.ToLower(*messageDesc.Name)
-			if !(strings.Contains(messageDescName, config.PlayerDatabaseName) || strings.Contains(messageDescName, config.PlayerDatabaseName1)) {
-				continue
-			}
-
-			handleName := strcase.ToCamel(*messageDesc.Name)
-			messageType := *messageDesc.Name
-			// ... 原本生成 .cpp 文件的逻辑 ...
-
-			headerEntries = append(headerEntries, HeaderEntry{
-				HandlerName: handleName,
-				MessageType: messageType,
-			})
 		}
 	}
 
@@ -191,7 +204,7 @@ func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBP
 }
 
 // generateHandlerFile creates a new handler file with the specified parameters.
-func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData, messageType string) error {
+func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData, messageType string, entries []HeaderEntry) error {
 	file, err := os.Create(fileName)
 	if err != nil {
 		return fmt.Errorf("could not create file %s: %w", fileName, err)
@@ -213,6 +226,7 @@ func generateCppDeserializeFromDatabase(fileName string, handlerName string, fie
 		Fields:      fields,
 		HandlerName: handlerName,
 		MessageType: messageType,
+		Entries:     entries,
 	}
 
 	if err := tmpl.Execute(file, data); err != nil {

@@ -19,3 +19,4 @@ void PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& me
 	message.mutable_derived_attributes_component()->CopyFrom(tls.actorRegistry.get<BaseAttributesPbComponent>(player));
 	message.mutable_level_component()->CopyFrom(tls.actorRegistry.get<LevelPbComponent>(player));
 }
+

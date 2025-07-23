@@ -1359,48 +1359,37 @@ class PlayerAllData final
 
   // accessors -------------------------------------------------------
   enum : int {
-    kDataFieldNumber = 2,
-    kData1FieldNumber = 3,
-    kPlayerIdFieldNumber = 1,
+    kPlayerDatabaseDataFieldNumber = 2,
+    kPlayerDatabase1DataFieldNumber = 3,
   };
-  // .player_database data = 2;
-  bool has_data() const;
-  void clear_data() ;
-  const ::player_database& data() const;
-  PROTOBUF_NODISCARD ::player_database* release_data();
-  ::player_database* mutable_data();
-  void set_allocated_data(::player_database* value);
-  void unsafe_arena_set_allocated_data(::player_database* value);
-  ::player_database* unsafe_arena_release_data();
+  // .player_database player_database_data = 2;
+  bool has_player_database_data() const;
+  void clear_player_database_data() ;
+  const ::player_database& player_database_data() const;
+  PROTOBUF_NODISCARD ::player_database* release_player_database_data();
+  ::player_database* mutable_player_database_data();
+  void set_allocated_player_database_data(::player_database* value);
+  void unsafe_arena_set_allocated_player_database_data(::player_database* value);
+  ::player_database* unsafe_arena_release_player_database_data();
 
   private:
-  const ::player_database& _internal_data() const;
-  ::player_database* _internal_mutable_data();
+  const ::player_database& _internal_player_database_data() const;
+  ::player_database* _internal_mutable_player_database_data();
 
   public:
-  // .player_database_1 data1 = 3;
-  bool has_data1() const;
-  void clear_data1() ;
-  const ::player_database_1& data1() const;
-  PROTOBUF_NODISCARD ::player_database_1* release_data1();
-  ::player_database_1* mutable_data1();
-  void set_allocated_data1(::player_database_1* value);
-  void unsafe_arena_set_allocated_data1(::player_database_1* value);
-  ::player_database_1* unsafe_arena_release_data1();
+  // .player_database_1 player_database_1_data = 3;
+  bool has_player_database_1_data() const;
+  void clear_player_database_1_data() ;
+  const ::player_database_1& player_database_1_data() const;
+  PROTOBUF_NODISCARD ::player_database_1* release_player_database_1_data();
+  ::player_database_1* mutable_player_database_1_data();
+  void set_allocated_player_database_1_data(::player_database_1* value);
+  void unsafe_arena_set_allocated_player_database_1_data(::player_database_1* value);
+  ::player_database_1* unsafe_arena_release_player_database_1_data();
 
   private:
-  const ::player_database_1& _internal_data1() const;
-  ::player_database_1* _internal_mutable_data1();
-
-  public:
-  // uint64 player_id = 1;
-  void clear_player_id() ;
-  ::uint64_t player_id() const;
-  void set_player_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_player_id() const;
-  void _internal_set_player_id(::uint64_t value);
+  const ::player_database_1& _internal_player_database_1_data() const;
+  ::player_database_1* _internal_mutable_player_database_1_data();
 
   public:
   // @@protoc_insertion_point(class_scope:PlayerAllData)
@@ -1408,7 +1397,7 @@ class PlayerAllData final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 3, 2,
+      1, 2, 2,
       0, 2>
       _table_;
 
@@ -1428,9 +1417,8 @@ class PlayerAllData final
                           const PlayerAllData& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::player_database* data_;
-    ::player_database_1* data1_;
-    ::uint64_t player_id_;
+    ::player_database* player_database_data_;
+    ::player_database_1* player_database_1_data_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2411,67 +2399,45 @@ inline void player_database_1::_internal_set_player_id(::uint64_t value) {
 
 // PlayerAllData
 
-// uint64 player_id = 1;
-inline void PlayerAllData::clear_player_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.player_id_ = ::uint64_t{0u};
-}
-inline ::uint64_t PlayerAllData::player_id() const {
-  // @@protoc_insertion_point(field_get:PlayerAllData.player_id)
-  return _internal_player_id();
-}
-inline void PlayerAllData::set_player_id(::uint64_t value) {
-  _internal_set_player_id(value);
-  // @@protoc_insertion_point(field_set:PlayerAllData.player_id)
-}
-inline ::uint64_t PlayerAllData::_internal_player_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.player_id_;
-}
-inline void PlayerAllData::_internal_set_player_id(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.player_id_ = value;
-}
-
-// .player_database data = 2;
-inline bool PlayerAllData::has_data() const {
+// .player_database player_database_data = 2;
+inline bool PlayerAllData::has_player_database_data() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.data_ != nullptr);
+  PROTOBUF_ASSUME(!value || _impl_.player_database_data_ != nullptr);
   return value;
 }
-inline void PlayerAllData::clear_data() {
+inline void PlayerAllData::clear_player_database_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.data_ != nullptr) _impl_.data_->Clear();
+  if (_impl_.player_database_data_ != nullptr) _impl_.player_database_data_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::player_database& PlayerAllData::_internal_data() const {
+inline const ::player_database& PlayerAllData::_internal_player_database_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::player_database* p = _impl_.data_;
+  const ::player_database* p = _impl_.player_database_data_;
   return p != nullptr ? *p : reinterpret_cast<const ::player_database&>(::_player_database_default_instance_);
 }
-inline const ::player_database& PlayerAllData::data() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:PlayerAllData.data)
-  return _internal_data();
+inline const ::player_database& PlayerAllData::player_database_data() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerAllData.player_database_data)
+  return _internal_player_database_data();
 }
-inline void PlayerAllData::unsafe_arena_set_allocated_data(::player_database* value) {
+inline void PlayerAllData::unsafe_arena_set_allocated_player_database_data(::player_database* value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.data_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.player_database_data_);
   }
-  _impl_.data_ = reinterpret_cast<::player_database*>(value);
+  _impl_.player_database_data_ = reinterpret_cast<::player_database*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerAllData.data)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerAllData.player_database_data)
 }
-inline ::player_database* PlayerAllData::release_data() {
+inline ::player_database* PlayerAllData::release_player_database_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::player_database* released = _impl_.data_;
-  _impl_.data_ = nullptr;
+  ::player_database* released = _impl_.player_database_data_;
+  _impl_.player_database_data_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
     released = ::google::protobuf::internal::DuplicateIfNonNull(released);
@@ -2485,34 +2451,34 @@ inline ::player_database* PlayerAllData::release_data() {
   }
   return released;
 }
-inline ::player_database* PlayerAllData::unsafe_arena_release_data() {
+inline ::player_database* PlayerAllData::unsafe_arena_release_player_database_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:PlayerAllData.data)
+  // @@protoc_insertion_point(field_release:PlayerAllData.player_database_data)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::player_database* temp = _impl_.data_;
-  _impl_.data_ = nullptr;
+  ::player_database* temp = _impl_.player_database_data_;
+  _impl_.player_database_data_ = nullptr;
   return temp;
 }
-inline ::player_database* PlayerAllData::_internal_mutable_data() {
+inline ::player_database* PlayerAllData::_internal_mutable_player_database_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.data_ == nullptr) {
+  if (_impl_.player_database_data_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::player_database>(GetArena());
-    _impl_.data_ = reinterpret_cast<::player_database*>(p);
+    _impl_.player_database_data_ = reinterpret_cast<::player_database*>(p);
   }
-  return _impl_.data_;
+  return _impl_.player_database_data_;
 }
-inline ::player_database* PlayerAllData::mutable_data() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::player_database* PlayerAllData::mutable_player_database_data() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::player_database* _msg = _internal_mutable_data();
-  // @@protoc_insertion_point(field_mutable:PlayerAllData.data)
+  ::player_database* _msg = _internal_mutable_player_database_data();
+  // @@protoc_insertion_point(field_mutable:PlayerAllData.player_database_data)
   return _msg;
 }
-inline void PlayerAllData::set_allocated_data(::player_database* value) {
+inline void PlayerAllData::set_allocated_player_database_data(::player_database* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
-    delete (_impl_.data_);
+    delete (_impl_.player_database_data_);
   }
 
   if (value != nullptr) {
@@ -2525,49 +2491,49 @@ inline void PlayerAllData::set_allocated_data(::player_database* value) {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.data_ = reinterpret_cast<::player_database*>(value);
-  // @@protoc_insertion_point(field_set_allocated:PlayerAllData.data)
+  _impl_.player_database_data_ = reinterpret_cast<::player_database*>(value);
+  // @@protoc_insertion_point(field_set_allocated:PlayerAllData.player_database_data)
 }
 
-// .player_database_1 data1 = 3;
-inline bool PlayerAllData::has_data1() const {
+// .player_database_1 player_database_1_data = 3;
+inline bool PlayerAllData::has_player_database_1_data() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.data1_ != nullptr);
+  PROTOBUF_ASSUME(!value || _impl_.player_database_1_data_ != nullptr);
   return value;
 }
-inline void PlayerAllData::clear_data1() {
+inline void PlayerAllData::clear_player_database_1_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.data1_ != nullptr) _impl_.data1_->Clear();
+  if (_impl_.player_database_1_data_ != nullptr) _impl_.player_database_1_data_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline const ::player_database_1& PlayerAllData::_internal_data1() const {
+inline const ::player_database_1& PlayerAllData::_internal_player_database_1_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::player_database_1* p = _impl_.data1_;
+  const ::player_database_1* p = _impl_.player_database_1_data_;
   return p != nullptr ? *p : reinterpret_cast<const ::player_database_1&>(::_player_database_1_default_instance_);
 }
-inline const ::player_database_1& PlayerAllData::data1() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:PlayerAllData.data1)
-  return _internal_data1();
+inline const ::player_database_1& PlayerAllData::player_database_1_data() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerAllData.player_database_1_data)
+  return _internal_player_database_1_data();
 }
-inline void PlayerAllData::unsafe_arena_set_allocated_data1(::player_database_1* value) {
+inline void PlayerAllData::unsafe_arena_set_allocated_player_database_1_data(::player_database_1* value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.data1_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.player_database_1_data_);
   }
-  _impl_.data1_ = reinterpret_cast<::player_database_1*>(value);
+  _impl_.player_database_1_data_ = reinterpret_cast<::player_database_1*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerAllData.data1)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerAllData.player_database_1_data)
 }
-inline ::player_database_1* PlayerAllData::release_data1() {
+inline ::player_database_1* PlayerAllData::release_player_database_1_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::player_database_1* released = _impl_.data1_;
-  _impl_.data1_ = nullptr;
+  ::player_database_1* released = _impl_.player_database_1_data_;
+  _impl_.player_database_1_data_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
     released = ::google::protobuf::internal::DuplicateIfNonNull(released);
@@ -2581,34 +2547,34 @@ inline ::player_database_1* PlayerAllData::release_data1() {
   }
   return released;
 }
-inline ::player_database_1* PlayerAllData::unsafe_arena_release_data1() {
+inline ::player_database_1* PlayerAllData::unsafe_arena_release_player_database_1_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:PlayerAllData.data1)
+  // @@protoc_insertion_point(field_release:PlayerAllData.player_database_1_data)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::player_database_1* temp = _impl_.data1_;
-  _impl_.data1_ = nullptr;
+  ::player_database_1* temp = _impl_.player_database_1_data_;
+  _impl_.player_database_1_data_ = nullptr;
   return temp;
 }
-inline ::player_database_1* PlayerAllData::_internal_mutable_data1() {
+inline ::player_database_1* PlayerAllData::_internal_mutable_player_database_1_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.data1_ == nullptr) {
+  if (_impl_.player_database_1_data_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::player_database_1>(GetArena());
-    _impl_.data1_ = reinterpret_cast<::player_database_1*>(p);
+    _impl_.player_database_1_data_ = reinterpret_cast<::player_database_1*>(p);
   }
-  return _impl_.data1_;
+  return _impl_.player_database_1_data_;
 }
-inline ::player_database_1* PlayerAllData::mutable_data1() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::player_database_1* PlayerAllData::mutable_player_database_1_data() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
-  ::player_database_1* _msg = _internal_mutable_data1();
-  // @@protoc_insertion_point(field_mutable:PlayerAllData.data1)
+  ::player_database_1* _msg = _internal_mutable_player_database_1_data();
+  // @@protoc_insertion_point(field_mutable:PlayerAllData.player_database_1_data)
   return _msg;
 }
-inline void PlayerAllData::set_allocated_data1(::player_database_1* value) {
+inline void PlayerAllData::set_allocated_player_database_1_data(::player_database_1* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
-    delete (_impl_.data1_);
+    delete (_impl_.player_database_1_data_);
   }
 
   if (value != nullptr) {
@@ -2621,8 +2587,8 @@ inline void PlayerAllData::set_allocated_data1(::player_database_1* value) {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
 
-  _impl_.data1_ = reinterpret_cast<::player_database_1*>(value);
-  // @@protoc_insertion_point(field_set_allocated:PlayerAllData.data1)
+  _impl_.player_database_1_data_ = reinterpret_cast<::player_database_1*>(value);
+  // @@protoc_insertion_point(field_set_allocated:PlayerAllData.player_database_1_data)
 }
 
 #ifdef __GNUC__
