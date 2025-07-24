@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -55,59 +56,103 @@ func LoadFromRedis(ctx context.Context, redisClient redis.Cmdable, key string, m
 func BatchLoadAndCache(
 	ctx context.Context,
 	redisClient redis.Cmdable,
+	asyncClient *asynq.Client,
 	playerId uint64,
 	messages []proto.Message,
 ) error {
-	/*playerIdStr := strconv.FormatUint(playerId, 10)
-	hash := fnv.New64a()
-	_, _ = hash.Write([]byte(playerIdStr))
-	hashKey := hash.Sum64()
-
-	channels := make([]*queue.MessageTask, 0, len(messages))
-	keys := make([]string, 0, len(messages))
+	playerIdStr := strconv.FormatUint(playerId, 10)
+	taskIDs := make([]string, 0, len(messages))
+	redisKeys := make([]string, 0, len(messages))
+	messagesToFetch := make([]proto.Message, 0, len(messages))
 
 	for _, msg := range messages {
 		key := BuildRedisKey(msg, playerIdStr)
-		keys = append(keys, key)
+		redisKeys = append(redisKeys, key)
 
-		cmd := redisClient.Get(ctx, key)
-		val, err := cmd.Bytes()
+		// 尝试从 Redis 读取
+		val, err := redisClient.Get(ctx, key).Bytes()
 		if err == nil && len(val) > 0 {
-			continue // already in RedisClient
+			continue // 已缓存，跳过
+		}
+		if err != nil && err != redis.Nil {
+			logx.Errorf("Redis get failed: %v", err)
+			return err
 		}
 
-		// 构造 Protobuf Task
-		task := &task.DBTask{
+		// ✅ 生成 UUID 作为 taskID
+		taskID := uuid.NewString()
+
+		// 序列化消息体
+		data, err := proto.Marshal(msg)
+		if err != nil {
+			logx.Errorf("proto marshal failed: %v", err)
+			return err
+		}
+
+		msgType := string(proto.MessageReflect(msg).Descriptor().FullName())
+
+		taskPayload := &taskpb.DBTask{
 			Key:       playerId,
 			WhereCase: "where player_id='" + playerIdStr + "'",
-			Body:      payload,
+			Op:        "read",
+			MsgType:   msgType,
+			Body:      data,
+			TaskId:    taskID, // 👈 把 UUID 放进结构体中
+		}
+
+		payloadBytes, err := proto.Marshal(taskPayload)
+		if err != nil {
+			logx.Errorf("marshal task payload failed: %v", err)
+			return err
 		}
 
 		// 入队
-		if err := task.EnqueueTask(ctx, redisClient, taskID, task); err != nil {
+		taskID, err = task.EnqueueTaskWithID(ctx, asyncClient, playerId, taskID, payloadBytes)
+		if err != nil {
 			logx.Errorf("enqueue task failed: %v", err)
 			return err
 		}
 
 		taskIDs = append(taskIDs, taskID)
+		messagesToFetch = append(messagesToFetch, msg)
 	}
 
-	// 等待所有 ch
-	for _, ch := range channels {
-		<-ch.Chan
+	// 等待返回值
+	for i, tid := range taskIDs {
+		var resBytes []byte
+		var err error
+		for try := 0; try < 100; try++ {
+			resBytes, err = redisClient.Get(ctx, tid).Bytes()
+			if err == redis.Nil {
+				time.Sleep(100 * time.Millisecond)
+				continue
+			} else if err != nil {
+				return err
+			}
+			break
+		}
+		if resBytes == nil {
+			return fmt.Errorf("timeout waiting for task: %s", tid)
+		}
+
+		// 反序列化覆盖原始 proto.Message
+		if err := proto.Unmarshal(resBytes, messagesToFetch[i]); err != nil {
+			logx.Errorf("unmarshal returned proto failed: %v", err)
+			return err
+		}
 	}
 
-	// 写入 RedisClient
-	for i, msg := range messages {
-		if i < len(keys) {
-			err := SaveToRedis(ctx, redisClient, msg, keys[i])
+	// 缓存回 Redis
+	for i, msg := range messagesToFetch {
+		if i < len(redisKeys) {
+			err := SaveToRedis(ctx, redisClient, msg, redisKeys[i])
 			if err != nil {
 				logx.Errorf("SaveToRedis failed: %v", err)
 				return err
 			}
 		}
 	}
-	*/
+
 	return nil
 }
 
@@ -134,7 +179,7 @@ func SaveProtoToRedis(ctx context.Context, redis redis.Cmdable, key string, msg 
 func LoadAggregateData(
 	ctx context.Context,
 	redisClient redis.Cmdable,
-	clientAsync *asynq.Client,
+	asyncClient *asynq.Client,
 	playerId uint64,
 	result proto.Message,
 	build func(uint64) []proto.Message,
@@ -160,6 +205,10 @@ func LoadAggregateData(
 	taskIDs := make([]string, 0, len(subMsgs))
 
 	for _, msg := range subMsgs {
+		// ✅ 生成 UUID 作为 taskID
+		taskID := uuid.NewString()
+
+		// 序列化消息体
 		data, err := proto.Marshal(msg)
 		if err != nil {
 			logx.Errorf("proto marshal failed: %v", err)
@@ -174,6 +223,7 @@ func LoadAggregateData(
 			Op:        "read",
 			MsgType:   msgType,
 			Body:      data,
+			TaskId:    taskID, // 👈 把 UUID 放进结构体中
 		}
 
 		payloadBytes, err := proto.Marshal(taskPayload)
@@ -182,7 +232,8 @@ func LoadAggregateData(
 			return err
 		}
 
-		taskID, err := task.EnqueueTask(ctx, clientAsync, playerId, payloadBytes)
+		// 入队
+		taskID, err = task.EnqueueTaskWithID(ctx, asyncClient, playerId, taskID, payloadBytes)
 		if err != nil {
 			logx.Errorf("enqueue task failed: %v", err)
 			return err

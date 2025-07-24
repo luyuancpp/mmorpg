@@ -40,6 +40,9 @@ inline constexpr DBTask::Impl_::Impl_(
         body_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        task_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         key_{::uint64_t{0u}},
         _cached_size_{0} {}
 
@@ -83,6 +86,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::taskpb::DBTask, _impl_.op_),
         PROTOBUF_FIELD_OFFSET(::taskpb::DBTask, _impl_.msg_type_),
         PROTOBUF_FIELD_OFFSET(::taskpb::DBTask, _impl_.body_),
+        PROTOBUF_FIELD_OFFSET(::taskpb::DBTask, _impl_.task_id_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -94,16 +98,16 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_proto_2fdb_2fdb_5ftask_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\026proto/db/db_task.proto\022\006taskpb\"U\n\006DBTa"
+    "\n\026proto/db/db_task.proto\022\006taskpb\"f\n\006DBTa"
     "sk\022\013\n\003key\030\001 \001(\004\022\022\n\nwhere_case\030\002 \001(\t\022\n\n\002o"
-    "p\030\003 \001(\t\022\020\n\010msg_type\030\004 \001(\t\022\014\n\004body\030\005 \001(\014B"
-    "\013Z\tpb/taskpbb\006proto3"
+    "p\030\003 \001(\t\022\020\n\010msg_type\030\004 \001(\t\022\014\n\004body\030\005 \001(\014\022"
+    "\017\n\007task_id\030\006 \001(\tB\013Z\tpb/taskpbb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fdb_2fdb_5ftask_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdb_2fdb_5ftask_2eproto = {
     false,
     false,
-    140,
+    157,
     descriptor_table_protodef_proto_2fdb_2fdb_5ftask_2eproto,
     "proto/db/db_task.proto",
     &descriptor_table_proto_2fdb_2fdb_5ftask_2eproto_once,
@@ -139,6 +143,7 @@ inline PROTOBUF_NDEBUG_INLINE DBTask::Impl_::Impl_(
         op_(arena, from.op_),
         msg_type_(arena, from.msg_type_),
         body_(arena, from.body_),
+        task_id_(arena, from.task_id_),
         _cached_size_{0} {}
 
 DBTask::DBTask(
@@ -165,6 +170,7 @@ inline PROTOBUF_NDEBUG_INLINE DBTask::Impl_::Impl_(
         op_(arena),
         msg_type_(arena),
         body_(arena),
+        task_id_(arena),
         _cached_size_{0} {}
 
 inline void DBTask::SharedCtor(::_pb::Arena* arena) {
@@ -183,6 +189,7 @@ inline void DBTask::SharedDtor(MessageLite& self) {
   this_._impl_.op_.Destroy();
   this_._impl_.msg_type_.Destroy();
   this_._impl_.body_.Destroy();
+  this_._impl_.task_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -222,15 +229,15 @@ const ::google::protobuf::internal::ClassData* DBTask::GetClassData() const {
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 5, 0, 42, 2> DBTask::_table_ = {
+const ::_pbi::TcParseTable<3, 6, 0, 49, 2> DBTask::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    5, 56,  // max_field_number, fast_idx_mask
+    6, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967264,  // skipmap
+    4294967232,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    5,  // num_field_entries
+    6,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     _class_data_.base(),
@@ -256,7 +263,9 @@ const ::_pbi::TcParseTable<3, 5, 0, 42, 2> DBTask::_table_ = {
     // bytes body = 5;
     {::_pbi::TcParser::FastBS1,
      {42, 63, 0, PROTOBUF_FIELD_OFFSET(DBTask, _impl_.body_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // string task_id = 6;
+    {::_pbi::TcParser::FastUS1,
+     {50, 63, 0, PROTOBUF_FIELD_OFFSET(DBTask, _impl_.task_id_)}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
@@ -276,14 +285,18 @@ const ::_pbi::TcParseTable<3, 5, 0, 42, 2> DBTask::_table_ = {
     // bytes body = 5;
     {PROTOBUF_FIELD_OFFSET(DBTask, _impl_.body_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
+    // string task_id = 6;
+    {PROTOBUF_FIELD_OFFSET(DBTask, _impl_.task_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
-    "\15\0\12\2\10\0\0\0"
+    "\15\0\12\2\10\0\7\0"
     "taskpb.DBTask"
     "where_case"
     "op"
     "msg_type"
+    "task_id"
   }},
 };
 
@@ -298,6 +311,7 @@ PROTOBUF_NOINLINE void DBTask::Clear() {
   _impl_.op_.ClearToEmpty();
   _impl_.msg_type_.ClearToEmpty();
   _impl_.body_.ClearToEmpty();
+  _impl_.task_id_.ClearToEmpty();
   _impl_.key_ = ::uint64_t{0u};
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -354,6 +368,14 @@ PROTOBUF_NOINLINE void DBTask::Clear() {
             target = stream->WriteBytesMaybeAliased(5, _s, target);
           }
 
+          // string task_id = 6;
+          if (!this_._internal_task_id().empty()) {
+            const std::string& _s = this_._internal_task_id();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "taskpb.DBTask.task_id");
+            target = stream->WriteStringMaybeAliased(6, _s, target);
+          }
+
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
             target =
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -399,6 +421,11 @@ PROTOBUF_NOINLINE void DBTask::Clear() {
               total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
                                               this_._internal_body());
             }
+            // string task_id = 6;
+            if (!this_._internal_task_id().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_task_id());
+            }
             // uint64 key = 1;
             if (this_._internal_key() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
@@ -429,6 +456,9 @@ void DBTask::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::
   if (!from._internal_body().empty()) {
     _this->_internal_set_body(from._internal_body());
   }
+  if (!from._internal_task_id().empty()) {
+    _this->_internal_set_task_id(from._internal_task_id());
+  }
   if (from._internal_key() != 0) {
     _this->_impl_.key_ = from._impl_.key_;
   }
@@ -452,6 +482,7 @@ void DBTask::InternalSwap(DBTask* PROTOBUF_RESTRICT other) {
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.op_, &other->_impl_.op_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.msg_type_, &other->_impl_.msg_type_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.body_, &other->_impl_.body_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.task_id_, &other->_impl_.task_id_, arena);
         swap(_impl_.key_, other->_impl_.key_);
 }
 

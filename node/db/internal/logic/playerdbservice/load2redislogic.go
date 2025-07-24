@@ -36,6 +36,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlay
 	err := utils.BatchLoadAndCache(
 		l.ctx,
 		l.svcCtx.RedisClient,
+		l.svcCtx.AsynqClient,
 		in.PlayerId,
 		[]proto.Message{
 			msgCentre,
@@ -78,7 +79,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlay
 		func(id uint64) string {
 			return "PlayerAllData:" + strconv.FormatUint(id, 10)
 		},
-		time.Duration(config.AppConfig.ServerConfig.Redis.DefaultTTLSeconds)*time.Second,
+		time.Duration(config.AppConfig.ServerConfig.RedisClient.DefaultTTLSeconds)*time.Second,
 	)
 
 	if err != nil {
