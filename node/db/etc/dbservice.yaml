@@ -7,6 +7,7 @@ Etcd:
 ServerConfig:
   RoutineNum: 10
   ChannelBufferNum: 1000
+  QueueShardCount: 10
   Database:
     Hosts: "127.0.0.1:3306"
     User: "root"

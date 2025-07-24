@@ -12,6 +12,7 @@ type ServerConfig struct {
 	ChannelBufferNum uint64         `json:"ChannelBufferNum"`
 	Database         DatabaseConfig `json:"Database"`
 	RedisClient      RedisConfig    `json:"RedisClient"`
+	QueueShardCount  uint64         `json:"QueueShardCount"`
 }
 
 type DatabaseConfig struct {
