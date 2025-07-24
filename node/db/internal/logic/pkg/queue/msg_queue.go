@@ -78,6 +78,7 @@ func (q *MsgQueue) Put(msg MessageTask) error {
 
 	ch := q.QueueList[index].Data
 
+	// 检查是否需要扩容
 	if q.expandPolicy.Enabled {
 		usage := float64(len(ch)) / float64(cap(ch))
 		if usage >= q.expandPolicy.Threshold && uint64(cap(ch)) < q.expandPolicy.MaxSize {
@@ -85,10 +86,12 @@ func (q *MsgQueue) Put(msg MessageTask) error {
 			if newCap > q.expandPolicy.MaxSize {
 				newCap = q.expandPolicy.MaxSize
 			}
+
+			// 执行同步扩容
 			newChan, err := q.expandBufferLocked(index, newCap)
 			if err == nil {
 				q.QueueList[index].Data = newChan
-				ch = newChan
+				ch = newChan // 更新当前使用的 channel
 				log.Printf("[MsgQueue] Auto-expanded channel[%d] to size %d", index, newCap)
 			} else {
 				log.Printf("[MsgQueue] Failed to expand channel[%d]: %v", index, err)
@@ -96,6 +99,7 @@ func (q *MsgQueue) Put(msg MessageTask) error {
 		}
 	}
 
+	// ⚠️ 仍在持锁状态，此时没有人能写入或消费，写入安全
 	ch <- msg
 	return nil
 }
@@ -108,20 +112,16 @@ func (q *MsgQueue) expandBufferLocked(index int, newSize uint64) (chan MessageTa
 	oldChan := q.QueueList[index].Data
 	newChan := make(chan MessageTask, newSize)
 
-loop:
+	// 顺序地迁移所有已缓冲的消息（不阻塞、不丢、不乱序）
 	for {
 		select {
-		case msg, ok := <-oldChan:
-			if !ok {
-				break loop
-			}
+		case msg := <-oldChan:
 			newChan <- msg
 		default:
-			break loop
+			// 没有更多缓存消息了，退出
+			return newChan, nil
 		}
 	}
-
-	return newChan, nil
 }
 
 func (q *MsgQueue) Pop(index int) (MessageTask, bool) {
