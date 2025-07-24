@@ -175,8 +175,9 @@ func LoadAggregateData(
 		ch := &queue.MsgChannel{
 			Key:       hashKey,
 			Body:      msg,
-			Chan:      make(chan bool),
+			Chan:      make(chan bool, 1),
 			WhereCase: "where player_id='" + playerIdStr + "'",
+			Operation: queue.OpRead,
 		}
 		db.DB.MsgQueue.Put(*ch)
 		chs = append(chs, ch)
