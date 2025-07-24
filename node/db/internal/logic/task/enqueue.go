@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
 )
 
@@ -21,11 +20,8 @@ func GetQueueName(playerID uint64) string {
 	return fmt.Sprintf("player_queue_%d", shard)
 }
 
-func EnqueueTask(ctx context.Context, client *asynq.Client, playerID uint64, payload []byte) (string, error) {
+func EnqueueTaskWithID(ctx context.Context, client *asynq.Client, playerID uint64, taskID string, payload []byte) (string, error) {
 	queueName := GetQueueName(playerID)
-
-	// 生成全局唯一的任务 ID
-	taskID := uuid.NewString()
 
 	task := asynq.NewTask("player_task", payload)
 

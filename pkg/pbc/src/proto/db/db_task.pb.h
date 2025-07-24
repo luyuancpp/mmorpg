@@ -219,6 +219,7 @@ class DBTask final
     kOpFieldNumber = 3,
     kMsgTypeFieldNumber = 4,
     kBodyFieldNumber = 5,
+    kTaskIdFieldNumber = 6,
     kKeyFieldNumber = 1,
   };
   // string where_case = 2;
@@ -285,6 +286,22 @@ class DBTask final
   std::string* _internal_mutable_body();
 
   public:
+  // string task_id = 6;
+  void clear_task_id() ;
+  const std::string& task_id() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_task_id(Arg_&& arg, Args_... args);
+  std::string* mutable_task_id();
+  PROTOBUF_NODISCARD std::string* release_task_id();
+  void set_allocated_task_id(std::string* value);
+
+  private:
+  const std::string& _internal_task_id() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_task_id(
+      const std::string& value);
+  std::string* _internal_mutable_task_id();
+
+  public:
   // uint64 key = 1;
   void clear_key() ;
   ::uint64_t key() const;
@@ -300,8 +317,8 @@ class DBTask final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 5, 0,
-      42, 2>
+      3, 6, 0,
+      49, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -322,6 +339,7 @@ class DBTask final
     ::google::protobuf::internal::ArenaStringPtr op_;
     ::google::protobuf::internal::ArenaStringPtr msg_type_;
     ::google::protobuf::internal::ArenaStringPtr body_;
+    ::google::protobuf::internal::ArenaStringPtr task_id_;
     ::uint64_t key_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -558,6 +576,54 @@ inline void DBTask::set_allocated_body(std::string* value) {
     _impl_.body_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:taskpb.DBTask.body)
+}
+
+// string task_id = 6;
+inline void DBTask::clear_task_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.task_id_.ClearToEmpty();
+}
+inline const std::string& DBTask::task_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:taskpb.DBTask.task_id)
+  return _internal_task_id();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void DBTask::set_task_id(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.task_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:taskpb.DBTask.task_id)
+}
+inline std::string* DBTask::mutable_task_id() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_task_id();
+  // @@protoc_insertion_point(field_mutable:taskpb.DBTask.task_id)
+  return _s;
+}
+inline const std::string& DBTask::_internal_task_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.task_id_.Get();
+}
+inline void DBTask::_internal_set_task_id(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.task_id_.Set(value, GetArena());
+}
+inline std::string* DBTask::_internal_mutable_task_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.task_id_.Mutable( GetArena());
+}
+inline std::string* DBTask::release_task_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:taskpb.DBTask.task_id)
+  return _impl_.task_id_.Release();
+}
+inline void DBTask::set_allocated_task_id(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.task_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.task_id_.IsDefault()) {
+    _impl_.task_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:taskpb.DBTask.task_id)
 }
 
 #ifdef __GNUC__

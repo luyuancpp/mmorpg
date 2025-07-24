@@ -18,3 +18,5 @@ ServerConfig:
   RedisClient:
     Hosts: "127.0.0.1:6379"
     DefaultTTLSeconds: 3600  # 💡 默认缓存时间，1 小时
+    Password : ""
+    DB : 0

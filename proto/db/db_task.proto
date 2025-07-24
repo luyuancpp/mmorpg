@@ -10,4 +10,5 @@ message DBTask {
   string op = 3;          // "read" / "write"
   string msg_type = 4;    // 用于标识 Protobuf 类型
   bytes body = 5;         // 原始序列化数据
+  string task_id = 6; // 👈 用于写回 Redis 的唯一 key
 }
