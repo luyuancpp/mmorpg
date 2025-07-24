@@ -2,10 +2,11 @@ package queue
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
-	lru "github.com/hashicorp/golang-lru"
 	"log"
 	"sync"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/hashicorp/golang-lru"
 )
 
 type OperationType int
@@ -35,12 +36,12 @@ type AutoExpandPolicy struct {
 }
 
 type MsgQueue struct {
-	keyMap           *lru.Cache
-	queueList        []MsgChannelList
+	keyMap           *lru.Cache // key -> queue index 映射
+	QueueList        []MsgChannelList
 	RoutineNum       int
 	ChannelBufferNum uint64
 	expandPolicy     AutoExpandPolicy
-	mu               sync.RWMutex
+	Mu               sync.RWMutex
 	closed           bool
 }
 
@@ -49,13 +50,13 @@ func NewMsgQueue(routineNum int, channelBufferNum uint64, policy AutoExpandPolic
 	q := &MsgQueue{
 		RoutineNum:       routineNum,
 		ChannelBufferNum: channelBufferNum,
-		queueList:        make([]MsgChannelList, routineNum),
+		QueueList:        make([]MsgChannelList, routineNum),
 		keyMap:           keyMap,
 		expandPolicy:     policy,
 	}
 
 	for i := 0; i < routineNum; i++ {
-		q.queueList[i] = MsgChannelList{
+		q.QueueList[i] = MsgChannelList{
 			Data: make(chan MessageTask, channelBufferNum),
 		}
 	}
@@ -64,18 +65,18 @@ func NewMsgQueue(routineNum int, channelBufferNum uint64, policy AutoExpandPolic
 }
 
 func (q *MsgQueue) Put(msg MessageTask) error {
-	q.mu.Lock()
-	defer q.mu.Unlock()
+	q.Mu.Lock()
+	defer q.Mu.Unlock()
 
 	var index int
 	if val, ok := q.keyMap.Get(msg.Key); ok {
 		index = val.(int)
 	} else {
-		index = int(msg.Key % uint64(len(q.queueList)))
+		index = int(msg.Key % uint64(len(q.QueueList)))
 		q.keyMap.Add(msg.Key, index)
 	}
 
-	ch := q.queueList[index].Data
+	ch := q.QueueList[index].Data
 
 	if q.expandPolicy.Enabled {
 		usage := float64(len(ch)) / float64(cap(ch))
@@ -84,9 +85,14 @@ func (q *MsgQueue) Put(msg MessageTask) error {
 			if newCap > q.expandPolicy.MaxSize {
 				newCap = q.expandPolicy.MaxSize
 			}
-			_ = q.expandBufferLocked(index, newCap)
-			ch = q.queueList[index].Data
-			log.Printf("[MsgQueue] Auto-expanded channel[%d] to size %d", index, newCap)
+			newChan, err := q.expandBufferLocked(index, newCap)
+			if err == nil {
+				q.QueueList[index].Data = newChan
+				ch = newChan
+				log.Printf("[MsgQueue] Auto-expanded channel[%d] to size %d", index, newCap)
+			} else {
+				log.Printf("[MsgQueue] Failed to expand channel[%d]: %v", index, err)
+			}
 		}
 	}
 
@@ -94,68 +100,153 @@ func (q *MsgQueue) Put(msg MessageTask) error {
 	return nil
 }
 
+func (q *MsgQueue) expandBufferLocked(index int, newSize uint64) (chan MessageTask, error) {
+	if index < 0 || index >= len(q.QueueList) {
+		return nil, fmt.Errorf("invalid queue index %d", index)
+	}
+
+	oldChan := q.QueueList[index].Data
+	newChan := make(chan MessageTask, newSize)
+
+loop:
+	for {
+		select {
+		case msg, ok := <-oldChan:
+			if !ok {
+				break loop
+			}
+			newChan <- msg
+		default:
+			break loop
+		}
+	}
+
+	return newChan, nil
+}
+
 func (q *MsgQueue) Pop(index int) (MessageTask, bool) {
-	q.mu.RLock()
-	defer q.mu.RUnlock()
+	q.Mu.RLock()
+	defer q.Mu.RUnlock()
 
 	if q.closed {
 		return MessageTask{}, false
 	}
 
-	msg, ok := <-q.queueList[index].Data
+	msg, ok := <-q.QueueList[index].Data
 	return msg, ok
 }
 
-func (q *MsgQueue) TryPop(index int) (MessageTask, bool) {
-	q.mu.RLock()
-	defer q.mu.RUnlock()
-
-	if q.closed {
-		return MessageTask{}, false
-	}
-
-	select {
-	case msg, ok := <-q.queueList[index].Data:
-		return msg, ok
-	default:
-		return MessageTask{}, false
-	}
-}
-
 func (q *MsgQueue) Close() {
-	q.mu.Lock()
-	defer q.mu.Unlock()
+	q.Mu.Lock()
+	defer q.Mu.Unlock()
 
 	if q.closed {
 		return
 	}
 	q.closed = true
 
-	for _, chList := range q.queueList {
+	for _, chList := range q.QueueList {
 		close(chList.Data)
 	}
 }
 
-func (q *MsgQueue) expandBufferLocked(index int, newSize uint64) error {
-	if index < 0 || index >= len(q.queueList) {
-		return fmt.Errorf("invalid queue index %d", index)
+func (q *MsgQueue) TryPop(index int) (MessageTask, bool) {
+	q.Mu.RLock()
+	defer q.Mu.RUnlock()
+
+	if q.closed {
+		return MessageTask{}, false
 	}
 
-	oldChan := q.queueList[index].Data
+	select {
+	case msg, ok := <-q.QueueList[index].Data:
+		return msg, ok
+	default:
+		return MessageTask{}, false
+	}
+}
+
+// ExpandBuffer 扩容某个队列的 channel buffer
+func (q *MsgQueue) ExpandBuffer(index int, newSize uint64) error {
+	q.Mu.Lock()
+	defer q.Mu.Unlock()
+
+	if q.closed {
+		return fmt.Errorf("cannot expand buffer: queue is closed")
+	}
+	if index >= len(q.QueueList) {
+		return fmt.Errorf("invalid queue index")
+	}
+
+	oldChan := q.QueueList[index].Data
 	newChan := make(chan MessageTask, newSize)
 
+	// 把旧数据转移到新 channel
+loop:
 	for {
 		select {
-		case msg, ok := <-oldChan:
-			if !ok {
-				break
-			}
+		case msg := <-oldChan:
 			newChan <- msg
 		default:
-			goto done
+			break loop
 		}
 	}
-done:
-	q.queueList[index].Data = newChan
+
+	// 替换 channel
+	q.QueueList[index].Data = newChan
+
 	return nil
+}
+
+// ExpandWorker 增加新的 worker 及对应队列
+// startWorker 函数用于启动 worker 协程
+func (q *MsgQueue) ExpandWorker(n int, startWorker func(index int, ch <-chan MessageTask)) error {
+	q.Mu.Lock()
+	defer q.Mu.Unlock()
+
+	if q.closed {
+		return fmt.Errorf("cannot expand: queue is closed")
+	}
+
+	oldLen := len(q.QueueList)
+	newLen := oldLen + n
+	newQueueList := make([]MsgChannelList, newLen)
+	copy(newQueueList, q.QueueList)
+
+	for i := oldLen; i < newLen; i++ {
+		newQueueList[i] = MsgChannelList{
+			Data: make(chan MessageTask, q.ChannelBufferNum),
+		}
+		go startWorker(i, newQueueList[i].Data)
+	}
+
+	q.QueueList = newQueueList
+	q.RoutineNum = newLen
+	log.Printf("[MsgQueue] Expanded worker from %d to %d", oldLen, newLen)
+	return nil
+}
+
+func StartWorker(index int, ch <-chan MessageTask) {
+	for msg := range ch {
+		// 模拟处理
+		switch msg.Operation {
+		case OpRead:
+			log.Printf("worker %d: Read key %d", index, msg.Key)
+		case OpWrite:
+			log.Printf("worker %d: Write key %d", index, msg.Key)
+		}
+		msg.Chan <- true
+	}
+}
+
+func (q *MsgQueue) GetChannel(index int) <-chan MessageTask {
+	q.Mu.RLock()
+	defer q.Mu.RUnlock()
+	return q.QueueList[index].Data
+}
+
+func (q *MsgQueue) Len() int {
+	q.Mu.RLock()
+	defer q.Mu.RUnlock()
+	return len(q.QueueList)
 }
