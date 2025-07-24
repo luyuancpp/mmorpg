@@ -46,7 +46,7 @@ func CreateDatabase() error {
 	tempDB := sql.OpenDB(conn)
 	defer func() {
 		if err := tempDB.Close(); err != nil {
-			logx.Error("error closing temp database connection: %w", err)
+			logx.Errorf("error closing temp database connection: %v", err)
 		}
 	}()
 
@@ -137,7 +137,11 @@ func initDBConsume() {
 		for i := 0; i < DB.MsgQueue.RoutineNum; i++ {
 			go func(i int) {
 				for {
-					msg := DB.MsgQueue.Pop(i)
+					msg, ok := DB.MsgQueue.Pop(i)
+					if !ok {
+						logx.Infof("msg queue is empty, exit")
+						return
+					}
 					switch msg.Operation {
 					case queue.OpRead:
 						DB.PBDB.LoadOneByWhereCase(msg.Body, msg.WhereCase)

@@ -14,7 +14,7 @@ func TestPut(t *testing.T) {
 		for i := uint64(0); i < 10; i++ {
 			go func(i uint64) {
 				for {
-					msg := MsgChannel{}
+					msg := MessageTask{}
 					msg.Key = i
 					msg.Chan = make(chan bool)
 					q.Put(msg)
