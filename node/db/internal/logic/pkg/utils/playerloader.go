@@ -18,7 +18,7 @@ func BuildRedisKey(message proto.Message, playerIdStr string) string {
 	return string(proto.MessageReflect(message).Descriptor().FullName()) + ":" + playerIdStr
 }
 
-func LoadFromDB(message proto.Message, playerId uint64) (*queue.MsgChannel, error) {
+func LoadFromDB(message proto.Message, playerId uint64) (*queue.MessageTask, error) {
 	playerIdStr := strconv.FormatUint(playerId, 10)
 
 	hash := fnv.New64a()
@@ -29,7 +29,7 @@ func LoadFromDB(message proto.Message, playerId uint64) (*queue.MsgChannel, erro
 	}
 	hashKey := hash.Sum64()
 
-	ch := &queue.MsgChannel{
+	ch := &queue.MessageTask{
 		Key:       hashKey,
 		Body:      message,
 		Chan:      make(chan bool),
@@ -76,7 +76,7 @@ func BatchLoadAndCache(
 	_, _ = hash.Write([]byte(playerIdStr))
 	hashKey := hash.Sum64()
 
-	channels := make([]*queue.MsgChannel, 0, len(messages))
+	channels := make([]*queue.MessageTask, 0, len(messages))
 	keys := make([]string, 0, len(messages))
 
 	for _, msg := range messages {
@@ -89,7 +89,7 @@ func BatchLoadAndCache(
 			continue // already in Redis
 		}
 
-		ch := &queue.MsgChannel{
+		ch := &queue.MessageTask{
 			Key:       hashKey,
 			Body:      msg,
 			Chan:      make(chan bool),
@@ -169,10 +169,10 @@ func LoadAggregateData(
 
 	// 构建子结构
 	subMsgs := build(playerId)
-	var chs []*queue.MsgChannel
+	var chs []*queue.MessageTask
 
 	for _, msg := range subMsgs {
-		ch := &queue.MsgChannel{
+		ch := &queue.MessageTask{
 			Key:       hashKey,
 			Body:      msg,
 			Chan:      make(chan bool, 1),

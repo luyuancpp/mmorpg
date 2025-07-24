@@ -45,13 +45,16 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadAccountRequest) (*game.LoadAcc
 		return nil, err
 	}
 
-	msgChannel := queue.MsgChannel{}
+	msgChannel := queue.MessageTask{}
 	msgChannel.Key = hash64.Sum64()
 	msg := &game.UserAccounts{}
 	msgChannel.Body = msg
 	msgChannel.Chan = make(chan bool)
 	msgChannel.WhereCase = "where account='" + in.Account + "'"
-	db.DB.MsgQueue.Put(msgChannel)
+	err = db.DB.MsgQueue.Put(msgChannel)
+	if err != nil {
+		logx.Errorf("Put failed: %v", err)
+	}
 	_, ok := <-msgChannel.Chan
 	if !ok {
 		logx.Error("channel closed")
