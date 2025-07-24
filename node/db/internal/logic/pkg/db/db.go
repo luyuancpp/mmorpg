@@ -3,7 +3,6 @@ package db
 import (
 	"database/sql"
 	"db/internal/config"
-	"db/internal/logic/pkg/queue"
 	"db/pb/game"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
@@ -14,9 +13,8 @@ import (
 )
 
 type GameDB struct {
-	PBDB     *pbmysql.PbMysqlDB
-	MsgQueue *queue.MsgQueue
-	DB       *sql.DB
+	PBDB *pbmysql.PbMysqlDB
+	DB   *sql.DB
 }
 
 var DB *GameDB
@@ -74,9 +72,8 @@ func openDB() error {
 	}
 
 	DB = &GameDB{
-		DB:       sql.OpenDB(conn),
-		PBDB:     pbmysql.NewPb2DbTables(),
-		MsgQueue: queue.NewMsgQueue(config.AppConfig.ServerConfig.RoutineNum, config.AppConfig.ServerConfig.ChannelBufferNum),
+		DB:   sql.OpenDB(conn),
+		PBDB: pbmysql.NewPb2DbTables(),
 	}
 
 	DB.DB.SetMaxOpenConns(config.AppConfig.ServerConfig.Database.MaxOpenConn)
@@ -95,7 +92,6 @@ func InitDB() {
 	}
 	createDBTable()
 	alterDBTable()
-	initDBConsume()
 }
 
 // 返回一个包含多个 Protobuf 消息实例的切片
@@ -132,28 +128,44 @@ func alterDBTable() {
 	}
 }
 
-func initDBConsume() {
-	go func() {
-		for i := 0; i < DB.MsgQueue.RoutineNum; i++ {
-			go func(i int) {
-				for {
-					msg, ok := DB.MsgQueue.Pop(i)
-					if !ok {
-						logx.Infof("msg queue is empty, exit")
-						return
-					}
-					switch msg.Operation {
-					case queue.OpRead:
-						DB.PBDB.LoadOneByWhereCase(msg.Body, msg.WhereCase)
-					case queue.OpWrite:
-						DB.PBDB.Save(msg.Body) // 你需要有一个保存接口
-					default:
-						logx.Errorf("unknown operation type: %v", msg.Operation)
-					}
-					msg.Chan <- true
-				}
+/*
+func handleDBTask(ctx context.Context, t *asynq.Task) error {
+	payload := t.Payload()
 
-			}(i)
-		}
-	}()
-}
+	if len(payload) < 4 {
+		return errors.New("payload too short")
+	}
+
+	metaLen := binary.BigEndian.Uint32(payload[:4])
+	if len(payload) < int(4+metaLen) {
+		return errors.New("invalid payload length")
+	}
+
+	metaBytes := payload[4 : 4+metaLen]
+	msgBytes := payload[4+metaLen:]
+
+	var meta DBTaskPayload
+	if err := json.Unmarshal(metaBytes, &meta); err != nil {
+		return err
+	}
+
+	// 反射查找 protobuf 类型
+	mt, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(meta.MsgType))
+	if err != nil {
+		return fmt.Errorf("unknown proto message type: %s", meta.MsgType)
+	}
+
+	msg := dynamicpb.NewMessage(mt.Descriptor())
+	if err := proto.Unmarshal(msgBytes, msg); err != nil {
+		return fmt.Errorf("failed to unmarshal message: %v", err)
+	}
+
+	switch meta.Op {
+	case "read":
+		return DB.PBDB.LoadOneByWhereCase(msg, meta.WhereCase)
+	case "write":
+		return DB.PBDB.Save(msg)
+	default:
+		return fmt.Errorf("unknown op: %s", meta.Op)
+	}
+}*/

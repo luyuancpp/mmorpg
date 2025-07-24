@@ -11,7 +11,7 @@ type ServerConfig struct {
 	RoutineNum       int            `json:"RoutineNum"`
 	ChannelBufferNum uint64         `json:"ChannelBufferNum"`
 	Database         DatabaseConfig `json:"Database"`
-	Redis            RedisConfig    `json:"Redis"`
+	RedisClient      RedisConfig    `json:"RedisClient"`
 }
 
 type DatabaseConfig struct {
@@ -27,6 +27,8 @@ type DatabaseConfig struct {
 type RedisConfig struct {
 	Hosts             string `json:"Hosts"`
 	DefaultTTLSeconds int    `json:"DefaultTTLSeconds"`
+	Password          string `json:"Password"`
+	DB                int    `json:"DB"`
 }
 
 var AppConfig Config

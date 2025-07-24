@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package taskpb;
+
+option go_package = "pb/taskpb";
+
+message DBTask {
+  uint64 key = 1;
+  string where_case = 2;
+  string op = 3;          // "read" / "write"
+  string msg_type = 4;    // 用于标识 Protobuf 类型
+  bytes body = 5;         // 原始序列化数据
+}

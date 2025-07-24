@@ -3,7 +3,7 @@ package constants
 import "fmt"
 
 const (
-	// 登录会话相关的 Redis 键前缀
+	// 登录会话相关的 RedisClient 键前缀
 	LoginAccountSessionsKey   = "login_account_sessions"
 	RedisKeyPrefixAccountData = "account"
 )

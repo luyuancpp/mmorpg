@@ -2,42 +2,29 @@ package utils
 
 import (
 	"context"
-	"db/internal/logic/pkg/db"
-	"db/internal/logic/pkg/queue"
+	"db/internal/logic/task"
+	"db/pb/game"
+	"db/pb/taskpb"
 	"errors"
+	"fmt"
+	"github.com/golang/protobuf/proto"
+	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
-	"hash/fnv"
+	"github.com/zeromicro/go-zero/core/logx"
 	"strconv"
 	"time"
-
-	"github.com/golang/protobuf/proto"
-	"github.com/zeromicro/go-zero/core/logx"
 )
+
+type DBTaskPayload struct {
+	Key       uint64 `json:"key"`
+	WhereCase string `json:"where_case"`
+	Op        string `json:"op"`       // "read" / "write"
+	MsgType   string `json:"msg_type"` // 消息类型名，用于反序列化
+	Body      []byte `json:"-"`        // 序列化后放 task.Payload() 的 raw data
+}
 
 func BuildRedisKey(message proto.Message, playerIdStr string) string {
 	return string(proto.MessageReflect(message).Descriptor().FullName()) + ":" + playerIdStr
-}
-
-func LoadFromDB(message proto.Message, playerId uint64) (*queue.MessageTask, error) {
-	playerIdStr := strconv.FormatUint(playerId, 10)
-
-	hash := fnv.New64a()
-	_, err := hash.Write([]byte(playerIdStr))
-	if err != nil {
-		logx.Error(err)
-		return nil, err
-	}
-	hashKey := hash.Sum64()
-
-	ch := &queue.MessageTask{
-		Key:       hashKey,
-		Body:      message,
-		Chan:      make(chan bool),
-		WhereCase: "where player_id='" + playerIdStr + "'",
-	}
-
-	db.DB.MsgQueue.Put(*ch)
-	return ch, nil
 }
 
 func SaveToRedis(ctx context.Context, redisClient redis.Cmdable, message proto.Message, key string) error {
@@ -55,7 +42,7 @@ func LoadFromRedis(ctx context.Context, redisClient redis.Cmdable, key string, m
 		if err == redis.Nil {
 			return false, nil
 		}
-		logx.Error("Redis get error:", err)
+		logx.Error("RedisClient get error:", err)
 		return false, err
 	}
 	if err := proto.Unmarshal(val, message); err != nil {
@@ -71,7 +58,7 @@ func BatchLoadAndCache(
 	playerId uint64,
 	messages []proto.Message,
 ) error {
-	playerIdStr := strconv.FormatUint(playerId, 10)
+	/*playerIdStr := strconv.FormatUint(playerId, 10)
 	hash := fnv.New64a()
 	_, _ = hash.Write([]byte(playerIdStr))
 	hashKey := hash.Sum64()
@@ -86,17 +73,23 @@ func BatchLoadAndCache(
 		cmd := redisClient.Get(ctx, key)
 		val, err := cmd.Bytes()
 		if err == nil && len(val) > 0 {
-			continue // already in Redis
+			continue // already in RedisClient
 		}
 
-		ch := &queue.MessageTask{
-			Key:       hashKey,
-			Body:      msg,
-			Chan:      make(chan bool),
+		// 构造 Protobuf Task
+		task := &task.DBTask{
+			Key:       playerId,
 			WhereCase: "where player_id='" + playerIdStr + "'",
+			Body:      payload,
 		}
-		db.DB.MsgQueue.Put(*ch)
-		channels = append(channels, ch)
+
+		// 入队
+		if err := task.EnqueueTask(ctx, redisClient, taskID, task); err != nil {
+			logx.Errorf("enqueue task failed: %v", err)
+			return err
+		}
+
+		taskIDs = append(taskIDs, taskID)
 	}
 
 	// 等待所有 ch
@@ -104,7 +97,7 @@ func BatchLoadAndCache(
 		<-ch.Chan
 	}
 
-	// 写入 Redis
+	// 写入 RedisClient
 	for i, msg := range messages {
 		if i < len(keys) {
 			err := SaveToRedis(ctx, redisClient, msg, keys[i])
@@ -114,7 +107,7 @@ func BatchLoadAndCache(
 			}
 		}
 	}
-
+	*/
 	return nil
 }
 
@@ -123,7 +116,6 @@ func LoadProtoFromRedis(ctx context.Context, redisClient redis.Cmdable, key stri
 	if errors.Is(err, redis.Nil) {
 		return false, nil // 未命中
 	}
-	return false, err
 	if err := proto.Unmarshal(val, msg); err != nil {
 		return false, err
 	}
@@ -133,7 +125,7 @@ func LoadProtoFromRedis(ctx context.Context, redisClient redis.Cmdable, key stri
 func SaveProtoToRedis(ctx context.Context, redis redis.Cmdable, key string, msg proto.Message, ttl time.Duration) error {
 	data, err := proto.Marshal(msg)
 	if err != nil {
-		logx.Errorf("Marshal proto to Redis error: %v", err)
+		logx.Errorf("Marshal proto to RedisClient error: %v", err)
 		return err
 	}
 	return redis.Set(ctx, key, data, ttl).Err()
@@ -142,6 +134,7 @@ func SaveProtoToRedis(ctx context.Context, redis redis.Cmdable, key string, msg 
 func LoadAggregateData(
 	ctx context.Context,
 	redisClient redis.Cmdable,
+	clientAsync *asynq.Client,
 	playerId uint64,
 	result proto.Message,
 	build func(uint64) []proto.Message,
@@ -151,54 +144,87 @@ func LoadAggregateData(
 ) error {
 	key := keyBuilder(playerId)
 
-	// 1. 尝试从 Redis 加载
+	// 1. RedisClient 命中直接返回
 	found, err := LoadProtoFromRedis(ctx, redisClient, key, result)
 	if err != nil {
-		logx.Errorf("Redis get failed: %v", err)
+		logx.Errorf("RedisClient get failed: %v", err)
 		return err
 	}
 	if found {
 		return nil
 	}
 
-	// 2. Redis 未命中，从 DB 加载子结构
+	// 2. 构造子消息并发异步任务
 	playerIdStr := strconv.FormatUint(playerId, 10)
-	hash := fnv.New64a()
-	_, _ = hash.Write([]byte(playerIdStr))
-	hashKey := hash.Sum64()
-
-	// 构建子结构
 	subMsgs := build(playerId)
-	var chs []*queue.MessageTask
+	taskIDs := make([]string, 0, len(subMsgs))
 
 	for _, msg := range subMsgs {
-		ch := &queue.MessageTask{
-			Key:       hashKey,
-			Body:      msg,
-			Chan:      make(chan bool, 1),
-			WhereCase: "where player_id='" + playerIdStr + "'",
-			Operation: queue.OpRead,
+		data, err := proto.Marshal(msg)
+		if err != nil {
+			logx.Errorf("proto marshal failed: %v", err)
+			return err
 		}
-		db.DB.MsgQueue.Put(*ch)
-		chs = append(chs, ch)
+
+		msgType := string(proto.MessageReflect(msg).Descriptor().FullName())
+
+		taskPayload := &taskpb.DBTask{
+			Key:       playerId,
+			WhereCase: "where player_id='" + playerIdStr + "'",
+			Op:        "read",
+			MsgType:   msgType,
+			Body:      data,
+		}
+
+		payloadBytes, err := proto.Marshal(taskPayload)
+		if err != nil {
+			logx.Errorf("marshal task payload failed: %v", err)
+			return err
+		}
+
+		taskID, err := task.EnqueueTask(ctx, clientAsync, playerId, payloadBytes)
+		if err != nil {
+			logx.Errorf("enqueue task failed: %v", err)
+			return err
+		}
+
+		taskIDs = append(taskIDs, taskID)
 	}
 
-	// 等待所有异步加载完成
-	for _, ch := range chs {
-		<-ch.Chan
+	// 3. 等待所有异步任务完成（轮询或订阅 RedisClient）
+	var subResults []proto.Message
+	for _, tid := range taskIDs {
+		var resBytes []byte
+		for try := 0; try < 100; try++ { // 最多等 10 秒
+			resBytes, err = redisClient.Get(ctx, tid).Bytes()
+			if err == redis.Nil {
+				time.Sleep(100 * time.Millisecond)
+				continue
+			} else if err != nil {
+				return err
+			}
+			break
+		}
+		if resBytes == nil {
+			return fmt.Errorf("timeout waiting for task: %s", tid)
+		}
+
+		// 反序列化回对应的 proto.Message
+		// ⚠️ 你可以根据 type 做 switch-case 区分
+		msg := &game.PlayerDatabase{} // 举例
+		if err := proto.Unmarshal(resBytes, msg); err != nil {
+			return err
+		}
+		subResults = append(subResults, msg)
 	}
 
-	// 聚合数据
-	err = assign(subMsgs, result)
-	if err != nil {
-		logx.Errorf("assign aggregate data failed: %v", err)
+	// 4. 聚合
+	if err := assign(subResults, result); err != nil {
 		return err
 	}
 
-	// 存回 Redis
-	err = SaveProtoToRedis(ctx, redisClient, key, result, ttl)
-	if err != nil {
-		logx.Errorf("Save to Redis failed: %v", err)
+	// 5. 写入 RedisClient 缓存
+	if err := SaveProtoToRedis(ctx, redisClient, key, result, ttl); err != nil {
 		return err
 	}
 

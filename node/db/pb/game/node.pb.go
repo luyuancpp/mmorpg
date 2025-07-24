@@ -29,7 +29,7 @@ const (
 	ENodeType_SceneNodeService         ENodeType = 3  // 场景服务器服务
 	ENodeType_GateNodeService          ENodeType = 4  // 网关节点服务
 	ENodeType_LoginNodeService         ENodeType = 5  // 登录服务器节点服务
-	ENodeType_RedisNodeService         ENodeType = 6  // Redis 节点服务
+	ENodeType_RedisNodeService         ENodeType = 6  // RedisClient 节点服务
 	ENodeType_EtcdNodeService          ENodeType = 7  // etcd节点
 	ENodeType_MailNodeService          ENodeType = 8  // 邮件节点服务
 	ENodeType_ChatNodeService          ENodeType = 9  // 聊天节点服务
