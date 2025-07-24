@@ -138,9 +138,17 @@ func initDBConsume() {
 			go func(i int) {
 				for {
 					msg := DB.MsgQueue.Pop(i)
-					DB.PBDB.LoadOneByWhereCase(msg.Body, msg.WhereCase)
+					switch msg.Operation {
+					case queue.OpRead:
+						DB.PBDB.LoadOneByWhereCase(msg.Body, msg.WhereCase)
+					case queue.OpWrite:
+						DB.PBDB.Save(msg.Body) // 你需要有一个保存接口
+					default:
+						logx.Errorf("unknown operation type: %v", msg.Operation)
+					}
 					msg.Chan <- true
 				}
+
 			}(i)
 		}
 	}()

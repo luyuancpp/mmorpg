@@ -2,11 +2,19 @@ package queue
 
 import "github.com/golang/protobuf/proto"
 
+type OperationType int
+
+const (
+	OpRead OperationType = iota
+	OpWrite
+)
+
 type MsgChannel struct {
 	Key       uint64
 	Body      proto.Message
 	WhereCase string
 	Chan      chan bool
+	Operation OperationType
 }
 
 type MsgChannelList struct {
@@ -19,13 +27,15 @@ type MsgQueue struct {
 	ChanelBufferNum uint64
 }
 
-func NewMsgQueue(RoutineNum int, ChanelBufferNum uint64) *MsgQueue {
-	q := new(MsgQueue)
-	q.RoutineNum = RoutineNum
-	q.ChanelBufferNum = ChanelBufferNum
-	q.QueueList = make([]MsgChannelList, q.RoutineNum)
-	for i := 0; i < q.RoutineNum; i++ {
-		q.QueueList[i] = MsgChannelList{make(chan MsgChannel, ChanelBufferNum)}
+func NewMsgQueue(routineNum int, channelBufferNum uint64) *MsgQueue {
+	q := &MsgQueue{
+		RoutineNum: routineNum,
+		QueueList:  make([]MsgChannelList, routineNum),
+	}
+	for i := 0; i < routineNum; i++ {
+		q.QueueList[i] = MsgChannelList{
+			Data: make(chan MsgChannel, channelBufferNum),
+		}
 	}
 	return q
 }
