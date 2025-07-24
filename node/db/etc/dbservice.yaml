@@ -15,6 +15,6 @@ ServerConfig:
     MaxOpenConn: 10
     MaxIdleConn: 3
     Net: ""
-  Redis:
+  RedisClient:
     Hosts: "127.0.0.1:6379"
     DefaultTTLSeconds: 3600  # 💡 默认缓存时间，1 小时
