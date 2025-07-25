@@ -4,6 +4,7 @@ import (
 	"db/internal/config"
 	"db/internal/logic/pkg/db"
 	task2 "db/internal/logic/pkg/task"
+	server "db/internal/server/dbservice"
 	"db/internal/svc"
 	"db/pb/game"
 	"flag"
@@ -34,7 +35,7 @@ func main() {
 	conf.MustLoad(*configFile, &config.AppConfig)
 	ctx := svc.NewServiceContext()
 
-	server := asynq.NewServer(
+	serverAsynq := asynq.NewServer(
 		asynq.RedisClientOpt{
 			Addr:     ctx.Config.ServerConfig.RedisClient.Hosts,
 			Password: ctx.Config.ServerConfig.RedisClient.Password,
@@ -46,9 +47,9 @@ func main() {
 		},
 	)
 	mux := asynq.NewServeMux()
-	mux.HandleFunc("player_task", task2.NewDBTaskHandler(ctx.RedisClient))
+	mux.HandleFunc("shard_task", task2.NewDBTaskHandler(ctx.RedisClient))
 
-	if err := server.Start(mux); err != nil {
+	if err := serverAsynq.Start(mux); err != nil {
 		panic(err)
 	}
 

@@ -4,7 +4,6 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
-	"github.com/zeromicro/go-zero/zrpc"
 	"login/internal/config"
 	"login/internal/logic/pkg/centre"
 	"login/pb/game"
@@ -13,7 +12,6 @@ import (
 
 type ServiceContext struct {
 	RedisClient *redis.Client
-	DbClient    *zrpc.Client
 	SnowFlake   *snowflake.Node
 	NodeInfo    game.NodeInfo
 	// 使用 atomic.Value 安全存储 CentreClient

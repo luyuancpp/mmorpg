@@ -26,69 +26,49 @@
 #include <grpcpp/support/sync_stream.h>
 #include <grpcpp/ports_def.inc>
 
-class AccountDBService final {
+class dbservice final {
  public:
   static constexpr char const* service_full_name() {
-    return "AccountDBService";
+    return "dbservice";
   }
   class StubInterface {
    public:
     virtual ~StubInterface() {}
-    virtual ::grpc::Status Load2Redis(::grpc::ClientContext* context, const ::LoadAccountRequest& request, ::LoadAccountResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::LoadAccountResponse>> AsyncLoad2Redis(::grpc::ClientContext* context, const ::LoadAccountRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::LoadAccountResponse>>(AsyncLoad2RedisRaw(context, request, cq));
+    virtual ::grpc::Status Test(::grpc::ClientContext* context, const ::Empty& request, ::Empty* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> AsyncTest(::grpc::ClientContext* context, const ::Empty& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(AsyncTestRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::LoadAccountResponse>> PrepareAsyncLoad2Redis(::grpc::ClientContext* context, const ::LoadAccountRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::LoadAccountResponse>>(PrepareAsyncLoad2RedisRaw(context, request, cq));
-    }
-    virtual ::grpc::Status Save2Redis(::grpc::ClientContext* context, const ::SaveAccountRequest& request, ::SaveAccountResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::SaveAccountResponse>> AsyncSave2Redis(::grpc::ClientContext* context, const ::SaveAccountRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::SaveAccountResponse>>(AsyncSave2RedisRaw(context, request, cq));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::SaveAccountResponse>> PrepareAsyncSave2Redis(::grpc::ClientContext* context, const ::SaveAccountRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::SaveAccountResponse>>(PrepareAsyncSave2RedisRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncTest(::grpc::ClientContext* context, const ::Empty& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncTestRaw(context, request, cq));
     }
     class async_interface {
      public:
       virtual ~async_interface() {}
-      virtual void Load2Redis(::grpc::ClientContext* context, const ::LoadAccountRequest* request, ::LoadAccountResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void Load2Redis(::grpc::ClientContext* context, const ::LoadAccountRequest* request, ::LoadAccountResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      virtual void Save2Redis(::grpc::ClientContext* context, const ::SaveAccountRequest* request, ::SaveAccountResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void Save2Redis(::grpc::ClientContext* context, const ::SaveAccountRequest* request, ::SaveAccountResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Test(::grpc::ClientContext* context, const ::Empty* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Test(::grpc::ClientContext* context, const ::Empty* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
     class async_interface* experimental_async() { return async(); }
    private:
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::LoadAccountResponse>* AsyncLoad2RedisRaw(::grpc::ClientContext* context, const ::LoadAccountRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::LoadAccountResponse>* PrepareAsyncLoad2RedisRaw(::grpc::ClientContext* context, const ::LoadAccountRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::SaveAccountResponse>* AsyncSave2RedisRaw(::grpc::ClientContext* context, const ::SaveAccountRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::SaveAccountResponse>* PrepareAsyncSave2RedisRaw(::grpc::ClientContext* context, const ::SaveAccountRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncTestRaw(::grpc::ClientContext* context, const ::Empty& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncTestRaw(::grpc::ClientContext* context, const ::Empty& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
-    ::grpc::Status Load2Redis(::grpc::ClientContext* context, const ::LoadAccountRequest& request, ::LoadAccountResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::LoadAccountResponse>> AsyncLoad2Redis(::grpc::ClientContext* context, const ::LoadAccountRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::LoadAccountResponse>>(AsyncLoad2RedisRaw(context, request, cq));
+    ::grpc::Status Test(::grpc::ClientContext* context, const ::Empty& request, ::Empty* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> AsyncTest(::grpc::ClientContext* context, const ::Empty& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(AsyncTestRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::LoadAccountResponse>> PrepareAsyncLoad2Redis(::grpc::ClientContext* context, const ::LoadAccountRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::LoadAccountResponse>>(PrepareAsyncLoad2RedisRaw(context, request, cq));
-    }
-    ::grpc::Status Save2Redis(::grpc::ClientContext* context, const ::SaveAccountRequest& request, ::SaveAccountResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::SaveAccountResponse>> AsyncSave2Redis(::grpc::ClientContext* context, const ::SaveAccountRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::SaveAccountResponse>>(AsyncSave2RedisRaw(context, request, cq));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::SaveAccountResponse>> PrepareAsyncSave2Redis(::grpc::ClientContext* context, const ::SaveAccountRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::SaveAccountResponse>>(PrepareAsyncSave2RedisRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncTest(::grpc::ClientContext* context, const ::Empty& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(PrepareAsyncTestRaw(context, request, cq));
     }
     class async final :
       public StubInterface::async_interface {
      public:
-      void Load2Redis(::grpc::ClientContext* context, const ::LoadAccountRequest* request, ::LoadAccountResponse* response, std::function<void(::grpc::Status)>) override;
-      void Load2Redis(::grpc::ClientContext* context, const ::LoadAccountRequest* request, ::LoadAccountResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void Save2Redis(::grpc::ClientContext* context, const ::SaveAccountRequest* request, ::SaveAccountResponse* response, std::function<void(::grpc::Status)>) override;
-      void Save2Redis(::grpc::ClientContext* context, const ::SaveAccountRequest* request, ::SaveAccountResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Test(::grpc::ClientContext* context, const ::Empty* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
+      void Test(::grpc::ClientContext* context, const ::Empty* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -100,12 +80,9 @@ class AccountDBService final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class async async_stub_{this};
-    ::grpc::ClientAsyncResponseReader< ::LoadAccountResponse>* AsyncLoad2RedisRaw(::grpc::ClientContext* context, const ::LoadAccountRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::LoadAccountResponse>* PrepareAsyncLoad2RedisRaw(::grpc::ClientContext* context, const ::LoadAccountRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::SaveAccountResponse>* AsyncSave2RedisRaw(::grpc::ClientContext* context, const ::SaveAccountRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::SaveAccountResponse>* PrepareAsyncSave2RedisRaw(::grpc::ClientContext* context, const ::SaveAccountRequest& request, ::grpc::CompletionQueue* cq) override;
-    const ::grpc::internal::RpcMethod rpcmethod_Load2Redis_;
-    const ::grpc::internal::RpcMethod rpcmethod_Save2Redis_;
+    ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncTestRaw(::grpc::ClientContext* context, const ::Empty& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncTestRaw(::grpc::ClientContext* context, const ::Empty& request, ::grpc::CompletionQueue* cq) override;
+    const ::grpc::internal::RpcMethod rpcmethod_Test_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -113,645 +90,147 @@ class AccountDBService final {
    public:
     Service();
     virtual ~Service();
-    virtual ::grpc::Status Load2Redis(::grpc::ServerContext* context, const ::LoadAccountRequest* request, ::LoadAccountResponse* response);
-    virtual ::grpc::Status Save2Redis(::grpc::ServerContext* context, const ::SaveAccountRequest* request, ::SaveAccountResponse* response);
+    virtual ::grpc::Status Test(::grpc::ServerContext* context, const ::Empty* request, ::Empty* response);
   };
   template <class BaseClass>
-  class WithAsyncMethod_Load2Redis : public BaseClass {
+  class WithAsyncMethod_Test : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithAsyncMethod_Load2Redis() {
+    WithAsyncMethod_Test() {
       ::grpc::Service::MarkMethodAsync(0);
     }
-    ~WithAsyncMethod_Load2Redis() override {
+    ~WithAsyncMethod_Test() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Load2Redis(::grpc::ServerContext* /*context*/, const ::LoadAccountRequest* /*request*/, ::LoadAccountResponse* /*response*/) override {
+    ::grpc::Status Test(::grpc::ServerContext* /*context*/, const ::Empty* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestLoad2Redis(::grpc::ServerContext* context, ::LoadAccountRequest* request, ::grpc::ServerAsyncResponseWriter< ::LoadAccountResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestTest(::grpc::ServerContext* context, ::Empty* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
+  typedef WithAsyncMethod_Test<Service > AsyncService;
   template <class BaseClass>
-  class WithAsyncMethod_Save2Redis : public BaseClass {
+  class WithCallbackMethod_Test : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithAsyncMethod_Save2Redis() {
-      ::grpc::Service::MarkMethodAsync(1);
-    }
-    ~WithAsyncMethod_Save2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Save2Redis(::grpc::ServerContext* /*context*/, const ::SaveAccountRequest* /*request*/, ::SaveAccountResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestSave2Redis(::grpc::ServerContext* context, ::SaveAccountRequest* request, ::grpc::ServerAsyncResponseWriter< ::SaveAccountResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  typedef WithAsyncMethod_Load2Redis<WithAsyncMethod_Save2Redis<Service > > AsyncService;
-  template <class BaseClass>
-  class WithCallbackMethod_Load2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithCallbackMethod_Load2Redis() {
+    WithCallbackMethod_Test() {
       ::grpc::Service::MarkMethodCallback(0,
-          new ::grpc::internal::CallbackUnaryHandler< ::LoadAccountRequest, ::LoadAccountResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::Empty, ::Empty>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::LoadAccountRequest* request, ::LoadAccountResponse* response) { return this->Load2Redis(context, request, response); }));}
-    void SetMessageAllocatorFor_Load2Redis(
-        ::grpc::MessageAllocator< ::LoadAccountRequest, ::LoadAccountResponse>* allocator) {
+                   ::grpc::CallbackServerContext* context, const ::Empty* request, ::Empty* response) { return this->Test(context, request, response); }));}
+    void SetMessageAllocatorFor_Test(
+        ::grpc::MessageAllocator< ::Empty, ::Empty>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::LoadAccountRequest, ::LoadAccountResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::Empty, ::Empty>*>(handler)
               ->SetMessageAllocator(allocator);
     }
-    ~WithCallbackMethod_Load2Redis() override {
+    ~WithCallbackMethod_Test() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Load2Redis(::grpc::ServerContext* /*context*/, const ::LoadAccountRequest* /*request*/, ::LoadAccountResponse* /*response*/) override {
+    ::grpc::Status Test(::grpc::ServerContext* /*context*/, const ::Empty* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerUnaryReactor* Load2Redis(
-      ::grpc::CallbackServerContext* /*context*/, const ::LoadAccountRequest* /*request*/, ::LoadAccountResponse* /*response*/)  { return nullptr; }
+    virtual ::grpc::ServerUnaryReactor* Test(
+      ::grpc::CallbackServerContext* /*context*/, const ::Empty* /*request*/, ::Empty* /*response*/)  { return nullptr; }
   };
-  template <class BaseClass>
-  class WithCallbackMethod_Save2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithCallbackMethod_Save2Redis() {
-      ::grpc::Service::MarkMethodCallback(1,
-          new ::grpc::internal::CallbackUnaryHandler< ::SaveAccountRequest, ::SaveAccountResponse>(
-            [this](
-                   ::grpc::CallbackServerContext* context, const ::SaveAccountRequest* request, ::SaveAccountResponse* response) { return this->Save2Redis(context, request, response); }));}
-    void SetMessageAllocatorFor_Save2Redis(
-        ::grpc::MessageAllocator< ::SaveAccountRequest, ::SaveAccountResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::SaveAccountRequest, ::SaveAccountResponse>*>(handler)
-              ->SetMessageAllocator(allocator);
-    }
-    ~WithCallbackMethod_Save2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Save2Redis(::grpc::ServerContext* /*context*/, const ::SaveAccountRequest* /*request*/, ::SaveAccountResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    virtual ::grpc::ServerUnaryReactor* Save2Redis(
-      ::grpc::CallbackServerContext* /*context*/, const ::SaveAccountRequest* /*request*/, ::SaveAccountResponse* /*response*/)  { return nullptr; }
-  };
-  typedef WithCallbackMethod_Load2Redis<WithCallbackMethod_Save2Redis<Service > > CallbackService;
+  typedef WithCallbackMethod_Test<Service > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
-  class WithGenericMethod_Load2Redis : public BaseClass {
+  class WithGenericMethod_Test : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithGenericMethod_Load2Redis() {
+    WithGenericMethod_Test() {
       ::grpc::Service::MarkMethodGeneric(0);
     }
-    ~WithGenericMethod_Load2Redis() override {
+    ~WithGenericMethod_Test() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Load2Redis(::grpc::ServerContext* /*context*/, const ::LoadAccountRequest* /*request*/, ::LoadAccountResponse* /*response*/) override {
+    ::grpc::Status Test(::grpc::ServerContext* /*context*/, const ::Empty* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
   };
   template <class BaseClass>
-  class WithGenericMethod_Save2Redis : public BaseClass {
+  class WithRawMethod_Test : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithGenericMethod_Save2Redis() {
-      ::grpc::Service::MarkMethodGeneric(1);
-    }
-    ~WithGenericMethod_Save2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Save2Redis(::grpc::ServerContext* /*context*/, const ::SaveAccountRequest* /*request*/, ::SaveAccountResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-  };
-  template <class BaseClass>
-  class WithRawMethod_Load2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawMethod_Load2Redis() {
+    WithRawMethod_Test() {
       ::grpc::Service::MarkMethodRaw(0);
     }
-    ~WithRawMethod_Load2Redis() override {
+    ~WithRawMethod_Test() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Load2Redis(::grpc::ServerContext* /*context*/, const ::LoadAccountRequest* /*request*/, ::LoadAccountResponse* /*response*/) override {
+    ::grpc::Status Test(::grpc::ServerContext* /*context*/, const ::Empty* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestLoad2Redis(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestTest(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
-  class WithRawMethod_Save2Redis : public BaseClass {
+  class WithRawCallbackMethod_Test : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithRawMethod_Save2Redis() {
-      ::grpc::Service::MarkMethodRaw(1);
-    }
-    ~WithRawMethod_Save2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Save2Redis(::grpc::ServerContext* /*context*/, const ::SaveAccountRequest* /*request*/, ::SaveAccountResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestSave2Redis(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  template <class BaseClass>
-  class WithRawCallbackMethod_Load2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawCallbackMethod_Load2Redis() {
+    WithRawCallbackMethod_Test() {
       ::grpc::Service::MarkMethodRawCallback(0,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Load2Redis(context, request, response); }));
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Test(context, request, response); }));
     }
-    ~WithRawCallbackMethod_Load2Redis() override {
+    ~WithRawCallbackMethod_Test() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Load2Redis(::grpc::ServerContext* /*context*/, const ::LoadAccountRequest* /*request*/, ::LoadAccountResponse* /*response*/) override {
+    ::grpc::Status Test(::grpc::ServerContext* /*context*/, const ::Empty* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerUnaryReactor* Load2Redis(
+    virtual ::grpc::ServerUnaryReactor* Test(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class WithRawCallbackMethod_Save2Redis : public BaseClass {
+  class WithStreamedUnaryMethod_Test : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithRawCallbackMethod_Save2Redis() {
-      ::grpc::Service::MarkMethodRawCallback(1,
-          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-            [this](
-                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Save2Redis(context, request, response); }));
-    }
-    ~WithRawCallbackMethod_Save2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Save2Redis(::grpc::ServerContext* /*context*/, const ::SaveAccountRequest* /*request*/, ::SaveAccountResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    virtual ::grpc::ServerUnaryReactor* Save2Redis(
-      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
-  };
-  template <class BaseClass>
-  class WithStreamedUnaryMethod_Load2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithStreamedUnaryMethod_Load2Redis() {
+    WithStreamedUnaryMethod_Test() {
       ::grpc::Service::MarkMethodStreamed(0,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::LoadAccountRequest, ::LoadAccountResponse>(
+          ::Empty, ::Empty>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::LoadAccountRequest, ::LoadAccountResponse>* streamer) {
-                       return this->StreamedLoad2Redis(context,
+                     ::Empty, ::Empty>* streamer) {
+                       return this->StreamedTest(context,
                          streamer);
                   }));
     }
-    ~WithStreamedUnaryMethod_Load2Redis() override {
+    ~WithStreamedUnaryMethod_Test() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status Load2Redis(::grpc::ServerContext* /*context*/, const ::LoadAccountRequest* /*request*/, ::LoadAccountResponse* /*response*/) override {
+    ::grpc::Status Test(::grpc::ServerContext* /*context*/, const ::Empty* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedLoad2Redis(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::LoadAccountRequest,::LoadAccountResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedTest(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::Empty,::Empty>* server_unary_streamer) = 0;
   };
-  template <class BaseClass>
-  class WithStreamedUnaryMethod_Save2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithStreamedUnaryMethod_Save2Redis() {
-      ::grpc::Service::MarkMethodStreamed(1,
-        new ::grpc::internal::StreamedUnaryHandler<
-          ::SaveAccountRequest, ::SaveAccountResponse>(
-            [this](::grpc::ServerContext* context,
-                   ::grpc::ServerUnaryStreamer<
-                     ::SaveAccountRequest, ::SaveAccountResponse>* streamer) {
-                       return this->StreamedSave2Redis(context,
-                         streamer);
-                  }));
-    }
-    ~WithStreamedUnaryMethod_Save2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable regular version of this method
-    ::grpc::Status Save2Redis(::grpc::ServerContext* /*context*/, const ::SaveAccountRequest* /*request*/, ::SaveAccountResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedSave2Redis(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::SaveAccountRequest,::SaveAccountResponse>* server_unary_streamer) = 0;
-  };
-  typedef WithStreamedUnaryMethod_Load2Redis<WithStreamedUnaryMethod_Save2Redis<Service > > StreamedUnaryService;
+  typedef WithStreamedUnaryMethod_Test<Service > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_Load2Redis<WithStreamedUnaryMethod_Save2Redis<Service > > StreamedService;
-};
-
-class PlayerDBService final {
- public:
-  static constexpr char const* service_full_name() {
-    return "PlayerDBService";
-  }
-  class StubInterface {
-   public:
-    virtual ~StubInterface() {}
-    virtual ::grpc::Status Load2Redis(::grpc::ClientContext* context, const ::LoadPlayerRequest& request, ::LoadPlayerResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::LoadPlayerResponse>> AsyncLoad2Redis(::grpc::ClientContext* context, const ::LoadPlayerRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::LoadPlayerResponse>>(AsyncLoad2RedisRaw(context, request, cq));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::LoadPlayerResponse>> PrepareAsyncLoad2Redis(::grpc::ClientContext* context, const ::LoadPlayerRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::LoadPlayerResponse>>(PrepareAsyncLoad2RedisRaw(context, request, cq));
-    }
-    virtual ::grpc::Status Save2Redis(::grpc::ClientContext* context, const ::SavePlayerRequest& request, ::SavePlayerResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::SavePlayerResponse>> AsyncSave2Redis(::grpc::ClientContext* context, const ::SavePlayerRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::SavePlayerResponse>>(AsyncSave2RedisRaw(context, request, cq));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::SavePlayerResponse>> PrepareAsyncSave2Redis(::grpc::ClientContext* context, const ::SavePlayerRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::SavePlayerResponse>>(PrepareAsyncSave2RedisRaw(context, request, cq));
-    }
-    class async_interface {
-     public:
-      virtual ~async_interface() {}
-      virtual void Load2Redis(::grpc::ClientContext* context, const ::LoadPlayerRequest* request, ::LoadPlayerResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void Load2Redis(::grpc::ClientContext* context, const ::LoadPlayerRequest* request, ::LoadPlayerResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      virtual void Save2Redis(::grpc::ClientContext* context, const ::SavePlayerRequest* request, ::SavePlayerResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void Save2Redis(::grpc::ClientContext* context, const ::SavePlayerRequest* request, ::SavePlayerResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-    };
-    typedef class async_interface experimental_async_interface;
-    virtual class async_interface* async() { return nullptr; }
-    class async_interface* experimental_async() { return async(); }
-   private:
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::LoadPlayerResponse>* AsyncLoad2RedisRaw(::grpc::ClientContext* context, const ::LoadPlayerRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::LoadPlayerResponse>* PrepareAsyncLoad2RedisRaw(::grpc::ClientContext* context, const ::LoadPlayerRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::SavePlayerResponse>* AsyncSave2RedisRaw(::grpc::ClientContext* context, const ::SavePlayerRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::SavePlayerResponse>* PrepareAsyncSave2RedisRaw(::grpc::ClientContext* context, const ::SavePlayerRequest& request, ::grpc::CompletionQueue* cq) = 0;
-  };
-  class Stub final : public StubInterface {
-   public:
-    Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
-    ::grpc::Status Load2Redis(::grpc::ClientContext* context, const ::LoadPlayerRequest& request, ::LoadPlayerResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::LoadPlayerResponse>> AsyncLoad2Redis(::grpc::ClientContext* context, const ::LoadPlayerRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::LoadPlayerResponse>>(AsyncLoad2RedisRaw(context, request, cq));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::LoadPlayerResponse>> PrepareAsyncLoad2Redis(::grpc::ClientContext* context, const ::LoadPlayerRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::LoadPlayerResponse>>(PrepareAsyncLoad2RedisRaw(context, request, cq));
-    }
-    ::grpc::Status Save2Redis(::grpc::ClientContext* context, const ::SavePlayerRequest& request, ::SavePlayerResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::SavePlayerResponse>> AsyncSave2Redis(::grpc::ClientContext* context, const ::SavePlayerRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::SavePlayerResponse>>(AsyncSave2RedisRaw(context, request, cq));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::SavePlayerResponse>> PrepareAsyncSave2Redis(::grpc::ClientContext* context, const ::SavePlayerRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::SavePlayerResponse>>(PrepareAsyncSave2RedisRaw(context, request, cq));
-    }
-    class async final :
-      public StubInterface::async_interface {
-     public:
-      void Load2Redis(::grpc::ClientContext* context, const ::LoadPlayerRequest* request, ::LoadPlayerResponse* response, std::function<void(::grpc::Status)>) override;
-      void Load2Redis(::grpc::ClientContext* context, const ::LoadPlayerRequest* request, ::LoadPlayerResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void Save2Redis(::grpc::ClientContext* context, const ::SavePlayerRequest* request, ::SavePlayerResponse* response, std::function<void(::grpc::Status)>) override;
-      void Save2Redis(::grpc::ClientContext* context, const ::SavePlayerRequest* request, ::SavePlayerResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-     private:
-      friend class Stub;
-      explicit async(Stub* stub): stub_(stub) { }
-      Stub* stub() { return stub_; }
-      Stub* stub_;
-    };
-    class async* async() override { return &async_stub_; }
-
-   private:
-    std::shared_ptr< ::grpc::ChannelInterface> channel_;
-    class async async_stub_{this};
-    ::grpc::ClientAsyncResponseReader< ::LoadPlayerResponse>* AsyncLoad2RedisRaw(::grpc::ClientContext* context, const ::LoadPlayerRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::LoadPlayerResponse>* PrepareAsyncLoad2RedisRaw(::grpc::ClientContext* context, const ::LoadPlayerRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::SavePlayerResponse>* AsyncSave2RedisRaw(::grpc::ClientContext* context, const ::SavePlayerRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::SavePlayerResponse>* PrepareAsyncSave2RedisRaw(::grpc::ClientContext* context, const ::SavePlayerRequest& request, ::grpc::CompletionQueue* cq) override;
-    const ::grpc::internal::RpcMethod rpcmethod_Load2Redis_;
-    const ::grpc::internal::RpcMethod rpcmethod_Save2Redis_;
-  };
-  static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
-
-  class Service : public ::grpc::Service {
-   public:
-    Service();
-    virtual ~Service();
-    virtual ::grpc::Status Load2Redis(::grpc::ServerContext* context, const ::LoadPlayerRequest* request, ::LoadPlayerResponse* response);
-    virtual ::grpc::Status Save2Redis(::grpc::ServerContext* context, const ::SavePlayerRequest* request, ::SavePlayerResponse* response);
-  };
-  template <class BaseClass>
-  class WithAsyncMethod_Load2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithAsyncMethod_Load2Redis() {
-      ::grpc::Service::MarkMethodAsync(0);
-    }
-    ~WithAsyncMethod_Load2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Load2Redis(::grpc::ServerContext* /*context*/, const ::LoadPlayerRequest* /*request*/, ::LoadPlayerResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestLoad2Redis(::grpc::ServerContext* context, ::LoadPlayerRequest* request, ::grpc::ServerAsyncResponseWriter< ::LoadPlayerResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  template <class BaseClass>
-  class WithAsyncMethod_Save2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithAsyncMethod_Save2Redis() {
-      ::grpc::Service::MarkMethodAsync(1);
-    }
-    ~WithAsyncMethod_Save2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Save2Redis(::grpc::ServerContext* /*context*/, const ::SavePlayerRequest* /*request*/, ::SavePlayerResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestSave2Redis(::grpc::ServerContext* context, ::SavePlayerRequest* request, ::grpc::ServerAsyncResponseWriter< ::SavePlayerResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  typedef WithAsyncMethod_Load2Redis<WithAsyncMethod_Save2Redis<Service > > AsyncService;
-  template <class BaseClass>
-  class WithCallbackMethod_Load2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithCallbackMethod_Load2Redis() {
-      ::grpc::Service::MarkMethodCallback(0,
-          new ::grpc::internal::CallbackUnaryHandler< ::LoadPlayerRequest, ::LoadPlayerResponse>(
-            [this](
-                   ::grpc::CallbackServerContext* context, const ::LoadPlayerRequest* request, ::LoadPlayerResponse* response) { return this->Load2Redis(context, request, response); }));}
-    void SetMessageAllocatorFor_Load2Redis(
-        ::grpc::MessageAllocator< ::LoadPlayerRequest, ::LoadPlayerResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::LoadPlayerRequest, ::LoadPlayerResponse>*>(handler)
-              ->SetMessageAllocator(allocator);
-    }
-    ~WithCallbackMethod_Load2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Load2Redis(::grpc::ServerContext* /*context*/, const ::LoadPlayerRequest* /*request*/, ::LoadPlayerResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    virtual ::grpc::ServerUnaryReactor* Load2Redis(
-      ::grpc::CallbackServerContext* /*context*/, const ::LoadPlayerRequest* /*request*/, ::LoadPlayerResponse* /*response*/)  { return nullptr; }
-  };
-  template <class BaseClass>
-  class WithCallbackMethod_Save2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithCallbackMethod_Save2Redis() {
-      ::grpc::Service::MarkMethodCallback(1,
-          new ::grpc::internal::CallbackUnaryHandler< ::SavePlayerRequest, ::SavePlayerResponse>(
-            [this](
-                   ::grpc::CallbackServerContext* context, const ::SavePlayerRequest* request, ::SavePlayerResponse* response) { return this->Save2Redis(context, request, response); }));}
-    void SetMessageAllocatorFor_Save2Redis(
-        ::grpc::MessageAllocator< ::SavePlayerRequest, ::SavePlayerResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::SavePlayerRequest, ::SavePlayerResponse>*>(handler)
-              ->SetMessageAllocator(allocator);
-    }
-    ~WithCallbackMethod_Save2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Save2Redis(::grpc::ServerContext* /*context*/, const ::SavePlayerRequest* /*request*/, ::SavePlayerResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    virtual ::grpc::ServerUnaryReactor* Save2Redis(
-      ::grpc::CallbackServerContext* /*context*/, const ::SavePlayerRequest* /*request*/, ::SavePlayerResponse* /*response*/)  { return nullptr; }
-  };
-  typedef WithCallbackMethod_Load2Redis<WithCallbackMethod_Save2Redis<Service > > CallbackService;
-  typedef CallbackService ExperimentalCallbackService;
-  template <class BaseClass>
-  class WithGenericMethod_Load2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithGenericMethod_Load2Redis() {
-      ::grpc::Service::MarkMethodGeneric(0);
-    }
-    ~WithGenericMethod_Load2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Load2Redis(::grpc::ServerContext* /*context*/, const ::LoadPlayerRequest* /*request*/, ::LoadPlayerResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-  };
-  template <class BaseClass>
-  class WithGenericMethod_Save2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithGenericMethod_Save2Redis() {
-      ::grpc::Service::MarkMethodGeneric(1);
-    }
-    ~WithGenericMethod_Save2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Save2Redis(::grpc::ServerContext* /*context*/, const ::SavePlayerRequest* /*request*/, ::SavePlayerResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-  };
-  template <class BaseClass>
-  class WithRawMethod_Load2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawMethod_Load2Redis() {
-      ::grpc::Service::MarkMethodRaw(0);
-    }
-    ~WithRawMethod_Load2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Load2Redis(::grpc::ServerContext* /*context*/, const ::LoadPlayerRequest* /*request*/, ::LoadPlayerResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestLoad2Redis(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  template <class BaseClass>
-  class WithRawMethod_Save2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawMethod_Save2Redis() {
-      ::grpc::Service::MarkMethodRaw(1);
-    }
-    ~WithRawMethod_Save2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Save2Redis(::grpc::ServerContext* /*context*/, const ::SavePlayerRequest* /*request*/, ::SavePlayerResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestSave2Redis(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  template <class BaseClass>
-  class WithRawCallbackMethod_Load2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawCallbackMethod_Load2Redis() {
-      ::grpc::Service::MarkMethodRawCallback(0,
-          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-            [this](
-                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Load2Redis(context, request, response); }));
-    }
-    ~WithRawCallbackMethod_Load2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Load2Redis(::grpc::ServerContext* /*context*/, const ::LoadPlayerRequest* /*request*/, ::LoadPlayerResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    virtual ::grpc::ServerUnaryReactor* Load2Redis(
-      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
-  };
-  template <class BaseClass>
-  class WithRawCallbackMethod_Save2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawCallbackMethod_Save2Redis() {
-      ::grpc::Service::MarkMethodRawCallback(1,
-          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-            [this](
-                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Save2Redis(context, request, response); }));
-    }
-    ~WithRawCallbackMethod_Save2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status Save2Redis(::grpc::ServerContext* /*context*/, const ::SavePlayerRequest* /*request*/, ::SavePlayerResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    virtual ::grpc::ServerUnaryReactor* Save2Redis(
-      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
-  };
-  template <class BaseClass>
-  class WithStreamedUnaryMethod_Load2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithStreamedUnaryMethod_Load2Redis() {
-      ::grpc::Service::MarkMethodStreamed(0,
-        new ::grpc::internal::StreamedUnaryHandler<
-          ::LoadPlayerRequest, ::LoadPlayerResponse>(
-            [this](::grpc::ServerContext* context,
-                   ::grpc::ServerUnaryStreamer<
-                     ::LoadPlayerRequest, ::LoadPlayerResponse>* streamer) {
-                       return this->StreamedLoad2Redis(context,
-                         streamer);
-                  }));
-    }
-    ~WithStreamedUnaryMethod_Load2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable regular version of this method
-    ::grpc::Status Load2Redis(::grpc::ServerContext* /*context*/, const ::LoadPlayerRequest* /*request*/, ::LoadPlayerResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedLoad2Redis(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::LoadPlayerRequest,::LoadPlayerResponse>* server_unary_streamer) = 0;
-  };
-  template <class BaseClass>
-  class WithStreamedUnaryMethod_Save2Redis : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithStreamedUnaryMethod_Save2Redis() {
-      ::grpc::Service::MarkMethodStreamed(1,
-        new ::grpc::internal::StreamedUnaryHandler<
-          ::SavePlayerRequest, ::SavePlayerResponse>(
-            [this](::grpc::ServerContext* context,
-                   ::grpc::ServerUnaryStreamer<
-                     ::SavePlayerRequest, ::SavePlayerResponse>* streamer) {
-                       return this->StreamedSave2Redis(context,
-                         streamer);
-                  }));
-    }
-    ~WithStreamedUnaryMethod_Save2Redis() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable regular version of this method
-    ::grpc::Status Save2Redis(::grpc::ServerContext* /*context*/, const ::SavePlayerRequest* /*request*/, ::SavePlayerResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedSave2Redis(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::SavePlayerRequest,::SavePlayerResponse>* server_unary_streamer) = 0;
-  };
-  typedef WithStreamedUnaryMethod_Load2Redis<WithStreamedUnaryMethod_Save2Redis<Service > > StreamedUnaryService;
-  typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_Load2Redis<WithStreamedUnaryMethod_Save2Redis<Service > > StreamedService;
+  typedef WithStreamedUnaryMethod_Test<Service > StreamedService;
 };
 
 
