@@ -21,7 +21,7 @@
 20=CentreSceneUnRegisterScene
 21=CentreLoginNodeSessionDisconnect
 22=GatePlayerEnterGameNode
-23=PlayerDBServiceLoad2Redis
+23=dbserviceTest
 24=SceneSceneClientPlayerEnterScene
 25=SceneSceneClientPlayerNotifyActorListCreate
 26=ScenePlayerExitGame
@@ -31,8 +31,6 @@
 30=SceneRoutePlayerStringMsg
 31=CentreLoginNodeEnterGame
 32=SceneScenePlayerLeaveScene
-33=AccountDBServiceSave2Redis
-34=PlayerDBServiceSave2Redis
 35=ScenePlayerSyncSyncAttribute5Frames
 36=GateSendMessageToPlayer
 37=SceneSceneClientPlayerSceneInfoC2S
@@ -55,7 +53,6 @@
 54=GateKickSessionByCentre
 55=SceneClientPlayerCommonKickPlayer
 56=CentreRegisterNodeSession
-57=AccountDBServiceLoad2Redis
 58=ScenePlayerCentre2GsLogin
 59=SceneInvokePlayerService
 60=SceneSendMessageToPlayer

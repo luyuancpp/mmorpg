@@ -2,3 +2,8 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
+import "proto/common/empty.proto";
+
+service dbservice {
+  rpc Test (Empty) returns (Empty);
+}

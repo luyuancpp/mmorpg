@@ -10,7 +10,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -20,74 +19,24 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type DbTest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *DbTest) Reset() {
-	*x = DbTest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_db_db_service_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *DbTest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DbTest) ProtoMessage() {}
-
-func (x *DbTest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_db_db_service_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DbTest.ProtoReflect.Descriptor instead.
-func (*DbTest) Descriptor() ([]byte, []int) {
-	return file_proto_db_db_service_proto_rawDescGZIP(), []int{0}
-}
-
 var File_proto_db_db_service_proto protoreflect.FileDescriptor
 
 var file_proto_db_db_service_proto_rawDesc = []byte{
 	0x0a, 0x19, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x64, 0x62, 0x2f, 0x64, 0x62, 0x5f, 0x73, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x08, 0x0a, 0x06, 0x44,
-	0x62, 0x54, 0x65, 0x73, 0x74, 0x32, 0x25, 0x0a, 0x09, 0x64, 0x62, 0x73, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x12, 0x18, 0x0a, 0x04, 0x54, 0x65, 0x73, 0x74, 0x12, 0x07, 0x2e, 0x44, 0x62, 0x54,
-	0x65, 0x73, 0x74, 0x1a, 0x07, 0x2e, 0x44, 0x62, 0x54, 0x65, 0x73, 0x74, 0x42, 0x09, 0x5a, 0x07,
-	0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x18, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x32, 0x23, 0x0a, 0x09, 0x64, 0x62, 0x73, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x12, 0x16, 0x0a, 0x04, 0x54, 0x65, 0x73, 0x74, 0x12, 0x06, 0x2e, 0x45, 0x6d, 0x70,
+	0x74, 0x79, 0x1a, 0x06, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62,
+	0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
-var (
-	file_proto_db_db_service_proto_rawDescOnce sync.Once
-	file_proto_db_db_service_proto_rawDescData = file_proto_db_db_service_proto_rawDesc
-)
-
-func file_proto_db_db_service_proto_rawDescGZIP() []byte {
-	file_proto_db_db_service_proto_rawDescOnce.Do(func() {
-		file_proto_db_db_service_proto_rawDescData = protoimpl.X.CompressGZIP(file_proto_db_db_service_proto_rawDescData)
-	})
-	return file_proto_db_db_service_proto_rawDescData
-}
-
-var file_proto_db_db_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_db_db_service_proto_goTypes = []any{
-	(*DbTest)(nil), // 0: DbTest
+	(*Empty)(nil), // 0: Empty
 }
 var file_proto_db_db_service_proto_depIdxs = []int32{
-	0, // 0: dbservice.Test:input_type -> DbTest
-	0, // 1: dbservice.Test:output_type -> DbTest
+	0, // 0: dbservice.Test:input_type -> Empty
+	0, // 1: dbservice.Test:output_type -> Empty
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -100,33 +49,19 @@ func file_proto_db_db_service_proto_init() {
 	if File_proto_db_db_service_proto != nil {
 		return
 	}
-	if !protoimpl.UnsafeEnabled {
-		file_proto_db_db_service_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*DbTest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
+	file_proto_common_empty_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_db_db_service_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_proto_db_db_service_proto_goTypes,
 		DependencyIndexes: file_proto_db_db_service_proto_depIdxs,
-		MessageInfos:      file_proto_db_db_service_proto_msgTypes,
 	}.Build()
 	File_proto_db_db_service_proto = out.File
 	file_proto_db_db_service_proto_rawDesc = nil

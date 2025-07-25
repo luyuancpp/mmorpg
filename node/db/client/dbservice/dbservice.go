@@ -13,10 +13,8 @@ import (
 )
 
 type (
-	DbTest = game.DbTest
-
 	Dbservice interface {
-		Test(ctx context.Context, in *DbTest, opts ...grpc.CallOption) (*DbTest, error)
+		Test(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	}
 
 	defaultDbservice struct {
@@ -30,7 +28,7 @@ func NewDbservice(cli zrpc.Client) Dbservice {
 	}
 }
 
-func (m *defaultDbservice) Test(ctx context.Context, in *DbTest, opts ...grpc.CallOption) (*DbTest, error) {
+func (m *defaultDbservice) Test(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
 	client := game.NewDbserviceClient(m.cli.Conn())
 	return client.Test(ctx, in, opts...)
 }

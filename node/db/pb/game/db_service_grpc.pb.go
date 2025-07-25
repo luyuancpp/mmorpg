@@ -26,7 +26,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DbserviceClient interface {
-	Test(ctx context.Context, in *DbTest, opts ...grpc.CallOption) (*DbTest, error)
+	Test(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type dbserviceClient struct {
@@ -37,9 +37,9 @@ func NewDbserviceClient(cc grpc.ClientConnInterface) DbserviceClient {
 	return &dbserviceClient{cc}
 }
 
-func (c *dbserviceClient) Test(ctx context.Context, in *DbTest, opts ...grpc.CallOption) (*DbTest, error) {
+func (c *dbserviceClient) Test(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DbTest)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, Dbservice_Test_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (c *dbserviceClient) Test(ctx context.Context, in *DbTest, opts ...grpc.Cal
 // All implementations must embed UnimplementedDbserviceServer
 // for forward compatibility.
 type DbserviceServer interface {
-	Test(context.Context, *DbTest) (*DbTest, error)
+	Test(context.Context, *Empty) (*Empty, error)
 	mustEmbedUnimplementedDbserviceServer()
 }
 
@@ -62,7 +62,7 @@ type DbserviceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedDbserviceServer struct{}
 
-func (UnimplementedDbserviceServer) Test(context.Context, *DbTest) (*DbTest, error) {
+func (UnimplementedDbserviceServer) Test(context.Context, *Empty) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Test not implemented")
 }
 func (UnimplementedDbserviceServer) mustEmbedUnimplementedDbserviceServer() {}
@@ -87,7 +87,7 @@ func RegisterDbserviceServer(s grpc.ServiceRegistrar, srv DbserviceServer) {
 }
 
 func _Dbservice_Test_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DbTest)
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func _Dbservice_Test_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: Dbservice_Test_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DbserviceServer).Test(ctx, req.(*DbTest))
+		return srv.(DbserviceServer).Test(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

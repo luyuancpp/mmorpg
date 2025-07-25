@@ -95,7 +95,7 @@ func BatchLoadAndCache(
 
 		for try := 0; try < 100; try++ {
 			resBytes, err = redisClient.Get(ctx, tid).Bytes()
-			if err == redis.Nil {
+			if errors.Is(err, redis.Nil) {
 				time.Sleep(1 * time.Millisecond)
 				continue
 			} else if err != nil {
@@ -224,7 +224,7 @@ func LoadAggregateData(
 		var resBytes []byte
 		for try := 0; try < 100; try++ { // 最多等 10 秒
 			resBytes, err = redisClient.Get(ctx, tid).Bytes()
-			if err == redis.Nil {
+			if errors.Is(err, redis.Nil) {
 				time.Sleep(1 * time.Millisecond)
 				continue
 			} else if err != nil {
