@@ -2,7 +2,7 @@ package utils
 
 import (
 	"context"
-	"db/internal/logic/task"
+	"db/internal/logic/pkg/task"
 	"db/pb/game"
 	"db/pb/taskpb"
 	"errors"

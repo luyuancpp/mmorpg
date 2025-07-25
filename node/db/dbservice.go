@@ -3,9 +3,7 @@ package main
 import (
 	"db/internal/config"
 	"db/internal/logic/pkg/db"
-	"db/internal/logic/task"
-	accountdbserviceServer "db/internal/server/accountdbservice"
-	playerdbserviceServer "db/internal/server/playerdbservice"
+	task2 "db/internal/logic/pkg/task"
 	"db/internal/svc"
 	"db/pb/game"
 	"flag"
@@ -24,7 +22,7 @@ var configFile = flag.String("f", "etc/dbservice.yaml", "the config file")
 func buildPlayerQueues(shardCount int, concurrencyPerQueue int) map[string]int {
 	queues := make(map[string]int, shardCount)
 	for i := 0; i < shardCount; i++ {
-		queueName := task.GetQueueName(uint64(i)) // 保证一致性
+		queueName := task2.GetQueueName(uint64(i)) // 保证一致性
 		queues[queueName] = concurrencyPerQueue
 	}
 	return queues
@@ -48,7 +46,7 @@ func main() {
 		},
 	)
 	mux := asynq.NewServeMux()
-	mux.HandleFunc("player_task", task.NewDBTaskHandler(ctx.RedisClient))
+	mux.HandleFunc("player_task", task2.NewDBTaskHandler(ctx.RedisClient))
 
 	if err := server.Start(mux); err != nil {
 		panic(err)
@@ -57,8 +55,7 @@ func main() {
 	db.InitDB()
 
 	s := zrpc.MustNewServer(config.AppConfig.RpcServerConf, func(grpcServer *grpc.Server) {
-		game.RegisterAccountDBServiceServer(grpcServer, accountdbserviceServer.NewAccountDBServiceServer(ctx))
-		game.RegisterPlayerDBServiceServer(grpcServer, playerdbserviceServer.NewPlayerDBServiceServer(ctx))
+		game.RegisterDbserviceServer(grpcServer, server.NewDbserviceServer(ctx))
 		if config.AppConfig.Mode == service.DevMode || config.AppConfig.Mode == service.TestMode {
 			reflection.Register(grpcServer)
 		}
