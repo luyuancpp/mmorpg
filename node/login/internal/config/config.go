@@ -32,7 +32,7 @@ type NodeConfig struct {
 	ZoneId           uint32    `json:"zoneid"`
 	SessionExpireMin uint32    `json:"session_expire_minutes"`
 	MaxLoginDevices  uint32    `json:"max_login_devices"`
-	Redis            RedisConf `json:"RedisClient"`
+	RedisClient      RedisConf `json:"RedisClient"`
 	LeaseTTL         int64     `json:"LeaseTTL"`
 	QueueShardCount  uint64    `json:"QueueShardCount"`
 }

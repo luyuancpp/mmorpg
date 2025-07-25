@@ -23,11 +23,11 @@ type ServiceContext struct {
 
 func NewServiceContext() *ServiceContext {
 	return &ServiceContext{
-		RedisClient: redis.NewClient(&redis.Options{Addr: config.AppConfig.Node.Redis.Host}),
+		RedisClient: redis.NewClient(&redis.Options{Addr: config.AppConfig.Node.RedisClient.Host}),
 		AsynqClient: asynq.NewClient(asynq.RedisClientOpt{
-			Addr:     config.AppConfig.Node.Redis.Host,
-			Password: config.AppConfig.Node.Redis.Password,
-			DB:       int(config.AppConfig.Node.Redis.DB),
+			Addr:     config.AppConfig.Node.RedisClient.Host,
+			Password: config.AppConfig.Node.RedisClient.Password,
+			DB:       int(config.AppConfig.Node.RedisClient.DB),
 		}),
 	}
 }

@@ -178,7 +178,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		func(id uint64) string {
 			return "PlayerAllData:" + strconv.FormatUint(id, 10)
 		},
-		time.Duration(config.AppConfig.Node.Redis.DefaultTTLSeconds)*time.Second,
+		time.Duration(config.AppConfig.Node.RedisClient.DefaultTTLSeconds)*time.Second,
 	)
 
 	return nil
