@@ -8,12 +8,12 @@ import (
 )
 
 func GetQueueName(playerId uint64) string {
-	return fmt.Sprintf("player:%d", playerId%config.AppConfig.ServerConfig.QueueShardCount)
+	return fmt.Sprintf("shard:%d", playerId%config.AppConfig.ServerConfig.QueueShardCount)
 }
 
 func EnqueueTaskWithID(ctx context.Context, client *asynq.Client, playerID uint64, taskID string, payload []byte) (string, error) {
 	queueName := GetQueueName(playerID)
-	task := asynq.NewTask("player_task", payload)
+	task := asynq.NewTask("shard_task", payload)
 	_, err := client.Enqueue(task,
 		asynq.Queue(queueName),
 		asynq.TaskID(taskID),

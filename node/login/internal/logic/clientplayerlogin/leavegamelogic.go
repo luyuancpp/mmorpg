@@ -36,7 +36,7 @@ func (l *LeaveGameLogic) LeaveGame(in *game.LeaveGameRequest) (*game.Empty, erro
 	// ✅ 统一 session 清理
 	err := sessioncleaner.CleanupSession(
 		l.ctx,
-		l.svcCtx.Redis,
+		l.svcCtx.RedisClient,
 		sessionDetails.SessionId,
 		"leave",
 	)

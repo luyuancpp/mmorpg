@@ -30,7 +30,7 @@ type DBTask struct {
 	Op        string `protobuf:"bytes,3,opt,name=op,proto3" json:"op,omitempty"`                          // "read" / "write"
 	MsgType   string `protobuf:"bytes,4,opt,name=msg_type,json=msgType,proto3" json:"msg_type,omitempty"` // 用于标识 Protobuf 类型
 	Body      []byte `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`                      // 原始序列化数据
-	TaskId    string `protobuf:"bytes,6,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`    // 👈 用于写回 Redis 的唯一 key
+	TaskId    string `protobuf:"bytes,6,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`    // 👈 用于写回 RedisClient 的唯一 key
 }
 
 func (x *DBTask) Reset() {

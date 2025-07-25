@@ -2,12 +2,13 @@ package clientplayerloginlogic
 
 import (
 	"context"
+	"fmt"
 	"github.com/golang/protobuf/proto"
-	"login/client/playerdbservice"
 	"login/data"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
+	"login/internal/logic/pkg/dataloader"
 	"login/internal/logic/pkg/fsmstore"
 	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsessionstore"
@@ -46,7 +47,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	}
 
 	// 2. 获取 LoginSessionInfo
-	session, err := loginsessionstore.GetLoginSession(l.ctx, l.svcCtx.Redis, sessionDetails.SessionId)
+	session, err := loginsessionstore.GetLoginSession(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId)
 	if err != nil {
 		logx.Errorf("GetLoginSession failed: %v", err)
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionNotFound)
@@ -54,7 +55,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	}
 
 	// 3. 加锁防止同角色并发登录
-	playerLocker := locker.NewPlayerLocker(l.svcCtx.Redis, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
+	playerLocker := locker.NewPlayerLocker(l.svcCtx.RedisClient, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
 	ok, err = playerLocker.Acquire(l.ctx, in.PlayerId)
 	if err != nil || !ok {
 		logx.Errorf("EnterGame lock acquire failed for playerId=%d: %v", in.PlayerId, err)
@@ -65,9 +66,9 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 
 	// 4. 加载账号信息并验证角色归属
 	accountKey := constants.GetAccountDataKey(session.Account)
-	dataBytes, err := l.svcCtx.Redis.Get(l.ctx, accountKey).Bytes()
+	dataBytes, err := l.svcCtx.RedisClient.Get(l.ctx, accountKey).Bytes()
 	if err != nil {
-		logx.Errorf("Redis Get user account failed: %v", err)
+		logx.Errorf("RedisClient Get user account failed: %v", err)
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginAccountNotFound)
 		return resp, nil
 	}
@@ -94,7 +95,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	// 5. FSM 状态管理（按 sessionId）
 	sessionIdStr := strconv.FormatUint(sessionDetails.SessionId, 10)
 	f := data.InitPlayerFSM()
-	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.Redis, f, sessionIdStr, ""); err != nil {
+	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionIdStr, ""); err != nil {
 		logx.Errorf("FSM Load failed: %v", err)
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginFsmFailed)
 		return resp, nil
@@ -106,7 +107,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 		return resp, nil
 	}
 
-	// 6. 加载 Player 数据（若不在 Redis）
+	// 6. 加载 Player 数据（若不在 RedisClient）
 	if err := l.ensurePlayerDataInRedis(in.PlayerId); err != nil {
 		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginPlayerGuidError)
 		logx.Errorf("Load player data failed: %v", err)
@@ -119,7 +120,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	// 8. 清理 Session 和 FSM
 	_ = sessioncleaner.CleanupSession(
 		l.ctx,
-		l.svcCtx.Redis,
+		l.svcCtx.RedisClient,
 		sessionDetails.SessionId,
 		"enterGame",
 	)
@@ -129,13 +130,57 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 }
 
 func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
-	key := constants.GetPlayerDataKey(playerId)
-	playerData, err := l.svcCtx.Redis.Get(l.ctx, key).Bytes()
-	if err != nil || len(playerData) == 0 {
-		dbService := playerdbservice.NewPlayerDBService(*l.svcCtx.DbClient)
-		_, err := dbService.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: playerId})
+	msgCentre := &game.PlayerCentreDatabase{PlayerId: playerId}
+
+	err := dataloader.BatchLoadAndCache(
+		l.ctx,
+		l.svcCtx.RedisClient,
+		l.svcCtx.AsynqClient,
+		playerId,
+		[]proto.Message{
+			msgCentre,
+		},
+	)
+
+	if err != nil {
+		logx.Errorf("BatchLoadAndCache error: %v", err)
 		return err
 	}
+
+	playerAll := &game.PlayerAllData{}
+
+	err = dataloader.LoadAggregateData(
+		l.ctx,
+		l.svcCtx.RedisClient,
+		l.svcCtx.AsynqClient,
+		playerId,
+		playerAll,
+		func(id uint64) []proto.Message {
+			return []proto.Message{
+				&game.PlayerDatabase{PlayerId: id},
+				&game.PlayerDatabase_1{PlayerId: id},
+			}
+		},
+		func(messages []proto.Message, target proto.Message) error {
+			allData := target.(*game.PlayerAllData)
+			for _, m := range messages {
+				switch msg := m.(type) {
+				case *game.PlayerDatabase:
+					allData.PlayerDatabaseData = msg
+				case *game.PlayerDatabase_1:
+					allData.PlayerDatabase_1Data = msg
+				default:
+					return fmt.Errorf("unexpected type %T", msg)
+				}
+			}
+			return nil
+		},
+		func(id uint64) string {
+			return "PlayerAllData:" + strconv.FormatUint(id, 10)
+		},
+		time.Duration(config.AppConfig.Node.Redis.DefaultTTLSeconds)*time.Second,
+	)
+
 	return nil
 }
 

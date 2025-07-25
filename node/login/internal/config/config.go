@@ -16,10 +16,11 @@ type Config struct {
 }
 
 type RedisConf struct {
-	Host     string `json:"Host"`
-	Password string `json:"Password"`
-	DB       uint32 `json:"DB"`
-	PoolSize uint32 `json:"PoolSize"`
+	Host              string `json:"Host"`
+	Password          string `json:"Password"`
+	DB                uint32 `json:"DB"`
+	PoolSize          uint32 `json:"PoolSize"`
+	DefaultTTLSeconds uint32 `json:"DefaultTTLSeconds"`
 }
 
 type AccountConf struct {
@@ -31,8 +32,9 @@ type NodeConfig struct {
 	ZoneId           uint32    `json:"zoneid"`
 	SessionExpireMin uint32    `json:"session_expire_minutes"`
 	MaxLoginDevices  uint32    `json:"max_login_devices"`
-	Redis            RedisConf `json:"Redis"`
-	LeaseTTL         int64     `json:"LeaseTTL"` // 新增字段
+	Redis            RedisConf `json:"RedisClient"`
+	LeaseTTL         int64     `json:"LeaseTTL"`
+	QueueShardCount  uint64    `json:"QueueShardCount"`
 }
 
 type SnowflakeConf struct {
