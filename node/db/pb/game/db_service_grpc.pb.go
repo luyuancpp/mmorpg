@@ -19,279 +19,101 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AccountDBService_Load2Redis_FullMethodName = "/AccountDBService/Load2Redis"
-	AccountDBService_Save2Redis_FullMethodName = "/AccountDBService/Save2Redis"
+	Dbservice_Test_FullMethodName = "/dbservice/Test"
 )
 
-// AccountDBServiceClient is the client API for AccountDBService service.
+// DbserviceClient is the client API for Dbservice service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type AccountDBServiceClient interface {
-	Load2Redis(ctx context.Context, in *LoadAccountRequest, opts ...grpc.CallOption) (*LoadAccountResponse, error)
-	Save2Redis(ctx context.Context, in *SaveAccountRequest, opts ...grpc.CallOption) (*SaveAccountResponse, error)
+type DbserviceClient interface {
+	Test(ctx context.Context, in *DbTest, opts ...grpc.CallOption) (*DbTest, error)
 }
 
-type accountDBServiceClient struct {
+type dbserviceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewAccountDBServiceClient(cc grpc.ClientConnInterface) AccountDBServiceClient {
-	return &accountDBServiceClient{cc}
+func NewDbserviceClient(cc grpc.ClientConnInterface) DbserviceClient {
+	return &dbserviceClient{cc}
 }
 
-func (c *accountDBServiceClient) Load2Redis(ctx context.Context, in *LoadAccountRequest, opts ...grpc.CallOption) (*LoadAccountResponse, error) {
+func (c *dbserviceClient) Test(ctx context.Context, in *DbTest, opts ...grpc.CallOption) (*DbTest, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(LoadAccountResponse)
-	err := c.cc.Invoke(ctx, AccountDBService_Load2Redis_FullMethodName, in, out, cOpts...)
+	out := new(DbTest)
+	err := c.cc.Invoke(ctx, Dbservice_Test_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *accountDBServiceClient) Save2Redis(ctx context.Context, in *SaveAccountRequest, opts ...grpc.CallOption) (*SaveAccountResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SaveAccountResponse)
-	err := c.cc.Invoke(ctx, AccountDBService_Save2Redis_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// AccountDBServiceServer is the server API for AccountDBService service.
-// All implementations must embed UnimplementedAccountDBServiceServer
+// DbserviceServer is the server API for Dbservice service.
+// All implementations must embed UnimplementedDbserviceServer
 // for forward compatibility.
-type AccountDBServiceServer interface {
-	Load2Redis(context.Context, *LoadAccountRequest) (*LoadAccountResponse, error)
-	Save2Redis(context.Context, *SaveAccountRequest) (*SaveAccountResponse, error)
-	mustEmbedUnimplementedAccountDBServiceServer()
+type DbserviceServer interface {
+	Test(context.Context, *DbTest) (*DbTest, error)
+	mustEmbedUnimplementedDbserviceServer()
 }
 
-// UnimplementedAccountDBServiceServer must be embedded to have
+// UnimplementedDbserviceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedAccountDBServiceServer struct{}
+type UnimplementedDbserviceServer struct{}
 
-func (UnimplementedAccountDBServiceServer) Load2Redis(context.Context, *LoadAccountRequest) (*LoadAccountResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Load2Redis not implemented")
+func (UnimplementedDbserviceServer) Test(context.Context, *DbTest) (*DbTest, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Test not implemented")
 }
-func (UnimplementedAccountDBServiceServer) Save2Redis(context.Context, *SaveAccountRequest) (*SaveAccountResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Save2Redis not implemented")
-}
-func (UnimplementedAccountDBServiceServer) mustEmbedUnimplementedAccountDBServiceServer() {}
-func (UnimplementedAccountDBServiceServer) testEmbeddedByValue()                          {}
+func (UnimplementedDbserviceServer) mustEmbedUnimplementedDbserviceServer() {}
+func (UnimplementedDbserviceServer) testEmbeddedByValue()                   {}
 
-// UnsafeAccountDBServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to AccountDBServiceServer will
+// UnsafeDbserviceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to DbserviceServer will
 // result in compilation errors.
-type UnsafeAccountDBServiceServer interface {
-	mustEmbedUnimplementedAccountDBServiceServer()
+type UnsafeDbserviceServer interface {
+	mustEmbedUnimplementedDbserviceServer()
 }
 
-func RegisterAccountDBServiceServer(s grpc.ServiceRegistrar, srv AccountDBServiceServer) {
-	// If the following call pancis, it indicates UnimplementedAccountDBServiceServer was
+func RegisterDbserviceServer(s grpc.ServiceRegistrar, srv DbserviceServer) {
+	// If the following call pancis, it indicates UnimplementedDbserviceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&AccountDBService_ServiceDesc, srv)
+	s.RegisterService(&Dbservice_ServiceDesc, srv)
 }
 
-func _AccountDBService_Load2Redis_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LoadAccountRequest)
+func _Dbservice_Test_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DbTest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AccountDBServiceServer).Load2Redis(ctx, in)
+		return srv.(DbserviceServer).Test(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AccountDBService_Load2Redis_FullMethodName,
+		FullMethod: Dbservice_Test_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountDBServiceServer).Load2Redis(ctx, req.(*LoadAccountRequest))
+		return srv.(DbserviceServer).Test(ctx, req.(*DbTest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AccountDBService_Save2Redis_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SaveAccountRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AccountDBServiceServer).Save2Redis(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AccountDBService_Save2Redis_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountDBServiceServer).Save2Redis(ctx, req.(*SaveAccountRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// AccountDBService_ServiceDesc is the grpc.ServiceDesc for AccountDBService service.
+// Dbservice_ServiceDesc is the grpc.ServiceDesc for Dbservice service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var AccountDBService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "AccountDBService",
-	HandlerType: (*AccountDBServiceServer)(nil),
+var Dbservice_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "dbservice",
+	HandlerType: (*DbserviceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Load2Redis",
-			Handler:    _AccountDBService_Load2Redis_Handler,
-		},
-		{
-			MethodName: "Save2Redis",
-			Handler:    _AccountDBService_Save2Redis_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/db/db_service.proto",
-}
-
-const (
-	PlayerDBService_Load2Redis_FullMethodName = "/PlayerDBService/Load2Redis"
-	PlayerDBService_Save2Redis_FullMethodName = "/PlayerDBService/Save2Redis"
-)
-
-// PlayerDBServiceClient is the client API for PlayerDBService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type PlayerDBServiceClient interface {
-	Load2Redis(ctx context.Context, in *LoadPlayerRequest, opts ...grpc.CallOption) (*LoadPlayerResponse, error)
-	Save2Redis(ctx context.Context, in *SavePlayerRequest, opts ...grpc.CallOption) (*SavePlayerResponse, error)
-}
-
-type playerDBServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewPlayerDBServiceClient(cc grpc.ClientConnInterface) PlayerDBServiceClient {
-	return &playerDBServiceClient{cc}
-}
-
-func (c *playerDBServiceClient) Load2Redis(ctx context.Context, in *LoadPlayerRequest, opts ...grpc.CallOption) (*LoadPlayerResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(LoadPlayerResponse)
-	err := c.cc.Invoke(ctx, PlayerDBService_Load2Redis_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *playerDBServiceClient) Save2Redis(ctx context.Context, in *SavePlayerRequest, opts ...grpc.CallOption) (*SavePlayerResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SavePlayerResponse)
-	err := c.cc.Invoke(ctx, PlayerDBService_Save2Redis_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// PlayerDBServiceServer is the server API for PlayerDBService service.
-// All implementations must embed UnimplementedPlayerDBServiceServer
-// for forward compatibility.
-type PlayerDBServiceServer interface {
-	Load2Redis(context.Context, *LoadPlayerRequest) (*LoadPlayerResponse, error)
-	Save2Redis(context.Context, *SavePlayerRequest) (*SavePlayerResponse, error)
-	mustEmbedUnimplementedPlayerDBServiceServer()
-}
-
-// UnimplementedPlayerDBServiceServer must be embedded to have
-// forward compatible implementations.
-//
-// NOTE: this should be embedded by value instead of pointer to avoid a nil
-// pointer dereference when methods are called.
-type UnimplementedPlayerDBServiceServer struct{}
-
-func (UnimplementedPlayerDBServiceServer) Load2Redis(context.Context, *LoadPlayerRequest) (*LoadPlayerResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Load2Redis not implemented")
-}
-func (UnimplementedPlayerDBServiceServer) Save2Redis(context.Context, *SavePlayerRequest) (*SavePlayerResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Save2Redis not implemented")
-}
-func (UnimplementedPlayerDBServiceServer) mustEmbedUnimplementedPlayerDBServiceServer() {}
-func (UnimplementedPlayerDBServiceServer) testEmbeddedByValue()                         {}
-
-// UnsafePlayerDBServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to PlayerDBServiceServer will
-// result in compilation errors.
-type UnsafePlayerDBServiceServer interface {
-	mustEmbedUnimplementedPlayerDBServiceServer()
-}
-
-func RegisterPlayerDBServiceServer(s grpc.ServiceRegistrar, srv PlayerDBServiceServer) {
-	// If the following call pancis, it indicates UnimplementedPlayerDBServiceServer was
-	// embedded by pointer and is nil.  This will cause panics if an
-	// unimplemented method is ever invoked, so we test this at initialization
-	// time to prevent it from happening at runtime later due to I/O.
-	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
-		t.testEmbeddedByValue()
-	}
-	s.RegisterService(&PlayerDBService_ServiceDesc, srv)
-}
-
-func _PlayerDBService_Load2Redis_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LoadPlayerRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PlayerDBServiceServer).Load2Redis(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PlayerDBService_Load2Redis_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PlayerDBServiceServer).Load2Redis(ctx, req.(*LoadPlayerRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _PlayerDBService_Save2Redis_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SavePlayerRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PlayerDBServiceServer).Save2Redis(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PlayerDBService_Save2Redis_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PlayerDBServiceServer).Save2Redis(ctx, req.(*SavePlayerRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// PlayerDBService_ServiceDesc is the grpc.ServiceDesc for PlayerDBService service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var PlayerDBService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "PlayerDBService",
-	HandlerType: (*PlayerDBServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Load2Redis",
-			Handler:    _PlayerDBService_Load2Redis_Handler,
-		},
-		{
-			MethodName: "Save2Redis",
-			Handler:    _PlayerDBService_Save2Redis_Handler,
+			MethodName: "Test",
+			Handler:    _Dbservice_Test_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
