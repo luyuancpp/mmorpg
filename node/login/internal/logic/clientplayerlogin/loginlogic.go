@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/golang/protobuf/proto"
 	"github.com/redis/go-redis/v9"
-	"login/client/accountdbservice"
 	"login/data"
 	"login/internal/config"
 	"login/internal/constants"
@@ -139,20 +138,16 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	cmd := l.svcCtx.RedisClient.Get(l.ctx, rdKey)
 	valueBytes, err := cmd.Bytes()
 	if errors.Is(err, redis.Nil) {
-		logx.Infof("Account data not found in RedisClient for %s, loading from DB...", in.Account)
-		service := accountdbservice.NewAccountDBService(*l.svcCtx.DbClient)
-		_, loadErr := service.Load2Redis(l.ctx, &game.LoadAccountRequest{Account: in.Account})
-		if loadErr != nil {
-			logx.Errorf("Load account data from DB failed for %s: %v", in.Account, loadErr)
-			resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginAccountDataLoadFailed)}
-			return resp, loadErr
-		}
-		cmd = l.svcCtx.RedisClient.Get(l.ctx, rdKey)
-		valueBytes, err = cmd.Bytes()
+		//todo
+		key := constants.GetAccountDataKey(in.Account)
+		msg := &game.UserAccounts{}
+		valueBytes, err := proto.Marshal(msg)
 		if err != nil {
-			logx.Errorf("RedisClient re-get account data failed after DB load: %v", err)
+			logx.Error(err)
 			return nil, err
 		}
+
+		l.svcCtx.RedisClient.Set(l.ctx, key, valueBytes, time.Duration(12*time.Hour))
 	}
 
 	userAccount := &game.UserAccounts{}
