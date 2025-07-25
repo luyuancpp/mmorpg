@@ -337,10 +337,10 @@ type GameConfig_ZoneRedisConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Host     string `protobuf:"bytes,3,opt,name=host,proto3" json:"host,omitempty"`         // Redis 服务器地址
-	Port     uint32 `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`        // Redis 服务器端口
-	Password string `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"` // Redis 密码（可选）
-	Db       uint32 `protobuf:"varint,6,opt,name=db,proto3" json:"db,omitempty"`            // 使用的 Redis 数据库编号
+	Host     string `protobuf:"bytes,3,opt,name=host,proto3" json:"host,omitempty"`         // RedisClient 服务器地址
+	Port     uint32 `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`        // RedisClient 服务器端口
+	Password string `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"` // RedisClient 密码（可选）
+	Db       uint32 `protobuf:"varint,6,opt,name=db,proto3" json:"db,omitempty"`            // 使用的 RedisClient 数据库编号
 }
 
 func (x *GameConfig_ZoneRedisConfig) Reset() {

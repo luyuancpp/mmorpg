@@ -24,7 +24,7 @@ func newTestFSM() *fsm.FSM {
 func TestFSMStore_SaveAndLoad(t *testing.T) {
 	ctx := context.Background()
 
-	// 创建本地 Redis 测试连接（默认 127.0.0.1:6379）
+	// 创建本地 RedisClient 测试连接（默认 127.0.0.1:6379）
 	rdb := redis.NewClient(&redis.Options{
 		Addr: "127.0.0.1:6379",
 		DB:   1, // 用测试库，避免污染主库
@@ -69,7 +69,7 @@ func TestFSMStore_SaveAndLoad(t *testing.T) {
 	err = SaveFSMState(ctx, rdb, newFSM, account, roleId)
 	assert.NoError(t, err)
 
-	// 验证 Redis 中状态
+	// 验证 RedisClient 中状态
 	val, err := rdb.Get(ctx, key).Result()
 	assert.NoError(t, err)
 	assert.Equal(t, "end", val)

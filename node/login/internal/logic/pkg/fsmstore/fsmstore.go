@@ -10,12 +10,12 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// RedisKeyFormat 返回 Redis 中保存 FSM 状态的 key
+// RedisKeyFormat 返回 RedisClient 中保存 FSM 状态的 key
 func redisKey(account, roleId string) string {
 	return fmt.Sprintf("fsm_state:%s:%s", account, roleId)
 }
 
-// SaveFSMState saves the current FSM state to Redis
+// SaveFSMState saves the current FSM state to RedisClient
 func SaveFSMState(ctx context.Context, redisClient *redis.Client, f *fsm.FSM, account, roleId string) error {
 	key := redisKey(account, roleId)
 	state := f.Current()
@@ -23,7 +23,7 @@ func SaveFSMState(ctx context.Context, redisClient *redis.Client, f *fsm.FSM, ac
 	return redisClient.Set(ctx, key, state, expire).Err()
 }
 
-// LoadFSMState loads FSM state from Redis and applies it to the FSM
+// LoadFSMState loads FSM state from RedisClient and applies it to the FSM
 func LoadFSMState(ctx context.Context, redisClient *redis.Client, f *fsm.FSM, account, roleId string) error {
 	key := redisKey(account, roleId)
 	state, err := redisClient.Get(ctx, key).Result()

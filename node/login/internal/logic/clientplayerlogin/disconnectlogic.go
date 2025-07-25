@@ -33,7 +33,7 @@ func (l *DisconnectLogic) Disconnect(in *game.LoginNodeDisconnectRequest) (*game
 
 	_ = sessioncleaner.CleanupSession(
 		l.ctx,
-		l.svcCtx.Redis,
+		l.svcCtx.RedisClient,
 		sessionDetails.SessionId,
 		"disconnect",
 	)

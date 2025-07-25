@@ -34,9 +34,9 @@ func CleanupSession(
 		_ = redisClient.SRem(ctx, deviceKey, sessionId).Err()
 	}
 
-	// 删除 Redis session
+	// 删除 RedisClient session
 	if err := loginsessionstore.DeleteLoginSession(ctx, redisClient, sessionId); err != nil {
-		logx.Errorf("[%s] Delete session from Redis failed: sessionId=%d, err=%v", logicTag, sessionId, err)
+		logx.Errorf("[%s] Delete session from RedisClient failed: sessionId=%d, err=%v", logicTag, sessionId, err)
 	}
 
 	logx.Infof("[%s] Session cleanup completed for sessionId=%d", logicTag, sessionId)

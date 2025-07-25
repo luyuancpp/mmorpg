@@ -66,9 +66,3 @@ service AccountDBService {
   rpc Load2Redis (LoadAccountRequest) returns (LoadAccountResponse);
   rpc Save2Redis (SaveAccountRequest) returns (SaveAccountResponse);
 }
-
-service PlayerDBService {
-  rpc Load2Redis (LoadPlayerRequest) returns (LoadPlayerResponse);
-  rpc Save2Redis (SavePlayerRequest) returns (SavePlayerResponse);
-}
-

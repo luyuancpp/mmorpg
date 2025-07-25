@@ -42,7 +42,7 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	resp := &game.LoginResponse{}
 
 	// 1. 分布式锁，重试机制
-	locker := locker.NewAccountLocker(l.svcCtx.Redis, time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second)
+	locker := locker.NewAccountLocker(l.svcCtx.RedisClient, time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second)
 
 	ok, err := locker.AcquireLogin(l.ctx, in.Account)
 	if err != nil || !ok {
@@ -66,7 +66,7 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	// 3. FSM 加载 + 执行 + 保存，出错立即返回
 	f := data.InitPlayerFSM()
 
-	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.Redis, f, sessionId, ""); err != nil {
+	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionId, ""); err != nil {
 		logx.Errorf("FSM state load failed for sessionId=%s, account=%s, error: %v", sessionId, in.Account, err)
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginFSMLoadFailed)}
 		return resp, nil
@@ -82,7 +82,7 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 
 	// 保存 FSM 状态
 	logx.Infof("Attempting to save FSM state for sessionId=%s", sessionId)
-	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.Redis, f, sessionId, ""); err != nil {
+	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionId, ""); err != nil {
 		logx.Errorf("FSM save failed for sessionId=%s, account=%s, error: %v", sessionId, in.Account, err)
 		// 不阻断，但记录错误
 		//todo 让客户端重新登录
@@ -93,18 +93,18 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 
 	// 添加 SessionId 到设备集合
 	sessionKey := constants.GenerateSessionKey(in.Account)
-	if err := l.svcCtx.Redis.SAdd(l.ctx, sessionKey, sessionDetails.SessionId).Err(); err != nil {
-		logx.Errorf("Redis SAdd error: %v", err)
+	if err := l.svcCtx.RedisClient.SAdd(l.ctx, sessionKey, sessionDetails.SessionId).Err(); err != nil {
+		logx.Errorf("RedisClient SAdd error: %v", err)
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginRedisSetFailed)}
 		return resp, nil
 	}
 	expire := time.Duration(config.AppConfig.Node.SessionExpireMin) * time.Minute
-	_ = l.svcCtx.Redis.Expire(l.ctx, sessionKey, expire)
+	_ = l.svcCtx.RedisClient.Expire(l.ctx, sessionKey, expire)
 
 	// 限制最多 N 个设备
-	count, err := l.svcCtx.Redis.SCard(l.ctx, sessionKey).Result()
+	count, err := l.svcCtx.RedisClient.SCard(l.ctx, sessionKey).Result()
 	if err != nil {
-		logx.Errorf("Redis SCard error: %v", err)
+		logx.Errorf("RedisClient SCard error: %v", err)
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginRedisSetFailed)}
 		return resp, nil
 	}
@@ -129,17 +129,17 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 		LoginTime: time.Now().Unix(),
 		Fsm:       f.Current(),
 	}
-	if err := loginsessionstore.SaveLoginSession(l.ctx, l.svcCtx.Redis, sessionInfo, expire); err != nil {
+	if err := loginsessionstore.SaveLoginSession(l.ctx, l.svcCtx.RedisClient, sessionInfo, expire); err != nil {
 		logx.Errorf("Failed to save login session for account=%s: %v", in.Account, err)
 		// 不终止流程
 	}
 
-	// 6. 加载账户数据（改进 Redis 获取判断方式）
+	// 6. 加载账户数据（改进 RedisClient 获取判断方式）
 	rdKey := constants.GetAccountDataKey(in.Account)
-	cmd := l.svcCtx.Redis.Get(l.ctx, rdKey)
+	cmd := l.svcCtx.RedisClient.Get(l.ctx, rdKey)
 	valueBytes, err := cmd.Bytes()
 	if errors.Is(err, redis.Nil) {
-		logx.Infof("Account data not found in Redis for %s, loading from DB...", in.Account)
+		logx.Infof("Account data not found in RedisClient for %s, loading from DB...", in.Account)
 		service := accountdbservice.NewAccountDBService(*l.svcCtx.DbClient)
 		_, loadErr := service.Load2Redis(l.ctx, &game.LoadAccountRequest{Account: in.Account})
 		if loadErr != nil {
@@ -147,10 +147,10 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 			resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginAccountDataLoadFailed)}
 			return resp, loadErr
 		}
-		cmd = l.svcCtx.Redis.Get(l.ctx, rdKey)
+		cmd = l.svcCtx.RedisClient.Get(l.ctx, rdKey)
 		valueBytes, err = cmd.Bytes()
 		if err != nil {
-			logx.Errorf("Redis re-get account data failed after DB load: %v", err)
+			logx.Errorf("RedisClient re-get account data failed after DB load: %v", err)
 			return nil, err
 		}
 	}

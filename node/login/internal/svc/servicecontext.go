@@ -2,6 +2,7 @@ package svc
 
 import (
 	"github.com/bwmarrin/snowflake"
+	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/zrpc"
 	"login/internal/config"
@@ -11,19 +12,23 @@ import (
 )
 
 type ServiceContext struct {
-	Redis     *redis.Client
-	DbClient  *zrpc.Client
-	SnowFlake *snowflake.Node
-	NodeInfo  game.NodeInfo
+	RedisClient *redis.Client
+	DbClient    *zrpc.Client
+	SnowFlake   *snowflake.Node
+	NodeInfo    game.NodeInfo
 	// 使用 atomic.Value 安全存储 CentreClient
 	centreClient atomic.Value // 类型为 *centre.CentreClient
+	AsynqClient  *asynq.Client
 }
 
 func NewServiceContext() *ServiceContext {
-	dbClient := zrpc.MustNewClient(config.AppConfig.DbClient)
 	return &ServiceContext{
-		Redis:    redis.NewClient(&redis.Options{Addr: config.AppConfig.Node.Redis.Host}),
-		DbClient: &dbClient,
+		RedisClient: redis.NewClient(&redis.Options{Addr: config.AppConfig.Node.Redis.Host}),
+		AsynqClient: asynq.NewClient(asynq.RedisClientOpt{
+			Addr:     config.AppConfig.Node.Redis.Host,
+			Password: config.AppConfig.Node.Redis.Password,
+			DB:       int(config.AppConfig.Node.Redis.DB),
+		}),
 	}
 }
 

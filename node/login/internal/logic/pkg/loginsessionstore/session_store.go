@@ -15,7 +15,7 @@ func sessionKey(sessionId uint64) string {
 	return fmt.Sprintf("login_session_info:%d", sessionId)
 }
 
-// SaveLoginSession 存储登录会话信息到 Redis
+// SaveLoginSession 存储登录会话信息到 RedisClient
 // 修改后的函数签名：
 func SaveLoginSession(ctx context.Context, redisClient *redis.Client, info *game.LoginSessionInfo, ttl time.Duration) error {
 	key := sessionKey(info.SessionId)
