@@ -296,7 +296,7 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 		if (auto* existInfo = registry.try_get<NodeInfo>(entityId);
 			existInfo ) {
 
-			if (IsSameNode(info, *existInfo)) {
+			if (IsSameNode(info.node_uuid(), existInfo->node_uuid())) {
 				LOG_INFO << "Node already registered, IP: " << info.endpoint().ip()
 					<< ", Port: " << info.endpoint().port();
 				return;
@@ -444,7 +444,7 @@ bool Node::IsNodeConnected(uint32_t nodeType, const NodeInfo& info) const {
 	{
 		entt::registry& registry = tls.GetNodeRegistry(nodeType);
 		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
-			if (IsSameNode(info, nodeInfo)) {
+			if (IsSameNode(info.node_uuid(), nodeInfo.node_uuid())) {
 				LOG_INFO << "Node already registered, IP: " << nodeInfo.endpoint().ip()
 					<< ", Port: " << nodeInfo.endpoint().port();
 				return true;
@@ -459,19 +459,14 @@ bool Node::IsNodeConnected(uint32_t nodeType, const NodeInfo& info) const {
 	return false;
 }
 
-bool Node::IsSameNode(const NodeInfo& node1, const NodeInfo& node2) const
-{
-	return node1.node_uuid() == node2.node_uuid();
-}
-
 bool Node::IsMyNode(const NodeInfo& node) const
 {
-	return IsSameNode(node, GetNodeInfo().node_uuid());
+	return IsSameNode(node.node_uuid(), GetNodeInfo().node_uuid());
 }
 
-bool Node::IsSameNode(const NodeInfo& node, const std::string& uuid) const
+bool Node::IsSameNode(const std::string& uuid1, const std::string& uuid2) const
 {
-	return uuid == node.node_uuid();
+	return uuid1 == uuid2;
 }
 
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
@@ -720,7 +715,7 @@ void Node::HandleNodeRegistration(
 		entt::registry& registry = tls.GetNodeRegistry(nodeType);
 		const auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
-			if (!IsSameNode(serverNode, peerNode)) continue;
+			if (!IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
 			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
 			entt::entity created = ResetEntity(registry, nodeEntity); 
 			if (created == entt::null) {
