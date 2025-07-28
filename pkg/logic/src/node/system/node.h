@@ -94,8 +94,7 @@ protected:
 
     // 工具与状态判断
     bool IsNodeConnected(uint32_t nodeType, const NodeInfo& node) const;
-	bool IsSameNode(const NodeInfo& node1, const NodeInfo& node2) const;
-	bool IsSameNode(const NodeInfo& node, const std::string& uuid) const;
+	bool IsSameNode(const std::string& uuid1, const std::string& uuid2) const;
     bool IsMyNode(const NodeInfo& node ) const;
     bool IsServiceStarted() { return rpcServer != nullptr; }
 
