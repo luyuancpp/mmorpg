@@ -10,7 +10,7 @@ Node:
   zoneid: 0
   session_expire_minutes: 60
   max_login_devices: 3
-  LeaseTTL: 5
+  LeaseTTL: 500
   QueueShardCount: 50
   RedisClient:
     Host: 127.0.0.1:6379
