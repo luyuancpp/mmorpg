@@ -8,7 +8,7 @@ Etcd:
 
 Node:
   zoneid: 0
-  session_expire_minutes: 60
+  session_expire_minutes: 1
   max_login_devices: 3
   LeaseTTL: 500
   QueueShardCount: 50
