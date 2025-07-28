@@ -28,10 +28,9 @@ service_discovery_prefixes:
 # Kafka 配置
 Kafka:
   Brokers:
-    - "kafka1.example.com:9092"
-    - "kafka2.example.com:9092"
-    - "kafka3.example.com:9092"
-  Topic: "game-events"               # 默认 topic
+    - "localhost:9092"
+  Topics: 
+    - "game-events"               # 默认 topic
   GroupID: "game-consumer-group"     # 默认 consumer group ID
   EnableAutoCommit: true
   AutoOffsetReset: "earliest"        # earliest 或 latest

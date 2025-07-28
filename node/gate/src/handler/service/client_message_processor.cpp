@@ -22,7 +22,7 @@
 #include "util/node_utils.h"
 #include "proto/logic/event/node_event.pb.h"
 
-static std::optional<entt::entity> PickRandomLoginNode(uint32_t nodeType, uint32_t targetNodeType) {
+static std::optional<entt::entity> PickRandomNode(uint32_t nodeType, uint32_t targetNodeType) {
 	std::vector<entt::entity> candidates;
 	auto& registry = tls.GetNodeRegistry(nodeType);
 	auto view = registry.view<NodeInfo>();
@@ -107,7 +107,7 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 	auto& session = sessionIt->second;
 
 	if (!session.HasNodeId(nodeType)) {
-		auto randomNode = PickRandomLoginNode(nodeType, nodeType);
+		auto randomNode = PickRandomNode(nodeType, nodeType);
 		if (!randomNode) {
 			LOG_ERROR << "[LoginNode] No available login node for session id: " << sessionId;
 			return std::nullopt;
@@ -276,13 +276,13 @@ void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& req
 		return;
 	}
 
-    auto& sceneNode = registry.get<RpcClientPtr>(tcpNodeId);
+    auto& tcpNode = registry.get<RpcClientPtr>(tcpNodeId);
     ClientSendMessageToPlayerRequest message;
     message.mutable_message_content()->set_serialized_message(request->body());
     message.set_session_id(sessionId);
     message.mutable_message_content()->set_id(request->id());
     message.mutable_message_content()->set_message_id(request->message_id());
-    sceneNode->CallRemoteMethod(SceneClientSendMessageToPlayerMessageId, message);
+    tcpNode->CallRemoteMethod(SceneClientSendMessageToPlayerMessageId, message);
 
     LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 }
