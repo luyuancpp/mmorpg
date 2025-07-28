@@ -55,14 +55,29 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	}
 
 	// 3. 加锁防止同角色并发登录
-	playerLocker := locker.NewPlayerLocker(l.svcCtx.RedisClient, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
-	ok, err = playerLocker.Acquire(l.ctx, in.PlayerId)
-	if err != nil || !ok {
+	playerLocker := locker.NewRedisLocker(l.svcCtx.RedisClient)
+	key := "player_locker:" + strconv.FormatUint(in.PlayerId, 10)
+	tryLocker, err := playerLocker.TryLock(l.ctx, key, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
+	if err != nil {
 		logx.Errorf("EnterGame lock acquire failed for playerId=%d: %v", in.PlayerId, err)
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
-	defer playerLocker.Release(l.ctx, in.PlayerId)
+
+	if !tryLocker.IsLocked() {
+		logx.Errorf("EnterGame lock acquire failed for playerId=%d: %v", in.PlayerId, err)
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginInProgress)}
+		return resp, nil
+	}
+
+	defer func() {
+		ok, err := tryLocker.Release(l.ctx)
+		if err != nil {
+			logx.Errorf("Failed to release lock: %v", err)
+		} else if !ok {
+			logx.Infof("Lock was not held by us (possibly expired)")
+		}
+	}()
 
 	// 4. 加载账号信息并验证角色归属
 	accountKey := constants.GetAccountDataKey(session.Account)
