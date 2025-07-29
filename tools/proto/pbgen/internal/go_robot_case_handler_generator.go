@@ -13,7 +13,7 @@ import (
 const handlerTotalTemplate = `package handler
 
 import (
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"go.uber.org/zap"
 	"robot/logic/gameobject"
 	"robot/pb/game"
