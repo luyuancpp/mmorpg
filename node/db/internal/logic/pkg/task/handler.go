@@ -31,23 +31,51 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 			return fmt.Errorf("unmarshal proto message failed: %v", err)
 		}
 
+		var (
+			resultData []byte
+			resultErr  string
+		)
+
 		switch task.Op {
 		case "read":
-			db.DB.PBDB.LoadOneByWhereCase(msg, task.WhereCase)
-			if task.TaskId != "" {
-				resultBytes, err := proto.Marshal(msg)
+			err := db.DB.PBDB.LoadOneByWhereCase(msg, task.WhereCase)
+			if err != nil {
+				resultErr = fmt.Sprintf("DB read failed: %v", err)
+			} else {
+				resultData, err = proto.Marshal(msg)
 				if err != nil {
-					return err
-				}
-				if err := redisClient.Set(ctx, task.TaskId, resultBytes, time.Minute).Err(); err != nil {
-					return err
+					resultErr = fmt.Sprintf("marshal result failed: %v", err)
 				}
 			}
+
 		case "write":
-			db.DB.PBDB.Save(msg)
+			err := db.DB.PBDB.Save(msg)
+			if err != nil {
+				resultErr = fmt.Sprintf("DB write failed: %v", err)
+			}
+
 		default:
-			return fmt.Errorf("unsupported op: %s", task.Op)
+			resultErr = fmt.Sprintf("unsupported op: %s", task.Op)
 		}
+
+		// 写回 TaskResult（只读操作才有结果数据）
+		if task.TaskId != "" {
+			result := &taskpb.TaskResult{
+				Success: resultErr == "",
+				Data:    resultData,
+				Error:   resultErr,
+			}
+			resBytes, err := proto.Marshal(result)
+			if err != nil {
+				return fmt.Errorf("marshal TaskResult failed: %v", err)
+			}
+			err = redisClient.Set(ctx, task.TaskId, resBytes, time.Minute).Err()
+			if err != nil {
+				return fmt.Errorf("Redis set TaskResult failed: %v", err)
+			}
+		}
+
+		// handler 返回 nil 代表任务不会重试
 		return nil
 	}
 }

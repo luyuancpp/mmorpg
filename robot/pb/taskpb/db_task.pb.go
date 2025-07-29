@@ -107,6 +107,69 @@ func (x *DBTask) GetTaskId() string {
 	return ""
 }
 
+type TaskResult struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Success bool   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
+	Data    []byte `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`        // 返回的 proto message bytes（如果 success = true）
+	Error   string `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`      // 错误信息（如果 success = false）
+}
+
+func (x *TaskResult) Reset() {
+	*x = TaskResult{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_db_db_task_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TaskResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TaskResult) ProtoMessage() {}
+
+func (x *TaskResult) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_db_db_task_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TaskResult.ProtoReflect.Descriptor instead.
+func (*TaskResult) Descriptor() ([]byte, []int) {
+	return file_proto_db_db_task_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *TaskResult) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *TaskResult) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *TaskResult) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
 var File_proto_db_db_task_proto protoreflect.FileDescriptor
 
 var file_proto_db_db_task_proto_rawDesc = []byte{
@@ -121,8 +184,13 @@ var file_proto_db_db_task_proto_rawDesc = []byte{
 	0x6d, 0x73, 0x67, 0x54, 0x79, 0x70, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x18,
 	0x05, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x12, 0x17, 0x0a, 0x07, 0x74,
 	0x61, 0x73, 0x6b, 0x5f, 0x69, 0x64, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x74, 0x61,
-	0x73, 0x6b, 0x49, 0x64, 0x42, 0x0b, 0x5a, 0x09, 0x70, 0x62, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x70,
-	0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x6b, 0x49, 0x64, 0x22, 0x50, 0x0a, 0x0a, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65, 0x73, 0x75,
+	0x6c, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12, 0x12, 0x0a, 0x04,
+	0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61,
+	0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x42, 0x0b, 0x5a, 0x09, 0x70, 0x62, 0x2f, 0x74, 0x61, 0x73,
+	0x6b, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -137,9 +205,10 @@ func file_proto_db_db_task_proto_rawDescGZIP() []byte {
 	return file_proto_db_db_task_proto_rawDescData
 }
 
-var file_proto_db_db_task_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_db_db_task_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_db_db_task_proto_goTypes = []any{
-	(*DBTask)(nil), // 0: taskpb.DBTask
+	(*DBTask)(nil),     // 0: taskpb.DBTask
+	(*TaskResult)(nil), // 1: taskpb.TaskResult
 }
 var file_proto_db_db_task_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -167,6 +236,18 @@ func file_proto_db_db_task_proto_init() {
 				return nil
 			}
 		}
+		file_proto_db_db_task_proto_msgTypes[1].Exporter = func(v any, i int) any {
+			switch v := v.(*TaskResult); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -174,7 +255,7 @@ func file_proto_db_db_task_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_db_db_task_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
