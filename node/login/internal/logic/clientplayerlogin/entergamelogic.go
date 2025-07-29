@@ -3,7 +3,7 @@ package clientplayerloginlogic
 import (
 	"context"
 	"fmt"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"login/data"
 	"login/internal/config"
 	"login/internal/constants"

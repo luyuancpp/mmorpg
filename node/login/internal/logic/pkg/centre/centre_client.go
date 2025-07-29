@@ -2,10 +2,10 @@ package centre
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"github.com/luyuancpp/muduoclient/muduo"
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/protobuf/proto"
 	"login/pb/game"
 )
 

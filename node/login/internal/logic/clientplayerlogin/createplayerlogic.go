@@ -3,8 +3,8 @@ package clientplayerloginlogic
 import (
 	"context"
 	"errors"
-	"github.com/golang/protobuf/proto"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/protobuf/proto"
 	"login/data"
 	"login/internal/config"
 	"login/internal/constants"
