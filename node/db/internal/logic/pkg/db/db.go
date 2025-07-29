@@ -6,9 +6,9 @@ import (
 	"db/pb/game"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
-	"github.com/golang/protobuf/proto"
 	pbmysql "github.com/luyuancpp/pbmysql-go"
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/protobuf/proto"
 	"log"
 )
 
