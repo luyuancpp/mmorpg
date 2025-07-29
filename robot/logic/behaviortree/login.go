@@ -48,6 +48,11 @@ func (c *CreatePlayer) Initialize(setting *BTNodeCfg) {
 }
 
 func (c *CreatePlayer) OnTick(tick *Tick) b3.Status {
+	sent := tick.Blackboard.GetMem(CreateCharacterSentBoardKey)
+	if sent != nil {
+		return b3.FAILURE
+	}
+
 	clientI := tick.Blackboard.GetMem(ClientBoardKey)
 
 	client, ok := clientI.(interfaces.GameClientInterface)
@@ -64,6 +69,7 @@ func (c *CreatePlayer) OnTick(tick *Tick) b3.Status {
 	rq := &game.CreatePlayerRequest{}
 	client.Send(rq, game.ClientPlayerLoginCreatePlayerMessageId)
 
+	tick.Blackboard.SetMem(CreateCharacterSentBoardKey, true)
 	return b3.SUCCESS
 }
 
@@ -102,6 +108,11 @@ func (p *PlayerEnterGame) Initialize(setting *BTNodeCfg) {
 }
 
 func (p *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
+	sent := tick.Blackboard.GetMem(EnterGameSentBoardKey)
+	if sent != nil {
+		return b3.FAILURE
+	}
+
 	// 从黑板中获取客户端
 	clientI := tick.Blackboard.GetMem(ClientBoardKey)
 	client, ok := clientI.(interfaces.GameClientInterface)
@@ -132,6 +143,7 @@ func (p *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 	rq := &game.EnterGameRequest{PlayerId: playerId}
 	client.Send(rq, game.ClientPlayerLoginEnterGameMessageId)
 
+	tick.Blackboard.SetMem(EnterGameSentBoardKey, true)
 	return b3.SUCCESS
 }
 

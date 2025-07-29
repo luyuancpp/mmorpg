@@ -44,16 +44,17 @@ func BatchLoadAndCache(
 	for _, msg := range messages {
 		key := BuildRedisKey(msg, playerIdStr)
 		redisKeys = append(redisKeys, key)
-
-		val, err := redisClient.Get(ctx, key).Bytes()
-		if err == nil && len(val) > 0 {
+		_, err := redisClient.Get(ctx, key).Bytes()
+		if err == nil {
+			// 不管值是 "" 还是其他，只要 err == nil，就是 key 存在
 			continue
 		}
-		if err != nil && err != redis.Nil {
+		if !errors.Is(err, redis.Nil) {
+			// 非 key 不存在的错误，记录并返回
 			logx.Errorf("RedisClient get failed: %v", err)
 			return err
 		}
-
+		// redis.Nil -> key 不存在 -> 去加载
 		taskID := uuid.NewString()
 		data, err := proto.Marshal(msg)
 		if err != nil {
@@ -135,9 +136,15 @@ func BatchLoadAndCache(
 func LoadProtoFromRedis(ctx context.Context, redisClient redis.Cmdable, key string, msg proto.Message) (bool, error) {
 	val, err := redisClient.Get(ctx, key).Bytes()
 	if errors.Is(err, redis.Nil) {
-		return false, nil // 未命中
+		// Key 不存在，缓存未命中
+		return false, nil
+	}
+	if err != nil {
+		// Redis 其他错误（比如 context deadline）
+		return false, err
 	}
 	if err := proto.Unmarshal(val, msg); err != nil {
+		// Redis 拿到的是垃圾值或结构错误，反序列化失败
 		return false, err
 	}
 	return true, nil
