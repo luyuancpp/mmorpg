@@ -73,7 +73,7 @@ func openDB() error {
 
 	DB = &GameDB{
 		DB:   sql.OpenDB(conn),
-		PBDB: pbmysql.NewPb2DbTables(),
+		PBDB: pbmysql.NewPbMysqlDB(),
 	}
 
 	DB.DB.SetMaxOpenConns(config.AppConfig.ServerConfig.Database.MaxOpenConn)
@@ -110,7 +110,7 @@ func createDBTable() {
 	tables := getTables()
 
 	for _, table := range tables {
-		DB.PBDB.AddMysqlTable(table)
+		DB.PBDB.RegisterTable(table)
 		sql := DB.PBDB.GetCreateTableSql(table)
 		_, err := DB.DB.Exec(sql)
 		if err != nil {
