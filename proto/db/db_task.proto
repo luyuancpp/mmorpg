@@ -12,3 +12,9 @@ message DBTask {
   bytes body = 5;         // 原始序列化数据
   string task_id = 6; // 👈 用于写回 Redis 的唯一 key
 }
+
+message TaskResult {
+  bool success = 1;       // 是否成功
+  bytes data = 2;         // 返回的 proto message bytes（如果 success = true）
+  string error = 3;       // 错误信息（如果 success = false）
+}

@@ -5,7 +5,6 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
-	"github.com/zeromicro/go-zero/core/logx"
 	"login/internal/config"
 	"login/internal/logic/pkg/centre"
 	"login/pb/game"
@@ -22,25 +21,25 @@ type ServiceContext struct {
 }
 
 func NewServiceContext() *ServiceContext {
+	redisOpt := asynq.RedisClientOpt{
+		Addr:     config.AppConfig.Node.RedisClient.Host,
+		Password: config.AppConfig.Node.RedisClient.Password,
+		DB:       int(config.AppConfig.Node.RedisClient.DB),
+	}
+
 	RedisClient := redis.NewClient(&redis.Options{
 		Addr:     config.AppConfig.Node.RedisClient.Host,
 		Password: config.AppConfig.Node.RedisClient.Password,
 		DB:       int(config.AppConfig.Node.RedisClient.DB),
 	})
 
-	// ping 一下验证连接是否通
 	if err := RedisClient.Ping(context.Background()).Err(); err != nil {
-		logx.Errorf("Failed to connect to Redis: %v", err)
-		panic(err) // 或者 graceful exit
+		panic(err)
 	}
 
 	return &ServiceContext{
 		RedisClient: RedisClient,
-		AsynqClient: asynq.NewClient(asynq.RedisClientOpt{
-			Addr:     config.AppConfig.Node.RedisClient.Host,
-			Password: config.AppConfig.Node.RedisClient.Password,
-			DB:       int(config.AppConfig.Node.RedisClient.DB),
-		}),
+		AsynqClient: asynq.NewClient(redisOpt),
 	}
 }
 

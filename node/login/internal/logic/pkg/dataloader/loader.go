@@ -9,8 +9,10 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/types/dynamicpb"
 	"login/internal/logic/pkg/task"
-	"login/pb/game"
 	"login/pb/taskpb"
 	"strconv"
 	"time"
@@ -37,28 +39,31 @@ func BatchLoadAndCache(
 	messages []proto.Message,
 ) error {
 	playerIdStr := strconv.FormatUint(playerId, 10)
-	taskIDs := make([]string, 0, len(messages))
-	redisKeys := make([]string, 0, len(messages))
-	messagesToFetch := make([]proto.Message, 0, len(messages))
+
+	var (
+		taskIDs         []string
+		messagesToFetch []proto.Message
+		uncachedKeys    []string
+	)
 
 	for _, msg := range messages {
 		key := BuildRedisKey(msg, playerIdStr)
-		redisKeys = append(redisKeys, key)
+
+		// Redis 命中检查
 		_, err := redisClient.Get(ctx, key).Bytes()
 		if err == nil {
-			// 不管值是 "" 还是其他，只要 err == nil，就是 key 存在
 			continue
 		}
 		if !errors.Is(err, redis.Nil) {
-			// 非 key 不存在的错误，记录并返回
-			logx.Errorf("RedisClient get failed: %v", err)
+			logx.Errorf("Redis GET error for key %s: %v", key, err)
 			return err
 		}
-		// redis.Nil -> key 不存在 -> 去加载
+
+		// 未命中缓存 → 构建任务
 		taskID := uuid.NewString()
 		data, err := proto.Marshal(msg)
 		if err != nil {
-			logx.Errorf("proto marshal failed: %v", err)
+			logx.Errorf("Proto marshal failed: %v", err)
 			return err
 		}
 
@@ -74,20 +79,23 @@ func BatchLoadAndCache(
 
 		payloadBytes, err := proto.Marshal(taskPayload)
 		if err != nil {
-			logx.Errorf("marshal task payload failed: %v", err)
+			logx.Errorf("Marshal task payload failed: %v", err)
 			return err
 		}
 
 		taskID, err = task.EnqueueTaskWithID(ctx, asyncClient, playerId, taskID, payloadBytes)
 		if err != nil {
-			logx.Errorf("enqueue task failed: %v", err)
+			logx.Errorf("Enqueue task failed: %v", err)
 			return err
 		}
 
+		// 记录未命中
 		taskIDs = append(taskIDs, taskID)
 		messagesToFetch = append(messagesToFetch, msg)
+		uncachedKeys = append(uncachedKeys, key)
 	}
 
+	// 等待任务返回结果
 	for i, tid := range taskIDs {
 		var (
 			resBytes []byte
@@ -97,36 +105,41 @@ func BatchLoadAndCache(
 		for try := 0; try < 100; try++ {
 			resBytes, err = redisClient.Get(ctx, tid).Bytes()
 			if errors.Is(err, redis.Nil) {
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(time.Duration(try+1) * time.Millisecond) // 线性退避
 				continue
 			} else if err != nil {
+				logx.Errorf("Redis get task result %s failed: %v", tid, err)
 				return err
 			}
 			break
 		}
 
 		if err != nil {
-			return err
-		}
-		if len(resBytes) == 0 {
 			return fmt.Errorf("timeout waiting for task: %s", tid)
 		}
 
-		// ✅ 注意这里不能再写 :=，否则 err 会被重新声明
-		err = proto.Unmarshal(resBytes, messagesToFetch[i])
+		var result taskpb.TaskResult // 你需要定义这个结构
+		if err := proto.Unmarshal(resBytes, &result); err != nil {
+			logx.Errorf("Unmarshal task result failed: %v", err)
+			return err
+		}
+		if !result.Success {
+			return fmt.Errorf("task %s failed: %s", tid, result.Error)
+		}
+
+		err = proto.Unmarshal(result.Data, messagesToFetch[i])
 		if err != nil {
-			logx.Errorf("unmarshal returned proto failed: %v", err)
+			logx.Errorf("Unmarshal message failed: %v", err)
 			return err
 		}
 	}
 
+	// 缓存未命中成功加载的数据
 	for i, msg := range messagesToFetch {
-		if i < len(redisKeys) {
-			err := SaveToRedis(ctx, redisClient, msg, redisKeys[i])
-			if err != nil {
-				logx.Errorf("SaveToRedis failed: %v", err)
-				return err
-			}
+		err := SaveToRedis(ctx, redisClient, msg, uncachedKeys[i])
+		if err != nil {
+			logx.Errorf("SaveToRedis failed for key %s: %v", uncachedKeys[i], err)
+			return err
 		}
 	}
 
@@ -172,7 +185,7 @@ func LoadAggregateData(
 ) error {
 	key := keyBuilder(playerId)
 
-	// 1. RedisClient 命中直接返回
+	// Step 1: 先尝试读取缓存
 	found, err := LoadProtoFromRedis(ctx, redisClient, key, result)
 	if err != nil {
 		logx.Errorf("RedisClient get failed: %v", err)
@@ -182,16 +195,14 @@ func LoadAggregateData(
 		return nil
 	}
 
-	// 2. 构造子消息并发异步任务
 	playerIdStr := strconv.FormatUint(playerId, 10)
 	subMsgs := build(playerId)
 	taskIDs := make([]string, 0, len(subMsgs))
+	msgTypes := make([]string, 0, len(subMsgs)) // 记录每个类型
 
 	for _, msg := range subMsgs {
-		// ✅ 生成 UUID 作为 taskID
 		taskID := uuid.NewString()
 
-		// 序列化消息体
 		data, err := proto.Marshal(msg)
 		if err != nil {
 			logx.Errorf("proto marshal failed: %v", err)
@@ -199,66 +210,83 @@ func LoadAggregateData(
 		}
 
 		msgType := string(proto.MessageReflect(msg).Descriptor().FullName())
-
 		taskPayload := &taskpb.DBTask{
 			Key:       playerId,
 			WhereCase: "where player_id='" + playerIdStr + "'",
 			Op:        "read",
 			MsgType:   msgType,
 			Body:      data,
-			TaskId:    taskID, // 👈 把 UUID 放进结构体中
+			TaskId:    taskID,
 		}
 
-		payloadBytes, err := proto.Marshal(taskPayload)
+		payload, err := proto.Marshal(taskPayload)
 		if err != nil {
-			logx.Errorf("marshal task payload failed: %v", err)
+			logx.Errorf("marshal DBTask failed: %v", err)
 			return err
 		}
 
-		// 入队
-		taskID, err = task.EnqueueTaskWithID(ctx, asyncClient, playerId, taskID, payloadBytes)
+		_, err = task.EnqueueTaskWithID(ctx, asyncClient, playerId, taskID, payload)
 		if err != nil {
 			logx.Errorf("enqueue task failed: %v", err)
 			return err
 		}
 
 		taskIDs = append(taskIDs, taskID)
+		msgTypes = append(msgTypes, msgType)
 	}
 
-	// 3. 等待所有异步任务完成（轮询或订阅 RedisClient）
+	// Step 3: 等待所有任务完成
 	var subResults []proto.Message
-	for _, tid := range taskIDs {
+	for i, tid := range taskIDs {
 		var resBytes []byte
-		for try := 0; try < 100; try++ { // 最多等 10 秒
+		var err error
+		for try := 0; try < 100; try++ {
 			resBytes, err = redisClient.Get(ctx, tid).Bytes()
 			if errors.Is(err, redis.Nil) {
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(time.Duration(try+1) * time.Millisecond)
 				continue
 			} else if err != nil {
+				logx.Errorf("Redis get task result failed: %v", err)
 				return err
 			}
 			break
 		}
-		if resBytes == nil {
-			return fmt.Errorf("timeout waiting for task: %s", tid)
+
+		if resBytes == nil || len(resBytes) == 0 {
+			return fmt.Errorf("timeout or empty result for task: %s", tid)
 		}
 
-		// 反序列化回对应的 proto.Message
-		// ⚠️ 你可以根据 type 做 switch-case 区分
-		msg := &game.PlayerDatabase{} // 举例
-		if err := proto.Unmarshal(resBytes, msg); err != nil {
-			return err
+		var resultMsg taskpb.TaskResult
+		if err := proto.Unmarshal(resBytes, &resultMsg); err != nil {
+			return fmt.Errorf("unmarshal TaskResult failed: %v", err)
 		}
+
+		if !resultMsg.Success {
+			return fmt.Errorf("task %s failed: %s", tid, resultMsg.Error)
+		}
+
+		// 动态反序列化 resultMsg.Data 到指定类型
+		mt, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(msgTypes[i]))
+		if err != nil {
+			return fmt.Errorf("unknown message type: %s", msgTypes[i])
+		}
+		msg := dynamicpb.NewMessage(mt.Descriptor())
+
+		if err := proto.Unmarshal(resultMsg.Data, msg); err != nil {
+			return fmt.Errorf("unmarshal sub message failed: %v", err)
+		}
+
 		subResults = append(subResults, msg)
 	}
 
-	// 4. 聚合
+	// Step 4: 聚合合并结果
 	if err := assign(subResults, result); err != nil {
-		return err
+		return fmt.Errorf("assign aggregated result failed: %v", err)
 	}
 
-	// 5. 写入 RedisClient 缓存
+	// Step 5: 写入缓存
 	if err := SaveProtoToRedis(ctx, redisClient, key, result, ttl); err != nil {
+		logx.Errorf("SaveProtoToRedis failed: %v", err)
 		return err
 	}
 
