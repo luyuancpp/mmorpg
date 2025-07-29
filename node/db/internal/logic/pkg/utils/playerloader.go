@@ -7,11 +7,11 @@ import (
 	"db/pb/taskpb"
 	"errors"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/protobuf/proto"
 	"strconv"
 	"time"
 )
