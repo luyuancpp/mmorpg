@@ -92,6 +92,65 @@ TEST(TestSnowFlakeThreadSafe, generate)
 	EXPECT_EQ(guidSet.size(), (firstV.size() + secondV.size() + thirdV.size()));
 }
 
+TEST(SnowFlakeTest, SequentialOrder) {
+	SnowFlake gen;
+	gen.set_node_id(1);
+	Guid last = gen.Generate();
+
+	for (int i = 0; i < 1000; ++i) {
+		Guid next = gen.Generate();
+		ASSERT_GT(next, last) << "ID should be monotonically increasing";
+		last = next;
+	}
+}
+
+TEST(SnowFlakeTest, MultiThreadUniqueness) {
+	constexpr int THREAD_COUNT = 8;
+	constexpr int IDS_PER_THREAD = 5000;
+
+	SnowFlakeAtomic gen;
+	gen.set_node_id(2);
+	std::unordered_set<Guid> ids;
+	std::mutex mutex;
+
+	auto worker = [&]() {
+		std::unordered_set<Guid> local_ids;
+		for (int i = 0; i < IDS_PER_THREAD; ++i) {
+			local_ids.insert(gen.Generate());
+		}
+
+		std::lock_guard<std::mutex> lock(mutex);
+		for (const auto& id : local_ids) {
+			auto [_, inserted] = ids.insert(id);
+			ASSERT_TRUE(inserted) << "Duplicate ID detected in multithreaded context";
+		}
+		};
+
+	std::vector<std::thread> threads;
+	for (int i = 0; i < THREAD_COUNT; ++i) {
+		threads.emplace_back(worker);
+	}
+
+	for (auto& t : threads) {
+		t.join();
+	}
+
+	ASSERT_EQ(ids.size(), THREAD_COUNT * IDS_PER_THREAD);
+}
+
+TEST(SnowFlakeTest, IdParsing) {
+	SnowFlake gen;
+	gen.set_node_id(3);
+	Guid id = gen.Generate();
+	auto components = ParseGuid(id);
+	auto real_time = GetRealTimeFromGuid(id);
+
+	ASSERT_EQ(components.node_id, 3);
+	ASSERT_LT(components.sequence, (1ULL << kStepBits));
+	ASSERT_GT(real_time, 1600000000); // Unix Ê±¼ä´Á sanity check
+}
+
+
 int main(int argc, char** argv)
 {
 	testing::InitGoogleTest(&argc, argv);

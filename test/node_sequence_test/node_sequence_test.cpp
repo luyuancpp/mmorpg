@@ -14,7 +14,7 @@ using GuidSet = std::unordered_set<Guid>;
 
 using NodeIdGenerator32BitId = NodeIdGenerator<uint64_t, 32>;
 
-NodeIdGenerator32BitId sf;
+NodeIdGenerator32BitId idGenAtomic;
 
 static const std::size_t kTestSize = 0xffffff;
 
@@ -22,7 +22,7 @@ void emplaceToVector(GuidVector& v)
 {
 	for (std::size_t i = 0; i < kTestSize; ++i)
 	{
-		v.emplace_back(sf.Generate());
+		v.emplace_back(idGenAtomic.Generate());
 	}
 }
 
@@ -36,7 +36,7 @@ void putVectorIntoSet(GuidSet& s, GuidVector& v)
 
 TEST(TestSnowFlakeThreadSafe, justGenerateTime)
 {
-	Guid id = sf.Generate();
+	Guid id = idGenAtomic.Generate();
 }
 
 TEST(TestSnowFlakeThreadSafe, generate)
