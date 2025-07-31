@@ -20,12 +20,12 @@ using Guid = uint64_t;
 
 #ifdef ENABLE_SNOWFLAKE_TESTING
 constexpr uint64_t kEpoch = 0;
-constexpr uint64_t kNodeBits = 10;
-constexpr uint64_t kStepBits = 20;
+constexpr uint64_t kNodeBits = 14;
+constexpr uint64_t kStepBits = 16;
 #else
 constexpr uint64_t kEpoch = 1753951299;
-constexpr uint64_t kNodeBits = 12;
-constexpr uint64_t kStepBits = 18;
+constexpr uint64_t kNodeBits = 14;
+constexpr uint64_t kStepBits = 16;
 #endif
 
 constexpr uint64_t kTimeShift = kNodeBits + kStepBits;
@@ -131,7 +131,7 @@ private:
 			step;
 	}
 
-	uint64_t WaitNextTime(uint64_t last) const
+	uint64_t WaitNextTime(uint64_t last)
 	{
 		uint64_t now = NowEpoch();
 		int retry = 0;
@@ -146,17 +146,51 @@ private:
 		return now;
 	}
 
-	uint64_t NowEpoch() const
+	uint64_t NowEpoch()
 	{
 #ifdef ENABLE_SNOWFLAKE_TESTING
 		if (use_mock_time_) {
-			return mock_now_++ - epoch_;
+			auto now_epoch = mock_now_++ - epoch_;
+			//CheckTimestampOverflow(now_epoch, kTimeShift, epoch_);
+			return now_epoch;
 		}
 #endif
 
-		return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(
-			std::chrono::system_clock::now().time_since_epoch())
+		uint64_t now_epoch = static_cast<uint64_t>(
+			std::chrono::duration_cast<std::chrono::seconds>(
+				std::chrono::system_clock::now().time_since_epoch())
 			.count()) - epoch_;
+
+		//CheckTimestampOverflow(now_epoch, kTimeShift, epoch_);
+		return now_epoch;
+
+	}
+
+	inline void CheckTimestampOverflow(uint64_t now_epoch, uint64_t kTimeShift, uint64_t epoch) {
+		constexpr uint64_t kSecondsPerYear = 31536000; // 365 * 24 * 60 * 60
+		constexpr uint64_t kTimeThreshold = 100000000; // 约 3.17 年
+
+		uint64_t max_time_value = (1ULL << (64 - kTimeShift));
+
+		if (now_epoch >= max_time_value) {
+			LOG_FATAL << "Snowflake time field overflow! now=" << now_epoch
+				<< ", max=" << max_time_value
+				<< ", base epoch=" << epoch;
+		}
+		else if (max_time_value - now_epoch <= kTimeThreshold) {
+			LOG_WARN << "Snowflake timestamp approaching limit. Remaining seconds: "
+				<< (max_time_value - now_epoch)
+				<< " (~" << (max_time_value - now_epoch) / kSecondsPerYear
+				<< " years left)";
+		}
+	}
+
+
+	inline uint64_t GetMaxSupportedYears(uint64_t kTimeShift) {
+		constexpr uint64_t seconds_per_year = 31536000;
+		uint64_t time_bits = 64 - kTimeShift;
+		uint64_t max_seconds = (1ULL << time_bits);
+		return max_seconds / seconds_per_year;
 	}
 
 private:
@@ -279,7 +313,7 @@ private:
 			step;
 	}
 
-	uint64_t NowEpoch() const
+	uint64_t NowEpoch()
 	{
 #ifdef ENABLE_SNOWFLAKE_TESTING
 		if (use_mock_time_.load(std::memory_order_relaxed)) {
@@ -294,7 +328,7 @@ private:
 			.count()) - epoch_;
 	}
 
-	uint64_t WaitUntilTimeAdvance(uint64_t last_time) const
+	uint64_t WaitUntilTimeAdvance(uint64_t last_time) 
 	{
 		uint64_t now = NowEpoch();
 		int retry = 0;
