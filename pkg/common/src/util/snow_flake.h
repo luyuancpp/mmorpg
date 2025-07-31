@@ -18,14 +18,19 @@ using Guid = uint64_t;
 // https://github.com/yitter/IdGenerator
 // https://github.com/bwmarrin/snowflake
 
-static constexpr uint64_t kEpoch = 1719674201;
-static constexpr uint64_t kNodeBits = 12;
-static constexpr uint64_t kStepBits = 18;
+constexpr uint64_t kEpoch = 1719674201;
+#ifdef TESTING
+constexpr uint64_t kNodeBits = 10;
+constexpr uint64_t kStepBits = 20;
+#else
+constexpr uint64_t kNodeBits = 12;
+constexpr uint64_t kStepBits = 18;
+#endif
 
-static constexpr uint64_t kTimeShift = kNodeBits + kStepBits;
-static constexpr uint64_t kNodeShift = kStepBits;
-static constexpr uint64_t kStepMask = (1ULL << kStepBits) - 1;
-static constexpr uint64_t kNodeMask = (1ULL << kNodeBits) - 1;
+constexpr uint64_t kTimeShift = kNodeBits + kStepBits;
+constexpr uint64_t kNodeShift = kStepBits;
+constexpr uint64_t kStepMask = (1ULL << kStepBits) - 1;
+constexpr uint64_t kNodeMask = (1ULL << kNodeBits) - 1;
 
 class SnowFlake
 {
