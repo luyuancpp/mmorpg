@@ -19,8 +19,8 @@ using Guid = uint64_t;
 // https://github.com/bwmarrin/snowflake
 
 static constexpr uint64_t kEpoch = 1719674201;
-static constexpr uint64_t kNodeBits = 15;
-static constexpr uint64_t kStepBits = 15;
+static constexpr uint64_t kNodeBits = 14;
+static constexpr uint64_t kStepBits = 16;
 
 static constexpr uint64_t kTimeShift = kNodeBits + kStepBits;
 static constexpr uint64_t kNodeShift = kStepBits;
