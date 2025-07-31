@@ -13,7 +13,7 @@ using Guid = uint64_t;
 using GuidVector = std::vector<Guid>;
 using GuidSet = std::unordered_set<Guid>;
 
-constexpr size_t kTotal = 10000,0000;
+constexpr size_t kTotal = 300'000'000;
 
 SnowFlakeAtomic idGenAtomic;
 GuidSet firstV;

@@ -18,11 +18,12 @@ using Guid = uint64_t;
 // https://github.com/yitter/IdGenerator
 // https://github.com/bwmarrin/snowflake
 
-constexpr uint64_t kEpoch = 1719674201;
 #ifdef ENABLE_SNOWFLAKE_TESTING
+constexpr uint64_t kEpoch = 0;
 constexpr uint64_t kNodeBits = 10;
 constexpr uint64_t kStepBits = 20;
 #else
+constexpr uint64_t kEpoch = 1753951299;
 constexpr uint64_t kNodeBits = 12;
 constexpr uint64_t kStepBits = 18;
 #endif
@@ -149,7 +150,7 @@ private:
 	{
 #ifdef ENABLE_SNOWFLAKE_TESTING
 		if (use_mock_time_) {
-			return mock_now_ - epoch_;
+			return mock_now_++ - epoch_;
 		}
 #endif
 
@@ -282,7 +283,8 @@ private:
 	{
 #ifdef ENABLE_SNOWFLAKE_TESTING
 		if (use_mock_time_.load(std::memory_order_relaxed)) {
-			return mock_now_.load(std::memory_order_relaxed) - epoch_;
+			// 每次调用 mock_now_ 自增 1，防止死循环
+			return mock_now_.fetch_add(1, std::memory_order_relaxed) - epoch_;
 		}
 #endif
 
