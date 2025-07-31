@@ -48,6 +48,114 @@ void putVectorIntoSet(GuidSet& s, GuidVector& v)
 	}
 }
 
+
+TEST(SnowFlakeTest, Generate100MillionGUIDs_UniqueInSingleNode)
+{
+	constexpr size_t total = 100'000'0000;
+	std::unordered_set<Guid> ids;
+	ids.reserve(total);
+
+	SnowFlake sf;
+	sf.set_node_id(1);
+	sf.set_epoch(kEpoch);
+
+	for (size_t i = 0; i < total; ++i) {
+		Guid id = sf.Generate();
+
+		// 检查是否重复
+		auto result = ids.insert(id);
+		ASSERT_TRUE(result.second) << "重复 ID 出现在索引 " << i << ", ID=" << id;
+
+		// 可选：每 10M 输出一次进度
+		if ((i + 1) % 10'000'000 == 0) {
+			std::cout << "已生成 " << (i + 1) << " 个 ID..." << std::endl;
+		}
+	}
+
+	EXPECT_EQ(ids.size(), total);
+}
+
+// 批量 ID 生成是否正确
+TEST(SnowFlakeTest, GenerateBatch)
+{
+	SnowFlake sf;
+	sf.set_node_id(2);
+	sf.set_epoch(kEpoch);
+
+	size_t count = 1000;
+	auto ids = sf.GenerateBatch(count);
+
+	EXPECT_EQ(ids.size(), count);
+
+	// 检查唯一性
+	std::unordered_set<Guid> id_set(ids.begin(), ids.end());
+	EXPECT_EQ(id_set.size(), count);
+}
+
+// 多节点 ID 是否不同
+TEST(SnowFlakeTest, NodeIDAffectsGeneratedID)
+{
+	SnowFlake sf1;
+	sf1.set_node_id(1);
+	sf1.set_epoch(kEpoch);
+
+	SnowFlake sf2;
+	sf2.set_node_id(2);
+	sf2.set_epoch(kEpoch);
+
+	Guid id1 = sf1.Generate();
+	Guid id2 = sf2.Generate();
+
+	EXPECT_NE(id1, id2);
+}
+
+// 模拟时间回拨（逻辑演示，实际测试需 mock）
+TEST(SnowFlakeTest, HandleClockRollback)
+{
+	SnowFlake sf;
+	sf.set_node_id(1);
+	sf.set_epoch(kEpoch);
+
+	Guid id1 = sf.Generate();
+
+	// 模拟系统时间回拨（需配合注入或 mock）
+	// 这里无法精确模拟，但你可以手动调用内部函数进行测试
+	// 比如 WaitNextTime(last_time_) 的返回值 > last_time_
+
+	EXPECT_NO_THROW({
+		Guid id2 = sf.Generate();
+		EXPECT_GT(id2, id1);
+		});
+}
+
+
+
+TEST(SnowFlakeAtomicTest, StepAutoIncrementInSameSecond)
+{
+	SnowFlakeAtomic sf;
+	sf.set_node_id(1);
+
+	// 等待时间对齐到“秒”，确保所有生成落在同一秒
+	auto now = std::chrono::system_clock::now();
+	auto now_sec = std::chrono::time_point_cast<std::chrono::seconds>(now);
+	auto wait_until = now_sec + std::chrono::seconds(1); // 下一整秒
+
+	std::this_thread::sleep_until(wait_until);
+
+	// 现在开始在“同一秒”内快速生成多个 ID
+	std::vector<Guid> ids;
+	for (int i = 0; i < 100; ++i) {
+		ids.push_back(sf.Generate());
+	}
+
+	// 检查 sequence 是否递增，step 从 0 开始
+	for (size_t i = 0; i < ids.size(); ++i) {
+		SnowFlakeComponents c = ParseGuid(ids[i]);
+		LOG_INFO << "Index: " << i << ", step: " << c.sequence;
+		EXPECT_EQ(c.sequence, i); // step 应该等于索引
+	}
+}
+
 TEST(TestSnowFlake, generateNormal)
 {
 	GuidSet guidSet;
