@@ -13,17 +13,16 @@ using GuidSet = std::unordered_set<Guid>;
 
 constexpr size_t kTotal = INT32_MAX;
 
-
 SnowFlakeAtomic idGenAtomic;
-GuidVector firstV;
-GuidVector secondV;
-GuidVector thirdV;
+GuidSet firstV;
+GuidSet secondV;
+GuidSet thirdV;
 
-void emplaceToVector(GuidVector& v)
+void emplaceToVector(GuidSet& v)
 {
 	for (std::size_t i = 0; i < kTotal; ++i)
 	{
-		v.emplace_back(idGenAtomic.Generate());
+		v.emplace(idGenAtomic.Generate());
 	}
 }
 
@@ -157,17 +156,6 @@ TEST(SnowFlakeAtomicTest, StepAutoIncrementInSameSecond)
 	}
 }
 
-TEST(TestSnowFlake, generateNormal)
-{
-	GuidSet guidSet;
-	GuidVector v;
-
-	emplaceToVector(v);
-	putVectorIntoSet(guidSet, v);
-
-	EXPECT_EQ(guidSet.size(), v.size());
-}
-
 TEST(TestSnowFlakeThreadSafe, justGenerateTime)
 {
 	auto start = std::chrono::high_resolution_clock::now();
@@ -193,10 +181,6 @@ TEST(TestSnowFlakeThreadSafe, generate)
 	firstThread.join();
 	secondThread.join();
 	thirdThread.join();
-
-	putVectorIntoSet(guidSet, firstV);
-	putVectorIntoSet(guidSet, secondV);
-	putVectorIntoSet(guidSet, thirdV);
 
 	EXPECT_EQ(guidSet.size(), (firstV.size() + secondV.size() + thirdV.size()));
 }
