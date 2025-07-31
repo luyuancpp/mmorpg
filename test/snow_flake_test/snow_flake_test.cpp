@@ -11,7 +11,7 @@ using Guid = uint64_t;
 using GuidVector = std::vector<Guid>;
 using GuidSet = std::unordered_set<Guid>;
 
-SnowFlakeThreadSafe sf;
+SnowFlakeAtomic idGenAtomic;
 GuidVector firstV;
 GuidVector secondV;
 GuidVector thirdV;
@@ -21,7 +21,7 @@ void emplaceToVector(GuidVector& v)
 {
 	for (std::size_t i = 0; i < kTestSize; ++i)
 	{
-		v.emplace_back(sf.Generate());
+		v.emplace_back(idGenAtomic.Generate());
 	}
 }
 
@@ -62,7 +62,7 @@ TEST(TestSnowFlake, generateNormal)
 TEST(TestSnowFlakeThreadSafe, justGenerateTime)
 {
 	auto start = std::chrono::high_resolution_clock::now();
-	Guid id = sf.Generate();
+	Guid id = idGenAtomic.Generate();
 	auto end = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> duration = end - start;
 
