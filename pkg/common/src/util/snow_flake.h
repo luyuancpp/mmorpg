@@ -13,8 +13,8 @@
 using Guid = uint64_t;
 #endif
 
-// ID 结构参考自 Snowflake 算法
-// 链接参考：
+// ID structure based on Snowflake algorithm
+// Reference:
 // https://github.com/yitter/IdGenerator
 // https://github.com/bwmarrin/snowflake
 
@@ -52,7 +52,7 @@ public:
 		uint64_t now = NowEpoch();
 
 		if (now < last_time_) {
-			LOG_ERROR << "系统时钟回拨：" << last_time_ << " -> " << now;
+			LOG_ERROR << "System clock moved backwards: " << last_time_ << " -> " << now;
 			now = WaitNextTime(last_time_);
 		}
 
@@ -62,7 +62,7 @@ public:
 		}
 		else {
 			if (step_ >= kStepMask) {
-				LOG_WARN << "当前秒内 ID 已耗尽，等待下一秒";
+				LOG_WARN << "ID pool exhausted in current second, waiting for the next second";
 				now = WaitNextTime(last_time_);
 				last_time_ = now;
 				step_ = 0;
@@ -85,7 +85,7 @@ public:
 			uint64_t now = NowEpoch();
 
 			if (now < last_time_) {
-				LOG_ERROR << "系统时钟回拨：" << last_time_ << " -> " << now;
+				LOG_ERROR << "System clock moved backwards: " << last_time_ << " -> " << now;
 				now = WaitNextTime(last_time_);
 			}
 
@@ -104,7 +104,7 @@ public:
 			count -= batch;
 
 			if (step_ > kStepMask) {
-				LOG_WARN << "当前秒内 ID 已耗尽，等待下一秒";
+				LOG_WARN << "ID pool exhausted in current second, waiting for the next second";
 				now = WaitNextTime(last_time_);
 				last_time_ = now;
 				step_ = 0;
@@ -127,8 +127,8 @@ private:
 		uint64_t now = NowEpoch();
 		int retry = 0;
 		while (now <= last) {
-			if (++retry > 3000) {  // 最多等待约3秒
-				LOG_FATAL << "系统时间未前进，可能时钟异常";
+			if (++retry > 3000) {
+				LOG_FATAL << "System time not advancing, possible clock anomaly";
 				break;
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -141,8 +141,7 @@ private:
 	{
 		return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(
 			std::chrono::system_clock::now().time_since_epoch())
-			.count()) -
-			epoch_;
+			.count()) - epoch_;
 	}
 
 private:
@@ -170,7 +169,7 @@ public:
 			uint64_t last = last_time_.load(std::memory_order_relaxed);
 
 			if (now < last) {
-				LOG_ERROR << "时间回拨：now=" << now << " < last=" << last;
+				LOG_ERROR << "Clock rollback detected: now=" << now << " < last=" << last;
 				now = WaitUntilTimeAdvance(last);
 				last = last_time_.load(std::memory_order_relaxed); // reload
 			}
@@ -188,7 +187,7 @@ public:
 
 			uint64_t step = step_.fetch_add(1, std::memory_order_relaxed);
 			if (step > kStepMask) {
-				LOG_WARN << "step overflow in one second, waiting for next second";
+				LOG_WARN << "Step overflow in current second, waiting for next second";
 				now = WaitUntilTimeAdvance(last);
 				last_time_.store(now, std::memory_order_relaxed);
 				step_.store(0, std::memory_order_relaxed);
@@ -197,7 +196,6 @@ public:
 			return ComposeID(last, step);
 		}
 	}
-
 
 	std::vector<Guid> GenerateBatch(size_t count)
 	{
@@ -209,7 +207,7 @@ public:
 			uint64_t last = last_time_.load(std::memory_order_relaxed);
 
 			if (now < last) {
-				LOG_ERROR << "时间回拨：now=" << now << " < last=" << last;
+				LOG_ERROR << "Clock rollback detected: now=" << now << " < last=" << last;
 				now = WaitUntilTimeAdvance(last);
 				last = last_time_.load(std::memory_order_relaxed);
 			}
@@ -236,7 +234,7 @@ public:
 			count -= batch;
 
 			if (current_step + batch - 1 >= kStepMask) {
-				LOG_WARN << "当前秒内 ID 已耗尽（并发），等待下一秒";
+				LOG_WARN << "ID pool exhausted in current second (concurrent), waiting for the next second";
 				now = WaitUntilTimeAdvance(last);
 				last_time_.store(now, std::memory_order_relaxed);
 				step_.store(0, std::memory_order_relaxed);
@@ -245,7 +243,6 @@ public:
 
 		return ids;
 	}
-
 
 private:
 	Guid ComposeID(uint64_t time, uint64_t step)
@@ -260,8 +257,7 @@ private:
 		return static_cast<uint64_t>(
 			std::chrono::duration_cast<std::chrono::seconds>(
 				std::chrono::system_clock::now().time_since_epoch())
-			.count()) -
-			epoch_;
+			.count()) - epoch_;
 	}
 
 	uint64_t WaitUntilTimeAdvance(uint64_t last_time) const
@@ -270,7 +266,7 @@ private:
 		int retry = 0;
 		while (now <= last_time) {
 			if (++retry > 3000) {
-				LOG_FATAL << "系统时间未前进，可能时钟异常";
+				LOG_FATAL << "System time not advancing, possible clock anomaly";
 				break;
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
