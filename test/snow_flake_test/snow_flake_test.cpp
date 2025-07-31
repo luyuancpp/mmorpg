@@ -150,6 +150,53 @@ TEST(SnowFlakeTest, IdParsing) {
 	ASSERT_GT(real_time, 1600000000); // Unix 时间戳 sanity check
 }
 
+// 测试批量生成的唯一性
+TEST(SnowFlakeTest, GenerateBatchUnique)
+{
+	SnowFlake generator;
+	generator.set_node_id(1);
+
+	const size_t batch_size = 10000;
+	std::vector<Guid> ids = generator.GenerateBatch(batch_size);
+
+	ASSERT_EQ(ids.size(), batch_size);
+
+	std::unordered_set<Guid> unique_ids(ids.begin(), ids.end());
+	EXPECT_EQ(unique_ids.size(), ids.size()) << "IDs are not unique";
+}
+
+// 测试多次批量生成的正确性
+TEST(SnowFlakeTest, MultipleBatchGeneration)
+{
+	SnowFlakeAtomic generator;
+	generator.set_node_id(123);
+
+	const size_t batch1 = 5000;
+	const size_t batch2 = 8000;
+
+	std::vector<Guid> ids1 = generator.GenerateBatch(batch1);
+	std::vector<Guid> ids2 = generator.GenerateBatch(batch2);
+
+	std::unordered_set<Guid> all(ids1.begin(), ids1.end());
+	all.insert(ids2.begin(), ids2.end());
+
+	EXPECT_EQ(all.size(), batch1 + batch2) << "Duplicate IDs found across batches";
+}
+
+// 测试解析 ID 成分
+TEST(SnowFlakeTest, GuidParsing)
+{
+	SnowFlake generator;
+	generator.set_node_id(42);
+	Guid id = generator.Generate();
+
+	auto parsed = ParseGuid(id);
+
+	EXPECT_EQ(parsed.node_id, 42);
+	EXPECT_LT(parsed.sequence, (1U << kStepBits));
+	EXPECT_GT(parsed.timestamp, 0);
+}
+
 
 int main(int argc, char** argv)
 {

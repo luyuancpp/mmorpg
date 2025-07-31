@@ -67,6 +67,44 @@ public:
 		return ComposeID(last_time_, step_);
 	}
 
+	std::vector<Guid> GenerateBatch(size_t count)
+	{
+		std::vector<Guid> ids;
+		ids.reserve(count);
+
+		while (count > 0) {
+			uint64_t now = NowEpoch();
+
+			if (now < last_time_) {
+				LOG_ERROR << "系统时钟回拨：" << last_time_ << " -> " << now;
+				now = WaitNextTime(last_time_);
+			}
+
+			if (now > last_time_) {
+				step_ = 0;
+				last_time_ = now;
+			}
+
+			uint64_t remaining = kStepMask - step_ + 1;
+			uint64_t batch = std::min<uint64_t>(remaining, count);
+
+			for (uint64_t i = 0; i < batch; ++i) {
+				ids.push_back(ComposeID(now, step_++));
+			}
+
+			count -= batch;
+
+			if (step_ > kStepMask) {
+				LOG_WARN << "当前秒内 ID 已耗尽，等待下一秒";
+				now = WaitNextTime(last_time_);
+				last_time_ = now;
+				step_ = 0;
+			}
+		}
+
+		return ids;
+	}
+
 private:
 	uint64_t ComposeID(uint64_t time, uint64_t step)
 	{
@@ -152,6 +190,54 @@ public:
 			return ComposeID(now, step);
 		}
 	}
+
+	std::vector<Guid> GenerateBatch(size_t count)
+	{
+		std::vector<Guid> ids;
+		ids.reserve(count);
+
+		while (count > 0) {
+			uint64_t now = NowEpoch();
+			uint64_t last = last_time_.load(std::memory_order_relaxed);
+
+			if (now < last) {
+				LOG_ERROR << "时间回拨：now=" << now << " < last=" << last;
+				now = WaitUntilTimeAdvance(last);
+				last = last_time_.load(std::memory_order_relaxed);
+			}
+
+			if (now > last) {
+				if (last_time_.compare_exchange_strong(last, now, std::memory_order_acq_rel)) {
+					step_.store(0, std::memory_order_relaxed);
+					last = now;
+				}
+				else {
+					continue; // Retry
+				}
+			}
+
+			uint64_t current_step = step_.fetch_add(count, std::memory_order_relaxed);
+			uint64_t available = kStepMask - current_step + 1;
+
+			uint64_t batch = std::min<uint64_t>(available, count);
+
+			for (uint64_t i = 0; i < batch; ++i) {
+				ids.push_back(ComposeID(now, current_step + i));
+			}
+
+			count -= batch;
+
+			if (current_step + batch - 1 >= kStepMask) {
+				LOG_WARN << "当前秒内 ID 已耗尽（并发），等待下一秒";
+				now = WaitUntilTimeAdvance(last);
+				last_time_.store(now, std::memory_order_relaxed);
+				step_.store(0, std::memory_order_relaxed);
+			}
+		}
+
+		return ids;
+	}
+
 
 private:
 	Guid ComposeID(uint64_t time, uint64_t step)
