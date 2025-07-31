@@ -197,6 +197,43 @@ TEST(SnowFlakeTest, GuidParsing)
 	EXPECT_GT(parsed.timestamp, 0);
 }
 
+// 并发压力测试：多个线程并发批量生成，确保 ID 唯一
+TEST(SnowFlakeTest, ConcurrentBatchGeneration)
+{
+	constexpr size_t kThreads = 8;
+	constexpr size_t kIDsPerThread = 10000;
+	constexpr size_t kTotalIDs = kThreads * kIDsPerThread;
+
+	SnowFlakeAtomic generator;
+	generator.set_node_id(999);
+
+	std::vector<std::thread> threads;
+	std::vector<Guid> all_ids;
+	all_ids.reserve(kTotalIDs);
+
+	std::mutex mutex;  // 保护 all_ids
+
+	auto worker = [&]() {
+		auto ids = generator.GenerateBatch(kIDsPerThread);
+		std::lock_guard<std::mutex> lock(mutex);
+		all_ids.insert(all_ids.end(), ids.begin(), ids.end());
+		};
+
+	for (size_t i = 0; i < kThreads; ++i) {
+		threads.emplace_back(worker);
+	}
+
+	for (auto& t : threads) {
+		t.join();
+	}
+
+	// 验证总数
+	ASSERT_EQ(all_ids.size(), kTotalIDs);
+
+	// 验证唯一性
+	std::unordered_set<Guid> unique_ids(all_ids.begin(), all_ids.end());
+	EXPECT_EQ(unique_ids.size(), all_ids.size()) << "并发生成的 ID 有重复";
+}
 
 int main(int argc, char** argv)
 {
