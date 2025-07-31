@@ -7,6 +7,7 @@
 
 #include <kafka/kafka_consumer.h>
 #include <kafka/kafka_producer.h>
+#include <type_define/type_define.h>
 
 class ThreadLocalStorage
 {

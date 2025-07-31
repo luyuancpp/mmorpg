@@ -30,11 +30,6 @@ static constexpr uint64_t kNodeMask = (1ULL << kNodeBits) - 1;
 class SnowFlake
 {
 public:
-	explicit SnowFlake(uint16_t node_id)
-	{
-		set_node_id(node_id);
-	}
-
 	inline void set_node_id(uint16_t node_id)
 	{
 		if (node_id > kNodeMask) {
@@ -113,10 +108,12 @@ private:
 class SnowFlakeAtomic
 {
 public:
-	explicit SnowFlakeAtomic(uint16_t node_id)
-		: node_id_(node_id)
+	inline void set_node_id(uint16_t node_id)
 	{
-		assert(node_id <= kNodeMask);
+		if (node_id > kNodeMask) {
+			LOG_FATAL << "Node ID overflow: max allowed is " << kNodeMask;
+		}
+		node_id_ = node_id;
 	}
 
 	Guid Generate()
@@ -182,7 +179,7 @@ private:
 				LOG_FATAL << "系统时间未前进，可能时钟异常";
 				break;
 			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			now = NowEpoch();
 		}
 		return now;
@@ -190,7 +187,7 @@ private:
 
 private:
 	const uint64_t epoch_ = kEpoch;
-	const uint16_t node_id_;
+	uint16_t node_id_;
 	std::atomic<uint64_t> last_time_{ 0 };
 	std::atomic<uint64_t> step_{ 0 };
 };
