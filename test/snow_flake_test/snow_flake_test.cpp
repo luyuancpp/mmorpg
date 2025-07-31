@@ -11,15 +11,17 @@ using Guid = uint64_t;
 using GuidVector = std::vector<Guid>;
 using GuidSet = std::unordered_set<Guid>;
 
+constexpr size_t kTotal = INT32_MAX;
+
+
 SnowFlakeAtomic idGenAtomic;
 GuidVector firstV;
 GuidVector secondV;
 GuidVector thirdV;
-static const std::size_t kTestSize = 1000000;
 
 void emplaceToVector(GuidVector& v)
 {
-	for (std::size_t i = 0; i < kTestSize; ++i)
+	for (std::size_t i = 0; i < kTotal; ++i)
 	{
 		v.emplace_back(idGenAtomic.Generate());
 	}
@@ -51,15 +53,14 @@ void putVectorIntoSet(GuidSet& s, GuidVector& v)
 
 TEST(SnowFlakeTest, Generate100MillionGUIDs_UniqueInSingleNode)
 {
-	constexpr size_t total = 100'000'0000;
 	std::unordered_set<Guid> ids;
-	ids.reserve(total);
+	ids.reserve(kTotal);
 
 	SnowFlake sf;
 	sf.set_node_id(1);
 	sf.set_epoch(kEpoch);
 
-	for (size_t i = 0; i < total; ++i) {
+	for (size_t i = 0; i < kTotal; ++i) {
 		Guid id = sf.Generate();
 
 		// 检查是否重复
@@ -72,7 +73,7 @@ TEST(SnowFlakeTest, Generate100MillionGUIDs_UniqueInSingleNode)
 		}
 	}
 
-	EXPECT_EQ(ids.size(), total);
+	EXPECT_EQ(ids.size(), kTotal);
 }
 
 // 批量 ID 生成是否正确

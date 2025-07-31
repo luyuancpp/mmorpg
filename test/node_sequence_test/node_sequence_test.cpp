@@ -18,11 +18,11 @@ using NodeIdGenerator32BitId = NodeIdGenerator<uint64_t, 32>;
 
 NodeIdGenerator32BitId idGenAtomic;
 
-static const std::size_t kTestSize = 0xffffff;
+static const std::size_t kTotal = 0xffffff;
 
 void emplaceToVector(GuidVector& v)
 {
-	for (std::size_t i = 0; i < kTestSize; ++i)
+	for (std::size_t i = 0; i < kTotal; ++i)
 	{
 		v.emplace_back(idGenAtomic.Generate());
 	}
