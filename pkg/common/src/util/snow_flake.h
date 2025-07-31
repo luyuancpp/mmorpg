@@ -3,6 +3,8 @@
 #include <chrono>
 #include <cstdint>
 #include <thread>
+#include <atomic>
+#include <cassert>
 
 #include "muduo/base/Logging.h"
 
@@ -28,7 +30,10 @@ static constexpr uint64_t kNodeMask = (1ULL << kNodeBits) - 1;
 class SnowFlake
 {
 public:
-	SnowFlake() = default;
+	explicit SnowFlake(uint16_t node_id)
+	{
+		set_node_id(node_id);
+	}
 
 	inline void set_node_id(uint16_t node_id)
 	{
@@ -42,10 +47,9 @@ public:
 
 	inline void set_epoch(uint64_t epoch) { epoch_ = epoch; }
 
-	inline Guid Generate()
+	Guid Generate()
 	{
-		uint64_t now = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(
-			std::chrono::system_clock::now().time_since_epoch()).count()) - epoch_;
+		uint64_t now = NowEpoch();
 
 		if (now < last_time_) {
 			LOG_ERROR << "系统时钟回拨：" << last_time_ << " -> " << now;
@@ -59,36 +63,49 @@ public:
 		else {
 			step_ = (step_ + 1) & kStepMask;
 			if (step_ == 0) {
-				// 等待下一个秒
+				LOG_WARN << "当前秒内 ID 已耗尽，等待下一秒";
 				now = WaitNextTime(last_time_);
 				last_time_ = now;
 			}
 		}
 
-		return (last_time_ << kTimeShift) |
-			(static_cast<uint64_t>(node_id_) << kNodeShift) |
-			step_;
+		return ComposeID(last_time_, step_);
 	}
 
 private:
-	inline uint64_t WaitNextTime(uint64_t last)
+	uint64_t ComposeID(uint64_t time, uint64_t step)
+	{
+		return (time << kTimeShift) |
+			(static_cast<uint64_t>(node_id_) << kNodeShift) |
+			step;
+	}
+
+	uint64_t WaitNextTime(uint64_t last) const
 	{
 		uint64_t now = NowEpoch();
+		int retry = 0;
 		while (now <= last) {
+			if (++retry > 3000) {  // 最多等待约3秒
+				LOG_FATAL << "系统时间未前进，可能时钟异常";
+				break;
+			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			now = NowEpoch();
 		}
 		return now;
 	}
 
-	inline uint64_t NowEpoch() const
+	uint64_t NowEpoch() const
 	{
 		return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(
-			std::chrono::system_clock::now().time_since_epoch()).count()) - epoch_;
+			std::chrono::system_clock::now().time_since_epoch())
+			.count()) -
+			epoch_;
 	}
 
+private:
 	uint64_t epoch_ = kEpoch;
-	uint16_t node_id_ = 0;
+	uint16_t node_id_;
 	uint64_t last_time_ = 0;
 	uint64_t step_ = 0;
 };
@@ -106,29 +123,28 @@ public:
 	{
 		while (true) {
 			uint64_t now = NowEpoch();
-
 			uint64_t last = last_time_.load(std::memory_order_relaxed);
 
 			if (now < last) {
 				LOG_ERROR << "时间回拨：now=" << now << " < last=" << last;
 				now = WaitUntilTimeAdvance(last);
+				last = last_time_.load(std::memory_order_relaxed); // reload
 			}
 
 			if (now > last) {
-				// 抢占新的时间戳
 				if (last_time_.compare_exchange_strong(last, now, std::memory_order_acq_rel)) {
 					step_.store(0, std::memory_order_relaxed);
 					return ComposeID(now, 0);
 				}
-				// 失败重试（其他线程先抢到了）
+				last = last_time_.load(std::memory_order_relaxed); // reload
 				continue;
 			}
 
-			// 同一秒内，增加序列号
 			uint64_t step = step_.fetch_add(1, std::memory_order_relaxed) & kStepMask;
 			if (step == 0) {
-				// 本秒 step 用尽，等待下一秒
+				LOG_WARN << "当前秒内 ID 已耗尽（并发），等待下一秒";
 				now = WaitUntilTimeAdvance(last);
+				last = last_time_.load(std::memory_order_relaxed); // reload
 				if (last_time_.compare_exchange_strong(last, now, std::memory_order_acq_rel)) {
 					step_.store(0, std::memory_order_relaxed);
 					return ComposeID(now, 0);
@@ -141,26 +157,31 @@ public:
 	}
 
 private:
-	inline Guid ComposeID(uint64_t time, uint64_t step)
+	Guid ComposeID(uint64_t time, uint64_t step)
 	{
 		return (time << kTimeShift) |
 			(static_cast<uint64_t>(node_id_) << kNodeShift) |
 			step;
 	}
 
-	inline uint64_t NowEpoch() const
+	uint64_t NowEpoch() const
 	{
 		return static_cast<uint64_t>(
 			std::chrono::duration_cast<std::chrono::seconds>(
-				std::chrono::system_clock::now().time_since_epoch()
-			).count()
-			) - epoch_;
+				std::chrono::system_clock::now().time_since_epoch())
+			.count()) -
+			epoch_;
 	}
 
-	inline uint64_t WaitUntilTimeAdvance(uint64_t last_time) const
+	uint64_t WaitUntilTimeAdvance(uint64_t last_time) const
 	{
 		uint64_t now = NowEpoch();
+		int retry = 0;
 		while (now <= last_time) {
+			if (++retry > 3000) {
+				LOG_FATAL << "系统时间未前进，可能时钟异常";
+				break;
+			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			now = NowEpoch();
 		}
@@ -170,31 +191,25 @@ private:
 private:
 	const uint64_t epoch_ = kEpoch;
 	const uint16_t node_id_;
-
 	std::atomic<uint64_t> last_time_{ 0 };
 	std::atomic<uint64_t> step_{ 0 };
 };
 
-
 struct SnowFlakeComponents {
-	uint64_t timestamp;  // 相对于 epoch 的秒数
+	uint64_t timestamp;
 	uint64_t node_id;
 	uint64_t sequence;
 };
 
-// 解析 ID 的时间、节点、序列号
 inline SnowFlakeComponents ParseGuid(Guid id, uint64_t epoch = kEpoch)
 {
 	SnowFlakeComponents components;
-
 	components.timestamp = (id >> kTimeShift);
-	components.node_id = (id >> kNodeShift) & ((1ULL << kNodeBits) - 1);
+	components.node_id = (id >> kNodeShift) & kNodeMask;
 	components.sequence = id & kStepMask;
-
 	return components;
 }
 
-// 获取真实系统时间戳（std::time_t），单位秒
 inline std::time_t GetRealTimeFromGuid(Guid id, uint64_t epoch = kEpoch)
 {
 	uint64_t seconds_since_epoch = (id >> kTimeShift);
