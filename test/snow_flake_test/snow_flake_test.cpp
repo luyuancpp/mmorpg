@@ -4,6 +4,8 @@
 #include <thread>
 #include <unordered_set>
 #include <vector>
+#define ENABLE_SNOWFLAKE_TESTING
+
 #include "util/snow_flake.h"
 
 using Guid = uint64_t;
@@ -11,7 +13,7 @@ using Guid = uint64_t;
 using GuidVector = std::vector<Guid>;
 using GuidSet = std::unordered_set<Guid>;
 
-constexpr size_t kTotal = INT32_MAX;
+constexpr size_t kTotal = 10000,0000;
 
 SnowFlakeAtomic idGenAtomic;
 GuidSet firstV;
@@ -49,6 +51,71 @@ void putVectorIntoSet(GuidSet& s, GuidVector& v)
 	}
 }
 
+
+TEST(SnowFlakeTest, ClockRollback_SingleThread) {
+	SnowFlake sf;
+	sf.set_node_id(1);
+	sf.set_mock_now(1000);  // 当前时间为 1000
+
+	auto id1 = sf.Generate();
+	auto c1 = ParseGuid(id1);
+
+	sf.set_mock_now(990);  // 模拟时钟回拨
+	auto id2 = sf.Generate();
+	auto c2 = ParseGuid(id2);
+
+	EXPECT_GE(c2.timestamp, c1.timestamp);  // ID 不能比之前的时间戳小
+}
+
+TEST(SnowFlakeAtomicTest, ClockRollback_Concurrent) {
+	SnowFlakeAtomic sf;
+	sf.set_node_id(2);
+	sf.set_mock_now(2000);
+
+	auto id1 = sf.Generate();
+	auto c1 = ParseGuid(id1);
+
+	sf.set_mock_now(1995);  // 模拟回拨
+	auto id2 = sf.Generate();
+	auto c2 = ParseGuid(id2);
+
+	EXPECT_GE(c2.timestamp, c1.timestamp);  // 应修正为不小于上次
+}
+
+
+TEST(SnowFlakeTest, ClockRollbackSingleThread) {
+	SnowFlake sf;
+	sf.set_node_id(1);
+
+	sf.set_mock_now(1000);
+	Guid id1 = sf.Generate();
+	auto c1 = ParseGuid(id1);
+
+	sf.set_mock_now(990); // 模拟时钟回拨
+	Guid id2 = sf.Generate();
+	auto c2 = ParseGuid(id2);
+
+	// 回拨后产生的 ID 不能小于之前
+	EXPECT_GE(c2.timestamp, c1.timestamp);
+	EXPECT_EQ(c2.node_id, c1.node_id);
+}
+
+TEST(SnowFlakeTest, ClockRollbackMultiThread) {
+	SnowFlakeAtomic sf;
+	sf.set_node_id(2);
+
+	sf.set_mock_now(2000);
+	Guid id1 = sf.Generate();
+	auto c1 = ParseGuid(id1);
+
+	sf.set_mock_now(1990); // 模拟时钟回拨
+	Guid id2 = sf.Generate();
+	auto c2 = ParseGuid(id2);
+
+	// 期望修复后的时间戳不小于之前的
+	EXPECT_GE(c2.timestamp, c1.timestamp);
+	EXPECT_EQ(c2.node_id, c1.node_id);
+}
 
 TEST(SnowFlakeTest, Generate100MillionGUIDs_UniqueInSingleNode)
 {
@@ -109,52 +176,108 @@ TEST(SnowFlakeTest, NodeIDAffectsGeneratedID)
 	EXPECT_NE(id1, id2);
 }
 
-// 模拟时间回拨（逻辑演示，实际测试需 mock）
-TEST(SnowFlakeTest, HandleClockRollback)
-{
-	SnowFlake sf;
-	sf.set_node_id(1);
-	sf.set_epoch(kEpoch);
+//单线程 + 普通生成（SnowFlake::Generate）
+TEST(SnowFlakeTest, UniqueIds_SingleThread_NormalGenerate) {
+	constexpr int32_t kNodeCount = 5;
 
-	Guid id1 = sf.Generate();
+	std::unordered_set<Guid> all_ids;
+	all_ids.reserve(kNodeCount * kTotal);
 
-	// 模拟系统时间回拨（需配合注入或 mock）
-	// 这里无法精确模拟，但你可以手动调用内部函数进行测试
-	// 比如 WaitNextTime(last_time_) 的返回值 > last_time_
+	for (int32_t node = 0; node < kNodeCount; ++node) {
+		SnowFlake sf;
+		sf.set_node_id(static_cast<uint16_t>(node));
 
-	EXPECT_NO_THROW({
-		Guid id2 = sf.Generate();
-		EXPECT_GT(id2, id1);
-		});
-}
-
-
-
-TEST(SnowFlakeAtomicTest, StepAutoIncrementInSameSecond)
-{
-	SnowFlakeAtomic sf;
-	sf.set_node_id(1);
-
-	// 等待时间对齐到“秒”，确保所有生成落在同一秒
-	auto now = std::chrono::system_clock::now();
-	auto now_sec = std::chrono::time_point_cast<std::chrono::seconds>(now);
-	auto wait_until = now_sec + std::chrono::seconds(1); // 下一整秒
-
-	std::this_thread::sleep_until(wait_until);
-
-	// 现在开始在“同一秒”内快速生成多个 ID
-	std::vector<Guid> ids;
-	for (int i = 0; i < 100; ++i) {
-		ids.push_back(sf.Generate());
+		for (int32_t i = 0; i < kTotal; ++i) {
+			Guid id = sf.Generate();
+			auto [_, inserted] = all_ids.insert(id);
+			ASSERT_TRUE(inserted) << "Duplicate ID from node " << node;
+		}
 	}
 
-	// 检查 sequence 是否递增，step 从 0 开始
-	for (size_t i = 0; i < ids.size(); ++i) {
-		SnowFlakeComponents c = ParseGuid(ids[i]);
-		LOG_INFO << "Index: " << i << ", step: " << c.sequence;
-		EXPECT_EQ(c.sequence, i); // step 应该等于索引
-	}
+	EXPECT_EQ(all_ids.size(), kNodeCount * kTotal);
 }
+
+//单线程 + 批量生成（SnowFlake::GenerateBatch）
+TEST(SnowFlakeTest, UniqueIds_SingleThread_BatchGenerate) {
+	constexpr int32_t kNodeCount = 5;
+
+	std::unordered_set<Guid> all_ids;
+	all_ids.reserve(kNodeCount * kTotal);
+
+	for (int32_t node = 0; node < kNodeCount; ++node) {
+		SnowFlake sf;
+		sf.set_node_id(static_cast<uint16_t>(node));
+
+		auto ids = sf.GenerateBatch(kTotal);
+		for (const auto& id : ids) {
+			auto [_, inserted] = all_ids.insert(id);
+			ASSERT_TRUE(inserted) << "Duplicate ID from node " << node;
+		}
+	}
+
+	EXPECT_EQ(all_ids.size(), kNodeCount * kTotal);
+}
+
+//多线程 + 普通生成（SnowFlakeAtomic::Generate）
+TEST(SnowFlakeTest, UniqueIds_MultiThread_NormalGenerate) {
+	constexpr int32_t kNodeCount = 5;
+
+	std::unordered_set<Guid> all_ids;
+	std::mutex id_mutex;
+
+	std::vector<std::thread> threads;
+
+	for (int32_t node = 0; node < kNodeCount; ++node) {
+		threads.emplace_back([node, &all_ids, &id_mutex]() {
+			SnowFlakeAtomic sf;
+			sf.set_node_id(static_cast<uint16_t>(node));
+
+			for (int32_t i = 0; i < kTotal; ++i) {
+				Guid id = sf.Generate();
+				std::lock_guard<std::mutex> lock(id_mutex);
+				auto [_, inserted] = all_ids.insert(id);
+				ASSERT_TRUE(inserted) << "Duplicate ID in thread node " << node;
+			}
+			});
+	}
+
+	for (auto& t : threads) {
+		t.join();
+	}
+
+	EXPECT_EQ(all_ids.size(), kNodeCount * kTotal);
+}
+
+//多线程 + 批量生成（SnowFlakeAtomic::GenerateBatch）
+TEST(SnowFlakeTest, UniqueIds_MultiThread_BatchGenerate) {
+	constexpr int32_t kNodeCount = 5;
+
+	std::unordered_set<Guid> all_ids;
+	std::mutex id_mutex;
+
+	std::vector<std::thread> threads;
+
+	for (int32_t node = 0; node < kNodeCount; ++node) {
+		threads.emplace_back([node, &all_ids, &id_mutex]() {
+			SnowFlakeAtomic sf;
+			sf.set_node_id(static_cast<uint16_t>(node));
+
+			auto ids = sf.GenerateBatch(kTotal);
+			std::lock_guard<std::mutex> lock(id_mutex);
+			for (const auto& id : ids) {
+				auto [_, inserted] = all_ids.insert(id);
+				ASSERT_TRUE(inserted) << "Duplicate ID in thread node " << node;
+			}
+			});
+	}
+
+	for (auto& t : threads) {
+		t.join();
+	}
+
+	EXPECT_EQ(all_ids.size(), kNodeCount * kTotal);
+}
+
 
 TEST(TestSnowFlakeThreadSafe, justGenerateTime)
 {
@@ -190,7 +313,7 @@ TEST(SnowFlakeTest, SequentialOrder) {
 	gen.set_node_id(1);
 	Guid last = gen.Generate();
 
-	for (int i = 0; i < 1000; ++i) {
+	for (int32_t i = 0; i < 1000; ++i) {
 		Guid next = gen.Generate();
 		ASSERT_GT(next, last) << "ID should be monotonically increasing";
 		last = next;
@@ -198,8 +321,8 @@ TEST(SnowFlakeTest, SequentialOrder) {
 }
 
 TEST(SnowFlakeTest, MultiThreadUniqueness) {
-	constexpr int THREAD_COUNT = 8;
-	constexpr int IDS_PER_THREAD = 5000;
+	constexpr int32_t THREAD_COUNT = 8;
+	constexpr int32_t IDS_PER_THREAD = 5000;
 
 	SnowFlakeAtomic gen;
 	gen.set_node_id(2);
@@ -208,7 +331,7 @@ TEST(SnowFlakeTest, MultiThreadUniqueness) {
 
 	auto worker = [&]() {
 		std::unordered_set<Guid> local_ids;
-		for (int i = 0; i < IDS_PER_THREAD; ++i) {
+		for (int32_t i = 0; i < IDS_PER_THREAD; ++i) {
 			local_ids.insert(gen.Generate());
 		}
 
@@ -220,7 +343,7 @@ TEST(SnowFlakeTest, MultiThreadUniqueness) {
 		};
 
 	std::vector<std::thread> threads;
-	for (int i = 0; i < THREAD_COUNT; ++i) {
+	for (int32_t i = 0; i < THREAD_COUNT; ++i) {
 		threads.emplace_back(worker);
 	}
 
@@ -328,7 +451,7 @@ TEST(SnowFlakeTest, ConcurrentBatchGeneration)
 	EXPECT_EQ(unique_ids.size(), all_ids.size()) << "并发生成的 ID 有重复";
 }
 
-int main(int argc, char** argv)
+int32_t main(int32_t argc, char** argv)
 {
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();

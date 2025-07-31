@@ -19,7 +19,7 @@ using Guid = uint64_t;
 // https://github.com/bwmarrin/snowflake
 
 constexpr uint64_t kEpoch = 1719674201;
-#ifdef TESTING
+#ifdef ENABLE_SNOWFLAKE_TESTING
 constexpr uint64_t kNodeBits = 10;
 constexpr uint64_t kStepBits = 20;
 #else
@@ -114,6 +114,14 @@ public:
 		return ids;
 	}
 
+#ifdef ENABLE_SNOWFLAKE_TESTING
+	void set_mock_now(uint64_t mock_now)
+	{
+		mock_now_ = mock_now;
+		use_mock_time_ = true;
+	}
+#endif
+
 private:
 	uint64_t ComposeID(uint64_t time, uint64_t step)
 	{
@@ -139,6 +147,12 @@ private:
 
 	uint64_t NowEpoch() const
 	{
+#ifdef ENABLE_SNOWFLAKE_TESTING
+		if (use_mock_time_) {
+			return mock_now_ - epoch_;
+		}
+#endif
+
 		return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(
 			std::chrono::system_clock::now().time_since_epoch())
 			.count()) - epoch_;
@@ -149,6 +163,11 @@ private:
 	uint16_t node_id_;
 	uint64_t last_time_ = 0;
 	uint64_t step_ = 0;
+#ifdef ENABLE_SNOWFLAKE_TESTING
+	uint64_t mock_now_ = 0;
+	bool use_mock_time_ = false;
+#endif
+
 };
 
 class SnowFlakeAtomic
@@ -244,6 +263,13 @@ public:
 		return ids;
 	}
 
+#ifdef ENABLE_SNOWFLAKE_TESTING
+public:
+	void set_mock_now(uint64_t mock_now) {
+		mock_now_.store(mock_now, std::memory_order_relaxed);
+		use_mock_time_.store(true, std::memory_order_relaxed);
+	}
+#endif
 private:
 	Guid ComposeID(uint64_t time, uint64_t step)
 	{
@@ -254,6 +280,12 @@ private:
 
 	uint64_t NowEpoch() const
 	{
+#ifdef ENABLE_SNOWFLAKE_TESTING
+		if (use_mock_time_.load(std::memory_order_relaxed)) {
+			return mock_now_.load(std::memory_order_relaxed) - epoch_;
+		}
+#endif
+
 		return static_cast<uint64_t>(
 			std::chrono::duration_cast<std::chrono::seconds>(
 				std::chrono::system_clock::now().time_since_epoch())
@@ -280,6 +312,10 @@ private:
 	uint16_t node_id_;
 	std::atomic<uint64_t> last_time_{ 0 };
 	std::atomic<uint64_t> step_{ 0 };
+#ifdef ENABLE_SNOWFLAKE_TESTING
+	std::atomic<uint64_t> mock_now_{ 0 };
+	std::atomic<bool> use_mock_time_{ false };
+#endif
 };
 
 struct SnowFlakeComponents {
