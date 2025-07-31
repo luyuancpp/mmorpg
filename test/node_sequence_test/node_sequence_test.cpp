@@ -9,6 +9,8 @@
 #include "util/snow_flake.h"
 #include "util/node_id_generator.h"
 
+
+
 using GuidVector = std::vector<Guid>;
 using GuidSet = std::unordered_set<Guid>;
 
@@ -34,8 +36,10 @@ void putVectorIntoSet(GuidSet& s, GuidVector& v)
 	}
 }
 
+
 TEST(TestSnowFlakeThreadSafe, justGenerateTime)
 {
+	idGenAtomic.set_node_id(1);
 	Guid id = idGenAtomic.Generate();
 }
 

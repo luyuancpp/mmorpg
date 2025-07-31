@@ -19,8 +19,8 @@ using Guid = uint64_t;
 // https://github.com/bwmarrin/snowflake
 
 static constexpr uint64_t kEpoch = 1719674201;
-static constexpr uint64_t kNodeBits = 14;
-static constexpr uint64_t kStepBits = 16;
+static constexpr uint64_t kNodeBits = 12;
+static constexpr uint64_t kStepBits = 18;
 
 static constexpr uint64_t kTimeShift = kNodeBits + kStepBits;
 static constexpr uint64_t kNodeShift = kStepBits;
@@ -52,20 +52,24 @@ public:
 		}
 
 		if (now > last_time_) {
-			step_ = 0;
 			last_time_ = now;
+			step_ = 0;
 		}
 		else {
-			step_ = (step_ + 1) & kStepMask;
-			if (step_ == 0) {
+			if (step_ >= kStepMask) {
 				LOG_WARN << "当前秒内 ID 已耗尽，等待下一秒";
 				now = WaitNextTime(last_time_);
 				last_time_ = now;
+				step_ = 0;
+			}
+			else {
+				step_ += 1;
 			}
 		}
 
 		return ComposeID(last_time_, step_);
 	}
+
 
 	std::vector<Guid> GenerateBatch(size_t count)
 	{
@@ -169,27 +173,26 @@ public:
 			if (now > last) {
 				if (last_time_.compare_exchange_strong(last, now, std::memory_order_acq_rel)) {
 					step_.store(0, std::memory_order_relaxed);
-					return ComposeID(now, 0);
+					last = now;
 				}
-				last = last_time_.load(std::memory_order_relaxed); // reload
-				continue;
+				else {
+					last = last_time_.load(std::memory_order_relaxed);
+					continue;
+				}
 			}
 
-			uint64_t step = step_.fetch_add(1, std::memory_order_relaxed) & kStepMask;
-			if (step == 0) {
-				LOG_WARN << "当前秒内 ID 已耗尽（并发），等待下一秒";
+			uint64_t step = step_.fetch_add(1, std::memory_order_relaxed);
+			if (step > kStepMask) {
+				LOG_WARN << "step overflow in one second, waiting for next second";
 				now = WaitUntilTimeAdvance(last);
-				last = last_time_.load(std::memory_order_relaxed); // reload
-				if (last_time_.compare_exchange_strong(last, now, std::memory_order_acq_rel)) {
-					step_.store(0, std::memory_order_relaxed);
-					return ComposeID(now, 0);
-				}
+				last_time_.store(now, std::memory_order_relaxed);
+				step_.store(0, std::memory_order_relaxed);
 				continue;
 			}
-
-			return ComposeID(now, step);
+			return ComposeID(last, step);
 		}
 	}
+
 
 	std::vector<Guid> GenerateBatch(size_t count)
 	{
