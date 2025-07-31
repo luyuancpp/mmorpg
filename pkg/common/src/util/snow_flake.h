@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <atomic>
 #include <chrono>
@@ -23,8 +23,8 @@ using Guid = uint64_t;
 // 注意：总位数为 63 位，兼容 Lua（避免使用符号位）
 
 static constexpr uint64_t kEpoch = 1719674201; // 自定义 epoch（单位：秒）
-static constexpr uint64_t kNodeBits = 13;      // 节点ID位数
-static constexpr uint64_t kStepBits = 18;      // 每秒内生成的序号
+static constexpr uint64_t kNodeBits = 15;      // 节点ID位数
+static constexpr uint64_t kStepBits = 15;      // 每秒内生成的序号
 static constexpr uint64_t kTimeShift = kNodeBits + kStepBits;
 static constexpr uint64_t kNodeShift = kStepBits;
 static constexpr uint64_t kStepMask = (1ULL << kStepBits) - 1; // 262143
@@ -132,3 +132,29 @@ public:
 private:
 	mutable MutexLock mutex_;
 };
+
+
+struct SnowFlakeComponents {
+	uint64_t timestamp;  // 相对于 epoch 的秒数
+	uint64_t node_id;
+	uint64_t sequence;
+};
+
+// 解析 ID 的时间、节点、序列号
+inline SnowFlakeComponents ParseGuid(Guid id, uint64_t epoch = kEpoch)
+{
+	SnowFlakeComponents components;
+
+	components.timestamp = (id >> kTimeShift);
+	components.node_id = (id >> kNodeShift) & ((1ULL << kNodeBits) - 1);
+	components.sequence = id & kStepMask;
+
+	return components;
+}
+
+// 获取真实系统时间戳（std::time_t），单位秒
+inline std::time_t GetRealTimeFromGuid(Guid id, uint64_t epoch = kEpoch)
+{
+	uint64_t seconds_since_epoch = (id >> kTimeShift);
+	return static_cast<std::time_t>(seconds_since_epoch + epoch);
+}
