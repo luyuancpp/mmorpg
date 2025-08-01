@@ -8,10 +8,6 @@ import (
 	"login/internal/config"
 )
 
-func GetQueueName(playerId uint64) string {
-	return fmt.Sprintf("shard:%d", playerId%config.AppConfig.Node.QueueShardCount)
-}
-
 func EnqueueTaskWithID(ctx context.Context, client *asynq.Client, playerID uint64, taskID string, payload []byte) (string, error) {
 	if taskID == "" {
 		return "", fmt.Errorf("taskID cannot be empty")
