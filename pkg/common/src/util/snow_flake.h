@@ -20,8 +20,8 @@ using Guid = uint64_t;
 
 #ifdef ENABLE_SNOWFLAKE_TESTING
 constexpr uint64_t kEpoch = 0;
-constexpr uint64_t kNodeBits = 14;
-constexpr uint64_t kStepBits = 16;
+constexpr uint64_t kNodeBits = 11;
+constexpr uint64_t kStepBits = 19;
 #else
 constexpr uint64_t kEpoch = 1753951299;
 constexpr uint64_t kNodeBits = 14;
