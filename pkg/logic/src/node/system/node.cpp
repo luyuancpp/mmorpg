@@ -799,21 +799,28 @@ void Node::AcquireNode() {
 
 	constexpr uint32_t PORT_STEP = 10000;
 
-	// 1. 如果是全局唯一类型，直接使用 zone_id
+	// 1. 如果是全局唯一类型，执行清理逻辑 + 直接使用 zone_id
 	if (IsZoneSingletonNodeType(GetNodeType())) {
-		uint32_t zoneId = tlsCommonLogic.GetGameConfig().zone_id();
+		const uint32_t zoneId = tlsCommonLogic.GetGameConfig().zone_id();
 		GetNodeInfo().set_node_id(zoneId);
 		LOG_INFO << "Assigned node_id by zone_id: " << zoneId;
+
+		// 清理已有的 key（基于 node type 前缀）
+		std::string prefix = MakeEtcdKey(GetNodeInfo());
+		EtcdHelper::DeleteRange(prefix, false);
+		LOG_INFO << "Deleted old singleton keys with prefix: " << prefix;
 
 		if (rpcServer == nullptr) {
 			uint32_t assignedPort = GetNodeType() * PORT_STEP + zoneId;
 			GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
 			LOG_INFO << "Assigned RPC port: " << assignedPort;
 		}
+
 		RegisterNodeService();
 		return;
 	}
 
+	// ...（以下为非 singleton 的原有分配逻辑）
 	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[GetNodeType()];
 	auto& existingNodes = *nodeList.mutable_node_list();
 
@@ -863,7 +870,6 @@ void Node::AcquireNode() {
 
 	RegisterNodeService();
 }
-
 
 void Node::KeepNodeAlive() {
 	renewLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().keep_alive_interval(), [this]() {

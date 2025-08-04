@@ -8,11 +8,9 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	RoutineNum       int            `json:"RoutineNum"`
-	ChannelBufferNum uint64         `json:"ChannelBufferNum"`
-	Database         DatabaseConfig `json:"Database"`
-	RedisClient      RedisConfig    `json:"RedisClient"`
-	QueueShardCount  uint64         `json:"QueueShardCount"`
+	Database        DatabaseConfig `json:"Database"`
+	RedisClient     RedisConfig    `json:"RedisClient"`
+	QueueShardCount uint64         `json:"QueueShardCount"`
 }
 
 type DatabaseConfig struct {

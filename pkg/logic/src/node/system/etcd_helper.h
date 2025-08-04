@@ -12,4 +12,5 @@ namespace EtcdHelper {
 	void PutIfAbsent(const std::string& key, const std::string& newValue, int64_t currentVersion, int64_t lease);
 	void PutIfAbsent(const std::string& key, const NodeInfo& nodeInfo, int64_t lease);
 	void RevokeLeaseAndCleanup(int64_t leaseId);
+	void DeleteRange(const std::string& key, bool isPrefix);
 }

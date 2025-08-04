@@ -218,7 +218,7 @@ func LoadAggregateData(
 
 	var subResults []proto.Message
 	for i, tid := range taskIDs {
-		resBytes, err := WaitForTaskResult(ctx, redisClient, tid, 100)
+		resBytes, err := WaitForTaskResult(ctx, redisClient, tid, 1000)
 		if err != nil {
 			return err
 		}
