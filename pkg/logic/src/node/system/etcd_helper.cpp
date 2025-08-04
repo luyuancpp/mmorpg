@@ -107,3 +107,16 @@ void EtcdHelper::RevokeLeaseAndCleanup(int64_t leaseId)
 
 	SendLeaseLeaseRevoke(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), request);
 }
+
+void EtcdHelper::DeleteRange(const std::string& key, bool isPrefix) {
+	etcdserverpb::DeleteRangeRequest request;
+	request.set_key(key);
+
+	if (isPrefix) {
+		std::string range_end = key;
+		range_end.back() += 1;  // prefix 范围删除
+		request.set_range_end(range_end);
+	}
+
+	SendKVDeleteRange(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), request);
+}
