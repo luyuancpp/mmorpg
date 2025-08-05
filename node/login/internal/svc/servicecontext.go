@@ -2,11 +2,13 @@ package svc
 
 import (
 	"context"
+	"fmt"
 	"github.com/bwmarrin/snowflake"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"login/internal/config"
 	"login/internal/logic/pkg/centre"
+	"login/internal/logic/pkg/taskmanager"
 	"login/pb/game"
 	"sync/atomic"
 )
@@ -18,28 +20,48 @@ type ServiceContext struct {
 	// 使用 atomic.Value 安全存储 CentreClient
 	centreClient atomic.Value // 类型为 *centre.CentreClient
 	AsynqClient  *asynq.Client
+	TaskManager  *taskmanager.TaskManager
+	TaskExecutor *taskmanager.TaskExecutor
 }
 
 func NewServiceContext() *ServiceContext {
+	ctx := context.Background()
+
+	// 初始化 Redis 客户端配置
+	redisHost := config.AppConfig.Node.RedisClient.Host
+	redisPassword := config.AppConfig.Node.RedisClient.Password
+	redisDB := int(config.AppConfig.Node.RedisClient.DB)
+
 	redisOpt := asynq.RedisClientOpt{
-		Addr:     config.AppConfig.Node.RedisClient.Host,
-		Password: config.AppConfig.Node.RedisClient.Password,
-		DB:       int(config.AppConfig.Node.RedisClient.DB),
+		Addr:     redisHost,
+		Password: redisPassword,
+		DB:       redisDB,
 	}
 
-	RedisClient := redis.NewClient(&redis.Options{
-		Addr:     config.AppConfig.Node.RedisClient.Host,
-		Password: config.AppConfig.Node.RedisClient.Password,
-		DB:       int(config.AppConfig.Node.RedisClient.DB),
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     redisHost,
+		Password: redisPassword,
+		DB:       redisDB,
 	})
 
-	if err := RedisClient.Ping(context.Background()).Err(); err != nil {
-		panic(err)
+	if err := redisClient.Ping(ctx).Err(); err != nil {
+		panic(fmt.Errorf("failed to connect Redis: %w", err))
 	}
 
+	// 初始化 TaskManager 和 TaskExecutor
+	taskMgr := taskmanager.NewTaskManager()
+
+	taskExecutor, err := taskmanager.NewTaskExecutor(100, taskMgr, redisClient)
+	if err != nil {
+		panic(fmt.Errorf("failed to init TaskExecutor: %w", err))
+	}
+
+	// 返回 ServiceContext 实例
 	return &ServiceContext{
-		RedisClient: RedisClient,
-		AsynqClient: asynq.NewClient(redisOpt),
+		RedisClient:  redisClient,
+		AsynqClient:  asynq.NewClient(redisOpt),
+		TaskManager:  taskMgr,
+		TaskExecutor: taskExecutor,
 	}
 }
 

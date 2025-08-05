@@ -2,7 +2,6 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"fmt"
 	"google.golang.org/protobuf/proto"
 	"login/data"
 	"login/internal/config"
@@ -146,7 +145,6 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 
 func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 	msgCentre := &game.PlayerCentreDatabase{PlayerId: playerId}
-
 	err := dataloader.BatchLoadAndCache(
 		l.ctx,
 		l.svcCtx.RedisClient,
@@ -155,7 +153,8 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		[]proto.Message{
 			msgCentre,
 		},
-	)
+		l.svcCtx.TaskManager,
+		l.svcCtx.TaskExecutor)
 
 	if err != nil {
 		logx.Errorf("BatchLoadAndCache error: %v", err)
@@ -176,25 +175,11 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 				&game.PlayerDatabase_1{PlayerId: id},
 			}
 		},
-		func(messages []proto.Message, target proto.Message) error {
-			allData := target.(*game.PlayerAllData)
-			for _, m := range messages {
-				switch msg := m.(type) {
-				case *game.PlayerDatabase:
-					allData.PlayerDatabaseData = msg
-				case *game.PlayerDatabase_1:
-					allData.PlayerDatabase_1Data = msg
-				default:
-					return fmt.Errorf("unexpected type %T", msg)
-				}
-			}
-			return nil
-		},
 		func(id uint64) string {
-			return "PlayerAllData:" + strconv.FormatUint(id, 10)
+			return string(playerAll.ProtoReflect().Descriptor().FullName()) + ":" + strconv.FormatUint(id, 10)
 		},
-		time.Duration(config.AppConfig.Node.RedisClient.DefaultTTLSeconds)*time.Second,
-	)
+		l.svcCtx.TaskManager,
+		l.svcCtx.TaskExecutor)
 
 	return nil
 }
