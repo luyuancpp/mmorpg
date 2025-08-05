@@ -73,7 +73,7 @@ func (tm *TaskManager) ProcessBatch(ctx context.Context, taskKey string, redisCl
 			continue
 		}
 
-		resBytes, err := WaitForTaskResult(ctx, redisClient, task.TaskID, 100)
+		resBytes, err := WaitForTaskResult(ctx, redisClient, task.TaskID, 1000)
 		if err != nil {
 			task.Status = "failed"
 			task.Error = err

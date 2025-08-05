@@ -3,27 +3,11 @@ package dataloader
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
-	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 	"login/internal/logic/pkg/taskmanager"
-	"time"
 )
-
-func BuildRedisKey(message proto.Message, playerIdStr string) string {
-	return string(message.ProtoReflect().Descriptor().FullName()) + ":" + playerIdStr
-}
-
-func SaveProtoToRedis(ctx context.Context, redis redis.Cmdable, key string, msg proto.Message, ttl time.Duration) error {
-	data, err := proto.Marshal(msg)
-	if err != nil {
-		logx.Errorf("Marshal proto to Redis error: %v", err)
-		return err
-	}
-	return redis.Set(ctx, key, data, ttl).Err()
-}
 
 func LoadProtoFromRedis(ctx context.Context, redisClient redis.Cmdable, key string, msg proto.Message) (bool, error) {
 	val, err := redisClient.Get(ctx, key).Bytes()
@@ -37,21 +21,6 @@ func LoadProtoFromRedis(ctx context.Context, redisClient redis.Cmdable, key stri
 		return false, err
 	}
 	return true, nil
-}
-
-func WaitForTaskResult(ctx context.Context, redisClient redis.Cmdable, key string, maxTries int) ([]byte, error) {
-	for try := 0; try < maxTries; try++ {
-		resBytes, err := redisClient.Get(ctx, key).Bytes()
-		if errors.Is(err, redis.Nil) {
-			time.Sleep(time.Duration(try+1) * time.Millisecond)
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
-		return resBytes, nil
-	}
-	return nil, fmt.Errorf("timeout waiting for task: %s", key)
 }
 
 func BatchLoadAndCache(
