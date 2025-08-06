@@ -38,17 +38,20 @@ func (tm *TaskManager) GetBatch(taskKey string) (*TaskBatch, bool) {
 	return batch, exists
 }
 
-func SaveProtoToRedis(ctx context.Context, redis redis.Cmdable, key string, msg proto.Message, ttl time.Duration) error {
+func SaveProtoToRedis(redis redis.Cmdable, key string, msg proto.Message, ttl time.Duration) error {
 	data, err := proto.Marshal(msg)
 	if err != nil {
 		logx.Errorf("Marshal proto to Redis error: %v", err)
 		return err
 	}
-	return redis.Set(ctx, key, data, ttl).Err()
+	return redis.Set(context.Background(), key, data, ttl).Err()
 }
 
-func WaitForTaskResult(ctx context.Context, redisClient redis.Cmdable, key string, timeout time.Duration) ([]byte, error) {
-	// BLPOP 返回 [key, value]，如果超时或 key 不存在则返回 redis.Nil
+func WaitForTaskResult(redisClient redis.Cmdable, key string, timeout time.Duration) ([]byte, error) {
+	// 创建一个新的 timeout ctx，避免父 ctx 被取消影响
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
 	result, err := redisClient.BLPop(ctx, timeout, key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -64,7 +67,7 @@ func WaitForTaskResult(ctx context.Context, redisClient redis.Cmdable, key strin
 	return []byte(result[1]), nil
 }
 
-func (tm *TaskManager) ProcessBatch(ctx context.Context, taskKey string, redisClient redis.Cmdable) {
+func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 	logx.Infof("Start processing task batch for key: %s", taskKey)
 
 	batch, exists := tm.GetBatch(taskKey)
@@ -80,7 +83,7 @@ func (tm *TaskManager) ProcessBatch(ctx context.Context, taskKey string, redisCl
 		}
 
 		logx.Infof("Waiting for task result: %s", task.TaskID)
-		resBytes, err := WaitForTaskResult(ctx, redisClient, task.TaskID, time.Duration(config.AppConfig.Timeouts.TaskWaitTimeoutSec)*time.Second)
+		resBytes, err := WaitForTaskResult(redisClient, task.TaskID, time.Duration(config.AppConfig.Timeouts.TaskWaitTimeoutSec)*time.Second)
 		if err != nil {
 			task.Status = "failed"
 			task.Error = err
@@ -111,7 +114,7 @@ func (tm *TaskManager) ProcessBatch(ctx context.Context, taskKey string, redisCl
 			continue
 		}
 
-		if err := SaveProtoToRedis(ctx, redisClient, task.RedisKey, task.Message, 5*time.Minute); err != nil {
+		if err := SaveProtoToRedis(redisClient, task.RedisKey, task.Message, time.Duration(config.AppConfig.Timeouts.RoleCacheExpireHours)*time.Hour); err != nil {
 			task.Status = "failed"
 			task.Error = err
 			logx.Errorf("Failed to save message to Redis for task %s: %v", task.TaskID, err)
