@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"google.golang.org/protobuf/proto"
+	"login/internal/config"
 	"login/pb/taskpb"
 	"sync"
 	"time"
@@ -46,19 +47,21 @@ func SaveProtoToRedis(ctx context.Context, redis redis.Cmdable, key string, msg 
 	return redis.Set(ctx, key, data, ttl).Err()
 }
 
-func WaitForTaskResult(ctx context.Context, redisClient redis.Cmdable, key string, maxTries int) ([]byte, error) {
-	for try := 0; try < maxTries; try++ {
-		resBytes, err := redisClient.Get(ctx, key).Bytes()
+func WaitForTaskResult(ctx context.Context, redisClient redis.Cmdable, key string, timeout time.Duration) ([]byte, error) {
+	// BLPOP 返回 [key, value]，如果超时或 key 不存在则返回 redis.Nil
+	result, err := redisClient.BLPop(ctx, timeout, key).Result()
+	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			time.Sleep(time.Duration(try+1) * time.Millisecond)
-			continue
+			return nil, fmt.Errorf("timeout waiting for task: %s", key)
 		}
-		if err != nil {
-			return nil, err
-		}
-		return resBytes, nil
+		return nil, err
 	}
-	return nil, fmt.Errorf("timeout waiting for task: %s", key)
+
+	if len(result) != 2 {
+		return nil, fmt.Errorf("unexpected BLPOP result: %v", result)
+	}
+
+	return []byte(result[1]), nil
 }
 
 func (tm *TaskManager) ProcessBatch(ctx context.Context, taskKey string, redisClient redis.Cmdable) {
@@ -73,7 +76,7 @@ func (tm *TaskManager) ProcessBatch(ctx context.Context, taskKey string, redisCl
 			continue
 		}
 
-		resBytes, err := WaitForTaskResult(ctx, redisClient, task.TaskID, 1000)
+		resBytes, err := WaitForTaskResult(ctx, redisClient, task.TaskID, time.Duration(config.AppConfig.Timeouts.TaskWaitTimeoutSec)*time.Second)
 		if err != nil {
 			task.Status = "failed"
 			task.Error = err
