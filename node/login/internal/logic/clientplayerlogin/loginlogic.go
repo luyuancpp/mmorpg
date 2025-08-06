@@ -92,13 +92,18 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 
 	// 添加 SessionId 到设备集合
 	sessionKey := constants.GenerateSessionKey(in.Account)
-	if err := l.svcCtx.RedisClient.SAdd(l.ctx, sessionKey, sessionDetails.SessionId).Err(); err != nil {
-		logx.Errorf("RedisClient SAdd error: %v", err)
+	expire := time.Duration(config.AppConfig.Node.SessionExpireMin) * time.Minute
+
+	_, err = l.svcCtx.RedisClient.TxPipelined(l.ctx, func(pipe redis.Pipeliner) error {
+		pipe.SAdd(l.ctx, sessionKey, sessionDetails.SessionId)
+		pipe.Expire(l.ctx, sessionKey, expire)
+		return nil
+	})
+	if err != nil {
+		logx.Errorf("Failed to SAdd + Expire in pipeline for sessionKey=%s: %v", sessionKey, err)
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginRedisSetFailed)}
 		return resp, nil
 	}
-	expire := time.Duration(config.AppConfig.Node.SessionExpireMin) * time.Minute
-	_ = l.svcCtx.RedisClient.Expire(l.ctx, sessionKey, expire)
 
 	// 限制最多 N 个设备
 	count, err := l.svcCtx.RedisClient.SCard(l.ctx, sessionKey).Result()
@@ -134,25 +139,9 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	}
 
 	// 6. 加载账户数据（改进 RedisClient 获取判断方式）
-	rdKey := constants.GetAccountDataKey(in.Account)
-	cmd := l.svcCtx.RedisClient.Get(l.ctx, rdKey)
-	valueBytes, err := cmd.Bytes()
-	if errors.Is(err, redis.Nil) {
-		//todo
-		key := constants.GetAccountDataKey(in.Account)
-		msg := &game.UserAccounts{}
-		valueBytes, err := proto.Marshal(msg)
-		if err != nil {
-			logx.Error(err)
-			return nil, err
-		}
-
-		l.svcCtx.RedisClient.Set(l.ctx, key, valueBytes, time.Duration(12*time.Hour))
-	}
-
-	userAccount := &game.UserAccounts{}
-	if err := proto.Unmarshal(valueBytes, userAccount); err != nil {
-		logx.Errorf("Unmarshal user account failed for %s: %v", in.Account, err)
+	accountDataTTL := 12 * time.Hour
+	userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, in.Account, accountDataTTL)
+	if err != nil {
 		return nil, err
 	}
 
@@ -164,4 +153,47 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	}
 
 	return resp, nil
+}
+
+func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string, ttl time.Duration) (*game.UserAccounts, error) {
+	key := constants.GetAccountDataKey(account)
+
+	// 优先尝试从 Redis 获取
+	cmd := rdb.Get(ctx, key)
+	valueBytes, err := cmd.Bytes()
+
+	if errors.Is(err, redis.Nil) {
+		// Redis 无数据，创建空对象
+		logx.Infof("UserAccounts not found for account=%s, initializing default", account)
+		userAccount := &game.UserAccounts{}
+
+		valueBytes, err = proto.Marshal(userAccount)
+		if err != nil {
+			logx.Errorf("Marshal default UserAccounts failed: %v", err)
+			return nil, err
+		}
+
+		// 保存到 Redis
+		err = rdb.Set(ctx, key, valueBytes, ttl).Err()
+		if err != nil {
+			logx.Errorf("Failed to save default UserAccounts to Redis for account=%s: %v", account, err)
+			return nil, err
+		}
+
+		return userAccount, nil
+	}
+
+	if err != nil {
+		logx.Errorf("Failed to get UserAccounts from Redis: %v", err)
+		return nil, err
+	}
+
+	// 反序列化返回
+	userAccount := &game.UserAccounts{}
+	if err := proto.Unmarshal(valueBytes, userAccount); err != nil {
+		logx.Errorf("Unmarshal user account failed for account=%s: %v", account, err)
+		return nil, err
+	}
+
+	return userAccount, nil
 }
