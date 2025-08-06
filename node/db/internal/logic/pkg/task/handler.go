@@ -12,7 +12,6 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
-	"time"
 )
 
 func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
@@ -44,8 +43,7 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 		switch task.Op {
 		case "read":
 			logx.Infof("Executing DB read for TaskID=%s", task.TaskId)
-			err := db.DB.PBDB.LoadOneByWhereCase(msg, task.WhereCase)
-			if err != nil {
+			if err := db.DB.PBDB.LoadOneByWhereCase(msg, task.WhereCase); err != nil {
 				resultErr = fmt.Sprintf("DB read failed: %v", err)
 				logx.Errorf("DB read error for TaskID=%s: %v", task.TaskId, err)
 			} else {
@@ -58,8 +56,7 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 
 		case "write":
 			logx.Infof("Executing DB write for TaskID=%s", task.TaskId)
-			err := db.DB.PBDB.Save(msg)
-			if err != nil {
+			if err := db.DB.PBDB.Save(msg); err != nil {
 				resultErr = fmt.Sprintf("DB write failed: %v", err)
 				logx.Errorf("DB write error for TaskID=%s: %v", task.TaskId, err)
 			}
@@ -69,6 +66,7 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 			logx.Errorf("Unsupported op for TaskID=%s: %s", task.TaskId, task.Op)
 		}
 
+		// 返回结果写入 Redis
 		if task.TaskId != "" {
 			result := &taskpb.TaskResult{
 				Success: resultErr == "",
@@ -80,7 +78,9 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 				logx.Errorf("Marshal TaskResult failed for TaskID=%s: %v", task.TaskId, err)
 				return fmt.Errorf("marshal TaskResult failed: %v", err)
 			}
-			err = redisClient.Set(ctx, task.TaskId, resBytes, time.Minute).Err()
+
+			// 用 context.Background() 保证写入 Redis 不被外部取消打断
+			err = redisClient.LPush(context.Background(), task.TaskId, resBytes).Err()
 			if err != nil {
 				logx.Errorf("Failed to write TaskResult to Redis for TaskID=%s: %v", task.TaskId, err)
 				return fmt.Errorf("Redis set TaskResult failed: %v", err)
