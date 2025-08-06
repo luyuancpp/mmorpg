@@ -2,7 +2,6 @@ package taskmanager
 
 import (
 	"context"
-	"errors"
 	"login/internal/logic/pkg/cache"
 	"login/internal/logic/pkg/task"
 	"login/pb/taskpb"
@@ -27,16 +26,30 @@ func InitAndAddMessageTasks(
 	playerIdStr := strconv.FormatUint(playerId, 10)
 	var tasks []*MessageTask
 
-	for _, msg := range messages {
-		key := cache.BuildRedisKey(msg, playerIdStr) // 你自己的 Redis key 生成函数
+	// 构造 Redis key 和映射
+	keys := make([]string, 0, len(messages))
+	msgMap := make(map[string]proto.Message, len(messages))
 
-		_, err := redisClient.Get(ctx, key).Bytes()
-		if err == nil {
-			continue
+	for _, msg := range messages {
+		key := cache.BuildRedisKey(msg, playerIdStr)
+		keys = append(keys, key)
+		msgMap[key] = msg
+	}
+
+	// 使用 MGET 批量获取 Redis 数据
+	values, err := redisClient.MGet(ctx, keys...).Result()
+	if err != nil {
+		return err
+	}
+
+	// 遍历 Redis 返回值，处理 miss 的 key（nil）
+	for i, val := range values {
+		if val != nil {
+			continue // 已命中缓存，跳过
 		}
-		if !errors.Is(err, redis.Nil) {
-			return err
-		}
+
+		key := keys[i]
+		msg := msgMap[key]
 
 		data, err := proto.Marshal(msg)
 		if err != nil {
