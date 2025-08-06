@@ -139,8 +139,7 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	}
 
 	// 6. 加载账户数据（改进 RedisClient 获取判断方式）
-	accountDataTTL := 12 * time.Hour
-	userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, in.Account, accountDataTTL)
+	userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, in.Account, time.Duration(config.AppConfig.Timeouts.AccountDataTTLHours)*time.Second)
 	if err != nil {
 		return nil, err
 	}

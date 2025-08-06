@@ -61,6 +61,8 @@ type EtcdRegistryConf struct {
 type TimeoutConf struct {
 	EtcdDialTimeoutMS         int `json:"EtcdDialTimeoutMS"`
 	ServiceDiscoveryTimeoutMS int `json:"ServiceDiscoveryTimeoutMS"`
+	TaskWaitTimeoutSec        int `json:"TaskWaitTimeoutSec"`
+	AccountDataTTLHours       int `json:"AccountDataTTLHours"`
 }
 
 // 用于存储配置数据的全局变量
