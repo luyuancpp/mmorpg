@@ -40,7 +40,7 @@ func BatchLoadAndCache(
 		return err
 	}
 
-	return executor.SubmitTask(ctx, taskKey) // 非阻塞提交
+	return executor.SubmitTask(taskKey) // 非阻塞提交
 }
 
 func LoadAggregateData(
@@ -73,5 +73,5 @@ func LoadAggregateData(
 		return err
 	}
 
-	return executor.SubmitTask(ctx, taskKey) // 非阻塞提交
+	return executor.SubmitTask(taskKey) // 非阻塞提交
 }
