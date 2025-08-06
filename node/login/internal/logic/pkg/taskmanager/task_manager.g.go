@@ -65,21 +65,26 @@ func WaitForTaskResult(ctx context.Context, redisClient redis.Cmdable, key strin
 }
 
 func (tm *TaskManager) ProcessBatch(ctx context.Context, taskKey string, redisClient redis.Cmdable) {
+	logx.Infof("Start processing task batch for key: %s", taskKey)
+
 	batch, exists := tm.GetBatch(taskKey)
 	if !exists {
-		logx.Infof("No task batch for key: %s", taskKey)
+		logx.Infof("No task batch found for key: %s", taskKey)
 		return
 	}
 
 	for _, task := range batch.Tasks {
 		if task.Status != "pending" {
+			logx.Infof("Skipping task %s: status is %s", task.TaskID, task.Status)
 			continue
 		}
 
+		logx.Infof("Waiting for task result: %s", task.TaskID)
 		resBytes, err := WaitForTaskResult(ctx, redisClient, task.TaskID, time.Duration(config.AppConfig.Timeouts.TaskWaitTimeoutSec)*time.Second)
 		if err != nil {
 			task.Status = "failed"
 			task.Error = err
+			logx.Errorf("Task %s failed while waiting: %v", task.TaskID, err)
 			continue
 		}
 
@@ -87,27 +92,35 @@ func (tm *TaskManager) ProcessBatch(ctx context.Context, taskKey string, redisCl
 		if err := proto.Unmarshal(resBytes, &result); err != nil {
 			task.Status = "failed"
 			task.Error = err
+			logx.Errorf("Failed to unmarshal TaskResult for task %s: %v", task.TaskID, err)
 			continue
 		}
 
 		if !result.Success {
+			err := fmt.Errorf("task %s failed: %s", task.TaskID, result.Error)
 			task.Status = "failed"
-			task.Error = fmt.Errorf("task %s failed: %s", task.TaskID, result.Error)
+			task.Error = err
+			logx.Errorf("Task %s failed with error: %s", task.TaskID, result.Error)
 			continue
 		}
 
 		if err := proto.Unmarshal(result.Data, task.Message); err != nil {
 			task.Status = "failed"
 			task.Error = err
+			logx.Errorf("Failed to unmarshal Message for task %s: %v", task.TaskID, err)
 			continue
 		}
 
 		if err := SaveProtoToRedis(ctx, redisClient, task.RedisKey, task.Message, 5*time.Minute); err != nil {
 			task.Status = "failed"
 			task.Error = err
+			logx.Errorf("Failed to save message to Redis for task %s: %v", task.TaskID, err)
 			continue
 		}
 
 		task.Status = "done"
+		logx.Infof("Task %s processed successfully and saved to Redis", task.TaskID)
 	}
+
+	logx.Infof("Finished processing task batch for key: %s", taskKey)
 }
