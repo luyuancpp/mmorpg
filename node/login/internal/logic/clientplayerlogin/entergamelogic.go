@@ -181,7 +181,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		l.svcCtx.TaskManager,
 		l.svcCtx.TaskExecutor)
 
-	return nil
+	return err
 }
 
 func (l *EnterGameLogic) notifyCentreService(in *game.EnterGameRequest) {
