@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -18,16 +19,20 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 	return func(ctx context.Context, t *asynq.Task) error {
 		var task taskpb.DBTask
 		if err := proto.Unmarshal(t.Payload(), &task); err != nil {
+			logx.Errorf("Failed to unmarshal DBTask payload: %v", err)
 			return fmt.Errorf("unmarshal DBTask failed: %v", err)
 		}
+		logx.Infof("Received DB task: ID=%s, Op=%s, MsgType=%s", task.TaskId, task.Op, task.MsgType)
 
 		mt, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(task.MsgType))
 		if err != nil {
+			logx.Errorf("Unknown proto message type: %s", task.MsgType)
 			return fmt.Errorf("unknown proto message type: %s", task.MsgType)
 		}
 
 		msg := dynamicpb.NewMessage(mt.Descriptor())
 		if err := proto.Unmarshal(task.Body, msg); err != nil {
+			logx.Errorf("Failed to unmarshal proto message body: %v", err)
 			return fmt.Errorf("unmarshal proto message failed: %v", err)
 		}
 
@@ -38,27 +43,32 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 
 		switch task.Op {
 		case "read":
+			logx.Infof("Executing DB read for TaskID=%s", task.TaskId)
 			err := db.DB.PBDB.LoadOneByWhereCase(msg, task.WhereCase)
 			if err != nil {
 				resultErr = fmt.Sprintf("DB read failed: %v", err)
+				logx.Errorf("DB read error for TaskID=%s: %v", task.TaskId, err)
 			} else {
 				resultData, err = proto.Marshal(msg)
 				if err != nil {
 					resultErr = fmt.Sprintf("marshal result failed: %v", err)
+					logx.Errorf("Marshal result failed for TaskID=%s: %v", task.TaskId, err)
 				}
 			}
 
 		case "write":
+			logx.Infof("Executing DB write for TaskID=%s", task.TaskId)
 			err := db.DB.PBDB.Save(msg)
 			if err != nil {
 				resultErr = fmt.Sprintf("DB write failed: %v", err)
+				logx.Errorf("DB write error for TaskID=%s: %v", task.TaskId, err)
 			}
 
 		default:
 			resultErr = fmt.Sprintf("unsupported op: %s", task.Op)
+			logx.Errorf("Unsupported op for TaskID=%s: %s", task.TaskId, task.Op)
 		}
 
-		// 写回 TaskResult（只读操作才有结果数据）
 		if task.TaskId != "" {
 			result := &taskpb.TaskResult{
 				Success: resultErr == "",
@@ -67,15 +77,19 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 			}
 			resBytes, err := proto.Marshal(result)
 			if err != nil {
+				logx.Errorf("Marshal TaskResult failed for TaskID=%s: %v", task.TaskId, err)
 				return fmt.Errorf("marshal TaskResult failed: %v", err)
 			}
 			err = redisClient.Set(ctx, task.TaskId, resBytes, time.Minute).Err()
 			if err != nil {
+				logx.Errorf("Failed to write TaskResult to Redis for TaskID=%s: %v", task.TaskId, err)
 				return fmt.Errorf("Redis set TaskResult failed: %v", err)
 			}
+
+			logx.Infof("TaskResult written to Redis for TaskID=%s", task.TaskId)
 		}
 
-		// handler 返回 nil 代表任务不会重试
+		logx.Infof("DB Task %s completed. Success: %v", task.TaskId, resultErr == "")
 		return nil
 	}
 }

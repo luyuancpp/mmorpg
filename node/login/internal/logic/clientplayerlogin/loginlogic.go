@@ -41,15 +41,15 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	resp := &game.LoginResponse{}
 
 	// 1. 分布式锁，重试机制
-	locker := locker.NewAccountLocker(l.svcCtx.RedisClient, time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second)
+	accountLocker := locker.NewAccountLocker(l.svcCtx.RedisClient, time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second)
 
-	ok, err := locker.AcquireLogin(l.ctx, in.Account)
+	ok, err := accountLocker.AcquireLogin(l.ctx, in.Account)
 	if err != nil || !ok {
 		logx.Errorf("Login lock acquire failed for account=%s, err=%v", in.Account, err)
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
-	defer locker.ReleaseLogin(l.ctx, in.Account)
+	defer accountLocker.ReleaseLogin(l.ctx, in.Account)
 
 	// 2. 获取 Session
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
@@ -72,7 +72,6 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	}
 
 	// 执行 FSM 事件
-	logx.Infof("Processing FSM event for sessionId=%s, account=%s, event=process_login", sessionId, in.Account)
 	if err := f.Event(l.ctx, data.EventProcessLogin); err != nil {
 		logx.Errorf("FSM transition error for sessionId=%s, account=%s, event=process_login, error: %v", sessionId, in.Account, err)
 		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginFSMEventFailed)}
@@ -80,7 +79,6 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	}
 
 	// 保存 FSM 状态
-	logx.Infof("Attempting to save FSM state for sessionId=%s", sessionId)
 	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionId, ""); err != nil {
 		logx.Errorf("FSM save failed for sessionId=%s, account=%s, error: %v", sessionId, in.Account, err)
 		// 不阻断，但记录错误
