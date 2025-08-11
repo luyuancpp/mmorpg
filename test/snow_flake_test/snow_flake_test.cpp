@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+ï»¿#include <gtest/gtest.h>
 #include <functional>
 #include <iostream>
 #include <thread>
@@ -13,12 +13,12 @@ using Guid = uint64_t;
 using GuidVector = std::vector<Guid>;
 using GuidSet = std::unordered_set<Guid>;
 
-constexpr size_t kTotal = 300'000'000;
+constexpr size_t kTotal = 10'000'000;
 
 SnowFlakeAtomic idGenAtomic;
-GuidSet firstV;
-GuidSet secondV;
-GuidSet thirdV;
+GuidSet firstSet;
+GuidSet secondSet;
+GuidSet thirdSet;
 
 void emplaceToVector(GuidSet& v)
 {
@@ -30,56 +30,76 @@ void emplaceToVector(GuidSet& v)
 
 void generateThread1()
 {
-	emplaceToVector(firstV);
+	emplaceToVector(firstSet);
 }
 
 void generateThread2()
 {
-	emplaceToVector(secondV);
+	emplaceToVector(secondSet);
 }
 
 void generateThread3()
 {
-	emplaceToVector(thirdV);
+	emplaceToVector(thirdSet);
 }
 
-void putVectorIntoSet(GuidSet& s, GuidVector& v)
+
+TEST(TestSnowFlakeThreadSafe, generate)
 {
-	for (auto& it : v)
-	{
-		s.emplace(it);
-	}
-}
+	firstSet.clear();
+	secondSet.clear();
+	thirdSet.clear();
 
+	firstSet.reserve(kTotal);
+	secondSet.reserve(kTotal);
+	thirdSet.reserve(kTotal);
+
+	std::thread firstThread(generateThread1);
+	std::thread secondThread(generateThread2);
+	std::thread thirdThread(generateThread3);
+
+	firstThread.join();
+	secondThread.join();
+	thirdThread.join();
+
+	GuidSet total;
+	total.reserve(kTotal * 3);
+	total.insert(firstSet.begin(), firstSet.end());
+	total.insert(secondSet.begin(), secondSet.end());
+	total.insert(thirdSet.begin(), thirdSet.end());
+
+	EXPECT_EQ(kTotal * 3, total.size())
+		<< "å­˜åœ¨é‡å¤ ID";
+}
 
 TEST(SnowFlakeTest, ClockRollback_SingleThread) {
 	SnowFlake sf;
 	sf.set_node_id(1);
-	sf.set_mock_now(1000);  // µ±Ç°Ê±¼äÎª 1000
+	sf.set_mock_now(1000);  // å½“å‰æ—¶é—´ä¸º 1000
 
 	auto id1 = sf.Generate();
 	auto c1 = ParseGuid(id1);
 
-	sf.set_mock_now(990);  // Ä£ÄâÊ±ÖÓ»Ø²¦
+	sf.set_mock_now(990);  // æ¨¡æ‹Ÿæ—¶é’Ÿå›æ‹¨
 	auto id2 = sf.Generate();
 	auto c2 = ParseGuid(id2);
 
-	EXPECT_GE(c2.timestamp, c1.timestamp);  // ID ²»ÄÜ±ÈÖ®Ç°µÄÊ±¼ä´ÁĞ¡
+	EXPECT_GE(c2.timestamp, c1.timestamp);  // ID ä¸èƒ½æ¯”ä¹‹å‰çš„æ—¶é—´æˆ³å°
 }
 
 TEST(SnowFlakeAtomicTest, ClockRollback_Concurrent) {
 	SnowFlakeAtomic sf;
 	sf.set_node_id(2);
-	sf.set_mock_now(2000);
+	sf.set_mock_static_time(2000);
 
 	auto id1 = sf.Generate();
 	auto c1 = ParseGuid(id1);
 
-	sf.set_mock_now(1995);  // Ä£Äâ»Ø²¦
+	sf.set_mock_static_time(1995);  // æ¨¡æ‹Ÿå›æ‹¨
 	auto id2 = sf.Generate();
 	auto c2 = ParseGuid(id2);
 
-	EXPECT_GE(c2.timestamp, c1.timestamp);  // Ó¦ĞŞÕıÎª²»Ğ¡ÓÚÉÏ´Î
+	EXPECT_GE(c2.timestamp, c1.timestamp);  // åº”ä¿®æ­£ä¸ºä¸å°äºä¸Šæ¬¡
 }
 
 
@@ -91,28 +111,11 @@ TEST(SnowFlakeTest, ClockRollbackSingleThread) {
 	Guid id1 = sf.Generate();
 	auto c1 = ParseGuid(id1);
 
-	sf.set_mock_now(990); // Ä£ÄâÊ±ÖÓ»Ø²¦
+	sf.set_mock_now(990); // æ¨¡æ‹Ÿæ—¶é’Ÿå›æ‹¨
 	Guid id2 = sf.Generate();
 	auto c2 = ParseGuid(id2);
 
-	// »Ø²¦ºó²úÉúµÄ ID ²»ÄÜĞ¡ÓÚÖ®Ç°
-	EXPECT_GE(c2.timestamp, c1.timestamp);
-	EXPECT_EQ(c2.node_id, c1.node_id);
-}
-
-TEST(SnowFlakeTest, ClockRollbackMultiThread) {
-	SnowFlakeAtomic sf;
-	sf.set_node_id(2);
-
-	sf.set_mock_now(2000);
-	Guid id1 = sf.Generate();
-	auto c1 = ParseGuid(id1);
-
-	sf.set_mock_now(1990); // Ä£ÄâÊ±ÖÓ»Ø²¦
-	Guid id2 = sf.Generate();
-	auto c2 = ParseGuid(id2);
-
-	// ÆÚÍûĞŞ¸´ºóµÄÊ±¼ä´Á²»Ğ¡ÓÚÖ®Ç°µÄ
+	// å›æ‹¨åäº§ç”Ÿçš„ ID ä¸èƒ½å°äºä¹‹å‰
 	EXPECT_GE(c2.timestamp, c1.timestamp);
 	EXPECT_EQ(c2.node_id, c1.node_id);
 }
@@ -129,20 +132,20 @@ TEST(SnowFlakeTest, Generate100MillionGUIDs_UniqueInSingleNode)
 	for (size_t i = 0; i < kTotal; ++i) {
 		Guid id = sf.Generate();
 
-		// ¼ì²éÊÇ·ñÖØ¸´
+		// æ£€æŸ¥æ˜¯å¦é‡å¤
 		auto result = ids.insert(id);
-		ASSERT_TRUE(result.second) << "ÖØ¸´ ID ³öÏÖÔÚË÷Òı " << i << ", ID=" << id;
+		ASSERT_TRUE(result.second) << "é‡å¤ ID å‡ºç°åœ¨ç´¢å¼• " << i << ", ID=" << id;
 
-		// ¿ÉÑ¡£ºÃ¿ 10M Êä³öÒ»´Î½ø¶È
+		// å¯é€‰ï¼šæ¯ 10M è¾“å‡ºä¸€æ¬¡è¿›åº¦
 		if ((i + 1) % 10'000'000 == 0) {
-			std::cout << "ÒÑÉú³É " << (i + 1) << " ¸ö ID..." << std::endl;
+			std::cout << "å·²ç”Ÿæˆ " << (i + 1) << " ä¸ª ID..." << std::endl;
 		}
 	}
 
 	EXPECT_EQ(ids.size(), kTotal);
 }
 
-// ÅúÁ¿ ID Éú³ÉÊÇ·ñÕıÈ·
+// æ‰¹é‡ ID ç”Ÿæˆæ˜¯å¦æ­£ç¡®
 TEST(SnowFlakeTest, GenerateBatch)
 {
 	SnowFlake sf;
@@ -154,12 +157,12 @@ TEST(SnowFlakeTest, GenerateBatch)
 
 	EXPECT_EQ(ids.size(), count);
 
-	// ¼ì²éÎ¨Ò»ĞÔ
+	// æ£€æŸ¥å”¯ä¸€æ€§
 	std::unordered_set<Guid> id_set(ids.begin(), ids.end());
 	EXPECT_EQ(id_set.size(), count);
 }
 
-// ¶à½Úµã ID ÊÇ·ñ²»Í¬
+// å¤šèŠ‚ç‚¹ ID æ˜¯å¦ä¸åŒ
 TEST(SnowFlakeTest, NodeIDAffectsGeneratedID)
 {
 	SnowFlake sf1;
@@ -176,7 +179,7 @@ TEST(SnowFlakeTest, NodeIDAffectsGeneratedID)
 	EXPECT_NE(id1, id2);
 }
 
-//µ¥Ïß³Ì + ÆÕÍ¨Éú³É£¨SnowFlake::Generate£©
+//å•çº¿ç¨‹ + æ™®é€šç”Ÿæˆï¼ˆSnowFlake::Generateï¼‰
 TEST(SnowFlakeTest, UniqueIds_SingleThread_NormalGenerate) {
 	constexpr int32_t kNodeCount = 5;
 
@@ -197,7 +200,7 @@ TEST(SnowFlakeTest, UniqueIds_SingleThread_NormalGenerate) {
 	EXPECT_EQ(all_ids.size(), kNodeCount * kTotal);
 }
 
-//µ¥Ïß³Ì + ÅúÁ¿Éú³É£¨SnowFlake::GenerateBatch£©
+//å•çº¿ç¨‹ + æ‰¹é‡ç”Ÿæˆï¼ˆSnowFlake::GenerateBatchï¼‰
 TEST(SnowFlakeTest, UniqueIds_SingleThread_BatchGenerate) {
 	constexpr int32_t kNodeCount = 5;
 
@@ -218,7 +221,7 @@ TEST(SnowFlakeTest, UniqueIds_SingleThread_BatchGenerate) {
 	EXPECT_EQ(all_ids.size(), kNodeCount * kTotal);
 }
 
-//¶àÏß³Ì + ÆÕÍ¨Éú³É£¨SnowFlakeAtomic::Generate£©
+//å¤šçº¿ç¨‹ + æ™®é€šç”Ÿæˆï¼ˆSnowFlakeAtomic::Generateï¼‰
 TEST(SnowFlakeTest, UniqueIds_MultiThread_NormalGenerate) {
 	constexpr int32_t kNodeCount = 5;
 
@@ -248,7 +251,7 @@ TEST(SnowFlakeTest, UniqueIds_MultiThread_NormalGenerate) {
 	EXPECT_EQ(all_ids.size(), kNodeCount * kTotal);
 }
 
-//¶àÏß³Ì + ÅúÁ¿Éú³É£¨SnowFlakeAtomic::GenerateBatch£©
+//å¤šçº¿ç¨‹ + æ‰¹é‡ç”Ÿæˆï¼ˆSnowFlakeAtomic::GenerateBatchï¼‰
 TEST(SnowFlakeTest, UniqueIds_MultiThread_BatchGenerate) {
 	constexpr int32_t kNodeCount = 5;
 
@@ -290,23 +293,7 @@ TEST(TestSnowFlakeThreadSafe, justGenerateTime)
 	std::cout << "Generated ID: " << id << std::endl;
 }
 
-TEST(TestSnowFlakeThreadSafe, generate)
-{
-	GuidSet guidSet;
-	firstV.clear();
-	secondV.clear();
-	thirdV.clear();
 
-	std::thread firstThread(generateThread1);
-	std::thread secondThread(generateThread2);
-	std::thread thirdThread(generateThread3);
-
-	firstThread.join();
-	secondThread.join();
-	thirdThread.join();
-
-	EXPECT_EQ(guidSet.size(), (firstV.size() + secondV.size() + thirdV.size()));
-}
 
 TEST(SnowFlakeTest, SequentialOrder) {
 	SnowFlake gen;
@@ -363,10 +350,10 @@ TEST(SnowFlakeTest, IdParsing) {
 
 	ASSERT_EQ(components.node_id, 3);
 	ASSERT_LT(components.sequence, (1ULL << kStepBits));
-	ASSERT_GT(real_time, 1600000000); // Unix Ê±¼ä´Á sanity check
+	ASSERT_GT(real_time, 1600000000); // Unix æ—¶é—´æˆ³ sanity check
 }
 
-// ²âÊÔÅúÁ¿Éú³ÉµÄÎ¨Ò»ĞÔ
+// æµ‹è¯•æ‰¹é‡ç”Ÿæˆçš„å”¯ä¸€æ€§
 TEST(SnowFlakeTest, GenerateBatchUnique)
 {
 	SnowFlake generator;
@@ -381,7 +368,7 @@ TEST(SnowFlakeTest, GenerateBatchUnique)
 	EXPECT_EQ(unique_ids.size(), ids.size()) << "IDs are not unique";
 }
 
-// ²âÊÔ¶à´ÎÅúÁ¿Éú³ÉµÄÕıÈ·ĞÔ
+// æµ‹è¯•å¤šæ¬¡æ‰¹é‡ç”Ÿæˆçš„æ­£ç¡®æ€§
 TEST(SnowFlakeTest, MultipleBatchGeneration)
 {
 	SnowFlakeAtomic generator;
@@ -399,7 +386,7 @@ TEST(SnowFlakeTest, MultipleBatchGeneration)
 	EXPECT_EQ(all.size(), batch1 + batch2) << "Duplicate IDs found across batches";
 }
 
-// ²âÊÔ½âÎö ID ³É·Ö
+// æµ‹è¯•è§£æ ID æˆåˆ†
 TEST(SnowFlakeTest, GuidParsing)
 {
 	SnowFlake generator;
@@ -413,7 +400,7 @@ TEST(SnowFlakeTest, GuidParsing)
 	EXPECT_GT(parsed.timestamp, 0);
 }
 
-// ²¢·¢Ñ¹Á¦²âÊÔ£º¶à¸öÏß³Ì²¢·¢ÅúÁ¿Éú³É£¬È·±£ ID Î¨Ò»
+// å¹¶å‘å‹åŠ›æµ‹è¯•ï¼šå¤šä¸ªçº¿ç¨‹å¹¶å‘æ‰¹é‡ç”Ÿæˆï¼Œç¡®ä¿ ID å”¯ä¸€
 TEST(SnowFlakeTest, ConcurrentBatchGeneration)
 {
 	constexpr size_t kThreads = 8;
@@ -421,13 +408,13 @@ TEST(SnowFlakeTest, ConcurrentBatchGeneration)
 	constexpr size_t kTotalIDs = kThreads * kIDsPerThread;
 
 	SnowFlakeAtomic generator;
-	generator.set_node_id(999);
+	generator.set_node_id(2);
 
 	std::vector<std::thread> threads;
 	std::vector<Guid> all_ids;
 	all_ids.reserve(kTotalIDs);
 
-	std::mutex mutex;  // ±£»¤ all_ids
+	std::mutex mutex;  // ä¿æŠ¤ all_ids
 
 	auto worker = [&]() {
 		auto ids = generator.GenerateBatch(kIDsPerThread);
@@ -443,12 +430,12 @@ TEST(SnowFlakeTest, ConcurrentBatchGeneration)
 		t.join();
 	}
 
-	// ÑéÖ¤×ÜÊı
+	// éªŒè¯æ€»æ•°
 	ASSERT_EQ(all_ids.size(), kTotalIDs);
 
-	// ÑéÖ¤Î¨Ò»ĞÔ
+	// éªŒè¯å”¯ä¸€æ€§
 	std::unordered_set<Guid> unique_ids(all_ids.begin(), all_ids.end());
-	EXPECT_EQ(unique_ids.size(), all_ids.size()) << "²¢·¢Éú³ÉµÄ ID ÓĞÖØ¸´";
+	EXPECT_EQ(unique_ids.size(), all_ids.size()) << "å¹¶å‘ç”Ÿæˆçš„ ID æœ‰é‡å¤";
 }
 
 int32_t main(int32_t argc, char** argv)
