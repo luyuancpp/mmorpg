@@ -208,7 +208,7 @@ private:
 class SnowFlakeAtomic
 {
 public:
-	inline void set_node_id(uint16_t node_id)
+	void set_node_id(uint16_t node_id)
 	{
 		if (node_id > kNodeMask) {
 			LOG_FATAL << "Node ID overflow: max allowed is " << kNodeMask;
@@ -220,93 +220,44 @@ public:
 	{
 		while (true) {
 			uint64_t now = NowEpoch();
-			uint64_t last = last_time_.load(std::memory_order_relaxed);
 
-			if (now < last) {
-				LOG_ERROR << "Clock rollback detected: now=" << now << " < last=" << last;
-				now = WaitUntilTimeAdvance(last);
-				last = last_time_.load(std::memory_order_relaxed); // reload
-			}
+			uint64_t current = time_step_.load(std::memory_order_relaxed);
 
-			if (now > last) {
-				if (last_time_.compare_exchange_strong(last, now, std::memory_order_acq_rel)) {
-					step_.store(0, std::memory_order_relaxed);
-					last = now;
-				}
-				else {
-					last = last_time_.load(std::memory_order_relaxed);
-					continue;
-				}
-			}
+			uint32_t last_time = static_cast<uint32_t>(current >> 32);
+			uint32_t last_step = static_cast<uint32_t>(current & 0xFFFFFFFF);
 
-			uint64_t step = step_.fetch_add(1, std::memory_order_relaxed);
-			if (step > kStepMask) {
-				LOG_WARN << "Step overflow in current second, waiting for next second";
-				now = WaitUntilTimeAdvance(last);
-				last_time_.store(now, std::memory_order_relaxed);
-				step_.store(0, std::memory_order_relaxed);
+			if (now < last_time) {
+				LOG_ERROR << "Clock rollback: now=" << now << " < last=" << last_time;
+				now = WaitUntilTimeAdvance(last_time);
 				continue;
 			}
-			return ComposeID(last, step);
+
+			uint64_t next;
+
+			if (now == last_time) {
+				if (last_step >= kStepMask) {
+					now = WaitUntilTimeAdvance(last_time);
+					continue;
+				}
+				// 尝试增加 step
+				next = (static_cast<uint64_t>(now) << 32) | (last_step + 1);
+			}
+			else {
+				// 新时间，重置 step
+				next = (static_cast<uint64_t>(now) << 32);
+			}
+
+			if (time_step_.compare_exchange_weak(current, next, std::memory_order_acq_rel)) {
+				uint32_t step_to_use = (now == last_time) ? (last_step + 1) : 0;
+				return ComposeID(now, step_to_use);
+			}
+
+			// CAS 失败，重试
 		}
 	}
 
-	std::vector<Guid> GenerateBatch(size_t count)
-	{
-		std::vector<Guid> ids;
-		ids.reserve(count);
-
-		while (count > 0) {
-			uint64_t now = NowEpoch();
-			uint64_t last = last_time_.load(std::memory_order_relaxed);
-
-			if (now < last) {
-				LOG_ERROR << "Clock rollback detected: now=" << now << " < last=" << last;
-				now = WaitUntilTimeAdvance(last);
-				last = last_time_.load(std::memory_order_relaxed);
-			}
-
-			if (now > last) {
-				if (last_time_.compare_exchange_strong(last, now, std::memory_order_acq_rel)) {
-					step_.store(0, std::memory_order_relaxed);
-					last = now;
-				}
-				else {
-					continue; // Retry
-				}
-			}
-
-			uint64_t current_step = step_.fetch_add(count, std::memory_order_relaxed);
-			uint64_t available = kStepMask - current_step + 1;
-
-			uint64_t batch = std::min<uint64_t>(available, count);
-
-			for (uint64_t i = 0; i < batch; ++i) {
-				ids.push_back(ComposeID(now, current_step + i));
-			}
-
-			count -= batch;
-
-			if (current_step + batch - 1 >= kStepMask) {
-				LOG_WARN << "ID pool exhausted in current second (concurrent), waiting for the next second";
-				now = WaitUntilTimeAdvance(last);
-				last_time_.store(now, std::memory_order_relaxed);
-				step_.store(0, std::memory_order_relaxed);
-			}
-		}
-
-		return ids;
-	}
-
-#ifdef ENABLE_SNOWFLAKE_TESTING
-public:
-	void set_mock_now(uint64_t mock_now) {
-		mock_now_.store(mock_now, std::memory_order_relaxed);
-		use_mock_time_.store(true, std::memory_order_relaxed);
-	}
-#endif
 private:
-	Guid ComposeID(uint64_t time, uint64_t step)
+	Guid ComposeID(uint64_t time, uint32_t step)
 	{
 		return (time << kTimeShift) |
 			(static_cast<uint64_t>(node_id_) << kNodeShift) |
@@ -315,44 +266,39 @@ private:
 
 	uint64_t NowEpoch()
 	{
-#ifdef ENABLE_SNOWFLAKE_TESTING
-		if (use_mock_time_.load(std::memory_order_relaxed)) {
-			// 每次调用 mock_now_ 自增 1，防止死循环
-			return mock_now_.fetch_add(1, std::memory_order_relaxed) - epoch_;
-		}
-#endif
-
 		return static_cast<uint64_t>(
 			std::chrono::duration_cast<std::chrono::seconds>(
 				std::chrono::system_clock::now().time_since_epoch())
 			.count()) - epoch_;
 	}
 
-	uint64_t WaitUntilTimeAdvance(uint64_t last_time) 
+	uint64_t WaitUntilTimeAdvance(uint64_t last_time)
 	{
 		uint64_t now = NowEpoch();
-		int retry = 0;
 		while (now <= last_time) {
-			if (++retry > 3000) {
-				LOG_FATAL << "System time not advancing, possible clock anomaly";
-				break;
-			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			now = NowEpoch();
 		}
 		return now;
 	}
 
 private:
-	const uint64_t epoch_ = kEpoch;
-	uint16_t node_id_;
-	std::atomic<uint64_t> last_time_{ 0 };
-	std::atomic<uint64_t> step_{ 0 };
-#ifdef ENABLE_SNOWFLAKE_TESTING
-	std::atomic<uint64_t> mock_now_{ 0 };
-	std::atomic<bool> use_mock_time_{ false };
-#endif
+	// Constants
+	const uint64_t epoch_ = 1609459200; // 2021-01-01
+	static constexpr uint8_t kNodeBits = 10;
+	static constexpr uint8_t kStepBits = 22;
+
+	static constexpr uint64_t kNodeMask = (1ULL << kNodeBits) - 1;
+	static constexpr uint64_t kStepMask = (1ULL << kStepBits) - 1;
+
+	static constexpr uint8_t kStepShift = 0;
+	static constexpr uint8_t kNodeShift = kStepBits;
+	static constexpr uint8_t kTimeShift = kNodeBits + kStepBits;
+
+	uint16_t node_id_{ 0 };
+	std::atomic<uint64_t> time_step_{ 0 };
 };
+
 
 struct SnowFlakeComponents {
 	uint64_t timestamp;
