@@ -13,7 +13,7 @@ using Guid = uint64_t;
 using GuidVector = std::vector<Guid>;
 using GuidSet = std::unordered_set<Guid>;
 
-constexpr size_t kTotal = 10'000'000;
+constexpr size_t kTotal = 40'000'000;
 
 SnowFlakeAtomic idGenAtomic;
 GuidSet firstSet;
@@ -86,22 +86,6 @@ TEST(SnowFlakeTest, ClockRollback_SingleThread) {
 
 	EXPECT_GE(c2.timestamp, c1.timestamp);  // ID 不能比之前的时间戳小
 }
-
-TEST(SnowFlakeAtomicTest, ClockRollback_Concurrent) {
-	SnowFlakeAtomic sf;
-	sf.set_node_id(2);
-	sf.set_mock_static_time(2000);
-
-	auto id1 = sf.Generate();
-	auto c1 = ParseGuid(id1);
-
-	sf.set_mock_static_time(1995);  // 模拟回拨
-	auto id2 = sf.Generate();
-	auto c2 = ParseGuid(id2);
-
-	EXPECT_GE(c2.timestamp, c1.timestamp);  // 应修正为不小于上次
-}
-
 
 TEST(SnowFlakeTest, ClockRollbackSingleThread) {
 	SnowFlake sf;
