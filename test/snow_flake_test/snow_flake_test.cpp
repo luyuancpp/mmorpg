@@ -425,5 +425,11 @@ TEST(SnowFlakeTest, ConcurrentBatchGeneration)
 int32_t main(int32_t argc, char** argv)
 {
 	testing::InitGoogleTest(&argc, argv);
+	while (true) {
+		int32_t ret = RUN_ALL_TESTS();
+		if (ret != 0) {
+			return ret;
+		}
+	}
 	return RUN_ALL_TESTS();
 }
