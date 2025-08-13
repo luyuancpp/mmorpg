@@ -18,8 +18,8 @@ CentreNode::CentreNode(muduo::net::EventLoop* loop)
 	GetNodeInfo().set_node_type(CentreNodeService);
 	EventHandler::Register();
 	tls_centre.GetRedisSystem().Initialize();
-	kafkaConsumerHandler = KafkaSystem::KafkaMessageHandler;
 
+	GetKafkaManager().SetKafkaHandler(KafkaSystem::KafkaMessageHandler);
 }
 
 
