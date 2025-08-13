@@ -13,6 +13,7 @@
     <ClCompile Include="src\node\system\node_system.cpp" />
     <ClCompile Include="src\node\system\etcd_helper.cpp" />
     <ClCompile Include="src\time\comp\timer_task_boost_comp.cpp" />
+    <ClCompile Include="src\util\zone_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\node\constants\node_constants.h" />
@@ -40,5 +41,6 @@
     <ClInclude Include="src\node\system\etcd_helper.h" />
     <ClInclude Include="src\service\player_service.h" />
     <ClInclude Include="src\service\player_service_replied.h" />
+    <ClInclude Include="src\util\zone_utils.h" />
   </ItemGroup>
 </Project>

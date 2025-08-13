@@ -34,7 +34,6 @@ public:
     NodeId GetNodeId() const { return GetNodeInfo().node_id(); }
     uint32_t GetNodeType() const { return GetNodeInfo().node_type(); }
     NodeInfo& GetNodeInfo() const;
-    virtual std::string GetServiceName(uint32_t nodeType) const;
     virtual ::google::protobuf::Service* GetNodeReplyService() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return logSystem; }
     [[nodiscard]] RpcClientPtr GetZoneCentreNode() { return zoneCentreNode; }
@@ -111,6 +110,7 @@ protected:
     TimerTaskComp grpcHandlerTimer;
     TimerTaskComp serviceHealthMonitorTimer;
     TimerTaskComp acquireNodeTimer;
+	TimerTaskComp acquirePortTimer;
 	TimerTaskComp kafkaProducerTimer;
 	TimerTaskComp kafkaConsumerTimer;
     RpcClientPtr zoneCentreNode;
@@ -123,7 +123,8 @@ protected:
 	boost::uuids::random_generator gen;
 	KafkaConsumerHandler kafkaConsumerHandler;
     PartitionClassGuid partitions;
-    uint32_t tryPortId{ 10000 };
+    uint32_t tryPortId{ 0 };
+    std::deque<std::string> pendingKeys;
 };
 
 extern Node* gNode;

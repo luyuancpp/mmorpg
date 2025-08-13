@@ -66,3 +66,6 @@
 	path = third_party/librdkafka
 	url = https://github.com/confluentinc/librdkafka.git
 	branch = master
+[submodule "third_party/fmt"]
+	path = third_party/fmt
+	url = https://github.com/fmtlib/fmt.git
