@@ -107,33 +107,8 @@ void Node::InitRpcServer() {
 
 void Node::InitKafka()
 {
-	const auto& kafkaConfig = tlsCommonLogic.GetBaseDeployConfig().kafka(); // 假设有配置
-
-	std::vector<std::string> brokersVec;
-	for (const auto& broker : kafkaConfig.brokers()) {
-		brokersVec.push_back(broker);
-	}
-
-	std::vector<std::string> topicsVec;
-	for (const auto& topic : kafkaConfig.topics()) {
-		topicsVec.push_back(topic);
-	}
-
-	std::string brokers = boost::algorithm::join(brokersVec, ",");
-	std::string groupId = kafkaConfig.group_id();
-
-	partitions.emplace_back(tlsCommonLogic.GetGameConfig().zone_id());
-
-	tls.GetKafkaProducer() = std::make_unique<KafkaProducer>(brokers);
-	tls.GetKafkaConsumer() = std::make_unique<KafkaConsumer>(brokers,
-		groupId,
-		topicsVec,
-		partitions,
-		kafkaConsumerHandler);
-
-	LOG_INFO << "Kafka initialized. :" << kafkaConfig.DebugString();
+	kafkaManager.Init(tlsCommonLogic.GetBaseDeployConfig().kafka());
 }
-
 
 void Node::StartRpcServer() {
 	if (rpcServer) {
