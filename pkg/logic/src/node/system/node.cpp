@@ -282,7 +282,7 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 		if (auto* existInfo = registry.try_get<NodeInfo>(entityId);
 			existInfo ) {
 
-			if (IsSameNode(info.node_uuid(), existInfo->node_uuid())) {
+			if (NodeSystem::IsSameNode(info.node_uuid(), existInfo->node_uuid())) {
 				LOG_INFO << "Node already registered, IP: " << info.endpoint().ip()
 					<< ", Port: " << info.endpoint().port();
 				return;
@@ -412,7 +412,7 @@ void Node::ConnectAllNodes() {
 		if (!targetNodeTypeWhitelist.contains(nodeType)) continue;
 
 		for (const auto& node : nodeRegistry[nodeType].node_list()) {
-			if (IsNodeConnected(nodeType, node)) continue;
+			if (NodeSystem::IsNodeConnected(nodeType, node)) continue;
 
 			ConnectToNode(node);
 			LOG_INFO << "Connected to node from ConnectAllNodes: " << node.DebugString();
@@ -420,35 +420,9 @@ void Node::ConnectAllNodes() {
 	}
 }
 
-bool Node::IsNodeConnected(uint32_t nodeType, const NodeInfo& info) const {
-	switch (info.protocol_type()) {
-	case PROTOCOL_TCP:
-	{
-		entt::registry& registry = tls.GetNodeRegistry(nodeType);
-		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
-			if (IsSameNode(info.node_uuid(), nodeInfo.node_uuid())) {
-				LOG_INFO << "Node already registered, IP: " << nodeInfo.endpoint().ip()
-					<< ", Port: " << nodeInfo.endpoint().port();
-				return true;
-			}
-		}
-	}
-	break;
-	default:
-		break;
-	}
-	
-	return false;
-}
-
 bool Node::IsMyNode(const NodeInfo& node) const
 {
-	return IsSameNode(node.node_uuid(), GetNodeInfo().node_uuid());
-}
-
-bool Node::IsSameNode(const std::string& uuid1, const std::string& uuid2) const
-{
-	return uuid1 == uuid2;
+	return NodeSystem::IsSameNode(node.node_uuid(), GetNodeInfo().node_uuid());
 }
 
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
@@ -707,7 +681,7 @@ void Node::HandleNodeRegistration(
 		entt::registry& registry = tls.GetNodeRegistry(nodeType);
 		const auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
-			if (!IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
+			if (!NodeSystem::IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
 			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
 			entt::entity created = ResetEntity(registry, nodeEntity); 
 			if (created == entt::null) {

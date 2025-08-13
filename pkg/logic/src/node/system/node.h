@@ -33,14 +33,13 @@ public:
     NodeId GetNodeId() const { return GetNodeInfo().node_id(); }
     uint32_t GetNodeType() const { return GetNodeInfo().node_type(); }
     NodeInfo& GetNodeInfo() const;
+	KafkaManager& GetKafkaManager() { return kafkaManager; }
     virtual ::google::protobuf::Service* GetNodeReplyService() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return logSystem; }
     [[nodiscard]] RpcClientPtr GetZoneCentreNode() { return zoneCentreNode; }
     std::string FormatIpAndPort();
     std::string GetIp();
     uint32_t GetPort();
-
-    const PartitionClassGuid& GetPartitionListForZoneId()const {return partitions; }
 
     void CallRemoteMethodZoneCenter(uint32_t message_id, const ::google::protobuf::Message& request);
 
@@ -94,8 +93,6 @@ protected:
     void OnClientConnected(const OnTcpClientConnectedEvent& es);
 
     // 工具与状态判断
-    bool IsNodeConnected(uint32_t nodeType, const NodeInfo& node) const;
-	bool IsSameNode(const std::string& uuid1, const std::string& uuid2) const;
     bool IsMyNode(const NodeInfo& node ) const;
     bool IsServiceStarted() { return rpcServer != nullptr; }
 

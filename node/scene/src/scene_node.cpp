@@ -37,7 +37,7 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 		ConfigSystem::OnConfigLoadSuccessful();
 	});
 
-	kafkaConsumerHandler = KafkaSystem::KafkaMessageHandler;
+	GetKafkaManager().SetKafkaHandler(KafkaSystem::KafkaMessageHandler);
 }
 
 void SceneNode::StartRpcServer(){

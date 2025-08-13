@@ -17,6 +17,9 @@ public:
 	bool Init(const KafkaConfig& config);
 	bool Publish(const std::string& topic, const std::string& msg);
 	void Shutdown();
+
+	void SetKafkaHandler(KafkaHandler& h) { kafkaHandler = h; }
+
 private:
 	KafkaHandler kafkaHandler;
 };
