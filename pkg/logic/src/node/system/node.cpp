@@ -814,8 +814,6 @@ void Node::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& res
 void Node::AcquireNode() {
 	LOG_INFO << "Acquiring node ID for node type: " << GetNodeType();
 
-	constexpr uint32_t PORT_STEP = 10000;
-
 	// 1. 如果是全局唯一类型，执行清理逻辑 + 直接使用 zone_id
 	if (IsZoneSingletonNodeType(GetNodeType())) {
 		const uint32_t zoneId = tlsCommonLogic.GetGameConfig().zone_id();
@@ -824,13 +822,6 @@ void Node::AcquireNode() {
 
 		std::string prefix = MakeNodeEtcdKey(GetNodeInfo());
 		EtcdHelper::DeleteRange(prefix, false);
-
-		if (rpcServer == nullptr) {
-			uint32_t assignedPort = GetNodeType() * PORT_STEP + zoneId;
-			GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
-			LOG_INFO << "Assigned RPC port: " << assignedPort;
-		}
-
 		RegisterNodeService();
 		return;
 	}
@@ -874,15 +865,6 @@ void Node::AcquireNode() {
 
 	GetNodeInfo().set_node_id(nextNodeId);
 
-	if (rpcServer == nullptr) {
-		uint32_t assignedPort = GetNodeType() * PORT_STEP + nextNodeId;
-		GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
-		LOG_INFO << "Assigned RPC port: " << assignedPort;
-	}
-	else {
-		LOG_WARN << "RPC server already initialized, skipping port assignment.";
-	}
-
 	RegisterNodeService();
 }
 
@@ -911,8 +893,11 @@ uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts,
 	return 0; // 没有可用端口
 }
 
-void Node::AcquireNodePort()
-{
+void Node::AcquireNodePort(){
+	if (rpcServer != nullptr) {
+		return;
+	}
+
 	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[GetNodeType()];
 	auto& existingNodes = *nodeList.mutable_node_list();
 
@@ -1015,16 +1000,11 @@ void Node::RegisterNodePort() {
 
 void Node::RequestEtcdLease() {
 	uint64_t ttlSeconds = tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds();
-
 	LOG_INFO << "[EtcdLease] Requesting lease with TTL: " << ttlSeconds
 		<< " seconds. Time: " << muduo::Timestamp::now().toFormattedString();
-
 	LOG_DEBUG << "[EtcdLease] Calling EtcdHelper::GrantLease...";
-
 	EtcdHelper::GrantLease(ttlSeconds);
-
 	LOG_INFO << "[EtcdLease] Lease request completed.";
-
 }
 
 
