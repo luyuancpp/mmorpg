@@ -33,6 +33,7 @@
 #include "util/node_utils.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <fmt/base.h>
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
@@ -66,7 +67,7 @@ NodeInfo& Node::GetNodeInfo() const {
 	return tls.globalRegistry.get_or_emplace<NodeInfo>(GlobalEntity());
 }
 
-std::string Node::GetServiceName(uint32_t type) const {
+std::string GetServiceName(uint32_t type) {
 	return eNodeType_Name(type) + ".rpc";
 }
 
@@ -146,7 +147,6 @@ void Node::StartRpcServer() {
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, addr);
 	rpcServer->start();
 	rpcServer->registerService(GetNodeReplyService());
-	tls.OnNodeStart(info.node_id());
 
 	for (auto& val : gNodeService | std::views::values) {
 		rpcServer->registerService(val.get());
@@ -219,17 +219,26 @@ void Node::InitGrpcClients() {
 		});
 }
 
-std::string Node::MakeNodeEtcdKey(const NodeInfo& info) {
+static std::string MakeNodeEtcdPrefix(const NodeInfo& info)
+{
 	return GetServiceName(info.node_type()) +
 		"/zone/" + std::to_string(info.zone_id()) +
 		"/node_type/" + std::to_string(info.node_type()) +
-		"/node_id/" + std::to_string(info.node_id());
+		"/node_id/";
+}
+
+std::string Node::MakeNodeEtcdKey(const NodeInfo& info) {
+	return MakeNodeEtcdPrefix(info) + std::to_string(info.node_id());
+}
+
+static std::string MakeNodePortEtcdPrefix(const NodeInfo& nodeInfo)
+{
+	return  "/service/" + nodeInfo.endpoint().ip() +"/port/";
 }
 
 std::string Node::MakeNodePortEtcdKey(const NodeInfo& nodeInfo)
 {
-	return "/service/" + nodeInfo.endpoint().ip() +
-		"/port/" + std::to_string(nodeInfo.endpoint().port());
+	return MakeNodePortEtcdPrefix(nodeInfo) + std::to_string(nodeInfo.endpoint().port());
 }
 
 void Node::FetchServiceNodes() {
@@ -559,13 +568,30 @@ void Node::InitGrpcResponseHandlers() {
 
 	etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext& context, const ::etcdserverpb::TxnResponse& reply) {
 		LOG_INFO << "Txn response: " << reply.DebugString();
-		if (reply.succeeded()){
-			StartRpcServer();
+
+		auto& key = pendingKeys.front();
+
+		if (reply.succeeded()) {
+			if (boost::algorithm::starts_with(key, MakeNodePortEtcdPrefix(GetNodeInfo()))) {
+				StartRpcServer();
+			}
+			else if (boost::algorithm::starts_with(key, MakeNodeEtcdPrefix(GetNodeInfo()))) {
+				tls.OnNodeStart(GetNodeInfo().node_id());
+			}
 		}
 		else {
-			acquireNodeTimer.RunAfter(1, [this]() {AcquireNode(); });
+			if (boost::algorithm::starts_with(key, MakeNodeEtcdPrefix(GetNodeInfo()))) {
+				// 只有 node key 失败才尝试重新 AcquireNode
+				acquireNodeTimer.RunAfter(1, [this]() { AcquireNode(); });
+			}
+			else {
+				acquirePortTimer.RunAfter(1, [this]() { AcquireNodePort(); });
+			}
 		}
+
+		pendingKeys.pop_front();
 		};
+
 
 	etcdserverpb::AsyncWatchWatchHandler = [this](const ClientContext& context, const ::etcdserverpb::WatchResponse& response) {
 		if (!hasSentWatch)
@@ -601,8 +627,9 @@ void Node::InitGrpcResponseHandlers() {
 		if (leaseId <= 0) {
 			LOG_INFO << "Acquiring new lease, ID: " << reply.id();
 			leaseId = reply.id();
-			KeepNodeAlive();
+			AcquireNodePort();
 			AcquireNode();  // 获取节点ID或其他信息
+			KeepNodeAlive();
 		}
 		else {
 			LOG_INFO << "Lease already exists, updating lease_id: " << reply.id();
@@ -859,30 +886,29 @@ void Node::AcquireNode() {
 	RegisterNodeService();
 }
 
-
-uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts, uint32_t minPort, uint32_t maxPort)
-{
-	for (uint32_t port = minPort; port <= maxPort; ++port) {
-		if (usedPorts.find(port) == usedPorts.end()) {
-			return port;
-		}
-	}
-	throw std::runtime_error(fmt::format("No available port between {} and {}", minPort, maxPort));
-}
-
-bool IsPortReservedType(eNodeType type)
+bool IsPortReservedType(uint32_t type)
 {
 	return type == eNodeType::GateNodeService;
 }
 
-uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts, uint32_t minPort, uint32_t maxPort)
+uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts,
+	uint32_t minPort, uint32_t maxPort, uint32_t tryPortId)
 {
-	for (uint32_t port = minPort; port <= maxPort; ++port) {
+	// 优先从 tryPortId 到 maxPort
+	for (uint32_t port = tryPortId; port <= maxPort; ++port) {
 		if (usedPorts.find(port) == usedPorts.end()) {
 			return port;
 		}
 	}
-	throw std::runtime_error(fmt::format("No available port between {} and {}", minPort, maxPort));
+
+	// 再从 minPort 到 tryPortId - 1
+	for (uint32_t port = minPort; port < tryPortId; ++port) {
+		if (usedPorts.find(port) == usedPorts.end()) {
+			return port;
+		}
+	}
+
+	return 0; // 没有可用端口
 }
 
 void Node::AcquireNodePort()
@@ -900,23 +926,44 @@ void Node::AcquireNodePort()
 	if (IsPortReservedType(GetNodeInfo().node_type())) {
 		constexpr uint32_t GATE_BASE_PORT = 10000;
 		constexpr uint32_t GATE_PORT_LIMIT = 19999;
-		assignedPort = AllocatePortInRange(usedPorts, GATE_BASE_PORT, GATE_PORT_LIMIT);
+
+		// 默认初始为 BASE_PORT
+		if (tryPortId < GATE_BASE_PORT || tryPortId > GATE_PORT_LIMIT) {
+			tryPortId = GATE_BASE_PORT;
+		}
+
+		assignedPort = AllocatePortInRange(usedPorts, GATE_BASE_PORT, GATE_PORT_LIMIT, tryPortId);
 		LOG_INFO << "Assigned Gate RPC port: " << assignedPort;
 	}
 	else {
 		constexpr uint32_t MIN_PORT = 20000;
 		constexpr uint32_t MAX_PORT = 65535;
-		assignedPort = AllocatePortInRange(usedPorts, MIN_PORT, MAX_PORT);
+
+		if (tryPortId < MIN_PORT || tryPortId > MAX_PORT) {
+			tryPortId = MIN_PORT;
+		}
+
+		assignedPort = AllocatePortInRange(usedPorts, MIN_PORT, MAX_PORT, tryPortId);
 		LOG_INFO << "Assigned dynamic RPC port: " << assignedPort;
 	}
 
+	if (assignedPort != 0) {
+		tryPortId = assignedPort + 1;
+	}
+	else {
+		LOG_WARN << "No available RPC port found. TryPortId was: " << tryPortId;
+		tryPortId = 0; // fallback or signal failure
+	}
+
 	GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
+
 	LOG_INFO << "NodeType: " << GetNodeType()
 		<< " IP: " << GetNodeInfo().endpoint().ip()
 		<< " Port: " << assignedPort;
 
 	RegisterNodePort();
 }
+
 
 
 void Node::KeepNodeAlive() {
@@ -954,13 +1001,15 @@ void Node::RegisterNodeService() {
 	const auto serviceKey = MakeNodeEtcdKey(GetNodeInfo());
 	LOG_INFO << "Registering node service to etcd with key: " << serviceKey;
 	EtcdHelper::PutIfAbsent(serviceKey, GetNodeInfo(), leaseId);
+	pendingKeys.push_back(serviceKey);
 	LOG_INFO << "Registered node to etcd: " << GetNodeInfo().DebugString();
 }
 
 void Node::RegisterNodePort() {
-	const auto serviceKey = MakeNodePortEtcdKey(GetNodeInfo());
-	LOG_INFO << "Registering node port to etcd with key: " << serviceKey;
-	EtcdHelper::PutIfAbsent(serviceKey, "", 0, leaseId);
+	const auto portKey = MakeNodePortEtcdKey(GetNodeInfo());
+	LOG_INFO << "Registering node port to etcd with key: " << portKey;
+	EtcdHelper::PutIfAbsent(portKey, "", 0, leaseId);
+	pendingKeys.push_back(portKey);
 	LOG_INFO << "Registered node port to etcd: " << GetNodeInfo().endpoint().port();
 }
 
