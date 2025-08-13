@@ -166,7 +166,6 @@ void Node::StartRpcServer() {
 		<< "=============================================================\n";
 }
 
-
 void Node::Shutdown() {
 	LOG_DEBUG << "Node shutting down...";
 	StopWatchingServiceNodes();
@@ -242,8 +241,6 @@ void Node::ConnectToNode(const NodeInfo& info) {
 		LOG_INFO << "Skipping connection to self node: " << info.DebugString();
 		return;
 	}
-
-
 	switch (info.protocol_type()) {
 	case PROTOCOL_GRPC:
 		ConnectToGrpcNode(info);
@@ -283,7 +280,6 @@ void Node::ConnectToGrpcNode(const NodeInfo& info) {
 		<< ", IP: " << info.endpoint().ip()
 		<< ", Port: " << info.endpoint().port()
 		<< ", NodeType: " << info.node_type();
-
 
 	//todo 如果重连后连上了不同的gate会不会有异步问题
 }
@@ -372,11 +368,9 @@ uint32_t Node::GetPort() {
 
 void Node::CallRemoteMethodZoneCenter(uint32_t message_id, const ::google::protobuf::Message& request)
 {
-	if (nullptr == GetZoneCentreNode())
-	{
+	if (nullptr == GetZoneCentreNode()){
 		return;
 	}
-	
 	GetZoneCentreNode()->CallRemoteMethod(message_id, request);
 }
 
@@ -436,8 +430,6 @@ void Node::ConnectAllNodes() {
 	}
 }
 
-
-
 bool Node::IsNodeConnected(uint32_t nodeType, const NodeInfo& info) const {
 	switch (info.protocol_type()) {
 	case PROTOCOL_TCP:
@@ -488,12 +480,10 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		return;
 	}
 
-
 	if (!eNodeType_IsValid(deleteNode.node_type())) {
 		LOG_TRACE << "Unknown service type for key: " << key;
 		return;
 	}
-
 
 	// 下面是你的节点处理代码
 	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
@@ -509,9 +499,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		tls.dispatcher.trigger(onNodeRemovePbEvent);
 
 		Destroy(registry, nodeEntity);
-
 	}
-
 	LOG_INFO << "Service node stopped : " << deleteNode.DebugString();
 }
 
@@ -554,9 +542,7 @@ void Node::InitGrpcResponseHandlers() {
 				LOG_INFO << "Start watching prefix: " << prefix << " from revision " << revision[prefix];
 			}
 			hasSentRange = true;
-
 		}
-
 		};
 
 	etcdserverpb::AsyncKVPutHandler = [this](const ClientContext& context, const ::etcdserverpb::PutResponse& reply) {
@@ -645,8 +631,6 @@ void Node::OnServerConnected(const OnConnected2TcpServerEvent& event) {
 	auto& conn = event.conn_;
 	if (!conn->connected()) {
 		LOG_INFO << "Client disconnected: " << conn->peerAddress().toIpPort();
-
-
 		return;
 	}
 	LOG_INFO << "Connected to server: " << conn->peerAddress().toIpPort();
