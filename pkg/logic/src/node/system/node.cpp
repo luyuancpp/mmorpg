@@ -219,11 +219,17 @@ void Node::InitGrpcClients() {
 		});
 }
 
-std::string Node::MakeEtcdKey(const NodeInfo& info) {
+std::string Node::MakeNodeEtcdKey(const NodeInfo& info) {
 	return GetServiceName(info.node_type()) +
 		"/zone/" + std::to_string(info.zone_id()) +
 		"/node_type/" + std::to_string(info.node_type()) +
 		"/node_id/" + std::to_string(info.node_id());
+}
+
+std::string Node::MakeNodePortEtcdKey(const NodeInfo& nodeInfo)
+{
+	return "/service/" + nodeInfo.endpoint().ip() +
+		"/port/" + std::to_string(nodeInfo.endpoint().port());
 }
 
 void Node::FetchServiceNodes() {
@@ -789,10 +795,8 @@ void Node::AcquireNode() {
 		GetNodeInfo().set_node_id(zoneId);
 		LOG_INFO << "Assigned node_id by zone_id: " << zoneId;
 
-		// 清理已有的 key（基于 node type 前缀）
-		std::string prefix = MakeEtcdKey(GetNodeInfo());
+		std::string prefix = MakeNodeEtcdKey(GetNodeInfo());
 		EtcdHelper::DeleteRange(prefix, false);
-		LOG_INFO << "Deleted old singleton keys with prefix: " << prefix;
 
 		if (rpcServer == nullptr) {
 			uint32_t assignedPort = GetNodeType() * PORT_STEP + zoneId;
@@ -855,6 +859,66 @@ void Node::AcquireNode() {
 	RegisterNodeService();
 }
 
+
+uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts, uint32_t minPort, uint32_t maxPort)
+{
+	for (uint32_t port = minPort; port <= maxPort; ++port) {
+		if (usedPorts.find(port) == usedPorts.end()) {
+			return port;
+		}
+	}
+	throw std::runtime_error(fmt::format("No available port between {} and {}", minPort, maxPort));
+}
+
+bool IsPortReservedType(eNodeType type)
+{
+	return type == eNodeType::GateNodeService;
+}
+
+uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts, uint32_t minPort, uint32_t maxPort)
+{
+	for (uint32_t port = minPort; port <= maxPort; ++port) {
+		if (usedPorts.find(port) == usedPorts.end()) {
+			return port;
+		}
+	}
+	throw std::runtime_error(fmt::format("No available port between {} and {}", minPort, maxPort));
+}
+
+void Node::AcquireNodePort()
+{
+	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[GetNodeType()];
+	auto& existingNodes = *nodeList.mutable_node_list();
+
+	std::unordered_set<uint32_t> usedPorts;
+	for (const auto& node : existingNodes) {
+		usedPorts.insert(node.endpoint().port());
+	}
+
+	uint32_t assignedPort = 0;
+
+	if (IsPortReservedType(GetNodeInfo().node_type())) {
+		constexpr uint32_t GATE_BASE_PORT = 10000;
+		constexpr uint32_t GATE_PORT_LIMIT = 19999;
+		assignedPort = AllocatePortInRange(usedPorts, GATE_BASE_PORT, GATE_PORT_LIMIT);
+		LOG_INFO << "Assigned Gate RPC port: " << assignedPort;
+	}
+	else {
+		constexpr uint32_t MIN_PORT = 20000;
+		constexpr uint32_t MAX_PORT = 65535;
+		assignedPort = AllocatePortInRange(usedPorts, MIN_PORT, MAX_PORT);
+		LOG_INFO << "Assigned dynamic RPC port: " << assignedPort;
+	}
+
+	GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
+	LOG_INFO << "NodeType: " << GetNodeType()
+		<< " IP: " << GetNodeInfo().endpoint().ip()
+		<< " Port: " << assignedPort;
+
+	RegisterNodePort();
+}
+
+
 void Node::KeepNodeAlive() {
 	renewLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().keep_alive_interval(), [this]() {
 		etcdserverpb::LeaseKeepAliveRequest req;
@@ -887,14 +951,17 @@ void Node::StartServiceHealthMonitor(){
 }
 
 void Node::RegisterNodeService() {
-	const auto serviceKey = MakeEtcdKey(GetNodeInfo());
-
+	const auto serviceKey = MakeNodeEtcdKey(GetNodeInfo());
 	LOG_INFO << "Registering node service to etcd with key: " << serviceKey;
-
 	EtcdHelper::PutIfAbsent(serviceKey, GetNodeInfo(), leaseId);
-
 	LOG_INFO << "Registered node to etcd: " << GetNodeInfo().DebugString();
-	
+}
+
+void Node::RegisterNodePort() {
+	const auto serviceKey = MakeNodePortEtcdKey(GetNodeInfo());
+	LOG_INFO << "Registering node port to etcd with key: " << serviceKey;
+	EtcdHelper::PutIfAbsent(serviceKey, "", 0, leaseId);
+	LOG_INFO << "Registered node port to etcd: " << GetNodeInfo().endpoint().port();
 }
 
 void Node::RequestEtcdLease() {

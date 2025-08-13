@@ -75,7 +75,8 @@ protected:
     void ReleaseNodeId();
     void RegisterHandlers();
     void StopWatchingServiceNodes();
-    std::string MakeEtcdKey(const NodeInfo& nodeInfo);
+    std::string MakeNodeEtcdKey(const NodeInfo& nodeInfo);
+	std::string MakeNodePortEtcdKey(const NodeInfo& nodeInfo);
     void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
     void FetchServiceNodes();
@@ -83,10 +84,12 @@ protected:
     void InitGrpcClients();
     void TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const;
     void AcquireNode();
+	void AcquireNodePort();
     static void RequestEtcdLease();
     void KeepNodeAlive();
     void StartServiceHealthMonitor();
     void RegisterNodeService();
+    void RegisterNodePort();
 
     // 事件处理
     void OnServerConnected(const OnConnected2TcpServerEvent& es);
@@ -120,6 +123,7 @@ protected:
 	boost::uuids::random_generator gen;
 	KafkaConsumerHandler kafkaConsumerHandler;
     PartitionClassGuid partitions;
+    uint32_t tryPortId{ 10000 };
 };
 
 extern Node* gNode;
