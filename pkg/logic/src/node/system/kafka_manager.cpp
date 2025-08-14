@@ -25,7 +25,7 @@ bool KafkaManager::Init(const KafkaConfig& config) {
 	tls.GetKafkaProducer() = std::make_unique<KafkaProducer>(brokers);
 
 	if (!kafkaHandler) {
-		LOG_ERROR << "KafkaManager: Message handler not set. Please call subscribe() to register a handler.";
+		LOG_DEBUG << "KafkaManager: Message handler not set. Please call subscribe() to register a handler.";
 		return false;
 	}
 
