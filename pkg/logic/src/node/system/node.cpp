@@ -62,7 +62,7 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
 }
 
 Node::~Node() {
-	etcdService.Shutdown(); 
+	serviceDiscoveryManager.Shutdown();
 	Shutdown();
 }
 
@@ -80,8 +80,7 @@ void Node::Initialize() {
 	InitLogSystem();
 	LoadAllConfigData();
 	InitKafka();
-	InitGrpcClients();
-	FetchServiceNodes();
+	InitEtcdService();
 	LOG_DEBUG << "Node initialization complete.";
 }
 
@@ -107,6 +106,11 @@ void Node::InitRpcServer() {
 void Node::InitKafka()
 {
 	kafkaManager.Init(tlsCommonLogic.GetBaseDeployConfig().kafka());
+}
+
+void Node::InitEtcdService()
+{
+	serviceDiscoveryManager.Init();
 }
 
 void Node::StartRpcServer() {
@@ -179,16 +183,6 @@ void Node::SetupTimeZone() {
 	muduo::Logger::setTimeZone(hkTz);
 }
 
-void Node::InitGrpcClients() {
-	etcdService.Init();  // 替代原来的所有初始化
-}
-
-void Node::FetchServiceNodes() {
-	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
-		EtcdHelper::RangeQuery(prefix);
-	}
-}
-
 void Node::StopWatchingServiceNodes() {
 	EtcdHelper::StopAllWatching();
 }
@@ -230,55 +224,9 @@ void Node::CallRemoteMethodZoneCenter(uint32_t message_id, const ::google::proto
 	GetZoneCentreNode()->CallRemoteMethod(message_id, request);
 }
 
-void Node::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
-	LOG_INFO << "Add service node type " << nodeType << " JSON: " << nodeJson;
-
-	if (!eNodeType_IsValid(static_cast<int32_t>(nodeType))) {
-		LOG_ERROR << "Invalid node type: " << nodeType;
-		return;
-	}
-
-	NodeInfo newNode;
-	auto parseResult = google::protobuf::util::JsonStringToMessage(nodeJson, &newNode);
-	if (!parseResult.ok()) {
-		LOG_ERROR << "Parse node JSON failed, type: " << nodeType
-			<< ", JSON: " << nodeJson
-			<< ", Error: " << parseResult.message().data();
-		return;
-	}
-
-	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
-	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
-
-	*nodeList.Add() = newNode;
-	LOG_INFO << "Node added, type: " << nodeType << ", info: " << newNode.DebugString();
-
-	if (IsMyNode(newNode)) {
-		LOG_TRACE << "Node has same lease_id as self, skip adding node. Self uuid: " << newNode.node_uuid();
-		return;
-	}
-
-	if (!targetNodeTypeWhitelist.contains(nodeType)) return;
-
-	if (IsServiceStarted()) {
-		NodeConnector::ConnectToNode(newNode);
-		LOG_INFO << "Connected to node: " << newNode.DebugString();
-	}
-	else {
-		LOG_INFO << "Service not started or node already connected. Skipping connection for now: " << newNode.DebugString();
-	}
-}
-
 bool Node::IsMyNode(const NodeInfo& node) const
 {
 	return NodeUtils::IsSameNode(node.node_uuid(), GetNodeInfo().node_uuid());
-}
-
-void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
-	LOG_TRACE << "Service node start, key: " << key << ", value: " << value;
-	if (const auto nodeType = NodeUtils::GetServiceTypeFromPrefix(key); eNodeType_IsValid(nodeType)) {
-		AddServiceNode(value, nodeType);
-	}
 }
 
 void Node::HandleServiceNodeStop(const std::string& key, const std::string& nodeJson) {
@@ -328,14 +276,6 @@ void Node::OnServerConnected(const OnConnected2TcpServerEvent& event) {
 		nodeRegistrationManager.TryRegisterNodeSession(i, conn);
 	}
 }
-
-static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
-	0,
-	0,
-	CentreRegisterNodeSessionMessageId,
-	SceneRegisterNodeSessionMessageId,
-	GateRegisterNodeSessionMessageId
-};
 
 void Node::OnClientConnected(const OnTcpClientConnectedEvent& event) {
 	auto& conn = event.conn_;

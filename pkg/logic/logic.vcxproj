@@ -169,6 +169,7 @@
     <ClCompile Include="src\node\system\node_connector.cpp" />
     <ClCompile Include="src\node\system\node_util.cpp" />
     <ClCompile Include="src\node\system\registration_manager.cpp" />
+    <ClCompile Include="src\node\system\service_discovery_manager.cpp" />
     <ClCompile Include="src\time\comp\duration_funtion.cpp" />
     <ClCompile Include="src\time\comp\duration_manager.cpp" />
     <ClCompile Include="src\time\comp\timer_duration.cpp" />
@@ -197,6 +198,7 @@
     <ClInclude Include="src\node\system\node_connector.h" />
     <ClInclude Include="src\node\system\node_util.h" />
     <ClInclude Include="src\node\system\registration_manager.h" />
+    <ClInclude Include="src\node\system\service_discovery_manager.h" />
     <ClInclude Include="src\service\player_service.h" />
     <ClInclude Include="src\service\player_service_replied.h" />
     <ClInclude Include="src\time\system\cooldown_time_system.h" />

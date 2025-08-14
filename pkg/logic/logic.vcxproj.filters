@@ -20,6 +20,7 @@
     <ClCompile Include="src\node\system\node_allocator.cpp" />
     <ClCompile Include="src\node\system\etcd_service.cpp" />
     <ClCompile Include="src\node\system\registration_manager.cpp" />
+    <ClCompile Include="src\node\system\service_discovery_manager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\node\constants\node_constants.h" />
@@ -54,5 +55,6 @@
     <ClInclude Include="src\node\system\node_allocator.h" />
     <ClInclude Include="src\node\system\etcd_service.h" />
     <ClInclude Include="src\node\system\registration_manager.h" />
+    <ClInclude Include="src\node\system\service_discovery_manager.h" />
   </ItemGroup>
 </Project>
