@@ -34,6 +34,7 @@ public:
     uint32_t GetNodeType() const { return GetNodeInfo().node_type(); }
     NodeInfo& GetNodeInfo() const;
 	KafkaManager& GetKafkaManager() { return kafkaManager; }
+	int64_t GetLeaseId() const { return leaseId; }
     virtual ::google::protobuf::Service* GetNodeReplyService() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return logSystem; }
     [[nodiscard]] RpcClientPtr GetZoneCentreNode() { return zoneCentreNode; }
@@ -72,8 +73,6 @@ protected:
     void ReleaseNodeId();
     void RegisterHandlers();
     void StopWatchingServiceNodes();
-    std::string MakeNodeEtcdKey(const NodeInfo& nodeInfo);
-	std::string MakeNodePortEtcdKey(const NodeInfo& nodeInfo);
     void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
     void FetchServiceNodes();

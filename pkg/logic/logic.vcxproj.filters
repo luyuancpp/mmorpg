@@ -15,6 +15,7 @@
     <ClCompile Include="src\time\comp\timer_task_boost_comp.cpp" />
     <ClCompile Include="src\util\zone_utils.cpp" />
     <ClCompile Include="src\node\system\kafka_manager.cpp" />
+    <ClCompile Include="src\node\system\etcd_manager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\node\constants\node_constants.h" />
@@ -44,5 +45,6 @@
     <ClInclude Include="src\service\player_service_replied.h" />
     <ClInclude Include="src\util\zone_utils.h" />
     <ClInclude Include="src\node\system\kafka_manager.h" />
+    <ClInclude Include="src\node\system\etcd_manager.h" />
   </ItemGroup>
 </Project>
