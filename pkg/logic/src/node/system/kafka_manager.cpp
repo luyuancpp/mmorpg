@@ -19,13 +19,13 @@ bool KafkaManager::Init(const KafkaConfig& config) {
 		topicsVec.push_back(topic);
 	}
 
-	auto zoneId = tlsCommonLogic.GetGameConfig().zone_id(); // 区服 ID
-	std::vector<int32_t> partitions{ static_cast<int32_t>(zoneId)}; // KafkaConsumer 用 int32_t 分区
+	auto zoneId = tlsCommonLogic.GetGameConfig().zone_id(); // zone ID
+	std::vector<int32_t> partitions{ static_cast<int32_t>(zoneId) };
 
 	tls.GetKafkaProducer() = std::make_unique<KafkaProducer>(brokers);
 
 	if (!kafkaHandler) {
-		LOG_ERROR << "KafkaManager: 消息处理器未设置。请先调用 subscribe() 注册 handler。";
+		LOG_ERROR << "KafkaManager: Message handler not set. Please call subscribe() to register a handler.";
 		return false;
 	}
 
@@ -39,19 +39,19 @@ bool KafkaManager::Init(const KafkaConfig& config) {
 
 	tls.GetKafkaConsumer()->start();
 
-	LOG_INFO << "KafkaManager 初始化完成，brokers: " << brokers;
+	LOG_INFO << "KafkaManager initialized successfully. Brokers: " << brokers;
 	return true;
 }
 
 bool KafkaManager::Publish(const std::string& topic, const std::string& msg) {
 	if (!tls.GetKafkaProducer()) {
-		LOG_ERROR << "KafkaManager: 生产者未初始化";
+		LOG_ERROR << "KafkaManager: Producer is not initialized.";
 		return false;
 	}
 
 	auto err = tls.GetKafkaProducer()->send(topic, msg);
 	if (err != RdKafka::ERR_NO_ERROR) {
-		LOG_ERROR << "KafkaManager: 发送失败, err=" << RdKafka::err2str(err);
+		LOG_ERROR << "KafkaManager: Failed to send message. Error: " << RdKafka::err2str(err);
 		return false;
 	}
 
@@ -65,9 +65,9 @@ void KafkaManager::Shutdown() {
 	}
 
 	if (tls.GetKafkaProducer()) {
-		tls.GetKafkaProducer()->poll(); // flush 可能加在你自己的实现里
+		tls.GetKafkaProducer()->poll(); // flush if needed
 		tls.GetKafkaProducer().reset();
 	}
 
-	LOG_INFO << "KafkaManager 已关闭";
+	LOG_INFO << "KafkaManager has been shut down.";
 }
