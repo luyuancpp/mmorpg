@@ -3,7 +3,6 @@
 #include "config_loader/config.h"
 #include "proto/common/message.pb.h"
 #include "type_define/type_define.h"
-#include "util/random.h"
 #include <muduo/contrib/hiredis/hiredis.h>
 
 class ThreadLocalStorageCommonLogic
@@ -40,12 +39,6 @@ public:
         GameConfig = gameConfig;
     }
 
-
-	[[nodiscard]] Random& GetRng()
-	{
-		return random;
-	}
-
 	HiredisPtr& GetZoneRedis()
 	{
 		return zoneRedis;
@@ -59,7 +52,6 @@ private:
     std::string prev_node_replied_;
     BaseDeployConfig BaseDeployConfig;
     GameConfig GameConfig;
-	Random random;
 	HiredisPtr zoneRedis;
 };
 
