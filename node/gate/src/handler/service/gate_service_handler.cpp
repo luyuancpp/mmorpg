@@ -124,7 +124,7 @@ void GateHandler::RegisterNodeSession(::google::protobuf::RpcController* control
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	gGateNode->HandleNodeRegistration(*request, *response);
+	gNode->GetNodeRegistrationManager().HandleNodeRegistration(*request, *response);
 ///<<< END WRITING YOUR CODE
 }
 

@@ -13,6 +13,7 @@
 #include "kafka_manager.h"
 #include "etcd_service.h"
 #include "etcd_manager.h"
+#include "registration_manager.h"
 
 class RegisterNodeSessionRequest;
 class RegisterNodeSessionResponse;
@@ -44,6 +45,7 @@ public:
 	void SetZoneCentreNode(RpcClientPtr& c) { zoneCentreNode = c; }
     ClientList& GetZombieClientList() { return zombieClientList; }
     CanConnectNodeTypeList& GetTargetNodeTypeWhitelist() { return targetNodeTypeWhitelist; }
+	NodeRegistrationManager& GetNodeRegistrationManager() { return nodeRegistrationManager; }
     std::string FormatIpAndPort();
     std::string GetIp();
     uint32_t GetPort();
@@ -54,8 +56,6 @@ public:
     // 节点注册与服务处理
     void HandleServiceNodeStart(const std::string& key, const std::string& value);
     void HandleServiceNodeStop(const std::string& key, const std::string& value);
-    void HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response) const;
-    void HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const;
 
     virtual void StartRpcServer();
 	
@@ -77,7 +77,6 @@ protected:
     static void AsyncOutput(const char* msg, int len);
     void FetchServiceNodes();
     void InitGrpcClients();
-    void TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const;
     void StartServiceHealthMonitor();
 
     // 事件处理
@@ -111,6 +110,7 @@ protected:
 	KafkaManager kafkaManager;
 	EtcdService etcdService;
     EtcdManager etcdManager;
+    NodeRegistrationManager nodeRegistrationManager;
 };
 
 extern Node* gNode;

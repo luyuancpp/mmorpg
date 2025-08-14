@@ -670,7 +670,7 @@ void CentreHandler::RegisterNodeSession(::google::protobuf::RpcController* contr
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	gNode->HandleNodeRegistration(*request, *response);
+	gNode->GetNodeRegistrationManager().HandleNodeRegistration(*request, *response);
 ///<<< END WRITING YOUR CODE
 }
 
