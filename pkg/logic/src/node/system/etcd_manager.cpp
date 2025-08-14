@@ -5,8 +5,12 @@
 #include "etcd_helper.h"
 #include "node.h"
 #include <thread_local/storage_common_logic.h>
+#include "grpc/generator/proto/etcd/etcd_grpc.h"
 
-std::deque<std::string> EtcdManager::pendingKeys;
+
+TimerTaskComp renewLeaseTimer;
+
+std::deque<std::string> pendingKeys;
 
 std::string EtcdManager::GetServiceName(uint32_t type) {
 	return eNodeType_Name(type) + ".rpc";
@@ -57,4 +61,13 @@ void EtcdManager::RequestEtcdLease() {
 	LOG_DEBUG << "[EtcdLease] Calling EtcdHelper::GrantLease...";
 	EtcdHelper::GrantLease(ttlSeconds);
 	LOG_INFO << "[EtcdLease] Lease request completed.";
+}
+
+void EtcdManager::KeepNodeAlive() {
+	renewLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().keep_alive_interval(), []() {
+		etcdserverpb::LeaseKeepAliveRequest req;
+		req.set_id(gNode->GetLeaseId());
+		SendLeaseLeaseKeepAlive(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), req);
+		LOG_DEBUG << "Keeping node alive, lease_id: " << gNode->GetLeaseId();
+		});
 }

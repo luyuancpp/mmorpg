@@ -520,7 +520,7 @@ void Node::InitGrpcResponseHandlers() {
 	etcdserverpb::AsyncWatchWatchHandler = [this](const ClientContext& context, const ::etcdserverpb::WatchResponse& response) {
 		if (!hasSentWatch)
 		{
-			RequestEtcdLease();
+			EtcdManager::RequestEtcdLease();
 			hasSentWatch = true;
 		}
 		if (response.created()) {
@@ -560,7 +560,7 @@ void Node::InitGrpcResponseHandlers() {
 			// 租约过期后重新获取，需要重新注册服务节点
 			leaseId = reply.id();
 			KeepNodeAlive();
-			RegisterNodeService();
+			EtcdManager::RegisterNodeService();
 		}
 
 		LOG_INFO << "Lease granted: " << reply.DebugString();
@@ -746,7 +746,7 @@ void Node::AcquireNode() {
 
 		std::string prefix = EtcdManager::MakeNodeEtcdKey(GetNodeInfo());
 		EtcdHelper::DeleteRange(prefix, false);
-		RegisterNodeService();
+		EtcdManager::RegisterNodeService();
 		return;
 	}
 
@@ -789,7 +789,7 @@ void Node::AcquireNode() {
 
 	GetNodeInfo().set_node_id(nextNodeId);
 
-	RegisterNodeService();
+	EtcdManager::RegisterNodeService();
 }
 
 bool IsPortReservedType(uint32_t type)
@@ -870,10 +870,8 @@ void Node::AcquireNodePort(){
 		<< " IP: " << GetNodeInfo().endpoint().ip()
 		<< " Port: " << assignedPort;
 
-	RegisterNodePort();
+	EtcdManager::RegisterNodePort();
 }
-
-
 
 void Node::KeepNodeAlive() {
 	renewLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().keep_alive_interval(), [this]() {
@@ -883,7 +881,6 @@ void Node::KeepNodeAlive() {
 		LOG_DEBUG << "Keeping node alive, lease_id: " << leaseId;
 		});
 }
-
 
 void Node::StartServiceHealthMonitor(){
 	serviceHealthMonitorTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().health_check_interval(), [this]() {
@@ -901,34 +898,9 @@ void Node::StartServiceHealthMonitor(){
 			}
 		}
 
-		RequestEtcdLease();
+		EtcdManager::RequestEtcdLease();
 		}
 	);
-}
-
-void Node::RegisterNodeService() {
-	const auto serviceKey = EtcdManager::MakeNodeEtcdKey(GetNodeInfo());
-	LOG_INFO << "Registering node service to etcd with key: " << serviceKey;
-	EtcdHelper::PutIfAbsent(serviceKey, GetNodeInfo(), leaseId);
-	pendingKeys.push_back(serviceKey);
-	LOG_INFO << "Registered node to etcd: " << GetNodeInfo().DebugString();
-}
-
-void Node::RegisterNodePort() {
-	const auto portKey = EtcdManager::MakeNodePortEtcdKey(GetNodeInfo());
-	LOG_INFO << "Registering node port to etcd with key: " << portKey;
-	EtcdHelper::PutIfAbsent(portKey, "", 0, leaseId);
-	pendingKeys.push_back(portKey);
-	LOG_INFO << "Registered node port to etcd: " << GetNodeInfo().endpoint().port();
-}
-
-void Node::RequestEtcdLease() {
-	uint64_t ttlSeconds = tlsCommonLogic.GetBaseDeployConfig().node_ttl_seconds();
-	LOG_INFO << "[EtcdLease] Requesting lease with TTL: " << ttlSeconds
-		<< " seconds. Time: " << muduo::Timestamp::now().toFormattedString();
-	LOG_DEBUG << "[EtcdLease] Calling EtcdHelper::GrantLease...";
-	EtcdHelper::GrantLease(ttlSeconds);
-	LOG_INFO << "[EtcdLease] Lease request completed.";
 }
 
 
