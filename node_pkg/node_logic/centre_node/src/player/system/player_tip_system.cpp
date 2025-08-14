@@ -3,6 +3,8 @@
 #include "util/player_message_utils.h"
 #include "service_info/centre_player_service_info.h"
 #include "thread_local/storage_common_logic.h"
+#include "thread_local/player_storage.h"
+
 
 void PlayerTipSystem::SendToPlayer(entt::entity playerEntity, uint32_t tipId, const StringVector& parameters)
 {
@@ -17,8 +19,8 @@ void PlayerTipSystem::SendToPlayer(entt::entity playerEntity, uint32_t tipId, co
 
 void PlayerTipSystem::SendToPlayer(Guid playerId, uint32_t tipId, const StringVector& parameters)
 {
-	const auto playerIterator = GlobalPlayerList().find(playerId);
-	if (playerIterator == GlobalPlayerList().end())
+	const auto playerIterator = gPlayerList.find(playerId);
+	if (playerIterator == gPlayerList.end())
 	{
 		return;
 	}

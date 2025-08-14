@@ -41,6 +41,7 @@
     <ClInclude Include="src\network\rpc_session.h" />
     <ClInclude Include="src\redis_client\redis_client.h" />
     <ClInclude Include="src\test\test.h" />
+    <ClInclude Include="src\thread_local\player_storage.h" />
     <ClInclude Include="src\thread_local\storage.h" />
     <ClInclude Include="src\thread_local\storage_common_logic.h" />
     <ClInclude Include="src\thread_local\storage_lua.h" />
@@ -78,6 +79,7 @@
     <ClCompile Include="src\network\rpc_session.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
     <ClCompile Include="src\test\test.cpp" />
+    <ClCompile Include="src\thread_local\player_storage.cpp" />
     <ClCompile Include="src\thread_local\storage.cpp" />
     <ClCompile Include="src\thread_local\storage_common_logic.cpp" />
     <ClCompile Include="src\thread_local\storage_lua.cpp" />

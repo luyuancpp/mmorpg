@@ -28,6 +28,7 @@
 #include "util/network_utils.h"
 #include "util/player_message_utils.h"
 #include "thread_local/thread_local_node_context.h"
+#include "thread_local/player_storage.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
@@ -47,7 +48,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// 1 清除玩家会话，处理连续顶号进入情况
 	PlayerNodeSystem::RemovePlayerSessionSilently(request->player_id());
 
-	const auto& playerList = GlobalPlayerList();
+	const auto& playerList = gPlayerList;
 	auto playerIt = playerList.find(request->player_id());
 
 	PlayerGameNodeEnteryInfoPBComponent enterInfo;
@@ -84,8 +85,8 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	const auto playerIt = GlobalPlayerList().find(it->second);
-	if (playerIt == GlobalPlayerList().end())
+	const auto playerIt = gPlayerList.find(it->second);
+	if (playerIt == gPlayerList.end())
 	{
 		LOG_ERROR << "Player ID not found in common logic: " << it->second;
 		return;
@@ -173,7 +174,7 @@ void SceneHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* 
 		return;
 	}
 
-	const auto player = tlsCommonLogic.GetPlayer(it->second);
+	const auto player = PlayerManager::Instance().GetPlayer(it->second);
 	if (entt::null == player)
 	{
 		LOG_ERROR << "GatePlayerService player not loading " << request->message_content().message_id()
@@ -215,7 +216,7 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 		return;
 	}
 
-	const auto player = tlsCommonLogic.GetPlayer(it->second);
+	const auto player = PlayerManager::Instance().GetPlayer(it->second);
 	if (entt::null == player)
 	{
 		LOG_ERROR << "GatePlayerService player not loading";
@@ -242,7 +243,7 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	const auto player = tlsCommonLogic.GetPlayer(it->second);
+	const auto player = PlayerManager::Instance().GetPlayer(it->second);
 	if (entt::null == player)
 	{
 		LOG_ERROR << "GatePlayerService player not loading";
@@ -369,7 +370,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	const auto player = tlsCommonLogic.GetPlayer(request->player_id());
+	const auto player = PlayerManager::Instance().GetPlayer(request->player_id());
 	if (!tls.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found " << request->player_id();
@@ -392,7 +393,7 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
 {
 ///<<< BEGIN WRITING YOUR CODE
     //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
-	auto player = tlsCommonLogic.GetPlayer(request->player_id());
+	auto player = PlayerManager::Instance().GetPlayer(request->player_id());
 	if (player == entt::null)
 	{
 		LOG_ERROR << "Error: Player entity not found for player_id " << request->player_id();

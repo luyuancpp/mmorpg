@@ -5,6 +5,7 @@
 #include "service_info/game_client_player_service_info.h"
 #include "thread_local/storage_common_logic.h"
 #include "util/player_message_utils.h"
+#include "thread_local/player_storage.h"
 
 void PlayerTipSystem::SendToPlayer(entt::entity player, uint32_t tipId, const StringVector& strParam)
 {
@@ -20,7 +21,7 @@ void PlayerTipSystem::SendToPlayer(entt::entity player, uint32_t tipId, const St
 
 void PlayerTipSystem::SendToPlayer(const Guid playerId, const uint32_t tipId, const StringVector& strParam)
 {
-	const entt::entity playerEntity = tlsCommonLogic.GetPlayer(playerId);
+	const entt::entity playerEntity = PlayerManager::Instance().GetPlayer(playerId);
 	if (playerEntity == entt::null)
 	{
 		LOG_ERROR << "Player not found for ID: " << playerId;
