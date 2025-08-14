@@ -161,6 +161,7 @@
   <ItemGroup>
     <ClCompile Include="src\message_limiter\message_limiter.cpp" />
     <ClCompile Include="src\node\system\etcd_helper.cpp" />
+    <ClCompile Include="src\node\system\etcd_manager.cpp" />
     <ClCompile Include="src\node\system\kafka_manager.cpp" />
     <ClCompile Include="src\node\system\node.cpp" />
     <ClCompile Include="src\node\system\node_system.cpp" />
@@ -184,6 +185,7 @@
     <ClInclude Include="src\log\constants\log_color_constants.h" />
     <ClInclude Include="src\node\constants\node_constants.h" />
     <ClInclude Include="src\node\system\etcd_helper.h" />
+    <ClInclude Include="src\node\system\etcd_manager.h" />
     <ClInclude Include="src\node\system\kafka_manager.h" />
     <ClInclude Include="src\node\system\node.h" />
     <ClInclude Include="src\node\system\node_system.h" />

@@ -34,6 +34,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <fmt/base.h>
+#include "etcd_manager.h"
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
@@ -65,10 +66,6 @@ Node::~Node() {
 
 NodeInfo& Node::GetNodeInfo() const {
 	return tls.globalRegistry.get_or_emplace<NodeInfo>(GlobalEntity());
-}
-
-std::string GetServiceName(uint32_t type) {
-	return eNodeType_Name(type) + ".rpc";
 }
 
 void Node::Initialize() {
@@ -192,28 +189,6 @@ void Node::InitGrpcClients() {
 			HandleCompletedQueueMessage(registry);
 		}
 		});
-}
-
-static std::string MakeNodeEtcdPrefix(const NodeInfo& info)
-{
-	return GetServiceName(info.node_type()) +
-		"/zone/" + std::to_string(info.zone_id()) +
-		"/node_type/" + std::to_string(info.node_type()) +
-		"/node_id/";
-}
-
-std::string Node::MakeNodeEtcdKey(const NodeInfo& info) {
-	return MakeNodeEtcdPrefix(info) + std::to_string(info.node_id());
-}
-
-static std::string MakeNodePortEtcdPrefix(const NodeInfo& nodeInfo)
-{
-	return  "/service/" + nodeInfo.endpoint().ip() +"/port/";
-}
-
-std::string Node::MakeNodePortEtcdKey(const NodeInfo& nodeInfo)
-{
-	return MakeNodePortEtcdPrefix(nodeInfo) + std::to_string(nodeInfo.endpoint().port());
 }
 
 void Node::FetchServiceNodes() {
@@ -521,15 +496,15 @@ void Node::InitGrpcResponseHandlers() {
 		auto& key = pendingKeys.front();
 
 		if (reply.succeeded()) {
-			if (boost::algorithm::starts_with(key, MakeNodePortEtcdPrefix(GetNodeInfo()))) {
+			if (boost::algorithm::starts_with(key, EtcdManager::MakeNodePortEtcdPrefix(GetNodeInfo()))) {
 				StartRpcServer();
 			}
-			else if (boost::algorithm::starts_with(key, MakeNodeEtcdPrefix(GetNodeInfo()))) {
+			else if (boost::algorithm::starts_with(key, EtcdManager::MakeNodeEtcdPrefix(GetNodeInfo()))) {
 				tls.OnNodeStart(GetNodeInfo().node_id());
 			}
 		}
 		else {
-			if (boost::algorithm::starts_with(key, MakeNodeEtcdPrefix(GetNodeInfo()))) {
+			if (boost::algorithm::starts_with(key, EtcdManager::MakeNodeEtcdPrefix(GetNodeInfo()))) {
 				// 只有 node key 失败才尝试重新 AcquireNode
 				acquireNodeTimer.RunAfter(1, [this]() { AcquireNode(); });
 			}
@@ -683,7 +658,7 @@ void Node::HandleNodeRegistration(
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
 			if (!NodeSystem::IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
 			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
-			entt::entity created = ResetEntity(registry, nodeEntity); 
+			entt::entity created = ResetEntity(registry, nodeEntity);
 			if (created == entt::null) {
 				LOG_ERROR << "Create node entity failed in " << NodeSystem::GetRegistryName(registry);
 				return false;
@@ -769,7 +744,7 @@ void Node::AcquireNode() {
 		GetNodeInfo().set_node_id(zoneId);
 		LOG_INFO << "Assigned node_id by zone_id: " << zoneId;
 
-		std::string prefix = MakeNodeEtcdKey(GetNodeInfo());
+		std::string prefix = EtcdManager::MakeNodeEtcdKey(GetNodeInfo());
 		EtcdHelper::DeleteRange(prefix, false);
 		RegisterNodeService();
 		return;
@@ -932,7 +907,7 @@ void Node::StartServiceHealthMonitor(){
 }
 
 void Node::RegisterNodeService() {
-	const auto serviceKey = MakeNodeEtcdKey(GetNodeInfo());
+	const auto serviceKey = EtcdManager::MakeNodeEtcdKey(GetNodeInfo());
 	LOG_INFO << "Registering node service to etcd with key: " << serviceKey;
 	EtcdHelper::PutIfAbsent(serviceKey, GetNodeInfo(), leaseId);
 	pendingKeys.push_back(serviceKey);
@@ -940,7 +915,7 @@ void Node::RegisterNodeService() {
 }
 
 void Node::RegisterNodePort() {
-	const auto portKey = MakeNodePortEtcdKey(GetNodeInfo());
+	const auto portKey = EtcdManager::MakeNodePortEtcdKey(GetNodeInfo());
 	LOG_INFO << "Registering node port to etcd with key: " << portKey;
 	EtcdHelper::PutIfAbsent(portKey, "", 0, leaseId);
 	pendingKeys.push_back(portKey);
