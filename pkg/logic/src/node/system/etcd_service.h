@@ -33,7 +33,6 @@ private:
     bool hasSentWatch = false;
     bool hasSentRange = false;
     int64_t leaseId = 0;
-    std::deque<std::string> pendingKeys;
     std::unordered_map<std::string, int64_t> revision;
     TimerTaskComp grpcHandlerTimer;
     TimerTaskComp acquireNodeTimer;

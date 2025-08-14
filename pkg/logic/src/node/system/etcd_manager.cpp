@@ -8,9 +8,6 @@
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
 
 
-
-std::deque<std::string> pendingKeys;
-
 void EtcdManager::Shutdown()
 {
 	renewLeaseTimer.Cancel();

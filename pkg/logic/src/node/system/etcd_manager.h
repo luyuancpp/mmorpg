@@ -8,6 +8,8 @@ class NodeInfo;
 class EtcdManager
 {
 public:
+	std::deque<std::string>& GetPendingKeys() { return pendingKeys; }
+
 	void Shutdown();
 
 	std::string GetServiceName(uint32_t type);
@@ -30,4 +32,5 @@ public:
 
 private:
 	TimerTaskComp renewLeaseTimer;
+	std::deque<std::string> pendingKeys;
 };
