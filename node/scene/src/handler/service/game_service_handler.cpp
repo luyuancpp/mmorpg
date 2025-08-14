@@ -5,7 +5,6 @@
 
 #include "common_error_tip.pb.h"
 #include "muduo/net/InetAddress.h"
-
 #include "scene_node.h"
 #include "game_common_logic/system/session_system.h"
 #include "core/network/message_system.h"
@@ -28,7 +27,7 @@
 #include "util/proto_field_checker.h"
 #include "util/network_utils.h"
 #include "util/player_message_utils.h"
-
+#include "thread_local/thread_local_node_context.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
@@ -362,7 +361,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 ///<<< BEGIN WRITING YOUR CODE
 	PlayerNodeSystem::RemovePlayerSession(request->player_id());
 
-	auto& registry = tls.GetNodeRegistry(eNodeType::GateNodeService);
+	auto& registry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::GateNodeService);
 	if (const entt::entity gateNodeId{ GetGateNodeId(request->session_id()) };
 		!registry.valid(gateNodeId))
 	{

@@ -3,6 +3,7 @@
 #include "thread_local/storage.h"
 #include "proto/common/common.pb.h"
 #include <network/rpc_client.h>
+#include "thread_local/thread_local_node_context.h"
 
 // 静态映射表定义（可放在 .cpp 中）//todo
 const std::unordered_map<eNodeType, std::string> nodeTypeNameMap = {
@@ -26,12 +27,12 @@ eNodeType NodeUtils::GetServiceTypeFromPrefix(const std::string& prefix) {
 }
 
 entt::registry& NodeUtils::GetRegistryForNodeType(uint32_t nodeType) {
-	return tls.GetNodeRegistry(nodeType);
+	return ThreadLocalNodeContext::Instance().GetRegistry(nodeType);
 }
 
 std::string NodeUtils::GetRegistryName(const entt::registry& registry) {
-	for (uint32_t i = 0; i < tls.GetNodeRegistry().size(); ++i){
-		if (&tls.GetNodeRegistry(i) == &registry) {
+	for (uint32_t i = 0; i < ThreadLocalNodeContext::Instance().GetAllRegistries().size(); ++i){
+		if (&ThreadLocalNodeContext::Instance().GetRegistry(i) == &registry) {
 			return eNodeType_Name(i);
 		}
 	}
@@ -39,8 +40,8 @@ std::string NodeUtils::GetRegistryName(const entt::registry& registry) {
 }
 
 eNodeType NodeUtils::GetRegistryType(const entt::registry& registry){
-	for (uint32_t i = 0; i < tls.GetNodeRegistry().size(); ++i){
-		if (&tls.GetNodeRegistry(i) == &registry) {
+	for (uint32_t i = 0; i < ThreadLocalNodeContext::Instance().GetAllRegistries().size(); ++i){
+		if (&ThreadLocalNodeContext::Instance().GetRegistry(i) == &registry) {
 			return eNodeType(i);
 		}
 	}
@@ -57,7 +58,7 @@ bool NodeUtils::IsNodeConnected(uint32_t nodeType, const NodeInfo& info)  {
 	switch (info.protocol_type()) {
 	case PROTOCOL_TCP:
 	{
-		entt::registry& registry = tls.GetNodeRegistry(nodeType);
+		entt::registry& registry = ThreadLocalNodeContext::Instance().GetRegistry(nodeType);
 		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
 			if (NodeUtils::IsSameNode(info.node_uuid(), nodeInfo.node_uuid())) {
 				LOG_INFO << "Node already registered, IP: " << nodeInfo.endpoint().ip()

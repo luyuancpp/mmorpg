@@ -43,6 +43,7 @@
     <ClInclude Include="src\util\node_utils.h" />
     <ClInclude Include="src\kafka\kafka_producer.h" />
     <ClInclude Include="src\kafka\kafka_consumer.h" />
+    <ClInclude Include="src\thread_local\thread_local_node_context.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\network\game_rpc.pb.cc" />
@@ -71,6 +72,7 @@
     <ClCompile Include="src\util\node_utils.cpp" />
     <ClCompile Include="src\kafka\kafka_producer.cpp" />
     <ClCompile Include="src\kafka\kafka_consumer.cpp" />
+    <ClCompile Include="src\thread_local\thread_local_node_context.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\network\autogen.bat" />

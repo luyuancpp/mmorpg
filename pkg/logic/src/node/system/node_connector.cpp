@@ -9,14 +9,10 @@
 #include <thread_local/storage_common_logic.h>
 #include "node.h"
 #include "util/network_utils.h"
-
-bool IsMyNode(const NodeInfo& node)
-{
-	return NodeUtils::IsSameNode(node.node_uuid(), GetNodeInfo().node_uuid());
-}
+#include "thread_local/thread_local_node_context.h"
 
 void NodeConnector::ConnectToNode(const NodeInfo& info) {
-	if (IsMyNode(info)) {
+	if (gNode->IsMyNode(info)) {
 		LOG_INFO << "Skipping connection to self node: " << info.DebugString();
 		return;
 	}
@@ -64,7 +60,7 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo& info) {
 }
 
 void NodeConnector::ConnectToTcpNode(const NodeInfo& info) {
-	auto& registry = tls.GetNodeRegistry(info.node_type());
+	auto& registry = ThreadLocalNodeContext::Instance().GetRegistry(info.node_type());
 	entt::entity entityId{ info.node_id() };
 
 	if (registry.valid(entityId)) {
