@@ -6,7 +6,6 @@
 #include "proto/common/node.pb.h"
 
 #include <kafka/kafka_consumer.h>
-#include <kafka/kafka_producer.h>
 #include <type_define/type_define.h>
 
 class ThreadLocalStorage
@@ -14,7 +13,6 @@ class ThreadLocalStorage
 public:
 	using NodeRgistries = std::array<entt::registry, eNodeType_ARRAYSIZE>;
 	using NodeGloabalEntity = std::array<entt::entity, eNodeType_ARRAYSIZE>;
-	using KafkaProducerPtr = std::unique_ptr<KafkaProducer>;
 	using KafkaConsumerPtr = std::unique_ptr<KafkaConsumer>;
 
 	ThreadLocalStorage();
@@ -51,12 +49,10 @@ public:
 
 	void OnNodeStart(uint32_t nodeId);
 
-	KafkaProducerPtr& GetKafkaProducer() { return kafkaProducer; }
 	KafkaConsumerPtr& GetKafkaConsumer() { return kafkaConsumer; }
 private:
 	NodeRgistries nodeRegistries;
 	NodeGloabalEntity nodeGlobalEntities;
-	KafkaProducerPtr kafkaProducer;
 	KafkaConsumerPtr kafkaConsumer;
 };
 
