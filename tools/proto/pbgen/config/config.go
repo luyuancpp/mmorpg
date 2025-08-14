@@ -58,8 +58,8 @@ const (
 	CommonSrcDirectory             = "pkg/common/src/"
 
 	ServiceIdFilePath             = ProtoDir + "serviceid.txt"
-	HandlerSourceDirectory        = "src/handler/service/"
-	RepliedHandlerSourceDirectory = "src/handler/service_replied/"
+	HandlerSourceDirectory        = "src/handler/rpc/"
+	RepliedHandlerSourceDirectory = "src/handler/rpc_response/"
 	EventHandlerSourceDirectory   = "src/handler/event/"
 	PbcLuaDirectory               = PbcOutputDirectory + "lua/"
 )
@@ -208,11 +208,11 @@ const (
 	ClientPrefixName                = "Client" //
 	TypePlayer                      = "player"
 	DisplayPlayer                   = "Player"
-	ServiceIncludeName              = "service/"
-	PlayerServiceIncludeName        = "#include \"service/player_service.h\"\n"
-	PlayerServiceRepliedIncludeName = "#include \"service/player_service_replied.h\"\n"
+	ServiceIncludeName              = "rpc/"
+	PlayerServiceIncludeName        = "#include \"rpc/player_service.h\"\n"
+	PlayerServiceRepliedIncludeName = "#include \"rpc/player_service_replied.h\"\n"
 	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
-	ClientLuaProjectRelative        = "script/lua/service/"
+	ClientLuaProjectRelative        = "script/lua/rpc/"
 	ClassNameSuffix                 = "Handler"
 	NodeEnumName                    = "eNodeType"
 	NodeServiceSuffix               = "nodeservice"

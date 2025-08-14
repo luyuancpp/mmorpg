@@ -18,22 +18,22 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\client_message_processor.cpp">
+    <ClCompile Include="src\handler\rpc\client_message_processor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\gate_service_handler.cpp">
+    <ClCompile Include="src\handler\rpc\gate_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service_replied\centre_service_replied_handler.cpp">
+    <ClCompile Include="src\handler\rpc_response\centre_service_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service_replied\game_service_replied_handler.cpp">
+    <ClCompile Include="src\handler\rpc_response\game_service_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service_replied\register_replied_handler.cpp">
+    <ClCompile Include="src\handler\rpc_response\register_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service_replied\route_message_replied_handler.cpp">
+    <ClCompile Include="src\handler\rpc_response\route_message_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\thread_local\storage_gate.cpp">
@@ -42,36 +42,36 @@
     <ClCompile Include="src\gate_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service_replied\player\player_service_replied.cpp">
+    <ClCompile Include="src\handler\rpc_response\player\player_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\player\player_service.cpp">
+    <ClCompile Include="src\handler\rpc\player\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service_replied\register_handler.cpp">
+    <ClCompile Include="src\handler\rpc_response\register_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service_replied\centre_scene_replied_handler.cpp">
+    <ClCompile Include="src\handler\rpc_response\centre_scene_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service_replied\game_scene_replied_handler.cpp">
+    <ClCompile Include="src\handler\rpc_response\game_scene_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\handler\service\client_message_processor.h">
+    <ClInclude Include="src\handler\rpc\client_message_processor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\gate_service_handler.h">
+    <ClInclude Include="src\handler\rpc\gate_service_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\comp\gate_session.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service_replied\centre_service_replied_handler.h">
+    <ClInclude Include="src\handler\rpc_response\centre_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service_replied\game_service_replied_handler.h">
+    <ClInclude Include="src\handler\rpc_response\game_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\thread_local\storage_gate.h">
@@ -80,10 +80,10 @@
     <ClInclude Include="src\gate_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service_replied\centre_scene_replied_handler.h">
+    <ClInclude Include="src\handler\rpc_response\centre_scene_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service_replied\game_scene_replied_handler.h">
+    <ClInclude Include="src\handler\rpc_response\game_scene_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
