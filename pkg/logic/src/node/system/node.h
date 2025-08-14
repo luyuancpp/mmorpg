@@ -41,6 +41,7 @@ public:
     [[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
 	void SetZoneCentreNode(RpcClientPtr& c) { zoneCentreNode = c; }
     ClientList& GetZombieClientList() { return zombieClientList; }
+    CanConnectNodeTypeList& GetTargetNodeTypeWhitelist() { return targetNodeTypeWhitelist; }
     std::string FormatIpAndPort();
     std::string GetIp();
     uint32_t GetPort();
@@ -64,14 +65,6 @@ protected:
     void LoadAllConfigData();
     void SetupTimeZone();
     void InitKafka();
-
-
-    // 节点连接与管理
-    void ConnectToNode(const NodeInfo& nodeInfo);
-    void ConnectToGrpcNode(const NodeInfo& nodeInfo);
-    void ConnectToTcpNode(const NodeInfo& nodeInfo);
-    void ConnectToHttpNode(const NodeInfo& nodeInfo);
-    void ConnectAllNodes();
 
     void ReleaseNodeId();
     void RegisterHandlers();

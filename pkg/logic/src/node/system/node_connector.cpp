@@ -114,3 +114,19 @@ void NodeConnector::ConnectToTcpNode(const NodeInfo& info) {
 void NodeConnector::ConnectToHttpNode(const NodeInfo&) {
 	// HTTP连接逻辑可扩展
 }
+
+void NodeConnector::ConnectAllNodes() {
+	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+
+	for (uint32_t nodeType = 0; nodeType < eNodeType_ARRAYSIZE; ++nodeType)
+	{
+		if (!gNode->GetTargetNodeTypeWhitelist().contains(nodeType)) continue;
+
+		for (const auto& node : nodeRegistry[nodeType].node_list()) {
+			if (NodeUtils::IsNodeConnected(nodeType, node)) continue;
+
+			ConnectToNode(node);
+			LOG_INFO << "Connected to node from ConnectAllNodes: " << node.DebugString();
+		}
+	}
+}
