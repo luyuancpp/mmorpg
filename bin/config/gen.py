@@ -31,15 +31,15 @@ for directory in directories:
 
 # Define commands to execute
 commands = [
-    "python gen_xls_to_json.py",
-    "python gen_xls_to_proto.py",
+    "python gen_json_from_xlsx.py",
+    "python gen_proto_from_xlsx.py",
     "python gen_xlsx_cpp_tip_to_proto.py",
     "python operator_xlsx_to_proto.py",
     "python gen_xls_to_cpp_config.py",
     "python gen_xls_cpp_id.py",
-    "python gen_proto_cpp.py",
-    "python gen_proto_go.py",
-    "python generate_xlsx_cpp_constants.py",
+    "python gen_cpp_proto.py",
+    "python gen_go_proto.py",
+    "python gen_cpp_constants_from_xlsx.py",
     "python generate_xlsx_cpp_id_bit_index.py",
     "python md5tool.py md5copy ./generated/cpp/ ../../pkg/config/src/",
     "python md5tool.py md5copy ./generated/cpp_table_id_bit_index/ "
