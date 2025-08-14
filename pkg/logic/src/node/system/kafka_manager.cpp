@@ -29,7 +29,7 @@ bool KafkaManager::Init(const KafkaConfig& config) {
 		return false;
 	}
 
-	tls.GetKafkaConsumer() = std::make_unique<KafkaConsumer>(
+	KafkaConsumer::Instance().init(
 		brokers,
 		groupId,
 		topicsVec,
@@ -37,7 +37,7 @@ bool KafkaManager::Init(const KafkaConfig& config) {
 		kafkaHandler
 	);
 
-	tls.GetKafkaConsumer()->start();
+	KafkaConsumer::Instance().start();
 
 	LOG_INFO << "KafkaManager initialized successfully. Brokers: " << brokers;
 	return true;
@@ -55,10 +55,7 @@ bool KafkaManager::Publish(const std::string& topic, const std::string& msg) {
 }
 
 void KafkaManager::Shutdown() {
-	if (tls.GetKafkaConsumer()) {
-		tls.GetKafkaConsumer()->stop();
-		tls.GetKafkaConsumer().reset();
-	}
+	KafkaConsumer::Instance().stop();
 
 	KafkaProducer::Instance().poll(); // flush if needed
 	

@@ -1,11 +1,12 @@
 ﻿#include "kafka_consumer.h"
 #include "muduo/base/Logging.h"
 
-KafkaConsumer::KafkaConsumer(const std::string& brokers, const std::string& groupId,
+void KafkaConsumer::init(const std::string& brokers, const std::string& groupId,
 	const std::vector<std::string>& topics,
 	const std::vector<int32_t>& partitions,  // 需要消费的分区
-	MessageCallback callback)
-	: msgCallback_(std::move(callback)) {
+	const MessageCallback& callback) {
+	msgCallback_ = callback;
+
 	std::string errstr;
 
 	// 配置 Kafka consumer
