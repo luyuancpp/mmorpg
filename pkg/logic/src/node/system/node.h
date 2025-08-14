@@ -108,7 +108,6 @@ protected:
     bool hasSentWatch{ false };
 	int64_t leaseId{ 0 };
 	boost::uuids::random_generator gen;
-    std::deque<std::string> pendingKeys;
 	KafkaManager kafkaManager;
 	EtcdService etcdService;
     EtcdManager etcdManager;

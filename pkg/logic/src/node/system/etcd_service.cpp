@@ -97,14 +97,13 @@ void EtcdService::InitLeaseHandlers() {
 
         LOG_INFO << "Lease granted: " << reply.DebugString();
     };
-    
 }
 
 void EtcdService::InitTxnHandlers() {
     etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext& context, const ::etcdserverpb::TxnResponse& reply) {
         LOG_INFO << "Txn response: " << reply.DebugString();
 
-        auto& key = pendingKeys.front();
+        auto& key = gNode->GetEtcdManager().GetPendingKeys().front();
 
         if (reply.succeeded()) {
             if (boost::algorithm::starts_with(key, gNode->GetEtcdManager().MakeNodePortEtcdPrefix(gNode->GetNodeInfo()))) {
@@ -120,7 +119,7 @@ void EtcdService::InitTxnHandlers() {
             }
         }
 
-        pendingKeys.pop_front();
+        gNode->GetEtcdManager().GetPendingKeys().pop_front();
     };
 }
 
