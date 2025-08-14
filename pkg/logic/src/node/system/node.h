@@ -11,6 +11,8 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include "kafka_manager.h"
+#include "etcd_service.h"
+#include "etcd_manager.h"
 
 class RegisterNodeSessionRequest;
 class RegisterNodeSessionResponse;
@@ -45,6 +47,7 @@ public:
     std::string FormatIpAndPort();
     std::string GetIp();
     uint32_t GetPort();
+	EtcdManager& GetEtcdManager() { return etcdManager; }
 
     void CallRemoteMethodZoneCenter(uint32_t message_id, const ::google::protobuf::Message& request);
 
@@ -73,7 +76,6 @@ protected:
     void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
     void FetchServiceNodes();
-    void InitGrpcResponseHandlers();
     void InitGrpcClients();
     void TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const;
     void StartServiceHealthMonitor();
@@ -108,6 +110,8 @@ protected:
 	boost::uuids::random_generator gen;
     std::deque<std::string> pendingKeys;
 	KafkaManager kafkaManager;
+	EtcdService etcdService;
+    EtcdManager etcdManager;
 };
 
 extern Node* gNode;

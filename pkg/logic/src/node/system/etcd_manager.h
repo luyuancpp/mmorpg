@@ -8,26 +8,26 @@ class NodeInfo;
 class EtcdManager
 {
 public:
-	static void Shutdown();
+	void Shutdown();
 
-	static std::string GetServiceName(uint32_t type);
+	std::string GetServiceName(uint32_t type);
 
-	static std::string MakeNodeEtcdPrefix(const NodeInfo& info);
+	std::string MakeNodeEtcdPrefix(const NodeInfo& info);
 
-	static std::string MakeNodeEtcdKey(const NodeInfo& info);
+	std::string MakeNodeEtcdKey(const NodeInfo& info);
 
-	static std::string MakeNodePortEtcdPrefix(const NodeInfo& nodeInfo);
+	std::string MakeNodePortEtcdPrefix(const NodeInfo& nodeInfo);
 
-	static std::string MakeNodePortEtcdKey(const NodeInfo& nodeInfo);
+	std::string MakeNodePortEtcdKey(const NodeInfo& nodeInfo);
 
-	static void RegisterNodeService();
+	void RegisterNodeService();
 
-	static void RegisterNodePort();
+	void RegisterNodePort();
 
-	static void RequestEtcdLease();
+	void RequestEtcdLease();
 
-	static void KeepNodeAlive();
+	void KeepNodeAlive();
 
 private:
-
+	TimerTaskComp renewLeaseTimer;
 };

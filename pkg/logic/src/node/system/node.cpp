@@ -32,12 +32,10 @@
 #include "util/node_utils.h"
 #include <boost/algorithm/string.hpp>
 #include <fmt/base.h>
-#include "etcd_manager.h"
 #include "etcd_service.h"
 #include "node_connector.h"
 #include "node_allocator.h"
 
-EtcdService etcdService;
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
@@ -148,7 +146,7 @@ void Node::Shutdown() {
 	tls.Clear();
 	logSystem.stop();
 	ReleaseNodeId();
-	EtcdManager::Shutdown();
+	gNode->GetEtcdManager().Shutdown();
 	grpcHandlerTimer.Cancel();
 	LOG_DEBUG << "Node shutdown complete.";
 }
@@ -202,7 +200,6 @@ void Node::ReleaseNodeId() {
 void InitRepliedHandler();
 void Node::RegisterHandlers() {
 	InitMessageInfo();
-	InitGrpcResponseHandlers();
 	InitRepliedHandler();
 }
 
@@ -317,148 +314,6 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		Destroy(registry, nodeEntity);
 	}
 	LOG_INFO << "Service node stopped : " << deleteNode.DebugString();
-}
-
-void Node::InitGrpcResponseHandlers() {
-	etcdserverpb::AsyncKVRangeHandler = [this](const ClientContext& context, const ::etcdserverpb::RangeResponse& reply) {
-		std::unordered_set<std::string> seenPrefixes;
-
-		// 初始化所有前缀的下次 revision（默认都设为 reply 的 revision + 1）
-		int64_t nextRevision = reply.header().revision() + 1;
-
-		// 你维护了每个 prefix 是否在本次 Range 中出现
-		std::unordered_map<std::string, bool> prefixSeen;
-
-		// 初始化为 false
-		for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
-			prefixSeen[prefix] = false;
-		}
-
-		// 处理所有 kv
-		for (const auto& kv : reply.kvs()) {
-			HandleServiceNodeStart(kv.key(), kv.value());
-
-			for (const auto& prefix : prefixSeen) {
-				if (kv.key().rfind(prefix.first, 0) == 0) { // prefix match
-					prefixSeen[prefix.first] = true;
-					break;
-				}
-			}
-		}
-
-		// 设置 revision
-		for (const auto& [prefix, seen] : prefixSeen) {
-			revision[prefix] = nextRevision;
-		}
-
-		// 启动 watch
-		if (!hasSentRange) {
-			for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
-				EtcdHelper::StartWatchingPrefix(prefix, revision[prefix]);
-				LOG_INFO << "Start watching prefix: " << prefix << " from revision " << revision[prefix];
-			}
-			hasSentRange = true;
-		}
-		};
-
-	etcdserverpb::AsyncKVPutHandler = [this](const ClientContext& context, const ::etcdserverpb::PutResponse& reply) {
-		LOG_INFO << "Put response: " << reply.DebugString();
-		};
-
-	etcdserverpb::AsyncKVDeleteRangeHandler = [](const ClientContext& context, const ::etcdserverpb::DeleteRangeResponse& reply) {};
-
-	etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext& context, const ::etcdserverpb::TxnResponse& reply) {
-		LOG_INFO << "Txn response: " << reply.DebugString();
-
-		auto& key = pendingKeys.front();
-
-		if (reply.succeeded()) {
-			if (boost::algorithm::starts_with(key, EtcdManager::MakeNodePortEtcdPrefix(GetNodeInfo()))) {
-				StartRpcServer();
-			}
-			else if (boost::algorithm::starts_with(key, EtcdManager::MakeNodeEtcdPrefix(GetNodeInfo()))) {
-				tls.OnNodeStart(GetNodeInfo().node_id());
-			}
-		}
-		else {
-			if (boost::algorithm::starts_with(key, EtcdManager::MakeNodeEtcdPrefix(GetNodeInfo()))) {
-				// 只有 node key 失败才尝试重新 AcquireNode
-				acquireNodeTimer.RunAfter(1, [this]() { NodeAllocator::AcquireNode(); });
-			}
-			else {
-				acquirePortTimer.RunAfter(1, [this]() { NodeAllocator::AcquireNodePort(); });
-			}
-		}
-
-		pendingKeys.pop_front();
-		};
-
-
-	etcdserverpb::AsyncWatchWatchHandler = [this](const ClientContext& context, const ::etcdserverpb::WatchResponse& response) {
-		if (!hasSentWatch)
-		{
-			EtcdManager::RequestEtcdLease();
-			hasSentWatch = true;
-		}
-		if (response.created()) {
-			LOG_TRACE << "Watch created.";
-			return;
-		}
-		if (response.canceled()) {
-			LOG_INFO << "Watch canceled: " << response.cancel_reason();
-			if (response.compact_revision() > 0) {
-				LOG_ERROR << "Revision compacted: " << response.compact_revision();
-			}
-			return;
-		}
-		for (const auto& event : response.events()) {
-			if (event.type() == mvccpb::Event_EventType::Event_EventType_PUT) {
-				LOG_INFO << "Key put: " << event.kv().key();
-				HandleServiceNodeStart(event.kv().key(), event.kv().value());
-			}
-			else if (event.type() == mvccpb::Event_EventType::Event_EventType_DELETE) {
-				HandleServiceNodeStop(event.kv().key(), event.prev_kv().value());
-				LOG_INFO << "Key deleted: " << event.kv().key();
-			}
-		}
-		};
-
-	etcdserverpb::AsyncLeaseLeaseGrantHandler = [this](const ClientContext& context, const ::etcdserverpb::LeaseGrantResponse& reply) {
-		// 如果原来没有租约，说明是第一次获取，需要初始化节点信息
-		if (leaseId <= 0) {
-			LOG_INFO << "Acquiring new lease, ID: " << reply.id();
-			leaseId = reply.id();
-			NodeAllocator::AcquireNodePort();
-			NodeAllocator::AcquireNode();  // 获取节点ID或其他信息
-			EtcdManager::KeepNodeAlive();
-		}
-		else {
-			LOG_INFO << "Lease already exists, updating lease_id: " << reply.id();
-			// 租约过期后重新获取，需要重新注册服务节点
-			leaseId = reply.id();
-			EtcdManager::KeepNodeAlive();
-			EtcdManager::RegisterNodeService();
-		}
-
-		LOG_INFO << "Lease granted: " << reply.DebugString();
-		};
-
-	auto emptEtcdHandler = [](const ClientContext& context, const ::google::protobuf::Message& reply) {};
-	if (!etcdserverpb::AsyncKVCompactHandler) {
-		etcdserverpb::AsyncKVCompactHandler = emptEtcdHandler;
-	}
-	if (!etcdserverpb::AsyncLeaseLeaseRevokeHandler) {
-		etcdserverpb::AsyncLeaseLeaseRevokeHandler = emptEtcdHandler;
-	}
-	if (!etcdserverpb::AsyncLeaseLeaseKeepAliveHandler) {
-		etcdserverpb::AsyncLeaseLeaseKeepAliveHandler = emptEtcdHandler;
-	}
-	if (!etcdserverpb::AsyncLeaseLeaseTimeToLiveHandler) {
-		etcdserverpb::AsyncLeaseLeaseTimeToLiveHandler = emptEtcdHandler;
-	}
-	if (!etcdserverpb::AsyncLeaseLeaseLeasesHandler) {
-		etcdserverpb::AsyncLeaseLeaseLeasesHandler = emptEtcdHandler;
-	}
 }
 
 void Node::OnServerConnected(const OnConnected2TcpServerEvent& event) {
@@ -628,7 +483,7 @@ void Node::StartServiceHealthMonitor(){
 			}
 		}
 
-		EtcdManager::RequestEtcdLease();
+		gNode->GetEtcdManager().RequestEtcdLease();
 		}
 	);
 }
