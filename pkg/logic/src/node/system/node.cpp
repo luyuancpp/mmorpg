@@ -16,7 +16,7 @@
 #include "muduo/base/TimeZone.h"
 #include "network/process_info.h"
 #include "network/rpc_session.h"
-#include "node/system/node_system.h"
+#include "node/system/node_util.h"
 #include "pbc/common_error_tip.pb.h"
 #include "proto/common/node.pb.h"
 #include "proto/logic/event/node_event.pb.h"
@@ -225,7 +225,7 @@ void Node::ConnectToNode(const NodeInfo& info) {
 
 void Node::ConnectToGrpcNode(const NodeInfo& info) {
 	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
-	auto& registry = NodeSystem::GetRegistryForNodeType(info.node_type());
+	auto& registry = NodeUtils::GetRegistryForNodeType(info.node_type());
 
 	const entt::entity entityId{ info.node_id() };
 	auto createdId = ResetEntity(registry, entityId);
@@ -257,7 +257,7 @@ void Node::ConnectToTcpNode(const NodeInfo& info) {
 		if (auto* existInfo = registry.try_get<NodeInfo>(entityId);
 			existInfo ) {
 
-			if (NodeSystem::IsSameNode(info.node_uuid(), existInfo->node_uuid())) {
+			if (NodeUtils::IsSameNode(info.node_uuid(), existInfo->node_uuid())) {
 				LOG_INFO << "Node already registered, IP: " << info.endpoint().ip()
 					<< ", Port: " << info.endpoint().port();
 				return;
@@ -387,7 +387,7 @@ void Node::ConnectAllNodes() {
 		if (!targetNodeTypeWhitelist.contains(nodeType)) continue;
 
 		for (const auto& node : nodeRegistry[nodeType].node_list()) {
-			if (NodeSystem::IsNodeConnected(nodeType, node)) continue;
+			if (NodeUtils::IsNodeConnected(nodeType, node)) continue;
 
 			ConnectToNode(node);
 			LOG_INFO << "Connected to node from ConnectAllNodes: " << node.DebugString();
@@ -397,12 +397,12 @@ void Node::ConnectAllNodes() {
 
 bool Node::IsMyNode(const NodeInfo& node) const
 {
-	return NodeSystem::IsSameNode(node.node_uuid(), GetNodeInfo().node_uuid());
+	return NodeUtils::IsSameNode(node.node_uuid(), GetNodeInfo().node_uuid());
 }
 
 void Node::HandleServiceNodeStart(const std::string& key, const std::string& value) {
 	LOG_TRACE << "Service node start, key: " << key << ", value: " << value;
-	if (const auto nodeType = NodeSystem::GetServiceTypeFromPrefix(key); eNodeType_IsValid(nodeType)) {
+	if (const auto nodeType = NodeUtils::GetServiceTypeFromPrefix(key); eNodeType_IsValid(nodeType)) {
 		AddServiceNode(value, nodeType);
 	}
 }
@@ -609,7 +609,7 @@ void Node::TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnec
 	entt::registry& registry = tls.GetNodeRegistry(nodeType);
 	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
 		if (!IsSameAddress(client->peer_addr(), conn->peerAddress())) continue;
-		LOG_INFO << "Peer address match in " << NodeSystem::GetRegistryName(registry)
+		LOG_INFO << "Peer address match in " << NodeUtils::GetRegistryName(registry)
 			<< ": " << conn->peerAddress().toIpPort();
 		registry.emplace<TimerTaskComp>(entity).RunAfter(0.5, [conn, this, nodeType, &client]() {
 			RegisterNodeSessionRequest req;
@@ -656,16 +656,16 @@ void Node::HandleNodeRegistration(
 		entt::registry& registry = tls.GetNodeRegistry(nodeType);
 		const auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
-			if (!NodeSystem::IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
+			if (!NodeUtils::IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
 			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
 			entt::entity created = ResetEntity(registry, nodeEntity);
 			if (created == entt::null) {
-				LOG_ERROR << "Create node entity failed in " << NodeSystem::GetRegistryName(registry);
+				LOG_ERROR << "Create node entity failed in " << NodeUtils::GetRegistryName(registry);
 				return false;
 			}
 			registry.emplace<RpcSession>(created, RpcSession{ conn });
 			LOG_INFO << "Node registered, id: " << peerNode.node_id()
-				<< " in " << NodeSystem::GetRegistryName(registry);
+				<< " in " << NodeUtils::GetRegistryName(registry);
 			return true;
 		}
 		return false;

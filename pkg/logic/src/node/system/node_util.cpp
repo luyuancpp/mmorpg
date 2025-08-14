@@ -1,4 +1,4 @@
-﻿#include "node_system.h"
+﻿#include "node_util.h"
 #include <muduo/base/Logging.h>
 #include "thread_local/storage.h"
 #include "proto/common/common.pb.h"
@@ -14,7 +14,7 @@ const std::unordered_map<eNodeType, std::string> nodeTypeNameMap = {
 	{ eNodeType::DbNodeService,eNodeType_Name(DbNodeService) }
 };
 
-eNodeType NodeSystem::GetServiceTypeFromPrefix(const std::string& prefix) {
+eNodeType NodeUtils::GetServiceTypeFromPrefix(const std::string& prefix) {
 	for (const auto& [type, name] : nodeTypeNameMap) {
 		if (prefix.find(name) != std::string::npos) {
 			return type;
@@ -25,11 +25,11 @@ eNodeType NodeSystem::GetServiceTypeFromPrefix(const std::string& prefix) {
 	return eNodeType(std::numeric_limits<::int32_t>::max());
 }
 
-entt::registry& NodeSystem::GetRegistryForNodeType(uint32_t nodeType) {
+entt::registry& NodeUtils::GetRegistryForNodeType(uint32_t nodeType) {
 	return tls.GetNodeRegistry(nodeType);
 }
 
-std::string NodeSystem::GetRegistryName(const entt::registry& registry) {
+std::string NodeUtils::GetRegistryName(const entt::registry& registry) {
 	for (uint32_t i = 0; i < tls.GetNodeRegistry().size(); ++i){
 		if (&tls.GetNodeRegistry(i) == &registry) {
 			return eNodeType_Name(i);
@@ -38,7 +38,7 @@ std::string NodeSystem::GetRegistryName(const entt::registry& registry) {
 	return "UnknownRegistry";
 }
 
-eNodeType NodeSystem::GetRegistryType(const entt::registry& registry){
+eNodeType NodeUtils::GetRegistryType(const entt::registry& registry){
 	for (uint32_t i = 0; i < tls.GetNodeRegistry().size(); ++i){
 		if (&tls.GetNodeRegistry(i) == &registry) {
 			return eNodeType(i);
@@ -48,18 +48,18 @@ eNodeType NodeSystem::GetRegistryType(const entt::registry& registry){
 	return eNodeType(std::numeric_limits<::int32_t>::max());
 }
 
-bool NodeSystem::IsSameNode(const std::string& uuid1, const std::string& uuid2)
+bool NodeUtils::IsSameNode(const std::string& uuid1, const std::string& uuid2)
 {
 	return uuid1 == uuid2;
 }
 
-bool NodeSystem::IsNodeConnected(uint32_t nodeType, const NodeInfo& info)  {
+bool NodeUtils::IsNodeConnected(uint32_t nodeType, const NodeInfo& info)  {
 	switch (info.protocol_type()) {
 	case PROTOCOL_TCP:
 	{
 		entt::registry& registry = tls.GetNodeRegistry(nodeType);
 		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
-			if (NodeSystem::IsSameNode(info.node_uuid(), nodeInfo.node_uuid())) {
+			if (NodeUtils::IsSameNode(info.node_uuid(), nodeInfo.node_uuid())) {
 				LOG_INFO << "Node already registered, IP: " << nodeInfo.endpoint().ip()
 					<< ", Port: " << nodeInfo.endpoint().port();
 				return true;

@@ -8,7 +8,7 @@
 #include "proto/common/node.pb.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_gate.h"
-#include "node/system/node_system.h"
+#include "node/system/node_util.h"
 #include "game_common_logic/system/session_system.h"
 #include "grpc/generator/grpc_init.h"
 

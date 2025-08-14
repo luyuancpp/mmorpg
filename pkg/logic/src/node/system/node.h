@@ -30,6 +30,7 @@ public:
     virtual ~Node();
 
     // 基本信息获取
+    muduo::net::EventLoop* GetLoop() { return eventLoop; }
     NodeId GetNodeId() const { return GetNodeInfo().node_id(); }
     uint32_t GetNodeType() const { return GetNodeInfo().node_type(); }
     NodeInfo& GetNodeInfo() const;
@@ -37,7 +38,9 @@ public:
 	int64_t GetLeaseId() const { return leaseId; }
     virtual ::google::protobuf::Service* GetNodeReplyService() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return logSystem; }
-    [[nodiscard]] RpcClientPtr GetZoneCentreNode() { return zoneCentreNode; }
+    [[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
+	void SetZoneCentreNode(RpcClientPtr& c) { zoneCentreNode = c; }
+    ClientList& GetZombieClientList() { return zombieClientList; }
     std::string FormatIpAndPort();
     std::string GetIp();
     uint32_t GetPort();

@@ -1,12 +1,12 @@
 ﻿#include "zone_utils.h"
-#include "node/system/node_system.h"
+#include "node/system/node_util.h"
 #include "common/common.pb.h"
 
 uint32_t GetZoneIdFromNodeId(NodeId nodeId) {
 	entt::entity nodeEntity{ nodeId };
 
 	// 获取 SceneNodeService 类型的 registry
-	auto& registry = NodeSystem::GetRegistryForNodeType(eNodeType::SceneNodeService);
+	auto& registry = NodeUtils::GetRegistryForNodeType(eNodeType::SceneNodeService);
 
 	// 尝试获取该节点的 NodeInfo 组件
 	const NodeInfo* nodeInfo = registry.try_get<NodeInfo>(nodeEntity);

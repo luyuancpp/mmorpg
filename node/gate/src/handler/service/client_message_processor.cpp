@@ -16,7 +16,7 @@
 #include "service_info/game_client_player_service_info.h"
 #include "thread_local/storage_gate.h"
 #include "proto/common/node.pb.h"
-#include "node/system/node_system.h"
+#include "node/system/node_util.h"
 #include "google/protobuf/descriptor.h"
 #include "util/network_utils.h"
 #include "util/node_utils.h"
@@ -270,7 +270,7 @@ void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& req
 			<< ", message_id: " << request->message_id()
 			<< ", session_id: " << sessionId
 			<< ", node_type: " << handlerMeta.targetNodeType
-			<< ", registry: " << NodeSystem::GetRegistryName(registry);
+			<< ", registry: " << NodeUtils::GetRegistryName(registry);
 
 		RpcClientSessionHandler::SendTipToClient(conn, kServerCrashed);
 		return;

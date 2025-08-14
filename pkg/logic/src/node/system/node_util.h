@@ -5,7 +5,7 @@
 
 class NodeInfo;
 
-class NodeSystem
+class NodeUtils
 {
 public:
 	static eNodeType GetServiceTypeFromPrefix(const std::string& prefix);
