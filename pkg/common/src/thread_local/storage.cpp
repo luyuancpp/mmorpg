@@ -16,16 +16,6 @@ void ThreadLocalStorage::Clear()
 	sessionRegistry.clear();
 	nodeGlobalRegistry.clear();
 
-	for (auto& registry : nodeRegistries)
-	{
-		registry.clear();
-	}
-
-	for (auto& e : nodeGlobalEntities)
-	{
-		e = entt::null;
-	}
-
 	dispatcher.clear();
 
 	operatorEntity = entt::null;
@@ -33,15 +23,6 @@ void ThreadLocalStorage::Clear()
 	globalEntity = entt::null;
 }
 
-entt::entity ThreadLocalStorage::GetNodeGlobalEntity(uint32_t nodeType)
-{
-	auto& registry = GetNodeRegistry(nodeType);
-	if (nodeGlobalEntities[nodeType] == entt::null)
-	{
-		nodeGlobalEntities[nodeType] = registry.create();
-	}
-	return nodeGlobalEntities[nodeType];
-}
 
 void ThreadLocalStorage::OnNodeStart(uint32_t nodeId)
 {

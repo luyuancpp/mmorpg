@@ -14,6 +14,7 @@
 #include "util/node_message_utils.h"
 #include "util/node_utils.h"
 #include "util/zone_utils.h"
+#include "thread_local/thread_local_node_context.h"
 
 entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext)
 {
@@ -220,7 +221,7 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 		return false;
 	}
 
-	auto& sceneNodeRegistry = tls.GetNodeRegistry(eNodeType::SceneNodeService);
+	auto& sceneNodeRegistry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService);
 	if (!sceneNodeRegistry.valid(SceneUtil::get_game_node_eid(fromSceneInfo->guid())) ||
 		!sceneNodeRegistry.valid(SceneUtil::get_game_node_eid(toSceneInfo->guid())))
 	{
