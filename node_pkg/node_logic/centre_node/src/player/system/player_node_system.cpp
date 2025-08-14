@@ -27,13 +27,14 @@
 #include "util/player_message_utils.h"
 #include "type_alias/player_session_type_alias.h"
 #include "thread_local/thread_local_node_context.h"
+#include "thread_local/player_storage.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData, const std::any& extra)
 {
 	//load 回来之前断开连接了,然后又加到redis了 这种怎么办,session id 变了咋办
 
 	LOG_INFO << "Handling async load for player: " << playerId;
-	assert(GlobalPlayerList().find(playerId) == GlobalPlayerList().end());
+	assert(gPlayerList.find(playerId) == gPlayerList.end());
 
 	auto sessionPbComp = std::any_cast<PlayerSessionSnapshotPBComp>(extra);
 
@@ -43,7 +44,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	}
 	
 	auto playerEntity = tls.actorRegistry.create();
-	if (const auto [first, success] = GlobalPlayerList().emplace(playerId, playerEntity); !success)
+	if (const auto [first, success] = gPlayerList.emplace(playerId, playerEntity); !success)
 	{
 		LOG_ERROR << "Error emplacing player in player list: " << playerId;
 		return;
@@ -194,7 +195,7 @@ void PlayerNodeSystem::HandleAbnormalExit(Guid playerID)
 {
 	LOG_INFO << "Handling abnormal exit for player: " << playerID;
 
-	const auto playerEntity = tlsCommonLogic.GetPlayer(playerID);
+	const auto playerEntity = PlayerManager::Instance().GetPlayer(playerID);
 	if (!tls.actorRegistry.valid(playerEntity))
 	{
 		LOG_ERROR << "Player entity not valid for abnormal exit: " << playerID;
@@ -217,9 +218,9 @@ void PlayerNodeSystem::Logout(Guid playerID)
 	// TODO: Handle cases where player didn't enter any scene yet (e.g., login process or scene switch)
 	LOG_INFO << "Logging out player: " << playerID;
 
-	defer(GlobalPlayerList().erase(playerID));
+	defer(gPlayerList.erase(playerID));
 
-	const auto playerEntity = tlsCommonLogic.GetPlayer(playerID);
+	const auto playerEntity = PlayerManager::Instance().GetPlayer(playerID);
 	if (!tls.actorRegistry.valid(playerEntity))
 	{
 		LOG_WARN << "Logout skipped, player entity invalid: " << playerID;

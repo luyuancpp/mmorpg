@@ -36,6 +36,7 @@
 #include "util/player_message_utils.h"
 #include "type_alias/player_redis.h"
 #include "thread_local/thread_local_node_context.h"
+#include "thread_local/player_storage.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -61,8 +62,8 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 
 	LOG_TRACE << "Getting player entity for session ID: " << session_id << ", player ID: " << player_id;
 
-	const auto player_it = GlobalPlayerList().find(player_id);
-	if (player_it == GlobalPlayerList().end())
+	const auto player_it = gPlayerList.find(player_id);
+	if (player_it == gPlayerList.end())
 	{
 		LOG_ERROR << "Player not found for session ID: " << session_id << ", player ID: " << player_id;
 		return entt::null;
@@ -109,8 +110,8 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 
 	LOG_TRACE << "Getting player entity for session ID: " << session_id << ", player ID: " << player_id;
 
-	const auto player_it = GlobalPlayerList().find(player_id);
-	if (player_it == GlobalPlayerList().end())
+	const auto player_it = gPlayerList.find(player_id);
+	if (player_it == gPlayerList.end())
 	{
 		LOG_TRACE << "Player not found for session ID: " << session_id << ", player ID: " << player_id;
 		return ;
@@ -174,7 +175,7 @@ void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* con
 {
 ///<<< BEGIN WRITING YOUR CODE
     
-	if (GlobalPlayerList().size() >= kMaxPlayerSize)
+	if (gPlayerList.size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error_message()->set_id(kLoginAccountPlayerFull);
@@ -210,7 +211,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	// 注册当前 session
 	GlobalSessionList()[sessionId] = playerId;
 
-	auto& playerList = GlobalPlayerList();
+	auto& playerList = gPlayerList;
 	auto it = playerList.find(playerId);
 
 	if (it == playerList.end()) {
@@ -329,7 +330,7 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 	}
 
 	const auto playerId = it->second;
-	const auto player = tlsCommonLogic.GetPlayer(playerId);
+	const auto player = PlayerManager::Instance().GetPlayer(playerId);
 	if (!tls.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << playerId;
@@ -440,7 +441,7 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	LOG_TRACE << "Enter Scene Node Succeed request received.";
 
 	const auto playerId = request->player_id();
-	const auto player = tlsCommonLogic.GetPlayer(playerId);
+	const auto player = PlayerManager::Instance().GetPlayer(playerId);
 	if (!tls.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << playerId;

@@ -25,6 +25,7 @@
 #include "cross_server_error_tip.pb.h"
 #include "player_tip_system.h"
 #include <kafka/kafka_producer.h>
+#include "thread_local/player_storage.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)
 {
@@ -39,7 +40,7 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData& mess
 
 	//todo session 啥时候删除？
 
-	auto playerEntity = tlsCommonLogic.GetPlayer(playerId);
+	auto playerEntity = PlayerManager::Instance().GetPlayer(playerId);
 	HandleCrossZoneTransfer(playerEntity);
 
 	if (tls.actorRegistry.any_of<UnregisterPlayer>(playerEntity))
@@ -119,8 +120,8 @@ void PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(entt::entity pl
 //todo 检测
 void PlayerNodeSystem::RemovePlayerSession(const Guid playerId)
 {
-	auto playerIt = GlobalPlayerList().find(playerId);
-	if (playerIt == GlobalPlayerList().end())
+	auto playerIt = gPlayerList.find(playerId);
+	if (playerIt == gPlayerList.end())
 	{
 		LOG_ERROR << "RemovePlayerSession: PlayerNodeInfoPBComponent not found for player: " << playerId;
 		return;
@@ -145,8 +146,8 @@ void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
 
 void PlayerNodeSystem::RemovePlayerSessionSilently(Guid player_id)
 {
-	auto playerIt = GlobalPlayerList().find(player_id);
-	if (playerIt == GlobalPlayerList().end())
+	auto playerIt = gPlayerList.find(player_id);
+	if (playerIt == gPlayerList.end())
 	{
 		return;
 	}
@@ -157,8 +158,8 @@ void PlayerNodeSystem::DestroyPlayer(Guid playerId)
 {
 	LOG_INFO << "Destroying player: " << playerId;
 
-	defer(GlobalPlayerList().erase(playerId));
-	Destroy(tls.actorRegistry, tlsCommonLogic.GetPlayer(playerId));
+	defer(gPlayerList.erase(playerId));
+	Destroy(tls.actorRegistry, PlayerManager::Instance().GetPlayer(playerId));
 }
 
 void PlayerNodeSystem::HandleExitGameNode(entt::entity player)
@@ -249,7 +250,7 @@ entt::entity PlayerNodeSystem::InitPlayerFromAllData(const PlayerAllData& player
 	auto player = tls.actorRegistry.create();
 
 	// 2. 注册全局玩家实体映射
-	if (const auto [it, inserted] = GlobalPlayerList().emplace(playerId, player); !inserted)
+	if (const auto [it, inserted] = gPlayerList.emplace(playerId, player); !inserted)
 	{
 		LOG_ERROR << "[InitPlayerFromAllData] Player already exists in GlobalPlayerList: " << playerId;
 		return entt::null;

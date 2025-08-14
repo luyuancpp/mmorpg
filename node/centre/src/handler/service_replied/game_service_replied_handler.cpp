@@ -18,8 +18,8 @@ extern MessageResponseDispatcher gResponseDispatcher;
 #include "thread_local/storage_centre.h"
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_session_type_alias.h"
-
 #include "proto/logic/component/player_network_comp.pb.h"
+#include "thread_local/player_storage.h"
 
 ///<<< END WRITING YOUR CODE
 
@@ -93,7 +93,7 @@ void OnSceneInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn, cons
 
 	const auto  player_id    = it->second;
 	const auto& message_info = gRpcServiceRegistry.at(replied->message_content().message_id() );
-	const auto  player = tlsCommonLogic.GetPlayer(player_id);
+	const auto  player = PlayerManager::Instance().GetPlayer(player_id);
 	if (!tls.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"

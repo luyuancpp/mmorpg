@@ -11,10 +11,12 @@
 #include "node_utils.h"
 #include <service_info/game_service_service_info.h>
 #include "thread_local/thread_local_node_context.h"
+#include "thread_local/player_storage.h"
+
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
-	SendMessageToClientViaGate(messageId, message, tlsCommonLogic.GetPlayer(playerId));
+	SendMessageToClientViaGate(messageId, message, PlayerManager::Instance().GetPlayer(playerId));
 }
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity)
@@ -149,7 +151,7 @@ void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Messa
 }
 
 void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message& message, Guid playerId) {
-	SendMessageToPlayerOnGrpcNode(messageId, message, tlsCommonLogic.GetPlayer(playerId));
+	SendMessageToPlayerOnGrpcNode(messageId, message, PlayerManager::Instance().GetPlayer(playerId));
 }
 
 inline NodeId GetEffectiveNodeId(
@@ -223,7 +225,7 @@ void SendMessageToPlayerOnSceneNode(uint32_t messageId,
 	const google::protobuf::Message& message,
 	Guid playerId)
 {
-	SendMessageToPlayerOnSceneNode(messageId, message, tlsCommonLogic.GetPlayer(playerId));
+	SendMessageToPlayerOnSceneNode(messageId, message, PlayerManager::Instance().GetPlayer(playerId));
 }
 
 
@@ -232,7 +234,7 @@ void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
 	uint32_t messageId,
 	const google::protobuf::Message& message,
 	Guid playerId) {
-	SendMessageToPlayerOnNode(wrappedMessageId, nodeType, messageId, message, tlsCommonLogic.GetPlayer(playerId));
+	SendMessageToPlayerOnNode(wrappedMessageId, nodeType, messageId, message, PlayerManager::Instance().GetPlayer(playerId));
 }
 
 
@@ -295,7 +297,7 @@ void CallMethodOnPlayerNode(
 	uint32_t messageId,
 	const google::protobuf::Message& message,
 	Guid playerId) {
-	CallMethodOnPlayerNode(remoteMethodId, nodeType, messageId, message, tlsCommonLogic.GetPlayer(playerId));
+	CallMethodOnPlayerNode(remoteMethodId, nodeType, messageId, message, PlayerManager::Instance().GetPlayer(playerId));
 }
 
 void CallMethodOnPlayerNode(

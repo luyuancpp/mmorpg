@@ -8,7 +8,7 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "service_info/centre_service_service_info.h"
 #include "thread_local/thread_local_node_context.h"
-
+#include "thread_local/player_storage.h"
 
 template <typename SessionType>
 void SendMessageToNodeInternal(SessionType* session, uint32_t messageId, const google::protobuf::Message& message) {
@@ -113,7 +113,7 @@ void BroadcastToNodes(uint32_t messageId, const google::protobuf::Message& messa
 
 void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId, uint32_t nodeType, uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
-	SendMessageToPlayerViaClientNode(wrappedMessageId, nodeType, messageId, message, tlsCommonLogic.GetPlayer(playerId));
+	SendMessageToPlayerViaClientNode(wrappedMessageId, nodeType, messageId, message, PlayerManager::Instance().GetPlayer(playerId));
 }
 
 
@@ -171,7 +171,7 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 	const google::protobuf::Message& message,
 	Guid playerId)
 {
-	SendMessageToPlayerViaSessionNode(wrappedMessageId, nodeType, messageId, message, tlsCommonLogic.GetPlayer(playerId));
+	SendMessageToPlayerViaSessionNode(wrappedMessageId, nodeType, messageId, message, PlayerManager::Instance().GetPlayer(playerId));
 }
 
 

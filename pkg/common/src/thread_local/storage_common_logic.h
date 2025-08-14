@@ -9,7 +9,6 @@
 class ThreadLocalStorageCommonLogic
 {
 public:
-    using PlayerListMap = std::unordered_map<Guid, entt::entity>;
 	using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
 
     RoutingNodeInfo& GetRoutingNodeInfo() { return route_data_; }
@@ -21,10 +20,6 @@ public:
     void SetCurrentSessionId(const uint64_t current_session_id) { current_session_id_ = current_session_id; }
     uint64_t GetSessionId() const { return current_session_id_; }
 
-    entt::entity GetPlayer(Guid player_uid);
-    inline PlayerListMap& GetPlayerList() { return playerList; }
-    inline const PlayerListMap& GetPlayerList() const { return playerList; }
-    
     [[nodiscard]] ::BaseDeployConfig& GetBaseDeployConfig()
     {
         return BaseDeployConfig;
@@ -62,7 +57,6 @@ private:
     uint32_t next_route_node_id_{UINT32_MAX};
     uint64_t current_session_id_{kInvalidSessionId};
     std::string prev_node_replied_;
-    PlayerListMap playerList;
     BaseDeployConfig BaseDeployConfig;
     GameConfig GameConfig;
 	Random random;
@@ -71,8 +65,4 @@ private:
 
 extern thread_local ThreadLocalStorageCommonLogic tlsCommonLogic;
 
-// 在某个全局头文件，比如 common_accessor.h 中定义：
-inline auto& GlobalPlayerList() {
-	return tlsCommonLogic.GetPlayerList();
-}
 
