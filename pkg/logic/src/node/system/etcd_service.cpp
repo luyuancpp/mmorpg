@@ -18,7 +18,7 @@ void EtcdService::Init() {
     InitGrpcNode(channel, tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
 
     grpcHandlerTimer.RunEvery(0.005, [] {
-        for (auto&registry : tls.GetNodeRegistry()) {
+        for (auto& registry : tls.GetNodeRegistry()) {
             HandleCompletedQueueMessage(registry);
         }
     });
@@ -27,12 +27,13 @@ void EtcdService::Init() {
 }
 
 void EtcdService::InitHandlers() {
+    InitKVHandlers();
+    InitWatchHandlers();
+    InitLeaseHandlers();
+    InitTxnHandlers();
+}
 
-	InitKVHandlers();
-	InitWatchHandlers();
-	InitLeaseHandlers();
-	InitTxnHandlers();
-	
+void EtcdService::InitKVHandlers() {
     etcdserverpb::AsyncKVRangeHandler = [this](const ClientContext& ctx, const etcdserverpb::RangeResponse& reply) {
         int64_t nextRevision = reply.header().revision() + 1;
         std::unordered_map<std::string, bool> prefixSeen;
@@ -60,82 +61,67 @@ void EtcdService::InitHandlers() {
         }
     };
 
+    etcdserverpb::AsyncKVPutHandler = [this](const ClientContext& context, const ::etcdserverpb::PutResponse& reply) {
+        LOG_INFO << "Put response: " << reply.DebugString();
+    };
+
+    etcdserverpb::AsyncKVDeleteRangeHandler = [](const ClientContext& context, const ::etcdserverpb::DeleteRangeResponse& reply) {};
+
+    auto emptyHandler = [](const ClientContext& context, const ::google::protobuf::Message& reply) {};
+    if (!etcdserverpb::AsyncKVCompactHandler) {
+        etcdserverpb::AsyncKVCompactHandler = emptyHandler;
+    }
+}
+
+void EtcdService::InitWatchHandlers() {
     etcdserverpb::AsyncWatchWatchHandler = [this](const ClientContext& ctx, const etcdserverpb::WatchResponse& response) {
         OnWatchResponse(response);
     };
+}
 
-    etcdserverpb::AsyncLeaseLeaseGrantHandler = [this](const ClientContext& ctx, const etcdserverpb::LeaseGrantResponse& reply) {
-        OnLeaseGranted(reply);
+void EtcdService::InitLeaseHandlers() {
+    etcdserverpb::AsyncLeaseLeaseGrantHandler = [this](const ClientContext& context, const ::etcdserverpb::LeaseGrantResponse& reply) {
+        if (leaseId <= 0) {
+            LOG_INFO << "Acquiring new lease, ID: " << reply.id();
+            leaseId = reply.id();
+            NodeAllocator::AcquireNodePort();
+            NodeAllocator::AcquireNode();
+            gNode->GetEtcdManager().KeepNodeAlive();
+        } else {
+            LOG_INFO << "Lease already exists, updating lease_id: " << reply.id();
+            leaseId = reply.id();
+            gNode->GetEtcdManager().KeepNodeAlive();
+            gNode->GetEtcdManager().RegisterNodeService();
+            gNode->GetEtcdManager().RegisterNodePort();
+        }
+
+        LOG_INFO << "Lease granted: " << reply.DebugString();
     };
-	
-	etcdserverpb::AsyncKVPutHandler = [this](const ClientContext& context, const ::etcdserverpb::PutResponse& reply) {
-		LOG_INFO << "Put response: " << reply.DebugString();
-		};
+    
+}
 
-	etcdserverpb::AsyncKVDeleteRangeHandler = [](const ClientContext& context, const ::etcdserverpb::DeleteRangeResponse& reply) {};
+void EtcdService::InitTxnHandlers() {
+    etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext& context, const ::etcdserverpb::TxnResponse& reply) {
+        LOG_INFO << "Txn response: " << reply.DebugString();
 
-	etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext& context, const ::etcdserverpb::TxnResponse& reply) {
-		LOG_INFO << "Txn response: " << reply.DebugString();
+        auto& key = pendingKeys.front();
 
-		auto& key = pendingKeys.front();
+        if (reply.succeeded()) {
+            if (boost::algorithm::starts_with(key, gNode->GetEtcdManager().MakeNodePortEtcdPrefix(gNode->GetNodeInfo()))) {
+                gNode->StartRpcServer();
+            } else if (boost::algorithm::starts_with(key, gNode->GetEtcdManager().MakeNodeEtcdPrefix(gNode->GetNodeInfo()))) {
+                tls.OnNodeStart(gNode->GetNodeInfo().node_id());
+            }
+        } else {
+            if (boost::algorithm::starts_with(key, gNode->GetEtcdManager().MakeNodeEtcdPrefix(gNode->GetNodeInfo()))) {
+                acquireNodeTimer.RunAfter(1, [this]() { NodeAllocator::AcquireNode(); });
+            } else {
+                acquirePortTimer.RunAfter(1, [this]() { NodeAllocator::AcquireNodePort(); });
+            }
+        }
 
-		if (reply.succeeded()) {
-			if (boost::algorithm::starts_with(key, EtcdManager::MakeNodePortEtcdPrefix(gNode->GetNodeInfo()))) {
-				gNode->StartRpcServer();
-			}
-			else if (boost::algorithm::starts_with(key, EtcdManager::MakeNodeEtcdPrefix(gNode->GetNodeInfo()))) {
-				tls.OnNodeStart(gNode->GetNodeInfo().node_id());
-			}
-		}
-		else {
-			if (boost::algorithm::starts_with(key, EtcdManager::MakeNodeEtcdPrefix(gNode->GetNodeInfo()))) {
-				// 只有 node key 失败才尝试重新 AcquireNode
-				acquireNodeTimer.RunAfter(1, [this]() { NodeAllocator::AcquireNode(); });
-			}
-			else {
-				acquirePortTimer.RunAfter(1, [this]() { NodeAllocator::AcquireNodePort(); });
-			}
-		}
-
-		pendingKeys.pop_front();
-		};
-	
-	etcdserverpb::AsyncLeaseLeaseGrantHandler = [this](const ClientContext& context, const ::etcdserverpb::LeaseGrantResponse& reply) {
-		// 如果原来没有租约，说明是第一次获取，需要初始化节点信息
-		if (leaseId <= 0) {
-			LOG_INFO << "Acquiring new lease, ID: " << reply.id();
-			leaseId = reply.id();
-			NodeAllocator::AcquireNodePort();
-			NodeAllocator::AcquireNode();  // 获取节点ID或其他信息
-			EtcdManager::KeepNodeAlive();
-		}
-		else {
-			LOG_INFO << "Lease already exists, updating lease_id: " << reply.id();
-			// 租约过期后重新获取，需要重新注册服务节点
-			leaseId = reply.id();
-			EtcdManager::KeepNodeAlive();
-			EtcdManager::RegisterNodeService();
-		}
-
-		LOG_INFO << "Lease granted: " << reply.DebugString();
-		};
-
-	auto emptEtcdHandler = [](const ClientContext& context, const ::google::protobuf::Message& reply) {};
-	if (!etcdserverpb::AsyncKVCompactHandler) {
-		etcdserverpb::AsyncKVCompactHandler = emptEtcdHandler;
-	}
-	if (!etcdserverpb::AsyncLeaseLeaseRevokeHandler) {
-		etcdserverpb::AsyncLeaseLeaseRevokeHandler = emptEtcdHandler;
-	}
-	if (!etcdserverpb::AsyncLeaseLeaseKeepAliveHandler) {
-		etcdserverpb::AsyncLeaseLeaseKeepAliveHandler = emptEtcdHandler;
-	}
-	if (!etcdserverpb::AsyncLeaseLeaseTimeToLiveHandler) {
-		etcdserverpb::AsyncLeaseLeaseTimeToLiveHandler = emptEtcdHandler;
-	}
-	if (!etcdserverpb::AsyncLeaseLeaseLeasesHandler) {
-		etcdserverpb::AsyncLeaseLeaseLeasesHandler = emptEtcdHandler;
-	}
+        pendingKeys.pop_front();
+    };
 }
 
 void EtcdService::StartWatchingPrefixes() {
@@ -173,37 +159,21 @@ void EtcdService::OnWatchResponse(const etcdserverpb::WatchResponse& response) {
     }
 }
 
-void EtcdService::InitKVHandlers()
-{
-}
-
-void EtcdService::InitWatchHandlers()
-{
-}
-
-void EtcdService::InitLeaseHandlers()
-{
-}
-
-void EtcdService::InitTxnHandlers()
-{
-}
-
 void EtcdService::RequestLease() {
-    EtcdManager::RequestEtcdLease();
+    gNode->GetEtcdManager().RequestEtcdLease();
 }
 
 void EtcdService::KeepAlive() {
-    EtcdManager::KeepNodeAlive();
+    gNode->GetEtcdManager().KeepNodeAlive();
 }
 
 void EtcdService::RegisterService() {
-    EtcdManager::RegisterNodeService();
+    gNode->GetEtcdManager().RegisterNodeService();
 }
 
 void EtcdService::Shutdown() {
     EtcdHelper::StopAllWatching();
-    EtcdManager::Shutdown();
+    gNode->GetEtcdManager().Shutdown();
 }
 
 void EtcdService::OnLeaseGranted(const etcdserverpb::LeaseGrantResponse& reply) {

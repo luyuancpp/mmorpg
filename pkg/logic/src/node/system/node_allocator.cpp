@@ -18,9 +18,9 @@ void NodeAllocator::AcquireNode() {
 		gNode->GetNodeInfo().set_node_id(zoneId);
 		LOG_INFO << "Assigned node_id by zone_id: " << zoneId;
 
-		std::string prefix = EtcdManager::MakeNodeEtcdKey(gNode->GetNodeInfo());
+		std::string prefix = gNode->GetEtcdManager().MakeNodeEtcdKey(gNode->GetNodeInfo());
 		EtcdHelper::DeleteRange(prefix, false);
-		EtcdManager::RegisterNodeService();
+		gNode->GetEtcdManager().RegisterNodeService();
 		return;
 	}
 
@@ -63,7 +63,7 @@ void NodeAllocator::AcquireNode() {
 
 	GetNodeInfo().set_node_id(nextNodeId);
 
-	EtcdManager::RegisterNodeService();
+	gNode->GetEtcdManager().RegisterNodeService();
 }
 
 bool IsPortReservedType(uint32_t type)
@@ -140,5 +140,5 @@ void NodeAllocator::AcquireNodePort() {
 		<< " IP: " << GetNodeInfo().endpoint().ip()
 		<< " Port: " << assignedPort;
 
-	EtcdManager::RegisterNodePort();
+	gNode->GetEtcdManager().RegisterNodePort();
 }

@@ -8,7 +8,6 @@
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
 
 
-TimerTaskComp renewLeaseTimer;
 
 std::deque<std::string> pendingKeys;
 
