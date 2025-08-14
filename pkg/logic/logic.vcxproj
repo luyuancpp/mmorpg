@@ -164,6 +164,7 @@
     <ClCompile Include="src\node\system\etcd_manager.cpp" />
     <ClCompile Include="src\node\system\kafka_manager.cpp" />
     <ClCompile Include="src\node\system\node.cpp" />
+    <ClCompile Include="src\node\system\node_allocator.cpp" />
     <ClCompile Include="src\node\system\node_connector.cpp" />
     <ClCompile Include="src\node\system\node_util.cpp" />
     <ClCompile Include="src\time\comp\duration_funtion.cpp" />
@@ -189,6 +190,7 @@
     <ClInclude Include="src\node\system\etcd_manager.h" />
     <ClInclude Include="src\node\system\kafka_manager.h" />
     <ClInclude Include="src\node\system\node.h" />
+    <ClInclude Include="src\node\system\node_allocator.h" />
     <ClInclude Include="src\node\system\node_connector.h" />
     <ClInclude Include="src\node\system\node_util.h" />
     <ClInclude Include="src\service\player_service.h" />

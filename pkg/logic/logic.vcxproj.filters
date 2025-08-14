@@ -17,6 +17,7 @@
     <ClCompile Include="src\node\system\kafka_manager.cpp" />
     <ClCompile Include="src\node\system\etcd_manager.cpp" />
     <ClCompile Include="src\node\system\node_connector.cpp" />
+    <ClCompile Include="src\node\system\node_allocator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\node\constants\node_constants.h" />
@@ -48,5 +49,6 @@
     <ClInclude Include="src\node\system\kafka_manager.h" />
     <ClInclude Include="src\node\system\etcd_manager.h" />
     <ClInclude Include="src\node\system\node_connector.h" />
+    <ClInclude Include="src\node\system\node_allocator.h" />
   </ItemGroup>
 </Project>
