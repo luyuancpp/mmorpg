@@ -75,8 +75,6 @@ protected:
     void InitGrpcResponseHandlers();
     void InitGrpcClients();
     void TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const;
-    void AcquireNode();
-	void AcquireNodePort();
     void StartServiceHealthMonitor();
 
     // 事件处理
@@ -107,7 +105,6 @@ protected:
     bool hasSentWatch{ false };
 	int64_t leaseId{ 0 };
 	boost::uuids::random_generator gen;
-    uint32_t tryPortId{ 0 };
     std::deque<std::string> pendingKeys;
 	KafkaManager kafkaManager;
 };
