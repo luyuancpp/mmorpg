@@ -24,6 +24,7 @@
 #include "util/zone_utils.h"
 #include "cross_server_error_tip.pb.h"
 #include "player_tip_system.h"
+#include <kafka/kafka_producer.h>
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)
 {
@@ -215,7 +216,7 @@ void PlayerNodeSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	request.set_serialized_player_data(std::move(playerAllDataMessage.SerializeAsString()));
 	request.set_centre_node_id(nodeIdMap[eNodeType::CentreNodeService]);
 
-	tls.GetKafkaProducer()->send("player_migrate", request.SerializeAsString(), std::to_string(playerId), changeInfo->to_zone_id());
+	KafkaProducer::Instance().send("player_migrate", request.SerializeAsString(), std::to_string(playerId), changeInfo->to_zone_id());
 
 	LOG_INFO << "[CrossZone] Sent player transfer to zone " << changeInfo->to_zone_id() << ": " << playerId;
 

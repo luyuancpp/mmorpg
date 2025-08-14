@@ -8,9 +8,16 @@
 class KafkaProducer : public RdKafka::DeliveryReportCb {
 public:
 	using DeliveryCallback = std::function<void(const std::string& topic, int32_t partition, int64_t offset, const std::string& message)>;
-
-	KafkaProducer(const std::string& brokers);
 	~KafkaProducer();
+
+	void init(const std::string& brokers);
+
+	// ✅ 线程单例访问器
+	static KafkaProducer& Instance() {
+		// 每个线程维护一个 KafkaProducer 实例（第一次用时创建）
+		thread_local KafkaProducer instance;
+		return instance;
+	}
 
 	// 异步发送消息，支持指定分区和消息的 key
 	RdKafka::ErrorCode send(const std::string& topic, const std::string& message, const std::string& key = "", int32_t partition = RdKafka::Topic::PARTITION_UA);

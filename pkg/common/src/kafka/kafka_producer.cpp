@@ -1,7 +1,7 @@
 ﻿#include "kafka_producer.h"
 #include "muduo/base/Logging.h"
 
-KafkaProducer::KafkaProducer(const std::string& brokers) {
+void KafkaProducer::init(const std::string& brokers) {
 	std::string errstr;
 
 	conf_.reset(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));

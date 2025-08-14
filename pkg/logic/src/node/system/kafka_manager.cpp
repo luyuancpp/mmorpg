@@ -22,7 +22,7 @@ bool KafkaManager::Init(const KafkaConfig& config) {
 	auto zoneId = tlsCommonLogic.GetGameConfig().zone_id(); // zone ID
 	std::vector<int32_t> partitions{ static_cast<int32_t>(zoneId) };
 
-	tls.GetKafkaProducer() = std::make_unique<KafkaProducer>(brokers);
+	KafkaProducer::Instance().init(brokers);
 
 	if (!kafkaHandler) {
 		LOG_DEBUG << "KafkaManager: Message handler not set. Please call subscribe() to register a handler.";
@@ -44,12 +44,8 @@ bool KafkaManager::Init(const KafkaConfig& config) {
 }
 
 bool KafkaManager::Publish(const std::string& topic, const std::string& msg) {
-	if (!tls.GetKafkaProducer()) {
-		LOG_ERROR << "KafkaManager: Producer is not initialized.";
-		return false;
-	}
 
-	auto err = tls.GetKafkaProducer()->send(topic, msg);
+	auto err = KafkaProducer::Instance().send(topic, msg);
 	if (err != RdKafka::ERR_NO_ERROR) {
 		LOG_ERROR << "KafkaManager: Failed to send message. Error: " << RdKafka::err2str(err);
 		return false;
@@ -64,10 +60,7 @@ void KafkaManager::Shutdown() {
 		tls.GetKafkaConsumer().reset();
 	}
 
-	if (tls.GetKafkaProducer()) {
-		tls.GetKafkaProducer()->poll(); // flush if needed
-		tls.GetKafkaProducer().reset();
-	}
-
+	KafkaProducer::Instance().poll(); // flush if needed
+	
 	LOG_INFO << "KafkaManager has been shut down.";
 }
