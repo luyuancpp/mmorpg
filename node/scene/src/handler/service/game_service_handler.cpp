@@ -427,7 +427,7 @@ void SceneHandler::RegisterNodeSession(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	gNode->HandleNodeRegistration(*request, *response);
+	gNode->GetNodeRegistrationManager().HandleNodeRegistration(*request, *response);
 ///<<< END WRITING YOUR CODE
 }
 

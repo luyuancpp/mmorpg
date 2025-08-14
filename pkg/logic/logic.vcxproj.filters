@@ -18,6 +18,8 @@
     <ClCompile Include="src\node\system\etcd_manager.cpp" />
     <ClCompile Include="src\node\system\node_connector.cpp" />
     <ClCompile Include="src\node\system\node_allocator.cpp" />
+    <ClCompile Include="src\node\system\etcd_service.cpp" />
+    <ClCompile Include="src\node\system\registration_manager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\node\constants\node_constants.h" />
@@ -50,5 +52,7 @@
     <ClInclude Include="src\node\system\etcd_manager.h" />
     <ClInclude Include="src\node\system\node_connector.h" />
     <ClInclude Include="src\node\system\node_allocator.h" />
+    <ClInclude Include="src\node\system\etcd_service.h" />
+    <ClInclude Include="src\node\system\registration_manager.h" />
   </ItemGroup>
 </Project>
