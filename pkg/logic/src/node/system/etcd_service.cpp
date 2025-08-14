@@ -124,7 +124,7 @@ void EtcdService::StartWatchingPrefixes() {
 }
 
 void EtcdService::HandlePutEvent(const std::string& key, const std::string& value) {
-	gNode->HandleServiceNodeStart(key, value);
+	gNode->GetServiceDiscoveryManager().HandleServiceNodeStart(key, value);
 }
 
 void EtcdService::HandleDeleteEvent(const std::string& key, const std::string& value) {

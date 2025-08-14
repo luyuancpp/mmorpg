@@ -14,6 +14,7 @@
 #include "etcd_service.h"
 #include "etcd_manager.h"
 #include "registration_manager.h"
+#include "service_discovery_manager.h"
 
 class RegisterNodeSessionRequest;
 class RegisterNodeSessionResponse;
@@ -46,6 +47,7 @@ public:
     ClientList& GetZombieClientList() { return zombieClientList; }
     CanConnectNodeTypeList& GetTargetNodeTypeWhitelist() { return targetNodeTypeWhitelist; }
 	NodeRegistrationManager& GetNodeRegistrationManager() { return nodeRegistrationManager; }
+    ServiceDiscoveryManager& GetServiceDiscoveryManager() { return serviceDiscoveryManager; }
     std::string FormatIpAndPort();
     std::string GetIp();
     uint32_t GetPort();
@@ -54,11 +56,13 @@ public:
     void CallRemoteMethodZoneCenter(uint32_t message_id, const ::google::protobuf::Message& request);
 
     // 节点注册与服务处理
-    void HandleServiceNodeStart(const std::string& key, const std::string& value);
     void HandleServiceNodeStop(const std::string& key, const std::string& value);
 
     virtual void StartRpcServer();
 	
+	// 工具与状态判断
+	bool IsMyNode(const NodeInfo& node) const;
+	bool IsServiceStarted() { return rpcServer != nullptr; }
 protected:
     // 初始化相关
     void InitRpcServer();
@@ -69,23 +73,19 @@ protected:
     void LoadAllConfigData();
     void SetupTimeZone();
     void InitKafka();
+    void InitEtcdService();
 
     void ReleaseNodeId();
     void RegisterHandlers();
     void StopWatchingServiceNodes();
-    void AddServiceNode(const std::string& nodeJson, uint32_t nodeType);
     static void AsyncOutput(const char* msg, int len);
-    void FetchServiceNodes();
-    void InitGrpcClients();
     void StartServiceHealthMonitor();
 
     // 事件处理
     void OnServerConnected(const OnConnected2TcpServerEvent& es);
     void OnClientConnected(const OnTcpClientConnectedEvent& es);
 
-    // 工具与状态判断
-    bool IsMyNode(const NodeInfo& node ) const;
-    bool IsServiceStarted() { return rpcServer != nullptr; }
+
 
     void Shutdown();
 
@@ -108,9 +108,9 @@ protected:
 	int64_t leaseId{ 0 };
 	boost::uuids::random_generator gen;
 	KafkaManager kafkaManager;
-	EtcdService etcdService;
     EtcdManager etcdManager;
     NodeRegistrationManager nodeRegistrationManager;
+    ServiceDiscoveryManager serviceDiscoveryManager;
 };
 
 extern Node* gNode;
