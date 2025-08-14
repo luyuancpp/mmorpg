@@ -54,11 +54,12 @@ public:
     void HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response) const;
     void HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const;
 
+    virtual void StartRpcServer();
+	
 protected:
     // 初始化相关
     void InitRpcServer();
     void Initialize();
-    virtual void StartRpcServer();
     void InitLogSystem();
     void RegisterEventHandlers();
     void LoadConfigs();

@@ -27,16 +27,17 @@
 #include "thread_local/storage_common_logic.h"
 #include "time/system/time_system.h"
 #include "util/network_utils.h"
-#include "util/random.h"
 #include "generator/util/gen_util.h"
 #include "util/stacktrace_system.h"
 #include "util/node_utils.h"
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/join.hpp>
 #include <fmt/base.h>
 #include "etcd_manager.h"
+#include "etcd_service.h"
 #include "node_connector.h"
 #include "node_allocator.h"
+
+EtcdService etcdService;
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
@@ -63,6 +64,7 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
 }
 
 Node::~Node() {
+	etcdService.Shutdown(); 
 	Shutdown();
 }
 
@@ -180,17 +182,7 @@ void Node::SetupTimeZone() {
 }
 
 void Node::InitGrpcClients() {
-	const std::string& etcdAddr = *tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin();
-	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
-	InitGrpcNode(channel, tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService));
-
-	LOG_INFO << "Initializing gRPC client to etcd address: " << etcdAddr;
-
-	grpcHandlerTimer.RunEvery(0.005, [] {
-		for (auto&registry : tls.GetNodeRegistry()){
-			HandleCompletedQueueMessage(registry);
-		}
-		});
+	etcdService.Init();  // 替代原来的所有初始化
 }
 
 void Node::FetchServiceNodes() {
