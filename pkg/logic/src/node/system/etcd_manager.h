@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <deque>
+#include "time/comp/timer_task_comp.h"
 
 class NodeInfo;
 
@@ -23,6 +24,8 @@ public:
 
 	static void RequestEtcdLease();
 
-	static std::deque<std::string> pendingKeys;
+	static void KeepNodeAlive();
+
+private:
 
 };

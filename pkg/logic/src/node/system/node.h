@@ -81,11 +81,8 @@ protected:
     void TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const;
     void AcquireNode();
 	void AcquireNodePort();
-    static void RequestEtcdLease();
     void KeepNodeAlive();
     void StartServiceHealthMonitor();
-    void RegisterNodeService();
-    void RegisterNodePort();
 
     // 事件处理
     void OnServerConnected(const OnConnected2TcpServerEvent& es);
