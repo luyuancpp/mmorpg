@@ -144,7 +144,7 @@ void Node::Shutdown() {
 	tls.Clear();
 	logSystem.stop();
 	ReleaseNodeId();
-	renewLeaseTimer.Cancel();
+	EtcdManager::Shutdown();
 	grpcHandlerTimer.Cancel();
 	LOG_DEBUG << "Node shutdown complete.";
 }
@@ -553,13 +553,13 @@ void Node::InitGrpcResponseHandlers() {
 			leaseId = reply.id();
 			AcquireNodePort();
 			AcquireNode();  // 获取节点ID或其他信息
-			KeepNodeAlive();
+			EtcdManager::KeepNodeAlive();
 		}
 		else {
 			LOG_INFO << "Lease already exists, updating lease_id: " << reply.id();
 			// 租约过期后重新获取，需要重新注册服务节点
 			leaseId = reply.id();
-			KeepNodeAlive();
+			EtcdManager::KeepNodeAlive();
 			EtcdManager::RegisterNodeService();
 		}
 
@@ -871,15 +871,6 @@ void Node::AcquireNodePort(){
 		<< " Port: " << assignedPort;
 
 	EtcdManager::RegisterNodePort();
-}
-
-void Node::KeepNodeAlive() {
-	renewLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().keep_alive_interval(), [this]() {
-		etcdserverpb::LeaseKeepAliveRequest req;
-		req.set_id(leaseId);
-		SendLeaseLeaseKeepAlive(tls.GetNodeRegistry(EtcdNodeService), tls.GetNodeGlobalEntity(EtcdNodeService), req);
-		LOG_DEBUG << "Keeping node alive, lease_id: " << leaseId;
-		});
 }
 
 void Node::StartServiceHealthMonitor(){

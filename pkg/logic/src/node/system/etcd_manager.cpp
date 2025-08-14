@@ -12,6 +12,11 @@ TimerTaskComp renewLeaseTimer;
 
 std::deque<std::string> pendingKeys;
 
+void EtcdManager::Shutdown()
+{
+	renewLeaseTimer.Cancel();
+}
+
 std::string EtcdManager::GetServiceName(uint32_t type) {
 	return eNodeType_Name(type) + ".rpc";
 }

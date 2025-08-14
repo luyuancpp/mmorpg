@@ -81,7 +81,6 @@ protected:
     void TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const;
     void AcquireNode();
 	void AcquireNodePort();
-    void KeepNodeAlive();
     void StartServiceHealthMonitor();
 
     // 事件处理
@@ -98,7 +97,6 @@ protected:
     muduo::net::EventLoop* eventLoop;
     muduo::AsyncLogging logSystem;
     RpcServerPtr rpcServer;
-    TimerTaskComp renewLeaseTimer;
     TimerTaskComp grpcHandlerTimer;
     TimerTaskComp serviceHealthMonitorTimer;
     TimerTaskComp acquireNodeTimer;

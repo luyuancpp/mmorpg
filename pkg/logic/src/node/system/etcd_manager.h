@@ -8,6 +8,8 @@ class NodeInfo;
 class EtcdManager
 {
 public:
+	static void Shutdown();
+
 	static std::string GetServiceName(uint32_t type);
 
 	static std::string MakeNodeEtcdPrefix(const NodeInfo& info);
