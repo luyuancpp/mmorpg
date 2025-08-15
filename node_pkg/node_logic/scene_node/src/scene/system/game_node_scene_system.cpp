@@ -12,7 +12,7 @@
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 #include "util/node_utils.h"
-#include "util/node_message_utils.h"
+#include "network/node_message_utils.h"
 
 void GameNodeSceneSystem::InitializeNodeScenes() {
 	if (!(GetNodeInfo().scene_node_type() == eSceneNodeType::kMainSceneNode ||

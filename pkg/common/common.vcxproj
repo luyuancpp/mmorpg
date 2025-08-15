@@ -23,23 +23,7 @@
     <ClInclude Include="src\config_loader\config.h" />
     <ClInclude Include="src\generator\util\gen_util.h" />
     <ClInclude Include="src\global_data\async_log_file.h" />
-    <ClInclude Include="src\kafka\kafka_consumer.h" />
-    <ClInclude Include="src\kafka\kafka_producer.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
-    <ClInclude Include="src\network\codec\codec.h" />
-    <ClInclude Include="src\network\codec\dispatcher.h" />
-    <ClInclude Include="src\network\codec\dispatcher_lite.h" />
-    <ClInclude Include="src\network\codec\message_response_dispatcher.h" />
-    <ClInclude Include="src\network\game_rpc.pb.h" />
-    <ClInclude Include="src\network\message_statistics.h" />
-    <ClInclude Include="src\network\process_info.h" />
-    <ClInclude Include="src\network\game_channel.h" />
-    <ClInclude Include="src\network\rpc_client.h" />
-    <ClInclude Include="src\network\rpc_connection_event.h" />
-    <ClInclude Include="src\network\network_constants.h" />
-    <ClInclude Include="src\network\rpc_server.h" />
-    <ClInclude Include="src\network\rpc_session.h" />
-    <ClInclude Include="src\redis_client\redis_client.h" />
     <ClInclude Include="src\test\test.h" />
     <ClInclude Include="src\thread_local\player_storage.h" />
     <ClInclude Include="src\thread_local\storage.h" />
@@ -53,11 +37,8 @@
     <ClInclude Include="src\util\fast_queue.h" />
     <ClInclude Include="src\util\file2string.h" />
     <ClInclude Include="src\util\game_registry.h" />
-    <ClInclude Include="src\util\network_utils.h" />
     <ClInclude Include="src\util\node_id_generator.h" />
-    <ClInclude Include="src\util\node_message_utils.h" />
     <ClInclude Include="src\util\node_utils.h" />
-    <ClInclude Include="src\util\player_message_utils.h" />
     <ClInclude Include="src\util\proto_field_checker.h" />
     <ClInclude Include="src\util\random.h" />
     <ClInclude Include="src\util\snow_flake.h" />
@@ -68,16 +49,6 @@
     <ClCompile Include="src\config_loader\config.cpp" />
     <ClCompile Include="src\generator\util\gen_util.cpp" />
     <ClCompile Include="src\global_data\async_log_file.cpp" />
-    <ClCompile Include="src\kafka\kafka_consumer.cpp" />
-    <ClCompile Include="src\kafka\kafka_producer.cpp" />
-    <ClCompile Include="src\network\codec\codec.cc" />
-    <ClCompile Include="src\network\game_rpc.pb.cc" />
-    <ClCompile Include="src\network\message_statistics.cpp" />
-    <ClCompile Include="src\network\process_info.cpp" />
-    <ClCompile Include="src\network\game_channel.cc" />
-    <ClCompile Include="src\network\rpc_server.cc" />
-    <ClCompile Include="src\network\rpc_session.cpp" />
-    <ClCompile Include="src\redis_client\redis_client.cpp" />
     <ClCompile Include="src\test\test.cpp" />
     <ClCompile Include="src\thread_local\player_storage.cpp" />
     <ClCompile Include="src\thread_local\storage.cpp" />
@@ -87,18 +58,9 @@
     <ClCompile Include="src\util\base64.cpp" />
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\util\game_registry.cpp" />
-    <ClCompile Include="src\util\network_utils.cpp" />
-    <ClCompile Include="src\util\node_message_utils.cpp" />
     <ClCompile Include="src\util\node_utils.cpp" />
-    <ClCompile Include="src\util\player_message_utils.cpp" />
     <ClCompile Include="src\util\proto_field_checker.cpp" />
     <ClCompile Include="src\util\utility.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\network\autogen.bat" />
-    <None Include="src\network\autogen.sh" />
-    <None Include="src\network\game_rpc.proto" />
-    <None Include="src\network\protoc.exe" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

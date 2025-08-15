@@ -8,7 +8,7 @@
 #include "network_utils.h"
 #include "network/rpc_session.h"
 #include "service_info/service_info.h"
-#include "node_utils.h"
+#include "util/node_utils.h"
 #include <service_info/game_service_service_info.h>
 #include "thread_local/thread_local_node_context.h"
 #include "thread_local/player_storage.h"

@@ -25,8 +25,8 @@
 #include "thread_local/storage_game.h"
 #include "type_alias/player_session_type_alias.h"
 #include "util/proto_field_checker.h"
-#include "util/network_utils.h"
-#include "util/player_message_utils.h"
+#include "network/network_utils.h"
+#include "network/player_message_utils.h"
 #include "thread_local/thread_local_node_context.h"
 #include "thread_local/player_storage.h"
 
