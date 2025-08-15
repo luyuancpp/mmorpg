@@ -11,7 +11,7 @@
 #include "player/system/player_node_system.h"
 #include "player/system/player_scene_system.h"
 #include "scene/system/game_node_scene_system.h"
-#include "service/player_service.h"
+#include "rpc/player_service.h"
 #include "network/rpc_session.h"
 #include "network/constants/network_constants.h"
 #include "network/system/error_handling_system.h"

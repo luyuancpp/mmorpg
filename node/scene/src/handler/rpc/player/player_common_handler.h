@@ -2,7 +2,7 @@
 
 #include "proto/logic/client_player/player_common.pb.h"
 
-#include "service/player_service.h"
+#include "rpc/player_service.h"
 
 #include "macros/return_define.h"
 

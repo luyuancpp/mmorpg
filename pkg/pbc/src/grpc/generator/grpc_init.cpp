@@ -4,7 +4,7 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include <grpcpp/grpcpp.h>
 #include <google/protobuf/message.h>
-#include "node/system/node_system.h"
+#include "node/system/node_util.h"
 #include "muduo/base/Logging.h"
 #include "grpc/grpc_tag.h"
 
@@ -56,7 +56,7 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
 }
 
 void HandleCompletedQueueMessage(entt::registry& registry){
-    auto nodeType = NodeSystem::GetRegistryType(registry);
+    auto nodeType = NodeUtils::GetRegistryType(registry);
     auto&& view = registry.view<grpc::CompletionQueue>();
     for (auto&& [e, completeQueueComp] : view.each()) {
         void* got_tag = nullptr;
@@ -83,7 +83,7 @@ void HandleCompletedQueueMessage(entt::registry& registry){
 
 
 void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
-    auto nodeType = NodeSystem::GetRegistryType(registry);
+    auto nodeType = NodeUtils::GetRegistryType(registry);
     registry.emplace<grpc::CompletionQueue>(nodeEntity);
     if (eNodeType::PlayerLocatorNodeService == nodeType) {
         playerlocator::InitPlayerLocatorGrpcNode(channel, registry, nodeEntity);
