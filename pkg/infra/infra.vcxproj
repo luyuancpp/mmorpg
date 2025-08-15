@@ -27,6 +27,9 @@
     <ClInclude Include="src\network\codec\message_response_dispatcher.h" />
     <ClInclude Include="src\network\game_rpc.pb.h" />
     <ClInclude Include="src\network\message_statistics.h" />
+    <ClInclude Include="src\network\network_utils.h" />
+    <ClInclude Include="src\network\node_message_utils.h" />
+    <ClInclude Include="src\network\player_message_utils.h" />
     <ClInclude Include="src\network\process_info.h" />
     <ClInclude Include="src\network\game_channel.h" />
     <ClInclude Include="src\network\rpc_client.h" />
@@ -42,6 +45,9 @@
     <ClCompile Include="src\network\codec\codec.cc" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\message_statistics.cpp" />
+    <ClCompile Include="src\network\network_utils.cpp" />
+    <ClCompile Include="src\network\node_message_utils.cpp" />
+    <ClCompile Include="src\network\player_message_utils.cpp" />
     <ClCompile Include="src\network\process_info.cpp" />
     <ClCompile Include="src\network\game_channel.cc" />
     <ClCompile Include="src\network\rpc_server.cc" />

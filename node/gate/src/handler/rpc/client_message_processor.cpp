@@ -18,7 +18,7 @@
 #include "proto/common/node.pb.h"
 #include "node/system/node_util.h"
 #include "google/protobuf/descriptor.h"
-#include "util/network_utils.h"
+#include "network/network_utils.h"
 #include "util/node_utils.h"
 #include "proto/logic/event/node_event.pb.h"
 #include "thread_local/thread_local_node_context.h"

@@ -5,7 +5,7 @@
 #include "thread_local/storage_common_logic.h"
 #include "service_info/gate_service_service_info.h"
 #include "muduo/base/Logging.h"
-#include "util/network_utils.h"
+#include "network_utils.h"
 #include "network/rpc_session.h"
 #include "service_info/service_info.h"
 #include "node_utils.h"

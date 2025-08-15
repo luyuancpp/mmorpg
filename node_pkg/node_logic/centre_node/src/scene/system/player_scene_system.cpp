@@ -11,7 +11,7 @@
 #include "player/system/player_tip_system.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
-#include "util/node_message_utils.h"
+#include "network/node_message_utils.h"
 #include "util/node_utils.h"
 #include "util/zone_utils.h"
 #include "thread_local/thread_local_node_context.h"

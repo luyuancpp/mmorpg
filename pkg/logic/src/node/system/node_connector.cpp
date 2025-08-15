@@ -8,7 +8,7 @@
 #include <grpc/generator/grpc_init.h>
 #include <thread_local/storage_common_logic.h>
 #include "node.h"
-#include "util/network_utils.h"
+#include "network/network_utils.h"
 #include "thread_local/thread_local_node_context.h"
 
 void NodeConnector::ConnectToNode(const NodeInfo& info) {

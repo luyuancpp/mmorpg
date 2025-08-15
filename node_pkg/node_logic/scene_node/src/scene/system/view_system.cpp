@@ -10,7 +10,7 @@
 #include "proto/logic/component/npc_comp.pb.h"
 #include "thread_local/storage.h"
 #include "type_define/type_define.h"
-#include "util/player_message_utils.h"
+#include "network/player_message_utils.h"
 
 void ViewSystem::Initialize()
 {

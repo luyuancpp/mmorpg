@@ -26,7 +26,7 @@
 #include "service_info/service_info.h"
 #include "thread_local/storage_common_logic.h"
 #include "time/system/time_system.h"
-#include "util/network_utils.h"
+#include "network/network_utils.h"
 #include "generator/util/gen_util.h"
 #include "util/stacktrace_system.h"
 #include "util/node_utils.h"

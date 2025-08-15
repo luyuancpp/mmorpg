@@ -15,7 +15,7 @@
 #include "test/test.h"
 #include "thread_local/storage.h"
 #include "type_alias/actor.h"
-#include "util/player_message_utils.h"
+#include "network/player_message_utils.h"
 
 void AoiSystem::Update(double delta) {
     for (auto&& [entity, transform, sceneComp] : tls.actorRegistry.view<Transform, SceneEntityComp>().each()) {

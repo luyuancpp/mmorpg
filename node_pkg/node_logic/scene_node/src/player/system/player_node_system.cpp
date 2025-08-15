@@ -16,7 +16,7 @@
 #include "type_alias/player_session_type_alias.h"
 #include "util/defer.h"
 #include "util/node_utils.h"
-#include "util/node_message_utils.h"
+#include "network/node_message_utils.h"
 #include "player/system/player_data_loader_system.h"
 #include "type_define/type_define.h"
 #include "proto/db/mysql_database_table.pb.h"
