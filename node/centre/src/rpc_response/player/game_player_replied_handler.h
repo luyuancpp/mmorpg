@@ -2,7 +2,7 @@
 #pragma once
 #include "proto/scene/game_player.pb.h"
 
-#include "service/player_service_replied.h"
+#include "rpc/player_service_replied.h"
 
 
 class ScenePlayerRepliedHandler : public ::PlayerServiceReplied

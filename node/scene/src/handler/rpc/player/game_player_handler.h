@@ -2,7 +2,7 @@
 
 #include "proto/scene/game_player.pb.h"
 
-#include "service/player_service.h"
+#include "rpc/player_service.h"
 
 #include "macros/return_define.h"
 

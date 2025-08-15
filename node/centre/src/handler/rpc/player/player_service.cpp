@@ -1,7 +1,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "service/player_service.h"
+#include "rpc/player_service.h"
 #include "centre_player_handler.h"
 #include "centre_player_scene_handler.h"
 class CentrePlayerUtilityImpl : public CentrePlayerUtility {};
