@@ -47,7 +47,7 @@ func BuildProto(protoPath string) error {
 		dstFileHeadName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbhEx, 1)
 		dstFileCppName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
 
-		protoRelativePath := strings.Replace(protoPath, config.ProjectDir, "", 1)
+		protoRelativePath := strings.Replace(protoPath, config.OutputRoot, "", 1)
 
 		tempBaseDir := filepath.ToSlash(path.Dir(config.PbcTempDirectory + protoRelativePath))
 		newBaseDir := filepath.ToSlash(path.Dir(dstFileCppName))

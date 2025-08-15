@@ -2,11 +2,11 @@ package config
 
 // ----------- 项目根目录及相关路径 -----------
 const (
-	ProjectDir                = "../../../"
-	ProtoDir                  = ProjectDir + "proto/"
-	ProtoParentIncludePathDir = ProjectDir
+	OutputRoot                = "../../../"
+	ProtoDir                  = OutputRoot + "proto/"
+	ProtoParentIncludePathDir = OutputRoot
 	ThirdPartyDirectory       = "third_party/"
-	GrpcDirectory             = ProjectDir + ThirdPartyDirectory + "grpc/"
+	GrpcDirectory             = OutputRoot + ThirdPartyDirectory + "grpc/"
 	ProtoBufferDirectory      = GrpcDirectory + "third_party/protobuf/src/"
 )
 
@@ -46,7 +46,7 @@ const (
 
 // ----------- 项目目录路径 -----------
 const (
-	NodeDirectory                  = ProjectDir + "node/"
+	NodeDirectory                  = OutputRoot + "node/"
 	NodePkgDirectory               = "node_pkg/"
 	NodePkgLogicDirectory          = NodePkgDirectory + "node_logic/"
 	NodePkgLogicSceneNodeDirectory = NodePkgLogicDirectory + "scene_node/"
@@ -66,45 +66,45 @@ const (
 
 // ----------- 方法处理目录 -----------
 const (
-	RobotMethodHandlerDirectory                 = ProjectDir + RobotDirectory + "logic/handler/"
-	GameNodeMethodHandlerDirectory              = ProjectDir + GameNodeDirectory + RpcHandlerSourceDirectory
-	GameNodePlayerMethodHandlerDirectory        = ProjectDir + GameNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
-	GameNodeMethodRepliedHandlerDirectory       = ProjectDir + GameNodeDirectory + RpcResponseSourceDirectory
-	GameNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GameNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
-	CentreNodeMethodHandlerDirectory            = ProjectDir + CentreNodeDirectory + RpcHandlerSourceDirectory
-	CentreNodePlayerMethodHandlerDirectory      = ProjectDir + CentreNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
-	CentreMethodRepliedHandleDir                = ProjectDir + CentreNodeDirectory + RpcResponseSourceDirectory
-	CentrePlayerMethodRepliedHandlerDirectory   = ProjectDir + CentreNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
-	GateMethodHandlerDirectory                  = ProjectDir + GateNodeDirectory + RpcHandlerSourceDirectory
-	GateMethodRepliedHandlerDirectory           = ProjectDir + GateNodeDirectory + RpcResponseSourceDirectory
-	GateNodePlayerMethodHandlerDirectory        = ProjectDir + GateNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
-	GateNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GateNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
+	RobotMethodHandlerDirectory                 = OutputRoot + RobotDirectory + "logic/handler/"
+	GameNodeMethodHandlerDirectory              = OutputRoot + GameNodeDirectory + RpcHandlerSourceDirectory
+	GameNodePlayerMethodHandlerDirectory        = OutputRoot + GameNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
+	GameNodeMethodRepliedHandlerDirectory       = OutputRoot + GameNodeDirectory + RpcResponseSourceDirectory
+	GameNodePlayerMethodRepliedHandlerDirectory = OutputRoot + GameNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
+	CentreNodeMethodHandlerDirectory            = OutputRoot + CentreNodeDirectory + RpcHandlerSourceDirectory
+	CentreNodePlayerMethodHandlerDirectory      = OutputRoot + CentreNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
+	CentreMethodRepliedHandleDir                = OutputRoot + CentreNodeDirectory + RpcResponseSourceDirectory
+	CentrePlayerMethodRepliedHandlerDirectory   = OutputRoot + CentreNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
+	GateMethodHandlerDirectory                  = OutputRoot + GateNodeDirectory + RpcHandlerSourceDirectory
+	GateMethodRepliedHandlerDirectory           = OutputRoot + GateNodeDirectory + RpcResponseSourceDirectory
+	GateNodePlayerMethodHandlerDirectory        = OutputRoot + GateNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
+	GateNodePlayerMethodRepliedHandlerDirectory = OutputRoot + GateNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
 )
 
 // ----------- 输出目录 -----------
 const (
 	ToolDir               = "tools/"
-	TempFileGenerationDir = ProjectDir + ToolDir + "generated/temp/files/"
+	TempFileGenerationDir = OutputRoot + ToolDir + "generated/temp/files/"
 	PbDescDirectory       = TempFileGenerationDir + "proto_desc/"
 	AllInOneProtoDescFile = PbDescDirectory + "all_in_one.pb.desc"
 
-	PbcProtoOutputDirectory  = ProjectDir + PbcProtoDirectory + ProtoDirName
-	PbcOutputDirectory       = ProjectDir + PbcProtoDirectory
-	GrpcOutputDirectory      = ProjectDir + PbcProtoDirectory
+	PbcProtoOutputDirectory  = OutputRoot + PbcProtoDirectory + ProtoDirName
+	PbcOutputDirectory       = OutputRoot + PbcProtoDirectory
+	GrpcOutputDirectory      = OutputRoot + PbcProtoDirectory
 	GrpcTempDirectory        = TempFileGenerationDir + "grpc/"
 	PbcTempDirectory         = TempFileGenerationDir
-	GrpcProtoOutputDirectory = ProjectDir + PbcProtoDirectory + ProtoDirName
+	GrpcProtoOutputDirectory = OutputRoot + PbcProtoDirectory + ProtoDirName
 
-	RobotGoOutputDirectory = ProjectDir + RobotDirectory
+	RobotGoOutputDirectory = OutputRoot + RobotDirectory
 	GoPbGameDirectory      = "pb/game/"
 	RobotGoGamePbDirectory = RobotGoOutputDirectory + GoPbGameDirectory
 	MessageIdGoFile        = "message_id.go"
 	RobotMessageIdFilePath = RobotGoGamePbDirectory + MessageIdGoFile
 
-	LoginDirectory       = ProjectDir + "node/login/"
+	LoginDirectory       = OutputRoot + "node/login/"
 	LoginGoGameDirectory = LoginDirectory + GoPbGameDirectory
 	LoginMessageIdGoFile = LoginGoGameDirectory + MessageIdGoFile
-	DbGoDirectory        = ProjectDir + "node/db/"
+	DbGoDirectory        = OutputRoot + "node/db/"
 
 	ServiceInfoName       = "service_info/"
 	ServiceInfoDirectory  = PbcOutputDirectory + ServiceInfoName
@@ -113,22 +113,22 @@ const (
 	ServiceHeaderFilePath = ServiceInfoDirectory + "service_info.h"
 
 	LuaServiceFilePath       = PbcLuaDirectory + "lua_service.cpp"
-	ClientLuaDirectory       = ProjectDir + "bin/script/lua/service/"
-	ClientLuaServiceFilePath = ProjectDir + "client/src/handler/service_lua.cpp"
+	ClientLuaDirectory       = OutputRoot + "bin/script/lua/service/"
+	ClientLuaServiceFilePath = OutputRoot + "client/src/handler/service_lua.cpp"
 
 	GrpcGeneratorDirectory = "grpc/generator/"
 
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
-	PlayerStorageSystemDirectory     = ProjectDir + NodePkgLogicSceneNodeDirectory + "src/player/system/"
-	CppGenGrpcDirectory              = ProjectDir + PbcProtoDirectory + GrpcGeneratorDirectory
+	PlayerStorageSystemDirectory     = OutputRoot + NodePkgLogicSceneNodeDirectory + "src/player/system/"
+	CppGenGrpcDirectory              = OutputRoot + PbcProtoDirectory + GrpcGeneratorDirectory
 	PlayerStorageTempDirectory       = TempFileGenerationDir + "/node/game/game_logic/"
-	GrpcInitFileCppPath              = ProjectDir + PbcProtoDirectory + GrpcGeneratorDirectory + "grpc_init.cpp"
-	GrpcInitFileHeadPath             = ProjectDir + PbcProtoDirectory + GrpcGeneratorDirectory + "grpc_init.h"
+	GrpcInitFileCppPath              = OutputRoot + PbcProtoDirectory + GrpcGeneratorDirectory + "grpc_init.cpp"
+	GrpcInitFileHeadPath             = OutputRoot + PbcProtoDirectory + GrpcGeneratorDirectory + "grpc_init.h"
 
 	GeneratorDirectory     = "generator/"
 	UtilGeneratorDirectory = GeneratorDirectory + "util/"
-	GenUtilFileCppPath     = ProjectDir + CommonSrcDirectory + UtilGeneratorDirectory + "gen_util.cpp"
-	GenUtilFileHeadPath    = ProjectDir + CommonSrcDirectory + UtilGeneratorDirectory + "gen_util.h"
+	GenUtilFileCppPath     = OutputRoot + CommonSrcDirectory + UtilGeneratorDirectory + "gen_util.cpp"
+	GenUtilFileHeadPath    = OutputRoot + CommonSrcDirectory + UtilGeneratorDirectory + "gen_util.h"
 )
 
 // ----------- 文件名 -----------
@@ -220,8 +220,8 @@ const (
 
 // ----------- 事件处理目录 -----------
 const (
-	GameNodeEventHandlerDirectory   = ProjectDir + GameNodeDirectory + EventHandlerSourceDirectory
-	CentreNodeEventHandlerDirectory = ProjectDir + CentreNodeDirectory + EventHandlerSourceDirectory
+	GameNodeEventHandlerDirectory   = OutputRoot + GameNodeDirectory + EventHandlerSourceDirectory
+	CentreNodeEventHandlerDirectory = OutputRoot + CentreNodeDirectory + EventHandlerSourceDirectory
 )
 
 // ----------- 玩家数据库名称 -----------
