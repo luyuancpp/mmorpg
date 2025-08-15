@@ -5,12 +5,12 @@ import (
 	"github.com/iancoleman/strcase"
 	"log"
 	"os"
+	"pbgen/internal/config"
 	"strings"
 	"text/template"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
-	"pbgen/config"
 )
 
 const playerLoaderTemplate = `

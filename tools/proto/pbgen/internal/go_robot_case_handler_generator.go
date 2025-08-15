@@ -3,11 +3,10 @@ package internal
 import (
 	"fmt"
 	"os"
+	"pbgen/internal/config"
 	"pbgen/util"
 	"strings"
 	"text/template"
-
-	"pbgen/config"
 )
 
 const handlerTotalTemplate = `package handler

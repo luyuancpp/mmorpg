@@ -1,0 +1,8 @@
+mappings:
+  handler:
+    path: handlers/{{proto_dir}}/{{proto_file}}_handler.cpp
+    template: templates/handler.tmpl
+
+  rpc_response:
+    path: rpc_response/{{proto_dir}}/{{proto_file}}_response.cpp
+    template: templates/rpc_response.tmpl

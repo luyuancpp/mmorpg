@@ -195,14 +195,14 @@
     <ClCompile Include="src\handler\rpc\centre_service_handler.cpp" />
     <ClCompile Include="src\handler\rpc\player\player_service.cpp" />
     <ClCompile Include="src\handler\rpc\register_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\game_scene_replied_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\player\game_player_scene_replied_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\player\game_player_replied_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\game_service_replied_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\gate_service_replied_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\player\player_service_replied.cpp" />
-    <ClCompile Include="src\handler\rpc_response\player\player_state_attribute_sync_replied_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\register_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\game_scene_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\player\game_player_scene_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\player\game_player_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\game_service_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\gate_service_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\player\player_service_replied.cpp" />
+    <ClCompile Include="src\rpc_response\player\player_state_attribute_sync_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\register_replied_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\centre_node.h" />
@@ -223,12 +223,12 @@
     <ClInclude Include="src\handler\rpc\player\centre_player_handler.h" />
     <ClInclude Include="src\handler\rpc\player\centre_player_scene_handler.h" />
     <ClInclude Include="src\handler\rpc\centre_service_handler.h" />
-    <ClInclude Include="src\handler\rpc_response\game_scene_replied_handler.h" />
-    <ClInclude Include="src\handler\rpc_response\player\game_player_scene_replied_handler.h" />
-    <ClInclude Include="src\handler\rpc_response\player\game_player_replied_handler.h" />
-    <ClInclude Include="src\handler\rpc_response\game_service_replied_handler.h" />
-    <ClInclude Include="src\handler\rpc_response\gate_service_replied_handler.h" />
-    <ClInclude Include="src\handler\rpc_response\player\player_state_attribute_sync_replied_handler.h" />
+    <ClInclude Include="src\rpc_response\game_scene_replied_handler.h" />
+    <ClInclude Include="src\rpc_response\player\game_player_scene_replied_handler.h" />
+    <ClInclude Include="src\rpc_response\player\game_player_replied_handler.h" />
+    <ClInclude Include="src\rpc_response\game_service_replied_handler.h" />
+    <ClInclude Include="src\rpc_response\gate_service_replied_handler.h" />
+    <ClInclude Include="src\rpc_response\player\player_state_attribute_sync_replied_handler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

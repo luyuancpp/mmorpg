@@ -2,7 +2,7 @@ package internal
 
 import (
 	"path/filepath"
-	"pbgen/config"
+	"pbgen/internal/config"
 	"pbgen/util"
 	"strings"
 )

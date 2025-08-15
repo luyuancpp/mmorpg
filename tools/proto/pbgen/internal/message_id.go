@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"pbgen/config"
+	"pbgen/internal/config"
 	"strings"
 	"sync"
 )

@@ -151,7 +151,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\handler\event\server_event_handler.cpp" />
     <ClCompile Include="src\handler\rpc\player\game_client_player_handler.cpp" />
     <ClCompile Include="src\handler\rpc\player_state_attribute_sync_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\player\centre_player_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\player\centre_player_replied_handler.cpp" />
     <ClCompile Include="src\scene_node.cpp" />
     <ClCompile Include="src\handler\event\skill_event_handler.cpp" />
     <ClCompile Include="src\handler\rpc\player\player_common_handler.cpp" />
@@ -164,12 +164,12 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\handler\rpc\player\player_state_attribute_sync_handler.cpp" />
     <ClCompile Include="src\handler\rpc\register_handler.cpp" />
     <ClCompile Include="src\handler\rpc\player\player_scene_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\gate_service_replied_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\centre_scene_replied_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\player\centre_player_scene_replied_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\centre_service_replied_handler.cpp" />
-    <ClCompile Include="src\handler\rpc_response\player\player_service_replied.cpp" />
-    <ClCompile Include="src\handler\rpc_response\register_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\gate_service_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\centre_scene_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\player\centre_player_scene_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\centre_service_replied_handler.cpp" />
+    <ClCompile Include="src\rpc_response\player\player_service_replied.cpp" />
+    <ClCompile Include="src\rpc_response\register_replied_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\actor_combat_state_event_handler.h" />
@@ -186,7 +186,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\handler\event\server_event_handler.h" />
     <ClInclude Include="src\handler\rpc\player\game_client_player_handler.h" />
     <ClInclude Include="src\handler\rpc\player_state_attribute_sync_handler.h" />
-    <ClInclude Include="src\handler\rpc_response\player\centre_player_replied_handler.h" />
+    <ClInclude Include="src\rpc_response\player\centre_player_replied_handler.h" />
     <ClInclude Include="src\scene_node.h" />
     <ClInclude Include="src\handler\event\skill_event_handler.h" />
     <ClInclude Include="src\handler\rpc\player\player_common_handler.h" />
@@ -197,10 +197,10 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\handler\rpc\player\player_skill_handler.h" />
     <ClInclude Include="src\handler\rpc\player\player_state_attribute_sync_handler.h" />
     <ClInclude Include="src\handler\rpc\player\player_scene_handler.h" />
-    <ClInclude Include="src\handler\rpc_response\gate_service_replied_handler.h" />
-    <ClInclude Include="src\handler\rpc_response\centre_scene_replied_handler.h" />
-    <ClInclude Include="src\handler\rpc_response\player\centre_player_scene_replied_handler.h" />
-    <ClInclude Include="src\handler\rpc_response\centre_service_replied_handler.h" />
+    <ClInclude Include="src\rpc_response\gate_service_replied_handler.h" />
+    <ClInclude Include="src\rpc_response\centre_scene_replied_handler.h" />
+    <ClInclude Include="src\rpc_response\player\centre_player_scene_replied_handler.h" />
+    <ClInclude Include="src\rpc_response\centre_service_replied_handler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

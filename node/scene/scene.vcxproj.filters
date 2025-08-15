@@ -51,19 +51,19 @@
     <ClCompile Include="src\handler\rpc\player\player_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\rpc_response\centre_scene_replied_handler.cpp">
+    <ClCompile Include="src\rpc_response\centre_scene_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\rpc_response\player\centre_player_scene_replied_handler.cpp">
+    <ClCompile Include="src\rpc_response\player\centre_player_scene_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\rpc_response\centre_service_replied_handler.cpp">
+    <ClCompile Include="src\rpc_response\centre_service_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\rpc_response\player\player_service_replied.cpp">
+    <ClCompile Include="src\rpc_response\player\player_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\rpc_response\register_replied_handler.cpp">
+    <ClCompile Include="src\rpc_response\register_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\scene_node.cpp">
@@ -78,7 +78,7 @@
     <ClCompile Include="src\handler\rpc\player\player_skill_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\rpc_response\gate_service_replied_handler.cpp">
+    <ClCompile Include="src\rpc_response\gate_service_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\event\player_event_handler.cpp">
@@ -111,7 +111,7 @@
     <ClCompile Include="src\handler\rpc\player_state_attribute_sync_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\rpc_response\player\centre_player_replied_handler.cpp">
+    <ClCompile Include="src\rpc_response\player\centre_player_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\event\player_migration_event_handler.cpp">
@@ -146,13 +146,13 @@
     <ClInclude Include="src\handler\rpc\player\player_scene_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\rpc_response\centre_scene_replied_handler.h">
+    <ClInclude Include="src\rpc_response\centre_scene_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\rpc_response\player\centre_player_scene_replied_handler.h">
+    <ClInclude Include="src\rpc_response\player\centre_player_scene_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\rpc_response\centre_service_replied_handler.h">
+    <ClInclude Include="src\rpc_response\centre_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\scene_node.h">
@@ -167,7 +167,7 @@
     <ClInclude Include="src\handler\rpc\player\player_skill_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\rpc_response\gate_service_replied_handler.h">
+    <ClInclude Include="src\rpc_response\gate_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\event\player_event_handler.h">
@@ -200,7 +200,7 @@
     <ClInclude Include="src\handler\rpc\player_state_attribute_sync_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\rpc_response\player\centre_player_replied_handler.h">
+    <ClInclude Include="src\rpc_response\player\centre_player_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\event\player_migration_event_handler.h">

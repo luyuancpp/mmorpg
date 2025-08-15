@@ -8,9 +8,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"pbgen/internal/config"
 	"strings"
 
-	"pbgen/config"
 	"pbgen/util"
 )
 

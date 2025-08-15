@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"pbgen/config"
+	"pbgen/internal/config"
 	"pbgen/util"
 	"sort"
 	"strings"

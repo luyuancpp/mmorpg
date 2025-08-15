@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 	"path"
-	"pbgen/config"
+	"pbgen/internal/config"
 	"pbgen/util"
 	"strings"
 )
