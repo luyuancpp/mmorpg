@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"pbgen/config"
+	"pbgen/internal/config"
 	"pbgen/util"
 	"sort"
 	"strings"

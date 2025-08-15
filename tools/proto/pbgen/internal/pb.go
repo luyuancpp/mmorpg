@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"pbgen/config"
+	"pbgen/internal/config"
 	"pbgen/util"
 	"runtime"
 	"strings"

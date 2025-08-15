@@ -57,28 +57,28 @@ const (
 	PbcProtoDirectory              = "pkg/pbc/src/"
 	CommonSrcDirectory             = "pkg/common/src/"
 
-	ServiceIdFilePath             = ProtoDir + "serviceid.txt"
-	HandlerSourceDirectory        = "src/handler/rpc/"
-	RepliedHandlerSourceDirectory = "src/handler/rpc_response/"
-	EventHandlerSourceDirectory   = "src/handler/event/"
-	PbcLuaDirectory               = PbcOutputDirectory + "lua/"
+	ServiceIdFilePath           = ProtoDir + "serviceid.txt"
+	RpcHandlerSourceDirectory   = "src/handler/rpc/"
+	RpcResponseSourceDirectory  = "src/rpc_response/"
+	EventHandlerSourceDirectory = "src/handler/event/"
+	PbcLuaDirectory             = PbcOutputDirectory + "lua/"
 )
 
 // ----------- 方法处理目录 -----------
 const (
 	RobotMethodHandlerDirectory                 = ProjectDir + RobotDirectory + "logic/handler/"
-	GameNodeMethodHandlerDirectory              = ProjectDir + GameNodeDirectory + HandlerSourceDirectory
-	GameNodePlayerMethodHandlerDirectory        = ProjectDir + GameNodeDirectory + HandlerSourceDirectory + TypePlayer + "/"
-	GameNodeMethodRepliedHandlerDirectory       = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory
-	GameNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory + TypePlayer + "/"
-	CentreNodeMethodHandlerDirectory            = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory
-	CentreNodePlayerMethodHandlerDirectory      = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory + TypePlayer + "/"
-	CentreMethodRepliedHandleDir                = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory
-	CentrePlayerMethodRepliedHandlerDirectory   = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory + TypePlayer + "/"
-	GateMethodHandlerDirectory                  = ProjectDir + GateNodeDirectory + HandlerSourceDirectory
-	GateMethodRepliedHandlerDirectory           = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory
-	GateNodePlayerMethodHandlerDirectory        = ProjectDir + GateNodeDirectory + HandlerSourceDirectory + TypePlayer + "/"
-	GateNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory + TypePlayer + "/"
+	GameNodeMethodHandlerDirectory              = ProjectDir + GameNodeDirectory + RpcHandlerSourceDirectory
+	GameNodePlayerMethodHandlerDirectory        = ProjectDir + GameNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
+	GameNodeMethodRepliedHandlerDirectory       = ProjectDir + GameNodeDirectory + RpcResponseSourceDirectory
+	GameNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GameNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
+	CentreNodeMethodHandlerDirectory            = ProjectDir + CentreNodeDirectory + RpcHandlerSourceDirectory
+	CentreNodePlayerMethodHandlerDirectory      = ProjectDir + CentreNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
+	CentreMethodRepliedHandleDir                = ProjectDir + CentreNodeDirectory + RpcResponseSourceDirectory
+	CentrePlayerMethodRepliedHandlerDirectory   = ProjectDir + CentreNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
+	GateMethodHandlerDirectory                  = ProjectDir + GateNodeDirectory + RpcHandlerSourceDirectory
+	GateMethodRepliedHandlerDirectory           = ProjectDir + GateNodeDirectory + RpcResponseSourceDirectory
+	GateNodePlayerMethodHandlerDirectory        = ProjectDir + GateNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
+	GateNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GateNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
 )
 
 // ----------- 输出目录 -----------
