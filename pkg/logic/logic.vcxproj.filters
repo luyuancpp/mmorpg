@@ -46,8 +46,8 @@
     <ClInclude Include="src\node\system\node.h" />
     <ClInclude Include="src\node\system\node_util.h" />
     <ClInclude Include="src\node\system\etcd_helper.h" />
-    <ClInclude Include="src\service\player_service.h" />
-    <ClInclude Include="src\service\player_service_replied.h" />
+    <ClInclude Include="src\rpc\player_service.h" />
+    <ClInclude Include="src\rpc\player_service_replied.h" />
     <ClInclude Include="src\util\zone_utils.h" />
     <ClInclude Include="src\node\system\kafka_manager.h" />
     <ClInclude Include="src\node\system\etcd_manager.h" />
