@@ -7,8 +7,8 @@
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/TcpServer.h"
 
-#include "handler/service/client_message_processor.h"
-#include "handler/service/gate_service_handler.h"
+#include "handler/rpc/client_message_processor.h"
+#include "handler/rpc/gate_service_handler.h"
 #include "network/rpc_connection_event.h"
 #include "network/codec/codec.h"
 #include "network/codec/dispatcher.h"

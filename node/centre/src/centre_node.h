@@ -1,6 +1,6 @@
 #pragma once
 
-#include "handler/service/centre_service_handler.h"
+#include "handler/rpc/centre_service_handler.h"
 #include "node/system/node.h"
 
 class CentreNode : public Node
