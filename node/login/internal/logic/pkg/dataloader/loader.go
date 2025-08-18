@@ -29,12 +29,11 @@ func BatchLoadAndCache(
 	asyncClient *asynq.Client,
 	playerId uint64,
 	messages []proto.Message,
-	taskMgr *taskmanager.TaskManager,
 	executor *taskmanager.TaskExecutor,
 ) error {
 	taskKey := taskmanager.GenerateBatchTaskKey(messages, playerId)
 
-	err := taskmanager.InitAndAddMessageTasks(ctx, taskMgr, taskKey, redisClient, asyncClient, playerId, messages)
+	err := taskmanager.InitAndAddMessageTasks(ctx, executor, taskKey, redisClient, asyncClient, playerId, messages)
 
 	if err != nil {
 		return err
@@ -51,7 +50,6 @@ func LoadAggregateData(
 	result proto.Message,
 	build func(uint64) []proto.Message,
 	keyBuilder func(uint64) string,
-	taskMgr *taskmanager.TaskManager,
 	executor *taskmanager.TaskExecutor,
 ) error {
 	key := keyBuilder(playerId)
@@ -68,7 +66,7 @@ func LoadAggregateData(
 
 	taskKey := taskmanager.GenerateTaskKey(result, playerId)
 
-	err = taskmanager.InitAndAddMessageTasks(ctx, taskMgr, taskKey, redisClient, asyncClient, playerId, subMsgs)
+	err = taskmanager.InitAndAddMessageTasks(ctx, executor, taskKey, redisClient, asyncClient, playerId, subMsgs)
 	if err != nil {
 		return err
 	}

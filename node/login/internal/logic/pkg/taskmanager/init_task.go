@@ -13,10 +13,11 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// 这是任务初始化函数
+// InitAndAddMessageTasks 初始化并添加消息任务到对应key的TaskManager
+// 注意：现在需要传入TaskExecutor而不是直接传入TaskManager
 func InitAndAddMessageTasks(
 	ctx context.Context,
-	manager *TaskManager,
+	executor *TaskExecutor, // 改为传入TaskExecutor
 	taskKey string,
 	redisClient redis.Cmdable,
 	asyncClient *asynq.Client,
@@ -88,6 +89,8 @@ func InitAndAddMessageTasks(
 	}
 
 	if len(tasks) > 0 {
+		// 通过TaskExecutor获取该taskKey对应的TaskManager
+		manager := executor.GetTaskManagerByKey(taskKey)
 		manager.AddBatch(taskKey, tasks)
 	}
 
