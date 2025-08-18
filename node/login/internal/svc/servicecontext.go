@@ -20,7 +20,6 @@ type ServiceContext struct {
 	// 使用 atomic.Value 安全存储 CentreClient
 	centreClient atomic.Value // 类型为 *centre.CentreClient
 	AsynqClient  *asynq.Client
-	TaskManager  *taskmanager.TaskManager
 	TaskExecutor *taskmanager.TaskExecutor
 }
 
@@ -48,10 +47,8 @@ func NewServiceContext() *ServiceContext {
 		panic(fmt.Errorf("failed to connect Redis: %w", err))
 	}
 
-	// 初始化 TaskManager 和 TaskExecutor
-	taskMgr := taskmanager.NewTaskManager()
-
-	taskExecutor, err := taskmanager.NewTaskExecutor(100, taskMgr, redisClient)
+	// 初始化 TaskExecutor
+	taskExecutor, err := taskmanager.NewTaskExecutor(100, redisClient)
 	if err != nil {
 		panic(fmt.Errorf("failed to init TaskExecutor: %w", err))
 	}
@@ -60,7 +57,6 @@ func NewServiceContext() *ServiceContext {
 	return &ServiceContext{
 		RedisClient:  redisClient,
 		AsynqClient:  asynq.NewClient(redisOpt),
-		TaskManager:  taskMgr,
 		TaskExecutor: taskExecutor,
 	}
 }

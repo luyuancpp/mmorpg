@@ -153,7 +153,6 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		[]proto.Message{
 			msgCentre,
 		},
-		l.svcCtx.TaskManager,
 		l.svcCtx.TaskExecutor)
 
 	if err != nil {
@@ -178,7 +177,6 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		func(id uint64) string {
 			return string(playerAll.ProtoReflect().Descriptor().FullName()) + ":" + strconv.FormatUint(id, 10)
 		},
-		l.svcCtx.TaskManager,
 		l.svcCtx.TaskExecutor)
 
 	return err
