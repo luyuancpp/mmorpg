@@ -83,7 +83,7 @@ func InitAndAddMessageTasks(
 			Message:  msg,
 			RedisKey: key,
 			PlayerID: playerId,
-			Status:   "pending",
+			Status:   TaskStatusPending,
 		})
 	}
 
