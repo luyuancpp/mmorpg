@@ -13,16 +13,22 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// InitAndAddMessageTasks 初始化并添加消息任务到对应key的TaskManager
-// 注意：现在需要传入TaskExecutor而不是直接传入TaskManager
+// 新增：定义聚合任务选项
+type InitTaskOptions struct {
+	Aggregator Aggregator // 聚合器（为nil时表示普通任务）
+}
+
+// InitAndAddMessageTasks 初始化并添加消息任务（支持普通任务和聚合任务）
+// 当options.Aggregator不为nil时，创建聚合任务（不缓存子PB）
 func InitAndAddMessageTasks(
 	ctx context.Context,
-	executor *TaskExecutor, // 改为传入TaskExecutor
+	executor *TaskExecutor,
 	taskKey string,
 	redisClient redis.Cmdable,
 	asyncClient *asynq.Client,
 	playerId uint64,
 	messages []proto.Message,
+	options InitTaskOptions, // 新增选项参数，用于传递聚合器
 ) error {
 	playerIdStr := strconv.FormatUint(playerId, 10)
 	var tasks []*MessageTask
@@ -85,13 +91,22 @@ func InitAndAddMessageTasks(
 			RedisKey: key,
 			PlayerID: playerId,
 			Status:   TaskStatusPending,
+			// SkipSubCache 不需要在这里设置，由AddBatch/AddAggregateBatch自动处理
 		})
 	}
 
 	if len(tasks) > 0 {
 		// 通过TaskExecutor获取该taskKey对应的TaskManager
 		manager := executor.GetTaskManagerByKey(taskKey)
-		manager.AddBatch(taskKey, tasks)
+
+		// 根据是否有聚合器，选择添加普通批次或聚合批次
+		if options.Aggregator != nil {
+			// 聚合任务：不缓存子PB，最终缓存聚合后的父PB
+			manager.AddAggregateBatch(taskKey, tasks, options.Aggregator)
+		} else {
+			// 普通任务：缓存每个子PB
+			manager.AddBatch(taskKey, tasks)
+		}
 	}
 
 	return nil
