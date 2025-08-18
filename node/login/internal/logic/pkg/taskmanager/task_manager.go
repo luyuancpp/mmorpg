@@ -14,15 +14,27 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
+// 定义任务完成回调函数类型
+type BatchDoneCallback func(taskKey string, batch *TaskBatch)
+
 type TaskManager struct {
-	mu      sync.RWMutex
-	batches map[string]*TaskBatch
+	mu        sync.RWMutex
+	batches   map[string]*TaskBatch
+	callbacks map[string]BatchDoneCallback // 存储每个taskKey对应的回调
 }
 
 func NewTaskManager() *TaskManager {
 	return &TaskManager{
-		batches: make(map[string]*TaskBatch),
+		batches:   make(map[string]*TaskBatch),
+		callbacks: make(map[string]BatchDoneCallback),
 	}
+}
+
+// 注册任务批次完成回调
+func (tm *TaskManager) RegisterCallback(taskKey string, callback BatchDoneCallback) {
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
+	tm.callbacks[taskKey] = callback
 }
 
 func (tm *TaskManager) AddBatch(taskKey string, tasks []*MessageTask) {
@@ -127,7 +139,24 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 
 	logx.Infof("Finished processing task batch for key: %s", taskKey)
 
+	// 执行回调（在删除批次前执行）
+	tm.mu.RLock()
+	callback, hasCallback := tm.callbacks[taskKey]
+	tm.mu.RUnlock()
+
+	if hasCallback {
+		defer func() {
+			// 回调执行异常保护
+			if r := recover(); r != nil {
+				logx.Errorf("Callback for taskKey %s panicked: %v", taskKey, r)
+			}
+		}()
+		callback(taskKey, batch)
+	}
+
+	// 清理资源
 	tm.mu.Lock()
 	delete(tm.batches, taskKey)
+	delete(tm.callbacks, taskKey) // 移除已执行的回调
 	tm.mu.Unlock()
 }
