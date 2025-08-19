@@ -9,7 +9,7 @@
 #include <thread_local/storage_common_logic.h>
 #include "node.h"
 #include "network/network_utils.h"
-#include "thread_local/thread_local_node_context.h"
+#include "thread_local/node_context_manager.h"
 
 void NodeConnector::ConnectToNode(const NodeInfo& info) {
 	if (gNode->IsMyNode(info)) {
@@ -60,7 +60,7 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo& info) {
 }
 
 void NodeConnector::ConnectToTcpNode(const NodeInfo& info) {
-	auto& registry = ThreadLocalNodeContext::Instance().GetRegistry(info.node_type());
+	auto& registry = NodeContextManager::Instance().GetRegistry(info.node_type());
 	entt::entity entityId{ info.node_id() };
 
 	if (registry.valid(entityId)) {

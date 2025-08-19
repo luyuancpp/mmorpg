@@ -9,7 +9,7 @@
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "proto/logic/event/scene_event.pb.h"
 #include "proto/common/node.pb.h"
-#include "thread_local/thread_local_node_context.h"
+#include "thread_local/node_context_manager.h"
 
 #include <ranges> // Only if using C++20 ranges
 
@@ -60,7 +60,7 @@ void SceneUtil::Clear() {
 	LOG_TRACE << "Clearing scene system data";
 	tls.sceneRegistry.clear();
 	tls.actorRegistry.clear();
-	ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService).clear();
+	NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService).clear();
 }
 
 // Get game node ID associated with a scene entity
@@ -88,7 +88,7 @@ uint32_t SceneUtil::GenSceneGuid() {
 // Get total number of scenes associated with a specific configuration ID
 std::size_t SceneUtil::GetScenesSize(uint32_t sceneConfigId) {
 	std::size_t sceneSize = 0;
-	auto& registry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 	for (auto node : registry.view<NodeSceneComp>()) {
 		auto& nodeSceneComp = registry.get<NodeSceneComp>(node);
 		sceneSize += nodeSceneComp.GetScenesByConfig(sceneConfigId).size();
@@ -113,7 +113,7 @@ bool SceneUtil::IsSceneEmpty() {
 
 // Check if there are non-empty scene lists for a specific configuration
 bool SceneUtil::ConfigSceneListNotEmpty(uint32_t sceneConfigId) {
-	auto& sceneNodeRegistry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService);
+	auto& sceneNodeRegistry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 	for (auto nodeEid : sceneNodeRegistry.view<NodeSceneComp>()) {
 		auto& nodeSceneComp = sceneNodeRegistry.get<NodeSceneComp>(nodeEid);
 		if (!nodeSceneComp.GetScenesByConfig(sceneConfigId).empty()) {
@@ -159,7 +159,7 @@ entt::entity SceneUtil::CreateSceneToSceneNode(const CreateGameNodeSceneParam& p
 	tls.sceneRegistry.emplace<SceneInfoPBComponent>(scene, std::move(sceneInfo));
 	tls.sceneRegistry.emplace<ScenePlayers>(scene);
 
-	auto& registry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 	auto* serverPlayerInfo = registry.try_get<GameNodePlayerInfoPtrPBComponent>(param.node);
 	if (serverPlayerInfo) {
 		tls.sceneRegistry.emplace<GameNodePlayerInfoPtrPBComponent>(scene, *serverPlayerInfo);
@@ -185,7 +185,7 @@ void SceneUtil::DestroyScene(const DestroySceneParam& param) {
 		return;
 	}
 
-	auto* pServerComp = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService).try_get<NodeSceneComp>(param.node);
+	auto* pServerComp = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService).try_get<NodeSceneComp>(param.node);
 	if (!pServerComp) {
 		LOG_ERROR << "ServerComp not found for node";
 		return;
@@ -208,7 +208,7 @@ void SceneUtil::DestroyScene(const DestroySceneParam& param) {
 
 // Handle server node destruction
 void SceneUtil::HandleDestroyGameNode(entt::entity node) {
-	auto& registry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 
 	auto& nodeSceneComp = registry.get<NodeSceneComp>(node);
 	auto sceneLists = nodeSceneComp.GetSceneLists();
@@ -388,7 +388,7 @@ void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
 
 // 这里只处理了同gs,如果是跨gs的场景切换，应该别的地方处理
 void SceneUtil::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
-	auto& destNodeScene = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(param.destNode);
+	auto& destNodeScene = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService).get<NodeSceneComp>(param.destNode);
 	auto sceneEntity = destNodeScene.GetSceneWithMinPlayerCountByConfigId(param.sceneConfId);
 
 	if (sceneEntity == entt::null) {
@@ -408,7 +408,7 @@ void SceneUtil::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
 
 // Replace a crashed server node with a new node
 void SceneUtil::ReplaceCrashGameNode(entt::entity crashNode, entt::entity destNode) {
-	auto& sceneRegistry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService);
+	auto& sceneRegistry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 	auto& crashNodeScene = sceneRegistry.get<NodeSceneComp>(crashNode);
 	auto sceneLists = crashNodeScene.GetSceneLists();
 

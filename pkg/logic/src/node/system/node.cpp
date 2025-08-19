@@ -35,7 +35,7 @@
 #include "etcd_service.h"
 #include "node_connector.h"
 #include "node_allocator.h"
-#include "thread_local/thread_local_node_context.h"
+#include "thread_local/node_context_manager.h"
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
@@ -252,7 +252,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 	if (deleteNode.protocol_type() == PROTOCOL_GRPC)
 	{
 		auto nodeEntity = entt::entity{ deleteNode.node_id() };
-		entt::registry& registry = ThreadLocalNodeContext::Instance().GetRegistry(deleteNode.node_type());
+		entt::registry& registry = NodeContextManager::Instance().GetRegistry(deleteNode.node_type());
 
 		OnNodeRemovePbEvent onNodeRemovePbEvent;
 		onNodeRemovePbEvent.set_entity(entt::to_integral(nodeEntity));

@@ -24,7 +24,7 @@
     <ClInclude Include="src\generator\util\gen_util.h" />
     <ClInclude Include="src\util\fast_queue.h" />
     <ClInclude Include="src\util\node_utils.h" />
-    <ClInclude Include="src\thread_local\thread_local_node_context.h" />
+    <ClInclude Include="src\thread_local\node_context_manager.h" />
     <ClInclude Include="src\thread_local\player_manager.h" />
   </ItemGroup>
   <ItemGroup>
@@ -41,7 +41,7 @@
     <ClCompile Include="src\util\base64.cpp" />
     <ClCompile Include="src\generator\util\gen_util.cpp" />
     <ClCompile Include="src\util\node_utils.cpp" />
-    <ClCompile Include="src\thread_local\thread_local_node_context.cpp" />
+    <ClCompile Include="src\thread_local\node_context_manager.cpp" />
     <ClCompile Include="src\thread_local\player_manager.cpp" />
   </ItemGroup>
 </Project>

@@ -4,7 +4,7 @@
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
 #include <muduo/base/Logging.h>
 #include <thread_local/storage.h>
-#include "thread_local/thread_local_node_context.h"
+#include "thread_local/node_context_manager.h"
 
 void EtcdHelper::PutServiceNodeInfo(const NodeInfo& nodeInfo, const std::string& key) {
     etcdserverpb::PutRequest request;
@@ -23,7 +23,7 @@ void EtcdHelper::PutServiceNodeInfo(const NodeInfo& nodeInfo, const std::string&
     }
     request.set_value(jsonValue);
 
-    SendKVPut(ThreadLocalNodeContext::Instance().GetRegistry(EtcdNodeService), ThreadLocalNodeContext::Instance().GetGlobalEntity(EtcdNodeService), request);
+    SendKVPut(NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService), request);
 }
 
 void EtcdHelper::RangeQuery(const std::string& prefix) {
@@ -34,7 +34,7 @@ void EtcdHelper::RangeQuery(const std::string& prefix) {
 	range_end.back() += 1; // last char + 1
 	request.set_range_end(range_end);
 
-	SendKVRange(ThreadLocalNodeContext::Instance().GetRegistry(EtcdNodeService), ThreadLocalNodeContext::Instance().GetGlobalEntity(EtcdNodeService), request);
+	SendKVRange(NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService), request);
 }
 
 void EtcdHelper::StartWatchingPrefix(const std::string& prefix, int64_t revision) {
@@ -52,7 +52,7 @@ void EtcdHelper::StartWatchingPrefix(const std::string& prefix, int64_t revision
 		createReq.set_start_revision(revision);
 	}
 
-	SendWatchWatch(ThreadLocalNodeContext::Instance().GetRegistry(EtcdNodeService), ThreadLocalNodeContext::Instance().GetGlobalEntity(EtcdNodeService), request);
+	SendWatchWatch(NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService), request);
 }
 
 void EtcdHelper::StopAllWatching() {
@@ -64,7 +64,7 @@ void EtcdHelper::GrantLease(uint32_t ttlSeconds) {
 	etcdserverpb::LeaseGrantRequest leaseReq;
 	leaseReq.set_ttl(ttlSeconds);  // 设置 TTL（生存时间）
 
-	SendLeaseLeaseGrant(ThreadLocalNodeContext::Instance().GetRegistry(EtcdNodeService), ThreadLocalNodeContext::Instance().GetGlobalEntity(EtcdNodeService), leaseReq);
+	SendLeaseLeaseGrant(NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService), leaseReq);
 }
 
 void EtcdHelper::PutIfAbsent(const std::string& key, const std::string& newValue, int64_t currentVersion, int64_t lease) {
@@ -83,7 +83,7 @@ void EtcdHelper::PutIfAbsent(const std::string& key, const std::string& newValue
 	successOp->set_value(newValue);
 	successOp->set_lease(lease);
 
-	SendKVTxn(ThreadLocalNodeContext::Instance().GetRegistry(EtcdNodeService), ThreadLocalNodeContext::Instance().GetGlobalEntity(EtcdNodeService), txn);
+	SendKVTxn(NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService), txn);
 }
 
 void EtcdHelper::PutIfAbsent(const std::string& key, const NodeInfo& nodeInfo, int64_t lease)
@@ -104,7 +104,7 @@ void EtcdHelper::RevokeLeaseAndCleanup(int64_t leaseId)
 	etcdserverpb::LeaseRevokeRequest request;
 	request.set_id(leaseId);
 
-	SendLeaseLeaseRevoke(ThreadLocalNodeContext::Instance().GetRegistry(EtcdNodeService), ThreadLocalNodeContext::Instance().GetGlobalEntity(EtcdNodeService), request);
+	SendLeaseLeaseRevoke(NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService), request);
 }
 
 void EtcdHelper::DeleteRange(const std::string& key, bool isPrefix) {
@@ -117,5 +117,5 @@ void EtcdHelper::DeleteRange(const std::string& key, bool isPrefix) {
 		request.set_range_end(range_end);
 	}
 
-	SendKVDeleteRange(ThreadLocalNodeContext::Instance().GetRegistry(EtcdNodeService), ThreadLocalNodeContext::Instance().GetGlobalEntity(EtcdNodeService), request);
+	SendKVDeleteRange(NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService), request);
 }
