@@ -6,7 +6,7 @@
 #include "node.h"
 #include <thread_local/storage_common_logic.h>
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
-#include "thread_local/thread_local_node_context.h"
+#include "thread_local/node_context_manager.h"
 
 void EtcdManager::Shutdown()
 {
@@ -68,7 +68,7 @@ void EtcdManager::KeepNodeAlive() {
 	renewLeaseTimer.RunEvery(tlsCommonLogic.GetBaseDeployConfig().keep_alive_interval(), []() {
 		etcdserverpb::LeaseKeepAliveRequest req;
 		req.set_id(gNode->GetLeaseId());
-		SendLeaseLeaseKeepAlive(ThreadLocalNodeContext::Instance().GetRegistry(EtcdNodeService), ThreadLocalNodeContext::Instance().GetGlobalEntity(EtcdNodeService), req);
+		SendLeaseLeaseKeepAlive(NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService), req);
 		LOG_DEBUG << "Keeping node alive, lease_id: " << gNode->GetLeaseId();
 		});
 }

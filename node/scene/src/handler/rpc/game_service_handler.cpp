@@ -27,7 +27,7 @@
 #include "util/proto_field_checker.h"
 #include "network/network_utils.h"
 #include "network/player_message_utils.h"
-#include "thread_local/thread_local_node_context.h"
+#include "thread_local/node_context_manager.h"
 #include "thread_local/player_manager.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
@@ -362,7 +362,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 ///<<< BEGIN WRITING YOUR CODE
 	PlayerNodeSystem::RemovePlayerSession(request->player_id());
 
-	auto& registry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::GateNodeService);
+	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::GateNodeService);
 	if (const entt::entity gateNodeId{ GetGateNodeId(request->session_id()) };
 		!registry.valid(gateNodeId))
 	{

@@ -12,7 +12,7 @@
 #include <util/node_utils.h>
 #include "proto/logic/event/server_event.pb.h"
 #include <generator/util/gen_util.h>
-#include "thread_local/thread_local_node_context.h"
+#include "thread_local/node_context_manager.h"
 
 static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 	0,
@@ -23,7 +23,7 @@ static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 };
 
 void NodeRegistrationManager::TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const {
-	entt::registry& registry = ThreadLocalNodeContext::Instance().GetRegistry(nodeType);
+	entt::registry& registry = NodeContextManager::Instance().GetRegistry(nodeType);
 	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
 		if (!IsSameAddress(client->peer_addr(), conn->peerAddress())) continue;
 		LOG_INFO << "Peer address match in " << NodeUtils::GetRegistryName(registry)
@@ -49,7 +49,7 @@ void NodeRegistrationManager::HandleNodeRegistration(
 	LOG_TRACE << "Node registration request: " << request.DebugString();
 
 	auto tryRegister = [&, this](const TcpConnectionPtr& conn, uint32_t nodeType) -> bool {
-		entt::registry& registry = ThreadLocalNodeContext::Instance().GetRegistry(nodeType);
+		entt::registry& registry = NodeContextManager::Instance().GetRegistry(nodeType);
 		const auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
 			if (!NodeUtils::IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
@@ -86,7 +86,7 @@ void NodeRegistrationManager::HandleNodeRegistration(
 void NodeRegistrationManager::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const {
 	LOG_INFO << "Node registration response: " << response.DebugString();
 	uint32_t nodeType = response.peer_node().node_type();
-	entt::registry& registry = ThreadLocalNodeContext::Instance().GetRegistry(nodeType);
+	entt::registry& registry = NodeContextManager::Instance().GetRegistry(nodeType);
 	if (response.error_message().id() != kCommon_errorOK) {
 		LOG_TRACE << "Registration failed: " << response.DebugString();
 		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {

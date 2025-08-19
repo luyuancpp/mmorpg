@@ -9,7 +9,7 @@
 #include "grpc/generator/grpc_init.h"
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
 #include "thread_local/storage_common_logic.h"
-#include "thread_local/thread_local_node_context.h"
+#include "thread_local/node_context_manager.h"
 
 void EtcdService::Init() {
 	InitHandlers();
@@ -17,10 +17,10 @@ void EtcdService::Init() {
 	const std::string& etcdAddr = *tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin();
 	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
 
-	InitGrpcNode(channel, ThreadLocalNodeContext::Instance().GetRegistry(EtcdNodeService), ThreadLocalNodeContext::Instance().GetGlobalEntity(EtcdNodeService));
+	InitGrpcNode(channel, NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService));
 
 	grpcHandlerTimer.RunEvery(0.005, [] {
-		for (auto& registry : ThreadLocalNodeContext::Instance().GetAllRegistries()) {
+		for (auto& registry : NodeContextManager::Instance().GetAllRegistries()) {
 			HandleCompletedQueueMessage(registry);
 		}
 		});

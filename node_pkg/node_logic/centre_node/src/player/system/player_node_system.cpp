@@ -26,7 +26,7 @@
 #include "network/rpc_session.h"
 #include "network/player_message_utils.h"
 #include "type_alias/player_session_type_alias.h"
-#include "thread_local/thread_local_node_context.h"
+#include "thread_local/node_context_manager.h"
 #include "thread_local/player_manager.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData, const std::any& extra)
@@ -123,7 +123,7 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	LOG_INFO << "Adding game node player to gate node, session_id: " << sessionPB->gate_session_id();
 
 	entt::entity gateNodeId{ GetGateNodeId(sessionPB->gate_session_id()) };
-	auto& registry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::GateNodeService);
+	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::GateNodeService);
 	if (!registry.valid(gateNodeId))
 	{
 		LOG_WARN << "Gate node invalid for session_id: " << sessionPB->gate_session_id();

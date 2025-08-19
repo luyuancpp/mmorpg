@@ -35,7 +35,7 @@
 #include "network/network_utils.h"
 #include "network/player_message_utils.h"
 #include "type_alias/player_redis.h"
-#include "thread_local/thread_local_node_context.h"
+#include "thread_local/node_context_manager.h"
 #include "thread_local/player_manager.h"
 
 using namespace muduo;
@@ -144,7 +144,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	}
 
 	const entt::entity gameNodeId{ it->second };
-	auto& registry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 	if (!registry.valid(gameNodeId))
 	{
 		LOG_ERROR << "Invalid game node ID found for player: " << tls.actorRegistry.get<Guid>(playerEntity);
@@ -572,7 +572,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	case GateNodeService:
 	{
 		entt::entity gate_node_id{ tlsCommonLogic.GetNextRouteNodeId() };
-		auto& registry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService);
+		auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 		if (!registry.valid(gate_node_id))
 		{
 			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.GetNextRouteNodeId();
@@ -590,7 +590,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	case SceneNodeService:
 	{
 		entt::entity game_node_id{ tlsCommonLogic.GetNextRouteNodeId() };
-		auto& registry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService);
+		auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 		if (!registry.valid(game_node_id))
 		{
 			LOG_ERROR << "Game node not found: " << tlsCommonLogic.GetNextRouteNodeId() << ", " << request->DebugString();
@@ -632,7 +632,7 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto sceneNodeId = entt::entity{ request->node_id() };
-	auto& registry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 
     // Check if the scene node ID is valid
     if (!registry.valid(sceneNodeId))

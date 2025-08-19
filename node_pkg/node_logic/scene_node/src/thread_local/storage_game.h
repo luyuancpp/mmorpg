@@ -14,7 +14,6 @@ using NodeIdGenerator32BitId = NodeIdGenerator<uint64_t, 32>;
 class ThreadLocalStorageGame
 {
 public:
-	RedisSystem redis;
 	PlayerDataRedis playerRedis;
 	SceneNavMapComp sceneNav;
 	FrameTime frameTime;
