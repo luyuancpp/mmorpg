@@ -155,12 +155,10 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 	const totalTasksToLoad = 2
 	// 状态跟踪：已完成的任务数、是否全部成功、并发安全控制
 	var (
-		completedTasks  int        // 已完成的任务数量（替代 automatic）
-		mu              sync.Mutex // 保护计数器的互斥锁
-		allTasksSuccess bool       // 所有任务是否都成功
-		notifyOnce      sync.Once  // 确保通知只执行一次
+		completedTasks int        // 已完成的任务数量（替代 automatic）
+		mu             sync.Mutex // 保护计数器的互斥锁
+		notifyOnce     sync.Once  // 确保通知只执行一次
 	)
-	allTasksSuccess = true // 初始假设全部成功
 
 	// 任务完成回调：累加计数并检查是否所有任务都完成
 	callback := func(taskKey string, taskSuccess bool, err error) {
@@ -168,33 +166,27 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		defer mu.Unlock()
 
 		// 累加已完成任务数（无论成功失败都计数）
-		completedTasks++
 		// 只要有一个任务失败，整体标记为失败
 		if !taskSuccess {
-			allTasksSuccess = false
+			completedTasks++
 		}
 
 		// 所有任务都完成后，触发通知（只执行一次）
 		if completedTasks >= totalTasksToLoad {
 			notifyOnce.Do(func() {
-				if allTasksSuccess {
-					// 所有任务成功，通知中心
-					req := &game.CentrePlayerGameNodeEntryRequest{
-						ClientMsgBody: &game.CentreEnterGameRequest{
-							PlayerId: playerId,
-						},
-						SessionInfo: sessionDetails,
-					}
-
-					node := l.svcCtx.GetCentreClient()
-					if node != nil {
-						node.Send(req, game.CentreLoginNodeEnterGameMessageId)
-					}
-					logx.Infof("All %d tasks completed successfully, notified centre", totalTasksToLoad)
-				} else {
-					// 有任务失败，记录错误
-					logx.Errorf("Some tasks failed (total completed: %d), skip notify centre", completedTasks)
+				// 所有任务成功，通知中心
+				req := &game.CentrePlayerGameNodeEntryRequest{
+					ClientMsgBody: &game.CentreEnterGameRequest{
+						PlayerId: playerId,
+					},
+					SessionInfo: sessionDetails,
 				}
+
+				node := l.svcCtx.GetCentreClient()
+				if node != nil {
+					node.Send(req, game.CentreLoginNodeEnterGameMessageId)
+				}
+				logx.Infof("All %d tasks completed successfully, notified centre", totalTasksToLoad)
 			})
 		}
 	}
