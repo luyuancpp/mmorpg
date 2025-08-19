@@ -15,10 +15,8 @@ void SkillEventHandler::UnRegister()
 {
     tls.dispatcher.sink<SkillExecutedEvent>().disconnect<&SkillEventHandler::SkillExecutedEventHandler>();
 }
-
 void SkillEventHandler::SkillExecutedEventHandler(const SkillExecutedEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
