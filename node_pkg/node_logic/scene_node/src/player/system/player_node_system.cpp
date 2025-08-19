@@ -25,7 +25,7 @@
 #include "cross_server_error_tip.pb.h"
 #include "player_tip_system.h"
 #include <kafka/kafka_producer.h>
-#include "thread_local/player_storage.h"
+#include "thread_local/player_manager.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)
 {

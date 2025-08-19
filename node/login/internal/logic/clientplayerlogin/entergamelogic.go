@@ -3,6 +3,7 @@ package clientplayerloginlogic
 import (
 	"context"
 	"errors"
+	"fmt"
 	"google.golang.org/protobuf/proto"
 	"login/data"
 	"login/internal/config"
@@ -16,6 +17,7 @@ import (
 	"login/internal/svc"
 	"login/pb/game"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -142,50 +144,79 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 }
 
 func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
+	// 获取会话信息
+	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
+	if !ok {
+		logx.Error("Session not found in context during notify centre")
+		return errors.New("session not found")
+	}
+
+	// 配置：需要加载的任务总数
+	const totalTasksToLoad = 2
+	// 状态跟踪：已完成的任务数、是否全部成功、并发安全控制
+	var (
+		completedTasks  int        // 已完成的任务数量（替代 automatic）
+		mu              sync.Mutex // 保护计数器的互斥锁
+		allTasksSuccess bool       // 所有任务是否都成功
+		notifyOnce      sync.Once  // 确保通知只执行一次
+	)
+	allTasksSuccess = true // 初始假设全部成功
+
+	// 任务完成回调：累加计数并检查是否所有任务都完成
+	callback := func(taskKey string, taskSuccess bool, err error) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		// 累加已完成任务数（无论成功失败都计数）
+		completedTasks++
+		// 只要有一个任务失败，整体标记为失败
+		if !taskSuccess {
+			allTasksSuccess = false
+		}
+
+		// 所有任务都完成后，触发通知（只执行一次）
+		if completedTasks >= totalTasksToLoad {
+			notifyOnce.Do(func() {
+				if allTasksSuccess {
+					// 所有任务成功，通知中心
+					req := &game.CentrePlayerGameNodeEntryRequest{
+						ClientMsgBody: &game.CentreEnterGameRequest{
+							PlayerId: playerId,
+						},
+						SessionInfo: sessionDetails,
+					}
+
+					node := l.svcCtx.GetCentreClient()
+					if node != nil {
+						node.Send(req, game.CentreLoginNodeEnterGameMessageId)
+					}
+					logx.Infof("All %d tasks completed successfully, notified centre", totalTasksToLoad)
+				} else {
+					// 有任务失败，记录错误
+					logx.Errorf("Some tasks failed (total completed: %d), skip notify centre", completedTasks)
+				}
+			})
+		}
+	}
+
+	// 第一个任务：加载中心数据库数据
 	msgCentre := &game.PlayerCentreDatabase{PlayerId: playerId}
-	err := dataloader.BatchLoadAndCache(
+	if err := dataloader.BatchLoadAndCache(
 		l.ctx,
 		l.svcCtx.RedisClient,
 		l.svcCtx.AsynqClient,
 		playerId,
-		[]proto.Message{
-			msgCentre,
-		},
+		[]proto.Message{msgCentre},
 		l.svcCtx.TaskExecutor,
-		nil)
-
-	if err != nil {
-		logx.Errorf("BatchLoadAndCache error: %v", err)
+		callback,
+	); err != nil {
+		logx.Errorf("Failed to start BatchLoadAndCache: %v", err)
 		return err
 	}
 
-	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
-	if !ok {
-		logx.Error("Session not found in context during notify centre")
-		return errors.New("Session not found in context during notify centre")
-	}
-
-	// 定义回调
-	callback := func(taskKey string, allSuccess bool, err error) {
-		if allSuccess {
-			req := &game.CentrePlayerGameNodeEntryRequest{
-				ClientMsgBody: &game.CentreEnterGameRequest{
-					PlayerId: playerId,
-				},
-				SessionInfo: sessionDetails,
-			}
-
-			node := l.svcCtx.GetCentreClient()
-			if node != nil {
-				node.Send(req, game.CentreLoginNodeEnterGameMessageId)
-			}
-		} else {
-			logx.Errorf("批次 %s 处理失败: %v\n", taskKey, err)
-		}
-	}
-
+	// 第二个任务：加载聚合数据
 	playerAll := &game.PlayerAllData{}
-	err = dataloader.LoadAggregateData(
+	if err := dataloader.LoadAggregateData(
 		l.ctx,
 		l.svcCtx.RedisClient,
 		l.svcCtx.AsynqClient,
@@ -198,9 +229,14 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 			}
 		},
 		func(id uint64) string {
-			return string(playerAll.ProtoReflect().Descriptor().FullName()) + ":" + strconv.FormatUint(id, 10)
+			return fmt.Sprintf("%s:%d", playerAll.ProtoReflect().Descriptor().FullName(), id)
 		},
-		l.svcCtx.TaskExecutor, callback)
+		l.svcCtx.TaskExecutor,
+		callback,
+	); err != nil {
+		logx.Errorf("Failed to start LoadAggregateData: %v", err)
+		return err
+	}
 
-	return err
+	return nil
 }

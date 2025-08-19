@@ -8,7 +8,7 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "service_info/centre_service_service_info.h"
 #include "thread_local/thread_local_node_context.h"
-#include "thread_local/player_storage.h"
+#include "thread_local/player_manager.h"
 
 template <typename SessionType>
 void SendMessageToNodeInternal(SessionType* session, uint32_t messageId, const google::protobuf::Message& message) {

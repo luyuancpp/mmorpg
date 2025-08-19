@@ -28,7 +28,7 @@
 #include "network/network_utils.h"
 #include "network/player_message_utils.h"
 #include "thread_local/thread_local_node_context.h"
-#include "thread_local/player_storage.h"
+#include "thread_local/player_manager.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
