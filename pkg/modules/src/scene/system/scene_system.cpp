@@ -13,6 +13,8 @@
 
 #include <ranges> // Only if using C++20 ranges
 
+thread_local TransientNode12BitCompositeIdGenerator  nodeSequence; // Sequence for generating node IDs
+
 // Constants
 static constexpr std::size_t kMaxScenePlayer = 1000;
 

@@ -23,7 +23,7 @@
     <ClInclude Include="src\combat\skill\system\skill_system.h" />
     <ClInclude Include="src\core\config\config_system.h" />
     <ClInclude Include="src\core\constants\fps_constants.h" />
-    <ClInclude Include="src\core\system\node_sequence_generator_system.h" />
+    <ClInclude Include="src\core\system\id_generator_manager.h" />
     <ClInclude Include="src\core\system\redis_system.h" />
     <ClInclude Include="src\entity\system\entity_system.h" />
     <ClInclude Include="src\mount\system\mount_system.h" />

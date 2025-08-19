@@ -7,7 +7,7 @@
 #include "util/node_id_generator.h"
 
 constexpr char kSessionBinMetaKey[] = "x-session-detail-bin";
-using SessionIdGenerator = NodeIdGenerator<uint64_t, 32>;
+using SessionIdGenerator = TransientNodeCompositeIdGenerator<uint64_t, 32>;
 
 uint16_t get_available_port(uint16_t start_port = 10001, uint16_t max_port = 65535);
 
