@@ -7,6 +7,7 @@
 #include "scene/constants/dt_crowd_constants.h"
 
 #include "proto/logic/event/scene_event.pb.h"
+#include <proto/logic/component/actor_comp.pb.h>
 
 void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 {

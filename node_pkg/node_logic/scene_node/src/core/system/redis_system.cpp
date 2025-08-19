@@ -11,7 +11,7 @@ using namespace muduo::net;
 
 void RedisSystem::Initialize()
 {
-    tlsGame.playerRedis = std::make_unique<PlayerDataRedis::element_type>(*tlsCommonLogic.GetZoneRedis());
-    tlsGame.playerRedis->SetLoadCallbackWithExtra(PlayerNodeSystem::HandlePlayerAsyncLoaded);
-    tlsGame.playerRedis->SetSaveCallback(PlayerNodeSystem::HandlePlayerAsyncSaved);
+    playerRedis = std::make_unique<PlayerDataRedis::element_type>(*tlsCommonLogic.GetZoneRedis());
+    playerRedis->SetLoadCallbackWithExtra(PlayerNodeSystem::HandlePlayerAsyncLoaded);
+    playerRedis->SetSaveCallback(PlayerNodeSystem::HandlePlayerAsyncSaved);
 }

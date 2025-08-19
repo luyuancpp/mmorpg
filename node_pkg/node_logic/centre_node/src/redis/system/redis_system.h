@@ -21,7 +21,6 @@ public:
         return instance;
     }
 
-
     void Initialize();
 private:
 };

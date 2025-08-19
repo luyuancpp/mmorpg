@@ -29,6 +29,7 @@
 #include "network/player_message_utils.h"
 #include "thread_local/node_context_manager.h"
 #include "thread_local/player_manager.h"
+#include "core/system/redis_system.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
@@ -62,7 +63,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	}
 
 	// 3 玩家不在线，加入异步加载列表并尝试异步加载
-	tlsGame.playerRedis->AsyncLoad(request->player_id(), enterInfo);
+	RedisSystem::Instance().GetPlayerDataRedis()->AsyncLoad(request->player_id(), enterInfo);
 ///<<< END WRITING YOUR CODE
 }
 
