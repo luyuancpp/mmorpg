@@ -4,7 +4,7 @@
 
 //服务器重启以后失效的
 template <class T, size_t kNodeBit>
-class NodeIdGenerator
+class TransientNodeCompositeIdGenerator
 {
 public:
 	static size_t node_bit() { return kNodeBit; }
@@ -33,4 +33,4 @@ private:
 	T seq_{ 0 };
 };
 
-using NodeIdGenerator12BitId = NodeIdGenerator<uint32_t, 12>;
+using TransientNode12BitCompositeIdGenerator  = TransientNodeCompositeIdGenerator<uint32_t, 12>;

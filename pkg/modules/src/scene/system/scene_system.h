@@ -200,6 +200,4 @@ public:
      */
     static bool IsSceneEmpty();
 
-private:
-    inline static NodeIdGenerator12BitId nodeSequence; // Sequence for generating node IDs
 };

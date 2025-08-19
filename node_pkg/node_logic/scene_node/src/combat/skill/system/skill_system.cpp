@@ -27,11 +27,12 @@
 #include "time/comp/timer_task_comp.h"
 #include "time/system/cooldown_time_system.h"
 #include "time/system/time_system.h"
+#include <core/system/id_generator_manager.h>
 
 uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const SkillContextCompMap& targetBuffList) {
 	uint64_t newSkillId;
 	do {
-		newSkillId = tlsGame.skillIdGenerator.Generate();
+		newSkillId = ThreadLocalIdGeneratorManager::Instance().skillIdGenerator.Generate();
 	} while (casterBuffList.contains(newSkillId) || targetBuffList.contains(newSkillId));
 	return newSkillId;
 }

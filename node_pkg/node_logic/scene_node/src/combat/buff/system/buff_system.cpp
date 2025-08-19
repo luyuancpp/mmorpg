@@ -17,13 +17,14 @@
 #include "proto/logic/event/skill_event.pb.h"
 #include "thread_local/storage_game.h"
 #include "util/utility.h"
+#include "core/system/id_generator_manager.h"
 
 // Buff ID生成逻辑
 uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
 {
     uint64_t newBuffId = UINT64_MAX;
     do {
-        newBuffId = tlsGame.buffIdGenerator.Generate();
+        newBuffId = ThreadLocalIdGeneratorManager::Instance().buffIdGenerator.Generate();
     } while (buffList.contains(newBuffId) || newBuffId == UINT64_MAX);
     return newBuffId;
 }

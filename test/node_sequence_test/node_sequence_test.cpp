@@ -14,9 +14,9 @@
 using GuidVector = std::vector<Guid>;
 using GuidSet = std::unordered_set<Guid>;
 
-using NodeIdGenerator32BitId = NodeIdGenerator<uint64_t, 32>;
+using TransientNode32BitCompositeIdGenerator  = TransientNodeCompositeIdGenerator<uint64_t, 32>;
 
-NodeIdGenerator32BitId idGenAtomic;
+TransientNode32BitCompositeIdGenerator  idGenAtomic;
 
 static const std::size_t kTotal = 0xffffff;
 
