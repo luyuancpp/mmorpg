@@ -2,7 +2,7 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"google.golang.org/protobuf/proto"
 	"login/data"
 	"login/internal/config"
@@ -159,17 +159,32 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		return err
 	}
 
-	playerAll := &game.PlayerAllData{}
+	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
+	if !ok {
+		logx.Error("Session not found in context during notify centre")
+		return errors.New("Session not found in context during notify centre")
+	}
 
 	// 定义回调
 	callback := func(taskKey string, allSuccess bool, err error) {
 		if allSuccess {
-			fmt.Printf("批次 %s 处理成功\n", taskKey)
+			req := &game.CentrePlayerGameNodeEntryRequest{
+				ClientMsgBody: &game.CentreEnterGameRequest{
+					PlayerId: playerId,
+				},
+				SessionInfo: sessionDetails,
+			}
+
+			node := l.svcCtx.GetCentreClient()
+			if node != nil {
+				node.Send(req, game.CentreLoginNodeEnterGameMessageId)
+			}
 		} else {
-			fmt.Printf("批次 %s 处理失败: %v\n", taskKey, err)
+			logx.Errorf("批次 %s 处理失败: %v\n", taskKey, err)
 		}
 	}
 
+	playerAll := &game.PlayerAllData{}
 	err = dataloader.LoadAggregateData(
 		l.ctx,
 		l.svcCtx.RedisClient,
@@ -188,24 +203,4 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		l.svcCtx.TaskExecutor, callback)
 
 	return err
-}
-
-func (l *EnterGameLogic) notifyCentreService(playerId uint64) {
-	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
-	if !ok {
-		logx.Error("Session not found in context during notify centre")
-		return
-	}
-
-	req := &game.CentrePlayerGameNodeEntryRequest{
-		ClientMsgBody: &game.CentreEnterGameRequest{
-			PlayerId: playerId,
-		},
-		SessionInfo: sessionDetails,
-	}
-
-	node := l.svcCtx.GetCentreClient()
-	if node != nil {
-		node.Send(req, game.CentreLoginNodeEnterGameMessageId)
-	}
 }
