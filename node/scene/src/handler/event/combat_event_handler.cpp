@@ -15,10 +15,8 @@ void CombatEventHandler::UnRegister()
 {
     tls.dispatcher.sink<BeKillEvent>().disconnect<&CombatEventHandler::BeKillEventHandler>();
 }
-
 void CombatEventHandler::BeKillEventHandler(const BeKillEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }

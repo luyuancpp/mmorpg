@@ -16,7 +16,6 @@ void NpcEventHandler::UnRegister()
 {
     tls.dispatcher.sink<InitializeNpcComponentsEvent>().disconnect<&NpcEventHandler::InitializeNpcComponentsEventHandler>();
 }
-
 void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcComponentsEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -31,5 +30,4 @@ void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcCom
     NpcSystem::InitializeNpcComponents(npc);
     
 ///<<< END WRITING YOUR CODE
-
 }

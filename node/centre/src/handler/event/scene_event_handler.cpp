@@ -41,38 +41,29 @@ void SceneEventHandler::UnRegister()
     tls.dispatcher.sink<AfterLeaveScene>().disconnect<&SceneEventHandler::AfterLeaveSceneHandler>();
     tls.dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventHandler::S2CEnterSceneHandler>();
 }
-
 void SceneEventHandler::OnSceneCreateHandler(const OnSceneCreate& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
-
 void SceneEventHandler::OnDestroySceneHandler(const OnDestroyScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 
 ///<<< END WRITING YOUR CODE
-
 }
-
 void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 
 ///<<< END WRITING YOUR CODE
-
 }
-
 void SceneEventHandler::AfterEnterSceneHandler(const AfterEnterScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
   
 ///<<< END WRITING YOUR CODE
-
 }
-
 void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -96,20 +87,15 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 		<< tls.sceneRegistry.get<SceneInfoPBComponent>(tls.actorRegistry.get<SceneEntityComp>(player).sceneEntity).guid();
 
 	///<<< END WRITING YOUR CODE
-
 }
-
 void SceneEventHandler::AfterLeaveSceneHandler(const AfterLeaveScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
-
 void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
     PlayerSceneSystem::SendToGameNodeEnterScene(entt::to_entity(event.entity()));
 ///<<< END WRITING YOUR CODE
-
 }

@@ -20,7 +20,6 @@ void PlayerEventHandler::UnRegister()
     tls.dispatcher.sink<PlayerUpgradeEvent>().disconnect<&PlayerEventHandler::PlayerUpgradeEventHandler>();
     tls.dispatcher.sink<InitializePlayerComponentsEvent>().disconnect<&PlayerEventHandler::InitializePlayerComponentsEventHandler>();
 }
-
 void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -34,17 +33,13 @@ void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent& e
 
 	PlayerSkillSystem::RegisterPlayer(player);
 ///<<< END WRITING YOUR CODE
-
 }
-
 void PlayerEventHandler::PlayerUpgradeEventHandler(const PlayerUpgradeEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	
 ///<<< END WRITING YOUR CODE
-
 }
-
 void PlayerEventHandler::InitializePlayerComponentsEventHandler(const InitializePlayerComponentsEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -57,5 +52,4 @@ void PlayerEventHandler::InitializePlayerComponentsEventHandler(const Initialize
 	}
 
 ///<<< END WRITING YOUR CODE
-
 }

@@ -26,7 +26,6 @@ void ActorEventHandler::UnRegister()
     tls.dispatcher.sink<InitializeActorComponentsEvent>().disconnect<&ActorEventHandler::InitializeActorComponentsEventHandler>();
     tls.dispatcher.sink<InterruptCurrentStatePbEvent>().disconnect<&ActorEventHandler::InterruptCurrentStatePbEventHandler>();
 }
-
 void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeActorComponentsEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -40,9 +39,7 @@ void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeAc
 	CombatStateSystem::InitializeCombatStateComponent(actorEntity);
 	SkillSystem::InitializeActorComponents(actorEntity);
 ///<<< END WRITING YOUR CODE
-
 }
-
 void ActorEventHandler::InterruptCurrentStatePbEventHandler(const InterruptCurrentStatePbEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -52,5 +49,4 @@ void ActorEventHandler::InterruptCurrentStatePbEventHandler(const InterruptCurre
 		MountSystem::InterruptAndUnmountActor(actorEntity);
 	}
 ///<<< END WRITING YOUR CODE
-
 }
