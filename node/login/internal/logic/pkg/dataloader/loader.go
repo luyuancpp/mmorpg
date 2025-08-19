@@ -33,7 +33,7 @@ func BatchLoadAndCache(
 ) error {
 	taskKey := taskmanager.GenerateBatchTaskKey(messages, playerId)
 
-	err := taskmanager.InitAndAddMessageTasks(ctx, executor, taskKey, redisClient, asyncClient, playerId, messages)
+	err := taskmanager.InitAndAddMessageTasks(ctx, executor, taskKey, redisClient, asyncClient, playerId, messages, taskmanager.InitTaskOptions{})
 
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func LoadAggregateData(
 
 	taskKey := taskmanager.GenerateTaskKey(result, playerId)
 
-	err = taskmanager.InitAndAddMessageTasks(ctx, executor, taskKey, redisClient, asyncClient, playerId, subMsgs)
+	err = taskmanager.InitAndAddMessageTasks(ctx, executor, taskKey, redisClient, asyncClient, playerId, subMsgs, taskmanager.InitTaskOptions{Aggregator: taskmanager.NewGenericAggregator(result, key)})
 	if err != nil {
 		return err
 	}
