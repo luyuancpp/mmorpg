@@ -196,7 +196,10 @@ func WaitForTaskResult(ctx context.Context, redisClient redis.Cmdable, key strin
 }
 
 // ProcessBatch 处理任务批次（触发回调）
-func (tm *TaskManager) ProcessBatch(ctx context.Context, taskKey string, redisClient redis.Cmdable) {
+func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	logx.Infof("Processing task batch: %s", taskKey)
 
 	batch, exists := tm.GetBatch(taskKey)
