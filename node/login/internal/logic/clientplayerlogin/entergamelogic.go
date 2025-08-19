@@ -2,6 +2,7 @@ package clientplayerloginlogic
 
 import (
 	"context"
+	"fmt"
 	"google.golang.org/protobuf/proto"
 	"login/data"
 	"login/internal/config"
@@ -128,10 +129,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 		return resp, err
 	}
 
-	// 7. 通知中心服
-	l.notifyCentreService(in)
-
-	// 8. 清理 Session 和 FSM
+	// 7. 清理 Session 和 FSM
 	_ = sessioncleaner.CleanupSession(
 		l.ctx,
 		l.svcCtx.RedisClient,
@@ -153,7 +151,8 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		[]proto.Message{
 			msgCentre,
 		},
-		l.svcCtx.TaskExecutor)
+		l.svcCtx.TaskExecutor,
+		nil)
 
 	if err != nil {
 		logx.Errorf("BatchLoadAndCache error: %v", err)
@@ -161,6 +160,15 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 	}
 
 	playerAll := &game.PlayerAllData{}
+
+	// 定义回调
+	callback := func(taskKey string, allSuccess bool, err error) {
+		if allSuccess {
+			fmt.Printf("批次 %s 处理成功\n", taskKey)
+		} else {
+			fmt.Printf("批次 %s 处理失败: %v\n", taskKey, err)
+		}
+	}
 
 	err = dataloader.LoadAggregateData(
 		l.ctx,
@@ -177,12 +185,12 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		func(id uint64) string {
 			return string(playerAll.ProtoReflect().Descriptor().FullName()) + ":" + strconv.FormatUint(id, 10)
 		},
-		l.svcCtx.TaskExecutor)
+		l.svcCtx.TaskExecutor, callback)
 
 	return err
 }
 
-func (l *EnterGameLogic) notifyCentreService(in *game.EnterGameRequest) {
+func (l *EnterGameLogic) notifyCentreService(playerId uint64) {
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok {
 		logx.Error("Session not found in context during notify centre")
@@ -191,7 +199,7 @@ func (l *EnterGameLogic) notifyCentreService(in *game.EnterGameRequest) {
 
 	req := &game.CentrePlayerGameNodeEntryRequest{
 		ClientMsgBody: &game.CentreEnterGameRequest{
-			PlayerId: in.PlayerId,
+			PlayerId: playerId,
 		},
 		SessionInfo: sessionDetails,
 	}

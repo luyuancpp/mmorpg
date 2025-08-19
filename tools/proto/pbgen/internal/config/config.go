@@ -141,7 +141,6 @@ const (
 	RegisterRepliedHandlerCppExtension = "register" + CppRepliedHandlerEx
 	RegisterHandlerCppExtension        = "register" + HandlerCppExtension
 	DbProtoFileName                    = "db_base.proto"
-	GameMysqlDBProtoFileName           = "mysql_database_table.proto"
 	PlayerDataLoaderName               = "player_data_loader_system.h"
 )
 
