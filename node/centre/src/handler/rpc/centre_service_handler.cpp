@@ -36,7 +36,7 @@
 #include "network/player_message_utils.h"
 #include "type_alias/player_redis.h"
 #include "thread_local/thread_local_node_context.h"
-#include "thread_local/player_storage.h"
+#include "thread_local/player_manager.h"
 
 using namespace muduo;
 using namespace muduo::net;

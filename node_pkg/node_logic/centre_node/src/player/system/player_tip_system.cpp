@@ -3,7 +3,7 @@
 #include "network/player_message_utils.h"
 #include "service_info/centre_player_service_info.h"
 #include "thread_local/storage_common_logic.h"
-#include "thread_local/player_storage.h"
+#include "thread_local/player_manager.h"
 
 
 void PlayerTipSystem::SendToPlayer(entt::entity playerEntity, uint32_t tipId, const StringVector& parameters)

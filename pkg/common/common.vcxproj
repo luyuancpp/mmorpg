@@ -25,7 +25,7 @@
     <ClInclude Include="src\global_data\async_log_file.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\test\test.h" />
-    <ClInclude Include="src\thread_local\player_storage.h" />
+    <ClInclude Include="src\thread_local\player_manager.h" />
     <ClInclude Include="src\thread_local\storage.h" />
     <ClInclude Include="src\thread_local\storage_common_logic.h" />
     <ClInclude Include="src\thread_local\storage_lua.h" />
@@ -50,7 +50,7 @@
     <ClCompile Include="src\generator\util\gen_util.cpp" />
     <ClCompile Include="src\global_data\async_log_file.cpp" />
     <ClCompile Include="src\test\test.cpp" />
-    <ClCompile Include="src\thread_local\player_storage.cpp" />
+    <ClCompile Include="src\thread_local\player_manager.cpp" />
     <ClCompile Include="src\thread_local\storage.cpp" />
     <ClCompile Include="src\thread_local\storage_common_logic.cpp" />
     <ClCompile Include="src\thread_local\storage_lua.cpp" />

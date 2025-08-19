@@ -19,7 +19,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_session_type_alias.h"
 #include "proto/logic/component/player_network_comp.pb.h"
-#include "thread_local/player_storage.h"
+#include "thread_local/player_manager.h"
 ///<<< END WRITING YOUR CODE
 
 

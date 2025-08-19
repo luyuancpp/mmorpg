@@ -27,7 +27,7 @@
 #include "network/player_message_utils.h"
 #include "type_alias/player_session_type_alias.h"
 #include "thread_local/thread_local_node_context.h"
-#include "thread_local/player_storage.h"
+#include "thread_local/player_manager.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData, const std::any& extra)
 {
