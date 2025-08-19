@@ -3,12 +3,15 @@
 #include <memory>
 
 #include "redis_client/redis_client.h"
+#include "proto/db/mysql_database_table.pb.h"
+
+using PlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, PlayerAllData>>;
 
 class RedisSystem
 {
 public:
-    using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
     RedisSystem() = default;
+
     // 禁止拷贝和移动，确保单例唯一性
     RedisSystem(const RedisSystem&) = delete;
     RedisSystem& operator=(const RedisSystem&) = delete;
@@ -22,10 +25,14 @@ public:
         return instance;
     }
 
+	PlayerDataRedis& GetPlayerDataRedis() {
+		return playerRedis;
+	}
 
     void Initialize();
+
 private:
-    HiredisPtr hiredis;
+	PlayerDataRedis playerRedis;
 };
 
 

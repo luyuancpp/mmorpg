@@ -26,6 +26,7 @@
 #include "player_tip_system.h"
 #include <kafka/kafka_producer.h>
 #include "thread_local/player_manager.h"
+#include "core/system/redis_system.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)
 {
@@ -314,7 +315,7 @@ void PlayerNodeSystem::SavePlayerToRedis(entt::entity player)
 
 	PlayerAllDataMessageFieldsUnMarshal(player, *message);
 
-	tlsGame.playerRedis->Save(message, playerId);
+	RedisSystem::Instance().GetPlayerDataRedis()->Save(message, playerId);
 
 	LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis";
 }
