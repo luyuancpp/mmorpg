@@ -268,8 +268,8 @@ public:
 			uint64_t now = NowEpoch();
 
 			uint64_t current = time_step_.load(std::memory_order_relaxed);
-			uint32_t last_time = static_cast<uint32_t>(current >> 32);
-			uint32_t last_step = static_cast<uint32_t>(current & 0xFFFFFFFF);
+			uint64_t last_time = static_cast<uint32_t>(current >> 32);
+			uint64_t last_step = static_cast<uint32_t>(current & 0xFFFFFFFF);
 
 			if (now < last_time) {
 				LOG_ERROR << "Clock rollback: now=" << now << " < last=" << last_time;
@@ -278,8 +278,8 @@ public:
 			}
 
 			uint64_t next;
-			uint32_t step_start = 0;
-			uint32_t step_count = 0;
+			uint64_t step_start = 0;
+			uint64_t step_count = 0;
 
 			if (now == last_time) {
 				if (last_step >= kStepMask) {
@@ -308,7 +308,7 @@ public:
 	}
 
 private:
-	Guid ComposeID(uint64_t time, uint32_t step) {
+	Guid ComposeID(uint64_t time, uint64_t step) {
 		return (time << kTimeShift) |
 			(static_cast<uint64_t>(node_id_) << kNodeShift) |
 			step;
