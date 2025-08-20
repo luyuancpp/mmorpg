@@ -10,13 +10,14 @@
 #include "scene/system/movement_system.h"
 #include "scene/system/view_system.h"
 #include "Recast/Recast.h"
-#include "thread_local/storage_game.h"
+#include "frame/manager/frame_time_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "proto/logic/component/frame_comp.pb.h"
 #include "thread_local/storage.h"
 #include "core/system/id_generator_manager.h"
 #include "node/system/node.h"
 #include "util/node_utils.h"
+#include "frame/manager/frame_time_manager.h"
 
 using namespace std::chrono;
 
@@ -27,9 +28,9 @@ uint64_t GetTimeInMilliseconds()
 
 void World::InitializeSystemBeforeConnect()
 {
-    tlsGame.frameTime.set_previous_time(GetTimeInMilliseconds());
-    tlsGame.frameTime.set_target_fps(kTargetFPS);
-    tlsGame.frameTime.set_delta_time(1.0 / tlsGame.frameTime.target_fps());
+    FrameTimeManager::Instance().frameTime.set_previous_time(GetTimeInMilliseconds());
+    FrameTimeManager::Instance().frameTime.set_target_fps(kTargetFPS);
+    FrameTimeManager::Instance().frameTime.set_delta_time(1.0 / FrameTimeManager::Instance().frameTime.target_fps());
     ThreadLocalIdGeneratorManager::Instance().SetNodeId(GetNodeInfo().node_id());
     ViewSystem::Initialize();
 }
@@ -42,12 +43,12 @@ void World::Update()
 {
     //https://github.com/recastnavigation/recastnavigation.git
     const auto currentTime = GetTimeInMilliseconds();
-    const double deltaTime = static_cast<double>((currentTime - tlsGame.frameTime.previous_time())) / 1000.0;
-    tlsGame.frameTime.set_previous_time(currentTime);
+    const double deltaTime = static_cast<double>((currentTime - FrameTimeManager::Instance().frameTime.previous_time())) / 1000.0;
+    FrameTimeManager::Instance().frameTime.set_previous_time(currentTime);
 
-    double accumulatedTime = rcClamp(tlsGame.frameTime.time_accumulator() + deltaTime, -1.0, 1.0);
+    double accumulatedTime = rcClamp(FrameTimeManager::Instance().frameTime.time_accumulator() + deltaTime, -1.0, 1.0);
     int simulationIterations = 0;
-    const double fixedDeltaTime = tlsGame.frameTime.delta_time();
+    const double fixedDeltaTime = FrameTimeManager::Instance().frameTime.delta_time();
 
     while (accumulatedTime > fixedDeltaTime)
     {
@@ -63,10 +64,10 @@ void World::Update()
             ActorAttributeCalculatorSystem::Update(fixedDeltaTime);
             ActorStateAttributeSyncSystem::Update(fixedDeltaTime);
 
-            tlsGame.frameTime.set_current_frame(tlsGame.frameTime.current_frame() + 1);
+            FrameTimeManager::Instance().frameTime.set_current_frame(FrameTimeManager::Instance().frameTime.current_frame() + 1);
         }
         simulationIterations++;
     }
 
-    tlsGame.frameTime.set_time_accumulator(accumulatedTime);
+    FrameTimeManager::Instance().frameTime.set_time_accumulator(accumulatedTime);
 }

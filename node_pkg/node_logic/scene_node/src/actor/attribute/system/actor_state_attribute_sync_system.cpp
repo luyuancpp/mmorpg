@@ -11,8 +11,7 @@
 #include "scene/system/view_system.h"
 #include "service_info/player_state_attribute_sync_service_info.h"
 #include "thread_local/storage.h"
-#include "actor/attribute/system/actor_state_attribute_sync_system.h"
-#include "thread_local/storage_game.h"
+#include "frame/manager/frame_time_manager.h"
 #include "network/player_message_utils.h"
 
 // 定义帧同步频率的配置数组大小
@@ -52,7 +51,7 @@ constexpr DistanceSyncConfig kDistanceSyncConfigs[] = {
 
 // 通用的同步函数，根据不同距离级别执行同步
 void SyncAttributesForDistanceLevel(const entt::entity& entity, EntityVector& nearbyEntityList, const DistanceSyncConfig& distanceSyncConfig) {
-    const auto currentFrame = tlsGame.frameTime.current_frame();
+    const auto currentFrame = FrameTimeManager::Instance().frameTime.current_frame();
 
     // 获取该距离级别的实体列表
     distanceSyncConfig.retrieveEntityList(entity, nearbyEntityList);

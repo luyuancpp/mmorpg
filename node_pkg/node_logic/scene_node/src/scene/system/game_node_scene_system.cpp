@@ -10,7 +10,6 @@
 #include "scene/system/scene_system.h"
 #include "service_info/centre_scene_service_info.h"
 #include "thread_local/storage.h"
-#include "thread_local/storage_game.h"
 #include "util/node_utils.h"
 #include "network/node_message_utils.h"
 #include "scene/mananger/scene_nav_mananger.h"

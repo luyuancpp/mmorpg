@@ -11,7 +11,6 @@
 #include "service_info/centre_service_service_info.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_common_logic.h"
-#include "thread_local/storage_game.h"
 #include "time/system/time_system.h"
 #include "type_alias/player_session_type_alias.h"
 #include "util/defer.h"

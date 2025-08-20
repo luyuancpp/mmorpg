@@ -2,7 +2,6 @@
 
 #include "scene/comp/dt_crowd_comp.h"
 #include "thread_local/storage.h"
-#include "thread_local/storage_game.h"
 #include "scene/comp/scene_comp.h"
 #include "scene/constants/dt_crowd_constants.h"
 

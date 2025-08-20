@@ -23,7 +23,6 @@
 #include "service_info/player_skill_service_info.h"
 #include "proto/logic/component/actor_combat_state_comp.pb.h"
 #include "thread_local/storage.h"
-#include "thread_local/storage_game.h"
 #include "time/comp/timer_task_comp.h"
 #include "time/system/cooldown_time_system.h"
 #include "time/system/time_system.h"

@@ -22,7 +22,6 @@
 #include "scene/system/scene_system.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_common_logic.h"
-#include "thread_local/storage_game.h"
 #include "type_alias/player_session_type_alias.h"
 #include "util/proto_field_checker.h"
 #include "network/network_utils.h"

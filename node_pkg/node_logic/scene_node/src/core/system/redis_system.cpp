@@ -3,7 +3,6 @@
 #include "muduo/net/EventLoop.h"
 
 #include "player/system/player_node_system.h"
-#include "thread_local/storage_game.h"
 #include "thread_local/storage_common_logic.h"
 
 using namespace muduo;
