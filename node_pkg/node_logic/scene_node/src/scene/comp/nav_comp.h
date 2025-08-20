@@ -12,4 +12,4 @@ struct NavComp
     dtNavMeshQuery navQuery;
 };
 
-using SceneNavMapComp = std::unordered_map<uint32_t, NavComp>;
+

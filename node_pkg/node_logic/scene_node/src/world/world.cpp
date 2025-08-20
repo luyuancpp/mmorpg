@@ -14,6 +14,9 @@
 #include "type_alias/player_session_type_alias.h"
 #include "proto/logic/component/frame_comp.pb.h"
 #include "thread_local/storage.h"
+#include "core/system/id_generator_manager.h"
+#include "node/system/node.h"
+#include "util/node_utils.h"
 
 using namespace std::chrono;
 
@@ -27,7 +30,7 @@ void World::InitializeSystemBeforeConnect()
     tlsGame.frameTime.set_previous_time(GetTimeInMilliseconds());
     tlsGame.frameTime.set_target_fps(kTargetFPS);
     tlsGame.frameTime.set_delta_time(1.0 / tlsGame.frameTime.target_fps());
-
+    ThreadLocalIdGeneratorManager::Instance().SetNodeId(GetNodeInfo().node_id());
     ViewSystem::Initialize();
 }
 
