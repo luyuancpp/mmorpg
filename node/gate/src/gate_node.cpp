@@ -7,10 +7,10 @@
 #include "proto/login/login_service.grpc.pb.h"
 #include "proto/common/node.pb.h"
 #include "service_info/service_info.h"
-#include "thread_local/storage_gate.h"
 #include "node/system/node_util.h"
 #include "game_common_logic/system/session_system.h"
 #include "grpc/generator/grpc_init.h"
+#include "session/manager/session_manager.h"
 
 GateNode* gGateNode = nullptr; 
 
@@ -29,8 +29,8 @@ GateNode::GateNode(EventLoop* loop)
 		if (nullptr == sessionDetails) {
 			return;
 		}
-		auto it = tls_gate.sessions().find(sessionDetails->session_id());
-		if (it == tls_gate.sessions().end()){
+		auto it = SessionManager::Instance().sessions().find(sessionDetails->session_id());
+		if (it == SessionManager::Instance().sessions().end()){
 			return;
 		}
 		gGateNode->SendMessageToClient(it->second.conn, reply);

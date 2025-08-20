@@ -4,8 +4,8 @@
 #include "network/codec/dispatcher.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_common_logic.h"
-#include "thread_local/storage_gate.h"
 #include "util/defer.h"
+#include "session/manager/session_manager.h"
 
 #include "service_info/gate_service_service_info.h"
 
@@ -33,8 +33,8 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		return;
 	}
 	//gate 和其他服务器不一样，直接返回消息给客户端
-	const auto it = tls_gate.sessions().find(replied->session_id());
-	if (it == tls_gate.sessions().end())
+	const auto it = SessionManager::Instance().sessions().find(replied->session_id());
+	if (it == SessionManager::Instance().sessions().end())
 	{
 		LOG_ERROR << "conn id not found  session id "  << "," << replied->session_id();
 		return;
