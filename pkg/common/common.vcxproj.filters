@@ -5,7 +5,7 @@
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\thread_local\storage.h" />
     <ClInclude Include="src\thread_local\storage_common_logic.h" />
-    <ClInclude Include="src\thread_local\storage_lua.h" />
+    <ClInclude Include="src\thread_local\lua_state.h" />
     <ClInclude Include="src\type_define\type_define.h" />
     <ClInclude Include="src\util\consistent_hash_node.h" />
     <ClInclude Include="src\util\defer.h" />
@@ -26,11 +26,12 @@
     <ClInclude Include="src\util\node_utils.h" />
     <ClInclude Include="src\thread_local\node_context_manager.h" />
     <ClInclude Include="src\thread_local\player_manager.h" />
+    <ClInclude Include="src\thread_local\message_route_manager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\thread_local\storage.cpp" />
     <ClCompile Include="src\thread_local\storage_common_logic.cpp" />
-    <ClCompile Include="src\thread_local\storage_lua.cpp" />
+    <ClCompile Include="src\thread_local\lua_state.cpp" />
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\util\game_registry.cpp" />
     <ClCompile Include="src\util\utility.cpp" />
