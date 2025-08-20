@@ -6,9 +6,9 @@
 
 #include "gate_node.h"
 #include "network/network_constants.h"
-#include "thread_local/storage_gate.h"
 
 #include "proto/logic/component/player_network_comp.pb.h"
+#include <session/manager/session_manager.h>
 
 bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
 {
@@ -24,8 +24,8 @@ void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* control
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	auto sessionIt = tls_gate.sessions().find(request->session_info().session_id());
-	if (sessionIt == tls_gate.sessions().end())
+	auto sessionIt = SessionManager::Instance().sessions().find(request->session_info().session_id());
+	if (sessionIt == SessionManager::Instance().sessions().end())
 	{
 		LOG_ERROR << "Session ID not found for PlayerEnterGs, session ID: " << request->session_info().session_id();
 		return;
@@ -46,8 +46,8 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 {
 	///<<< BEGIN WRITING YOUR CODE
 
-	auto sessionIt = tls_gate.sessions().find(request->header().session_id());
-	if (sessionIt == tls_gate.sessions().end())
+	auto sessionIt = SessionManager::Instance().sessions().find(request->header().session_id());
+	if (sessionIt == SessionManager::Instance().sessions().end())
 	{
 		if (shouldLogProtocolErrorForDisconnectedPlayer(request->message_content().message_id()))
 		{
@@ -67,7 +67,7 @@ void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* control
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	tls_gate.sessions().erase(request->session_id());
+	SessionManager::Instance().sessions().erase(request->session_id());
 	LOG_INFO << "Session ID kicked by Centre: " << request->session_id();
 	///<<< END WRITING YOUR CODE
 }
@@ -101,8 +101,8 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto&& sessionId : request->session_list())
 	{
-		auto sessionIt = tls_gate.sessions().find(sessionId);
-		if (sessionIt == tls_gate.sessions().end())
+		auto sessionIt = SessionManager::Instance().sessions().find(sessionId);
+		if (sessionIt == SessionManager::Instance().sessions().end())
 		{
 			if (shouldLogProtocolErrorForDisconnectedPlayer(request->message_content().message_id()))
 			{
