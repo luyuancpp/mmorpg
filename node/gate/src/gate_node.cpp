@@ -47,6 +47,6 @@ void GateNode::StartRpcServer()
 	rpcServer->GetTcpServer().setMessageCallback(
 		std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
 
-	tls_gate.session_id_gen().set_node_id(GetNodeId());
+	SessionManager::Instance().session_id_gen().set_node_id(GetNodeId());
 
 }
