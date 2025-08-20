@@ -262,6 +262,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "proto_field_checker_test", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "infra", "pkg\infra\infra.vcxproj", "{DCD4F63C-36D2-4639-83AC-DDB3FFC467C0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "centre_node", "node_pkg\node_logic\gate_node\gate_node.vcxproj", "{E42960B9-2E2E-4796-B7EF-893CA5EB0742}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -534,6 +536,14 @@ Global
 		{DCD4F63C-36D2-4639-83AC-DDB3FFC467C0}.Release|x64.Build.0 = Release|x64
 		{DCD4F63C-36D2-4639-83AC-DDB3FFC467C0}.Release|x86.ActiveCfg = Release|Win32
 		{DCD4F63C-36D2-4639-83AC-DDB3FFC467C0}.Release|x86.Build.0 = Release|Win32
+		{E42960B9-2E2E-4796-B7EF-893CA5EB0742}.Debug|x64.ActiveCfg = Debug|x64
+		{E42960B9-2E2E-4796-B7EF-893CA5EB0742}.Debug|x64.Build.0 = Debug|x64
+		{E42960B9-2E2E-4796-B7EF-893CA5EB0742}.Debug|x86.ActiveCfg = Debug|Win32
+		{E42960B9-2E2E-4796-B7EF-893CA5EB0742}.Debug|x86.Build.0 = Debug|Win32
+		{E42960B9-2E2E-4796-B7EF-893CA5EB0742}.Release|x64.ActiveCfg = Release|x64
+		{E42960B9-2E2E-4796-B7EF-893CA5EB0742}.Release|x64.Build.0 = Release|x64
+		{E42960B9-2E2E-4796-B7EF-893CA5EB0742}.Release|x86.ActiveCfg = Release|Win32
+		{E42960B9-2E2E-4796-B7EF-893CA5EB0742}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -573,6 +583,7 @@ Global
 		{551BF228-E717-4450-891B-20B1F2A097A1} = {05664B44-6C3C-4C89-A95F-42CF5BEBD44B}
 		{A00193B3-DDC6-4C43-9721-DC8554F8ADCF} = {99B5DD1D-6789-47B9-A4A3-1555F1E39454}
 		{DCD4F63C-36D2-4639-83AC-DDB3FFC467C0} = {9A3D9AF5-A60E-40E0-9A13-4196C05EDCCC}
+		{E42960B9-2E2E-4796-B7EF-893CA5EB0742} = {05664B44-6C3C-4C89-A95F-42CF5BEBD44B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {39DD7ACD-8F24-4314-9D3C-74F6B00572A2}
