@@ -14,7 +14,6 @@
 #include "service_info/game_service_service_info.h"
 #include "service_info/login_service_service_info.h"
 #include "service_info/game_client_player_service_info.h"
-#include "thread_local/storage_gate.h"
 #include "proto/common/node.pb.h"
 #include "node/system/node_util.h"
 #include "google/protobuf/descriptor.h"
@@ -22,6 +21,7 @@
 #include "util/node_utils.h"
 #include "proto/logic/event/node_event.pb.h"
 #include "thread_local/node_context_manager.h"
+#include <session/manager/session_manager.h>
 
 static std::optional<entt::entity> PickRandomNode(uint32_t nodeType, uint32_t targetNodeType) {
 	std::vector<entt::entity> candidates;
@@ -99,8 +99,8 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 	}
 
 	// 普通节点：需要 session 绑定
-	const auto sessionIt = tls_gate.sessions().find(sessionId);
-	if (sessionIt == tls_gate.sessions().end()) {
+	const auto sessionIt = SessionManager::Instance().sessions().find(sessionId);
+	if (sessionIt == SessionManager::Instance().sessions().end()) {
 		LOG_ERROR << "Session not found for session id: " << sessionId;
 		return std::nullopt;
 	}
@@ -234,17 +234,17 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 	gGateNode->CallRemoteMethodZoneCenter(CentreGateSessionDisconnectMessageId, request);
 
     // 删除会话
-    tls_gate.sessions().erase(sessionId);
+    SessionManager::Instance().sessions().erase(sessionId);
 
     LOG_TRACE << "Disconnected session id: " << sessionId;
 }
 
 void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn)
 {
-	auto sessionId = tls_gate.session_id_gen().Generate();
-	while (tls_gate.sessions().contains(sessionId))
+	auto sessionId = SessionManager::Instance().session_id_gen().Generate();
+	while (SessionManager::Instance().sessions().contains(sessionId))
 	{
-		sessionId = tls_gate.session_id_gen().Generate();
+		sessionId = SessionManager::Instance().session_id_gen().Generate();
 	}
 
 	// 用session id 防止改包把消息发给其他玩家
@@ -252,7 +252,7 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 	conn->setContext(sessionId);
 	Session session;
 	session.conn = conn;
-	tls_gate.sessions().emplace(sessionId, std::move(session));
+	SessionManager::Instance().sessions().emplace(sessionId, std::move(session));
 
 	LOG_TRACE << "New connection, assigned session id: " << sessionId;
 }
@@ -294,8 +294,8 @@ void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, c
 
 	SessionDetails sessionDetails;
 	sessionDetails.set_session_id(sessionId);
-	const auto sessionIt = tls_gate.sessions().find(sessionId);
-	if (sessionIt == tls_gate.sessions().end()) {
+	const auto sessionIt = SessionManager::Instance().sessions().find(sessionId);
+	if (sessionIt == SessionManager::Instance().sessions().end()) {
 		LOG_ERROR << "Session not found for session id: " << sessionId;
 		return ;
 	}
@@ -332,8 +332,8 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
 	muduo::Timestamp)
 {
 	auto sessionId = GetSessionId(conn);
-	const auto sessionIt = tls_gate.sessions().find(sessionId);
-	if (sessionIt == tls_gate.sessions().end()) {
+	const auto sessionIt = SessionManager::Instance().sessions().find(sessionId);
+	if (sessionIt == SessionManager::Instance().sessions().end()) {
 		LOG_ERROR << "[Invalid Session] No session found for conn session_id: " << sessionId
 			<< ", message_id: " << request->message_id();
 		return;
@@ -361,7 +361,7 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
 void RpcClientSessionHandler::OnNodeRemovePbEventHandler(const OnNodeRemovePbEvent& pb)
 {
 	auto& registry = NodeContextManager::Instance().GetRegistry(pb.node_type());
-	for (auto& session : tls_gate.sessions())
+	for (auto& session : SessionManager::Instance().sessions())
 	{
 		if (session.second.GetNodeId(pb.node_type()) != pb.entity()) continue;
 		session.second.SetNodeId(pb.node_type(), kInvalidNodeId);
