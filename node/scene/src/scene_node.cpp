@@ -11,7 +11,7 @@
 #include "proto/common/node.pb.h"
 #include "proto/logic/event/server_event.pb.h"
 #include "thread_local/storage_common_logic.h"
-#include "thread_local/storage_game.h"
+#include "frame/manager/frame_time_manager.h"
 #include "world/world.h"
 #include "proto/centre/centre_service.pb.h"
 #include "core/network/message_system.h"
@@ -45,7 +45,7 @@ void SceneNode::StartRpcServer(){
 	Node::StartRpcServer();
 
 	World::ReadyForGame();
-	worldTimer.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
+	worldTimer.RunEvery(FrameTimeManager::Instance().frameTime.delta_time(), World::Update);
 }
 
 

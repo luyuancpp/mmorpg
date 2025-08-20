@@ -15,7 +15,6 @@
 #include "combat/buff/comp/buff_comp.h"
 #include "combat/buff/constants/buff_constants.h"
 #include "proto/logic/event/skill_event.pb.h"
-#include "thread_local/storage_game.h"
 #include "util/utility.h"
 #include "core/system/id_generator_manager.h"
 
