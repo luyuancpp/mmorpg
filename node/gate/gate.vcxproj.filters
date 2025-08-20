@@ -36,9 +36,6 @@
     <ClCompile Include="src\rpc_response\route_message_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\thread_local\storage_gate.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\gate_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -65,16 +62,10 @@
     <ClInclude Include="src\handler\rpc\gate_service_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\comp\gate_session.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\rpc_response\centre_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rpc_response\game_service_replied_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\thread_local\storage_gate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\gate_node.h">

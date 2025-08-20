@@ -9,7 +9,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "gate_node.h"
-#include "thread_local/storage_gate.h"
+#include "session/manager/session_manager.h"
 
 ///<<< END WRITING YOUR CODE
 
@@ -56,8 +56,8 @@ void OnSceneSendMessageToPlayerRepliedHandler(const TcpConnectionPtr& conn, cons
 void OnSceneClientSendMessageToPlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::ClientSendMessageToPlayerResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto it = tls_gate.sessions().find(replied->session_id());
-	if (it == tls_gate.sessions().end())
+    auto it = SessionManager::Instance().sessions().find(replied->session_id());
+	if (it == SessionManager::Instance().sessions().end())
 	{
 		LOG_ERROR << "conn id not found  session id " << "," << replied->session_id();
 		return;
