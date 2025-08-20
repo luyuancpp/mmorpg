@@ -21,6 +21,11 @@ public:
         return instance;
     }
 
+    void SetNodeId(uint32_t nodeId) {
+        buffIdGenerator.set_node_id(nodeId);
+        skillIdGenerator.set_node_id(nodeId);
+    }
+
 	TransientNode32BitCompositeIdGenerator  buffIdGenerator;
 	TransientNode32BitCompositeIdGenerator  skillIdGenerator;
 };

@@ -57,6 +57,7 @@
     <ClInclude Include="src\player\system\player_data_loader_system.h" />
     <ClInclude Include="src\player\constants\player_constants.h" />
     <ClInclude Include="src\kafka\system\kafka_system.h" />
+    <ClInclude Include="src\scene\mananger\scene_nav_mananger.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\actor\action_state\system\actor_action_state_system.cpp" />
@@ -95,5 +96,6 @@
     <ClCompile Include="src\thread_local\storage_game.cpp" />
     <ClCompile Include="src\world\world.cpp" />
     <ClCompile Include="src\kafka\system\kafka_system.cpp" />
+    <ClCompile Include="src\scene\mananger\scene_nav_mananger.cpp" />
   </ItemGroup>
 </Project>
