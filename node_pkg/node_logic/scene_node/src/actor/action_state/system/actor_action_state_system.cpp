@@ -8,7 +8,7 @@
 #include "macros/return_define.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/event/actor_event.pb.h"
-#include "thread_local/storage.h"
+
 #include <thread_local/dispatcher_manager.h>
 
 namespace {

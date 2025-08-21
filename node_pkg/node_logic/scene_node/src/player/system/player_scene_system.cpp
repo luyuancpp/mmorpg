@@ -7,7 +7,7 @@
 #include "thread_local/redis_manager.h"
 
 #include "service_info/player_scene_service_info.h"
-#include "thread_local/storage.h"
+
 #include "network/player_message_utils.h"
 #include <thread_local/registry_manager.h>
 

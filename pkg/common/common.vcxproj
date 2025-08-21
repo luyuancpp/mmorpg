@@ -31,7 +31,7 @@
     <ClInclude Include="src\thread_local\player_manager.h" />
     <ClInclude Include="src\thread_local\registry_manager.h" />
     <ClInclude Include="src\thread_local\snow_flake_manager.h" />
-    <ClInclude Include="src\thread_local\storage.h" />
+    <ClInclude Include="src\thread_local\thread_local_entity_container.h" />
     <ClInclude Include="src\thread_local\redis_manager.h" />
     <ClInclude Include="src\thread_local\lua_state.h" />
     <ClInclude Include="src\thread_local\node_context_manager.h" />
@@ -59,7 +59,7 @@
     <ClCompile Include="src\thread_local\player_manager.cpp" />
     <ClCompile Include="src\thread_local\registry_manager.cpp" />
     <ClCompile Include="src\thread_local\snow_flake_manager.cpp" />
-    <ClCompile Include="src\thread_local\storage.cpp" />
+    <ClCompile Include="src\thread_local\thread_local_entity_container.cpp" />
     <ClCompile Include="src\thread_local\redis_manager.cpp" />
     <ClCompile Include="src\thread_local\lua_state.cpp" />
     <ClCompile Include="src\thread_local\node_context_manager.cpp" />

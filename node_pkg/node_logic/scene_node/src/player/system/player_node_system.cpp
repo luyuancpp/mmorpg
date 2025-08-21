@@ -9,7 +9,7 @@
 #include "proto/logic/event/player_event.pb.h"
 #include "service_info/centre_player_scene_service_info.h"
 #include "service_info/centre_service_service_info.h"
-#include "thread_local/storage.h"
+
 #include "thread_local/redis_manager.h"
 #include "time/system/time_system.h"
 #include "type_alias/player_session_type_alias.h"

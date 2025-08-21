@@ -3,7 +3,7 @@
 #include "buff_config.h"
 #include "combat/buff/system/buff_impl_system.h"
 #include "proto/logic/component/buff_comp.pb.h"
-#include "thread_local/storage.h"
+
 
 
 #include <ranges>
@@ -323,7 +323,7 @@ void BuffSystem::OnBeforeGiveDamage(const entt::entity casterEntity, const entt:
     //};
     // 
     // 检查并应用Buff效果
-    //	for (auto& buff : tls.registry.get<BuffListComp>(event.target)) {
+    //	for (auto& buff : tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target)) {
     //		if (buff.second.HasFlag(DamageFlag_NotMiss)) {
     //			event.damageFlags |= DamageFlag_NotMiss;
     //		}
@@ -334,7 +334,7 @@ void BuffSystem::OnBeforeGiveDamage(const entt::entity casterEntity, const entt:
 void BuffSystem::OnAfterGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent)
 {
     // 检查并应用DOT效果
-    //for (auto& buff : tls.registry.get<BuffListComp>(event.target)) {
+    //for (auto& buff : tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target)) {
     //	if (buff.second.HasChanceForDOT()) {
     //		// 添加DOT Buff
     //		AddDOTBuff(event.target);
@@ -344,7 +344,7 @@ void BuffSystem::OnAfterGiveDamage(const entt::entity casterEntity, const entt::
 
 void BuffSystem::OnBeforeTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent)
 {
-    //auto& buffs = tls.registry.get<BuffListComp>(event.target);
+    //auto& buffs = tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target);
     //for (auto& [buffId, buff] : buffs) {
     //	if (buff.HasShield()) {
     //		// 假设护盾Buff会减少伤害
@@ -358,7 +358,7 @@ void BuffSystem::OnAfterTakeDamage(const entt::entity casterEntity, const entt::
     BuffImplSystem::UpdateLastDamageOrSkillHitTime(entt::to_entity(damageEvent.attacker_id()), casterEntity);
 
     // 检查并应用额外效果
-    //auto& buffs = tls.registry.get<BuffListComp>(event.target);
+    //auto& buffs = tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target);
     //for (auto& [buffId, buff] : buffs) {
     //	if (buff.HasPostDamageEffect()) {
     //		// 执行额外效果，例如添加额外的伤害效果

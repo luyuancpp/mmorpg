@@ -4,7 +4,7 @@
 #include <iostream>
 #include "proto/common/node.pb.h"
 #include "proto/common/session.pb.h"
-#include "thread_local/storage.h"
+
 
 NodeId GetGateNodeId(Guid session_id)
 {

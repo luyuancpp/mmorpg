@@ -11,7 +11,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 #include "scene/system/game_node_scene_system.h"
 #include "proto/common/node.pb.h"
 #include "proto/logic/event/server_event.pb.h"
-#include "thread_local/storage.h"
+
 #include "scene_node.h"
 ///<<< END WRITING YOUR CODE
 

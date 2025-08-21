@@ -1,7 +1,7 @@
 #include "movement_system.h"
 
 #include "muduo/base/Logging.h"
-#include "thread_local/storage.h"
+
 #include "proto/logic/component/actor_comp.pb.h"
 #include <thread_local/registry_manager.h>
 

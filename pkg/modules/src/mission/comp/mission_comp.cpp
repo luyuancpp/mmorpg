@@ -4,7 +4,7 @@
 
 #include "condition_config.h"
 #include "mission/constants/mission_constants.h"
-#include "thread_local/storage.h"
+
 #include "macros/return_define.h"
 #include "pbc/common_error_tip.pb.h"
 #include "pbc/mission_error_tip.pb.h"

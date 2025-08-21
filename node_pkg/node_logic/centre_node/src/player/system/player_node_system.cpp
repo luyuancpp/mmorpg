@@ -2,7 +2,6 @@
 #include "muduo/base/Logging.h"
 
 #include "scene/comp/scene_comp.h"
-#include "thread_local/storage.h"
 #include "game_common_logic/system/session_system.h"
 #include "player/comp/player_comp.h"
 #include "scene/system/player_change_scene_system.h"

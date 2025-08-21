@@ -3,7 +3,7 @@
 
 #include "scene/comp/scene_comp.h"
 #include "node/constants/node_constants.h"
-#include "thread_local/storage.h"
+
 #include "pbc/scene_error_tip.pb.h"
 #include "pbc/common_error_tip.pb.h"
 #include "proto/logic/component/game_node_comp.pb.h"

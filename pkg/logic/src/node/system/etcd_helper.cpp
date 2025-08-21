@@ -3,7 +3,6 @@
 #include "thread_local/redis_manager.h"
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
 #include <muduo/base/Logging.h>
-#include <thread_local/storage.h>
 #include "thread_local/node_context_manager.h"
 
 void EtcdHelper::PutServiceNodeInfo(const NodeInfo& nodeInfo, const std::string& key) {

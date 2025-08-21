@@ -8,7 +8,7 @@
 #include "proto/scene/player_scene.pb.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"
-#include "thread_local/storage.h"
+
 #include "type_define/type_define.h"
 #include "network/player_message_utils.h"
 #include <thread_local/registry_manager.h>
@@ -135,7 +135,7 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
 		createMessage.mutable_transform()->CopyFrom(*entrantTransform);
 	}
 
-	/*if (const auto guid = tls.registry.try_get<Guid>(entrant)) {
+	/*if (const auto guid = tlsThreadLocalEntityContainer.registry.try_get<Guid>(entrant)) {
 		createMessage.set_guid(*guid);
 	}*/
 }

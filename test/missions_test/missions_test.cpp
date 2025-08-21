@@ -9,7 +9,7 @@
 #include "pbc/mission_error_tip.pb.h"
 #include "handler/event/mission_event_handler.h"
 #include "util/random.h"
-#include "thread_local/storage.h"
+
 
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"

@@ -1,45 +1,46 @@
 #include "game_registry.h"
 
-#include "thread_local/storage.h"
+#include "thread_local/dispatcher_manager.h"
 #include "stacktrace_system.h"
 #include <thread_local/registry_manager.h>
+#include <thread_local/thread_local_entity_container.cpp>
 
 static_assert(sizeof(uint64_t) == sizeof(entt::entity), "sizeof(uint64_t) == sizeof(entt::entity)");
 
 entt::entity ErrorEntity()
 {
-    if (tls.errorEntity == entt::null)
+    if (tlsThreadLocalEntityContainer.errorEntity == entt::null)
     {
-        tls.errorEntity = tlsRegistryManager.globalRegistry.create();
+        tlsThreadLocalEntityContainer.errorEntity = tlsRegistryManager.globalRegistry.create();
     }
-    return tls.errorEntity;
+    return tlsThreadLocalEntityContainer.errorEntity;
 }
 
 entt::entity OperatorEntity()
 {
-    if (tls.operatorEntity == entt::null)
+    if (tlsThreadLocalEntityContainer.operatorEntity == entt::null)
     {
-        tls.operatorEntity = tlsRegistryManager.globalRegistry.create();
+        tlsThreadLocalEntityContainer.operatorEntity = tlsRegistryManager.globalRegistry.create();
     }
-    return tls.operatorEntity;
+    return tlsThreadLocalEntityContainer.operatorEntity;
 }
 
 entt::entity GlobalEntity()
 {
-    if (tls.globalEntity == entt::null)
+    if (tlsThreadLocalEntityContainer.globalEntity == entt::null)
     {
-        tls.globalEntity = tlsRegistryManager.globalRegistry.create();
+        tlsThreadLocalEntityContainer.globalEntity = tlsRegistryManager.globalRegistry.create();
     }
-    return tls.globalEntity;
+    return tlsThreadLocalEntityContainer.globalEntity;
 }
 
 entt::entity GetGlobalGrpcNodeEntity()
 {
-    if (tls.globalGrpcNodeEntity == entt::null)
+    if (tlsThreadLocalEntityContainer.globalGrpcNodeEntity == entt::null)
     {
-        tls.globalGrpcNodeEntity = tlsRegistryManager.nodeGlobalRegistry.create();
+        tlsThreadLocalEntityContainer.globalGrpcNodeEntity = tlsRegistryManager.nodeGlobalRegistry.create();
     }
-    return tls.globalGrpcNodeEntity;
+    return tlsThreadLocalEntityContainer.globalGrpcNodeEntity;
 }
 
 //to check 

@@ -4,7 +4,7 @@
 #include "pbc/common_error_tip.pb.h"
 #include "pbc/reward_error_tip.pb.h"
 #include "reward/comp/reward_comp.h"
-#include "thread_local/storage.h"
+
 #include <thread_local/registry_manager.h>
 
 void RewardSystem::InitializeActorComponents(entt::entity entityId)

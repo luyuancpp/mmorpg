@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "combat/skill/system/skill_system.h"
-#include "thread_local/storage.h"
+
 #include "skill_config.h"
 #include "combat/skill/comp/skill_comp.h"
 #include "combat/skill/constants/skill_constants.h"
