@@ -37,7 +37,7 @@
 #include "type_alias/player_redis.h"
 #include "thread_local/node_context_manager.h"
 #include "thread_local/player_manager.h"
-#include "thread_local/message_route_manager.h"
+#include "thread_local/message_context.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -478,12 +478,12 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	///<<< BEGIN WRITING YOUR CODE
 
 	// Clean up previous routing information
-	defer(MessageRouteManager::Instance().SetNextRouteNodeType(UINT32_MAX));
-	defer(MessageRouteManager::Instance().SeNextRouteNodeId(UINT32_MAX));
-	defer(MessageRouteManager::Instance().SetCurrentSessionId(kInvalidSessionId));
+	defer(MessageContext ::Instance().SetNextRouteNodeType(UINT32_MAX));
+	defer(MessageContext ::Instance().SeNextRouteNodeId(UINT32_MAX));
+	defer(MessageContext ::Instance().SetCurrentSessionId(kInvalidSessionId));
 
 	// Set current session ID
-	MessageRouteManager::Instance().SetCurrentSessionId(request->session_id());
+	MessageContext ::Instance().SetCurrentSessionId(request->session_id());
 
 	if (request->route_nodes_size() >= kMaxRouteSize)
 	{
@@ -544,7 +544,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 
 	auto* mutable_request = const_cast<::RouteMessageRequest*>(request);
 
-	if (MessageRouteManager::Instance().GetNextRouteNodeType() == UINT32_MAX)
+	if (MessageContext ::Instance().GetNextRouteNodeType() == UINT32_MAX)
 	{
 		const auto byte_size = static_cast<int32_t>(current_node_response->ByteSizeLong());
 		response->mutable_body()->resize(byte_size);
@@ -556,33 +556,33 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 			*response->add_route_nodes() = request_data_it;
 		}
 
-		response->set_session_id(MessageRouteManager::Instance().GetSessionId());
+		response->set_session_id(MessageContext ::Instance().GetSessionId());
 		response->set_id(request->id());
 		return;
 	}
 
 	// Need to route to the next node
 	auto* next_route_data = mutable_request->add_route_nodes();
-	next_route_data->CopyFrom(MessageRouteManager::Instance().GetRoutingNodeInfo());
+	next_route_data->CopyFrom(MessageContext ::Instance().GetRoutingNodeInfo());
 	next_route_data->mutable_node_info()->CopyFrom(gNode->GetNodeInfo());
-	mutable_request->set_body(MessageRouteManager::Instance().RouteMsgBody());
+	mutable_request->set_body(MessageContext ::Instance().RouteMsgBody());
 	mutable_request->set_id(request->id());
 
-	switch (MessageRouteManager::Instance().GetNextRouteNodeType())
+	switch (MessageContext ::Instance().GetNextRouteNodeType())
 	{
 	case GateNodeService:
 	{
-		entt::entity gate_node_id{ MessageRouteManager::Instance().GetNextRouteNodeId() };
+		entt::entity gate_node_id{ MessageContext ::Instance().GetNextRouteNodeId() };
 		auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 		if (!registry.valid(gate_node_id))
 		{
-			LOG_ERROR << "Gate node not found: " << MessageRouteManager::Instance().GetNextRouteNodeId();
+			LOG_ERROR << "Gate node not found: " << MessageContext ::Instance().GetNextRouteNodeId();
 			return;
 		}
 		const auto sceneNodeSession = registry.try_get<RpcSession>(gate_node_id);
 		if (!sceneNodeSession)
 		{
-			LOG_ERROR << "Gate node not found: " << MessageRouteManager::Instance().GetNextRouteNodeId();
+			LOG_ERROR << "Gate node not found: " << MessageContext ::Instance().GetNextRouteNodeId();
 			return;
 		}
 		sceneNodeSession->RouteMessageToNode(GateRouteNodeMessageMessageId, *mutable_request);
@@ -590,17 +590,17 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	}
 	case SceneNodeService:
 	{
-		entt::entity game_node_id{ MessageRouteManager::Instance().GetNextRouteNodeId() };
+		entt::entity game_node_id{ MessageContext ::Instance().GetNextRouteNodeId() };
 		auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 		if (!registry.valid(game_node_id))
 		{
-			LOG_ERROR << "Game node not found: " << MessageRouteManager::Instance().GetNextRouteNodeId() << ", " << request->DebugString();
+			LOG_ERROR << "Game node not found: " << MessageContext ::Instance().GetNextRouteNodeId() << ", " << request->DebugString();
 			return;
 		}
 		const auto sceneNodeSession = registry.try_get<RpcSession>(game_node_id);
 		if (!sceneNodeSession)
 		{
-			LOG_ERROR << "Game node not found: " << MessageRouteManager::Instance().GetNextRouteNodeId() << ", " << request->DebugString();
+			LOG_ERROR << "Game node not found: " << MessageContext ::Instance().GetNextRouteNodeId() << ", " << request->DebugString();
 			return;
 		}
 		sceneNodeSession->RouteMessageToNode(SceneRouteNodeStringMsgMessageId, *mutable_request);
@@ -608,7 +608,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	}
 	default:
 	{
-		LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << MessageRouteManager::Instance().GetNextRouteNodeType();
+		LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << MessageContext ::Instance().GetNextRouteNodeType();
 		break;
 	}
 	}

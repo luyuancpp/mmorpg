@@ -4,17 +4,17 @@
 #include "proto/common/message.pb.h"
 #include "type_define/type_define.h"
 
-class MessageRouteManager
+class MessageContext 
 {
 public:
 
-	MessageRouteManager() = default;
+	MessageContext () = default;
 
-	MessageRouteManager(const MessageRouteManager&) = delete;
-	MessageRouteManager& operator=(const MessageRouteManager&) = delete;
+	MessageContext (const MessageContext &) = delete;
+	MessageContext & operator=(const MessageContext &) = delete;
 
-	static MessageRouteManager& Instance() {
-		thread_local MessageRouteManager instance;
+	static MessageContext & Instance() {
+		thread_local MessageContext  instance;
 		return instance;
 	}
 

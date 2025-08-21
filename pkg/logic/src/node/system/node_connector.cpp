@@ -10,6 +10,7 @@
 #include "node.h"
 #include "network/network_utils.h"
 #include "thread_local/node_context_manager.h"
+#include <thread_local/node_config_manager.h>
 
 void NodeConnector::ConnectToNode(const NodeInfo& info) {
 	if (gNode->IsMyNode(info)) {
@@ -102,7 +103,7 @@ void NodeConnector::ConnectToTcpNode(const NodeInfo& info) {
 
 	// Step 4: 设置中心节点引用（仅限中心服）
 	if (info.node_type() == CentreNodeService &&
-		info.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
+		info.zone_id() == NodeConfigManager::Instance().GetGameConfig().zone_id()) {
 		gNode->SetZoneCentreNode(client);
 	}
 }

@@ -26,7 +26,8 @@
     <ClInclude Include="src\util\node_utils.h" />
     <ClInclude Include="src\thread_local\node_context_manager.h" />
     <ClInclude Include="src\thread_local\player_manager.h" />
-    <ClInclude Include="src\thread_local\message_route_manager.h" />
+    <ClInclude Include="src\thread_local\message_context.h" />
+    <ClInclude Include="src\thread_local\node_config_manager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\thread_local\storage.cpp" />

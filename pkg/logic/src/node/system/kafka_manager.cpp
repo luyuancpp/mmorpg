@@ -4,6 +4,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include "thread_local/storage_common_logic.h"
 #include "thread_local/storage.h"
+#include <thread_local/node_config_manager.h>
 
 bool KafkaManager::Init(const KafkaConfig& config) {
 	std::vector<std::string> brokersVec;
@@ -19,7 +20,7 @@ bool KafkaManager::Init(const KafkaConfig& config) {
 		topicsVec.push_back(topic);
 	}
 
-	auto zoneId = tlsCommonLogic.GetGameConfig().zone_id(); // zone ID
+	auto zoneId = NodeConfigManager::Instance().GetGameConfig().zone_id(); // zone ID
 	std::vector<int32_t> partitions{ static_cast<int32_t>(zoneId) };
 
 	KafkaProducer::Instance().init(brokers);

@@ -7,6 +7,7 @@
 #include "node_connector.h"
 #include "google/protobuf/util/json_util.h"
 #include <util/node_utils.h>
+#include <thread_local/node_config_manager.h>
 
 void ServiceDiscoveryManager::Init()
 {
@@ -20,7 +21,7 @@ void ServiceDiscoveryManager::Shutdown()
 }
 
 void ServiceDiscoveryManager::FetchServiceNodes() {
-	for (const auto& prefix : tlsCommonLogic.GetBaseDeployConfig().service_discovery_prefixes()) {
+	for (const auto& prefix : NodeConfigManager::Instance().GetBaseDeployConfig().service_discovery_prefixes()) {
 		EtcdHelper::RangeQuery(prefix);
 	}
 }
