@@ -7,9 +7,10 @@
 #include "pbc/common_error_tip.pb.h"
 #include "scene/system/player_change_scene_system.h"
 #include "scene/system/scene_system.h"
-#include "thread_local/registry_manager.h"
 
 EntityVector globalSceneList;
+
+extern thread_local RegistryManager tlsRegistryManager;
 
 entt::entity CreateMainSceneNodeEntity()
 {

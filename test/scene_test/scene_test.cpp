@@ -1,14 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "muduo/base/Logging.h"
 #include "scene/system/scene_system.h"
 #include "scene/comp/scene_comp.h"
-#include "thread_local/storage.h"
 #include "pbc/scene_error_tip.pb.h"
 #include "pbc/common_error_tip.pb.h"
 
 #include "proto/logic/component/game_node_comp.pb.h"
-#include "proto/logic/component/scene_comp.pb.h"
 #include "proto/common/node.pb.h"
 #include "thread_local/node_context_manager.h"
 #include <thread_local/registry_manager.h>
