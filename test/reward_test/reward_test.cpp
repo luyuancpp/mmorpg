@@ -4,13 +4,14 @@
 #include "thread_local/storage.h"
 #include "cpp_table_id_bit_index/reward_table_id_bit_index.h"
 #include "reward/comp/reward_comp.h"
+#include <thread_local/registry_manager.h>
 
 
 decltype(auto) CreatePlayerEntityWithRewardComponent()
 {
-    const auto playerEntity = tls.actorRegistry.create();
+    const auto playerEntity = tlsRegistryManager.actorRegistry.create();
     RewardSystem::InitializeActorComponents(playerEntity);
-    tls.actorRegistry.emplace<Guid>(playerEntity);
+    tlsRegistryManager.actorRegistry.emplace<Guid>(playerEntity);
     return playerEntity;
 }
 

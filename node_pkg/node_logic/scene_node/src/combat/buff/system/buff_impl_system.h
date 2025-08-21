@@ -10,6 +10,7 @@
 #include "thread_local/storage.h"
 #include "time/system/time_system.h"
 #include "util/defer.h"
+#include <thread_local/registry_manager.h>
 
 // BuffImplSystem: Buff逻辑工具类，用于处理各种Buff生命周期相关的逻辑
 class BuffImplSystem {
@@ -69,7 +70,7 @@ public:
 
         defer(BuffSystem::RemoveBuff(targetEntity, buffsToRemoveTarget));
         
-        for (auto& buffList = tls.actorRegistry.get<BuffListComp>(targetEntity);
+        for (auto& buffList = tlsRegistryManager.actorRegistry.get<BuffListComp>(targetEntity);
             auto& buffComp : buffList | std::views::values) {
             FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 
@@ -137,7 +138,7 @@ private:
         
         defer(BuffSystem::RemoveBuff(casterEntity, buffsToRemoveCaster));
 
-        for (auto& buffList = tls.actorRegistry.get<BuffListComp>(casterEntity);
+        for (auto& buffList = tlsRegistryManager.actorRegistry.get<BuffListComp>(casterEntity);
             auto& buffComp : buffList | std::views::values) {
            FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 

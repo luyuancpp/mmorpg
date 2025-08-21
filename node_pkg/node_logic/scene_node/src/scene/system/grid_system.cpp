@@ -7,6 +7,7 @@
 #include "proto/logic/component/actor_comp.pb.h"
 #include "scene/comp/scene_comp.h"
 #include "thread_local/storage.h"
+#include <thread_local/registry_manager.h>
 
 const Point kDefaultSize(20.0, 20.0);
 const Point kOrigin(0.0, 0.0);
@@ -39,19 +40,19 @@ void GridSystem::GetCurrentAndNeighborGridIds(const Hex& hex, GridSet& gridSet) 
 void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entites, bool excludingSel)
 {
     // 检查实体是否有效
-    if (!tls.actorRegistry.valid(entity)) {
+    if (!tlsRegistryManager.actorRegistry.valid(entity)) {
         LOG_ERROR << "Entity not found in scene";
         return;
     }
   
     // 获取实体所在的 Hex 位置
-    const auto hexPosition = tls.actorRegistry.try_get<Hex>(entity);
+    const auto hexPosition = tlsRegistryManager.actorRegistry.try_get<Hex>(entity);
     if (!hexPosition) {
         return;
     }
 
     // 获取实体的场景组件
-    const auto sceneComponent = tls.actorRegistry.try_get<SceneEntityComp>(entity);
+    const auto sceneComponent = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(entity);
     if (!sceneComponent) {
         return;
     }
@@ -89,19 +90,19 @@ void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorde
 void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSet& entites)
 {
     // 检查实体是否有效
-    if (!tls.actorRegistry.valid(entity)) {
+    if (!tlsRegistryManager.actorRegistry.valid(entity)) {
         LOG_ERROR << "Entity not found in scene";
         return;
     }
   
     // 获取实体所在的 Hex 位置
-    const auto hexPosition = tls.actorRegistry.try_get<Hex>(entity);
+    const auto hexPosition = tlsRegistryManager.actorRegistry.try_get<Hex>(entity);
     if (!hexPosition) {
         return;
     }
 
     // 获取实体的场景组件
-    const auto sceneComponent = tls.actorRegistry.try_get<SceneEntityComp>(entity);
+    const auto sceneComponent = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(entity);
     if (!sceneComponent) {
         return;
     }
@@ -155,7 +156,7 @@ void GridSystem::UpdateLogGridSize(double deltaTime) {
 
 void GridSystem::ClearEmptyGrids() {
     std::vector<absl::uint128> destroyEntities;
-    for (auto&& [_, gridList] : tls.actorRegistry.view<SceneGridListComp>().each()) {
+    for (auto&& [_, gridList] : tlsRegistryManager.actorRegistry.view<SceneGridListComp>().each()) {
         destroyEntities.clear();
         for (auto& it : gridList) {
             if (it.second.entities.empty()) {

@@ -4,6 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "npc/system/npc_system.h"
+#include <thread_local/registry_manager.h>
 ///<<< END WRITING YOUR CODE
 
 
@@ -21,7 +22,7 @@ void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcCom
 ///<<< BEGIN WRITING YOUR CODE
     auto npc = entt::to_entity(event.actor_entity());
 
-    if (!tls.actorRegistry.valid(npc))
+    if (!tlsRegistryManager.actorRegistry.valid(npc))
     {
         LOG_ERROR << "Npc Not Found :" << event.actor_entity();
         return;

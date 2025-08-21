@@ -9,6 +9,7 @@
 #include "service_info/player_scene_service_info.h"
 #include "thread_local/storage.h"
 #include "network/player_message_utils.h"
+#include <thread_local/registry_manager.h>
 
 
 void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene)
@@ -16,7 +17,7 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	const auto sceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(scene);
 	if (sceneInfo == nullptr)
 	{
-		LOG_ERROR << "Failed to get scene info for player: " << tls.actorRegistry.get<Guid>(player);
+		LOG_ERROR << "Failed to get scene info for player: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
 		return;
 	}
 

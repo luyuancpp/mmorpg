@@ -9,6 +9,7 @@
 #include "service_info/centre_service_service_info.h"
 #include "thread_local/node_context_manager.h"
 #include "thread_local/player_manager.h"
+#include <thread_local/registry_manager.h>
 
 template <typename SessionType>
 void SendMessageToNodeInternal(SessionType* session, uint32_t messageId, const google::protobuf::Message& message) {
@@ -123,12 +124,12 @@ void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId,
 	const google::protobuf::Message& message,
 	entt::entity playerEntity)
 {
-	if (!tls.actorRegistry.valid(playerEntity)) {
+	if (!tlsRegistryManager.actorRegistry.valid(playerEntity)) {
 		LOG_ERROR << "Invalid player entity";
 		return;
 	}
 
-	const auto* sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!sessionPB) {
 		LOG_ERROR << "Player session info not found for entity";
 		return;
@@ -181,12 +182,12 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 	const google::protobuf::Message& message,
 	entt::entity playerEntity)
 {
-	if (!tls.actorRegistry.valid(playerEntity)) {
+	if (!tlsRegistryManager.actorRegistry.valid(playerEntity)) {
 		LOG_ERROR << "Invalid player entity";
 		return;
 	}
 
-	const auto* sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!sessionPB) {
 		LOG_ERROR << "Player session info not found for entity";
 		return;

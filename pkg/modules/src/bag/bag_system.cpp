@@ -9,6 +9,7 @@
 #include "util/snow_flake.h"
 #include "item_config.h"
 #include "util/defer.h"
+#include <thread_local/snow_flake_manager.h>
 
 Bag::Bag()
     : entity(tls.itemRegistry.create())
@@ -509,14 +510,14 @@ void Bag::Unlock(std::size_t sz)
 
 Guid Bag::GeneratorItemGuid()
 {
-	tls.lastGeneratorItemGuid = tls.itemIdGenerator.Generate();
-	return  tls.lastGeneratorItemGuid;
+	tlsSnowflakeManager.lastGeneratorItemGuid = tlsSnowflakeManager.itemIdGenerator.Generate();
+	return  tlsSnowflakeManager.lastGeneratorItemGuid;
 }
 
 
 Guid Bag::LastGeneratorItemGuid()
 {
-	return tls.lastGeneratorItemGuid;
+	return tlsSnowflakeManager.lastGeneratorItemGuid;
 }
 
 bool Bag::IsInvalidItemGuid(const ItemPBComponent& item)const

@@ -12,6 +12,7 @@
 #include "type_alias/actor.h"
 #include "util/random.h"
 #include "thread_local/redis_manager.h"
+#include <thread_local/registry_manager.h>
 
 extern const Point kDefaultSize(20.0, 20.0);
 extern const Point kOrigin(0.0, 0.0);
@@ -30,21 +31,21 @@ protected:
     MockAoiSystem aoi_system;
 
     void SetUp() override {
-        tls.globalRegistry.emplace<ActorCreateS2C>(GlobalEntity());
-        tls.globalRegistry.emplace<ActorDestroyS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.emplace<ActorCreateS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.emplace<ActorDestroyS2C>(GlobalEntity());
 
-        tls.globalRegistry.emplace<ActorListCreateS2C>(GlobalEntity());
-        tls.globalRegistry.emplace<ActorListDestroyS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.emplace<ActorListCreateS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.emplace<ActorListDestroyS2C>(GlobalEntity());
     }
 
     void TearDown() override {
-        tls.globalRegistry.remove<ActorCreateS2C>(GlobalEntity());
-        tls.globalRegistry.remove<ActorDestroyS2C>(GlobalEntity());
-        tls.globalRegistry.remove<ActorListCreateS2C>(GlobalEntity());
-        tls.globalRegistry.remove<ActorListDestroyS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.remove<ActorCreateS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.remove<ActorDestroyS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.remove<ActorListCreateS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.remove<ActorListDestroyS2C>(GlobalEntity());
 
         tls.sceneRegistry.clear();
-        tls.actorRegistry.clear();
+        tlsRegistryManager.actorRegistry.clear();
     }
 };
 
@@ -86,13 +87,13 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
     std::unordered_map<absl::uint128, uint32_t, absl::Hash<absl::uint128>> expected_entity_count;
 
     for (uint32_t i = 0; i < 10; ++i) {
-        auto player_entity = tls.actorRegistry.create();
+        auto player_entity = tlsRegistryManager.actorRegistry.create();
 
-        Transform& transform = tls.actorRegistry.emplace<Transform>(player_entity);
+        Transform& transform = tlsRegistryManager.actorRegistry.emplace<Transform>(player_entity);
         transform.mutable_location()->set_x(Random::Instance().RandReal<double>(0, 1000));
         transform.mutable_location()->set_y(Random::Instance().RandReal<double>(0, 1000));
 
-        tls.actorRegistry.emplace<SceneEntityComp>(player_entity, scene_entity_comp);
+        tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(player_entity, scene_entity_comp);
 
         // Invoke Update method
         aoi_system.Update(0.1);
@@ -118,14 +119,14 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     auto scene_entity = tls.sceneRegistry.create();
     auto& scene_grid_list = tls.sceneRegistry.emplace<SceneGridListComp>(scene_entity);
 
-    auto player_entity = tls.actorRegistry.create();
+    auto player_entity = tlsRegistryManager.actorRegistry.create();
 
-    Transform& transform = tls.actorRegistry.emplace<Transform>(player_entity);
+    Transform& transform = tlsRegistryManager.actorRegistry.emplace<Transform>(player_entity);
     transform.mutable_location()->set_x(0);
     transform.mutable_location()->set_y(0);
 
     SceneEntityComp scene_entity_comp{ scene_entity };
-    tls.actorRegistry.emplace<SceneEntityComp>(player_entity, scene_entity_comp);
+    tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(player_entity, scene_entity_comp);
 
     // Initial position
     aoi_system.Update(0.1);
@@ -202,26 +203,26 @@ protected:
 
     void SetUp() override {
 
-        tls.globalRegistry.emplace<ActorCreateS2C>(GlobalEntity());
-        tls.globalRegistry.emplace<ActorDestroyS2C>(GlobalEntity());
-        tls.globalRegistry.emplace<ActorListCreateS2C>(GlobalEntity());
-        tls.globalRegistry.emplace<ActorListDestroyS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.emplace<ActorCreateS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.emplace<ActorDestroyS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.emplace<ActorListCreateS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.emplace<ActorListDestroyS2C>(GlobalEntity());
         
         // Setup mock data
-        entity1 = tls.actorRegistry.create();
-        entity2 = tls.actorRegistry.create();
+        entity1 = tlsRegistryManager.actorRegistry.create();
+        entity2 = tlsRegistryManager.actorRegistry.create();
 
         // Set up mock components
         auto sceneEntity = tls.sceneRegistry.create();
         sceneEntityComp1.sceneEntity = sceneEntity;
         sceneEntityComp2.sceneEntity = sceneEntity;
-        tls.actorRegistry.emplace<SceneEntityComp>(entity1, sceneEntityComp1);
-        tls.actorRegistry.emplace<SceneEntityComp>(entity2, sceneEntityComp2);
+        tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(entity1, sceneEntityComp1);
+        tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(entity2, sceneEntityComp2);
 
         // Set initial positions
-        auto& transform1 = tls.actorRegistry.emplace<Transform>(entity1);
+        auto& transform1 = tlsRegistryManager.actorRegistry.emplace<Transform>(entity1);
 
-        auto& transform2 = tls.actorRegistry.emplace<Transform>(entity2);
+        auto& transform2 = tlsRegistryManager.actorRegistry.emplace<Transform>(entity2);
         transform2.mutable_location()->set_x(100);
         transform2.mutable_location()->set_y(100);
 
@@ -231,12 +232,12 @@ protected:
     }
 
     void TearDown() override {
-        tls.globalRegistry.remove<ActorCreateS2C>(GlobalEntity());
-        tls.globalRegistry.remove<ActorDestroyS2C>(GlobalEntity());
-        tls.globalRegistry.remove<ActorListCreateS2C>(GlobalEntity());
-        tls.globalRegistry.remove<ActorListDestroyS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.remove<ActorCreateS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.remove<ActorDestroyS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.remove<ActorListCreateS2C>(GlobalEntity());
+        tlsRegistryManager.globalRegistry.remove<ActorListDestroyS2C>(GlobalEntity());
 
-        tls.actorRegistry.clear();
+        tlsRegistryManager.actorRegistry.clear();
         tls.sceneRegistry.clear();
 
         entitiesToNotifyEntry.clear();
@@ -247,7 +248,7 @@ protected:
 // Test case for entering the view
 TEST_F(AoiSystemTest1, TestEntityEnterView) {
     // Move entity2 to be within view range of entity1
-    auto& location = *tls.actorRegistry.get<Transform>(entity2).mutable_location();
+    auto& location = *tlsRegistryManager.actorRegistry.get<Transform>(entity2).mutable_location();
     location.set_x(20);
     location.set_y(20);
 
@@ -263,7 +264,7 @@ TEST_F(AoiSystemTest1, TestEntityEnterView) {
 // Test case for leaving the view
 TEST_F(AoiSystemTest1, TestEntityLeaveView) {
     // Move entity2 out of view range of entity1
-    auto& location = *tls.actorRegistry.get<Transform>(entity2).mutable_location();
+    auto& location = *tlsRegistryManager.actorRegistry.get<Transform>(entity2).mutable_location();
     location.set_x(0);
     location.set_y(0);
 

@@ -13,6 +13,7 @@
 #include "thread_local/storage.h"
 #include "frame/manager/frame_time_manager.h"
 #include "network/player_message_utils.h"
+#include <thread_local/registry_manager.h>
 
 // 定义帧同步频率的配置数组大小
 constexpr uint32_t kSyncFrequencyArraySize = 5;
@@ -74,7 +75,7 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 {
     EntityVector nearbyEntityList;
 
-    for (auto [entity, transform] : tls.actorRegistry.view<Transform>().each())
+    for (auto [entity, transform] : tlsRegistryManager.actorRegistry.view<Transform>().each())
     {
         // 始终同步基础属性
         ActorStateAttributeSyncSystem::SyncBasicAttributes(entity);
@@ -94,20 +95,20 @@ void ActorStateAttributeSyncSystem::Initialize() {
 // 初始化实体的组件
 void ActorStateAttributeSyncSystem::InitializeActorComponents(const entt::entity entity) {
     // 在实体上添加速度、计算属性、派生属性和同步消息组件
-    tls.actorRegistry.emplace<Velocity>(entity);
-    tls.actorRegistry.emplace<CalculatedAttributesPbComponent>(entity);
-    tls.actorRegistry.emplace<DerivedAttributesPbComponent>(entity);
-    tls.actorRegistry.emplace<BaseAttributeSyncDataS2C>(entity);
-    tls.actorRegistry.emplace<AttributeDelta2FramesS2C>(entity);
-    tls.actorRegistry.emplace<AttributeDelta5FramesS2C>(entity);
-    tls.actorRegistry.emplace<AttributeDelta10FramesS2C>(entity);
-    tls.actorRegistry.emplace<AttributeDelta30FramesS2C>(entity);
-    tls.actorRegistry.emplace<AttributeDelta60FramesS2C>(entity);
+    tlsRegistryManager.actorRegistry.emplace<Velocity>(entity);
+    tlsRegistryManager.actorRegistry.emplace<CalculatedAttributesPbComponent>(entity);
+    tlsRegistryManager.actorRegistry.emplace<DerivedAttributesPbComponent>(entity);
+    tlsRegistryManager.actorRegistry.emplace<BaseAttributeSyncDataS2C>(entity);
+    tlsRegistryManager.actorRegistry.emplace<AttributeDelta2FramesS2C>(entity);
+    tlsRegistryManager.actorRegistry.emplace<AttributeDelta5FramesS2C>(entity);
+    tlsRegistryManager.actorRegistry.emplace<AttributeDelta10FramesS2C>(entity);
+    tlsRegistryManager.actorRegistry.emplace<AttributeDelta30FramesS2C>(entity);
+    tlsRegistryManager.actorRegistry.emplace<AttributeDelta60FramesS2C>(entity);
 }
 
 // 获取附近一级实体列表
 void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-    const auto& aoiList = tls.actorRegistry.get<AoiListComp>(entity).aoiList;
+    const auto& aoiList = tlsRegistryManager.actorRegistry.get<AoiListComp>(entity).aoiList;
 
     for (const auto& nearbyEntity : aoiList) {
         constexpr double viewRadiusFactor = 0.333;
@@ -123,7 +124,7 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity e
 
 // 获取附近二级实体列表
 void ActorStateAttributeSyncSystem::GetNearbyLevel2Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-    const auto& aoiList = tls.actorRegistry.get<AoiListComp>(entity).aoiList;
+    const auto& aoiList = tlsRegistryManager.actorRegistry.get<AoiListComp>(entity).aoiList;
 
     for (const auto& nearbyEntity : aoiList) {
         constexpr double viewRadiusFactor = 0.666;
@@ -139,7 +140,7 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel2Entities(const entt::entity e
 
 // 获取附近三级实体列表
 void ActorStateAttributeSyncSystem::GetNearbyLevel3Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-    const auto& aoiList = tls.actorRegistry.get<AoiListComp>(entity).aoiList;
+    const auto& aoiList = tlsRegistryManager.actorRegistry.get<AoiListComp>(entity).aoiList;
 
     for (const auto& nearbyEntity : aoiList) {
         const double viewRadius = ViewSystem::GetMaxViewRadius(nearbyEntity);
@@ -154,13 +155,13 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel3Entities(const entt::entity e
 
 // 同步基础属性到附近的实体
 void ActorStateAttributeSyncSystem::SyncBasicAttributes(entt::entity entity) {
-    const auto aoiListComp = tls.actorRegistry.try_get<AoiListComp>(entity);
+    const auto aoiListComp = tlsRegistryManager.actorRegistry.try_get<AoiListComp>(entity);
     if (aoiListComp == nullptr) {
         return;
     }
 
     // 获取当前实体的增量同步消息
-    auto& syncMessage = tls.actorRegistry.get<BaseAttributeSyncDataS2C>(entity);
+    auto& syncMessage = tlsRegistryManager.actorRegistry.get<BaseAttributeSyncDataS2C>(entity);
     BroadcastMessageToPlayers(ScenePlayerSyncSyncBaseAttributeMessageId, syncMessage, aoiListComp->aoiList);
 
     // 发送后清空消息，准备下一次增量数据
@@ -173,7 +174,7 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
         switch (syncFrequency) {
         case eAttributeSyncFrequency::kSyncEvery2Frames:
         {
-            auto& syncMessage = tls.actorRegistry.get<AttributeDelta2FramesS2C>(entity);
+            auto& syncMessage = tlsRegistryManager.actorRegistry.get<AttributeDelta2FramesS2C>(entity);
 
             if (syncMessage.ByteSizeLong() <= 0)
             {
@@ -188,7 +189,7 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
 
         case eAttributeSyncFrequency::kSyncEvery5Frames:
         {
-            auto& syncMessage = tls.actorRegistry.get<AttributeDelta5FramesS2C>(entity);
+            auto& syncMessage = tlsRegistryManager.actorRegistry.get<AttributeDelta5FramesS2C>(entity);
 
             if (syncMessage.ByteSizeLong() <= 0)
             {
@@ -203,7 +204,7 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
 
         case eAttributeSyncFrequency::kSyncEvery10Frames:
         {
-            auto& syncMessage = tls.actorRegistry.get<AttributeDelta10FramesS2C>(entity);
+            auto& syncMessage = tlsRegistryManager.actorRegistry.get<AttributeDelta10FramesS2C>(entity);
 
             if (syncMessage.ByteSizeLong() <= 0)
             {
@@ -218,7 +219,7 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
 
         case eAttributeSyncFrequency::kSyncEvery30Frames:
         {
-            auto& syncMessage = tls.actorRegistry.get<AttributeDelta30FramesS2C>(entity);
+            auto& syncMessage = tlsRegistryManager.actorRegistry.get<AttributeDelta30FramesS2C>(entity);
 
             if (syncMessage.ByteSizeLong() <= 0)
             {
@@ -233,7 +234,7 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
 
         case eAttributeSyncFrequency::kSyncEvery60Frames:
         {
-            auto& syncMessage = tls.actorRegistry.get<AttributeDelta60FramesS2C>(entity);
+            auto& syncMessage = tlsRegistryManager.actorRegistry.get<AttributeDelta60FramesS2C>(entity);
 
             if (syncMessage.ByteSizeLong() <= 0)
             {

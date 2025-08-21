@@ -4,6 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "player/system/player_skill_system.h"
+#include <thread_local/registry_manager.h>
 ///<<< END WRITING YOUR CODE
 
 
@@ -25,7 +26,7 @@ void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent& e
 ///<<< BEGIN WRITING YOUR CODE
 	auto player = entt::to_entity(event.actor_entity());
 
-	if (!tls.actorRegistry.valid(player))
+	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player Not Found :" << event.actor_entity();
 		return;
@@ -45,7 +46,7 @@ void PlayerEventHandler::InitializePlayerComponentsEventHandler(const Initialize
 ///<<< BEGIN WRITING YOUR CODE
 	auto player = entt::to_entity(event.actor_entity());
 
-	if (!tls.actorRegistry.valid(player))
+	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player Not Found :" << event.actor_entity();
 		return;

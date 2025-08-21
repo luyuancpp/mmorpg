@@ -12,6 +12,7 @@
 #include <service_info/game_service_service_info.h>
 #include "thread_local/node_context_manager.h"
 #include "thread_local/player_manager.h"
+#include <thread_local/registry_manager.h>
 
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
@@ -21,13 +22,13 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity)
 {
-	if (!tls.actorRegistry.valid(playerEntity))
+	if (!tlsRegistryManager.actorRegistry.valid(playerEntity))
 	{
 		LOG_WARN << "Invalid player entity.";
 		return;
 	}
 
-	const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_WARN << "Player node info not found for player entity " << entt::to_integral(playerEntity);
@@ -94,16 +95,16 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message& mess
 
 	for (auto& player : playerList)
 	{
-		if (!tls.actorRegistry.valid(player))
+		if (!tlsRegistryManager.actorRegistry.valid(player))
 		{
 			LOG_ERROR << "Invalid player entity in playerList";
 			continue;
 		}
 
-		const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
+		const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 		if (!playerSessionSnapshotPB)
 		{
-			LOG_ERROR << "Player node info not found for player entity: " << tls.actorRegistry.get<Guid>(player);
+			LOG_ERROR << "Player node info not found for player entity: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
 			continue;
 		}
 
@@ -171,7 +172,7 @@ inline NodeId GetEffectiveNodeId(
 }
 
 void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity) {
-	if (!tls.actorRegistry.valid(playerEntity))
+	if (!tlsRegistryManager.actorRegistry.valid(playerEntity))
 	{
 		LOG_ERROR << "Player entity is not valid";
 		return;
@@ -179,7 +180,7 @@ void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::M
 
 	auto& rpcHandlerMeta = gRpcServiceRegistry[messageId];
 
-	const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "Player node info not found for player entity";
@@ -188,7 +189,7 @@ void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::M
 
 	SessionDetails sessionDetails;
 	sessionDetails.set_session_id(playerSessionSnapshotPB->gate_session_id());
-	sessionDetails.set_player_id(tls.actorRegistry.get<Guid>(playerEntity));
+	sessionDetails.set_player_id(tlsRegistryManager.actorRegistry.get<Guid>(playerEntity));
 
 	if (!rpcHandlerMeta.messageSender) {
 		LOG_ERROR << "Message sender not found for message ID: " << messageId;
@@ -244,13 +245,13 @@ void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
 	const google::protobuf::Message& message,
 	entt::entity playerEntity)
 {
-	if (!tls.actorRegistry.valid(playerEntity))
+	if (!tlsRegistryManager.actorRegistry.valid(playerEntity))
 	{
 		LOG_ERROR << "Invalid player entity -> " << entt::to_integral(playerEntity);
 		return;
 	}
 
-	const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "Player session info not found -> " << entt::to_integral(playerEntity);
@@ -307,13 +308,13 @@ void CallMethodOnPlayerNode(
 	const google::protobuf::Message& message,
 	entt::entity player)
 {
-	if (!tls.actorRegistry.valid(player))
+	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Invalid player entity.";
 		return;
 	}
 
-	const auto* playerSessionSnapshotPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
+	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "PlayerSessionSnapshotPBComp not found for player -> " << entt::to_integral(player);

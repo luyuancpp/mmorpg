@@ -9,10 +9,8 @@
 class ThreadLocalStorage
 {
 public:
-
 	ThreadLocalStorage();
 
-	entt::registry globalRegistry;
 	entt::registry actorRegistry;
 	entt::registry sceneRegistry;
 	entt::registry itemRegistry;
@@ -26,12 +24,7 @@ public:
 	entt::entity globalEntity{ entt::null };
 	entt::entity globalGrpcNodeEntity{ entt::null };
 
-	SnowFlake itemIdGenerator;
-	Guid lastGeneratorItemGuid{ kInvalidGuid };
-
 	void Clear();
-
-	void OnNodeStart(uint32_t nodeId);
 
 private:
 };

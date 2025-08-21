@@ -34,28 +34,28 @@ namespace {
 // Function to retrieve reward for completing a mission
 uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 	// Check if player exists in the registry
-	if (!tls.actorRegistry.valid(param.playerId)) {
-		LOG_ERROR << "Player not found: playerId = " << tls.actorRegistry.get<Guid>(param.playerId);
+	if (!tlsRegistryManager.actorRegistry.valid(param.playerId)) {
+		LOG_ERROR << "Player not found: playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId);
 		return PrintStackAndReturnError(kInvalidParameter);
 	}
 
 	// Retrieve mission reward component for the player
-	auto* const missionRewardComp = tls.actorRegistry.try_get<RewardListPBComponent>(param.playerId);
+	auto* const missionRewardComp = tlsRegistryManager.actorRegistry.try_get<RewardListPBComponent>(param.playerId);
 	if (nullptr == missionRewardComp) {
-		LOG_ERROR << "Mission reward component not found: playerId = " << tls.actorRegistry.get<Guid>(param.playerId);
+		LOG_ERROR << "Mission reward component not found: playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId);
 		return PrintStackAndReturnError(kPlayerMissionComponentNotFound);
 	}
 
 	// Check if the mission ID is valid for reward
 	auto rewardMissionIdMap = missionRewardComp->mutable_can_reward_mission_id();
 	if (rewardMissionIdMap->find(param.missionId) == rewardMissionIdMap->end()) {
-		LOG_ERROR << "Mission ID not found in reward list: missionId = " << param.missionId << ", playerId = " << tls.actorRegistry.get<Guid>(param.playerId);
+		LOG_ERROR << "Mission ID not found in reward list: missionId = " << param.missionId << ", playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId);
 		return PrintStackAndReturnError(kMissionIdNotInRewardList);
 	}
 
 	// Remove mission ID from reward list
 	rewardMissionIdMap->erase(param.missionId);
-	LOG_INFO << "Removed mission ID from reward list: missionId = " << param.missionId << ", playerId = " << tls.actorRegistry.get<Guid>(param.playerId);
+	LOG_INFO << "Removed mission ID from reward list: missionId = " << param.missionId << ", playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId);
 	return kSuccess;
 }
 
@@ -87,9 +87,9 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 	const entt::entity playerEntity = entt::to_entity(acceptEvent.entity());
 
 	// Retrieve mission component for the player
-	auto* const missionComp = tls.actorRegistry.try_get<MissionsComponent>(playerEntity);
+	auto* const missionComp = tlsRegistryManager.actorRegistry.try_get<MissionsComponent>(playerEntity);
 	if (nullptr == missionComp) {
-		LOG_ERROR << "Missions component not found for playerEntity = " << tls.actorRegistry.get<Guid>(playerEntity);
+		LOG_ERROR << "Missions component not found for playerEntity = " << tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
 		return kPlayerMissionComponentNotFound;
 	}
 
@@ -97,7 +97,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 	auto ret = CheckMissionAcceptance(acceptEvent, missionComp);
 	if (ret != kSuccess) {
 		LOG_ERROR << "CheckMissionAcceptance failed for mission_id = " << acceptEvent.mission_id()
-			<< ", playerEntity = " << tls.actorRegistry.get<Guid>(playerEntity);
+			<< ", playerEntity = " << tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
 		return ret;
 	}
 
@@ -132,7 +132,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 		onAcceptedMissionEvent.set_entity(entt::to_integral(playerEntity));
 		onAcceptedMissionEvent.set_mission_id(acceptEvent.mission_id());
 		tls.dispatcher.enqueue(onAcceptedMissionEvent);
-		LOG_INFO << "Mission accepted for playerEntity = " << tls.actorRegistry.get<Guid>(playerEntity) << ", mission_id = " << acceptEvent.mission_id();
+		LOG_INFO << "Mission accepted for playerEntity = " << tlsRegistryManager.actorRegistry.get<Guid>(playerEntity) << ", mission_id = " << acceptEvent.mission_id();
 	}
 
 	return kSuccess;
@@ -141,20 +141,20 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 // Function to abandon a mission
 uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
 	// Retrieve mission component for the player
-	auto* const missionComp = tls.actorRegistry.try_get<MissionsComponent>(param.playerId);
+	auto* const missionComp = tlsRegistryManager.actorRegistry.try_get<MissionsComponent>(param.playerId);
 	if (nullptr == missionComp) {
-		LOG_ERROR << "Missions component not found for playerId = " << tls.actorRegistry.get<Guid>(param.playerId);
+		LOG_ERROR << "Missions component not found for playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId);
 		return kPlayerMissionComponentNotFound;
 	}
 
 	// Check if mission is uncompleted
 	if (kMissionAlreadyCompleted == missionComp->IsMissionUncompleted(param.missionId)) {
-		LOG_ERROR << "Mission is already completed for playerId = " << tls.actorRegistry.get<Guid>(param.playerId) << ", missionId = " << param.missionId;
+		LOG_ERROR << "Mission is already completed for playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId) << ", missionId = " << param.missionId;
 		return kMissionAlreadyCompleted;
 	}
 
 	// Remove mission ID from reward list if applicable
-	auto* const missionReward = tls.actorRegistry.try_get<RewardListPBComponent>(param.playerId);
+	auto* const missionReward = tlsRegistryManager.actorRegistry.try_get<RewardListPBComponent>(param.playerId);
 	if (nullptr != missionReward) {
 		missionReward->mutable_can_reward_mission_id()->erase(param.missionId);
 	}
@@ -166,14 +166,14 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
 
 	// Delete mission classification
 	DeleteMissionClassification(param.playerId, param.missionId);
-	LOG_INFO << "Mission abandoned for playerId = " << tls.actorRegistry.get<Guid>(param.playerId) << ", missionId = " << param.missionId;
+	LOG_INFO << "Mission abandoned for playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId) << ", missionId = " << param.missionId;
 	return kSuccess;
 }
 
 // Function to complete all missions for a player
 void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t operation) {
 	// Retrieve mission component for the player
-	auto* const missionComp = tls.actorRegistry.try_get<MissionsComponent>(playerEntity);
+	auto* const missionComp = tlsRegistryManager.actorRegistry.try_get<MissionsComponent>(playerEntity);
 	if (nullptr == missionComp) {
 		return;
 	}
@@ -226,9 +226,9 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 	const entt::entity playerEntity = entt::to_entity(conditionEvent.entity());
 
 	// Retrieve mission component for the player
-	auto* const missionComp = tls.actorRegistry.try_get<MissionsComponent>(playerEntity);
+	auto* const missionComp = tlsRegistryManager.actorRegistry.try_get<MissionsComponent>(playerEntity);
 	if (nullptr == missionComp) {
-		LOG_ERROR << "HandleMissionConditionEvent: Missions component not found for playerEntity = " << tls.actorRegistry.get<Guid>(playerEntity);
+		LOG_ERROR << "HandleMissionConditionEvent: Missions component not found for playerEntity = " << tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
 		return;
 	}
 
@@ -236,7 +236,7 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 	auto classifyMissionsIt = missionComp->GetEventMissionsClassify().find(conditionEvent.condition_type());
 	if (classifyMissionsIt == missionComp->GetEventMissionsClassify().end()) {
 		LOG_ERROR << "HandleMissionConditionEvent: No missions found for condition type = " << conditionEvent.condition_type()
-			<< " for playerEntity = " << tls.actorRegistry.get<Guid>(playerEntity);
+			<< " for playerEntity = " << tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
 		return;
 	}
 
@@ -285,7 +285,7 @@ void MissionSystem::RemoveMissionClassification(MissionsComponent* missionComp, 
 // Delete mission classification
 void MissionSystem::DeleteMissionClassification(entt::entity playerEntity, uint32_t missionId) {
 	// Retrieve mission component for the player
-	auto* const missionComp = tls.actorRegistry.try_get<MissionsComponent>(playerEntity);
+	auto* const missionComp = tlsRegistryManager.actorRegistry.try_get<MissionsComponent>(playerEntity);
 	if (nullptr == missionComp) {
 		return;
 	}
@@ -309,7 +309,7 @@ bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& condition
 	}
 
 	// Retrieve mission component for the player
-	const auto* const missionComp = tls.actorRegistry.try_get<MissionsComponent>(entt::to_entity(conditionEvent.entity()));
+	const auto* const missionComp = tlsRegistryManager.actorRegistry.try_get<MissionsComponent>(entt::to_entity(conditionEvent.entity()));
 	if (nullptr == missionComp) {
 		return false;
 	}
@@ -417,7 +417,7 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 	}
 
 	// Retrieve mission component for the player
-	auto* const missionComp = tls.actorRegistry.try_get<MissionsComponent>(playerEntity);
+	auto* const missionComp = tlsRegistryManager.actorRegistry.try_get<MissionsComponent>(playerEntity);
 	if (nullptr == missionComp) {
 		return;
 	}
@@ -428,7 +428,7 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 		DeleteMissionClassification(playerEntity, missionId);
 
 		// Retrieve mission reward component for the player
-		auto* const missionReward = tls.actorRegistry.try_get<RewardListPBComponent>(playerEntity);
+		auto* const missionReward = tlsRegistryManager.actorRegistry.try_get<RewardListPBComponent>(playerEntity);
 
 		// Create mission condition event
 		MissionConditionEvent missionConditionEvent;

@@ -5,47 +5,48 @@
 #include "scene/comp/scene_comp.h"
 #include "scene/comp/scene_node_scene_comp.h"
 #include "thread_local/storage.h"
+#include <thread_local/registry_manager.h>
 
 void InterestSystem::InitializeActorComponents(const entt::entity entity)
 {
-    tls.actorRegistry.emplace<FollowerListComp>(entity);
-    tls.actorRegistry.emplace<FollowingListComp>(entity);
-    tls.actorRegistry.emplace<AoiListComp>(entity);
+    tlsRegistryManager.actorRegistry.emplace<FollowerListComp>(entity);
+    tlsRegistryManager.actorRegistry.emplace<FollowingListComp>(entity);
+    tlsRegistryManager.actorRegistry.emplace<AoiListComp>(entity);
 }
 
 void InterestSystem::AddWatcher(const entt::entity watcher, const entt::entity target) {
     if (watcher == entt::null || target == entt::null) return;
 
-    tls.actorRegistry.get<FollowerListComp>(target).followerList.insert(watcher);
-    tls.actorRegistry.get<FollowingListComp>(watcher).followingList.insert(target);
+    tlsRegistryManager.actorRegistry.get<FollowerListComp>(target).followerList.insert(watcher);
+    tlsRegistryManager.actorRegistry.get<FollowingListComp>(watcher).followingList.insert(target);
 }
 
 void InterestSystem::RemoveWatcher(const entt::entity watcher, const entt::entity target) {
     if (watcher == entt::null || target == entt::null) return;
 
-    tls.actorRegistry.get<FollowerListComp>(target).followerList.erase(watcher);
-    tls.actorRegistry.get<FollowingListComp>(watcher).followingList.erase(target);
+    tlsRegistryManager.actorRegistry.get<FollowerListComp>(target).followerList.erase(watcher);
+    tlsRegistryManager.actorRegistry.get<FollowingListComp>(watcher).followingList.erase(target);
 }
 
 bool InterestSystem::IsInAoiList(const entt::entity watcher, const entt::entity target)
 {
     if (watcher == entt::null || target == entt::null) return false;
 
-    return tls.actorRegistry.get<AoiListComp>(watcher).aoiList.contains(target);
+    return tlsRegistryManager.actorRegistry.get<AoiListComp>(watcher).aoiList.contains(target);
 }
 
 void InterestSystem::AddAoiEntity(const entt::entity watcher, const entt::entity target)
 {
     if (watcher == entt::null || target == entt::null) return;
 
-    tls.actorRegistry.get<AoiListComp>(watcher).aoiList.erase(target);
+    tlsRegistryManager.actorRegistry.get<AoiListComp>(watcher).aoiList.erase(target);
 }
 
 void InterestSystem::RemoveAoiEntity(const entt::entity watcher, const entt::entity target)
 {
     if (watcher == entt::null || target == entt::null ) return;
 
-    tls.actorRegistry.get<AoiListComp>(watcher).aoiList.erase(target);
+    tlsRegistryManager.actorRegistry.get<AoiListComp>(watcher).aoiList.erase(target);
 }
 
 void InterestSystem::NotifyWatchers(const entt::entity target) {

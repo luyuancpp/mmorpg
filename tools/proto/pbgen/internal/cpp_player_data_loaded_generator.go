@@ -14,13 +14,13 @@ import (
 )
 
 const playerLoaderTemplate = `
-#include "thread_local/storage.h"
+#include "thread_local/registry_manager.h"
 #include "proto/db/mysql_database_table.pb.h"
 
 void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message){
 	{{- range .Fields }}
 	{{- if .TypeName }}
-	tls.actorRegistry.emplace<{{.TypeName}}>(player, message.{{.Name}}());
+	tlsRegistryManager.actorRegistry.emplace<{{.TypeName}}>(player, message.{{.Name}}());
 	{{- end }}
 	{{- end }}
 }
@@ -28,7 +28,7 @@ void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.Messag
 void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message){
 	{{- range .Fields }}
 	{{- if .TypeName }}
-	message.mutable_{{.Name}}()->CopyFrom(tls.actorRegistry.get<{{.TypeName}}>(player));
+	message.mutable_{{.Name}}()->CopyFrom(tlsRegistryManager.actorRegistry.get<{{.TypeName}}>(player));
 	{{- end }}
 	{{- end }}
 }

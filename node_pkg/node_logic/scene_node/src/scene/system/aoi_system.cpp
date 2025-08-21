@@ -16,12 +16,14 @@
 #include "thread_local/storage.h"
 #include "type_alias/actor.h"
 #include "network/player_message_utils.h"
+#include <thread_local/registry_manager.h>
+
 
 void AoiSystem::Update(double delta) {
-    for (auto&& [entity, transform, sceneComp] : tls.actorRegistry.view<Transform, SceneEntityComp>().each()) {
+    for (auto&& [entity, transform, sceneComp] : tlsRegistryManager.actorRegistry.view<Transform, SceneEntityComp>().each()) {
         // 跳过无效场景
         if (!tls.sceneRegistry.valid(sceneComp.sceneEntity)) {
-            LOG_ERROR << "Scene not found for entity " << tls.actorRegistry.get<Guid>(entity);
+            LOG_ERROR << "Scene not found for entity " << tlsRegistryManager.actorRegistry.get<Guid>(entity);
             continue;
         }
 
@@ -42,14 +44,14 @@ void AoiSystem::Update(double delta) {
 
 void AoiSystem::UpdateGridState(const entt::entity entity, SceneGridListComp& gridList, const Hex& currentHex,
                                 const GridId currentGridId, GridSet& gridsToEnter, GridSet& gridsToLeave) {
-    if (!tls.actorRegistry.any_of<Hex>(entity)) {
+    if (!tlsRegistryManager.actorRegistry.any_of<Hex>(entity)) {
         // 首次加入场景
         gridList[currentGridId].entities.insert(entity);
-        tls.actorRegistry.emplace<Hex>(entity, currentHex);
+        tlsRegistryManager.actorRegistry.emplace<Hex>(entity, currentHex);
         GridSystem::GetCurrentAndNeighborGridIds(currentHex, gridsToEnter);
     } else {
         // 更新位置
-        const auto previousHex = tls.actorRegistry.get<Hex>(entity);
+        const auto previousHex = tlsRegistryManager.actorRegistry.get<Hex>(entity);
         if (hex_distance(previousHex, currentHex) == 0) {
             return;
         }
@@ -69,8 +71,8 @@ void AoiSystem::UpdateGridState(const entt::entity entity, SceneGridListComp& gr
         gridList[previousGridId].entities.erase(entity);
         gridList[currentGridId].entities.insert(entity);
 
-        tls.actorRegistry.remove<Hex>(entity);
-        tls.actorRegistry.emplace<Hex>(entity, currentHex);
+        tlsRegistryManager.actorRegistry.remove<Hex>(entity);
+        tlsRegistryManager.actorRegistry.emplace<Hex>(entity, currentHex);
     }
 }
 
@@ -141,15 +143,15 @@ void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity,
 
 void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
     const auto entity = entt::to_entity(message.entity());
-    if (!tls.actorRegistry.valid(entity)) {
+    if (!tlsRegistryManager.actorRegistry.valid(entity)) {
         LOG_ERROR << "Entity not found in scene";
         return;
     }
 
-    const auto hex = tls.actorRegistry.try_get<Hex>(entity);
+    const auto hex = tlsRegistryManager.actorRegistry.try_get<Hex>(entity);
     if (!hex) return;
 
-    auto& gridList = tls.sceneRegistry.get<SceneGridListComp>(tls.actorRegistry.get<SceneEntityComp>(entity).sceneEntity);
+    auto& gridList = tls.sceneRegistry.get<SceneGridListComp>(tlsRegistryManager.actorRegistry.get<SceneEntityComp>(entity).sceneEntity);
     GridSet gridsToLeave;
     GridSystem::GetCurrentAndNeighborGridIds(*hex, gridsToLeave);
 

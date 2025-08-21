@@ -122,10 +122,10 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 
 	auto playerEntity =  player_it->second;
 
-	const auto* sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (sessionPB == nullptr)
 	{
-		LOG_ERROR << "PlayerNodeInfo not found for player entity: " << tls.actorRegistry.get<Guid>(playerEntity);
+		LOG_ERROR << "PlayerNodeInfo not found for player entity: " << tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
 		return;
 	}
 
@@ -148,7 +148,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 	if (!registry.valid(gameNodeId))
 	{
-		LOG_ERROR << "Invalid game node ID found for player: " << tls.actorRegistry.get<Guid>(playerEntity);
+		LOG_ERROR << "Invalid game node ID found for player: " << tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
 		return;
 	}
 
@@ -159,7 +159,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 		return;
 	}
 
-	const auto playerId = tls.actorRegistry.get<Guid>(playerEntity);
+	const auto playerId = tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
 
 	LOG_INFO << "Handling disconnect for player: " << playerId;
 
@@ -232,9 +232,9 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		//区分顶号和断线重连
 		// 已经有 player 对象在中心服内存中
 		auto player = it->second;
-		bool hasOldSession = tls.actorRegistry.any_of<PlayerSessionSnapshotPBComp>(player);
+		bool hasOldSession = tlsRegistryManager.actorRegistry.any_of<PlayerSessionSnapshotPBComp>(player);
 
-		auto& sessionPB = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
+		auto& sessionPB = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
 		auto oldSessionId = sessionPB.gate_session_id();
 		const std::string& oldLoginToken = sessionPB.login_token();
 
@@ -257,7 +257,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		}
 
 		// ✅ 设置登录类型（进入场景时使用）
-		auto& enterComp = tls.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player);
+		auto& enterComp = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player);
 		if (!hasOldSession) {
 			enterComp.set_enter_gs_type(LOGIN_FIRST);
 		}
@@ -332,7 +332,7 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 
 	const auto playerId = it->second;
 	const auto player = PlayerManager::Instance().GetPlayer(playerId);
-	if (!tls.actorRegistry.valid(player))
+	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << playerId;
 		SendErrorToClient(*request, *response, kPlayerNotFoundInSession);
@@ -419,7 +419,7 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 
 	response->mutable_message_content()->set_message_id(request->message_content().message_id());
 	
-	if (const auto tipInfoMessage = tls.globalRegistry.try_get<TipInfoMessage>(GlobalEntity());
+	if (const auto tipInfoMessage = tlsRegistryManager.globalRegistry.try_get<TipInfoMessage>(GlobalEntity());
 		nullptr != tipInfoMessage)
 	{
 		response->mutable_message_content()->mutable_error_message()->CopyFrom(*tipInfoMessage);
@@ -443,13 +443,13 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 
 	const auto playerId = request->player_id();
 	const auto player = PlayerManager::Instance().GetPlayer(playerId);
-	if (!tls.actorRegistry.valid(player))
+	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << playerId;
 		return;
 	}
 
-	auto* sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
+	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (!sessionPB)
 	{
 		LOG_ERROR << "Player session info not found for player: " << playerId;
