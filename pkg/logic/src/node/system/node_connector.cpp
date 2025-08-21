@@ -11,6 +11,7 @@
 #include "network/network_utils.h"
 #include "thread_local/node_context_manager.h"
 #include <thread_local/node_config_manager.h>
+#include <thread_local/registry_manager.h>
 
 void NodeConnector::ConnectToNode(const NodeInfo& info) {
 	if (gNode->IsMyNode(info)) {
@@ -35,7 +36,7 @@ void NodeConnector::ConnectToNode(const NodeInfo& info) {
 }
 
 void NodeConnector::ConnectToGrpcNode(const NodeInfo& info) {
-	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& registry = NodeUtils::GetRegistryForNodeType(info.node_type());
 
 	const entt::entity entityId{ info.node_id() };
@@ -113,7 +114,7 @@ void NodeConnector::ConnectToHttpNode(const NodeInfo&) {
 }
 
 void NodeConnector::ConnectAllNodes() {
-	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 
 	for (uint32_t nodeType = 0; nodeType < eNodeType_ARRAYSIZE; ++nodeType)
 	{

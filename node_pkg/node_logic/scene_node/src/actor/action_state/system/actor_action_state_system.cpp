@@ -9,6 +9,7 @@
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/event/actor_event.pb.h"
 #include "thread_local/storage.h"
+#include <thread_local/dispatcher_manager.h>
 
 namespace {
     // 检查某个动作是否与当前状态冲突，若冲突，返回对应的错误码
@@ -36,7 +37,7 @@ namespace {
             InterruptCurrentStatePbEvent interruptEvent;
             interruptEvent.set_actor_entity(entt::to_integral(actorEntity));
             interruptEvent.set_actor_state(actorState);
-            tls.dispatcher.trigger(interruptEvent);
+            dispatcher.trigger(interruptEvent);
 
             // 中断当前状态并执行该动作
             RETURN_FALSE_ON_ERROR(ActorActionStateSystem::RemoveState(actorEntity, actorState));

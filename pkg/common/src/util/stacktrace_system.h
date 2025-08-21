@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include <muduo/base/Logging.h>
 
 constexpr size_t kMaxEntries = 10;
 

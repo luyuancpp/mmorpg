@@ -8,6 +8,7 @@
 #include "proto/logic/event/scene_event.pb.h"
 #include "time/system/time_system.h"
 #include <thread_local/registry_manager.h>
+#include <thread_local/dispatcher_manager.h>
 
 
 // 添加切换场景信息到队列
@@ -117,7 +118,7 @@ void PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(entt::entity player) 
 void PlayerChangeSceneUtil::OnEnterSceneOk(entt::entity player) {
 	S2CEnterScene ev;
 	ev.set_entity(entt::to_integral(player));
-	tls.dispatcher.trigger(ev);
+	dispatcher.trigger(ev);
 }
 
 void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {

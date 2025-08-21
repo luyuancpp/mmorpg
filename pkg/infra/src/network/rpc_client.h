@@ -9,6 +9,7 @@
 #include "network/game_channel.h"
 #include "thread_local/storage.h"
 #include "rpc_connection_event.h"
+#include <thread_local/dispatcher_manager.h>
 
 using namespace muduo;
 using namespace muduo::net;
@@ -116,7 +117,7 @@ private:
             LOG_WARN << "Disconnected from server at " << conn->peerAddress().toIpPort() << ".";
         }
 
-        tls.dispatcher.trigger<OnConnected2TcpServerEvent>(conn);
+        dispatcher.trigger<OnConnected2TcpServerEvent>(conn);
     }
 
     bool connected_{ false };

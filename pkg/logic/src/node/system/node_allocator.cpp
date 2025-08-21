@@ -7,6 +7,8 @@
 #include <util/node_utils.h>
 #include <thread_local/redis_manager.h>
 #include <thread_local/node_config_manager.h>
+#include <thread_local/registry_manager.h>
+#include <util/snow_flake.h>
 
 uint32_t tryPortId{ 0 };
 
@@ -26,7 +28,7 @@ void NodeAllocator::AcquireNode() {
 	}
 
 	// ...（以下为非 singleton 的原有分配逻辑）
-	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[gNode->GetNodeType()];
+	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[gNode->GetNodeType()];
 	auto& existingNodes = *nodeList.mutable_node_list();
 
 	std::unordered_set<uint32_t> usedIds;
@@ -93,7 +95,7 @@ uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts,
 }
 
 void NodeAllocator::AcquireNodePort() {
-	auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[gNode->GetNodeType()];
+	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[gNode->GetNodeType()];
 	auto& existingNodes = *nodeList.mutable_node_list();
 
 	std::unordered_set<uint32_t> usedPorts;

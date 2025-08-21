@@ -165,7 +165,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 	auto& missionsComponent = tlsRegistryManager.actorRegistry.get<MissionsComponent>(playerEntity);
 
 	// Trigger update to handle any pending mission events
-	tls.dispatcher.update<AcceptMissionEvent>();
+	dispatcher.update<AcceptMissionEvent>();
 
 	// Accept mission with mission_id = 6
 	uint32_t mission_id = 6;
@@ -243,7 +243,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// Trigger update to handle any pending mission condition events
-	tls.dispatcher.update<MissionConditionEvent>();
+	dispatcher.update<MissionConditionEvent>();
 
 	// After handling kConditionInteraction, expect 0 missions in progress and 1 completed mission
 	EXPECT_EQ(0, missionsComponent.MissionSize());
@@ -368,7 +368,7 @@ TEST(MissionsComponent, OnCompleteMission)
 	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// Update mission status and verify completion
-	tls.dispatcher.update<AcceptMissionEvent>();
+	dispatcher.update<AcceptMissionEvent>();
 	EXPECT_FALSE(missionsComponent.IsAccepted(missionId));
 	EXPECT_TRUE(missionsComponent.IsComplete(missionId));
 
@@ -387,8 +387,8 @@ TEST(MissionsComponent, OnCompleteMission)
 		EXPECT_FALSE(missionsComponent.IsAccepted(missionId));
 		EXPECT_TRUE(missionsComponent.IsComplete(missionId));
 
-		tls.dispatcher.update<AcceptMissionEvent>();
-		EXPECT_EQ(0, tls.dispatcher.size<AcceptMissionEvent>());
+		dispatcher.update<AcceptMissionEvent>();
+		EXPECT_EQ(0, dispatcher.size<AcceptMissionEvent>());
 
 		EXPECT_TRUE(missionsComponent.IsAccepted(++missionId));
 		EXPECT_FALSE(missionsComponent.IsComplete(missionId));
@@ -418,13 +418,13 @@ TEST(MissionsComponent, AcceptNextMirroMission)
 	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// Update mission status and verify completion
-	tls.dispatcher.update<AcceptMissionEvent>();
+	dispatcher.update<AcceptMissionEvent>();
 	EXPECT_FALSE(missionsComponent.IsAccepted(missionId));
 	EXPECT_TRUE(missionsComponent.IsComplete(missionId));
 
 	// Accept next mission and verify its status
 	const auto nextMissionId = ++missionId;
-	tls.dispatcher.update<AcceptMissionEvent>();
+	dispatcher.update<AcceptMissionEvent>();
 	EXPECT_TRUE(missionsComponent.IsAccepted(nextMissionId));
 	EXPECT_FALSE(missionsComponent.IsComplete(nextMissionId));
 }
@@ -469,8 +469,8 @@ TEST(MissionsComponent, MissionCondition)
 	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// Update mission status and verify completion
-	tls.dispatcher.update<AcceptMissionEvent>();
-	tls.dispatcher.update<MissionConditionEvent>();
+	dispatcher.update<AcceptMissionEvent>();
+	dispatcher.update<MissionConditionEvent>();
 
 	// Verify mission completion status
 	EXPECT_FALSE(missionsComponent.IsAccepted(missionId));
