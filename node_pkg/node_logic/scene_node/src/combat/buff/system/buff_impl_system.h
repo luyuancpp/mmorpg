@@ -11,6 +11,7 @@
 #include "time/system/time_system.h"
 #include "util/defer.h"
 #include <thread_local/registry_manager.h>
+#include "thread_local/dispatcher_manager.h"
 
 // BuffImplSystem: Buff逻辑工具类，用于处理各种Buff生命周期相关的逻辑
 class BuffImplSystem {
@@ -93,7 +94,7 @@ private:
         event.set_source_buff_id(buffComp.buffPb.buff_id());
         event.set_state_type(kActorCombatStateSilence);
 
-        tls.dispatcher.trigger(event);
+        dispatcher.trigger(event);
         return true;
     }
 
@@ -104,7 +105,7 @@ private:
         event.set_source_buff_id(buffId);
         event.set_state_type(kActorCombatStateSilence);
 
-        tls.dispatcher.trigger(event);
+        dispatcher.trigger(event);
         return true;
     }
 

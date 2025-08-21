@@ -1,20 +1,20 @@
 #include "{{ .HeaderFile }}"
 #include "{{ .ProtoInclude }}"
-#include "thread_local/storage.h"
+#include "thread_local/dispatcher_manager.h"
 
 {{ .GlobalUserCode }}
 
 void {{ .ClassName }}::Register()
 {
 {{- range .EventMessages }}
-    tls.dispatcher.sink<{{ . }}>().connect<&{{ $.ClassName }}::{{ . }}Handler>();
+    dispatcher.sink<{{ . }}>().connect<&{{ $.ClassName }}::{{ . }}Handler>();
 {{- end }}
 }
 
 void {{ .ClassName }}::UnRegister()
 {
 {{- range .EventMessages }}
-    tls.dispatcher.sink<{{ . }}>().disconnect<&{{ $.ClassName }}::{{ . }}Handler>();
+    dispatcher.sink<{{ . }}>().disconnect<&{{ $.ClassName }}::{{ . }}Handler>();
 {{- end }}
 }
 

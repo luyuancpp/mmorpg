@@ -8,12 +8,12 @@
 
 void BuffEventHandler::Register()
 {
-    tls.dispatcher.sink<BuffTestEvet>().connect<&BuffEventHandler::BuffTestEvetHandler>();
+    dispatcher.sink<BuffTestEvet>().connect<&BuffEventHandler::BuffTestEvetHandler>();
 }
 
 void BuffEventHandler::UnRegister()
 {
-    tls.dispatcher.sink<BuffTestEvet>().disconnect<&BuffEventHandler::BuffTestEvetHandler>();
+    dispatcher.sink<BuffTestEvet>().disconnect<&BuffEventHandler::BuffTestEvetHandler>();
 }
 void BuffEventHandler::BuffTestEvetHandler(const BuffTestEvet& event)
 {

@@ -49,7 +49,7 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
 	LOG_INFO << "Node created, log file: " << logPath;
 
 	gNode = this;
-	tls.nodeGlobalRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	tlsRegistryManager.nodeGlobalRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 
 	//未实现的节点实现一个空函数
 	void InitPlayerService();
@@ -137,7 +137,7 @@ void Node::StartRpcServer() {
 
 	StartServiceHealthMonitor();
 
-	tls.dispatcher.trigger<OnServerStart>();
+	dispatcher.trigger<OnServerStart>();
 
 	auto nodeTypeName = boost::to_upper_copy(eNodeType_Name(GetNodeInfo().node_type()));
 	LOG_INFO << "\n\n"
@@ -151,6 +151,7 @@ void Node::Shutdown() {
 	LOG_DEBUG << "Node shutting down...";
 	StopWatchingServiceNodes();
 	tls.Clear();
+	tlsRegistryManager.Clear();
 	logSystem.stop();
 	ReleaseNodeId();
 	gNode->GetEtcdManager().Shutdown();
@@ -168,8 +169,8 @@ void Node::InitLogSystem() {
 }
 
 void Node::RegisterEventHandlers() {
-	tls.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&Node::OnServerConnected>(*this);
-	tls.dispatcher.sink<OnTcpClientConnectedEvent>().connect<&Node::OnClientConnected>(*this);
+	dispatcher.sink<OnConnected2TcpServerEvent>().connect<&Node::OnServerConnected>(*this);
+	dispatcher.sink<OnTcpClientConnectedEvent>().connect<&Node::OnClientConnected>(*this);
 }
 
 void Node::LoadConfigs() {
@@ -250,7 +251,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 	}
 
 	// 下面是你的节点处理代码
-	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[deleteNode.node_type()].mutable_node_list();
 	if (deleteNode.protocol_type() == PROTOCOL_GRPC)
 	{
@@ -260,7 +261,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		OnNodeRemovePbEvent onNodeRemovePbEvent;
 		onNodeRemovePbEvent.set_entity(entt::to_integral(nodeEntity));
 		onNodeRemovePbEvent.set_node_type(deleteNode.node_type());
-		tls.dispatcher.trigger(onNodeRemovePbEvent);
+		dispatcher.trigger(onNodeRemovePbEvent);
 
 		Destroy(registry, nodeEntity);
 	}
@@ -283,7 +284,7 @@ void Node::OnServerConnected(const OnConnected2TcpServerEvent& event) {
 void Node::OnClientConnected(const OnTcpClientConnectedEvent& event) {
 	auto& conn = event.conn_;
 	if (!conn->connected()) {
-		for (const auto& [entity, session] : tls.sessionRegistry.view<RpcSession>().each()) {
+		for (const auto& [entity, session] : tlsRegistryManager.sessionRegistry.view<RpcSession>().each()) {
 			auto& existConn = session.connection;
 			if (!IsSameAddress(conn->peerAddress(), existConn->peerAddress())) {
 				LOG_TRACE << "Endpoint mismatch: expected " << conn->peerAddress().toIp()
@@ -292,13 +293,13 @@ void Node::OnClientConnected(const OnTcpClientConnectedEvent& event) {
 					<< ":" << existConn->peerAddress().port();
 				continue;
 			}
-			tls.sessionRegistry.destroy(entity);
+			tlsRegistryManager.sessionRegistry.destroy(entity);
 			return;
 		}
 		return;
 	}
-	auto entity = tls.sessionRegistry.create();
-	tls.sessionRegistry.emplace<RpcSession>(entity, RpcSession{ conn });
+	auto entity = tlsRegistryManager.sessionRegistry.create();
+	tlsRegistryManager.sessionRegistry.emplace<RpcSession>(entity, RpcSession{ conn });
 	LOG_INFO << "Client connected: " << conn->peerAddress().toIpPort();
 }
 
@@ -310,7 +311,7 @@ void Node::StartServiceHealthMonitor(){
 		}
 		auto& myNode = GetNodeInfo();
 
-		auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+		auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		auto& nodeList = *nodeRegistry[myNode.node_type()].mutable_node_list();
 		for (auto it = nodeList.begin(); it != nodeList.end(); ++it) {
 			if (IsMyNode(*it)) {

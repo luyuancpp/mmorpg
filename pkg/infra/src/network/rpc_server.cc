@@ -16,6 +16,7 @@
 
 #include "rpc_connection_event.h"
 #include <thread_local/storage.h>
+#include <thread_local/dispatcher_manager.h>
 
 using namespace muduo;
 using namespace muduo::net;
@@ -59,7 +60,7 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
     conn->setContext(GameChannelPtr());
     // FIXME:
   }
-  tls.dispatcher.trigger<OnTcpClientConnectedEvent>(conn);
+  dispatcher.trigger<OnTcpClientConnectedEvent>(conn);
 }
 
 // void RpcServer::onMessage(const TcpConnectionPtr& conn,

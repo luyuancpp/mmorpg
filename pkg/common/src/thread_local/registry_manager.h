@@ -14,7 +14,6 @@ public:
     RegistryManager(const RegistryManager&) = delete;
     RegistryManager& operator=(const RegistryManager&) = delete;
 
-
 	entt::registry globalRegistry;
 	entt::registry actorRegistry;
 	entt::registry sceneRegistry;

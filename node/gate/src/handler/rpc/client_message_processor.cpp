@@ -72,7 +72,7 @@ RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
     messageDispatcher.registerMessageCallback<ClientRequest>(
         std::bind(&RpcClientSessionHandler::DispatchClientRpcMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-	tls.dispatcher.sink<OnNodeRemovePbEvent>().connect<&RpcClientSessionHandler::OnNodeRemovePbEventHandler>(*this);
+	dispatcher.sink<OnNodeRemovePbEvent>().connect<&RpcClientSessionHandler::OnNodeRemovePbEventHandler>(*this);
 
 }
 

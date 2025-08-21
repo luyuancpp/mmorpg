@@ -11,6 +11,7 @@
 #include "pbc/common_error_tip.pb.h"
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"
+#include <thread_local/dispatcher_manager.h>
 
 #include <functional>
 #include <unordered_map>
@@ -131,7 +132,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 		OnAcceptedMissionEvent onAcceptedMissionEvent;
 		onAcceptedMissionEvent.set_entity(entt::to_integral(playerEntity));
 		onAcceptedMissionEvent.set_mission_id(acceptEvent.mission_id());
-		tls.dispatcher.enqueue(onAcceptedMissionEvent);
+		dispatcher.enqueue(onAcceptedMissionEvent);
 		LOG_INFO << "Mission accepted for playerEntity = " << tlsRegistryManager.actorRegistry.get<Guid>(playerEntity) << ", mission_id = " << acceptEvent.mission_id();
 	}
 
@@ -452,7 +453,7 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 				OnMissionAwardEvent missionAwardEvent;
 				missionAwardEvent.set_entity(entt::to_integral(playerEntity));
 				missionAwardEvent.set_mission_id(missionId);
-				tls.dispatcher.enqueue(missionAwardEvent);
+				dispatcher.enqueue(missionAwardEvent);
 			}
 			else if (nullptr != missionReward && missionComp->GetMissionConfig()->GetRewardId(missionId) > 0) {
 				// Mark mission as rewardable
@@ -467,13 +468,13 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 			// Enqueue acceptance event for each next mission
 			for (int32_t i = 0; i < nextMissions.size(); ++i) {
 				acceptMissionEvent.set_mission_id(nextMissions.Get(i));
-				tls.dispatcher.enqueue(acceptMissionEvent);
+				dispatcher.enqueue(acceptMissionEvent);
 			}
 
 			// Add mission ID to condition event for next processing
 			missionConditionEvent.clear_condtion_ids();
 			missionConditionEvent.mutable_condtion_ids()->Add(missionId);
-			tls.dispatcher.enqueue(missionConditionEvent);
+			dispatcher.enqueue(missionConditionEvent);
 		}
 	}
 }

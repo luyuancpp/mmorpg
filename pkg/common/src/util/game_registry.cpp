@@ -37,7 +37,7 @@ entt::entity GetGlobalGrpcNodeEntity()
 {
     if (tls.globalGrpcNodeEntity == entt::null)
     {
-        tls.globalGrpcNodeEntity = tls.nodeGlobalRegistry.create();
+        tls.globalGrpcNodeEntity = tlsRegistryManager.nodeGlobalRegistry.create();
     }
     return tls.globalGrpcNodeEntity;
 }

@@ -25,6 +25,7 @@
     <ClInclude Include="src\global_data\async_log_file.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\test\test.h" />
+    <ClInclude Include="src\thread_local\dispatcher_manager.h" />
     <ClInclude Include="src\thread_local\node_config_manager.h" />
     <ClInclude Include="src\thread_local\message_context.h" />
     <ClInclude Include="src\thread_local\player_manager.h" />
@@ -54,6 +55,7 @@
     <ClCompile Include="src\generator\util\gen_util.cpp" />
     <ClCompile Include="src\global_data\async_log_file.cpp" />
     <ClCompile Include="src\test\test.cpp" />
+    <ClCompile Include="src\thread_local\dispatcher_manager.cpp" />
     <ClCompile Include="src\thread_local\player_manager.cpp" />
     <ClCompile Include="src\thread_local\registry_manager.cpp" />
     <ClCompile Include="src\thread_local\snow_flake_manager.cpp" />

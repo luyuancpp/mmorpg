@@ -10,6 +10,7 @@
 #include "proto/logic/event/scene_event.pb.h"
 #include "proto/common/node.pb.h"
 #include "thread_local/node_context_manager.h"
+#include "thread_local/dispatcher_manager.h"
 
 #include <ranges> // Only if using C++20 ranges
 #include <thread_local/registry_manager.h>
@@ -175,7 +176,7 @@ entt::entity SceneUtil::CreateSceneToSceneNode(const CreateGameNodeSceneParam& p
 
 	OnSceneCreate createSceneEvent;
 	createSceneEvent.set_entity(entt::to_integral(scene));
-	tls.dispatcher.trigger(createSceneEvent);
+	dispatcher.trigger(createSceneEvent);
 
 	LOG_INFO << "Created new scene with ID: " << tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(scene).guid();
 	return scene;
@@ -202,7 +203,7 @@ void SceneUtil::DestroyScene(const DestroySceneParam& param) {
 
 	OnDestroyScene destroySceneEvent;
 	destroySceneEvent.set_entity(entt::to_integral(param.scene));
-	tls.dispatcher.trigger(destroySceneEvent);
+	dispatcher.trigger(destroySceneEvent);
 
 	pServerComp->RemoveScene(param.scene);
 
@@ -313,7 +314,7 @@ void SceneUtil::EnterScene(const EnterSceneParam& param) {
 
 	AfterEnterScene afterEnterScene;
 	afterEnterScene.set_entity(entt::to_integral(param.enter));
-	tls.dispatcher.trigger(afterEnterScene);
+	dispatcher.trigger(afterEnterScene);
 
 	if (tlsRegistryManager.actorRegistry.any_of<Guid>(param.enter)) {
 		LOG_INFO << "Player entered scene - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(param.scene);
@@ -369,7 +370,7 @@ void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
 
     BeforeLeaveScene beforeLeaveScene;
     beforeLeaveScene.set_entity(entt::to_integral(param.leaver));
-    tls.dispatcher.trigger(beforeLeaveScene);
+    dispatcher.trigger(beforeLeaveScene);
 
 	auto& scenePlayers = tlsRegistryManager.sceneRegistry.get<ScenePlayers>(sceneEntity);
 	scenePlayers.erase(param.leaver);
@@ -382,7 +383,7 @@ void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
 
 	/*AfterLeaveScene afterLeaveScene;
 	afterLeaveScene.set_entity(entt::to_integral(param.leaver));
-	tls.dispatcher.trigger(afterLeaveScene);*/
+	dispatcher.trigger(afterLeaveScene);*/
 
 	if (tlsRegistryManager.actorRegistry.any_of<Guid>(param.leaver)) {
 		LOG_INFO << "Player left scene - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.leaver) << ", Scene ID: " << entt::to_integral(sceneEntity);

@@ -13,6 +13,7 @@
 #include "proto/logic/event/server_event.pb.h"
 #include <generator/util/gen_util.h>
 #include "thread_local/node_context_manager.h"
+#include <thread_local/registry_manager.h>
 
 static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 	0,
@@ -50,7 +51,7 @@ void NodeRegistrationManager::HandleNodeRegistration(
 
 	auto tryRegister = [&, this](const TcpConnectionPtr& conn, uint32_t nodeType) -> bool {
 		entt::registry& registry = NodeContextManager::Instance().GetRegistry(nodeType);
-		const auto& nodeList = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+		const auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
 			if (!NodeUtils::IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
 			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
@@ -67,13 +68,13 @@ void NodeRegistrationManager::HandleNodeRegistration(
 		return false;
 		};
 
-	for (const auto& [entity, session] : tls.sessionRegistry.view<RpcSession>().each()) {
+	for (const auto& [entity, session] : tlsRegistryManager.sessionRegistry.view<RpcSession>().each()) {
 		auto& conn = session.connection;
 		if (!IsSameAddress(conn->peerAddress(), muduo::net::InetAddress(request.endpoint().ip(), request.endpoint().port()))) continue;
 		for (uint32_t nodeType = eNodeType_MIN; nodeType < eNodeType_ARRAYSIZE; ++nodeType) {
 			if (peerNode.node_type() != nodeType || !IsTcpNodeType(nodeType)) continue;
 			if (tryRegister(conn, nodeType)) {
-				tls.sessionRegistry.destroy(entity);
+				tlsRegistryManager.sessionRegistry.destroy(entity);
 				response.mutable_error_message()->set_id(kCommon_errorOK);
 				LOG_INFO << "Node registration succeeded: " << peerNode.DebugString();
 				return;
@@ -120,11 +121,11 @@ void NodeRegistrationManager::TriggerNodeConnectionEvent(entt::registry& registr
 		ConnectToNodePbEvent connectEvent;
 		connectEvent.set_entity(entt::to_integral(entity));
 		connectEvent.set_node_type(nodeInfo.node_type());
-		tls.dispatcher.trigger(connectEvent);
+		dispatcher.trigger(connectEvent);
 		if (nodeInfo.node_type() == CentreNodeService) {
 			OnConnect2CentrePbEvent centreEvent;
 			centreEvent.set_entity(entt::to_integral(entity));
-			tls.dispatcher.trigger(centreEvent);
+			dispatcher.trigger(centreEvent);
 			LOG_INFO << "CentreNode connected, entity: " << entt::to_integral(entity);
 		}
 		registry.remove<TimerTaskComp>(entity);

@@ -30,6 +30,7 @@
     <ClInclude Include="src\thread_local\node_config_manager.h" />
     <ClInclude Include="src\thread_local\registry_manager.h" />
     <ClInclude Include="src\thread_local\snow_flake_manager.h" />
+    <ClInclude Include="src\thread_local\dispatcher_manager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\thread_local\storage.cpp" />
@@ -49,5 +50,6 @@
     <ClCompile Include="src\thread_local\player_manager.cpp" />
     <ClCompile Include="src\thread_local\registry_manager.cpp" />
     <ClCompile Include="src\thread_local\snow_flake_manager.cpp" />
+    <ClCompile Include="src\thread_local\dispatcher_manager.cpp" />
   </ItemGroup>
 </Project>

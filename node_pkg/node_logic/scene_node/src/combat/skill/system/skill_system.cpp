@@ -627,7 +627,7 @@ void TriggerBeKillEvent(const entt::entity casterEntity, const entt::entity targ
 	beKillEvent.set_caster(entt::to_integral(casterEntity));
 	beKillEvent.set_target(entt::to_integral(target));
 
-	tls.dispatcher.trigger(beKillEvent);
+	dispatcher.trigger(beKillEvent);
 }
 
 // 触发伤害后的事件

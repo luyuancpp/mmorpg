@@ -18,11 +18,11 @@ void NpcSystem::CreateNpc()
 
     InitializeActorComponentsEvent initializeActorComponentsEvent;
     initializeActorComponentsEvent.set_actor_entity(entt::to_integral(npc));
-    tls.dispatcher.trigger(initializeActorComponentsEvent);
+    dispatcher.trigger(initializeActorComponentsEvent);
     
     InitializeNpcComponentsEvent initializeNpcComponents;
     initializeNpcComponents.set_actor_entity(entt::to_integral(npc));
-    tls.dispatcher.trigger(initializeNpcComponents);
+    dispatcher.trigger(initializeNpcComponents);
 
     tlsRegistryManager.actorRegistry.get<LevelPbComponent>(npc).set_level(1);
 }

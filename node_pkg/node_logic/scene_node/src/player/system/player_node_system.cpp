@@ -271,7 +271,7 @@ entt::entity PlayerNodeSystem::InitPlayerFromAllData(const PlayerAllData& player
 
 		RegisterPlayerEvent registerPlayer;
 		registerPlayer.set_actor_entity(entt::to_integral(player));
-		tls.dispatcher.trigger(registerPlayer);
+		dispatcher.trigger(registerPlayer);
 	}
 
 	// 6. 设置视野
@@ -287,11 +287,11 @@ entt::entity PlayerNodeSystem::InitPlayerFromAllData(const PlayerAllData& player
 	// 8. 初始化系统组件事件
 	InitializeActorComponentsEvent initActorEvent;
 	initActorEvent.set_actor_entity(entt::to_integral(player));
-	tls.dispatcher.trigger(initActorEvent);
+	dispatcher.trigger(initActorEvent);
 
 	InitializePlayerComponentsEvent initPlayerEvent;
 	initPlayerEvent.set_actor_entity(entt::to_integral(player));
-	tls.dispatcher.trigger(initPlayerEvent);
+	dispatcher.trigger(initPlayerEvent);
 
 	// 9. 进入场景节点
 	EnterGs(player, enterInfo);

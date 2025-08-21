@@ -43,7 +43,7 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string& nodeJson, uint32
 		return;
 	}
 
-	auto& nodeRegistry = tls.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
 
 	*nodeList.Add() = newNode;
