@@ -5,6 +5,7 @@
 #include "proto/logic/event/npc_event.pb.h"
 #include "thread_local/storage.h"
 #include <thread_local/registry_manager.h>
+#include <thread_local/dispatcher_manager.h>
 
 void NpcSystem::InitializeNpcComponents(entt::entity npc)
 {

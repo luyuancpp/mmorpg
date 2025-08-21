@@ -22,6 +22,7 @@
 #include "proto/logic/event/node_event.pb.h"
 #include "thread_local/node_context_manager.h"
 #include <session/manager/session_manager.h>
+#include "thread_local/dispatcher_manager.h"
 
 static std::optional<entt::entity> PickRandomNode(uint32_t nodeType, uint32_t targetNodeType) {
 	std::vector<entt::entity> candidates;
@@ -65,9 +66,9 @@ static inline NodeId GetEffectiveNodeId(
 }
 
 RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
-    ProtobufDispatcher& dispatcher)
+    ProtobufDispatcher& dispatcherParam)
     : protobufCodec(codec),
-    messageDispatcher(dispatcher)
+    messageDispatcher(dispatcherParam)
 {
     messageDispatcher.registerMessageCallback<ClientRequest>(
         std::bind(&RpcClientSessionHandler::DispatchClientRpcMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));

@@ -9,6 +9,7 @@
 #include "proto/common/node.pb.h"
 #include "thread_local/node_context_manager.h"
 #include <thread_local/registry_manager.h>
+#include <muduo/base/Logging.h>
 
 using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
 

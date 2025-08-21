@@ -26,6 +26,7 @@
 #include <kafka/kafka_producer.h>
 #include "thread_local/player_manager.h"
 #include "core/system/redis_system.h"
+#include <thread_local/dispatcher_manager.h>
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)
 {

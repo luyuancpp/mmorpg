@@ -27,6 +27,7 @@
 #include "time/system/cooldown_time_system.h"
 #include "time/system/time_system.h"
 #include <core/system/id_generator_manager.h>
+#include <thread_local/dispatcher_manager.h>
 
 uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const SkillContextCompMap& targetBuffList) {
 	uint64_t newSkillId;

@@ -8,6 +8,7 @@
 #include "proto/logic/event/scene_event.pb.h"
 #include <proto/logic/component/actor_comp.pb.h>
 #include <thread_local/registry_manager.h>
+#include <muduo/base/Logging.h>
 
 void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 {
