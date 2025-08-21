@@ -29,7 +29,7 @@ void GameNodeSceneSystem::InitializeNodeScenes() {
 }
 
 void GameNodeSceneSystem::RegisterSceneToAllCentre(entt::entity scene) {
-	const auto sceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(scene);
+	const auto sceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>(scene);
 	if (!sceneInfo) {
 		return;
 	}
@@ -46,7 +46,7 @@ void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 	RegisterSceneRequest request;
 	request.set_scene_node_id(GetNodeInfo().node_id());
 
-	for (auto&& [entity, sceneInfo] : tls.sceneRegistry.view<SceneInfoPBComponent>().each()) {
+	for (auto&& [entity, sceneInfo] : tlsRegistryManager.sceneRegistry.view<SceneInfoPBComponent>().each()) {
 		request.mutable_scenes_info()->Add()->CopyFrom(sceneInfo);
 	}
 
@@ -58,12 +58,12 @@ void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 
 void GameNodeSceneSystem::HandleSceneCreation(const OnSceneCreate& message) {
 	entt::entity scene = entt::to_entity(message.entity());
-	tls.sceneRegistry.emplace<SceneGridListComp>(scene);
+	tlsRegistryManager.sceneRegistry.emplace<SceneGridListComp>(scene);
 
-	auto& sceneInfo = tls.sceneRegistry.get<SceneInfoPBComponent>(scene);
+	auto& sceneInfo = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(scene);
 	if (SceneNavManager::Instance().Contains(sceneInfo.scene_confid())) {
 		// Auto-generated crowd handling
-		// auto& dtCrowd = tls.sceneRegistry.emplace<dtCrowd>(scene);
+		// auto& dtCrowd = tlsRegistryManager.sceneRegistry.emplace<dtCrowd>(scene);
 		// dtCrowd.init(1000, kAgentRadius, &tls_game.sceneNav_[sceneInfo.sceneConfid()].navMesh);
 	}
 }

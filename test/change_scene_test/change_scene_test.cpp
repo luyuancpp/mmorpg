@@ -52,7 +52,7 @@ TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
+	const auto sceneId = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
@@ -66,7 +66,7 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
+	const auto sceneId = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
 	ChangeSceneInfoPBComponent changeInfo;
@@ -94,7 +94,7 @@ TEST(PlayerChangeScene, DiffGs)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
+	const auto sceneId = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
 	ChangeSceneInfoPBComponent changeInfo;
@@ -118,7 +118,7 @@ TEST(PlayerChangeScene, SameGs)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
+	const auto sceneId = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
 	ChangeSceneInfoPBComponent changeInfo;
@@ -133,7 +133,7 @@ TEST(PlayerChangeScene, CrossServerDiffGs)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
+	const auto sceneId = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
 	ChangeSceneInfoPBComponent changeInfo;
@@ -157,7 +157,7 @@ TEST(PlayerChangeScene, ServerCrush)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
+	const auto sceneId = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
 	ChangeSceneInfoPBComponent changeInfo;

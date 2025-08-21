@@ -61,14 +61,14 @@ void SceneUtil::SetSequenceNodeId(const uint32_t node_id) { nodeSequence.set_nod
 
 void SceneUtil::Clear() {
 	LOG_TRACE << "Clearing scene system data";
-	tls.sceneRegistry.clear();
+	tlsRegistryManager.sceneRegistry.clear();
 	tlsRegistryManager.actorRegistry.clear();
 	NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService).clear();
 }
 
 // Get game node ID associated with a scene entity
 NodeId SceneUtil::GetGameNodeIdFromSceneEntity(entt::entity scene) {
-	auto* sceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(scene);
+	auto* sceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>(scene);
 	if (sceneInfo) {
 		return GetGameNodeIdFromGuid(sceneInfo->guid());
 	}
@@ -81,7 +81,7 @@ NodeId SceneUtil::GetGameNodeIdFromSceneEntity(entt::entity scene) {
 // Generate unique scene ID
 uint32_t SceneUtil::GenSceneGuid() {
 	uint32_t sceneId = nodeSequence.Generate();
-	while (tls.sceneRegistry.valid(entt::entity{ sceneId })) {
+	while (tlsRegistryManager.sceneRegistry.valid(entt::entity{ sceneId })) {
 		sceneId = nodeSequence.Generate();
 	}
 	LOG_INFO << "Generated new scene ID: " << sceneId;
@@ -102,14 +102,14 @@ std::size_t SceneUtil::GetScenesSize(uint32_t sceneConfigId) {
 
 // Get total number of scenes in the registry
 std::size_t SceneUtil::GetScenesSize() {
-	std::size_t totalScenes = tls.sceneRegistry.storage<SceneInfoPBComponent>().size();
+	std::size_t totalScenes = tlsRegistryManager.sceneRegistry.storage<SceneInfoPBComponent>().size();
 	LOG_TRACE << "Total scenes in the registry: " << totalScenes;
 	return totalScenes;
 }
 
 // Check if scene registry is empty
 bool SceneUtil::IsSceneEmpty() {
-	bool isEmpty = tls.sceneRegistry.storage<SceneInfoPBComponent>().empty();
+	bool isEmpty = tlsRegistryManager.sceneRegistry.storage<SceneInfoPBComponent>().empty();
 	LOG_TRACE << "Scene registry empty: " << (isEmpty ? "true" : "false");
 	return isEmpty;
 }
@@ -153,19 +153,19 @@ entt::entity SceneUtil::CreateSceneToSceneNode(const CreateGameNodeSceneParam& p
 		sceneInfo.set_guid(GenSceneGuid());
 	}
 
-	const auto scene = TryCreateEntity(tls.sceneRegistry, entt::entity{ sceneInfo.guid() });
+	const auto scene = TryCreateEntity(tlsRegistryManager.sceneRegistry, entt::entity{ sceneInfo.guid() });
 	if (scene == entt::null) {
 		LOG_ERROR << "Failed to create scene in registry";
 		return entt::null;
 	}
 
-	tls.sceneRegistry.emplace<SceneInfoPBComponent>(scene, std::move(sceneInfo));
-	tls.sceneRegistry.emplace<ScenePlayers>(scene);
+	tlsRegistryManager.sceneRegistry.emplace<SceneInfoPBComponent>(scene, std::move(sceneInfo));
+	tlsRegistryManager.sceneRegistry.emplace<ScenePlayers>(scene);
 
 	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 	auto* serverPlayerInfo = registry.try_get<GameNodePlayerInfoPtrPBComponent>(param.node);
 	if (serverPlayerInfo) {
-		tls.sceneRegistry.emplace<GameNodePlayerInfoPtrPBComponent>(scene, *serverPlayerInfo);
+		tlsRegistryManager.sceneRegistry.emplace<GameNodePlayerInfoPtrPBComponent>(scene, *serverPlayerInfo);
 	}
 
 	auto* pServerComp = registry.try_get<NodeSceneComp>(param.node);
@@ -177,7 +177,7 @@ entt::entity SceneUtil::CreateSceneToSceneNode(const CreateGameNodeSceneParam& p
 	createSceneEvent.set_entity(entt::to_integral(scene));
 	tls.dispatcher.trigger(createSceneEvent);
 
-	LOG_INFO << "Created new scene with ID: " << tls.sceneRegistry.get<SceneInfoPBComponent>(scene).guid();
+	LOG_INFO << "Created new scene with ID: " << tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(scene).guid();
 	return scene;
 }
 
@@ -194,7 +194,7 @@ void SceneUtil::DestroyScene(const DestroySceneParam& param) {
 		return;
 	}
 
-	auto* sceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(param.scene);
+	auto* sceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>(param.scene);
 	if (!sceneInfo) {
 		LOG_ERROR << "SceneInfo not found for scene";
 		return;
@@ -233,12 +233,12 @@ void SceneUtil::HandleDestroyGameNode(entt::entity node) {
 
 // Check if a player can enter a scene
 uint32_t SceneUtil::CheckPlayerEnterScene(const EnterSceneParam& param) {
-	if (!tls.sceneRegistry.valid(param.scene)) {
+	if (!tlsRegistryManager.sceneRegistry.valid(param.scene)) {
 		LOG_ERROR << "Invalid scene entity when checking player enter scene - Scene ID: " << entt::to_integral(param.scene);
 		return kInvalidEnterSceneParameters;
 	}
 
-	auto* sceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(param.scene);
+	auto* sceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>(param.scene);
 	if (!sceneInfo) {
 		LOG_ERROR << "SceneInfo not found when checking player enter scene - Scene ID: " << entt::to_integral(param.scene);
 		return kInvalidEnterSceneParameters;
@@ -256,14 +256,14 @@ uint32_t SceneUtil::CheckPlayerEnterScene(const EnterSceneParam& param) {
 
 // Check if scene player size limits are respected
 uint32_t SceneUtil::CheckScenePlayerSize(entt::entity scene) {
-	auto& scenePlayers = tls.sceneRegistry.get<ScenePlayers>(scene);
+	auto& scenePlayers = tlsRegistryManager.sceneRegistry.get<ScenePlayers>(scene);
 
 	if (scenePlayers.size() >= kMaxScenePlayer) {
 		LOG_WARN << "Scene player size limit exceeded - Scene ID: " << entt::to_integral(scene);
 		return kEnterSceneNotFull;
 	}
 
-	auto* gsPlayerInfo = tls.sceneRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(scene);
+	auto* gsPlayerInfo = tlsRegistryManager.sceneRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(scene);
 	if (!gsPlayerInfo) {
 		LOG_ERROR << "GameNodePlayerInfoPtr not found for scene - Scene ID: " << entt::to_integral(scene);
 		return kEnterSceneGsInfoNull;
@@ -286,7 +286,7 @@ void SceneUtil::EnterScene(const EnterSceneParam& param) {
 		return;
 	}
 
-	if (!tls.sceneRegistry.valid(param.scene))
+	if (!tlsRegistryManager.sceneRegistry.valid(param.scene))
 	{
 		LOG_ERROR << "Invalid scene entity when entering scene - Scene ID: " << entt::to_integral(param.scene);
 		return;
@@ -298,7 +298,7 @@ void SceneUtil::EnterScene(const EnterSceneParam& param) {
 		return;
 	}
 
-	auto& scenePlayers = tls.sceneRegistry.get<ScenePlayers>(param.scene);
+	auto& scenePlayers = tlsRegistryManager.sceneRegistry.get<ScenePlayers>(param.scene);
 	scenePlayers.emplace(param.enter);
 	if (tlsRegistryManager.actorRegistry.any_of<SceneEntityComp>(param.enter))
 	{
@@ -306,7 +306,7 @@ void SceneUtil::EnterScene(const EnterSceneParam& param) {
 	}
 	tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(param.enter, param.scene);
 
-	auto* gsPlayerInfo = tls.sceneRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(param.scene);
+	auto* gsPlayerInfo = tlsRegistryManager.sceneRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(param.scene);
 	if (gsPlayerInfo) {
 		(*gsPlayerInfo)->set_player_size((*gsPlayerInfo)->player_size() + 1);
 	}
@@ -362,7 +362,7 @@ void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
 	}
 
 	auto sceneEntity = sceneEntityComp->sceneEntity;
-	if (!tls.sceneRegistry.valid(sceneEntity)) {
+	if (!tlsRegistryManager.sceneRegistry.valid(sceneEntity)) {
 		LOG_ERROR << "Invalid scene entity when leaving scene - Player : " << entt::to_integral(param.leaver);
 		return;
 	}
@@ -371,11 +371,11 @@ void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
     beforeLeaveScene.set_entity(entt::to_integral(param.leaver));
     tls.dispatcher.trigger(beforeLeaveScene);
 
-	auto& scenePlayers = tls.sceneRegistry.get<ScenePlayers>(sceneEntity);
+	auto& scenePlayers = tlsRegistryManager.sceneRegistry.get<ScenePlayers>(sceneEntity);
 	scenePlayers.erase(param.leaver);
 	tlsRegistryManager.actorRegistry.remove<SceneEntityComp>(param.leaver);
 
-	auto* gsPlayerInfo = tls.sceneRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(sceneEntity);
+	auto* gsPlayerInfo = tlsRegistryManager.sceneRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(sceneEntity);
 	if (gsPlayerInfo) {
 		(*gsPlayerInfo)->set_player_size((*gsPlayerInfo)->player_size() - 1);
 	}
@@ -417,7 +417,7 @@ void SceneUtil::ReplaceCrashGameNode(entt::entity crashNode, entt::entity destNo
 
 	for (auto& confIdSceneList : sceneLists | std::views::values) {
 		for (auto scene : confIdSceneList) {
-			auto* pSceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(scene);
+			auto* pSceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>(scene);
 			if (!pSceneInfo) {
 				continue;
 			}

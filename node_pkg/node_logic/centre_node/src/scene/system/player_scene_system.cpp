@@ -21,7 +21,7 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 {
 	// 尝试进入上次成功进入的场景
 	entt::entity currentSceneId = entt::entity{ sceneContext.scene_info().guid() };
-	if (tls.sceneRegistry.valid(currentSceneId) &&
+	if (tlsRegistryManager.sceneRegistry.valid(currentSceneId) &&
 		kSuccess == SceneUtil::CheckPlayerEnterScene({ .scene = currentSceneId, .enter = entt::null }))
 	{
 		return currentSceneId;
@@ -29,7 +29,7 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 
 	// 尝试进入上次登录但未成功进入的场景
 	entt::entity lastSceneId = entt::entity{ sceneContext.scene_info_last_time().guid() };
-	if (tls.sceneRegistry.valid(lastSceneId) &&
+	if (tlsRegistryManager.sceneRegistry.valid(lastSceneId) &&
 		kSuccess == SceneUtil::CheckPlayerEnterScene({ .scene = lastSceneId, .enter = entt::null }))
 	{
 		return lastSceneId;
@@ -89,7 +89,7 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* sceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>((*playerSceneEntity).sceneEntity);
+    const auto* sceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>((*playerSceneEntity).sceneEntity);
     if (!sceneInfo)
     {
         LOG_ERROR << "Scene info not found for player: " << playerId;
@@ -176,7 +176,7 @@ entt::entity PlayerSceneSystem::ResolveTargetScene(entt::entity playerEntity)
 	if (info.guid() > 0)
 	{
 		toScene = entt::entity{ info.guid() };
-		if (!tls.sceneRegistry.valid(toScene))
+		if (!tlsRegistryManager.sceneRegistry.valid(toScene))
 		{
 			LOG_ERROR << "Target scene not valid for player: " << playerId;
 			PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneSceneNotFound, {});
@@ -204,8 +204,8 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 {
 	auto playerId = tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
 	auto* fromSceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity);
-	const auto* fromSceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(fromSceneEntity->sceneEntity);
-	const auto* toSceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(toScene);
+	const auto* fromSceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>(fromSceneEntity->sceneEntity);
+	const auto* toSceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>(toScene);
 
 	if (!fromSceneInfo || !toSceneInfo)
 	{
@@ -249,8 +249,8 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 	auto& changeInfo = *tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 	auto* fromSceneComp = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity);
 
-	auto fromNodeGuid = SceneUtil::GetGameNodeIdFromGuid(tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneComp->sceneEntity).guid());
-	auto toNodeGuid = SceneUtil::GetGameNodeIdFromGuid(tls.sceneRegistry.get<SceneInfoPBComponent>(toScene).guid());
+	auto fromNodeGuid = SceneUtil::GetGameNodeIdFromGuid(tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(fromSceneComp->sceneEntity).guid());
+	auto toNodeGuid = SceneUtil::GetGameNodeIdFromGuid(tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(toScene).guid());
 
 	entt::entity fromNode{fromNodeGuid};
 	entt::entity toNode{ toNodeGuid };
@@ -319,7 +319,7 @@ void PlayerSceneSystem::ProcessEnterGameNode(entt::entity playerEntity, entt::en
 
 void PlayerSceneSystem::PushInitialChangeSceneInfo(entt::entity playerEntity, entt::entity sceneEntity)
 {
-	const auto& sceneInfo = tls.sceneRegistry.get<SceneInfoPBComponent>(sceneEntity);
+	const auto& sceneInfo = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(sceneEntity);
 
 	ChangeSceneInfoPBComponent changeInfo;
 	PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeInfo, sceneInfo);

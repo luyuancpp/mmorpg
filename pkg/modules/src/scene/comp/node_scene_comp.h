@@ -7,6 +7,8 @@
 #include "node/constants/node_constants.h"
 #include "thread_local/storage.h"
 #include "proto/common/common.pb.h"
+#include "thread_local/redis_manager.h"
+#include <thread_local/registry_manager.h>
 
 using SceneList = EntityUnorderedSet;
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
@@ -61,21 +63,21 @@ public:
 
 	void AddScene(entt::entity scene_id)
 	{
-		const auto& sceneInfo = tls.sceneRegistry.get<SceneInfoPBComponent>(scene_id);
+		const auto& sceneInfo = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(scene_id);
 		configSceneLists[sceneInfo.scene_confid()].emplace(scene_id);
 	}
 
 	void RemoveScene(entt::entity scene_eid)
 	{
-		const auto& sceneInfo = tls.sceneRegistry.get<SceneInfoPBComponent>(scene_eid);
+		const auto& sceneInfo = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(scene_eid);
 		auto it = configSceneLists.find(sceneInfo.scene_confid());
 		if (it != configSceneLists.end())
 		{
 			it->second.erase(scene_eid);
 		}
-		if (tls.sceneRegistry.valid(scene_eid))
+		if (tlsRegistryManager.sceneRegistry.valid(scene_eid))
 		{
-			Destroy(tls.sceneRegistry, scene_eid);
+			Destroy(tlsRegistryManager.sceneRegistry, scene_eid);
 		}
 	}
 
@@ -92,7 +94,7 @@ public:
 
 		for (auto scene : sceneList)
 		{
-			const auto playerSize = tls.sceneRegistry.get<ScenePlayers>(scene).size();
+			const auto playerSize = tlsRegistryManager.sceneRegistry.get<ScenePlayers>(scene).size();
 			if (playerSize >= kMaxScenePlayerSize) // 可以避免重复的大小比较
 			{
 				continue;

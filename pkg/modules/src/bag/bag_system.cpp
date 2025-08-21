@@ -10,15 +10,16 @@
 #include "item_config.h"
 #include "util/defer.h"
 #include <thread_local/snow_flake_manager.h>
+#include "thread_local/redis_manager.h"
 
 Bag::Bag()
-    : entity(tls.itemRegistry.create())
+    : entity(tlsRegistryManager.itemRegistry.create())
 {
 }
 
 Bag::~Bag()
 {
-    Destroy(tls.itemRegistry, entity);
+    Destroy(tlsRegistryManager.itemRegistry, entity);
 }
 
 
