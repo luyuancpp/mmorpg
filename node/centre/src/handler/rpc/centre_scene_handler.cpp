@@ -36,7 +36,7 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 {
 	///<<< BEGIN WRITING YOUR CODE
 	const entt::entity scene{ request->scene() };
-	if (!tls.sceneRegistry.valid(scene))
+	if (!tlsRegistryManager.sceneRegistry.valid(scene))
 	{
 		LOG_ERROR << "Scene not found: " << request->scene();
 		return;

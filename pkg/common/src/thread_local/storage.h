@@ -11,8 +11,6 @@ class ThreadLocalStorage
 public:
 	ThreadLocalStorage();
 
-	entt::registry actorRegistry;
-	entt::registry sceneRegistry;
 	entt::registry itemRegistry;
 	entt::registry sessionRegistry;
 	entt::registry nodeGlobalRegistry;
