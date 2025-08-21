@@ -6,7 +6,7 @@
 #include <network/rpc_client.h>
 #include <util/node_utils.h>
 #include <grpc/generator/grpc_init.h>
-#include <thread_local/storage_common_logic.h>
+#include <thread_local/redis_manager.h>
 #include "node.h"
 #include "network/network_utils.h"
 #include "thread_local/node_context_manager.h"

@@ -5,7 +5,7 @@
 #include "etcd_manager.h"
 #include "etcd_helper.h"
 #include <util/node_utils.h>
-#include <thread_local/storage_common_logic.h>
+#include <thread_local/redis_manager.h>
 #include <thread_local/node_config_manager.h>
 
 uint32_t tryPortId{ 0 };

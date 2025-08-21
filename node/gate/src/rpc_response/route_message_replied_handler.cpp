@@ -3,7 +3,7 @@
 #include "gate_node.h"
 #include "network/codec/dispatcher.h"
 #include "service_info/service_info.h"
-#include "thread_local/storage_common_logic.h"
+#include "thread_local/redis_manager.h"
 #include "util/defer.h"
 #include "session/manager/session_manager.h"
 #include "thread_local/message_context.h"

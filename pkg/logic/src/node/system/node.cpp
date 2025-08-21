@@ -24,7 +24,7 @@
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
 #include "service_info/service_info.h"
-#include "thread_local/storage_common_logic.h"
+#include "thread_local/redis_manager.h"
 #include "time/system/time_system.h"
 #include "network/network_utils.h"
 #include "generator/util/gen_util.h"
@@ -98,8 +98,8 @@ void Node::InitRpcServer() {
 	info.set_node_uuid(boost::uuids::to_string(gen()));
 
 	InetAddress addr(NodeConfigManager::Instance().GetGameConfig().zone_redis().host(), NodeConfigManager::Instance().GetGameConfig().zone_redis().port());
-	tlsCommonLogic.GetZoneRedis() = std::make_unique<ThreadLocalStorageCommonLogic::HiredisPtr::element_type>(eventLoop, addr);
-	tlsCommonLogic.GetZoneRedis()->connect();
+	tlsReids.GetZoneRedis() = std::make_unique<RedisManager::HiredisPtr::element_type>(eventLoop, addr);
+	tlsReids.GetZoneRedis()->connect();
 
 	LOG_DEBUG << "Node info: " << info.DebugString();
 }

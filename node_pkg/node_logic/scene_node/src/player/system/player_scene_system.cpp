@@ -4,7 +4,7 @@
 
 #include "core/network/message_system.h"
 
-#include "thread_local/storage_common_logic.h"
+#include "thread_local/redis_manager.h"
 
 #include "service_info/player_scene_service_info.h"
 #include "thread_local/storage.h"
