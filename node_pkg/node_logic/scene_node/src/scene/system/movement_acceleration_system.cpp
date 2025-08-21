@@ -3,10 +3,11 @@
 #include "proto/logic/component/comp.pb.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "thread_local/storage.h"
+#include <thread_local/registry_manager.h>
 
 void MovementAccelerationSystem::Update(const double delta)
 {
-	auto view = tls.actorRegistry.view<Transform, Velocity, Acceleration>();
+	auto view = tlsRegistryManager.actorRegistry.view<Transform, Velocity, Acceleration>();
 	for (auto&& [entity, transform, velocity, acceleration] : view.each())
 	{
 		auto& location = *transform.mutable_location();

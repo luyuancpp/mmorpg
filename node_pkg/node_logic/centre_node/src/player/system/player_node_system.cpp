@@ -43,20 +43,20 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 		return;
 	}
 	
-	auto playerEntity = tls.actorRegistry.create();
+	auto playerEntity = tlsRegistryManager.actorRegistry.create();
 	if (const auto [first, success] = gPlayerList.emplace(playerId, playerEntity); !success)
 	{
 		LOG_ERROR << "Error emplacing player in player list: " << playerId;
 		return;
 	}
 
-	auto& sessionPB = tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity, std::move(sessionPbComp));
+	auto& sessionPB = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity, std::move(sessionPbComp));
 
-	tls.actorRegistry.emplace<Player>(playerEntity);
-	tls.actorRegistry.emplace<Guid>(playerEntity, playerId);
-	tls.actorRegistry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
+	tlsRegistryManager.actorRegistry.emplace<Player>(playerEntity);
+	tlsRegistryManager.actorRegistry.emplace<Guid>(playerEntity, playerId);
+	tlsRegistryManager.actorRegistry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
 
-	tls.actorRegistry.emplace<PlayerEnterGameStatePbComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
+	tlsRegistryManager.actorRegistry.emplace<PlayerEnterGameStatePbComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
 	PlayerSceneSystem::HandleLoginEnterScene(playerEntity);
 	LOG_INFO << "Player login enter scene handled: " << playerId;
@@ -70,7 +70,7 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_centre_datab
 
 void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
 {
-	if (const auto* const enterGameFlag = tls.actorRegistry.try_get<PlayerEnterGameStatePbComp>(player))
+	if (const auto* const enterGameFlag = tlsRegistryManager.actorRegistry.try_get<PlayerEnterGameStatePbComp>(player))
 	{
 		LOG_DEBUG << "EnterGameNodeInfoPBComponent found with type: " << enterGameFlag->enter_gs_type();
 
@@ -83,14 +83,14 @@ void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
 			PlayerNodeSystem::HandlePlayerReconnection(player);
 		}
 
-		tls.actorRegistry.remove<PlayerEnterGameStatePbComp>(player);
+		tlsRegistryManager.actorRegistry.remove<PlayerEnterGameStatePbComp>(player);
 		LOG_DEBUG << "Removed EnterGameNodeInfoPBComponent from player";
 	}
 }
 
 void PlayerNodeSystem::HandlePlayerLogin(entt::entity playerEntity)
 {
-	const auto enterGameFlag = tls.actorRegistry.try_get<PlayerEnterGameStatePbComp>(playerEntity);
+	const auto enterGameFlag = tlsRegistryManager.actorRegistry.try_get<PlayerEnterGameStatePbComp>(playerEntity);
 	if (!enterGameFlag)
 	{
 		LOG_WARN << "HandlePlayerLogin called but EnterGameNodeInfoPBComponent not found";
@@ -113,10 +113,10 @@ void PlayerNodeSystem::HandlePlayerReconnection(entt::entity player)
 
 void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 {
-	auto* sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!sessionPB)
 	{
-		LOG_WARN << "PlayerSessionSnapshotPB not found for player: " << tls.actorRegistry.try_get<Guid>(playerEntity);
+		LOG_WARN << "PlayerSessionSnapshotPB not found for player: " << tlsRegistryManager.actorRegistry.try_get<Guid>(playerEntity);
 		return;
 	}
 
@@ -155,13 +155,13 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 
 void PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
 {
-	const auto* const sessionPB = tls.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* const sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!sessionPB)
 	{
 		LOG_ERROR << "Invalid player session in HandleGameNodePlayerRegisteredAtGateNode";
 		return;
 	}
-	const auto* const playerId = tls.actorRegistry.try_get<Guid>(playerEntity);
+	const auto* const playerId = tlsRegistryManager.actorRegistry.try_get<Guid>(playerEntity);
 	if (!playerId)
 	{
 		LOG_ERROR << "Player ID not found in HandleGameNodePlayerRegisteredAtGateNode";
@@ -196,7 +196,7 @@ void PlayerNodeSystem::HandleAbnormalExit(Guid playerID)
 	LOG_INFO << "Handling abnormal exit for player: " << playerID;
 
 	const auto playerEntity = PlayerManager::Instance().GetPlayer(playerID);
-	if (!tls.actorRegistry.valid(playerEntity))
+	if (!tlsRegistryManager.actorRegistry.valid(playerEntity))
 	{
 		LOG_ERROR << "Player entity not valid for abnormal exit: " << playerID;
 		return;
@@ -205,7 +205,7 @@ void PlayerNodeSystem::HandleAbnormalExit(Guid playerID)
 	FetchGlobalVariableTableOrReturnVoid(kGlobalVariable_Abnormal_logout);
 
 	LOG_DEBUG << "Starting abnormal logout timer for player: " << playerID;
-	tls.actorRegistry.get_or_emplace<AbnormalExitTimer>(playerEntity).timer.RunAfter(globalVariableTable->todouble(), [playerID]() {
+	tlsRegistryManager.actorRegistry.get_or_emplace<AbnormalExitTimer>(playerEntity).timer.RunAfter(globalVariableTable->todouble(), [playerID]() {
 		LOG_INFO << "Abnormal exit timeout reached for player: " << playerID;
 		Logout(playerID);
 		});
@@ -221,13 +221,13 @@ void PlayerNodeSystem::Logout(Guid playerID)
 	defer(gPlayerList.erase(playerID));
 
 	const auto playerEntity = PlayerManager::Instance().GetPlayer(playerID);
-	if (!tls.actorRegistry.valid(playerEntity))
+	if (!tlsRegistryManager.actorRegistry.valid(playerEntity))
 	{
 		LOG_WARN << "Logout skipped, player entity invalid: " << playerID;
 		return;
 	}
 
-	if (tls.actorRegistry.try_get<SceneEntityComp>(playerEntity))
+	if (tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity))
 	{
 		LOG_DEBUG << "Player in scene, removing from scene: " << playerID;
 		SceneUtil::LeaveScene({ playerEntity });
@@ -236,6 +236,6 @@ void PlayerNodeSystem::Logout(Guid playerID)
 	GameNodeExitGameRequest exitGameRequest;
 	SendMessageToPlayerOnSceneNode(ScenePlayerExitGameMessageId, exitGameRequest, playerEntity);
 
-	Destroy(tls.actorRegistry, playerEntity);
+	Destroy(tlsRegistryManager.actorRegistry, playerEntity);
 	LOG_INFO << "Destroyed player entity: " << playerID;
 }

@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <thread_local/registry_manager.h>
+
 #define RETURN_ON_ERROR(result)  \
 if ((result) != kSuccess) {   \
 return (result);          \
@@ -24,10 +26,10 @@ return tip_code; \
 }
 
 #define TRANSFER_ERROR_MESSAGE(response) \
-if (auto* tipInfoMessage = tls.globalRegistry.try_get<TipInfoMessage>(GlobalEntity())) { \
+if (auto* tipInfoMessage = tlsRegistryManager.globalRegistry.try_get<TipInfoMessage>(GlobalEntity())) { \
 if (response) { \
 *(response)->mutable_error_message() = std::move(*tipInfoMessage); \
-tls.globalRegistry.remove<TipInfoMessage>(GlobalEntity()); \
+tlsRegistryManager.globalRegistry.remove<TipInfoMessage>(GlobalEntity()); \
 } \
 }
 
@@ -35,7 +37,7 @@ tls.globalRegistry.remove<TipInfoMessage>(GlobalEntity()); \
 { \
 auto err = fn(request); \
 if (err != kSuccess) { \
-tls.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity()).set_id(err); \
+tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity()).set_id(err); \
 return; \
 } \
 }
@@ -44,7 +46,7 @@ return; \
 { \
 auto err = fn(player, request); \
 if (err != kSuccess) { \
-tls.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity()).set_id(err); \
+tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity()).set_id(err); \
 return; \
 } \
 }

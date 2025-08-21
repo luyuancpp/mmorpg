@@ -16,6 +16,7 @@
 #include "service_info/game_player_service_info.h"
 #include "proto/logic/component/scene_comp.pb.h"
 #include "network/player_message_utils.h"
+#include <thread_local/registry_manager.h>
 
 ///<<< END WRITING YOUR CODE
 
@@ -69,7 +70,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 	///<<< BEGIN WRITING YOUR CODE
 		const auto player = entt::to_entity(event.entity());
 
-	auto* const changeSceneQueue = tls.actorRegistry.try_get<ChangeSceneQueuePBComponent>(player);
+	auto* const changeSceneQueue = tlsRegistryManager.actorRegistry.try_get<ChangeSceneQueuePBComponent>(player);
 
 	GsLeaveSceneRequest leaveSceneRequest;
 
@@ -82,9 +83,9 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 	SendMessageToPlayerOnSceneNode(SceneScenePlayerLeaveSceneMessageId, leaveSceneRequest, player);
 
 	LOG_INFO << "Player is leaving scene "
-		<< tls.actorRegistry.get<Guid>(player)
+		<< tlsRegistryManager.actorRegistry.get<Guid>(player)
 		<< ", Scene GUID: "
-		<< tls.sceneRegistry.get<SceneInfoPBComponent>(tls.actorRegistry.get<SceneEntityComp>(player).sceneEntity).guid();
+		<< tls.sceneRegistry.get<SceneInfoPBComponent>(tlsRegistryManager.actorRegistry.get<SceneEntityComp>(player).sceneEntity).guid();
 
 	///<<< END WRITING YOUR CODE
 }

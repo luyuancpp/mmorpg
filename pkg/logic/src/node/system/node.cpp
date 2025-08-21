@@ -37,6 +37,8 @@
 #include "node_allocator.h"
 #include "thread_local/node_context_manager.h"
 #include <thread_local/node_config_manager.h>
+#include <thread_local/registry_manager.h>
+
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
@@ -68,7 +70,7 @@ Node::~Node() {
 }
 
 NodeInfo& Node::GetNodeInfo() const {
-	return tls.globalRegistry.get_or_emplace<NodeInfo>(GlobalEntity());
+	return tlsRegistryManager.globalRegistry.get_or_emplace<NodeInfo>(GlobalEntity());
 }
 
 void Node::Initialize() {

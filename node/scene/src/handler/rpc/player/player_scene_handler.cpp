@@ -20,7 +20,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	::EnterSceneC2SResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_TRACE << "EnterSceneC2S request received for player: " << tls.actorRegistry.get<Guid>(player)
+	LOG_TRACE << "EnterSceneC2S request received for player: " << tlsRegistryManager.actorRegistry.get<Guid>(player)
 		<< ", scene_info: " << request->scene_info().DebugString();
 
 	auto game_node_type = gNode->GetNodeInfo().scene_node_type();
@@ -40,12 +40,12 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 		return;
 	}
 
-	if (auto current_scene_comp = tls.actorRegistry.try_get<SceneEntityComp>(player))
+	if (auto current_scene_comp = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(player))
 	{
-		const auto current_scene_info = tls.actorRegistry.try_get<SceneInfoPBComponent>(current_scene_comp->sceneEntity);
+		const auto current_scene_info = tlsRegistryManager.actorRegistry.try_get<SceneInfoPBComponent>(current_scene_comp->sceneEntity);
 		if (current_scene_info && current_scene_info->guid() == scene_info.guid() && scene_info.guid() > 0)
 		{
-			LOG_WARN << "Player " << tls.actorRegistry.get<Guid>(player) << " is already in the requested scene: " << scene_info.guid();
+			LOG_WARN << "Player " << tlsRegistryManager.actorRegistry.get<Guid>(player) << " is already in the requested scene: " << scene_info.guid();
 			response->mutable_error_message()->set_id(kEnterSceneYouInCurrentScene);
 			return;
 		}
@@ -55,7 +55,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	enterSceneReq.mutable_scene_info()->CopyFrom(scene_info);
 	SendToCentrePlayerByClientNode(CentrePlayerSceneEnterSceneMessageId, enterSceneReq, player);
 
-	LOG_TRACE << "EnterSceneC2S request processed successfully for player: " << tls.actorRegistry.get<Guid>(player);
+	LOG_TRACE << "EnterSceneC2S request processed successfully for player: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
 ///<<< END WRITING YOUR CODE
 
 }

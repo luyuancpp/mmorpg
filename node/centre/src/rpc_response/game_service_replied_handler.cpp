@@ -92,7 +92,7 @@ void OnSceneInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn, cons
 	const auto  player_id    = it->second;
 	const auto& message_info = gRpcServiceRegistry.at(replied->message_content().message_id() );
 	const auto  player = PlayerManager::Instance().GetPlayer(player_id);
-	if (!tls.actorRegistry.valid(player))
+	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"
 			<< replied->message_content().message_id();

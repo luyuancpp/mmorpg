@@ -8,6 +8,7 @@
 #include "combat/buff/comp/buff_comp.h"
 #include "combat/buff/constants/buff_constants.h"
 #include "thread_local/storage.h"
+#include <thread_local/registry_manager.h>
 
 bool ModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
     if (buffTable == nullptr) {
@@ -60,9 +61,9 @@ static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffComp&
     }
 
     //todo 及时计算 max_health
-    auto& baseAttributesPbComponent = tls.actorRegistry.get<BaseAttributesPbComponent>(parent);
-    const auto& derivedAttributesPbComponent = tls.actorRegistry.get<DerivedAttributesPbComponent>(parent);
-    const auto& levelComponent = tls.actorRegistry.get<LevelPbComponent>(parent);
+    auto& baseAttributesPbComponent = tlsRegistryManager.actorRegistry.get<BaseAttributesPbComponent>(parent);
+    const auto& derivedAttributesPbComponent = tlsRegistryManager.actorRegistry.get<DerivedAttributesPbComponent>(parent);
+    const auto& levelComponent = tlsRegistryManager.actorRegistry.get<LevelPbComponent>(parent);
 
     const auto lostHealth = derivedAttributesPbComponent.max_health() - baseAttributesPbComponent.health();  // 计算已损失生命值
 

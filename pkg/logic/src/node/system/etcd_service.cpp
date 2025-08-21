@@ -11,6 +11,7 @@
 #include "thread_local/redis_manager.h"
 #include "thread_local/node_context_manager.h"
 #include <thread_local/node_config_manager.h>
+#include <thread_local/snow_flake_manager.h>
 
 void EtcdService::Init() {
 	InitHandlers();
@@ -101,7 +102,7 @@ void EtcdService::InitTxnHandlers() {
 			}
 			else if (boost::algorithm::starts_with(key, gNode->GetEtcdManager().MakeNodeEtcdPrefix(gNode->GetNodeInfo()))) {
 				// Node acquired successfully
-				tls.OnNodeStart(gNode->GetNodeInfo().node_id());
+				tlsSnowflakeManager.OnNodeStart(gNode->GetNodeInfo().node_id());
 				gNode->StartRpcServer();
 			}
 		}

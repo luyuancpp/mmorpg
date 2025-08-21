@@ -5,7 +5,7 @@
 
 #include "proto/scene/player_scene.pb.h"
 
-#define actorCreateMessage tls.globalRegistry.get<ActorCreateS2C>(GlobalEntity())
-#define actorDestroyMessage tls.globalRegistry.get<ActorDestroyS2C>(GlobalEntity())
-#define actorListCreateMessage tls.globalRegistry.get<ActorListCreateS2C>(GlobalEntity())
-#define actorListDestroyMessage tls.globalRegistry.get<ActorListDestroyS2C>(GlobalEntity())
+#define actorCreateMessage tlsRegistryManager.globalRegistry.get<ActorCreateS2C>(GlobalEntity())
+#define actorDestroyMessage tlsRegistryManager.globalRegistry.get<ActorDestroyS2C>(GlobalEntity())
+#define actorListCreateMessage tlsRegistryManager.globalRegistry.get<ActorListCreateS2C>(GlobalEntity())
+#define actorListDestroyMessage tlsRegistryManager.globalRegistry.get<ActorListDestroyS2C>(GlobalEntity())

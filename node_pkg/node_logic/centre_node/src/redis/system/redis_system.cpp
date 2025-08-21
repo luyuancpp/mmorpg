@@ -12,7 +12,7 @@ using namespace muduo::net;
 
 void RedisSystem::Initialize()
 {
-    auto& playerRedis = tls.globalRegistry.emplace<PlayerCentreDataRedis>(GlobalEntity());
+    auto& playerRedis = tlsRegistryManager.globalRegistry.emplace<PlayerCentreDataRedis>(GlobalEntity());
     playerRedis = std::make_unique<PlayerCentreDataRedis::element_type>(*tlsReids.GetZoneRedis());
     playerRedis->SetLoadCallbackWithExtra(PlayerNodeSystem::HandlePlayerAsyncLoaded);
     playerRedis->SetSaveCallback(PlayerNodeSystem::HandlePlayerAsyncSaved);

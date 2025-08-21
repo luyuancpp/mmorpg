@@ -7,28 +7,29 @@
 #include "pbc/common_error_tip.pb.h"
 #include "scene/system/player_change_scene_system.h"
 #include "scene/system/scene_system.h"
+#include "thread_local/registry_manager.h"
 
 EntityVector globalSceneList;
 
 entt::entity CreateMainSceneNodeEntity()
 {
 	// Create a main scene node entity
-	const auto sceneEntity = tls.actorRegistry.create();
-	AddMainSceneNodeComponent(tls.actorRegistry, sceneEntity);
+	const auto sceneEntity = tlsRegistryManager.actorRegistry.create();
+	AddMainSceneNodeComponent(tlsRegistryManager.actorRegistry, sceneEntity);
 	return sceneEntity;
 }
 
 entt::entity CreatePlayerEntity()
 {
 	// Create a player entity and initialize change scene queue
-	auto playerEntity = tls.actorRegistry.create();
+	auto playerEntity = tlsRegistryManager.actorRegistry.create();
 	return playerEntity;
 }
 
 ChangeSceneInfoPBComponent& GetPlayerFrontChangeSceneInfo(entt::entity playerEntity)
 {
 	// Get the front change scene info for the player
-	return *tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
+	return *tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 }
 
 TEST(PlayerChangeScene, CreateMainScene)
@@ -58,7 +59,7 @@ TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
 	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eSameGs); // todo scene logic
 	EXPECT_EQ(kSuccess, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_TRUE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 }
 
 TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
@@ -75,18 +76,18 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 	EXPECT_EQ(kSuccess, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_FALSE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eWaitingEnter);
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
 
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_FALSE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
 	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(playerEntity);
 
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_TRUE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 }
 
 TEST(PlayerChangeScene, DiffGs)
@@ -101,16 +102,16 @@ TEST(PlayerChangeScene, DiffGs)
 	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs);
 	EXPECT_EQ(kSuccess, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_FALSE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_FALSE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
 	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(playerEntity);
 
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_TRUE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 }
 
 TEST(PlayerChangeScene, SameGs)
@@ -125,7 +126,7 @@ TEST(PlayerChangeScene, SameGs)
 	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eSameGs); // todo scene logic
 	EXPECT_EQ(kSuccess, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_TRUE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 }
 
 TEST(PlayerChangeScene, CrossServerDiffGs)
@@ -140,15 +141,15 @@ TEST(PlayerChangeScene, CrossServerDiffGs)
 	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs); // todo scene logic
 	EXPECT_EQ(kSuccess, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_FALSE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_FALSE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
 	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(playerEntity);
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_TRUE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 }
 
 // Test various states
@@ -164,20 +165,20 @@ TEST(PlayerChangeScene, ServerCrush)
 	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs); // todo scene logic
 	EXPECT_EQ(kSuccess, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_FALSE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eWaitingEnter);
 	PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity); // crash
-	EXPECT_TRUE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 	EXPECT_EQ(kSuccess, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eWaitingEnter);
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_FALSE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
 	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(playerEntity);
 	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
-	EXPECT_TRUE(tls.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
+	EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 }
 
 int32_t main(int argc, char** argv)

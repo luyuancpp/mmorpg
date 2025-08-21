@@ -16,6 +16,7 @@
 #ifdef __linux__
 #include <unistd.h>
 #endif // __linux__
+#include <thread_local/registry_manager.h>
 
 using namespace muduo;
 using namespace muduo::net;
@@ -153,17 +154,17 @@ struct CastingTimerCompTest
 
 void TestScenario() {
 
-    auto entity = tls.actorRegistry.create();
+    auto entity = tlsRegistryManager.actorRegistry.create();
 
-    auto& t = tls.actorRegistry.emplace<CastingTimerCompTest>(entity);
+    auto& t = tlsRegistryManager.actorRegistry.emplace<CastingTimerCompTest>(entity);
 
     auto fn = [entity]() {
         std::cout << "TestCoreDump : new callback executed." << std::endl;
 
-        tls.actorRegistry.destroy(entity);
+        tlsRegistryManager.actorRegistry.destroy(entity);
 
-        auto entity = tls.actorRegistry.create();
-        auto& t = tls.actorRegistry.get_or_emplace<CastingTimerCompTest>(entity);
+        auto entity = tlsRegistryManager.actorRegistry.create();
+        auto& t = tlsRegistryManager.actorRegistry.get_or_emplace<CastingTimerCompTest>(entity);
 
         };
 

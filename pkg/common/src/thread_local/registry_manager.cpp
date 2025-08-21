@@ -1,6 +1,6 @@
 #include "registry_manager.h"
 
-thread_local RegistryManager tlsManager;
+thread_local RegistryManager tlsRegistryManager;
 
 RegistryManager::RegistryManager()
 {

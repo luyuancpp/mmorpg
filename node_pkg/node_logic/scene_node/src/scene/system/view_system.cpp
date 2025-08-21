@@ -11,6 +11,7 @@
 #include "thread_local/storage.h"
 #include "type_define/type_define.h"
 #include "network/player_message_utils.h"
+#include <thread_local/registry_manager.h>
 
 void ViewSystem::Initialize()
 {
@@ -20,10 +21,10 @@ void ViewSystem::Initialize()
 
 void ViewSystem::InitializeActorMessages()
 {
-	tls.globalRegistry.emplace<ActorCreateS2C>(GlobalEntity());
-	tls.globalRegistry.emplace<ActorDestroyS2C>(GlobalEntity());
-	tls.globalRegistry.emplace<ActorListCreateS2C>(GlobalEntity());
-	tls.globalRegistry.emplace<ActorListDestroyS2C>(GlobalEntity());
+	tlsRegistryManager.globalRegistry.emplace<ActorCreateS2C>(GlobalEntity());
+	tlsRegistryManager.globalRegistry.emplace<ActorDestroyS2C>(GlobalEntity());
+	tlsRegistryManager.globalRegistry.emplace<ActorListCreateS2C>(GlobalEntity());
+	tlsRegistryManager.globalRegistry.emplace<ActorListDestroyS2C>(GlobalEntity());
 }
 
 bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant)
@@ -42,12 +43,12 @@ bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity e
 
 bool ViewSystem::BothAreNpcs(entt::entity observer, entt::entity entrant)
 {
-	return tls.actorRegistry.any_of<Npc>(observer) && tls.actorRegistry.any_of<Npc>(entrant);
+	return tlsRegistryManager.actorRegistry.any_of<Npc>(observer) && tlsRegistryManager.actorRegistry.any_of<Npc>(entrant);
 }
 
 bool ViewSystem::EntrantIsNpc(entt::entity entrant)
 {
-	return tls.actorRegistry.any_of<Npc>(entrant);
+	return tlsRegistryManager.actorRegistry.any_of<Npc>(entrant);
 }
 
 bool ViewSystem::ShouldRefreshView()
@@ -60,7 +61,7 @@ double ViewSystem::GetMaxViewRadius(entt::entity observer)
 {
 	double viewRadius = kMaxViewRadius;
 
-	if (const auto observerViewRadius = tls.actorRegistry.try_get<ViewRadius>(observer)) {
+	if (const auto observerViewRadius = tlsRegistryManager.actorRegistry.try_get<ViewRadius>(observer)) {
 		viewRadius = observerViewRadius->radius();
 	}
 
@@ -69,8 +70,8 @@ double ViewSystem::GetMaxViewRadius(entt::entity observer)
 
 bool ViewSystem::IsWithinViewRadius(entt::entity viewer, entt::entity targetEntity, double visionRadius)
 {
-	const auto viewerTransform = tls.actorRegistry.try_get<Transform>(viewer);
-	const auto targetTransform = tls.actorRegistry.try_get<Transform>(targetEntity);
+	const auto viewerTransform = tlsRegistryManager.actorRegistry.try_get<Transform>(viewer);
+	const auto targetTransform = tlsRegistryManager.actorRegistry.try_get<Transform>(targetEntity);
 
 	// 如果缺少位置数据，返回 false，表示不在视野内
 	if (!viewerTransform || !targetTransform) {
@@ -102,8 +103,8 @@ bool ViewSystem::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
 
 double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2)
 {
-	const auto transform1 = tls.actorRegistry.try_get<Transform>(entity1);
-	const auto transform2 = tls.actorRegistry.try_get<Transform>(entity2);
+	const auto transform1 = tlsRegistryManager.actorRegistry.try_get<Transform>(entity1);
+	const auto transform2 = tlsRegistryManager.actorRegistry.try_get<Transform>(entity2);
 
 	// 如果任一实体缺少位置数据，返回 -1 表示距离不可计算
 	if (!transform1 || !transform2) {
@@ -130,7 +131,7 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
 {
 	createMessage.set_entity(entt::to_integral(entrant));
 
-	if (const auto entrantTransform = tls.actorRegistry.try_get<Transform>(entrant)) {
+	if (const auto entrantTransform = tlsRegistryManager.actorRegistry.try_get<Transform>(entrant)) {
 		createMessage.mutable_transform()->CopyFrom(*entrantTransform);
 	}
 
@@ -162,7 +163,7 @@ void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uin
 }
 
 void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
-    auto transform = tls.actorRegistry.try_get<Transform>(entity);
+    auto transform = tlsRegistryManager.actorRegistry.try_get<Transform>(entity);
 	if (nullptr == transform)
 	{
 		return;

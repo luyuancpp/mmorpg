@@ -11,6 +11,7 @@
 #include "proto/logic/component/scene_comp.pb.h"
 #include "proto/common/node.pb.h"
 #include "thread_local/node_context_manager.h"
+#include <thread_local/registry_manager.h>
 
 using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
 
@@ -187,7 +188,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto playerEntity = tls.actorRegistry.create();
+		auto playerEntity = tlsRegistryManager.actorRegistry.create();
 
 		if (i % 2 == 0)
 		{
@@ -209,13 +210,13 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 	for (const auto& playerEntity : playerEntitySet1)
 	{
 		EXPECT_TRUE(scenesPlayers1.find(playerEntity) != scenesPlayers1.end());
-		EXPECT_TRUE(tls.actorRegistry.get<SceneEntityComp>(playerEntity).sceneEntity == scene1);
+		EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<SceneEntityComp>(playerEntity).sceneEntity == scene1);
 	}
 
 	for (const auto& playerEntity : playerEntitiesSet2)
 	{
 		EXPECT_TRUE(scenesPlayers2.find(playerEntity) != scenesPlayers2.end());
-		EXPECT_TRUE(tls.actorRegistry.get<SceneEntityComp>(playerEntity).sceneEntity == scene2);
+		EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<SceneEntityComp>(playerEntity).sceneEntity == scene2);
 	}
 
 	EXPECT_EQ(NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService).get<GameNodePlayerInfoPtrPBComponent>(node1)->player_size(), playerSize / 2);
@@ -227,7 +228,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 		leaveParam1.leaver = playerEntity;
 		sceneSystem.LeaveScene(leaveParam1);
 		EXPECT_FALSE(scenesPlayers1.find(playerEntity) != scenesPlayers1.end());
-		EXPECT_EQ(tls.actorRegistry.try_get<SceneEntityComp>(playerEntity), nullptr);
+		EXPECT_EQ(tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity), nullptr);
 	}
 
 	EXPECT_EQ(NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService).get<GameNodePlayerInfoPtrPBComponent>(node1)->player_size(), 0);
@@ -238,7 +239,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 		leaveParam2.leaver = playerEntity;
 		sceneSystem.LeaveScene(leaveParam2);
 		EXPECT_FALSE(scenesPlayers2.find(playerEntity) != scenesPlayers2.end());
-		EXPECT_EQ(tls.actorRegistry.try_get<SceneEntityComp>(playerEntity), nullptr);
+		EXPECT_EQ(tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity), nullptr);
 	}
 
 	EXPECT_EQ(NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService).get<GameNodePlayerInfoPtrPBComponent>(node2)->player_size(), 0);
@@ -294,7 +295,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 	{
 		for (auto&& sceneEntity : sceneEntities)
 		{
-			enterParam1.enter = tls.actorRegistry.create();
+			enterParam1.enter = tlsRegistryManager.actorRegistry.create();
 			enterParam1.scene = sceneEntity;
 			playerScene1.emplace(enterParam1.enter, enterParam1.scene);
 			sm.EnterScene(enterParam1);
@@ -348,7 +349,7 @@ TEST(GS, CompelToChangeScene)
 	EntityUnorderedSet playerList1;
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto player = tls.actorRegistry.create();
+		auto player = tlsRegistryManager.actorRegistry.create();
 		playerList1.emplace(player);
 		enterParam1.enter = player;
 		sm.EnterScene(enterParam1);
@@ -361,7 +362,7 @@ TEST(GS, CompelToChangeScene)
 	{
 		compelChangeParam1.player = it;
 		sm.CompelPlayerChangeScene(compelChangeParam1);
-		EXPECT_TRUE(tls.actorRegistry.try_get<SceneEntityComp>(it)->sceneEntity == scene2);
+		EXPECT_TRUE(tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(it)->sceneEntity == scene2);
 	}
 	EXPECT_EQ(NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService).get<GameNodePlayerInfoPtrPBComponent>(node1)->player_size(), 0);
 	EXPECT_EQ(NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService).get<GameNodePlayerInfoPtrPBComponent>(node2)->player_size(), playerList1.size());
@@ -412,7 +413,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 	{
 		for (auto it : sceneEntities)
 		{
-			auto pE = tls.actorRegistry.create();
+			auto pE = tlsRegistryManager.actorRegistry.create();
 			enterParam1.enter = pE;
 			enterParam1.scene = it;
 			playerScene1.emplace(enterParam1.enter, enterParam1.scene);
@@ -473,7 +474,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto player = tls.actorRegistry.create();
+		auto player = tlsRegistryManager.actorRegistry.create();
 		enterParam1.enter = player;
 		enterParam1.scene = firstScene;
 		playerScene1.emplace(enterParam1.enter, enterParam1.scene);
@@ -539,7 +540,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
 				auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
-				auto p_e = tls.actorRegistry.create();
+				auto p_e = tlsRegistryManager.actorRegistry.create();
 				enter_param1.enter = p_e;
 				enter_param1.scene = can_enter;
 				player_scene1.emplace(enter_param1.enter, can_enter);
@@ -550,7 +551,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			uint32_t player_scene_guid = 0;
 			for (auto& it : player_scene1)
 			{
-				auto& pse = tls.actorRegistry.get<SceneEntityComp>(it.first);
+				auto& pse = tlsRegistryManager.actorRegistry.get<SceneEntityComp>(it.first);
 				EXPECT_TRUE(pse.sceneEntity == it.second);
 				EXPECT_EQ(tls.sceneRegistry.get<SceneInfoPBComponent>(pse.sceneEntity).scene_confid(), scene_config_id0);
 			}
@@ -560,7 +561,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
 				auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
-				auto player = tls.actorRegistry.create();
+				auto player = tlsRegistryManager.actorRegistry.create();
 				enter_param1.enter = player;
 				enter_param1.scene = can_enter;
 				player_scene2.emplace(enter_param1.enter, enter_param1.scene);
@@ -570,7 +571,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			player_scene_guid = 0;
 			for (auto& it : player_scene2)
 			{
-				auto& pse = tls.actorRegistry.get<SceneEntityComp>(it.first);
+				auto& pse = tlsRegistryManager.actorRegistry.get<SceneEntityComp>(it.first);
 				EXPECT_TRUE(pse.sceneEntity == it.second);
 				EXPECT_EQ(tls.sceneRegistry.get<SceneInfoPBComponent>(pse.sceneEntity).scene_confid(), scene_config_id1);
 			}
@@ -588,13 +589,13 @@ TEST(GS, WeightRoundRobinMainScene)
 			LeaveSceneParam leave_scene;
 			for (auto& it : player_scene1)
 			{
-				auto& pse = tls.actorRegistry.get<SceneEntityComp>(it.first);
+				auto& pse = tlsRegistryManager.actorRegistry.get<SceneEntityComp>(it.first);
 				leave_scene.leaver = it.first;
 				sm.LeaveScene(leave_scene);
 			}
 			for (auto& it : player_scene2)
 			{
-				auto& pse = tls.actorRegistry.get<SceneEntityComp>(it.first);
+				auto& pse = tlsRegistryManager.actorRegistry.get<SceneEntityComp>(it.first);
 				leave_scene.leaver = it.first;
 				sm.LeaveScene(leave_scene);
 			}
@@ -662,7 +663,7 @@ TEST(GS, ServerEnterLeavePressure)
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
 		auto canEnter = nsSys.FindSceneWithMinPlayerCount(weightRoundRobinScene);
-		auto playerEntity = tls.actorRegistry.create();
+		auto playerEntity = tlsRegistryManager.actorRegistry.create();
 		enterParam1.enter = playerEntity;
 		enterParam1.scene = canEnter;
 		playerScene1.emplace(enterParam1.enter, enterParam1.scene);
@@ -679,7 +680,7 @@ TEST(GS, ServerEnterLeavePressure)
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
 		auto canEnter = nsSys.FindSceneWithMinPlayerCount(weightRoundRobinScene);
-		auto playerEntity = tls.actorRegistry.create();
+		auto playerEntity = tlsRegistryManager.actorRegistry.create();
 		enterParam1.enter = playerEntity;
 		enterParam1.scene = canEnter;
 		playerScene2.emplace(enterParam1.enter, enterParam1.scene);
@@ -703,14 +704,14 @@ TEST(GS, EnterDefaultScene)
 	}
 
 	// Create a player entity
-	const auto player = tls.actorRegistry.create();
+	const auto player = tlsRegistryManager.actorRegistry.create();
 
 	// Enter the default scene with the player
 	const EnterDefaultSceneParam enterParam{ player };
 	SceneUtil::EnterDefaultScene(enterParam);
 
 	// Verify the player is in the default scene
-	const auto [sceneEntity] = tls.actorRegistry.get<SceneEntityComp>(player);
+	const auto [sceneEntity] = tlsRegistryManager.actorRegistry.get<SceneEntityComp>(player);
 	const auto& sceneInfo = tls.sceneRegistry.get<SceneInfoPBComponent>(sceneEntity);
 	EXPECT_EQ(sceneInfo.scene_confid(), kDefaultSceneId);
 }
@@ -776,7 +777,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 				{
 					continue;
 				}
-				auto playerEntity = tls.actorRegistry.create();
+				auto playerEntity = tlsRegistryManager.actorRegistry.create();
 				enterParam1.enter = playerEntity;
 				enterParam1.scene = canEnter;
 				playerScene1.emplace(enterParam1.enter, canEnter);
@@ -787,7 +788,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			// Verify players are correctly placed in scenes and sceneConfigId0 is assigned
 			for (auto& it : playerScene1)
 			{
-				auto& pse = tls.actorRegistry.get<SceneEntityComp>(it.first);
+				auto& pse = tlsRegistryManager.actorRegistry.get<SceneEntityComp>(it.first);
 				EXPECT_TRUE(pse.sceneEntity == it.second);
 				EXPECT_EQ(tls.sceneRegistry.get<SceneInfoPBComponent>(pse.sceneEntity).scene_confid(), sceneConfigId0);
 			}
@@ -802,7 +803,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 				{
 					continue;
 				}
-				auto playerEntity = tls.actorRegistry.create();
+				auto playerEntity = tlsRegistryManager.actorRegistry.create();
 				enterParam1.enter = playerEntity;
 				enterParam1.scene = canEnter;
 				playerScene2.emplace(enterParam1.enter, enterParam1.scene);
@@ -813,7 +814,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			// Verify players are correctly placed in scenes and sceneConfigId1 is assigned
 			for (auto& it : playerScene2)
 			{
-				auto& pse = tls.actorRegistry.get<SceneEntityComp>(it.first);
+				auto& pse = tlsRegistryManager.actorRegistry.get<SceneEntityComp>(it.first);
 				EXPECT_TRUE(pse.sceneEntity == it.second);
 				EXPECT_EQ(tls.sceneRegistry.get<SceneInfoPBComponent>(pse.sceneEntity).scene_confid(), sceneConfigId1);
 			}
@@ -904,10 +905,10 @@ TEST(GS, CheckEnterRoomScene)
 	auto scene = SceneUtil::CreateSceneToSceneNode({ .node = CreateMainSceneNode(), .sceneInfo = sceneInfo });
 
 	// Create players with different GUIDs
-	const auto player1 = tls.actorRegistry.create();
-	tls.actorRegistry.emplace<Guid>(player1, 1);   // Player 1 with GUID 1
-	const auto player2 = tls.actorRegistry.create();
-	tls.actorRegistry.emplace<Guid>(player2, 100); // Player 2 with GUID 100
+	const auto player1 = tlsRegistryManager.actorRegistry.create();
+	tlsRegistryManager.actorRegistry.emplace<Guid>(player1, 1);   // Player 1 with GUID 1
+	const auto player2 = tlsRegistryManager.actorRegistry.create();
+	tlsRegistryManager.actorRegistry.emplace<Guid>(player2, 100); // Player 2 with GUID 100
 
 	// Test cases
 	EXPECT_EQ(kSuccess, SceneUtil::CheckPlayerEnterScene({ .scene = scene, .enter = player1 }));

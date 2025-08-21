@@ -313,7 +313,7 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
         return;
     }
 
-	if (const auto tipInfoMessage = tls.globalRegistry.try_get<TipInfoMessage>(GlobalEntity());
+	if (const auto tipInfoMessage = tlsRegistryManager.globalRegistry.try_get<TipInfoMessage>(GlobalEntity());
 		nullptr != tipInfoMessage)
 	{
 		response->mutable_message_content()->mutable_error_message()->CopyFrom(*tipInfoMessage);
@@ -371,7 +371,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 	}
 
 	const auto player = PlayerManager::Instance().GetPlayer(request->player_id());
-	if (!tls.actorRegistry.valid(player))
+	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found " << request->player_id();
 		return;
@@ -379,7 +379,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 
 	GlobalSessionList().emplace(request->session_id(), request->player_id());
 
-	tls.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(request->session_id());
+	tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(request->session_id());
 
 	PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(player);
 ///<<< END WRITING YOUR CODE

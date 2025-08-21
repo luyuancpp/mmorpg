@@ -2,6 +2,7 @@
 
 #include "thread_local/storage.h"
 #include "stacktrace_system.h"
+#include <thread_local/registry_manager.h>
 
 static_assert(sizeof(uint64_t) == sizeof(entt::entity), "sizeof(uint64_t) == sizeof(entt::entity)");
 
@@ -9,7 +10,7 @@ entt::entity ErrorEntity()
 {
     if (tls.errorEntity == entt::null)
     {
-        tls.errorEntity = tls.globalRegistry.create();
+        tls.errorEntity = tlsRegistryManager.globalRegistry.create();
     }
     return tls.errorEntity;
 }
@@ -18,7 +19,7 @@ entt::entity OperatorEntity()
 {
     if (tls.operatorEntity == entt::null)
     {
-        tls.operatorEntity = tls.globalRegistry.create();
+        tls.operatorEntity = tlsRegistryManager.globalRegistry.create();
     }
     return tls.operatorEntity;
 }
@@ -27,7 +28,7 @@ entt::entity GlobalEntity()
 {
     if (tls.globalEntity == entt::null)
     {
-        tls.globalEntity = tls.globalRegistry.create();
+        tls.globalEntity = tlsRegistryManager.globalRegistry.create();
     }
     return tls.globalEntity;
 }

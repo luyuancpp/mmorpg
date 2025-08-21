@@ -9,7 +9,6 @@ ThreadLocalStorage::ThreadLocalStorage()
 
 void ThreadLocalStorage::Clear()
 {
-	globalRegistry.clear();
 	actorRegistry.clear();
 	sceneRegistry.clear();
 	itemRegistry.clear();
@@ -24,7 +23,3 @@ void ThreadLocalStorage::Clear()
 }
 
 
-void ThreadLocalStorage::OnNodeStart(uint32_t nodeId)
-{
-	itemIdGenerator.set_node_id(nodeId);
-}
