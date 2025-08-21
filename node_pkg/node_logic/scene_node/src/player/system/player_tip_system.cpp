@@ -3,7 +3,7 @@
 #include "core/network/message_system.h"
 #include "muduo/base/Logging.h"
 #include "service_info/game_client_player_service_info.h"
-#include "thread_local/storage_common_logic.h"
+#include "thread_local/redis_manager.h"
 #include "network/player_message_utils.h"
 #include "thread_local/player_manager.h"
 

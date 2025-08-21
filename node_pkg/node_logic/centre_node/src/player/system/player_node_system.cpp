@@ -14,7 +14,7 @@
 #include "service_info/game_player_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
-#include "thread_local/storage_common_logic.h"
+#include "thread_local/redis_manager.h"
 #include "util/defer.h"
 #include "proto/common/node.pb.h"
 #include "cpp_table_id_constants_name/global_abnormal_logout_table_id_constants.h"

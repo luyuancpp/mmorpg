@@ -1,5 +1,5 @@
 #include "service_discovery_manager.h"
-#include <thread_local/storage_common_logic.h>
+#include <thread_local/redis_manager.h>
 #include "etcd_helper.h"
 #include <muduo/base/Logging.h>
 #include "node_util.h"

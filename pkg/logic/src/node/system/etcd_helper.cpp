@@ -1,6 +1,6 @@
 ﻿#include "etcd_helper.h"
 #include <google/protobuf/util/json_util.h>
-#include "thread_local/storage_common_logic.h"
+#include "thread_local/redis_manager.h"
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
 #include <muduo/base/Logging.h>
 #include <thread_local/storage.h>

@@ -4,7 +4,7 @@
 #include "thread_local/storage.h"
 #include "network/rpc_session.h"
 #include <network/rpc_client.h>
-#include "thread_local/storage_common_logic.h"
+#include "thread_local/redis_manager.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "service_info/centre_service_service_info.h"
 #include "thread_local/node_context_manager.h"

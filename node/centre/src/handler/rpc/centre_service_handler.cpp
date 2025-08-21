@@ -24,7 +24,7 @@
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
 #include "service_info/service_info.h"
-#include "thread_local/storage_common_logic.h"
+#include "thread_local/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "util/defer.h"
 #include "util/proto_field_checker.h"
