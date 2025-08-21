@@ -8,6 +8,7 @@
 #include "google/protobuf/util/json_util.h"
 #include <util/node_utils.h>
 #include <thread_local/node_config_manager.h>
+#include <thread_local/registry_manager.h>
 
 void ServiceDiscoveryManager::Init()
 {

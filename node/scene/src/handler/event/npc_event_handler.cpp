@@ -1,10 +1,11 @@
 #include "npc_event_handler.h"
 #include "proto/logic/event/npc_event.pb.h"
-#include "thread_local/storage.h"
+#include "thread_local/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "npc/system/npc_system.h"
 #include <thread_local/registry_manager.h>
+#include <muduo/base/Logging.h>
 ///<<< END WRITING YOUR CODE
 
 
