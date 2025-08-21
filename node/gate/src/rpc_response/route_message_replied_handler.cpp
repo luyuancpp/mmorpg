@@ -6,7 +6,7 @@
 #include "thread_local/storage_common_logic.h"
 #include "util/defer.h"
 #include "session/manager/session_manager.h"
-#include "thread_local/message_route_manager.h"
+#include "thread_local/message_context.h"
 #include "service_info/gate_service_service_info.h"
 
 extern ProtobufDispatcher gResponseDispatcher;
@@ -14,11 +14,11 @@ extern ProtobufDispatcher gResponseDispatcher;
 void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RouteMessageResponse>& replied, Timestamp timestamp)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	defer(MessageRouteManager::Instance().SetNextRouteNodeType(UINT32_MAX));
-	defer(MessageRouteManager::Instance().SeNextRouteNodeId(UINT32_MAX));
-	defer(MessageRouteManager::Instance().SetCurrentSessionId(kInvalidSessionId));
+	defer(MessageContext ::Instance().SetNextRouteNodeType(UINT32_MAX));
+	defer(MessageContext ::Instance().SeNextRouteNodeId(UINT32_MAX));
+	defer(MessageContext ::Instance().SetCurrentSessionId(kInvalidSessionId));
 
-	MessageRouteManager::Instance().SetCurrentSessionId(replied->session_id());
+	MessageContext ::Instance().SetCurrentSessionId(replied->session_id());
 
 	if (replied->route_nodes_size() <= 0)
 	{

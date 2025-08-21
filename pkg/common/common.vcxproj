@@ -25,7 +25,8 @@
     <ClInclude Include="src\global_data\async_log_file.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\test\test.h" />
-    <ClInclude Include="src\thread_local\message_route_manager.h" />
+    <ClInclude Include="src\thread_local\node_config_manager.h" />
+    <ClInclude Include="src\thread_local\message_context.h" />
     <ClInclude Include="src\thread_local\player_manager.h" />
     <ClInclude Include="src\thread_local\storage.h" />
     <ClInclude Include="src\thread_local\storage_common_logic.h" />

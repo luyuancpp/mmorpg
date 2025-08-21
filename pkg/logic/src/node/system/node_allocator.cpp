@@ -6,6 +6,7 @@
 #include "etcd_helper.h"
 #include <util/node_utils.h>
 #include <thread_local/storage_common_logic.h>
+#include <thread_local/node_config_manager.h>
 
 uint32_t tryPortId{ 0 };
 
@@ -14,7 +15,7 @@ void NodeAllocator::AcquireNode() {
 
 	// 1. 如果是全局唯一类型，执行清理逻辑 + 直接使用 zone_id
 	if (IsZoneSingletonNodeType(gNode->GetNodeType())) {
-		const uint32_t zoneId = tlsCommonLogic.GetGameConfig().zone_id();
+		const uint32_t zoneId = NodeConfigManager::Instance().GetGameConfig().zone_id();
 		gNode->GetNodeInfo().set_node_id(zoneId);
 		LOG_INFO << "Assigned node_id by zone_id: " << zoneId;
 
