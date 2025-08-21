@@ -46,5 +46,6 @@
     <ClCompile Include="src\util\node_utils.cpp" />
     <ClCompile Include="src\thread_local\node_context_manager.cpp" />
     <ClCompile Include="src\thread_local\player_manager.cpp" />
+    <ClCompile Include="src\thread_local\registry_manager.cpp" />
   </ItemGroup>
 </Project>
