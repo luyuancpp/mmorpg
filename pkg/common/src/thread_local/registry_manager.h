@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "util/game_registry.h"
 #include "util/snow_flake.h"
@@ -9,8 +9,22 @@
 class RegistryManager
 {
 public:
-
 	RegistryManager();
+
+    // 禁止拷贝和移动，确保单例唯一性
+    RegistryManager(const RegistryManager&) = delete;
+    RegistryManager& operator=(const RegistryManager&) = delete;
+
+    /**
+     * 获取线程局部的单例实例
+     * @return 线程唯一的 ThreadLocalNodeContext 实例
+     */
+    static RegistryManager& Instance() {
+        thread_local RegistryManager instance;
+        return instance;
+    }
+
+
 
 	entt::registry globalRegistry;
 	entt::registry actorRegistry;

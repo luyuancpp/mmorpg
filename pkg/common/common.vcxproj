@@ -54,6 +54,7 @@
     <ClCompile Include="src\global_data\async_log_file.cpp" />
     <ClCompile Include="src\test\test.cpp" />
     <ClCompile Include="src\thread_local\player_manager.cpp" />
+    <ClCompile Include="src\thread_local\registry_manager.cpp" />
     <ClCompile Include="src\thread_local\storage.cpp" />
     <ClCompile Include="src\thread_local\redis_manager.cpp" />
     <ClCompile Include="src\thread_local\lua_state.cpp" />
