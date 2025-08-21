@@ -3,7 +3,7 @@
 #include "type_define/type_define.h"
 
 #include "item_system.h"
-#include "thread_local/storage.h"
+
 
 using ItemsMap = std::unordered_map<Guid, entt::entity>;
 using PosMap = std::unordered_map<uint32_t, Guid>;

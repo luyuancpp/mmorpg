@@ -1,7 +1,6 @@
 ﻿#include <cstdint>
 
 #include "node_message_utils.h"
-#include "thread_local/storage.h"
 #include "network/rpc_session.h"
 #include <network/rpc_client.h>
 #include "thread_local/redis_manager.h"

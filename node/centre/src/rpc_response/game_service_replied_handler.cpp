@@ -12,7 +12,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 #include <boost/get_pointer.hpp>
 #include <muduo/base/Logging.h>
 
-#include "thread_local/storage.h"
+
 #include "service_info/service_info.h"
 #include "rpc/player_service_replied.h"
 #include "thread_local/redis_manager.h"

@@ -2,7 +2,6 @@
 #include "proto/common/common.pb.h"
 #include "node_util.h"
 #include <muduo/base/Logging.h>
-#include <thread_local/storage.h>
 #include <network/rpc_client.h>
 #include <util/node_utils.h>
 #include <grpc/generator/grpc_init.h>

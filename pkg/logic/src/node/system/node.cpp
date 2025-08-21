@@ -38,6 +38,7 @@
 #include "thread_local/node_context_manager.h"
 #include <thread_local/node_config_manager.h>
 #include <thread_local/registry_manager.h>
+#include "thread_local/thread_local_entity_container.h"
 
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
@@ -150,7 +151,7 @@ void Node::StartRpcServer() {
 void Node::Shutdown() {
 	LOG_DEBUG << "Node shutting down...";
 	StopWatchingServiceNodes();
-	tls.Clear();
+	tlsThreadLocalEntityContainer.Clear();
 	tlsRegistryManager.Clear();
 	logSystem.stop();
 	ReleaseNodeId();

@@ -3,7 +3,7 @@
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/event/actor_event.pb.h"
 #include "proto/logic/event/npc_event.pb.h"
-#include "thread_local/storage.h"
+
 #include <thread_local/registry_manager.h>
 #include <thread_local/dispatcher_manager.h>
 

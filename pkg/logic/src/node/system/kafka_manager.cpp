@@ -3,7 +3,7 @@
 #include <muduo/base/Logging.h>
 #include <boost/algorithm/string/join.hpp>
 #include "thread_local/redis_manager.h"
-#include "thread_local/storage.h"
+
 #include <thread_local/node_config_manager.h>
 
 bool KafkaManager::Init(const KafkaConfig& config) {

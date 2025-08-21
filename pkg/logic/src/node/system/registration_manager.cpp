@@ -3,7 +3,6 @@
 #include <time/comp/timer_task_comp.h>
 #include "node_util.h"
 #include <service_info/game_service_service_info.h>
-#include <thread_local/storage.h>
 #include <service_info/centre_service_service_info.h>
 #include <service_info/gate_service_service_info.h>
 #include <network/rpc_client.h>

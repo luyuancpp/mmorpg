@@ -5,7 +5,7 @@
 
 #include "type_define/type_define.h"
 #include "node/constants/node_constants.h"
-#include "thread_local/storage.h"
+
 #include "proto/common/common.pb.h"
 #include <thread_local/registry_manager.h>
 

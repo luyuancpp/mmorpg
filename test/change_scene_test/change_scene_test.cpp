@@ -2,7 +2,7 @@
 #include <boost/circular_buffer.hpp>
 #include "muduo/base/Timestamp.h"
 #include "type_define/type_define.h"
-#include "thread_local/storage.h"
+
 #include "pbc/scene_error_tip.pb.h"
 #include "pbc/common_error_tip.pb.h"
 #include "scene/system/player_change_scene_system.h"

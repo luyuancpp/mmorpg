@@ -1,6 +1,6 @@
 ﻿#include "node_util.h"
 #include <muduo/base/Logging.h>
-#include "thread_local/storage.h"
+
 #include "proto/common/common.pb.h"
 #include <network/rpc_client.h>
 #include "thread_local/node_context_manager.h"

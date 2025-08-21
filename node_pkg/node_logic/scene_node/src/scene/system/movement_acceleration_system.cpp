@@ -2,7 +2,7 @@
 
 #include "proto/logic/component/comp.pb.h"
 #include "proto/logic/component/actor_comp.pb.h"
-#include "thread_local/storage.h"
+
 #include <thread_local/registry_manager.h>
 
 void MovementAccelerationSystem::Update(const double delta)

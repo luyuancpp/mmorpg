@@ -2,7 +2,7 @@
 
 #include "class_config.h"
 #include "proto/logic/component/player_skill_comp.pb.h"
-#include "thread_local/storage.h"
+
 #include <thread_local/registry_manager.h>
 
 void PlayerSkillSystem::InitializePlayerComponentsHandler(entt::entity player)

@@ -1,7 +1,7 @@
 ﻿#include "reward/system/reward_system.h"
 #include <gtest/gtest.h>
 
-#include "thread_local/storage.h"
+
 #include "cpp_table_id_bit_index/reward_table_id_bit_index.h"
 #include "reward/comp/reward_comp.h"
 #include <thread_local/registry_manager.h>

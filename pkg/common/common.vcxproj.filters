@@ -3,7 +3,7 @@
   <ItemGroup>
     <ClInclude Include="src\config_expression\config_expression.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
-    <ClInclude Include="src\thread_local\storage.h" />
+    <ClInclude Include="src\thread_local\thread_local_entity_container.h" />
     <ClInclude Include="src\thread_local\redis_manager.h" />
     <ClInclude Include="src\thread_local\lua_state.h" />
     <ClInclude Include="src\type_define\type_define.h" />
@@ -33,7 +33,7 @@
     <ClInclude Include="src\thread_local\dispatcher_manager.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\thread_local\storage.cpp" />
+    <ClCompile Include="src\thread_local\thread_local_entity_container.cpp" />
     <ClCompile Include="src\thread_local\redis_manager.cpp" />
     <ClCompile Include="src\thread_local\lua_state.cpp" />
     <ClCompile Include="src\util\file2string.cpp" />
