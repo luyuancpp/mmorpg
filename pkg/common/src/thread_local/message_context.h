@@ -13,11 +13,6 @@ public:
 	MessageContext (const MessageContext &) = delete;
 	MessageContext & operator=(const MessageContext &) = delete;
 
-	static MessageContext & Instance() {
-		thread_local MessageContext  instance;
-		return instance;
-	}
-
 	RoutingNodeInfo& GetRoutingNodeInfo() { return route_data_; }
 	std::string& RouteMsgBody() { return route_msg_body_; }
 	void SetNextRouteNodeType(const uint32_t node_type) { next_route_node_type_ = node_type; }
@@ -37,4 +32,4 @@ private:
 };
 
 
-
+extern thread_local MessageContext tlsMessageContext;
