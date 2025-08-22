@@ -56,8 +56,8 @@ void OnSceneSendMessageToPlayerRepliedHandler(const TcpConnectionPtr& conn, cons
 void OnSceneClientSendMessageToPlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::ClientSendMessageToPlayerResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto it = SessionManager::Instance().sessions().find(replied->session_id());
-	if (it == SessionManager::Instance().sessions().end())
+    auto it = tlsSessionManager.sessions().find(replied->session_id());
+	if (it == tlsSessionManager.sessions().end())
 	{
 		LOG_ERROR << "conn id not found  session id " << "," << replied->session_id();
 		return;
