@@ -53,5 +53,6 @@
     <ClCompile Include="src\thread_local\dispatcher_manager.cpp" />
     <ClCompile Include="src\thread_local\message_context.cpp" />
     <ClCompile Include="src\thread_local\node_config_manager.cpp" />
+    <ClCompile Include="src\util\random.cpp" />
   </ItemGroup>
 </Project>

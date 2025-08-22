@@ -28,9 +28,9 @@ uint64_t GetTimeInMilliseconds()
 
 void World::InitializeSystemBeforeConnect()
 {
-    FrameTimeManager::Instance().frameTime.set_previous_time(GetTimeInMilliseconds());
-    FrameTimeManager::Instance().frameTime.set_target_fps(kTargetFPS);
-    FrameTimeManager::Instance().frameTime.set_delta_time(1.0 / FrameTimeManager::Instance().frameTime.target_fps());
+    tlsFrameTimeManager.frameTime.set_previous_time(GetTimeInMilliseconds());
+    tlsFrameTimeManager.frameTime.set_target_fps(kTargetFPS);
+    tlsFrameTimeManager.frameTime.set_delta_time(1.0 / tlsFrameTimeManager.frameTime.target_fps());
     ThreadLocalIdGeneratorManager::Instance().SetNodeId(GetNodeInfo().node_id());
     ViewSystem::Initialize();
 }
@@ -43,12 +43,12 @@ void World::Update()
 {
     //https://github.com/recastnavigation/recastnavigation.git
     const auto currentTime = GetTimeInMilliseconds();
-    const double deltaTime = static_cast<double>((currentTime - FrameTimeManager::Instance().frameTime.previous_time())) / 1000.0;
-    FrameTimeManager::Instance().frameTime.set_previous_time(currentTime);
+    const double deltaTime = static_cast<double>((currentTime - tlsFrameTimeManager.frameTime.previous_time())) / 1000.0;
+    tlsFrameTimeManager.frameTime.set_previous_time(currentTime);
 
-    double accumulatedTime = rcClamp(FrameTimeManager::Instance().frameTime.time_accumulator() + deltaTime, -1.0, 1.0);
+    double accumulatedTime = rcClamp(tlsFrameTimeManager.frameTime.time_accumulator() + deltaTime, -1.0, 1.0);
     int simulationIterations = 0;
-    const double fixedDeltaTime = FrameTimeManager::Instance().frameTime.delta_time();
+    const double fixedDeltaTime = tlsFrameTimeManager.frameTime.delta_time();
 
     while (accumulatedTime > fixedDeltaTime)
     {
@@ -64,10 +64,10 @@ void World::Update()
             ActorAttributeCalculatorSystem::Update(fixedDeltaTime);
             ActorStateAttributeSyncSystem::Update(fixedDeltaTime);
 
-            FrameTimeManager::Instance().frameTime.set_current_frame(FrameTimeManager::Instance().frameTime.current_frame() + 1);
+            tlsFrameTimeManager.frameTime.set_current_frame(tlsFrameTimeManager.frameTime.current_frame() + 1);
         }
         simulationIterations++;
     }
 
-    FrameTimeManager::Instance().frameTime.set_time_accumulator(accumulatedTime);
+    tlsFrameTimeManager.frameTime.set_time_accumulator(accumulatedTime);
 }

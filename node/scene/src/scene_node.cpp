@@ -45,7 +45,7 @@ void SceneNode::StartRpcServer(){
 	Node::StartRpcServer();
 
 	World::ReadyForGame();
-	worldTimer.RunEvery(FrameTimeManager::Instance().frameTime.delta_time(), World::Update);
+	worldTimer.RunEvery(tlsFrameTimeManager.frameTime.delta_time(), World::Update);
 }
 
 

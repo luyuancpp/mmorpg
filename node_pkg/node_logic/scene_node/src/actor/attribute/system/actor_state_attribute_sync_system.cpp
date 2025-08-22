@@ -52,7 +52,7 @@ constexpr DistanceSyncConfig kDistanceSyncConfigs[] = {
 
 // 通用的同步函数，根据不同距离级别执行同步
 void SyncAttributesForDistanceLevel(const entt::entity& entity, EntityVector& nearbyEntityList, const DistanceSyncConfig& distanceSyncConfig) {
-    const auto currentFrame = FrameTimeManager::Instance().frameTime.current_frame();
+    const auto currentFrame = tlsFrameTimeManager.frameTime.current_frame();
 
     // 获取该距离级别的实体列表
     distanceSyncConfig.retrieveEntityList(entity, nearbyEntityList);
