@@ -96,5 +96,6 @@
     <ClCompile Include="src\world\world.cpp" />
     <ClCompile Include="src\kafka\system\kafka_system.cpp" />
     <ClCompile Include="src\scene\mananger\scene_nav_mananger.cpp" />
+    <ClCompile Include="src\frame\manager\frame_time_manager.cpp" />
   </ItemGroup>
 </Project>

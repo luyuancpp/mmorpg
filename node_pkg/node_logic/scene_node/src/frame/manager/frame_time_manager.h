@@ -10,12 +10,7 @@ public:
 	FrameTimeManager (const FrameTimeManager &) = delete;
 	FrameTimeManager & operator=(const FrameTimeManager &) = delete;
 
-	static FrameTimeManager & Instance() {
-		thread_local FrameTimeManager  instance;
-		return instance;
-	}
-
-
 	FrameTime frameTime;
-
 };
+
+extern thread_local FrameTimeManager  tlsFrameTimeManager;

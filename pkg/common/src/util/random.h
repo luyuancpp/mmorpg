@@ -13,11 +13,6 @@ public:
 		rng.seed(seed);
 	}
 
-	static Random& Instance() {
-		thread_local Random instance;
-		return instance;
-	}
-
 	// 限定整数类型
 	template <std::integral IntType>
 	IntType Rand(IntType min, IntType max)
@@ -37,3 +32,6 @@ public:
 private:
 	std::mt19937_64 rng;
 };
+
+
+extern thread_local Random tlsRandom;

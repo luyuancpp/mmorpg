@@ -70,6 +70,7 @@
     <ClCompile Include="src\util\game_registry.cpp" />
     <ClCompile Include="src\util\node_utils.cpp" />
     <ClCompile Include="src\util\proto_field_checker.cpp" />
+    <ClCompile Include="src\util\random.cpp" />
     <ClCompile Include="src\util\utility.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

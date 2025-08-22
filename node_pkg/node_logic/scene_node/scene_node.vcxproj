@@ -233,6 +233,7 @@
     <ClCompile Include="src\core\config\config_system.cpp" />
     <ClCompile Include="src\core\system\redis_system.cpp" />
     <ClCompile Include="src\entity\system\entity_system.cpp" />
+    <ClCompile Include="src\frame\manager\frame_time_manager.cpp" />
     <ClCompile Include="src\kafka\system\kafka_system.cpp" />
     <ClCompile Include="src\mount\system\mount_system.cpp" />
     <ClCompile Include="src\npc\system\npc_system.cpp" />
