@@ -23,7 +23,7 @@ void SendMessageToNodeInternal(SessionType* session, uint32_t messageId, const g
 
 void SendMessageToSessionNode(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId, uint32_t nodeType) {
 	entt::entity entity{ nodeId };
-	auto& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 
 	if (!registry.valid(entity)) {
 		LOG_ERROR << "Session node not found: " << nodeId << " of type: " << static_cast<int>(nodeType);
@@ -42,7 +42,7 @@ void SendMessageToSessionNode(uint32_t messageId, const google::protobuf::Messag
 
 void SendMessageToClientNode(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId, uint32_t nodeType) {
 	entt::entity entity{ nodeId };
-	auto& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 
 	if (!registry.valid(entity)) {
 		LOG_ERROR << "Client node not found: " << nodeId << " of type: " << static_cast<int>(nodeType);
@@ -62,7 +62,7 @@ void CallRemoteMethodOnSession(uint32_t messageId, const google::protobuf::Messa
 	NodeId nodeId, uint32_t nodeType)
 {
 	entt::entity entity{ nodeId };
-	auto& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	if (!registry.valid(entity))
 	{
 		LOG_ERROR << "Node not found: " << nodeId << " of type: " << static_cast<int>(nodeType);
@@ -83,7 +83,7 @@ void CallRemoteMethodOnClient(uint32_t messageId, const google::protobuf::Messag
 	NodeId nodeId, uint32_t nodeType)
 {
 	entt::entity entity{ nodeId };
-	auto& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	if (!registry.valid(entity))
 	{
 		LOG_ERROR << "Node not found: " << nodeId;
@@ -104,7 +104,7 @@ void CallRemoteMethodOnClient(uint32_t messageId, const google::protobuf::Messag
 void BroadcastToNodes(uint32_t messageId, const google::protobuf::Message& message,
 	uint32_t nodeType)
 {
-	auto& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	for (auto&& [_, node] : registry.view<RpcClientPtr>().each())
 	{
 		node->CallRemoteMethod(messageId, message);
@@ -144,7 +144,7 @@ void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId,
 
 	entt::entity nodeEntity{ it->second };
 
-	auto& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	if (!registry.valid(nodeEntity)) {
 		LOG_ERROR << "Node not found for player, type = " << static_cast<int>(nodeType);
 		return;
@@ -202,7 +202,7 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 
 	entt::entity nodeEntity{ it->second };
 
-	auto& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	if (!registry.valid(nodeEntity)) {
 		LOG_ERROR << "Node not found for player, type = " << nodeType;
 		return;

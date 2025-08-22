@@ -69,7 +69,7 @@ void EtcdManager::KeepNodeAlive() {
 	renewLeaseTimer.RunEvery(tlsNodeConfigManager.GetBaseDeployConfig().keep_alive_interval(), []() {
 		etcdserverpb::LeaseKeepAliveRequest req;
 		req.set_id(gNode->GetLeaseId());
-		SendLeaseLeaseKeepAlive(NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService), req);
+		SendLeaseLeaseKeepAlive(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), req);
 		LOG_DEBUG << "Keeping node alive, lease_id: " << gNode->GetLeaseId();
 		});
 }

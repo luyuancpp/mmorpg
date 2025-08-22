@@ -48,14 +48,13 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// 1 清除玩家会话，处理连续顶号进入情况
 	PlayerNodeSystem::RemovePlayerSessionSilently(request->player_id());
 
-	const auto& playerList = gPlayerList;
-	auto playerIt = playerList.find(request->player_id());
+	auto playerIt = tlsPlayerList.find(request->player_id());
 
 	PlayerGameNodeEnteryInfoPBComponent enterInfo;
 	enterInfo.set_centre_node_id(request->centre_node_id());
 
 	// 2 检查玩家是否已经在线，若在线则直接进入
-	if (playerIt != playerList.end())
+	if (playerIt != tlsPlayerList.end())
 	{
 		PlayerNodeSystem::EnterGs(playerIt->second, enterInfo);
 		return;
@@ -85,8 +84,8 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	const auto playerIt = gPlayerList.find(it->second);
-	if (playerIt == gPlayerList.end())
+	const auto playerIt = tlsPlayerList.find(it->second);
+	if (playerIt == tlsPlayerList.end())
 	{
 		LOG_ERROR << "Player ID not found in common logic: " << it->second;
 		return;
@@ -362,7 +361,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 ///<<< BEGIN WRITING YOUR CODE
 	PlayerNodeSystem::RemovePlayerSession(request->player_id());
 
-	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::GateNodeService);
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
 	if (const entt::entity gateNodeId{ GetGateNodeId(request->session_id()) };
 		!registry.valid(gateNodeId))
 	{

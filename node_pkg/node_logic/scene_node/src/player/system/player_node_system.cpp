@@ -121,8 +121,8 @@ void PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(entt::entity pl
 //todo 检测
 void PlayerNodeSystem::RemovePlayerSession(const Guid playerId)
 {
-	auto playerIt = gPlayerList.find(playerId);
-	if (playerIt == gPlayerList.end())
+	auto playerIt = tlsPlayerList.find(playerId);
+	if (playerIt == tlsPlayerList.end())
 	{
 		LOG_ERROR << "RemovePlayerSession: PlayerNodeInfoPBComponent not found for player: " << playerId;
 		return;
@@ -147,8 +147,8 @@ void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
 
 void PlayerNodeSystem::RemovePlayerSessionSilently(Guid player_id)
 {
-	auto playerIt = gPlayerList.find(player_id);
-	if (playerIt == gPlayerList.end())
+	auto playerIt = tlsPlayerList.find(player_id);
+	if (playerIt == tlsPlayerList.end())
 	{
 		return;
 	}
@@ -159,7 +159,7 @@ void PlayerNodeSystem::DestroyPlayer(Guid playerId)
 {
 	LOG_INFO << "Destroying player: " << playerId;
 
-	defer(gPlayerList.erase(playerId));
+	defer(tlsPlayerList.erase(playerId));
 	Destroy(tlsRegistryManager.actorRegistry, PlayerManager::Instance().GetPlayer(playerId));
 }
 
@@ -251,7 +251,7 @@ entt::entity PlayerNodeSystem::InitPlayerFromAllData(const PlayerAllData& player
 	auto player = tlsRegistryManager.actorRegistry.create();
 
 	// 2. 注册全局玩家实体映射
-	if (const auto [it, inserted] = gPlayerList.emplace(playerId, player); !inserted)
+	if (const auto [it, inserted] = tlsPlayerList.emplace(playerId, player); !inserted)
 	{
 		LOG_ERROR << "[InitPlayerFromAllData] Player already exists in GlobalPlayerList: " << playerId;
 		return entt::null;

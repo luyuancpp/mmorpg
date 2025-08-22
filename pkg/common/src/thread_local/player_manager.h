@@ -5,7 +5,7 @@
 
 using PlayerListMap = std::unordered_map<Guid, entt::entity>;
 
-extern thread_local PlayerListMap gPlayerList;
+extern thread_local PlayerListMap tlsPlayerList;
 
 class PlayerManager {
 public:

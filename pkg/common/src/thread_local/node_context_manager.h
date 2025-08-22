@@ -25,15 +25,6 @@ public:
     NodeContextManager& operator=(const NodeContextManager&) = delete;
 
     /**
-     * 获取线程局部的单例实例
-     * @return 线程唯一的 ThreadLocalNodeContext 实例
-     */
-    static NodeContextManager& Instance() {
-        thread_local NodeContextManager instance;
-        return instance;
-    }
-
-    /**
      * 获取指定节点类型的ECS注册表
      * @param nodeType 节点类型（需在 [0, kNodeTypeCount) 范围内）
      * @return 对应节点类型的 entt::registry 引用
@@ -99,3 +90,5 @@ private:
     NodeRegistries registries_;         // 每种节点类型的ECS注册表
     NodeGlobalEntity globalEntities_;   // 每种节点类型的全局实体
 };
+
+extern thread_local NodeContextManager tlsNodeContextManager;

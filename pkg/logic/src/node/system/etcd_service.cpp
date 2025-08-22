@@ -19,10 +19,10 @@ void EtcdService::Init() {
 	const std::string& etcdAddr = *tlsNodeConfigManager.GetBaseDeployConfig().etcd_hosts().begin();
 	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
 
-	InitGrpcNode(channel, NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService));
+	InitGrpcNode(channel, tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService));
 
 	grpcHandlerTimer.RunEvery(0.005, [] {
-		for (auto& registry : NodeContextManager::Instance().GetAllRegistries()) {
+		for (auto& registry : tlsNodeContextManager.GetAllRegistries()) {
 			HandleCompletedQueueMessage(registry);
 		}
 		});

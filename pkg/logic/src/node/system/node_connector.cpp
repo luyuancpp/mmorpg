@@ -61,7 +61,7 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo& info) {
 }
 
 void NodeConnector::ConnectToTcpNode(const NodeInfo& info) {
-	auto& registry = NodeContextManager::Instance().GetRegistry(info.node_type());
+	auto& registry = tlsNodeContextManager.GetRegistry(info.node_type());
 	entt::entity entityId{ info.node_id() };
 
 	if (registry.valid(entityId)) {

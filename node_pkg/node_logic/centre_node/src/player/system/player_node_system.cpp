@@ -33,7 +33,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	//load 回来之前断开连接了,然后又加到redis了 这种怎么办,session id 变了咋办
 
 	LOG_INFO << "Handling async load for player: " << playerId;
-	assert(gPlayerList.find(playerId) == gPlayerList.end());
+	assert(tlsPlayerList.find(playerId) == tlsPlayerList.end());
 
 	auto sessionPbComp = std::any_cast<PlayerSessionSnapshotPBComp>(extra);
 
@@ -43,7 +43,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	}
 	
 	auto playerEntity = tlsRegistryManager.actorRegistry.create();
-	if (const auto [first, success] = gPlayerList.emplace(playerId, playerEntity); !success)
+	if (const auto [first, success] = tlsPlayerList.emplace(playerId, playerEntity); !success)
 	{
 		LOG_ERROR << "Error emplacing player in player list: " << playerId;
 		return;
@@ -122,7 +122,7 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	LOG_INFO << "Adding game node player to gate node, session_id: " << sessionPB->gate_session_id();
 
 	entt::entity gateNodeId{ GetGateNodeId(sessionPB->gate_session_id()) };
-	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::GateNodeService);
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
 	if (!registry.valid(gateNodeId))
 	{
 		LOG_WARN << "Gate node invalid for session_id: " << sessionPB->gate_session_id();
@@ -217,7 +217,7 @@ void PlayerNodeSystem::Logout(Guid playerID)
 	// TODO: Handle cases where player didn't enter any scene yet (e.g., login process or scene switch)
 	LOG_INFO << "Logging out player: " << playerID;
 
-	defer(gPlayerList.erase(playerID));
+	defer(tlsPlayerList.erase(playerID));
 
 	const auto playerEntity = PlayerManager::Instance().GetPlayer(playerID);
 	if (!tlsRegistryManager.actorRegistry.valid(playerEntity))

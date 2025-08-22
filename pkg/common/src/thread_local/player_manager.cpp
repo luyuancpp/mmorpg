@@ -1,11 +1,11 @@
 ﻿#include "player_manager.h" 
 
-thread_local PlayerListMap gPlayerList;
+thread_local PlayerListMap tlsPlayerList;
 
 entt::entity PlayerManager::GetPlayer(Guid player_uid)
 {
-	auto playerIt = gPlayerList.find(player_uid);
-	if (gPlayerList.end() == playerIt)
+	auto playerIt = tlsPlayerList.find(player_uid);
+	if (tlsPlayerList.end() == playerIt)
 	{
 		return entt::null;
 	}

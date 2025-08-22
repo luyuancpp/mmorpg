@@ -257,7 +257,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 	if (deleteNode.protocol_type() == PROTOCOL_GRPC)
 	{
 		auto nodeEntity = entt::entity{ deleteNode.node_id() };
-		entt::registry& registry = NodeContextManager::Instance().GetRegistry(deleteNode.node_type());
+		entt::registry& registry = tlsNodeContextManager.GetRegistry(deleteNode.node_type());
 
 		OnNodeRemovePbEvent onNodeRemovePbEvent;
 		onNodeRemovePbEvent.set_entity(entt::to_integral(nodeEntity));
