@@ -29,8 +29,8 @@ GateNode::GateNode(EventLoop* loop)
 		if (nullptr == sessionDetails) {
 			return;
 		}
-		auto it = SessionManager::Instance().sessions().find(sessionDetails->session_id());
-		if (it == SessionManager::Instance().sessions().end()){
+		auto it = tlsSessionManager.sessions().find(sessionDetails->session_id());
+		if (it == tlsSessionManager.sessions().end()){
 			return;
 		}
 		gGateNode->SendMessageToClient(it->second.conn, reply);
@@ -47,6 +47,6 @@ void GateNode::StartRpcServer()
 	rpcServer->GetTcpServer().setMessageCallback(
 		std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
 
-	SessionManager::Instance().session_id_gen().set_node_id(GetNodeId());
+	tlsSessionManager.session_id_gen().set_node_id(GetNodeId());
 
 }

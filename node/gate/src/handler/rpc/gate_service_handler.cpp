@@ -24,8 +24,8 @@ void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* control
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	auto sessionIt = SessionManager::Instance().sessions().find(request->session_info().session_id());
-	if (sessionIt == SessionManager::Instance().sessions().end())
+	auto sessionIt = tlsSessionManager.sessions().find(request->session_info().session_id());
+	if (sessionIt == tlsSessionManager.sessions().end())
 	{
 		LOG_ERROR << "Session ID not found for PlayerEnterGs, session ID: " << request->session_info().session_id();
 		return;
@@ -46,8 +46,8 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 {
 	///<<< BEGIN WRITING YOUR CODE
 
-	auto sessionIt = SessionManager::Instance().sessions().find(request->header().session_id());
-	if (sessionIt == SessionManager::Instance().sessions().end())
+	auto sessionIt = tlsSessionManager.sessions().find(request->header().session_id());
+	if (sessionIt == tlsSessionManager.sessions().end())
 	{
 		if (shouldLogProtocolErrorForDisconnectedPlayer(request->message_content().message_id()))
 		{
@@ -67,7 +67,7 @@ void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* control
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	SessionManager::Instance().sessions().erase(request->session_id());
+	tlsSessionManager.sessions().erase(request->session_id());
 	LOG_INFO << "Session ID kicked by Centre: " << request->session_id();
 	///<<< END WRITING YOUR CODE
 }
@@ -101,8 +101,8 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto&& sessionId : request->session_list())
 	{
-		auto sessionIt = SessionManager::Instance().sessions().find(sessionId);
-		if (sessionIt == SessionManager::Instance().sessions().end())
+		auto sessionIt = tlsSessionManager.sessions().find(sessionId);
+		if (sessionIt == tlsSessionManager.sessions().end())
 		{
 			if (shouldLogProtocolErrorForDisconnectedPlayer(request->message_content().message_id()))
 			{

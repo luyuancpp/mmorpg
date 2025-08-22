@@ -14,12 +14,6 @@ public:
 	SessionManager(const SessionManager&) = delete;
 	SessionManager& operator=(const SessionManager&) = delete;
 
-	static SessionManager& Instance() {
-		thread_local SessionManager instance;
-		return instance;
-	}
-
-
 	SessionList& sessions() { return sessionList; }
 	SessionIdGenerator& session_id_gen() { return sessionIdGen; }
 private:
@@ -27,3 +21,4 @@ private:
 	SessionIdGenerator sessionIdGen;
 };
 
+extern thread_local SessionManager tlsSessionManager;

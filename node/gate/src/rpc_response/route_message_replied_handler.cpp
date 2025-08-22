@@ -33,8 +33,8 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		return;
 	}
 	//gate 和其他服务器不一样，直接返回消息给客户端
-	const auto it = SessionManager::Instance().sessions().find(replied->session_id());
-	if (it == SessionManager::Instance().sessions().end())
+	const auto it = tlsSessionManager.sessions().find(replied->session_id());
+	if (it == tlsSessionManager.sessions().end())
 	{
 		LOG_ERROR << "conn id not found  session id "  << "," << replied->session_id();
 		return;
