@@ -35,7 +35,7 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 	}
 
 	entt::entity gateSessionId{ GetGateNodeId(playerSessionSnapshotPB->gate_session_id()) };
-	auto& gateNodeRegistry = NodeContextManager::Instance().GetRegistry(eNodeType::GateNodeService);
+	auto& gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
 	if (!gateNodeRegistry.valid(gateSessionId))
 	{
 		LOG_ERROR << "Gate session not found for player with session ID " << playerSessionSnapshotPB->gate_session_id();
@@ -66,7 +66,7 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId gateNodeId)
 {
 	entt::entity gateEntity{ gateNodeId };
-	auto& gateNodeRegistry = NodeContextManager::Instance().GetRegistry(eNodeType::GateNodeService);
+	auto& gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
 	if (!gateNodeRegistry.valid(gateEntity))
 	{
 		LOG_ERROR << "Gate not found for NodeId -> " << gateNodeId;
@@ -90,7 +90,7 @@ template<typename PlayerContainer>
 void InternalBroadcast(uint32_t messageId, const google::protobuf::Message& message, const PlayerContainer& playerList)
 {
 	std::unordered_map<entt::entity, BroadCastSessionIdList> gateList;
-	auto& gateNodeRegistry = NodeContextManager::Instance().GetRegistry(eNodeType::GateNodeService);
+	auto& gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
 
 	for (auto& player : playerList)
 	{
@@ -197,11 +197,11 @@ void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::M
 
 	auto nodeId = GetEffectiveNodeId(rpcHandlerMeta.targetNodeType);
 	entt::entity node{ entt::to_entity(nodeId) };
-	if (!NodeContextManager::Instance().GetRegistry(rpcHandlerMeta.targetNodeType).valid(node)) {
+	if (!tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType).valid(node)) {
 		LOG_ERROR << "Node not found for type: " << rpcHandlerMeta.targetNodeType;
 		return;
 	}
-	rpcHandlerMeta.messageSender(NodeContextManager::Instance().GetRegistry(rpcHandlerMeta.targetNodeType),
+	rpcHandlerMeta.messageSender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType),
 		node,
 		*rpcHandlerMeta.requestPrototype,
 		{ kSessionBinMetaKey },
@@ -267,7 +267,7 @@ void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
 
 	entt::entity nodeEntity{ it->second };
 
-	auto& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	if (!registry.valid(nodeEntity))
 	{
 		LOG_ERROR << "Node entity invalid for player -> " << entt::to_integral(playerEntity)
@@ -330,7 +330,7 @@ void CallMethodOnPlayerNode(
 
 	entt::entity targetNodeEntity{ it->second };
 
-	auto& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 
 	if (!registry.valid(targetNodeEntity))
 	{

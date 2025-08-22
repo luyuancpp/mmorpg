@@ -19,8 +19,8 @@ void PlayerTipSystem::SendToPlayer(entt::entity playerEntity, uint32_t tipId, co
 
 void PlayerTipSystem::SendToPlayer(Guid playerId, uint32_t tipId, const StringVector& parameters)
 {
-	const auto playerIterator = gPlayerList.find(playerId);
-	if (playerIterator == gPlayerList.end())
+	const auto playerIterator = tlsPlayerList.find(playerId);
+	if (playerIterator == tlsPlayerList.end())
 	{
 		return;
 	}

@@ -43,7 +43,7 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 	}
 
 	const entt::entity gameNode{ request->scene_node_id() };
-	if (!NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService).valid(gameNode))
+	if (!tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(gameNode))
 	{
 		LOG_ERROR << "Node not found: " << request->scene_node_id();
 		return;

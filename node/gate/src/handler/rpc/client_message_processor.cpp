@@ -26,7 +26,7 @@
 
 static std::optional<entt::entity> PickRandomNode(uint32_t nodeType, uint32_t targetNodeType) {
 	std::vector<entt::entity> candidates;
-	auto& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	auto view = registry.view<NodeInfo>();
 	for (auto entity : view) {
 		const auto& node = view.get<NodeInfo>(entity);
@@ -88,7 +88,7 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 			return std::nullopt;
 		}
 
-		const auto& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+		const auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 		auto entity = entt::entity{ nodeInfo->node_id() };
 
 		if (!registry.valid(entity)) {
@@ -117,7 +117,7 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 		session.SetNodeId(nodeType, entt::to_integral(*randomNode));
 	}
 
-	const auto& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+	const auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	entt::entity nodeEntity = entt::entity{ GetEffectiveNodeId(session, nodeType) };
 	if (!registry.valid(nodeEntity)) {
 		LOG_ERROR << "[LoginNode] Bound login node is invalid. session id: " << sessionId;
@@ -227,7 +227,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
         request.set_session_id(sessionId);
         SessionDetails sessionDetails;
         sessionDetails.set_session_id(sessionId);
-        loginpb::SendClientPlayerLoginDisconnect(NodeContextManager::Instance().GetRegistry(eNodeType::LoginNodeService), *loginNode, request, { kSessionBinMetaKey }, SerializeSessionDetails(sessionDetails));
+        loginpb::SendClientPlayerLoginDisconnect(tlsNodeContextManager.GetRegistry(eNodeType::LoginNodeService), *loginNode, request, { kSessionBinMetaKey }, SerializeSessionDetails(sessionDetails));
     }
 
     GateSessionDisconnectRequest request;
@@ -265,7 +265,7 @@ void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& req
 
 	// 玩家没登录直接发其他消息，乱发消息
     entt::entity tcpNodeId = entt::entity{ GetEffectiveNodeId(session, handlerMeta.targetNodeType) };
-	auto& registry = NodeContextManager::Instance().GetRegistry(handlerMeta.targetNodeType);
+	auto& registry = tlsNodeContextManager.GetRegistry(handlerMeta.targetNodeType);
 	if (!registry.valid(tcpNodeId))
 	{
 		LOG_ERROR << "[TCP Node Error] Invalid tcp node id: " << static_cast<uint32_t>(tcpNodeId)
@@ -312,7 +312,7 @@ void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, c
 		}
 
 		
-		rpcHandlerMeta .messageSender(NodeContextManager::Instance().GetRegistry(rpcHandlerMeta .targetNodeType), 
+		rpcHandlerMeta .messageSender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta .targetNodeType), 
             *node, 
             *rpcHandlerMeta .requestPrototype, 
             { kSessionBinMetaKey }, 
@@ -361,7 +361,7 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
 
 void RpcClientSessionHandler::OnNodeRemovePbEventHandler(const OnNodeRemovePbEvent& pb)
 {
-	auto& registry = NodeContextManager::Instance().GetRegistry(pb.node_type());
+	auto& registry = tlsNodeContextManager.GetRegistry(pb.node_type());
 	for (auto& session : SessionManager::Instance().sessions())
 	{
 		if (session.second.GetNodeId(pb.node_type()) != pb.entity()) continue;

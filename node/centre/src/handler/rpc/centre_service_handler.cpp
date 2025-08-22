@@ -63,8 +63,8 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 
 	LOG_TRACE << "Getting player entity for session ID: " << session_id << ", player ID: " << player_id;
 
-	const auto player_it = gPlayerList.find(player_id);
-	if (player_it == gPlayerList.end())
+	const auto player_it = tlsPlayerList.find(player_id);
+	if (player_it == tlsPlayerList.end())
 	{
 		LOG_ERROR << "Player not found for session ID: " << session_id << ", player ID: " << player_id;
 		return entt::null;
@@ -111,8 +111,8 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 
 	LOG_TRACE << "Getting player entity for session ID: " << session_id << ", player ID: " << player_id;
 
-	const auto player_it = gPlayerList.find(player_id);
-	if (player_it == gPlayerList.end())
+	const auto player_it = tlsPlayerList.find(player_id);
+	if (player_it == tlsPlayerList.end())
 	{
 		LOG_TRACE << "Player not found for session ID: " << session_id << ", player ID: " << player_id;
 		return ;
@@ -145,7 +145,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	}
 
 	const entt::entity gameNodeId{ it->second };
-	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 	if (!registry.valid(gameNodeId))
 	{
 		LOG_ERROR << "Invalid game node ID found for player: " << tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
@@ -176,7 +176,7 @@ void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* con
 {
 ///<<< BEGIN WRITING YOUR CODE
     
-	if (gPlayerList.size() >= kMaxPlayerSize)
+	if (tlsPlayerList.size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error_message()->set_id(kLoginAccountPlayerFull);
@@ -212,7 +212,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	// 注册当前 session
 	GlobalSessionList()[sessionId] = playerId;
 
-	auto& playerList = gPlayerList;
+	auto& playerList = tlsPlayerList;
 	auto it = playerList.find(playerId);
 
 	if (it == playerList.end()) {
@@ -573,7 +573,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	case GateNodeService:
 	{
 		entt::entity gate_node_id{ tlsMessageContext.GetNextRouteNodeId() };
-		auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
+		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 		if (!registry.valid(gate_node_id))
 		{
 			LOG_ERROR << "Gate node not found: " << tlsMessageContext.GetNextRouteNodeId();
@@ -591,7 +591,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	case SceneNodeService:
 	{
 		entt::entity game_node_id{ tlsMessageContext.GetNextRouteNodeId() };
-		auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
+		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 		if (!registry.valid(game_node_id))
 		{
 			LOG_ERROR << "Game node not found: " << tlsMessageContext.GetNextRouteNodeId() << ", " << request->DebugString();
@@ -633,7 +633,7 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto sceneNodeId = entt::entity{ request->node_id() };
-	auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
     // Check if the scene node ID is valid
     if (!registry.valid(sceneNodeId))

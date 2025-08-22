@@ -21,12 +21,11 @@ void PlayerTipSystem::SendToPlayer(entt::entity player, uint32_t tipId, const St
 
 void PlayerTipSystem::SendToPlayer(const Guid playerId, const uint32_t tipId, const StringVector& strParam)
 {
-	const entt::entity playerEntity = PlayerManager::Instance().GetPlayer(playerId);
-	if (playerEntity == entt::null)
+	auto playerIt = tlsPlayerList.find(playerId);
+	if (tlsPlayerList.end() == playerIt)
 	{
-		LOG_ERROR << "Player not found for ID: " << playerId;
-		return;
+		return ;
 	}
 
-	SendToPlayer(playerEntity, tipId, strParam);
+	SendToPlayer(playerIt->second, tipId, strParam);
 }

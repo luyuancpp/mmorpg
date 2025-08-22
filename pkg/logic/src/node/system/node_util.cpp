@@ -27,12 +27,12 @@ eNodeType NodeUtils::GetServiceTypeFromPrefix(const std::string& prefix) {
 }
 
 entt::registry& NodeUtils::GetRegistryForNodeType(uint32_t nodeType) {
-	return NodeContextManager::Instance().GetRegistry(nodeType);
+	return tlsNodeContextManager.GetRegistry(nodeType);
 }
 
 std::string NodeUtils::GetRegistryName(const entt::registry& registry) {
-	for (uint32_t i = 0; i < NodeContextManager::Instance().GetAllRegistries().size(); ++i){
-		if (&NodeContextManager::Instance().GetRegistry(i) == &registry) {
+	for (uint32_t i = 0; i < tlsNodeContextManager.GetAllRegistries().size(); ++i){
+		if (&tlsNodeContextManager.GetRegistry(i) == &registry) {
 			return eNodeType_Name(i);
 		}
 	}
@@ -40,8 +40,8 @@ std::string NodeUtils::GetRegistryName(const entt::registry& registry) {
 }
 
 eNodeType NodeUtils::GetRegistryType(const entt::registry& registry){
-	for (uint32_t i = 0; i < NodeContextManager::Instance().GetAllRegistries().size(); ++i){
-		if (&NodeContextManager::Instance().GetRegistry(i) == &registry) {
+	for (uint32_t i = 0; i < tlsNodeContextManager.GetAllRegistries().size(); ++i){
+		if (&tlsNodeContextManager.GetRegistry(i) == &registry) {
 			return eNodeType(i);
 		}
 	}
@@ -58,7 +58,7 @@ bool NodeUtils::IsNodeConnected(uint32_t nodeType, const NodeInfo& info)  {
 	switch (info.protocol_type()) {
 	case PROTOCOL_TCP:
 	{
-		entt::registry& registry = NodeContextManager::Instance().GetRegistry(nodeType);
+		entt::registry& registry = tlsNodeContextManager.GetRegistry(nodeType);
 		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
 			if (NodeUtils::IsSameNode(info.node_uuid(), nodeInfo.node_uuid())) {
 				LOG_INFO << "Node already registered, IP: " << nodeInfo.endpoint().ip()

@@ -222,7 +222,7 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 		return false;
 	}
 
-	auto& sceneNodeRegistry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
+	auto& sceneNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 	if (!sceneNodeRegistry.valid(SceneUtil::get_game_node_eid(fromSceneInfo->guid())) ||
 		!sceneNodeRegistry.valid(SceneUtil::get_game_node_eid(toSceneInfo->guid())))
 	{
