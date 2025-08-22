@@ -331,7 +331,15 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 	}
 
 	const auto playerId = it->second;
-	const auto player = PlayerManager::Instance().GetPlayer(playerId);
+	auto playerEntityIt = tlsPlayerList.find(playerId);
+	if (tlsPlayerList.end() == playerEntityIt)
+	{
+		LOG_ERROR << "Player not found: " << playerId;
+		SendErrorToClient(*request, *response, kPlayerNotFoundInSession);
+		return;
+	}
+
+	const auto player = playerEntityIt->second;
 	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << playerId;
@@ -442,7 +450,15 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	LOG_TRACE << "Enter Scene Node Succeed request received.";
 
 	const auto playerId = request->player_id();
-	const auto player = PlayerManager::Instance().GetPlayer(playerId);
+
+	auto playerEntityIt = tlsPlayerList.find(playerId);
+	if (tlsPlayerList.end() == playerEntityIt)
+	{
+		LOG_ERROR << "Player not found: " << playerId;
+		return;
+	}
+
+	const auto player = playerEntityIt->second;
 	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << playerId;
