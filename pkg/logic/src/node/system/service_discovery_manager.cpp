@@ -22,7 +22,7 @@ void ServiceDiscoveryManager::Shutdown()
 }
 
 void ServiceDiscoveryManager::FetchServiceNodes() {
-	for (const auto& prefix : NodeConfigManager::Instance().GetBaseDeployConfig().service_discovery_prefixes()) {
+	for (const auto& prefix : tlsNodeConfigManager.GetBaseDeployConfig().service_discovery_prefixes()) {
 		EtcdHelper::RangeQuery(prefix);
 	}
 }

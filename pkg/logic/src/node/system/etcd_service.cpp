@@ -16,7 +16,7 @@
 void EtcdService::Init() {
 	InitHandlers();
 
-	const std::string& etcdAddr = *NodeConfigManager::Instance().GetBaseDeployConfig().etcd_hosts().begin();
+	const std::string& etcdAddr = *tlsNodeConfigManager.GetBaseDeployConfig().etcd_hosts().begin();
 	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
 
 	InitGrpcNode(channel, NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService));
@@ -42,7 +42,7 @@ void EtcdService::InitKVHandlers() {
 		int64_t nextRevision = reply.header().revision() + 1;
 		std::unordered_map<std::string, bool> prefixSeen;
 
-		for (const auto& prefix : NodeConfigManager::Instance().GetBaseDeployConfig().service_discovery_prefixes()) {
+		for (const auto& prefix : tlsNodeConfigManager.GetBaseDeployConfig().service_discovery_prefixes()) {
 			prefixSeen[prefix] = false;
 		}
 
@@ -120,7 +120,7 @@ void EtcdService::InitTxnHandlers() {
 }
 
 void EtcdService::StartWatchingPrefixes() {
-	for (const auto& prefix : NodeConfigManager::Instance().GetBaseDeployConfig().service_discovery_prefixes()) {
+	for (const auto& prefix : tlsNodeConfigManager.GetBaseDeployConfig().service_discovery_prefixes()) {
 		EtcdHelper::StartWatchingPrefix(prefix, revision[prefix]);
 		LOG_INFO << "Watching prefix: " << prefix << " from revision " << revision[prefix];
 	}

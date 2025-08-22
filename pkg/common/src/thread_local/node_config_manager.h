@@ -10,11 +10,6 @@ public:
 	NodeConfigManager(const NodeConfigManager&) = delete;
 	NodeConfigManager& operator=(const NodeConfigManager&) = delete;
 
-	static NodeConfigManager& Instance() {
-		thread_local NodeConfigManager instance;
-		return instance;
-	}
-
 	[[nodiscard]] ::BaseDeployConfig& GetBaseDeployConfig()
 	{
 		return BaseDeployConfig;
@@ -29,3 +24,5 @@ private:
 	BaseDeployConfig BaseDeployConfig;
 	GameConfig GameConfig;
 };
+
+extern thread_local NodeConfigManager tlsNodeConfigManager;

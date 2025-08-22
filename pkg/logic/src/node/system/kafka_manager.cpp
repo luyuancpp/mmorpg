@@ -20,7 +20,7 @@ bool KafkaManager::Init(const KafkaConfig& config) {
 		topicsVec.push_back(topic);
 	}
 
-	auto zoneId = NodeConfigManager::Instance().GetGameConfig().zone_id(); // zone ID
+	auto zoneId = tlsNodeConfigManager.GetGameConfig().zone_id(); // zone ID
 	std::vector<int32_t> partitions{ static_cast<int32_t>(zoneId) };
 
 	KafkaProducer::Instance().init(brokers);

@@ -103,7 +103,7 @@ void NodeConnector::ConnectToTcpNode(const NodeInfo& info) {
 
 	// Step 4: 设置中心节点引用（仅限中心服）
 	if (info.node_type() == CentreNodeService &&
-		info.zone_id() == NodeConfigManager::Instance().GetGameConfig().zone_id()) {
+		info.zone_id() == tlsNodeConfigManager.GetGameConfig().zone_id()) {
 		gNode->SetZoneCentreNode(client);
 	}
 }

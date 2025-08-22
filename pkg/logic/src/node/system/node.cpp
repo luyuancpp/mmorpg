@@ -93,14 +93,14 @@ void Node::InitRpcServer() {
 	info.mutable_endpoint()->set_ip(localip());
 	info.mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
 	info.set_node_type(GetNodeType());
-	info.set_scene_node_type(NodeConfigManager::Instance().GetGameConfig().scene_node_type());
+	info.set_scene_node_type(tlsNodeConfigManager.GetGameConfig().scene_node_type());
 	info.set_protocol_type(PROTOCOL_TCP);
 	info.set_launch_time(TimeUtil::NowMicrosecondsUTC());
-	info.set_zone_id(NodeConfigManager::Instance().GetGameConfig().zone_id());
+	info.set_zone_id(tlsNodeConfigManager.GetGameConfig().zone_id());
 
 	info.set_node_uuid(boost::uuids::to_string(gen()));
 
-	InetAddress addr(NodeConfigManager::Instance().GetGameConfig().zone_redis().host(), NodeConfigManager::Instance().GetGameConfig().zone_redis().port());
+	InetAddress addr(tlsNodeConfigManager.GetGameConfig().zone_redis().host(), tlsNodeConfigManager.GetGameConfig().zone_redis().port());
 	tlsReids.GetZoneRedis() = std::make_unique<RedisManager::HiredisPtr::element_type>(eventLoop, addr);
 	tlsReids.GetZoneRedis()->connect();
 
@@ -109,7 +109,7 @@ void Node::InitRpcServer() {
 
 void Node::InitKafka()
 {
-	kafkaManager.Init(NodeConfigManager::Instance().GetBaseDeployConfig().kafka());
+	kafkaManager.Init(tlsNodeConfigManager.GetBaseDeployConfig().kafka());
 }
 
 void Node::InitEtcdService()
@@ -162,7 +162,7 @@ void Node::Shutdown() {
 
 void Node::InitLogSystem() {
 	auto logLevel = static_cast<muduo::Logger::LogLevel>(
-		NodeConfigManager::Instance().GetBaseDeployConfig().log_level()
+		tlsNodeConfigManager.GetBaseDeployConfig().log_level()
 		);
 	muduo::Logger::setLogLevel(logLevel);
 	muduo::Logger::setOutput(AsyncOutput);
@@ -175,8 +175,8 @@ void Node::RegisterEventHandlers() {
 }
 
 void Node::LoadConfigs() {
-	readBaseDeployConfig("etc/base_deploy_config.yaml", NodeConfigManager::Instance().GetBaseDeployConfig());
-	readGameConfig("etc/game_config.yaml", NodeConfigManager::Instance().GetGameConfig());
+	readBaseDeployConfig("etc/base_deploy_config.yaml", tlsNodeConfigManager.GetBaseDeployConfig());
+	readGameConfig("etc/game_config.yaml", tlsNodeConfigManager.GetGameConfig());
 }
 
 void Node::LoadAllConfigData() {
@@ -305,7 +305,7 @@ void Node::OnClientConnected(const OnTcpClientConnectedEvent& event) {
 }
 
 void Node::StartServiceHealthMonitor(){
-	serviceHealthMonitorTimer.RunEvery(NodeConfigManager::Instance().GetBaseDeployConfig().health_check_interval(), [this]() {
+	serviceHealthMonitorTimer.RunEvery(tlsNodeConfigManager.GetBaseDeployConfig().health_check_interval(), [this]() {
 		if (nullptr == rpcServer)
 		{
 			return;
