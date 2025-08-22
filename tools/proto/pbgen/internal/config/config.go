@@ -46,7 +46,8 @@ const (
 
 // ----------- 项目目录路径 -----------
 const (
-	NodeDirectory                  = OutputRoot + "node/"
+	NodeGoDirectory = OutputRoot + "go/"
+
 	NodePkgDirectory               = "node_pkg/"
 	NodePkgLogicDirectory          = NodePkgDirectory + "node_logic/"
 	NodePkgLogicSceneNodeDirectory = NodePkgLogicDirectory + "scene_node/"
@@ -101,10 +102,10 @@ const (
 	MessageIdGoFile        = "message_id.go"
 	RobotMessageIdFilePath = RobotGoGamePbDirectory + MessageIdGoFile
 
-	LoginDirectory       = OutputRoot + "node/login/"
+	LoginDirectory       = OutputRoot + "go/login/"
 	LoginGoGameDirectory = LoginDirectory + GoPbGameDirectory
 	LoginMessageIdGoFile = LoginGoGameDirectory + MessageIdGoFile
-	DbGoDirectory        = OutputRoot + "node/db/"
+	DbGoDirectory        = OutputRoot + "go/db/"
 
 	ServiceInfoName       = "service_info/"
 	ServiceInfoDirectory  = PbcOutputDirectory + ServiceInfoName

@@ -268,7 +268,7 @@ func GenerateGoGRPCFromProto(protoPath string) error {
 
 	// 4. 为所有注册的 grpc 节点目录生成 Go gRPC 代码
 	for nodeDir := range config.GrpcServices {
-		outputDir := filepath.Join(config.NodeDirectory, nodeDir)
+		outputDir := filepath.Join(config.NodeGoDirectory, nodeDir)
 		generateLoginGoProto(protoFiles, outputDir)
 	}
 
