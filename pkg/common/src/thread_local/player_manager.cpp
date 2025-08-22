@@ -2,7 +2,7 @@
 
 thread_local PlayerListMap tlsPlayerList;
 
-entt::entity PlayerManager::GetPlayer(Guid player_uid)
+entt::entity GetPlayer(Guid player_uid)
 {
 	auto playerIt = tlsPlayerList.find(player_uid);
 	if (tlsPlayerList.end() == playerIt)

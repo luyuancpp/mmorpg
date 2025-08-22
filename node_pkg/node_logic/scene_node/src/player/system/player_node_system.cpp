@@ -41,7 +41,7 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData& mess
 
 	//todo session 啥时候删除？
 
-	auto playerEntity = PlayerManager::Instance().GetPlayer(playerId);
+	auto playerEntity = GetPlayer(playerId);
 	HandleCrossZoneTransfer(playerEntity);
 
 	if (tlsRegistryManager.actorRegistry.any_of<UnregisterPlayer>(playerEntity))
@@ -160,7 +160,7 @@ void PlayerNodeSystem::DestroyPlayer(Guid playerId)
 	LOG_INFO << "Destroying player: " << playerId;
 
 	defer(tlsPlayerList.erase(playerId));
-	Destroy(tlsRegistryManager.actorRegistry, PlayerManager::Instance().GetPlayer(playerId));
+	Destroy(tlsRegistryManager.actorRegistry, GetPlayer(playerId));
 }
 
 void PlayerNodeSystem::HandleExitGameNode(entt::entity player)

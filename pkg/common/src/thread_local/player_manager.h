@@ -7,14 +7,6 @@ using PlayerListMap = std::unordered_map<Guid, entt::entity>;
 
 extern thread_local PlayerListMap tlsPlayerList;
 
-class PlayerManager {
-public:
-	static PlayerManager& Instance() {
-		thread_local PlayerManager instance;
-		return instance;
-	}
 
-	entt::entity GetPlayer(Guid player_uid);
-};
-
+entt::entity GetPlayer(Guid player_uid);
 

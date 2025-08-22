@@ -194,7 +194,7 @@ void PlayerNodeSystem::HandleAbnormalExit(Guid playerID)
 {
 	LOG_INFO << "Handling abnormal exit for player: " << playerID;
 
-	const auto playerEntity = PlayerManager::Instance().GetPlayer(playerID);
+	const auto playerEntity = GetPlayer(playerID);
 	if (!tlsRegistryManager.actorRegistry.valid(playerEntity))
 	{
 		LOG_ERROR << "Player entity not valid for abnormal exit: " << playerID;
@@ -219,7 +219,7 @@ void PlayerNodeSystem::Logout(Guid playerID)
 
 	defer(tlsPlayerList.erase(playerID));
 
-	const auto playerEntity = PlayerManager::Instance().GetPlayer(playerID);
+	const auto playerEntity = GetPlayer(playerID);
 	if (!tlsRegistryManager.actorRegistry.valid(playerEntity))
 	{
 		LOG_WARN << "Logout skipped, player entity invalid: " << playerID;
