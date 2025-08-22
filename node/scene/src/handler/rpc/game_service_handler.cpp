@@ -173,7 +173,7 @@ void SceneHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* 
 		return;
 	}
 
-	const auto player = PlayerManager::Instance().GetPlayer(it->second);
+	const auto player = GetPlayer(it->second);
 	if (entt::null == player)
 	{
 		LOG_ERROR << "GatePlayerService player not loading " << request->message_content().message_id()
@@ -215,7 +215,7 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 		return;
 	}
 
-	const auto player = PlayerManager::Instance().GetPlayer(it->second);
+	const auto player = GetPlayer(it->second);
 	if (entt::null == player)
 	{
 		LOG_ERROR << "GatePlayerService player not loading";
@@ -242,7 +242,7 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	const auto player = PlayerManager::Instance().GetPlayer(it->second);
+	const auto player = GetPlayer(it->second);
 	if (entt::null == player)
 	{
 		LOG_ERROR << "GatePlayerService player not loading";
@@ -369,7 +369,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	const auto player = PlayerManager::Instance().GetPlayer(request->player_id());
+	const auto player = GetPlayer(request->player_id());
 	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found " << request->player_id();
@@ -392,7 +392,7 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
 {
 ///<<< BEGIN WRITING YOUR CODE
     //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
-	auto player = PlayerManager::Instance().GetPlayer(request->player_id());
+	auto player = GetPlayer(request->player_id());
 	if (player == entt::null)
 	{
 		LOG_ERROR << "Error: Player entity not found for player_id " << request->player_id();

@@ -16,7 +16,7 @@
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
-	SendMessageToClientViaGate(messageId, message, PlayerManager::Instance().GetPlayer(playerId));
+	SendMessageToClientViaGate(messageId, message, GetPlayer(playerId));
 }
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity)
@@ -151,7 +151,7 @@ void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Messa
 }
 
 void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message& message, Guid playerId) {
-	SendMessageToPlayerOnGrpcNode(messageId, message, PlayerManager::Instance().GetPlayer(playerId));
+	SendMessageToPlayerOnGrpcNode(messageId, message, GetPlayer(playerId));
 }
 
 inline NodeId GetEffectiveNodeId(
@@ -225,7 +225,7 @@ void SendMessageToPlayerOnSceneNode(uint32_t messageId,
 	const google::protobuf::Message& message,
 	Guid playerId)
 {
-	SendMessageToPlayerOnSceneNode(messageId, message, PlayerManager::Instance().GetPlayer(playerId));
+	SendMessageToPlayerOnSceneNode(messageId, message, GetPlayer(playerId));
 }
 
 
@@ -234,7 +234,7 @@ void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
 	uint32_t messageId,
 	const google::protobuf::Message& message,
 	Guid playerId) {
-	SendMessageToPlayerOnNode(wrappedMessageId, nodeType, messageId, message, PlayerManager::Instance().GetPlayer(playerId));
+	SendMessageToPlayerOnNode(wrappedMessageId, nodeType, messageId, message, GetPlayer(playerId));
 }
 
 
@@ -297,7 +297,7 @@ void CallMethodOnPlayerNode(
 	uint32_t messageId,
 	const google::protobuf::Message& message,
 	Guid playerId) {
-	CallMethodOnPlayerNode(remoteMethodId, nodeType, messageId, message, PlayerManager::Instance().GetPlayer(playerId));
+	CallMethodOnPlayerNode(remoteMethodId, nodeType, messageId, message, GetPlayer(playerId));
 }
 
 void CallMethodOnPlayerNode(

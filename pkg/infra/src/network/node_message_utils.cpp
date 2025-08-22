@@ -113,7 +113,7 @@ void BroadcastToNodes(uint32_t messageId, const google::protobuf::Message& messa
 
 void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId, uint32_t nodeType, uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
-	SendMessageToPlayerViaClientNode(wrappedMessageId, nodeType, messageId, message, PlayerManager::Instance().GetPlayer(playerId));
+	SendMessageToPlayerViaClientNode(wrappedMessageId, nodeType, messageId, message, GetPlayer(playerId));
 }
 
 
@@ -171,7 +171,7 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 	const google::protobuf::Message& message,
 	Guid playerId)
 {
-	SendMessageToPlayerViaSessionNode(wrappedMessageId, nodeType, messageId, message, PlayerManager::Instance().GetPlayer(playerId));
+	SendMessageToPlayerViaSessionNode(wrappedMessageId, nodeType, messageId, message, GetPlayer(playerId));
 }
 
 
