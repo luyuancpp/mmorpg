@@ -51,5 +51,6 @@
     <ClCompile Include="src\thread_local\registry_manager.cpp" />
     <ClCompile Include="src\thread_local\snow_flake_manager.cpp" />
     <ClCompile Include="src\thread_local\dispatcher_manager.cpp" />
+    <ClCompile Include="src\thread_local\message_context.cpp" />
   </ItemGroup>
 </Project>

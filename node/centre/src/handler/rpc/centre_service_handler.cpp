@@ -478,12 +478,12 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	///<<< BEGIN WRITING YOUR CODE
 
 	// Clean up previous routing information
-	defer(MessageContext ::Instance().SetNextRouteNodeType(UINT32_MAX));
-	defer(MessageContext ::Instance().SeNextRouteNodeId(UINT32_MAX));
-	defer(MessageContext ::Instance().SetCurrentSessionId(kInvalidSessionId));
+	defer(tlsMessageContext.SetNextRouteNodeType(UINT32_MAX));
+	defer(tlsMessageContext.SeNextRouteNodeId(UINT32_MAX));
+	defer(tlsMessageContext.SetCurrentSessionId(kInvalidSessionId));
 
 	// Set current session ID
-	MessageContext ::Instance().SetCurrentSessionId(request->session_id());
+	tlsMessageContext.SetCurrentSessionId(request->session_id());
 
 	if (request->route_nodes_size() >= kMaxRouteSize)
 	{
@@ -544,7 +544,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 
 	auto* mutable_request = const_cast<::RouteMessageRequest*>(request);
 
-	if (MessageContext ::Instance().GetNextRouteNodeType() == UINT32_MAX)
+	if (tlsMessageContext.GetNextRouteNodeType() == UINT32_MAX)
 	{
 		const auto byte_size = static_cast<int32_t>(current_node_response->ByteSizeLong());
 		response->mutable_body()->resize(byte_size);
@@ -556,33 +556,33 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 			*response->add_route_nodes() = request_data_it;
 		}
 
-		response->set_session_id(MessageContext ::Instance().GetSessionId());
+		response->set_session_id(tlsMessageContext.GetSessionId());
 		response->set_id(request->id());
 		return;
 	}
 
 	// Need to route to the next node
 	auto* next_route_data = mutable_request->add_route_nodes();
-	next_route_data->CopyFrom(MessageContext ::Instance().GetRoutingNodeInfo());
+	next_route_data->CopyFrom(tlsMessageContext.GetRoutingNodeInfo());
 	next_route_data->mutable_node_info()->CopyFrom(gNode->GetNodeInfo());
-	mutable_request->set_body(MessageContext ::Instance().RouteMsgBody());
+	mutable_request->set_body(tlsMessageContext.RouteMsgBody());
 	mutable_request->set_id(request->id());
 
-	switch (MessageContext ::Instance().GetNextRouteNodeType())
+	switch (tlsMessageContext.GetNextRouteNodeType())
 	{
 	case GateNodeService:
 	{
-		entt::entity gate_node_id{ MessageContext ::Instance().GetNextRouteNodeId() };
+		entt::entity gate_node_id{ tlsMessageContext.GetNextRouteNodeId() };
 		auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 		if (!registry.valid(gate_node_id))
 		{
-			LOG_ERROR << "Gate node not found: " << MessageContext ::Instance().GetNextRouteNodeId();
+			LOG_ERROR << "Gate node not found: " << tlsMessageContext.GetNextRouteNodeId();
 			return;
 		}
 		const auto sceneNodeSession = registry.try_get<RpcSession>(gate_node_id);
 		if (!sceneNodeSession)
 		{
-			LOG_ERROR << "Gate node not found: " << MessageContext ::Instance().GetNextRouteNodeId();
+			LOG_ERROR << "Gate node not found: " << tlsMessageContext.GetNextRouteNodeId();
 			return;
 		}
 		sceneNodeSession->RouteMessageToNode(GateRouteNodeMessageMessageId, *mutable_request);
@@ -590,17 +590,17 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	}
 	case SceneNodeService:
 	{
-		entt::entity game_node_id{ MessageContext ::Instance().GetNextRouteNodeId() };
+		entt::entity game_node_id{ tlsMessageContext.GetNextRouteNodeId() };
 		auto& registry = NodeContextManager::Instance().GetRegistry(eNodeType::SceneNodeService);
 		if (!registry.valid(game_node_id))
 		{
-			LOG_ERROR << "Game node not found: " << MessageContext ::Instance().GetNextRouteNodeId() << ", " << request->DebugString();
+			LOG_ERROR << "Game node not found: " << tlsMessageContext.GetNextRouteNodeId() << ", " << request->DebugString();
 			return;
 		}
 		const auto sceneNodeSession = registry.try_get<RpcSession>(game_node_id);
 		if (!sceneNodeSession)
 		{
-			LOG_ERROR << "Game node not found: " << MessageContext ::Instance().GetNextRouteNodeId() << ", " << request->DebugString();
+			LOG_ERROR << "Game node not found: " << tlsMessageContext.GetNextRouteNodeId() << ", " << request->DebugString();
 			return;
 		}
 		sceneNodeSession->RouteMessageToNode(SceneRouteNodeStringMsgMessageId, *mutable_request);
@@ -608,7 +608,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	}
 	default:
 	{
-		LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << MessageContext ::Instance().GetNextRouteNodeType();
+		LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << tlsMessageContext.GetNextRouteNodeType();
 		break;
 	}
 	}
