@@ -315,7 +315,7 @@ void PlayerNodeSystem::SavePlayerToRedis(entt::entity player)
 
 	PlayerAllDataMessageFieldsUnMarshal(player, *message);
 
-	RedisSystem::Instance().GetPlayerDataRedis()->Save(message, playerId);
+	tlsRedisSystem.GetPlayerDataRedis()->Save(message, playerId);
 
 	LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis";
 }

@@ -26,3 +26,4 @@ private:
 };
 
 
+extern thread_local RedisSystem tlsRedisSystem;

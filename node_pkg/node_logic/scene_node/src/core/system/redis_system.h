@@ -16,15 +16,6 @@ public:
     RedisSystem(const RedisSystem&) = delete;
     RedisSystem& operator=(const RedisSystem&) = delete;
 
-    /**
-     * 获取线程局部的单例实例
-     * @return 线程唯一的 ThreadLocalNodeContext 实例
-     */
-    static RedisSystem& Instance() {
-        thread_local RedisSystem instance;
-        return instance;
-    }
-
 	PlayerDataRedis& GetPlayerDataRedis() {
 		return playerRedis;
 	}
@@ -36,3 +27,4 @@ private:
 };
 
 
+extern thread_local RedisSystem tlsRedisSystem;
