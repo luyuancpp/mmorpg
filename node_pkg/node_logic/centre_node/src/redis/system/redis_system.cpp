@@ -7,6 +7,8 @@
 #include "type_alias/player_redis.h"
 #include "thread_local/redis_manager.h"
 
+thread_local RedisSystem tlsRedisSystem;
+
 using namespace muduo;
 using namespace muduo::net;
 

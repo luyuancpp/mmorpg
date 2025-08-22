@@ -61,7 +61,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	}
 
 	// 3 玩家不在线，加入异步加载列表并尝试异步加载
-	RedisSystem::Instance().GetPlayerDataRedis()->AsyncLoad(request->player_id(), enterInfo);
+	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id(), enterInfo);
 ///<<< END WRITING YOUR CODE
 }
 
