@@ -17,7 +17,7 @@ void NodeAllocator::AcquireNode() {
 
 	// 1. 如果是全局唯一类型，执行清理逻辑 + 直接使用 zone_id
 	if (IsZoneSingletonNodeType(gNode->GetNodeType())) {
-		const uint32_t zoneId = NodeConfigManager::Instance().GetGameConfig().zone_id();
+		const uint32_t zoneId = tlsNodeConfigManager.GetGameConfig().zone_id();
 		gNode->GetNodeInfo().set_node_id(zoneId);
 		LOG_INFO << "Assigned node_id by zone_id: " << zoneId;
 

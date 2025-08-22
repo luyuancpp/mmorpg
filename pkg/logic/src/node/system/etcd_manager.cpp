@@ -57,7 +57,7 @@ void EtcdManager::RegisterNodePort() {
 }
 
 void EtcdManager::RequestEtcdLease() {
-	uint64_t ttlSeconds = NodeConfigManager::Instance().GetBaseDeployConfig().node_ttl_seconds();
+	uint64_t ttlSeconds = tlsNodeConfigManager.GetBaseDeployConfig().node_ttl_seconds();
 	LOG_INFO << "[EtcdLease] Requesting lease with TTL: " << ttlSeconds
 		<< " seconds. Time: " << muduo::Timestamp::now().toFormattedString();
 	LOG_DEBUG << "[EtcdLease] Calling EtcdHelper::GrantLease...";
@@ -66,7 +66,7 @@ void EtcdManager::RequestEtcdLease() {
 }
 
 void EtcdManager::KeepNodeAlive() {
-	renewLeaseTimer.RunEvery(NodeConfigManager::Instance().GetBaseDeployConfig().keep_alive_interval(), []() {
+	renewLeaseTimer.RunEvery(tlsNodeConfigManager.GetBaseDeployConfig().keep_alive_interval(), []() {
 		etcdserverpb::LeaseKeepAliveRequest req;
 		req.set_id(gNode->GetLeaseId());
 		SendLeaseLeaseKeepAlive(NodeContextManager::Instance().GetRegistry(EtcdNodeService), NodeContextManager::Instance().GetGlobalEntity(EtcdNodeService), req);

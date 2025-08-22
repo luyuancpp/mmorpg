@@ -3,7 +3,7 @@
 #include "thread_local/dispatcher_manager.h"
 #include "stacktrace_system.h"
 #include <thread_local/registry_manager.h>
-#include <thread_local/thread_local_entity_container.cpp>
+#include <thread_local/thread_local_entity_container.h>
 
 static_assert(sizeof(uint64_t) == sizeof(entt::entity), "sizeof(uint64_t) == sizeof(entt::entity)");
 
