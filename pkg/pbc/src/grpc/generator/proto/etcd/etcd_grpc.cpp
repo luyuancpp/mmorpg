@@ -2,7 +2,6 @@
 
 
 #include "etcd_grpc.h"
-
 #include "proto/logic/constants/etcd_grpc.pb.h"
 #include "util/base64.h"
 #include <boost/pool/object_pool.hpp>
