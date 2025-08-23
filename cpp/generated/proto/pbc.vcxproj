@@ -19,152 +19,76 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\proto\centre\centre_player.pb.cc" />
-    <ClCompile Include="src\proto\centre\centre_player_scene.pb.cc" />
-    <ClCompile Include="src\proto\centre\centre_scene.pb.cc" />
-    <ClCompile Include="src\proto\centre\centre_service.pb.cc" />
-    <ClCompile Include="src\proto\common\common.pb.cc" />
-    <ClCompile Include="src\proto\common\config.pb.cc" />
-    <ClCompile Include="src\proto\common\empty.pb.cc" />
-    <ClCompile Include="src\proto\common\message.pb.cc" />
-    <ClCompile Include="src\proto\common\node.pb.cc" />
-    <ClCompile Include="src\proto\common\session.pb.cc" />
-    <ClCompile Include="src\proto\common\statistics.pb.cc" />
-    <ClCompile Include="src\proto\common\tip.pb.cc" />
-    <ClCompile Include="src\proto\common\user_accounts.pb.cc" />
-    <ClCompile Include="src\proto\db\db_base.pb.cc" />
-    <ClCompile Include="src\proto\db\db_service.grpc.pb.cc" />
-    <ClCompile Include="src\proto\db\db_service.pb.cc" />
-    <ClCompile Include="src\proto\db\mysql_database_table.pb.cc" />
-    <ClCompile Include="src\proto\etcd\etcd.grpc.pb.cc" />
-    <ClCompile Include="src\proto\etcd\etcd.pb.cc" />
-    <ClCompile Include="src\proto\etcd\kv.pb.cc" />
-    <ClCompile Include="src\proto\etcd\version.pb.cc" />
-    <ClCompile Include="src\proto\gate\gate_service.pb.cc" />
-    <ClCompile Include="src\proto\logic\client_player\player_common.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\actor_attribute_state_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\actor_combat_state_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\actor_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\buff_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\frame_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\game_node_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\item_base_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\item_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\mission_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\npc_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\player_async_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\player_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\player_login_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\player_network_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\player_scene_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\player_skill_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\scene_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\skill_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\team_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\time_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\constants\etcd_grpc.pb.cc" />
-    <ClCompile Include="src\proto\logic\constants\function_switch.pb.cc" />
-    <ClCompile Include="src\proto\logic\constants\scene.pb.cc" />
-    <ClCompile Include="src\proto\logic\constants\test_switch.pb.cc" />
-    <ClCompile Include="src\proto\logic\event\actor_combat_state_event.pb.cc" />
-    <ClCompile Include="src\proto\logic\event\actor_event.pb.cc" />
-    <ClCompile Include="src\proto\logic\event\buff_event.pb.cc" />
-    <ClCompile Include="src\proto\logic\event\combat_event.pb.cc" />
-    <ClCompile Include="src\proto\logic\event\mission_event.pb.cc" />
-    <ClCompile Include="src\proto\logic\event\node_event.pb.cc" />
-    <ClCompile Include="src\proto\logic\event\npc_event.pb.cc" />
-    <ClCompile Include="src\proto\logic\event\player_event.pb.cc" />
-    <ClCompile Include="src\proto\logic\event\player_migration_event.pb.cc" />
-    <ClCompile Include="src\proto\logic\event\scene_event.pb.cc" />
-    <ClCompile Include="src\proto\logic\event\server_event.pb.cc" />
-    <ClCompile Include="src\proto\logic\event\skill_event.pb.cc" />
-    <ClCompile Include="src\proto\login\login_service.grpc.pb.cc" />
-    <ClCompile Include="src\proto\login\login_service.pb.cc" />
-    <ClCompile Include="src\proto\player_locator\player_locator.grpc.pb.cc" />
-    <ClCompile Include="src\proto\player_locator\player_locator.pb.cc" />
-    <ClCompile Include="src\proto\scene\game_client_player.pb.cc" />
-    <ClCompile Include="src\proto\scene\game_player.pb.cc" />
-    <ClCompile Include="src\proto\scene\game_player_scene.pb.cc" />
-    <ClCompile Include="src\proto\scene\game_scene.pb.cc" />
-    <ClCompile Include="src\proto\scene\game_service.pb.cc" />
-    <ClCompile Include="src\proto\scene\player_scene.pb.cc" />
-    <ClCompile Include="src\proto\scene\player_skill.pb.cc" />
-    <ClCompile Include="src\proto\scene\player_state_attribute_sync.pb.cc" />
+    <ClCompile Include="centre\centre_player.pb.cc" />
+    <ClCompile Include="centre\centre_player_scene.pb.cc" />
+    <ClCompile Include="centre\centre_scene.pb.cc" />
+    <ClCompile Include="centre\centre_service.pb.cc" />
+    <ClCompile Include="common\common.pb.cc" />
+    <ClCompile Include="common\config.pb.cc" />
+    <ClCompile Include="common\empty.pb.cc" />
+    <ClCompile Include="common\message.pb.cc" />
+    <ClCompile Include="common\node.pb.cc" />
+    <ClCompile Include="common\session.pb.cc" />
+    <ClCompile Include="common\statistics.pb.cc" />
+    <ClCompile Include="common\tip.pb.cc" />
+    <ClCompile Include="common\user_accounts.pb.cc" />
+    <ClCompile Include="db\db_base.pb.cc" />
+    <ClCompile Include="db\db_service.grpc.pb.cc" />
+    <ClCompile Include="db\db_service.pb.cc" />
+    <ClCompile Include="db\mysql_database_table.pb.cc" />
+    <ClCompile Include="etcd\etcd.grpc.pb.cc" />
+    <ClCompile Include="etcd\etcd.pb.cc" />
+    <ClCompile Include="etcd\kv.pb.cc" />
+    <ClCompile Include="etcd\version.pb.cc" />
+    <ClCompile Include="gate\gate_service.pb.cc" />
+    <ClCompile Include="login\login_service.grpc.pb.cc" />
+    <ClCompile Include="login\login_service.pb.cc" />
+    <ClCompile Include="player_locator\player_locator.grpc.pb.cc" />
+    <ClCompile Include="player_locator\player_locator.pb.cc" />
+    <ClCompile Include="scene\game_client_player.pb.cc" />
+    <ClCompile Include="scene\game_player.pb.cc" />
+    <ClCompile Include="scene\game_player_scene.pb.cc" />
+    <ClCompile Include="scene\game_scene.pb.cc" />
+    <ClCompile Include="scene\game_service.pb.cc" />
+    <ClCompile Include="scene\player_scene.pb.cc" />
+    <ClCompile Include="scene\player_skill.pb.cc" />
+    <ClCompile Include="scene\player_state_attribute_sync.pb.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\proto\centre\centre_player.pb.h" />
-    <ClInclude Include="src\proto\centre\centre_player_scene.pb.h" />
-    <ClInclude Include="src\proto\centre\centre_scene.pb.h" />
-    <ClInclude Include="src\proto\centre\centre_service.pb.h" />
-    <ClInclude Include="src\proto\common\common.pb.h" />
-    <ClInclude Include="src\proto\common\config.pb.h" />
-    <ClInclude Include="src\proto\common\empty.pb.h" />
-    <ClInclude Include="src\proto\common\message.pb.h" />
-    <ClInclude Include="src\proto\common\node.pb.h" />
-    <ClInclude Include="src\proto\common\session.pb.h" />
-    <ClInclude Include="src\proto\common\statistics.pb.h" />
-    <ClInclude Include="src\proto\common\tip.pb.h" />
-    <ClInclude Include="src\proto\common\user_accounts.pb.h" />
-    <ClInclude Include="src\proto\db\db_base.pb.h" />
-    <ClInclude Include="src\proto\db\db_service.grpc.pb.h" />
-    <ClInclude Include="src\proto\db\db_service.pb.h" />
-    <ClInclude Include="src\proto\db\mysql_database_table.pb.h" />
-    <ClInclude Include="src\proto\etcd\etcd.grpc.pb.h" />
-    <ClInclude Include="src\proto\etcd\etcd.pb.h" />
-    <ClInclude Include="src\proto\etcd\kv.pb.h" />
-    <ClInclude Include="src\proto\etcd\version.pb.h" />
-    <ClInclude Include="src\proto\gate\gate_service.pb.h" />
-    <ClInclude Include="src\proto\logic\client_player\player_common.pb.h" />
-    <ClInclude Include="src\proto\logic\component\actor_attribute_state_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\actor_combat_state_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\actor_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\buff_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\frame_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\game_node_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\item_base_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\item_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\mission_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\npc_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\player_async_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\player_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\player_login_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\player_network_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\player_scene_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\player_skill_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\scene_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\skill_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\team_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\time_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\constants\etcd_grpc.pb.h" />
-    <ClInclude Include="src\proto\logic\constants\function_switch.pb.h" />
-    <ClInclude Include="src\proto\logic\constants\scene.pb.h" />
-    <ClInclude Include="src\proto\logic\constants\test_switch.pb.h" />
-    <ClInclude Include="src\proto\logic\event\actor_combat_state_event.pb.h" />
-    <ClInclude Include="src\proto\logic\event\actor_event.pb.h" />
-    <ClInclude Include="src\proto\logic\event\buff_event.pb.h" />
-    <ClInclude Include="src\proto\logic\event\combat_event.pb.h" />
-    <ClInclude Include="src\proto\logic\event\mission_event.pb.h" />
-    <ClInclude Include="src\proto\logic\event\node_event.pb.h" />
-    <ClInclude Include="src\proto\logic\event\npc_event.pb.h" />
-    <ClInclude Include="src\proto\logic\event\player_event.pb.h" />
-    <ClInclude Include="src\proto\logic\event\player_migration_event.pb.h" />
-    <ClInclude Include="src\proto\logic\event\scene_event.pb.h" />
-    <ClInclude Include="src\proto\logic\event\server_event.pb.h" />
-    <ClInclude Include="src\proto\logic\event\skill_event.pb.h" />
-    <ClInclude Include="src\proto\login\login_service.grpc.pb.h" />
-    <ClInclude Include="src\proto\login\login_service.pb.h" />
-    <ClInclude Include="src\proto\player_locator\player_locator.grpc.pb.h" />
-    <ClInclude Include="src\proto\player_locator\player_locator.pb.h" />
-    <ClInclude Include="src\proto\scene\game_client_player.pb.h" />
-    <ClInclude Include="src\proto\scene\game_player.pb.h" />
-    <ClInclude Include="src\proto\scene\game_player_scene.pb.h" />
-    <ClInclude Include="src\proto\scene\game_scene.pb.h" />
-    <ClInclude Include="src\proto\scene\game_service.pb.h" />
-    <ClInclude Include="src\proto\scene\player_scene.pb.h" />
-    <ClInclude Include="src\proto\scene\player_skill.pb.h" />
-    <ClInclude Include="src\proto\scene\player_state_attribute_sync.pb.h" />
+    <ClInclude Include="centre\centre_player.pb.h" />
+    <ClInclude Include="centre\centre_player_scene.pb.h" />
+    <ClInclude Include="centre\centre_scene.pb.h" />
+    <ClInclude Include="centre\centre_service.pb.h" />
+    <ClInclude Include="common\common.pb.h" />
+    <ClInclude Include="common\config.pb.h" />
+    <ClInclude Include="common\empty.pb.h" />
+    <ClInclude Include="common\message.pb.h" />
+    <ClInclude Include="common\node.pb.h" />
+    <ClInclude Include="common\session.pb.h" />
+    <ClInclude Include="common\statistics.pb.h" />
+    <ClInclude Include="common\tip.pb.h" />
+    <ClInclude Include="common\user_accounts.pb.h" />
+    <ClInclude Include="db\db_base.pb.h" />
+    <ClInclude Include="db\db_service.grpc.pb.h" />
+    <ClInclude Include="db\db_service.pb.h" />
+    <ClInclude Include="db\mysql_database_table.pb.h" />
+    <ClInclude Include="etcd\etcd.grpc.pb.h" />
+    <ClInclude Include="etcd\etcd.pb.h" />
+    <ClInclude Include="etcd\kv.pb.h" />
+    <ClInclude Include="etcd\version.pb.h" />
+    <ClInclude Include="gate\gate_service.pb.h" />
+    <ClInclude Include="login\login_service.grpc.pb.h" />
+    <ClInclude Include="login\login_service.pb.h" />
+    <ClInclude Include="player_locator\player_locator.grpc.pb.h" />
+    <ClInclude Include="player_locator\player_locator.pb.h" />
+    <ClInclude Include="scene\game_client_player.pb.h" />
+    <ClInclude Include="scene\game_player.pb.h" />
+    <ClInclude Include="scene\game_player_scene.pb.h" />
+    <ClInclude Include="scene\game_scene.pb.h" />
+    <ClInclude Include="scene\game_service.pb.h" />
+    <ClInclude Include="scene\player_scene.pb.h" />
+    <ClInclude Include="scene\player_skill.pb.h" />
+    <ClInclude Include="scene\player_state_attribute_sync.pb.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -220,8 +144,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>../../lib/</OutDir>
-    <IntDir>../../bin/vsout/lib/$(ProjectName)/</IntDir>
+    <OutDir>../../../lib/</OutDir>
+    <IntDir>../../../bin/vsout/lib/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -270,7 +194,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>./src/;../../../../third_party/sol2/include/;../../../../third_party/lua/;../../../../third_party/grpc/include/;../../../../third_party/;../../../../third_party/grpc/third_party/protobuf/src/;../../../../third_party/grpc/third_party/abseil-cpp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../;../../../third_party/grpc/include/;../../../third_party/;../../../third_party/grpc/third_party/protobuf/src/;../../../third_party/grpc/third_party/abseil-cpp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
