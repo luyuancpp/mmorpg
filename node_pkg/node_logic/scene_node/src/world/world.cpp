@@ -31,7 +31,7 @@ void World::InitializeSystemBeforeConnect()
     tlsFrameTimeManager.frameTime.set_previous_time(GetTimeInMilliseconds());
     tlsFrameTimeManager.frameTime.set_target_fps(kTargetFPS);
     tlsFrameTimeManager.frameTime.set_delta_time(1.0 / tlsFrameTimeManager.frameTime.target_fps());
-    ThreadLocalIdGeneratorManager::Instance().SetNodeId(GetNodeInfo().node_id());
+    tlsIdGeneratorManager.SetNodeId(GetNodeInfo().node_id());
     ViewSystem::Initialize();
 }
 

@@ -32,7 +32,7 @@
 uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const SkillContextCompMap& targetBuffList) {
 	uint64_t newSkillId;
 	do {
-		newSkillId = ThreadLocalIdGeneratorManager::Instance().skillIdGenerator.Generate();
+		newSkillId = tlsIdGeneratorManager.skillIdGenerator.Generate();
 	} while (casterBuffList.contains(newSkillId) || targetBuffList.contains(newSkillId));
 	return newSkillId;
 }

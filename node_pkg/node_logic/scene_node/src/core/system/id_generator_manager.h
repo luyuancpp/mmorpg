@@ -12,15 +12,6 @@ public:
     ThreadLocalIdGeneratorManager(const ThreadLocalIdGeneratorManager&) = delete;
     ThreadLocalIdGeneratorManager& operator=(const ThreadLocalIdGeneratorManager&) = delete;
 
-    /**
-     * 获取线程局部的单例实例
-     * @return 线程唯一的 ThreadLocalNodeContext 实例
-     */
-    static ThreadLocalIdGeneratorManager& Instance() {
-        thread_local ThreadLocalIdGeneratorManager instance;
-        return instance;
-    }
-
     void SetNodeId(uint32_t nodeId) {
         buffIdGenerator.set_node_id(nodeId);
         skillIdGenerator.set_node_id(nodeId);
@@ -29,3 +20,5 @@ public:
 	TransientNode32BitCompositeIdGenerator  buffIdGenerator;
 	TransientNode32BitCompositeIdGenerator  skillIdGenerator;
 };
+
+extern thread_local ThreadLocalIdGeneratorManager tlsIdGeneratorManager;

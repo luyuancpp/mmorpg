@@ -231,6 +231,7 @@
     <ClCompile Include="src\combat\projectile\system\projectile_system.cpp" />
     <ClCompile Include="src\combat\skill\system\skill_system.cpp" />
     <ClCompile Include="src\core\config\config_system.cpp" />
+    <ClCompile Include="src\core\system\id_generator_manager.cpp" />
     <ClCompile Include="src\core\system\redis_system.cpp" />
     <ClCompile Include="src\entity\system\entity_system.cpp" />
     <ClCompile Include="src\frame\manager\frame_time_manager.cpp" />
