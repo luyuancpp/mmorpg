@@ -1,14 +1,10 @@
 ﻿#include "reward/system/reward_system.h"
 #include <gtest/gtest.h>
 
-
 #include "cpp_table_id_bit_index/reward_table_id_bit_index.h"
-#include "reward/comp/reward_comp.h"
 #include <thread_local/registry_manager.h>
 
-
-decltype(auto) CreatePlayerEntityWithRewardComponent()
-{
+decltype(auto) CreatePlayerEntityWithRewardComponent(){
     const auto playerEntity = tlsRegistryManager.actorRegistry.create();
     RewardSystem::InitializeActorComponents(playerEntity);
     tlsRegistryManager.actorRegistry.emplace<Guid>(playerEntity);
@@ -17,7 +13,6 @@ decltype(auto) CreatePlayerEntityWithRewardComponent()
 
 // 测试：初始化时所有奖励未领取
 TEST(RewardSystemTest, InitializationTest) {
-
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
     RewardSystem rewardSystem;
