@@ -94,7 +94,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{7d732139-58fd-4e6f-a12a-f6b3f8b13577}</ProjectGuid>
-    <RootNamespace>pbc</RootNamespace>
+    <RootNamespace>proto</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>proto</ProjectName>
   </PropertyGroup>

@@ -124,7 +124,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "proto", "proto", "{DBDDC4E5
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{38085C54-EEAF-4C06-9460-7B56B100463D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "proto", "cpp\generated\proto\pbc.vcxproj", "{7D732139-58FD-4E6F-A12A-F6B3F8B13577}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "proto", "cpp\generated\proto\proto.vcxproj", "{7D732139-58FD-4E6F-A12A-F6B3F8B13577}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
