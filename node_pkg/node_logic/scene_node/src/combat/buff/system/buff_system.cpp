@@ -23,7 +23,7 @@ uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
 {
     uint64_t newBuffId = UINT64_MAX;
     do {
-        newBuffId = ThreadLocalIdGeneratorManager::Instance().buffIdGenerator.Generate();
+        newBuffId = tlsIdGeneratorManager.buffIdGenerator.Generate();
     } while (buffList.contains(newBuffId) || newBuffId == UINT64_MAX);
     return newBuffId;
 }
