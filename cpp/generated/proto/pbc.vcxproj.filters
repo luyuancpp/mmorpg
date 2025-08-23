@@ -150,9 +150,6 @@
     <ClCompile Include="src\proto\etcd\version.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\grpc\generator\proto\etcd\etcd_grpc.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\logic\constants\etcd_grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -163,9 +160,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\login\login_service.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\grpc\generator\proto\login\login_service_grpc.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\db\db_base.pb.cc">
@@ -226,15 +220,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\scene\game_client_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\grpc\generator\grpc_init.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service_info\service_info.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\grpc\generator\proto\player_locator\player_locator_grpc.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\player_locator\player_locator.grpc.pb.cc">
@@ -383,9 +368,6 @@
     <ClInclude Include="src\proto\etcd\version.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\grpc\generator\proto\etcd\etcd_grpc.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\proto\logic\constants\etcd_grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -396,9 +378,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\login\login_service.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\grpc\generator\proto\login\login_service_grpc.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\db\db_base.pb.h">
@@ -459,66 +438,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\scene\player_state_attribute_sync.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\grpc\generator\grpc_init.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\centre_player_scene_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\centre_player_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\centre_scene_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\centre_service_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\db_service_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\etcd_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\game_client_player_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\game_player_scene_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\game_player_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\game_scene_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\game_service_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\gate_service_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\login_service_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\player_scene_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\player_skill_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\player_state_attribute_sync_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service_info\service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\grpc\grpc_tag.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\grpc\generator\proto\player_locator\player_locator_grpc.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\player_locator\player_locator.grpc.pb.h">
