@@ -24,6 +24,7 @@
     <ProjectGuid>{03F2DF47-F5B9-41E9-933B-903D317FEEB1}</ProjectGuid>
     <RootNamespace>logic</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>core</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -90,7 +91,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;NOMINMAX;GOOGLE_CHECK_EQ=ABSL_CHECK_EQ;GOOGLE_LOG=ABSL_LOG;GOOGLE_DCHECK=ABSL_DCHECK;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../third_party/boost/;./src/;../pbc/src/;../../third_party/muduo/;../..//third_party/redis/;../../third_party/sol2/include/;../../third_party/lua/src/;../../third_party/redis/deps/;../../third_party/muduo/contrib/windows/include;../config/src/;../../third_party/lua/;../../third_party/;../../third_party/zlib/;../../pkg/config/src/pbc/;../../third_party/grpc/include/;../common/src/;../../third_party/spdlog/include/;../pbc/src/proto/;../../third_party/grpc/third_party/protobuf/src/;../../third_party/grpc/third_party/abseil-cpp/;../../third_party/xxhash/;../../third_party/librdkafka/src-cpp/;../../third_party/fmt/include/;../../pkg/infra/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../third_party/boost/;../common/;../../../../third_party/muduo/;../../....//third_party/redis/;../../../../third_party/sol2/include/;../../../../third_party/lua/src/;../../../../third_party/muduo/contrib/windows/include/;../../../../third_party/zlib/;../../../../third_party/grpc/include/;../../../../third_party/grpc/third_party/abseil-cpp/;../../../generated/;../../../../third_party/grpc/third_party/;../../../../third_party/;../../../../third_party/grpc/third_party/protobuf/src/;./;../../../../third_party/redis/deps/;../../../../third_party/redis/;../;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200;4819;4146;4244;4267;4018;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -162,10 +163,19 @@
     <ClCompile Include="game_common_logic\system\session_system.cpp" />
     <ClCompile Include="log\system\console_log_system.cpp" />
     <ClCompile Include="message_limiter\message_limiter.cpp" />
+    <ClCompile Include="network\codec\codec.cc" />
+    <ClCompile Include="network\game_channel.cc" />
+    <ClCompile Include="network\game_rpc.pb.cc" />
+    <ClCompile Include="network\message_statistics.cpp" />
+    <ClCompile Include="network\network_utils.cpp" />
+    <ClCompile Include="network\node_message_utils.cpp" />
+    <ClCompile Include="network\player_message_utils.cpp" />
+    <ClCompile Include="network\process_info.cpp" />
+    <ClCompile Include="network\rpc_server.cc" />
+    <ClCompile Include="network\rpc_session.cpp" />
     <ClCompile Include="node\system\etcd_helper.cpp" />
     <ClCompile Include="node\system\etcd_manager.cpp" />
     <ClCompile Include="node\system\etcd_service.cpp" />
-    <ClCompile Include="node\system\kafka_manager.cpp" />
     <ClCompile Include="node\system\node.cpp" />
     <ClCompile Include="node\system\node_allocator.cpp" />
     <ClCompile Include="node\system\node_connector.cpp" />
@@ -190,11 +200,26 @@
     <ClInclude Include="log\system\console_log_system.h" />
     <ClInclude Include="message_limiter\message_limiter.h" />
     <ClInclude Include="macros\return_define.h" />
+    <ClInclude Include="network\codec\codec.h" />
+    <ClInclude Include="network\codec\dispatcher.h" />
+    <ClInclude Include="network\codec\dispatcher_lite.h" />
+    <ClInclude Include="network\codec\message_response_dispatcher.h" />
+    <ClInclude Include="network\game_channel.h" />
+    <ClInclude Include="network\game_rpc.pb.h" />
+    <ClInclude Include="network\message_statistics.h" />
+    <ClInclude Include="network\network_constants.h" />
+    <ClInclude Include="network\network_utils.h" />
+    <ClInclude Include="network\node_message_utils.h" />
+    <ClInclude Include="network\player_message_utils.h" />
+    <ClInclude Include="network\process_info.h" />
+    <ClInclude Include="network\rpc_client.h" />
+    <ClInclude Include="network\rpc_connection_event.h" />
+    <ClInclude Include="network\rpc_server.h" />
+    <ClInclude Include="network\rpc_session.h" />
     <ClInclude Include="node\constants\node_constants.h" />
     <ClInclude Include="node\system\etcd_helper.h" />
     <ClInclude Include="node\system\etcd_manager.h" />
     <ClInclude Include="node\system\etcd_service.h" />
-    <ClInclude Include="node\system\kafka_manager.h" />
     <ClInclude Include="node\system\node.h" />
     <ClInclude Include="node\system\node_allocator.h" />
     <ClInclude Include="node\system\node_connector.h" />
@@ -214,6 +239,11 @@
     <ClInclude Include="time\system\time_system.h" />
     <ClInclude Include="type_alias\player_session_type_alias.h" />
     <ClInclude Include="util\zone_utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="network\autogen.bat" />
+    <None Include="network\autogen.sh" />
+    <None Include="network\game_rpc.proto" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

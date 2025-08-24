@@ -5,8 +5,8 @@
 #include <string>
 #include <functional>
 #include <memory>
-#include "kafka/kafka_producer.h"
-#include "kafka/kafka_consumer.h"
+#include "messaging/kafka/kafka_producer.h"
+#include "messaging/kafka/kafka_consumer.h"
 
 using KafkaHandler = std::function<void(const std::string& topic, const std::string& msg)>;
 

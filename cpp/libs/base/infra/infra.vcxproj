@@ -19,45 +19,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="kafka\kafka_consumer.h" />
-    <ClInclude Include="kafka\kafka_producer.h" />
-    <ClInclude Include="network\codec\codec.h" />
-    <ClInclude Include="network\codec\dispatcher.h" />
-    <ClInclude Include="network\codec\dispatcher_lite.h" />
-    <ClInclude Include="network\codec\message_response_dispatcher.h" />
-    <ClInclude Include="network\game_rpc.pb.h" />
-    <ClInclude Include="network\message_statistics.h" />
-    <ClInclude Include="network\network_utils.h" />
-    <ClInclude Include="network\node_message_utils.h" />
-    <ClInclude Include="network\player_message_utils.h" />
-    <ClInclude Include="network\process_info.h" />
-    <ClInclude Include="network\game_channel.h" />
-    <ClInclude Include="network\rpc_client.h" />
-    <ClInclude Include="network\rpc_connection_event.h" />
-    <ClInclude Include="network\network_constants.h" />
-    <ClInclude Include="network\rpc_server.h" />
-    <ClInclude Include="network\rpc_session.h" />
-    <ClInclude Include="redis_client\redis_client.h" />
+    <ClInclude Include="messaging\kafka\kafka_consumer.h" />
+    <ClInclude Include="messaging\kafka\kafka_manager.h" />
+    <ClInclude Include="messaging\kafka\kafka_producer.h" />
+    <ClInclude Include="storage\redis_client\redis_client.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="kafka\kafka_consumer.cpp" />
-    <ClCompile Include="kafka\kafka_producer.cpp" />
-    <ClCompile Include="network\codec\codec.cc" />
-    <ClCompile Include="network\game_rpc.pb.cc" />
-    <ClCompile Include="network\message_statistics.cpp" />
-    <ClCompile Include="network\network_utils.cpp" />
-    <ClCompile Include="network\node_message_utils.cpp" />
-    <ClCompile Include="network\player_message_utils.cpp" />
-    <ClCompile Include="network\process_info.cpp" />
-    <ClCompile Include="network\game_channel.cc" />
-    <ClCompile Include="network\rpc_server.cc" />
-    <ClCompile Include="network\rpc_session.cpp" />
-    <ClCompile Include="redis_client\redis_client.cpp" />
+    <ClCompile Include="messaging\kafka\kafka_consumer.cpp" />
+    <ClCompile Include="messaging\kafka\kafka_manager.cpp" />
+    <ClCompile Include="messaging\kafka\kafka_producer.cpp" />
+    <ClCompile Include="storage\redis_client\redis_client.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="network\autogen.bat" />
-    <None Include="network\autogen.sh" />
-    <None Include="network\game_rpc.proto" />
     <None Include="src\network\protoc.exe" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

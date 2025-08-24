@@ -10,7 +10,7 @@
 #include "type_define/type_define.h"
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
-#include "kafka_manager.h"
+#include "infra/messaging/kafka/kafka_manager.h"
 #include "etcd_service.h"
 #include "etcd_manager.h"
 #include "registration_manager.h"
