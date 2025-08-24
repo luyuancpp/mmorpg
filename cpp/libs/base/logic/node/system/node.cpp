@@ -3,7 +3,7 @@
 #include <regex>
 #include <grpcpp/create_channel.h>
 #include <boost/uuid/uuid_io.hpp>
-#include "all_config.h"
+#include "config/all_config.h"
 #include "etcd_helper.h"
 #include "config_loader/config.h"
 #include "google/protobuf/util/json_util.h"
@@ -12,12 +12,12 @@
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
-#include "logic/event/server_event.pb.h"
+#include "proto/logic/event/server_event.pb.h"
 #include "muduo/base/TimeZone.h"
 #include "network/process_info.h"
 #include "network/rpc_session.h"
 #include "node/system/node_util.h"
-#include "pbc/common_error_tip.pb.h"
+#include "proto/config/common_error_tip.pb.h"
 #include "proto/common/node.pb.h"
 #include "proto/logic/event/node_event.pb.h"
 #include "service_info/centre_service_service_info.h"
@@ -27,11 +27,10 @@
 #include "thread_local/redis_manager.h"
 #include "time/system/time_system.h"
 #include "network/network_utils.h"
-#include "generator/util/gen_util.h"
+#include "util/gen_util.h"
 #include "util/stacktrace_system.h"
 #include "util/node_utils.h"
 #include <boost/algorithm/string.hpp>
-#include <fmt/base.h>
 #include "etcd_service.h"
 #include "node_connector.h"
 #include "node_allocator.h"
