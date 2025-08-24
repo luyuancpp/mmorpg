@@ -159,7 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\message_limiter\message_limiter.cpp" />
+    <ClCompile Include="message_limiter\message_limiter.cpp" />
     <ClCompile Include="src\node\system\etcd_helper.cpp" />
     <ClCompile Include="src\node\system\etcd_manager.cpp" />
     <ClCompile Include="src\node\system\etcd_service.cpp" />
@@ -178,13 +178,13 @@
     <ClCompile Include="src\log\system\console_log_system.cpp" />
     <ClCompile Include="src\game_common_logic\system\session_system.cpp" />
     <ClCompile Include="src\time\system\time_system.cpp" />
-    <ClCompile Include="src\util\zone_utils.cpp" />
+    <ClCompile Include="util\zone_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\error_handling\error_handling.h" />
-    <ClInclude Include="src\message_limiter\message_limiter.h" />
+    <ClInclude Include="error_handling\error_handling.h" />
+    <ClInclude Include="message_limiter\message_limiter.h" />
     <ClInclude Include="src\log\macros\game_log.h" />
-    <ClInclude Include="src\macros\return_define.h" />
+    <ClInclude Include="macros\return_define.h" />
     <ClInclude Include="src\game_common_logic\comp\session_comp.h" />
     <ClInclude Include="src\log\constants\log_constants.h" />
     <ClInclude Include="src\log\constants\log_color_constants.h" />
@@ -199,8 +199,8 @@
     <ClInclude Include="src\node\system\node_util.h" />
     <ClInclude Include="src\node\system\registration_manager.h" />
     <ClInclude Include="src\node\system\service_discovery_manager.h" />
-    <ClInclude Include="src\rpc\player_service.h" />
-    <ClInclude Include="src\rpc\player_service_replied.h" />
+    <ClInclude Include="rpc\player_service.h" />
+    <ClInclude Include="rpc\player_service_replied.h" />
     <ClInclude Include="src\time\system\cooldown_time_system.h" />
     <ClInclude Include="src\time\system\time_meter_system.h" />
     <ClInclude Include="src\time\constants\time_constants.h" />
@@ -210,10 +210,10 @@
     <ClInclude Include="src\time\comp\timer_list.h" />
     <ClInclude Include="src\time\comp\timer_task_comp.h" />
     <ClInclude Include="src\time\system\time_system.h" />
-    <ClInclude Include="src\type_alias\player_session_type_alias.h" />
+    <ClInclude Include="type_alias\player_session_type_alias.h" />
     <ClInclude Include="src\log\system\console_log_system.h" />
     <ClInclude Include="src\game_common_logic\system\session_system.h" />
-    <ClInclude Include="src\util\zone_utils.h" />
+    <ClInclude Include="util\zone_utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
