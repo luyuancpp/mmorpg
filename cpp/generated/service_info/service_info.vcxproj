@@ -48,7 +48,7 @@
     <ProjectGuid>{356DE209-55AC-4AE6-9BAE-32D50D7EB473}</ProjectGuid>
     <RootNamespace>service_info</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>wrappers</ProjectName>
+    <ProjectName>service_info</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
