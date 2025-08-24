@@ -124,9 +124,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{38085C
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "proto", "cpp\generated\proto\proto.vcxproj", "{7D732139-58FD-4E6F-A12A-F6B3F8B13577}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "service_info", "service_info", "{C854BFD7-22AE-450F-88FC-78226381F34F}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wrappers", "wrappers", "{C854BFD7-22AE-450F-88FC-78226381F34F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "service_info", "cpp\generated\service_info\service_info.vcxproj", "{356DE209-55AC-4AE6-9BAE-32D50D7EB473}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wrappers", "cpp\generated\service_info\service_info.vcxproj", "{356DE209-55AC-4AE6-9BAE-32D50D7EB473}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "config", "cpp\generated\config\config.vcxproj", "{963B97D8-5FE7-40C1-AC41-05441452F2D7}"
 EndProject
