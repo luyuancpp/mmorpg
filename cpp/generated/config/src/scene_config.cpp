@@ -1,6 +1,6 @@
 #include "google/protobuf/util/json_util.h"
-#include "src/util/file2string.h"
-#include "common_error_tip.pb.h"
+#include "util/file2string.h"
+#include "config/common_error_tip.pb.h"
 #include "scene_config.h"
 
 void SceneConfigurationTable::Load() {

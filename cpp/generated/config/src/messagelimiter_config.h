@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "config_expression/config_expression.h"
 #include "muduo/base/Logging.h"
-#include "messagelimiter_config.pb.h"
+#include "config/messagelimiter_config.pb.h"
 
 class MessageLimiterConfigurationTable {
 public:
