@@ -119,8 +119,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>../../../../lib/</OutDir>
-    <IntDir>../../../../bin/vsout/lib/$(ProjectName)/</IntDir>
+    <OutDir>../../../lib/</OutDir>
+    <IntDir>../../../bin/vsout/lib/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -169,7 +169,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../common/;../../third_party/muduo/contrib/windows/include/;../../third_party/muduo;./src/pbc/;../../third_party/spdlog/include/;../../third_party/boost/;../common/src/;../../third_party/exprtk/;../../third_party/;../../third_party/grpc/third_party/protobuf/src/;../../third_party/grpc/third_party/abseil-cpp/;../../third_party/xxhash/;../../third_party/librdkafka/src-cpp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../common/;../../../third_party/muduo/contrib/windows/include/;../../../third_party/muduo;../../third_party/boost/;../../../third_party/exprtk/;../../../third_party/;../../../third_party/grpc/third_party/protobuf/src/;../../../third_party/grpc/third_party/abseil-cpp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
