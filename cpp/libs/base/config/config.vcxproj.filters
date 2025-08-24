@@ -54,94 +54,10 @@
     <ClCompile Include="src\testmultikey_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pbc\ability_operator.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\bag_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\bag_operator.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\buff_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\buff_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\common_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\condition_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\cooldown_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\globalvariable_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\item_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\mainscene_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\mission_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\mission_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\monsterbase_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\scene_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\scene_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\scene_operator.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\skill_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\skill_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\team_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\test_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\testmultikey_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\class_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pbc\class_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\entity_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\skillpermission_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\skillpermission_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\actor_action_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\mount_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\actoractionstate_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\actoractionstate_config.cpp">
@@ -150,25 +66,10 @@
     <ClCompile Include="src\actoractioncombatstate_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pbc\actoractioncombatstate_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\reward_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pbc\reward_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\messagelimiter_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\messagelimiter_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\reward_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\cross_server_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -212,72 +113,6 @@
     <ClInclude Include="src\testmultikey_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pbc\ability_operator.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\bag_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\bag_operator.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\buff_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\buff_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\common_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\condition_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\cooldown_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\globalvariable_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\item_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\mainscene_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\mission_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\mission_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\monsterbase_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\scene_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\scene_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\scene_operator.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\skill_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\skill_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\team_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\test_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\testmultikey_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\cpp_table_id_constants_name\globalvariable_table_id_constants.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -287,25 +122,7 @@
     <ClInclude Include="src\class_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pbc\class_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\entity_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\skillpermission_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\skillpermission_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\actor_action_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\mount_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\actoractionstate_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\cpp_table_id_constants_name\actoractionstate_table_id_constants.h">
@@ -317,34 +134,19 @@
     <ClInclude Include="src\actoractioncombatstate_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pbc\actoractioncombatstate_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\cpp_table_id_bit_index\reward_table_id_bit_index.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\reward_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pbc\reward_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\messagelimiter_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\messagelimiter_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\reward_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\cpp_table_id_constants_name\actoractioncombatstate_table_id_constants.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\cpp_table_id_constants_name\global_abnormal_logout_table_id_constants.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\cross_server_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
