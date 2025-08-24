@@ -10,7 +10,7 @@
 #include "node.h"
 #include <util/node_utils.h>
 #include "proto/logic/event/server_event.pb.h"
-#include <generator/util/gen_util.h>
+#include <util/gen_util.h>
 #include "thread_local/node_context_manager.h"
 #include <thread_local/registry_manager.h>
 
