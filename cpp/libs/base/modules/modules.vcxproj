@@ -162,32 +162,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="src\reward\system\reward_system.cpp" />
-    <ClCompile Include="src\mission\comp\mission_comp.cpp" />
-    <ClCompile Include="src\bag\bag_system.cpp" />
-    <ClCompile Include="src\bag\item_system.cpp" />
-    <ClCompile Include="src\mission\system\mission_system.cpp" />
-    <ClCompile Include="src\scene\system\node_scene_system.cpp" />
-    <ClCompile Include="src\scene\system\scene_system.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\network\constants\network_constants.h" />
-    <ClInclude Include="src\network\system\error_handling_system.h" />
-    <ClInclude Include="src\reward\comp\reward_comp.h" />
-    <ClInclude Include="src\reward\system\reward_system.h" />
-    <ClInclude Include="src\mission\comp\mission_comp.h" />
-    <ClInclude Include="src\scene\comp\player_scene.h" />
-    <ClInclude Include="src\scene\comp\scene_comp.h" />
-    <ClInclude Include="src\scene\comp\node_scene_comp.h" />
-    <ClInclude Include="src\mission\constants\mission_constants.h" />
-    <ClInclude Include="src\bag\bag_system.h" />
-    <ClInclude Include="src\bag\item_system.h" />
-    <ClInclude Include="src\mission\comp\missions_config_comp.h" />
-    <ClInclude Include="src\mission\system\mission_system.h" />
-    <ClInclude Include="src\scene\system\node_scene_system.h" />
-    <ClInclude Include="src\scene\system\scene_system.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

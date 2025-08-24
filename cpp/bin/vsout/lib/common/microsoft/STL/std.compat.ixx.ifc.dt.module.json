@@ -5,8 +5,8 @@
         {
             "primary-output": "..\\..\\..\\bin\\vsout\\lib\\common\\microsoft\\STL\\std.compat.obj",
             "outputs": [
-                "..\\..\\bin\\vsout\\lib\\common\\microsoft\\STL\\std.compat.ixx.ifc.dt.module.json",
-                "..\\..\\bin\\vsout\\lib\\common\\microsoft\\STL\\std.compat.ixx.ifc.dt.d.json",
+                "..\\..\\..\\bin\\vsout\\lib\\common\\microsoft\\STL\\std.compat.ixx.ifc.dt.module.json",
+                "..\\..\\..\\bin\\vsout\\lib\\common\\microsoft\\STL\\std.compat.ixx.ifc.dt.d.json",
                 "..\\..\\..\\bin\\vsout\\lib\\common\\microsoft\\STL\\std.compat.ifc"
             ],
             "provides": [
