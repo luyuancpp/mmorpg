@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "config_expression/config_expression.h"
 #include "muduo/base/Logging.h"
-#include "globalvariable_config.pb.h"
+#include "config/globalvariable_config.pb.h"
 
 class GlobalVariableConfigurationTable {
 public:

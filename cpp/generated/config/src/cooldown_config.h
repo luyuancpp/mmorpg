@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "config_expression/config_expression.h"
 #include "muduo/base/Logging.h"
-#include "cooldown_config.pb.h"
+#include "config/cooldown_config.pb.h"
 
 class CooldownConfigurationTable {
 public:
