@@ -1,6 +1,6 @@
 #include "game_node_scene_system.h"
 
-#include "mainscene_config.h"
+#include "config/mainscene_config.h"
 #include "core/network/message_system.h"
 #include "player/system/player_scene_system.h"
 #include "scene/comp/grid_comp.h"
@@ -9,8 +9,7 @@
 #include "scene/comp/scene_comp.h"
 #include "scene/system/scene_system.h"
 #include "service_info/centre_scene_service_info.h"
-
-#include "util/node_utils.h"
+#include "network/node_utils.h"
 #include "network/node_message_utils.h"
 #include "scene/mananger/scene_nav_mananger.h"
 

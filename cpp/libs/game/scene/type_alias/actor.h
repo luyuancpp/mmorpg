@@ -2,7 +2,7 @@
 #include <unordered_map>
 
 #include "base/common/type_define/type_define.h"
-
+#include "base/threading/entity_manager.h"
 #include "proto/scene/player_scene.pb.h"
 
 #define actorCreateMessage tlsRegistryManager.globalRegistry.get<ActorCreateS2C>(GlobalEntity())
