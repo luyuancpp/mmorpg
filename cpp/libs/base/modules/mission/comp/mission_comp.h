@@ -7,7 +7,7 @@
 #include "type_define/type_define.h"
 #include "mission/comp/missions_config_comp.h"
 #include "util/game_registry.h"
-#include "cpp_table_id_bit_index/mission_table_id_bit_index.h"
+#include "config/cpp_table_id_bit_index/mission_table_id_bit_index.h"
 
 class AcceptMissionEvent;
 class MissionConditionEvent;

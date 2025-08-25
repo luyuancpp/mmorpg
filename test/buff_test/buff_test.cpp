@@ -7,8 +7,8 @@
 #include "proto/logic/event/buff_event.pb.h"
 #include "combat/buff/comp/buff_comp.h"
 #include "time/comp/timer_task_comp.h"
-#include "pbc/buff_error_tip.pb.h"
-#include "pbc/common_error_tip.pb.h"
+#include "proto/config/buff_error_tip.pb.h"
+#include "proto/config/common_error_tip.pb.h"
 #include <thread_local/registry_manager.h>
 
 

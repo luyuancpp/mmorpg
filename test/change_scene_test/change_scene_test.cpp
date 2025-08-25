@@ -3,8 +3,8 @@
 #include "muduo/base/Timestamp.h"
 #include "type_define/type_define.h"
 
-#include "pbc/scene_error_tip.pb.h"
-#include "pbc/common_error_tip.pb.h"
+#include "proto/config/scene_error_tip.pb.h"
+#include "proto/config/common_error_tip.pb.h"
 #include "scene/system/player_change_scene_system.h"
 #include "scene/system/scene_system.h"
 
