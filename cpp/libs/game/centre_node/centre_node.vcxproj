@@ -18,6 +18,25 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="kafka\system\kafka_system.cpp" />
+    <ClCompile Include="player\system\player_node_system.cpp" />
+    <ClCompile Include="player\system\player_tip_system.cpp" />
+    <ClCompile Include="redis\system\redis_system.cpp" />
+    <ClCompile Include="scene\system\player_change_scene_system.cpp" />
+    <ClCompile Include="scene\system\player_scene_system.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="kafka\system\kafka_system.h" />
+    <ClInclude Include="node\comp\game_node_comp.h" />
+    <ClInclude Include="player\comp\player_comp.h" />
+    <ClInclude Include="player\system\player_node_system.h" />
+    <ClInclude Include="player\system\player_tip_system.h" />
+    <ClInclude Include="redis\system\redis_system.h" />
+    <ClInclude Include="scene\system\player_change_scene_system.h" />
+    <ClInclude Include="scene\system\player_scene_system.h" />
+    <ClInclude Include="type_alias\player_redis.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -159,25 +178,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="src\kafka\system\kafka_system.cpp" />
-    <ClCompile Include="src\player\system\player_node_system.cpp" />
-    <ClCompile Include="src\player\system\player_tip_system.cpp" />
-    <ClCompile Include="src\redis\system\redis_system.cpp" />
-    <ClCompile Include="src\scene\system\player_change_scene_system.cpp" />
-    <ClCompile Include="src\scene\system\player_scene_system.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\kafka\system\kafka_system.h" />
-    <ClInclude Include="src\node\comp\game_node_comp.h" />
-    <ClInclude Include="src\player\comp\player_comp.h" />
-    <ClInclude Include="src\player\system\player_node_system.h" />
-    <ClInclude Include="src\player\system\player_tip_system.h" />
-    <ClInclude Include="src\redis\system\redis_system.h" />
-    <ClInclude Include="src\scene\system\player_change_scene_system.h" />
-    <ClInclude Include="src\scene\system\player_scene_system.h" />
-    <ClInclude Include="src\type_alias\player_redis.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
