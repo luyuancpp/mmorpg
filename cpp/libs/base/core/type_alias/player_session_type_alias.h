@@ -3,7 +3,7 @@
 
 #include "base/common/type_define/type_define.h"
 
-#include <threading/registry_manager.h>
+#include <base/threading/registry_manager.h>
 
 using SessionList = std::unordered_map<Guid, Guid>;
 

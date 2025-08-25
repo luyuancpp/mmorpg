@@ -13,7 +13,7 @@
 #include "service_info/game_player_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
-#include "base/common/thread_local/redis_manager.h"
+#include "base/threading/redis_manager.h"
 #include "base/common/util/defer.h"
 #include "proto/common/node.pb.h"
 #include "config/cpp_table_id_constants_name/global_abnormal_logout_table_id_constants.h"
@@ -25,8 +25,8 @@
 #include "base/core/network/rpc_session.h"
 #include "base/core/network/player_message_utils.h"
 #include "base/core/type_alias/player_session_type_alias.h"
-#include "base/common/thread_local/node_context_manager.h"
-#include "base/common/thread_local/player_manager.h"
+#include "base/threading/node_context_manager.h"
+#include "base/threading/player_manager.h"
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData, const std::any& extra)
 {
