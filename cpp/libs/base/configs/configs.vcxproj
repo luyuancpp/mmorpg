@@ -19,31 +19,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="kafka\system\kafka_system.cpp" />
-    <ClCompile Include="player\system\player_node_system.cpp" />
-    <ClCompile Include="player\system\player_tip_system.cpp" />
-    <ClCompile Include="redis\system\redis_system.cpp" />
-    <ClCompile Include="scene\system\player_change_scene_system.cpp" />
-    <ClCompile Include="scene\system\player_scene_system.cpp" />
+    <ClInclude Include="config_expression.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="node_config_manager.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="kafka\system\kafka_system.h" />
-    <ClInclude Include="node\comp\game_node_comp.h" />
-    <ClInclude Include="player\comp\player_comp.h" />
-    <ClInclude Include="player\system\player_node_system.h" />
-    <ClInclude Include="player\system\player_tip_system.h" />
-    <ClInclude Include="redis\system\redis_system.h" />
-    <ClInclude Include="scene\system\player_change_scene_system.h" />
-    <ClInclude Include="scene\system\player_scene_system.h" />
-    <ClInclude Include="type_alias\player_redis.h" />
+    <ClCompile Include="config.cpp" />
+    <ClCompile Include="node_config_manager.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{551BF228-E717-4450-891B-20B1F2A097A1}</ProjectGuid>
-    <RootNamespace>game_logic</RootNamespace>
+    <ProjectGuid>{34DA1D56-8463-4D6D-9DC1-58D13A66F71C}</ProjectGuid>
+    <RootNamespace>configs</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>centre</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -108,9 +97,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;_TCHAR_DEFINED;UNICODE;NOMINMAX;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;NOMINMAX;GOOGLE_CHECK_EQ=ABSL_CHECK_EQ;GOOGLE_LOG=ABSL_LOG;GOOGLE_DCHECK=ABSL_DCHECK;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS;YAML_CPP_STATIC_DEFINE;_WIN32_WINNT=0x0A00</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../../../third_party/boost/;../common/;../../../../third_party/muduo/;../../....//third_party/redis/;../../../../third_party/sol2/include/;../../../../third_party/lua/src/;../../../../third_party/muduo/contrib/windows/include/;../../../../third_party/zlib/;../../../../third_party/grpc/include/;../../../../third_party/grpc/third_party/abseil-cpp/;../../../generated/;../../../../third_party/grpc/third_party/;../../../../third_party/;../../../../third_party/grpc/third_party/protobuf/src/;./;../../../../third_party/redis/deps/;../../../../third_party/redis/;../../base/infran/;../../../../third_party/librdkafka/src-cpp/;../../;../../base/common/;../../base/core/;../../base/modules/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../third_party/boost/;../../../../third_party/muduo/;../../../../third_party/redis/;../../../../third_party/sol2/include/;../../../../third_party/lua/src/;../../../../third_party/redis/deps/;../../../../third_party/muduo/contrib/windows/include/;../../../../third_party/lua/;../../../../third_party/;../../../../third_party/zlib/;../../../../third_party/spdlog/include/;../../../generated/;../../../../third_party/grpc/third_party/protobuf/src/;../../../../third_party/grpc/third_party/abseil-cpp/;../../../../third_party/yaml-cpp/include/;../../../../third_party/xxhash/;../../../../third_party/librdkafka/src-cpp/;./;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200;4819;4146;4244;4267;4018;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>

@@ -5,7 +5,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include "config/all_config.h"
 #include "etcd_helper.h"
-#include "config_loader/config.h"
+#include "config.h"
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "grpc/generator/grpc_init.h"
@@ -35,10 +35,9 @@
 #include "node_connector.h"
 #include "node_allocator.h"
 #include "thread_local/node_context_manager.h"
-#include <thread_local/node_config_manager.h>
+#include <node_config_manager.h>
 #include <thread_local/registry_manager.h>
 #include "thread_local/thread_local_entity_container.h"
-
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
