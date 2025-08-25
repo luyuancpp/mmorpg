@@ -7,7 +7,7 @@
 #include "proto/logic/component/actor_comp.pb.h"
 #include "scene/comp/scene_comp.h"
 
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 const Point kDefaultSize(20.0, 20.0);
 const Point kOrigin(0.0, 0.0);

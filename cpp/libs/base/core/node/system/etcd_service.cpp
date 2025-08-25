@@ -8,10 +8,10 @@
 #include "node_allocator.h"
 #include "grpc/generator/grpc_init.h"
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
-#include "thread_local/redis_manager.h"
-#include "thread_local/node_context_manager.h"
+#include "threading/redis_manager.h"
+#include "threading/node_context_manager.h"
 #include <node_config_manager.h>
-#include <thread_local/snow_flake_manager.h>
+#include <threading/snow_flake_manager.h>
 
 void EtcdService::Init() {
 	InitHandlers();

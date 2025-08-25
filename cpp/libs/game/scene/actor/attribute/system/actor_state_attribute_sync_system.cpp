@@ -13,7 +13,7 @@
 
 #include "frame/manager/frame_time_manager.h"
 #include "network/player_message_utils.h"
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 // 定义帧同步频率的配置数组大小
 constexpr uint32_t kSyncFrequencyArraySize = 5;

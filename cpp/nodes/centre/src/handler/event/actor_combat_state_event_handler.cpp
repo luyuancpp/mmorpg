@@ -1,6 +1,6 @@
 #include "actor_combat_state_event_handler.h"
 #include "proto/logic/event/actor_combat_state_event.pb.h"
-#include "thread_local/dispatcher_manager.h"
+#include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

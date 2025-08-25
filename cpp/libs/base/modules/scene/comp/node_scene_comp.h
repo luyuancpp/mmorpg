@@ -7,7 +7,7 @@
 #include "node/constants/node_constants.h"
 
 #include "proto/common/common.pb.h"
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 using SceneList = EntityUnorderedSet;
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;

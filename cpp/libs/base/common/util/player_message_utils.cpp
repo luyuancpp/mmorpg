@@ -66,7 +66,7 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId gateNodeId)
 {
 	entt::entity gateEntity{ gateNodeId };
-	auto& gateNodeRegistry = ThreadLocalNodeContext::Instance().GetRegistry(eNodeType::GateNodeService);
+	auto& gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
 	if (!gateNodeRegistry.valid(gateEntity))
 	{
 		LOG_ERROR << "Gate not found for NodeId -> " << gateNodeId;

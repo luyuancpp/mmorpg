@@ -9,11 +9,11 @@
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "proto/logic/event/scene_event.pb.h"
 #include "proto/common/node.pb.h"
-#include "thread_local/node_context_manager.h"
-#include "thread_local/dispatcher_manager.h"
+#include "threading/node_context_manager.h"
+#include "threading/dispatcher_manager.h"
 
 #include <ranges> // Only if using C++20 ranges
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 thread_local TransientNode12BitCompositeIdGenerator  nodeSequence; // Sequence for generating node IDs
 

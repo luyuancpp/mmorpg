@@ -10,8 +10,8 @@
 
 #include "time/system/time_system.h"
 #include "util/defer.h"
-#include <thread_local/registry_manager.h>
-#include "thread_local/dispatcher_manager.h"
+#include <threading/registry_manager.h>
+#include "threading/dispatcher_manager.h"
 
 // BuffImplSystem: Buff逻辑工具类，用于处理各种Buff生命周期相关的逻辑
 class BuffImplSystem {

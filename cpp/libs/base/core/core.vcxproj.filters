@@ -30,6 +30,7 @@
     <ClCompile Include="network\process_info.cpp" />
     <ClCompile Include="network\rpc_server.cc" />
     <ClCompile Include="network\rpc_session.cpp" />
+    <ClCompile Include="network\node_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="type_alias\player_session_type_alias.h" />
@@ -81,6 +82,7 @@
     <ClInclude Include="network\rpc_server.h" />
     <ClInclude Include="network\rpc_session.h" />
     <ClInclude Include="network\error_handling_system.h" />
+    <ClInclude Include="network\node_utils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="network\autogen.bat" />

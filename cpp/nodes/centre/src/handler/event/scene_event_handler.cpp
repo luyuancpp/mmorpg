@@ -1,6 +1,6 @@
 #include "scene_event_handler.h"
 #include "proto/logic/event/scene_event.pb.h"
-#include "thread_local/dispatcher_manager.h"
+#include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE 
 
@@ -16,7 +16,7 @@
 #include "service_info/game_player_service_info.h"
 #include "proto/logic/component/scene_comp.pb.h"
 #include "network/player_message_utils.h"
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 ///<<< END WRITING YOUR CODE
 

@@ -10,7 +10,7 @@
 #include "proto/config/common_error_tip.pb.h"
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"
-#include <thread_local/dispatcher_manager.h>
+#include <threading/dispatcher_manager.h>
 
 #include <functional>
 #include <unordered_map>

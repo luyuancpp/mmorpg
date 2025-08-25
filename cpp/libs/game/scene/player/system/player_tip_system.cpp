@@ -3,9 +3,9 @@
 #include "core/network/message_system.h"
 #include "muduo/base/Logging.h"
 #include "service_info/game_client_player_service_info.h"
-#include "thread_local/redis_manager.h"
+#include "threading/redis_manager.h"
 #include "network/player_message_utils.h"
-#include "thread_local/player_manager.h"
+#include "threading/player_manager.h"
 
 void PlayerTipSystem::SendToPlayer(entt::entity player, uint32_t tipId, const StringVector& strParam)
 {

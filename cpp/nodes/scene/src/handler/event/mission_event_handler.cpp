@@ -1,6 +1,6 @@
 #include "mission_event_handler.h"
 #include "proto/logic/event/mission_event.pb.h"
-#include "thread_local/dispatcher_manager.h"
+#include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "mission/comp/mission_comp.h"

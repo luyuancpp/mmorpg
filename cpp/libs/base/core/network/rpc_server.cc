@@ -15,7 +15,7 @@
 #include <google/protobuf/service.h>
 
 #include "rpc_connection_event.h"
-#include <thread_local/dispatcher_manager.h>
+#include <threading/dispatcher_manager.h>
 
 using namespace muduo;
 using namespace muduo::net;

@@ -5,7 +5,7 @@
 #include "scene/comp/scene_comp.h"
 #include "scene/comp/scene_node_scene_comp.h"
 
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 void InterestSystem::InitializeActorComponents(const entt::entity entity)
 {

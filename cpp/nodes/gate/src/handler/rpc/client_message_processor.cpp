@@ -20,9 +20,9 @@
 #include "network/network_utils.h"
 #include "util/node_utils.h"
 #include "proto/logic/event/node_event.pb.h"
-#include "thread_local/node_context_manager.h"
+#include "threading/node_context_manager.h"
 #include <session/manager/session_manager.h>
-#include "thread_local/dispatcher_manager.h"
+#include "threading/dispatcher_manager.h"
 
 static std::optional<entt::entity> PickRandomNode(uint32_t nodeType, uint32_t targetNodeType) {
 	std::vector<entt::entity> candidates;

@@ -8,11 +8,12 @@
 #include <network/rpc_client.h>
 #include <network/rpc_session.h>
 #include "node.h"
-#include <util/node_utils.h>
+#include <network/node_utils.h>
 #include "proto/logic/event/server_event.pb.h"
 #include <util/gen_util.h>
-#include "thread_local/node_context_manager.h"
-#include <thread_local/registry_manager.h>
+#include "threading/node_context_manager.h"
+#include <threading/registry_manager.h>
+#include <threading/entity_manager.h>
 
 static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 	0,

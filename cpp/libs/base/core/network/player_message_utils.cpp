@@ -1,17 +1,17 @@
 ﻿#include "player_message_utils.h"
 
 #include "proto/logic/component/player_network_comp.pb.h"
-#include "thread_local/redis_manager.h"
+#include "threading/redis_manager.h"
 #include "service_info/gate_service_service_info.h"
 #include "muduo/base/Logging.h"
 #include "network_utils.h"
 #include "network/rpc_session.h"
 #include "service_info/service_info.h"
-#include "util/node_utils.h"
+#include "network/node_utils.h"
 #include <service_info/game_service_service_info.h>
-#include "thread_local/node_context_manager.h"
-#include "thread_local/player_manager.h"
-#include <thread_local/registry_manager.h>
+#include "threading/node_context_manager.h"
+#include "threading/player_manager.h"
+#include <threading/registry_manager.h>
 
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)

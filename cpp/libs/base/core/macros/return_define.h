@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 #define RETURN_ON_ERROR(result)  \
 if ((result) != kSuccess) {   \

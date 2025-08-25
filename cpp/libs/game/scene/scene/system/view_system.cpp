@@ -11,7 +11,7 @@
 
 #include "base/common/type_define/type_define.h"
 #include "network/player_message_utils.h"
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 void ViewSystem::Initialize()
 {

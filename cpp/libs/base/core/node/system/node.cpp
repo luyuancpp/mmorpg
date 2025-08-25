@@ -24,20 +24,21 @@
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
 #include "service_info/service_info.h"
-#include "thread_local/redis_manager.h"
+#include "threading/redis_manager.h"
 #include "time/system/time_system.h"
 #include "network/network_utils.h"
 #include "util/gen_util.h"
 #include "util/stacktrace_system.h"
-#include "util/node_utils.h"
+#include "network/node_utils.h"
 #include <boost/algorithm/string.hpp>
 #include "etcd_service.h"
 #include "node_connector.h"
 #include "node_allocator.h"
-#include "thread_local/node_context_manager.h"
+#include "threading/node_context_manager.h"
 #include <node_config_manager.h>
-#include <thread_local/registry_manager.h>
-#include "thread_local/thread_local_entity_container.h"
+#include <threading/registry_manager.h>
+#include "threading/thread_local_entity_container.h"
+#include <threading/entity_manager.h>
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 

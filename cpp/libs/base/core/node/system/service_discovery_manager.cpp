@@ -1,14 +1,15 @@
 #include "service_discovery_manager.h"
-#include <thread_local/redis_manager.h>
+#include <threading/redis_manager.h>
 #include "etcd_helper.h"
 #include <muduo/base/Logging.h>
 #include "node_util.h"
 #include "node.h"
 #include "node_connector.h"
 #include "google/protobuf/util/json_util.h"
-#include <util/node_utils.h>
+#include <network/node_utils.h>
 #include <node_config_manager.h>
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
+#include <threading/entity_manager.h>
 
 void ServiceDiscoveryManager::Init()
 {

@@ -1,9 +1,9 @@
 ﻿#include "etcd_helper.h"
 #include <google/protobuf/util/json_util.h>
-#include "thread_local/redis_manager.h"
+#include "threading/redis_manager.h"
 #include "grpc/generator/proto/etcd/etcd_grpc.h"
 #include <muduo/base/Logging.h>
-#include "thread_local/node_context_manager.h"
+#include "threading/node_context_manager.h"
 
 void EtcdHelper::PutServiceNodeInfo(const NodeInfo& nodeInfo, const std::string& key) {
     etcdserverpb::PutRequest request;

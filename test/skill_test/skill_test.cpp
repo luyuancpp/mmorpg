@@ -9,7 +9,7 @@
 #include "time/system/cooldown_time_system.h"
 #include "proto/config/skill_error_tip.pb.h"
 #include "proto/config/common_error_tip.pb.h"
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 using ::testing::_;
 using ::testing::Return;

@@ -21,13 +21,13 @@
 #include "proto/common/node.pb.h"
 #include "scene/system/scene_system.h"
 #include "service_info/service_info.h"
-#include "thread_local/redis_manager.h"
+#include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "util/proto_field_checker.h"
 #include "network/network_utils.h"
 #include "network/player_message_utils.h"
-#include "thread_local/node_context_manager.h"
-#include "thread_local/player_manager.h"
+#include "threading/node_context_manager.h"
+#include "threading/player_manager.h"
 #include "core/system/redis_system.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;

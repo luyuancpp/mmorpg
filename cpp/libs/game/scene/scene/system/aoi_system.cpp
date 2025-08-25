@@ -16,7 +16,7 @@
 
 #include "type_alias/actor.h"
 #include "network/player_message_utils.h"
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 
 void AoiSystem::Update(double delta) {

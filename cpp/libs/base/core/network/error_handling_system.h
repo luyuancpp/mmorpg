@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 // 模板函数：发送错误信息给客户端
 template <typename Request, typename Response>

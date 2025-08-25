@@ -7,8 +7,8 @@
 #include "muduo/base/Logging.h"
 #include "proto/logic/event/scene_event.pb.h"
 #include "time/system/time_system.h"
-#include <thread_local/registry_manager.h>
-#include <thread_local/dispatcher_manager.h>
+#include <threading/registry_manager.h>
+#include <threading/dispatcher_manager.h>
 
 
 // 添加切换场景信息到队列

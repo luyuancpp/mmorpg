@@ -1,6 +1,6 @@
 #include "npc_event_handler.h"
 #include "proto/logic/event/npc_event.pb.h"
-#include "thread_local/dispatcher_manager.h"
+#include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
