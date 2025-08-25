@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "redis_client/redis_client.h"
+#include "base/infra/storage/redis_client/redis_client.h"
 
 class RedisSystem
 {
