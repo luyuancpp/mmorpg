@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="message_limiter\message_limiter.cpp" />
-    <ClCompile Include="util\zone_utils.cpp" />
+    <ClCompile Include="node\system\zone_utils.cpp" />
     <ClCompile Include="game_common_logic\system\session_system.cpp" />
     <ClCompile Include="log\system\console_log_system.cpp" />
     <ClCompile Include="node\system\etcd_helper.cpp" />
@@ -38,7 +38,7 @@
     <ClInclude Include="error_handling\error_handling.h" />
     <ClInclude Include="rpc\player_service.h" />
     <ClInclude Include="rpc\player_service_replied.h" />
-    <ClInclude Include="util\zone_utils.h" />
+    <ClInclude Include="node\system\zone_utils.h" />
     <ClInclude Include="game_common_logic\system\session_system.h" />
     <ClInclude Include="game_common_logic\comp\session_comp.h" />
     <ClInclude Include="log\constants\log_constants.h" />
