@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <unordered_map>
-#include "config_expression/config_expression.h"
+#include "config_expression.h"
 #include "muduo/base/Logging.h"
 #include "proto/config/skillpermission_config.pb.h"
 

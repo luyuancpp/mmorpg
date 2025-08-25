@@ -4,7 +4,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include "thread_local/redis_manager.h"
 
-#include <thread_local/node_config_manager.h>
+#include <node_config_manager.h>
 
 bool KafkaManager::Init(const KafkaConfig& config) {
 	std::vector<std::string> brokersVec;

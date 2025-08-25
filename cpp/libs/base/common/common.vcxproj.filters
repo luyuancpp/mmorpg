@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="config_expression\config_expression.h" />
     <ClInclude Include="muduowindow\TimerId.h" />
     <ClInclude Include="thread_local\thread_local_entity_container.h" />
     <ClInclude Include="thread_local\redis_manager.h" />
@@ -19,14 +18,12 @@
     <ClInclude Include="util\node_id_generator.h" />
     <ClInclude Include="util\stacktrace_system.h" />
     <ClInclude Include="util\proto_field_checker.h" />
-    <ClInclude Include="config_loader\config.h" />
     <ClInclude Include="util\base64.h" />
     <ClInclude Include="util\fast_queue.h" />
     <ClInclude Include="util\node_utils.h" />
     <ClInclude Include="thread_local\node_context_manager.h" />
     <ClInclude Include="thread_local\player_manager.h" />
     <ClInclude Include="thread_local\message_context.h" />
-    <ClInclude Include="thread_local\node_config_manager.h" />
     <ClInclude Include="thread_local\registry_manager.h" />
     <ClInclude Include="thread_local\snow_flake_manager.h" />
     <ClInclude Include="thread_local\dispatcher_manager.h" />
@@ -41,7 +38,6 @@
     <ClCompile Include="global_data\async_log_file.cpp" />
     <ClCompile Include="test\test.cpp" />
     <ClCompile Include="util\proto_field_checker.cpp" />
-    <ClCompile Include="config_loader\config.cpp" />
     <ClCompile Include="util\base64.cpp" />
     <ClCompile Include="util\node_utils.cpp" />
     <ClCompile Include="thread_local\node_context_manager.cpp" />
@@ -50,7 +46,6 @@
     <ClCompile Include="thread_local\snow_flake_manager.cpp" />
     <ClCompile Include="thread_local\dispatcher_manager.cpp" />
     <ClCompile Include="thread_local\message_context.cpp" />
-    <ClCompile Include="thread_local\node_config_manager.cpp" />
     <ClCompile Include="util\random.cpp" />
   </ItemGroup>
 </Project>

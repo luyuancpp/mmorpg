@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config_loader/config.h"
+#include "config.h"
 #include "proto/common/message.pb.h"
 
 class NodeConfigManager {
