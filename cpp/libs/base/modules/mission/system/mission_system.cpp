@@ -2,13 +2,12 @@
 #include <ranges>
 #include "error_handling/error_handling.h"
 #include "muduo/base/Logging.h"
-#include "condition_config.h"
+#include "config/condition_config.h"
 #include "mission/constants/mission_constants.h"
 #include "mission/comp/mission_comp.h"
-
 #include "macros/return_define.h"
-#include "pbc/mission_error_tip.pb.h"
-#include "pbc/common_error_tip.pb.h"
+#include "proto/config/mission_error_tip.pb.h"
+#include "proto/config/common_error_tip.pb.h"
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"
 #include <thread_local/dispatcher_manager.h>

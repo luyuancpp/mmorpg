@@ -2,8 +2,8 @@
 
 #include "scene/system/scene_system.h"
 #include "scene/comp/scene_comp.h"
-#include "pbc/scene_error_tip.pb.h"
-#include "pbc/common_error_tip.pb.h"
+#include "proto/config/scene_error_tip.pb.h"
+#include "proto/config/common_error_tip.pb.h"
 
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "proto/common/node.pb.h"
