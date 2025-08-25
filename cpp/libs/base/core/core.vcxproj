@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{03F2DF47-F5B9-41E9-933B-903D317FEEB1}</ProjectGuid>
-    <RootNamespace>logic</RootNamespace>
+    <RootNamespace>core</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>core</ProjectName>
   </PropertyGroup>
