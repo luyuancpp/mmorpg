@@ -4,11 +4,12 @@
 #include "node.h"
 #include "etcd_manager.h"
 #include "etcd_helper.h"
-#include <util/node_utils.h>
-#include <thread_local/redis_manager.h>
+#include <network/node_utils.h>
+#include <threading/redis_manager.h>
 #include <node_config_manager.h>
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 #include <util/snow_flake.h>
+#include <threading/entity_manager.h>
 
 uint32_t tryPortId{ 0 };
 

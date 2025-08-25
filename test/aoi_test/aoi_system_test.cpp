@@ -11,8 +11,8 @@
 
 #include "type_alias/actor.h"
 #include "util/random.h"
-#include "thread_local/redis_manager.h"
-#include <thread_local/registry_manager.h>
+#include "threading/redis_manager.h"
+#include <threading/registry_manager.h>
 
 extern const Point kDefaultSize(20.0, 20.0);
 extern const Point kOrigin(0.0, 0.0);

@@ -16,7 +16,7 @@
 #ifdef __linux__
 #include <unistd.h>
 #endif // __linux__
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 using namespace muduo;
 using namespace muduo::net;

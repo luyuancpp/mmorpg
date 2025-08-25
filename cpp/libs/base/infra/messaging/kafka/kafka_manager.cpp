@@ -2,7 +2,7 @@
 #include "proto/common/config.pb.h"
 #include <muduo/base/Logging.h>
 #include <boost/algorithm/string/join.hpp>
-#include "thread_local/redis_manager.h"
+#include "threading/redis_manager.h"
 
 #include <node_config_manager.h>
 

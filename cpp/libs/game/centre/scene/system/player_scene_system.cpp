@@ -14,8 +14,8 @@
 #include "network/node_message_utils.h"
 #include "util/node_utils.h"
 #include "util/zone_utils.h"
-#include "thread_local/node_context_manager.h"
-#include <thread_local/registry_manager.h>
+#include "threading/node_context_manager.h"
+#include <threading/registry_manager.h>
 
 entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext)
 {

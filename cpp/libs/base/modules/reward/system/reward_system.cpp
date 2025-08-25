@@ -5,7 +5,7 @@
 #include "proto/config/reward_error_tip.pb.h"
 #include "reward/comp/reward_comp.h"
 
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 void RewardSystem::InitializeActorComponents(entt::entity entityId)
 {

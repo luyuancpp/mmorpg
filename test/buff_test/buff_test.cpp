@@ -9,7 +9,7 @@
 #include "time/comp/timer_task_comp.h"
 #include "proto/config/buff_error_tip.pb.h"
 #include "proto/config/common_error_tip.pb.h"
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 
 

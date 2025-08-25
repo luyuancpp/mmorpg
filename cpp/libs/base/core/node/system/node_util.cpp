@@ -3,7 +3,7 @@
 
 #include "proto/common/common.pb.h"
 #include <network/rpc_client.h>
-#include "thread_local/node_context_manager.h"
+#include "threading/node_context_manager.h"
 
 // 静态映射表定义（可放在 .cpp 中）//todo
 const std::unordered_map<eNodeType, std::string> nodeTypeNameMap = {

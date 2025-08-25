@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "cpp_table_id_bit_index/reward_table_id_bit_index.h"
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 decltype(auto) CreatePlayerEntityWithRewardComponent(){
     const auto playerEntity = tlsRegistryManager.actorRegistry.create();

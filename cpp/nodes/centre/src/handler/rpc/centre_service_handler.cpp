@@ -24,7 +24,7 @@
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
 #include "service_info/service_info.h"
-#include "thread_local/redis_manager.h"
+#include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "util/defer.h"
 #include "util/proto_field_checker.h"
@@ -35,9 +35,9 @@
 #include "network/network_utils.h"
 #include "network/player_message_utils.h"
 #include "type_alias/player_redis.h"
-#include "thread_local/node_context_manager.h"
-#include "thread_local/player_manager.h"
-#include "thread_local/message_context.h"
+#include "threading/node_context_manager.h"
+#include "threading/player_manager.h"
+#include "threading/message_context.h"
 
 using namespace muduo;
 using namespace muduo::net;

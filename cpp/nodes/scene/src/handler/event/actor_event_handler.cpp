@@ -1,6 +1,6 @@
 #include "actor_event_handler.h"
 #include "proto/logic/event/actor_event.pb.h"
-#include "thread_local/dispatcher_manager.h"
+#include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "actor/action_state/constants/actor_state_constants.h"

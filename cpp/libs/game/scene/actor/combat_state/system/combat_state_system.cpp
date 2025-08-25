@@ -10,7 +10,7 @@
 #include "proto/logic/component/actor_combat_state_comp.pb.h"
 #include "proto/logic/event/actor_combat_state_event.pb.h"
 
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 // 初始化实体的战斗状态组件
 void CombatStateSystem::InitializeCombatStateComponent(entt::entity entity) {

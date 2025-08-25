@@ -3,14 +3,15 @@
 #include "node_util.h"
 #include <muduo/base/Logging.h>
 #include <network/rpc_client.h>
-#include <util/node_utils.h>
+#include <network/node_utils.h>
 #include <grpc/generator/grpc_init.h>
-#include <thread_local/redis_manager.h>
+#include <threading/redis_manager.h>
 #include "node.h"
 #include "network/network_utils.h"
-#include "thread_local/node_context_manager.h"
+#include "threading/node_context_manager.h"
 #include <node_config_manager.h>
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
+#include <threading/entity_manager.h>
 
 void NodeConnector::ConnectToNode(const NodeInfo& info) {
 	if (gNode->IsMyNode(info)) {

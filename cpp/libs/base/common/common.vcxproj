@@ -22,15 +22,6 @@
     <ClInclude Include="global_data\async_log_file.h" />
     <ClInclude Include="muduowindow\TimerId.h" />
     <ClInclude Include="test\test.h" />
-    <ClInclude Include="thread_local\dispatcher_manager.h" />
-    <ClInclude Include="thread_local\message_context.h" />
-    <ClInclude Include="thread_local\player_manager.h" />
-    <ClInclude Include="thread_local\registry_manager.h" />
-    <ClInclude Include="thread_local\snow_flake_manager.h" />
-    <ClInclude Include="thread_local\thread_local_entity_container.h" />
-    <ClInclude Include="thread_local\redis_manager.h" />
-    <ClInclude Include="thread_local\lua_state.h" />
-    <ClInclude Include="thread_local\node_context_manager.h" />
     <ClInclude Include="type_define\type_define.h" />
     <ClInclude Include="util\base64.h" />
     <ClInclude Include="util\consistent_hash_node.h" />
@@ -39,7 +30,6 @@
     <ClInclude Include="util\file2string.h" />
     <ClInclude Include="util\game_registry.h" />
     <ClInclude Include="util\node_id_generator.h" />
-    <ClInclude Include="util\node_utils.h" />
     <ClInclude Include="util\proto_field_checker.h" />
     <ClInclude Include="util\random.h" />
     <ClInclude Include="util\snow_flake.h" />
@@ -49,19 +39,9 @@
   <ItemGroup>
     <ClCompile Include="global_data\async_log_file.cpp" />
     <ClCompile Include="test\test.cpp" />
-    <ClCompile Include="thread_local\dispatcher_manager.cpp" />
-    <ClCompile Include="thread_local\message_context.cpp" />
-    <ClCompile Include="thread_local\player_manager.cpp" />
-    <ClCompile Include="thread_local\registry_manager.cpp" />
-    <ClCompile Include="thread_local\snow_flake_manager.cpp" />
-    <ClCompile Include="thread_local\thread_local_entity_container.cpp" />
-    <ClCompile Include="thread_local\redis_manager.cpp" />
-    <ClCompile Include="thread_local\lua_state.cpp" />
-    <ClCompile Include="thread_local\node_context_manager.cpp" />
     <ClCompile Include="util\base64.cpp" />
     <ClCompile Include="util\file2string.cpp" />
     <ClCompile Include="util\game_registry.cpp" />
-    <ClCompile Include="util\node_utils.cpp" />
     <ClCompile Include="util\proto_field_checker.cpp" />
     <ClCompile Include="util\random.cpp" />
     <ClCompile Include="util\utility.cpp" />

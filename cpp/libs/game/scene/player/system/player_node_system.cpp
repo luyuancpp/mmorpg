@@ -10,7 +10,7 @@
 #include "service_info/centre_player_scene_service_info.h"
 #include "service_info/centre_service_service_info.h"
 
-#include "thread_local/redis_manager.h"
+#include "threading/redis_manager.h"
 #include "time/system/time_system.h"
 #include "type_alias/player_session_type_alias.h"
 #include "util/defer.h"
@@ -24,9 +24,9 @@
 #include "cross_server_error_tip.pb.h"
 #include "player_tip_system.h"
 #include <kafka/kafka_producer.h>
-#include "thread_local/player_manager.h"
+#include "threading/player_manager.h"
 #include "core/system/redis_system.h"
-#include <thread_local/dispatcher_manager.h>
+#include <threading/dispatcher_manager.h>
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)
 {

@@ -9,8 +9,8 @@
 #include "util/snow_flake.h"
 #include "config/item_config.h"
 #include "util/defer.h"
-#include <thread_local/snow_flake_manager.h>
-#include "thread_local/redis_manager.h"
+#include <threading/snow_flake_manager.h>
+#include "threading/redis_manager.h"
 
 Bag::Bag()
     : entity(tlsRegistryManager.itemRegistry.create())

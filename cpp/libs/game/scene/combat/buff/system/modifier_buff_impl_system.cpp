@@ -8,7 +8,7 @@
 #include "combat/buff/comp/buff_comp.h"
 #include "combat/buff/constants/buff_constants.h"
 
-#include <thread_local/registry_manager.h>
+#include <threading/registry_manager.h>
 
 bool ModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
     if (buffTable == nullptr) {

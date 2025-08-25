@@ -138,6 +138,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scene", "cpp\libs\game\scen
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "configs", "cpp\libs\base\configs\configs.vcxproj", "{34DA1D56-8463-4D6D-9DC1-58D13A66F71C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "threading", "cpp\libs\base\threading\threading.vcxproj", "{8B95AB85-AA83-465D-8B10-19CCF03A3654}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -434,6 +436,14 @@ Global
 		{34DA1D56-8463-4D6D-9DC1-58D13A66F71C}.Release|x64.Build.0 = Release|x64
 		{34DA1D56-8463-4D6D-9DC1-58D13A66F71C}.Release|x86.ActiveCfg = Release|Win32
 		{34DA1D56-8463-4D6D-9DC1-58D13A66F71C}.Release|x86.Build.0 = Release|Win32
+		{8B95AB85-AA83-465D-8B10-19CCF03A3654}.Debug|x64.ActiveCfg = Debug|x64
+		{8B95AB85-AA83-465D-8B10-19CCF03A3654}.Debug|x64.Build.0 = Debug|x64
+		{8B95AB85-AA83-465D-8B10-19CCF03A3654}.Debug|x86.ActiveCfg = Debug|Win32
+		{8B95AB85-AA83-465D-8B10-19CCF03A3654}.Debug|x86.Build.0 = Debug|Win32
+		{8B95AB85-AA83-465D-8B10-19CCF03A3654}.Release|x64.ActiveCfg = Release|x64
+		{8B95AB85-AA83-465D-8B10-19CCF03A3654}.Release|x64.Build.0 = Release|x64
+		{8B95AB85-AA83-465D-8B10-19CCF03A3654}.Release|x86.ActiveCfg = Release|Win32
+		{8B95AB85-AA83-465D-8B10-19CCF03A3654}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -480,6 +490,7 @@ Global
 		{7D172AE7-4B58-430F-A448-B7B6139384A2} = {7AD08E7B-AB3C-46C3-A68E-05D1BCA30C86}
 		{341399B9-CD77-43CA-B0BD-B4504A3EC82B} = {7AD08E7B-AB3C-46C3-A68E-05D1BCA30C86}
 		{34DA1D56-8463-4D6D-9DC1-58D13A66F71C} = {485DBD5C-8DDE-4D76-8B43-5C01A131FBEB}
+		{8B95AB85-AA83-465D-8B10-19CCF03A3654} = {485DBD5C-8DDE-4D76-8B43-5C01A131FBEB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {39DD7ACD-8F24-4314-9D3C-74F6B00572A2}
