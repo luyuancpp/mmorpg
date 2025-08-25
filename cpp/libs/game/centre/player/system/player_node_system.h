@@ -1,7 +1,7 @@
 #pragma once
 #include <any>
 #include "entt/src/entt/entity/registry.hpp"
-#include "type_define/type_define.h"
+#include "base/common/type_define/type_define.h"
 
 class player_centre_database;
 

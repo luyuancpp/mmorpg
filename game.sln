@@ -132,9 +132,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scene", "cpp\nodes\scene\sc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "centre", "cpp\libs\game\centre\centre.vcxproj", "{551BF228-E717-4450-891B-20B1F2A097A1}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gate", "cpp\libs\game\gate\gate_node.vcxproj", "{7D172AE7-4B58-430F-A448-B7B6139384A2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gate", "cpp\libs\game\gate\gate.vcxproj", "{7D172AE7-4B58-430F-A448-B7B6139384A2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scene", "cpp\libs\game\scene\scene_node.vcxproj", "{341399B9-CD77-43CA-B0BD-B4504A3EC82B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scene", "cpp\libs\game\scene\scene.vcxproj", "{341399B9-CD77-43CA-B0BD-B4504A3EC82B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,6 +1,6 @@
 #pragma once
 #include <any>
-#include "type_define/type_define.h"
+#include "base/common/type_define/type_define.h"
 #include "proto/db/mysql_database_table.pb.h"
 
 class PlayerGameNodeEnteryInfoPBComponent;

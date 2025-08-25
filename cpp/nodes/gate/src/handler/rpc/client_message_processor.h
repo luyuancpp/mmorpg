@@ -4,7 +4,7 @@
 #include "muduo/net/EventLoop.h"
 #include "network/rpc_client.h"
 #include "network/codec/dispatcher.h"
-#include "type_define/type_define.h"
+#include "base/common/type_define/type_define.h"
 #include "proto/common/message.pb.h"
 
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
