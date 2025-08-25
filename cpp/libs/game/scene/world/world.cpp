@@ -16,7 +16,7 @@
 
 #include "core/system/id_generator_manager.h"
 #include "node/system/node.h"
-#include "util/node_utils.h"
+#include "network/node_utils.h"
 #include "frame/manager/frame_time_manager.h"
 
 using namespace std::chrono;
