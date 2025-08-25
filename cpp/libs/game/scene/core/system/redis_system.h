@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "redis_client/redis_client.h"
+#include "base/infra/storage/redis_client/redis_client.h"
 #include "proto/db/mysql_database_table.pb.h"
 
 using PlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, PlayerAllData>>;
