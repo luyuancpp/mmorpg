@@ -9,7 +9,7 @@
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/event/actor_event.pb.h"
 
-#include <base/thread_local/dispatcher_manager.h>
+#include <base/threading/dispatcher_manager.h>
 
 namespace {
     // 检查某个动作是否与当前状态冲突，若冲突，返回对应的错误码

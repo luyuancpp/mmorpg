@@ -2,9 +2,9 @@
 
 #include <muduo/base/Logging.h>
 
-#include "entity_error_tip.pb.h"
-#include "skillpermission_config.h"
-#include "skill_config.h"
+#include "proto/config/entity_error_tip.pb.h"
+#include "config/skillpermission_config.h"
+#include "config/skill_config.h"
 #include "actor/action_state/constants/actor_state_constants.h"
 #include "actor/action_state/system/actor_action_state_system.h"
 #include "actor/combat_state/system/combat_state_system.h"
@@ -15,8 +15,8 @@
 #include "proto/logic/event/combat_event.pb.h"
 #include "proto/logic/event/skill_event.pb.h"
 #include "macros/return_define.h"
-#include "proto/common_error_tip.pb.h"
-#include "proto/skill_error_tip.pb.h"
+#include "proto/config/common_error_tip.pb.h"
+#include "proto/config/skill_error_tip.pb.h"
 #include "proto/logic/component/buff_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"

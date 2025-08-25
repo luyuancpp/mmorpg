@@ -1,6 +1,6 @@
 #include "player_skill_system.h"
 
-#include "class_config.h"
+#include "config/class_config.h"
 #include "proto/logic/component/player_skill_comp.pb.h"
 
 #include <threading/registry_manager.h>

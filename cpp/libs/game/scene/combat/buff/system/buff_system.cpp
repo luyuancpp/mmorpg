@@ -1,6 +1,6 @@
 ﻿#include "buff_system.h"
 #include <ranges>
-#include "buff_config.h"
+#include "config/buff_config.h"
 #include "combat/buff/system/buff_impl_system.h"
 #include "proto/logic/component/buff_comp.pb.h"
 
@@ -8,8 +8,8 @@
 
 #include <ranges>
 #include <muduo/base/Logging.h>
-#include "buff_error_tip.pb.h"
-#include "common_error_tip.pb.h"
+#include "proto/config/buff_error_tip.pb.h"
+#include "proto/config/common_error_tip.pb.h"
 #include "modifier_buff_impl_system.h"
 #include "motion_modifier_impl_system.h"
 #include "combat/buff/comp/buff_comp.h"
