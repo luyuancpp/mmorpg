@@ -21,7 +21,7 @@
   <ItemGroup>
     <ClInclude Include="global_data\async_log_file.h" />
     <ClInclude Include="muduowindow\TimerId.h" />
-    <ClInclude Include="test\test.h" />
+    <ClInclude Include="stat\stat.h" />
     <ClInclude Include="type_define\type_define.h" />
     <ClInclude Include="util\base64.h" />
     <ClInclude Include="util\consistent_hash_node.h" />
@@ -38,7 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="global_data\async_log_file.cpp" />
-    <ClCompile Include="test\test.cpp" />
+    <ClCompile Include="stat\stat.cpp" />
     <ClCompile Include="util\base64.cpp" />
     <ClCompile Include="util\file2string.cpp" />
     <ClCompile Include="util\game_registry.cpp" />
