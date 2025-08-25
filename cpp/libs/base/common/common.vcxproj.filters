@@ -11,7 +11,7 @@
     <ClInclude Include="util\snow_flake.h" />
     <ClInclude Include="util\utility.h" />
     <ClInclude Include="global_data\async_log_file.h" />
-    <ClInclude Include="test\test.h" />
+    <ClInclude Include="stat\stat.h" />
     <ClInclude Include="util\node_id_generator.h" />
     <ClInclude Include="util\stacktrace_system.h" />
     <ClInclude Include="util\proto_field_checker.h" />
@@ -23,7 +23,7 @@
     <ClCompile Include="util\game_registry.cpp" />
     <ClCompile Include="util\utility.cpp" />
     <ClCompile Include="global_data\async_log_file.cpp" />
-    <ClCompile Include="test\test.cpp" />
+    <ClCompile Include="stat\stat.cpp" />
     <ClCompile Include="util\proto_field_checker.cpp" />
     <ClCompile Include="util\base64.cpp" />
     <ClCompile Include="util\random.cpp" />
