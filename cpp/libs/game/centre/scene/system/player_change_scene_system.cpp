@@ -1,14 +1,14 @@
 #include "player_change_scene_system.h"
 
-#include "pbc/common_error_tip.pb.h"
-#include "pbc/scene_error_tip.pb.h"
+#include "proto/config/common_error_tip.pb.h"
+#include "proto/config/scene_error_tip.pb.h"
 #include "scene/system/scene_system.h"
 
 #include "muduo/base/Logging.h"
 #include "proto/logic/event/scene_event.pb.h"
 #include "time/system/time_system.h"
-#include <threading/registry_manager.h>
-#include <threading/dispatcher_manager.h>
+#include <base/threading/registry_manager.h>
+#include <base/threading/dispatcher_manager.h>
 
 
 // 添加切换场景信息到队列

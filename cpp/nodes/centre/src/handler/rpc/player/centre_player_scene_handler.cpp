@@ -5,8 +5,8 @@
 #include "muduo/base/Logging.h"
 
 #include "scene/system/scene_system.h"
-#include "pbc/scene_error_tip.pb.h"
-#include "pbc/common_error_tip.pb.h"
+#include "proto/scene_error_tip.pb.h"
+#include "proto/common_error_tip.pb.h"
 #include "centre_node.h"
 #include "scene/system/player_scene_system.h"
 #include "player/system/player_tip_system.h"
