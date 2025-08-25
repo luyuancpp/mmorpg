@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <unordered_map>
-#include "config_expression/config_expression.h"
+#include "base/common/config_expression/config_expression.h"
 #include "muduo/base/Logging.h"
 #include "proto/config/globalvariable_config.pb.h"
 

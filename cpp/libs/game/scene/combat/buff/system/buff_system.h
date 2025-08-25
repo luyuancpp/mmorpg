@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "combat/buff/comp/buff_comp.h"
-#include "type_define/type_define.h"
+#include "base/common/type_define/type_define.h"
 
 class BuffTable;
 class SkillExecutedEvent;

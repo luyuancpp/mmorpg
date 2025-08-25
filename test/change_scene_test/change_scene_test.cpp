@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <boost/circular_buffer.hpp>
 #include "muduo/base/Timestamp.h"
-#include "type_define/type_define.h"
+#include "base/common/type_define/type_define.h"
 
 #include "proto/config/scene_error_tip.pb.h"
 #include "proto/config/common_error_tip.pb.h"

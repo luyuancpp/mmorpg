@@ -18,6 +18,13 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="session\comp\gate_session.h" />
+    <ClInclude Include="session\manager\session_manager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="session\manager\session_manager.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

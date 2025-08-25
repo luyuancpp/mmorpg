@@ -1,7 +1,7 @@
 #pragma once
 #include <unordered_map>
 
-#include "type_define/type_define.h"
+#include "base/common/type_define/type_define.h"
 
 #include <thread_local/registry_manager.h>
 

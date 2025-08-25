@@ -17,7 +17,7 @@
 #include "util/node_utils.h"
 #include "network/node_message_utils.h"
 #include "player/system/player_data_loader_system.h"
-#include "type_define/type_define.h"
+#include "base/common/type_define/type_define.h"
 #include "proto/db/mysql_database_table.pb.h"
 #include "proto/logic/event/player_migration_event.pb.h"
 #include "util/zone_utils.h"

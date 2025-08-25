@@ -9,7 +9,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
-#include "type_define/type_define.h"
+#include "base/common/type_define/type_define.h"
 
 #include "scene/system/player_change_scene_system.h"
 #include "util/game_registry.h"
