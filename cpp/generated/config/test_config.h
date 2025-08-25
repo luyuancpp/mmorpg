@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "config_expression/config_expression.h"
 #include "muduo/base/Logging.h"
-#include "config/test_config.pb.h"
+#include "proto/config/test_config.pb.h"
 
 class TestConfigurationTable {
 public:
