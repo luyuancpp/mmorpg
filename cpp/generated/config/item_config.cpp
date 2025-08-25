@@ -1,6 +1,6 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "config/common_error_tip.pb.h"
+#include "proto/config/common_error_tip.pb.h"
 #include "item_config.h"
 
 void ItemConfigurationTable::Load() {
