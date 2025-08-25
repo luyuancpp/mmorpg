@@ -12,6 +12,7 @@
 #include "base/common/type_define/type_define.h"
 #include "network/player_message_utils.h"
 #include <threading/registry_manager.h>
+#include <threading/entity_manager.h>
 
 void ViewSystem::Initialize()
 {

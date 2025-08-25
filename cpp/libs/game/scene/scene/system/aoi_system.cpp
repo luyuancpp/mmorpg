@@ -13,7 +13,6 @@
 #include "scene/comp/scene_comp.h"
 #include "service_info/player_scene_service_info.h"
 #include "test/test.h"
-
 #include "type_alias/actor.h"
 #include "network/player_message_utils.h"
 #include <threading/registry_manager.h>
