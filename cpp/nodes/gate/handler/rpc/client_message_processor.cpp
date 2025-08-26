@@ -8,7 +8,7 @@
 
 #include "gate_node.h"
 #include "grpc/generator/proto/login/login_service_grpc.h"
-#include "proto/common_error_tip.pb.h"
+#include "proto/table/common_error_tip.pb.h"
 #include "service_info/service_info.h"
 #include "service_info/centre_service_service_info.h"
 #include "service_info/game_service_service_info.h"
@@ -17,12 +17,11 @@
 #include "proto/common/node.pb.h"
 #include "node/system/node_util.h"
 #include "google/protobuf/descriptor.h"
-#include "network/network_utils.h"
-#include "util/node_utils.h"
 #include "proto/logic/event/node_event.pb.h"
 #include "threading/node_context_manager.h"
 #include <session/manager/session_manager.h>
 #include "threading/dispatcher_manager.h"
+#include <network/node_utils.h>
 
 static std::optional<entt::entity> PickRandomNode(uint32_t nodeType, uint32_t targetNodeType) {
 	std::vector<entt::entity> candidates;

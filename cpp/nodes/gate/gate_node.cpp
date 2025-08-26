@@ -8,7 +8,7 @@
 #include "proto/common/node.pb.h"
 #include "service_info/service_info.h"
 #include "node/system/node_util.h"
-#include "game_common_logic/system/session_system.h"
+#include "session/system/session_system.h"
 #include "grpc/generator/grpc_init.h"
 #include "session/manager/session_manager.h"
 
