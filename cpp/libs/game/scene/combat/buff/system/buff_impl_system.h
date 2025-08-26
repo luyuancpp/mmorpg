@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-#include "config/buff_config.h"
+#include "table/buff_config.h"
 #include "combat/buff/system/buff_system.h"
-#include "proto/config/common_error_tip.pb.h"
+#include "proto/table/common_error_tip.pb.h"
 #include "actor/combat_state/constants/combat_state_constants.h"
 #include "combat/buff/comp/buff_comp.h"
 #include "combat/buff/constants/buff_constants.h"

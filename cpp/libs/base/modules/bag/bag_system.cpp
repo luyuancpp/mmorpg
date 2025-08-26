@@ -4,10 +4,10 @@
 
 #include "error_handling/error_handling.h"
 #include "macros/return_define.h"
-#include "proto/config/common_error_tip.pb.h"
-#include "proto/config/bag_error_tip.pb.h"
+#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/bag_error_tip.pb.h"
 #include "util/snow_flake.h"
-#include "config/item_config.h"
+#include "table/item_config.h"
 #include "util/defer.h"
 #include <threading/snow_flake_manager.h>
 #include "threading/redis_manager.h"

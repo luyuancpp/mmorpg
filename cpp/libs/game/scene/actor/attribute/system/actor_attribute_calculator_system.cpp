@@ -5,7 +5,7 @@
 
 #include "actor/attribute/comp/actor_atrribute_comp.h"
 
-#include "config/buff_config.h"
+#include "table/buff_config.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "combat/buff/comp/buff_comp.h"
 #include "proto/scene/player_state_attribute_sync.pb.h"

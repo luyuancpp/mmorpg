@@ -7,8 +7,8 @@
 #include "combat/skill/constants/skill_constants.h"
 #include "time/comp/timer_task_comp.h"
 #include "time/system/cooldown_time_system.h"
-#include "proto/config/skill_error_tip.pb.h"
-#include "proto/config/common_error_tip.pb.h"
+#include "proto/table/skill_error_tip.pb.h"
+#include "proto/table/common_error_tip.pb.h"
 #include <threading/registry_manager.h>
 
 using ::testing::_;

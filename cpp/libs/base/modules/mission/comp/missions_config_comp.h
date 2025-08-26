@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config/mission_config.h"
+#include "table/mission_config.h"
 
 struct IMissionConfig 
 {

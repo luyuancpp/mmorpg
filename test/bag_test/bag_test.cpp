@@ -6,8 +6,8 @@
 
 #include "bag/bag_system.h"
 
-#include "proto/config/common_error_tip.pb.h"
-#include "proto/config/bag_error_tip.pb.h"
+#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/bag_error_tip.pb.h"
 
 decltype(auto) GetItemTable(int32_t itemTableId) {
     return ItemConfigurationTable::Instance().GetTable(itemTableId);

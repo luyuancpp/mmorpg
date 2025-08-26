@@ -160,7 +160,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="game_common_logic\system\session_system.cpp" />
     <ClCompile Include="log\system\console_log_system.cpp" />
     <ClCompile Include="message_limiter\message_limiter.cpp" />
     <ClCompile Include="network\codec\codec.cc" />
@@ -193,8 +192,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="error_handling\error_handling.h" />
-    <ClInclude Include="game_common_logic\comp\session_comp.h" />
-    <ClInclude Include="game_common_logic\system\session_system.h" />
     <ClInclude Include="log\constants\log_color_constants.h" />
     <ClInclude Include="log\constants\log_constants.h" />
     <ClInclude Include="log\macros\game_log.h" />
