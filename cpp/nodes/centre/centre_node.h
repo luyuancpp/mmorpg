@@ -1,7 +1,7 @@
 #pragma once
 
 #include "handler/rpc/centre_service_handler.h"
-#include "node/system/node.h"
+#include "base/core/node/system/node.h"
 
 class CentreNode : public Node
 {

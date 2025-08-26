@@ -2,6 +2,8 @@
 
 #include <threading/registry_manager.h>
 
+entt::entity GlobalEntity();
+
 // 模板函数：发送错误信息给客户端
 template <typename Request, typename Response>
 void SendErrorToClient(const Request& request, Response& response, uint32_t err) {
