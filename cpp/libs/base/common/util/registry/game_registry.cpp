@@ -1,6 +1,7 @@
 #include "game_registry.h"
 
-#include "stacktrace_system.h"
+#include <muduo/base/Logging.h>
+#include <util/stacktrace_system.h>
 
 static_assert(sizeof(uint64_t) == sizeof(entt::entity), "sizeof(uint64_t) == sizeof(entt::entity)");
 
