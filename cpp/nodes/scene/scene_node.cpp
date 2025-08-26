@@ -2,7 +2,7 @@
 
 #include <ranges>
 
-#include "all_config.h"
+#include "table/all_config.h"
 #include "core/config/config_system.h"
 #include "handler/event/event_handler.h"
 #include "muduo/base/Logging.h"

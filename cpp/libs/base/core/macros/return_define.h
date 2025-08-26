@@ -4,6 +4,8 @@
 
 #include <threading/registry_manager.h>
 
+entt::entity GlobalEntity();
+
 #define RETURN_ON_ERROR(result)  \
 if ((result) != kSuccess) {   \
 return (result);          \
