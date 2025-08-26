@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "util/game_registry.h"
+#include "util/registry/game_registry.h"
 #include "proto/common/node.pb.h"
 #include "type_define/type_define.h"
 #include <cassert>  // 用于边界检查

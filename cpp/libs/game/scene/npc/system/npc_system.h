@@ -1,6 +1,6 @@
 #pragma once
 
-#include "util/game_registry.h"
+#include "util/registry/game_registry.h"
 
 class  NpcSystem
 {
