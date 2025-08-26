@@ -2,8 +2,8 @@
 
 #include <ranges>
 
-#include "config/actoractioncombatstate_config.h"
-#include "proto/config/common_error_tip.pb.h"
+#include "table/actoractioncombatstate_config.h"
+#include "proto/table/common_error_tip.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "actor/attribute/system/actor_attribute_calculator_system.h"
 #include "actor/combat_state/constants/combat_state_constants.h"

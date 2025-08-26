@@ -1,7 +1,7 @@
 ﻿#include "mount_system.h"
 
-#include "proto/config/common_error_tip.pb.h"
-#include "proto/config/mount_error_tip.pb.h"
+#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/mount_error_tip.pb.h"
 #include "actor/action_state/constants/actor_state_constants.h"
 #include "actor/action_state/system/actor_action_state_system.h"
 #include "macros/return_define.h"

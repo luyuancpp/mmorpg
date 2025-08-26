@@ -2,8 +2,8 @@
 
 #include <ranges>
 
-#include "config/actoractionstate_config.h"
-#include "proto/config/common_error_tip.pb.h"
+#include "table/actoractionstate_config.h"
+#include "proto/table/common_error_tip.pb.h"
 #include "actor/action_state/constants/actor_state_constants.h"
 #include "base/core/macros/return_define.h"
 #include "proto/logic/component/actor_comp.pb.h"

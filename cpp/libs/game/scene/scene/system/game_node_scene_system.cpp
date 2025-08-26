@@ -1,6 +1,6 @@
 #include "game_node_scene_system.h"
 
-#include "config/mainscene_config.h"
+#include "table/mainscene_config.h"
 #include "core/network/message_system.h"
 #include "player/system/player_scene_system.h"
 #include "scene/comp/grid_comp.h"
