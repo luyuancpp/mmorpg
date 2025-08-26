@@ -5,8 +5,8 @@
 #include "muduo/base/Logging.h"
 
 #include "scene/system/scene_system.h"
-#include "proto/scene_error_tip.pb.h"
-#include "proto/common_error_tip.pb.h"
+#include "proto/table/scene_error_tip.pb.h"
+#include "proto/table/common_error_tip.pb.h"
 #include "centre_node.h"
 #include "scene/system/player_scene_system.h"
 #include "player/system/player_tip_system.h"
@@ -16,7 +16,7 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "node/system/node_util.h"
 #include "threading/redis_manager.h"
-#include "util/zone_utils.h"
+#include "base/core/node/system/zone_utils.h"
 ///<<< END WRITING YOUR CODE
 
 

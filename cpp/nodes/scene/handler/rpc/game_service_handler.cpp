@@ -3,7 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "common_error_tip.pb.h"
+#include "proto/table/common_error_tip.pb.h"
 #include "muduo/net/InetAddress.h"
 #include "scene_node.h"
 #include "game_common_logic/system/session_system.h"
