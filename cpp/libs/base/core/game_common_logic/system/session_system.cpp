@@ -3,7 +3,7 @@
 #include "proto/common/session.pb.h"
 #include <muduo/base/Logging.h>
 #include <grpcpp/grpcpp.h>
-#include "util/base64.h"
+#include "util/encode/base64.h"
 
 constexpr char kSessionBinMetaKey[] = "x-session-detail-bin";
 

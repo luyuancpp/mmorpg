@@ -5,7 +5,7 @@
 //https://zhuanlan.zhihu.com/p/34723199
 
 #include "base/common/type_define/type_define.h"
-#include "util/game_registry.h"
+#include "util/registry/game_registry.h"
 
 class ActorStateAttributeSyncSystem
 {
