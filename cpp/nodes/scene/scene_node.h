@@ -5,7 +5,6 @@
 #include "network/rpc_client.h"
 #include "network/rpc_connection_event.h"
 #include "node/system/node.h"
-#include "redis_client/redis_client.h"
 
 class OnConnect2CentrePbEvent;
 

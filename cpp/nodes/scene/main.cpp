@@ -1,6 +1,6 @@
 #include "muduo/net/EventLoop.h"
 
-#include "src/scene_node.h"
+#include "scene_node.h"
 #include "grpc/third_party/abseil-cpp/absl/log/initialize.h"
 
 using namespace muduo;
