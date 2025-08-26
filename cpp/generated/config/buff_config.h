@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "config_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/config/buff_config.pb.h"
+#include "proto/table/buff_config.pb.h"
 
 class BuffConfigurationTable {
 public:
