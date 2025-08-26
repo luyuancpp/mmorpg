@@ -73,8 +73,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>../../bin/vsout/</OutDir>
-    <IntDir>../../bin/vsout/$(ProjectName)/</IntDir>
+    <OutDir>../../../bin/vsout/</OutDir>
+    <IntDir>../../../bin/vsout/$(ProjectName)/</IntDir>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
