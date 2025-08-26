@@ -93,7 +93,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS;YAML_CPP_STATIC_DEFINE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../../third_party/;../../third_party/boost/;./src/;../../third_party/zlib/;../../pkg/common/src/;../../third_party/redis/;../../../third_party/muduo/;../../third_party/muduo/contrib/windows/include/;../../third_party/redis/deps/;../../pkg/pbc/src/;../../pkg/config/src/;../../pkg/config/src/pbc/;../../third_party/grpc/include/;../../pkg/pbc/src/common_proto/;../../pkg/logic/src/;../../third_party/spdlog/include/;../../pkg/pbc/src/proto/;../../pkg/pbc/src/proto/logic/;../../pkg/modules/src/;../../node_pkg/node_logic/centre_node/src/;../../third_party/grpc/third_party/protobuf/src/;../../third_party/grpc/third_party/abseil-cpp/;../../third_party/xxhash/;../../third_party/librdkafka/src-cpp/;../../pkg/infra/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../third_party/;../../../third_party/boost/;../../../third_party/zlib/;../../../third_party/redis/;../../../third_party/muduo/;../../../third_party/muduo/contrib/windows/include/;../../../third_party/redis/deps/;../../../third_party/grpc/include/;../../pkg/pbc/src/common_proto/;../../pkg/logic/src/;../../third_party/spdlog/include/;../../pkg/pbc/src/proto/;../../pkg/pbc/src/proto/logic/;../../pkg/modules/src/;../../node_pkg/node_logic/centre_node/src/;../../third_party/grpc/third_party/protobuf/src/;../../third_party/grpc/third_party/abseil-cpp/;../../third_party/xxhash/;../../third_party/librdkafka/src-cpp/;../../pkg/infra/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200;4819;4146;4244;4267;4018;4200;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -175,60 +175,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\centre_node.cpp" />
-    <ClCompile Include="src\handler\event\actor_combat_state_event_handler.cpp" />
-    <ClCompile Include="src\handler\event\actor_event_handler.cpp" />
-    <ClCompile Include="src\handler\event\buff_event_handler.cpp" />
-    <ClCompile Include="src\handler\event\combat_event_handler.cpp" />
-    <ClCompile Include="src\handler\event\event_handler.cpp" />
-    <ClCompile Include="src\handler\event\mission_event_handler.cpp" />
-    <ClCompile Include="src\handler\event\node_event_handler.cpp" />
-    <ClCompile Include="src\handler\event\npc_event_handler.cpp" />
-    <ClCompile Include="src\handler\event\player_event_handler.cpp" />
-    <ClCompile Include="src\handler\event\player_migration_event_handler.cpp" />
-    <ClCompile Include="src\handler\event\scene_event_handler.cpp" />
-    <ClCompile Include="src\handler\event\server_event_handler.cpp" />
-    <ClCompile Include="src\handler\event\skill_event_handler.cpp" />
-    <ClCompile Include="src\handler\rpc\centre_scene_handler.cpp" />
-    <ClCompile Include="src\handler\rpc\player\centre_player_handler.cpp" />
-    <ClCompile Include="src\handler\rpc\player\centre_player_scene_handler.cpp" />
-    <ClCompile Include="src\handler\rpc\centre_service_handler.cpp" />
-    <ClCompile Include="src\handler\rpc\player\player_service.cpp" />
-    <ClCompile Include="src\handler\rpc\register_handler.cpp" />
-    <ClCompile Include="src\rpc_response\game_scene_replied_handler.cpp" />
-    <ClCompile Include="src\rpc_response\player\game_player_scene_replied_handler.cpp" />
-    <ClCompile Include="src\rpc_response\player\game_player_replied_handler.cpp" />
-    <ClCompile Include="src\rpc_response\game_service_replied_handler.cpp" />
-    <ClCompile Include="src\rpc_response\gate_service_replied_handler.cpp" />
-    <ClCompile Include="src\rpc_response\player\player_service_replied.cpp" />
-    <ClCompile Include="src\rpc_response\player\player_state_attribute_sync_replied_handler.cpp" />
-    <ClCompile Include="src\rpc_response\register_replied_handler.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\centre_node.h" />
-    <ClInclude Include="src\handler\event\actor_combat_state_event_handler.h" />
-    <ClInclude Include="src\handler\event\actor_event_handler.h" />
-    <ClInclude Include="src\handler\event\buff_event_handler.h" />
-    <ClInclude Include="src\handler\event\combat_event_handler.h" />
-    <ClInclude Include="src\handler\event\event_handler.h" />
-    <ClInclude Include="src\handler\event\mission_event_handler.h" />
-    <ClInclude Include="src\handler\event\node_event_handler.h" />
-    <ClInclude Include="src\handler\event\npc_event_handler.h" />
-    <ClInclude Include="src\handler\event\player_event_handler.h" />
-    <ClInclude Include="src\handler\event\player_migration_event_handler.h" />
-    <ClInclude Include="src\handler\event\scene_event_handler.h" />
-    <ClInclude Include="src\handler\event\server_event_handler.h" />
-    <ClInclude Include="src\handler\event\skill_event_handler.h" />
-    <ClInclude Include="src\handler\rpc\centre_scene_handler.h" />
-    <ClInclude Include="src\handler\rpc\player\centre_player_handler.h" />
-    <ClInclude Include="src\handler\rpc\player\centre_player_scene_handler.h" />
-    <ClInclude Include="src\handler\rpc\centre_service_handler.h" />
-    <ClInclude Include="src\rpc_response\game_scene_replied_handler.h" />
-    <ClInclude Include="src\rpc_response\player\game_player_scene_replied_handler.h" />
-    <ClInclude Include="src\rpc_response\player\game_player_replied_handler.h" />
-    <ClInclude Include="src\rpc_response\game_service_replied_handler.h" />
-    <ClInclude Include="src\rpc_response\gate_service_replied_handler.h" />
-    <ClInclude Include="src\rpc_response\player\player_state_attribute_sync_replied_handler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
