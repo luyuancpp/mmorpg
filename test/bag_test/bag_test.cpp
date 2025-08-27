@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "base/common/type_define/type_define.h"
+#include "base/core/type_define/type_define.h"
 
 #include "item_config.h"
 

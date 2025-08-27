@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "proto/table/common_error_tip.pb.h"
 #include "proto/common/tip.pb.h"
-#include "combat/skill/system/skill_system.h"
+#include "scene/combat/skill/system/skill_system.h"
 #include "macros/return_define.h"
 #include "proto/logic/component/player_skill_comp.pb.h"
 

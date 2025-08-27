@@ -80,6 +80,7 @@
     <ClInclude Include="network\rpc_session.h" />
     <ClInclude Include="network\error_handling_system.h" />
     <ClInclude Include="network\node_utils.h" />
+    <ClInclude Include="type_define\type_define.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="network\autogen.bat" />

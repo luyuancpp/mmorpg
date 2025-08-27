@@ -15,7 +15,7 @@
 #include "service_info/login_service_service_info.h"
 #include "service_info/game_client_player_service_info.h"
 #include "proto/common/node.pb.h"
-#include "node/system/node_util.h"
+#include "node/system/node/node_util.h"
 #include "google/protobuf/descriptor.h"
 #include "proto/logic/event/node_event.pb.h"
 #include "threading/node_context_manager.h"

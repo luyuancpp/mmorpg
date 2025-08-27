@@ -7,11 +7,11 @@
 #include "actor/action_state/system/actor_action_state_system.h"
 #include "actor/attribute/system/actor_attribute_calculator_system.h"
 #include "actor/attribute/system/actor_state_attribute_sync_system.h"
-#include "actor/combat_state/system/combat_state_system.h"
-#include "combat/buff/system/buff_system.h"
-#include "combat/skill/system/skill_system.h"
+#include "scene/combat_state/system/combat_state_system.h"
+#include "scene/combat/buff/system/buff_system.h"
+#include "scene/combat/skill/system/skill_system.h"
 #include "mount/system/mount_system.h"
-#include "scene/system/interest_system.h"
+#include "scene/scene/system/interest_system.h"
 ///<<< END WRITING YOUR CODE
 
 
