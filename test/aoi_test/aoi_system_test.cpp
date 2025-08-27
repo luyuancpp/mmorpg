@@ -1,11 +1,11 @@
 ﻿// test_aoi_system.cpp
 
-#include "scene/system/aoi_system.h"
+#include "scene/scene/system/aoi_system.h"
 #include <gtest/gtest.h>
 #include "hexagons_grid.h"
 #include "core/network/message_system.h"
-#include "scene/comp/grid_comp.h"
-#include "scene/system/grid_system.h"
+#include "scene/scene/comp/grid_comp.h"
+#include "scene/scene/system/grid_system.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "scene/comp/scene_comp.h"
 
