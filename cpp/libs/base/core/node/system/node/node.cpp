@@ -8,7 +8,7 @@
 #include "config.h"
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/message_differencer.h"
-#include "grpc_client/grpc_init.h"
+#include "grpc_client/grpc_init_client.h"
 #include "grpc_client/proto/etcd/etcd_grpc_client.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"

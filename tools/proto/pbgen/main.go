@@ -13,7 +13,7 @@ import (
 )
 
 func MakeProjectDir() {
-	os.MkdirAll(config.PbcOutputDirectory, os.FileMode(0777))
+	os.MkdirAll(config.GeneratedOutputDirectory, os.FileMode(0777))
 	os.MkdirAll(config.PbcLuaDirectory, os.FileMode(0777))
 	os.MkdirAll(config.ServiceInfoDirectory, os.FileMode(0777))
 	os.MkdirAll(config.CppGenGrpcDirectory, os.FileMode(0777))
