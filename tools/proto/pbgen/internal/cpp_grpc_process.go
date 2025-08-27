@@ -111,13 +111,13 @@ func CppGrpcCallClient() {
 			cppFileBaseName := firstService.ProtoPathWithFileBaseName()
 
 			// 生成 .h 文件
-			filePath := config.CppGenGrpcDirectory + cppFileBaseName + config.GrpcHeaderExtension
+			filePath := config.CppGenGrpcDirectory + cppFileBaseName + config.GrpcClientHeaderExtension
 			if err := generateGrpcFile(filePath, serviceInfo, AsyncClientHeaderTemplate); err != nil {
 				log.Fatal(err)
 			}
 
 			// 生成 .cpp 文件
-			filePathCpp := config.CppGenGrpcDirectory + cppFileBaseName + config.GrpcCppExtension
+			filePathCpp := config.CppGenGrpcDirectory + cppFileBaseName + config.GrpcClientCppExtension
 			if err := generateGrpcFile(filePathCpp, serviceInfo, AsyncClientCppHandleTemplate); err != nil {
 				log.Fatal(err)
 			}

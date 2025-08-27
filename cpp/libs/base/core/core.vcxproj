@@ -91,7 +91,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;NOMINMAX;GOOGLE_CHECK_EQ=ABSL_CHECK_EQ;GOOGLE_LOG=ABSL_LOG;GOOGLE_DCHECK=ABSL_DCHECK;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../../../third_party/boost/;../common/;../../../../third_party/muduo/;../../....//third_party/redis/;../../../../third_party/sol2/include/;../../../../third_party/lua/src/;../../../../third_party/muduo/contrib/windows/include/;../../../../third_party/zlib/;../../../../third_party/grpc/include/;../../../../third_party/grpc/third_party/abseil-cpp/;../../../generated/;../../../../third_party/grpc/third_party/;../../../../third_party/;../../../../third_party/grpc/third_party/protobuf/src/;./;../../../../third_party/redis/deps/;../../../../third_party/redis/;../;../infra/;../../../../third_party/librdkafka/src-cpp/;../configs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../third_party/boost/;../common/;../../../../third_party/muduo/;../../....//third_party/redis/;../../../../third_party/sol2/include/;../../../../third_party/lua/src/;../../../../third_party/muduo/contrib/windows/include/;../../../../third_party/zlib/;../../../../third_party/grpc/include/;../../../../third_party/grpc/third_party/abseil-cpp/;../../../generated/;../../../../third_party/grpc/third_party/;../../../../third_party/;../../../../third_party/grpc/third_party/protobuf/src/;./;../../../../third_party/redis/deps/;../../../../third_party/redis/;../;../infra/;../../../../third_party/librdkafka/src-cpp/;../configs/;../../../generated/grpc_client/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200;4819;4146;4244;4267;4018;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -162,7 +162,7 @@
   <ItemGroup>
     <ClCompile Include="log\system\console_log_system.cpp" />
     <ClCompile Include="message_limiter\message_limiter.cpp" />
-    <ClCompile Include="network\codec\codec.cc" />
+    <ClCompile Include="network\codec\codec.cpp" />
     <ClCompile Include="network\game_channel.cc" />
     <ClCompile Include="network\game_rpc.pb.cc" />
     <ClCompile Include="network\message_statistics.cpp" />
@@ -173,15 +173,15 @@
     <ClCompile Include="network\process_info.cpp" />
     <ClCompile Include="network\rpc_server.cc" />
     <ClCompile Include="network\rpc_session.cpp" />
-    <ClCompile Include="node\system\etcd_helper.cpp" />
-    <ClCompile Include="node\system\etcd_manager.cpp" />
-    <ClCompile Include="node\system\etcd_service.cpp" />
-    <ClCompile Include="node\system\node.cpp" />
-    <ClCompile Include="node\system\node_allocator.cpp" />
-    <ClCompile Include="node\system\node_connector.cpp" />
-    <ClCompile Include="node\system\node_util.cpp" />
-    <ClCompile Include="node\system\registration_manager.cpp" />
-    <ClCompile Include="node\system\service_discovery_manager.cpp" />
+    <ClCompile Include="node\system\etcd\etcd_helper.cpp" />
+    <ClCompile Include="node\system\etcd\etcd_manager.cpp" />
+    <ClCompile Include="node\system\etcd\etcd_service.cpp" />
+    <ClCompile Include="node\system\node\node.cpp" />
+    <ClCompile Include="node\system\node\node_allocator.cpp" />
+    <ClCompile Include="node\system\node\node_connector.cpp" />
+    <ClCompile Include="node\system\node\node_util.cpp" />
+    <ClCompile Include="node\system\registration\registration_manager.cpp" />
+    <ClCompile Include="node\system\discovery\service_discovery_manager.cpp" />
     <ClCompile Include="time\comp\duration_funtion.cpp" />
     <ClCompile Include="time\comp\duration_manager.cpp" />
     <ClCompile Include="time\comp\timer_duration.cpp" />
@@ -217,15 +217,15 @@
     <ClInclude Include="network\rpc_server.h" />
     <ClInclude Include="network\rpc_session.h" />
     <ClInclude Include="node\constants\node_constants.h" />
-    <ClInclude Include="node\system\etcd_helper.h" />
-    <ClInclude Include="node\system\etcd_manager.h" />
-    <ClInclude Include="node\system\etcd_service.h" />
-    <ClInclude Include="node\system\node.h" />
-    <ClInclude Include="node\system\node_allocator.h" />
-    <ClInclude Include="node\system\node_connector.h" />
-    <ClInclude Include="node\system\node_util.h" />
-    <ClInclude Include="node\system\registration_manager.h" />
-    <ClInclude Include="node\system\service_discovery_manager.h" />
+    <ClInclude Include="node\system\etcd\etcd_helper.h" />
+    <ClInclude Include="node\system\etcd\etcd_manager.h" />
+    <ClInclude Include="node\system\etcd\etcd_service.h" />
+    <ClInclude Include="node\system\node\node.h" />
+    <ClInclude Include="node\system\node\node_allocator.h" />
+    <ClInclude Include="node\system\node\node_connector.h" />
+    <ClInclude Include="node\system\node\node_util.h" />
+    <ClInclude Include="node\system\registration\registration_manager.h" />
+    <ClInclude Include="node\system\discovery\service_discovery_manager.h" />
     <ClInclude Include="rpc\player_service.h" />
     <ClInclude Include="rpc\player_service_replied.h" />
     <ClInclude Include="time\comp\duration_funtion.h" />
