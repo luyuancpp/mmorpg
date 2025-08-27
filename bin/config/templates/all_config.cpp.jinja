@@ -10,7 +10,7 @@
 
 LoadSuccessCallback loadSuccessCallback;
 
-void LoadConfigs() {
+void LoadTables() {
 {% for item in sheetnames %}
     {{ item }}ConfigurationTable::Instance().Load();
     {{ item }}ConfigurationTable::Instance().LoadSuccess();
@@ -21,7 +21,7 @@ void LoadConfigs() {
     }
 }
 
-void LoadConfigsAsync() {
+void LoadTablesAsync() {
     static muduo::CountDownLatch latch({{ sheetnames|length }});
 {% for item in sheetnames %}
     std::thread {{ item }}LoadThread([](){

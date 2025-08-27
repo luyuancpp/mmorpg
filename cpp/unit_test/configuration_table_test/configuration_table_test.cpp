@@ -6,7 +6,7 @@
 #include "table/skill_config.h"
 #include "table/buff_config.h"
 
-void LoadConfigs();
+void LoadTables();
 
 TEST(LoadConfigsTest, GetAbilityAllTable)
 {
@@ -91,7 +91,7 @@ TEST(LoadConfigsTest, GetTestStringValueAllTable)
 int main(int argc, char** argv) {
 
     ::testing::InitGoogleTest(&argc, argv);
-    LoadConfigs();
+    LoadTables();
     int ret = RUN_ALL_TESTS();
     return ret;
 }

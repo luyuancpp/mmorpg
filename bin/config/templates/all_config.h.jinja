@@ -4,8 +4,8 @@
 
 using LoadSuccessCallback = std::function< void() >;
 
-void LoadConfigs();
+void LoadTables();
 
-void LoadConfigsAsync();
+void LoadTablesAsync();
 
-void OnConfigLoadSuccess(const LoadSuccessCallback& callback);
+void OnTablesLoadSuccess(const LoadSuccessCallback& callback);

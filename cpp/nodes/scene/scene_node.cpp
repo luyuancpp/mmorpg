@@ -33,7 +33,7 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 
 	World::InitializeSystemBeforeConnect();
 
-	OnConfigLoadSuccess([]()
+	OnTablesLoadSuccess([]()
 	{
 		ConfigSystem::OnConfigLoadSuccessful();
 	});
