@@ -477,61 +477,9 @@ void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, cons
 }
 #pragma endregion
 #pragma region LeaseLeaseRevoke
-boost::object_pool<AsyncLeaseLeaseRevokeGrpcClient> LeaseLeaseRevokePool;
-using AsyncLeaseLeaseRevokeHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::LeaseRevokeResponse&)>;
-AsyncLeaseLeaseRevokeHandlerFunctionType AsyncLeaseLeaseRevokeHandler;
-
-void AsyncCompleteGrpcLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncLeaseLeaseRevokeGrpcClient*>(got_tag));
-    if (call->status.ok()) {
-        if (AsyncLeaseLeaseRevokeHandler) {
-            AsyncLeaseLeaseRevokeHandler(call->context, call->reply);
-        }
-    } else {
-        LOG_ERROR << call->status.error_message();
-    }
-
-	LeaseLeaseRevokePool.destroy(call);
-}
 
 
 
-void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request) {
-
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-    auto call(LeaseLeaseRevokePool.construct());
-    call->response_reader = registry
-        .get<LeaseStubPtr>(nodeEntity)
-        ->PrepareAsyncLeaseRevoke(&call->context, request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(LeaseLeaseRevokeMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
-
-}
-
-
-void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
-    auto call(LeaseLeaseRevokePool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-    }
-
-    call->response_reader = registry
-        .get<LeaseStubPtr>(nodeEntity)
-        ->PrepareAsyncLeaseRevoke(&call->context, request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(LeaseLeaseRevokeMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
-
-}
 
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
     const ::etcdserverpb::LeaseRevokeRequest& derived = static_cast<const ::etcdserverpb::LeaseRevokeRequest&>(message);
@@ -629,130 +577,7 @@ void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, 
     SendLeaseLeaseKeepAlive(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
-#pragma region LeaseLeaseTimeToLive
-boost::object_pool<AsyncLeaseLeaseTimeToLiveGrpcClient> LeaseLeaseTimeToLivePool;
-using AsyncLeaseLeaseTimeToLiveHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::LeaseTimeToLiveResponse&)>;
-AsyncLeaseLeaseTimeToLiveHandlerFunctionType AsyncLeaseLeaseTimeToLiveHandler;
 
-void AsyncCompleteGrpcLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncLeaseLeaseTimeToLiveGrpcClient*>(got_tag));
-    if (call->status.ok()) {
-        if (AsyncLeaseLeaseTimeToLiveHandler) {
-            AsyncLeaseLeaseTimeToLiveHandler(call->context, call->reply);
-        }
-    } else {
-        LOG_ERROR << call->status.error_message();
-    }
-
-	LeaseLeaseTimeToLivePool.destroy(call);
-}
-
-
-
-void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request) {
-
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-    auto call(LeaseLeaseTimeToLivePool.construct());
-    call->response_reader = registry
-        .get<LeaseStubPtr>(nodeEntity)
-        ->PrepareAsyncLeaseTimeToLive(&call->context, request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(LeaseLeaseTimeToLiveMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
-
-}
-
-
-void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
-    auto call(LeaseLeaseTimeToLivePool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-    }
-
-    call->response_reader = registry
-        .get<LeaseStubPtr>(nodeEntity)
-        ->PrepareAsyncLeaseTimeToLive(&call->context, request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(LeaseLeaseTimeToLiveMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
-
-}
-
-void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-    const ::etcdserverpb::LeaseTimeToLiveRequest& derived = static_cast<const ::etcdserverpb::LeaseTimeToLiveRequest&>(message);
-    SendLeaseLeaseTimeToLive(registry, nodeEntity, derived, metaKeys, metaValues);
-}
-#pragma endregion
-#pragma region LeaseLeaseLeases
-boost::object_pool<AsyncLeaseLeaseLeasesGrpcClient> LeaseLeaseLeasesPool;
-using AsyncLeaseLeaseLeasesHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::LeaseLeasesResponse&)>;
-AsyncLeaseLeaseLeasesHandlerFunctionType AsyncLeaseLeaseLeasesHandler;
-
-void AsyncCompleteGrpcLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncLeaseLeaseLeasesGrpcClient*>(got_tag));
-    if (call->status.ok()) {
-        if (AsyncLeaseLeaseLeasesHandler) {
-            AsyncLeaseLeaseLeasesHandler(call->context, call->reply);
-        }
-    } else {
-        LOG_ERROR << call->status.error_message();
-    }
-
-	LeaseLeaseLeasesPool.destroy(call);
-}
-
-
-
-void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request) {
-
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-    auto call(LeaseLeaseLeasesPool.construct());
-    call->response_reader = registry
-        .get<LeaseStubPtr>(nodeEntity)
-        ->PrepareAsyncLeaseLeases(&call->context, request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(LeaseLeaseLeasesMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
-
-}
-
-
-void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
-    auto call(LeaseLeaseLeasesPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-    }
-
-    call->response_reader = registry
-        .get<LeaseStubPtr>(nodeEntity)
-        ->PrepareAsyncLeaseLeases(&call->context, request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(LeaseLeaseLeasesMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
-
-}
-
-void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-    const ::etcdserverpb::LeaseLeasesRequest& derived = static_cast<const ::etcdserverpb::LeaseLeasesRequest&>(message);
-    SendLeaseLeaseLeases(registry, nodeEntity, derived, metaKeys, metaValues);
-}
-#pragma endregion
 
 
 void HandleEtcdCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
@@ -830,38 +655,7 @@ void SetEtcdIfEmptyHandler(const std::function<void(const ClientContext&, const 
 
 
 
-    if (!AsyncKVRangeHandler) {
-        AsyncKVRangeHandler = handler;
-    }
-    if (!AsyncKVPutHandler) {
-        AsyncKVPutHandler = handler;
-    }
-    if (!AsyncKVDeleteRangeHandler) {
-        AsyncKVDeleteRangeHandler = handler;
-    }
-    if (!AsyncKVTxnHandler) {
-        AsyncKVTxnHandler = handler;
-    }
-    if (!AsyncKVCompactHandler) {
-        AsyncKVCompactHandler = handler;
-    }
-    if (!AsyncWatchWatchHandler) {
-        AsyncWatchWatchHandler = handler;
-    }
-    if (!AsyncLeaseLeaseGrantHandler) {
-        AsyncLeaseLeaseGrantHandler = handler;
-    }
-    if (!AsyncLeaseLeaseRevokeHandler) {
-        AsyncLeaseLeaseRevokeHandler = handler;
-    }
-    if (!AsyncLeaseLeaseKeepAliveHandler) {
-        AsyncLeaseLeaseKeepAliveHandler = handler;
-    }
-    if (!AsyncLeaseLeaseTimeToLiveHandler) {
-        AsyncLeaseLeaseTimeToLiveHandler = handler;
-    }
-    if (!AsyncLeaseLeaseLeasesHandler) {
-        AsyncLeaseLeaseLeasesHandler = handler;
+  
     }
 }
 
