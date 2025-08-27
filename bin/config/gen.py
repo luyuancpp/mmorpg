@@ -46,7 +46,7 @@ commands = [
     "../../cpp/generated/proto/table/bit_index/",
     "python md5tool.py md5copy ./generated/cpp_table_id_constants_name/ "
     "../../cpp/generated/proto/table/constants/",
-    "python md5tool.py md5copy ./generated/proto/cpp/ ../../cpp/generated/proto/table",
+    "python md5tool.py md5copy ./generated/proto/cpp/ ../../cpp/generated/proto/table/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../go/login/pb/game/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../go/db/pb/game/",
 ]
