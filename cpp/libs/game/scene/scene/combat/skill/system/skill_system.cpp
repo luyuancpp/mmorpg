@@ -11,7 +11,7 @@
 #include "scene/combat/buff/system/buff_system.h"
 #include "scene/combat/skill/comp/skill_comp.h"
 #include "scene/combat/skill/constants/skill_constants.h"
-#include "scene/system/view_system.h"
+#include "scene/scene/system/view_system.h"
 #include "proto/logic/event/combat_event.pb.h"
 #include "proto/logic/event/skill_event.pb.h"
 #include "macros/return_define.h"
