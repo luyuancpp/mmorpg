@@ -18,7 +18,7 @@
     <ClCompile Include="missions_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\node\scene\src\handler\event\mission_event_handler.cpp">
+    <ClCompile Include="..\..\nodes\scene\handler\event\mission_event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
