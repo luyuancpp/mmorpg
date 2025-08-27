@@ -120,3 +120,8 @@ bool readGameConfig(const std::string& filename, GameConfig& gameConfig) {
 
 	return true;
 }
+
+
+std::string GetConfigDir() {
+	return "config/generated/json/";
+}

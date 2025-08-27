@@ -7,7 +7,7 @@ std::string GetConfigDir();
 
 void {{ sheetname }}ConfigurationTable::Load() {
     data_.Clear();
-    
+
     std::string path = GetConfigDir() + "{{ sheetname | lower }}.json";
     const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
