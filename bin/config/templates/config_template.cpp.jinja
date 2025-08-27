@@ -3,9 +3,13 @@
 #include "common_error_tip.pb.h"
 #include "{{ sheetname | lower }}_config.h"
 
+std::string GetConfigDir();
+
 void {{ sheetname }}ConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/{{ sheetname | lower }}.json");
+    
+    std::string path = GetConfigDir() + "{{ sheetname | lower }}.json";
+    const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "{{ sheetname }}" << result.message().data();
     }
