@@ -5,7 +5,7 @@
 #include <boost/algorithm/string.hpp>
 #include "node/system/node/node.h"
 #include "node/system/node/node_allocator.h"
-#include "grpc_client/grpc_init.h"
+#include "grpc_client/grpc_init_client.h"
 #include "grpc_client/proto/etcd/etcd_grpc_client.h"
 #include "threading/redis_manager.h"
 #include "threading/node_context_manager.h"

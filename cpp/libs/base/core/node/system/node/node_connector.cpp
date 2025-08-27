@@ -4,7 +4,7 @@
 #include <muduo/base/Logging.h>
 #include <network/rpc_client.h>
 #include <network/node_utils.h>
-#include <grpc_client/grpc_init.h>
+#include <grpc_client/grpc_init_client.h>
 #include <threading/redis_manager.h>
 #include "node.h"
 #include "network/network_utils.h"

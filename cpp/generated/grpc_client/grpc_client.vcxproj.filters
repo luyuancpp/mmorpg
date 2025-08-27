@@ -5,14 +5,14 @@
     <ClCompile Include="proto\etcd\etcd_grpc_client.cpp" />
     <ClCompile Include="proto\login\login_service_grpc_client.cpp" />
     <ClCompile Include="proto\player_locator\player_locator_grpc_client.cpp" />
-    <ClCompile Include="grpc_init.cpp" />
+    <ClCompile Include="grpc_init_client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="proto\db\db_grpc_client.h" />
     <ClInclude Include="proto\etcd\etcd_grpc_client.h" />
     <ClInclude Include="proto\login\login_service_grpc_client.h" />
     <ClInclude Include="proto\player_locator\player_locator_grpc_client.h" />
-    <ClInclude Include="grpc_init.h" />
+    <ClInclude Include="grpc_init_client.h" />
     <ClInclude Include="grpc_call_tag.h" />
   </ItemGroup>
 </Project>
