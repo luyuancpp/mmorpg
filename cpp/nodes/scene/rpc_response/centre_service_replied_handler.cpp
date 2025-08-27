@@ -8,7 +8,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "scene/system/game_node_scene_system.h"
+#include "scene/scene/system/game_node_scene_system.h"
 #include "proto/common/node.pb.h"
 #include "proto/logic/event/server_event.pb.h"
 
