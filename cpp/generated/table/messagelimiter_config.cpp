@@ -3,9 +3,13 @@
 #include "proto/table/common_error_tip.pb.h"
 #include "messagelimiter_config.h"
 
+std::string GetConfigDir();
+
 void MessageLimiterConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/messagelimiter.json");
+
+    std::string path = GetConfigDir() + "messagelimiter.json";
+    const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "MessageLimiter" << result.message().data();
     }

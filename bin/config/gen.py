@@ -41,7 +41,7 @@ commands = [
     "python gen_go_proto.py",
     "python gen_cpp_constants_from_xlsx.py",
     "python generate_xlsx_cpp_id_bit_index.py",
-    "python md5tool.py md5copy ./generated/cpp/ ../../cpp/generated/config",
+    "python md5tool.py md5copy ./generated/cpp/ ../../cpp/generated/table/",
     "python md5tool.py md5copy ./generated/cpp_table_id_bit_index/ "
     "../../cpp/generated/proto/table/bit_index/",
     "python md5tool.py md5copy ./generated/cpp_table_id_constants_name/ "

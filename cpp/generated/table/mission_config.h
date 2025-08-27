@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "config_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/mission_config.pb.h"
+#include "mission_config.pb.h"
 
 class MissionConfigurationTable {
 public:

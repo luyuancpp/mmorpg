@@ -3,9 +3,13 @@
 #include "proto/table/common_error_tip.pb.h"
 #include "testmultikey_config.h"
 
+std::string GetConfigDir();
+
 void TestMultiKeyConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/testmultikey.json");
+
+    std::string path = GetConfigDir() + "testmultikey.json";
+    const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "TestMultiKey" << result.message().data();
     }

@@ -3,9 +3,13 @@
 #include "proto/table/common_error_tip.pb.h"
 #include "mission_config.h"
 
+std::string GetConfigDir();
+
 void MissionConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/mission.json");
+
+    std::string path = GetConfigDir() + "mission.json";
+    const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "Mission" << result.message().data();
     }

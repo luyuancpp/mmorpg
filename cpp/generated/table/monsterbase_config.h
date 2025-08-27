@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "config_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/monsterbase_config.pb.h"
+#include "monsterbase_config.pb.h"
 
 class MonsterBaseConfigurationTable {
 public:

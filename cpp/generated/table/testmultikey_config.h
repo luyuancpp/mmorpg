@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "config_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/testmultikey_config.pb.h"
+#include "testmultikey_config.pb.h"
 
 class TestMultiKeyConfigurationTable {
 public:

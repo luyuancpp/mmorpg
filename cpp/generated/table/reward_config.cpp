@@ -3,9 +3,13 @@
 #include "proto/table/common_error_tip.pb.h"
 #include "reward_config.h"
 
+std::string GetConfigDir();
+
 void RewardConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/reward.json");
+
+    std::string path = GetConfigDir() + "reward.json";
+    const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "Reward" << result.message().data();
     }

@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "config_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/skill_config.pb.h"
+#include "skill_config.pb.h"
 
 class SkillConfigurationTable {
 public:

@@ -3,9 +3,13 @@
 #include "proto/table/common_error_tip.pb.h"
 #include "monsterbase_config.h"
 
+std::string GetConfigDir();
+
 void MonsterBaseConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/monsterbase.json");
+
+    std::string path = GetConfigDir() + "monsterbase.json";
+    const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "MonsterBase" << result.message().data();
     }

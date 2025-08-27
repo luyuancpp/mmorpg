@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "config_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/scene_config.pb.h"
+#include "scene_config.pb.h"
 
 class SceneConfigurationTable {
 public:

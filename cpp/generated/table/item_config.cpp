@@ -3,9 +3,13 @@
 #include "proto/table/common_error_tip.pb.h"
 #include "item_config.h"
 
+std::string GetConfigDir();
+
 void ItemConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/item.json");
+
+    std::string path = GetConfigDir() + "item.json";
+    const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "Item" << result.message().data();
     }

@@ -3,9 +3,13 @@
 #include "proto/table/common_error_tip.pb.h"
 #include "cooldown_config.h"
 
+std::string GetConfigDir();
+
 void CooldownConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/cooldown.json");
+
+    std::string path = GetConfigDir() + "cooldown.json";
+    const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "Cooldown" << result.message().data();
     }
