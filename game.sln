@@ -110,10 +110,19 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aoi_test", "cpp\unit_test\a
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bag_test", "cpp\unit_test\bag_test\bag_test.vcxproj", "{25282015-32E5-471D-97A6-31ADDA31E797}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6348AEF3-B5C7-43C9-AEAD-D707F104140F} = {6348AEF3-B5C7-43C9-AEAD-D707F104140F}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "buff_test", "cpp\unit_test\buff_test\buff_test.vcxproj", "{8BAC5861-85E7-4AE9-B178-B84EF907146C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6348AEF3-B5C7-43C9-AEAD-D707F104140F} = {6348AEF3-B5C7-43C9-AEAD-D707F104140F}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "change_scene_test", "cpp\unit_test\change_scene_test\change_scene.vcxproj", "{96C26F40-AE31-4E5B-8318-F6D183AD8185}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6348AEF3-B5C7-43C9-AEAD-D707F104140F} = {6348AEF3-B5C7-43C9-AEAD-D707F104140F}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "configuration_table_test", "cpp\unit_test\configuration_table_test\configuration_table_test.vcxproj", "{A0261F03-BBFD-4406-A62A-5F9CCCC67C0E}"
 	ProjectSection(ProjectDependencies) = postProject
