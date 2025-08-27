@@ -24,7 +24,7 @@
 
 LoadSuccessCallback loadSuccessCallback;
 
-void LoadConfigs() {
+void LoadTables() {
 
     ActorActionCombatStateConfigurationTable::Instance().Load();
     ActorActionCombatStateConfigurationTable::Instance().LoadSuccess();
@@ -86,7 +86,7 @@ void LoadConfigs() {
     }
 }
 
-void LoadConfigsAsync() {
+void LoadTablesAsync() {
     static muduo::CountDownLatch latch(18);
 
     std::thread ActorActionCombatStateLoadThread([](){
@@ -205,6 +205,6 @@ void LoadConfigsAsync() {
     }
 }
 
-void OnConfigLoadSuccess(const LoadSuccessCallback& callback){
+void OnTablesLoadSuccess(const LoadSuccessCallback& callback){
 loadSuccessCallback = callback;
 }

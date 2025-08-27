@@ -179,7 +179,7 @@ void Node::LoadConfigs() {
 }
 
 void Node::LoadAllConfigData() {
-	LoadConfigsAsync();
+	LoadTablesAsync();
 }
 
 void Node::SetupTimeZone() {
