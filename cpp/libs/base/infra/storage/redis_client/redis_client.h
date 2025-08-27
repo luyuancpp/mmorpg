@@ -10,7 +10,7 @@
 
 #include "deps/hiredis/hiredis.h"
 
-#include "type_define/type_define.h"
+#include "base/core/type_define/type_define.h"
 
 static constexpr const char* kSaveAndMarkLuaScript = R"(
     redis.call('SET', KEYS[1], ARGV[1])
