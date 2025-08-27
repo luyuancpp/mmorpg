@@ -6,7 +6,7 @@
 #include "scene_node.h"
 #include "network/rpc_client.h"
 #include "service_info/centre_service_service_info.h"
-#include "scene/system/game_node_scene_system.h"
+#include "scene/scene/system/game_node_scene_system.h"
 #include "scene/system/scene_system.h"
 #include "network/node_message_utils.h"
 #include <proto/common/node.pb.h>

@@ -13,7 +13,7 @@
 #include "network/codec/codec.h"
 #include "network/codec/dispatcher.h"
 #include "time/comp/timer_task_comp.h"
-#include "node/system/node.h"
+#include "node/system/node/node.h"
 
 class GateNode : public  Node
 {

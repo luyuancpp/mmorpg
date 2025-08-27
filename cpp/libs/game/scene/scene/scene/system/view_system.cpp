@@ -9,7 +9,7 @@
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"
 
-#include "base/common/type_define/type_define.h"
+#include "base/core/type_define/type_define.h"
 #include "network/player_message_utils.h"
 #include <threading/registry_manager.h>
 #include <threading/entity_manager.h>

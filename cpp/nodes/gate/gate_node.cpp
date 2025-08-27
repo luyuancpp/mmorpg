@@ -7,7 +7,7 @@
 #include "proto/login/login_service.grpc.pb.h"
 #include "proto/common/node.pb.h"
 #include "service_info/service_info.h"
-#include "node/system/node_util.h"
+#include "node/system/node/node_util.h"
 #include "session/system/session_system.h"
 #include "grpc_client/grpc_init.h"
 #include "session/manager/session_manager.h"

@@ -2,7 +2,7 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "base/common/type_define/type_define.h"
+#include "base/core/type_define/type_define.h"
 
 //可以丢弃时间的派发器，比如提示,服务器压力大的时候可以把提示扔了
 
