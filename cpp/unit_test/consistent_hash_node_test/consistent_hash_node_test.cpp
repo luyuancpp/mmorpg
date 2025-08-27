@@ -1,6 +1,6 @@
 ﻿
 #include <gtest/gtest.h>
-#include "util/consistent_hash_node.h"  // Assuming this is the header file for ConsistentHashNode
+#include "base/common/util/hash/consistent_hash_node.h"  // Assuming this is the header file for ConsistentHashNode
 
 // Test fixture for ConsistentHashNode
 class ConsistentHashNodeTest : public ::testing::Test {
