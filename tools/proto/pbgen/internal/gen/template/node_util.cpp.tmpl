@@ -1,4 +1,4 @@
-#include "gen_util.h"
+#include "proto_util.h"
 #include <unordered_set>
 #include "proto/common/node.pb.h"
 

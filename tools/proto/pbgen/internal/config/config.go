@@ -48,20 +48,20 @@ const (
 const (
 	NodeGoDirectory = OutputRoot + "go/"
 
-	NodePkgDirectory               = "node_pkg/"
-	NodePkgLogicDirectory          = NodePkgDirectory + "node_logic/"
-	NodePkgLogicSceneNodeDirectory = NodePkgLogicDirectory + "scene_node/"
-	GameNodeDirectory              = "node/scene/"
-	CentreNodeDirectory            = "node/centre/"
-	GateNodeDirectory              = "node/gate/"
+	NodePkgDirectory               = "cpp/libs/"
+	NodePkgLogicDirectory          = NodePkgDirectory + "base/"
+	NodesLibDirectory              = "nodes/"
+	NodePkgLogicSceneNodeDirectory = NodePkgDirectory + NodesLibDirectory + "scene/"
+	GameNodeDirectory              = NodePkgDirectory + NodesLibDirectory + "nodes/scene/"
+	CentreNodeDirectory            = NodePkgDirectory + NodesLibDirectory + "nodes/centre/"
+	GateNodeDirectory              = NodePkgDirectory + NodesLibDirectory + "nodes/gate/"
 	RobotDirectory                 = "robot/"
-	PbcProtoDirectory              = "pkg/pbc/src/"
-	CommonSrcDirectory             = "pkg/common/src/"
+	ProtoProtoDirectory            = "generated/"
 
 	ServiceIdFilePath           = ProtoDir + "serviceid.txt"
-	RpcHandlerSourceDirectory   = "src/handler/rpc/"
-	RpcResponseSourceDirectory  = "src/rpc_response/"
-	EventHandlerSourceDirectory = "src/handler/event/"
+	RpcHandlerSourceDirectory   = "handler/rpc/"
+	RpcResponseSourceDirectory  = "rpc_response/"
+	EventHandlerSourceDirectory = "handler/event/"
 	PbcLuaDirectory             = PbcOutputDirectory + "lua/"
 )
 
@@ -89,12 +89,12 @@ const (
 	PbDescDirectory       = TempFileGenerationDir + "proto_desc/"
 	AllInOneProtoDescFile = PbDescDirectory + "all_in_one.pb.desc"
 
-	PbcProtoOutputDirectory  = OutputRoot + PbcProtoDirectory + ProtoDirName
-	PbcOutputDirectory       = OutputRoot + PbcProtoDirectory
-	GrpcOutputDirectory      = OutputRoot + PbcProtoDirectory
+	PbcProtoOutputDirectory  = OutputRoot + ProtoProtoDirectory + ProtoDirName
+	PbcOutputDirectory       = OutputRoot + ProtoProtoDirectory
+	GrpcOutputDirectory      = OutputRoot + ProtoProtoDirectory
 	GrpcTempDirectory        = TempFileGenerationDir + "grpc/"
 	PbcTempDirectory         = TempFileGenerationDir
-	GrpcProtoOutputDirectory = OutputRoot + PbcProtoDirectory + ProtoDirName
+	GrpcProtoOutputDirectory = OutputRoot + ProtoProtoDirectory + ProtoDirName
 
 	RobotGoOutputDirectory = OutputRoot + RobotDirectory
 	GoPbGameDirectory      = "pb/game/"
@@ -117,19 +117,19 @@ const (
 	ClientLuaDirectory       = OutputRoot + "bin/script/lua/service/"
 	ClientLuaServiceFilePath = OutputRoot + "client/src/handler/service_lua.cpp"
 
-	GrpcGeneratorDirectory = "grpc/generator/"
+	GrpcGeneratorDirectory = "generated/"
 
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
-	PlayerStorageSystemDirectory     = OutputRoot + NodePkgLogicSceneNodeDirectory + "src/player/system/"
-	CppGenGrpcDirectory              = OutputRoot + PbcProtoDirectory + GrpcGeneratorDirectory
+	PlayerStorageSystemDirectory     = OutputRoot + NodePkgLogicSceneNodeDirectory + "player/system/"
+	CppGenGrpcDirectory              = OutputRoot + ProtoProtoDirectory + GrpcGeneratorDirectory
 	PlayerStorageTempDirectory       = TempFileGenerationDir + "/node/game/game_logic/"
-	GrpcInitFileCppPath              = OutputRoot + PbcProtoDirectory + GrpcGeneratorDirectory + "grpc_init.cpp"
-	GrpcInitFileHeadPath             = OutputRoot + PbcProtoDirectory + GrpcGeneratorDirectory + "grpc_init.h"
+	GrpcInitFileCppPath              = OutputRoot + ProtoProtoDirectory + GrpcGeneratorDirectory + "grpc_init.cpp"
+	GrpcInitFileHeadPath             = OutputRoot + ProtoProtoDirectory + GrpcGeneratorDirectory + "grpc_init.h"
 
-	GeneratorDirectory     = "generator/"
-	UtilGeneratorDirectory = GeneratorDirectory + "util/"
-	GenUtilFileCppPath     = OutputRoot + CommonSrcDirectory + UtilGeneratorDirectory + "gen_util.cpp"
-	GenUtilFileHeadPath    = OutputRoot + CommonSrcDirectory + UtilGeneratorDirectory + "gen_util.h"
+	GeneratorDirectory     = "generated/"
+	UtilGeneratorDirectory = GeneratorDirectory + "proto_util/"
+	GenUtilFileCppPath     = OutputRoot + UtilGeneratorDirectory + "proto_util.cpp"
+	GenUtilFileHeadPath    = OutputRoot + UtilGeneratorDirectory + "proto_util.h"
 )
 
 // ----------- 文件名 -----------
