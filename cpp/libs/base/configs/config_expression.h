@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "exprtk/exprtk.hpp"
-#include "type_define/type_define.h"
+#include "base/core/type_define/type_define.h"
 
 // 自定义随机函数
 template<class T>

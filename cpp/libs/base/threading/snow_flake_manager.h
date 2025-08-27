@@ -1,7 +1,7 @@
 #pragma once
 
 #include "util/snow_flake.h"
-#include <type_define/type_define.h>
+#include <base/core/type_define/type_define.h>
 
 class SnowFlakeManager
 {
