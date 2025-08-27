@@ -10,7 +10,7 @@
 #include "scene/comp/scene_comp.h"
 
 #include "type_alias/actor.h"
-#include "util/random.h"
+#include "base/common/util/random/random.h"
 #include "threading/redis_manager.h"
 #include <threading/registry_manager.h>
 
