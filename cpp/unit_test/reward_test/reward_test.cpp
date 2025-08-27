@@ -1,7 +1,7 @@
 ﻿#include "reward/system/reward_system.h"
 #include <gtest/gtest.h>
 
-#include "cpp_table_id_bit_index/reward_table_id_bit_index.h"
+#include "table/bit_index/reward_table_id_bit_index.h"
 #include <threading/registry_manager.h>
 
 decltype(auto) CreatePlayerEntityWithRewardComponent(){
