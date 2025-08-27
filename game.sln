@@ -142,6 +142,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "session", "cpp\libs\base\se
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "table", "cpp\generated\table\table.vcxproj", "{963B97D8-5FE7-40C1-AC41-05441452F2D7}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_client", "cpp\generated\grpc_client\grpc_client.vcxproj", "{B1CFC307-2AFD-4B53-BA3A-DE6226BFD494}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -454,6 +456,14 @@ Global
 		{963B97D8-5FE7-40C1-AC41-05441452F2D7}.Release|x64.Build.0 = Release|x64
 		{963B97D8-5FE7-40C1-AC41-05441452F2D7}.Release|x86.ActiveCfg = Release|Win32
 		{963B97D8-5FE7-40C1-AC41-05441452F2D7}.Release|x86.Build.0 = Release|Win32
+		{B1CFC307-2AFD-4B53-BA3A-DE6226BFD494}.Debug|x64.ActiveCfg = Debug|x64
+		{B1CFC307-2AFD-4B53-BA3A-DE6226BFD494}.Debug|x64.Build.0 = Debug|x64
+		{B1CFC307-2AFD-4B53-BA3A-DE6226BFD494}.Debug|x86.ActiveCfg = Debug|Win32
+		{B1CFC307-2AFD-4B53-BA3A-DE6226BFD494}.Debug|x86.Build.0 = Debug|Win32
+		{B1CFC307-2AFD-4B53-BA3A-DE6226BFD494}.Release|x64.ActiveCfg = Release|x64
+		{B1CFC307-2AFD-4B53-BA3A-DE6226BFD494}.Release|x64.Build.0 = Release|x64
+		{B1CFC307-2AFD-4B53-BA3A-DE6226BFD494}.Release|x86.ActiveCfg = Release|Win32
+		{B1CFC307-2AFD-4B53-BA3A-DE6226BFD494}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -502,6 +512,7 @@ Global
 		{8B95AB85-AA83-465D-8B10-19CCF03A3654} = {485DBD5C-8DDE-4D76-8B43-5C01A131FBEB}
 		{FA8524DA-D5B6-4785-8B1C-F43E985E56AA} = {485DBD5C-8DDE-4D76-8B43-5C01A131FBEB}
 		{963B97D8-5FE7-40C1-AC41-05441452F2D7} = {07890428-9607-49D9-B2E1-7ADAD185FE64}
+		{B1CFC307-2AFD-4B53-BA3A-DE6226BFD494} = {07890428-9607-49D9-B2E1-7ADAD185FE64}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {39DD7ACD-8F24-4314-9D3C-74F6B00572A2}
