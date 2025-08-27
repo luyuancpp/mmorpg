@@ -3,7 +3,7 @@
 #include <entt/src/entt/entity/entity.hpp>
 
 #include "scene/comp/scene_comp.h"
-#include "scene/comp/scene_node_scene_comp.h"
+#include "scene/scene/comp/scene_node_scene_comp.h"
 
 #include <threading/registry_manager.h>
 

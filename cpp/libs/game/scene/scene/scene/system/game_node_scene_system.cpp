@@ -3,7 +3,7 @@
 #include "table/mainscene_config.h"
 #include "core/network/message_system.h"
 #include "player/system/player_scene_system.h"
-#include "scene/comp/grid_comp.h"
+#include "scene/scene/comp/grid_comp.h"
 #include "proto/logic/event/scene_event.pb.h"
 #include "proto/common/node.pb.h"
 #include "scene/comp/scene_comp.h"
@@ -11,7 +11,7 @@
 #include "service_info/centre_scene_service_info.h"
 #include "network/node_utils.h"
 #include "network/node_message_utils.h"
-#include "scene/mananger/scene_nav_mananger.h"
+#include "scene/scene/mananger/scene_nav_mananger.h"
 
 void GameNodeSceneSystem::InitializeNodeScenes() {
 	if (!(GetNodeInfo().scene_node_type() == eSceneNodeType::kMainSceneNode ||

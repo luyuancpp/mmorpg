@@ -7,8 +7,8 @@
 #include "actor/attribute/constants/actor_state_attribute_constants.h"
 #include "core/network/message_system.h"
 #include "scene/comp/scene_comp.h"
-#include "scene/comp/scene_node_scene_comp.h"
-#include "scene/system/view_system.h"
+#include "scene/scene/comp/scene_node_scene_comp.h"
+#include "scene/scene/system/view_system.h"
 #include "service_info/player_state_attribute_sync_service_info.h"
 
 #include "frame/manager/frame_time_manager.h"
