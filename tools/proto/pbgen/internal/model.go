@@ -160,7 +160,7 @@ func (info *RPCServiceInfo) GetServiceFullNameWithNoColon() string {
 }
 
 func (info *RPCServiceInfo) GeneratorGrpcFileName() string {
-	return info.FileBaseName() + config.GrpcExtension
+	return info.FileBaseName() + config.GrpcClientExtension
 }
 
 func (info *RPCServiceInfo) Service() string {
@@ -188,7 +188,7 @@ func (info *MethodInfo) ServiceInfoHeadInclude() string {
 }
 
 func (info *MethodInfo) GeneratorGrpcFileName() string {
-	return info.FileNameNoEx() + config.GrpcExtension
+	return info.FileNameNoEx() + config.GrpcClientExtension
 }
 
 func (info *MethodInfo) PbcHeadName() string {

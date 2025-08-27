@@ -4,6 +4,6 @@ option go_package = "pb/game";
 
 import "proto/common/empty.proto";
 
-service dbservice {
+service db {
   rpc Test (Empty) returns (Empty);
 }

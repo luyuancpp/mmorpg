@@ -33,9 +33,9 @@ const (
 	CppRepliedHandlerEx           = "_replied_handler.cpp"
 	CppSol2Extension              = "_sol2.cpp"
 	CppSystemExtension            = "_system.cpp"
-	GrpcHeaderExtension           = "_grpc.h"
-	GrpcCppExtension              = "_grpc.cpp"
-	GrpcExtension                 = "_grpc"
+	GrpcClientExtension           = "_grpc_client"
+	GrpcClientHeaderExtension     = GrpcClientExtension + HeaderExtension
+	GrpcClientCppExtension        = GrpcClientExtension + CppExtension
 )
 
 // ----------- 消息与方法相关名字 -----------

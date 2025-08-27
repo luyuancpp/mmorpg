@@ -1,9 +1,8 @@
 #include "world.h"
 
-
 #include "actor/attribute/system/actor_attribute_calculator_system.h"
 #include "actor/attribute/system/actor_state_attribute_sync_system.h"
-#include "combat/buff/system/buff_system.h"
+#include "scene/combat/buff/system/buff_system.h"
 #include "core/constants/fps_constants.h"
 #include "scene/system/aoi_system.h"
 #include "scene/system/movement_acceleration_system.h"
@@ -13,9 +12,8 @@
 #include "frame/manager/frame_time_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "proto/logic/component/frame_comp.pb.h"
-
 #include "core/system/id_generator_manager.h"
-#include "node/system/node.h"
+#include "node/system/node/node.h"
 #include "network/node_utils.h"
 #include "frame/manager/frame_time_manager.h"
 

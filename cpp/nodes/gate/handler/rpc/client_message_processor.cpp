@@ -7,7 +7,7 @@
 #include <optional>
 
 #include "gate_node.h"
-#include "grpc_client/proto/login/login_service_grpc.h"
+#include "grpc_client/proto/login/login_service_grpc_client.h"
 #include "proto/table/common_error_tip.pb.h"
 #include "service_info/service_info.h"
 #include "service_info/centre_service_service_info.h"
@@ -44,7 +44,6 @@ static std::optional<entt::entity> PickRandomNode(uint32_t nodeType, uint32_t ta
 	std::uniform_int_distribution<> dis(0, candidates.size() - 1);
 	return candidates[dis(gen)];
 }
-
 
 static inline NodeId GetEffectiveNodeId(
 	const Session& session,
