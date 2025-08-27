@@ -3,9 +3,13 @@
 #include "proto/table/common_error_tip.pb.h"
 #include "scene_config.h"
 
+std::string GetConfigDir();
+
 void SceneConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/scene.json");
+
+    std::string path = GetConfigDir() + "scene.json";
+    const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "Scene" << result.message().data();
     }

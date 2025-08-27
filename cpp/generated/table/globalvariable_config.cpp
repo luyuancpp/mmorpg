@@ -3,9 +3,13 @@
 #include "proto/table/common_error_tip.pb.h"
 #include "globalvariable_config.h"
 
+std::string GetConfigDir();
+
 void GlobalVariableConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/globalvariable.json");
+
+    std::string path = GetConfigDir() + "globalvariable.json";
+    const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "GlobalVariable" << result.message().data();
     }

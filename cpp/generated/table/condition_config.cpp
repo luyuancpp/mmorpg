@@ -3,9 +3,13 @@
 #include "proto/table/common_error_tip.pb.h"
 #include "condition_config.h"
 
+std::string GetConfigDir();
+
 void ConditionConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/condition.json");
+
+    std::string path = GetConfigDir() + "condition.json";
+    const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "Condition" << result.message().data();
     }

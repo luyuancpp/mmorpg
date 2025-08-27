@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "config_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/item_config.pb.h"
+#include "item_config.pb.h"
 
 class ItemConfigurationTable {
 public:

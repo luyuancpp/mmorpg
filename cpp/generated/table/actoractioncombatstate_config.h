@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "config_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/actoractioncombatstate_config.pb.h"
+#include "actoractioncombatstate_config.pb.h"
 
 class ActorActionCombatStateConfigurationTable {
 public:

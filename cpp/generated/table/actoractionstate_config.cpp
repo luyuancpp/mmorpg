@@ -3,9 +3,13 @@
 #include "proto/table/common_error_tip.pb.h"
 #include "actoractionstate_config.h"
 
+std::string GetConfigDir();
+
 void ActorActionStateConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/actoractionstate.json");
+
+    std::string path = GetConfigDir() + "actoractionstate.json";
+    const auto contents = File2String(path);
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "ActorActionState" << result.message().data();
     }
