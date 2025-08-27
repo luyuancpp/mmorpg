@@ -3,9 +3,8 @@
 
 #include "db_service_grpc.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
-#include "util/base64.h"
+#include "common/util/encode/base64.h"
 #include <boost/pool/object_pool.hpp>
-
 
 namespace  {
 struct DbServiceCompleteQueue {

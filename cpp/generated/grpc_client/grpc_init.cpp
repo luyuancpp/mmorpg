@@ -4,13 +4,24 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include <grpcpp/grpcpp.h>
 #include <google/protobuf/message.h>
-#include "node/system/node_util.h"
 #include "muduo/base/Logging.h"
-#include "grpc/grpc_tag.h"
+#include "grpc_tag.h"
+#include <proto/common/node.pb.h>
+#include <proto/common/common.pb.h>
 
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
+
+namespace NodeUtils
+{
+	eNodeType GetServiceTypeFromPrefix(const std::string& prefix);
+	entt::registry& GetRegistryForNodeType(uint32_t nodeType);
+	std::string GetRegistryName(const entt::registry& registry);
+	eNodeType GetRegistryType(const entt::registry& registry);
+	bool IsSameNode(const std::string& uuid1, const std::string& uuid2);
+	bool IsNodeConnected(uint32_t nodeType, const NodeInfo& info);
+};
 
 
 namespace playerlocator {

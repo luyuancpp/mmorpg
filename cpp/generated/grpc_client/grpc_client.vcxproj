@@ -19,8 +19,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="grpc_init.cpp" />
+    <ClCompile Include="proto\db\db_service_grpc.cpp" />
+    <ClCompile Include="proto\etcd\etcd_grpc.cpp" />
+    <ClCompile Include="proto\login\login_service_grpc.cpp" />
+    <ClCompile Include="proto\player_locator\player_locator_grpc.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="grpc_init.h" />
+    <ClInclude Include="grpc_tag.h" />
+    <ClInclude Include="proto\db\db_service_grpc.h" />
+    <ClInclude Include="proto\etcd\etcd_grpc.h" />
+    <ClInclude Include="proto\login\login_service_grpc.h" />
+    <ClInclude Include="proto\player_locator\player_locator_grpc.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -126,7 +137,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../;../../../third_party/grpc/include/;../../../third_party/;../../../third_party/grpc/third_party/protobuf/src/;../../../third_party/grpc/third_party/abseil-cpp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../;../../../third_party/grpc/include/;../../../third_party/;../../../third_party/grpc/third_party/protobuf/src/;../../../third_party/grpc/third_party/abseil-cpp/;./;../../../third_party/muduo/;../../../third_party/boost/;../../libs/base;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>

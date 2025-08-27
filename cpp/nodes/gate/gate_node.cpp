@@ -2,14 +2,14 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "grpc/generator/proto/login/login_service_grpc.h"
+#include "grpc_client/proto/login/login_service_grpc.h"
 #include "network/rpc_session.h"
 #include "proto/login/login_service.grpc.pb.h"
 #include "proto/common/node.pb.h"
 #include "service_info/service_info.h"
 #include "node/system/node_util.h"
 #include "session/system/session_system.h"
-#include "grpc/generator/grpc_init.h"
+#include "grpc_client/grpc_init.h"
 #include "session/manager/session_manager.h"
 
 GateNode* gGateNode = nullptr; 
