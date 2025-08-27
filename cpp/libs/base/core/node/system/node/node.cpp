@@ -27,7 +27,7 @@
 #include "threading/redis_manager.h"
 #include "time/system/time_system.h"
 #include "network/network_utils.h"
-#include "util/gen_util.h"
+#include "proto_util/proto_util.h"
 #include "util/stacktrace_system.h"
 #include "network/node_utils.h"
 #include <boost/algorithm/string.hpp>
