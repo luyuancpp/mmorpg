@@ -70,11 +70,11 @@ private:
 
 1. * *任务系统类 MissionSystem * *：
 - 包含了接受任务（Accept）、放弃任务（Abandon）、完成任务（CompleteAllMission）等操作的方法。
-- 使用了多种数据结构和工具，包括Google Protobuf、Entt（一个ECS库）、条件配置（condition_config.h）、日志记录等。
+- 使用了多种数据结构和工具，包括Google Protobuf、Entt（一个ECS库）、条件配置（condition_table.h）、日志记录等。
 
 2. * *任务状态和进度管理 * *：
 - 任务状态通过枚举和Protobuf消息进行管理（MissionPbComp），任务的进度通过更新、检查条件来动态变化。
-- 每个任务有特定的条件（通过condition_config.h配置），任务完成时需要满足所有条件。
+- 每个任务有特定的条件（通过condition_table.h配置），任务完成时需要满足所有条件。
 
 3. * *条件检查和更新 * *：
 - `IsConditionCompleted`函数根据条件配置和实际进度判断条件是否完成。

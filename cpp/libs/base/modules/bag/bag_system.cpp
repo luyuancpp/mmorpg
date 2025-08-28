@@ -7,7 +7,7 @@
 #include "proto/table/common_error_tip.pb.h"
 #include "proto/table/bag_error_tip.pb.h"
 #include "util/snow_flake.h"
-#include "table/item_config.h"
+#include "table/item_table.h"
 #include "util/defer.h"
 #include <threading/snow_flake_manager.h>
 #include "threading/redis_manager.h"

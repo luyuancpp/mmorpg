@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "muduo/base/Logging.h"
-#include "table/test_config.h"
-#include "table/testmultikey_config.h"
-#include "table/skill_config.h"
-#include "table/buff_config.h"
+#include "table/test_table.h"
+#include "table/testmultikey_table.h"
+#include "table/skill_table.h"
+#include "table/buff_table.h"
 
 void LoadTables();
 

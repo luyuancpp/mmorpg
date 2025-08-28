@@ -1,6 +1,6 @@
 ﻿#include "buff_system.h"
 #include <ranges>
-#include "table/buff_config.h"
+#include "table/buff_table.h"
 #include "scene/combat/buff/system/buff_impl_system.h"
 #include "proto/logic/component/buff_comp.pb.h"
 #include <ranges>

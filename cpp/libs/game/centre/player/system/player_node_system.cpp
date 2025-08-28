@@ -17,7 +17,7 @@
 #include "base/common/util/defer.h"
 #include "proto/common/node.pb.h"
 #include "table/constants/global_abnormal_logout_table_id_constants.h"
-#include "table/globalvariable_config.h"
+#include "table/globalvariable_table.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
 #include "proto/db/mysql_database_table.pb.h"
 #include "base/core/network/network_utils.h"

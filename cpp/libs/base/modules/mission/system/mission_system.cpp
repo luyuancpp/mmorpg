@@ -2,7 +2,7 @@
 #include <ranges>
 #include "error_handling/error_handling.h"
 #include "muduo/base/Logging.h"
-#include "table/condition_config.h"
+#include "table/condition_table.h"
 #include "mission/constants/mission_constants.h"
 #include "mission/comp/mission_comp.h"
 #include "macros/return_define.h"

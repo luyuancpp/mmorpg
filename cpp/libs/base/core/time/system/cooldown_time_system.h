@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include <chrono>
-#include "table/cooldown_config.h"
+#include "table/cooldown_table.h"
 #include "time_system.h"
 #include "proto/logic/component/time_comp.pb.h"
 

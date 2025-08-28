@@ -3,7 +3,7 @@
 #include <regex>
 #include <grpcpp/create_channel.h>
 #include <boost/uuid/uuid_io.hpp>
-#include "table/all_config.h"
+#include "table/all_table.h"
 #include "node/system/etcd/etcd_helper.h"
 #include "config.h"
 #include "google/protobuf/util/json_util.h"
