@@ -87,6 +87,24 @@
     <ClInclude Include="testmultikey_table.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="bit_index\mission_table_id_bit_index.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="bit_index\reward_table_id_bit_index.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="constants\actoractioncombatstate_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="constants\actoractionstate_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="constants\global_abnormal_logout_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="constants\globalvariable_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="actoractioncombatstate_table.cpp">
