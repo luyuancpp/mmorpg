@@ -93,13 +93,12 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
         proto_content += 'syntax = "proto3";\n\n'
         proto_content += 'option go_package = "pb/game";\n\n'
         proto_content += f"enum {group_name} {{\n"
-        proto_content += f"  k{group_name.capitalize()}OK = 0;\n"
 
         for enum_name, _ in group_data:
             if enum_name in existing_id_mapping:
                 enum_id = existing_id_mapping[enum_name]
             else:
-                enum_id = max(existing_id_mapping.values(), default=-1) + 1
+                enum_id = max(existing_id_mapping.values(), default=0) + 1  # 从1开始
                 existing_id_mapping[enum_name] = enum_id
 
             enum_name_with_k = f"k{enum_name.strip()}"
