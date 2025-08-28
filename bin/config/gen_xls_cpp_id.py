@@ -22,12 +22,12 @@ def generate_id_enum(sheet):
     n_rows = sheet.max_row
     name = sheet.title
     file_str = "#pragma once\n"
-    file_str += f"enum e_{name}_configid : uint32_t\n{{\n"
+    file_str += f"enum e_{name}_table_id : uint32_t\n{{\n"
 
     for idx in range(generate_common.BEGIN_ROW_IDX, n_rows + 1):
         cell_value = sheet.cell(row=idx, column=1).value
         if cell_value is not None:
-            file_str += f"    {name}_config_id_{int(cell_value)},\n"
+            file_str += f"    {name}_table_id{int(cell_value)},\n"
 
     file_str += "};\n"
     return file_str

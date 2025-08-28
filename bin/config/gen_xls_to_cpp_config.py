@@ -74,8 +74,8 @@ def process_workbook(filename):
         workbook = openpyxl.load_workbook(filename)
         workbook_data = get_workbook_data(workbook)
         for sheetname, data in workbook_data.items():
-            header_filename = f"{sheetname.lower()}_config.h"
-            cpp_filename = f"{sheetname.lower()}_config.cpp"
+            header_filename = f"{sheetname.lower()}_table.h"
+            cpp_filename = f"{sheetname.lower()}_table.cpp"
 
             # Create a Jinja2 environment and load the templates
             env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'), auto_reload=True)
