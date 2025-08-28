@@ -1,13 +1,9 @@
-// Proto file for {{ group_name }}
 syntax = "proto3";
 
 option go_package = "pb/game";
 
 enum {{ group_name }} {
-{% if group_name == "scene_error" %}
-  option allow_alias = true;
 
-{% endif %}
   k{{ group_name.capitalize() }}OK = 0;
 {% for enum_name, enum_id in group_data.items() %}
   k{{ enum_name }} = {{ enum_id }};
