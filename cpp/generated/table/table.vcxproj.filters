@@ -15,122 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="all_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="buff_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="condition_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="cooldown_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="globalvariable_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="item_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="mainscene_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="mission_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="monsterbase_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="scene_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="skill_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="test_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="testmultikey_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="class_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="skillpermission_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="actoractionstate_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="actoractioncombatstate_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="reward_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="messagelimiter_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="all_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="buff_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="condition_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="cooldown_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="globalvariable_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="item_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="mainscene_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="mission_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="monsterbase_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="scene_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="skill_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="test_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="testmultikey_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="class_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="skillpermission_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="actoractionstate_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="actoractioncombatstate_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="reward_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="messagelimiter_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="cpp_table_id_bit_index\mission_table_id_bit_index.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -149,5 +33,115 @@
     <ClInclude Include="cpp_table_id_constants_name\global_abnormal_logout_table_id_constants.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="actoractioncombatstate_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="actoractionstate_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="buff_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="class_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="condition_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="cooldown_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="globalvariable_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="item_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mainscene_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="messagelimiter_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mission_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="monsterbase_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="reward_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scene_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="skill_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="skillpermission_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="test_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="testmultikey_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="actoractioncombatstate_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="actoractionstate_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="buff_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="class_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="condition_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="cooldown_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="globalvariable_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="item_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mainscene_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="messagelimiter_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mission_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="monsterbase_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="reward_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="scene_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="skill_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="skillpermission_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="test_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="testmultikey_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

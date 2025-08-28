@@ -2,7 +2,7 @@
 
 #include "base/core/type_define/type_define.h"
 
-#include "table/item_config.h"
+#include "table/item_table.h"
 #include "bag/bag_system.h"
 #include "proto/table/common_error_tip.pb.h"
 #include "proto/table/bag_error_tip.pb.h"

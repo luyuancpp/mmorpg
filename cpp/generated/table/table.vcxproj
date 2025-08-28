@@ -19,52 +19,50 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="actoractioncombatstate_config.cpp" />
-    <ClCompile Include="actoractionstate_config.cpp" />
-    <ClCompile Include="all_config.cpp" />
-    <ClCompile Include="buff_config.cpp" />
-    <ClCompile Include="class_config.cpp" />
-    <ClCompile Include="condition_config.cpp" />
-    <ClCompile Include="cooldown_config.cpp" />
-    <ClCompile Include="globalvariable_config.cpp" />
-    <ClCompile Include="item_config.cpp" />
-    <ClCompile Include="mainscene_config.cpp" />
-    <ClCompile Include="messagelimiter_config.cpp" />
-    <ClCompile Include="mission_config.cpp" />
-    <ClCompile Include="monsterbase_config.cpp" />
-    <ClCompile Include="reward_config.cpp" />
-    <ClCompile Include="scene_config.cpp" />
-    <ClCompile Include="skillpermission_config.cpp" />
-    <ClCompile Include="skill_config.cpp" />
-    <ClCompile Include="testmultikey_config.cpp" />
-    <ClCompile Include="test_config.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="actoractioncombatstate_config.h" />
-    <ClInclude Include="actoractionstate_config.h" />
-    <ClInclude Include="all_config.h" />
-    <ClInclude Include="buff_config.h" />
-    <ClInclude Include="class_config.h" />
-    <ClInclude Include="condition_config.h" />
-    <ClInclude Include="cooldown_config.h" />
+    <ClInclude Include="actoractioncombatstate_table.h" />
+    <ClInclude Include="actoractionstate_table.h" />
+    <ClInclude Include="buff_table.h" />
+    <ClInclude Include="class_table.h" />
+    <ClInclude Include="condition_table.h" />
+    <ClInclude Include="cooldown_table.h" />
     <ClInclude Include="cpp_table_id_bit_index\mission_table_id_bit_index.h" />
     <ClInclude Include="cpp_table_id_bit_index\reward_table_id_bit_index.h" />
     <ClInclude Include="cpp_table_id_constants_name\actoractioncombatstate_table_id_constants.h" />
     <ClInclude Include="cpp_table_id_constants_name\actoractionstate_table_id_constants.h" />
     <ClInclude Include="cpp_table_id_constants_name\globalvariable_table_id_constants.h" />
     <ClInclude Include="cpp_table_id_constants_name\global_abnormal_logout_table_id_constants.h" />
-    <ClInclude Include="globalvariable_config.h" />
-    <ClInclude Include="item_config.h" />
-    <ClInclude Include="mainscene_config.h" />
-    <ClInclude Include="messagelimiter_config.h" />
-    <ClInclude Include="mission_config.h" />
-    <ClInclude Include="monsterbase_config.h" />
-    <ClInclude Include="reward_config.h" />
-    <ClInclude Include="scene_config.h" />
-    <ClInclude Include="skillpermission_config.h" />
-    <ClInclude Include="skill_config.h" />
-    <ClInclude Include="testmultikey_config.h" />
-    <ClInclude Include="test_config.h" />
+    <ClInclude Include="globalvariable_table.h" />
+    <ClInclude Include="item_table.h" />
+    <ClInclude Include="mainscene_table.h" />
+    <ClInclude Include="messagelimiter_table.h" />
+    <ClInclude Include="mission_table.h" />
+    <ClInclude Include="monsterbase_table.h" />
+    <ClInclude Include="reward_table.h" />
+    <ClInclude Include="scene_table.h" />
+    <ClInclude Include="skillpermission_table.h" />
+    <ClInclude Include="skill_table.h" />
+    <ClInclude Include="testmultikey_table.h" />
+    <ClInclude Include="test_table.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="actoractioncombatstate_table.cpp" />
+    <ClCompile Include="actoractionstate_table.cpp" />
+    <ClCompile Include="buff_table.cpp" />
+    <ClCompile Include="class_table.cpp" />
+    <ClCompile Include="condition_table.cpp" />
+    <ClCompile Include="cooldown_table.cpp" />
+    <ClCompile Include="globalvariable_table.cpp" />
+    <ClCompile Include="item_table.cpp" />
+    <ClCompile Include="mainscene_table.cpp" />
+    <ClCompile Include="messagelimiter_table.cpp" />
+    <ClCompile Include="mission_table.cpp" />
+    <ClCompile Include="monsterbase_table.cpp" />
+    <ClCompile Include="reward_table.cpp" />
+    <ClCompile Include="scene_table.cpp" />
+    <ClCompile Include="skillpermission_table.cpp" />
+    <ClCompile Include="skill_table.cpp" />
+    <ClCompile Include="testmultikey_table.cpp" />
+    <ClCompile Include="test_table.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

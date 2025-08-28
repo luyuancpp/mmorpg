@@ -2,7 +2,7 @@
 #include "gmock/gmock.h"
 #include "scene/combat/skill/system/skill_system.h"
 
-#include "table/skill_config.h"
+#include "table/skill_table.h"
 #include "scene/combat/skill/comp/skill_comp.h"
 #include "scene/combat/skill/constants/skill_constants.h"
 #include "time/comp/timer_task_comp.h"

@@ -1,7 +1,7 @@
 ﻿#include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "scene/combat/buff/system/buff_system.h"
-#include "table/buff_config.h"
+#include "table/buff_table.h"
 #include "proto/table/buff_error_tip.pb.h"
 
 #include "proto/logic/event/buff_event.pb.h"

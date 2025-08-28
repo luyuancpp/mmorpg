@@ -1,6 +1,6 @@
 ﻿#include "modifier_buff_impl_system.h"
 
-#include "table/buff_config.h"
+#include "table/buff_table.h"
 #include "proto/table/buff_config.pb.h"
 #include "proto/logic/component/actor_attribute_state_comp.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"

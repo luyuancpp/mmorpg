@@ -1,7 +1,7 @@
 ﻿#include "message_limiter.h"
 
 #include "proto/table/common_error_tip.pb.h"
-#include "table/messagelimiter_config.h"
+#include "table/messagelimiter_table.h"
 #include "time/system/time_system.h"
 
 // 构造函数，初始化默认的最大请求数和时间窗口
