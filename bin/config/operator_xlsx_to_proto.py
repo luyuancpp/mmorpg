@@ -89,10 +89,10 @@ def read_excel_data(file_path):
 def generate_proto_file(group_name, group_data, existing_id_mapping):
     """Generates Proto file for a given group."""
     try:
-        proto_content = f"// Proto file for {group_name}\n"
-        proto_content += 'syntax = "proto3";\n\n'
+        proto_content = 'syntax = "proto3";\n\n'
         proto_content += 'option go_package = "pb/game";\n\n'
         proto_content += f"enum {group_name} {{\n"
+        proto_content += f"  k{group_name.capitalize()}OK = 0;\n"
 
         for enum_name, _ in group_data:
             if enum_name in existing_id_mapping:

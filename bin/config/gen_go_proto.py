@@ -76,7 +76,6 @@ if __name__ == "__main__":
     common_includes = [
         "generated/proto",  # 你的 proto 根目录
         "../../third_party/grpc/third_party/protobuf/src",
-        "../../third_party/googleapis",  # 如果有使用 googleapis 的 proto
     ]
 
     # 多个任务配置（不同 source_dir -> 不同输出目录）
