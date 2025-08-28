@@ -53,8 +53,14 @@ def compile_protobuf_files(source_dir, protobuf_include_dir, output_dir):
 
 
 if __name__ == "__main__":
-    source_dir = "generated/proto"  # Source directory containing .proto files
+    source_dir = "generated/proto/"  # Source directory containing .proto files
     protobuf_include_dir = "../../third_party/grpc/third_party/protobuf/src"  # Protobuf headers directory
-    output_dir = "./generated/proto/cpp"  # Output directory for generated C++ files
+    output_dir = source_dir + "cpp/"  # Output directory for generated C++ files
+
+    compile_protobuf_files(source_dir, protobuf_include_dir, output_dir)
+
+    source_dir = "generated/proto/tip/"  # Source directory containing .proto files
+    protobuf_include_dir = "../../third_party/grpc/third_party/protobuf/src"  # Protobuf headers directory
+    output_dir = source_dir + "cpp/tip/"  # Output directory for generated C++ files
 
     compile_protobuf_files(source_dir, protobuf_include_dir, output_dir)
