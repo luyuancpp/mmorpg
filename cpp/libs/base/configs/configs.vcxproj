@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="config_expression.h" />
+    <ClInclude Include="table_expression.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="node_config_manager.h" />
   </ItemGroup>
