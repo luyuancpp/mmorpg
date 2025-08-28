@@ -56,6 +56,6 @@ def compile_protobuf_files_go(source_dir, protobuf_include_dir, output_dir):
 if __name__ == "__main__":
     source_dir = "generated/proto"  # Source directory containing .proto files
     protobuf_include_dir = "../../third_party/grpc/third_party/protobuf/src"  # Protobuf headers directory
-    output_dir = "generated/proto/go"  # Output directory for generated Go files
+    output_dir = source_dir + "/go/"  # Output directory for generated Go files
 
     compile_protobuf_files_go(source_dir, protobuf_include_dir, output_dir)
