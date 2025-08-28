@@ -155,7 +155,7 @@ def process_file(file_path: str) -> None:
 
 def save_proto_file(content: str, sheet_name: str) -> None:
     """Save the generated .proto content to a file."""
-    proto_file_path = os.path.join(PROTO_DIR, f'{sheet_name}_config.proto')
+    proto_file_path = os.path.join(PROTO_DIR, f'{sheet_name}_table.proto')
     try:
         with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
             proto_file.write(content)

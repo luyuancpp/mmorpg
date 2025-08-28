@@ -1,9 +1,9 @@
 #pragma once
 #include <cstdint>
 #include <unordered_map>
-#include "config_expression.h"
+#include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "{{ sheetname | lower }}_config.pb.h"
+#include "proto/table/{{ sheetname | lower }}_table.pb.h"
 
 class {{ sheetname }}ConfigurationTable {
 public:
