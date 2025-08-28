@@ -19,8 +19,10 @@ directories = [
     "generated/json",
     "../../cpp/generated/proto/table",
     "../../cpp/generated/table/",
-    "../../cpp/generated/table/constants/",
-    "../../cpp/generated/table/bit_index/"
+    "../../cpp/generated/proto/table/constants/",
+    "../../cpp/generated/proto/table/bit_index",
+    "../../cpp/generated/proto/table/operator/",
+    "../../cpp/generated/proto/table/tip/",
 ]
 
 # Create directories if they don't exist
@@ -43,10 +45,12 @@ commands = [
     "python generate_xlsx_cpp_id_bit_index.py",
     "python md5tool.py md5copy ./generated/cpp/ ../../cpp/generated/table/",
     "python md5tool.py md5copy ./generated/cpp_table_id_bit_index/ "
-    "../../cpp/generated/proto/table/bit_index/",
+    "../../cpp/generated/table/bit_index/",
     "python md5tool.py md5copy ./generated/cpp_table_id_constants_name/ "
-    "../../cpp/generated/proto/table/constants/",
+    "../../cpp/generated/table/constants/",
     "python md5tool.py md5copy ./generated/proto/cpp/ ../../cpp/generated/proto/table/",
+    "python md5tool.py md5copy ./generated/proto/cpp/operator/ ../../cpp/generated/proto/table/operator/",
+    "python md5tool.py md5copy ./generated/proto/cpp/tip/ ../../cpp/generated/proto/table/tip/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../go/login/pb/game/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../go/db/pb/game/",
 ]
