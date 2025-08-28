@@ -6,61 +6,67 @@ import subprocess
 import logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def compile_protobuf_files(source_dir, protobuf_include_dir, output_dir):
+def compile_protobuf_files(source_dir, include_dirs, output_dir):
     """
-    Compile all .proto files in the source directory to C++ using protoc compiler in one command.
+    Compile all .proto files in the source directory to C++ using protoc compiler.
 
     Args:
     - source_dir (str): Directory containing .proto files.
-    - protobuf_include_dir (str): Directory containing protobuf headers (usually protobuf installation directory).
+    - include_dirs (list[str]): Directories containing protobuf headers (and other .proto dependencies).
     - output_dir (str): Directory where generated C++ files will be placed.
     """
     proto_files = []
-
     for dirpath, _, filenames in os.walk(source_dir):
         for filename in filenames:
             if filename.endswith(".proto"):
                 proto_files.append(os.path.join(dirpath, filename))
 
     if not proto_files:
-        logger.warning("No .proto files found.")
+        logger.warning(f"No .proto files found in {source_dir}")
         return
 
-    # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
-    # Construct protoc command
-    command = [
-        "protoc",
-        f"--proto_path={source_dir}",
-        f"--proto_path={protobuf_include_dir}",
-        f"--cpp_out={output_dir}",
-    ] + proto_files
+    command = ["protoc"]
+    for inc in include_dirs:
+        command.append(f"--proto_path={os.path.abspath(inc)}")
+
+    command.append(f"--cpp_out={os.path.abspath(output_dir)}")
+    command.extend(proto_files)
 
     try:
         result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        logger.info("Compiled all proto files successfully.")
+        logger.info(f"Compiled all proto files in {source_dir} successfully.")
         if result.stdout:
             logger.info(result.stdout)
         if result.stderr:
             logger.warning(result.stderr)
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to compile proto files. Error: {e.stderr}")
+        logger.error(f"Failed to compile proto files in {source_dir}. Error: {e.stderr}")
 
 
 if __name__ == "__main__":
-    source_dir = "generated/proto/"  # Source directory containing .proto files
-    protobuf_include_dir = "../../third_party/grpc/third_party/protobuf/src"  # Protobuf headers directory
-    output_dir = source_dir + "cpp/"  # Output directory for generated C++ files
+    # 公共的依赖目录（protobuf 源码路径、第三方 proto 等）
+    common_includes = [
+        "../../third_party/grpc/third_party/protobuf/src",
+        "generated/proto",        # 自己的 proto 根目录
+    ]
 
-    compile_protobuf_files(source_dir, protobuf_include_dir, output_dir)
+    # 多个 proto 源目录配置
+    proto_jobs = [
+        {
+            "source_dir": "generated/proto/",
+            "output_dir": "generated/proto/cpp/",
+        },
+        {
+            "source_dir": "generated/proto/tip/",
+            "output_dir": "generated/proto/cpp/tip/",
+        },
+    ]
 
-    source_dir = "generated/proto/tip/"  # Source directory containing .proto files
-    protobuf_include_dir = "../../third_party/grpc/third_party/protobuf/src"  # Protobuf headers directory
-    output_dir = source_dir + "cpp/tip/"  # Output directory for generated C++ files
-
-    compile_protobuf_files(source_dir, protobuf_include_dir, output_dir)
+    for job in proto_jobs:
+        compile_protobuf_files(job["source_dir"], common_includes, job["output_dir"])
