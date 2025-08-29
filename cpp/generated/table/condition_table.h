@@ -5,15 +5,15 @@
 #include "muduo/base/Logging.h"
 #include "proto/table/condition_table.pb.h"
 
-class ConditionConfigurationTable {
+class ConditionTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const ConditionTable*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
-    static ConditionConfigurationTable& Instance() {
-        static ConditionConfigurationTable instance;
+    static ConditionTableManager& Instance() {
+        static ConditionTableManager instance;
         return instance;
     }
 
@@ -42,29 +42,29 @@ private:
 };
 
 inline const ConditionTabledData& GetConditionAllTable() {
-    return ConditionConfigurationTable::Instance().All();
+    return ConditionTableManager::Instance().All();
 }
 
 #define FetchAndValidateConditionTable(tableId) \
-    const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(tableId); \
+    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().GetTable(tableId); \
     do { if (!( conditionTable )) { LOG_ERROR << "Condition table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomConditionTable(prefix, tableId) \
-    const auto [prefix##ConditionTable, prefix##fetchResult] = ConditionConfigurationTable::Instance().GetTable(tableId); \
+    const auto [prefix##ConditionTable, prefix##fetchResult] = ConditionTableManager::Instance().GetTable(tableId); \
     do { if (!(prefix##ConditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchConditionTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(tableId); \
+    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().GetTable(tableId); \
     do { if (!( conditionTable )) { LOG_ERROR << "Condition table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchConditionTableOrReturnVoid(tableId) \
-    const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(tableId); \
+    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().GetTable(tableId); \
     do { if (!( conditionTable )) { LOG_ERROR << "Condition table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchConditionTableOrContinue(tableId) \
-    const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(tableId); \
+    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().GetTable(tableId); \
     do { if (!( conditionTable )) { LOG_ERROR << "Condition table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchConditionTableOrReturnFalse(tableId) \
-    const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(tableId); \
+    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().GetTable(tableId); \
     do { if (!( conditionTable )) { LOG_ERROR << "Condition table not found for ID: " << tableId; return false; } } while(0)

@@ -163,7 +163,7 @@ private:
         const entt::entity casterEntity,
         const entt::entity targetEntity
     ) {
-        const auto bonusDamage = BuffConfigurationTable::Instance().GetBonusdamage(buffTable->id());
+        const auto bonusDamage = BuffTableManager::Instance().GetBonusdamage(buffTable->id());
         damageEvent.set_damage(damageEvent.damage() + bonusDamage);
 
         buffsToRemoveCaster.emplace(buffComp.buffPb.buff_id());

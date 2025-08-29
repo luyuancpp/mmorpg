@@ -5,15 +5,15 @@
 #include "muduo/base/Logging.h"
 #include "proto/table/skill_table.pb.h"
 
-class SkillConfigurationTable {
+class SkillTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const SkillTable*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
-    static SkillConfigurationTable& Instance() {
-        static SkillConfigurationTable instance;
+    static SkillTableManager& Instance() {
+        static SkillTableManager instance;
         return instance;
     }
 
@@ -54,29 +54,29 @@ private:
 };
 
 inline const SkillTabledData& GetSkillAllTable() {
-    return SkillConfigurationTable::Instance().All();
+    return SkillTableManager::Instance().All();
 }
 
 #define FetchAndValidateSkillTable(tableId) \
-    const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().GetTable(tableId); \
     do { if (!( skillTable )) { LOG_ERROR << "Skill table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomSkillTable(prefix, tableId) \
-    const auto [prefix##SkillTable, prefix##fetchResult] = SkillConfigurationTable::Instance().GetTable(tableId); \
+    const auto [prefix##SkillTable, prefix##fetchResult] = SkillTableManager::Instance().GetTable(tableId); \
     do { if (!(prefix##SkillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchSkillTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().GetTable(tableId); \
     do { if (!( skillTable )) { LOG_ERROR << "Skill table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchSkillTableOrReturnVoid(tableId) \
-    const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().GetTable(tableId); \
     do { if (!( skillTable )) { LOG_ERROR << "Skill table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchSkillTableOrContinue(tableId) \
-    const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().GetTable(tableId); \
     do { if (!( skillTable )) { LOG_ERROR << "Skill table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchSkillTableOrReturnFalse(tableId) \
-    const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().GetTable(tableId); \
     do { if (!( skillTable )) { LOG_ERROR << "Skill table not found for ID: " << tableId; return false; } } while(0)

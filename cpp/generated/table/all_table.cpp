@@ -26,59 +26,59 @@ LoadSuccessCallback loadSuccessCallback;
 
 void LoadTables() {
 
-    ActorActionCombatStateConfigurationTable::Instance().Load();
-    ActorActionCombatStateConfigurationTable::Instance().LoadSuccess();
+    ActorActionCombatStateTableManager::Instance().Load();
+    ActorActionCombatStateTableManager::Instance().LoadSuccess();
 
-    ActorActionStateConfigurationTable::Instance().Load();
-    ActorActionStateConfigurationTable::Instance().LoadSuccess();
+    ActorActionStateTableManager::Instance().Load();
+    ActorActionStateTableManager::Instance().LoadSuccess();
 
-    BuffConfigurationTable::Instance().Load();
-    BuffConfigurationTable::Instance().LoadSuccess();
+    BuffTableManager::Instance().Load();
+    BuffTableManager::Instance().LoadSuccess();
 
-    ClassConfigurationTable::Instance().Load();
-    ClassConfigurationTable::Instance().LoadSuccess();
+    ClassTableManager::Instance().Load();
+    ClassTableManager::Instance().LoadSuccess();
 
-    ConditionConfigurationTable::Instance().Load();
-    ConditionConfigurationTable::Instance().LoadSuccess();
+    ConditionTableManager::Instance().Load();
+    ConditionTableManager::Instance().LoadSuccess();
 
-    CooldownConfigurationTable::Instance().Load();
-    CooldownConfigurationTable::Instance().LoadSuccess();
+    CooldownTableManager::Instance().Load();
+    CooldownTableManager::Instance().LoadSuccess();
 
-    GlobalVariableConfigurationTable::Instance().Load();
-    GlobalVariableConfigurationTable::Instance().LoadSuccess();
+    GlobalVariableTableManager::Instance().Load();
+    GlobalVariableTableManager::Instance().LoadSuccess();
 
-    ItemConfigurationTable::Instance().Load();
-    ItemConfigurationTable::Instance().LoadSuccess();
+    ItemTableManager::Instance().Load();
+    ItemTableManager::Instance().LoadSuccess();
 
-    MainSceneConfigurationTable::Instance().Load();
-    MainSceneConfigurationTable::Instance().LoadSuccess();
+    MainSceneTableManager::Instance().Load();
+    MainSceneTableManager::Instance().LoadSuccess();
 
-    MessageLimiterConfigurationTable::Instance().Load();
-    MessageLimiterConfigurationTable::Instance().LoadSuccess();
+    MessageLimiterTableManager::Instance().Load();
+    MessageLimiterTableManager::Instance().LoadSuccess();
 
-    MissionConfigurationTable::Instance().Load();
-    MissionConfigurationTable::Instance().LoadSuccess();
+    MissionTableManager::Instance().Load();
+    MissionTableManager::Instance().LoadSuccess();
 
-    MonsterBaseConfigurationTable::Instance().Load();
-    MonsterBaseConfigurationTable::Instance().LoadSuccess();
+    MonsterBaseTableManager::Instance().Load();
+    MonsterBaseTableManager::Instance().LoadSuccess();
 
-    RewardConfigurationTable::Instance().Load();
-    RewardConfigurationTable::Instance().LoadSuccess();
+    RewardTableManager::Instance().Load();
+    RewardTableManager::Instance().LoadSuccess();
 
-    SceneConfigurationTable::Instance().Load();
-    SceneConfigurationTable::Instance().LoadSuccess();
+    SceneTableManager::Instance().Load();
+    SceneTableManager::Instance().LoadSuccess();
 
-    SkillConfigurationTable::Instance().Load();
-    SkillConfigurationTable::Instance().LoadSuccess();
+    SkillTableManager::Instance().Load();
+    SkillTableManager::Instance().LoadSuccess();
 
-    SkillPermissionConfigurationTable::Instance().Load();
-    SkillPermissionConfigurationTable::Instance().LoadSuccess();
+    SkillPermissionTableManager::Instance().Load();
+    SkillPermissionTableManager::Instance().LoadSuccess();
 
-    TestConfigurationTable::Instance().Load();
-    TestConfigurationTable::Instance().LoadSuccess();
+    TestTableManager::Instance().Load();
+    TestTableManager::Instance().LoadSuccess();
 
-    TestMultiKeyConfigurationTable::Instance().Load();
-    TestMultiKeyConfigurationTable::Instance().LoadSuccess();
+    TestMultiKeyTableManager::Instance().Load();
+    TestMultiKeyTableManager::Instance().LoadSuccess();
 
 
     if (loadSuccessCallback){
@@ -90,116 +90,116 @@ void LoadTablesAsync() {
     static muduo::CountDownLatch latch(18);
 
     std::thread ActorActionCombatStateLoadThread([](){
-        ActorActionCombatStateConfigurationTable::Instance().Load();
+        ActorActionCombatStateTableManager::Instance().Load();
             latch.countDown();});
             ActorActionCombatStateLoadThread.detach();
 
     std::thread ActorActionStateLoadThread([](){
-        ActorActionStateConfigurationTable::Instance().Load();
+        ActorActionStateTableManager::Instance().Load();
             latch.countDown();});
             ActorActionStateLoadThread.detach();
 
     std::thread BuffLoadThread([](){
-        BuffConfigurationTable::Instance().Load();
+        BuffTableManager::Instance().Load();
             latch.countDown();});
             BuffLoadThread.detach();
 
     std::thread ClassLoadThread([](){
-        ClassConfigurationTable::Instance().Load();
+        ClassTableManager::Instance().Load();
             latch.countDown();});
             ClassLoadThread.detach();
 
     std::thread ConditionLoadThread([](){
-        ConditionConfigurationTable::Instance().Load();
+        ConditionTableManager::Instance().Load();
             latch.countDown();});
             ConditionLoadThread.detach();
 
     std::thread CooldownLoadThread([](){
-        CooldownConfigurationTable::Instance().Load();
+        CooldownTableManager::Instance().Load();
             latch.countDown();});
             CooldownLoadThread.detach();
 
     std::thread GlobalVariableLoadThread([](){
-        GlobalVariableConfigurationTable::Instance().Load();
+        GlobalVariableTableManager::Instance().Load();
             latch.countDown();});
             GlobalVariableLoadThread.detach();
 
     std::thread ItemLoadThread([](){
-        ItemConfigurationTable::Instance().Load();
+        ItemTableManager::Instance().Load();
             latch.countDown();});
             ItemLoadThread.detach();
 
     std::thread MainSceneLoadThread([](){
-        MainSceneConfigurationTable::Instance().Load();
+        MainSceneTableManager::Instance().Load();
             latch.countDown();});
             MainSceneLoadThread.detach();
 
     std::thread MessageLimiterLoadThread([](){
-        MessageLimiterConfigurationTable::Instance().Load();
+        MessageLimiterTableManager::Instance().Load();
             latch.countDown();});
             MessageLimiterLoadThread.detach();
 
     std::thread MissionLoadThread([](){
-        MissionConfigurationTable::Instance().Load();
+        MissionTableManager::Instance().Load();
             latch.countDown();});
             MissionLoadThread.detach();
 
     std::thread MonsterBaseLoadThread([](){
-        MonsterBaseConfigurationTable::Instance().Load();
+        MonsterBaseTableManager::Instance().Load();
             latch.countDown();});
             MonsterBaseLoadThread.detach();
 
     std::thread RewardLoadThread([](){
-        RewardConfigurationTable::Instance().Load();
+        RewardTableManager::Instance().Load();
             latch.countDown();});
             RewardLoadThread.detach();
 
     std::thread SceneLoadThread([](){
-        SceneConfigurationTable::Instance().Load();
+        SceneTableManager::Instance().Load();
             latch.countDown();});
             SceneLoadThread.detach();
 
     std::thread SkillLoadThread([](){
-        SkillConfigurationTable::Instance().Load();
+        SkillTableManager::Instance().Load();
             latch.countDown();});
             SkillLoadThread.detach();
 
     std::thread SkillPermissionLoadThread([](){
-        SkillPermissionConfigurationTable::Instance().Load();
+        SkillPermissionTableManager::Instance().Load();
             latch.countDown();});
             SkillPermissionLoadThread.detach();
 
     std::thread TestLoadThread([](){
-        TestConfigurationTable::Instance().Load();
+        TestTableManager::Instance().Load();
             latch.countDown();});
             TestLoadThread.detach();
 
     std::thread TestMultiKeyLoadThread([](){
-        TestMultiKeyConfigurationTable::Instance().Load();
+        TestMultiKeyTableManager::Instance().Load();
             latch.countDown();});
             TestMultiKeyLoadThread.detach();
 
     latch.wait();
 
 
-    ActorActionCombatStateConfigurationTable::Instance().LoadSuccess();
-    ActorActionStateConfigurationTable::Instance().LoadSuccess();
-    BuffConfigurationTable::Instance().LoadSuccess();
-    ClassConfigurationTable::Instance().LoadSuccess();
-    ConditionConfigurationTable::Instance().LoadSuccess();
-    CooldownConfigurationTable::Instance().LoadSuccess();
-    GlobalVariableConfigurationTable::Instance().LoadSuccess();
-    ItemConfigurationTable::Instance().LoadSuccess();
-    MainSceneConfigurationTable::Instance().LoadSuccess();
-    MessageLimiterConfigurationTable::Instance().LoadSuccess();
-    MissionConfigurationTable::Instance().LoadSuccess();
-    MonsterBaseConfigurationTable::Instance().LoadSuccess();
-    RewardConfigurationTable::Instance().LoadSuccess();
-    SceneConfigurationTable::Instance().LoadSuccess();
-    SkillConfigurationTable::Instance().LoadSuccess();
-    SkillPermissionConfigurationTable::Instance().LoadSuccess();
-    TestConfigurationTable::Instance().LoadSuccess();
-    TestMultiKeyConfigurationTable::Instance().LoadSuccess();
+    ActorActionCombatStateTableManager::Instance().LoadSuccess();
+    ActorActionStateTableManager::Instance().LoadSuccess();
+    BuffTableManager::Instance().LoadSuccess();
+    ClassTableManager::Instance().LoadSuccess();
+    ConditionTableManager::Instance().LoadSuccess();
+    CooldownTableManager::Instance().LoadSuccess();
+    GlobalVariableTableManager::Instance().LoadSuccess();
+    ItemTableManager::Instance().LoadSuccess();
+    MainSceneTableManager::Instance().LoadSuccess();
+    MessageLimiterTableManager::Instance().LoadSuccess();
+    MissionTableManager::Instance().LoadSuccess();
+    MonsterBaseTableManager::Instance().LoadSuccess();
+    RewardTableManager::Instance().LoadSuccess();
+    SceneTableManager::Instance().LoadSuccess();
+    SkillTableManager::Instance().LoadSuccess();
+    SkillPermissionTableManager::Instance().LoadSuccess();
+    TestTableManager::Instance().LoadSuccess();
+    TestMultiKeyTableManager::Instance().LoadSuccess();
      if (loadSuccessCallback){
         loadSuccessCallback();
     }

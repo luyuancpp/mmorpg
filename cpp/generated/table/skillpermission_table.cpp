@@ -5,7 +5,7 @@
 
 std::string GetConfigDir();
 
-void SkillPermissionConfigurationTable::Load() {
+void SkillPermissionTableManager::Load() {
     data_.Clear();
 
     std::string path = GetConfigDir() + "skillpermission.json";
@@ -20,7 +20,7 @@ void SkillPermissionConfigurationTable::Load() {
     }
 }
 
-std::pair<const SkillPermissionTable*, uint32_t> SkillPermissionConfigurationTable::GetTable(const uint32_t tableId) {
+std::pair<const SkillPermissionTable*, uint32_t> SkillPermissionTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "SkillPermission table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const SkillPermissionTable*, uint32_t> SkillPermissionConfigurationTab
     return { it->second, kSuccess };
 }
 
-std::pair<const SkillPermissionTable*, uint32_t> SkillPermissionConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const SkillPermissionTable*, uint32_t> SkillPermissionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };

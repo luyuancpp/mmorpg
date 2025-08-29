@@ -5,7 +5,7 @@
 
 std::string GetConfigDir();
 
-void ItemConfigurationTable::Load() {
+void ItemTableManager::Load() {
     data_.Clear();
 
     std::string path = GetConfigDir() + "item.json";
@@ -20,7 +20,7 @@ void ItemConfigurationTable::Load() {
     }
 }
 
-std::pair<const ItemTable*, uint32_t> ItemConfigurationTable::GetTable(const uint32_t tableId) {
+std::pair<const ItemTable*, uint32_t> ItemTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Item table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const ItemTable*, uint32_t> ItemConfigurationTable::GetTable(const uin
     return { it->second, kSuccess };
 }
 
-std::pair<const ItemTable*, uint32_t> ItemConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const ItemTable*, uint32_t> ItemTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };

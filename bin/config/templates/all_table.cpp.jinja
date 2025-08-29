@@ -12,8 +12,8 @@ LoadSuccessCallback loadSuccessCallback;
 
 void LoadTables() {
 {% for item in sheetnames %}
-    {{ item }}ConfigurationTable::Instance().Load();
-    {{ item }}ConfigurationTable::Instance().LoadSuccess();
+    {{ item }}TableManager::Instance().Load();
+    {{ item }}TableManager::Instance().LoadSuccess();
 {% endfor %}
 
     if (loadSuccessCallback){
@@ -25,14 +25,14 @@ void LoadTablesAsync() {
     static muduo::CountDownLatch latch({{ sheetnames|length }});
 {% for item in sheetnames %}
     std::thread {{ item }}LoadThread([](){
-        {{ item }}ConfigurationTable::Instance().Load();
+        {{ item }}TableManager::Instance().Load();
             latch.countDown();});
             {{ item }}LoadThread.detach();
 {%endfor %}
     latch.wait();
 
 {% for item in sheetnames %}
-    {{ item }}ConfigurationTable::Instance().LoadSuccess();
+    {{ item }}TableManager::Instance().LoadSuccess();
 {%- endfor %}
      if (loadSuccessCallback){
         loadSuccessCallback();

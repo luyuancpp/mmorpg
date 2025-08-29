@@ -5,7 +5,7 @@
 
 std::string GetConfigDir();
 
-void GlobalVariableConfigurationTable::Load() {
+void GlobalVariableTableManager::Load() {
     data_.Clear();
 
     std::string path = GetConfigDir() + "globalvariable.json";
@@ -20,7 +20,7 @@ void GlobalVariableConfigurationTable::Load() {
     }
 }
 
-std::pair<const GlobalVariableTable*, uint32_t> GlobalVariableConfigurationTable::GetTable(const uint32_t tableId) {
+std::pair<const GlobalVariableTable*, uint32_t> GlobalVariableTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "GlobalVariable table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const GlobalVariableTable*, uint32_t> GlobalVariableConfigurationTable
     return { it->second, kSuccess };
 }
 
-std::pair<const GlobalVariableTable*, uint32_t> GlobalVariableConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const GlobalVariableTable*, uint32_t> GlobalVariableTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };

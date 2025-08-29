@@ -20,7 +20,7 @@ uint32_t MessageLimiter::CanSend(uint32_t messageId) {
     uint64_t timeWindowDuration = this->defaultTimeWindow;
 
     // 检查是否有针对该消息ID的特殊配置
-    if (const auto [configEntry, fetchSuccess] = MessageLimiterConfigurationTable::Instance().GetTableWithoutErrorLogging(messageId);
+    if (const auto [configEntry, fetchSuccess] = MessageLimiterTableManager::Instance().GetTableWithoutErrorLogging(messageId);
         configEntry != nullptr) {
         maxAllowedRequests = configEntry->maxrequests();   // 覆盖最大请求数
         timeWindowDuration = configEntry->timewindow(); // 覆盖时间窗口

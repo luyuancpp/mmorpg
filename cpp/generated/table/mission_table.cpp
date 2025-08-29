@@ -5,7 +5,7 @@
 
 std::string GetConfigDir();
 
-void MissionConfigurationTable::Load() {
+void MissionTableManager::Load() {
     data_.Clear();
 
     std::string path = GetConfigDir() + "mission.json";
@@ -20,7 +20,7 @@ void MissionConfigurationTable::Load() {
     }
 }
 
-std::pair<const MissionTable*, uint32_t> MissionConfigurationTable::GetTable(const uint32_t tableId) {
+std::pair<const MissionTable*, uint32_t> MissionTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Mission table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const MissionTable*, uint32_t> MissionConfigurationTable::GetTable(con
     return { it->second, kSuccess };
 }
 
-std::pair<const MissionTable*, uint32_t> MissionConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const MissionTable*, uint32_t> MissionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };

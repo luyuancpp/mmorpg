@@ -5,15 +5,15 @@
 #include "muduo/base/Logging.h"
 #include "proto/table/mission_table.pb.h"
 
-class MissionConfigurationTable {
+class MissionTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const MissionTable*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
-    static MissionConfigurationTable& Instance() {
-        static MissionConfigurationTable instance;
+    static MissionTableManager& Instance() {
+        static MissionTableManager instance;
         return instance;
     }
 
@@ -42,29 +42,29 @@ private:
 };
 
 inline const MissionTabledData& GetMissionAllTable() {
-    return MissionConfigurationTable::Instance().All();
+    return MissionTableManager::Instance().All();
 }
 
 #define FetchAndValidateMissionTable(tableId) \
-    const auto [missionTable, fetchResult] = MissionConfigurationTable::Instance().GetTable(tableId); \
+    const auto [missionTable, fetchResult] = MissionTableManager::Instance().GetTable(tableId); \
     do { if (!( missionTable )) { LOG_ERROR << "Mission table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomMissionTable(prefix, tableId) \
-    const auto [prefix##MissionTable, prefix##fetchResult] = MissionConfigurationTable::Instance().GetTable(tableId); \
+    const auto [prefix##MissionTable, prefix##fetchResult] = MissionTableManager::Instance().GetTable(tableId); \
     do { if (!(prefix##MissionTable)) { LOG_ERROR << "Mission table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchMissionTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [missionTable, fetchResult] = MissionConfigurationTable::Instance().GetTable(tableId); \
+    const auto [missionTable, fetchResult] = MissionTableManager::Instance().GetTable(tableId); \
     do { if (!( missionTable )) { LOG_ERROR << "Mission table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchMissionTableOrReturnVoid(tableId) \
-    const auto [missionTable, fetchResult] = MissionConfigurationTable::Instance().GetTable(tableId); \
+    const auto [missionTable, fetchResult] = MissionTableManager::Instance().GetTable(tableId); \
     do { if (!( missionTable )) { LOG_ERROR << "Mission table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchMissionTableOrContinue(tableId) \
-    const auto [missionTable, fetchResult] = MissionConfigurationTable::Instance().GetTable(tableId); \
+    const auto [missionTable, fetchResult] = MissionTableManager::Instance().GetTable(tableId); \
     do { if (!( missionTable )) { LOG_ERROR << "Mission table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchMissionTableOrReturnFalse(tableId) \
-    const auto [missionTable, fetchResult] = MissionConfigurationTable::Instance().GetTable(tableId); \
+    const auto [missionTable, fetchResult] = MissionTableManager::Instance().GetTable(tableId); \
     do { if (!( missionTable )) { LOG_ERROR << "Mission table not found for ID: " << tableId; return false; } } while(0)

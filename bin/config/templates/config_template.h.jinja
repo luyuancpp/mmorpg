@@ -5,15 +5,15 @@
 #include "muduo/base/Logging.h"
 #include "proto/table/{{ sheetname | lower }}_table.pb.h"
 
-class {{ sheetname }}ConfigurationTable {
+class {{ sheetname }}TableManager {
 public:
     using KeyValueDataType = std::unordered_map{{ container_type }}<uint32_t, const {{ sheetname }}Table*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
-    static {{ sheetname }}ConfigurationTable& Instance() {
-        static {{ sheetname }}ConfigurationTable instance;
+    static {{ sheetname }}TableManager& Instance() {
+        static {{ sheetname }}TableManager instance;
         return instance;
     }
 
@@ -71,29 +71,29 @@ private:
 };
 
 inline const {{ sheetname }}TabledData& Get{{ sheetname }}AllTable() {
-    return {{ sheetname }}ConfigurationTable::Instance().All();
+    return {{ sheetname }}TableManager::Instance().All();
 }
 
 #define FetchAndValidate{{ sheetname }}Table(tableId) \
-    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
+    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
     do { if (!( {{  sheetname[0].lower() + sheetname[1:] }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustom{{ sheetname }}Table(prefix, tableId) \
-    const auto [prefix##{{ sheetname }}Table, prefix##fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
+    const auto [prefix##{{ sheetname }}Table, prefix##fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
     do { if (!(prefix##{{ sheetname }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrReturnCustom(tableId, customReturnValue) \
-    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
+    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
     do { if (!( {{  sheetname[0].lower() + sheetname[1:] }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrReturnVoid(tableId) \
-    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
+    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
     do { if (!( {{  sheetname[0].lower() + sheetname[1:] }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrContinue(tableId) \
-    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
+    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
     do { if (!( {{  sheetname[0].lower() + sheetname[1:] }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; continue; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrReturnFalse(tableId) \
-    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}ConfigurationTable::Instance().GetTable(tableId); \
+    const auto [{{  sheetname[0].lower() + sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
     do { if (!( {{  sheetname[0].lower() + sheetname[1:] }}Table )) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return false; } } while(0)

@@ -5,7 +5,7 @@
 
 std::string GetConfigDir();
 
-void {{ sheetname }}ConfigurationTable::Load() {
+void {{ sheetname }}TableManager::Load() {
     data_.Clear();
 
     std::string path = GetConfigDir() + "{{ sheetname | lower }}.json";
@@ -38,7 +38,7 @@ void {{ sheetname }}ConfigurationTable::Load() {
     {%- endfor %}
 }
 
-std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}ConfigurationTable::GetTable(const uint32_t tableId) {
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId;
@@ -47,7 +47,7 @@ std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}ConfigurationTab
     return { it->second, kSuccess };
 }
 
-std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}ConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };
@@ -57,7 +57,7 @@ std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}ConfigurationTab
 
 {%- for data in datastring %}
     {%- if data and data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL %}
-std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}ConfigurationTable::GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const {
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const {
     const auto it = kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_.find(tableId);
     if (it == kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_.end()) {
         LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId;
