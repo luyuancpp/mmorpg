@@ -3,14 +3,51 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "type_define/warn_on_save_ptr.h"
 #include "proto/table/reward_table.pb.h"
 
-using RewardTableTempPtr = WarnOnSavePtr<const RewardTable>;
+class RewardTableTempPtr  {
+public:
+	explicit RewardTableTempPtr(const RewardTable* ptr) : ptr_(ptr) {}
+
+	// Support pointer-like access
+	const RewardTable* operator->() const { return ptr_; }
+	const RewardTable& operator*()  const { return *ptr_; }
+
+	// Enable usage in boolean expressions
+	explicit operator bool() const { return ptr_ != nullptr; }
+
+	// Enable comparison with nullptr (does NOT trigger deprecation)
+	friend bool operator==(const RewardTableTempPtr& lhs, std::nullptr_t) {
+		return lhs.ptr_ == nullptr;
+	}
+
+	friend bool operator!=(const RewardTableTempPtr& lhs, std::nullptr_t) {
+		return lhs.ptr_ != nullptr;
+	}
+
+	friend bool operator==(std::nullptr_t, const RewardTableTempPtr& rhs) {
+		return rhs.ptr_ == nullptr;
+	}
+
+	friend bool operator!=(std::nullptr_t, const RewardTableTempPtr& rhs) {
+		return rhs.ptr_ != nullptr;
+	}
+
+	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
+	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
+	operator const RewardTable* () const { return ptr_; }
+
+	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
+	const RewardTable* Get() const { return ptr_; }
+
+private:
+	const RewardTable* ptr_;
+};
+
 
 class RewardTableManager {
 public:
-    using KeyValueDataType = std::unordered_map<uint32_t, const RewardTableTempPtr>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const RewardTable*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;

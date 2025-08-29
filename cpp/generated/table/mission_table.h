@@ -3,14 +3,51 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "type_define/warn_on_save_ptr.h"
 #include "proto/table/mission_table.pb.h"
 
-using MissionTableTempPtr = WarnOnSavePtr<const MissionTable>;
+class MissionTableTempPtr  {
+public:
+	explicit MissionTableTempPtr(const MissionTable* ptr) : ptr_(ptr) {}
+
+	// Support pointer-like access
+	const MissionTable* operator->() const { return ptr_; }
+	const MissionTable& operator*()  const { return *ptr_; }
+
+	// Enable usage in boolean expressions
+	explicit operator bool() const { return ptr_ != nullptr; }
+
+	// Enable comparison with nullptr (does NOT trigger deprecation)
+	friend bool operator==(const MissionTableTempPtr& lhs, std::nullptr_t) {
+		return lhs.ptr_ == nullptr;
+	}
+
+	friend bool operator!=(const MissionTableTempPtr& lhs, std::nullptr_t) {
+		return lhs.ptr_ != nullptr;
+	}
+
+	friend bool operator==(std::nullptr_t, const MissionTableTempPtr& rhs) {
+		return rhs.ptr_ == nullptr;
+	}
+
+	friend bool operator!=(std::nullptr_t, const MissionTableTempPtr& rhs) {
+		return rhs.ptr_ != nullptr;
+	}
+
+	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
+	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
+	operator const MissionTable* () const { return ptr_; }
+
+	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
+	const MissionTable* Get() const { return ptr_; }
+
+private:
+	const MissionTable* ptr_;
+};
+
 
 class MissionTableManager {
 public:
-    using KeyValueDataType = std::unordered_map<uint32_t, const MissionTableTempPtr>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const MissionTable*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;

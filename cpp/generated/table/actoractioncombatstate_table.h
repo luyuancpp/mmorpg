@@ -3,14 +3,51 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "type_define/warn_on_save_ptr.h"
 #include "proto/table/actoractioncombatstate_table.pb.h"
 
-using ActorActionCombatStateTableTempPtr = WarnOnSavePtr<const ActorActionCombatStateTable>;
+class ActorActionCombatStateTableTempPtr  {
+public:
+	explicit ActorActionCombatStateTableTempPtr(const ActorActionCombatStateTable* ptr) : ptr_(ptr) {}
+
+	// Support pointer-like access
+	const ActorActionCombatStateTable* operator->() const { return ptr_; }
+	const ActorActionCombatStateTable& operator*()  const { return *ptr_; }
+
+	// Enable usage in boolean expressions
+	explicit operator bool() const { return ptr_ != nullptr; }
+
+	// Enable comparison with nullptr (does NOT trigger deprecation)
+	friend bool operator==(const ActorActionCombatStateTableTempPtr& lhs, std::nullptr_t) {
+		return lhs.ptr_ == nullptr;
+	}
+
+	friend bool operator!=(const ActorActionCombatStateTableTempPtr& lhs, std::nullptr_t) {
+		return lhs.ptr_ != nullptr;
+	}
+
+	friend bool operator==(std::nullptr_t, const ActorActionCombatStateTableTempPtr& rhs) {
+		return rhs.ptr_ == nullptr;
+	}
+
+	friend bool operator!=(std::nullptr_t, const ActorActionCombatStateTableTempPtr& rhs) {
+		return rhs.ptr_ != nullptr;
+	}
+
+	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
+	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
+	operator const ActorActionCombatStateTable* () const { return ptr_; }
+
+	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
+	const ActorActionCombatStateTable* Get() const { return ptr_; }
+
+private:
+	const ActorActionCombatStateTable* ptr_;
+};
+
 
 class ActorActionCombatStateTableManager {
 public:
-    using KeyValueDataType = std::unordered_map<uint32_t, const ActorActionCombatStateTableTempPtr>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const ActorActionCombatStateTable*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
