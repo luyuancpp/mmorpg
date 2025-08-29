@@ -9,6 +9,11 @@ class {{ sheetname }}TableTempPtr  {
 public:
 	explicit {{ sheetname }}TableTempPtr(const {{ sheetname }}Table* ptr) : ptr_(ptr) {}
 
+    {{ sheetname }}TableTempPtr(const {{ sheetname }}TableTempPtr&) = delete;
+    {{ sheetname }}TableTempPtr& operator=(const {{ sheetname }}TableTempPtr&) = delete;
+    {{ sheetname }}TableTempPtr({{ sheetname }}TableTempPtr&&) = delete;
+    {{ sheetname }}TableTempPtr& operator=({{ sheetname }}TableTempPtr&&) = delete;
+
 	// Support pointer-like access
 	const {{ sheetname }}Table* operator->() const { return ptr_; }
 	const {{ sheetname }}Table& operator*()  const { return *ptr_; }
@@ -59,8 +64,8 @@ public:
 
     const {{ sheetname }}TabledData& All() const { return data_; }
 
-    std::pair<const {{ sheetname }}TableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const {{ sheetname }}TableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<{{ sheetname }}TableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<{{ sheetname }}TableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -75,7 +80,7 @@ public:
     {% for data in datastring if data %}
         {%- if data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL -%}
             {%- set column_map_type = 'unordered_map' if data[generate_common.COL_OBJ_TABLE_MULTI] != generate_common.MULTI_TABLE_KEY_CELL else 'unordered_multimap' %}
-    std::pair<const {{ sheetname }}TableTempPtr, uint32_t> GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const;
+    std::pair< {{ sheetname }}TableTempPtr, uint32_t> GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const;
     const std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}TableTempPtr>& Get{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data() const { return kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_; }
         {% endif %}
         {%- if data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not none -%}
