@@ -205,6 +205,6 @@ void LoadTablesAsync() {
     }
 }
 
-void OnConfigLoadSuccess(const LoadSuccessCallback& callback){
+void OnTablesLoadSuccess(const LoadSuccessCallback& callback){
 loadSuccessCallback = callback;
 }
