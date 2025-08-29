@@ -2,7 +2,7 @@
 #include <chrono>
 #include <thread>
 #include <gtest/gtest.h>
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 
 TEST(MessageLimiterTest, AllowInitialRequests) {
     MessageLimiter limiter(5, 60);  // 每 60 秒允许 5 次

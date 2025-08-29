@@ -1,5 +1,5 @@
 #include "registration_manager.h"
-#include <proto/table/common_error_tip.pb.h>
+#include <proto/table/tip/common_error_tip.pb.h>
 #include <time/comp/timer_task_comp.h>
 #include "node/system/node/node_util.h"
 #include <service_info/game_service_service_info.h>

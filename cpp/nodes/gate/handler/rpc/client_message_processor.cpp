@@ -8,7 +8,7 @@
 
 #include "gate_node.h"
 #include "grpc_client/proto/login/login_service_grpc_client.h"
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 #include "service_info/service_info.h"
 #include "service_info/centre_service_service_info.h"
 #include "service_info/game_service_service_info.h"

@@ -4,7 +4,7 @@
 
 #include "table/item_table.h"
 #include "bag/bag_system.h"
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 #include "proto/table/bag_error_tip.pb.h"
 
 decltype(auto) GetItemTable(int32_t itemTableId) {

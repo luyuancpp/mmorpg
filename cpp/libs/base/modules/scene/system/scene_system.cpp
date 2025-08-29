@@ -5,7 +5,7 @@
 #include "node/constants/node_constants.h"
 
 #include "proto/table/scene_error_tip.pb.h"
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "proto/logic/event/scene_event.pb.h"
 #include "proto/common/node.pb.h"

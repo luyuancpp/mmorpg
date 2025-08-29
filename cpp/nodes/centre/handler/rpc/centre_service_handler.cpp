@@ -3,7 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "centre_node.h"
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 #include "table/mainscene_table.h"
 #include "session/system/session_system.h"
 #include "rpc/player_service.h"

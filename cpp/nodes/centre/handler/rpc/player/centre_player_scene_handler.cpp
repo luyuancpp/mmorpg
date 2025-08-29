@@ -6,7 +6,7 @@
 
 #include "scene/system/scene_system.h"
 #include "proto/table/scene_error_tip.pb.h"
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 #include "centre_node.h"
 #include "scene/system/player_scene_system.h"
 #include "player/system/player_tip_system.h"

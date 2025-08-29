@@ -15,7 +15,7 @@
 #include "proto/logic/event/combat_event.pb.h"
 #include "proto/logic/event/skill_event.pb.h"
 #include "macros/return_define.h"
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 #include "proto/table/skill_error_tip.pb.h"
 #include "proto/logic/component/buff_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"

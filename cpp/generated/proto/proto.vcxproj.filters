@@ -279,25 +279,13 @@
     <ClCompile Include="table\tip\team_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="table\ability_operator.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="table\actor_action_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="table\actoractioncombatstate_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="table\actoractionstate_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="table\bag_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="table\bag_operator.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="table\buff_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="table\buff_table.pb.cc">
@@ -306,19 +294,10 @@
     <ClCompile Include="table\class_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="table\common_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="table\condition_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="table\cooldown_table.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="table\cross_server_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="table\entity_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="table\globalvariable_table.pb.cc">
@@ -327,16 +306,10 @@
     <ClCompile Include="table\item_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="table\login_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="table\mainscene_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="table\messagelimiter_table.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="table\mission_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="table\mission_table.pb.cc">
@@ -345,7 +318,22 @@
     <ClCompile Include="table\monsterbase_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="table\mount_error_tip.pb.cc">
+    <ClCompile Include="table\scene_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="table\skill_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="table\skillpermission_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="table\test_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="table\testmultikey_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="table\reward_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -614,25 +602,13 @@
     <ClInclude Include="table\tip\team_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="table\ability_operator.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="table\actor_action_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="table\actoractioncombatstate_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="table\actoractionstate_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="table\bag_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="table\bag_operator.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="table\buff_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="table\buff_table.pb.h">
@@ -641,19 +617,10 @@
     <ClInclude Include="table\class_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="table\common_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="table\condition_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="table\cooldown_table.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="table\cross_server_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="table\entity_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="table\globalvariable_table.pb.h">
@@ -662,16 +629,10 @@
     <ClInclude Include="table\item_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="table\login_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="table\mainscene_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="table\messagelimiter_table.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="table\mission_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="table\mission_table.pb.h">
@@ -680,7 +641,22 @@
     <ClInclude Include="table\monsterbase_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="table\mount_error_tip.pb.h">
+    <ClInclude Include="table\reward_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="table\scene_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="table\skill_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="table\skillpermission_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="table\test_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="table\testmultikey_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -10,7 +10,7 @@ import shutil
 import logging
 
 # Configure logging
-logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def read_hash_from_md5_file(md5_filename):
@@ -212,18 +212,31 @@ def main():
     elif operation == 'md5copy':
         destination = dirs[1]
         for filename in os.listdir(dirs[0]):
-            filename = dirs[0] + filename
+            source_file = os.path.join(dirs[0], filename)
             if not os.path.exists(destination):
-                    os.makedirs(destination)
-            dfilename = filename
-            destinationfilename = destination + dfilename.replace(dirs[0], "")
-            if not os.path.exists(destinationfilename):
-                    shutil.copyfile(filename, destinationfilename)
+                os.makedirs(destination)
+                logger.info(f"Created destination directory: {destination}")
+
+            dest_file = os.path.join(destination, filename)
+
+            try:
+                if not os.path.exists(dest_file):
+                    shutil.copyfile(source_file, dest_file)
+                    logger.info(f"Copied new file: {source_file} -> {dest_file}")
                     continue
-            filemd5 = generate_md5_hash(filename)
-            destinationdmd5 = generate_md5_hash(destinationfilename)
-            if destinationdmd5 != filemd5:
-                shutil.copyfile(filename, destinationfilename)
+
+                source_md5 = generate_md5_hash(source_file)
+                dest_md5 = generate_md5_hash(dest_file)
+
+                if source_md5 != dest_md5:
+                    shutil.copyfile(source_file, dest_file)
+                    logger.info(f"Overwrote file due to mismatch: {source_file} -> {dest_file}")
+                else:
+                    logger.info(f"Skipped (identical): {source_file}")
+
+            except Exception as e:
+                logger.error(f"Error copying {source_file} to {dest_file}: {e}")
+
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,6 @@
 ﻿#include "message_limiter.h"
 
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 #include "table/messagelimiter_table.h"
 #include "time/system/time_system.h"
 
