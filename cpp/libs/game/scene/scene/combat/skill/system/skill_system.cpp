@@ -588,13 +588,13 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
 
     // 获取施法者的等级组件并设置伤害参数
     auto& levelComponent = tlsRegistryManager.actorRegistry.get<LevelPbComponent>(casterEntity);
-    SkillConfigurationTable::Instance().SetDamageParam({ static_cast<double>(levelComponent.level()) });
+    SkillTableManager::Instance().SetDamageParam({ static_cast<double>(levelComponent.level()) });
 
     // 设置攻击者 ID
     damageEvent.set_attacker_id(entt::to_integral(casterEntity));
 
     // 计算技能的基础伤害
-    double baseDamage = SkillConfigurationTable::Instance().GetDamage(skillContentIt->second->skilltableid());
+    double baseDamage = SkillTableManager::Instance().GetDamage(skillContentIt->second->skilltableid());
 
     // 计算最终伤害
     double finalDamage = CalculateFinalDamage(casterEntity, targetEntity, baseDamage);

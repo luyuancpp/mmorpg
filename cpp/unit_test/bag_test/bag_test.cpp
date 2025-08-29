@@ -8,7 +8,7 @@
 #include "proto/table/tip/bag_error_tip.pb.h"
 
 decltype(auto) GetItemTable(int32_t itemTableId) {
-    return ItemConfigurationTable::Instance().GetTable(itemTableId);
+    return ItemTableManager::Instance().GetTable(itemTableId);
 }
 
 TEST(BagTest, NullItem)
@@ -660,7 +660,7 @@ TEST(BagTest, NeatenCanNotStack)
 
 int main(int argc, char** argv)
 {
-    ItemConfigurationTable::Instance().Load();
+    ItemTableManager::Instance().Load();
     testing::InitGoogleTest();
     return RUN_ALL_TESTS();
 }
