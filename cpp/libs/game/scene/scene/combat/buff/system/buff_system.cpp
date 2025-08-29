@@ -26,7 +26,7 @@ uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
 }
 
 // 目标免疫判定
-bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTableParam)
+bool IsTargetImmune(const BuffListComp& buffList, const BuffTableTempPtr& buffTableParam)
 {
     for (const auto& buff : buffList | std::views::values) {
         FetchAndValidateBuffTable(buff.buffPb.buff_table_id());
@@ -48,7 +48,7 @@ void BuffSystem::InitializeActorComponents(entt::entity entity)
 }
 
 // 创建 Buff 数据指针
-BuffMessagePtr CreateBuffDataPtr(const BuffTable* buffTable) {
+BuffMessagePtr CreateBuffDataPtr(const BuffTableTempPtr& buffTable) {
     switch (buffTable->bufftype()) {
     case kBuffTypeNoDamageOrSkillHitInLastSeconds:
         return std::make_shared<BuffNoDamageOrSkillHitInLastSecondsPbComp>();
@@ -246,7 +246,7 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
     return kSuccess;
 }
 
-void BuffSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable)
+void BuffSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTableTempPtr& buffTable)
 {
     if (BuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
         return;
@@ -262,7 +262,7 @@ void BuffSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTabl
 
 void BuffSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffComp& buffComp) {}
 
-void BuffSystem::OnBuffRemove(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
+void BuffSystem::OnBuffRemove(const entt::entity parent, BuffComp& buffComp, const BuffTableTempPtr& buffTable)
 {
     if (ModifierBuffImplSystem::OnBuffRemove(parent, buffComp, buffTable)) {
         return;
@@ -272,7 +272,7 @@ void BuffSystem::OnBuffRemove(const entt::entity parent, BuffComp& buffComp, con
     }
 }
 
-void BuffSystem::OnBuffDestroy(entt::entity parent, const uint64_t buffId, const BuffTable* buffTable)
+void BuffSystem::OnBuffDestroy(entt::entity parent, const uint64_t buffId, const BuffTableTempPtr& buffTable)
 {
     if (BuffImplSystem::OnBuffDestroy(parent, buffId, buffTable)) {
         return;
@@ -386,7 +386,7 @@ void BuffSystem::OnSkillHit(const entt::entity casterEntity, const entt::entity 
 }
 
 bool BuffSystem::AddSubBuffs(entt::entity parent,
-    const BuffTable* buffTable,
+    const BuffTableTempPtr& buffTable,
     BuffComp& buffComp)
 {
     if (nullptr == buffTable)
@@ -420,7 +420,7 @@ bool BuffSystem::AddSubBuffs(entt::entity parent,
 }
 
 void BuffSystem::AddTargetSubBuffs(const entt::entity targetEntity,
-    const BuffTable* buffTable,
+    const BuffTableTempPtr& buffTable,
     const SkillContextPtrComp& abilityContext)
 {
     if (nullptr == buffTable)
@@ -435,7 +435,7 @@ void BuffSystem::AddTargetSubBuffs(const entt::entity targetEntity,
 
 // 添加子 Buff，不进行已添加检查
 void BuffSystem::AddSubBuffsWithoutCheck(entt::entity parent,
-    const BuffTable* buffTable,
+    const BuffTableTempPtr& buffTable,
     BuffComp& buffComp)
 {
     // 直接添加子 Buff，不检查是否已添加过
@@ -453,7 +453,7 @@ void BuffSystem::AddSubBuffsWithoutCheck(entt::entity parent,
     }
 }
 
-bool CanApplyMoreTicks(const BuffPeriodicBuffPbComponent& periodicBuff, const BuffTable* buffTable) {
+bool CanApplyMoreTicks(const BuffPeriodicBuffPbComponent& periodicBuff, const BuffTableTempPtr& buffTable) {
     return (buffTable->intervalcount() <= 0) || (periodicBuff.ticks_done() + 1 <= buffTable->intervalcount());
 }
 

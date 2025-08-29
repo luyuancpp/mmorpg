@@ -3,11 +3,14 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
+#include "type_define/warn_on_save_ptr.h"
 #include "proto/table/testmultikey_table.pb.h"
+
+using TestMultiKeyTableTempPtr = WarnOnSavePtr<const TestMultiKeyTable>;
 
 class TestMultiKeyTableManager {
 public:
-    using KeyValueDataType = std::unordered_map<uint32_t, const TestMultiKeyTable*>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const TestMultiKeyTableTempPtr>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
@@ -19,8 +22,8 @@ public:
 
     const TestMultiKeyTabledData& All() const { return data_; }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const TestMultiKeyTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const TestMultiKeyTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const TestMultiKeyTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -33,23 +36,23 @@ public:
     void LoadSuccess(){if (loadSuccessCallback_){loadSuccessCallback_();}}
 
     
-    std::pair<const TestMultiKeyTable*, uint32_t> GetByStringkey(const std::string& tableId) const;
-    const std::unordered_map<std::string, const TestMultiKeyTable*>& GetStringkeyData() const { return kv_stringkeydata_; }
+    std::pair<const TestMultiKeyTableTempPtr, uint32_t> GetByStringkey(const std::string& tableId) const;
+    const std::unordered_map<std::string, const TestMultiKeyTableTempPtr>& GetStringkeyData() const { return kv_stringkeydata_; }
         
-    std::pair<const TestMultiKeyTable*, uint32_t> GetByUint32key(uint32_t tableId) const;
-    const std::unordered_map<uint32_t, const TestMultiKeyTable*>& GetUint32keyData() const { return kv_uint32keydata_; }
+    std::pair<const TestMultiKeyTableTempPtr, uint32_t> GetByUint32key(uint32_t tableId) const;
+    const std::unordered_map<uint32_t, const TestMultiKeyTableTempPtr>& GetUint32keyData() const { return kv_uint32keydata_; }
         
-    std::pair<const TestMultiKeyTable*, uint32_t> GetByIn32key(int32_t tableId) const;
-    const std::unordered_map<int32_t, const TestMultiKeyTable*>& GetIn32keyData() const { return kv_in32keydata_; }
+    std::pair<const TestMultiKeyTableTempPtr, uint32_t> GetByIn32key(int32_t tableId) const;
+    const std::unordered_map<int32_t, const TestMultiKeyTableTempPtr>& GetIn32keyData() const { return kv_in32keydata_; }
         
-    std::pair<const TestMultiKeyTable*, uint32_t> GetByMstringkey(const std::string& tableId) const;
-    const std::unordered_multimap<std::string, const TestMultiKeyTable*>& GetMstringkeyData() const { return kv_mstringkeydata_; }
+    std::pair<const TestMultiKeyTableTempPtr, uint32_t> GetByMstringkey(const std::string& tableId) const;
+    const std::unordered_multimap<std::string, const TestMultiKeyTableTempPtr>& GetMstringkeyData() const { return kv_mstringkeydata_; }
         
-    std::pair<const TestMultiKeyTable*, uint32_t> GetByMuint32key(uint32_t tableId) const;
-    const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetMuint32keyData() const { return kv_muint32keydata_; }
+    std::pair<const TestMultiKeyTableTempPtr, uint32_t> GetByMuint32key(uint32_t tableId) const;
+    const std::unordered_multimap<uint32_t, const TestMultiKeyTableTempPtr>& GetMuint32keyData() const { return kv_muint32keydata_; }
         
-    std::pair<const TestMultiKeyTable*, uint32_t> GetByMin32key(int32_t tableId) const;
-    const std::unordered_multimap<int32_t, const TestMultiKeyTable*>& GetMin32keyData() const { return kv_min32keydata_; }
+    std::pair<const TestMultiKeyTableTempPtr, uint32_t> GetByMin32key(int32_t tableId) const;
+    const std::unordered_multimap<int32_t, const TestMultiKeyTableTempPtr>& GetMin32keyData() const { return kv_min32keydata_; }
         
 
 private:
@@ -57,12 +60,12 @@ private:
     TestMultiKeyTabledData data_;
     KeyValueDataType kv_data_;
     
-    std::unordered_map<std::string, const TestMultiKeyTable*> kv_stringkeydata_;
-    std::unordered_map<uint32_t, const TestMultiKeyTable*> kv_uint32keydata_;
-    std::unordered_map<int32_t, const TestMultiKeyTable*> kv_in32keydata_;
-    std::unordered_multimap<std::string, const TestMultiKeyTable*> kv_mstringkeydata_;
-    std::unordered_multimap<uint32_t, const TestMultiKeyTable*> kv_muint32keydata_;
-    std::unordered_multimap<int32_t, const TestMultiKeyTable*> kv_min32keydata_;
+    std::unordered_map<std::string, const TestMultiKeyTableTempPtr> kv_stringkeydata_;
+    std::unordered_map<uint32_t, const TestMultiKeyTableTempPtr> kv_uint32keydata_;
+    std::unordered_map<int32_t, const TestMultiKeyTableTempPtr> kv_in32keydata_;
+    std::unordered_multimap<std::string, const TestMultiKeyTableTempPtr> kv_mstringkeydata_;
+    std::unordered_multimap<uint32_t, const TestMultiKeyTableTempPtr> kv_muint32keydata_;
+    std::unordered_multimap<int32_t, const TestMultiKeyTableTempPtr> kv_min32keydata_;
 };
 
 inline const TestMultiKeyTabledData& GetTestMultiKeyAllTable() {

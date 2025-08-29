@@ -17,7 +17,7 @@
 class BuffImplSystem {
 public:
     // 定期调用逻辑 (每帧或定时触发)
-    static bool OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable) {
+    static bool OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTableTempPtr& buffTable) {
         if (!buffTable) return false;
 
         switch (buffTable->bufftype()) {
@@ -29,7 +29,7 @@ public:
     }
 
     // Buff开始时的逻辑
-    static bool OnBuffStart(const entt::entity parent, const BuffComp& buffComp, const BuffTable* buffTable) {
+    static bool OnBuffStart(const entt::entity parent, const BuffComp& buffComp, const BuffTableTempPtr& buffTable) {
         if (!buffTable) return false;
 
         switch (buffTable->bufftype()) {
@@ -41,7 +41,7 @@ public:
     }
 
     // Buff销毁时的逻辑
-    static bool OnBuffDestroy(const entt::entity parent, uint64_t buffId, const BuffTable* buffTable) {
+    static bool OnBuffDestroy(const entt::entity parent, uint64_t buffId, const BuffTableTempPtr& buffTable) {
         if (!buffTable) return false;
 
         switch (buffTable->bufftype()) {
@@ -113,7 +113,7 @@ private:
     static bool HandleIntervalNoDamageOrSkillHit(
         const entt::entity parent,
         BuffComp& buffComp,
-        const BuffTable* buffTable
+        const BuffTableTempPtr& buffTable
     ) {
         if (!buffTable || buffTable->nodamageorskillhitinlastseconds() <= 0) return false;
 
@@ -157,7 +157,7 @@ private:
     // 处理下一次基础攻击的 Buff 逻辑
     static void ApplyNextBasicAttackBuff(
         BuffComp& buffComp,
-        const BuffTable* buffTable,
+		const BuffTableTempPtr& buffTable,
         DamageEventPbComponent& damageEvent,
         UInt64Set& buffsToRemoveCaster,
         const entt::entity casterEntity,

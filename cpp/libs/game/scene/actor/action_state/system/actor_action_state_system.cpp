@@ -13,7 +13,7 @@
 
 namespace {
     // 检查某个动作是否与当前状态冲突，若冲突，返回对应的错误码
-    uint32_t CheckForStateConflict(const ActorActionStateTable* actorActionStateTable, uint32_t actorState) {
+    uint32_t CheckForStateConflict(const ActorActionStateTableTempPtr& actorActionStateTable, uint32_t actorState) {
         if (actorState >= static_cast<uint32_t>(actorActionStateTable->state_size())) {
             return kSuccess;  // 如果状态无效，返回成功
         }
@@ -26,7 +26,7 @@ namespace {
     }
 
     // 中断当前状态并执行该动作
-    bool InterruptAndPerformAction(const ActorActionStateTable* actorActionStateTable, uint32_t actorState, entt::entity actorEntity) {
+    bool InterruptAndPerformAction(const ActorActionStateTableTempPtr& actorActionStateTable, uint32_t actorState, entt::entity actorEntity) {
         if (actorState >= static_cast<uint32_t>(actorActionStateTable->state_size())) {
             return false;  // 无效状态，返回失败
         }

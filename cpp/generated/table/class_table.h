@@ -3,11 +3,14 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
+#include "type_define/warn_on_save_ptr.h"
 #include "proto/table/class_table.pb.h"
+
+using ClassTableTempPtr = WarnOnSavePtr<const ClassTable>;
 
 class ClassTableManager {
 public:
-    using KeyValueDataType = std::unordered_map<uint32_t, const ClassTable*>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const ClassTableTempPtr>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
@@ -19,8 +22,8 @@ public:
 
     const ClassTabledData& All() const { return data_; }
 
-    std::pair<const ClassTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const ClassTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const ClassTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const ClassTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

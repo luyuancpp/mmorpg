@@ -338,17 +338,17 @@ bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& condition
 }
 
 // Update mission progress if conditions match the event
-bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, int index, const ConditionTable* conditionRow) {
+bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, int index, const ConditionTableTempPtr& conditionTable) {
 	// Retrieve old progress value
 	const auto oldProgress = mission.progress(index);
 
 	// Check if condition is already completed
-	if (IsConditionFulfilled(conditionRow->id(), oldProgress)) {
+	if (IsConditionFulfilled(conditionTable->id(), oldProgress)) {
 		return false;
 	}
 
 	// Check if condition type matches event type
-	if (conditionEvent.condition_type() != conditionRow->condition_type()) {
+	if (conditionEvent.condition_type() != conditionTable->condition_type()) {
 		return false;
 	}
 
@@ -376,10 +376,10 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent
 		};
 
 	// Count matching conditions for up to four condition slots
-	countMatchingConditions(conditionRow->condition1(), 0);
-	countMatchingConditions(conditionRow->condition2(), 1);
-	countMatchingConditions(conditionRow->condition3(), 2);
-	countMatchingConditions(conditionRow->condition4(), 3);
+	countMatchingConditions(conditionTable->condition1(), 0);
+	countMatchingConditions(conditionTable->condition2(), 1);
+	countMatchingConditions(conditionTable->condition3(), 2);
+	countMatchingConditions(conditionTable->condition4(), 3);
 
 	// Ensure all expected conditions match
 	if (configConditionCount > 0 && matchConditionCount != configConditionCount) {

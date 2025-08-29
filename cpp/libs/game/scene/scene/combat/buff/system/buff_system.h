@@ -2,6 +2,7 @@
 
 #include "scene/combat/buff/comp/buff_comp.h"
 #include "base/core/type_define/type_define.h"
+#include "table/buff_table.h"
 
 class BuffTable;
 class SkillExecutedEvent;
@@ -52,17 +53,17 @@ public:
     static uint32_t OnBuffAwake(entt::entity parent, uint32_t buffTableId);
 
     //当Buff生效时（加入到Buff容器后），我们提供给策划一个抽象接口OnBuffStart，由策划配置具体效果。
-    static void OnBuffStart(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable);
+    static void OnBuffStart(entt::entity parent, BuffComp& buffComp, const BuffTableTempPtr& buffTable);
 
     //当Buff添加时存在相同类型且Caster相等的时候，Buff执行刷新流程（更新Buff层数，等级，持续时间等数据）。
     // 我们提供给策划一个抽象接口OnBuffRefresh，由策划配置具体效果。
     static void OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffComp& buffComp);
 
     //当Buff销毁前（还未从Buff容器中移除），我们提供给策划一个抽象接口OnBuffRemove，由策划配置具体效果。
-    static void OnBuffRemove(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable);
+    static void OnBuffRemove(entt::entity parent, BuffComp& buffComp, const BuffTableTempPtr& buffTable);
 
     //当Buff销毁后（已从Buff容器中移除），我们提供给策划一个抽象接口OnBuffDestroy，由策划配置具体效果。
-    static void OnBuffDestroy(entt::entity parent, const uint64_t buffId, const BuffTable* buffTable);
+    static void OnBuffDestroy(entt::entity parent, const uint64_t buffId, const BuffTableTempPtr& buffTable);
 
     //Buff还可以创建定时器，以触发间隔持续效果。通过策划配置时调用StartIntervalThink操作，
     // 提供OnIntervalThink抽象接口供策划配置具体效果。
@@ -99,19 +100,19 @@ public:
 
     static bool AddSubBuffs(
         entt::entity parent,
-        const BuffTable* buffTable,
+        const BuffTableTempPtr& buffTable,
         BuffComp& buffComp  // 根据实际类型填写
     );
 
     static void AddTargetSubBuffs(
         entt::entity targetEntity,
-        const BuffTable* buffTable,
+        const BuffTableTempPtr& buffTable,
         const SkillContextPtrComp& abilityContext
     );
 
     static void AddSubBuffsWithoutCheck(
         entt::entity parent,
-        const BuffTable* buffTable,
+        const BuffTableTempPtr& buffTable,
         BuffComp& buffComp  // 根据实际类型填写
     );
 };

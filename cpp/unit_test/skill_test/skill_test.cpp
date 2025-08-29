@@ -89,7 +89,7 @@ TEST_F(SkillUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
     CoolDownTimeMillisecondSystem::Reset(cooldownTimeComp);
     cooldownList.mutable_cooldown_list()->emplace(1, cooldownTimeComp);
 
-    uint32_t result = skillUtil->CheckCooldown(caster, tableSkill.get());
+    uint32_t result = skillUtil->CheckCooldown(caster, SkillTableTempPtr(tableSkill.get()));
     EXPECT_EQ(result, kSkillCooldownNotReady);
 }
 
@@ -108,7 +108,7 @@ TEST_F(SkillUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
     auto& cooldownList = tlsRegistryManager.actorRegistry.emplace<CooldownTimeListComp>(caster);
     cooldownList.mutable_cooldown_list()->emplace(1, cooldownTimeComp);
 
-    uint32_t result = skillUtil->CheckCooldown(caster, tableSkill.get());
+    uint32_t result = skillUtil->CheckCooldown(caster, SkillTableTempPtr(tableSkill.get()));
     EXPECT_EQ(result, kSuccess);
 }
 
@@ -121,7 +121,7 @@ TEST_F(SkillUtilTest, HandleCastingTimer_ImmediateSkill_ReturnsOk) {
     EXPECT_CALL(*mockSkillTable, GetSkillTable(_))
         .WillRepeatedly(Return(tableSkill.get()));
 
-    uint32_t result = skillUtil->CheckCasting(caster, tableSkill.get());
+    uint32_t result = skillUtil->CheckCasting(caster, SkillTableTempPtr(tableSkill.get()));
     EXPECT_EQ(result, kSuccess);
 }
 
@@ -134,7 +134,7 @@ TEST_F(SkillUtilTest, HandleRecoveryTimeTimer_ImmediateSkill_ReturnsOk) {
     EXPECT_CALL(*mockSkillTable, GetSkillTable(_))
         .WillRepeatedly(Return(tableSkill.get()));
 
-    uint32_t result = skillUtil->CheckRecovery(caster, tableSkill.get());
+    uint32_t result = skillUtil->CheckRecovery(caster, SkillTableTempPtr(tableSkill.get()));
     EXPECT_EQ(result, kSuccess);
 }
 
@@ -148,7 +148,7 @@ TEST_F(SkillUtilTest, HandleChannelTimeTimer_ImmediateSkill_ReturnsOk) {
     EXPECT_CALL(*mockSkillTable, GetSkillTable(_))
         .WillRepeatedly(Return(tableSkill.get()));
 
-    uint32_t result = skillUtil->CheckChannel(caster, tableSkill.get());
+    uint32_t result = skillUtil->CheckChannel(caster, SkillTableTempPtr(tableSkill.get()));
     EXPECT_EQ(result, kSuccess);
 }
 
@@ -177,7 +177,7 @@ TEST_F(SkillUtilTest, SetupCastingTimer_SetsTimer) {
     EXPECT_CALL(*mockSkillTable, IsSkillOfType(_, kGeneralSkill))
         .WillRepeatedly(Return(true));
 
-    skillUtil->SetupCastingTimer(caster, tableSkill.get(), 2);
+    skillUtil->SetupCastingTimer(caster, SkillTableTempPtr(tableSkill.get()), 2);
 
     auto* castingTimerComp = tlsRegistryManager.actorRegistry.try_get<CastingTimerComp>(caster);
     ASSERT_NE(castingTimerComp, nullptr);  // Check if the component was created

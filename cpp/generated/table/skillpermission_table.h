@@ -3,11 +3,14 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
+#include "type_define/warn_on_save_ptr.h"
 #include "proto/table/skillpermission_table.pb.h"
+
+using SkillPermissionTableTempPtr = WarnOnSavePtr<const SkillPermissionTable>;
 
 class SkillPermissionTableManager {
 public:
-    using KeyValueDataType = std::unordered_map<uint32_t, const SkillPermissionTable*>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const SkillPermissionTableTempPtr>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
@@ -19,8 +22,8 @@ public:
 
     const SkillPermissionTabledData& All() const { return data_; }
 
-    std::pair<const SkillPermissionTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const SkillPermissionTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const SkillPermissionTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const SkillPermissionTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

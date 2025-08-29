@@ -20,19 +20,19 @@ void TestTableManager::Load() {
     }
 }
 
-std::pair<const TestTable*, uint32_t> TestTableManager::GetTable(const uint32_t tableId) {
+std::pair<const TestTableTempPtr, uint32_t> TestTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Test table not found for ID: " << tableId;
-        return { nullptr, kInvalidTableId };
+        return { TestTableTempPtr(nullptr), kInvalidTableId };
     }
-    return { it->second, kSuccess };
+    return { TestTableTempPtr(it->second), kSuccess };
 }
 
-std::pair<const TestTable*, uint32_t> TestTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const TestTableTempPtr, uint32_t> TestTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { nullptr, kInvalidTableId };
+        return { TestTableTempPtr(nullptr), kInvalidTableId };
     }
-    return { it->second, kSuccess };
+    return { TestTableTempPtr(it->second), kSuccess };
 }

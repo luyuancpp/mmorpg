@@ -1,16 +1,18 @@
-﻿template<typename T>
+﻿#pragma once
+
+template<typename T>
 class WarnOnSavePtr {
 public:
 	explicit WarnOnSavePtr(T* ptr) : ptr_(ptr) {}
 
-	// 解引用支持
+	// Support pointer-like access
 	T* operator->() const { return ptr_; }
 	T& operator*()  const { return *ptr_; }
 
-	// ✅ 判断空指针
+	// Enable usage in boolean expressions
 	explicit operator bool() const { return ptr_ != nullptr; }
 
-	// ✅ 支持与 nullptr 比较（不会触发 warning）
+	// Enable comparison with nullptr (does NOT trigger deprecation)
 	friend bool operator==(const WarnOnSavePtr& lhs, std::nullptr_t) {
 		return lhs.ptr_ == nullptr;
 	}
@@ -27,11 +29,11 @@ public:
 		return rhs.ptr_ != nullptr;
 	}
 
-	// 🚨 真正用于保存的隐式转换（触发警告）
-	[[deprecated("🚫 不要保存这个指针，它只在当前作用域有效。热更后使用会导致崩溃。")]]
+	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
+	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
 	operator T* () const { return ptr_; }
 
-	[[deprecated("🚫 不要保存这个指针，它只在当前作用域有效。热更后使用会导致崩溃。")]]
+	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
 	T* Get() const { return ptr_; }
 
 private:

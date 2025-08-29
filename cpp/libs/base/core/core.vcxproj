@@ -240,6 +240,7 @@
     <ClInclude Include="type_alias\player_session_type_alias.h" />
     <ClInclude Include="node\system\zone_utils.h" />
     <ClInclude Include="type_define\type_define.h" />
+    <ClInclude Include="type_define\warn_on_save_ptr.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="network\autogen.bat" />

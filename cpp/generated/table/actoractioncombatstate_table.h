@@ -3,11 +3,14 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
+#include "type_define/warn_on_save_ptr.h"
 #include "proto/table/actoractioncombatstate_table.pb.h"
+
+using ActorActionCombatStateTableTempPtr = WarnOnSavePtr<const ActorActionCombatStateTable>;
 
 class ActorActionCombatStateTableManager {
 public:
-    using KeyValueDataType = std::unordered_map<uint32_t, const ActorActionCombatStateTable*>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const ActorActionCombatStateTableTempPtr>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
@@ -19,8 +22,8 @@ public:
 
     const ActorActionCombatStateTabledData& All() const { return data_; }
 
-    std::pair<const ActorActionCombatStateTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const ActorActionCombatStateTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const ActorActionCombatStateTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const ActorActionCombatStateTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
