@@ -3,14 +3,51 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "type_define/warn_on_save_ptr.h"
 #include "proto/table/buff_table.pb.h"
 
-using BuffTableTempPtr = WarnOnSavePtr<const BuffTable>;
+class BuffTableTempPtr  {
+public:
+	explicit BuffTableTempPtr(const BuffTable* ptr) : ptr_(ptr) {}
+
+	// Support pointer-like access
+	const BuffTable* operator->() const { return ptr_; }
+	const BuffTable& operator*()  const { return *ptr_; }
+
+	// Enable usage in boolean expressions
+	explicit operator bool() const { return ptr_ != nullptr; }
+
+	// Enable comparison with nullptr (does NOT trigger deprecation)
+	friend bool operator==(const BuffTableTempPtr& lhs, std::nullptr_t) {
+		return lhs.ptr_ == nullptr;
+	}
+
+	friend bool operator!=(const BuffTableTempPtr& lhs, std::nullptr_t) {
+		return lhs.ptr_ != nullptr;
+	}
+
+	friend bool operator==(std::nullptr_t, const BuffTableTempPtr& rhs) {
+		return rhs.ptr_ == nullptr;
+	}
+
+	friend bool operator!=(std::nullptr_t, const BuffTableTempPtr& rhs) {
+		return rhs.ptr_ != nullptr;
+	}
+
+	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
+	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
+	operator const BuffTable* () const { return ptr_; }
+
+	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
+	const BuffTable* Get() const { return ptr_; }
+
+private:
+	const BuffTable* ptr_;
+};
+
 
 class BuffTableManager {
 public:
-    using KeyValueDataType = std::unordered_map<uint32_t, const BuffTableTempPtr>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const BuffTable*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
