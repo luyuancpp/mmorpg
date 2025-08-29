@@ -3,7 +3,7 @@
 #include <ranges>
 
 #include "table/actoractionstate_table.h"
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 #include "actor/action_state/constants/actor_state_constants.h"
 #include "base/core/macros/return_define.h"
 #include "proto/logic/component/actor_comp.pb.h"

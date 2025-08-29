@@ -1,7 +1,7 @@
 #include "player_change_scene_system.h"
 
-#include "proto/table/common_error_tip.pb.h"
-#include "proto/table/scene_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
+#include "proto/table/tip/scene_error_tip.pb.h"
 #include "scene/system/scene_system.h"
 
 #include "muduo/base/Logging.h"

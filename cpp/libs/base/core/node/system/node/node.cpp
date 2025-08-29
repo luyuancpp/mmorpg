@@ -17,7 +17,7 @@
 #include "network/process_info.h"
 #include "network/rpc_session.h"
 #include "node/system/node/node_util.h"
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 #include "proto/common/node.pb.h"
 #include "proto/logic/event/node_event.pb.h"
 #include "service_info/centre_service_service_info.h"

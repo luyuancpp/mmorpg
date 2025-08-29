@@ -126,8 +126,8 @@ def generate_all_config():
 
     # 初始化模板引擎
     env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'))
-    header_template = env.get_template("all_config.h.jinja")
-    cpp_template = env.get_template("all_config.cpp.jinja")
+    header_template = env.get_template("all_table.h.jinja")
+    cpp_template = env.get_template("all_table.cpp.jinja")
 
     header_content = header_template.render()
     cpp_content = cpp_template.render(sheetnames=sheetnames, cpucount=cpucount)
@@ -145,8 +145,10 @@ def main():
     with concurrent.futures.ProcessPoolExecutor() as executor:
         executor.map(process_workbook, xlsx_files)
 
-
-
+    # Generate header and implementation files for all configurations
+    header_content, cpp_content = generate_all_config()
+    generate_common.mywrite(header_content, CPP_DIR / "all_table.h")
+    generate_common.mywrite(cpp_content, CPP_DIR / "all_table.cpp")
 
 if __name__ == "__main__":
     main()

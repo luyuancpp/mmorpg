@@ -21,7 +21,7 @@
 #include "proto/db/mysql_database_table.pb.h"
 #include "proto/logic/event/player_migration_event.pb.h"
 #include "node/system/zone_utils.h"
-#include "proto/table/cross_server_error_tip.pb.h"
+#include "proto/table/tip/cross_server_error_tip.pb.h"
 #include "player_tip_system.h"
 #include <base/infra/messaging/kafka/kafka_producer.h>
 #include "threading/player_manager.h"

@@ -7,7 +7,7 @@
 #include "mission/comp/mission_comp.h"
 #include "macros/return_define.h"
 #include "proto/table/mission_error_tip.pb.h"
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"
 #include <threading/dispatcher_manager.h>

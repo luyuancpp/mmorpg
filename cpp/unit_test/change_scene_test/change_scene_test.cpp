@@ -4,7 +4,7 @@
 #include "base/core/type_define/type_define.h"
 
 #include "proto/table/scene_error_tip.pb.h"
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 #include "scene/system/player_change_scene_system.h"
 #include "scene/system/scene_system.h"
 
