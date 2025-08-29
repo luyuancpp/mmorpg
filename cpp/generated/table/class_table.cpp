@@ -5,7 +5,7 @@
 
 std::string GetConfigDir();
 
-void ClassConfigurationTable::Load() {
+void ClassTableManager::Load() {
     data_.Clear();
 
     std::string path = GetConfigDir() + "class.json";
@@ -20,7 +20,7 @@ void ClassConfigurationTable::Load() {
     }
 }
 
-std::pair<const ClassTable*, uint32_t> ClassConfigurationTable::GetTable(const uint32_t tableId) {
+std::pair<const ClassTable*, uint32_t> ClassTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Class table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const ClassTable*, uint32_t> ClassConfigurationTable::GetTable(const u
     return { it->second, kSuccess };
 }
 
-std::pair<const ClassTable*, uint32_t> ClassConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const ClassTable*, uint32_t> ClassTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };

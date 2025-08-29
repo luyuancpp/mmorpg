@@ -5,7 +5,7 @@
 
 std::string GetConfigDir();
 
-void MessageLimiterConfigurationTable::Load() {
+void MessageLimiterTableManager::Load() {
     data_.Clear();
 
     std::string path = GetConfigDir() + "messagelimiter.json";
@@ -20,7 +20,7 @@ void MessageLimiterConfigurationTable::Load() {
     }
 }
 
-std::pair<const MessageLimiterTable*, uint32_t> MessageLimiterConfigurationTable::GetTable(const uint32_t tableId) {
+std::pair<const MessageLimiterTable*, uint32_t> MessageLimiterTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "MessageLimiter table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const MessageLimiterTable*, uint32_t> MessageLimiterConfigurationTable
     return { it->second, kSuccess };
 }
 
-std::pair<const MessageLimiterTable*, uint32_t> MessageLimiterConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const MessageLimiterTable*, uint32_t> MessageLimiterTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };

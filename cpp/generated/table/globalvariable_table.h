@@ -5,15 +5,15 @@
 #include "muduo/base/Logging.h"
 #include "proto/table/globalvariable_table.pb.h"
 
-class GlobalVariableConfigurationTable {
+class GlobalVariableTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const GlobalVariableTable*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
-    static GlobalVariableConfigurationTable& Instance() {
-        static GlobalVariableConfigurationTable instance;
+    static GlobalVariableTableManager& Instance() {
+        static GlobalVariableTableManager instance;
         return instance;
     }
 
@@ -42,29 +42,29 @@ private:
 };
 
 inline const GlobalVariableTabledData& GetGlobalVariableAllTable() {
-    return GlobalVariableConfigurationTable::Instance().All();
+    return GlobalVariableTableManager::Instance().All();
 }
 
 #define FetchAndValidateGlobalVariableTable(tableId) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().GetTable(tableId); \
     do { if (!( globalVariableTable )) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomGlobalVariableTable(prefix, tableId) \
-    const auto [prefix##GlobalVariableTable, prefix##fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(tableId); \
+    const auto [prefix##GlobalVariableTable, prefix##fetchResult] = GlobalVariableTableManager::Instance().GetTable(tableId); \
     do { if (!(prefix##GlobalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchGlobalVariableTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().GetTable(tableId); \
     do { if (!( globalVariableTable )) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchGlobalVariableTableOrReturnVoid(tableId) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().GetTable(tableId); \
     do { if (!( globalVariableTable )) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchGlobalVariableTableOrContinue(tableId) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().GetTable(tableId); \
     do { if (!( globalVariableTable )) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchGlobalVariableTableOrReturnFalse(tableId) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().GetTable(tableId); \
     do { if (!( globalVariableTable )) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return false; } } while(0)

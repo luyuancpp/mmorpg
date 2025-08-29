@@ -5,15 +5,15 @@
 #include "muduo/base/Logging.h"
 #include "proto/table/actoractionstate_table.pb.h"
 
-class ActorActionStateConfigurationTable {
+class ActorActionStateTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const ActorActionStateTable*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
-    static ActorActionStateConfigurationTable& Instance() {
-        static ActorActionStateConfigurationTable instance;
+    static ActorActionStateTableManager& Instance() {
+        static ActorActionStateTableManager instance;
         return instance;
     }
 
@@ -42,29 +42,29 @@ private:
 };
 
 inline const ActorActionStateTabledData& GetActorActionStateAllTable() {
-    return ActorActionStateConfigurationTable::Instance().All();
+    return ActorActionStateTableManager::Instance().All();
 }
 
 #define FetchAndValidateActorActionStateTable(tableId) \
-    const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
+    const auto [actorActionStateTable, fetchResult] = ActorActionStateTableManager::Instance().GetTable(tableId); \
     do { if (!( actorActionStateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomActorActionStateTable(prefix, tableId) \
-    const auto [prefix##ActorActionStateTable, prefix##fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
+    const auto [prefix##ActorActionStateTable, prefix##fetchResult] = ActorActionStateTableManager::Instance().GetTable(tableId); \
     do { if (!(prefix##ActorActionStateTable)) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchActorActionStateTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
+    const auto [actorActionStateTable, fetchResult] = ActorActionStateTableManager::Instance().GetTable(tableId); \
     do { if (!( actorActionStateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchActorActionStateTableOrReturnVoid(tableId) \
-    const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
+    const auto [actorActionStateTable, fetchResult] = ActorActionStateTableManager::Instance().GetTable(tableId); \
     do { if (!( actorActionStateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchActorActionStateTableOrContinue(tableId) \
-    const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
+    const auto [actorActionStateTable, fetchResult] = ActorActionStateTableManager::Instance().GetTable(tableId); \
     do { if (!( actorActionStateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchActorActionStateTableOrReturnFalse(tableId) \
-    const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(tableId); \
+    const auto [actorActionStateTable, fetchResult] = ActorActionStateTableManager::Instance().GetTable(tableId); \
     do { if (!( actorActionStateTable )) { LOG_ERROR << "ActorActionState table not found for ID: " << tableId; return false; } } while(0)

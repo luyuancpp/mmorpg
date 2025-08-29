@@ -5,15 +5,15 @@
 #include "muduo/base/Logging.h"
 #include "proto/table/class_table.pb.h"
 
-class ClassConfigurationTable {
+class ClassTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const ClassTable*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
-    static ClassConfigurationTable& Instance() {
-        static ClassConfigurationTable instance;
+    static ClassTableManager& Instance() {
+        static ClassTableManager instance;
         return instance;
     }
 
@@ -42,29 +42,29 @@ private:
 };
 
 inline const ClassTabledData& GetClassAllTable() {
-    return ClassConfigurationTable::Instance().All();
+    return ClassTableManager::Instance().All();
 }
 
 #define FetchAndValidateClassTable(tableId) \
-    const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(tableId); \
+    const auto [classTable, fetchResult] = ClassTableManager::Instance().GetTable(tableId); \
     do { if (!( classTable )) { LOG_ERROR << "Class table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomClassTable(prefix, tableId) \
-    const auto [prefix##ClassTable, prefix##fetchResult] = ClassConfigurationTable::Instance().GetTable(tableId); \
+    const auto [prefix##ClassTable, prefix##fetchResult] = ClassTableManager::Instance().GetTable(tableId); \
     do { if (!(prefix##ClassTable)) { LOG_ERROR << "Class table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchClassTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(tableId); \
+    const auto [classTable, fetchResult] = ClassTableManager::Instance().GetTable(tableId); \
     do { if (!( classTable )) { LOG_ERROR << "Class table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchClassTableOrReturnVoid(tableId) \
-    const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(tableId); \
+    const auto [classTable, fetchResult] = ClassTableManager::Instance().GetTable(tableId); \
     do { if (!( classTable )) { LOG_ERROR << "Class table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchClassTableOrContinue(tableId) \
-    const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(tableId); \
+    const auto [classTable, fetchResult] = ClassTableManager::Instance().GetTable(tableId); \
     do { if (!( classTable )) { LOG_ERROR << "Class table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchClassTableOrReturnFalse(tableId) \
-    const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(tableId); \
+    const auto [classTable, fetchResult] = ClassTableManager::Instance().GetTable(tableId); \
     do { if (!( classTable )) { LOG_ERROR << "Class table not found for ID: " << tableId; return false; } } while(0)

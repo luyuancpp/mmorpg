@@ -5,7 +5,7 @@
 
 std::string GetConfigDir();
 
-void SceneConfigurationTable::Load() {
+void SceneTableManager::Load() {
     data_.Clear();
 
     std::string path = GetConfigDir() + "scene.json";
@@ -20,7 +20,7 @@ void SceneConfigurationTable::Load() {
     }
 }
 
-std::pair<const SceneTable*, uint32_t> SceneConfigurationTable::GetTable(const uint32_t tableId) {
+std::pair<const SceneTable*, uint32_t> SceneTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Scene table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const SceneTable*, uint32_t> SceneConfigurationTable::GetTable(const u
     return { it->second, kSuccess };
 }
 
-std::pair<const SceneTable*, uint32_t> SceneConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const SceneTable*, uint32_t> SceneTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };

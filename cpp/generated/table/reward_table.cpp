@@ -5,7 +5,7 @@
 
 std::string GetConfigDir();
 
-void RewardConfigurationTable::Load() {
+void RewardTableManager::Load() {
     data_.Clear();
 
     std::string path = GetConfigDir() + "reward.json";
@@ -20,7 +20,7 @@ void RewardConfigurationTable::Load() {
     }
 }
 
-std::pair<const RewardTable*, uint32_t> RewardConfigurationTable::GetTable(const uint32_t tableId) {
+std::pair<const RewardTable*, uint32_t> RewardTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Reward table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const RewardTable*, uint32_t> RewardConfigurationTable::GetTable(const
     return { it->second, kSuccess };
 }
 
-std::pair<const RewardTable*, uint32_t> RewardConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const RewardTable*, uint32_t> RewardTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };

@@ -5,7 +5,7 @@
 
 std::string GetConfigDir();
 
-void BuffConfigurationTable::Load() {
+void BuffTableManager::Load() {
     data_.Clear();
 
     std::string path = GetConfigDir() + "buff.json";
@@ -24,7 +24,7 @@ void BuffConfigurationTable::Load() {
     });
 }
 
-std::pair<const BuffTable*, uint32_t> BuffConfigurationTable::GetTable(const uint32_t tableId) {
+std::pair<const BuffTable*, uint32_t> BuffTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Buff table not found for ID: " << tableId;
@@ -33,7 +33,7 @@ std::pair<const BuffTable*, uint32_t> BuffConfigurationTable::GetTable(const uin
     return { it->second, kSuccess };
 }
 
-std::pair<const BuffTable*, uint32_t> BuffConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const BuffTable*, uint32_t> BuffTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };

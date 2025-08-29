@@ -5,15 +5,15 @@
 #include "muduo/base/Logging.h"
 #include "proto/table/item_table.pb.h"
 
-class ItemConfigurationTable {
+class ItemTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const ItemTable*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
-    static ItemConfigurationTable& Instance() {
-        static ItemConfigurationTable instance;
+    static ItemTableManager& Instance() {
+        static ItemTableManager instance;
         return instance;
     }
 
@@ -42,29 +42,29 @@ private:
 };
 
 inline const ItemTabledData& GetItemAllTable() {
-    return ItemConfigurationTable::Instance().All();
+    return ItemTableManager::Instance().All();
 }
 
 #define FetchAndValidateItemTable(tableId) \
-    const auto [itemTable, fetchResult] = ItemConfigurationTable::Instance().GetTable(tableId); \
+    const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
     do { if (!( itemTable )) { LOG_ERROR << "Item table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomItemTable(prefix, tableId) \
-    const auto [prefix##ItemTable, prefix##fetchResult] = ItemConfigurationTable::Instance().GetTable(tableId); \
+    const auto [prefix##ItemTable, prefix##fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
     do { if (!(prefix##ItemTable)) { LOG_ERROR << "Item table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchItemTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [itemTable, fetchResult] = ItemConfigurationTable::Instance().GetTable(tableId); \
+    const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
     do { if (!( itemTable )) { LOG_ERROR << "Item table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchItemTableOrReturnVoid(tableId) \
-    const auto [itemTable, fetchResult] = ItemConfigurationTable::Instance().GetTable(tableId); \
+    const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
     do { if (!( itemTable )) { LOG_ERROR << "Item table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchItemTableOrContinue(tableId) \
-    const auto [itemTable, fetchResult] = ItemConfigurationTable::Instance().GetTable(tableId); \
+    const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
     do { if (!( itemTable )) { LOG_ERROR << "Item table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchItemTableOrReturnFalse(tableId) \
-    const auto [itemTable, fetchResult] = ItemConfigurationTable::Instance().GetTable(tableId); \
+    const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
     do { if (!( itemTable )) { LOG_ERROR << "Item table not found for ID: " << tableId; return false; } } while(0)

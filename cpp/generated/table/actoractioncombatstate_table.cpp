@@ -5,7 +5,7 @@
 
 std::string GetConfigDir();
 
-void ActorActionCombatStateConfigurationTable::Load() {
+void ActorActionCombatStateTableManager::Load() {
     data_.Clear();
 
     std::string path = GetConfigDir() + "actoractioncombatstate.json";
@@ -20,7 +20,7 @@ void ActorActionCombatStateConfigurationTable::Load() {
     }
 }
 
-std::pair<const ActorActionCombatStateTable*, uint32_t> ActorActionCombatStateConfigurationTable::GetTable(const uint32_t tableId) {
+std::pair<const ActorActionCombatStateTable*, uint32_t> ActorActionCombatStateTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "ActorActionCombatState table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const ActorActionCombatStateTable*, uint32_t> ActorActionCombatStateCo
     return { it->second, kSuccess };
 }
 
-std::pair<const ActorActionCombatStateTable*, uint32_t> ActorActionCombatStateConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const ActorActionCombatStateTable*, uint32_t> ActorActionCombatStateTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };

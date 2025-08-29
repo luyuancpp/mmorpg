@@ -67,10 +67,10 @@ static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffComp&
 
     const auto lostHealth = derivedAttributesPbComponent.max_health() - baseAttributesPbComponent.health();  // 计算已损失生命值
 
-    BuffConfigurationTable::Instance().SetHealthregenerationParam(
+    BuffTableManager::Instance().SetHealthregenerationParam(
         { static_cast<double>(levelComponent.level()),  static_cast<double>(lostHealth) });
 
-    const auto healingAmount = BuffConfigurationTable::Instance().GetHealthregeneration(buffTable->id());
+    const auto healingAmount = BuffTableManager::Instance().GetHealthregeneration(buffTable->id());
     const auto currentHealth = std::min<uint64_t>(derivedAttributesPbComponent.max_health(),
         static_cast<uint64_t>(static_cast<double>(baseAttributesPbComponent.health()) +
             healingAmount));

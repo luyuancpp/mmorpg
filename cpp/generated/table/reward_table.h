@@ -5,15 +5,15 @@
 #include "muduo/base/Logging.h"
 #include "proto/table/reward_table.pb.h"
 
-class RewardConfigurationTable {
+class RewardTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const RewardTable*>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
-    static RewardConfigurationTable& Instance() {
-        static RewardConfigurationTable instance;
+    static RewardTableManager& Instance() {
+        static RewardTableManager instance;
         return instance;
     }
 
@@ -42,29 +42,29 @@ private:
 };
 
 inline const RewardTabledData& GetRewardAllTable() {
-    return RewardConfigurationTable::Instance().All();
+    return RewardTableManager::Instance().All();
 }
 
 #define FetchAndValidateRewardTable(tableId) \
-    const auto [rewardTable, fetchResult] = RewardConfigurationTable::Instance().GetTable(tableId); \
+    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().GetTable(tableId); \
     do { if (!( rewardTable )) { LOG_ERROR << "Reward table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomRewardTable(prefix, tableId) \
-    const auto [prefix##RewardTable, prefix##fetchResult] = RewardConfigurationTable::Instance().GetTable(tableId); \
+    const auto [prefix##RewardTable, prefix##fetchResult] = RewardTableManager::Instance().GetTable(tableId); \
     do { if (!(prefix##RewardTable)) { LOG_ERROR << "Reward table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchRewardTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [rewardTable, fetchResult] = RewardConfigurationTable::Instance().GetTable(tableId); \
+    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().GetTable(tableId); \
     do { if (!( rewardTable )) { LOG_ERROR << "Reward table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchRewardTableOrReturnVoid(tableId) \
-    const auto [rewardTable, fetchResult] = RewardConfigurationTable::Instance().GetTable(tableId); \
+    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().GetTable(tableId); \
     do { if (!( rewardTable )) { LOG_ERROR << "Reward table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchRewardTableOrContinue(tableId) \
-    const auto [rewardTable, fetchResult] = RewardConfigurationTable::Instance().GetTable(tableId); \
+    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().GetTable(tableId); \
     do { if (!( rewardTable )) { LOG_ERROR << "Reward table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchRewardTableOrReturnFalse(tableId) \
-    const auto [rewardTable, fetchResult] = RewardConfigurationTable::Instance().GetTable(tableId); \
+    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().GetTable(tableId); \
     do { if (!( rewardTable )) { LOG_ERROR << "Reward table not found for ID: " << tableId; return false; } } while(0)
