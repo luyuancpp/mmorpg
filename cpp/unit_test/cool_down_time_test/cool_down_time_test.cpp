@@ -142,7 +142,7 @@ TEST_F(CoolDownTimeMillisecondUtilTest, ResetCooldown) {
 
 int main(int argc, char** argv)
 {
-	CooldownConfigurationTable::Instance().Load();
+	CooldownTableManager::Instance().Load();
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
 }

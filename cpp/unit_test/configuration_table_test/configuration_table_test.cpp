@@ -43,7 +43,7 @@ TEST(LoadConfigsTest, GetTestMultiKeyAllTable)
 
 TEST(LoadConfigsTest, GetTestMultiUint32ValueRangeTable)
 {
-	auto& data = TestMultiKeyConfigurationTable::Instance().GetMuint32keyData();
+	auto& data = TestMultiKeyTableManager::Instance().GetMuint32keyData();
 	auto range17 = data.equal_range(17);
 	for (auto it = range17.first; it != range17.second; ++it) {
 		LOG_INFO << it->first << ' ' << it->second->DebugString();
@@ -53,7 +53,7 @@ TEST(LoadConfigsTest, GetTestMultiUint32ValueRangeTable)
 
 TEST(LoadConfigsTest, GetTestMultiInt32ValueRangeTable)
 {
-	auto& data = TestMultiKeyConfigurationTable::Instance().GetMin32keyData();
+	auto& data = TestMultiKeyTableManager::Instance().GetMin32keyData();
 	auto range10 = data.equal_range(10);
 	for (auto it = range10.first; it != range10.second; ++it) {
 		LOG_INFO << it->first << ' ' << it->second->DebugString();
@@ -62,7 +62,7 @@ TEST(LoadConfigsTest, GetTestMultiInt32ValueRangeTable)
 
 TEST(LoadConfigsTest, GetTestMultiStringValueRangeTable)
 {
-	auto& data = TestMultiKeyConfigurationTable::Instance().GetMstringkeyData();
+	auto& data = TestMultiKeyTableManager::Instance().GetMstringkeyData();
 	auto rangeaa = data.equal_range("aa");
 	for (auto it = rangeaa.first; it != rangeaa.second; ++it) {
 		LOG_INFO << it->first << ' ' << it->second->DebugString();
@@ -71,19 +71,19 @@ TEST(LoadConfigsTest, GetTestMultiStringValueRangeTable)
 
 TEST(LoadConfigsTest, GetTestUint32ValueFindTable)
 {
-	auto it = TestMultiKeyConfigurationTable::Instance().GetByUint32key(14);
+	auto it = TestMultiKeyTableManager::Instance().GetByUint32key(14);
 	EXPECT_EQ(it.first->id(), 1);
 }
 
 TEST(LoadConfigsTest, GetTestInt32ValueAllTable)
 {
-	auto it = TestMultiKeyConfigurationTable::Instance().GetByIn32key(8);
+	auto it = TestMultiKeyTableManager::Instance().GetByIn32key(8);
 	EXPECT_EQ(it.first->id(), 1);
 }
 
 TEST(LoadConfigsTest, GetTestStringValueAllTable)
 {
-	auto it = TestMultiKeyConfigurationTable::Instance().GetByStringkey("aa");
+	auto it = TestMultiKeyTableManager::Instance().GetByStringkey("aa");
 	EXPECT_EQ(it.first->id(), 1);
 }
 
