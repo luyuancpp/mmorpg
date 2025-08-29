@@ -285,9 +285,6 @@
     <ClCompile Include="table\actoractionstate_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="table\bag_operator.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="table\buff_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -606,9 +603,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="table\actoractionstate_table.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="table\bag_operator.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="table\buff_table.pb.h">

@@ -93,7 +93,6 @@
     <ClCompile Include="scene\player_state_attribute_sync.pb.cc" />
     <ClCompile Include="table\actoractioncombatstate_table.pb.cc" />
     <ClCompile Include="table\actoractionstate_table.pb.cc" />
-    <ClCompile Include="table\bag_operator.pb.cc" />
     <ClCompile Include="table\buff_table.pb.cc" />
     <ClCompile Include="table\class_table.pb.cc" />
     <ClCompile Include="table\condition_table.pb.cc" />
@@ -202,7 +201,6 @@
     <ClInclude Include="scene\player_state_attribute_sync.pb.h" />
     <ClInclude Include="table\actoractioncombatstate_table.pb.h" />
     <ClInclude Include="table\actoractionstate_table.pb.h" />
-    <ClInclude Include="table\bag_operator.pb.h" />
     <ClInclude Include="table\buff_table.pb.h" />
     <ClInclude Include="table\class_table.pb.h" />
     <ClInclude Include="table\condition_table.pb.h" />
