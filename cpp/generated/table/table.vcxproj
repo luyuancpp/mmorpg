@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="actoractioncombatstate_table.h" />
     <ClInclude Include="actoractionstate_table.h" />
+    <ClInclude Include="all_table.h" />
     <ClInclude Include="bit_index\mission_table_id_bit_index.h" />
     <ClInclude Include="bit_index\reward_table_id_bit_index.h" />
     <ClInclude Include="buff_table.h" />
@@ -53,6 +54,7 @@
   <ItemGroup>
     <ClCompile Include="actoractioncombatstate_table.cpp" />
     <ClCompile Include="actoractionstate_table.cpp" />
+    <ClCompile Include="all_table.cpp" />
     <ClCompile Include="buff_table.cpp" />
     <ClCompile Include="class_table.cpp" />
     <ClCompile Include="condition_table.cpp" />

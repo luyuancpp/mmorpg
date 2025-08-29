@@ -5,7 +5,7 @@
 #include "error_handling/error_handling.h"
 #include "macros/return_define.h"
 #include "proto/table/tip/common_error_tip.pb.h"
-#include "proto/table/bag_error_tip.pb.h"
+#include "proto/table/tip/bag_error_tip.pb.h"
 #include "util/snow_flake.h"
 #include "table/item_table.h"
 #include "util/defer.h"

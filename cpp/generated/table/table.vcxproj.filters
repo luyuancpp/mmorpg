@@ -105,6 +105,9 @@
     <ClInclude Include="testmultikey_table.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="all_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="actoractioncombatstate_table.cpp">
@@ -159,6 +162,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="testmultikey_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="all_table.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
