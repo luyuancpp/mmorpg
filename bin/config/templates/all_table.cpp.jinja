@@ -5,7 +5,7 @@
 
 {#- Include config headers #}
 {% for item in sheetnames %}
-#include "{{ item.lower() }}_config.h"
+#include "{{ item.lower() }}_table.h"
 {%- endfor %}
 
 LoadSuccessCallback loadSuccessCallback;

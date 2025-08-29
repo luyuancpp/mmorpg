@@ -1,6 +1,6 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/common_error_tip.pb.h"
+#include "proto/table/tip/common_error_tip.pb.h"
 #include "globalvariable_table.h"
 
 std::string GetConfigDir();

@@ -12,7 +12,7 @@
 #include "network/rpc_session.h"
 #include "network/error_handling_system.h"
 #include "node/comp/game_node_comp.h"
-#include "proto/table/login_error_tip.pb.h"
+#include "proto/table/tip/login_error_tip.pb.h"
 #include "player/system/player_node_system.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
