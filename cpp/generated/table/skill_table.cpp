@@ -23,19 +23,19 @@ void SkillTableManager::Load() {
     });
 }
 
-std::pair<const SkillTable*, uint32_t> SkillTableManager::GetTable(const uint32_t tableId) {
+std::pair<const SkillTableTempPtr, uint32_t> SkillTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Skill table not found for ID: " << tableId;
-        return { nullptr, kInvalidTableId };
+        return { SkillTableTempPtr(nullptr), kInvalidTableId };
     }
-    return { it->second, kSuccess };
+    return { SkillTableTempPtr(it->second), kSuccess };
 }
 
-std::pair<const SkillTable*, uint32_t> SkillTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const SkillTableTempPtr, uint32_t> SkillTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { nullptr, kInvalidTableId };
+        return { SkillTableTempPtr(nullptr), kInvalidTableId };
     }
-    return { it->second, kSuccess };
+    return { SkillTableTempPtr(it->second), kSuccess };
 }

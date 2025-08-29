@@ -3,11 +3,14 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
+#include "type_define/warn_on_save_ptr.h"
 #include "proto/table/buff_table.pb.h"
+
+using BuffTableTempPtr = WarnOnSavePtr<const BuffTable>;
 
 class BuffTableManager {
 public:
-    using KeyValueDataType = std::unordered_map<uint32_t, const BuffTable*>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const BuffTableTempPtr>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
@@ -19,8 +22,8 @@ public:
 
     const BuffTabledData& All() const { return data_; }
 
-    std::pair<const BuffTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const BuffTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const BuffTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const BuffTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

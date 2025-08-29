@@ -3,11 +3,14 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
+#include "type_define/warn_on_save_ptr.h"
 #include "proto/table/{{ sheetname | lower }}_table.pb.h"
+
+using {{ sheetname }}TableTempPtr = WarnOnSavePtr<const {{ sheetname }}Table>;
 
 class {{ sheetname }}TableManager {
 public:
-    using KeyValueDataType = std::unordered_map{{ container_type }}<uint32_t, const {{ sheetname }}Table*>;
+    using KeyValueDataType = std::unordered_map{{ container_type }}<uint32_t, const {{ sheetname }}TableTempPtr>;
 
     // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
@@ -19,8 +22,8 @@ public:
 
     const {{ sheetname }}TabledData& All() const { return data_; }
 
-    std::pair<const {{ sheetname }}Table*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const {{ sheetname }}Table*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const {{ sheetname }}TableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const {{ sheetname }}TableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -35,8 +38,8 @@ public:
     {% for data in datastring if data %}
         {%- if data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL -%}
             {%- set column_map_type = 'unordered_map' if data[generate_common.COL_OBJ_TABLE_MULTI] != generate_common.MULTI_TABLE_KEY_CELL else 'unordered_multimap' %}
-    std::pair<const {{ sheetname }}Table*, uint32_t> GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const;
-    const std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}Table*>& Get{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data() const { return kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_; }
+    std::pair<const {{ sheetname }}TableTempPtr, uint32_t> GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const;
+    const std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}TableTempPtr>& Get{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data() const { return kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_; }
         {% endif %}
         {%- if data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not none -%}
     {{ data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] }} Get{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}(const uint32_t tableId){
@@ -62,7 +65,7 @@ private:
     {% for data in datastring if data %}
         {%- if data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL -%}
             {% set column_map_type = 'unordered_map' if data[generate_common.COL_OBJ_TABLE_MULTI] != generate_common.MULTI_TABLE_KEY_CELL else 'unordered_multimap' %}
-    std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}Table*> kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_;
+    std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}TableTempPtr> kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_;
         {%- endif -%}
         {%- if data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not none -%}
     ExcelExpression<{{ data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] }}> expression_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}_;
