@@ -17,6 +17,10 @@ func MakeProjectDir() {
 	os.MkdirAll(config.PbcLuaDirectory, os.FileMode(0777))
 	os.MkdirAll(config.ServiceInfoDirectory, os.FileMode(0777))
 	os.MkdirAll(config.CppGenGrpcDirectory, os.FileMode(0777))
+	os.MkdirAll(config.PbDescDirectory, os.FileMode(0777))
+	os.MkdirAll(config.TempFileGenerationDir, os.FileMode(0777))
+	os.MkdirAll(config.PbcTempDirectory, os.FileMode(0777))
+	os.MkdirAll(config.GrpcTempDirectory, os.FileMode(0777))
 
 	for i := 0; i < len(config.ProtoDirectoryNames); i++ {
 		config.ProtoDirs = append(config.ProtoDirs, config.ProtoDir+config.ProtoDirectoryNames[i])

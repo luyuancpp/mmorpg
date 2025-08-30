@@ -14,7 +14,7 @@ import (
 )
 
 const playerLoaderTemplate = `
-#include "thread_local/registry_manager.h"
+#include "threading/registry_manager.h"
 #include "proto/db/mysql_database_table.pb.h"
 
 void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message){

@@ -5,53 +5,54 @@
 #include "proto/logic/constants/etcd_grpc.pb.h"
 #include "common/util/encode/base64.h"
 #include <boost/pool/object_pool.hpp>
+#include "grpc_call_tag.h"
 
 namespace  {
-struct DbServiceCompleteQueue {
+struct DbCompleteQueue {
     grpc::CompletionQueue cq;
 };
 
 boost::object_pool<GrpcTag> tagPool;
-#pragma region dbserviceTest
-boost::object_pool<AsyncdbserviceTestGrpcClient> dbserviceTestPool;
-using AsyncdbserviceTestHandlerFunctionType =
+#pragma region dbTest
+boost::object_pool<AsyncdbTestGrpcClient> dbTestPool;
+using AsyncdbTestHandlerFunctionType =
     std::function<void(const ClientContext&, const ::Empty&)>;
-AsyncdbserviceTestHandlerFunctionType AsyncdbserviceTestHandler;
+AsyncdbTestHandlerFunctionType AsyncdbTestHandler;
 
-void AsyncCompleteGrpcdbserviceTest(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+void AsyncCompleteGrpcdbTest(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     auto call(
-        static_cast<AsyncdbserviceTestGrpcClient*>(got_tag));
+        static_cast<AsyncdbTestGrpcClient*>(got_tag));
     if (call->status.ok()) {
-        if (AsyncdbserviceTestHandler) {
-            AsyncdbserviceTestHandler(call->context, call->reply);
+        if (AsyncdbTestHandler) {
+            AsyncdbTestHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
     }
 
-	dbserviceTestPool.destroy(call);
+	dbTestPool.destroy(call);
 }
 
 
 
-void SenddbserviceTest(entt::registry& registry, entt::entity nodeEntity, const ::Empty& request) {
+void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const ::Empty& request) {
 
     auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-    auto call(dbserviceTestPool.construct());
+    auto call(dbTestPool.construct());
     call->response_reader = registry
-        .get<dbserviceStubPtr>(nodeEntity)
+        .get<dbStubPtr>(nodeEntity)
         ->PrepareAsyncTest(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(dbserviceTestMessageId, (void*)call));
+    GrpcTag* got_tag(tagPool.construct(dbTestMessageId, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
 
-void SenddbserviceTest(entt::registry& registry, entt::entity nodeEntity, const ::Empty& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const ::Empty& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(dbserviceTestPool.construct());
+    auto call(dbTestPool.construct());
     auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
@@ -60,26 +61,26 @@ void SenddbserviceTest(entt::registry& registry, entt::entity nodeEntity, const 
     }
 
     call->response_reader = registry
-        .get<dbserviceStubPtr>(nodeEntity)
+        .get<dbStubPtr>(nodeEntity)
         ->PrepareAsyncTest(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(dbserviceTestMessageId, (void*)call));
+    GrpcTag* got_tag(tagPool.construct(dbTestMessageId, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
-void SenddbserviceTest(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
     const ::Empty& derived = static_cast<const ::Empty&>(message);
-    SenddbserviceTest(registry, nodeEntity, derived, metaKeys, metaValues);
+    SenddbTest(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 
 
-void HandleDbServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
+void HandleDbCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
         switch (grpcTag->messageId) {
-        case dbserviceTestMessageId:
-            AsyncCompleteGrpcdbserviceTest(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+        case dbTestMessageId:
+            AsyncCompleteGrpcdbTest(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
             break;
         default:
@@ -89,23 +90,23 @@ void HandleDbServiceCompletedQueueMessage(entt::registry& registry, entt::entity
 
 
 
-void SetDbServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
+void SetDbHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
 
-    AsyncdbserviceTestHandler = handler;
+    AsyncdbTestHandler = handler;
 }
 
 
-void SetDbServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
+void SetDbIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
 
-    if (!AsyncdbserviceTestHandler) {
-        AsyncdbserviceTestHandler = handler;
+    if (!AsyncdbTestHandler) {
+        AsyncdbTestHandler = handler;
     }
 }
 
 
-void InitDbServiceGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
+void InitDbGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
 
-    registry.emplace<dbserviceStubPtr>(nodeEntity, dbservice::NewStub(channel));
+    registry.emplace<dbStubPtr>(nodeEntity, db::NewStub(channel));
 
 }
 

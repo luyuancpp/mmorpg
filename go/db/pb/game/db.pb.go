@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v5.29.0
-// source: proto/db/db_service.proto
+// source: proto/db/db.proto
 
 package game
 
@@ -20,18 +20,18 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-var File_proto_db_db_service_proto protoreflect.FileDescriptor
+var File_proto_db_db_proto protoreflect.FileDescriptor
 
-const file_proto_db_db_service_proto_rawDesc = "" +
+const file_proto_db_db_proto_rawDesc = "" +
 	"\n" +
-	"\x19proto/db/db_service.proto\x1a\x18proto/common/empty.proto2\x1c\n" +
+	"\x11proto/db/db.proto\x1a\x18proto/common/empty.proto2\x1c\n" +
 	"\x02db\x12\x16\n" +
 	"\x04Test\x12\x06.Empty\x1a\x06.EmptyB\tZ\apb/gameb\x06proto3"
 
-var file_proto_db_db_service_proto_goTypes = []any{
+var file_proto_db_db_proto_goTypes = []any{
 	(*Empty)(nil), // 0: Empty
 }
-var file_proto_db_db_service_proto_depIdxs = []int32{
+var file_proto_db_db_proto_depIdxs = []int32{
 	0, // 0: db.Test:input_type -> Empty
 	0, // 1: db.Test:output_type -> Empty
 	1, // [1:2] is the sub-list for method output_type
@@ -41,9 +41,9 @@ var file_proto_db_db_service_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_proto_db_db_service_proto_init() }
-func file_proto_db_db_service_proto_init() {
-	if File_proto_db_db_service_proto != nil {
+func init() { file_proto_db_db_proto_init() }
+func file_proto_db_db_proto_init() {
+	if File_proto_db_db_proto != nil {
 		return
 	}
 	file_proto_common_empty_proto_init()
@@ -51,16 +51,16 @@ func file_proto_db_db_service_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_db_db_service_proto_rawDesc), len(file_proto_db_db_service_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_db_db_proto_rawDesc), len(file_proto_db_db_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_db_db_service_proto_goTypes,
-		DependencyIndexes: file_proto_db_db_service_proto_depIdxs,
+		GoTypes:           file_proto_db_db_proto_goTypes,
+		DependencyIndexes: file_proto_db_db_proto_depIdxs,
 	}.Build()
-	File_proto_db_db_service_proto = out.File
-	file_proto_db_db_service_proto_goTypes = nil
-	file_proto_db_db_service_proto_depIdxs = nil
+	File_proto_db_db_proto = out.File
+	file_proto_db_db_proto_goTypes = nil
+	file_proto_db_db_proto_depIdxs = nil
 }

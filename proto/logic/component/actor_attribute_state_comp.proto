@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 option go_package = "pb/game";
-import "proto/logic/component/comp.proto";
 
 message CombatStateFlagsPbComponent {
     map<uint32, bool> state_flags = 1; // 单独的属性同步映射
