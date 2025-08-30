@@ -9,6 +9,11 @@ class ItemTableTempPtr  {
 public:
 	explicit ItemTableTempPtr(const ItemTable* ptr) : ptr_(ptr) {}
 
+    ItemTableTempPtr(const ItemTableTempPtr&) = delete;
+    ItemTableTempPtr& operator=(const ItemTableTempPtr&) = delete;
+    ItemTableTempPtr(ItemTableTempPtr&&) = delete;
+    ItemTableTempPtr& operator=(ItemTableTempPtr&&) = delete;
+
 	// Support pointer-like access
 	const ItemTable* operator->() const { return ptr_; }
 	const ItemTable& operator*()  const { return *ptr_; }
@@ -59,8 +64,8 @@ public:
 
     const ItemTabledData& All() const { return data_; }
 
-    std::pair<const ItemTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const ItemTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<ItemTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<ItemTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

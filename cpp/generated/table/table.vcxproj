@@ -19,58 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="actoractioncombatstate_table.h" />
-    <ClInclude Include="actoractionstate_table.h" />
-    <ClInclude Include="all_table.h" />
-    <ClInclude Include="bit_index\mission_table_id_bit_index.h" />
-    <ClInclude Include="bit_index\reward_table_id_bit_index.h" />
-    <ClInclude Include="buff_table.h" />
-    <ClInclude Include="class_table.h" />
-    <ClInclude Include="condition_table.h" />
-    <ClInclude Include="constants\actoractioncombatstate_table_id_constants.h" />
-    <ClInclude Include="constants\actoractionstate_table_id_constants.h" />
-    <ClInclude Include="constants\globalvariable_table_id_constants.h" />
-    <ClInclude Include="constants\global_abnormal_logout_table_id_constants.h" />
-    <ClInclude Include="cooldown_table.h" />
     <ClInclude Include="cpp_table_id_bit_index\mission_table_id_bit_index.h" />
     <ClInclude Include="cpp_table_id_bit_index\reward_table_id_bit_index.h" />
     <ClInclude Include="cpp_table_id_constants_name\actoractioncombatstate_table_id_constants.h" />
     <ClInclude Include="cpp_table_id_constants_name\actoractionstate_table_id_constants.h" />
     <ClInclude Include="cpp_table_id_constants_name\globalvariable_table_id_constants.h" />
     <ClInclude Include="cpp_table_id_constants_name\global_abnormal_logout_table_id_constants.h" />
-    <ClInclude Include="globalvariable_table.h" />
-    <ClInclude Include="item_table.h" />
-    <ClInclude Include="mainscene_table.h" />
-    <ClInclude Include="messagelimiter_table.h" />
-    <ClInclude Include="mission_table.h" />
-    <ClInclude Include="monsterbase_table.h" />
-    <ClInclude Include="reward_table.h" />
-    <ClInclude Include="scene_table.h" />
-    <ClInclude Include="skillpermission_table.h" />
-    <ClInclude Include="skill_table.h" />
-    <ClInclude Include="testmultikey_table.h" />
-    <ClInclude Include="test_table.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="actoractioncombatstate_table.cpp" />
-    <ClCompile Include="actoractionstate_table.cpp" />
-    <ClCompile Include="all_table.cpp" />
-    <ClCompile Include="buff_table.cpp" />
-    <ClCompile Include="class_table.cpp" />
-    <ClCompile Include="condition_table.cpp" />
-    <ClCompile Include="cooldown_table.cpp" />
-    <ClCompile Include="globalvariable_table.cpp" />
-    <ClCompile Include="item_table.cpp" />
-    <ClCompile Include="mainscene_table.cpp" />
-    <ClCompile Include="messagelimiter_table.cpp" />
-    <ClCompile Include="mission_table.cpp" />
-    <ClCompile Include="monsterbase_table.cpp" />
-    <ClCompile Include="reward_table.cpp" />
-    <ClCompile Include="scene_table.cpp" />
-    <ClCompile Include="skillpermission_table.cpp" />
-    <ClCompile Include="skill_table.cpp" />
-    <ClCompile Include="testmultikey_table.cpp" />
-    <ClCompile Include="test_table.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

@@ -9,6 +9,11 @@ class GlobalVariableTableTempPtr  {
 public:
 	explicit GlobalVariableTableTempPtr(const GlobalVariableTable* ptr) : ptr_(ptr) {}
 
+    GlobalVariableTableTempPtr(const GlobalVariableTableTempPtr&) = delete;
+    GlobalVariableTableTempPtr& operator=(const GlobalVariableTableTempPtr&) = delete;
+    GlobalVariableTableTempPtr(GlobalVariableTableTempPtr&&) = delete;
+    GlobalVariableTableTempPtr& operator=(GlobalVariableTableTempPtr&&) = delete;
+
 	// Support pointer-like access
 	const GlobalVariableTable* operator->() const { return ptr_; }
 	const GlobalVariableTable& operator*()  const { return *ptr_; }
@@ -59,8 +64,8 @@ public:
 
     const GlobalVariableTabledData& All() const { return data_; }
 
-    std::pair<const GlobalVariableTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const GlobalVariableTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<GlobalVariableTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<GlobalVariableTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

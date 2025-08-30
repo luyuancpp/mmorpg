@@ -20,7 +20,7 @@ void ClassTableManager::Load() {
     }
 }
 
-std::pair<const ClassTableTempPtr, uint32_t> ClassTableManager::GetTable(const uint32_t tableId) {
+std::pair< ClassTableTempPtr, uint32_t> ClassTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Class table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const ClassTableTempPtr, uint32_t> ClassTableManager::GetTable(const u
     return { ClassTableTempPtr(it->second), kSuccess };
 }
 
-std::pair<const ClassTableTempPtr, uint32_t> ClassTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< ClassTableTempPtr, uint32_t> ClassTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { ClassTableTempPtr(nullptr), kInvalidTableId };

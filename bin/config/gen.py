@@ -17,12 +17,11 @@ directories = [
     "generated/proto/go/",
     "generated/cpp_table_id_constants_name/",
     "generated/json",
-    "../../cpp/generated/proto/table",
-    "../../cpp/generated/table/",
-    "../../cpp/generated/table/constants/",
-    "../../cpp/generated/table/bit_index",
-    "../../cpp/generated/proto/table/operator/",
-    "../../cpp/generated/proto/table/tip/",
+    "../../cpp/generated/table/code/",
+    "../../cpp/generated/table/code/constants/",
+    "../../cpp/generated/table/code/bit_index",
+    "../../cpp/generated/table/proto/operator/",
+    "../../cpp/generated/table/proto/tip/",
 ]
 
 # Create directories if they don't exist
@@ -43,14 +42,14 @@ commands = [
     "python gen_go_proto.py",
     "python gen_cpp_constants_from_xlsx.py",
     "python generate_xlsx_cpp_id_bit_index.py",
-    "python md5tool.py md5copy ./generated/cpp/ ../../cpp/generated/table/",
+    "python md5tool.py md5copy ./generated/cpp/ ../../cpp/generated/table/code/",
     "python md5tool.py md5copy ./generated/cpp_table_id_bit_index/ "
-    "../../cpp/generated/table/bit_index/",
+    "../../cpp/generated/table/code/bit_index/",
     "python md5tool.py md5copy ./generated/cpp_table_id_constants_name/ "
-    "../../cpp/generated/table/constants/",
-    "python md5tool.py md5copy ./generated/proto/cpp/ ../../cpp/generated/proto/table/",
-    "python md5tool.py md5copy ./generated/proto/cpp/operator/ ../../cpp/generated/proto/table/operator/",
-    "python md5tool.py md5copy ./generated/proto/cpp/tip/ ../../cpp/generated/proto/table/tip/",
+    "../../cpp/generated/table/code/constants/",
+    "python md5tool.py md5copy ./generated/proto/cpp/ ../../cpp/generated/table/proto",
+    "python md5tool.py md5copy ./generated/proto/cpp/operator/ ../../cpp/generated/table/proto/operator/",
+    "python md5tool.py md5copy ./generated/proto/cpp/tip/ ../../cpp/generated/table/proto/tip/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../go/login/pb/game/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../go/db/pb/game/",
 ]

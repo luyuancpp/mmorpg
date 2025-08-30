@@ -20,7 +20,7 @@ void ItemTableManager::Load() {
     }
 }
 
-std::pair<const ItemTableTempPtr, uint32_t> ItemTableManager::GetTable(const uint32_t tableId) {
+std::pair< ItemTableTempPtr, uint32_t> ItemTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Item table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const ItemTableTempPtr, uint32_t> ItemTableManager::GetTable(const uin
     return { ItemTableTempPtr(it->second), kSuccess };
 }
 
-std::pair<const ItemTableTempPtr, uint32_t> ItemTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< ItemTableTempPtr, uint32_t> ItemTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { ItemTableTempPtr(nullptr), kInvalidTableId };

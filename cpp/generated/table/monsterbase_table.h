@@ -9,6 +9,11 @@ class MonsterBaseTableTempPtr  {
 public:
 	explicit MonsterBaseTableTempPtr(const MonsterBaseTable* ptr) : ptr_(ptr) {}
 
+    MonsterBaseTableTempPtr(const MonsterBaseTableTempPtr&) = delete;
+    MonsterBaseTableTempPtr& operator=(const MonsterBaseTableTempPtr&) = delete;
+    MonsterBaseTableTempPtr(MonsterBaseTableTempPtr&&) = delete;
+    MonsterBaseTableTempPtr& operator=(MonsterBaseTableTempPtr&&) = delete;
+
 	// Support pointer-like access
 	const MonsterBaseTable* operator->() const { return ptr_; }
 	const MonsterBaseTable& operator*()  const { return *ptr_; }
@@ -59,8 +64,8 @@ public:
 
     const MonsterBaseTabledData& All() const { return data_; }
 
-    std::pair<const MonsterBaseTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const MonsterBaseTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<MonsterBaseTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<MonsterBaseTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

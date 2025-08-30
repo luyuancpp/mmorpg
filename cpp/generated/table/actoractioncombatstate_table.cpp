@@ -20,7 +20,7 @@ void ActorActionCombatStateTableManager::Load() {
     }
 }
 
-std::pair<const ActorActionCombatStateTableTempPtr, uint32_t> ActorActionCombatStateTableManager::GetTable(const uint32_t tableId) {
+std::pair< ActorActionCombatStateTableTempPtr, uint32_t> ActorActionCombatStateTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "ActorActionCombatState table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const ActorActionCombatStateTableTempPtr, uint32_t> ActorActionCombatS
     return { ActorActionCombatStateTableTempPtr(it->second), kSuccess };
 }
 
-std::pair<const ActorActionCombatStateTableTempPtr, uint32_t> ActorActionCombatStateTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< ActorActionCombatStateTableTempPtr, uint32_t> ActorActionCombatStateTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { ActorActionCombatStateTableTempPtr(nullptr), kInvalidTableId };
