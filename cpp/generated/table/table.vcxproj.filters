@@ -33,5 +33,139 @@
     <ClInclude Include="cpp_table_id_constants_name\global_abnormal_logout_table_id_constants.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="code\bit_index\mission_table_id_bit_index.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\bit_index\reward_table_id_bit_index.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\constants\actoractioncombatstate_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\constants\actoractionstate_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\constants\global_abnormal_logout_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\constants\globalvariable_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\actoractioncombatstate_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\actoractionstate_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\all_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\buff_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\class_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\condition_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\cooldown_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\globalvariable_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\item_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\mainscene_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\messagelimiter_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\mission_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\monsterbase_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\reward_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\scene_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\skill_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\skillpermission_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\test_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\testmultikey_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="code\actoractioncombatstate_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\actoractionstate_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\all_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\buff_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\class_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\condition_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\cooldown_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\globalvariable_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\item_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\mainscene_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\messagelimiter_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\mission_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\monsterbase_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\reward_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\scene_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\skill_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\skillpermission_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\test_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\testmultikey_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
