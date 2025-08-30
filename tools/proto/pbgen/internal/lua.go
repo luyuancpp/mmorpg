@@ -64,7 +64,7 @@ func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 	}
 	data := util.IncludeName(filePath, fd.Name()) +
 		"#include <sol/sol.hpp>\n" +
-		"#include \"thread_local/storage_lua.h\"\n" +
+		"#include \"threading/storage_lua.h\"\n" +
 		"void Pb2sol2" + fileBaseName + "()" + "\n{\n"
 	defer func(f *os.File) {
 		err := f.Close()
@@ -253,7 +253,7 @@ func writeLuaServiceMethodCppFile(methodList RPCMethods) {
 		return
 	}
 	var data = "#include <cstdint>\n\n"
-	data += "#include \"thread_local/storage_lua.h\"\n"
+	data += "#include \"threading/storage_lua.h\"\n"
 	data += methodList[0].IncludeName() + "\n\n"
 
 	data += "void Init" + methodList[0].Service() + "Lua()\n{\n"

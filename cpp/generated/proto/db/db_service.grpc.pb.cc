@@ -20,49 +20,49 @@
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/support/sync_stream.h>
 
-static const char* dbservice_method_names[] = {
-  "/dbservice/Test",
+static const char* db_method_names[] = {
+  "/db/Test",
 };
 
-std::unique_ptr< dbservice::Stub> dbservice::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
+std::unique_ptr< db::Stub> db::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
   (void)options;
-  std::unique_ptr< dbservice::Stub> stub(new dbservice::Stub(channel, options));
+  std::unique_ptr< db::Stub> stub(new db::Stub(channel, options));
   return stub;
 }
 
-dbservice::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
-  : channel_(channel), rpcmethod_Test_(dbservice_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+db::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
+  : channel_(channel), rpcmethod_Test_(db_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
-::grpc::Status dbservice::Stub::Test(::grpc::ClientContext* context, const ::Empty& request, ::Empty* response) {
+::grpc::Status db::Stub::Test(::grpc::ClientContext* context, const ::Empty& request, ::Empty* response) {
   return ::grpc::internal::BlockingUnaryCall< ::Empty, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Test_, context, request, response);
 }
 
-void dbservice::Stub::async::Test(::grpc::ClientContext* context, const ::Empty* request, ::Empty* response, std::function<void(::grpc::Status)> f) {
+void db::Stub::async::Test(::grpc::ClientContext* context, const ::Empty* request, ::Empty* response, std::function<void(::grpc::Status)> f) {
   ::grpc::internal::CallbackUnaryCall< ::Empty, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Test_, context, request, response, std::move(f));
 }
 
-void dbservice::Stub::async::Test(::grpc::ClientContext* context, const ::Empty* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
+void db::Stub::async::Test(::grpc::ClientContext* context, const ::Empty* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
   ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Test_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::Empty>* dbservice::Stub::PrepareAsyncTestRaw(::grpc::ClientContext* context, const ::Empty& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::Empty>* db::Stub::PrepareAsyncTestRaw(::grpc::ClientContext* context, const ::Empty& request, ::grpc::CompletionQueue* cq) {
   return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::Empty, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Test_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::Empty>* dbservice::Stub::AsyncTestRaw(::grpc::ClientContext* context, const ::Empty& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::Empty>* db::Stub::AsyncTestRaw(::grpc::ClientContext* context, const ::Empty& request, ::grpc::CompletionQueue* cq) {
   auto* result =
     this->PrepareAsyncTestRaw(context, request, cq);
   result->StartCall();
   return result;
 }
 
-dbservice::Service::Service() {
+db::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      dbservice_method_names[0],
+      db_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< dbservice::Service, ::Empty, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
-          [](dbservice::Service* service,
+      new ::grpc::internal::RpcMethodHandler< db::Service, ::Empty, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](db::Service* service,
              ::grpc::ServerContext* ctx,
              const ::Empty* req,
              ::Empty* resp) {
@@ -70,10 +70,10 @@ dbservice::Service::Service() {
              }, this)));
 }
 
-dbservice::Service::~Service() {
+db::Service::~Service() {
 }
 
-::grpc::Status dbservice::Service::Test(::grpc::ServerContext* context, const ::Empty* request, ::Empty* response) {
+::grpc::Status db::Service::Test(::grpc::ServerContext* context, const ::Empty* request, ::Empty* response) {
   (void) context;
   (void) request;
   (void) response;
