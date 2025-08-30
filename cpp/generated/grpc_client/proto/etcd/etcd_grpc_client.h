@@ -2,7 +2,7 @@
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
-#include "grpc_call_tag.h"
+#include "grpc_client/grpc_call_tag.h"
 
 #include "proto/etcd/etcd.grpc.pb.h"
 

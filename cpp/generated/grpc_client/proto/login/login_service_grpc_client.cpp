@@ -5,7 +5,7 @@
 #include "proto/logic/constants/etcd_grpc.pb.h"
 #include "common/util/encode/base64.h"
 #include <boost/pool/object_pool.hpp>
-#include "grpc_call_tag.h
+#include "grpc_call_tag.h"
 
 namespace loginpb {
 struct LoginServiceCompleteQueue {
