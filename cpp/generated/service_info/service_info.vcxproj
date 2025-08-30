@@ -23,7 +23,7 @@
     <ClInclude Include="centre_player_service_info.h" />
     <ClInclude Include="centre_scene_service_info.h" />
     <ClInclude Include="centre_service_service_info.h" />
-    <ClInclude Include="db_service_service_info.h" />
+    <ClInclude Include="db_service_info.h" />
     <ClInclude Include="etcd_service_info.h" />
     <ClInclude Include="game_client_player_service_info.h" />
     <ClInclude Include="game_player_scene_service_info.h" />

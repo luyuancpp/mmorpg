@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/db/db_service.pb.h"
+#include "proto/db/db.pb.h"
 
 
 constexpr uint32_t dbTestMessageId = 33;

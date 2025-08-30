@@ -30,9 +30,6 @@
     <ClInclude Include="centre_service_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="db_service_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="etcd_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -70,6 +67,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="playerlocator_service_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="db_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

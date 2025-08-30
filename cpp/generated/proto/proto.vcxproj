@@ -32,6 +32,10 @@
     <ClCompile Include="common\statistics.pb.cc" />
     <ClCompile Include="common\tip.pb.cc" />
     <ClCompile Include="common\user_accounts.pb.cc" />
+    <ClCompile Include="db\db.grpc.pb.cc" />
+    <ClCompile Include="db\db.pb.cc" />
+    <ClCompile Include="db\db_base.grpc.pb.cc" />
+    <ClCompile Include="db\db_base.pb.cc" />
     <ClCompile Include="logic\client_player\player_common.pb.cc" />
     <ClCompile Include="logic\component\actor_attribute_state_comp.pb.cc" />
     <ClCompile Include="logic\component\actor_combat_state_comp.pb.cc" />
@@ -70,9 +74,6 @@
     <ClCompile Include="logic\event\scene_event.pb.cc" />
     <ClCompile Include="logic\event\server_event.pb.cc" />
     <ClCompile Include="logic\event\skill_event.pb.cc" />
-    <ClCompile Include="db\db_base.pb.cc" />
-    <ClCompile Include="db\db_service.grpc.pb.cc" />
-    <ClCompile Include="db\db_service.pb.cc" />
     <ClCompile Include="db\mysql_database_table.pb.cc" />
     <ClCompile Include="etcd\etcd.grpc.pb.cc" />
     <ClCompile Include="etcd\etcd.pb.cc" />
@@ -140,6 +141,10 @@
     <ClInclude Include="common\statistics.pb.h" />
     <ClInclude Include="common\tip.pb.h" />
     <ClInclude Include="common\user_accounts.pb.h" />
+    <ClInclude Include="db\db.grpc.pb.h" />
+    <ClInclude Include="db\db.pb.h" />
+    <ClInclude Include="db\db_base.grpc.pb.h" />
+    <ClInclude Include="db\db_base.pb.h" />
     <ClInclude Include="logic\client_player\player_common.pb.h" />
     <ClInclude Include="logic\component\actor_attribute_state_comp.pb.h" />
     <ClInclude Include="logic\component\actor_combat_state_comp.pb.h" />
@@ -178,9 +183,6 @@
     <ClInclude Include="logic\event\scene_event.pb.h" />
     <ClInclude Include="logic\event\server_event.pb.h" />
     <ClInclude Include="logic\event\skill_event.pb.h" />
-    <ClInclude Include="db\db_base.pb.h" />
-    <ClInclude Include="db\db_service.grpc.pb.h" />
-    <ClInclude Include="db\db_service.pb.h" />
     <ClInclude Include="db\mysql_database_table.pb.h" />
     <ClInclude Include="etcd\etcd.grpc.pb.h" />
     <ClInclude Include="etcd\etcd.pb.h" />
