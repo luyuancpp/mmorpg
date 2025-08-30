@@ -4,7 +4,7 @@ const AsyncClientHeaderTemplate = `#pragma once
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
-#include "grpc/grpc_tag.h"
+#include "grpc_client/grpc_call_tag.h"
 
 {{.GrpcIncludeHeadName}}
 {{ range $index, $m := .ServiceInfo }}
@@ -84,9 +84,9 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 
 #include "{{.GeneratorGrpcFileName}}.h"
 #include "proto/logic/constants/etcd_grpc.pb.h"
-#include "util/base64.h"
+#include "common/util/encode/base64.h"
 #include <boost/pool/object_pool.hpp>
-
+#include "grpc_call_tag.h"
 
 namespace {{.Package}} {
 struct {{.GrpcCompleteQueueName}} {

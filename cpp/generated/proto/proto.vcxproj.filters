@@ -54,9 +54,6 @@
     <ClCompile Include="login\login_service.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="db\db_base.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="centre\centre_scene.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -73,12 +70,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="common\message.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="db\db_service.grpc.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="db\db_service.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="db\mysql_database_table.pb.cc">
@@ -333,6 +324,18 @@
     <ClCompile Include="table\reward_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="db\db.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="db\db.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="db\db_base.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="db\db_base.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\common.pb.h">
@@ -374,9 +377,6 @@
     <ClInclude Include="login\login_service.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="db\db_base.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="centre\centre_scene.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -393,12 +393,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\message.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="db\db_service.grpc.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="db\db_service.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="db\mysql_database_table.pb.h">
@@ -651,6 +645,18 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="table\testmultikey_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="db\db_base.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="db\db.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="db\db.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="db\db_base.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -49,14 +49,15 @@ const (
 	NodeGoDirectory                = OutputRoot + "go/"
 	NodeCppDirectory               = OutputRoot + "cpp/"
 	NodePkgDirectory               = "cpp/libs/"
-	NodePkgLogicDirectory          = NodePkgDirectory + "base/"
+	NodeLibBaseDirectory           = NodePkgDirectory + "base/"
+	NodeLibGameDirectory           = NodePkgDirectory + "game/"
 	NodesLibDirectory              = "nodes/"
-	NodePkgLogicSceneNodeDirectory = NodePkgDirectory + NodesLibDirectory + "scene/"
+	NodePkgLogicSceneNodeDirectory = NodeLibGameDirectory + "scene/"
 	GameNodeDirectory              = NodeCppDirectory + "nodes/scene/"
 	CentreNodeDirectory            = NodeCppDirectory + "nodes/centre/"
 	GateNodeDirectory              = NodeCppDirectory + "nodes/gate/"
 	RobotDirectory                 = "robot/"
-	GeneratedDirectory             = "generated/"
+	GeneratedDirectory             = "cpp/generated/"
 
 	ServiceIdFilePath           = ProtoDir + "serviceid.txt"
 	RpcHandlerSourceDirectory   = "handler/rpc/"
@@ -127,9 +128,9 @@ const (
 	GrpcInitFileHeadPath             = OutputRoot + GeneratedDirectory + GrpcGeneratorDirectory + "grpc_init_client.h"
 
 	GeneratorDirectory     = "generated/"
-	UtilGeneratorDirectory = GeneratorDirectory + "proto_util/"
-	GenUtilFileCppPath     = OutputRoot + UtilGeneratorDirectory + "proto_util.cpp"
-	GenUtilFileHeadPath    = OutputRoot + UtilGeneratorDirectory + "proto_util.h"
+	UtilGeneratorDirectory = OutputRoot + GeneratedDirectory + "proto_util/"
+	GenUtilFileCppPath     = UtilGeneratorDirectory + "proto_util.cpp"
+	GenUtilFileHeadPath    = UtilGeneratorDirectory + "proto_util.h"
 )
 
 // ----------- 文件名 -----------
