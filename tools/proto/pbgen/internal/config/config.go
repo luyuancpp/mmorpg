@@ -128,9 +128,9 @@ const (
 	GrpcInitFileHeadPath             = OutputRoot + GeneratedDirectory + GrpcGeneratorDirectory + "grpc_init_client.h"
 
 	GeneratorDirectory     = "generated/"
-	UtilGeneratorDirectory = GeneratorDirectory + "proto_util/"
-	GenUtilFileCppPath     = OutputRoot + UtilGeneratorDirectory + "proto_util.cpp"
-	GenUtilFileHeadPath    = OutputRoot + UtilGeneratorDirectory + "proto_util.h"
+	UtilGeneratorDirectory = OutputRoot + GeneratedDirectory + "proto_util/"
+	GenUtilFileCppPath     = UtilGeneratorDirectory + "proto_util.cpp"
+	GenUtilFileHeadPath    = UtilGeneratorDirectory + "proto_util.h"
 )
 
 // ----------- 文件名 -----------
