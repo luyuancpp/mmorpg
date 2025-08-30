@@ -77,7 +77,7 @@ var File_proto_centre_centre_player_proto protoreflect.FileDescriptor
 
 const file_proto_centre_centre_player_proto_rawDesc = "" +
 	"\n" +
-	" proto/centre/centre_player.proto\x1a\x16proto/common/tip.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\"^\n" +
+	" proto/centre/centre_player.proto\x1a\x16proto/common/tip.proto\x1a\x18proto/common/empty.proto\"^\n" +
 	"\x17CentreKickPlayerRequest\x12'\n" +
 	"\x06reason\x18\x01 \x01(\v2\x0f.TipInfoMessageR\x06reason\x12\x1a\n" +
 	"\boperator\x18\x02 \x01(\tR\boperator2q\n" +
@@ -123,7 +123,6 @@ func file_proto_centre_centre_player_proto_init() {
 		return
 	}
 	file_proto_common_tip_proto_init()
-	file_proto_common_common_proto_init()
 	file_proto_common_empty_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{

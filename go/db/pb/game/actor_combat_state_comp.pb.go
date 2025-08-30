@@ -156,7 +156,7 @@ var File_proto_logic_component_actor_combat_state_comp_proto protoreflect.FileDe
 
 const file_proto_logic_component_actor_combat_state_comp_proto_rawDesc = "" +
 	"\n" +
-	"3proto/logic/component/actor_combat_state_comp.proto\x1a proto/logic/component/comp.proto\"\xa2\x01\n" +
+	"3proto/logic/component/actor_combat_state_comp.proto\"\xa2\x01\n" +
 	"\x1dCombatStateDetailsPbComponent\x12E\n" +
 	"\asources\x18\x01 \x03(\v2+.CombatStateDetailsPbComponent.SourcesEntryR\asources\x1a:\n" +
 	"\fSourcesEntry\x12\x10\n" +
@@ -207,7 +207,6 @@ func file_proto_logic_component_actor_combat_state_comp_proto_init() {
 	if File_proto_logic_component_actor_combat_state_comp_proto != nil {
 		return
 	}
-	file_proto_logic_component_comp_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

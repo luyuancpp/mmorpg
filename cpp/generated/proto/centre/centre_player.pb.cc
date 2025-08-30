@@ -83,18 +83,16 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n proto/centre/centre_player.proto\032\026prot"
-    "o/common/tip.proto\032\031proto/common/common."
-    "proto\032\030proto/common/empty.proto\"L\n\027Centr"
-    "eKickPlayerRequest\022\037\n\006reason\030\001 \001(\0132\017.Tip"
-    "InfoMessage\022\020\n\010operator\030\002 \001(\t2q\n\023CentreP"
-    "layerUtility\022*\n\017SendTipToClient\022\017.TipInf"
-    "oMessage\032\006.Empty\022.\n\nKickPlayer\022\030.CentreK"
-    "ickPlayerRequest\032\006.EmptyB\014Z\007pb/game\200\001\001b\006"
-    "proto3"
+    "o/common/tip.proto\032\030proto/common/empty.p"
+    "roto\"L\n\027CentreKickPlayerRequest\022\037\n\006reaso"
+    "n\030\001 \001(\0132\017.TipInfoMessage\022\020\n\010operator\030\002 \001"
+    "(\t2q\n\023CentrePlayerUtility\022*\n\017SendTipToCl"
+    "ient\022\017.TipInfoMessage\032\006.Empty\022.\n\nKickPla"
+    "yer\022\030.CentreKickPlayerRequest\032\006.EmptyB\014Z"
+    "\007pb/game\200\001\001b\006proto3"
 };
-static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcentre_2fcentre_5fplayer_2eproto_deps[3] =
+static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcentre_2fcentre_5fplayer_2eproto_deps[2] =
     {
-        &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2ftip_2eproto,
 };
@@ -102,12 +100,12 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fplayer_2epro
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fplayer_2eproto = {
     false,
     false,
-    326,
+    299,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_2eproto,
     "proto/centre/centre_player.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fplayer_2eproto_once,
     descriptor_table_proto_2fcentre_2fcentre_5fplayer_2eproto_deps,
-    3,
+    2,
     1,
     schemas,
     file_default_instances,

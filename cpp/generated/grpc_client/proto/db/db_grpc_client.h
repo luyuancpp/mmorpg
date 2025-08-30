@@ -15,7 +15,7 @@ using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
 namespace  {
-using dbserviceStubPtr = std::unique_ptr<dbservice::Stub>;
+using dbserviceStubPtr = std::unique_ptr<db::Stub>;
 #pragma region dbserviceTest
 
 
