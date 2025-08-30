@@ -26,10 +26,10 @@
 #include <grpcpp/support/sync_stream.h>
 #include <grpcpp/ports_def.inc>
 
-class dbservice final {
+class db final {
  public:
   static constexpr char const* service_full_name() {
-    return "dbservice";
+    return "db";
   }
   class StubInterface {
    public:

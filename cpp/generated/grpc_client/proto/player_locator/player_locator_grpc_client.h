@@ -2,7 +2,6 @@
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
-#include "common/util/encode/base64.h"
 #include "grpc_call_tag.h"
 
 #include "proto/player_locator/player_locator.grpc.pb.h"

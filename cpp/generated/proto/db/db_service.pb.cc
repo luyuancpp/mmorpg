@@ -34,8 +34,8 @@ static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_proto_2fdb_2fdb_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\031proto/db/db_service.proto\032\030proto/commo"
-    "n/empty.proto2#\n\tdbservice\022\026\n\004Test\022\006.Emp"
-    "ty\032\006.EmptyB\tZ\007pb/gameb\006proto3"
+    "n/empty.proto2\034\n\002db\022\026\n\004Test\022\006.Empty\032\006.Em"
+    "ptyB\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fdb_2fdb_5fservice_2eproto_deps[1] =
     {
@@ -45,7 +45,7 @@ static ::absl::once_flag descriptor_table_proto_2fdb_2fdb_5fservice_2eproto_once
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdb_2fdb_5fservice_2eproto = {
     false,
     false,
-    109,
+    102,
     descriptor_table_protodef_proto_2fdb_2fdb_5fservice_2eproto,
     "proto/db/db_service.proto",
     &descriptor_table_proto_2fdb_2fdb_5fservice_2eproto_once,
