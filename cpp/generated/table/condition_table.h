@@ -9,6 +9,11 @@ class ConditionTableTempPtr  {
 public:
 	explicit ConditionTableTempPtr(const ConditionTable* ptr) : ptr_(ptr) {}
 
+    ConditionTableTempPtr(const ConditionTableTempPtr&) = delete;
+    ConditionTableTempPtr& operator=(const ConditionTableTempPtr&) = delete;
+    ConditionTableTempPtr(ConditionTableTempPtr&&) = delete;
+    ConditionTableTempPtr& operator=(ConditionTableTempPtr&&) = delete;
+
 	// Support pointer-like access
 	const ConditionTable* operator->() const { return ptr_; }
 	const ConditionTable& operator*()  const { return *ptr_; }
@@ -59,8 +64,8 @@ public:
 
     const ConditionTabledData& All() const { return data_; }
 
-    std::pair<const ConditionTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const ConditionTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<ConditionTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<ConditionTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

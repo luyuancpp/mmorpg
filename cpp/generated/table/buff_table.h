@@ -9,6 +9,11 @@ class BuffTableTempPtr  {
 public:
 	explicit BuffTableTempPtr(const BuffTable* ptr) : ptr_(ptr) {}
 
+    BuffTableTempPtr(const BuffTableTempPtr&) = delete;
+    BuffTableTempPtr& operator=(const BuffTableTempPtr&) = delete;
+    BuffTableTempPtr(BuffTableTempPtr&&) = delete;
+    BuffTableTempPtr& operator=(BuffTableTempPtr&&) = delete;
+
 	// Support pointer-like access
 	const BuffTable* operator->() const { return ptr_; }
 	const BuffTable& operator*()  const { return *ptr_; }
@@ -59,8 +64,8 @@ public:
 
     const BuffTabledData& All() const { return data_; }
 
-    std::pair<const BuffTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const BuffTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<BuffTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<BuffTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

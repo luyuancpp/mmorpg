@@ -9,6 +9,11 @@ class SceneTableTempPtr  {
 public:
 	explicit SceneTableTempPtr(const SceneTable* ptr) : ptr_(ptr) {}
 
+    SceneTableTempPtr(const SceneTableTempPtr&) = delete;
+    SceneTableTempPtr& operator=(const SceneTableTempPtr&) = delete;
+    SceneTableTempPtr(SceneTableTempPtr&&) = delete;
+    SceneTableTempPtr& operator=(SceneTableTempPtr&&) = delete;
+
 	// Support pointer-like access
 	const SceneTable* operator->() const { return ptr_; }
 	const SceneTable& operator*()  const { return *ptr_; }
@@ -59,8 +64,8 @@ public:
 
     const SceneTabledData& All() const { return data_; }
 
-    std::pair<const SceneTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const SceneTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<SceneTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<SceneTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

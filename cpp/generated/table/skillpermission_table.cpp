@@ -20,7 +20,7 @@ void SkillPermissionTableManager::Load() {
     }
 }
 
-std::pair<const SkillPermissionTableTempPtr, uint32_t> SkillPermissionTableManager::GetTable(const uint32_t tableId) {
+std::pair< SkillPermissionTableTempPtr, uint32_t> SkillPermissionTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "SkillPermission table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const SkillPermissionTableTempPtr, uint32_t> SkillPermissionTableManag
     return { SkillPermissionTableTempPtr(it->second), kSuccess };
 }
 
-std::pair<const SkillPermissionTableTempPtr, uint32_t> SkillPermissionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< SkillPermissionTableTempPtr, uint32_t> SkillPermissionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { SkillPermissionTableTempPtr(nullptr), kInvalidTableId };

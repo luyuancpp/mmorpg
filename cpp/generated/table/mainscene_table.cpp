@@ -20,7 +20,7 @@ void MainSceneTableManager::Load() {
     }
 }
 
-std::pair<const MainSceneTableTempPtr, uint32_t> MainSceneTableManager::GetTable(const uint32_t tableId) {
+std::pair< MainSceneTableTempPtr, uint32_t> MainSceneTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "MainScene table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const MainSceneTableTempPtr, uint32_t> MainSceneTableManager::GetTable
     return { MainSceneTableTempPtr(it->second), kSuccess };
 }
 
-std::pair<const MainSceneTableTempPtr, uint32_t> MainSceneTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< MainSceneTableTempPtr, uint32_t> MainSceneTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { MainSceneTableTempPtr(nullptr), kInvalidTableId };

@@ -9,6 +9,11 @@ class SkillTableTempPtr  {
 public:
 	explicit SkillTableTempPtr(const SkillTable* ptr) : ptr_(ptr) {}
 
+    SkillTableTempPtr(const SkillTableTempPtr&) = delete;
+    SkillTableTempPtr& operator=(const SkillTableTempPtr&) = delete;
+    SkillTableTempPtr(SkillTableTempPtr&&) = delete;
+    SkillTableTempPtr& operator=(SkillTableTempPtr&&) = delete;
+
 	// Support pointer-like access
 	const SkillTable* operator->() const { return ptr_; }
 	const SkillTable& operator*()  const { return *ptr_; }
@@ -59,8 +64,8 @@ public:
 
     const SkillTabledData& All() const { return data_; }
 
-    std::pair<const SkillTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const SkillTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<SkillTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<SkillTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

@@ -9,6 +9,11 @@ class ActorActionStateTableTempPtr  {
 public:
 	explicit ActorActionStateTableTempPtr(const ActorActionStateTable* ptr) : ptr_(ptr) {}
 
+    ActorActionStateTableTempPtr(const ActorActionStateTableTempPtr&) = delete;
+    ActorActionStateTableTempPtr& operator=(const ActorActionStateTableTempPtr&) = delete;
+    ActorActionStateTableTempPtr(ActorActionStateTableTempPtr&&) = delete;
+    ActorActionStateTableTempPtr& operator=(ActorActionStateTableTempPtr&&) = delete;
+
 	// Support pointer-like access
 	const ActorActionStateTable* operator->() const { return ptr_; }
 	const ActorActionStateTable& operator*()  const { return *ptr_; }
@@ -59,8 +64,8 @@ public:
 
     const ActorActionStateTabledData& All() const { return data_; }
 
-    std::pair<const ActorActionStateTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const ActorActionStateTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<ActorActionStateTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<ActorActionStateTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

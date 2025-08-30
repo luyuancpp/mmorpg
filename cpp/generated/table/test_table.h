@@ -9,6 +9,11 @@ class TestTableTempPtr  {
 public:
 	explicit TestTableTempPtr(const TestTable* ptr) : ptr_(ptr) {}
 
+    TestTableTempPtr(const TestTableTempPtr&) = delete;
+    TestTableTempPtr& operator=(const TestTableTempPtr&) = delete;
+    TestTableTempPtr(TestTableTempPtr&&) = delete;
+    TestTableTempPtr& operator=(TestTableTempPtr&&) = delete;
+
 	// Support pointer-like access
 	const TestTable* operator->() const { return ptr_; }
 	const TestTable& operator*()  const { return *ptr_; }
@@ -59,8 +64,8 @@ public:
 
     const TestTabledData& All() const { return data_; }
 
-    std::pair<const TestTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const TestTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<TestTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<TestTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

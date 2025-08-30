@@ -20,7 +20,7 @@ void MissionTableManager::Load() {
     }
 }
 
-std::pair<const MissionTableTempPtr, uint32_t> MissionTableManager::GetTable(const uint32_t tableId) {
+std::pair< MissionTableTempPtr, uint32_t> MissionTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Mission table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair<const MissionTableTempPtr, uint32_t> MissionTableManager::GetTable(con
     return { MissionTableTempPtr(it->second), kSuccess };
 }
 
-std::pair<const MissionTableTempPtr, uint32_t> MissionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< MissionTableTempPtr, uint32_t> MissionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return { MissionTableTempPtr(nullptr), kInvalidTableId };

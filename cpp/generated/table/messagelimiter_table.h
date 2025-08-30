@@ -9,6 +9,11 @@ class MessageLimiterTableTempPtr  {
 public:
 	explicit MessageLimiterTableTempPtr(const MessageLimiterTable* ptr) : ptr_(ptr) {}
 
+    MessageLimiterTableTempPtr(const MessageLimiterTableTempPtr&) = delete;
+    MessageLimiterTableTempPtr& operator=(const MessageLimiterTableTempPtr&) = delete;
+    MessageLimiterTableTempPtr(MessageLimiterTableTempPtr&&) = delete;
+    MessageLimiterTableTempPtr& operator=(MessageLimiterTableTempPtr&&) = delete;
+
 	// Support pointer-like access
 	const MessageLimiterTable* operator->() const { return ptr_; }
 	const MessageLimiterTable& operator*()  const { return *ptr_; }
@@ -59,8 +64,8 @@ public:
 
     const MessageLimiterTabledData& All() const { return data_; }
 
-    std::pair<const MessageLimiterTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const MessageLimiterTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<MessageLimiterTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<MessageLimiterTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

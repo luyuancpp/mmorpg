@@ -9,6 +9,11 @@ class MissionTableTempPtr  {
 public:
 	explicit MissionTableTempPtr(const MissionTable* ptr) : ptr_(ptr) {}
 
+    MissionTableTempPtr(const MissionTableTempPtr&) = delete;
+    MissionTableTempPtr& operator=(const MissionTableTempPtr&) = delete;
+    MissionTableTempPtr(MissionTableTempPtr&&) = delete;
+    MissionTableTempPtr& operator=(MissionTableTempPtr&&) = delete;
+
 	// Support pointer-like access
 	const MissionTable* operator->() const { return ptr_; }
 	const MissionTable& operator*()  const { return *ptr_; }
@@ -59,8 +64,8 @@ public:
 
     const MissionTabledData& All() const { return data_; }
 
-    std::pair<const MissionTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const MissionTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<MissionTableTempPtr, uint32_t> GetTable(uint32_t tableId);
+    std::pair<MissionTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
