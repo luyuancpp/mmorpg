@@ -3,7 +3,7 @@
 #include <regex>
 #include <grpcpp/create_channel.h>
 #include <boost/uuid/uuid_io.hpp>
-#include "table/all_table.h"
+#include "table/code/all_table.h"
 #include "node/system/etcd/etcd_helper.h"
 #include "config.h"
 #include "google/protobuf/util/json_util.h"
@@ -17,7 +17,7 @@
 #include "network/process_info.h"
 #include "network/rpc_session.h"
 #include "node/system/node/node_util.h"
-#include "proto/table/tip/common_error_tip.pb.h"
+#include "table/proto/tip/common_error_tip.pb.h"
 #include "proto/common/node.pb.h"
 #include "proto/logic/event/node_event.pb.h"
 #include "service_info/centre_service_service_info.h"
