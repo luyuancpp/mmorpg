@@ -2,7 +2,6 @@
 
 #include "scene/combat/buff/comp/buff_comp.h"
 #include "base/core/type_define/type_define.h"
-#include "table/buff_table.h"
 
 class BuffTable;
 class SkillExecutedEvent;

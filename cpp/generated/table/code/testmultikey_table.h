@@ -33,23 +33,23 @@ public:
     void LoadSuccess(){if (loadSuccessCallback_){loadSuccessCallback_();}}
 
     
-    std::pair< TestMultiKeyTable, uint32_t> GetByStringkey(const std::string& tableId) const;
-    const std::unordered_map<std::string, const TestMultiKeyTable>& GetStringkeyData() const { return kv_stringkeydata_; }
+    std::pair< const TestMultiKeyTable*, uint32_t> GetByStringkey(const std::string& tableId) const;
+    const std::unordered_map<std::string, const TestMultiKeyTable*>& GetStringkeyData() const { return kv_stringkeydata_; }
         
-    std::pair< TestMultiKeyTable, uint32_t> GetByUint32key(uint32_t tableId) const;
-    const std::unordered_map<uint32_t, const TestMultiKeyTable>& GetUint32keyData() const { return kv_uint32keydata_; }
+    std::pair< const TestMultiKeyTable*, uint32_t> GetByUint32key(uint32_t tableId) const;
+    const std::unordered_map<uint32_t, const TestMultiKeyTable*>& GetUint32keyData() const { return kv_uint32keydata_; }
         
-    std::pair< TestMultiKeyTable, uint32_t> GetByIn32key(int32_t tableId) const;
-    const std::unordered_map<int32_t, const TestMultiKeyTable>& GetIn32keyData() const { return kv_in32keydata_; }
+    std::pair< const TestMultiKeyTable*, uint32_t> GetByIn32key(int32_t tableId) const;
+    const std::unordered_map<int32_t, const TestMultiKeyTable*>& GetIn32keyData() const { return kv_in32keydata_; }
         
-    std::pair< TestMultiKeyTable, uint32_t> GetByMstringkey(const std::string& tableId) const;
-    const std::unordered_multimap<std::string, const TestMultiKeyTable>& GetMstringkeyData() const { return kv_mstringkeydata_; }
+    std::pair< const TestMultiKeyTable*, uint32_t> GetByMstringkey(const std::string& tableId) const;
+    const std::unordered_multimap<std::string, const TestMultiKeyTable*>& GetMstringkeyData() const { return kv_mstringkeydata_; }
         
-    std::pair< TestMultiKeyTable, uint32_t> GetByMuint32key(uint32_t tableId) const;
-    const std::unordered_multimap<uint32_t, const TestMultiKeyTable>& GetMuint32keyData() const { return kv_muint32keydata_; }
+    std::pair< const TestMultiKeyTable*, uint32_t> GetByMuint32key(uint32_t tableId) const;
+    const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetMuint32keyData() const { return kv_muint32keydata_; }
         
-    std::pair< TestMultiKeyTable, uint32_t> GetByMin32key(int32_t tableId) const;
-    const std::unordered_multimap<int32_t, const TestMultiKeyTable>& GetMin32keyData() const { return kv_min32keydata_; }
+    std::pair< const TestMultiKeyTable*, uint32_t> GetByMin32key(int32_t tableId) const;
+    const std::unordered_multimap<int32_t, const TestMultiKeyTable*>& GetMin32keyData() const { return kv_min32keydata_; }
         
 
 private:
@@ -57,12 +57,12 @@ private:
     TestMultiKeyTabledData data_;
     KeyValueDataType kv_data_;
     
-    std::unordered_map<std::string, const TestMultiKeyTable> kv_stringkeydata_;
-    std::unordered_map<uint32_t, const TestMultiKeyTable> kv_uint32keydata_;
-    std::unordered_map<int32_t, const TestMultiKeyTable> kv_in32keydata_;
-    std::unordered_multimap<std::string, const TestMultiKeyTable> kv_mstringkeydata_;
-    std::unordered_multimap<uint32_t, const TestMultiKeyTable> kv_muint32keydata_;
-    std::unordered_multimap<int32_t, const TestMultiKeyTable> kv_min32keydata_;
+    std::unordered_map<std::string, const TestMultiKeyTable *> kv_stringkeydata_;
+    std::unordered_map<uint32_t, const TestMultiKeyTable *> kv_uint32keydata_;
+    std::unordered_map<int32_t, const TestMultiKeyTable *> kv_in32keydata_;
+    std::unordered_multimap<std::string, const TestMultiKeyTable *> kv_mstringkeydata_;
+    std::unordered_multimap<uint32_t, const TestMultiKeyTable *> kv_muint32keydata_;
+    std::unordered_multimap<int32_t, const TestMultiKeyTable *> kv_min32keydata_;
 };
 
 inline const TestMultiKeyTabledData& GetTestMultiKeyAllTable() {

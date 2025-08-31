@@ -1,10 +1,10 @@
 #pragma once
-#include "table/buff_table.h"
 #include <entt/src/entt/entity/entity.hpp>
 
 #include "scene/combat/skill/comp/skill_comp.h"
 
 struct BuffComp;
+class BuffTable;
 
 class MotionModifierBuffImplSystem{
 public:

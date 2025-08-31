@@ -35,8 +35,8 @@ public:
     {% for data in datastring if data %}
         {%- if data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL -%}
             {%- set column_map_type = 'unordered_map' if data[generate_common.COL_OBJ_TABLE_MULTI] != generate_common.MULTI_TABLE_KEY_CELL else 'unordered_multimap' %}
-    std::pair< {{ sheetname }}Table, uint32_t> GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const;
-    const std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}Table>& Get{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data() const { return kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_; }
+    std::pair< const {{ sheetname }}Table*, uint32_t> GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const;
+    const std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}Table*>& Get{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data() const { return kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_; }
         {% endif %}
         {%- if data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not none -%}
     {{ data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] }} Get{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}(const uint32_t tableId){
@@ -62,7 +62,7 @@ private:
     {% for data in datastring if data %}
         {%- if data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL -%}
             {% set column_map_type = 'unordered_map' if data[generate_common.COL_OBJ_TABLE_MULTI] != generate_common.MULTI_TABLE_KEY_CELL else 'unordered_multimap' %}
-    std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}Table> kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_;
+    std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}Table *> kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_;
         {%- endif -%}
         {%- if data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not none -%}
     ExcelExpression<{{ data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] }}> expression_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}_;
