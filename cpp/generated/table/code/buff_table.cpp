@@ -1,7 +1,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "buff_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/buff_table.h"
 
 std::string GetConfigDir();
 
@@ -24,19 +24,19 @@ void BuffTableManager::Load() {
     });
 }
 
-std::pair< BuffTableTempPtr, uint32_t> BuffTableManager::GetTable(const uint32_t tableId) {
+std::pair< BuffTable*, uint32_t> BuffTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Buff table not found for ID: " << tableId;
-        return { BuffTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { BuffTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
 
-std::pair< BuffTableTempPtr, uint32_t> BuffTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< BuffTable*, uint32_t> BuffTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { BuffTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { BuffTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }

@@ -1,8 +1,8 @@
 ﻿#include "reward_system.h"
 
 #include "muduo/base/Logging.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "proto/table/tip/reward_error_tip.pb.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/reward_error_tip.pb.h"
 #include "reward/comp/reward_comp.h"
 
 #include <threading/registry_manager.h>

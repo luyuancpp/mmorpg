@@ -1,7 +1,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "test_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/test_table.h"
 
 std::string GetConfigDir();
 
@@ -20,19 +20,19 @@ void TestTableManager::Load() {
     }
 }
 
-std::pair< TestTableTempPtr, uint32_t> TestTableManager::GetTable(const uint32_t tableId) {
+std::pair< TestTable*, uint32_t> TestTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Test table not found for ID: " << tableId;
-        return { TestTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { TestTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
 
-std::pair< TestTableTempPtr, uint32_t> TestTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< TestTable*, uint32_t> TestTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { TestTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { TestTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }

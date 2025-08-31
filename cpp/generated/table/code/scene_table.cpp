@@ -1,7 +1,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "scene_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/scene_table.h"
 
 std::string GetConfigDir();
 
@@ -20,19 +20,19 @@ void SceneTableManager::Load() {
     }
 }
 
-std::pair< SceneTableTempPtr, uint32_t> SceneTableManager::GetTable(const uint32_t tableId) {
+std::pair< SceneTable*, uint32_t> SceneTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Scene table not found for ID: " << tableId;
-        return { SceneTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { SceneTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
 
-std::pair< SceneTableTempPtr, uint32_t> SceneTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< SceneTable*, uint32_t> SceneTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { SceneTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { SceneTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }

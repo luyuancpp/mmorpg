@@ -1,7 +1,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "mission_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/mission_table.h"
 
 std::string GetConfigDir();
 
@@ -20,19 +20,19 @@ void MissionTableManager::Load() {
     }
 }
 
-std::pair< MissionTableTempPtr, uint32_t> MissionTableManager::GetTable(const uint32_t tableId) {
+std::pair< MissionTable*, uint32_t> MissionTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Mission table not found for ID: " << tableId;
-        return { MissionTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { MissionTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
 
-std::pair< MissionTableTempPtr, uint32_t> MissionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< MissionTable*, uint32_t> MissionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { MissionTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { MissionTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }

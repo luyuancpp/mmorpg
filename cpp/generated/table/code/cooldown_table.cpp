@@ -1,7 +1,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "cooldown_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/cooldown_table.h"
 
 std::string GetConfigDir();
 
@@ -20,19 +20,19 @@ void CooldownTableManager::Load() {
     }
 }
 
-std::pair< CooldownTableTempPtr, uint32_t> CooldownTableManager::GetTable(const uint32_t tableId) {
+std::pair< CooldownTable*, uint32_t> CooldownTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Cooldown table not found for ID: " << tableId;
-        return { CooldownTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { CooldownTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
 
-std::pair< CooldownTableTempPtr, uint32_t> CooldownTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< CooldownTable*, uint32_t> CooldownTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { CooldownTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { CooldownTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }

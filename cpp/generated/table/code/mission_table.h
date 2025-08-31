@@ -3,52 +3,7 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/mission_table.pb.h"
-
-class MissionTableTempPtr  {
-public:
-	explicit MissionTableTempPtr(const MissionTable* ptr) : ptr_(ptr) {}
-
-    MissionTableTempPtr(const MissionTableTempPtr&) = delete;
-    MissionTableTempPtr& operator=(const MissionTableTempPtr&) = delete;
-    MissionTableTempPtr(MissionTableTempPtr&&) = delete;
-    MissionTableTempPtr& operator=(MissionTableTempPtr&&) = delete;
-
-	// Support pointer-like access
-	const MissionTable* operator->() const { return ptr_; }
-	const MissionTable& operator*()  const { return *ptr_; }
-
-	// Enable usage in boolean expressions
-	explicit operator bool() const { return ptr_ != nullptr; }
-
-	// Enable comparison with nullptr (does NOT trigger deprecation)
-	friend bool operator==(const MissionTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(const MissionTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ != nullptr;
-	}
-
-	friend bool operator==(std::nullptr_t, const MissionTableTempPtr& rhs) {
-		return rhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(std::nullptr_t, const MissionTableTempPtr& rhs) {
-		return rhs.ptr_ != nullptr;
-	}
-
-	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	operator const MissionTable* () const { return ptr_; }
-
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	const MissionTable* Get() const { return ptr_; }
-
-private:
-	const MissionTable* ptr_;
-};
-
+#include "table/proto/mission_table.pb.h"
 
 class MissionTableManager {
 public:
@@ -64,8 +19,8 @@ public:
 
     const MissionTabledData& All() const { return data_; }
 
-    std::pair<MissionTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<MissionTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<MissionTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<MissionTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

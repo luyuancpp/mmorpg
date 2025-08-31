@@ -2,12 +2,12 @@
 
 #include <ranges>
 
-#include "table/condition_table.h"
+#include "table/code/condition_table.h"
 #include "mission/constants/mission_constants.h"
 
 #include "macros/return_define.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "proto/table/tip/mission_error_tip.pb.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/mission_error_tip.pb.h"
 
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"

@@ -3,52 +3,7 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/{{ sheetname | lower }}_table.pb.h"
-
-class {{ sheetname }}TableTempPtr  {
-public:
-	explicit {{ sheetname }}TableTempPtr(const {{ sheetname }}Table* ptr) : ptr_(ptr) {}
-
-    {{ sheetname }}TableTempPtr(const {{ sheetname }}TableTempPtr&) = delete;
-    {{ sheetname }}TableTempPtr& operator=(const {{ sheetname }}TableTempPtr&) = delete;
-    {{ sheetname }}TableTempPtr({{ sheetname }}TableTempPtr&&) = delete;
-    {{ sheetname }}TableTempPtr& operator=({{ sheetname }}TableTempPtr&&) = delete;
-
-	// Support pointer-like access
-	const {{ sheetname }}Table* operator->() const { return ptr_; }
-	const {{ sheetname }}Table& operator*()  const { return *ptr_; }
-
-	// Enable usage in boolean expressions
-	explicit operator bool() const { return ptr_ != nullptr; }
-
-	// Enable comparison with nullptr (does NOT trigger deprecation)
-	friend bool operator==(const {{ sheetname }}TableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(const {{ sheetname }}TableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ != nullptr;
-	}
-
-	friend bool operator==(std::nullptr_t, const {{ sheetname }}TableTempPtr& rhs) {
-		return rhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(std::nullptr_t, const {{ sheetname }}TableTempPtr& rhs) {
-		return rhs.ptr_ != nullptr;
-	}
-
-	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	operator const {{ sheetname }}Table* () const { return ptr_; }
-
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	const {{ sheetname }}Table* Get() const { return ptr_; }
-
-private:
-	const {{ sheetname }}Table* ptr_;
-};
-
+#include "table/proto/{{ sheetname | lower }}_table.pb.h"
 
 class {{ sheetname }}TableManager {
 public:
@@ -64,8 +19,8 @@ public:
 
     const {{ sheetname }}TabledData& All() const { return data_; }
 
-    std::pair<{{ sheetname }}TableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<{{ sheetname }}TableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<{{ sheetname }}Table*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<{{ sheetname }}Table*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -80,8 +35,8 @@ public:
     {% for data in datastring if data %}
         {%- if data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL -%}
             {%- set column_map_type = 'unordered_map' if data[generate_common.COL_OBJ_TABLE_MULTI] != generate_common.MULTI_TABLE_KEY_CELL else 'unordered_multimap' %}
-    std::pair< {{ sheetname }}TableTempPtr, uint32_t> GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const;
-    const std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}TableTempPtr>& Get{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data() const { return kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_; }
+    std::pair< {{ sheetname }}Table, uint32_t> GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const;
+    const std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}Table>& Get{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data() const { return kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_; }
         {% endif %}
         {%- if data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not none -%}
     {{ data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] }} Get{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}(const uint32_t tableId){
@@ -107,7 +62,7 @@ private:
     {% for data in datastring if data %}
         {%- if data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL -%}
             {% set column_map_type = 'unordered_map' if data[generate_common.COL_OBJ_TABLE_MULTI] != generate_common.MULTI_TABLE_KEY_CELL else 'unordered_multimap' %}
-    std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}TableTempPtr> kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_;
+    std::{{ column_map_type }}<{{ get_cpp_type_name(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}, const {{ sheetname }}Table> kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_;
         {%- endif -%}
         {%- if data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not none -%}
     ExcelExpression<{{ data[generate_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] }}> expression_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}_;

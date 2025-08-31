@@ -1,7 +1,7 @@
 ﻿#include "modifier_buff_impl_system.h"
 
 #include "table/buff_table.h"
-#include "proto/table/buff_table.pb.h"
+#include "table/proto/buff_table.pb.h"
 #include "proto/logic/component/actor_attribute_state_comp.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "actor/attribute/system/actor_attribute_calculator_system.h"
@@ -10,7 +10,7 @@
 
 #include <threading/registry_manager.h>
 
-bool ModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTableTempPtr& buffTable) {
+bool ModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
     if (buffTable == nullptr) {
         return false;
     }
@@ -29,7 +29,7 @@ void ModifierBuffImplSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTab
     // 当前未实现，可以添加逻辑来刷新 buff
 }
 
-bool ModifierBuffImplSystem::OnBuffRemove(const entt::entity parent, BuffComp& buff, const BuffTableTempPtr& buffTable) {
+bool ModifierBuffImplSystem::OnBuffRemove(const entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
     if (buffTable == nullptr) {
         return false;
     }
@@ -43,7 +43,7 @@ bool ModifierBuffImplSystem::OnBuffRemove(const entt::entity parent, BuffComp& b
     return  false;
 }
 
-bool ModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffComp& buff, const BuffTableTempPtr& buffTable) {
+bool ModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
     // 当前未实现，可以添加销毁 buff 的逻辑
 
     if (buffTable == nullptr) {
@@ -54,7 +54,7 @@ bool ModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffComp& buff, 
     return false;
 }
 
-static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffComp& buffComp, const BuffTableTempPtr& buffTable)
+static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
 {
     if (buffTable == nullptr) {
         return false;
@@ -82,7 +82,7 @@ static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffComp&
     return  true;
 }
 
-bool ModifierBuffImplSystem::OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTableTempPtr& buffTable)
+bool ModifierBuffImplSystem::OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
 {
 
     switch (buffTable->bufftype())
@@ -104,7 +104,7 @@ void ModifierBuffImplSystem::OnSkillHit(entt::entity caster, entt::entity target
 {
 }
 
-bool ModifierBuffImplSystem::IsMovementSpeedBuff(const BuffTableTempPtr& buffTable) {
+bool ModifierBuffImplSystem::IsMovementSpeedBuff(const BuffTable* buffTable) {
     return buffTable->bufftype() == kBuffTypeMovementSpeedReduction || 
            buffTable->bufftype() == kBuffTypeMovementSpeedBoost;
 }

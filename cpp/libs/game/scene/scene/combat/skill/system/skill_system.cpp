@@ -2,7 +2,7 @@
 
 #include <muduo/base/Logging.h>
 
-#include "proto/table/tip/entity_error_tip.pb.h"
+#include "table/proto/tip/entity_error_tip.pb.h"
 #include "table/skillpermission_table.h"
 #include "table/skill_table.h"
 #include "actor/action_state/constants/actor_state_constants.h"
@@ -15,8 +15,8 @@
 #include "proto/logic/event/combat_event.pb.h"
 #include "proto/logic/event/skill_event.pb.h"
 #include "macros/return_define.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "proto/table/tip/skill_error_tip.pb.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/skill_error_tip.pb.h"
 #include "proto/logic/component/buff_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
@@ -42,7 +42,7 @@ void SkillSystem::InitializeActorComponents(entt::entity entity) {
 	tlsRegistryManager.actorRegistry.emplace<CooldownTimeListComp>(entity);
 }
 
-void SkillSystem::StartCooldown(entt::entity caster, const SkillTableTempPtr& skillTable) {
+void SkillSystem::StartCooldown(entt::entity caster, const SkillTable* skillTable) {
 	if (auto* coolDownComp = tlsRegistryManager.actorRegistry.try_get<CooldownTimeListComp>(caster)) {
 		CooldownTimeComp comp;
 		comp.set_start(TimeUtil::NowMilliseconds());
@@ -85,14 +85,14 @@ void AddSkillContext(entt::entity caster, const ReleaseSkillSkillRequest* reques
 	}
 }
 
-void ConsumeItems(entt::entity caster, const SkillTableTempPtr& skillTable) {
+void ConsumeItems(entt::entity caster, const SkillTable* skillTable) {
 	for (const auto& item : skillTable->requireditem()) {
 		// TODO: Implement item consumption logic
 	}
 }
 
 // Consume required resources
-void ConsumeResources(entt::entity caster, const SkillTableTempPtr& skillTable) {
+void ConsumeResources(entt::entity caster, const SkillTable* skillTable) {
 	for (const auto& resource : skillTable->requestresource()) {
 		// TODO: Implement resource consumption logic
 	}
@@ -126,7 +126,7 @@ uint32_t SkillSystem::ReleaseSkill(const entt::entity casterEntity, const Releas
 	return kSuccess;
 }
 
-uint32_t CheckPlayerLevel(const entt::entity casterEntity, const SkillTableTempPtr& skillTable) {
+uint32_t CheckPlayerLevel(const entt::entity casterEntity, const SkillTable* skillTable) {
 	if (!tlsRegistryManager.actorRegistry.any_of<Player>(casterEntity))
 	{
 		return  kSuccess;
@@ -147,7 +147,7 @@ uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
 }
 
 
-uint32_t CheckBuff(const entt::entity casterEntity, const SkillTableTempPtr& skillTable) {
+uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable) {
 
 	auto& combatStateCollection = tlsRegistryManager.actorRegistry.get<CombatStateCollectionPbComponent>(casterEntity);
 
@@ -166,13 +166,13 @@ uint32_t CheckBuff(const entt::entity casterEntity, const SkillTableTempPtr& ski
 }
 
 
-uint32_t CheckState(const entt::entity casterEntity, const SkillTableTempPtr& skillTable) {
+uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTable) {
 	RETURN_ON_ERROR(ActorActionStateSystem::TryPerformAction(casterEntity, kActorActionUseSkill, kActorStateCombat));
 	RETURN_ON_ERROR(CombatStateSystem::ValidateSkillUsage(casterEntity, kActorActionUseSkill));
 	return kSuccess;
 }
 
-uint32_t CheckItemUse(const entt::entity casterEntity, const SkillTableTempPtr& skillTable) {
+uint32_t CheckItemUse(const entt::entity casterEntity, const SkillTable* skillTable) {
 	for (auto& item : skillTable->requireditem()){
 		
 	}
@@ -369,7 +369,7 @@ uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillSkillRequest* request) 
 	return err;  // 返回错误状态（如果有）
 }
 
-uint32_t SkillSystem::CheckCooldown(const entt::entity casterEntity, const SkillTableTempPtr& skillTable) {
+uint32_t SkillSystem::CheckCooldown(const entt::entity casterEntity, const SkillTable* skillTable) {
 	if (const auto* coolDownTimeListComp = tlsRegistryManager.actorRegistry.try_get<CooldownTimeListComp>(casterEntity)) {
 		if (const auto it = coolDownTimeListComp->cooldown_list().find(skillTable->cooldown_id());
 			it != coolDownTimeListComp->cooldown_list().end() &&
@@ -385,7 +385,7 @@ uint32_t SkillSystem::CheckCooldown(const entt::entity casterEntity, const Skill
 	return kSuccess;
 }
 
-uint32_t SkillSystem::CheckCasting(const entt::entity casterEntity, const SkillTableTempPtr& skillTable) {
+uint32_t SkillSystem::CheckCasting(const entt::entity casterEntity, const SkillTable* skillTable) {
 	if (auto* castTimerComp = tlsRegistryManager.actorRegistry.try_get<CastingTimerComp>(casterEntity)) {
 		if (skillTable->immediately() && castTimerComp->timer.IsActive()) {
 			LOG_INFO << "Immediate skill: " << skillTable->id()
@@ -406,7 +406,7 @@ uint32_t SkillSystem::CheckCasting(const entt::entity casterEntity, const SkillT
 	return kSuccess;
 }
 
-uint32_t SkillSystem::CheckRecovery(const entt::entity casterEntity, const SkillTableTempPtr& skillTable) {
+uint32_t SkillSystem::CheckRecovery(const entt::entity casterEntity, const SkillTable* skillTable) {
 	if (auto* recoveryTimeTimerComp = tlsRegistryManager.actorRegistry.try_get<RecoveryTimerComp>(casterEntity)) {
 		if (skillTable->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
 			LOG_INFO << "Immediate skill: " << skillTable->id()
@@ -427,7 +427,7 @@ uint32_t SkillSystem::CheckRecovery(const entt::entity casterEntity, const Skill
 	return kSuccess;
 }
 
-uint32_t SkillSystem::CheckChannel(const entt::entity casterEntity, const SkillTableTempPtr& skillTable) {
+uint32_t SkillSystem::CheckChannel(const entt::entity casterEntity, const SkillTable* skillTable) {
 	if (auto* channelFinishTimerComp = tlsRegistryManager.actorRegistry.try_get<ChannelFinishTimerComp>(casterEntity)) {
 		if (skillTable->immediately() && channelFinishTimerComp->timer.IsActive()) {
 			LOG_INFO << "Immediate skill: " << skillTable->id()
@@ -465,7 +465,7 @@ void SkillSystem::BroadcastSkillUsedMessage(const entt::entity casterEntity, con
 	);
 }
 
-void SkillSystem::SetupCastingTimer(entt::entity casterEntity, const SkillTableTempPtr& skillTable, uint64_t skillId) {
+void SkillSystem::SetupCastingTimer(entt::entity casterEntity, const SkillTable* skillTable, uint64_t skillId) {
 	auto& castingTimer = tlsRegistryManager.actorRegistry.get_or_emplace<CastingTimerComp>(casterEntity).timer;
 	if (IsSkillOfType(skillTable->id(), kGeneralSkill)) {
 		castingTimer.RunAfter(skillTable->castpoint(), [casterEntity, skillId] {

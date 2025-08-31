@@ -1,7 +1,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "skill_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/skill_table.h"
 
 std::string GetConfigDir();
 
@@ -23,19 +23,19 @@ void SkillTableManager::Load() {
     });
 }
 
-std::pair< SkillTableTempPtr, uint32_t> SkillTableManager::GetTable(const uint32_t tableId) {
+std::pair< SkillTable*, uint32_t> SkillTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Skill table not found for ID: " << tableId;
-        return { SkillTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { SkillTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
 
-std::pair< SkillTableTempPtr, uint32_t> SkillTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< SkillTable*, uint32_t> SkillTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { SkillTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { SkillTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }

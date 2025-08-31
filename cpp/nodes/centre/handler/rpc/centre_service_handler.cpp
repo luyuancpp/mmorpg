@@ -3,8 +3,8 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "centre_node.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "table/mainscene_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/mainscene_table.h"
 #include "session/system/session_system.h"
 #include "rpc/player_service.h"
 #include "muduo/net/Callbacks.h"
@@ -12,7 +12,7 @@
 #include "network/rpc_session.h"
 #include "network/error_handling_system.h"
 #include "node/comp/game_node_comp.h"
-#include "proto/table/tip/login_error_tip.pb.h"
+#include "table/proto/tip/login_error_tip.pb.h"
 #include "player/system/player_node_system.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"

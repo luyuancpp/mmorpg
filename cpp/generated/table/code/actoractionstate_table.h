@@ -3,52 +3,7 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/actoractionstate_table.pb.h"
-
-class ActorActionStateTableTempPtr  {
-public:
-	explicit ActorActionStateTableTempPtr(const ActorActionStateTable* ptr) : ptr_(ptr) {}
-
-    ActorActionStateTableTempPtr(const ActorActionStateTableTempPtr&) = delete;
-    ActorActionStateTableTempPtr& operator=(const ActorActionStateTableTempPtr&) = delete;
-    ActorActionStateTableTempPtr(ActorActionStateTableTempPtr&&) = delete;
-    ActorActionStateTableTempPtr& operator=(ActorActionStateTableTempPtr&&) = delete;
-
-	// Support pointer-like access
-	const ActorActionStateTable* operator->() const { return ptr_; }
-	const ActorActionStateTable& operator*()  const { return *ptr_; }
-
-	// Enable usage in boolean expressions
-	explicit operator bool() const { return ptr_ != nullptr; }
-
-	// Enable comparison with nullptr (does NOT trigger deprecation)
-	friend bool operator==(const ActorActionStateTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(const ActorActionStateTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ != nullptr;
-	}
-
-	friend bool operator==(std::nullptr_t, const ActorActionStateTableTempPtr& rhs) {
-		return rhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(std::nullptr_t, const ActorActionStateTableTempPtr& rhs) {
-		return rhs.ptr_ != nullptr;
-	}
-
-	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	operator const ActorActionStateTable* () const { return ptr_; }
-
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	const ActorActionStateTable* Get() const { return ptr_; }
-
-private:
-	const ActorActionStateTable* ptr_;
-};
-
+#include "table/proto/actoractionstate_table.pb.h"
 
 class ActorActionStateTableManager {
 public:
@@ -64,8 +19,8 @@ public:
 
     const ActorActionStateTabledData& All() const { return data_; }
 
-    std::pair<ActorActionStateTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<ActorActionStateTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<ActorActionStateTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<ActorActionStateTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

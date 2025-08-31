@@ -1,7 +1,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "actoractioncombatstate_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/actoractioncombatstate_table.h"
 
 std::string GetConfigDir();
 
@@ -20,19 +20,19 @@ void ActorActionCombatStateTableManager::Load() {
     }
 }
 
-std::pair< ActorActionCombatStateTableTempPtr, uint32_t> ActorActionCombatStateTableManager::GetTable(const uint32_t tableId) {
+std::pair< ActorActionCombatStateTable*, uint32_t> ActorActionCombatStateTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "ActorActionCombatState table not found for ID: " << tableId;
-        return { ActorActionCombatStateTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { ActorActionCombatStateTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
 
-std::pair< ActorActionCombatStateTableTempPtr, uint32_t> ActorActionCombatStateTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< ActorActionCombatStateTable*, uint32_t> ActorActionCombatStateTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { ActorActionCombatStateTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { ActorActionCombatStateTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }

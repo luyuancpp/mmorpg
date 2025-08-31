@@ -2,7 +2,7 @@
 
 #include "table/buff_table.h"
 #include "scene/combat/buff/system/buff_system.h"
-#include "proto/table/tip/common_error_tip.pb.h"
+#include "table/proto/tip/common_error_tip.pb.h"
 #include "scene//combat_state/constants/combat_state_constants.h"
 #include "scene/combat/buff/comp/buff_comp.h"
 #include "scene/combat/buff/constants/buff_constants.h"
@@ -17,7 +17,7 @@
 class BuffImplSystem {
 public:
     // 定期调用逻辑 (每帧或定时触发)
-    static bool OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTableTempPtr& buffTable) {
+    static bool OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable) {
         if (!buffTable) return false;
 
         switch (buffTable->bufftype()) {
@@ -29,7 +29,7 @@ public:
     }
 
     // Buff开始时的逻辑
-    static bool OnBuffStart(const entt::entity parent, const BuffComp& buffComp, const BuffTableTempPtr& buffTable) {
+    static bool OnBuffStart(const entt::entity parent, const BuffComp& buffComp, const BuffTable* buffTable) {
         if (!buffTable) return false;
 
         switch (buffTable->bufftype()) {
@@ -41,7 +41,7 @@ public:
     }
 
     // Buff销毁时的逻辑
-    static bool OnBuffDestroy(const entt::entity parent, uint64_t buffId, const BuffTableTempPtr& buffTable) {
+    static bool OnBuffDestroy(const entt::entity parent, uint64_t buffId, const BuffTable* buffTable) {
         if (!buffTable) return false;
 
         switch (buffTable->bufftype()) {
@@ -113,7 +113,7 @@ private:
     static bool HandleIntervalNoDamageOrSkillHit(
         const entt::entity parent,
         BuffComp& buffComp,
-        const BuffTableTempPtr& buffTable
+        const BuffTable* buffTable
     ) {
         if (!buffTable || buffTable->nodamageorskillhitinlastseconds() <= 0) return false;
 
@@ -157,7 +157,7 @@ private:
     // 处理下一次基础攻击的 Buff 逻辑
     static void ApplyNextBasicAttackBuff(
         BuffComp& buffComp,
-		const BuffTableTempPtr& buffTable,
+		const BuffTable* buffTable,
         DamageEventPbComponent& damageEvent,
         UInt64Set& buffsToRemoveCaster,
         const entt::entity casterEntity,

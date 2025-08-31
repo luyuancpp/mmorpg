@@ -1,7 +1,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "skillpermission_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/skillpermission_table.h"
 
 std::string GetConfigDir();
 
@@ -20,19 +20,19 @@ void SkillPermissionTableManager::Load() {
     }
 }
 
-std::pair< SkillPermissionTableTempPtr, uint32_t> SkillPermissionTableManager::GetTable(const uint32_t tableId) {
+std::pair< SkillPermissionTable*, uint32_t> SkillPermissionTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "SkillPermission table not found for ID: " << tableId;
-        return { SkillPermissionTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { SkillPermissionTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
 
-std::pair< SkillPermissionTableTempPtr, uint32_t> SkillPermissionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< SkillPermissionTable*, uint32_t> SkillPermissionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { SkillPermissionTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { SkillPermissionTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }

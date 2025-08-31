@@ -3,52 +3,7 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/globalvariable_table.pb.h"
-
-class GlobalVariableTableTempPtr  {
-public:
-	explicit GlobalVariableTableTempPtr(const GlobalVariableTable* ptr) : ptr_(ptr) {}
-
-    GlobalVariableTableTempPtr(const GlobalVariableTableTempPtr&) = delete;
-    GlobalVariableTableTempPtr& operator=(const GlobalVariableTableTempPtr&) = delete;
-    GlobalVariableTableTempPtr(GlobalVariableTableTempPtr&&) = delete;
-    GlobalVariableTableTempPtr& operator=(GlobalVariableTableTempPtr&&) = delete;
-
-	// Support pointer-like access
-	const GlobalVariableTable* operator->() const { return ptr_; }
-	const GlobalVariableTable& operator*()  const { return *ptr_; }
-
-	// Enable usage in boolean expressions
-	explicit operator bool() const { return ptr_ != nullptr; }
-
-	// Enable comparison with nullptr (does NOT trigger deprecation)
-	friend bool operator==(const GlobalVariableTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(const GlobalVariableTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ != nullptr;
-	}
-
-	friend bool operator==(std::nullptr_t, const GlobalVariableTableTempPtr& rhs) {
-		return rhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(std::nullptr_t, const GlobalVariableTableTempPtr& rhs) {
-		return rhs.ptr_ != nullptr;
-	}
-
-	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	operator const GlobalVariableTable* () const { return ptr_; }
-
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	const GlobalVariableTable* Get() const { return ptr_; }
-
-private:
-	const GlobalVariableTable* ptr_;
-};
-
+#include "table/proto/globalvariable_table.pb.h"
 
 class GlobalVariableTableManager {
 public:
@@ -64,8 +19,8 @@ public:
 
     const GlobalVariableTabledData& All() const { return data_; }
 
-    std::pair<GlobalVariableTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<GlobalVariableTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<GlobalVariableTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<GlobalVariableTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

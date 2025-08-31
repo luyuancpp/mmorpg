@@ -3,52 +3,7 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/reward_table.pb.h"
-
-class RewardTableTempPtr  {
-public:
-	explicit RewardTableTempPtr(const RewardTable* ptr) : ptr_(ptr) {}
-
-    RewardTableTempPtr(const RewardTableTempPtr&) = delete;
-    RewardTableTempPtr& operator=(const RewardTableTempPtr&) = delete;
-    RewardTableTempPtr(RewardTableTempPtr&&) = delete;
-    RewardTableTempPtr& operator=(RewardTableTempPtr&&) = delete;
-
-	// Support pointer-like access
-	const RewardTable* operator->() const { return ptr_; }
-	const RewardTable& operator*()  const { return *ptr_; }
-
-	// Enable usage in boolean expressions
-	explicit operator bool() const { return ptr_ != nullptr; }
-
-	// Enable comparison with nullptr (does NOT trigger deprecation)
-	friend bool operator==(const RewardTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(const RewardTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ != nullptr;
-	}
-
-	friend bool operator==(std::nullptr_t, const RewardTableTempPtr& rhs) {
-		return rhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(std::nullptr_t, const RewardTableTempPtr& rhs) {
-		return rhs.ptr_ != nullptr;
-	}
-
-	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	operator const RewardTable* () const { return ptr_; }
-
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	const RewardTable* Get() const { return ptr_; }
-
-private:
-	const RewardTable* ptr_;
-};
-
+#include "table/proto/reward_table.pb.h"
 
 class RewardTableManager {
 public:
@@ -64,8 +19,8 @@ public:
 
     const RewardTabledData& All() const { return data_; }
 
-    std::pair<RewardTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<RewardTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<RewardTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<RewardTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

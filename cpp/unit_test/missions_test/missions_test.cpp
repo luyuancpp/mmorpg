@@ -5,8 +5,8 @@
 #include "mission/constants/mission_constants.h"
 #include "mission/comp/mission_comp.h"
 #include "mission/system/mission_system.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "proto/table/tip/mission_error_tip.pb.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/mission_error_tip.pb.h"
 #include "../../nodes/scene/handler/event/mission_event_handler.h"
 #include "base/common/util/random/random.h"
 

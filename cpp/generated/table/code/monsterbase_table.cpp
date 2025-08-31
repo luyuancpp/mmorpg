@@ -1,7 +1,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "monsterbase_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/monsterbase_table.h"
 
 std::string GetConfigDir();
 
@@ -20,19 +20,19 @@ void MonsterBaseTableManager::Load() {
     }
 }
 
-std::pair< MonsterBaseTableTempPtr, uint32_t> MonsterBaseTableManager::GetTable(const uint32_t tableId) {
+std::pair< MonsterBaseTable*, uint32_t> MonsterBaseTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "MonsterBase table not found for ID: " << tableId;
-        return { MonsterBaseTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { MonsterBaseTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
 
-std::pair< MonsterBaseTableTempPtr, uint32_t> MonsterBaseTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< MonsterBaseTable*, uint32_t> MonsterBaseTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { MonsterBaseTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { MonsterBaseTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
