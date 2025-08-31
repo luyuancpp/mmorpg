@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "table/buff_table.h"
+#include "table/code/buff_table.h"
 #include "scene/combat/buff/system/buff_system.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "scene//combat_state/constants/combat_state_constants.h"

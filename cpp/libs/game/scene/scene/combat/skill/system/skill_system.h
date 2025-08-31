@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <entt/src/entt/entity/entity.hpp>
-#include "table/skill_table.h"
+
 
 #include "proto/scene/player_skill.pb.h"
 //https://zhuanlan.zhihu.com/p/149704315

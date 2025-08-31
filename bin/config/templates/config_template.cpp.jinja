@@ -57,7 +57,7 @@ std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::Ge
 
 {%- for data in datastring %}
     {%- if data and data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL %}
-std::pair< {{ sheetname }}Table, uint32_t> {{ sheetname }}TableManager::GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const {
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}({{ get_cpp_type_param_name_with_ref(data[generate_common.COL_OBJ_COLUMN_TYPE]) }} tableId) const {
     const auto it = kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_.find(tableId);
     if (it == kv_{{ data[generate_common.COL_OBJ_COLUMN_NAME] }}data_.end()) {
         LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId;

@@ -2,7 +2,7 @@
 #include "gmock/gmock.h"
 #include "scene/combat/skill/system/skill_system.h"
 
-#include "table/skill_table.h"
+#include "table/code/skill_table.h"
 #include "scene/combat/skill/comp/skill_comp.h"
 #include "scene/combat/skill/constants/skill_constants.h"
 #include "time/comp/timer_task_comp.h"
@@ -108,7 +108,7 @@ TEST_F(SkillUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
     auto& cooldownList = tlsRegistryManager.actorRegistry.emplace<CooldownTimeListComp>(caster);
     cooldownList.mutable_cooldown_list()->emplace(1, cooldownTimeComp);
 
-    uint32_t result = skillUtil->CheckCooldown(caster, SkillTableTempPtr(tableSkill.get()));
+    uint32_t result = skillUtil->CheckCooldown(caster, tableSkill);
     EXPECT_EQ(result, kSuccess);
 }
 
@@ -121,7 +121,7 @@ TEST_F(SkillUtilTest, HandleCastingTimer_ImmediateSkill_ReturnsOk) {
     EXPECT_CALL(*mockSkillTable, GetSkillTable(_))
         .WillRepeatedly(Return(tableSkill.get()));
 
-    uint32_t result = skillUtil->CheckCasting(caster, SkillTableTempPtr(tableSkill.get()));
+    uint32_t result = skillUtil->CheckCasting(caster, tableSkill.));
     EXPECT_EQ(result, kSuccess);
 }
 
@@ -134,7 +134,7 @@ TEST_F(SkillUtilTest, HandleRecoveryTimeTimer_ImmediateSkill_ReturnsOk) {
     EXPECT_CALL(*mockSkillTable, GetSkillTable(_))
         .WillRepeatedly(Return(tableSkill.get()));
 
-    uint32_t result = skillUtil->CheckRecovery(caster, SkillTableTempPtr(tableSkill.get()));
+    uint32_t result = skillUtil->CheckRecovery(caster, tableSkill);
     EXPECT_EQ(result, kSuccess);
 }
 
