@@ -1,7 +1,7 @@
 ﻿#include <gtest/gtest.h>
 
 #include "table/code/condition_table.h"
-#include "table/mission_table.h"
+#include "table/code/mission_table.h"
 #include "mission/constants/mission_constants.h"
 #include "mission/comp/mission_comp.h"
 #include "mission/system/mission_system.h"
