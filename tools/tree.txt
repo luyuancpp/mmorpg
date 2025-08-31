@@ -195,77 +195,6 @@
                 |-- player_skill.pb.h
                 |-- player_state_attribute_sync.pb.cc
                 |-- player_state_attribute_sync.pb.h
-            |-- table
-                |-- operator
-                    |-- ability_operator.pb.cc
-                    |-- ability_operator.pb.h
-                    |-- bag_operator.pb.cc
-                    |-- bag_operator.pb.h
-                    |-- scene_operator.pb.cc
-                    |-- scene_operator.pb.h
-                |-- tip
-                    |-- actor_action_error_tip.pb.cc
-                    |-- actor_action_error_tip.pb.h
-                    |-- bag_error_tip.pb.cc
-                    |-- bag_error_tip.pb.h
-                    |-- buff_error_tip.pb.cc
-                    |-- buff_error_tip.pb.h
-                    |-- common_error_tip.pb.cc
-                    |-- common_error_tip.pb.h
-                    |-- cross_server_error_tip.pb.cc
-                    |-- cross_server_error_tip.pb.h
-                    |-- entity_error_tip.pb.cc
-                    |-- entity_error_tip.pb.h
-                    |-- login_error_tip.pb.cc
-                    |-- login_error_tip.pb.h
-                    |-- mission_error_tip.pb.cc
-                    |-- mission_error_tip.pb.h
-                    |-- mount_error_tip.pb.cc
-                    |-- mount_error_tip.pb.h
-                    |-- reward_error_tip.pb.cc
-                    |-- reward_error_tip.pb.h
-                    |-- scene_error_tip.pb.cc
-                    |-- scene_error_tip.pb.h
-                    |-- skill_error_tip.pb.cc
-                    |-- skill_error_tip.pb.h
-                    |-- team_error_tip.pb.cc
-                    |-- team_error_tip.pb.h
-                |-- actoractioncombatstate_table.pb.cc
-                |-- actoractioncombatstate_table.pb.h
-                |-- actoractionstate_table.pb.cc
-                |-- actoractionstate_table.pb.h
-                |-- buff_table.pb.cc
-                |-- buff_table.pb.h
-                |-- class_table.pb.cc
-                |-- class_table.pb.h
-                |-- condition_table.pb.cc
-                |-- condition_table.pb.h
-                |-- cooldown_table.pb.cc
-                |-- cooldown_table.pb.h
-                |-- globalvariable_table.pb.cc
-                |-- globalvariable_table.pb.h
-                |-- item_table.pb.cc
-                |-- item_table.pb.h
-                |-- mainscene_table.pb.cc
-                |-- mainscene_table.pb.h
-                |-- messagelimiter_table.pb.cc
-                |-- messagelimiter_table.pb.h
-                |-- mission_table.pb.cc
-                |-- mission_table.pb.h
-                |-- monsterbase_table.pb.cc
-                |-- monsterbase_table.pb.h
-                |-- reward_table.pb.cc
-                |-- reward_table.pb.h
-                |-- scene_table.pb.cc
-                |-- scene_table.pb.h
-                |-- skill_table.pb.cc
-                |-- skill_table.pb.h
-                |-- skillpermission_table.pb.cc
-                |-- skillpermission_table.pb.h
-                |-- test_table.pb.cc
-                |-- test_table.pb.h
-                |-- testmultikey_table.pb.cc
-                |-- testmultikey_table.pb.h
             |-- team
                 |-- game_team.pb.cc
                 |-- game_team.pb.h
@@ -302,55 +231,36 @@
             |-- service_info.vcxproj.filters
             |-- service_info.vcxproj.user
         |-- table
-            |-- bit_index
-                |-- mission_table_id_bit_index.h
-                |-- reward_table_id_bit_index.h
-            |-- constants
-                |-- actoractioncombatstate_table_id_constants.h
-                |-- actoractionstate_table_id_constants.h
-                |-- global_abnormal_logout_table_id_constants.h
-                |-- globalvariable_table_id_constants.h
-            |-- actoractioncombatstate_table.cpp
-            |-- actoractioncombatstate_table.h
-            |-- actoractionstate_table.cpp
-            |-- actoractionstate_table.h
-            |-- all_table.cpp
-            |-- all_table.h
-            |-- buff_table.cpp
-            |-- buff_table.h
-            |-- class_table.cpp
-            |-- class_table.h
-            |-- condition_table.cpp
-            |-- condition_table.h
-            |-- cooldown_table.cpp
-            |-- cooldown_table.h
-            |-- globalvariable_table.cpp
-            |-- globalvariable_table.h
-            |-- item_table.cpp
-            |-- item_table.h
-            |-- mainscene_table.cpp
-            |-- mainscene_table.h
-            |-- messagelimiter_table.cpp
-            |-- messagelimiter_table.h
-            |-- mission_table.cpp
-            |-- mission_table.h
-            |-- monsterbase_table.cpp
-            |-- monsterbase_table.h
-            |-- reward_table.cpp
-            |-- reward_table.h
-            |-- scene_table.cpp
-            |-- scene_table.h
-            |-- skill_table.cpp
-            |-- skill_table.h
-            |-- skillpermission_table.cpp
-            |-- skillpermission_table.h
+            |-- code
+                |-- bit_index
+                    |-- mission_table_id_bit_index.h
+                    |-- reward_table_id_bit_index.h
+                |-- constants
+                    |-- actoractioncombatstate_table_id_constants.h
+                    |-- actoractionstate_table_id_constants.h
+                    |-- global_abnormal_logout_table_id_constants.h
+                    |-- globalvariable_table_id_constants.h
+                |-- actoractioncombatstate_table.cpp
+                |-- actoractioncombatstate_table.h
+
+            |-- proto
+                |-- operator
+                    |-- ability_operator.pb.cc
+                    |-- ability_operator.pb.h
+
+                |-- tip
+                    |-- actor_action_error_tip.pb.cc
+                    |-- actor_action_error_tip.pb.h
+       
+                |-- actoractioncombatstate_table.pb.cc
+                |-- actoractioncombatstate_table.pb.h
+                |-- actoractionstate_table.pb.cc
+                |-- actoractionstate_table.pb.h
+       
+                |-- testmultikey_table.pb.h
             |-- table.vcxproj
             |-- table.vcxproj.filters
             |-- table.vcxproj.user
-            |-- test_table.cpp
-            |-- test_table.h
-            |-- testmultikey_table.cpp
-            |-- testmultikey_table.h
     |-- libs
         |-- base
             |-- common
