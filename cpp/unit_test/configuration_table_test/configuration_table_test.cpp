@@ -2,9 +2,9 @@
 #include "gmock/gmock.h"
 #include "muduo/base/Logging.h"
 #include "table/code/test_table.h"
-#include "table/testmultikey_table.h"
-#include "table/skill_table.h"
-#include "table/buff_table.h"
+#include "table/code/testmultikey_table.h"
+#include "table/code/skill_table.h"
+#include "table/code/buff_table.h"
 
 void LoadTables();
 
