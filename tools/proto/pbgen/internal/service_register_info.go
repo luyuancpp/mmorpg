@@ -277,18 +277,16 @@ void InitMessageInfo()
 			continue
 		}
 
+		includes = append(includes, firstMethod.IncludeName())
+		serviceInfoIncludes = append(serviceInfoIncludes, firstMethod.ServiceInfoIncludeName())
+
 		if firstMethod.CcGenericServices() {
-			includes = append(includes, firstMethod.IncludeName())
-			serviceInfoIncludes = append(serviceInfoIncludes, firstMethod.ServiceInfoIncludeName())
 
 			handlerClass := fmt.Sprintf(
 				"class %sImpl final : public %s {};",
 				service.GetServiceName(),
 				service.GetServiceName())
 			handlerClasses = append(handlerClasses, handlerClass)
-		} else {
-			includes = append(includes, firstMethod.GrpcIncludeHeadName())
-			serviceInfoIncludes = append(serviceInfoIncludes, firstMethod.ServiceInfoIncludeName())
 		}
 	}
 

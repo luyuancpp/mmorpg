@@ -647,7 +647,7 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 func getServiceRepliedHandlerCppStr(dst string, methods RPCMethods, _ string, _ string) string {
 	const methodRepliedHandlerCppTemplate = `
 {{ .CppRepliedHandlerInclude }}
-#include "{{ .ServiceInfoName }}/{{ .ServiceInfoHeadInclude }}"
+#include "rpc/{{ .ServiceInfoName }}{{ .ServiceInfoHeadInclude }}"
 #include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gResponseDispatcher;
