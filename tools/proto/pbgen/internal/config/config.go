@@ -108,7 +108,8 @@ const (
 	LoginMessageIdGoFile = LoginGoGameDirectory + MessageIdGoFile
 	DbGoDirectory        = OutputRoot + "go/db/"
 
-	GeneratedRpcDirectory = GeneratedOutputDirectory + "rpc/"
+	GeneratedRpcName      = "rpc/"
+	GeneratedRpcDirectory = GeneratedOutputDirectory + GeneratedRpcName
 	ServiceInfoName       = "service_info/"
 	ServiceInfoDirectory  = GeneratedRpcDirectory + ServiceInfoName
 	ServiceInfoExtension  = "_service_info"

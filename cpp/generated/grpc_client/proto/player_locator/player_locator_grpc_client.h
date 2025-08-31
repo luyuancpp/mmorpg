@@ -3,11 +3,10 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
 #include "grpc_client/grpc_call_tag.h"
-
 #include "proto/player_locator/player_locator.grpc.pb.h"
 
 
-#include "service_info/player_locator_service_info.h"
+#include "rpc/service_info/player_locator_service_info.h"
 
 
 using grpc::ClientContext;

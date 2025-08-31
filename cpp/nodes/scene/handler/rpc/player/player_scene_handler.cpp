@@ -8,7 +8,7 @@
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "proto/centre/centre_player_scene.pb.h"
 #include "scene/comp/scene_comp.h"
-#include "service_info/centre_player_scene_service_info.h"
+#include "rpc/service_info/centre_player_scene_service_info.h"
 
 #include "proto/common/node.pb.h"
 #include "network/node_message_utils.h"

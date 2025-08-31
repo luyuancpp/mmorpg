@@ -6,7 +6,7 @@
 
 #include "threading/redis_manager.h"
 
-#include "service_info/player_scene_service_info.h"
+#include "rpc/service_info/player_scene_service_info.h"
 
 #include "network/player_message_utils.h"
 #include <threading/registry_manager.h>
