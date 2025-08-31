@@ -19,8 +19,8 @@ public:
 
     const ActorActionCombatStateTabledData& All() const { return data_; }
 
-    std::pair<ActorActionCombatStateTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<ActorActionCombatStateTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const ActorActionCombatStateTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const ActorActionCombatStateTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

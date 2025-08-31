@@ -19,8 +19,8 @@ public:
 
     const MonsterBaseTabledData& All() const { return data_; }
 
-    std::pair<MonsterBaseTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<MonsterBaseTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const MonsterBaseTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const MonsterBaseTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

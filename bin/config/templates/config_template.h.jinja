@@ -19,8 +19,8 @@ public:
 
     const {{ sheetname }}TabledData& All() const { return data_; }
 
-    std::pair<{{ sheetname }}Table*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<{{ sheetname }}Table*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const {{ sheetname }}Table*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const {{ sheetname }}Table*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

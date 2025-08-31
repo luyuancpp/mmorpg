@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "muduo/base/Logging.h"
-#include "table/test_table.h"
+#include "table/code/test_table.h"
 #include "table/testmultikey_table.h"
 #include "table/skill_table.h"
 #include "table/buff_table.h"

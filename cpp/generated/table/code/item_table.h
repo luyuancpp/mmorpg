@@ -19,8 +19,8 @@ public:
 
     const ItemTabledData& All() const { return data_; }
 
-    std::pair<ItemTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<ItemTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const ItemTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const ItemTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
