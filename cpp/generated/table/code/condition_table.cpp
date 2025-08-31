@@ -1,7 +1,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "condition_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/condition_table.h"
 
 std::string GetConfigDir();
 
@@ -20,19 +20,19 @@ void ConditionTableManager::Load() {
     }
 }
 
-std::pair< ConditionTableTempPtr, uint32_t> ConditionTableManager::GetTable(const uint32_t tableId) {
+std::pair< ConditionTable*, uint32_t> ConditionTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Condition table not found for ID: " << tableId;
-        return { ConditionTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { ConditionTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
 
-std::pair< ConditionTableTempPtr, uint32_t> ConditionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< ConditionTable*, uint32_t> ConditionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { ConditionTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { ConditionTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }

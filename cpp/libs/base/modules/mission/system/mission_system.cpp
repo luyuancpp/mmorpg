@@ -2,12 +2,12 @@
 #include <ranges>
 #include "error_handling/error_handling.h"
 #include "muduo/base/Logging.h"
-#include "table/condition_table.h"
+#include "table/code/condition_table.h"
 #include "mission/constants/mission_constants.h"
 #include "mission/comp/mission_comp.h"
 #include "macros/return_define.h"
-#include "proto/table/tip/mission_error_tip.pb.h"
-#include "proto/table/tip/common_error_tip.pb.h"
+#include "table/proto/tip/mission_error_tip.pb.h"
+#include "table/proto/tip/common_error_tip.pb.h"
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"
 #include <threading/dispatcher_manager.h>
@@ -338,7 +338,7 @@ bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& condition
 }
 
 // Update mission progress if conditions match the event
-bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, int index, const ConditionTableTempPtr& conditionTable) {
+bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, int index, const ConditionTable* conditionTable) {
 	// Retrieve old progress value
 	const auto oldProgress = mission.progress(index);
 

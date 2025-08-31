@@ -3,52 +3,7 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/class_table.pb.h"
-
-class ClassTableTempPtr  {
-public:
-	explicit ClassTableTempPtr(const ClassTable* ptr) : ptr_(ptr) {}
-
-    ClassTableTempPtr(const ClassTableTempPtr&) = delete;
-    ClassTableTempPtr& operator=(const ClassTableTempPtr&) = delete;
-    ClassTableTempPtr(ClassTableTempPtr&&) = delete;
-    ClassTableTempPtr& operator=(ClassTableTempPtr&&) = delete;
-
-	// Support pointer-like access
-	const ClassTable* operator->() const { return ptr_; }
-	const ClassTable& operator*()  const { return *ptr_; }
-
-	// Enable usage in boolean expressions
-	explicit operator bool() const { return ptr_ != nullptr; }
-
-	// Enable comparison with nullptr (does NOT trigger deprecation)
-	friend bool operator==(const ClassTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(const ClassTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ != nullptr;
-	}
-
-	friend bool operator==(std::nullptr_t, const ClassTableTempPtr& rhs) {
-		return rhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(std::nullptr_t, const ClassTableTempPtr& rhs) {
-		return rhs.ptr_ != nullptr;
-	}
-
-	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	operator const ClassTable* () const { return ptr_; }
-
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	const ClassTable* Get() const { return ptr_; }
-
-private:
-	const ClassTable* ptr_;
-};
-
+#include "table/proto/class_table.pb.h"
 
 class ClassTableManager {
 public:
@@ -64,8 +19,8 @@ public:
 
     const ClassTabledData& All() const { return data_; }
 
-    std::pair<ClassTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<ClassTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<ClassTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<ClassTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

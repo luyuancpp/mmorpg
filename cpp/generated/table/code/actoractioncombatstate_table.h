@@ -3,52 +3,7 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/actoractioncombatstate_table.pb.h"
-
-class ActorActionCombatStateTableTempPtr  {
-public:
-	explicit ActorActionCombatStateTableTempPtr(const ActorActionCombatStateTable* ptr) : ptr_(ptr) {}
-
-    ActorActionCombatStateTableTempPtr(const ActorActionCombatStateTableTempPtr&) = delete;
-    ActorActionCombatStateTableTempPtr& operator=(const ActorActionCombatStateTableTempPtr&) = delete;
-    ActorActionCombatStateTableTempPtr(ActorActionCombatStateTableTempPtr&&) = delete;
-    ActorActionCombatStateTableTempPtr& operator=(ActorActionCombatStateTableTempPtr&&) = delete;
-
-	// Support pointer-like access
-	const ActorActionCombatStateTable* operator->() const { return ptr_; }
-	const ActorActionCombatStateTable& operator*()  const { return *ptr_; }
-
-	// Enable usage in boolean expressions
-	explicit operator bool() const { return ptr_ != nullptr; }
-
-	// Enable comparison with nullptr (does NOT trigger deprecation)
-	friend bool operator==(const ActorActionCombatStateTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(const ActorActionCombatStateTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ != nullptr;
-	}
-
-	friend bool operator==(std::nullptr_t, const ActorActionCombatStateTableTempPtr& rhs) {
-		return rhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(std::nullptr_t, const ActorActionCombatStateTableTempPtr& rhs) {
-		return rhs.ptr_ != nullptr;
-	}
-
-	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	operator const ActorActionCombatStateTable* () const { return ptr_; }
-
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	const ActorActionCombatStateTable* Get() const { return ptr_; }
-
-private:
-	const ActorActionCombatStateTable* ptr_;
-};
-
+#include "table/proto/actoractioncombatstate_table.pb.h"
 
 class ActorActionCombatStateTableManager {
 public:
@@ -64,8 +19,8 @@ public:
 
     const ActorActionCombatStateTabledData& All() const { return data_; }
 
-    std::pair<ActorActionCombatStateTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<ActorActionCombatStateTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<ActorActionCombatStateTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<ActorActionCombatStateTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

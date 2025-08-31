@@ -2,8 +2,8 @@
 
 #include <ranges>
 
-#include "table/actoractionstate_table.h"
-#include "proto/table/tip/common_error_tip.pb.h"
+#include "table/code/actoractionstate_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
 #include "actor/action_state/constants/actor_state_constants.h"
 #include "base/core/macros/return_define.h"
 #include "proto/logic/component/actor_comp.pb.h"
@@ -13,7 +13,7 @@
 
 namespace {
     // 检查某个动作是否与当前状态冲突，若冲突，返回对应的错误码
-    uint32_t CheckForStateConflict(const ActorActionStateTableTempPtr& actorActionStateTable, uint32_t actorState) {
+    uint32_t CheckForStateConflict(const ActorActionStateTable* actorActionStateTable, uint32_t actorState) {
         if (actorState >= static_cast<uint32_t>(actorActionStateTable->state_size())) {
             return kSuccess;  // 如果状态无效，返回成功
         }
@@ -26,7 +26,7 @@ namespace {
     }
 
     // 中断当前状态并执行该动作
-    bool InterruptAndPerformAction(const ActorActionStateTableTempPtr& actorActionStateTable, uint32_t actorState, entt::entity actorEntity) {
+    bool InterruptAndPerformAction(const ActorActionStateTable* actorActionStateTable, uint32_t actorState, entt::entity actorEntity) {
         if (actorState >= static_cast<uint32_t>(actorActionStateTable->state_size())) {
             return false;  // 无效状态，返回失败
         }

@@ -8,7 +8,7 @@
 #include "type_define/type_define.h"
 #include "mission/comp/missions_config_comp.h"
 #include "util/registry/game_registry.h"
-#include "table/condition_table.h"
+#include "table/code/condition_table.h"
 
 struct GetRewardParam {
 	entt::entity playerId{ entt::null };
@@ -58,7 +58,7 @@ private:
 	static uint32_t CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComponent* missionComp);
 	static void RemoveMissionClassification(MissionsComponent* missionComp, uint32_t missionId);
 	static bool AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComponent* missionComp);
-	static bool UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, int index, const ConditionTableTempPtr& conditionRow);
+	static bool UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, int index, const ConditionTable* conditionRow);
 };
 
 /*

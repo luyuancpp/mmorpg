@@ -1,7 +1,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "globalvariable_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/globalvariable_table.h"
 
 std::string GetConfigDir();
 
@@ -20,19 +20,19 @@ void GlobalVariableTableManager::Load() {
     }
 }
 
-std::pair< GlobalVariableTableTempPtr, uint32_t> GlobalVariableTableManager::GetTable(const uint32_t tableId) {
+std::pair< GlobalVariableTable*, uint32_t> GlobalVariableTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "GlobalVariable table not found for ID: " << tableId;
-        return { GlobalVariableTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { GlobalVariableTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
 
-std::pair< GlobalVariableTableTempPtr, uint32_t> GlobalVariableTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< GlobalVariableTable*, uint32_t> GlobalVariableTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { GlobalVariableTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { GlobalVariableTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }

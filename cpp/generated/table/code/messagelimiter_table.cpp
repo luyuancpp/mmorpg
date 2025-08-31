@@ -1,7 +1,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "util/file2string.h"
-#include "proto/table/tip/common_error_tip.pb.h"
-#include "messagelimiter_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/messagelimiter_table.h"
 
 std::string GetConfigDir();
 
@@ -20,19 +20,19 @@ void MessageLimiterTableManager::Load() {
     }
 }
 
-std::pair< MessageLimiterTableTempPtr, uint32_t> MessageLimiterTableManager::GetTable(const uint32_t tableId) {
+std::pair< MessageLimiterTable*, uint32_t> MessageLimiterTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "MessageLimiter table not found for ID: " << tableId;
-        return { MessageLimiterTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { MessageLimiterTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }
 
-std::pair< MessageLimiterTableTempPtr, uint32_t> MessageLimiterTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair< MessageLimiterTable*, uint32_t> MessageLimiterTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return { MessageLimiterTableTempPtr(nullptr), kInvalidTableId };
+        return {nullptr, kInvalidTableId };
     }
-    return { MessageLimiterTableTempPtr(it->second), kSuccess };
+    return {it->second, kSuccess };
 }

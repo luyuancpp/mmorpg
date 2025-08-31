@@ -3,52 +3,7 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/condition_table.pb.h"
-
-class ConditionTableTempPtr  {
-public:
-	explicit ConditionTableTempPtr(const ConditionTable* ptr) : ptr_(ptr) {}
-
-    ConditionTableTempPtr(const ConditionTableTempPtr&) = delete;
-    ConditionTableTempPtr& operator=(const ConditionTableTempPtr&) = delete;
-    ConditionTableTempPtr(ConditionTableTempPtr&&) = delete;
-    ConditionTableTempPtr& operator=(ConditionTableTempPtr&&) = delete;
-
-	// Support pointer-like access
-	const ConditionTable* operator->() const { return ptr_; }
-	const ConditionTable& operator*()  const { return *ptr_; }
-
-	// Enable usage in boolean expressions
-	explicit operator bool() const { return ptr_ != nullptr; }
-
-	// Enable comparison with nullptr (does NOT trigger deprecation)
-	friend bool operator==(const ConditionTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(const ConditionTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ != nullptr;
-	}
-
-	friend bool operator==(std::nullptr_t, const ConditionTableTempPtr& rhs) {
-		return rhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(std::nullptr_t, const ConditionTableTempPtr& rhs) {
-		return rhs.ptr_ != nullptr;
-	}
-
-	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	operator const ConditionTable* () const { return ptr_; }
-
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	const ConditionTable* Get() const { return ptr_; }
-
-private:
-	const ConditionTable* ptr_;
-};
-
+#include "table/proto/condition_table.pb.h"
 
 class ConditionTableManager {
 public:
@@ -64,8 +19,8 @@ public:
 
     const ConditionTabledData& All() const { return data_; }
 
-    std::pair<ConditionTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<ConditionTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<ConditionTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<ConditionTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

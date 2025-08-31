@@ -3,52 +3,7 @@
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
-#include "proto/table/mainscene_table.pb.h"
-
-class MainSceneTableTempPtr  {
-public:
-	explicit MainSceneTableTempPtr(const MainSceneTable* ptr) : ptr_(ptr) {}
-
-    MainSceneTableTempPtr(const MainSceneTableTempPtr&) = delete;
-    MainSceneTableTempPtr& operator=(const MainSceneTableTempPtr&) = delete;
-    MainSceneTableTempPtr(MainSceneTableTempPtr&&) = delete;
-    MainSceneTableTempPtr& operator=(MainSceneTableTempPtr&&) = delete;
-
-	// Support pointer-like access
-	const MainSceneTable* operator->() const { return ptr_; }
-	const MainSceneTable& operator*()  const { return *ptr_; }
-
-	// Enable usage in boolean expressions
-	explicit operator bool() const { return ptr_ != nullptr; }
-
-	// Enable comparison with nullptr (does NOT trigger deprecation)
-	friend bool operator==(const MainSceneTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(const MainSceneTableTempPtr& lhs, std::nullptr_t) {
-		return lhs.ptr_ != nullptr;
-	}
-
-	friend bool operator==(std::nullptr_t, const MainSceneTableTempPtr& rhs) {
-		return rhs.ptr_ == nullptr;
-	}
-
-	friend bool operator!=(std::nullptr_t, const MainSceneTableTempPtr& rhs) {
-		return rhs.ptr_ != nullptr;
-	}
-
-	// 🚨 Dangerous: implicit conversion to raw pointer (triggers warning)
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	operator const MainSceneTable* () const { return ptr_; }
-
-	[[deprecated("Do not store this pointer. It's only valid temporarily and may cause crashes after hot-reloading.")]]
-	const MainSceneTable* Get() const { return ptr_; }
-
-private:
-	const MainSceneTable* ptr_;
-};
-
+#include "table/proto/mainscene_table.pb.h"
 
 class MainSceneTableManager {
 public:
@@ -64,8 +19,8 @@ public:
 
     const MainSceneTabledData& All() const { return data_; }
 
-    std::pair<MainSceneTableTempPtr, uint32_t> GetTable(uint32_t tableId);
-    std::pair<MainSceneTableTempPtr, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<MainSceneTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<MainSceneTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();

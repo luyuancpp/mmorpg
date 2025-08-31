@@ -2,7 +2,7 @@
 #include "player_skill_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "proto/table/tip/common_error_tip.pb.h"
+#include "table/proto/tip/common_error_tip.pb.h"
 #include "proto/common/tip.pb.h"
 #include "scene/combat/skill/system/skill_system.h"
 #include "macros/return_define.h"
