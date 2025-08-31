@@ -108,8 +108,9 @@ const (
 	LoginMessageIdGoFile = LoginGoGameDirectory + MessageIdGoFile
 	DbGoDirectory        = OutputRoot + "go/db/"
 
+	GeneratedRpcDirectory = GeneratedOutputDirectory + "rpc/"
 	ServiceInfoName       = "service_info/"
-	ServiceInfoDirectory  = GeneratedOutputDirectory + ServiceInfoName
+	ServiceInfoDirectory  = GeneratedRpcDirectory + ServiceInfoName
 	ServiceInfoExtension  = "_service_info"
 	ServiceCppFilePath    = ServiceInfoDirectory + "service_info.cpp"
 	ServiceHeaderFilePath = ServiceInfoDirectory + "service_info.h"
