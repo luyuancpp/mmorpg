@@ -3,8 +3,8 @@
 #include <muduo/base/Logging.h>
 
 #include "table/proto/tip/entity_error_tip.pb.h"
-#include "table/skillpermission_table.h"
-#include "table/skill_table.h"
+#include "table/code/skillpermission_table.h"
+#include "table/code/skill_table.h"
 #include "actor/action_state/constants/actor_state_constants.h"
 #include "actor/action_state/system/actor_action_state_system.h"
 #include "scene/combat_state/system/combat_state_system.h"

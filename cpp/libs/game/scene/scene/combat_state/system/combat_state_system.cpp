@@ -2,7 +2,7 @@
 
 #include <ranges>
 
-#include "table/actoractioncombatstate_table.h"
+#include "table/code/actoractioncombatstate_table.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "actor/attribute/system/actor_attribute_calculator_system.h"
