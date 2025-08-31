@@ -18,30 +18,6 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="centre_player_scene_service_info.h" />
-    <ClInclude Include="centre_player_service_info.h" />
-    <ClInclude Include="centre_scene_service_info.h" />
-    <ClInclude Include="centre_service_service_info.h" />
-    <ClInclude Include="db_service_info.h" />
-    <ClInclude Include="etcd_service_info.h" />
-    <ClInclude Include="game_client_player_service_info.h" />
-    <ClInclude Include="game_player_scene_service_info.h" />
-    <ClInclude Include="game_player_service_info.h" />
-    <ClInclude Include="game_scene_service_info.h" />
-    <ClInclude Include="game_service_service_info.h" />
-    <ClInclude Include="gate_service_service_info.h" />
-    <ClInclude Include="login_service_service_info.h" />
-    <ClInclude Include="playerlocator_service_info.h" />
-    <ClInclude Include="player_locator_service_info.h" />
-    <ClInclude Include="player_scene_service_info.h" />
-    <ClInclude Include="player_skill_service_info.h" />
-    <ClInclude Include="player_state_attribute_sync_service_info.h" />
-    <ClInclude Include="service_info.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="service_info.cpp" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
