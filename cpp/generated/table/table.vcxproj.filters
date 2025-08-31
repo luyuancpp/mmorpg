@@ -156,25 +156,10 @@
     <ClInclude Include="proto\tip\team_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="proto\ability_operator.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="proto\actor_action_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="proto\actoractioncombatstate_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\actoractionstate_table.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="proto\bag_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="proto\bag_operator.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="proto\buff_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\buff_table.pb.h">
@@ -183,19 +168,10 @@
     <ClInclude Include="proto\class_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="proto\common_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="proto\condition_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\cooldown_table.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="proto\cross_server_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="proto\entity_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\globalvariable_table.pb.h">
@@ -204,16 +180,10 @@
     <ClInclude Include="proto\item_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="proto\login_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="proto\mainscene_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\messagelimiter_table.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="proto\mission_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\mission_table.pb.h">
@@ -222,28 +192,16 @@
     <ClInclude Include="proto\monsterbase_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="proto\mount_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="proto\reward_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="proto\reward_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\scene_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="proto\skill_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="proto\skill_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\skillpermission_table.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="proto\team_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\test_table.pb.h">
@@ -359,25 +317,10 @@
     <ClCompile Include="proto\tip\team_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="proto\ability_operator.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="proto\actor_action_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="proto\actoractioncombatstate_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\actoractionstate_table.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="proto\bag_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="proto\bag_operator.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="proto\buff_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\buff_table.pb.cc">
@@ -386,19 +329,10 @@
     <ClCompile Include="proto\class_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="proto\common_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="proto\condition_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\cooldown_table.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="proto\cross_server_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="proto\entity_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\globalvariable_table.pb.cc">
@@ -407,16 +341,10 @@
     <ClCompile Include="proto\item_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="proto\login_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="proto\mainscene_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\messagelimiter_table.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="proto\mission_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\mission_table.pb.cc">
@@ -425,28 +353,16 @@
     <ClCompile Include="proto\monsterbase_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="proto\mount_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="proto\reward_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="proto\reward_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\scene_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="proto\skill_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="proto\skill_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\skillpermission_table.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="proto\team_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\test_table.pb.cc">
