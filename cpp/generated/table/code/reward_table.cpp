@@ -20,7 +20,7 @@ void RewardTableManager::Load() {
     }
 }
 
-std::pair< RewardTable*, uint32_t> RewardTableManager::GetTable(const uint32_t tableId) {
+std::pair<const RewardTable*, uint32_t> RewardTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Reward table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair< RewardTable*, uint32_t> RewardTableManager::GetTable(const uint32_t t
     return {it->second, kSuccess };
 }
 
-std::pair< RewardTable*, uint32_t> RewardTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const RewardTable*, uint32_t> RewardTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId };

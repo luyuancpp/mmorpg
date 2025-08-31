@@ -20,7 +20,7 @@ void MonsterBaseTableManager::Load() {
     }
 }
 
-std::pair< MonsterBaseTable*, uint32_t> MonsterBaseTableManager::GetTable(const uint32_t tableId) {
+std::pair<const MonsterBaseTable*, uint32_t> MonsterBaseTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "MonsterBase table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair< MonsterBaseTable*, uint32_t> MonsterBaseTableManager::GetTable(const 
     return {it->second, kSuccess };
 }
 
-std::pair< MonsterBaseTable*, uint32_t> MonsterBaseTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const MonsterBaseTable*, uint32_t> MonsterBaseTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId };

@@ -20,7 +20,7 @@ void CooldownTableManager::Load() {
     }
 }
 
-std::pair< CooldownTable*, uint32_t> CooldownTableManager::GetTable(const uint32_t tableId) {
+std::pair<const CooldownTable*, uint32_t> CooldownTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Cooldown table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair< CooldownTable*, uint32_t> CooldownTableManager::GetTable(const uint32
     return {it->second, kSuccess };
 }
 
-std::pair< CooldownTable*, uint32_t> CooldownTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const CooldownTable*, uint32_t> CooldownTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId };

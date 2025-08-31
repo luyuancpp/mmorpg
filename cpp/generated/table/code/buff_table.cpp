@@ -24,7 +24,7 @@ void BuffTableManager::Load() {
     });
 }
 
-std::pair< BuffTable*, uint32_t> BuffTableManager::GetTable(const uint32_t tableId) {
+std::pair<const BuffTable*, uint32_t> BuffTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Buff table not found for ID: " << tableId;
@@ -33,7 +33,7 @@ std::pair< BuffTable*, uint32_t> BuffTableManager::GetTable(const uint32_t table
     return {it->second, kSuccess };
 }
 
-std::pair< BuffTable*, uint32_t> BuffTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const BuffTable*, uint32_t> BuffTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId };

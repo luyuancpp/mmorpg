@@ -26,7 +26,7 @@ void TestMultiKeyTableManager::Load() {
     }
 }
 
-std::pair< TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::GetTable(const uint32_t tableId) {
+std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "TestMultiKey table not found for ID: " << tableId;
@@ -35,7 +35,7 @@ std::pair< TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::GetTable(cons
     return {it->second, kSuccess };
 }
 
-std::pair< TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId };

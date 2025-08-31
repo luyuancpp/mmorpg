@@ -20,7 +20,7 @@ void GlobalVariableTableManager::Load() {
     }
 }
 
-std::pair< GlobalVariableTable*, uint32_t> GlobalVariableTableManager::GetTable(const uint32_t tableId) {
+std::pair<const GlobalVariableTable*, uint32_t> GlobalVariableTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "GlobalVariable table not found for ID: " << tableId;
@@ -29,7 +29,7 @@ std::pair< GlobalVariableTable*, uint32_t> GlobalVariableTableManager::GetTable(
     return {it->second, kSuccess };
 }
 
-std::pair< GlobalVariableTable*, uint32_t> GlobalVariableTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const GlobalVariableTable*, uint32_t> GlobalVariableTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId };
