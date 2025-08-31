@@ -13,7 +13,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 #include <muduo/base/Logging.h>
 
 
-#include "service_info/service_info.h"
+#include "rpc/service_info/service_info.h"
 #include "rpc/player_service_replied.h"
 #include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"

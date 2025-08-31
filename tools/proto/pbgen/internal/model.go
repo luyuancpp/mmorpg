@@ -108,7 +108,7 @@ func (info *RPCServiceInfo) HeadName() string {
 }
 
 func (info *RPCServiceInfo) ServiceInfoIncludeName() string {
-	return config.IncludeBegin + config.ServiceInfoName + info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
+	return config.IncludeBegin + config.GeneratedRpcName + config.ServiceInfoName + info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
 }
 
 // FileNameNoEx 返回文件基本名
@@ -247,7 +247,7 @@ func (info *MethodInfo) Path() string {
 }
 
 func (info *MethodInfo) ServiceInfoIncludeName() string {
-	return config.IncludeBegin + info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
+	return config.IncludeBegin + config.GeneratedRpcName + info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
 }
 
 // CppHandlerIncludeName 返回Cpp处理器包含文件名

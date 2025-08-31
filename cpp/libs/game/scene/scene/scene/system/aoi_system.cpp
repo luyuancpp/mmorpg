@@ -11,7 +11,7 @@
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/event/scene_event.pb.h"
 #include "scene/comp/scene_comp.h"
-#include "service_info/player_scene_service_info.h"
+#include "rpc/service_info/player_scene_service_info.h"
 #include "stat/stat.h"
 #include "type_alias/actor.h"
 #include "network/player_message_utils.h"

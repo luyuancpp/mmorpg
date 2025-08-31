@@ -2,9 +2,9 @@
 #include <table/proto/tip/common_error_tip.pb.h>
 #include <time/comp/timer_task_comp.h>
 #include "node/system/node/node_util.h"
-#include <service_info/game_service_service_info.h>
-#include <service_info/centre_service_service_info.h>
-#include <service_info/gate_service_service_info.h>
+#include <rpc/service_info/game_service_service_info.h>
+#include <rpc/service_info/centre_service_service_info.h>
+#include <rpc/service_info/gate_service_service_info.h>
 #include <network/rpc_client.h>
 #include <network/rpc_session.h>
 #include "node/system/node/node.h"

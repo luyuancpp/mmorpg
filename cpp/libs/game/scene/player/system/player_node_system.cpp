@@ -7,8 +7,8 @@
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/event/player_event.pb.h"
-#include "service_info/centre_player_scene_service_info.h"
-#include "service_info/centre_service_service_info.h"
+#include "rpc/service_info/centre_player_scene_service_info.h"
+#include "rpc/service_info/centre_service_service_info.h"
 
 #include "threading/redis_manager.h"
 #include "time/system/time_system.h"

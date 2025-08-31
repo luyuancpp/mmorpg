@@ -3,11 +3,10 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
 #include "grpc_client/grpc_call_tag.h"
-
 #include "proto/etcd/etcd.grpc.pb.h"
 
 
-#include "service_info/etcd_service_info.h"
+#include "rpc/service_info/etcd_service_info.h"
 
 
 using grpc::ClientContext;

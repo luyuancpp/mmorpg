@@ -20,7 +20,7 @@
 #include "proto/logic/component/buff_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
-#include "service_info/player_skill_service_info.h"
+#include "rpc/service_info/player_skill_service_info.h"
 #include "proto/logic/component/actor_combat_state_comp.pb.h"
 
 #include "time/comp/timer_task_comp.h"
