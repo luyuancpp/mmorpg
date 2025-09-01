@@ -1,5 +1,5 @@
 #include "google/protobuf/util/json_util.h"
-#include "util/file2string.h"
+#include "core/utils/file2string.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/code/actoractioncombatstate_table.h"
 

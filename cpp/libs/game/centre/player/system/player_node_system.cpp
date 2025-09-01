@@ -14,7 +14,7 @@
 #include "rpc/service_info/game_service_service_info.h"
 #include "rpc/service_info/gate_service_service_info.h"
 #include "base/threading/redis_manager.h"
-#include "base/common/util/defer.h"
+#include "base/core/utils/defer.h"
 #include "proto/common/node.pb.h"
 #include "table/code/constants/global_abnormal_logout_table_id_constants.h"
 #include "table/code/globalvariable_table.h"

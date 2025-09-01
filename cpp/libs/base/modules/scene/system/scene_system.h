@@ -2,7 +2,7 @@
 
 #include "scene/comp/node_scene_comp.h"
 #include "scene/system/node_scene_system.h"
-#include "util/node_id_generator.h"
+#include "core/utils/id/node_id_generator.h"
 #include "proto/logic/component/scene_comp.pb.h"
 
 struct EnterSceneParam

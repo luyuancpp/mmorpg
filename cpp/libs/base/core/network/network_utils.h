@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include "type_define/type_define.h"
-#include "util/node_id_generator.h"
+#include "core/utils/id/node_id_generator.h"
 
 constexpr char kSessionBinMetaKey[] = "x-session-detail-bin";
 using SessionIdGenerator = TransientNodeCompositeIdGenerator<uint64_t, 32>;

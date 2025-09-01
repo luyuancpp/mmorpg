@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "util/registry/game_registry.h"
+#include "core/utils/registry/game_registry.h"
 
 struct SceneEntityComp
 {

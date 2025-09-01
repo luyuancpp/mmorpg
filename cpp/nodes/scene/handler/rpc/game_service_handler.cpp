@@ -23,7 +23,7 @@
 #include "rpc/service_info/service_info.h"
 #include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
-#include "util/proto/proto_field_checker.h"
+#include "core/utils/proto/proto_field_checker.h"
 #include "network/network_utils.h"
 #include "network/player_message_utils.h"
 #include "threading/node_context_manager.h"

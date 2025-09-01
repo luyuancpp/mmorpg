@@ -1,6 +1,6 @@
 #pragma once
 
-#include "util/registry/game_registry.h"
+#include "core/utils/registry/game_registry.h"
 
 class PlayerSkillSystem {
 public:
