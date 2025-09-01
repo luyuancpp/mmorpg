@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "core/utils/file2string.h"
+#include "core/utils/file/file2string.h"
 
 TEST(GS, ReadFile2String)
 {

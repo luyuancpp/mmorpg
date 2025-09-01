@@ -12,7 +12,7 @@
 #include "scene/combat/buff/comp/buff_comp.h"
 #include "scene/combat/buff/constants/buff_constants.h"
 #include "proto/logic/event/skill_event.pb.h"
-#include "core/utils/utility.h"
+#include "core/utils/utility/utility.h"
 #include "core/system/id_generator_manager.h"
 
 // Buff ID生成逻辑
