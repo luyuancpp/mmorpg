@@ -2,7 +2,7 @@
 
 #include "core/utils/registry/game_registry.h"
 
-#include <base/core/type_define/type_define.h>
+#include <engine/core/type_define/type_define.h>
 
 
 class ThreadLocalEntityContainer
