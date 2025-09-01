@@ -1,0 +1,20 @@
+syntax = "proto3";
+package resolver;
+option cc_generic_services = true;
+option java_generic_services = true;
+option py_generic_services = true;
+
+message ResolveRequest {
+  string address = 1;
+}
+
+message ResolveResponse {
+  bool resolved = 1 ;
+  repeated fixed32 ip = 2;
+  repeated int32 port = 3;
+}
+
+service ResolverService {
+  rpc Resolve (ResolveRequest) returns (ResolveResponse);
+}
+
