@@ -4,7 +4,7 @@
 #include <bitset>
 
 #include "proto/logic/component/mission_comp.pb.h"
-#include "type_define/type_define.h"
+#include "core/type_define/type_define.h"
 #include "mission/comp/missions_config_comp.h"
 #include "core/utils/registry/game_registry.h"
 #include "table/code/bit_index/mission_table_id_bit_index.h"

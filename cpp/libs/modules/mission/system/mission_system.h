@@ -5,7 +5,7 @@
 #include <google/protobuf/repeated_field.h>
 
 #include "proto/logic/component/mission_comp.pb.h"
-#include "type_define/type_define.h"
+#include "core/type_define/type_define.h"
 #include "mission/comp/missions_config_comp.h"
 #include "core/utils/registry/game_registry.h"
 #include "table/code/condition_table.h"

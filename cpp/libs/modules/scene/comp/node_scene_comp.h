@@ -3,11 +3,11 @@
 
 #include <ranges>
 
-#include "type_define/type_define.h"
-#include "node/constants/node_constants.h"
+#include "engine/core/type_define/type_define.h"
+#include "engine/core/node/constants/node_constants.h"
 
 #include "proto/common/common.pb.h"
-#include <base/threading/registry_manager.h>
+#include "engine/threading/registry_manager.h"
 
 using SceneList = EntityUnorderedSet;
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;

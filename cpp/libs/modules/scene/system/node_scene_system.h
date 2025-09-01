@@ -1,7 +1,7 @@
 #pragma once
 
-#include "node/constants/node_constants.h"
-#include "type_define/type_define.h"
+#include "engine/core/node/constants/node_constants.h"
+#include "engine/core/type_define/type_define.h"
 
 constexpr uint32_t kDefaultSceneId = 1;
 
