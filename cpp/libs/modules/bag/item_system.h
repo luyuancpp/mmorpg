@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "type_define/type_define.h"
+#include "engine/core/type_define/type_define.h"
 
 #include "proto/logic/component/item_base_comp.pb.h"
 

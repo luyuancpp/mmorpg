@@ -2,15 +2,15 @@
 #include "muduo/base/Logging.h"
 
 #include "scene/comp/scene_comp.h"
-#include "node/constants/node_constants.h"
+#include "engine/core/node/constants/node_constants.h"
 
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "proto/logic/event/scene_event.pb.h"
 #include "proto/common/node.pb.h"
-#include "threading/node_context_manager.h"
-#include "threading/dispatcher_manager.h"
+#include "engine/threading/node_context_manager.h"
+#include "engine/threading/dispatcher_manager.h"
 
 #include <ranges> // Only if using C++20 ranges
 #include <threading/registry_manager.h>
