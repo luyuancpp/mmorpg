@@ -2,13 +2,13 @@
 
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
-#include "scene/system/scene_system.h"
+#include "modules/scene/system/scene_system.h"
 
 #include "muduo/base/Logging.h"
 #include "proto/logic/event/scene_event.pb.h"
 #include "time/system/time_system.h"
-#include <base/threading/registry_manager.h>
-#include <base/threading/dispatcher_manager.h>
+#include <engine/threading/registry_manager.h>
+#include <engine/threading/dispatcher_manager.h>
 
 
 // 添加切换场景信息到队列

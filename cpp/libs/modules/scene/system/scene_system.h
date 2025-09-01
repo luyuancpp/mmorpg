@@ -1,9 +1,9 @@
 #pragma once
 
-#include "scene/comp/node_scene_comp.h"
-#include "scene/system/node_scene_system.h"
+#include "modules/scene/system/node_scene_system.h"
 #include "core/utils/id/node_id_generator.h"
 #include "proto/logic/component/scene_comp.pb.h"
+#include <proto/common/common.pb.h>
 
 struct EnterSceneParam
 {

@@ -6,12 +6,13 @@
 #include "scene/scene/comp/grid_comp.h"
 #include "proto/logic/event/scene_event.pb.h"
 #include "proto/common/node.pb.h"
-#include "scene/comp/scene_comp.h"
-#include "scene/system/scene_system.h"
+#include "modules/scene/comp/scene_comp.h"
+#include "modules/scene/system/scene_system.h"
 #include "rpc/service_info/centre_scene_service_info.h"
 #include "network/node_utils.h"
 #include "network/node_message_utils.h"
 #include "scene/scene/mananger/scene_nav_mananger.h"
+#include <threading/registry_manager.h>
 
 void GameNodeSceneSystem::InitializeNodeScenes() {
 	if (!(GetNodeInfo().scene_node_type() == eSceneNodeType::kMainSceneNode ||

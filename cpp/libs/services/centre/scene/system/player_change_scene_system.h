@@ -2,7 +2,7 @@
 
 #include <entt/src/entt/entity/entity.hpp>
 
-#include "base/modules/scene/comp/player_scene.h"
+#include "modules/scene/comp/player_scene.h"
 
 class SceneInfoPBComponent;
 
