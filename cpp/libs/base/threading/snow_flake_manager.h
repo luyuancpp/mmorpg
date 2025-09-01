@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/utils/snow_flake.h"
+#include "core/utils/id/snow_flake.h"
 #include <base/core/type_define/type_define.h>
 
 class SnowFlakeManager
