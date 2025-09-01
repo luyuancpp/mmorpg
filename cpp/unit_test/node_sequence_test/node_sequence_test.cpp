@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "core/utils/snow_flake.h"
+#include "core/utils/id/snow_flake.h"
 #include "core/utils/id/node_id_generator.h"
 
 
