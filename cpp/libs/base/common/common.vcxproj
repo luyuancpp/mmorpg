@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global_data\async_log_file.h" />
-    <ClInclude Include="muduowindow\TimerId.h" />
     <ClInclude Include="stat\stat.h" />
     <ClInclude Include="util\defer.h" />
     <ClInclude Include="util\encode\base64.h" />

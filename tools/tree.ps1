@@ -1,11 +1,11 @@
 ﻿# ==== 配置部分 ====
-$RootPath = "F:\work\mmorpg\cpp"               # 根目录
+$RootPath = "D:\game\luyuan\\mmorpg\cpp"               # 根目录
 $ExcludePaths = @(
-"F:\work\mmorpg\cpp\libs\base\muduo_windows",
-"F:\work\mmorpg\cpp\unit_test"
+"D:\game\luyuan\mmorpg\cpp\libs\base\muduo_windows",
+"D:\game\luyuan\mmorpg\cpp\unit_test"
 )
 
-$OutputFile = "F:\work\mmorpg\tools\tree.txt"  # 输出文件路径
+$OutputFile = "D:\game\luyuan\\mmorpg\tools\tree.txt"  # 输出文件路径
 
 # ==== 主函数 ====
 function Show-Tree {
