@@ -4,7 +4,7 @@
 //https://dev.epicgames.com/documentation/zh-cn/unreal-engine/replication-graph-in-unreal-engine
 //https://zhuanlan.zhihu.com/p/34723199
 
-#include "base/core/type_define/type_define.h"
+#include "engine/core/type_define/type_define.h"
 #include "core/utils/registry/game_registry.h"
 
 class ActorStateAttributeSyncSystem

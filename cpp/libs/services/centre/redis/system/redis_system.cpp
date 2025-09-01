@@ -5,7 +5,7 @@
 #include "player/system/player_node_system.h"
 
 #include "type_alias/player_redis.h"
-#include "base/threading/redis_manager.h"
+#include "engine/threading/redis_manager.h"
 
 thread_local RedisSystem tlsRedisSystem;
 

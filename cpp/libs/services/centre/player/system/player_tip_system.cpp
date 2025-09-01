@@ -1,9 +1,9 @@
 #include "player_tip_system.h"
 
-#include "base/core/network/player_message_utils.h"
+#include "engine/core/network/player_message_utils.h"
 #include "rpc/service_info/centre_player_service_info.h"
-#include "base/threading/redis_manager.h"
-#include "base/threading/player_manager.h"
+#include "engine/threading/redis_manager.h"
+#include "engine/threading/player_manager.h"
 
 
 void PlayerTipSystem::SendToPlayer(entt::entity playerEntity, uint32_t tipId, const StringVector& parameters)

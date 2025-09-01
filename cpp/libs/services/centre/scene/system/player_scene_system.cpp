@@ -1,7 +1,7 @@
 #include "player_scene_system.h"
 #include "muduo/base/Logging.h"
-#include "scene/comp/scene_comp.h"
-#include "scene/system/scene_system.h"
+#include "modules/scene/comp/scene_comp.h"
+#include "modules/scene/system/scene_system.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "node/comp/game_node_comp.h"
@@ -14,8 +14,8 @@
 #include "network/node_message_utils.h"
 #include "network/node_utils.h"
 #include "node/system/zone_utils.h"
-#include "base/threading/node_context_manager.h"
-#include "base/threading/registry_manager.h"
+#include "engine/threading/node_context_manager.h"
+#include "engine/threading/registry_manager.h"
 
 entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext)
 {
