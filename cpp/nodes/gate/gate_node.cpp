@@ -3,7 +3,7 @@
 #include <grpcpp/grpcpp.h>
 
 #include "grpc_client/proto/login/login_service_grpc_client.h"
-#include "network/rpc_session.h"
+#include "core/network/rpc_session.h"
 #include "proto/login/login_service.grpc.pb.h"
 #include "proto/common/node.pb.h"
 #include "rpc/service_info/service_info.h"
