@@ -8,7 +8,7 @@
 #include <threading/redis_manager.h>
 #include <node_config_manager.h>
 #include <threading/registry_manager.h>
-#include <util/snow_flake.h>
+#include <core/utils/snow_flake.h>
 #include <threading/entity_manager.h>
 
 uint32_t tryPortId{ 0 };

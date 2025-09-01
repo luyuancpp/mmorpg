@@ -6,7 +6,7 @@
 #include <vector>
 #define ENABLE_SNOWFLAKE_TESTING
 
-#include "util/snow_flake.h"
+#include "core/utils/snow_flake.h"
 
 using Guid = uint64_t;
 

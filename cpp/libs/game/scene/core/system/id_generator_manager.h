@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "util/node_id_generator.h"
+#include "core/utils/id/node_id_generator.h"
 
 using TransientNode32BitCompositeIdGenerator = TransientNodeCompositeIdGenerator<uint64_t, 32>;
 

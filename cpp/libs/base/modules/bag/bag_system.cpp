@@ -6,9 +6,9 @@
 #include "macros/return_define.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/bag_error_tip.pb.h"
-#include "util/snow_flake.h"
+#include "core/utils/snow_flake.h"
 #include "table/code/item_table.h"
-#include "util/defer.h"
+#include "core/utils/defer/defer.h"
 #include <threading/snow_flake_manager.h>
 #include "threading/redis_manager.h"
 

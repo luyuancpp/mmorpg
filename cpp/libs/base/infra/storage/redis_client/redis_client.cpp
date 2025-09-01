@@ -2,7 +2,7 @@
 
 #include "google/protobuf/message.h"
 
-#include "util/defer.h"
+#include "core/utils/defer/defer.h"
 
 void SyncRedisContext_Deleter::operator()(redisContext* res)
 {

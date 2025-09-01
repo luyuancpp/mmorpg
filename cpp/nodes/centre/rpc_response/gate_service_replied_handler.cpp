@@ -12,7 +12,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 #include "base/core/type_define/type_define.h"
 
 #include "scene/system/player_change_scene_system.h"
-#include "util/registry/game_registry.h"
+#include "core/utils/registry/game_registry.h"
 #include "player/system/player_node_system.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE

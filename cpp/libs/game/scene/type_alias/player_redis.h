@@ -3,7 +3,7 @@
 #include "redis_client/redis_client.h"
 
 #include "proto/db/mysql_database_table.pb.h"
-#include "util/registry/game_registry.h"
+#include "core/utils/registry/game_registry.h"
 
 
 using PlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_centre_database>>;
