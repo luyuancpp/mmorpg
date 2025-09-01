@@ -244,7 +244,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../../libs/base/common/;../../../third_party/muduo/contrib/windows/include/;../../../third_party/muduo;../../../third_party/boost/;../../../third_party/exprtk/;../../../third_party/;../../../third_party/grpc/third_party/protobuf/src/;../../../third_party/grpc/third_party/abseil-cpp/;../../generated/;../../libs/base/configs/;../../libs/;../../libs/base/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../libs/base/common/;../../../third_party/muduo/contrib/windows/include/;../../../third_party/muduo;../../../third_party/boost/;../../../third_party/exprtk/;../../../third_party/;../../../third_party/grpc/third_party/protobuf/src/;../../../third_party/grpc/third_party/abseil-cpp/;../../generated/;../../libs/engine/configs/;../../libs/;../../libs/engine/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>

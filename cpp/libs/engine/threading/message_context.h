@@ -2,7 +2,7 @@
 #pragma once
 
 #include "proto/common/message.pb.h"
-#include "base/core/type_define/type_define.h"
+#include "engine/core/type_define/type_define.h"
 
 class MessageContext 
 {

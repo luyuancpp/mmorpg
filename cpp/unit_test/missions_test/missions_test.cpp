@@ -8,7 +8,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/mission_error_tip.pb.h"
 #include "../../nodes/scene/handler/event/mission_event_handler.h"
-#include "base/core/utils/random/random.h"
+#include "engine/core/utils/random/random.h"
 
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"

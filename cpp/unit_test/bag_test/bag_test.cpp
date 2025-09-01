@@ -1,6 +1,6 @@
 ﻿#include <gtest/gtest.h>
 
-#include "base/core/type_define/type_define.h"
+#include "engine/core/type_define/type_define.h"
 
 #include "table/code/item_table.h"
 #include "bag/bag_system.h"
