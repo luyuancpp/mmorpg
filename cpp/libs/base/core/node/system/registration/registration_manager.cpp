@@ -10,7 +10,7 @@
 #include "node/system/node/node.h"
 #include <network/node_utils.h>
 #include "proto/logic/event/server_event.pb.h"
-#include <proto_core/utils/proto_util.h>
+#include <proto_util/proto_util.h>
 #include "threading/node_context_manager.h"
 #include <threading/registry_manager.h>
 #include <threading/entity_manager.h>

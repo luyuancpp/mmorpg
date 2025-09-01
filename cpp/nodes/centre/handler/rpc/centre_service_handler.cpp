@@ -27,7 +27,7 @@
 #include "type_alias/player_session_type_alias.h"
 #include "core/utils/defer/defer.h"
 #include "core/utils/proto/proto_field_checker.h"
-#include "core/utils/stacktrace_system.h"
+#include "core/utils/debug/stacktrace_system.h"
 #include "player/system/player_tip_system.h"
 #include "rpc/service_info/centre_player_scene_service_info.h"
 #include "type_alias/player_redis.h"
