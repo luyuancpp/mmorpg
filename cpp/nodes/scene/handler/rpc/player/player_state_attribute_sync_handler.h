@@ -2,7 +2,7 @@
 
 #include "proto/scene/player_state_attribute_sync.pb.h"
 
-#include "rpc/player_service.h"
+#include "rpc/player_service_interface.h"
 
 #include "macros/return_define.h"
 
