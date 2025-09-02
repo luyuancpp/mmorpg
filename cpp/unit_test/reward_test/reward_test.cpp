@@ -1,4 +1,4 @@
-﻿#include "reward/system/reward_system.h"
+﻿#include "modules/reward/system/reward_system.h"
 #include <gtest/gtest.h>
 
 #include "table/code/bit_index/reward_table_id_bit_index.h"

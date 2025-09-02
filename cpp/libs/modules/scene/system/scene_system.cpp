@@ -14,6 +14,7 @@
 
 #include <ranges> // Only if using C++20 ranges
 #include <threading/registry_manager.h>
+#include <scene/comp/node_scene_comp.h>
 
 thread_local TransientNode12BitCompositeIdGenerator  nodeSequence; // Sequence for generating node IDs
 

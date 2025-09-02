@@ -2,9 +2,9 @@
 
 #include "table/code/condition_table.h"
 #include "table/code/mission_table.h"
-#include "mission/constants/mission_constants.h"
-#include "mission/comp/mission_comp.h"
-#include "mission/system/mission_system.h"
+#include "modules/mission/constants/mission_constants.h"
+#include "modules/mission/comp/mission_comp.h"
+#include "modules/mission/system/mission_system.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/mission_error_tip.pb.h"
 #include "../../nodes/scene/handler/event/mission_event_handler.h"
