@@ -19,19 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="session\comp\gate_session.h" />
-    <ClInclude Include="session\manager\session_manager.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="session\manager\session_manager.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{7D172AE7-4B58-430F-A448-B7B6139384A2}</ProjectGuid>
-    <RootNamespace>gate</RootNamespace>
+    <ProjectGuid>{6EBE3530-3992-4654-A9D9-210CB52D49C1}</ProjectGuid>
+    <RootNamespace>player</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>gate</ProjectName>
+    <ProjectName>player</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
