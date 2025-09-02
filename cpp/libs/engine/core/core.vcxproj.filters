@@ -44,8 +44,6 @@
     <ClInclude Include="macros\return_define.h" />
     <ClInclude Include="message_limiter\message_limiter.h" />
     <ClInclude Include="error_handling\error_handling.h" />
-    <ClInclude Include="rpc\player_service.h" />
-    <ClInclude Include="rpc\player_service_replied.h" />
     <ClInclude Include="node\system\zone_utils.h" />
     <ClInclude Include="log\constants\log_constants.h" />
     <ClInclude Include="log\constants\log_color_constants.h" />
