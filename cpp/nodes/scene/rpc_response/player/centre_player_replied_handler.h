@@ -2,7 +2,7 @@
 #pragma once
 #include "proto/centre/centre_player.pb.h"
 
-#include "rpc/player_service_replied.h"
+#include "rpc/player_rpc_replied_handler.h"
 
 
 class CentrePlayerUtilityRepliedHandler : public ::PlayerServiceReplied
