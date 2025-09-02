@@ -10,6 +10,7 @@
 #include "threading/node_context_manager.h"
 #include <threading/registry_manager.h>
 #include <muduo/base/Logging.h>
+#include <modules/scene/comp/node_scene_comp.h>
 
 using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
 
