@@ -6,7 +6,7 @@
 #include "proto/db/db.grpc.pb.h"
 
 
-#include "rpc/service_info/db_service_info.h"
+#include "rpc/service_info/db_service_metadata.h"
 
 
 using grpc::ClientContext;

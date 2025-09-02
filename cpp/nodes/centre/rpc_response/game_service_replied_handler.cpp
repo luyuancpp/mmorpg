@@ -1,7 +1,7 @@
 
 #include "game_service_replied_handler.h"
 
-#include "rpc/service_info/game_service_service_info.h"
+#include "rpc/service_info/game_service_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gResponseDispatcher;
@@ -13,7 +13,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 #include <muduo/base/Logging.h>
 
 
-#include "rpc/service_info/service_info.h"
+#include "rpc/service_info/service_metadata.h"
 #include "rpc/player_rpc_replied_handler.h"
 #include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"

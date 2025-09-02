@@ -2,13 +2,13 @@
 
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "threading/redis_manager.h"
-#include "rpc/service_info/gate_service_service_info.h"
+#include "rpc/service_info/gate_service_service_metadata.h"
 #include "muduo/base/Logging.h"
 #include "network_utils.h"
 #include "network/rpc_session.h"
-#include "rpc/service_info/service_info.h"
+#include "rpc/service_info/service_metadata.h"
 #include "network/node_utils.h"
-#include <rpc/service_info/game_service_service_info.h>
+#include <rpc/service_info/game_service_service_metadata.h>
 #include "threading/node_context_manager.h"
 #include "threading/player_manager.h"
 #include <threading/registry_manager.h>
