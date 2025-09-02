@@ -206,9 +206,6 @@
                             |-- registration_manager.h
                         |-- zone_utils.cpp
                         |-- zone_utils.h
-                |-- rpc
-                    |-- player_service.h
-                    |-- player_service_replied.h
                 |-- time
                     |-- comp
                         |-- duration_funtion.cpp
@@ -264,7 +261,7 @@
                     |-- registry
                         |-- game_registry.cpp
                         |-- game_registry.h
-                    |-- snowf_lake
+                    |-- snow_flake
                         |-- snow_flake.h
                     |-- stat
                         |-- stat.cpp
@@ -290,8 +287,8 @@
                         |-- redis_client.cpp
                         |-- redis_client.h
                 |-- CMakeLists.txt
-                |-- infra.filters
                 |-- infra.vcxproj
+                |-- infra.vcxproj.filters
                 |-- infra.vcxproj.user
             |-- session
                 |-- comp
@@ -426,6 +423,13 @@
                 |-- gate.vcxproj
                 |-- gate.vcxproj.filters
                 |-- gate.vcxproj.user
+            |-- player
+                |-- rpc
+                    |-- player_rpc_replied_handler.h
+                    |-- player_service_interface.h
+                |-- player.vcxproj
+                |-- player.vcxproj.filters
+                |-- player.vcxproj.user
             |-- scene
                 |-- actor
                     |-- action_state
@@ -589,10 +593,13 @@
                     |-- player
                         |-- centre_player_handler.cpp
                         |-- centre_player_handler.h
-
-                        |-- player_service.cpp
+                        |-- centre_player_scene_handler.cpp
+                        |-- centre_player_scene_handler.h
+                        |-- player_service_interface.cpp
                     |-- centre_scene_handler.cpp
                     |-- centre_scene_handler.h
+                    |-- centre_service_handler.cpp
+                    |-- centre_service_handler.h
                     |-- register_handler.cpp
                 |-- chatgtp.txt
             |-- rpc_response
@@ -601,12 +608,16 @@
                     |-- game_player_replied_handler.h
                     |-- game_player_scene_replied_handler.cpp
                     |-- game_player_scene_replied_handler.h
-                    |-- player_service_replied.cpp
+                    |-- player_rpc_replied_handler.cpp
                     |-- player_state_attribute_sync_replied_handler.cpp
                     |-- player_state_attribute_sync_replied_handler.h
                 |-- game_scene_replied_handler.cpp
                 |-- game_scene_replied_handler.h
-
+                |-- game_service_replied_handler.cpp
+                |-- game_service_replied_handler.h
+                |-- gate_service_replied_handler.cpp
+                |-- gate_service_replied_handler.h
+                |-- register_replied_handler.cpp
             |-- centre.vcxproj
             |-- centre.vcxproj.filters
             |-- centre.vcxproj.user
@@ -618,14 +629,14 @@
             |-- handler
                 |-- rpc
                     |-- player
-                        |-- player_service.cpp
+                        |-- player_service_interface.cpp
                     |-- client_message_processor.cpp
                     |-- client_message_processor.h
                     |-- gate_service_handler.cpp
                     |-- gate_service_handler.h
             |-- rpc_response
                 |-- player
-                    |-- player_service_replied.cpp
+                    |-- player_rpc_replied_handler.cpp
                 |-- centre_scene_replied_handler.cpp
                 |-- centre_scene_replied_handler.h
                 |-- centre_service_replied_handler.cpp
@@ -666,11 +677,16 @@
                 |-- player
                     |-- centre_player_replied_handler.cpp
                     |-- centre_player_replied_handler.h
-
-                    |-- player_service_replied.cpp
+                    |-- centre_player_scene_replied_handler.cpp
+                    |-- centre_player_scene_replied_handler.h
+                    |-- player_rpc_replied_handler.cpp
                 |-- centre_scene_replied_handler.cpp
                 |-- centre_scene_replied_handler.h
-
+                |-- centre_service_replied_handler.cpp
+                |-- centre_service_replied_handler.h
+                |-- gate_service_replied_handler.cpp
+                |-- gate_service_replied_handler.h
+                |-- register_replied_handler.cpp
             |-- CMakeLists.txt
             |-- directory_tree.py
             |-- main.cpp
