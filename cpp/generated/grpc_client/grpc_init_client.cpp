@@ -39,10 +39,10 @@ namespace etcdserverpb {
 }
 
 namespace loginpb {
-    void SetLoginServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    void SetLoginServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    void InitLoginServiceGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
-    void HandleLoginServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+    void SetLoginHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetLoginIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void InitLoginGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+    void HandleLoginCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 }
 
 
@@ -52,7 +52,7 @@ void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::go
 
     etcdserverpb::SetEtcdIfEmptyHandler(handler);
 
-    loginpb::SetLoginServiceIfEmptyHandler(handler);
+    loginpb::SetLoginIfEmptyHandler(handler);
 
 }
 
@@ -62,7 +62,7 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
 
     etcdserverpb::SetEtcdHandler(handler);
 
-    loginpb::SetLoginServiceHandler(handler);
+    loginpb::SetLoginHandler(handler);
 
 }
 
@@ -86,7 +86,7 @@ void HandleCompletedQueueMessage(entt::registry& registry){
                 etcdserverpb::HandleEtcdCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
             else if (eNodeType::LoginNodeService == nodeType) {
-                loginpb::HandleLoginServiceCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+                loginpb::HandleLoginCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
         }
     }
@@ -103,6 +103,6 @@ void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, ent
         etcdserverpb::InitEtcdGrpcNode(channel, registry, nodeEntity);
     }
     else if (eNodeType::LoginNodeService == nodeType) {
-        loginpb::InitLoginServiceGrpcNode(channel, registry, nodeEntity);
+        loginpb::InitLoginGrpcNode(channel, registry, nodeEntity);
     }
 }
