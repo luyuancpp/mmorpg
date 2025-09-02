@@ -112,7 +112,7 @@ const (
 	GeneratedRpcDirectory = GeneratedOutputDirectory + GeneratedRpcName
 	ServiceInfoName       = "service_metadata/"
 	ServiceInfoDirectory  = GeneratedRpcDirectory + ServiceInfoName
-	ServiceInfoExtension  = "_service_info"
+	ServiceInfoExtension  = "service_metadata"
 	ServiceCppFilePath    = ServiceInfoDirectory + "service_metadata.cpp"
 	ServiceHeaderFilePath = ServiceInfoDirectory + "service_metadata.h"
 
@@ -130,7 +130,7 @@ const (
 	GrpcInitFileHeadPath             = OutputRoot + GeneratedDirectory + GrpcGeneratorDirectory + "grpc_init_client.h"
 
 	GeneratorDirectory     = "generated/"
-	UtilGeneratorDirectory = OutputRoot + GeneratedDirectory + "proto_util/"
+	UtilGeneratorDirectory = OutputRoot + GeneratedDirectory + "proto_helpers/"
 	GenUtilFileCppPath     = UtilGeneratorDirectory + "proto_util.cpp"
 	GenUtilFileHeadPath    = UtilGeneratorDirectory + "proto_util.h"
 )

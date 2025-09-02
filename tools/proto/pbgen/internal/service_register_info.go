@@ -225,7 +225,7 @@ func writeServiceInfoCppFile() {
 	}
 
 	const serviceInfoCppTemplate = `#include <array>
-#include "service_info.h"
+#include "service_metadata.h"
 #include "proto/common/node.pb.h"
 
 {{range .Includes -}}
