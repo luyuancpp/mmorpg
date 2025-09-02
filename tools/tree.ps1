@@ -1,7 +1,7 @@
 ﻿# ==== 配置部分 ====
 $RootPath = "D:\game\luyuan\\mmorpg\cpp"               # 根目录
 $ExcludePaths = @(
-"D:\game\luyuan\mmorpg\cpp\libs\base\muduo_windows",
+"D:\game\luyuan\mmorpg\cpp\libs\engine\muduo_windows",
 "D:\game\luyuan\mmorpg\cpp\unit_test"
 )
 
