@@ -10,7 +10,7 @@
 #include "muduo/base/Logging.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/event/scene_event.pb.h"
-#include "rpc/service_info/player_scene_service_metadata.h"
+#include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "core/utils/stat/stat.h"
 #include "type_alias/actor.h"
 #include "network/player_message_utils.h"

@@ -2,12 +2,12 @@
 
 #include "gate_node.h"
 #include "network/codec/dispatcher.h"
-#include "rpc/service_info/service_metadata.h"
+#include "rpc/service_metadata/service_metadata.h"
 #include "threading/redis_manager.h"
 #include "core/utils/defer/defer.h"
 #include "session/manager/session_manager.h"
 #include "threading/message_context.h"
-#include "rpc/service_info/gate_service_service_metadata.h"
+#include "rpc/service_metadata/gate_service_service_metadata.h"
 
 extern ProtobufDispatcher gResponseDispatcher;
 

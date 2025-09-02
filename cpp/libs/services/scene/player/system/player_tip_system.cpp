@@ -2,7 +2,7 @@
 
 #include "core/network/message_system.h"
 #include "muduo/base/Logging.h"
-#include "rpc/service_info/game_client_player_service_metadata.h"
+#include "rpc/service_metadata/game_client_player_service_metadata.h"
 #include "threading/redis_manager.h"
 #include "network/player_message_utils.h"
 #include "threading/player_manager.h"
