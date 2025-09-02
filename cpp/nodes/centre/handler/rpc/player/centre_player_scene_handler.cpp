@@ -11,7 +11,7 @@
 #include "scene/system/player_scene_system.h"
 #include "player/system/player_tip_system.h"
 #include "scene/system/player_change_scene_system.h"
-#include "rpc/service_info/player_scene_service_metadata.h"
+#include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "network/player_message_utils.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "node/system/node/node_util.h"

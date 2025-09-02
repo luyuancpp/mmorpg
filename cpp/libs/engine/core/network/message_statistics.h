@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-#include "rpc/service_info/service_metadata.h"
+#include "rpc/service_metadata/service_metadata.h"
 
 #include "proto/common/statistics.pb.h"
 

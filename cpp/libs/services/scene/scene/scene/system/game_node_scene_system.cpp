@@ -8,7 +8,7 @@
 #include "proto/common/node.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "modules/scene/system/scene_system.h"
-#include "rpc/service_info/centre_scene_service_metadata.h"
+#include "rpc/service_metadata/centre_scene_service_metadata.h"
 #include "network/node_utils.h"
 #include "network/node_message_utils.h"
 #include "scene/scene/mananger/scene_nav_mananger.h"

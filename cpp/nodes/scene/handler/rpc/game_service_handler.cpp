@@ -20,7 +20,7 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/common/node.pb.h"
 #include "modules/scene/system/scene_system.h"
-#include "rpc/service_info/service_metadata.h"
+#include "rpc/service_metadata/service_metadata.h"
 #include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "core/utils/proto/proto_field_checker.h"
