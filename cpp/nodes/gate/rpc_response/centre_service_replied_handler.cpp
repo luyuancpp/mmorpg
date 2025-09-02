@@ -1,7 +1,7 @@
 
 #include "centre_service_replied_handler.h"
 
-#include "rpc/service_metadata/centre_service_service_metadata.h"
+#include "rpc/service_metadata/centre_service_service_info.h"
 #include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gResponseDispatcher;
