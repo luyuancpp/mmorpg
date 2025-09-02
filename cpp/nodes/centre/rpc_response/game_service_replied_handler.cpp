@@ -14,7 +14,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 
 #include "rpc/service_info/service_info.h"
-#include "rpc/player_service_replied.h"
+#include "rpc/player_rpc_replied_handler.h"
 #include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "proto/logic/component/player_network_comp.pb.h"

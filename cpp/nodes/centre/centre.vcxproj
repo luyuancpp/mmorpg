@@ -192,7 +192,7 @@
     <ClCompile Include="handler\rpc\centre_service_handler.cpp" />
     <ClCompile Include="handler\rpc\player\centre_player_handler.cpp" />
     <ClCompile Include="handler\rpc\player\centre_player_scene_handler.cpp" />
-    <ClCompile Include="handler\rpc\player\player_service.cpp" />
+    <ClCompile Include="handler\rpc\player\player_service_interface.cpp" />
     <ClCompile Include="handler\rpc\register_handler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="rpc_response\game_scene_replied_handler.cpp" />
@@ -200,7 +200,7 @@
     <ClCompile Include="rpc_response\gate_service_replied_handler.cpp" />
     <ClCompile Include="rpc_response\player\game_player_replied_handler.cpp" />
     <ClCompile Include="rpc_response\player\game_player_scene_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\player\player_service_replied.cpp" />
+    <ClCompile Include="rpc_response\player\player_rpc_replied_handler.cpp" />
     <ClCompile Include="rpc_response\player\player_state_attribute_sync_replied_handler.cpp" />
     <ClCompile Include="rpc_response\register_replied_handler.cpp" />
   </ItemGroup>
