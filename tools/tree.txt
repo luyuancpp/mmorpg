@@ -3,7 +3,9 @@
     |-- generated
         |-- grpc_client
             |-- proto
-
+                |-- db
+                    |-- db_grpc_client.cpp
+                    |-- db_grpc_client.h
                 |-- etcd
                     |-- etcd_grpc_client.cpp
                     |-- etcd_grpc_client.h
@@ -67,23 +69,36 @@
             |-- proto.vcxproj
             |-- proto.vcxproj.filters
             |-- proto.vcxproj.user
-        |-- proto_util
+        |-- proto_helpers
+            |-- proto_helpers.filters
+            |-- proto_helpers.vcxproj
+            |-- proto_helpers.vcxproj.user
             |-- proto_util.cpp
             |-- proto_util.h
-            |-- proto_util.vcxproj
-            |-- proto_util.vcxproj.filters
-            |-- proto_util.vcxproj.user
         |-- rpc
-            |-- service_info
-                |-- centre_player_scene_service_info.h
-                |-- centre_player_service_info.h
-                |-- centre_scene_service_info.h
-                |-- centre_service_service_info.h
+            |-- service_metadata
+                |-- centre_player_scene_service_metadata.h
+                |-- centre_player_service_metadata.h
+                |-- centre_scene_service_metadata.h
+                |-- centre_service_service_metadata.h
+                |-- db_service_metadata.h
+                |-- etcd_service_metadata.h
+                |-- game_client_player_service_metadata.h
+                |-- game_player_scene_service_metadata.h
+                |-- game_player_service_metadata.h
+                |-- game_scene_service_metadata.h
+                |-- game_service_service_metadata.h
+                |-- gate_service_service_metadata.h
+                |-- login_service_metadata.h
+                |-- player_locator_service_metadata.h
+                |-- player_scene_service_metadata.h
+                |-- player_skill_service_metadata.h
+                |-- player_state_attribute_sync_service_metadata.h
+                |-- service_metadata.cpp
+                |-- service_metadata.h
             |-- rpc.vcxproj
             |-- rpc.vcxproj.filters
             |-- rpc.vcxproj.user
-        |-- service_info
-            |-- service_info.vcxproj.user
         |-- table
             |-- code
                 |-- bit_index
@@ -602,7 +617,7 @@
                     |-- centre_service_handler.h
                     |-- register_handler.cpp
                 |-- chatgtp.txt
-            |-- rpc_response
+            |-- rpc_replies
                 |-- player
                     |-- game_player_replied_handler.cpp
                     |-- game_player_replied_handler.h
@@ -634,7 +649,7 @@
                     |-- client_message_processor.h
                     |-- gate_service_handler.cpp
                     |-- gate_service_handler.h
-            |-- rpc_response
+            |-- rpc_replies
                 |-- player
                     |-- player_rpc_replied_handler.cpp
                 |-- centre_scene_replied_handler.cpp
@@ -673,7 +688,7 @@
                     |-- player_state_attribute_sync_handler.cpp
                     |-- player_state_attribute_sync_handler.h
                     |-- register_handler.cpp
-            |-- rpc_response
+            |-- rpc_replies
                 |-- player
                     |-- centre_player_replied_handler.cpp
                     |-- centre_player_replied_handler.h
