@@ -1,209 +1,68 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
-    </Filter>
+    <ClCompile Include="handler\event\actor_combat_state_event_handler.cpp" />
+    <ClCompile Include="handler\event\actor_event_handler.cpp" />
+    <ClCompile Include="handler\event\buff_event_handler.cpp" />
+    <ClCompile Include="handler\event\combat_event_handler.cpp" />
+    <ClCompile Include="handler\event\event_handler.cpp" />
+    <ClCompile Include="handler\event\mission_event_handler.cpp" />
+    <ClCompile Include="handler\event\node_event_handler.cpp" />
+    <ClCompile Include="handler\event\npc_event_handler.cpp" />
+    <ClCompile Include="handler\event\player_event_handler.cpp" />
+    <ClCompile Include="handler\event\player_migration_event_handler.cpp" />
+    <ClCompile Include="handler\event\scene_event_handler.cpp" />
+    <ClCompile Include="handler\event\server_event_handler.cpp" />
+    <ClCompile Include="handler\event\skill_event_handler.cpp" />
+    <ClCompile Include="handler\rpc\game_scene_handler.cpp" />
+    <ClCompile Include="handler\rpc\game_service_handler.cpp" />
+    <ClCompile Include="handler\rpc\player\game_client_player_handler.cpp" />
+    <ClCompile Include="handler\rpc\player\game_player_handler.cpp" />
+    <ClCompile Include="handler\rpc\player\game_player_scene_handler.cpp" />
+    <ClCompile Include="handler\rpc\player\player_scene_handler.cpp" />
+    <ClCompile Include="handler\rpc\player\player_service_interface.cpp" />
+    <ClCompile Include="handler\rpc\player\player_skill_handler.cpp" />
+    <ClCompile Include="handler\rpc\player\player_state_attribute_sync_handler.cpp" />
+    <ClCompile Include="handler\rpc\player_state_attribute_sync_handler.cpp" />
+    <ClCompile Include="handler\rpc\register_handler.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="rpc_response\centre_scene_replied_handler.cpp" />
+    <ClCompile Include="rpc_response\centre_service_replied_handler.cpp" />
+    <ClCompile Include="rpc_response\gate_service_replied_handler.cpp" />
+    <ClCompile Include="rpc_response\player\centre_player_replied_handler.cpp" />
+    <ClCompile Include="rpc_response\player\centre_player_scene_replied_handler.cpp" />
+    <ClCompile Include="rpc_response\player\player_rpc_replied_handler.cpp" />
+    <ClCompile Include="rpc_response\register_replied_handler.cpp" />
+    <ClCompile Include="scene_node.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\actor_combat_state_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\actor_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\buff_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\combat_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\mission_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\node_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\npc_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\player_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\player_migration_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\scene_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\server_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\event\skill_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\rpc\player\game_client_player_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\rpc\player\game_player_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\rpc\player\game_player_scene_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\rpc\player\player_common_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\rpc\player\player_scene_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\rpc\player\player_skill_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\rpc\player\player_state_attribute_sync_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\rpc\game_scene_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\rpc\game_service_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\rpc\player_state_attribute_sync_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\rpc\register_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="rpc_response\player\centre_player_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="rpc_response\player\centre_player_scene_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    <ClCompile Include="rpc_response\centre_scene_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="rpc_response\centre_service_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="rpc_response\gate_service_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="rpc_response\register_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="scene_node.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="handler\rpc\player\player_service_interface.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="rpc_response\player\player_rpc_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="handler\event\actor_combat_state_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\event\actor_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\event\buff_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\event\combat_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\event\event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\event\mission_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\event\node_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\event\npc_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\event\player_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\event\player_migration_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\event\scene_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\event\server_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\event\skill_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\rpc\player\game_client_player_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\rpc\player\game_player_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\rpc\player\game_player_scene_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\rpc\player\player_common_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\rpc\player\player_scene_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\rpc\player\player_skill_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\rpc\player\player_state_attribute_sync_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\rpc\game_scene_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\rpc\game_service_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\rpc\player_state_attribute_sync_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="rpc_response\player\centre_player_replied_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="rpc_response\player\centre_player_scene_replied_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="rpc_response\centre_scene_replied_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="rpc_response\centre_service_replied_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="rpc_response\gate_service_replied_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="scene_node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClInclude Include="handler\event\actor_combat_state_event_handler.h" />
+    <ClInclude Include="handler\event\actor_event_handler.h" />
+    <ClInclude Include="handler\event\buff_event_handler.h" />
+    <ClInclude Include="handler\event\combat_event_handler.h" />
+    <ClInclude Include="handler\event\event_handler.h" />
+    <ClInclude Include="handler\event\mission_event_handler.h" />
+    <ClInclude Include="handler\event\node_event_handler.h" />
+    <ClInclude Include="handler\event\npc_event_handler.h" />
+    <ClInclude Include="handler\event\player_event_handler.h" />
+    <ClInclude Include="handler\event\player_migration_event_handler.h" />
+    <ClInclude Include="handler\event\scene_event_handler.h" />
+    <ClInclude Include="handler\event\server_event_handler.h" />
+    <ClInclude Include="handler\event\skill_event_handler.h" />
+    <ClInclude Include="handler\rpc\game_scene_handler.h" />
+    <ClInclude Include="handler\rpc\game_service_handler.h" />
+    <ClInclude Include="handler\rpc\player\game_client_player_handler.h" />
+    <ClInclude Include="handler\rpc\player\game_player_handler.h" />
+    <ClInclude Include="handler\rpc\player\game_player_scene_handler.h" />
+    <ClInclude Include="handler\rpc\player\player_scene_handler.h" />
+    <ClInclude Include="handler\rpc\player\player_skill_handler.h" />
+    <ClInclude Include="handler\rpc\player\player_state_attribute_sync_handler.h" />
+    <ClInclude Include="handler\rpc\player_state_attribute_sync_handler.h" />
+    <ClInclude Include="rpc_response\centre_scene_replied_handler.h" />
+    <ClInclude Include="rpc_response\centre_service_replied_handler.h" />
+    <ClInclude Include="rpc_response\gate_service_replied_handler.h" />
+    <ClInclude Include="rpc_response\player\centre_player_replied_handler.h" />
+    <ClInclude Include="rpc_response\player\centre_player_scene_replied_handler.h" />
+    <ClInclude Include="scene_node.h" />
   </ItemGroup>
 </Project>
