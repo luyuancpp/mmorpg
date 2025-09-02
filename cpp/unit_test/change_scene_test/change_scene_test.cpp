@@ -7,6 +7,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "scene/system/player_change_scene_system.h"
 #include "modules/scene/system/scene_system.h"
+#include <threading/registry_manager.h>
 
 EntityVector globalSceneList;
 
