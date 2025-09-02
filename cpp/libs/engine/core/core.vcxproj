@@ -198,10 +198,10 @@
       <Optimization>Disabled</Optimization>
       <SupportJustMyCode>true</SupportJustMyCode>
       <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>../../../../bin/vsout/lib/common/</AssemblerListingLocation>
+      <AssemblerListingLocation>../../../../bin/vsout/lib/core/</AssemblerListingLocation>
       <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
       <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>../../../../bin/vsout/lib/common/</BrowseInformationFile>
+      <BrowseInformationFile>../../../../bin/vsout/lib/core/</BrowseInformationFile>
       <CompileAs>Default</CompileAs>
       <ConformanceMode>true</ConformanceMode>
       <DiagnosticsFormat>Column</DiagnosticsFormat>
@@ -225,37 +225,37 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
       <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>../../../../bin/vsout/lib/common/</ModuleDependenciesFile>
-      <ModuleOutputFile>../../../../bin/vsout/lib/common/</ModuleOutputFile>
+      <ModuleDependenciesFile>../../../../bin/vsout/lib/core/</ModuleDependenciesFile>
+      <ModuleOutputFile>../../../../bin/vsout/lib/core/</ModuleOutputFile>
       <OmitDefaultLibName>false</OmitDefaultLibName>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>../../../../bin/vsout/lib/common/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>../../../../bin/vsout/lib/core/%(RelativeDir)</ObjectFileName>
       <CallingConvention>Cdecl</CallingConvention>
-      <ProgramDataBaseFileName>../../../../lib/common.pdb</ProgramDataBaseFileName>
+      <ProgramDataBaseFileName>../../../../lib/core.pdb</ProgramDataBaseFileName>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>../../../../bin/vsout/lib/common/common.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>../../../../bin/vsout/lib/core/common.pch</PrecompiledHeaderOutputFile>
       <PreprocessToFile>false</PreprocessToFile>
       <PreprocessKeepComments>false</PreprocessKeepComments>
       <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
       <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
       <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>../../../../bin/vsout/lib/common/</SourceDependenciesFile>
+      <SourceDependenciesFile>../../../../bin/vsout/lib/core/</SourceDependenciesFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <SmallerTypeCheck>false</SmallerTypeCheck>
       <SpectreMitigation>false</SpectreMitigation>
       <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>../../../../bin/vsout/lib/common/common.tlog\</TrackerLogDirectory>
+      <TrackerLogDirectory>../../../../bin/vsout/lib/core/common.tlog\</TrackerLogDirectory>
       <TranslateIncludes>false</TranslateIncludes>
       <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
       <TreatWarningAsError>true</TreatWarningAsError>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <UseFullPaths>true</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>../../../../bin/vsout/lib/common/</XMLDocumentationFileName>
+      <XMLDocumentationFileName>../../../../bin/vsout/lib/core/</XMLDocumentationFileName>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <IntelJCCErratum>false</IntelJCCErratum>
       <BuildStlModules>false</BuildStlModules>
@@ -278,10 +278,10 @@
       <Optimization>Disabled</Optimization>
       <SupportJustMyCode>true</SupportJustMyCode>
       <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>../../../../bin/vsout/lib/common/</AssemblerListingLocation>
+      <AssemblerListingLocation>../../../../bin/vsout/lib/core/</AssemblerListingLocation>
       <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
       <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>../../../../bin/vsout/lib/common/</BrowseInformationFile>
+      <BrowseInformationFile>../../../../bin/vsout/lib/core/</BrowseInformationFile>
       <CompileAs>Default</CompileAs>
       <ConformanceMode>true</ConformanceMode>
       <DiagnosticsFormat>Column</DiagnosticsFormat>
@@ -305,37 +305,37 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
       <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>../../../../bin/vsout/lib/common/</ModuleDependenciesFile>
-      <ModuleOutputFile>../../../../bin/vsout/lib/common/</ModuleOutputFile>
+      <ModuleDependenciesFile>../../../../bin/vsout/lib/core/</ModuleDependenciesFile>
+      <ModuleOutputFile>../../../../bin/vsout/lib/core/</ModuleOutputFile>
       <OmitDefaultLibName>false</OmitDefaultLibName>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>../../../../bin/vsout/lib/common/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>../../../../bin/vsout/lib/core/%(RelativeDir)</ObjectFileName>
       <CallingConvention>Cdecl</CallingConvention>
-      <ProgramDataBaseFileName>../../../../lib/common.pdb</ProgramDataBaseFileName>
+      <ProgramDataBaseFileName>../../../../lib/core.pdb</ProgramDataBaseFileName>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>../../../../bin/vsout/lib/common/common.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>../../../../bin/vsout/lib/core/common.pch</PrecompiledHeaderOutputFile>
       <PreprocessToFile>false</PreprocessToFile>
       <PreprocessKeepComments>false</PreprocessKeepComments>
       <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
       <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
       <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>../../../../bin/vsout/lib/common/</SourceDependenciesFile>
+      <SourceDependenciesFile>../../../../bin/vsout/lib/core/</SourceDependenciesFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <SmallerTypeCheck>false</SmallerTypeCheck>
       <SpectreMitigation>false</SpectreMitigation>
       <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>../../../../bin/vsout/lib/common/common.tlog\</TrackerLogDirectory>
+      <TrackerLogDirectory>../../../../bin/vsout/lib/core/common.tlog\</TrackerLogDirectory>
       <TranslateIncludes>false</TranslateIncludes>
       <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
       <TreatWarningAsError>true</TreatWarningAsError>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <UseFullPaths>true</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>../../../../bin/vsout/lib/common/</XMLDocumentationFileName>
+      <XMLDocumentationFileName>../../../../bin/vsout/lib/core/</XMLDocumentationFileName>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <IntelJCCErratum>false</IntelJCCErratum>
       <BuildStlModules>false</BuildStlModules>
@@ -362,10 +362,10 @@
       <Optimization>Disabled</Optimization>
       <SupportJustMyCode>true</SupportJustMyCode>
       <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>../../../../bin/vsout/lib/common/</AssemblerListingLocation>
+      <AssemblerListingLocation>../../../../bin/vsout/lib/core/</AssemblerListingLocation>
       <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
       <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>../../../../bin/vsout/lib/common/</BrowseInformationFile>
+      <BrowseInformationFile>../../../../bin/vsout/lib/core/</BrowseInformationFile>
       <CompileAs>Default</CompileAs>
       <ConformanceMode>true</ConformanceMode>
       <DiagnosticsFormat>Column</DiagnosticsFormat>
@@ -389,37 +389,37 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
       <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>../../../../bin/vsout/lib/common/</ModuleDependenciesFile>
-      <ModuleOutputFile>../../../../bin/vsout/lib/common/</ModuleOutputFile>
+      <ModuleDependenciesFile>../../../../bin/vsout/lib/core/</ModuleDependenciesFile>
+      <ModuleOutputFile>../../../../bin/vsout/lib/core/</ModuleOutputFile>
       <OmitDefaultLibName>false</OmitDefaultLibName>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>../../../../bin/vsout/lib/common/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>../../../../bin/vsout/lib/core/%(RelativeDir)</ObjectFileName>
       <CallingConvention>Cdecl</CallingConvention>
-      <ProgramDataBaseFileName>../../../../lib/common.pdb</ProgramDataBaseFileName>
+      <ProgramDataBaseFileName>../../../../lib/core.pdb</ProgramDataBaseFileName>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>../../../../bin/vsout/lib/common/common.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>../../../../bin/vsout/lib/core/common.pch</PrecompiledHeaderOutputFile>
       <PreprocessToFile>false</PreprocessToFile>
       <PreprocessKeepComments>false</PreprocessKeepComments>
       <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
       <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
       <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>../../../../bin/vsout/lib/common/</SourceDependenciesFile>
+      <SourceDependenciesFile>../../../../bin/vsout/lib/core/</SourceDependenciesFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <SmallerTypeCheck>false</SmallerTypeCheck>
       <SpectreMitigation>false</SpectreMitigation>
       <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>../../../../bin/vsout/lib/common/common.tlog\</TrackerLogDirectory>
+      <TrackerLogDirectory>../../../../bin/vsout/lib/core/common.tlog\</TrackerLogDirectory>
       <TranslateIncludes>false</TranslateIncludes>
       <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
       <TreatWarningAsError>true</TreatWarningAsError>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <UseFullPaths>true</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>../../../../bin/vsout/lib/common/</XMLDocumentationFileName>
+      <XMLDocumentationFileName>../../../../bin/vsout/lib/core/</XMLDocumentationFileName>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <IntelJCCErratum>false</IntelJCCErratum>
       <BuildStlModules>false</BuildStlModules>
