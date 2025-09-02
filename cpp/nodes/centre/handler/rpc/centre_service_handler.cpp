@@ -36,6 +36,7 @@
 #include "threading/node_context_manager.h"
 #include "threading/player_manager.h"
 #include "threading/message_context.h"
+#include <modules/scene/comp/node_scene_comp.h>
 
 using namespace muduo;
 using namespace muduo::net;

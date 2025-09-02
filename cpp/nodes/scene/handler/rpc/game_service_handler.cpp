@@ -19,7 +19,7 @@
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/common/node.pb.h"
-#include "modules/modules/scene/system/scene_system.h"
+#include "modules/scene/system/scene_system.h"
 #include "rpc/service_info/service_info.h"
 #include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
