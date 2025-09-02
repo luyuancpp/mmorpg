@@ -24,14 +24,14 @@
     <ClCompile Include="handler\rpc\gate_service_handler.cpp" />
     <ClCompile Include="handler\rpc\player\player_service_interface.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="rpc_response\centre_scene_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\centre_service_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\game_scene_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\game_service_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\player\player_rpc_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\register_handler.cpp" />
-    <ClCompile Include="rpc_response\register_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\route_message_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\centre_scene_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\centre_service_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\game_scene_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\game_service_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\player\player_rpc_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\register_handler.cpp" />
+    <ClCompile Include="rpc_replies\register_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\route_message_replied_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="src\grpc\" />
@@ -40,10 +40,10 @@
     <ClInclude Include="gate_node.h" />
     <ClInclude Include="handler\rpc\client_message_processor.h" />
     <ClInclude Include="handler\rpc\gate_service_handler.h" />
-    <ClInclude Include="rpc_response\centre_scene_replied_handler.h" />
-    <ClInclude Include="rpc_response\centre_service_replied_handler.h" />
-    <ClInclude Include="rpc_response\game_scene_replied_handler.h" />
-    <ClInclude Include="rpc_response\game_service_replied_handler.h" />
+    <ClInclude Include="rpc_replies\centre_scene_replied_handler.h" />
+    <ClInclude Include="rpc_replies\centre_service_replied_handler.h" />
+    <ClInclude Include="rpc_replies\game_scene_replied_handler.h" />
+    <ClInclude Include="rpc_replies\game_service_replied_handler.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

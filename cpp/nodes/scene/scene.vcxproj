@@ -160,13 +160,13 @@
     <ClCompile Include="handler\rpc\player_state_attribute_sync_handler.cpp" />
     <ClCompile Include="handler\rpc\register_handler.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="rpc_response\centre_scene_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\centre_service_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\gate_service_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\player\centre_player_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\player\centre_player_scene_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\player\player_rpc_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\register_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\centre_scene_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\centre_service_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\gate_service_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\player\centre_player_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\player\centre_player_scene_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\player\player_rpc_replied_handler.cpp" />
+    <ClCompile Include="rpc_replies\register_replied_handler.cpp" />
     <ClCompile Include="scene_node.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -192,11 +192,11 @@
     <ClInclude Include="handler\rpc\player\player_skill_handler.h" />
     <ClInclude Include="handler\rpc\player\player_state_attribute_sync_handler.h" />
     <ClInclude Include="handler\rpc\player_state_attribute_sync_handler.h" />
-    <ClInclude Include="rpc_response\centre_scene_replied_handler.h" />
-    <ClInclude Include="rpc_response\centre_service_replied_handler.h" />
-    <ClInclude Include="rpc_response\gate_service_replied_handler.h" />
-    <ClInclude Include="rpc_response\player\centre_player_replied_handler.h" />
-    <ClInclude Include="rpc_response\player\centre_player_scene_replied_handler.h" />
+    <ClInclude Include="rpc_replies\centre_scene_replied_handler.h" />
+    <ClInclude Include="rpc_replies\centre_service_replied_handler.h" />
+    <ClInclude Include="rpc_replies\gate_service_replied_handler.h" />
+    <ClInclude Include="rpc_replies\player\centre_player_replied_handler.h" />
+    <ClInclude Include="rpc_replies\player\centre_player_scene_replied_handler.h" />
     <ClInclude Include="scene_node.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
