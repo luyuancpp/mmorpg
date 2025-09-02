@@ -22,13 +22,13 @@
     <ClCompile Include="gate_node.cpp" />
     <ClCompile Include="handler\rpc\client_message_processor.cpp" />
     <ClCompile Include="handler\rpc\gate_service_handler.cpp" />
-    <ClCompile Include="handler\rpc\player\player_service.cpp" />
+    <ClCompile Include="handler\rpc\player\player_service_interface.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="rpc_response\centre_scene_replied_handler.cpp" />
     <ClCompile Include="rpc_response\centre_service_replied_handler.cpp" />
     <ClCompile Include="rpc_response\game_scene_replied_handler.cpp" />
     <ClCompile Include="rpc_response\game_service_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\player\player_service_replied.cpp" />
+    <ClCompile Include="rpc_response\player\player_rpc_replied_handler.cpp" />
     <ClCompile Include="rpc_response\register_handler.cpp" />
     <ClCompile Include="rpc_response\register_replied_handler.cpp" />
     <ClCompile Include="rpc_response\route_message_replied_handler.cpp" />

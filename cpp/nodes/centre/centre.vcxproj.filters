@@ -63,9 +63,6 @@
     <ClCompile Include="handler\rpc\player\centre_player_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="handler\rpc\player\player_service.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="handler\rpc\centre_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -79,9 +76,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="rpc_response\player\game_player_scene_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="rpc_response\player\player_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="rpc_response\player\player_state_attribute_sync_replied_handler.cpp">
@@ -100,6 +94,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="centre_node.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="handler\rpc\player\player_service_interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rpc_response\player\player_rpc_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

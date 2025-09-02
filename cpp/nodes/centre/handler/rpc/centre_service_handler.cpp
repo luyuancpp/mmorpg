@@ -6,7 +6,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/code/mainscene_table.h"
 #include "session/system/session_system.h"
-#include "rpc/player_service.h"
+#include "rpc/player_service_interface.h"
 #include "muduo/net/Callbacks.h"
 #include "network/network_constants.h"
 #include "network/rpc_session.h"

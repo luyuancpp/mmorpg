@@ -155,7 +155,7 @@
     <ClCompile Include="handler\rpc\player\game_player_scene_handler.cpp" />
     <ClCompile Include="handler\rpc\player\player_common_handler.cpp" />
     <ClCompile Include="handler\rpc\player\player_scene_handler.cpp" />
-    <ClCompile Include="handler\rpc\player\player_service.cpp" />
+    <ClCompile Include="handler\rpc\player\player_service_interface.cpp" />
     <ClCompile Include="handler\rpc\player\player_skill_handler.cpp" />
     <ClCompile Include="handler\rpc\player\player_state_attribute_sync_handler.cpp" />
     <ClCompile Include="handler\rpc\player_state_attribute_sync_handler.cpp" />
@@ -166,7 +166,7 @@
     <ClCompile Include="rpc_response\gate_service_replied_handler.cpp" />
     <ClCompile Include="rpc_response\player\centre_player_replied_handler.cpp" />
     <ClCompile Include="rpc_response\player\centre_player_scene_replied_handler.cpp" />
-    <ClCompile Include="rpc_response\player\player_service_replied.cpp" />
+    <ClCompile Include="rpc_response\player\player_rpc_replied_handler.cpp" />
     <ClCompile Include="rpc_response\register_replied_handler.cpp" />
     <ClCompile Include="scene_node.cpp" />
   </ItemGroup>
