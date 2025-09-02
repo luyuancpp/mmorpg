@@ -103,7 +103,7 @@
     <ClInclude Include="utils\hash\consistent_hash_node.h" />
     <ClInclude Include="utils\random\random.h" />
     <ClInclude Include="utils\registry\game_registry.h" />
-    <ClInclude Include="utils\snowf_lake\snow_flake.h" />
+    <ClInclude Include="utils\snow_flake\snow_flake.h" />
     <ClInclude Include="utils\stat\stat.h" />
   </ItemGroup>
   <ItemGroup>

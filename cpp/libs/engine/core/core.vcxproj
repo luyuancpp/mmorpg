@@ -500,7 +500,7 @@
     <ClInclude Include="utils\proto\proto_field_checker.h" />
     <ClInclude Include="utils\random\random.h" />
     <ClInclude Include="utils\registry\game_registry.h" />
-    <ClInclude Include="utils\snowf_lake\snow_flake.h" />
+    <ClInclude Include="utils\snow_flake\snow_flake.h" />
     <ClInclude Include="utils\stat\stat.h" />
     <ClInclude Include="utils\utility\utility.h" />
   </ItemGroup>
