@@ -6,7 +6,7 @@
 #include "proto/player_locator/player_locator.grpc.pb.h"
 
 
-#include "rpc/service_info/player_locator_service_info.h"
+#include "rpc/service_info/player_locator_service_metadata.h"
 
 
 using grpc::ClientContext;

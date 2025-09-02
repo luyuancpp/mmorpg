@@ -6,7 +6,7 @@
 #include "proto/etcd/etcd.grpc.pb.h"
 
 
-#include "rpc/service_info/etcd_service_info.h"
+#include "rpc/service_info/etcd_service_metadata.h"
 
 
 using grpc::ClientContext;

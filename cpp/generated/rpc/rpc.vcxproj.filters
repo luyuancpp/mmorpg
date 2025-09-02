@@ -15,63 +15,63 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="service_info\centre_player_scene_service_info.h">
+    <ClInclude Include="service_info\centre_player_scene_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\centre_player_service_info.h">
+    <ClInclude Include="service_info\centre_player_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\centre_scene_service_info.h">
+    <ClInclude Include="service_info\centre_scene_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\centre_service_service_info.h">
+    <ClInclude Include="service_info\centre_service_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\db_service_info.h">
+    <ClInclude Include="service_info\db_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\etcd_service_info.h">
+    <ClInclude Include="service_info\etcd_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\game_client_player_service_info.h">
+    <ClInclude Include="service_info\game_client_player_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\game_player_scene_service_info.h">
+    <ClInclude Include="service_info\game_player_scene_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\game_player_service_info.h">
+    <ClInclude Include="service_info\game_player_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\game_scene_service_info.h">
+    <ClInclude Include="service_info\game_scene_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\game_service_service_info.h">
+    <ClInclude Include="service_info\game_service_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\gate_service_service_info.h">
+    <ClInclude Include="service_info\gate_service_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\player_locator_service_info.h">
+    <ClInclude Include="service_info\player_locator_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\player_scene_service_info.h">
+    <ClInclude Include="service_info\player_scene_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\player_skill_service_info.h">
+    <ClInclude Include="service_info\player_skill_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\player_state_attribute_sync_service_info.h">
+    <ClInclude Include="service_info\player_state_attribute_sync_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\service_info.h">
+    <ClInclude Include="service_info\service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\login_service_info.h">
+    <ClInclude Include="service_info\login_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="service_info\service_info.cpp">
+    <ClCompile Include="service_info\service_metadata.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

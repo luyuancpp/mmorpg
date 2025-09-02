@@ -110,11 +110,11 @@ const (
 
 	GeneratedRpcName      = "rpc/"
 	GeneratedRpcDirectory = GeneratedOutputDirectory + GeneratedRpcName
-	ServiceInfoName       = "service_info/"
+	ServiceInfoName       = "service_metadata/"
 	ServiceInfoDirectory  = GeneratedRpcDirectory + ServiceInfoName
 	ServiceInfoExtension  = "_service_info"
-	ServiceCppFilePath    = ServiceInfoDirectory + "service_info.cpp"
-	ServiceHeaderFilePath = ServiceInfoDirectory + "service_info.h"
+	ServiceCppFilePath    = ServiceInfoDirectory + "service_metadata.cpp"
+	ServiceHeaderFilePath = ServiceInfoDirectory + "service_metadata.h"
 
 	LuaServiceFilePath       = PbcLuaDirectory + "lua_service.cpp"
 	ClientLuaDirectory       = OutputRoot + "bin/script/lua/service/"

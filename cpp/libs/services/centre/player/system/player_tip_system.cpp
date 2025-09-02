@@ -1,7 +1,7 @@
 #include "player_tip_system.h"
 
 #include "engine/core/network/player_message_utils.h"
-#include "rpc/service_info/centre_player_service_info.h"
+#include "rpc/service_info/centre_player_service_metadata.h"
 #include "engine/threading/redis_manager.h"
 #include "engine/threading/player_manager.h"
 
