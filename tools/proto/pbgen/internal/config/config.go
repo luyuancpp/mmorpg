@@ -61,7 +61,7 @@ const (
 
 	ServiceIdFilePath           = ProtoDir + "serviceid.txt"
 	RpcHandlerSourceDirectory   = "handler/rpc/"
-	RpcResponseSourceDirectory  = "rpc_response/"
+	RpcResponseSourceDirectory  = "rpc_replies/"
 	EventHandlerSourceDirectory = "handler/event/"
 	PbcLuaDirectory             = GeneratedOutputDirectory + "lua/"
 )

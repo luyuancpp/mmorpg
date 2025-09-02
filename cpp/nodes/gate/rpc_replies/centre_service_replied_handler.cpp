@@ -1,18 +1,14 @@
 
 #include "centre_service_replied_handler.h"
 
-#include "rpc/service_metadata/centre_service_service_info.h"
+#include "rpc/service_metadata/centre_serviceservice_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "scene/scene/system/game_node_scene_system.h"
-#include "proto/common/node.pb.h"
-#include "proto/logic/event/server_event.pb.h"
-
-#include "scene_node.h"
+#include "gate_node.h"
 ///<<< END WRITING YOUR CODE
 
 
