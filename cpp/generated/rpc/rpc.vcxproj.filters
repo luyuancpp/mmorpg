@@ -51,9 +51,6 @@
     <ClInclude Include="service_info\gate_service_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_info\login_service_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="service_info\player_locator_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -67,6 +64,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="service_info\service_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service_info\login_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

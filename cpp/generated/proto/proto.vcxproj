@@ -80,8 +80,8 @@
     <ClCompile Include="etcd\kv.pb.cc" />
     <ClCompile Include="etcd\version.pb.cc" />
     <ClCompile Include="gate\gate_service.pb.cc" />
-    <ClCompile Include="login\login_service.grpc.pb.cc" />
-    <ClCompile Include="login\login_service.pb.cc" />
+    <ClCompile Include="login\login.grpc.pb.cc" />
+    <ClCompile Include="login\login.pb.cc" />
     <ClCompile Include="player_locator\player_locator.grpc.pb.cc" />
     <ClCompile Include="player_locator\player_locator.pb.cc" />
     <ClCompile Include="scene\game_client_player.pb.cc" />
@@ -155,8 +155,8 @@
     <ClInclude Include="etcd\kv.pb.h" />
     <ClInclude Include="etcd\version.pb.h" />
     <ClInclude Include="gate\gate_service.pb.h" />
-    <ClInclude Include="login\login_service.grpc.pb.h" />
-    <ClInclude Include="login\login_service.pb.h" />
+    <ClInclude Include="login\login.grpc.pb.h" />
+    <ClInclude Include="login\login.pb.h" />
     <ClInclude Include="player_locator\player_locator.grpc.pb.h" />
     <ClInclude Include="player_locator\player_locator.pb.h" />
     <ClInclude Include="scene\game_client_player.pb.h" />

@@ -48,12 +48,6 @@
     <ClCompile Include="etcd\version.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="login\login_service.grpc.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="login\login_service.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="centre\centre_scene.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -234,6 +228,12 @@
     <ClCompile Include="db\db_base.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="login\login.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="login\login.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\common.pb.h">
@@ -267,12 +267,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="etcd\version.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="login\login_service.grpc.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="login\login_service.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="centre\centre_scene.pb.h">
@@ -453,6 +447,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="db\db_base.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="login\login.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="login\login.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
