@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="rpc\player_service.h" />
-    <ClInclude Include="rpc\player_service_replied.h" />
+    <ClInclude Include="rpc\player_service_interface.h" />
+    <ClInclude Include="rpc\player_rpc_replied_handler.h" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
