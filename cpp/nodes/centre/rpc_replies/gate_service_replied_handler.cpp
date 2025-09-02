@@ -1,7 +1,7 @@
 
 #include "gate_service_replied_handler.h"
 
-#include "rpc/service_metadata/gate_serviceservice_metadata.h"
+#include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gResponseDispatcher;
