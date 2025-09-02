@@ -3,7 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
-#include "scene/system/scene_system.h"
+#include "modules/scene/system/scene_system.h"
 #include "proto/common/node.pb.h"
 #include "threading/node_context_manager.h"
 ///<<< END WRITING YOUR CODE

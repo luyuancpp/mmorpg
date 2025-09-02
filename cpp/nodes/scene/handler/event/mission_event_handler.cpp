@@ -3,8 +3,8 @@
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "mission/comp/mission_comp.h"
-#include "mission/system/mission_system.h"
+#include "modules/mission/comp/mission_comp.h"
+#include "modules/mission/system/mission_system.h"
 ///<<< END WRITING YOUR CODE
 
 

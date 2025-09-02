@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "scene/system/scene_system.h"
-#include "scene/comp/scene_comp.h"
+#include "modules/scene/system/scene_system.h"
+#include "modules/scene/comp/scene_comp.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 

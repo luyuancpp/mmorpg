@@ -1,7 +1,7 @@
 ﻿#include "scene_system.h"
 #include "muduo/base/Logging.h"
 
-#include "scene/comp/scene_comp.h"
+#include "modules/scene/comp/scene_comp.h"
 #include "engine/core/node/constants/node_constants.h"
 
 #include "table/proto/tip/scene_error_tip.pb.h"

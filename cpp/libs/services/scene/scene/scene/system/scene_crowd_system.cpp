@@ -2,7 +2,7 @@
 
 #include "scene/scene/comp/dt_crowd_comp.h"
 
-#include "scene/comp/scene_comp.h"
+#include "modules/scene/comp/scene_comp.h"
 #include "scene/scene/constants/dt_crowd_constants.h"
 
 #include "proto/logic/event/scene_event.pb.h"

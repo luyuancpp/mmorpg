@@ -1,6 +1,6 @@
 ﻿#include "node_scene_system.h"
 #include <ranges>
-#include "scene/comp/node_scene_comp.h"
+#include "modules/scene/comp/node_scene_comp.h"
 
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "proto/common/node.pb.h"
