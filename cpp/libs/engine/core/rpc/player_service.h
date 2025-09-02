@@ -4,8 +4,6 @@
 #include <entt/src/entt/entity/entity.hpp>
 #include "google/protobuf/service.h"
 
-
-
 class PlayerService
 {
 public:
