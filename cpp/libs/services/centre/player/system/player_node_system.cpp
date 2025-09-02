@@ -9,7 +9,7 @@
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
-#include "modules/scene/system/scene_system.h"
+#include "modules/modules/scene/system/scene_system.h"
 #include "rpc/service_info/game_player_service_info.h"
 #include "rpc/service_info/game_service_service_info.h"
 #include "rpc/service_info/gate_service_service_info.h"

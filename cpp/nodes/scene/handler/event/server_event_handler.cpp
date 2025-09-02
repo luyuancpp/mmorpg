@@ -7,7 +7,7 @@
 #include "network/rpc_client.h"
 #include "rpc/service_info/centre_service_service_info.h"
 #include "scene/scene/system/game_node_scene_system.h"
-#include "scene/system/scene_system.h"
+#include "modules/modules/scene/system/scene_system.h"
 #include "network/node_message_utils.h"
 #include <proto/common/node.pb.h>
 ///<<< END WRITING YOUR CODE
@@ -34,7 +34,7 @@ void ServerEventHandler::OnConnect2CentrePbEventHandler(const OnConnect2CentrePb
 	request.set_scene_node_type(gNode->GetNodeInfo().scene_node_type());
     CallRemoteMethodOnClient(CentreInitSceneNodeMessageId, request, entt::to_integral(event.entity()), eNodeType::CentreNodeService);
 
-	entt::entity centreNodeId = entt::to_entity(event.entity());
+    entt::entity centreNodeId{ event.entity() };
 	GameNodeSceneSystem::RegisterAllSceneToCentre(centreNodeId);
 ///<<< END WRITING YOUR CODE
 }

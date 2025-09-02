@@ -7,7 +7,7 @@
 #include "scene/scene/comp/grid_comp.h"
 #include "scene/scene/system/grid_system.h"
 #include "proto/logic/component/actor_comp.pb.h"
-#include "scene/comp/scene_comp.h"
+#include "modules/scene/comp/scene_comp.h"
 
 #include "type_alias/actor.h"
 #include "engine/core/utils/random/random.h"

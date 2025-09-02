@@ -6,7 +6,7 @@
 
 #include "proto/logic/component/mission_comp.pb.h"
 #include "core/type_define/type_define.h"
-#include "mission/comp/missions_config_comp.h"
+#include "modules/mission/comp/missions_config_comp.h"
 #include "core/utils/registry/game_registry.h"
 #include "table/code/condition_table.h"
 
