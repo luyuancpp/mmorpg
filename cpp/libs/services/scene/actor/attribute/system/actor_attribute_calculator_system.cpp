@@ -3,7 +3,7 @@
 #include <array>
 #include <ranges>
 
-#include "actor/attribute/comp/actor_atrribute_comp.h"
+#include "actor/attribute/comp/actor_attribute_comp.h"
 
 #include "table/code/buff_table.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"

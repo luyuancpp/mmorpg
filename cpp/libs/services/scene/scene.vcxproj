@@ -22,7 +22,7 @@
     <ClInclude Include="actor\action_state\constants\actor_effect_state_constants.h" />
     <ClInclude Include="actor\action_state\constants\actor_state_constants.h" />
     <ClInclude Include="actor\action_state\system\actor_action_state_system.h" />
-    <ClInclude Include="actor\attribute\comp\actor_atrribute_comp.h" />
+    <ClInclude Include="actor\attribute\comp\actor_attribute_comp.h" />
     <ClInclude Include="actor\attribute\constants\actor_state_attribute_calculator_constants.h" />
     <ClInclude Include="actor\attribute\constants\actor_state_attribute_constants.h" />
     <ClInclude Include="actor\attribute\system\actor_attribute_calculator_system.h" />
@@ -80,7 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="actor\action_state\system\actor_action_state_system.cpp" />
-    <ClCompile Include="actor\attribute\comp\actor_atrribute_comp.cpp" />
+    <ClCompile Include="actor\attribute\comp\actor_attribute_comp.cpp" />
     <ClCompile Include="actor\attribute\system\actor_attribute_calculator_system.cpp" />
     <ClCompile Include="actor\attribute\system\actor_state_attribute_sync_system.cpp" />
     <ClCompile Include="core\config\config_system.cpp" />
