@@ -27,7 +27,10 @@
                 |-- centre_player.pb.h
                 |-- centre_player_scene.pb.cc
                 |-- centre_player_scene.pb.h
-
+                |-- centre_scene.pb.cc
+                |-- centre_scene.pb.h
+                |-- centre_service.pb.cc
+                |-- centre_service.pb.h
             |-- common
                 |-- common.pb.cc
                 |-- common.pb.h
@@ -87,25 +90,80 @@
                 |-- component
                     |-- actor_attribute_state_comp.pb.cc
                     |-- actor_attribute_state_comp.pb.h
-
+                    |-- actor_combat_state_comp.pb.cc
+                    |-- actor_combat_state_comp.pb.h
+                    |-- actor_comp.pb.cc
+                    |-- actor_comp.pb.h
+                    |-- buff_comp.pb.cc
+                    |-- buff_comp.pb.h
+                    |-- comp.pb.cc
+                    |-- comp.pb.h
+                    |-- frame_comp.pb.cc
+                    |-- frame_comp.pb.h
+                    |-- game_node_comp.pb.cc
+                    |-- game_node_comp.pb.h
+                    |-- item_base_comp.pb.cc
+                    |-- item_base_comp.pb.h
+                    |-- item_comp.pb.cc
+                    |-- item_comp.pb.h
+                    |-- mission_comp.pb.cc
+                    |-- mission_comp.pb.h
+                    |-- npc_comp.pb.cc
+                    |-- npc_comp.pb.h
+                    |-- player_async_comp.pb.cc
+                    |-- player_async_comp.pb.h
+                    |-- player_comp.pb.cc
+                    |-- player_comp.pb.h
+                    |-- player_login_comp.pb.cc
+                    |-- player_login_comp.pb.h
+                    |-- player_network_comp.pb.cc
+                    |-- player_network_comp.pb.h
+                    |-- player_scene_comp.pb.cc
+                    |-- player_scene_comp.pb.h
+                    |-- player_skill_comp.pb.cc
                     |-- player_skill_comp.pb.h
                     |-- scene_comp.pb.cc
                     |-- scene_comp.pb.h
                     |-- skill_comp.pb.cc
                     |-- skill_comp.pb.h
-
+                    |-- team_comp.pb.cc
+                    |-- team_comp.pb.h
+                    |-- time_comp.pb.cc
+                    |-- time_comp.pb.h
                 |-- constants
                     |-- etcd_grpc.pb.cc
                     |-- etcd_grpc.pb.h
                     |-- function_switch.pb.cc
                     |-- function_switch.pb.h
-
+                    |-- scene.pb.cc
+                    |-- scene.pb.h
+                    |-- test_switch.pb.cc
+                    |-- test_switch.pb.h
                 |-- event
                     |-- actor_combat_state_event.pb.cc
                     |-- actor_combat_state_event.pb.h
                     |-- actor_event.pb.cc
                     |-- actor_event.pb.h
-
+                    |-- buff_event.pb.cc
+                    |-- buff_event.pb.h
+                    |-- combat_event.pb.cc
+                    |-- combat_event.pb.h
+                    |-- mission_event.pb.cc
+                    |-- mission_event.pb.h
+                    |-- node_event.pb.cc
+                    |-- node_event.pb.h
+                    |-- npc_event.pb.cc
+                    |-- npc_event.pb.h
+                    |-- player_event.pb.cc
+                    |-- player_event.pb.h
+                    |-- player_migration_event.pb.cc
+                    |-- player_migration_event.pb.h
+                    |-- scene_event.pb.cc
+                    |-- scene_event.pb.h
+                    |-- server_event.pb.cc
+                    |-- server_event.pb.h
+                    |-- skill_event.pb.cc
+                    |-- skill_event.pb.h
             |-- login
                 |-- login_service.grpc.pb.cc
                 |-- login_service.grpc.pb.h
@@ -119,8 +177,20 @@
             |-- scene
                 |-- game_client_player.pb.cc
                 |-- game_client_player.pb.h
-
-
+                |-- game_player.pb.cc
+                |-- game_player.pb.h
+                |-- game_player_scene.pb.cc
+                |-- game_player_scene.pb.h
+                |-- game_scene.pb.cc
+                |-- game_scene.pb.h
+                |-- game_service.pb.cc
+                |-- game_service.pb.h
+                |-- player_scene.pb.cc
+                |-- player_scene.pb.h
+                |-- player_skill.pb.cc
+                |-- player_skill.pb.h
+                |-- player_state_attribute_sync.pb.cc
+                |-- player_state_attribute_sync.pb.h
             |-- team
                 |-- game_team.pb.cc
                 |-- game_team.pb.h
@@ -140,11 +210,23 @@
                 |-- centre_scene_service_info.h
                 |-- centre_service_service_info.h
                 |-- db_service_info.h
-
+                |-- etcd_service_info.h
+                |-- game_client_player_service_info.h
+                |-- game_player_scene_service_info.h
+                |-- game_player_service_info.h
+                |-- game_scene_service_info.h
+                |-- game_service_service_info.h
+                |-- gate_service_service_info.h
+                |-- login_service_service_info.h
+                |-- player_locator_service_info.h
+                |-- player_scene_service_info.h
+                |-- player_skill_service_info.h
+                |-- player_state_attribute_sync_service_info.h
                 |-- service_info.cpp
                 |-- service_info.h
             |-- rpc.vcxproj
             |-- rpc.vcxproj.filters
+            |-- rpc.vcxproj.user
         |-- service_info
             |-- service_info.vcxproj.user
         |-- table
@@ -165,7 +247,36 @@
                 |-- all_table.h
                 |-- buff_table.cpp
                 |-- buff_table.h
-
+                |-- class_table.cpp
+                |-- class_table.h
+                |-- condition_table.cpp
+                |-- condition_table.h
+                |-- cooldown_table.cpp
+                |-- cooldown_table.h
+                |-- globalvariable_table.cpp
+                |-- globalvariable_table.h
+                |-- item_table.cpp
+                |-- item_table.h
+                |-- mainscene_table.cpp
+                |-- mainscene_table.h
+                |-- messagelimiter_table.cpp
+                |-- messagelimiter_table.h
+                |-- mission_table.cpp
+                |-- mission_table.h
+                |-- monsterbase_table.cpp
+                |-- monsterbase_table.h
+                |-- reward_table.cpp
+                |-- reward_table.h
+                |-- scene_table.cpp
+                |-- scene_table.h
+                |-- skill_table.cpp
+                |-- skill_table.h
+                |-- skillpermission_table.cpp
+                |-- skillpermission_table.h
+                |-- test_table.cpp
+                |-- test_table.h
+                |-- testmultikey_table.cpp
+                |-- testmultikey_table.h
             |-- proto
                 |-- operator
                     |-- ability_operator.pb.cc
@@ -177,67 +288,71 @@
                 |-- tip
                     |-- actor_action_error_tip.pb.cc
                     |-- actor_action_error_tip.pb.h
-
+                    |-- bag_error_tip.pb.cc
+                    |-- bag_error_tip.pb.h
+                    |-- buff_error_tip.pb.cc
+                    |-- buff_error_tip.pb.h
+                    |-- common_error_tip.pb.cc
+                    |-- common_error_tip.pb.h
+                    |-- cross_server_error_tip.pb.cc
+                    |-- cross_server_error_tip.pb.h
+                    |-- entity_error_tip.pb.cc
+                    |-- entity_error_tip.pb.h
+                    |-- login_error_tip.pb.cc
+                    |-- login_error_tip.pb.h
+                    |-- mission_error_tip.pb.cc
+                    |-- mission_error_tip.pb.h
+                    |-- mount_error_tip.pb.cc
+                    |-- mount_error_tip.pb.h
+                    |-- reward_error_tip.pb.cc
+                    |-- reward_error_tip.pb.h
+                    |-- scene_error_tip.pb.cc
+                    |-- scene_error_tip.pb.h
+                    |-- skill_error_tip.pb.cc
+                    |-- skill_error_tip.pb.h
+                    |-- team_error_tip.pb.cc
+                    |-- team_error_tip.pb.h
                 |-- actoractioncombatstate_table.pb.cc
                 |-- actoractioncombatstate_table.pb.h
                 |-- actoractionstate_table.pb.cc
                 |-- actoractionstate_table.pb.h
                 |-- buff_table.pb.cc
                 |-- buff_table.pb.h
-
+                |-- class_table.pb.cc
+                |-- class_table.pb.h
+                |-- condition_table.pb.cc
+                |-- condition_table.pb.h
+                |-- cooldown_table.pb.cc
+                |-- cooldown_table.pb.h
+                |-- globalvariable_table.pb.cc
+                |-- globalvariable_table.pb.h
+                |-- item_table.pb.cc
+                |-- item_table.pb.h
+                |-- mainscene_table.pb.cc
+                |-- mainscene_table.pb.h
+                |-- messagelimiter_table.pb.cc
+                |-- messagelimiter_table.pb.h
+                |-- mission_table.pb.cc
+                |-- mission_table.pb.h
+                |-- monsterbase_table.pb.cc
+                |-- monsterbase_table.pb.h
+                |-- reward_table.pb.cc
+                |-- reward_table.pb.h
+                |-- scene_table.pb.cc
+                |-- scene_table.pb.h
+                |-- skill_table.pb.cc
+                |-- skill_table.pb.h
+                |-- skillpermission_table.pb.cc
+                |-- skillpermission_table.pb.h
+                |-- test_table.pb.cc
+                |-- test_table.pb.h
+                |-- testmultikey_table.pb.cc
+                |-- testmultikey_table.pb.h
             |-- table.vcxproj
             |-- table.vcxproj.filters
             |-- table.vcxproj.user
     |-- libs
-        |-- base
-            |-- common
-                |-- global_data
-                    |-- async_log_file.cpp
-                    |-- async_log_file.h
-                |-- muduowindow
-                    |-- muduo
-                        |-- contrib
-                            |-- hiredis
-                                |-- CMakeLists.txt
-                        |-- net
-                            |-- protorpc
-                                |-- CMakeLists.txt
-                    |-- autogen.sh
-                    |-- CMakeLists.txt
-                    |-- TimerId.h
-                |-- stat
-                    |-- stat.cpp
-                    |-- stat.h
-                |-- util
-                    |-- encode
-                        |-- base64.cpp
-                        |-- base64.h
-                    |-- hash
-                        |-- consistent_hash_node.h
-                    |-- proto
-                        |-- proto_field_checker.cpp
-                        |-- proto_field_checker.h
-                    |-- random
-                        |-- random.cpp
-                        |-- random.h
-                    |-- registry
-                        |-- game_registry.cpp
-                        |-- game_registry.h
-                    |-- snowf_lake
-                        |-- snow_flake.h
-                    |-- defer.h
-                    |-- fast_queue.h
-                    |-- file2string.cpp
-                    |-- file2string.h
-                    |-- node_id_generator.h
-                    |-- snow_flake.h
-                    |-- stacktrace_system.h
-                    |-- utility.cpp
-                    |-- utility.h
-                |-- CMakeLists.txt
-                |-- common.vcxproj
-                |-- common.vcxproj.filters
-                |-- common.vcxproj.user
+        |-- engine
             |-- configs
                 |-- CMakeLists.txt
                 |-- config.cpp
@@ -355,6 +470,44 @@
                 |-- type_define
                     |-- type_define.h
                     |-- warn_on_save_ptr.h
+                |-- utils
+                    |-- data_structures
+                        |-- fast_queue.h
+                    |-- debug
+                        |-- stacktrace_system.h
+                    |-- defer
+                        |-- defer.h
+                    |-- encode
+                        |-- base64.cpp
+                        |-- base64.h
+                    |-- file
+                        |-- file2string.cpp
+                        |-- file2string.h
+                    |-- hash
+                        |-- consistent_hash_node.h
+                    |-- id
+                        |-- node_id_generator.h
+                        |-- snow_flake.h
+                    |-- log
+                        |-- async_log_file.cpp
+                        |-- async_log_file.h
+                    |-- proto
+                        |-- proto_field_checker.cpp
+                        |-- proto_field_checker.h
+                    |-- random
+                        |-- random.cpp
+                        |-- random.h
+                    |-- registry
+                        |-- game_registry.cpp
+                        |-- game_registry.h
+                    |-- snowf_lake
+                        |-- snow_flake.h
+                    |-- stat
+                        |-- stat.cpp
+                        |-- stat.h
+                    |-- utility
+                        |-- utility.cpp
+                        |-- utility.h
                 |-- chatgtp.txt
                 |-- core.vcxproj
                 |-- core.vcxproj.filters
@@ -376,61 +529,718 @@
                 |-- infra.filters
                 |-- infra.vcxproj
                 |-- infra.vcxproj.user
-            |-- modules
-                |-- bag
-                    |-- bag_system.cpp
-                    |-- bag_system.h
-                    |-- item_system.cpp
-                    |-- item_system.h
-                |-- matchback
-                    |-- match_list.cpp
-                    |-- match_list.h
-                    |-- match_manager.cpp
-                    |-- match_manager.h
-                    |-- match_room.cpp
-                    |-- match_room.h
-                    |-- match_unit.cpp
-                    |-- match_unit.h
-                |-- mission
-                    |-- comp
-                        |-- mission_comp.cpp
-                        |-- mission_comp.h
-                        |-- missions_config_comp.h
-                    |-- constants
-                        |-- mission_constants.h
-                    |-- system
-                        |-- mission_system.cpp
-                        |-- mission_system.h
-                    |-- chatgtp.md
-                |-- reward
-                    |-- comp
-                        |-- reward_comp.h
-                    |-- system
-                        |-- reward_system.cpp
-                        |-- reward_system.h
-                |-- scene
-                    |-- comp
-                        |-- node_scene_comp.h
-                        |-- player_scene.h
-                        |-- scene_comp.h
-                    |-- system
-                        |-- node_scene_system.cpp
-                        |-- node_scene_system.h
-                        |-- scene_system.cpp
-                        |-- scene_system.h
-                    |-- chatgtp
-                |-- time
-                    |-- constants
-                        |-- time_constants.h
-                    |-- system
-                        |-- cooldown_time_system.h
-                        |-- time_meter_system.h
-                        |-- time_system.cpp
-                        |-- time_system.h
-                |-- chatgtp.txt
-                |-- game_logic.vcxproj.filters
-                |-- modules.vcxproj
-                |-- modules.vcxproj.user
+            |-- muduo_windows
+                |-- src
+                    |-- contrib
+                        |-- hiredis
+                            |-- CMakeLists.txt
+                            |-- Hiredis.cc
+                            |-- Hiredis.h
+                            |-- mrediscli.cc
+                            |-- README.md
+                        |-- thrift
+                            |-- tests
+                                |-- echo
+                                    |-- CMakeLists.txt
+                                    |-- echo.thrift
+                                    |-- echoclient.py
+                                    |-- EchoServer.cc
+                                |-- ping
+                                    |-- CMakeLists.txt
+                                    |-- ping.thrift
+                                    |-- pingclient.py
+                                    |-- PingServer.cc
+                                |-- .gitignore
+                                |-- CMakeLists.txt
+                            |-- CMakeLists.txt
+                            |-- ThriftConnection.cc
+                            |-- ThriftConnection.h
+                            |-- ThriftServer.cc
+                            |-- ThriftServer.h
+                        |-- windows
+                            |-- include
+                                |-- arpa
+                                    |-- inet.h
+                                |-- linux
+                                    |-- unistd.h
+                                |-- netinet
+                                    |-- in.h
+                                    |-- tcp.h
+                                |-- sys
+                                    |-- eventfd.h
+                                    |-- prctl.h
+                                    |-- resource.h
+                                    |-- socket.h
+                                    |-- syscall.h
+                                    |-- time.h
+                                    |-- timerfd.h
+                                    |-- uio.h
+                                |-- endian.h
+                                |-- execinfo.h
+                                |-- netdb.h
+                                |-- poll.h
+                                |-- pthread.h
+                                |-- unistd.h
+                        |-- CMakeLists.txt
+                    |-- examples
+                        |-- ace
+                            |-- logging
+                                |-- client.cc
+                                |-- CMakeLists.txt
+                                |-- logrecord.proto
+                                |-- server.cc
+                            |-- ttcp
+                                |-- CMakeLists.txt
+                                |-- common.cc
+                                |-- common.h
+                                |-- main.cc
+                                |-- ttcp.cc
+                                |-- ttcp_asio_async.cc
+                                |-- ttcp_asio_sync.cc
+                                |-- ttcp_blocking.cc
+                        |-- asio
+                            |-- chat
+                                |-- client.cc
+                                |-- CMakeLists.txt
+                                |-- codec.h
+                                |-- loadtest.cc
+                                |-- server.cc
+                                |-- server_threaded.cc
+                                |-- server_threaded_efficient.cc
+                                |-- server_threaded_highperformance.cc
+                            |-- tutorial
+                                |-- timer2
+                                    |-- timer.cc
+                                |-- timer3
+                                    |-- timer.cc
+                                |-- timer4
+                                    |-- timer.cc
+                                |-- timer5
+                                    |-- timer.cc
+                                |-- timer6
+                                    |-- timer.cc
+                                |-- CMakeLists.txt
+                                |-- daytime_see_simple
+                                |-- there_is_no_timer1
+                            |-- echo_see_simple
+                        |-- cdns
+                            |-- CMakeLists.txt
+                            |-- dns.cc
+                            |-- Resolver.cc
+                            |-- Resolver.h
+                        |-- curl
+                            |-- CMakeLists.txt
+                            |-- Curl.cc
+                            |-- Curl.h
+                            |-- download.cc
+                            |-- mcurl.cc
+                            |-- README
+                        |-- fastcgi
+                            |-- CMakeLists.txt
+                            |-- fastcgi.cc
+                            |-- fastcgi.h
+                            |-- fastcgi_test.cc
+                            |-- nginx.conf
+                        |-- filetransfer
+                            |-- loadtest
+                                |-- Client.java
+                                |-- Handler.java
+                            |-- CMakeLists.txt
+                            |-- download.cc
+                            |-- download2.cc
+                            |-- download3.cc
+                        |-- hub
+                            |-- CMakeLists.txt
+                            |-- codec.cc
+                            |-- codec.h
+                            |-- hub.cc
+                            |-- pub.cc
+                            |-- pubsub.cc
+                            |-- pubsub.h
+                            |-- README
+                            |-- sub.cc
+                        |-- idleconnection
+                            |-- CMakeLists.txt
+                            |-- echo.cc
+                            |-- echo.h
+                            |-- main.cc
+                            |-- sortedlist.cc
+                        |-- maxconnection
+                            |-- CMakeLists.txt
+                            |-- echo.cc
+                            |-- echo.h
+                            |-- main.cc
+                        |-- memcached
+                            |-- client
+                                |-- bench.cc
+                                |-- CMakeLists.txt
+                            |-- server
+                                |-- CMakeLists.txt
+                                |-- footprint_test.cc
+                                |-- Item.cc
+                                |-- Item.h
+                                |-- MemcacheServer.cc
+                                |-- MemcacheServer.h
+                                |-- server.cc
+                                |-- Session.cc
+                                |-- Session.h
+                            |-- README
+                        |-- multiplexer
+                            |-- harness
+                                |-- src
+                                    |-- com
+                                        |-- chenshuo
+                                            |-- muduo
+                                                |-- example
+                                                    |-- multiplexer
+                                                        |-- testcase
+                                                            |-- TestOneClientBackendSend.java
+                                                            |-- TestOneClientBothSend.java
+                                                            |-- TestOneClientNoData.java
+                                                            |-- TestOneClientSend.java
+                                                            |-- TestTwoClients.java
+                                                        |-- DataEvent.java
+                                                        |-- Event.java
+                                                        |-- EventQueue.java
+                                                        |-- EventSource.java
+                                                        |-- MockBackendServer.java
+                                                        |-- MockClient.java
+                                                        |-- MultiplexerTest.java
+                                                        |-- MyCountDownLatch.java
+                                                        |-- TestCase.java
+                                                        |-- TestFailedException.java
+                                |-- run.sh
+                            |-- CMakeLists.txt
+                            |-- demux.cc
+                            |-- multiplexer.cc
+                            |-- multiplexer_simple.cc
+                        |-- netty
+                            |-- discard
+                                |-- client.cc
+                                |-- CMakeLists.txt
+                                |-- server.cc
+                            |-- echo
+                                |-- client.cc
+                                |-- CMakeLists.txt
+                                |-- server.cc
+                                |-- server2.cc
+                            |-- uptime
+                                |-- CMakeLists.txt
+                                |-- uptime.cc
+                        |-- pingpong
+                            |-- bench.cc
+                            |-- client.cc
+                            |-- CMakeLists.txt
+                            |-- server.cc
+                        |-- procmon
+                            |-- CMakeLists.txt
+                            |-- dummyload.cc
+                            |-- plot.cc
+                            |-- plot.h
+                            |-- plot_test.cc
+                            |-- procmon.cc
+                        |-- protobuf
+                            |-- codec
+                                |-- client.cc
+                                |-- CMakeLists.txt
+                                |-- codec.cc
+                                |-- codec.h
+                                |-- codec_test.cc
+                                |-- dispatcher.h
+                                |-- dispatcher_lite.h
+                                |-- dispatcher_lite_test.cc
+                                |-- dispatcher_test.cc
+                                |-- query.proto
+                                |-- server.cc
+                            |-- resolver
+                                |-- client.cc
+                                |-- CMakeLists.txt
+                                |-- resolver.proto
+                                |-- server.cc
+                            |-- rpc
+                                |-- client.cc
+                                |-- CMakeLists.txt
+                                |-- server.cc
+                                |-- sudoku.proto
+                            |-- rpcbalancer
+                                |-- balancer.cc
+                                |-- balancer_raw.cc
+                                |-- CMakeLists.txt
+                            |-- rpcbench
+                                |-- client.cc
+                                |-- CMakeLists.txt
+                                |-- echo.proto
+                                |-- server.cc
+                            |-- CMakeLists.txt
+                        |-- roundtrip
+                            |-- CMakeLists.txt
+                            |-- roundtrip.cc
+                            |-- roundtrip_udp.cc
+                        |-- shorturl
+                            |-- CMakeLists.txt
+                            |-- shorturl.cc
+                        |-- simple
+                            |-- allinone
+                                |-- allinone.cc
+                            |-- chargen
+                                |-- chargen.cc
+                                |-- chargen.h
+                                |-- main.cc
+                            |-- chargenclient
+                                |-- chargenclient.cc
+                            |-- daytime
+                                |-- daytime.cc
+                                |-- daytime.h
+                                |-- main.cc
+                            |-- discard
+                                |-- discard.cc
+                                |-- discard.h
+                                |-- main.cc
+                            |-- echo
+                                |-- echo.cc
+                                |-- echo.h
+                                |-- main.cc
+                            |-- time
+                                |-- main.cc
+                                |-- time.cc
+                                |-- time.h
+                            |-- timeclient
+                                |-- timeclient.cc
+                            |-- CMakeLists.txt
+                        |-- socks4a
+                            |-- balancer.cc
+                            |-- CMakeLists.txt
+                            |-- socks4a.cc
+                            |-- tcprelay.cc
+                            |-- tunnel.h
+                        |-- sudoku
+                            |-- batch.cc
+                            |-- CMakeLists.txt
+                            |-- loadtest.cc
+                            |-- percentile.h
+                            |-- pipeline.cc
+                            |-- server_basic.cc
+                            |-- server_hybrid.cc
+                            |-- server_multiloop.cc
+                            |-- server_prod.cc
+                            |-- server_threadpool.cc
+                            |-- stat.h
+                            |-- stat_unittest.cc
+                            |-- sudoku.cc
+                            |-- sudoku.h
+                        |-- twisted
+                            |-- finger
+                                |-- CMakeLists.txt
+                                |-- finger01.cc
+                                |-- finger02.cc
+                                |-- finger03.cc
+                                |-- finger04.cc
+                                |-- finger05.cc
+                                |-- finger06.cc
+                                |-- finger07.cc
+                                |-- README
+                        |-- wordcount
+                            |-- CMakeLists.txt
+                            |-- gen.py
+                            |-- hash.h
+                            |-- hasher.cc
+                            |-- README
+                            |-- receiver.cc
+                            |-- slowsink.py
+                        |-- zeromq
+                            |-- CMakeLists.txt
+                            |-- local_lat.cc
+                            |-- README
+                            |-- remote_lat.cc
+                        |-- CMakeLists.txt
+                    |-- muduo
+                        |-- base
+                            |-- tests
+                                |-- asyncloggingtest
+                                    |-- AsyncLoggingTest.cc
+                                    |-- AsyncLoggingTest.sln
+                                    |-- asyncloggingtest.vcxproj
+                                    |-- AsyncLoggingTest.vcxproj.filters
+                                |-- blockingqueuetest
+                                    |-- BlockingQueueTest.cc
+                                    |-- BlockingQueueTest.sln
+                                    |-- blockingqueuetest.vcxproj
+                                    |-- BlockingQueueTest.vcxproj.filters
+                                |-- boundedblockingqueuetest
+                                    |-- BoundedBlockingQueueTest.cc
+                                    |-- BoundedBlockingQueueTest.sln
+                                    |-- boundedblockingqueuetest.vcxproj
+                                    |-- BoundedBlockingQueueTest.vcxproj.filters
+                                |-- countdownlatchtest
+                                    |-- CountDownLatchTest.cc
+                                    |-- CountDownLatchTest.sln
+                                    |-- countdownlatchtest.vcxproj
+                                    |-- CountDownLatchTest.vcxproj.filters
+                                |-- datetest
+                                    |-- DateTest.cc
+                                    |-- DateTest.sln
+                                    |-- datetest.vcxproj
+                                    |-- DateTest.vcxproj.filters
+                                |-- exceptiontest
+                                    |-- ExceptionTest.cc
+                                    |-- ExceptionTest.sln
+                                    |-- exceptiontest.vcxproj
+                                    |-- ExceptionTest.vcxproj.filters
+                                |-- fileutiltest
+                                    |-- FileUtilTest.cc
+                                    |-- FileUtilTest.sln
+                                    |-- fileutiltest.vcxproj
+                                    |-- FileUtilTest.vcxproj.filters
+                                    |-- ReadMe.txt
+                                |-- logfiletest
+                                    |-- LogFileTest.cc
+                                    |-- LogFileTest.sln
+                                    |-- logfiletest.vcxproj
+                                    |-- LogFileTest.vcxproj.filters
+                                |-- logstreambench
+                                    |-- LogStreamBench.cc
+                                    |-- LogStreamBench.sln
+                                    |-- logstreambench.vcxproj
+                                    |-- LogStreamBench.vcxproj.filters
+                                |-- logstreamtest
+                                    |-- LogStreamTest.cc
+                                    |-- LogStreamTest.sln
+                                    |-- logstreamtest.vcxproj
+                                    |-- LogStreamTest.vcxproj.filters
+                                |-- threadbench
+                                    |-- ThreadBench.cc
+                                    |-- ThreadBench.sln
+                                    |-- threadbench.vcxproj
+                                    |-- ThreadBench.vcxproj.filters
+                                |-- threadpooltest
+                                    |-- ThreadPoolTest.cc
+                                    |-- ThreadPoolTest.sln
+                                    |-- threadpooltest.vcxproj
+                                    |-- ThreadPoolTest.vcxproj.filters
+                                |-- threadtest
+                                    |-- ThreadTest.cc
+                                    |-- ThreadTest.sln
+                                    |-- threadtest.vcxproj
+                                    |-- ThreadTest.vcxproj.filters
+                                |-- timestamptest
+                                    |-- TimestampTest.cc
+                                    |-- TimestampTest.filters
+                                    |-- TimestampTest.sln
+                                    |-- timestamptest.vcxproj
+                                |-- timezonetest
+                                    |-- New_York
+                                    |-- TimeZoneTest.cc
+                                    |-- TimeZoneTest.sln
+                                    |-- timezonetest.vcxproj
+                                    |-- TimeZoneTest.vcxproj.filters
+                                |-- AsyncLogging_test.cc
+                                |-- Atomic_unittest.cc
+                                |-- BlockingQueue_bench.cc
+                                |-- BlockingQueue_test.cc
+                                |-- BoundedBlockingQueue_test.cc
+                                |-- CMakeLists.txt
+                                |-- Date_unittest.cc
+                                |-- Exception_test.cc
+                                |-- FileUtil_test.cc
+                                |-- Fork_test.cc
+                                |-- GzipFile_test.cc
+                                |-- LogFile_test.cc
+                                |-- Logging_test.cc
+                                |-- LogStream_bench.cc
+                                |-- LogStream_test.cc
+                                |-- Mutex_test.cc
+                                |-- ProcessInfo_test.cc
+                                |-- Singleton_test.cc
+                                |-- SingletonThreadLocal_test.cc
+                                |-- Thread_bench.cc
+                                |-- Thread_test.cc
+                                |-- ThreadLocal_test.cc
+                                |-- ThreadLocalSingleton_test.cc
+                                |-- ThreadPool_test.cc
+                                |-- Timestamp_unittest.cc
+                                |-- TimeZone_unittest.cc
+                            |-- AsyncLogging.cc
+                            |-- AsyncLogging.h
+                            |-- Atomic.h
+                            |-- BlockingQueue.h
+                            |-- BoundedBlockingQueue.h
+                            |-- BUILD.bazel
+                            |-- CMakeLists.txt
+                            |-- Condition.cc
+                            |-- Condition.h
+                            |-- copyable.h
+                            |-- CountDownLatch.cc
+                            |-- CountDownLatch.h
+                            |-- CrossPlatformAdapterFunction.cc
+                            |-- CrossPlatformAdapterFunction.h
+                            |-- CurrentThread.cc
+                            |-- CurrentThread.h
+                            |-- Date.cc
+                            |-- Date.h
+                            |-- Exception.cc
+                            |-- Exception.h
+                            |-- FileUtil.cc
+                            |-- FileUtil.h
+                            |-- GzipFile.h
+                            |-- LogFile.cc
+                            |-- LogFile.h
+                            |-- Logging.cc
+                            |-- Logging.h
+                            |-- LogStream.cc
+                            |-- LogStream.h
+                            |-- Mutex.h
+                            |-- noncopyable.h
+                            |-- process_info.cpp
+                            |-- process_info.h
+                            |-- ProcessInfo.cc
+                            |-- ProcessInfo.h
+                            |-- Singleton.h
+                            |-- StringPiece.h
+                            |-- Thread.cc
+                            |-- Thread.h
+                            |-- ThreadLocal.h
+                            |-- ThreadLocalSingleton.h
+                            |-- ThreadPool.cc
+                            |-- ThreadPool.h
+                            |-- Timestamp.cc
+                            |-- Timestamp.h
+                            |-- TimeZone.cc
+                            |-- TimeZone.h
+                            |-- Types.h
+                            |-- WeakCallback.h
+                        |-- gtest
+                            |-- internal
+                                |-- custom
+                                    |-- gtest.h
+                                    |-- gtest-port.h
+                                    |-- gtest-printers.h
+                                    |-- README.md
+                                |-- gtest-death-test-internal.h
+                                |-- gtest-filepath.h
+                                |-- gtest-internal.h
+                                |-- gtest-param-util.h
+                                |-- gtest-port.h
+                                |-- gtest-port-arch.h
+                                |-- gtest-string.h
+                                |-- gtest-type-util.h
+                            |-- gtest.h
+                            |-- gtest_pred_impl.h
+                            |-- gtest_prod.h
+                            |-- gtest-assertion-result.h
+                            |-- gtest-death-test.h
+                            |-- gtest-matchers.h
+                            |-- gtest-message.h
+                            |-- gtest-param-test.h
+                            |-- gtest-printers.h
+                            |-- gtest-spi.h
+                            |-- gtest-test-part.h
+                            |-- gtest-typed-test.h
+                        |-- net
+                            |-- http
+                                |-- tests
+                                    |-- HttpRequest_unittest.cc
+                                    |-- HttpServer_test.cc
+                                |-- BUILD.bazel
+                                |-- CMakeLists.txt
+                                |-- HttpContext.cc
+                                |-- HttpContext.h
+                                |-- HttpRequest.h
+                                |-- HttpResponse.cc
+                                |-- HttpResponse.h
+                                |-- HttpServer.cc
+                                |-- HttpServer.h
+                            |-- inspect
+                                |-- tests
+                                    |-- BUILD.bazel
+                                    |-- Inspector_test.cc
+                                |-- BUILD.bazel
+                                |-- CMakeLists.txt
+                                |-- Inspector.cc
+                                |-- Inspector.h
+                                |-- PerformanceInspector.cc
+                                |-- PerformanceInspector.h
+                                |-- ProcessInspector.cc
+                                |-- ProcessInspector.h
+                                |-- SystemInspector.cc
+                                |-- SystemInspector.h
+                            |-- poller
+                                |-- DefaultPoller.cc
+                                |-- EPollPoller.cc
+                                |-- EPollPoller.h
+                                |-- PollPoller.cc
+                                |-- PollPoller.h
+                                |-- WindowsPollPoller.cc
+                            |-- protobuf
+                                |-- BufferStream.h
+                                |-- CMakeLists.txt
+                                |-- ProtobufCodecLite.cc
+                                |-- ProtobufCodecLite.h
+                            |-- protorpc
+                                |-- autogen.bat
+                                |-- CMakeLists.txt
+                                |-- google-inl.h
+                                |-- README
+                                |-- rpc.pb.cc
+                                |-- rpc.pb.h
+                                |-- rpc.proto
+                                |-- RpcChannel.cc
+                                |-- RpcChannel.h
+                                |-- RpcCodec.cc
+                                |-- RpcCodec.h
+                                |-- RpcCodec_test.cc
+                                |-- RpcServer.cc
+                                |-- RpcServer.h
+                                |-- rpcservice.pb.cc
+                                |-- rpcservice.pb.h
+                                |-- rpcservice.proto
+                            |-- tests
+                                |-- bufferunittest
+                                    |-- BufferUnittest.cc
+                                    |-- BufferUnittest.sln
+                                    |-- bufferunittest.vcxproj
+                                    |-- BufferUnittest.vcxproj.filters
+                                |-- channeltest
+                                    |-- ChannelTest.cc
+                                    |-- ChannelTest.sln
+                                    |-- channeltest.vcxproj
+                                    |-- ChannelTest.vcxproj.filters
+                                |-- echoclientunittest
+                                    |-- EchoClientUnitTest.cc
+                                    |-- EchoClientUnitTest.sln
+                                    |-- echoclientunittest.vcxproj
+                                    |-- EchoClientUnitTest.vcxproj.filters
+                                |-- echoserverunittest
+                                    |-- EchoServerUnitTest.cc
+                                    |-- EchoServerUnitTest.sln
+                                    |-- echoserverunittest.vcxproj
+                                    |-- EchoServerUnitTest.vcxproj.filters
+                                |-- eventloopthreadpoolunittest
+                                    |-- EventLoopThreadPoolUnitTest.cc
+                                    |-- EventLoopThreadPoolUnitTest.sln
+                                    |-- eventloopthreadpoolunittest.vcxproj
+                                    |-- EventLoopThreadPoolUnitTest.vcxproj.filters
+                                |-- eventloopthreadunittest
+                                    |-- EventLoopThreadUnitTest.cc
+                                    |-- EventLoopThreadUnitTest.sln
+                                    |-- eventloopthreadunittest.vcxproj
+                                    |-- EventLoopThreadUnitTest.vcxproj.filters
+                                |-- eventloopunittest
+                                    |-- EventLoopUnitTest.cc
+                                    |-- EventLoopUnitTest.sln
+                                    |-- eventloopunittest.vcxproj
+                                    |-- EventLoopUnitTest.vcxproj.filters
+                                |-- inetaddressunittest
+                                    |-- InetAddressUnitTest.cc
+                                    |-- InetAddressUnitTest.sln
+                                    |-- inetaddressunittest.vcxproj
+                                    |-- InetAddressUnitTest.vcxproj.filters
+                                |-- tcpclientreg1
+                                    |-- TcpClientReg1.cc
+                                    |-- TcpClientReg1.sln
+                                    |-- tcpclientreg1.vcxproj
+                                    |-- TcpClientReg1.vcxproj.filters
+                                |-- tcpclientreg2
+                                    |-- TcpClientReg2.cc
+                                    |-- TcpClientReg2.sln
+                                    |-- tcpclientreg2.vcxproj
+                                    |-- TcpClientReg2.vcxproj.filters
+                                |-- tcpclientreg3
+                                    |-- TcpClientReg3.cc
+                                    |-- TcpClientReg3.sln
+                                    |-- tcpclientreg3.vcxproj
+                                    |-- TcpClientReg3.vcxproj.filters
+                                |-- timerqueueunittest
+                                    |-- TimerQueueUnitTest.cc
+                                    |-- TimerQueueUnitTest.sln
+                                    |-- timerqueueunittest.vcxproj
+                                    |-- TimerQueueUnitTest.vcxproj.filters
+                                |-- zlibstreamunittest
+                                    |-- ZlibStreamUnitTest.cc
+                                    |-- ZlibStreamUnitTest.sln
+                                    |-- zlibstreamunittest.vcxproj
+                                    |-- ZlibStreamUnitTest.vcxproj.filters
+                                |-- Buffer_unittest.cc
+                                |-- Channel_test.cc
+                                |-- CMakeLists.txt
+                                |-- EchoClient_unittest.cc
+                                |-- EchoServer_unittest.cc
+                                |-- EventLoop_unittest.cc
+                                |-- EventLoopThread_unittest.cc
+                                |-- EventLoopThreadPool_unittest.cc
+                                |-- InetAddress_unittest.cc
+                                |-- TcpClient_reg1.cc
+                                |-- TcpClient_reg2.cc
+                                |-- TcpClient_reg3.cc
+                                |-- TimerQueue_unittest.cc
+                                |-- ZlibStream_unittest.cc
+                            |-- Acceptor.cc
+                            |-- Acceptor.h
+                            |-- boilerplate.cc
+                            |-- boilerplate.h
+                            |-- Buffer.cc
+                            |-- Buffer.h
+                            |-- BUILD.bazel
+                            |-- Callbacks.h
+                            |-- Channel.cc
+                            |-- Channel.h
+                            |-- CMakeLists.txt
+                            |-- Connector.cc
+                            |-- Connector.h
+                            |-- Endian.h
+                            |-- EventLoop.cc
+                            |-- EventLoop.h
+                            |-- EventLoopThread.cc
+                            |-- EventLoopThread.h
+                            |-- EventLoopThreadPool.cc
+                            |-- EventLoopThreadPool.h
+                            |-- InetAddress.cc
+                            |-- InetAddress.h
+                            |-- Poller.cc
+                            |-- Poller.h
+                            |-- premake4.lua
+                            |-- Socket.cc
+                            |-- Socket.h
+                            |-- SocketsOps.cc
+                            |-- SocketsOps.h
+                            |-- TcpClient.cc
+                            |-- TcpClient.h
+                            |-- TcpConnection.cc
+                            |-- TcpConnection.h
+                            |-- TcpServer.cc
+                            |-- TcpServer.h
+                            |-- Timer.cc
+                            |-- Timer.h
+                            |-- TimerId.h
+                            |-- TimerQueue.cc
+                            |-- TimerQueue.h
+                            |-- ZlibStream.h
+                    |-- patches
+                        |-- armlinux.diff
+                        |-- backport.diff
+                        |-- MacOSX.diff
+                    |-- .clang-tidy
+                    |-- .gitignore
+                    |-- .travis.yml
+                    |-- autogen.sh
+                    |-- BUILD.bazel
+                    |-- build.sh
+                    |-- ChangeLog
+                    |-- ChangeLog2
+                    |-- clean.sh
+                    |-- CMakeLists.txt
+                    |-- DownloadProject.cmake
+                    |-- DownloadProject.CMakeLists.cmake.in
+                    |-- License
+                    |-- make.sh
+                    |-- Makefile
+                    |-- README
+                    |-- README.md
+                    |-- runtest.sh
+                    |-- vcxproj2mk.sh
+                    |-- WORKSPACE
+                |-- muduo.vcxproj
+                |-- muduo.vcxproj.filters
+                |-- muduo.vcxproj.user
             |-- session
                 |-- comp
                     |-- session_comp.h
@@ -466,7 +1276,62 @@
                 |-- threading.vcxproj
                 |-- threading.vcxproj.filters
                 |-- threading.vcxproj.user
-        |-- game
+        |-- modules
+            |-- bag
+                |-- bag_system.cpp
+                |-- bag_system.h
+                |-- item_system.cpp
+                |-- item_system.h
+            |-- matchback
+                |-- match_list.cpp
+                |-- match_list.h
+                |-- match_manager.cpp
+                |-- match_manager.h
+                |-- match_room.cpp
+                |-- match_room.h
+                |-- match_unit.cpp
+                |-- match_unit.h
+            |-- mission
+                |-- comp
+                    |-- mission_comp.cpp
+                    |-- mission_comp.h
+                    |-- missions_config_comp.h
+                |-- constants
+                    |-- mission_constants.h
+                |-- system
+                    |-- mission_system.cpp
+                    |-- mission_system.h
+                |-- chatgtp.md
+            |-- reward
+                |-- comp
+                    |-- reward_comp.h
+                |-- system
+                    |-- reward_system.cpp
+                    |-- reward_system.h
+            |-- scene
+                |-- comp
+                    |-- node_scene_comp.h
+                    |-- player_scene.h
+                    |-- scene_comp.h
+                |-- system
+                    |-- node_scene_system.cpp
+                    |-- node_scene_system.h
+                    |-- scene_system.cpp
+                    |-- scene_system.h
+                |-- chatgtp
+            |-- time
+                |-- constants
+                    |-- time_constants.h
+                |-- system
+                    |-- cooldown_time_system.h
+                    |-- time_meter_system.h
+                    |-- time_system.cpp
+                    |-- time_system.h
+            |-- chatgtp.txt
+            |-- game_logic.vcxproj.filters
+            |-- modules.vcxproj
+            |-- modules.vcxproj.user
+        |-- services
             |-- centre
                 |-- kafka
                     |-- system
@@ -573,7 +1438,12 @@
                         |-- player_node_system.h
                         |-- player_player_database_1_system.cpp
                         |-- player_player_database_system.cpp
-
+                        |-- player_scene_system.cpp
+                        |-- player_scene_system.h
+                        |-- player_skill_system.cpp
+                        |-- player_skill_system.h
+                        |-- player_tip_system.cpp
+                        |-- player_tip_system.h
                 |-- scene
                     |-- combat
                         |-- buff
@@ -664,6 +1534,28 @@
                     |-- actor_combat_state_event_handler.h
                     |-- actor_event_handler.cpp
                     |-- actor_event_handler.h
+                    |-- buff_event_handler.cpp
+                    |-- buff_event_handler.h
+                    |-- combat_event_handler.cpp
+                    |-- combat_event_handler.h
+                    |-- event_handler.cpp
+                    |-- event_handler.h
+                    |-- mission_event_handler.cpp
+                    |-- mission_event_handler.h
+                    |-- node_event_handler.cpp
+                    |-- node_event_handler.h
+                    |-- npc_event_handler.cpp
+                    |-- npc_event_handler.h
+                    |-- player_event_handler.cpp
+                    |-- player_event_handler.h
+                    |-- player_migration_event_handler.cpp
+                    |-- player_migration_event_handler.h
+                    |-- scene_event_handler.cpp
+                    |-- scene_event_handler.h
+                    |-- server_event_handler.cpp
+                    |-- server_event_handler.h
+                    |-- skill_event_handler.cpp
+                    |-- skill_event_handler.h
                 |-- rpc
                     |-- player
                         |-- centre_player_handler.cpp
@@ -714,7 +1606,15 @@
                     |-- player_service_replied.cpp
                 |-- centre_scene_replied_handler.cpp
                 |-- centre_scene_replied_handler.h
-
+                |-- centre_service_replied_handler.cpp
+                |-- centre_service_replied_handler.h
+                |-- game_scene_replied_handler.cpp
+                |-- game_scene_replied_handler.h
+                |-- game_service_replied_handler.cpp
+                |-- game_service_replied_handler.h
+                |-- register_handler.cpp
+                |-- register_replied_handler.cpp
+                |-- route_message_replied_handler.cpp
             |-- CMakeLists.txt
             |-- gate.vcxproj
             |-- gate.vcxproj.filters
@@ -727,13 +1627,47 @@
                 |-- event
                     |-- actor_combat_state_event_handler.cpp
                     |-- actor_combat_state_event_handler.h
-
+                    |-- actor_event_handler.cpp
+                    |-- actor_event_handler.h
+                    |-- buff_event_handler.cpp
+                    |-- buff_event_handler.h
+                    |-- combat_event_handler.cpp
+                    |-- combat_event_handler.h
+                    |-- event_handler.cpp
+                    |-- event_handler.h
+                    |-- mission_event_handler.cpp
+                    |-- mission_event_handler.h
+                    |-- node_event_handler.cpp
+                    |-- node_event_handler.h
+                    |-- npc_event_handler.cpp
+                    |-- npc_event_handler.h
+                    |-- player_event_handler.cpp
+                    |-- player_event_handler.h
+                    |-- player_migration_event_handler.cpp
+                    |-- player_migration_event_handler.h
+                    |-- scene_event_handler.cpp
+                    |-- scene_event_handler.h
+                    |-- server_event_handler.cpp
+                    |-- server_event_handler.h
+                    |-- skill_event_handler.cpp
                     |-- skill_event_handler.h
                 |-- rpc
                     |-- player
                         |-- game_client_player_handler.cpp
                         |-- game_client_player_handler.h
-
+                        |-- game_player_handler.cpp
+                        |-- game_player_handler.h
+                        |-- game_player_scene_handler.cpp
+                        |-- game_player_scene_handler.h
+                        |-- player_common_handler.cpp
+                        |-- player_common_handler.h
+                        |-- player_scene_handler.cpp
+                        |-- player_scene_handler.h
+                        |-- player_service.cpp
+                        |-- player_skill_handler.cpp
+                        |-- player_skill_handler.h
+                        |-- player_state_attribute_sync_handler.cpp
+                        |-- player_state_attribute_sync_handler.h
                     |-- game_scene_handler.cpp
                     |-- game_scene_handler.h
                     |-- game_service_handler.cpp
@@ -750,7 +1684,11 @@
                     |-- player_service_replied.cpp
                 |-- centre_scene_replied_handler.cpp
                 |-- centre_scene_replied_handler.h
-
+                |-- centre_service_replied_handler.cpp
+                |-- centre_service_replied_handler.h
+                |-- gate_service_replied_handler.cpp
+                |-- gate_service_replied_handler.h
+                |-- register_replied_handler.cpp
             |-- CMakeLists.txt
             |-- directory_tree.py
             |-- main.cpp
