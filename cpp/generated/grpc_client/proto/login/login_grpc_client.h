@@ -6,7 +6,7 @@
 #include "proto/login/login.grpc.pb.h"
 
 
-#include "rpc/service_metadata/login_service_info.h"
+#include "rpc/service_metadata/loginservice_metadata.h"
 
 
 using grpc::ClientContext;
