@@ -2,9 +2,9 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "grpc_client/proto/login/login_service_grpc_client.h"
+#include "grpc_client/proto/login/login_grpc_client.h"
 #include "core/network/rpc_session.h"
-#include "proto/login/login_service.grpc.pb.h"
+#include "proto/login/login.grpc.pb.h"
 #include "proto/common/node.pb.h"
 #include "rpc/service_info/service_info.h"
 #include "node/system/node/node_util.h"

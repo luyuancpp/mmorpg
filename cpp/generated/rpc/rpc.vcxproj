@@ -31,7 +31,7 @@
     <ClInclude Include="service_info\game_scene_service_info.h" />
     <ClInclude Include="service_info\game_service_service_info.h" />
     <ClInclude Include="service_info\gate_service_service_info.h" />
-    <ClInclude Include="service_info\login_service_service_info.h" />
+    <ClInclude Include="service_info\login_service_info.h" />
     <ClInclude Include="service_info\player_locator_service_info.h" />
     <ClInclude Include="service_info\player_scene_service_info.h" />
     <ClInclude Include="service_info\player_skill_service_info.h" />
