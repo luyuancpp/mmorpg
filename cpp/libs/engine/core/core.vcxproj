@@ -473,8 +473,6 @@
     <ClInclude Include="node\system\node\node_util.h" />
     <ClInclude Include="node\system\registration\registration_manager.h" />
     <ClInclude Include="node\system\discovery\service_discovery_manager.h" />
-    <ClInclude Include="rpc\player_service.h" />
-    <ClInclude Include="rpc\player_service_replied.h" />
     <ClInclude Include="time\comp\duration_funtion.h" />
     <ClInclude Include="time\comp\duration_manager.h" />
     <ClInclude Include="time\comp\timer_duration.h" />

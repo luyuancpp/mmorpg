@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="rpc\player_service.h" />
+    <ClInclude Include="rpc\player_service_replied.h" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

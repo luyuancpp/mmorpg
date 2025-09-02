@@ -159,8 +159,8 @@ const (
 	YourCodePair             = YourCodeBegin + "\n" + YourCodeEnd + "\n"
 	EmptyResponseName        = "Empty"
 	MysqlName                = "mysql"
-	PlayerServiceName        = "player_service.cpp"
-	PlayerRepliedServiceName = "player_service_replied.cpp"
+	PlayerServiceName        = "player_service_interface.cpp"
+	PlayerRepliedServiceName = "player_rpc_replied_handler.cpp"
 	CompleteQueueName        = "CompleteQueue"
 )
 
@@ -212,8 +212,8 @@ const (
 	TypePlayer                      = "player"
 	DisplayPlayer                   = "Player"
 	ServiceIncludeName              = "rpc/"
-	PlayerServiceIncludeName        = "#include \"rpc/player_service.h\"\n"
-	PlayerServiceRepliedIncludeName = "#include \"rpc/player_service_replied.h\"\n"
+	PlayerServiceIncludeName        = "#include \"rpc/player_service_interface.h\"\n"
+	PlayerServiceRepliedIncludeName = "#include \"rpc/player_rpc_replied_handler.h\"\n"
 	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
 	ClientLuaProjectRelative        = "script/lua/rpc/"
 	ClassNameSuffix                 = "Handler"
