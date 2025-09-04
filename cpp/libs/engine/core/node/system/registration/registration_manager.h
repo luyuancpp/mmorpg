@@ -4,16 +4,16 @@
 
 #include <entt/src/entt/entity/registry.hpp>
 
-class RegisterNodeSessionRequest;
-class RegisterNodeSessionResponse;
+class HandshakeRequest;
+class HandshakeResponse;
 
 class NodeRegistrationManager {
 public:
 	void TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const;
 
-	void HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const;
+	void HandleNodeRegistrationResponse(const HandshakeResponse& response) const;
 
-	void HandleNodeRegistration(const RegisterNodeSessionRequest& request, RegisterNodeSessionResponse& response) const;
+	void OnNodeHandshake(const HandshakeRequest& request, HandshakeResponse& response) const;
 
-	void TriggerNodeConnectionEvent(entt::registry& registry, const RegisterNodeSessionResponse& response) const;
+	void TriggerNodeConnectionEvent(entt::registry& registry, const HandshakeResponse& response) const;
 };

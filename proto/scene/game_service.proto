@@ -72,4 +72,5 @@ service Scene {
   rpc EnterScene (Centre2GsEnterSceneRequest) returns (Empty);
   rpc CreateScene (CreateSceneRequest) returns (CreateSceneResponse);
   rpc RegisterNodeSession (RegisterNodeSessionRequest) returns (RegisterNodeSessionResponse);
+  rpc Handshake(HandshakeRequest) returns (HandshakeResponse);
 }

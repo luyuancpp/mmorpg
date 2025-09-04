@@ -39,6 +39,8 @@ void InitCentreRepliedHandler()
         std::bind(&OnCentreInitSceneNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gResponseDispatcher.registerMessageCallback<::RegisterNodeSessionResponse>(CentreRegisterNodeSessionMessageId,
         std::bind(&OnCentreRegisterNodeSessionRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    gResponseDispatcher.registerMessageCallback<::HandshakeResponse>(CentreHandshakeMessageId,
+        std::bind(&OnCentreHandshakeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void OnCentreGatePlayerServiceRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
@@ -110,6 +112,12 @@ void OnCentreInitSceneNodeRepliedHandler(const TcpConnectionPtr& conn, const std
 void OnCentreRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterNodeSessionResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    gNode->GetNodeRegistrationManager().HandleNodeRegistrationResponse(*replied);
+///<<< END WRITING YOUR CODE
+}
+
+void OnCentreHandshakeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::HandshakeResponse>& replied, Timestamp timestamp)
+{
+///<<< BEGIN WRITING YOUR CODE
+	gNode->GetNodeRegistrationManager().HandleNodeRegistrationResponse(*replied);
 ///<<< END WRITING YOUR CODE
 }

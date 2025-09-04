@@ -32,4 +32,8 @@ constexpr uint32_t GateRegisterNodeSessionMessageId = 67;
 constexpr uint32_t GateRegisterNodeSessionIndex = 6;
 #define GateRegisterNodeSessionMethod  ::Gate_Stub::descriptor()->method(6)
 
+constexpr uint32_t GateHandshakeMessageId = 57;
+constexpr uint32_t GateHandshakeIndex = 7;
+#define GateHandshakeMethod  ::Gate_Stub::descriptor()->method(7)
+
 

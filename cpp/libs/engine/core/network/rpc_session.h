@@ -11,8 +11,10 @@ class RpcSession
 {
 public:
     // 构造函数：初始化 TcpConnection 和 GameChannel
-    explicit RpcSession(const muduo::net::TcpConnectionPtr& conn)
-        : connection(conn),
+    explicit RpcSession(const muduo::net::TcpConnectionPtr& conn,
+        const std::string& uuid)
+		: connection(conn), 
+          node_uuid(uuid),
           channel_(boost::any_cast<GameChannelPtr>(conn->getContext())) {}
 
     // 检查连接是否有效
@@ -65,6 +67,8 @@ public:
 
 private:
     GameChannelPtr channel_; // 游戏通道对象
+	std::string node_uuid;
+	bool handshaked = false;
 };
 
 // 判断连接地址是否与服务器信息匹配

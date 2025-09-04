@@ -123,7 +123,7 @@ const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABS
     "SessionRequest\022\022\n\nsession_id\030\001 \001(\004\"[\n\031Br"
     "oadcastToPlayersRequest\022\024\n\014session_list\030"
     "\001 \003(\004\022(\n\017message_content\030\002 \001(\0132\017.Message"
-    "Content2\351\003\n\004Gate\022X\n\023PlayerEnterGameNode\022"
+    "Content2\235\004\n\004Gate\022X\n\023PlayerEnterGameNode\022"
     "\037.RegisterGameNodeSessionRequest\032 .Regis"
     "terGameNodeSessionResponse\0227\n\023SendMessag"
     "eToPlayer\022\030.NodeRouteMessageRequest\032\006.Em"
@@ -135,8 +135,9 @@ const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABS
     "8\n\022BroadcastToPlayers\022\032.BroadcastToPlaye"
     "rsRequest\032\006.Empty\022P\n\023RegisterNodeSession"
     "\022\033.RegisterNodeSessionRequest\032\034.Register"
-    "NodeSessionResponseB\014Z\007pb/game\200\001\001b\006proto"
-    "3"
+    "NodeSessionResponse\0222\n\tHandshake\022\021.Hands"
+    "hakeRequest\032\022.HandshakeResponseB\014Z\007pb/ga"
+    "me\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps[3] =
     {
@@ -148,7 +149,7 @@ static ::absl::once_flag descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgate_2fgate_5fservice_2eproto = {
     false,
     false,
-    761,
+    813,
     descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto,
     "proto/gate/gate_service.proto",
     &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_once,
@@ -713,6 +714,11 @@ void Gate::RegisterNodeSession(::google::protobuf::RpcController* controller,
   controller->SetFailed("Method RegisterNodeSession() not implemented.");
   done->Run();
 }
+void Gate::Handshake(::google::protobuf::RpcController* controller,
+                         const ::HandshakeRequest*, ::HandshakeResponse*, ::google::protobuf::Closure* done) {
+  controller->SetFailed("Method Handshake() not implemented.");
+  done->Run();
+}
 
 void Gate::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
@@ -763,6 +769,12 @@ void Gate::CallMethod(
                    ::google::protobuf::DownCastMessage<::RegisterNodeSessionResponse>(response),
                    done);
       break;
+    case 7:
+      this->Handshake(controller,
+                   ::google::protobuf::DownCastMessage<::HandshakeRequest>(request),
+                   ::google::protobuf::DownCastMessage<::HandshakeResponse>(response),
+                   done);
+      break;
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -788,6 +800,8 @@ const ::google::protobuf::Message& Gate::GetRequestPrototype(
       return ::BroadcastToPlayersRequest::default_instance();
     case 6:
       return ::RegisterNodeSessionRequest::default_instance();
+    case 7:
+      return ::HandshakeRequest::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -814,6 +828,8 @@ const ::google::protobuf::Message& Gate::GetResponsePrototype(
       return ::Empty::default_instance();
     case 6:
       return ::RegisterNodeSessionResponse::default_instance();
+    case 7:
+      return ::HandshakeResponse::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -876,6 +892,12 @@ void Gate_Stub::RegisterNodeSession(::google::protobuf::RpcController* controlle
                               const ::RegisterNodeSessionRequest* request,
                               ::RegisterNodeSessionResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(6), controller,
+                       request, response, done);
+}
+void Gate_Stub::Handshake(::google::protobuf::RpcController* controller,
+                              const ::HandshakeRequest* request,
+                              ::HandshakeResponse* response, ::google::protobuf::Closure* done) {
+  channel_->CallMethod(descriptor()->method(7), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

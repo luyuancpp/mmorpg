@@ -48,4 +48,8 @@ constexpr uint32_t SceneRegisterNodeSessionMessageId = 71;
 constexpr uint32_t SceneRegisterNodeSessionIndex = 10;
 #define SceneRegisterNodeSessionMethod  ::Scene_Stub::descriptor()->method(10)
 
+constexpr uint32_t SceneHandshakeMessageId = 34;
+constexpr uint32_t SceneHandshakeIndex = 11;
+#define SceneHandshakeMethod  ::Scene_Stub::descriptor()->method(11)
+
 

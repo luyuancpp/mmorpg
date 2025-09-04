@@ -14,6 +14,8 @@
 #include "threading/node_context_manager.h"
 #include <threading/registry_manager.h>
 #include <threading/entity_manager.h>
+#include <threading/rpc_manager.h>
+#include "proto/common/message.pb.h"
 
 static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 	0,
@@ -26,14 +28,12 @@ static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 void NodeRegistrationManager::TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const {
 	entt::registry& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
-		if (!IsSameAddress(client->peer_addr(), conn->peerAddress())) continue;
+		if (client->GetConnection() == nullptr || client->GetConnection().get() != conn.get()) continue;
 		LOG_INFO << "Peer address match in " << NodeUtils::GetRegistryName(registry)
 			<< ": " << conn->peerAddress().toIpPort();
 		registry.emplace<TimerTaskComp>(entity).RunAfter(0.5, [conn, this, nodeType, &client]() {
-			RegisterNodeSessionRequest req;
+			HandshakeRequest req;
 			req.mutable_self_node()->CopyFrom(GetNodeInfo());
-			req.mutable_endpoint()->set_ip(conn->localAddress().toIp());
-			req.mutable_endpoint()->set_port(conn->localAddress().port());
 			client->CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
 			});
 		return;
@@ -41,10 +41,17 @@ void NodeRegistrationManager::TryRegisterNodeSession(uint32_t nodeType, const mu
 }
 
 
-void NodeRegistrationManager::HandleNodeRegistration(
-	const RegisterNodeSessionRequest& request,
-	RegisterNodeSessionResponse& response
+void NodeRegistrationManager::OnNodeHandshake(
+	const HandshakeRequest& request,
+	HandshakeResponse& response
 ) const {
+	if (!RpcThreadContext::tls_current_conn)
+	{
+		response.mutable_error_message()->set_id(kFailedToRegisterTheNode);
+		LOG_ERROR << "No current connection in thread-local storage.";
+		return;
+	}
+
 	auto& peerNode = request.self_node();
 	response.mutable_peer_node()->CopyFrom(gNode->GetNodeInfo());
 	LOG_TRACE << "Node registration request: " << request.DebugString();
@@ -60,7 +67,7 @@ void NodeRegistrationManager::HandleNodeRegistration(
 				LOG_ERROR << "Create node entity failed in " << NodeUtils::GetRegistryName(registry);
 				return false;
 			}
-			registry.emplace<RpcSession>(created, RpcSession{ conn });
+			registry.emplace<RpcSession>(created, RpcSession{ conn , request.self_node().node_uuid()});
 			LOG_INFO << "Node registered, id: " << peerNode.node_id()
 				<< " in " << NodeUtils::GetRegistryName(registry);
 			return true;
@@ -68,43 +75,39 @@ void NodeRegistrationManager::HandleNodeRegistration(
 		return false;
 		};
 
-	for (const auto& [entity, session] : tlsRegistryManager.sessionRegistry.view<RpcSession>().each()) {
-		auto& conn = session.connection;
-		if (!IsSameAddress(conn->peerAddress(), muduo::net::InetAddress(request.endpoint().ip(), request.endpoint().port()))) continue;
-		for (uint32_t nodeType = eNodeType_MIN; nodeType < eNodeType_ARRAYSIZE; ++nodeType) {
-			if (peerNode.node_type() != nodeType || !IsTcpNodeType(nodeType)) continue;
-			if (tryRegister(conn, nodeType)) {
-				tlsRegistryManager.sessionRegistry.destroy(entity);
-				response.mutable_error_message()->set_id(kCommon_errorOK);
-				LOG_INFO << "Node registration succeeded: " << peerNode.DebugString();
-				return;
-			}
-		}
+	auto& conn = RpcThreadContext::tls_current_conn;
+	if (!IsTcpNodeType(peerNode.node_type()))
+	{
+		response.mutable_error_message()->set_id(kFailedToRegisterTheNode);
+		LOG_ERROR << "Invalid node type for registration: " << peerNode.node_type();
+		return;
+	}
+	if (tryRegister(conn, peerNode.node_type())) {
+		response.mutable_error_message()->set_id(kCommon_errorOK);
+		LOG_INFO << "Node registration succeeded: " << peerNode.DebugString();
+		return;
 	}
 	response.mutable_error_message()->set_id(kFailedToRegisterTheNode);
 }
 
-void NodeRegistrationManager::HandleNodeRegistrationResponse(const RegisterNodeSessionResponse& response) const {
+void NodeRegistrationManager::HandleNodeRegistrationResponse(const HandshakeResponse& response) const {
 	LOG_INFO << "Node registration response: " << response.DebugString();
 	uint32_t nodeType = response.peer_node().node_type();
 	entt::registry& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	if (response.error_message().id() != kCommon_errorOK) {
 		LOG_TRACE << "Registration failed: " << response.DebugString();
 		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
-			if (!IsSameAddress(client->peer_addr(), muduo::net::InetAddress(
-				response.peer_node().endpoint().ip(),
-				response.peer_node().endpoint().port()))) continue;
+			if (!NodeUtils::IsSameNode(nodeInfo.node_uuid(), response.peer_node().node_uuid())) continue;
 			registry.get<TimerTaskComp>(entity).RunAfter(0.5, [this, &client, nodeType]() {
-				RegisterNodeSessionRequest req;
+				HandshakeRequest req;
 				*req.mutable_self_node() = GetNodeInfo();
-				req.mutable_endpoint()->set_ip(client->local_addr().toIp());
-				req.mutable_endpoint()->set_port(client->local_addr().port());
 				client->CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
 				});
 			return;
 		}
 		return;
 	}
+
 	entt::entity peerEntity{ response.peer_node().node_id() };
 	registry.remove<TimerTaskComp>(peerEntity);
 	TriggerNodeConnectionEvent(registry, response);
@@ -112,7 +115,7 @@ void NodeRegistrationManager::HandleNodeRegistrationResponse(const RegisterNodeS
 }
 
 
-void NodeRegistrationManager::TriggerNodeConnectionEvent(entt::registry& registry, const RegisterNodeSessionResponse& response) const {
+void NodeRegistrationManager::TriggerNodeConnectionEvent(entt::registry& registry, const HandshakeResponse& response) const {
 	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
 		if (client->peer_addr().toIp() != response.peer_node().endpoint().ip() ||
 			client->peer_addr().port() != response.peer_node().endpoint().port()) {

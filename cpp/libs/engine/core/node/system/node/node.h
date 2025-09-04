@@ -83,9 +83,6 @@ protected:
 
     // 事件处理
     void OnServerConnected(const OnConnected2TcpServerEvent& es);
-    void OnClientConnected(const OnTcpClientConnectedEvent& es);
-
-
 
     void Shutdown();
 

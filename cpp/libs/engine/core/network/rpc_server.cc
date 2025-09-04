@@ -59,7 +59,6 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
     conn->setContext(GameChannelPtr());
     // FIXME:
   }
-  dispatcher.trigger<OnTcpClientConnectedEvent>(conn);
 }
 
 // void RpcServer::onMessage(const TcpConnectionPtr& conn,

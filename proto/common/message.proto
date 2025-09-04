@@ -199,8 +199,8 @@ message RegisterNodeSessionRequest {
 }
 
 message RegisterNodeSessionResponse {
-    TipInfoMessage error_message = 4;  // 错误消息（可选）
-    NodeInfo peer_node = 1;              // 对方的节点信息（返回的是对方）
+    TipInfoMessage error_message = 1;  // 错误消息（可选）
+    NodeInfo peer_node = 2;              // 对方的节点信息（返回的是对方）
 }
 
 message ClientRequest
@@ -212,3 +212,13 @@ message ClientRequest
   uint32 message_id = 5;
 }
 
+message HandshakeRequest {
+    string version = 1;
+    string token = 2;
+	NodeInfo self_node = 3;
+}
+
+message HandshakeResponse {
+    TipInfoMessage error_message = 1;  // 错误消息（可选）
+	NodeInfo peer_node = 2;              // 对方的节点信息（返回的是对方）
+}

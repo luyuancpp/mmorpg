@@ -18,7 +18,6 @@ public:
 	entt::registry actorRegistry;
 	entt::registry sceneRegistry;
 	entt::registry itemRegistry;
-	entt::registry sessionRegistry;
 	entt::registry nodeGlobalRegistry;
 
 	void Clear();

@@ -527,6 +527,10 @@ class Gate : public ::google::protobuf::Service {
                         const ::RegisterNodeSessionRequest* request,
                         ::RegisterNodeSessionResponse* response,
                         ::google::protobuf::Closure* done);
+  virtual void Handshake(::google::protobuf::RpcController* controller,
+                        const ::HandshakeRequest* request,
+                        ::HandshakeResponse* response,
+                        ::google::protobuf::Closure* done);
 
   // implements Service ----------------------------------------------
   const ::google::protobuf::ServiceDescriptor* GetDescriptor() override;
@@ -585,6 +589,10 @@ class Gate_Stub final : public Gate {
   void RegisterNodeSession(::google::protobuf::RpcController* controller,
                         const ::RegisterNodeSessionRequest* request,
                         ::RegisterNodeSessionResponse* response,
+                        ::google::protobuf::Closure* done) override;
+  void Handshake(::google::protobuf::RpcController* controller,
+                        const ::HandshakeRequest* request,
+                        ::HandshakeResponse* response,
                         ::google::protobuf::Closure* done) override;
 
  private:

@@ -101,6 +101,16 @@ public:
         channel_->RouteMessageToNode(message_id, request);
     }
 
+	TcpConnectionPtr GetConnection() const {
+		if (nullptr == client_.connection())
+		{
+			static TcpConnectionPtr c;
+			return c;
+		}
+
+		return client_.connection();
+	}
+
 private:
     void onConnection(const TcpConnectionPtr& conn)
     {
