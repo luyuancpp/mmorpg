@@ -6,9 +6,9 @@
 
 struct EnterRoomParam;
 struct CreateRoomOnNodeRoomParam;
-class OnSceneCreate;
-class AfterEnterScene;
-class BeforeLeaveScene;
+class OnRoomCreated;
+class AfterEnterRoom;
+class BeforeLeaveRoom;
 
 class GameNodeSceneSystem
 {
@@ -16,8 +16,8 @@ public:
     static void InitializeNodeScenes();
     static void RegisterSceneToAllCentre(entt::entity scene);
 	static void RegisterAllSceneToCentre(entt::entity centre);
-    static void HandleSceneCreation(const OnSceneCreate& message);
-    static void HandleAfterEnterSceneEvent(const AfterEnterScene& message);
-    static void HandleBeforeLeaveSceneEvent(const BeforeLeaveScene& message);
+    static void HandleSceneCreation(const OnRoomCreated& message);
+    static void HandleAfterEnterSceneEvent(const AfterEnterRoom& message);
+    static void HandleBeforeLeaveSceneEvent(const BeforeLeaveRoom& message);
 private:
 };

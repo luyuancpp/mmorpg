@@ -140,7 +140,7 @@ void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity,
     }
 }
 
-void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
+void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveRoom& message) {
     const auto entity = entt::to_entity(message.entity());
     if (!tlsRegistryManager.actorRegistry.valid(entity)) {
         LOG_ERROR << "Entity not found in scene";

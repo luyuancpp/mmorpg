@@ -201,9 +201,9 @@ void RoomUtil::DestroyRoom(const DestroyRoomParam& param) {
 		return;
 	}
 
-	OnDestroyScene destroyRoomEvent;
-	destroyRoomEvent.set_entity(entt::to_integral(param.room));
-	dispatcher.trigger(destroyRoomEvent);
+	OnRoomDestroyed roomDestroyedEvent;
+	roomDestroyedEvent.set_entity(entt::to_integral(param.room));
+	dispatcher.trigger(roomDestroyedEvent);
 
 	pServerComp->RemoveScene(param.room);
 

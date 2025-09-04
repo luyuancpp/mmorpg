@@ -23,31 +23,31 @@
 
 void SceneEventHandler::Register()
 {
-    dispatcher.sink<OnSceneCreate>().connect<&SceneEventHandler::OnSceneCreateHandler>();
-    dispatcher.sink<OnDestroyScene>().connect<&SceneEventHandler::OnDestroySceneHandler>();
+    dispatcher.sink<OnRoomCreated>().connect<&SceneEventHandler::OnSceneCreateHandler>();
+    dispatcher.sink<OnRoomDestroyed >().connect<&SceneEventHandler::OnDestroySceneHandler>();
     dispatcher.sink<BeforeEnterScene>().connect<&SceneEventHandler::BeforeEnterSceneHandler>();
-    dispatcher.sink<AfterEnterScene>().connect<&SceneEventHandler::AfterEnterSceneHandler>();
-    dispatcher.sink<BeforeLeaveScene>().connect<&SceneEventHandler::BeforeLeaveSceneHandler>();
+    dispatcher.sink<AfterEnterRoom>().connect<&SceneEventHandler::AfterEnterSceneHandler>();
+    dispatcher.sink<BeforeLeaveRoom>().connect<&SceneEventHandler::BeforeLeaveSceneHandler>();
     dispatcher.sink<AfterLeaveScene>().connect<&SceneEventHandler::AfterLeaveSceneHandler>();
     dispatcher.sink<S2CEnterScene>().connect<&SceneEventHandler::S2CEnterSceneHandler>();
 }
 
 void SceneEventHandler::UnRegister()
 {
-    dispatcher.sink<OnSceneCreate>().disconnect<&SceneEventHandler::OnSceneCreateHandler>();
-    dispatcher.sink<OnDestroyScene>().disconnect<&SceneEventHandler::OnDestroySceneHandler>();
+    dispatcher.sink<OnRoomCreated>().disconnect<&SceneEventHandler::OnSceneCreateHandler>();
+    dispatcher.sink<OnRoomDestroyed >().disconnect<&SceneEventHandler::OnDestroySceneHandler>();
     dispatcher.sink<BeforeEnterScene>().disconnect<&SceneEventHandler::BeforeEnterSceneHandler>();
-    dispatcher.sink<AfterEnterScene>().disconnect<&SceneEventHandler::AfterEnterSceneHandler>();
-    dispatcher.sink<BeforeLeaveScene>().disconnect<&SceneEventHandler::BeforeLeaveSceneHandler>();
+    dispatcher.sink<AfterEnterRoom>().disconnect<&SceneEventHandler::AfterEnterSceneHandler>();
+    dispatcher.sink<BeforeLeaveRoom>().disconnect<&SceneEventHandler::BeforeLeaveSceneHandler>();
     dispatcher.sink<AfterLeaveScene>().disconnect<&SceneEventHandler::AfterLeaveSceneHandler>();
     dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventHandler::S2CEnterSceneHandler>();
 }
-void SceneEventHandler::OnSceneCreateHandler(const OnSceneCreate& event)
+void SceneEventHandler::OnSceneCreateHandler(const OnRoomCreated& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-void SceneEventHandler::OnDestroySceneHandler(const OnDestroyScene& event)
+void SceneEventHandler::OnDestroySceneHandler(const OnRoomDestroyed & event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 
@@ -59,13 +59,13 @@ void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& event)
 
 ///<<< END WRITING YOUR CODE
 }
-void SceneEventHandler::AfterEnterSceneHandler(const AfterEnterScene& event)
+void SceneEventHandler::AfterEnterSceneHandler(const AfterEnterRoom& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
   
 ///<<< END WRITING YOUR CODE
 }
-void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
+void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveRoom& event)
 {
 	///<<< BEGIN WRITING YOUR CODE
 		const auto player = entt::to_entity(event.entity());
