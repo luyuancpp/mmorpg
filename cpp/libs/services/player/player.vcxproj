@@ -20,7 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rpc\player_service_interface.h" />
-    <ClInclude Include="rpc\player_rpc_replied_handler.h" />
+    <ClInclude Include="rpc\player_rpc_response_handler.h" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

@@ -72,25 +72,25 @@
     <ClCompile Include="handler\rpc\register_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\player\game_player_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\player\game_player_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\player\game_player_scene_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\player\game_player_scene_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\player\player_state_attribute_sync_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\player\player_state_attribute_sync_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\game_scene_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\game_scene_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\game_service_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\game_service_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\gate_service_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\gate_service_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\register_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\register_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="centre_node.cpp">
@@ -155,22 +155,22 @@
     <ClInclude Include="handler\rpc\centre_service_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rpc_replies\player\game_player_replied_handler.h">
+    <ClInclude Include="rpc_replies\player\game_player_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rpc_replies\player\game_player_scene_replied_handler.h">
+    <ClInclude Include="rpc_replies\player\game_player_scene_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rpc_replies\player\player_state_attribute_sync_replied_handler.h">
+    <ClInclude Include="rpc_replies\player\player_state_attribute_sync_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rpc_replies\game_scene_replied_handler.h">
+    <ClInclude Include="rpc_replies\game_scene_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rpc_replies\game_service_replied_handler.h">
+    <ClInclude Include="rpc_replies\game_service_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rpc_replies\gate_service_replied_handler.h">
+    <ClInclude Include="rpc_replies\gate_service_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="centre_node.h">

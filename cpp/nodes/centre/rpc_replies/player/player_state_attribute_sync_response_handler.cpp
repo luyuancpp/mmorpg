@@ -1,5 +1,5 @@
 
-#include "player_state_attribute_sync_replied_handler.h"
+#include "player_state_attribute_sync_response_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
