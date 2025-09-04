@@ -118,7 +118,7 @@ entt::entity NodeSceneSystem::FindSceneWithMinPlayerCount(const GetSceneParams& 
 	return FindSceneWithMinPlayerCountTemplate<MainRoomNode>(param, filterParam);
 }
 
-entt::entity NodeSceneSystem::FindNotFullScene(const GetSceneParams& param) {
+entt::entity NodeSceneSystem::FindNotFullRoom(const GetSceneParams& param) {
 	GetSceneFilterParam filterParam;
 
 	auto bestScene = FindNotFullSceneTemplate<MainRoomNode>(param, filterParam);

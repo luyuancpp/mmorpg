@@ -34,7 +34,7 @@ public:
 	static entt::entity FindSceneWithMinPlayerCount(const GetSceneParams& param);
 
 	// Find a server with the scene where player count is not full, more efficient than the above function
-	static entt::entity FindNotFullScene(const GetSceneParams& param);
+	static entt::entity FindNotFullRoom(const GetSceneParams& param);
 
 	// Set node pressure state
 	static void SetNodePressure(entt::entity node);

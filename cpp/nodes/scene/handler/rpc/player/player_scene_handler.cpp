@@ -41,7 +41,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 
 	if (auto current_scene_comp = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(player))
 	{
-		const auto current_scene_info = tlsRegistryManager.actorRegistry.try_get<SceneInfoPBComponent>(current_scene_comp->sceneEntity);
+		const auto current_scene_info = tlsRegistryManager.actorRegistry.try_get<SceneInfoPBComponent>(current_scene_comp->roomEntity);
 		if (current_scene_info && current_scene_info->guid() == scene_info.guid() && scene_info.guid() > 0)
 		{
 			LOG_WARN << "Player " << tlsRegistryManager.actorRegistry.get<Guid>(player) << " is already in the requested scene: " << scene_info.guid();

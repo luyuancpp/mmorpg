@@ -38,13 +38,13 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 	// 尝试找空闲的当前配置场景
 	if (sceneContext.scene_info().scene_confid() > 0)
 	{
-		entt::entity candidate = NodeSceneSystem::FindNotFullScene({ sceneContext.scene_info().scene_confid() });
+		entt::entity candidate = NodeSceneSystem::FindNotFullRoom({ sceneContext.scene_info().scene_confid() });
 		if (candidate != entt::null)
 			return candidate;
 	}
 
 	// fallback：默认配置场景
-	return NodeSceneSystem::FindNotFullScene({ GetDefaultSceneConfigurationId() });
+	return NodeSceneSystem::FindNotFullRoom({ GetDefaultSceneConfigurationId() });
 }
 
 
@@ -89,7 +89,7 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* sceneInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>((*playerSceneEntity).sceneEntity);
+    const auto* sceneInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>((*playerSceneEntity).roomEntity);
     if (!sceneInfo)
     {
         LOG_ERROR << "Scene info not found for player: " << playerId;
@@ -204,7 +204,7 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 {
 	auto playerId = tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
 	auto* fromSceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity);
-	const auto* fromSceneInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>(fromSceneEntity->sceneEntity);
+	const auto* fromSceneInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>(fromSceneEntity->roomEntity);
 	const auto* toSceneInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>(toScene);
 
 	if (!fromSceneInfo || !toSceneInfo)
@@ -249,7 +249,7 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 	auto& changeInfo = *tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 	auto* fromSceneComp = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity);
 
-	auto fromNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(fromSceneComp->sceneEntity).guid());
+	auto fromNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(fromSceneComp->roomEntity).guid());
 	auto toNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(toScene).guid());
 
 	entt::entity fromNode{fromNodeGuid};

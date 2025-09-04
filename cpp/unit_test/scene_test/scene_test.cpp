@@ -209,13 +209,13 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 	for (const auto& playerEntity : playerEntitySet1)
 	{
 		EXPECT_TRUE(scenesPlayers1.find(playerEntity) != scenesPlayers1.end());
-		EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<SceneEntityComp>(playerEntity).sceneEntity == scene1);
+		EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<SceneEntityComp>(playerEntity).roomEntity == scene1);
 	}
 
 	for (const auto& playerEntity : playerEntitiesSet2)
 	{
 		EXPECT_TRUE(scenesPlayers2.find(playerEntity) != scenesPlayers2.end());
-		EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<SceneEntityComp>(playerEntity).sceneEntity == scene2);
+		EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<SceneEntityComp>(playerEntity).roomEntity == scene2);
 	}
 
 	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<GameNodePlayerInfoPtrPBComponent>(node1)->player_size(), playerSize / 2);
@@ -361,7 +361,7 @@ TEST(GS, CompelToChangeScene)
 	{
 		compelChangeParam1.player = it;
 		sm.CompelPlayerChangeRoom(compelChangeParam1);
-		EXPECT_TRUE(tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(it)->sceneEntity == scene2);
+		EXPECT_TRUE(tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(it)->roomEntity == scene2);
 	}
 	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<GameNodePlayerInfoPtrPBComponent>(node1)->player_size(), 0);
 	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<GameNodePlayerInfoPtrPBComponent>(node2)->player_size(), playerList1.size());
@@ -551,8 +551,8 @@ TEST(GS, WeightRoundRobinMainScene)
 			for (auto& it : player_scene1)
 			{
 				auto& pse = tlsRegistryManager.actorRegistry.get<SceneEntityComp>(it.first);
-				EXPECT_TRUE(pse.sceneEntity == it.second);
-				EXPECT_EQ(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(pse.sceneEntity).scene_confid(), scene_config_id0);
+				EXPECT_TRUE(pse.roomEntity == it.second);
+				EXPECT_EQ(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(pse.roomEntity).scene_confid(), scene_config_id0);
 			}
 
 			std::unordered_map<entt::entity, entt::entity> player_scene2;
@@ -571,8 +571,8 @@ TEST(GS, WeightRoundRobinMainScene)
 			for (auto& it : player_scene2)
 			{
 				auto& pse = tlsRegistryManager.actorRegistry.get<SceneEntityComp>(it.first);
-				EXPECT_TRUE(pse.sceneEntity == it.second);
-				EXPECT_EQ(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(pse.sceneEntity).scene_confid(), scene_config_id1);
+				EXPECT_TRUE(pse.roomEntity == it.second);
+				EXPECT_EQ(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(pse.roomEntity).scene_confid(), scene_config_id1);
 			}
 
 			std::size_t server_player_size = player_size * 2 / server_size;
@@ -771,7 +771,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			// Enter players into scenes with sceneConfigId0
 			for (uint32_t i = 0; i < playerSize; ++i)
 			{
-				auto canEnter = nssys.FindNotFullScene(weightRoundRobinScene);
+				auto canEnter = nssys.FindNotFullRoom(weightRoundRobinScene);
 				if (canEnter == entt::null)
 				{
 					continue;
@@ -788,8 +788,8 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			for (auto& it : playerScene1)
 			{
 				auto& pse = tlsRegistryManager.actorRegistry.get<SceneEntityComp>(it.first);
-				EXPECT_TRUE(pse.sceneEntity == it.second);
-				EXPECT_EQ(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(pse.sceneEntity).scene_confid(), sceneConfigId0);
+				EXPECT_TRUE(pse.roomEntity == it.second);
+				EXPECT_EQ(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(pse.roomEntity).scene_confid(), sceneConfigId0);
 			}
 
 			// Enter players into scenes with sceneConfigId1
@@ -797,7 +797,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			weightRoundRobinScene.sceneConfigurationId = sceneConfigId1;
 			for (uint32_t i = 0; i < playerSize; ++i)
 			{
-				auto canEnter = nssys.FindNotFullScene(weightRoundRobinScene);
+				auto canEnter = nssys.FindNotFullRoom(weightRoundRobinScene);
 				if (canEnter == entt::null)
 				{
 					continue;
@@ -814,8 +814,8 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			for (auto& it : playerScene2)
 			{
 				auto& pse = tlsRegistryManager.actorRegistry.get<SceneEntityComp>(it.first);
-				EXPECT_TRUE(pse.sceneEntity == it.second);
-				EXPECT_EQ(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(pse.sceneEntity).scene_confid(), sceneConfigId1);
+				EXPECT_TRUE(pse.roomEntity == it.second);
+				EXPECT_EQ(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(pse.roomEntity).scene_confid(), sceneConfigId1);
 			}
 
 			// Calculate expected player distribution across servers

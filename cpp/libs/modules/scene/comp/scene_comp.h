@@ -6,5 +6,5 @@
 
 struct SceneEntityComp
 {
-	entt::entity sceneEntity{entt::null};
+	entt::entity roomEntity{entt::null};
 };
