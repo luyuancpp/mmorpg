@@ -5,7 +5,7 @@
 #include "rpc/player_rpc_response_handler.h"
 
 
-class ScenePlayerSyncReply : public ::PlayerServiceReplied
+class ScenePlayerSyncRepliedHandler : public ::PlayerServiceReplied
 {
 public:
     using PlayerServiceReplied::PlayerServiceReplied;
