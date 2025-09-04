@@ -1,10 +1,10 @@
 
-void InitRepliedHandler()
+void InitReply()
 {
-    void InitCentreSceneRepliedHandler();
-    InitCentreSceneRepliedHandler();
-    void InitCentreRepliedHandler();
-    InitCentreRepliedHandler();
-    void InitGateRepliedHandler();
-    InitGateRepliedHandler();
+    void InitCentreSceneReply();
+    InitCentreSceneReply();
+    void InitCentreReply();
+    InitCentreReply();
+    void InitGateReply();
+    InitGateReply();
 }

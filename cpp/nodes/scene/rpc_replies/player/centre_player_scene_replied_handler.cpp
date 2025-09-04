@@ -6,7 +6,7 @@
 
 
 
-void CentrePlayerSceneRepliedHandler::EnterScene(entt::entity player,const ::CentreEnterSceneRequest* request,
+void CentrePlayerSceneReply::EnterScene(entt::entity player,const ::CentreEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -15,7 +15,7 @@ void CentrePlayerSceneRepliedHandler::EnterScene(entt::entity player,const ::Cen
 }
 
 
-void CentrePlayerSceneRepliedHandler::LeaveScene(entt::entity player,const ::CentreLeaveSceneRequest* request,
+void CentrePlayerSceneReply::LeaveScene(entt::entity player,const ::CentreLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -24,7 +24,7 @@ void CentrePlayerSceneRepliedHandler::LeaveScene(entt::entity player,const ::Cen
 }
 
 
-void CentrePlayerSceneRepliedHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
+void CentrePlayerSceneReply::LeaveSceneAsyncSavePlayerComplete(entt::entity player,const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -33,7 +33,7 @@ void CentrePlayerSceneRepliedHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 }
 
 
-void CentrePlayerSceneRepliedHandler::SceneInfoC2S(entt::entity player,const ::CentreSceneInfoRequest* request,
+void CentrePlayerSceneReply::SceneInfoC2S(entt::entity player,const ::CentreSceneInfoRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE

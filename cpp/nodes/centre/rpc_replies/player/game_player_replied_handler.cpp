@@ -6,7 +6,7 @@
 
 
 
-void ScenePlayerRepliedHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLoginRequest* request,
+void ScenePlayerReply::Centre2GsLogin(entt::entity player,const ::Centre2GsLoginRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -15,7 +15,7 @@ void ScenePlayerRepliedHandler::Centre2GsLogin(entt::entity player,const ::Centr
 }
 
 
-void ScenePlayerRepliedHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,
+void ScenePlayerReply::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE

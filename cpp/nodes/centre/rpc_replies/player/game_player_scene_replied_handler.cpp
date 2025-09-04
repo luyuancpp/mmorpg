@@ -6,7 +6,7 @@
 
 
 
-void SceneScenePlayerRepliedHandler::EnterScene(entt::entity player,const ::GsEnterSceneRequest* request,
+void SceneScenePlayerReply::EnterScene(entt::entity player,const ::GsEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -15,7 +15,7 @@ void SceneScenePlayerRepliedHandler::EnterScene(entt::entity player,const ::GsEn
 }
 
 
-void SceneScenePlayerRepliedHandler::LeaveScene(entt::entity player,const ::GsLeaveSceneRequest* request,
+void SceneScenePlayerReply::LeaveScene(entt::entity player,const ::GsLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -24,7 +24,7 @@ void SceneScenePlayerRepliedHandler::LeaveScene(entt::entity player,const ::GsLe
 }
 
 
-void SceneScenePlayerRepliedHandler::EnterSceneS2C(entt::entity player,const ::EnterSceneS2CRequest* request,
+void SceneScenePlayerReply::EnterSceneS2C(entt::entity player,const ::EnterSceneS2CRequest* request,
 	::EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
