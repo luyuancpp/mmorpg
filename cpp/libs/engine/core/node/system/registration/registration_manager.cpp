@@ -90,7 +90,7 @@ void NodeRegistrationManager::OnNodeHandshake(
 	response.mutable_error_message()->set_id(kFailedToRegisterTheNode);
 }
 
-void NodeRegistrationManager::HandleNodeRegistrationResponse(const HandshakeResponse& response) const {
+void NodeRegistrationManager::OnHandshakeReplied(const HandshakeResponse& response) const {
 	LOG_INFO << "Node registration response: " << response.DebugString();
 	uint32_t nodeType = response.peer_node().node_type();
 	entt::registry& registry = tlsNodeContextManager.GetRegistry(nodeType);

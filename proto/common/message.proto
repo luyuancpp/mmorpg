@@ -193,16 +193,6 @@ message MyNestedMessage
   int64 nested_int64_field = 2;          // 单个 int64 字段
 }
 
-message RegisterNodeSessionRequest {
-  NodeInfo self_node = 1;              // 自己的节点信息
-  EndpointPBComponent endpoint = 2;
-}
-
-message RegisterNodeSessionResponse {
-    TipInfoMessage error_message = 1;  // 错误消息（可选）
-    NodeInfo peer_node = 2;              // 对方的节点信息（返回的是对方）
-}
-
 message ClientRequest
 {
   uint64 id = 1;

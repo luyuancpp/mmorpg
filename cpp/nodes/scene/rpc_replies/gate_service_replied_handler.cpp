@@ -68,12 +68,6 @@ void OnGateBroadcastToPlayersRepliedHandler(const TcpConnectionPtr& conn, const 
 ///<<< END WRITING YOUR CODE
 }
 
-void OnGateRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterNodeSessionResponse>& replied, Timestamp timestamp)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
 void OnGateHandshakeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::HandshakeResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE

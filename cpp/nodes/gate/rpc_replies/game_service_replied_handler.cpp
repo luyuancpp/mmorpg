@@ -112,14 +112,9 @@ void OnSceneCreateSceneRepliedHandler(const TcpConnectionPtr& conn, const std::s
 ///<<< END WRITING YOUR CODE
 }
 
-void OnSceneRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterNodeSessionResponse>& replied, Timestamp timestamp)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
 void OnSceneHandshakeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::HandshakeResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	gNode->GetNodeRegistrationManager()->OnHandshakeReplied(conn, *replied);
 ///<<< END WRITING YOUR CODE
 }

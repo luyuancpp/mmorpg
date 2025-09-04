@@ -109,15 +109,10 @@ void OnCentreInitSceneNodeRepliedHandler(const TcpConnectionPtr& conn, const std
 ///<<< END WRITING YOUR CODE
 }
 
-void OnCentreRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterNodeSessionResponse>& replied, Timestamp timestamp)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
 
 void OnCentreHandshakeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::HandshakeResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	gNode->GetNodeRegistrationManager().HandleNodeRegistrationResponse(*replied);
+	gNode->GetNodeRegistrationManager().OnHandshakeReplied(*replied);
 ///<<< END WRITING YOUR CODE
 }

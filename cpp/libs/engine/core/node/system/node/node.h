@@ -16,8 +16,6 @@
 #include "node/system/registration/registration_manager.h"
 #include "node/system/discovery/service_discovery_manager.h"
 
-class RegisterNodeSessionRequest;
-class RegisterNodeSessionResponse;
 
 class Node : muduo::noncopyable {
 public:

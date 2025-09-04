@@ -11,7 +11,7 @@ class NodeRegistrationManager {
 public:
 	void TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const;
 
-	void HandleNodeRegistrationResponse(const HandshakeResponse& response) const;
+	void OnHandshakeReplied(const HandshakeResponse& response) const;
 
 	void OnNodeHandshake(const HandshakeRequest& request, HandshakeResponse& response) const;
 
