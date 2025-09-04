@@ -20,9 +20,9 @@
 static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 	0,
 	0,
-	CentreHandshakeMessageId,
-	SceneHandshakeMessageId,
-	GateHandshakeMessageId
+	CentreNodeHandshakeMessageId,
+	SceneNodeHandshakeMessageId,
+	GateNodeHandshakeMessageId
 };
 
 void NodeHandshakeManager::TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const {

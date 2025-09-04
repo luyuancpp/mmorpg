@@ -127,15 +127,15 @@ const file_proto_gate_gate_service_proto_rawDesc = "" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\"x\n" +
 	"\x19BroadcastToPlayersRequest\x12!\n" +
 	"\fsession_list\x18\x01 \x03(\x04R\vsessionList\x128\n" +
-	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent2\xcb\x03\n" +
+	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent2\xd7\x03\n" +
 	"\x04Gate\x12X\n" +
 	"\x13PlayerEnterGameNode\x12\x1f.RegisterGameNodeSessionRequest\x1a .RegisterGameNodeSessionResponse\x127\n" +
 	"\x13SendMessageToPlayer\x12\x18.NodeRouteMessageRequest\x1a\x06.Empty\x122\n" +
 	"\x13KickSessionByCentre\x12\x13.KickSessionRequest\x1a\x06.Empty\x12?\n" +
 	"\x10RouteNodeMessage\x12\x14.RouteMessageRequest\x1a\x15.RouteMessageResponse\x12M\n" +
 	"\x12RoutePlayerMessage\x12\x1a.RoutePlayerMessageRequest\x1a\x1b.RoutePlayerMessageResponse\x128\n" +
-	"\x12BroadcastToPlayers\x12\x1a.BroadcastToPlayersRequest\x1a\x06.Empty\x122\n" +
-	"\tHandshake\x12\x11.HandshakeRequest\x1a\x12.HandshakeResponseB\fZ\apb/game\x80\x01\x01b\x06proto3"
+	"\x12BroadcastToPlayers\x12\x1a.BroadcastToPlayersRequest\x1a\x06.Empty\x12>\n" +
+	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB\fZ\apb/game\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_gate_gate_service_proto_rawDescOnce sync.Once
@@ -158,12 +158,12 @@ var file_proto_gate_gate_service_proto_goTypes = []any{
 	(*NodeRouteMessageRequest)(nil),         // 4: NodeRouteMessageRequest
 	(*RouteMessageRequest)(nil),             // 5: RouteMessageRequest
 	(*RoutePlayerMessageRequest)(nil),       // 6: RoutePlayerMessageRequest
-	(*HandshakeRequest)(nil),                // 7: HandshakeRequest
+	(*NodeHandshakeRequest)(nil),            // 7: NodeHandshakeRequest
 	(*RegisterGameNodeSessionResponse)(nil), // 8: RegisterGameNodeSessionResponse
 	(*Empty)(nil),                           // 9: Empty
 	(*RouteMessageResponse)(nil),            // 10: RouteMessageResponse
 	(*RoutePlayerMessageResponse)(nil),      // 11: RoutePlayerMessageResponse
-	(*HandshakeResponse)(nil),               // 12: HandshakeResponse
+	(*NodeHandshakeResponse)(nil),           // 12: NodeHandshakeResponse
 }
 var file_proto_gate_gate_service_proto_depIdxs = []int32{
 	2,  // 0: BroadcastToPlayersRequest.message_content:type_name -> MessageContent
@@ -173,14 +173,14 @@ var file_proto_gate_gate_service_proto_depIdxs = []int32{
 	5,  // 4: Gate.RouteNodeMessage:input_type -> RouteMessageRequest
 	6,  // 5: Gate.RoutePlayerMessage:input_type -> RoutePlayerMessageRequest
 	1,  // 6: Gate.BroadcastToPlayers:input_type -> BroadcastToPlayersRequest
-	7,  // 7: Gate.Handshake:input_type -> HandshakeRequest
+	7,  // 7: Gate.NodeHandshake:input_type -> NodeHandshakeRequest
 	8,  // 8: Gate.PlayerEnterGameNode:output_type -> RegisterGameNodeSessionResponse
 	9,  // 9: Gate.SendMessageToPlayer:output_type -> Empty
 	9,  // 10: Gate.KickSessionByCentre:output_type -> Empty
 	10, // 11: Gate.RouteNodeMessage:output_type -> RouteMessageResponse
 	11, // 12: Gate.RoutePlayerMessage:output_type -> RoutePlayerMessageResponse
 	9,  // 13: Gate.BroadcastToPlayers:output_type -> Empty
-	12, // 14: Gate.Handshake:output_type -> HandshakeResponse
+	12, // 14: Gate.NodeHandshake:output_type -> NodeHandshakeResponse
 	8,  // [8:15] is the sub-list for method output_type
 	1,  // [1:8] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name

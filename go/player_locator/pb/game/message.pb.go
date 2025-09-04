@@ -1529,7 +1529,7 @@ func (x *ClientRequest) GetMessageId() uint32 {
 	return 0
 }
 
-type HandshakeRequest struct {
+type NodeHandshakeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Version       string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
@@ -1538,20 +1538,20 @@ type HandshakeRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HandshakeRequest) Reset() {
-	*x = HandshakeRequest{}
+func (x *NodeHandshakeRequest) Reset() {
+	*x = NodeHandshakeRequest{}
 	mi := &file_proto_common_message_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HandshakeRequest) String() string {
+func (x *NodeHandshakeRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HandshakeRequest) ProtoMessage() {}
+func (*NodeHandshakeRequest) ProtoMessage() {}
 
-func (x *HandshakeRequest) ProtoReflect() protoreflect.Message {
+func (x *NodeHandshakeRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_message_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1563,33 +1563,33 @@ func (x *HandshakeRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HandshakeRequest.ProtoReflect.Descriptor instead.
-func (*HandshakeRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeHandshakeRequest.ProtoReflect.Descriptor instead.
+func (*NodeHandshakeRequest) Descriptor() ([]byte, []int) {
 	return file_proto_common_message_proto_rawDescGZIP(), []int{27}
 }
 
-func (x *HandshakeRequest) GetVersion() string {
+func (x *NodeHandshakeRequest) GetVersion() string {
 	if x != nil {
 		return x.Version
 	}
 	return ""
 }
 
-func (x *HandshakeRequest) GetToken() string {
+func (x *NodeHandshakeRequest) GetToken() string {
 	if x != nil {
 		return x.Token
 	}
 	return ""
 }
 
-func (x *HandshakeRequest) GetSelfNode() *NodeInfo {
+func (x *NodeHandshakeRequest) GetSelfNode() *NodeInfo {
 	if x != nil {
 		return x.SelfNode
 	}
 	return nil
 }
 
-type HandshakeResponse struct {
+type NodeHandshakeResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorMessage  *TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // 错误消息（可选）
 	PeerNode      *NodeInfo              `protobuf:"bytes,2,opt,name=peer_node,json=peerNode,proto3" json:"peer_node,omitempty"`             // 对方的节点信息（返回的是对方）
@@ -1597,20 +1597,20 @@ type HandshakeResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HandshakeResponse) Reset() {
-	*x = HandshakeResponse{}
+func (x *NodeHandshakeResponse) Reset() {
+	*x = NodeHandshakeResponse{}
 	mi := &file_proto_common_message_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HandshakeResponse) String() string {
+func (x *NodeHandshakeResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HandshakeResponse) ProtoMessage() {}
+func (*NodeHandshakeResponse) ProtoMessage() {}
 
-func (x *HandshakeResponse) ProtoReflect() protoreflect.Message {
+func (x *NodeHandshakeResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_message_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1622,19 +1622,19 @@ func (x *HandshakeResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HandshakeResponse.ProtoReflect.Descriptor instead.
-func (*HandshakeResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeHandshakeResponse.ProtoReflect.Descriptor instead.
+func (*NodeHandshakeResponse) Descriptor() ([]byte, []int) {
 	return file_proto_common_message_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *HandshakeResponse) GetErrorMessage() *TipInfoMessage {
+func (x *NodeHandshakeResponse) GetErrorMessage() *TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
 	return nil
 }
 
-func (x *HandshakeResponse) GetPeerNode() *NodeInfo {
+func (x *NodeHandshakeResponse) GetPeerNode() *NodeInfo {
 	if x != nil {
 		return x.PeerNode
 	}
@@ -1752,12 +1752,12 @@ const file_proto_common_message_proto_rawDesc = "" +
 	"\x06method\x18\x03 \x01(\tR\x06method\x12\x12\n" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x12\x1d\n" +
 	"\n" +
-	"message_id\x18\x05 \x01(\rR\tmessageId\"j\n" +
-	"\x10HandshakeRequest\x12\x18\n" +
+	"message_id\x18\x05 \x01(\rR\tmessageId\"n\n" +
+	"\x14NodeHandshakeRequest\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12&\n" +
-	"\tself_node\x18\x03 \x01(\v2\t.NodeInfoR\bselfNode\"q\n" +
-	"\x11HandshakeResponse\x124\n" +
+	"\tself_node\x18\x03 \x01(\v2\t.NodeInfoR\bselfNode\"u\n" +
+	"\x15NodeHandshakeResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12&\n" +
 	"\tpeer_node\x18\x02 \x01(\v2\t.NodeInfoR\bpeerNodeB\tZ\apb/gameb\x06proto3"
 
@@ -1802,8 +1802,8 @@ var file_proto_common_message_proto_goTypes = []any{
 	(*MyProtoMessage)(nil),                    // 24: MyProtoMessage
 	(*MyNestedMessage)(nil),                   // 25: MyNestedMessage
 	(*ClientRequest)(nil),                     // 26: ClientRequest
-	(*HandshakeRequest)(nil),                  // 27: HandshakeRequest
-	(*HandshakeResponse)(nil),                 // 28: HandshakeResponse
+	(*NodeHandshakeRequest)(nil),              // 27: NodeHandshakeRequest
+	(*NodeHandshakeResponse)(nil),             // 28: NodeHandshakeResponse
 	(*NodeInfo)(nil),                          // 29: NodeInfo
 	(*TipInfoMessage)(nil),                    // 30: TipInfoMessage
 	(*SessionDetails)(nil),                    // 31: SessionDetails
@@ -1838,9 +1838,9 @@ var file_proto_common_message_proto_depIdxs = []int32{
 	32, // 25: RegisterGateNodeRequest.rpc_client:type_name -> NetworkAddress
 	22, // 26: ProtoFieldCheckerTestPB.sub_message:type_name -> ProtoFieldCheckerTestSubPB
 	25, // 27: MyProtoMessage.nested_message:type_name -> MyNestedMessage
-	29, // 28: HandshakeRequest.self_node:type_name -> NodeInfo
-	30, // 29: HandshakeResponse.error_message:type_name -> TipInfoMessage
-	29, // 30: HandshakeResponse.peer_node:type_name -> NodeInfo
+	29, // 28: NodeHandshakeRequest.self_node:type_name -> NodeInfo
+	30, // 29: NodeHandshakeResponse.error_message:type_name -> TipInfoMessage
+	29, // 30: NodeHandshakeResponse.peer_node:type_name -> NodeInfo
 	31, // [31:31] is the sub-list for method output_type
 	31, // [31:31] is the sub-list for method input_type
 	31, // [31:31] is the sub-list for extension type_name
