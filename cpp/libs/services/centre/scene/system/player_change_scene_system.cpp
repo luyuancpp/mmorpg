@@ -12,7 +12,7 @@
 
 
 // 添加切换场景信息到队列
-uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo) {
+uint32_t PlayerChangeRoomUtil::PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo) {
 	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	changeSceneQueue.enqueue(changeInfo);
 	changeSceneQueue.front()->set_change_time(TimeUtil::NowSecondsUTC());
@@ -20,13 +20,13 @@ uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const C
 }
 
 // 移除队列中首个切换场景信息
-void PlayerChangeSceneUtil::PopFrontChangeSceneQueue(entt::entity player) {
+void PlayerChangeRoomUtil::PopFrontChangeSceneQueue(entt::entity player) {
 	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	changeSceneQueue.dequeue();
 }
 
 // 设置当前切换场景信息的切换状态
-void PlayerChangeSceneUtil::SetCurrentChangeSceneState(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState s) {
+void PlayerChangeRoomUtil::SetCurrentChangeSceneState(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState s) {
 	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (changeSceneQueue.empty()) {
 		return;
@@ -35,7 +35,7 @@ void PlayerChangeSceneUtil::SetCurrentChangeSceneState(entt::entity player, Chan
 }
 
 // 将场景信息复制到切换场景信息中
-void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const SceneInfoPBComponent& sceneInfo) {
+void PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const SceneInfoPBComponent& sceneInfo) {
 	changeInfo.set_scene_confid(sceneInfo.scene_confid());
 	changeInfo.set_dungen_confid(sceneInfo.dungen_confid());
 	changeInfo.set_guid(sceneInfo.guid());
@@ -102,7 +102,7 @@ void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent
 
 
 // 目标GS或Gate回调中心
-void PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(entt::entity player) {
+void PlayerChangeRoomUtil::OnTargetSceneNodeEnterComplete(entt::entity player) {
 	auto& queue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (queue.empty()) return;
 
@@ -115,13 +115,13 @@ void PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(entt::entity player) 
 
 
 // 确认玩家成功进入场景后的操作
-void PlayerChangeSceneUtil::OnEnterSceneOk(entt::entity player) {
+void PlayerChangeRoomUtil::OnEnterRoomOk(entt::entity player) {
 	S2CEnterScene ev;
 	ev.set_entity(entt::to_integral(player));
 	dispatcher.trigger(ev);
 }
 
-void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {
+void PlayerChangeRoomUtil::ProgressSceneChangeState(entt::entity player) {
 	auto& queue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (queue.empty()) return;
 
@@ -136,13 +136,13 @@ void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {
 				return;
 			}
 
-			RoomUtil::LeaveScene({ player });
-			RoomUtil::EnterScene({ destScene, player });
+			RoomUtil::LeaveRoom({ player });
+			RoomUtil::EnterRoom({ destScene, player });
 			queue.dequeue();
-			OnEnterSceneOk(player);
+			OnEnterRoomOk(player);
 		}
 		else {
-			RoomUtil::LeaveScene({ player });
+			RoomUtil::LeaveRoom({ player });
 			task.set_state(ChangeSceneInfoPBComponent::eLeaving);
 		}
 		break;
@@ -162,17 +162,17 @@ void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {
 	case ChangeSceneInfoPBComponent::eEnterSucceed: {
 		auto destScene = entt::entity{ task.guid() };
 		if (destScene == entt::null) {
-			RoomUtil::EnterDefaultScene({ player });
+			RoomUtil::EnterDefaultRoom({ player });
 		}
 		else {
-			RoomUtil::EnterScene({ destScene, player });
+			RoomUtil::EnterRoom({ destScene, player });
 		}
 		break;
 	}
 
 	case ChangeSceneInfoPBComponent::eGateEnterSucceed:
 		queue.dequeue();
-		OnEnterSceneOk(player);
+		OnEnterRoomOk(player);
 		break;
 
 	default:

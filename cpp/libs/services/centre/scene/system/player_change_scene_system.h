@@ -7,7 +7,7 @@
 class SceneInfoPBComponent;
 
 // PlayerChangeSceneSystem 类定义
-class PlayerChangeSceneUtil {
+class PlayerChangeRoomUtil {
 public:
 	// 添加切换场景信息到队列
 	static uint32_t PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo);
@@ -28,7 +28,7 @@ public:
 private:
 
 	// 确认玩家成功进入场景后的操作
-	static void OnEnterSceneOk(entt::entity player);
+	static void OnEnterRoomOk(entt::entity player);
 
 
 private:

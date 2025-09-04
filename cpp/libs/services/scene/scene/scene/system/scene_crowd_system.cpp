@@ -20,7 +20,7 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 		return;
 	}
 
-	auto dtCrowd = tlsRegistryManager.sceneRegistry.try_get<DtCrowdPtr>(playerEntity);
+	auto dtCrowd = tlsRegistryManager.roomRegistry.try_get<DtCrowdPtr>(playerEntity);
 	if (dtCrowd == nullptr)
 	{
 		return;

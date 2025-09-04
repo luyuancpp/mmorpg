@@ -58,7 +58,7 @@ void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorde
     }
 
     // 获取场景中的网格列表
-    auto& gridList = tlsRegistryManager.sceneRegistry.get<SceneGridListComp>(sceneComponent->sceneEntity);
+    auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(sceneComponent->sceneEntity);
     
     // 存储要扫描的网格 ID
     GridSet grids;
@@ -108,7 +108,7 @@ void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnordered
     }
 
     // 获取场景中的网格列表
-    auto& gridList = tlsRegistryManager.sceneRegistry.get<SceneGridListComp>(sceneComponent->sceneEntity);
+    auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(sceneComponent->sceneEntity);
     
     // 存储要扫描的网格 ID
     GridSet inViewGrids;
@@ -145,7 +145,7 @@ void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnordered
 }
 
 void GridSystem::UpdateLogGridSize(double deltaTime) {
-    for (auto&& [sceneEntity, gridList] : tlsRegistryManager.sceneRegistry.view<SceneGridListComp>().each()) {
+    for (auto&& [sceneEntity, gridList] : tlsRegistryManager.roomRegistry.view<SceneGridListComp>().each()) {
         for (const auto& [gridId, entityList] : gridList) {
             if (entityList.entities.empty()) {
                 LOG_ERROR << "Grid is empty but not removed";

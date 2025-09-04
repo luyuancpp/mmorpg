@@ -476,8 +476,8 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 
 	PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
 
-	PlayerChangeSceneUtil::SetCurrentChangeSceneState(player, ChangeSceneInfoPBComponent::eEnterSucceed);
-	PlayerChangeSceneUtil::ProgressSceneChangeState(player);
+	PlayerChangeRoomUtil::SetCurrentChangeSceneState(player, ChangeSceneInfoPBComponent::eEnterSucceed);
+	PlayerChangeRoomUtil::ProgressSceneChangeState(player);
 
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->scene_node_id();
 

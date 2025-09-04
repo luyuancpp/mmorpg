@@ -24,12 +24,12 @@ void GameNodeSceneSystem::InitializeNodeScenes() {
 	for (auto& item : mainSceneConf.data()) {
 		CreateSceneNodeRoomParam params{ .node = entt::entity{GetNodeInfo().node_id()}};
 		params.roomInfo.set_scene_confid(item.id());
-		RoomUtil::CreateSceneToSceneNode(params);
+		RoomUtil::CreateRoomOnRoomNode(params);
 	}
 }
 
 void GameNodeSceneSystem::RegisterSceneToAllCentre(entt::entity scene) {
-	const auto sceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>(scene);
+	const auto sceneInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>(scene);
 	if (!sceneInfo) {
 		return;
 	}
@@ -46,7 +46,7 @@ void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 	RegisterSceneRequest request;
 	request.set_scene_node_id(GetNodeInfo().node_id());
 
-	for (auto&& [entity, sceneInfo] : tlsRegistryManager.sceneRegistry.view<SceneInfoPBComponent>().each()) {
+	for (auto&& [entity, sceneInfo] : tlsRegistryManager.roomRegistry.view<SceneInfoPBComponent>().each()) {
 		request.mutable_scenes_info()->Add()->CopyFrom(sceneInfo);
 	}
 
@@ -58,9 +58,9 @@ void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 
 void GameNodeSceneSystem::HandleSceneCreation(const OnSceneCreate& message) {
 	entt::entity scene = entt::to_entity(message.entity());
-	tlsRegistryManager.sceneRegistry.emplace<SceneGridListComp>(scene);
+	tlsRegistryManager.roomRegistry.emplace<SceneGridListComp>(scene);
 
-	auto& sceneInfo = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(scene);
+	auto& sceneInfo = tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(scene);
 	if (SceneNavManager::Instance().Contains(sceneInfo.scene_confid())) {
 		// Auto-generated crowd handling
 		// auto& dtCrowd = tlsRegistryManager.sceneRegistry.emplace<dtCrowd>(scene);
