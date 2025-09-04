@@ -33,9 +33,7 @@ void InitGateRepliedHandler()
         std::bind(&OnGateRoutePlayerMessageRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gResponseDispatcher.registerMessageCallback<::Empty>(GateBroadcastToPlayersMessageId,
         std::bind(&OnGateBroadcastToPlayersRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RegisterNodeSessionResponse>(GateRegisterNodeSessionMessageId,
-        std::bind(&OnGateRegisterNodeSessionRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::HandshakeResponse>(GateHandshakeMessageId,
+    gResponseDispatcher.registerMessageCallback<::NodeHandshakeResponse>(GateHandshakeMessageId,
         std::bind(&OnGateHandshakeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
@@ -89,7 +87,7 @@ void OnGateBroadcastToPlayersRepliedHandler(const TcpConnectionPtr& conn, const 
 ///<<< END WRITING YOUR CODE
 }
 
-void OnGateHandshakeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::HandshakeResponse>& replied, Timestamp timestamp)
+void OnGateHandshakeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

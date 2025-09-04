@@ -28,7 +28,6 @@
     <ClCompile Include="network\player_message_utils.cpp" />
     <ClCompile Include="network\process_info.cpp" />
     <ClCompile Include="network\rpc_server.cc" />
-    <ClCompile Include="network\rpc_session.cpp" />
     <ClCompile Include="network\node_utils.cpp" />
     <ClCompile Include="utils\file\file2string.cpp" />
     <ClCompile Include="utils\log\async_log_file.cpp" />

@@ -421,18 +421,8 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 
 
 
-void SceneHandler::RegisterNodeSession(::google::protobuf::RpcController* controller, const ::RegisterNodeSessionRequest* request,
-	::RegisterNodeSessionResponse* response,
-	::google::protobuf::Closure* done)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
-
-
-void SceneHandler::Handshake(::google::protobuf::RpcController* controller, const ::HandshakeRequest* request,
-	::HandshakeResponse* response,
+void SceneHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
+	::NodeHandshakeResponse* response,
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE

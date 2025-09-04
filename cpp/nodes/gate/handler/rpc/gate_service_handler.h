@@ -31,9 +31,7 @@ public:
 
 
 
-
-
-	void Handshake(::google::protobuf::RpcController* controller,  const ::HandshakeRequest* request, ::HandshakeResponse* response, ::google::protobuf::Closure* done) override;
+	void NodeHandshake(::google::protobuf::RpcController* controller,  const ::NodeHandshakeRequest* request, ::NodeHandshakeResponse* response, ::google::protobuf::Closure* done) override;
 
 
 };

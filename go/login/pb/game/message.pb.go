@@ -1453,110 +1453,6 @@ func (x *MyNestedMessage) GetNestedInt64Field() int64 {
 	return 0
 }
 
-type RegisterNodeSessionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SelfNode      *NodeInfo              `protobuf:"bytes,1,opt,name=self_node,json=selfNode,proto3" json:"self_node,omitempty"` // 自己的节点信息
-	Endpoint      *EndpointPBComponent   `protobuf:"bytes,2,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RegisterNodeSessionRequest) Reset() {
-	*x = RegisterNodeSessionRequest{}
-	mi := &file_proto_common_message_proto_msgTypes[26]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RegisterNodeSessionRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RegisterNodeSessionRequest) ProtoMessage() {}
-
-func (x *RegisterNodeSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_message_proto_msgTypes[26]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RegisterNodeSessionRequest.ProtoReflect.Descriptor instead.
-func (*RegisterNodeSessionRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_message_proto_rawDescGZIP(), []int{26}
-}
-
-func (x *RegisterNodeSessionRequest) GetSelfNode() *NodeInfo {
-	if x != nil {
-		return x.SelfNode
-	}
-	return nil
-}
-
-func (x *RegisterNodeSessionRequest) GetEndpoint() *EndpointPBComponent {
-	if x != nil {
-		return x.Endpoint
-	}
-	return nil
-}
-
-type RegisterNodeSessionResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // 错误消息（可选）
-	PeerNode      *NodeInfo              `protobuf:"bytes,2,opt,name=peer_node,json=peerNode,proto3" json:"peer_node,omitempty"`             // 对方的节点信息（返回的是对方）
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RegisterNodeSessionResponse) Reset() {
-	*x = RegisterNodeSessionResponse{}
-	mi := &file_proto_common_message_proto_msgTypes[27]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RegisterNodeSessionResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RegisterNodeSessionResponse) ProtoMessage() {}
-
-func (x *RegisterNodeSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_message_proto_msgTypes[27]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RegisterNodeSessionResponse.ProtoReflect.Descriptor instead.
-func (*RegisterNodeSessionResponse) Descriptor() ([]byte, []int) {
-	return file_proto_common_message_proto_rawDescGZIP(), []int{27}
-}
-
-func (x *RegisterNodeSessionResponse) GetErrorMessage() *TipInfoMessage {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return nil
-}
-
-func (x *RegisterNodeSessionResponse) GetPeerNode() *NodeInfo {
-	if x != nil {
-		return x.PeerNode
-	}
-	return nil
-}
-
 type ClientRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1570,7 +1466,7 @@ type ClientRequest struct {
 
 func (x *ClientRequest) Reset() {
 	*x = ClientRequest{}
-	mi := &file_proto_common_message_proto_msgTypes[28]
+	mi := &file_proto_common_message_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1582,7 +1478,7 @@ func (x *ClientRequest) String() string {
 func (*ClientRequest) ProtoMessage() {}
 
 func (x *ClientRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_message_proto_msgTypes[28]
+	mi := &file_proto_common_message_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1595,7 +1491,7 @@ func (x *ClientRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientRequest.ProtoReflect.Descriptor instead.
 func (*ClientRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_message_proto_rawDescGZIP(), []int{28}
+	return file_proto_common_message_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ClientRequest) GetId() uint64 {
@@ -1644,7 +1540,7 @@ type HandshakeRequest struct {
 
 func (x *HandshakeRequest) Reset() {
 	*x = HandshakeRequest{}
-	mi := &file_proto_common_message_proto_msgTypes[29]
+	mi := &file_proto_common_message_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1656,7 +1552,7 @@ func (x *HandshakeRequest) String() string {
 func (*HandshakeRequest) ProtoMessage() {}
 
 func (x *HandshakeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_message_proto_msgTypes[29]
+	mi := &file_proto_common_message_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1669,7 +1565,7 @@ func (x *HandshakeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandshakeRequest.ProtoReflect.Descriptor instead.
 func (*HandshakeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_message_proto_rawDescGZIP(), []int{29}
+	return file_proto_common_message_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *HandshakeRequest) GetVersion() string {
@@ -1703,7 +1599,7 @@ type HandshakeResponse struct {
 
 func (x *HandshakeResponse) Reset() {
 	*x = HandshakeResponse{}
-	mi := &file_proto_common_message_proto_msgTypes[30]
+	mi := &file_proto_common_message_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1715,7 +1611,7 @@ func (x *HandshakeResponse) String() string {
 func (*HandshakeResponse) ProtoMessage() {}
 
 func (x *HandshakeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_message_proto_msgTypes[30]
+	mi := &file_proto_common_message_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1728,7 +1624,7 @@ func (x *HandshakeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandshakeResponse.ProtoReflect.Descriptor instead.
 func (*HandshakeResponse) Descriptor() ([]byte, []int) {
-	return file_proto_common_message_proto_rawDescGZIP(), []int{30}
+	return file_proto_common_message_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *HandshakeResponse) GetErrorMessage() *TipInfoMessage {
@@ -1849,13 +1745,7 @@ const file_proto_common_message_proto_rawDesc = "" +
 	"\x0enested_message\x18\x05 \x01(\v2\x10.MyNestedMessageR\rnestedMessage\"m\n" +
 	"\x0fMyNestedMessage\x12,\n" +
 	"\x12nested_int32_field\x18\x01 \x01(\x05R\x10nestedInt32Field\x12,\n" +
-	"\x12nested_int64_field\x18\x02 \x01(\x03R\x10nestedInt64Field\"v\n" +
-	"\x1aRegisterNodeSessionRequest\x12&\n" +
-	"\tself_node\x18\x01 \x01(\v2\t.NodeInfoR\bselfNode\x120\n" +
-	"\bendpoint\x18\x02 \x01(\v2\x14.EndpointPBComponentR\bendpoint\"{\n" +
-	"\x1bRegisterNodeSessionResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12&\n" +
-	"\tpeer_node\x18\x02 \x01(\v2\t.NodeInfoR\bpeerNode\"\x84\x01\n" +
+	"\x12nested_int64_field\x18\x02 \x01(\x03R\x10nestedInt64Field\"\x84\x01\n" +
 	"\rClientRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x18\n" +
 	"\aservice\x18\x02 \x01(\tR\aservice\x12\x16\n" +
@@ -1883,7 +1773,7 @@ func file_proto_common_message_proto_rawDescGZIP() []byte {
 	return file_proto_common_message_proto_rawDescData
 }
 
-var file_proto_common_message_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_proto_common_message_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_proto_common_message_proto_goTypes = []any{
 	(*RoutingNodeInfo)(nil),                   // 0: RoutingNodeInfo
 	(*MessageContent)(nil),                    // 1: MessageContent
@@ -1911,20 +1801,17 @@ var file_proto_common_message_proto_goTypes = []any{
 	(*ProtoFieldCheckerTestPB)(nil),           // 23: ProtoFieldCheckerTestPB
 	(*MyProtoMessage)(nil),                    // 24: MyProtoMessage
 	(*MyNestedMessage)(nil),                   // 25: MyNestedMessage
-	(*RegisterNodeSessionRequest)(nil),        // 26: RegisterNodeSessionRequest
-	(*RegisterNodeSessionResponse)(nil),       // 27: RegisterNodeSessionResponse
-	(*ClientRequest)(nil),                     // 28: ClientRequest
-	(*HandshakeRequest)(nil),                  // 29: HandshakeRequest
-	(*HandshakeResponse)(nil),                 // 30: HandshakeResponse
-	(*NodeInfo)(nil),                          // 31: NodeInfo
-	(*TipInfoMessage)(nil),                    // 32: TipInfoMessage
-	(*SessionDetails)(nil),                    // 33: SessionDetails
-	(*NetworkAddress)(nil),                    // 34: NetworkAddress
-	(*EndpointPBComponent)(nil),               // 35: EndpointPBComponent
+	(*ClientRequest)(nil),                     // 26: ClientRequest
+	(*HandshakeRequest)(nil),                  // 27: HandshakeRequest
+	(*HandshakeResponse)(nil),                 // 28: HandshakeResponse
+	(*NodeInfo)(nil),                          // 29: NodeInfo
+	(*TipInfoMessage)(nil),                    // 30: TipInfoMessage
+	(*SessionDetails)(nil),                    // 31: SessionDetails
+	(*NetworkAddress)(nil),                    // 32: NetworkAddress
 }
 var file_proto_common_message_proto_depIdxs = []int32{
-	31, // 0: RoutingNodeInfo.node_info:type_name -> NodeInfo
-	32, // 1: MessageContent.error_message:type_name -> TipInfoMessage
+	29, // 0: RoutingNodeInfo.node_info:type_name -> NodeInfo
+	30, // 1: MessageContent.error_message:type_name -> TipInfoMessage
 	1,  // 2: NodeRouteMessageRequest.message_content:type_name -> MessageContent
 	2,  // 3: NodeRouteMessageRequest.header:type_name -> NodeMessageHeader
 	1,  // 4: NodeRouteMessageResponse.message_content:type_name -> MessageContent
@@ -1933,36 +1820,32 @@ var file_proto_common_message_proto_depIdxs = []int32{
 	5,  // 7: PlayerNodeServiceRequest.header:type_name -> PlayerInfoExternal
 	1,  // 8: PlayerMessageResponse.message_content:type_name -> MessageContent
 	5,  // 9: PlayerMessageResponse.header:type_name -> PlayerInfoExternal
-	31, // 10: NodeRoutingMessageBody.node_info:type_name -> NodeInfo
-	33, // 11: RegisterGameNodeSessionRequest.session_info:type_name -> SessionDetails
-	33, // 12: RegisterGameNodeSessionResponse.session_info:type_name -> SessionDetails
-	33, // 13: RegisterGateNodeSessionResponse.session_info:type_name -> SessionDetails
-	33, // 14: RegisterCentreSessionNodeRequest.session_info:type_name -> SessionDetails
-	33, // 15: RegisterSessionCentreNodeResponse.session_info:type_name -> SessionDetails
-	33, // 16: GateSessionDisconnectRequest.session_info:type_name -> SessionDetails
+	29, // 10: NodeRoutingMessageBody.node_info:type_name -> NodeInfo
+	31, // 11: RegisterGameNodeSessionRequest.session_info:type_name -> SessionDetails
+	31, // 12: RegisterGameNodeSessionResponse.session_info:type_name -> SessionDetails
+	31, // 13: RegisterGateNodeSessionResponse.session_info:type_name -> SessionDetails
+	31, // 14: RegisterCentreSessionNodeRequest.session_info:type_name -> SessionDetails
+	31, // 15: RegisterSessionCentreNodeResponse.session_info:type_name -> SessionDetails
+	31, // 16: GateSessionDisconnectRequest.session_info:type_name -> SessionDetails
 	0,  // 17: RouteMessageRequest.route_nodes:type_name -> RoutingNodeInfo
 	0,  // 18: RouteMessageResponse.route_nodes:type_name -> RoutingNodeInfo
-	31, // 19: RoutePlayerMessageRequest.node_list:type_name -> NodeInfo
+	29, // 19: RoutePlayerMessageRequest.node_list:type_name -> NodeInfo
 	5,  // 20: RoutePlayerMessageRequest.player_info:type_name -> PlayerInfoExternal
-	31, // 21: RoutePlayerMessageResponse.node_list:type_name -> NodeInfo
+	29, // 21: RoutePlayerMessageResponse.node_list:type_name -> NodeInfo
 	5,  // 22: RoutePlayerMessageResponse.player_info:type_name -> PlayerInfoExternal
-	34, // 23: RegisterGameNodeRequest.rpc_client:type_name -> NetworkAddress
-	34, // 24: RegisterGameNodeRequest.rpc_server:type_name -> NetworkAddress
-	34, // 25: RegisterGateNodeRequest.rpc_client:type_name -> NetworkAddress
+	32, // 23: RegisterGameNodeRequest.rpc_client:type_name -> NetworkAddress
+	32, // 24: RegisterGameNodeRequest.rpc_server:type_name -> NetworkAddress
+	32, // 25: RegisterGateNodeRequest.rpc_client:type_name -> NetworkAddress
 	22, // 26: ProtoFieldCheckerTestPB.sub_message:type_name -> ProtoFieldCheckerTestSubPB
 	25, // 27: MyProtoMessage.nested_message:type_name -> MyNestedMessage
-	31, // 28: RegisterNodeSessionRequest.self_node:type_name -> NodeInfo
-	35, // 29: RegisterNodeSessionRequest.endpoint:type_name -> EndpointPBComponent
-	32, // 30: RegisterNodeSessionResponse.error_message:type_name -> TipInfoMessage
-	31, // 31: RegisterNodeSessionResponse.peer_node:type_name -> NodeInfo
-	31, // 32: HandshakeRequest.self_node:type_name -> NodeInfo
-	32, // 33: HandshakeResponse.error_message:type_name -> TipInfoMessage
-	31, // 34: HandshakeResponse.peer_node:type_name -> NodeInfo
-	35, // [35:35] is the sub-list for method output_type
-	35, // [35:35] is the sub-list for method input_type
-	35, // [35:35] is the sub-list for extension type_name
-	35, // [35:35] is the sub-list for extension extendee
-	0,  // [0:35] is the sub-list for field type_name
+	29, // 28: HandshakeRequest.self_node:type_name -> NodeInfo
+	30, // 29: HandshakeResponse.error_message:type_name -> TipInfoMessage
+	29, // 30: HandshakeResponse.peer_node:type_name -> NodeInfo
+	31, // [31:31] is the sub-list for method output_type
+	31, // [31:31] is the sub-list for method input_type
+	31, // [31:31] is the sub-list for extension type_name
+	31, // [31:31] is the sub-list for extension extendee
+	0,  // [0:31] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_message_proto_init() }
@@ -1979,7 +1862,7 @@ func file_proto_common_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_message_proto_rawDesc), len(file_proto_common_message_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   31,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

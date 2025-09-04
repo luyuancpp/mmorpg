@@ -47,11 +47,7 @@ public:
 
 
 
-	void RegisterNodeSession(::google::protobuf::RpcController* controller,  const ::RegisterNodeSessionRequest* request, ::RegisterNodeSessionResponse* response, ::google::protobuf::Closure* done) override;
-
-
-
-	void Handshake(::google::protobuf::RpcController* controller,  const ::HandshakeRequest* request, ::HandshakeResponse* response, ::google::protobuf::Closure* done) override;
+	void NodeHandshake(::google::protobuf::RpcController* controller,  const ::NodeHandshakeRequest* request, ::NodeHandshakeResponse* response, ::google::protobuf::Closure* done) override;
 
 
 };

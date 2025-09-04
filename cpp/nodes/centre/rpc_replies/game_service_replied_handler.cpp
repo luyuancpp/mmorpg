@@ -45,9 +45,7 @@ void InitSceneRepliedHandler()
         std::bind(&OnSceneEnterSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gResponseDispatcher.registerMessageCallback<::CreateSceneResponse>(SceneCreateSceneMessageId,
         std::bind(&OnSceneCreateSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RegisterNodeSessionResponse>(SceneRegisterNodeSessionMessageId,
-        std::bind(&OnSceneRegisterNodeSessionRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::HandshakeResponse>(SceneHandshakeMessageId,
+    gResponseDispatcher.registerMessageCallback<::NodeHandshakeResponse>(SceneHandshakeMessageId,
         std::bind(&OnSceneHandshakeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
@@ -161,7 +159,7 @@ void OnSceneCreateSceneRepliedHandler(const TcpConnectionPtr& conn, const std::s
 ///<<< END WRITING YOUR CODE
 }
 
-void OnSceneHandshakeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::HandshakeResponse>& replied, Timestamp timestamp)
+void OnSceneHandshakeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
