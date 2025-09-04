@@ -11,6 +11,7 @@
     <ClCompile Include="snow_flake_manager.cpp" />
     <ClCompile Include="thread_local_entity_container.cpp" />
     <ClCompile Include="entity_manager.cpp" />
+    <ClCompile Include="rpc_manager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dispatcher_manager.h" />
@@ -23,5 +24,6 @@
     <ClInclude Include="snow_flake_manager.h" />
     <ClInclude Include="thread_local_entity_container.h" />
     <ClInclude Include="entity_manager.h" />
+    <ClInclude Include="rpc_manager.h" />
   </ItemGroup>
 </Project>

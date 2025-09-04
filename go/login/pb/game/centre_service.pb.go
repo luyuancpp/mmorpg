@@ -441,7 +441,7 @@ const file_proto_centre_centre_service_proto_rawDesc = "" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"K\n" +
 	"\x13CentreLoginResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage2\x98\x06\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage2\xcc\x06\n" +
 	"\x06Centre\x126\n" +
 	"\x11GatePlayerService\x12\x19.GateClientMessageRequest\x1a\x06.Empty\x12>\n" +
 	"\x15GateSessionDisconnect\x12\x1d.GateSessionDisconnectRequest\x1a\x06.Empty\x12B\n" +
@@ -454,7 +454,8 @@ const file_proto_centre_centre_service_proto_rawDesc = "" +
 	"\x12RouteNodeStringMsg\x12\x14.RouteMessageRequest\x1a\x15.RouteMessageResponse\x12O\n" +
 	"\x14RoutePlayerStringMsg\x12\x1a.RoutePlayerMessageRequest\x1a\x1b.RoutePlayerMessageResponse\x12.\n" +
 	"\rInitSceneNode\x12\x15.InitSceneNodeRequest\x1a\x06.Empty\x12P\n" +
-	"\x13RegisterNodeSession\x12\x1b.RegisterNodeSessionRequest\x1a\x1c.RegisterNodeSessionResponseB\fZ\apb/game\x80\x01\x01b\x06proto3"
+	"\x13RegisterNodeSession\x12\x1b.RegisterNodeSessionRequest\x1a\x1c.RegisterNodeSessionResponse\x122\n" +
+	"\tHandshake\x12\x11.HandshakeRequest\x1a\x12.HandshakeResponseB\fZ\apb/game\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_centre_centre_service_proto_rawDescOnce sync.Once
@@ -486,11 +487,13 @@ var file_proto_centre_centre_service_proto_goTypes = []any{
 	(*RouteMessageRequest)(nil),              // 13: RouteMessageRequest
 	(*RoutePlayerMessageRequest)(nil),        // 14: RoutePlayerMessageRequest
 	(*RegisterNodeSessionRequest)(nil),       // 15: RegisterNodeSessionRequest
-	(*Empty)(nil),                            // 16: Empty
-	(*NodeRouteMessageResponse)(nil),         // 17: NodeRouteMessageResponse
-	(*RouteMessageResponse)(nil),             // 18: RouteMessageResponse
-	(*RoutePlayerMessageResponse)(nil),       // 19: RoutePlayerMessageResponse
-	(*RegisterNodeSessionResponse)(nil),      // 20: RegisterNodeSessionResponse
+	(*HandshakeRequest)(nil),                 // 16: HandshakeRequest
+	(*Empty)(nil),                            // 17: Empty
+	(*NodeRouteMessageResponse)(nil),         // 18: NodeRouteMessageResponse
+	(*RouteMessageResponse)(nil),             // 19: RouteMessageResponse
+	(*RoutePlayerMessageResponse)(nil),       // 20: RoutePlayerMessageResponse
+	(*RegisterNodeSessionResponse)(nil),      // 21: RegisterNodeSessionResponse
+	(*HandshakeResponse)(nil),                // 22: HandshakeResponse
 }
 var file_proto_centre_centre_service_proto_depIdxs = []int32{
 	8,  // 0: GateClientMessageRequest.rpc_client:type_name -> NetworkAddress
@@ -510,20 +513,22 @@ var file_proto_centre_centre_service_proto_depIdxs = []int32{
 	14, // 14: Centre.RoutePlayerStringMsg:input_type -> RoutePlayerMessageRequest
 	5,  // 15: Centre.InitSceneNode:input_type -> InitSceneNodeRequest
 	15, // 16: Centre.RegisterNodeSession:input_type -> RegisterNodeSessionRequest
-	16, // 17: Centre.GatePlayerService:output_type -> Empty
-	16, // 18: Centre.GateSessionDisconnect:output_type -> Empty
-	7,  // 19: Centre.LoginNodeAccountLogin:output_type -> CentreLoginResponse
-	16, // 20: Centre.LoginNodeEnterGame:output_type -> Empty
-	16, // 21: Centre.LoginNodeLeaveGame:output_type -> Empty
-	16, // 22: Centre.LoginNodeSessionDisconnect:output_type -> Empty
-	17, // 23: Centre.PlayerService:output_type -> NodeRouteMessageResponse
-	16, // 24: Centre.EnterGsSucceed:output_type -> Empty
-	18, // 25: Centre.RouteNodeStringMsg:output_type -> RouteMessageResponse
-	19, // 26: Centre.RoutePlayerStringMsg:output_type -> RoutePlayerMessageResponse
-	16, // 27: Centre.InitSceneNode:output_type -> Empty
-	20, // 28: Centre.RegisterNodeSession:output_type -> RegisterNodeSessionResponse
-	17, // [17:29] is the sub-list for method output_type
-	5,  // [5:17] is the sub-list for method input_type
+	16, // 17: Centre.Handshake:input_type -> HandshakeRequest
+	17, // 18: Centre.GatePlayerService:output_type -> Empty
+	17, // 19: Centre.GateSessionDisconnect:output_type -> Empty
+	7,  // 20: Centre.LoginNodeAccountLogin:output_type -> CentreLoginResponse
+	17, // 21: Centre.LoginNodeEnterGame:output_type -> Empty
+	17, // 22: Centre.LoginNodeLeaveGame:output_type -> Empty
+	17, // 23: Centre.LoginNodeSessionDisconnect:output_type -> Empty
+	18, // 24: Centre.PlayerService:output_type -> NodeRouteMessageResponse
+	17, // 25: Centre.EnterGsSucceed:output_type -> Empty
+	19, // 26: Centre.RouteNodeStringMsg:output_type -> RouteMessageResponse
+	20, // 27: Centre.RoutePlayerStringMsg:output_type -> RoutePlayerMessageResponse
+	17, // 28: Centre.InitSceneNode:output_type -> Empty
+	21, // 29: Centre.RegisterNodeSession:output_type -> RegisterNodeSessionResponse
+	22, // 30: Centre.Handshake:output_type -> HandshakeResponse
+	18, // [18:31] is the sub-list for method output_type
+	5,  // [5:18] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name

@@ -426,7 +426,17 @@ void SceneHandler::RegisterNodeSession(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	gNode->GetNodeRegistrationManager().HandleNodeRegistration(*request, *response);
+///<<< END WRITING YOUR CODE
+}
+
+
+
+void SceneHandler::Handshake(::google::protobuf::RpcController* controller, const ::HandshakeRequest* request,
+	::HandshakeResponse* response,
+	::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 ///<<< END WRITING YOUR CODE
 }
 

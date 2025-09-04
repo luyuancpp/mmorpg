@@ -509,7 +509,7 @@ const file_proto_scene_game_service_proto_rawDesc = "" +
 	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\"K\n" +
 	"\x13CreateSceneResponse\x124\n" +
 	"\n" +
-	"scene_info\x18\x01 \x01(\v2\x15.SceneInfoPBComponentR\tsceneInfo2\x93\x06\n" +
+	"scene_info\x18\x01 \x01(\v2\x15.SceneInfoPBComponentR\tsceneInfo2\xc7\x06\n" +
 	"\x05Scene\x12:\n" +
 	"\x13PlayerEnterGameNode\x12\x1b.PlayerEnterGameNodeRequest\x1a\x06.Empty\x12J\n" +
 	"\x13SendMessageToPlayer\x12\x18.NodeRouteMessageRequest\x1a\x19.NodeRouteMessageResponse\x12b\n" +
@@ -522,7 +522,8 @@ const file_proto_scene_game_service_proto_rawDesc = "" +
 	"\n" +
 	"EnterScene\x12\x1b.Centre2GsEnterSceneRequest\x1a\x06.Empty\x128\n" +
 	"\vCreateScene\x12\x13.CreateSceneRequest\x1a\x14.CreateSceneResponse\x12P\n" +
-	"\x13RegisterNodeSession\x12\x1b.RegisterNodeSessionRequest\x1a\x1c.RegisterNodeSessionResponseB\fZ\apb/game\x80\x01\x01b\x06proto3"
+	"\x13RegisterNodeSession\x12\x1b.RegisterNodeSessionRequest\x1a\x1c.RegisterNodeSessionResponse\x122\n" +
+	"\tHandshake\x12\x11.HandshakeRequest\x1a\x12.HandshakeResponseB\fZ\apb/game\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_scene_game_service_proto_rawDescOnce sync.Once
@@ -554,11 +555,13 @@ var file_proto_scene_game_service_proto_goTypes = []any{
 	(*RouteMessageRequest)(nil),               // 13: RouteMessageRequest
 	(*RoutePlayerMessageRequest)(nil),         // 14: RoutePlayerMessageRequest
 	(*RegisterNodeSessionRequest)(nil),        // 15: RegisterNodeSessionRequest
-	(*Empty)(nil),                             // 16: Empty
-	(*NodeRouteMessageResponse)(nil),          // 17: NodeRouteMessageResponse
-	(*RouteMessageResponse)(nil),              // 18: RouteMessageResponse
-	(*RoutePlayerMessageResponse)(nil),        // 19: RoutePlayerMessageResponse
-	(*RegisterNodeSessionResponse)(nil),       // 20: RegisterNodeSessionResponse
+	(*HandshakeRequest)(nil),                  // 16: HandshakeRequest
+	(*Empty)(nil),                             // 17: Empty
+	(*NodeRouteMessageResponse)(nil),          // 18: NodeRouteMessageResponse
+	(*RouteMessageResponse)(nil),              // 19: RouteMessageResponse
+	(*RoutePlayerMessageResponse)(nil),        // 20: RoutePlayerMessageResponse
+	(*RegisterNodeSessionResponse)(nil),       // 21: RegisterNodeSessionResponse
+	(*HandshakeResponse)(nil),                 // 22: HandshakeResponse
 }
 var file_proto_scene_game_service_proto_depIdxs = []int32{
 	9,  // 0: ClientSendMessageToPlayerRequest.message_content:type_name -> MessageContent
@@ -576,19 +579,21 @@ var file_proto_scene_game_service_proto_depIdxs = []int32{
 	6,  // 12: Scene.EnterScene:input_type -> Centre2GsEnterSceneRequest
 	7,  // 13: Scene.CreateScene:input_type -> CreateSceneRequest
 	15, // 14: Scene.RegisterNodeSession:input_type -> RegisterNodeSessionRequest
-	16, // 15: Scene.PlayerEnterGameNode:output_type -> Empty
-	17, // 16: Scene.SendMessageToPlayer:output_type -> NodeRouteMessageResponse
-	2,  // 17: Scene.ClientSendMessageToPlayer:output_type -> ClientSendMessageToPlayerResponse
-	16, // 18: Scene.CentreSendToPlayerViaGameNode:output_type -> Empty
-	17, // 19: Scene.InvokePlayerService:output_type -> NodeRouteMessageResponse
-	18, // 20: Scene.RouteNodeStringMsg:output_type -> RouteMessageResponse
-	19, // 21: Scene.RoutePlayerStringMsg:output_type -> RoutePlayerMessageResponse
-	16, // 22: Scene.UpdateSessionDetail:output_type -> Empty
-	16, // 23: Scene.EnterScene:output_type -> Empty
-	8,  // 24: Scene.CreateScene:output_type -> CreateSceneResponse
-	20, // 25: Scene.RegisterNodeSession:output_type -> RegisterNodeSessionResponse
-	15, // [15:26] is the sub-list for method output_type
-	4,  // [4:15] is the sub-list for method input_type
+	16, // 15: Scene.Handshake:input_type -> HandshakeRequest
+	17, // 16: Scene.PlayerEnterGameNode:output_type -> Empty
+	18, // 17: Scene.SendMessageToPlayer:output_type -> NodeRouteMessageResponse
+	2,  // 18: Scene.ClientSendMessageToPlayer:output_type -> ClientSendMessageToPlayerResponse
+	17, // 19: Scene.CentreSendToPlayerViaGameNode:output_type -> Empty
+	18, // 20: Scene.InvokePlayerService:output_type -> NodeRouteMessageResponse
+	19, // 21: Scene.RouteNodeStringMsg:output_type -> RouteMessageResponse
+	20, // 22: Scene.RoutePlayerStringMsg:output_type -> RoutePlayerMessageResponse
+	17, // 23: Scene.UpdateSessionDetail:output_type -> Empty
+	17, // 24: Scene.EnterScene:output_type -> Empty
+	8,  // 25: Scene.CreateScene:output_type -> CreateSceneResponse
+	21, // 26: Scene.RegisterNodeSession:output_type -> RegisterNodeSessionResponse
+	22, // 27: Scene.Handshake:output_type -> HandshakeResponse
+	16, // [16:28] is the sub-list for method output_type
+	4,  // [4:16] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name

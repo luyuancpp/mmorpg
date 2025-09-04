@@ -39,6 +39,8 @@ void InitSceneRepliedHandler()
         std::bind(&OnSceneCreateSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gResponseDispatcher.registerMessageCallback<::RegisterNodeSessionResponse>(SceneRegisterNodeSessionMessageId,
         std::bind(&OnSceneRegisterNodeSessionRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    gResponseDispatcher.registerMessageCallback<::HandshakeResponse>(SceneHandshakeMessageId,
+        std::bind(&OnSceneHandshakeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void OnScenePlayerEnterGameNodeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
@@ -111,6 +113,12 @@ void OnSceneCreateSceneRepliedHandler(const TcpConnectionPtr& conn, const std::s
 }
 
 void OnSceneRegisterNodeSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterNodeSessionResponse>& replied, Timestamp timestamp)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void OnSceneHandshakeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::HandshakeResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

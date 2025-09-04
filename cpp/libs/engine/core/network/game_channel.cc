@@ -8,6 +8,7 @@
 #include "rpc/service_metadata/service_metadata.h"
 #include "core/utils/stat/stat.h"
 #include "network/codec/message_response_dispatcher.h"
+#include "threading/rpc_manager.h"
 
 using namespace std::placeholders;
 
@@ -228,6 +229,8 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr& conn, const RpcMessag
     }
 
     LOG_TRACE << "RPC message received, type: " << rpcMessage.type() << ", message ID: " << rpcMessage.message_id();
+
+    RpcThreadContext::tls_current_conn = conn;
 
     switch (rpcMessage.type()) {
     case GameMessageType::RESPONSE:

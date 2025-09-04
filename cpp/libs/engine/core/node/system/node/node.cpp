@@ -170,7 +170,6 @@ void Node::InitLogSystem() {
 
 void Node::RegisterEventHandlers() {
 	dispatcher.sink<OnConnected2TcpServerEvent>().connect<&Node::OnServerConnected>(*this);
-	dispatcher.sink<OnTcpClientConnectedEvent>().connect<&Node::OnClientConnected>(*this);
 }
 
 void Node::LoadConfigs() {
@@ -279,28 +278,6 @@ void Node::OnServerConnected(const OnConnected2TcpServerEvent& event) {
 	{
 		nodeRegistrationManager.TryRegisterNodeSession(i, conn);
 	}
-}
-
-void Node::OnClientConnected(const OnTcpClientConnectedEvent& event) {
-	auto& conn = event.conn_;
-	if (!conn->connected()) {
-		for (const auto& [entity, session] : tlsRegistryManager.sessionRegistry.view<RpcSession>().each()) {
-			auto& existConn = session.connection;
-			if (!IsSameAddress(conn->peerAddress(), existConn->peerAddress())) {
-				LOG_TRACE << "Endpoint mismatch: expected " << conn->peerAddress().toIp()
-					<< ":" << conn->peerAddress().port()
-					<< ", actual " << existConn->peerAddress().toIp()
-					<< ":" << existConn->peerAddress().port();
-				continue;
-			}
-			tlsRegistryManager.sessionRegistry.destroy(entity);
-			return;
-		}
-		return;
-	}
-	auto entity = tlsRegistryManager.sessionRegistry.create();
-	tlsRegistryManager.sessionRegistry.emplace<RpcSession>(entity, RpcSession{ conn });
-	LOG_INFO << "Client connected: " << conn->peerAddress().toIpPort();
 }
 
 void Node::StartServiceHealthMonitor(){

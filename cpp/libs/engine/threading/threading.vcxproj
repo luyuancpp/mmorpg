@@ -27,6 +27,7 @@
     <ClCompile Include="player_manager.cpp" />
     <ClCompile Include="redis_manager.cpp" />
     <ClCompile Include="registry_manager.cpp" />
+    <ClCompile Include="rpc_manager.cpp" />
     <ClCompile Include="snow_flake_manager.cpp" />
     <ClCompile Include="thread_local_entity_container.cpp" />
   </ItemGroup>
@@ -39,6 +40,7 @@
     <ClInclude Include="player_manager.h" />
     <ClInclude Include="redis_manager.h" />
     <ClInclude Include="registry_manager.h" />
+    <ClInclude Include="rpc_manager.h" />
     <ClInclude Include="snow_flake_manager.h" />
     <ClInclude Include="thread_local_entity_container.h" />
   </ItemGroup>

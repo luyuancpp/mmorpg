@@ -688,7 +688,17 @@ void CentreHandler::RegisterNodeSession(::google::protobuf::RpcController* contr
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	gNode->GetNodeRegistrationManager().HandleNodeRegistration(*request, *response);
+///<<< END WRITING YOUR CODE
+}
+
+
+
+void CentreHandler::Handshake(::google::protobuf::RpcController* controller, const ::HandshakeRequest* request,
+	::HandshakeResponse* response,
+	::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 ///<<< END WRITING YOUR CODE
 }
 

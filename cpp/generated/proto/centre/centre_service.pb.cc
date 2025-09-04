@@ -367,7 +367,7 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto[]
     "\030\001 \001(\r\022\027\n\017scene_node_type\030\002 \001(\r\"7\n\022Centr"
     "eLoginRequest\022\017\n\007account\030\001 \001(\t\022\020\n\010passwo"
     "rd\030\002 \001(\t\"=\n\023CentreLoginResponse\022&\n\rerror"
-    "_message\030\001 \001(\0132\017.TipInfoMessage2\230\006\n\006Cent"
+    "_message\030\001 \001(\0132\017.TipInfoMessage2\314\006\n\006Cent"
     "re\0226\n\021GatePlayerService\022\031.GateClientMess"
     "ageRequest\032\006.Empty\022>\n\025GateSessionDisconn"
     "ect\022\035.GateSessionDisconnectRequest\032\006.Emp"
@@ -387,8 +387,9 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto[]
     "rMessageResponse\022.\n\rInitSceneNode\022\025.Init"
     "SceneNodeRequest\032\006.Empty\022P\n\023RegisterNode"
     "Session\022\033.RegisterNodeSessionRequest\032\034.R"
-    "egisterNodeSessionResponseB\014Z\007pb/game\200\001\001"
-    "b\006proto3"
+    "egisterNodeSessionResponse\0222\n\tHandshake\022"
+    "\021.HandshakeRequest\032\022.HandshakeResponseB\014"
+    "Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_deps[5] =
     {
@@ -402,7 +403,7 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fservice_2epr
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto = {
     false,
     false,
-    1568,
+    1620,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto,
     "proto/centre/centre_service.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_once,
@@ -2556,6 +2557,11 @@ void Centre::RegisterNodeSession(::google::protobuf::RpcController* controller,
   controller->SetFailed("Method RegisterNodeSession() not implemented.");
   done->Run();
 }
+void Centre::Handshake(::google::protobuf::RpcController* controller,
+                         const ::HandshakeRequest*, ::HandshakeResponse*, ::google::protobuf::Closure* done) {
+  controller->SetFailed("Method Handshake() not implemented.");
+  done->Run();
+}
 
 void Centre::CallMethod(
     const ::google::protobuf::MethodDescriptor* method,
@@ -2636,6 +2642,12 @@ void Centre::CallMethod(
                    ::google::protobuf::DownCastMessage<::RegisterNodeSessionResponse>(response),
                    done);
       break;
+    case 12:
+      this->Handshake(controller,
+                   ::google::protobuf::DownCastMessage<::HandshakeRequest>(request),
+                   ::google::protobuf::DownCastMessage<::HandshakeResponse>(response),
+                   done);
+      break;
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -2671,6 +2683,8 @@ const ::google::protobuf::Message& Centre::GetRequestPrototype(
       return ::InitSceneNodeRequest::default_instance();
     case 11:
       return ::RegisterNodeSessionRequest::default_instance();
+    case 12:
+      return ::HandshakeRequest::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -2707,6 +2721,8 @@ const ::google::protobuf::Message& Centre::GetResponsePrototype(
       return ::Empty::default_instance();
     case 11:
       return ::RegisterNodeSessionResponse::default_instance();
+    case 12:
+      return ::HandshakeResponse::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -2799,6 +2815,12 @@ void Centre_Stub::RegisterNodeSession(::google::protobuf::RpcController* control
                               const ::RegisterNodeSessionRequest* request,
                               ::RegisterNodeSessionResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(11), controller,
+                       request, response, done);
+}
+void Centre_Stub::Handshake(::google::protobuf::RpcController* controller,
+                              const ::HandshakeRequest* request,
+                              ::HandshakeResponse* response, ::google::protobuf::Closure* done) {
+  channel_->CallMethod(descriptor()->method(12), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

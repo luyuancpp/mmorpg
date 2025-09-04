@@ -21,6 +21,7 @@
 20=CentreSceneUnRegisterScene
 21=CentreLoginNodeSessionDisconnect
 22=GatePlayerEnterGameNode
+23=CentreHandshake
 24=SceneSceneClientPlayerEnterScene
 25=SceneSceneClientPlayerNotifyActorListCreate
 26=ScenePlayerExitGame
@@ -31,6 +32,7 @@
 31=CentreLoginNodeEnterGame
 32=SceneScenePlayerLeaveScene
 33=dbTest
+34=SceneHandshake
 35=ScenePlayerSyncSyncAttribute5Frames
 36=GateSendMessageToPlayer
 37=SceneSceneClientPlayerSceneInfoC2S
@@ -53,6 +55,7 @@
 54=GateKickSessionByCentre
 55=SceneClientPlayerCommonKickPlayer
 56=CentreRegisterNodeSession
+57=GateHandshake
 58=ScenePlayerCentre2GsLogin
 59=SceneInvokePlayerService
 60=SceneSendMessageToPlayer
