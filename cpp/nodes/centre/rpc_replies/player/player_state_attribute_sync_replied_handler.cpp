@@ -6,7 +6,7 @@
 
 
 
-void ScenePlayerSyncRepliedHandler::SyncBaseAttribute(entt::entity player,const ::BaseAttributeSyncDataS2C* request,
+void ScenePlayerSyncReply::SyncBaseAttribute(entt::entity player,const ::BaseAttributeSyncDataS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -15,7 +15,7 @@ void ScenePlayerSyncRepliedHandler::SyncBaseAttribute(entt::entity player,const 
 }
 
 
-void ScenePlayerSyncRepliedHandler::SyncAttribute2Frames(entt::entity player,const ::AttributeDelta2FramesS2C* request,
+void ScenePlayerSyncReply::SyncAttribute2Frames(entt::entity player,const ::AttributeDelta2FramesS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -24,7 +24,7 @@ void ScenePlayerSyncRepliedHandler::SyncAttribute2Frames(entt::entity player,con
 }
 
 
-void ScenePlayerSyncRepliedHandler::SyncAttribute5Frames(entt::entity player,const ::AttributeDelta5FramesS2C* request,
+void ScenePlayerSyncReply::SyncAttribute5Frames(entt::entity player,const ::AttributeDelta5FramesS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -33,7 +33,7 @@ void ScenePlayerSyncRepliedHandler::SyncAttribute5Frames(entt::entity player,con
 }
 
 
-void ScenePlayerSyncRepliedHandler::SyncAttribute10Frames(entt::entity player,const ::AttributeDelta10FramesS2C* request,
+void ScenePlayerSyncReply::SyncAttribute10Frames(entt::entity player,const ::AttributeDelta10FramesS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -42,7 +42,7 @@ void ScenePlayerSyncRepliedHandler::SyncAttribute10Frames(entt::entity player,co
 }
 
 
-void ScenePlayerSyncRepliedHandler::SyncAttribute30Frames(entt::entity player,const ::AttributeDelta30FramesS2C* request,
+void ScenePlayerSyncReply::SyncAttribute30Frames(entt::entity player,const ::AttributeDelta30FramesS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -51,7 +51,7 @@ void ScenePlayerSyncRepliedHandler::SyncAttribute30Frames(entt::entity player,co
 }
 
 
-void ScenePlayerSyncRepliedHandler::SyncAttribute60Frames(entt::entity player,const ::AttributeDelta60FramesS2C* request,
+void ScenePlayerSyncReply::SyncAttribute60Frames(entt::entity player,const ::AttributeDelta60FramesS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE

@@ -12,21 +12,21 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 
 
-void InitCentreSceneRepliedHandler()
+void InitCentreSceneReply()
 {
     gRpcResponseDispatcher.registerMessageCallback<::RegisterSceneResponse>(CentreSceneRegisterSceneMessageId,
-        std::bind(&OnCentreSceneRegisterSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        std::bind(&OnCentreSceneRegisterSceneReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::Empty>(CentreSceneUnRegisterSceneMessageId,
-        std::bind(&OnCentreSceneUnRegisterSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        std::bind(&OnCentreSceneUnRegisterSceneReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
-void OnCentreSceneRegisterSceneRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterSceneResponse>& replied, Timestamp timestamp)
+void OnCentreSceneRegisterSceneReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterSceneResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void OnCentreSceneUnRegisterSceneRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
+void OnCentreSceneUnRegisterSceneReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

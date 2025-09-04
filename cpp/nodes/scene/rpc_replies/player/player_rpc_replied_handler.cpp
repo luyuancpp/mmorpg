@@ -10,6 +10,6 @@ std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> gPlayerSe
 
 void InitPlayerServiceReplied()
 {
-    gPlayerServiceReplied.emplace("CentrePlayerUtility", std::make_unique<CentrePlayerUtilityRepliedHandler>(std::make_unique<CentrePlayerUtilityImpl>()));
-    gPlayerServiceReplied.emplace("CentrePlayerScene", std::make_unique<CentrePlayerSceneRepliedHandler>(std::make_unique<CentrePlayerSceneImpl>()));
+    gPlayerServiceReplied.emplace("CentrePlayerUtility", std::make_unique<CentrePlayerUtilityReply>(std::make_unique<CentrePlayerUtilityImpl>()));
+    gPlayerServiceReplied.emplace("CentrePlayerScene", std::make_unique<CentrePlayerSceneReply>(std::make_unique<CentrePlayerSceneImpl>()));
 }

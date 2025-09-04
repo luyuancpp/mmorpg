@@ -6,7 +6,7 @@
 
 
 
-void CentrePlayerUtilityRepliedHandler::SendTipToClient(entt::entity player,const ::TipInfoMessage* request,
+void CentrePlayerUtilityReply::SendTipToClient(entt::entity player,const ::TipInfoMessage* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -15,7 +15,7 @@ void CentrePlayerUtilityRepliedHandler::SendTipToClient(entt::entity player,cons
 }
 
 
-void CentrePlayerUtilityRepliedHandler::KickPlayer(entt::entity player,const ::CentreKickPlayerRequest* request,
+void CentrePlayerUtilityReply::KickPlayer(entt::entity player,const ::CentreKickPlayerRequest* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
