@@ -283,7 +283,7 @@ const playerMethodRepliedHeadTemplate = `
 {{.IncludeName}}
 {{.PlayerServiceRepliedIncludeName}}
 
-class {{.Service}}RepliedHandler : public ::PlayerServiceReplied
+class {{.Service}}Reply : public ::PlayerServiceReplied
 {
 public:
     using PlayerServiceReplied::PlayerServiceReplied;
