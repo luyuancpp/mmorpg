@@ -65,6 +65,11 @@ func generateGrpcFile(fileName string, grpcServices []*RPCServiceInfo, text stri
 		return nil
 	}
 
+	err = os.MkdirAll(path.Dir(fileName), os.FileMode(0777))
+	if err != nil {
+		return err
+	}
+
 	// 创建文件并写入渲染后的内容
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -106,9 +111,13 @@ func CppGrpcCallClient() {
 			})
 
 			// 确保目录存在
-			os.MkdirAll(path.Dir(config.CppGenGrpcDirectory+protoFile), os.FileMode(0777))
+			err := os.MkdirAll(path.Dir(config.CppGenGrpcDirectory+firstService.LogicalPath()), os.FileMode(0777))
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
 
-			cppFileBaseName := firstService.ProtoPathWithFileBaseName()
+			cppFileBaseName := firstService.LogicalPath()
 
 			// 生成 .h 文件
 			filePath := config.CppGenGrpcDirectory + cppFileBaseName + config.GrpcClientHeaderExtension

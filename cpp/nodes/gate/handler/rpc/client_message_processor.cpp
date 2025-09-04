@@ -7,7 +7,7 @@
 #include <optional>
 
 #include "gate_node.h"
-#include "grpc_client/proto/login/login_grpc_client.h"
+#include "grpc_client/login/login_grpc_client.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "rpc/service_metadata/centre_service_service_metadata.h"

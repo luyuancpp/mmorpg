@@ -1,18 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="proto\etcd\etcd_grpc_client.cpp" />
-    <ClCompile Include="proto\player_locator\player_locator_grpc_client.cpp" />
     <ClCompile Include="grpc_init_client.cpp" />
-    <ClCompile Include="proto\db\db_grpc_client.cpp" />
-    <ClCompile Include="proto\login\login_grpc_client.cpp" />
+    <ClCompile Include="db\db_grpc_client.cpp" />
+    <ClCompile Include="etcd\etcd_grpc_client.cpp" />
+    <ClCompile Include="login\login_grpc_client.cpp" />
+    <ClCompile Include="player_locator\player_locator_grpc_client.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="proto\etcd\etcd_grpc_client.h" />
-    <ClInclude Include="proto\player_locator\player_locator_grpc_client.h" />
     <ClInclude Include="grpc_init_client.h" />
     <ClInclude Include="grpc_call_tag.h" />
-    <ClInclude Include="proto\db\db_grpc_client.h" />
-    <ClInclude Include="proto\login\login_grpc_client.h" />
+    <ClInclude Include="db\db_grpc_client.h" />
+    <ClInclude Include="etcd\etcd_grpc_client.h" />
+    <ClInclude Include="login\login_grpc_client.h" />
+    <ClInclude Include="player_locator\player_locator_grpc_client.h" />
   </ItemGroup>
 </Project>

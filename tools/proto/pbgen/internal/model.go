@@ -144,6 +144,11 @@ func (info *RPCServiceInfo) ProtoPathWithFileBaseName() string {
 	return (info.Path()) + info.FileBaseName()
 }
 
+func (info *RPCServiceInfo) LogicalPath() string {
+	fullPath := info.ProtoPathWithFileBaseName()
+	return strings.TrimPrefix(fullPath, "proto/")
+}
+
 func (info *RPCServiceInfo) GrpcIncludeHeadName() string {
 	return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.GrpcHeadName() + config.GrpcPbhEx + "\"\n"
 }
