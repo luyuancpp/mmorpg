@@ -44,7 +44,7 @@ public:
 	void SetZoneCentreNode(RpcClientPtr& c) { zoneCentreNode = c; }
     ClientList& GetZombieClientList() { return zombieClientList; }
     CanConnectNodeTypeList& GetTargetNodeTypeWhitelist() { return targetNodeTypeWhitelist; }
-	NodeRegistrationManager& GetNodeRegistrationManager() { return nodeRegistrationManager; }
+	NodeHandshakeManager& GetNodeRegistrationManager() { return nodeRegistrationManager; }
     ServiceDiscoveryManager& GetServiceDiscoveryManager() { return serviceDiscoveryManager; }
     std::string FormatIpAndPort();
     std::string GetIp();
@@ -104,7 +104,7 @@ protected:
 	boost::uuids::random_generator gen;
 	KafkaManager kafkaManager;
     EtcdManager etcdManager;
-    NodeRegistrationManager nodeRegistrationManager;
+    NodeHandshakeManager nodeRegistrationManager;
     ServiceDiscoveryManager serviceDiscoveryManager;
 };
 

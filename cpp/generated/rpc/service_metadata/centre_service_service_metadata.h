@@ -48,12 +48,8 @@ constexpr uint32_t CentreInitSceneNodeMessageId = 15;
 constexpr uint32_t CentreInitSceneNodeIndex = 10;
 #define CentreInitSceneNodeMethod  ::Centre_Stub::descriptor()->method(10)
 
-constexpr uint32_t CentreRegisterNodeSessionMessageId = 56;
-constexpr uint32_t CentreRegisterNodeSessionIndex = 11;
-#define CentreRegisterNodeSessionMethod  ::Centre_Stub::descriptor()->method(11)
-
 constexpr uint32_t CentreHandshakeMessageId = 23;
-constexpr uint32_t CentreHandshakeIndex = 12;
-#define CentreHandshakeMethod  ::Centre_Stub::descriptor()->method(12)
+constexpr uint32_t CentreHandshakeIndex = 11;
+#define CentreHandshakeMethod  ::Centre_Stub::descriptor()->method(11)
 
 

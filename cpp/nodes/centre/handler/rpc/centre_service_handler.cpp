@@ -683,8 +683,8 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 
 
 
-void CentreHandler::Handshake(::google::protobuf::RpcController* controller, const ::HandshakeRequest* request,
-	::HandshakeResponse* response,
+void CentreHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
+	::NodeHandshakeResponse* response,
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE

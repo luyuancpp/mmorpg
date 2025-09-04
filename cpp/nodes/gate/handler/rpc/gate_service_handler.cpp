@@ -119,9 +119,8 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 
 
 
-
-void GateHandler::Handshake(::google::protobuf::RpcController* controller, const ::HandshakeRequest* request,
-	::HandshakeResponse* response,
+void GateHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
+	::NodeHandshakeResponse* response,
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE

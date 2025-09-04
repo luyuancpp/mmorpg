@@ -54,7 +54,6 @@
 53=ClientPlayerLoginLeaveGame
 54=GateKickSessionByCentre
 55=SceneClientPlayerCommonKickPlayer
-56=CentreRegisterNodeSession
 57=GateHandshake
 58=ScenePlayerCentre2GsLogin
 59=SceneInvokePlayerService
@@ -65,11 +64,9 @@
 64=SceneSceneClientPlayerNotifyEnterScene
 65=CentreRoutePlayerStringMsg
 66=SceneSceneClientPlayerNotifyActorCreate
-67=GateRegisterNodeSession
 68=ClientPlayerLoginCreatePlayer
 69=ClientPlayerLoginDisconnect
 70=SceneScenePlayerEnterScene
-71=SceneRegisterNodeSession
 72=GateRouteNodeMessage
 73=GateRoutePlayerMessage
 74=SceneCentreSendToPlayerViaGameNode

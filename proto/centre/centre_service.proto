@@ -68,5 +68,5 @@ service Centre {
   rpc RouteNodeStringMsg (RouteMessageRequest) returns (RouteMessageResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse);
   rpc InitSceneNode (InitSceneNodeRequest) returns (Empty);
-  rpc Handshake(HandshakeRequest) returns (HandshakeResponse);
+  rpc NodeHandshake(NodeHandshakeRequest) returns (NodeHandshakeResponse);
 }

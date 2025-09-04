@@ -1789,13 +1789,9 @@ class Centre : public ::google::protobuf::Service {
                         const ::InitSceneNodeRequest* request,
                         ::Empty* response,
                         ::google::protobuf::Closure* done);
-  virtual void RegisterNodeSession(::google::protobuf::RpcController* controller,
-                        const ::RegisterNodeSessionRequest* request,
-                        ::RegisterNodeSessionResponse* response,
-                        ::google::protobuf::Closure* done);
-  virtual void Handshake(::google::protobuf::RpcController* controller,
-                        const ::HandshakeRequest* request,
-                        ::HandshakeResponse* response,
+  virtual void NodeHandshake(::google::protobuf::RpcController* controller,
+                        const ::NodeHandshakeRequest* request,
+                        ::NodeHandshakeResponse* response,
                         ::google::protobuf::Closure* done);
 
   // implements Service ----------------------------------------------
@@ -1872,13 +1868,9 @@ class Centre_Stub final : public Centre {
                         const ::InitSceneNodeRequest* request,
                         ::Empty* response,
                         ::google::protobuf::Closure* done) override;
-  void RegisterNodeSession(::google::protobuf::RpcController* controller,
-                        const ::RegisterNodeSessionRequest* request,
-                        ::RegisterNodeSessionResponse* response,
-                        ::google::protobuf::Closure* done) override;
-  void Handshake(::google::protobuf::RpcController* controller,
-                        const ::HandshakeRequest* request,
-                        ::HandshakeResponse* response,
+  void NodeHandshake(::google::protobuf::RpcController* controller,
+                        const ::NodeHandshakeRequest* request,
+                        ::NodeHandshakeResponse* response,
                         ::google::protobuf::Closure* done) override;
 
  private:

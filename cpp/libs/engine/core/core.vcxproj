@@ -174,7 +174,6 @@
     <ClCompile Include="network\player_message_utils.cpp" />
     <ClCompile Include="network\process_info.cpp" />
     <ClCompile Include="network\rpc_server.cc" />
-    <ClCompile Include="network\rpc_session.cpp" />
     <ClCompile Include="node\system\etcd\etcd_helper.cpp" />
     <ClCompile Include="node\system\etcd\etcd_manager.cpp" />
     <ClCompile Include="node\system\etcd\etcd_service.cpp" />
