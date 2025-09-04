@@ -138,7 +138,7 @@ const (
 // ----------- 文件名 -----------
 const (
 	HandlerFileName                    = "Handler"
-	RepliedHandlerFileName             = "RepliedHandler"
+	RepliedHandlerFileName             = "Reply"
 	EventHandlerFileNameBase           = "event_handler"
 	EventHandlerHeaderFileName         = EventHandlerFileNameBase + HeaderExtension
 	EventHandlerCppFileName            = EventHandlerFileNameBase + CppExtension

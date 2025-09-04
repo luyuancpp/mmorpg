@@ -123,7 +123,7 @@ const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABS
     "SessionRequest\022\022\n\nsession_id\030\001 \001(\004\"[\n\031Br"
     "oadcastToPlayersRequest\022\024\n\014session_list\030"
     "\001 \003(\004\022(\n\017message_content\030\002 \001(\0132\017.Message"
-    "Content2\313\003\n\004Gate\022X\n\023PlayerEnterGameNode\022"
+    "Content2\327\003\n\004Gate\022X\n\023PlayerEnterGameNode\022"
     "\037.RegisterGameNodeSessionRequest\032 .Regis"
     "terGameNodeSessionResponse\0227\n\023SendMessag"
     "eToPlayer\022\030.NodeRouteMessageRequest\032\006.Em"
@@ -133,9 +133,9 @@ const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABS
     "\022M\n\022RoutePlayerMessage\022\032.RoutePlayerMess"
     "ageRequest\032\033.RoutePlayerMessageResponse\022"
     "8\n\022BroadcastToPlayers\022\032.BroadcastToPlaye"
-    "rsRequest\032\006.Empty\0222\n\tHandshake\022\021.Handsha"
-    "keRequest\032\022.HandshakeResponseB\014Z\007pb/game"
-    "\200\001\001b\006proto3"
+    "rsRequest\032\006.Empty\022>\n\rNodeHandshake\022\025.Nod"
+    "eHandshakeRequest\032\026.NodeHandshakeRespons"
+    "eB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps[3] =
     {
@@ -147,7 +147,7 @@ static ::absl::once_flag descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgate_2fgate_5fservice_2eproto = {
     false,
     false,
-    731,
+    743,
     descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto,
     "proto/gate/gate_service.proto",
     &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_once,
@@ -709,7 +709,7 @@ void Gate::BroadcastToPlayers(::google::protobuf::RpcController* controller,
 }
 void Gate::NodeHandshake(::google::protobuf::RpcController* controller,
                          const ::NodeHandshakeRequest*, ::NodeHandshakeResponse*, ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method Handshake() not implemented.");
+  controller->SetFailed("Method NodeHandshake() not implemented.");
   done->Run();
 }
 

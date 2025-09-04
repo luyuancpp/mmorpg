@@ -404,7 +404,7 @@ const char descriptor_table_protodef_proto_2fscene_2fgame_5fservice_2eproto[] AB
     "player_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"\'\n\022Cre"
     "ateSceneRequest\022\021\n\tconfig_id\030\001 \001(\r\"@\n\023Cr"
     "eateSceneResponse\022)\n\nscene_info\030\001 \001(\0132\025."
-    "SceneInfoPBComponent2\365\005\n\005Scene\022:\n\023Player"
+    "SceneInfoPBComponent2\201\006\n\005Scene\022:\n\023Player"
     "EnterGameNode\022\033.PlayerEnterGameNodeReque"
     "st\032\006.Empty\022J\n\023SendMessageToPlayer\022\030.Node"
     "RouteMessageRequest\032\031.NodeRouteMessageRe"
@@ -422,9 +422,9 @@ const char descriptor_table_protodef_proto_2fscene_2fgame_5fservice_2eproto[] AB
     "sionRequest\032\006.Empty\0221\n\nEnterScene\022\033.Cent"
     "re2GsEnterSceneRequest\032\006.Empty\0228\n\013Create"
     "Scene\022\023.CreateSceneRequest\032\024.CreateScene"
-    "Response\0222\n\tHandshake\022\021.HandshakeRequest"
-    "\032\022.HandshakeResponseB\014Z\007pb/game\200\001\001b\006prot"
-    "o3"
+    "Response\022>\n\rNodeHandshake\022\025.NodeHandshak"
+    "eRequest\032\026.NodeHandshakeResponseB\014Z\007pb/g"
+    "ame\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fscene_2fgame_5fservice_2eproto_deps[3] =
     {
@@ -436,7 +436,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fgame_5fservice_2eproto
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fgame_5fservice_2eproto = {
     false,
     false,
-    1562,
+    1574,
     descriptor_table_protodef_proto_2fscene_2fgame_5fservice_2eproto,
     "proto/scene/game_service.proto",
     &descriptor_table_proto_2fscene_2fgame_5fservice_2eproto_once,
@@ -2799,7 +2799,7 @@ void Scene::CreateScene(::google::protobuf::RpcController* controller,
 }
 void Scene::NodeHandshake(::google::protobuf::RpcController* controller,
                          const ::NodeHandshakeRequest*, ::NodeHandshakeResponse*, ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method Handshake() not implemented.");
+  controller->SetFailed("Method NodeHandshake() not implemented.");
   done->Run();
 }
 

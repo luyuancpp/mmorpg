@@ -60,12 +60,6 @@ extern ClientRequestDefaultTypeInternal _ClientRequest_default_instance_;
 class GateSessionDisconnectRequest;
 struct GateSessionDisconnectRequestDefaultTypeInternal;
 extern GateSessionDisconnectRequestDefaultTypeInternal _GateSessionDisconnectRequest_default_instance_;
-class NodeHandshakeRequest;
-struct HandshakeRequestDefaultTypeInternal;
-extern HandshakeRequestDefaultTypeInternal _HandshakeRequest_default_instance_;
-class NodeHandshakeResponse;
-struct HandshakeResponseDefaultTypeInternal;
-extern HandshakeResponseDefaultTypeInternal _HandshakeResponse_default_instance_;
 class MessageContent;
 struct MessageContentDefaultTypeInternal;
 extern MessageContentDefaultTypeInternal _MessageContent_default_instance_;
@@ -75,6 +69,12 @@ extern MyNestedMessageDefaultTypeInternal _MyNestedMessage_default_instance_;
 class MyProtoMessage;
 struct MyProtoMessageDefaultTypeInternal;
 extern MyProtoMessageDefaultTypeInternal _MyProtoMessage_default_instance_;
+class NodeHandshakeRequest;
+struct NodeHandshakeRequestDefaultTypeInternal;
+extern NodeHandshakeRequestDefaultTypeInternal _NodeHandshakeRequest_default_instance_;
+class NodeHandshakeResponse;
+struct NodeHandshakeResponseDefaultTypeInternal;
+extern NodeHandshakeResponseDefaultTypeInternal _NodeHandshakeResponse_default_instance_;
 class NodeMessageHeader;
 struct NodeMessageHeaderDefaultTypeInternal;
 extern NodeMessageHeaderDefaultTypeInternal _NodeMessageHeader_default_instance_;
@@ -5496,7 +5496,7 @@ class NodeRouteMessageRequest final
 
 class NodeHandshakeResponse final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:HandshakeResponse) */ {
+/* @@protoc_insertion_point(class_definition:NodeHandshakeResponse) */ {
  public:
   inline NodeHandshakeResponse() : NodeHandshakeResponse(nullptr) {}
   ~NodeHandshakeResponse() PROTOBUF_FINAL;
@@ -5552,7 +5552,7 @@ class NodeHandshakeResponse final
   }
   static inline const NodeHandshakeResponse* internal_default_instance() {
     return reinterpret_cast<const NodeHandshakeResponse*>(
-        &_HandshakeResponse_default_instance_);
+        &_NodeHandshakeResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 28;
   friend void swap(NodeHandshakeResponse& a, NodeHandshakeResponse& b) { a.Swap(&b); }
@@ -5620,7 +5620,7 @@ class NodeHandshakeResponse final
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "HandshakeResponse"; }
+  static ::absl::string_view FullMessageName() { return "NodeHandshakeResponse"; }
 
  protected:
   explicit NodeHandshakeResponse(::google::protobuf::Arena* arena);
@@ -5674,7 +5674,7 @@ class NodeHandshakeResponse final
   ::NodeInfo* _internal_mutable_peer_node();
 
   public:
-  // @@protoc_insertion_point(class_scope:HandshakeResponse)
+  // @@protoc_insertion_point(class_scope:NodeHandshakeResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -5710,7 +5710,7 @@ class NodeHandshakeResponse final
 
 class NodeHandshakeRequest final
     : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:HandshakeRequest) */ {
+/* @@protoc_insertion_point(class_definition:NodeHandshakeRequest) */ {
  public:
   inline NodeHandshakeRequest() : NodeHandshakeRequest(nullptr) {}
   ~NodeHandshakeRequest() PROTOBUF_FINAL;
@@ -5766,7 +5766,7 @@ class NodeHandshakeRequest final
   }
   static inline const NodeHandshakeRequest* internal_default_instance() {
     return reinterpret_cast<const NodeHandshakeRequest*>(
-        &_HandshakeRequest_default_instance_);
+        &_NodeHandshakeRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 27;
   friend void swap(NodeHandshakeRequest& a, NodeHandshakeRequest& b) { a.Swap(&b); }
@@ -5834,7 +5834,7 @@ class NodeHandshakeRequest final
   template <typename T>
   friend ::absl::string_view(
       ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "HandshakeRequest"; }
+  static ::absl::string_view FullMessageName() { return "NodeHandshakeRequest"; }
 
  protected:
   explicit NodeHandshakeRequest(::google::protobuf::Arena* arena);
@@ -5906,13 +5906,13 @@ class NodeHandshakeRequest final
   ::NodeInfo* _internal_mutable_self_node();
 
   public:
-  // @@protoc_insertion_point(class_scope:HandshakeRequest)
+  // @@protoc_insertion_point(class_scope:NodeHandshakeRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
       2, 3, 1,
-      37, 2>
+      41, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -10086,7 +10086,7 @@ inline void ClientRequest::_internal_set_message_id(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
-// HandshakeRequest
+// NodeHandshakeRequest
 
 // string version = 1;
 inline void NodeHandshakeRequest::clear_version() {
@@ -10095,7 +10095,7 @@ inline void NodeHandshakeRequest::clear_version() {
 }
 inline const std::string& NodeHandshakeRequest::version() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:HandshakeRequest.version)
+  // @@protoc_insertion_point(field_get:NodeHandshakeRequest.version)
   return _internal_version();
 }
 template <typename Arg_, typename... Args_>
@@ -10103,11 +10103,11 @@ inline PROTOBUF_ALWAYS_INLINE void NodeHandshakeRequest::set_version(Arg_&& arg,
                                                      Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.version_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:HandshakeRequest.version)
+  // @@protoc_insertion_point(field_set:NodeHandshakeRequest.version)
 }
 inline std::string* NodeHandshakeRequest::mutable_version() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_version();
-  // @@protoc_insertion_point(field_mutable:HandshakeRequest.version)
+  // @@protoc_insertion_point(field_mutable:NodeHandshakeRequest.version)
   return _s;
 }
 inline const std::string& NodeHandshakeRequest::_internal_version() const {
@@ -10124,7 +10124,7 @@ inline std::string* NodeHandshakeRequest::_internal_mutable_version() {
 }
 inline std::string* NodeHandshakeRequest::release_version() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:HandshakeRequest.version)
+  // @@protoc_insertion_point(field_release:NodeHandshakeRequest.version)
   return _impl_.version_.Release();
 }
 inline void NodeHandshakeRequest::set_allocated_version(std::string* value) {
@@ -10133,7 +10133,7 @@ inline void NodeHandshakeRequest::set_allocated_version(std::string* value) {
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.version_.IsDefault()) {
     _impl_.version_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:HandshakeRequest.version)
+  // @@protoc_insertion_point(field_set_allocated:NodeHandshakeRequest.version)
 }
 
 // string token = 2;
@@ -10143,7 +10143,7 @@ inline void NodeHandshakeRequest::clear_token() {
 }
 inline const std::string& NodeHandshakeRequest::token() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:HandshakeRequest.token)
+  // @@protoc_insertion_point(field_get:NodeHandshakeRequest.token)
   return _internal_token();
 }
 template <typename Arg_, typename... Args_>
@@ -10151,11 +10151,11 @@ inline PROTOBUF_ALWAYS_INLINE void NodeHandshakeRequest::set_token(Arg_&& arg,
                                                      Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.token_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:HandshakeRequest.token)
+  // @@protoc_insertion_point(field_set:NodeHandshakeRequest.token)
 }
 inline std::string* NodeHandshakeRequest::mutable_token() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_token();
-  // @@protoc_insertion_point(field_mutable:HandshakeRequest.token)
+  // @@protoc_insertion_point(field_mutable:NodeHandshakeRequest.token)
   return _s;
 }
 inline const std::string& NodeHandshakeRequest::_internal_token() const {
@@ -10172,7 +10172,7 @@ inline std::string* NodeHandshakeRequest::_internal_mutable_token() {
 }
 inline std::string* NodeHandshakeRequest::release_token() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:HandshakeRequest.token)
+  // @@protoc_insertion_point(field_release:NodeHandshakeRequest.token)
   return _impl_.token_.Release();
 }
 inline void NodeHandshakeRequest::set_allocated_token(std::string* value) {
@@ -10181,7 +10181,7 @@ inline void NodeHandshakeRequest::set_allocated_token(std::string* value) {
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.token_.IsDefault()) {
     _impl_.token_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:HandshakeRequest.token)
+  // @@protoc_insertion_point(field_set_allocated:NodeHandshakeRequest.token)
 }
 
 // .NodeInfo self_node = 3;
@@ -10196,7 +10196,7 @@ inline const ::NodeInfo& NodeHandshakeRequest::_internal_self_node() const {
   return p != nullptr ? *p : reinterpret_cast<const ::NodeInfo&>(::_NodeInfo_default_instance_);
 }
 inline const ::NodeInfo& NodeHandshakeRequest::self_node() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:HandshakeRequest.self_node)
+  // @@protoc_insertion_point(field_get:NodeHandshakeRequest.self_node)
   return _internal_self_node();
 }
 inline void NodeHandshakeRequest::unsafe_arena_set_allocated_self_node(::NodeInfo* value) {
@@ -10210,7 +10210,7 @@ inline void NodeHandshakeRequest::unsafe_arena_set_allocated_self_node(::NodeInf
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:HandshakeRequest.self_node)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:NodeHandshakeRequest.self_node)
 }
 inline ::NodeInfo* NodeHandshakeRequest::release_self_node() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -10233,7 +10233,7 @@ inline ::NodeInfo* NodeHandshakeRequest::release_self_node() {
 }
 inline ::NodeInfo* NodeHandshakeRequest::unsafe_arena_release_self_node() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:HandshakeRequest.self_node)
+  // @@protoc_insertion_point(field_release:NodeHandshakeRequest.self_node)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::NodeInfo* temp = _impl_.self_node_;
@@ -10251,7 +10251,7 @@ inline ::NodeInfo* NodeHandshakeRequest::_internal_mutable_self_node() {
 inline ::NodeInfo* NodeHandshakeRequest::mutable_self_node() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::NodeInfo* _msg = _internal_mutable_self_node();
-  // @@protoc_insertion_point(field_mutable:HandshakeRequest.self_node)
+  // @@protoc_insertion_point(field_mutable:NodeHandshakeRequest.self_node)
   return _msg;
 }
 inline void NodeHandshakeRequest::set_allocated_self_node(::NodeInfo* value) {
@@ -10272,12 +10272,12 @@ inline void NodeHandshakeRequest::set_allocated_self_node(::NodeInfo* value) {
   }
 
   _impl_.self_node_ = reinterpret_cast<::NodeInfo*>(value);
-  // @@protoc_insertion_point(field_set_allocated:HandshakeRequest.self_node)
+  // @@protoc_insertion_point(field_set_allocated:NodeHandshakeRequest.self_node)
 }
 
 // -------------------------------------------------------------------
 
-// HandshakeResponse
+// NodeHandshakeResponse
 
 // .TipInfoMessage error_message = 1;
 inline bool NodeHandshakeResponse::has_error_message() const {
@@ -10291,7 +10291,7 @@ inline const ::TipInfoMessage& NodeHandshakeResponse::_internal_error_message() 
   return p != nullptr ? *p : reinterpret_cast<const ::TipInfoMessage&>(::_TipInfoMessage_default_instance_);
 }
 inline const ::TipInfoMessage& NodeHandshakeResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:HandshakeResponse.error_message)
+  // @@protoc_insertion_point(field_get:NodeHandshakeResponse.error_message)
   return _internal_error_message();
 }
 inline void NodeHandshakeResponse::unsafe_arena_set_allocated_error_message(::TipInfoMessage* value) {
@@ -10305,7 +10305,7 @@ inline void NodeHandshakeResponse::unsafe_arena_set_allocated_error_message(::Ti
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:HandshakeResponse.error_message)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:NodeHandshakeResponse.error_message)
 }
 inline ::TipInfoMessage* NodeHandshakeResponse::release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -10328,7 +10328,7 @@ inline ::TipInfoMessage* NodeHandshakeResponse::release_error_message() {
 }
 inline ::TipInfoMessage* NodeHandshakeResponse::unsafe_arena_release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:HandshakeResponse.error_message)
+  // @@protoc_insertion_point(field_release:NodeHandshakeResponse.error_message)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::TipInfoMessage* temp = _impl_.error_message_;
@@ -10346,7 +10346,7 @@ inline ::TipInfoMessage* NodeHandshakeResponse::_internal_mutable_error_message(
 inline ::TipInfoMessage* NodeHandshakeResponse::mutable_error_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::TipInfoMessage* _msg = _internal_mutable_error_message();
-  // @@protoc_insertion_point(field_mutable:HandshakeResponse.error_message)
+  // @@protoc_insertion_point(field_mutable:NodeHandshakeResponse.error_message)
   return _msg;
 }
 inline void NodeHandshakeResponse::set_allocated_error_message(::TipInfoMessage* value) {
@@ -10367,7 +10367,7 @@ inline void NodeHandshakeResponse::set_allocated_error_message(::TipInfoMessage*
   }
 
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
-  // @@protoc_insertion_point(field_set_allocated:HandshakeResponse.error_message)
+  // @@protoc_insertion_point(field_set_allocated:NodeHandshakeResponse.error_message)
 }
 
 // .NodeInfo peer_node = 2;
@@ -10382,7 +10382,7 @@ inline const ::NodeInfo& NodeHandshakeResponse::_internal_peer_node() const {
   return p != nullptr ? *p : reinterpret_cast<const ::NodeInfo&>(::_NodeInfo_default_instance_);
 }
 inline const ::NodeInfo& NodeHandshakeResponse::peer_node() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:HandshakeResponse.peer_node)
+  // @@protoc_insertion_point(field_get:NodeHandshakeResponse.peer_node)
   return _internal_peer_node();
 }
 inline void NodeHandshakeResponse::unsafe_arena_set_allocated_peer_node(::NodeInfo* value) {
@@ -10396,7 +10396,7 @@ inline void NodeHandshakeResponse::unsafe_arena_set_allocated_peer_node(::NodeIn
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:HandshakeResponse.peer_node)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:NodeHandshakeResponse.peer_node)
 }
 inline ::NodeInfo* NodeHandshakeResponse::release_peer_node() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -10419,7 +10419,7 @@ inline ::NodeInfo* NodeHandshakeResponse::release_peer_node() {
 }
 inline ::NodeInfo* NodeHandshakeResponse::unsafe_arena_release_peer_node() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:HandshakeResponse.peer_node)
+  // @@protoc_insertion_point(field_release:NodeHandshakeResponse.peer_node)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
   ::NodeInfo* temp = _impl_.peer_node_;
@@ -10437,7 +10437,7 @@ inline ::NodeInfo* NodeHandshakeResponse::_internal_mutable_peer_node() {
 inline ::NodeInfo* NodeHandshakeResponse::mutable_peer_node() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::NodeInfo* _msg = _internal_mutable_peer_node();
-  // @@protoc_insertion_point(field_mutable:HandshakeResponse.peer_node)
+  // @@protoc_insertion_point(field_mutable:NodeHandshakeResponse.peer_node)
   return _msg;
 }
 inline void NodeHandshakeResponse::set_allocated_peer_node(::NodeInfo* value) {
@@ -10458,7 +10458,7 @@ inline void NodeHandshakeResponse::set_allocated_peer_node(::NodeInfo* value) {
   }
 
   _impl_.peer_node_ = reinterpret_cast<::NodeInfo*>(value);
-  // @@protoc_insertion_point(field_set_allocated:HandshakeResponse.peer_node)
+  // @@protoc_insertion_point(field_set_allocated:NodeHandshakeResponse.peer_node)
 }
 
 #ifdef __GNUC__

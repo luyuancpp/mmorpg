@@ -44,8 +44,8 @@ constexpr uint32_t SceneCreateSceneMessageId = 79;
 constexpr uint32_t SceneCreateSceneIndex = 9;
 #define SceneCreateSceneMethod  ::Scene_Stub::descriptor()->method(9)
 
-constexpr uint32_t SceneHandshakeMessageId = 34;
-constexpr uint32_t SceneHandshakeIndex = 10;
-#define SceneHandshakeMethod  ::Scene_Stub::descriptor()->method(10)
+constexpr uint32_t SceneNodeHandshakeMessageId = 23;
+constexpr uint32_t SceneNodeHandshakeIndex = 10;
+#define SceneNodeHandshakeMethod  ::Scene_Stub::descriptor()->method(10)
 
 
