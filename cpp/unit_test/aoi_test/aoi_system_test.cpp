@@ -214,8 +214,8 @@ protected:
 
         // Set up mock components
         auto sceneEntity = tlsRegistryManager.roomRegistry.create();
-        sceneEntityComp1.sceneEntity = sceneEntity;
-        sceneEntityComp2.sceneEntity = sceneEntity;
+        sceneEntityComp1.roomEntity = sceneEntity;
+        sceneEntityComp2.roomEntity = sceneEntity;
         tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(entity1, sceneEntityComp1);
         tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(entity2, sceneEntityComp2);
 
@@ -228,7 +228,7 @@ protected:
 
 
         // Set up grid list
-        tlsRegistryManager.roomRegistry.emplace<SceneGridListComp>(sceneEntityComp1.sceneEntity);
+        tlsRegistryManager.roomRegistry.emplace<SceneGridListComp>(sceneEntityComp1.roomEntity);
     }
 
     void TearDown() override {

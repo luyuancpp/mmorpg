@@ -21,12 +21,12 @@
 void AoiSystem::Update(double delta) {
     for (auto&& [entity, transform, sceneComp] : tlsRegistryManager.actorRegistry.view<Transform, SceneEntityComp>().each()) {
         // 跳过无效场景
-        if (!tlsRegistryManager.roomRegistry.valid(sceneComp.sceneEntity)) {
+        if (!tlsRegistryManager.roomRegistry.valid(sceneComp.roomEntity)) {
             LOG_ERROR << "Scene not found for entity " << tlsRegistryManager.actorRegistry.get<Guid>(entity);
             continue;
         }
 
-        auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(sceneComp.sceneEntity);
+        auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(sceneComp.roomEntity);
 
         // 获取当前实体所在网格
         const auto currentHex = GridSystem::CalculateHexPosition(transform);
@@ -150,7 +150,7 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
     const auto hex = tlsRegistryManager.actorRegistry.try_get<Hex>(entity);
     if (!hex) return;
 
-    auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(tlsRegistryManager.actorRegistry.get<SceneEntityComp>(entity).sceneEntity);
+    auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(tlsRegistryManager.actorRegistry.get<SceneEntityComp>(entity).roomEntity);
     GridSet gridsToLeave;
     GridSystem::GetCurrentAndNeighborGridIds(*hex, gridsToLeave);
 
