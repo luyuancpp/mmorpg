@@ -69,7 +69,7 @@ void RoomUtil::Clear() {
 
 // Get game node ID associated with a scene entity
 NodeId RoomUtil::GetGameNodeIdFromRoomEntity(entt::entity room) {
-	auto* roomInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>(room);
+	auto* roomInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>(room);
 	if (roomInfo) {
 		return GetGameNodeIdFromGuid(roomInfo->guid());
 	}
@@ -103,14 +103,14 @@ std::size_t RoomUtil::GetRoomsSize(uint32_t sceneConfigId) {
 
 // Get total number of scenes in the registry
 std::size_t RoomUtil::GetRoomsSize() {
-	std::size_t totalRooms = tlsRegistryManager.roomRegistry.storage<SceneInfoPBComponent>().size();
+	std::size_t totalRooms = tlsRegistryManager.roomRegistry.storage<RoomInfoPBComponent>().size();
 	LOG_TRACE << "Total scenes in the registry: " << totalRooms;
 	return totalRooms;
 }
 
 // Check if scene registry is empty
 bool RoomUtil::IsRoomEmpty() {
-	bool isEmpty = tlsRegistryManager.roomRegistry.storage<SceneInfoPBComponent>().empty();
+	bool isEmpty = tlsRegistryManager.roomRegistry.storage<RoomInfoPBComponent>().empty();
 	LOG_TRACE << "Scene registry empty: " << (isEmpty ? "true" : "false");
 	return isEmpty;
 }
@@ -149,7 +149,7 @@ entt::entity RoomUtil::CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& par
 		return entt::null;
 	}
 
-	SceneInfoPBComponent roomInfo(param.roomInfo);
+	RoomInfoPBComponent roomInfo(param.roomInfo);
 	if (roomInfo.guid() <= 0) {
 		roomInfo.set_guid(GenRoomGuid());
 	}
@@ -160,8 +160,8 @@ entt::entity RoomUtil::CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& par
 		return entt::null;
 	}
 
-	tlsRegistryManager.roomRegistry.emplace<SceneInfoPBComponent>(room, std::move(roomInfo));
-	tlsRegistryManager.roomRegistry.emplace<ScenePlayers>(room);
+	tlsRegistryManager.roomRegistry.emplace<RoomInfoPBComponent>(room, std::move(roomInfo));
+	tlsRegistryManager.roomRegistry.emplace<RoomPlayers>(room);
 
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 	auto* serverPlayerInfo = registry.try_get<GameNodePlayerInfoPtrPBComponent>(param.node);
@@ -174,11 +174,11 @@ entt::entity RoomUtil::CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& par
 		pServerComp->AddScene(room);
 	}
 
-	OnSceneCreate createRoomEvent;
+	OnRoomCreated createRoomEvent;
 	createRoomEvent.set_entity(entt::to_integral(room));
 	dispatcher.trigger(createRoomEvent);
 
-	LOG_INFO << "Created new scene with ID: " << tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(room).guid();
+	LOG_INFO << "Created new scene with ID: " << tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(room).guid();
 	return room;
 }
 
@@ -195,7 +195,7 @@ void RoomUtil::DestroyRoom(const DestroyRoomParam& param) {
 		return;
 	}
 
-	auto* roomInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>(param.room);
+	auto* roomInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>(param.room);
 	if (!roomInfo) {
 		LOG_ERROR << "SceneInfo not found for scene";
 		return;
@@ -239,7 +239,7 @@ uint32_t RoomUtil::CheckPlayerEnterRoom(const EnterRoomParam& param) {
 		return kInvalidEnterSceneParameters;
 	}
 
-	auto* roomInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>(param.room);
+	auto* roomInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>(param.room);
 	if (!roomInfo) {
 		LOG_ERROR << "SceneInfo not found when checking player enter scene - Scene ID: " << entt::to_integral(param.room);
 		return kInvalidEnterSceneParameters;
@@ -257,7 +257,7 @@ uint32_t RoomUtil::CheckPlayerEnterRoom(const EnterRoomParam& param) {
 
 // Check if scene player size limits are respected
 uint32_t RoomUtil::HasRoomSlot(entt::entity room) {
-	auto& roomPlayers = tlsRegistryManager.roomRegistry.get<ScenePlayers>(room);
+	auto& roomPlayers = tlsRegistryManager.roomRegistry.get<RoomPlayers>(room);
 
 	if (roomPlayers.size() >= kMaxRoomPlayer) {
 		LOG_WARN << "Scene player size limit exceeded - Scene ID: " << entt::to_integral(room);
@@ -298,20 +298,20 @@ void RoomUtil::EnterRoom(const EnterRoomParam& param) {
 		return;
 	}
 
-	auto& roomPlayers = tlsRegistryManager.roomRegistry.get<ScenePlayers>(param.room);
+	auto& roomPlayers = tlsRegistryManager.roomRegistry.get<RoomPlayers>(param.room);
 	roomPlayers.emplace(param.enter);
-	if (tlsRegistryManager.actorRegistry.any_of<SceneEntityComp>(param.enter))
+	if (tlsRegistryManager.actorRegistry.any_of<RoomEntityComp>(param.enter))
 	{
 		LOG_FATAL << tlsRegistryManager.actorRegistry.get<Guid>(param.enter);
 	}
-	tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(param.enter, param.room);
+	tlsRegistryManager.actorRegistry.emplace<RoomEntityComp>(param.enter, param.room);
 
 	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(param.room);
 	if (gsPlayerInfo) {
 		(*gsPlayerInfo)->set_player_size((*gsPlayerInfo)->player_size() + 1);
 	}
 
-	AfterEnterScene afterEnterRoom;
+	AfterEnterRoom afterEnterRoom;
 	afterEnterRoom.set_entity(entt::to_integral(param.enter));
 	dispatcher.trigger(afterEnterRoom);
 
@@ -354,7 +354,7 @@ void RoomUtil::LeaveRoom(const LeaveRoomParam& param) {
 		return;
 	}
 
-	auto roomEntityComp = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(param.leaver);
+	auto roomEntityComp = tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(param.leaver);
 	if (nullptr == roomEntityComp)
 	{
 		LOG_ERROR << "SceneEntityComp not found for player when leaving scene - Player : " << entt::to_integral(param.leaver);
@@ -367,22 +367,22 @@ void RoomUtil::LeaveRoom(const LeaveRoomParam& param) {
 		return;
 	}
 
-    BeforeLeaveScene beforeLeaveRoom;
+    BeforeLeaveRoom beforeLeaveRoom;
     beforeLeaveRoom.set_entity(entt::to_integral(param.leaver));
     dispatcher.trigger(beforeLeaveRoom);
 
-	auto& roomPlayers = tlsRegistryManager.roomRegistry.get<ScenePlayers>(roomEntity);
+	auto& roomPlayers = tlsRegistryManager.roomRegistry.get<RoomPlayers>(roomEntity);
 	roomPlayers.erase(param.leaver);
-	tlsRegistryManager.actorRegistry.remove<SceneEntityComp>(param.leaver);
+	tlsRegistryManager.actorRegistry.remove<RoomEntityComp>(param.leaver);
 
 	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(roomEntity);
 	if (gsPlayerInfo) {
 		(*gsPlayerInfo)->set_player_size((*gsPlayerInfo)->player_size() - 1);
 	}
 
-	/*AfterLeaveScene afterLeaveScene;
-	afterLeaveScene.set_entity(entt::to_integral(param.leaver));
-	dispatcher.trigger(afterLeaveScene);*/
+	/*AfterLeaveRoom afterLeaveRoom;
+	afterLeaveRoom.set_entity(entt::to_integral(param.leaver));
+	dispatcher.trigger(afterLeaveRoom);*/
 
 	if (tlsRegistryManager.actorRegistry.any_of<Guid>(param.leaver)) {
 		LOG_INFO << "Player left scene - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.leaver) << ", Scene ID: " << entt::to_integral(roomEntity);
@@ -417,7 +417,7 @@ void RoomUtil::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNod
 
 	for (auto& confIdRoomList : roomList | std::views::values) {
 		for (auto room : confIdRoomList) {
-			auto* roomInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>(room);
+			auto* roomInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>(room);
 			if (!roomInfo) {
 				continue;
 			}

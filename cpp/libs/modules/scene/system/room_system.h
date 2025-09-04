@@ -44,7 +44,7 @@ struct CreateRoomOnNodeRoomParam
     }
 
     entt::entity node{ entt::null };
-    SceneInfoPBComponent roomInfo;
+    RoomInfoPBComponent roomInfo;
 };
 
 struct DestroyRoomParam

@@ -19,7 +19,7 @@
 
 
 void AoiSystem::Update(double delta) {
-    for (auto&& [entity, transform, sceneComp] : tlsRegistryManager.actorRegistry.view<Transform, SceneEntityComp>().each()) {
+    for (auto&& [entity, transform, sceneComp] : tlsRegistryManager.actorRegistry.view<Transform, RoomEntityComp>().each()) {
         // 跳过无效场景
         if (!tlsRegistryManager.roomRegistry.valid(sceneComp.roomEntity)) {
             LOG_ERROR << "Scene not found for entity " << tlsRegistryManager.actorRegistry.get<Guid>(entity);
@@ -150,7 +150,7 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
     const auto hex = tlsRegistryManager.actorRegistry.try_get<Hex>(entity);
     if (!hex) return;
 
-    auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(tlsRegistryManager.actorRegistry.get<SceneEntityComp>(entity).roomEntity);
+    auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(tlsRegistryManager.actorRegistry.get<RoomEntityComp>(entity).roomEntity);
     GridSet gridsToLeave;
     GridSystem::GetCurrentAndNeighborGridIds(*hex, gridsToLeave);
 

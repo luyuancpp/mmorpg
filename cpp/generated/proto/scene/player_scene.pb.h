@@ -989,16 +989,16 @@ class SceneInfoS2C final
 
   public:
   void clear_scene_info() ;
-  ::SceneInfoPBComponent* mutable_scene_info(int index);
-  ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>* mutable_scene_info();
+  ::RoomInfoPBComponent* mutable_scene_info(int index);
+  ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>* mutable_scene_info();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>& _internal_scene_info() const;
-  ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>* _internal_mutable_scene_info();
+  const ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>& _internal_scene_info() const;
+  ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>* _internal_mutable_scene_info();
   public:
-  const ::SceneInfoPBComponent& scene_info(int index) const;
-  ::SceneInfoPBComponent* add_scene_info();
-  const ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>& scene_info() const;
+  const ::RoomInfoPBComponent& scene_info(int index) const;
+  ::RoomInfoPBComponent* add_scene_info();
+  const ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>& scene_info() const;
   // @@protoc_insertion_point(class_scope:SceneInfoS2C)
  private:
   class _Internal;
@@ -1022,7 +1022,7 @@ class SceneInfoS2C final
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const SceneInfoS2C& from_msg);
-    ::google::protobuf::RepeatedPtrField< ::SceneInfoPBComponent > scene_info_;
+    ::google::protobuf::RepeatedPtrField< ::RoomInfoPBComponent > scene_info_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1187,16 +1187,16 @@ class SceneInfoResponse final
 
   public:
   void clear_scene_info() ;
-  ::SceneInfoPBComponent* mutable_scene_info(int index);
-  ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>* mutable_scene_info();
+  ::RoomInfoPBComponent* mutable_scene_info(int index);
+  ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>* mutable_scene_info();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>& _internal_scene_info() const;
-  ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>* _internal_mutable_scene_info();
+  const ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>& _internal_scene_info() const;
+  ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>* _internal_mutable_scene_info();
   public:
-  const ::SceneInfoPBComponent& scene_info(int index) const;
-  ::SceneInfoPBComponent* add_scene_info();
-  const ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>& scene_info() const;
+  const ::RoomInfoPBComponent& scene_info(int index) const;
+  ::RoomInfoPBComponent* add_scene_info();
+  const ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>& scene_info() const;
   // @@protoc_insertion_point(class_scope:SceneInfoResponse)
  private:
   class _Internal;
@@ -1220,7 +1220,7 @@ class SceneInfoResponse final
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const SceneInfoResponse& from_msg);
-    ::google::protobuf::RepeatedPtrField< ::SceneInfoPBComponent > scene_info_;
+    ::google::protobuf::RepeatedPtrField< ::RoomInfoPBComponent > scene_info_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1381,16 +1381,16 @@ class EnterSceneS2C final
   // .SceneInfoPBComponent scene_info = 1;
   bool has_scene_info() const;
   void clear_scene_info() ;
-  const ::SceneInfoPBComponent& scene_info() const;
-  PROTOBUF_NODISCARD ::SceneInfoPBComponent* release_scene_info();
-  ::SceneInfoPBComponent* mutable_scene_info();
-  void set_allocated_scene_info(::SceneInfoPBComponent* value);
-  void unsafe_arena_set_allocated_scene_info(::SceneInfoPBComponent* value);
-  ::SceneInfoPBComponent* unsafe_arena_release_scene_info();
+  const ::RoomInfoPBComponent& scene_info() const;
+  PROTOBUF_NODISCARD ::RoomInfoPBComponent* release_scene_info();
+  ::RoomInfoPBComponent* mutable_scene_info();
+  void set_allocated_scene_info(::RoomInfoPBComponent* value);
+  void unsafe_arena_set_allocated_scene_info(::RoomInfoPBComponent* value);
+  ::RoomInfoPBComponent* unsafe_arena_release_scene_info();
 
   private:
-  const ::SceneInfoPBComponent& _internal_scene_info() const;
-  ::SceneInfoPBComponent* _internal_mutable_scene_info();
+  const ::RoomInfoPBComponent& _internal_scene_info() const;
+  ::RoomInfoPBComponent* _internal_mutable_scene_info();
 
   public:
   // @@protoc_insertion_point(class_scope:EnterSceneS2C)
@@ -1418,7 +1418,7 @@ class EnterSceneS2C final
                           const EnterSceneS2C& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::SceneInfoPBComponent* scene_info_;
+    ::RoomInfoPBComponent* scene_info_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1578,16 +1578,16 @@ class EnterSceneC2SRequest final
   // .SceneInfoPBComponent scene_info = 1;
   bool has_scene_info() const;
   void clear_scene_info() ;
-  const ::SceneInfoPBComponent& scene_info() const;
-  PROTOBUF_NODISCARD ::SceneInfoPBComponent* release_scene_info();
-  ::SceneInfoPBComponent* mutable_scene_info();
-  void set_allocated_scene_info(::SceneInfoPBComponent* value);
-  void unsafe_arena_set_allocated_scene_info(::SceneInfoPBComponent* value);
-  ::SceneInfoPBComponent* unsafe_arena_release_scene_info();
+  const ::RoomInfoPBComponent& scene_info() const;
+  PROTOBUF_NODISCARD ::RoomInfoPBComponent* release_scene_info();
+  ::RoomInfoPBComponent* mutable_scene_info();
+  void set_allocated_scene_info(::RoomInfoPBComponent* value);
+  void unsafe_arena_set_allocated_scene_info(::RoomInfoPBComponent* value);
+  ::RoomInfoPBComponent* unsafe_arena_release_scene_info();
 
   private:
-  const ::SceneInfoPBComponent& _internal_scene_info() const;
-  ::SceneInfoPBComponent* _internal_mutable_scene_info();
+  const ::RoomInfoPBComponent& _internal_scene_info() const;
+  ::RoomInfoPBComponent* _internal_mutable_scene_info();
 
   public:
   // @@protoc_insertion_point(class_scope:EnterSceneC2SRequest)
@@ -1615,7 +1615,7 @@ class EnterSceneC2SRequest final
                           const EnterSceneC2SRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::SceneInfoPBComponent* scene_info_;
+    ::RoomInfoPBComponent* scene_info_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2205,21 +2205,21 @@ inline bool EnterSceneC2SRequest::has_scene_info() const {
   PROTOBUF_ASSUME(!value || _impl_.scene_info_ != nullptr);
   return value;
 }
-inline const ::SceneInfoPBComponent& EnterSceneC2SRequest::_internal_scene_info() const {
+inline const ::RoomInfoPBComponent& EnterSceneC2SRequest::_internal_scene_info() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::SceneInfoPBComponent* p = _impl_.scene_info_;
-  return p != nullptr ? *p : reinterpret_cast<const ::SceneInfoPBComponent&>(::_SceneInfoPBComponent_default_instance_);
+  const ::RoomInfoPBComponent* p = _impl_.scene_info_;
+  return p != nullptr ? *p : reinterpret_cast<const ::RoomInfoPBComponent&>(::_SceneInfoPBComponent_default_instance_);
 }
-inline const ::SceneInfoPBComponent& EnterSceneC2SRequest::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::RoomInfoPBComponent& EnterSceneC2SRequest::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:EnterSceneC2SRequest.scene_info)
   return _internal_scene_info();
 }
-inline void EnterSceneC2SRequest::unsafe_arena_set_allocated_scene_info(::SceneInfoPBComponent* value) {
+inline void EnterSceneC2SRequest::unsafe_arena_set_allocated_scene_info(::RoomInfoPBComponent* value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.scene_info_);
   }
-  _impl_.scene_info_ = reinterpret_cast<::SceneInfoPBComponent*>(value);
+  _impl_.scene_info_ = reinterpret_cast<::RoomInfoPBComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -2227,11 +2227,11 @@ inline void EnterSceneC2SRequest::unsafe_arena_set_allocated_scene_info(::SceneI
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:EnterSceneC2SRequest.scene_info)
 }
-inline ::SceneInfoPBComponent* EnterSceneC2SRequest::release_scene_info() {
+inline ::RoomInfoPBComponent* EnterSceneC2SRequest::release_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::SceneInfoPBComponent* released = _impl_.scene_info_;
+  ::RoomInfoPBComponent* released = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -2246,30 +2246,30 @@ inline ::SceneInfoPBComponent* EnterSceneC2SRequest::release_scene_info() {
   }
   return released;
 }
-inline ::SceneInfoPBComponent* EnterSceneC2SRequest::unsafe_arena_release_scene_info() {
+inline ::RoomInfoPBComponent* EnterSceneC2SRequest::unsafe_arena_release_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:EnterSceneC2SRequest.scene_info)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::SceneInfoPBComponent* temp = _impl_.scene_info_;
+  ::RoomInfoPBComponent* temp = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
   return temp;
 }
-inline ::SceneInfoPBComponent* EnterSceneC2SRequest::_internal_mutable_scene_info() {
+inline ::RoomInfoPBComponent* EnterSceneC2SRequest::_internal_mutable_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.scene_info_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::SceneInfoPBComponent>(GetArena());
-    _impl_.scene_info_ = reinterpret_cast<::SceneInfoPBComponent*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::RoomInfoPBComponent>(GetArena());
+    _impl_.scene_info_ = reinterpret_cast<::RoomInfoPBComponent*>(p);
   }
   return _impl_.scene_info_;
 }
-inline ::SceneInfoPBComponent* EnterSceneC2SRequest::mutable_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::RoomInfoPBComponent* EnterSceneC2SRequest::mutable_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::SceneInfoPBComponent* _msg = _internal_mutable_scene_info();
+  ::RoomInfoPBComponent* _msg = _internal_mutable_scene_info();
   // @@protoc_insertion_point(field_mutable:EnterSceneC2SRequest.scene_info)
   return _msg;
 }
-inline void EnterSceneC2SRequest::set_allocated_scene_info(::SceneInfoPBComponent* value) {
+inline void EnterSceneC2SRequest::set_allocated_scene_info(::RoomInfoPBComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -2286,7 +2286,7 @@ inline void EnterSceneC2SRequest::set_allocated_scene_info(::SceneInfoPBComponen
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.scene_info_ = reinterpret_cast<::SceneInfoPBComponent*>(value);
+  _impl_.scene_info_ = reinterpret_cast<::RoomInfoPBComponent*>(value);
   // @@protoc_insertion_point(field_set_allocated:EnterSceneC2SRequest.scene_info)
 }
 
@@ -2395,21 +2395,21 @@ inline bool EnterSceneS2C::has_scene_info() const {
   PROTOBUF_ASSUME(!value || _impl_.scene_info_ != nullptr);
   return value;
 }
-inline const ::SceneInfoPBComponent& EnterSceneS2C::_internal_scene_info() const {
+inline const ::RoomInfoPBComponent& EnterSceneS2C::_internal_scene_info() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::SceneInfoPBComponent* p = _impl_.scene_info_;
-  return p != nullptr ? *p : reinterpret_cast<const ::SceneInfoPBComponent&>(::_SceneInfoPBComponent_default_instance_);
+  const ::RoomInfoPBComponent* p = _impl_.scene_info_;
+  return p != nullptr ? *p : reinterpret_cast<const ::RoomInfoPBComponent&>(::_SceneInfoPBComponent_default_instance_);
 }
-inline const ::SceneInfoPBComponent& EnterSceneS2C::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::RoomInfoPBComponent& EnterSceneS2C::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:EnterSceneS2C.scene_info)
   return _internal_scene_info();
 }
-inline void EnterSceneS2C::unsafe_arena_set_allocated_scene_info(::SceneInfoPBComponent* value) {
+inline void EnterSceneS2C::unsafe_arena_set_allocated_scene_info(::RoomInfoPBComponent* value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.scene_info_);
   }
-  _impl_.scene_info_ = reinterpret_cast<::SceneInfoPBComponent*>(value);
+  _impl_.scene_info_ = reinterpret_cast<::RoomInfoPBComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -2417,11 +2417,11 @@ inline void EnterSceneS2C::unsafe_arena_set_allocated_scene_info(::SceneInfoPBCo
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:EnterSceneS2C.scene_info)
 }
-inline ::SceneInfoPBComponent* EnterSceneS2C::release_scene_info() {
+inline ::RoomInfoPBComponent* EnterSceneS2C::release_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::SceneInfoPBComponent* released = _impl_.scene_info_;
+  ::RoomInfoPBComponent* released = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -2436,30 +2436,30 @@ inline ::SceneInfoPBComponent* EnterSceneS2C::release_scene_info() {
   }
   return released;
 }
-inline ::SceneInfoPBComponent* EnterSceneS2C::unsafe_arena_release_scene_info() {
+inline ::RoomInfoPBComponent* EnterSceneS2C::unsafe_arena_release_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:EnterSceneS2C.scene_info)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::SceneInfoPBComponent* temp = _impl_.scene_info_;
+  ::RoomInfoPBComponent* temp = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
   return temp;
 }
-inline ::SceneInfoPBComponent* EnterSceneS2C::_internal_mutable_scene_info() {
+inline ::RoomInfoPBComponent* EnterSceneS2C::_internal_mutable_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.scene_info_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::SceneInfoPBComponent>(GetArena());
-    _impl_.scene_info_ = reinterpret_cast<::SceneInfoPBComponent*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::RoomInfoPBComponent>(GetArena());
+    _impl_.scene_info_ = reinterpret_cast<::RoomInfoPBComponent*>(p);
   }
   return _impl_.scene_info_;
 }
-inline ::SceneInfoPBComponent* EnterSceneS2C::mutable_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::RoomInfoPBComponent* EnterSceneS2C::mutable_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::SceneInfoPBComponent* _msg = _internal_mutable_scene_info();
+  ::RoomInfoPBComponent* _msg = _internal_mutable_scene_info();
   // @@protoc_insertion_point(field_mutable:EnterSceneS2C.scene_info)
   return _msg;
 }
-inline void EnterSceneS2C::set_allocated_scene_info(::SceneInfoPBComponent* value) {
+inline void EnterSceneS2C::set_allocated_scene_info(::RoomInfoPBComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -2476,7 +2476,7 @@ inline void EnterSceneS2C::set_allocated_scene_info(::SceneInfoPBComponent* valu
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.scene_info_ = reinterpret_cast<::SceneInfoPBComponent*>(value);
+  _impl_.scene_info_ = reinterpret_cast<::RoomInfoPBComponent*>(value);
   // @@protoc_insertion_point(field_set_allocated:EnterSceneS2C.scene_info)
 }
 
@@ -2491,39 +2491,39 @@ inline int SceneInfoS2C::_internal_scene_info_size() const {
 inline int SceneInfoS2C::scene_info_size() const {
   return _internal_scene_info_size();
 }
-inline ::SceneInfoPBComponent* SceneInfoS2C::mutable_scene_info(int index)
+inline ::RoomInfoPBComponent* SceneInfoS2C::mutable_scene_info(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:SceneInfoS2C.scene_info)
   return _internal_mutable_scene_info()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>* SceneInfoS2C::mutable_scene_info()
+inline ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>* SceneInfoS2C::mutable_scene_info()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:SceneInfoS2C.scene_info)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_scene_info();
 }
-inline const ::SceneInfoPBComponent& SceneInfoS2C::scene_info(int index) const
+inline const ::RoomInfoPBComponent& SceneInfoS2C::scene_info(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:SceneInfoS2C.scene_info)
   return _internal_scene_info().Get(index);
 }
-inline ::SceneInfoPBComponent* SceneInfoS2C::add_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::RoomInfoPBComponent* SceneInfoS2C::add_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::SceneInfoPBComponent* _add = _internal_mutable_scene_info()->Add();
+  ::RoomInfoPBComponent* _add = _internal_mutable_scene_info()->Add();
   // @@protoc_insertion_point(field_add:SceneInfoS2C.scene_info)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>& SceneInfoS2C::scene_info() const
+inline const ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>& SceneInfoS2C::scene_info() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:SceneInfoS2C.scene_info)
   return _internal_scene_info();
 }
-inline const ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>&
+inline const ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>&
 SceneInfoS2C::_internal_scene_info() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.scene_info_;
 }
-inline ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>*
+inline ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>*
 SceneInfoS2C::_internal_mutable_scene_info() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.scene_info_;
@@ -2544,39 +2544,39 @@ inline int SceneInfoResponse::_internal_scene_info_size() const {
 inline int SceneInfoResponse::scene_info_size() const {
   return _internal_scene_info_size();
 }
-inline ::SceneInfoPBComponent* SceneInfoResponse::mutable_scene_info(int index)
+inline ::RoomInfoPBComponent* SceneInfoResponse::mutable_scene_info(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:SceneInfoResponse.scene_info)
   return _internal_mutable_scene_info()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>* SceneInfoResponse::mutable_scene_info()
+inline ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>* SceneInfoResponse::mutable_scene_info()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:SceneInfoResponse.scene_info)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_scene_info();
 }
-inline const ::SceneInfoPBComponent& SceneInfoResponse::scene_info(int index) const
+inline const ::RoomInfoPBComponent& SceneInfoResponse::scene_info(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:SceneInfoResponse.scene_info)
   return _internal_scene_info().Get(index);
 }
-inline ::SceneInfoPBComponent* SceneInfoResponse::add_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::RoomInfoPBComponent* SceneInfoResponse::add_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::SceneInfoPBComponent* _add = _internal_mutable_scene_info()->Add();
+  ::RoomInfoPBComponent* _add = _internal_mutable_scene_info()->Add();
   // @@protoc_insertion_point(field_add:SceneInfoResponse.scene_info)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>& SceneInfoResponse::scene_info() const
+inline const ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>& SceneInfoResponse::scene_info() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:SceneInfoResponse.scene_info)
   return _internal_scene_info();
 }
-inline const ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>&
+inline const ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>&
 SceneInfoResponse::_internal_scene_info() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.scene_info_;
 }
-inline ::google::protobuf::RepeatedPtrField<::SceneInfoPBComponent>*
+inline ::google::protobuf::RepeatedPtrField<::RoomInfoPBComponent>*
 SceneInfoResponse::_internal_mutable_scene_info() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.scene_info_;

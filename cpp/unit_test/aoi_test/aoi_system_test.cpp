@@ -82,7 +82,7 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
     auto scene_entity = tlsRegistryManager.roomRegistry.create();
     auto& scene_grid_list = tlsRegistryManager.roomRegistry.emplace<SceneGridListComp>(scene_entity);
 
-    SceneEntityComp scene_entity_comp{ scene_entity };
+    RoomEntityComp scene_entity_comp{ scene_entity };
 
     std::unordered_map<absl::uint128, uint32_t, absl::Hash<absl::uint128>> expected_entity_count;
 
@@ -93,7 +93,7 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
         transform.mutable_location()->set_x(tlsRandom.RandReal<double>(0, 1000));
         transform.mutable_location()->set_y(tlsRandom.RandReal<double>(0, 1000));
 
-        tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(player_entity, scene_entity_comp);
+        tlsRegistryManager.actorRegistry.emplace<RoomEntityComp>(player_entity, scene_entity_comp);
 
         // Invoke Update method
         aoi_system.Update(0.1);
@@ -125,8 +125,8 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     transform.mutable_location()->set_x(0);
     transform.mutable_location()->set_y(0);
 
-    SceneEntityComp scene_entity_comp{ scene_entity };
-    tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(player_entity, scene_entity_comp);
+    RoomEntityComp scene_entity_comp{ scene_entity };
+    tlsRegistryManager.actorRegistry.emplace<RoomEntityComp>(player_entity, scene_entity_comp);
 
     // Initial position
     aoi_system.Update(0.1);
@@ -197,8 +197,8 @@ protected:
     AoiSystem aoiSystem;
     entt::entity entity1;
     entt::entity entity2;
-    SceneEntityComp sceneEntityComp1;
-    SceneEntityComp sceneEntityComp2;
+    RoomEntityComp sceneEntityComp1;
+    RoomEntityComp sceneEntityComp2;
 
 
     void SetUp() override {
@@ -216,8 +216,8 @@ protected:
         auto sceneEntity = tlsRegistryManager.roomRegistry.create();
         sceneEntityComp1.roomEntity = sceneEntity;
         sceneEntityComp2.roomEntity = sceneEntity;
-        tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(entity1, sceneEntityComp1);
-        tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(entity2, sceneEntityComp2);
+        tlsRegistryManager.actorRegistry.emplace<RoomEntityComp>(entity1, sceneEntityComp1);
+        tlsRegistryManager.actorRegistry.emplace<RoomEntityComp>(entity2, sceneEntityComp2);
 
         // Set initial positions
         auto& transform1 = tlsRegistryManager.actorRegistry.emplace<Transform>(entity1);

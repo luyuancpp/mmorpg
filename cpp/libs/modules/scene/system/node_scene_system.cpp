@@ -89,7 +89,7 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParams& param, const GetScen
 	const auto& nodeSceneComps = registry.get<NodeNodeComp>(bestNode);
 
 	for (const auto& sceneIt : nodeSceneComps.GetScenesByConfig(sceneConfigId)) {
-		auto scenePlayerSize = tlsRegistryManager.roomRegistry.get<ScenePlayers>(sceneIt).size();
+		auto scenePlayerSize = tlsRegistryManager.roomRegistry.get<RoomPlayers>(sceneIt).size();
 
 		if (scenePlayerSize >= kMaxScenePlayerSize) {
 			continue;

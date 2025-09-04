@@ -2,12 +2,12 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message OnSceneCreate
+message OnRoomCreated
 {
   uint64 entity = 1;
 }
 
-message OnDestroyScene
+message OnRoomDestroyed
 {
   uint64 entity = 1;
 }
@@ -17,22 +17,22 @@ message BeforeEnterScene
   uint64 entity = 1;
 }
 
-message AfterEnterScene
+message AfterEnterRoom
 {
   uint64 entity = 1;
 }
 
-message BeforeLeaveScene
+message BeforeLeaveRoom
 {
   uint64 entity = 1;
 }
 
-message AfterLeaveScene
+message AfterLeaveRoom
 {
   uint64 entity = 1;
 }
 
-message S2CEnterScene
+message S2CEnterRoom
 {
   uint64 entity = 1;
 }
