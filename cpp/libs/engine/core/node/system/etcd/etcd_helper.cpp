@@ -1,7 +1,7 @@
 ﻿#include "etcd_helper.h"
 #include <google/protobuf/util/json_util.h>
 #include "threading/redis_manager.h"
-#include "grpc_client/proto/etcd/etcd_grpc_client.h"
+#include "grpc_client/etcd/etcd_grpc_client.h"
 #include <muduo/base/Logging.h>
 #include "threading/node_context_manager.h"
 

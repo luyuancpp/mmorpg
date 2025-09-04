@@ -4,7 +4,7 @@
 #include <muduo/base/Logging.h>
 #include "etcd_helper.h"
 #include <threading/redis_manager.h>
-#include "grpc_client/proto/etcd/etcd_grpc_client.h"
+#include "grpc_client/etcd/etcd_grpc_client.h"
 #include "threading/node_context_manager.h"
 #include <node_config_manager.h>
 #include <node/system/node/node.h>
