@@ -278,7 +278,6 @@ uint32_t RoomUtil::HasRoomSlot(entt::entity room) {
 	return kSuccess;
 }
 
-
 // Enter a player into a room
 void RoomUtil::EnterRoom(const EnterRoomParam& param) {
 	if (!param.CheckValid()) {
@@ -294,7 +293,7 @@ void RoomUtil::EnterRoom(const EnterRoomParam& param) {
 
 	if (!tlsRegistryManager.actorRegistry.valid(param.enter))
 	{
-		LOG_ERROR << "Invalid player entity when entering scene - Player : " << entt::to_integral(param.enter);
+		LOG_ERROR << "Invalid player entity when entering room - Player : " << entt::to_integral(param.enter);
 		return;
 	}
 
@@ -316,29 +315,29 @@ void RoomUtil::EnterRoom(const EnterRoomParam& param) {
 	dispatcher.trigger(afterEnterRoom);
 
 	if (tlsRegistryManager.actorRegistry.any_of<Guid>(param.enter)) {
-		LOG_INFO << "Player entered scene - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(param.room);
+		LOG_INFO << "Player entered room - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.enter) << ", Room ID: " << entt::to_integral(param.room);
 	}
 }
 
 
-// Enter a player into the default scene
+// Enter a player into the default room
 void RoomUtil::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
 	if (!param.CheckValid()) {
-		LOG_ERROR << "Invalid parameters when entering default scene";
+		LOG_ERROR << "Invalid parameters when entering default room";
 		return;
 	}
 
-	// Get a scene that is not full from the NodeSceneSystem
+	// Get a room that is not full from the NodeRoomSystem
 	auto defaultRoom = NodeSceneSystem::FindNotFullRoom({});
 
-	// Enter the player into the retrieved default scene
+	// Enter the player into the retrieved default room
 	EnterRoom({ defaultRoom, param.enter });
 
-	// Log the entry into the default scene
+	// Log the entry into the default room
 	if (tlsRegistryManager.actorRegistry.any_of<Guid>(param.enter))
 	{
-		LOG_INFO << "Player entered default scene - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(defaultRoom);
-	}	
+		LOG_INFO << "Player entered default room - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.enter) << ", Room ID: " << entt::to_integral(defaultRoom);
+	}
 }
 
 // Leave a player from a room
@@ -356,19 +355,19 @@ void RoomUtil::LeaveRoom(const LeaveRoomParam& param) {
 	auto roomEntityComp = tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(param.leaver);
 	if (nullptr == roomEntityComp)
 	{
-		LOG_ERROR << "SceneEntityComp not found for player when leaving scene - Player : " << entt::to_integral(param.leaver);
+		LOG_ERROR << "RoomEntityComp not found for player when leaving room - Player : " << entt::to_integral(param.leaver);
 		return;
 	}
 
 	auto roomEntity = roomEntityComp->roomEntity;
 	if (!tlsRegistryManager.roomRegistry.valid(roomEntity)) {
-		LOG_ERROR << "Invalid scene entity when leaving scene - Player : " << entt::to_integral(param.leaver);
+		LOG_ERROR << "Invalid room entity when leaving room - Player : " << entt::to_integral(param.leaver);
 		return;
 	}
 
-    BeforeLeaveRoom beforeLeaveRoom;
-    beforeLeaveRoom.set_entity(entt::to_integral(param.leaver));
-    dispatcher.trigger(beforeLeaveRoom);
+	BeforeLeaveRoom beforeLeaveRoom;
+	beforeLeaveRoom.set_entity(entt::to_integral(param.leaver));
+	dispatcher.trigger(beforeLeaveRoom);
 
 	auto& roomPlayers = tlsRegistryManager.roomRegistry.get<RoomPlayers>(roomEntity);
 	roomPlayers.erase(param.leaver);
@@ -384,11 +383,11 @@ void RoomUtil::LeaveRoom(const LeaveRoomParam& param) {
 	dispatcher.trigger(afterLeaveRoom);*/
 
 	if (tlsRegistryManager.actorRegistry.any_of<Guid>(param.leaver)) {
-		LOG_INFO << "Player left scene - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.leaver) << ", Scene ID: " << entt::to_integral(roomEntity);
+		LOG_INFO << "Player left room - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.leaver) << ", Room ID: " << entt::to_integral(roomEntity);
 	}
 }
 
-// 这里只处理了同gs,如果是跨gs的场景切换，应该别的地方处理
+// 这里只处理了同gs,如果是跨gs的room切换，应该别的地方处理
 void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 	auto& destNodeRoom = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeNodeComp>(param.destNode);
 	auto roomEntity = destNodeRoom.GetSceneWithMinPlayerCountByConfigId(param.sceneConfId);
