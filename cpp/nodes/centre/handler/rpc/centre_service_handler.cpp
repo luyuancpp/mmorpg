@@ -664,18 +664,18 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 
     if (request->scene_node_type() == eSceneNodeType::kMainSceneCrossNode)
     {
-		registry.remove<MainSceneNode>(sceneNodeId);
+		registry.remove<MainRoomNode>(sceneNodeId);
 		registry.emplace<CrossMainSceneNode>(sceneNodeId);
     	
     }
     else if (request->scene_node_type() == eSceneNodeType::kRoomNode)
     {
-		registry.remove<MainSceneNode>(sceneNodeId);
+		registry.remove<MainRoomNode>(sceneNodeId);
 		registry.emplace<RoomSceneNode>(sceneNodeId);
     }
     else if (request->scene_node_type() == eSceneNodeType::kRoomSceneCrossNode)
     {
-		registry.remove<MainSceneNode>(sceneNodeId);
+		registry.remove<MainRoomNode>(sceneNodeId);
 		registry.emplace<CrossRoomSceneNode>(sceneNodeId);
     }
 ///<<< END WRITING YOUR CODE

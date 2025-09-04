@@ -36,7 +36,7 @@ struct LeaveRoomParam
     entt::entity leaver{ entt::null };
 };
 
-struct CreateSceneNodeRoomParam
+struct CreateRoomOnNodeRoomParam
 {
     inline bool CheckValid() const
     {
@@ -87,14 +87,14 @@ public:
      * @param scene The entity ID of the scene.
      * @return The Game Node ID.
      */
-    static NodeId GetGameNodeIdFromRoomEntity(entt::entity scene);
+    static NodeId GetGameNodeIdFromRoomEntity(entt::entity room);
 
     /**
      * @brief get_game_node_eid retrieves the entity ID of a game node based on its scene ID.
      * @param scene_id The scene ID of the game node.
      * @return The entity ID of the game node.
      */
-    static entt::entity get_game_node_eid(uint64_t scene_id);
+    static entt::entity get_game_node_eid(uint64_t room_id);
 
     /**
      * @brief GenSceneGuid generates a unique scene GUID.
@@ -107,7 +107,7 @@ public:
      * @param scene_config_id The ID of the scene configuration.
      * @return The number of scenes.
      */
-    static std::size_t GetRoomsSize(uint32_t scene_config_id);
+    static std::size_t GetRoomsSize(uint32_t room_config_id);
 
     /**
      * @brief GetScenesSize retrieves the total number of scenes.
@@ -126,14 +126,14 @@ public:
      * @param scene The entity ID of the scene to check.
      * @return The number of players in the scene.
      */
-    static uint32_t HasRoomSlot(entt::entity scene);
+    static uint32_t HasRoomSlot(entt::entity room);
 
     /**
      * @brief CreateScene2GameNode creates a scene associated with a game node.
      * @param param Parameters for creating the scene.
      * @return The entity ID of the created scene.
      */
-    static entt::entity CreateRoomOnRoomNode(const CreateSceneNodeRoomParam& param);
+    static entt::entity CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& param);
 
     /**
      * @brief DestroyScene destroys a scene.

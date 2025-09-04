@@ -5,7 +5,7 @@
 #include "scene/scene/comp/nav_comp.h"
 
 struct EnterRoomParam;
-struct CreateSceneNodeRoomParam;
+struct CreateRoomOnNodeRoomParam;
 class OnSceneCreate;
 class AfterEnterScene;
 class BeforeLeaveScene;

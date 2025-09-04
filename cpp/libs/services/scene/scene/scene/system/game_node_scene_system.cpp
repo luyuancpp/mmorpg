@@ -22,7 +22,7 @@ void GameNodeSceneSystem::InitializeNodeScenes() {
 
 	const auto& mainSceneConf = GetMainSceneAllTable();
 	for (auto& item : mainSceneConf.data()) {
-		CreateSceneNodeRoomParam params{ .node = entt::entity{GetNodeInfo().node_id()}};
+		CreateRoomOnNodeRoomParam params{ .node = entt::entity{GetNodeInfo().node_id()}};
 		params.roomInfo.set_scene_confid(item.id());
 		RoomUtil::CreateRoomOnRoomNode(params);
 	}
