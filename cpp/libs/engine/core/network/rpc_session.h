@@ -71,13 +71,5 @@ private:
 	bool handshaked = false;
 };
 
-// 判断连接地址是否与服务器信息匹配
-template<typename ServerInfo>
-bool IsSameAddress(const muduo::net::InetAddress& connAddr, const ServerInfo& serverInfo)
-{
-    return serverInfo.ip() == connAddr.toIp() && serverInfo.port() == connAddr.port();
-}
 
-// 重载函数：判断两个 InetAddress 是否匹配
-bool IsSameAddress(const muduo::net::InetAddress& connAddr, const muduo::net::InetAddress& serverAddr);
 
