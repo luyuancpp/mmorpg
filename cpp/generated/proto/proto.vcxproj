@@ -88,10 +88,10 @@
     <ClCompile Include="scene\game_player.pb.cc" />
     <ClCompile Include="scene\game_player_scene.pb.cc" />
     <ClCompile Include="scene\game_scene.pb.cc" />
-    <ClCompile Include="scene\game_service.pb.cc" />
     <ClCompile Include="scene\player_scene.pb.cc" />
     <ClCompile Include="scene\player_skill.pb.cc" />
     <ClCompile Include="scene\player_state_attribute_sync.pb.cc" />
+    <ClCompile Include="scene\scene.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="centre\centre_player.pb.h" />
@@ -163,10 +163,10 @@
     <ClInclude Include="scene\game_player.pb.h" />
     <ClInclude Include="scene\game_player_scene.pb.h" />
     <ClInclude Include="scene\game_scene.pb.h" />
-    <ClInclude Include="scene\game_service.pb.h" />
     <ClInclude Include="scene\player_scene.pb.h" />
     <ClInclude Include="scene\player_skill.pb.h" />
     <ClInclude Include="scene\player_state_attribute_sync.pb.h" />
+    <ClInclude Include="scene\scene.pb.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
