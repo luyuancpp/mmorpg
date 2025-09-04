@@ -132,13 +132,13 @@
             |-- table.vcxproj.user
     |-- libs
         |-- engine
-            |-- configs
+            |-- config
                 |-- CMakeLists.txt
                 |-- config.cpp
                 |-- config.h
-                |-- configs.vcxproj
-                |-- configs.vcxproj.filters
-                |-- configs.vcxproj.user
+                |-- config.vcxproj
+                |-- config.vcxproj.filters
+                |-- config.vcxproj.user
                 |-- node_config_manager.cpp
                 |-- node_config_manager.h
                 |-- table_expression.h
@@ -284,7 +284,6 @@
                     |-- utility
                         |-- utility.cpp
                         |-- utility.h
-                |-- chatgtp.txt
                 |-- core.vcxproj
                 |-- core.vcxproj.filters
                 |-- core.vcxproj.user
@@ -365,7 +364,6 @@
                 |-- system
                     |-- mission_system.cpp
                     |-- mission_system.h
-                |-- chatgtp.md
             |-- reward
                 |-- comp
                     |-- reward_comp.h
@@ -382,7 +380,6 @@
                     |-- node_scene_system.h
                     |-- scene_system.cpp
                     |-- scene_system.h
-                |-- chatgtp
             |-- time
                 |-- constants
                     |-- time_constants.h
@@ -391,7 +388,6 @@
                     |-- time_meter_system.h
                     |-- time_system.cpp
                     |-- time_system.h
-            |-- chatgtp.txt
             |-- game_logic.vcxproj.filters
             |-- modules.vcxproj
             |-- modules.vcxproj.user
@@ -427,7 +423,6 @@
                 |-- centre.vcxproj
                 |-- centre.vcxproj.filters
                 |-- centre.vcxproj.user
-                |-- chatgtp.md
             |-- gate
                 |-- session
                     |-- comp
@@ -456,8 +451,8 @@
                             |-- actor_action_state_system.h
                     |-- attribute
                         |-- comp
-                            |-- actor_atrribute_comp.cpp
-                            |-- actor_atrribute_comp.h
+                            |-- actor_attribute_comp.cpp
+                            |-- actor_attribute_comp.h
                         |-- constants
                             |-- actor_state_attribute_calculator_constants.h
                             |-- actor_state_attribute_constants.h
@@ -543,7 +538,6 @@
                             |-- system
                                 |-- skill_system.cpp
                                 |-- skill_system.h
-                            |-- chatgtp.txt
                     |-- combat_state
                         |-- constants
                             |-- combat_state_constants.h
@@ -616,7 +610,6 @@
                     |-- centre_service_handler.cpp
                     |-- centre_service_handler.h
                     |-- register_handler.cpp
-                |-- chatgtp.txt
             |-- rpc_replies
                 |-- player
                     |-- game_player_replied_handler.cpp
