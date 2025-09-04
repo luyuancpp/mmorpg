@@ -2,7 +2,7 @@
 #pragma once
 #include "proto/scene/game_player_scene.pb.h"
 
-#include "rpc/player_rpc_replied_handler.h"
+#include "rpc/player_rpc_response_handler.h"
 
 
 class SceneScenePlayerReply : public ::PlayerServiceReplied

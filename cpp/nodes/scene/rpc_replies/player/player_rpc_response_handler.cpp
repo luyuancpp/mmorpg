@@ -1,8 +1,8 @@
 #include <memory>
 #include <unordered_map>
-#include "rpc/player_rpc_replied_handler.h"
-#include "centre_player_replied_handler.h"
-#include "centre_player_scene_replied_handler.h"
+#include "rpc/player_rpc_response_handler.h"
+#include "centre_player_response_handler.h"
+#include "centre_player_scene_response_handler.h"
 class CentrePlayerUtilityImpl : public CentrePlayerUtility {};
 class CentrePlayerSceneImpl : public CentrePlayerScene {};
 

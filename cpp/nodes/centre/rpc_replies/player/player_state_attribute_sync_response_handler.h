@@ -2,7 +2,7 @@
 #pragma once
 #include "proto/scene/player_state_attribute_sync.pb.h"
 
-#include "rpc/player_rpc_replied_handler.h"
+#include "rpc/player_rpc_response_handler.h"
 
 
 class ScenePlayerSyncReply : public ::PlayerServiceReplied

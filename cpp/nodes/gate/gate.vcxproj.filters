@@ -24,31 +24,31 @@
     <ClCompile Include="handler\rpc\gate_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\centre_scene_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\centre_scene_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\centre_service_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\centre_service_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\game_scene_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\game_scene_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\game_service_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\game_service_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="rpc_replies\register_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\register_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\register_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\route_message_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\route_message_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="gate_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\player\player_rpc_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\player\player_rpc_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="handler\rpc\player\player_service_interface.cpp">
@@ -62,16 +62,16 @@
     <ClInclude Include="handler\rpc\gate_service_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rpc_replies\centre_scene_replied_handler.h">
+    <ClInclude Include="rpc_replies\centre_scene_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rpc_replies\centre_service_replied_handler.h">
+    <ClInclude Include="rpc_replies\centre_service_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rpc_replies\game_scene_replied_handler.h">
+    <ClInclude Include="rpc_replies\game_scene_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rpc_replies\game_service_replied_handler.h">
+    <ClInclude Include="rpc_replies\game_service_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="gate_node.h">

@@ -29,8 +29,8 @@ const (
 	LuaCppExtension               = "_lua.cpp"
 	HandlerHeaderExtension        = "_handler.h"
 	HandlerCppExtension           = "_handler.cpp"
-	RepliedHandlerHeaderExtension = "_replied_handler.h"
-	CppRepliedHandlerEx           = "_replied_handler.cpp"
+	RepliedHandlerHeaderExtension = "_response_handler.h"
+	CppRepliedHandlerEx           = "_response_handler.cpp"
 	CppSol2Extension              = "_sol2.cpp"
 	CppSystemExtension            = "_system.cpp"
 	GrpcClientExtension           = "_grpc_client"
@@ -160,7 +160,7 @@ const (
 	EmptyResponseName        = "Empty"
 	MysqlName                = "mysql"
 	PlayerServiceName        = "player_service_interface.cpp"
-	PlayerRepliedServiceName = "player_rpc_replied_handler.cpp"
+	PlayerRepliedServiceName = "player_rpc_response_handler.cpp"
 	CompleteQueueName        = "CompleteQueue"
 )
 
@@ -213,7 +213,7 @@ const (
 	DisplayPlayer                   = "Player"
 	ServiceIncludeName              = "rpc/"
 	PlayerServiceIncludeName        = "#include \"rpc/player_service_interface.h\"\n"
-	PlayerServiceRepliedIncludeName = "#include \"rpc/player_rpc_replied_handler.h\"\n"
+	PlayerServiceRepliedIncludeName = "#include \"rpc/player_rpc_response_handler.h\"\n"
 	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
 	ClientLuaProjectRelative        = "script/lua/rpc/"
 	ClassNameSuffix                 = "Handler"

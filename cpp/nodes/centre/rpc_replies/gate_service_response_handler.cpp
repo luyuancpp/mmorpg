@@ -1,5 +1,5 @@
 
-#include "gate_service_replied_handler.h"
+#include "gate_service_response_handler.h"
 
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
@@ -8,6 +8,13 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
+#include "muduo/base/Logging.h"
+#include "engine/core/type_define/type_define.h"
+
+#include "scene/system/player_change_scene_system.h"
+#include "core/utils/registry/game_registry.h"
+#include "player/system/player_node_system.h"
+#include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
 
@@ -33,6 +40,20 @@ void InitGateReply()
 void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	///gate 更新gs,相应的gs可以往那个gate上发消息了
+	///todo 中间返回是断开了
+	entt::entity GetPlayerEntityBySessionId(uint64_t session_id);
+	const auto player = GetPlayerEntityBySessionId(replied->session_info().session_id());
+	if (entt::null == player)
+	{
+		LOG_TRACE << "session player not found " << replied->session_info().session_id();
+		return;
+	}
+	
+	PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(player);
+	PlayerNodeSystem::ProcessPlayerSessionState(player);
+	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(player);
+	PlayerChangeSceneUtil::ProgressSceneChangeState(player);
 ///<<< END WRITING YOUR CODE
 }
 

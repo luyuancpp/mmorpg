@@ -1,5 +1,5 @@
 
-#include "game_service_replied_handler.h"
+#include "game_service_response_handler.h"
 
 #include "rpc/service_metadata/game_service_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
@@ -14,7 +14,7 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 
 #include "rpc/service_metadata/service_metadata.h"
-#include "rpc/player_rpc_replied_handler.h"
+#include "rpc/player_rpc_response_handler.h"
 #include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "proto/logic/component/player_network_comp.pb.h"
