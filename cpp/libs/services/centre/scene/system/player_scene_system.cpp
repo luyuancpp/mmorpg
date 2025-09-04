@@ -6,7 +6,7 @@
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "node/comp/game_node_comp.h"
 #include "rpc/service_metadata/game_player_scene_service_metadata.h"
-#include "rpc/service_metadata/game_service_service_metadata.h"
+#include "rpc/service_metadata/scene_service_metadata.h"
 #include "scene/system/player_change_scene_system.h"
 #include "player/system/player_tip_system.h"
 #include "proto/logic/component/player_network_comp.pb.h"

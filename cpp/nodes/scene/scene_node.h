@@ -1,7 +1,7 @@
 #pragma once
 
 #include "muduo/net/EventLoop.h"
-#include "handler/rpc/game_service_handler.h"
+#include "handler/rpc/scene_handler.h"
 #include "network/rpc_client.h"
 #include "network/rpc_connection_event.h"
 #include "node/system/node/node.h"

@@ -34,7 +34,7 @@
 #include "rpc/service_metadata/game_player_service_metadata.h"
 #include "rpc/service_metadata/game_player_scene_service_metadata.h"
 #include "rpc/service_metadata/game_scene_service_metadata.h"
-#include "rpc/service_metadata/game_service_service_metadata.h"
+#include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "rpc/service_metadata/player_skill_service_metadata.h"
 #include "rpc/service_metadata/player_state_attribute_sync_service_metadata.h"

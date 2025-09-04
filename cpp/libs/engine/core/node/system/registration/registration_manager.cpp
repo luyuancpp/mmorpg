@@ -2,7 +2,7 @@
 #include <table/proto/tip/common_error_tip.pb.h>
 #include <time/comp/timer_task_comp.h>
 #include "node/system/node/node_util.h"
-#include <rpc/service_metadata/game_service_service_metadata.h>
+#include <rpc/service_metadata/scene_service_metadata.h>
 #include <rpc/service_metadata/centre_service_service_metadata.h>
 #include <rpc/service_metadata/gate_service_service_metadata.h>
 #include <network/rpc_client.h>

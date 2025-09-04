@@ -1,16 +1,24 @@
 
-#include "game_service_response_handler.h"
+#include "scene_response_handler.h"
 
-#include "rpc/service_metadata/game_service_service_metadata.h"
+#include "rpc/service_metadata/scene_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "gate_node.h"
-#include "session/manager/session_manager.h"
 
+#include <boost/get_pointer.hpp>
+#include <muduo/base/Logging.h>
+
+
+#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/player_rpc_response_handler.h"
+#include "threading/redis_manager.h"
+#include "type_alias/player_session_type_alias.h"
+#include "proto/logic/component/player_network_comp.pb.h"
+#include "threading/player_manager.h"
 ///<<< END WRITING YOUR CODE
 
 
@@ -56,27 +64,68 @@ void OnSceneSendMessageToPlayerReply(const TcpConnectionPtr& conn, const std::sh
 void OnSceneClientSendMessageToPlayerReply(const TcpConnectionPtr& conn, const std::shared_ptr<::ClientSendMessageToPlayerResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto it = tlsSessionManager.sessions().find(replied->session_id());
-	if (it == tlsSessionManager.sessions().end())
-	{
-		LOG_ERROR << "conn id not found  session id " << "," << replied->session_id();
-		return;
-	}
-	gGateNode->Codec().send(it->second.conn, replied->message_content());
 ///<<< END WRITING YOUR CODE
 }
 
 void OnSceneCentreSendToPlayerViaGameNodeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-
 ///<<< END WRITING YOUR CODE
 }
 
 void OnSceneInvokePlayerServiceReply(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeRouteMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	if (replied->message_content().message_id() >= gRpcServiceRegistry.size())
+	{
+		LOG_ERROR << "message_id not found " << replied->message_content().message_id() ;
+		return;
+	}
 
+	const auto it = GlobalSessionList().find(replied->header().session_id());
+	if (it == GlobalSessionList().end())
+	{
+		LOG_ERROR << "can not find session id " << replied->header().session_id();
+		return;
+	}
+
+	const auto  player_id    = it->second;
+	const auto& message_info = gRpcServiceRegistry.at(replied->message_content().message_id() );
+	const auto  player = GetPlayer(player_id);
+	if (!tlsRegistryManager.actorRegistry.valid(player))
+	{
+		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"
+			<< replied->message_content().message_id();
+		return;
+	}
+
+	const auto serviceIt = gPlayerServiceReplied.find(message_info.serviceName);
+	if (serviceIt == gPlayerServiceReplied.end())
+	{
+		LOG_ERROR << "PlayerService service not found " << player_id << ","
+		<< replied->message_content().message_id();
+		return;
+	}
+
+	const auto& serviceImpl = serviceIt->second;
+	google::protobuf::Service* service = serviceImpl->service();
+	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.methodName);
+	if (nullptr == method)
+	{
+		LOG_ERROR << "PlayerService method not found " << message_info.methodName;
+		return;
+	}
+
+	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
+	if (!playerResponse->ParsePartialFromArray(replied->message_content().serialized_message().data(),
+		static_cast < int32_t > ( replied ->message_content( ).serialized_message( ). size ( ) )))
+	{
+        LOG_ERROR << "ParsePartialFromArray " << message_info.methodName;
+        return;
+	}
+
+	serviceImpl->CallMethod(method, player, nullptr, boost::get_pointer(playerResponse));
 ///<<< END WRITING YOUR CODE
 }
 
@@ -113,6 +162,5 @@ void OnSceneCreateSceneReply(const TcpConnectionPtr& conn, const std::shared_ptr
 void OnSceneNodeHandshakeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	gNode->GetNodeRegistrationManager().OnHandshakeReplied(*replied);
 ///<<< END WRITING YOUR CODE
 }

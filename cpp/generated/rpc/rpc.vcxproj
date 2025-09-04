@@ -29,7 +29,7 @@
     <ClInclude Include="service_metadata\game_player_scene_service_metadata.h" />
     <ClInclude Include="service_metadata\game_player_service_metadata.h" />
     <ClInclude Include="service_metadata\game_scene_service_metadata.h" />
-    <ClInclude Include="service_metadata\game_service_service_metadata.h" />
+    <ClInclude Include="service_metadata\scene_service_metadata.h" />
     <ClInclude Include="service_metadata\gate_service_service_metadata.h" />
     <ClInclude Include="service_metadata\login_service_metadata.h" />
     <ClInclude Include="service_metadata\player_locator_service_metadata.h" />
