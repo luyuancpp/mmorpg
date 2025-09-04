@@ -325,7 +325,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> RegisterSceneRequest::_table_ = {
     {PROTOBUF_FIELD_OFFSET(RegisterSceneRequest, _impl_.scenes_info_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
+    {::_pbi::TcParser::GetTable<::RoomInfoPBComponent>()},
   }}, {{
   }},
 };

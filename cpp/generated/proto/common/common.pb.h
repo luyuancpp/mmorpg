@@ -66,7 +66,7 @@ extern NodeInfoDefaultTypeInternal _NodeInfo_default_instance_;
 class NodeInfoListPBComponent;
 struct NodeInfoListPBComponentDefaultTypeInternal;
 extern NodeInfoListPBComponentDefaultTypeInternal _NodeInfoListPBComponent_default_instance_;
-class SceneInfoPBComponent;
+class RoomInfoPBComponent;
 struct SceneInfoPBComponentDefaultTypeInternal;
 extern SceneInfoPBComponentDefaultTypeInternal _SceneInfoPBComponent_default_instance_;
 class SceneInfoPBComponent_CreatorsEntry_DoNotUse;
@@ -540,32 +540,32 @@ class EndpointPBComponent final
 };
 // -------------------------------------------------------------------
 
-class SceneInfoPBComponent final
+class RoomInfoPBComponent final
     : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:SceneInfoPBComponent) */ {
  public:
-  inline SceneInfoPBComponent() : SceneInfoPBComponent(nullptr) {}
-  ~SceneInfoPBComponent() PROTOBUF_FINAL;
+  inline RoomInfoPBComponent() : RoomInfoPBComponent(nullptr) {}
+  ~RoomInfoPBComponent() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(SceneInfoPBComponent* msg, std::destroying_delete_t) {
+  void operator delete(RoomInfoPBComponent* msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(SceneInfoPBComponent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(RoomInfoPBComponent));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR SceneInfoPBComponent(
+  explicit PROTOBUF_CONSTEXPR RoomInfoPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline SceneInfoPBComponent(const SceneInfoPBComponent& from) : SceneInfoPBComponent(nullptr, from) {}
-  inline SceneInfoPBComponent(SceneInfoPBComponent&& from) noexcept
-      : SceneInfoPBComponent(nullptr, std::move(from)) {}
-  inline SceneInfoPBComponent& operator=(const SceneInfoPBComponent& from) {
+  inline RoomInfoPBComponent(const RoomInfoPBComponent& from) : RoomInfoPBComponent(nullptr, from) {}
+  inline RoomInfoPBComponent(RoomInfoPBComponent&& from) noexcept
+      : RoomInfoPBComponent(nullptr, std::move(from)) {}
+  inline RoomInfoPBComponent& operator=(const RoomInfoPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline SceneInfoPBComponent& operator=(SceneInfoPBComponent&& from) noexcept {
+  inline RoomInfoPBComponent& operator=(RoomInfoPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -593,16 +593,16 @@ class SceneInfoPBComponent final
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const SceneInfoPBComponent& default_instance() {
+  static const RoomInfoPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const SceneInfoPBComponent* internal_default_instance() {
-    return reinterpret_cast<const SceneInfoPBComponent*>(
+  static inline const RoomInfoPBComponent* internal_default_instance() {
+    return reinterpret_cast<const RoomInfoPBComponent*>(
         &_SceneInfoPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 5;
-  friend void swap(SceneInfoPBComponent& a, SceneInfoPBComponent& b) { a.Swap(&b); }
-  inline void Swap(SceneInfoPBComponent* other) {
+  friend void swap(RoomInfoPBComponent& a, RoomInfoPBComponent& b) { a.Swap(&b); }
+  inline void Swap(RoomInfoPBComponent* other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -610,7 +610,7 @@ class SceneInfoPBComponent final
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(SceneInfoPBComponent* other) {
+  void UnsafeArenaSwap(RoomInfoPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -618,13 +618,13 @@ class SceneInfoPBComponent final
 
   // implements Message ----------------------------------------------
 
-  SceneInfoPBComponent* New(::google::protobuf::Arena* arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<SceneInfoPBComponent>(arena);
+  RoomInfoPBComponent* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<RoomInfoPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const SceneInfoPBComponent& from);
+  void CopyFrom(const RoomInfoPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const SceneInfoPBComponent& from) { SceneInfoPBComponent::MergeImpl(*this, from); }
+  void MergeFrom(const RoomInfoPBComponent& from) { RoomInfoPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -661,7 +661,7 @@ class SceneInfoPBComponent final
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(SceneInfoPBComponent* other);
+  void InternalSwap(RoomInfoPBComponent* other);
  private:
   template <typename T>
   friend ::absl::string_view(
@@ -669,10 +669,10 @@ class SceneInfoPBComponent final
   static ::absl::string_view FullMessageName() { return "SceneInfoPBComponent"; }
 
  protected:
-  explicit SceneInfoPBComponent(::google::protobuf::Arena* arena);
-  SceneInfoPBComponent(::google::protobuf::Arena* arena, const SceneInfoPBComponent& from);
-  SceneInfoPBComponent(::google::protobuf::Arena* arena, SceneInfoPBComponent&& from) noexcept
-      : SceneInfoPBComponent(arena) {
+  explicit RoomInfoPBComponent(::google::protobuf::Arena* arena);
+  RoomInfoPBComponent(::google::protobuf::Arena* arena, const RoomInfoPBComponent& from);
+  RoomInfoPBComponent(::google::protobuf::Arena* arena, RoomInfoPBComponent&& from) noexcept
+      : RoomInfoPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
@@ -770,7 +770,7 @@ class SceneInfoPBComponent final
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
-                          const SceneInfoPBComponent& from_msg);
+                          const RoomInfoPBComponent& from_msg);
     ::google::protobuf::internal::MapField<SceneInfoPBComponent_CreatorsEntry_DoNotUse, ::uint64_t, bool,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT64,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
@@ -1771,117 +1771,117 @@ inline void NetworkAddress::_internal_set_port(::uint32_t value) {
 // SceneInfoPBComponent
 
 // uint32 scene_confid = 1;
-inline void SceneInfoPBComponent::clear_scene_confid() {
+inline void RoomInfoPBComponent::clear_scene_confid() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_confid_ = 0u;
 }
-inline ::uint32_t SceneInfoPBComponent::scene_confid() const {
+inline ::uint32_t RoomInfoPBComponent::scene_confid() const {
   // @@protoc_insertion_point(field_get:SceneInfoPBComponent.scene_confid)
   return _internal_scene_confid();
 }
-inline void SceneInfoPBComponent::set_scene_confid(::uint32_t value) {
+inline void RoomInfoPBComponent::set_scene_confid(::uint32_t value) {
   _internal_set_scene_confid(value);
   // @@protoc_insertion_point(field_set:SceneInfoPBComponent.scene_confid)
 }
-inline ::uint32_t SceneInfoPBComponent::_internal_scene_confid() const {
+inline ::uint32_t RoomInfoPBComponent::_internal_scene_confid() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.scene_confid_;
 }
-inline void SceneInfoPBComponent::_internal_set_scene_confid(::uint32_t value) {
+inline void RoomInfoPBComponent::_internal_set_scene_confid(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_confid_ = value;
 }
 
 // uint32 guid = 2;
-inline void SceneInfoPBComponent::clear_guid() {
+inline void RoomInfoPBComponent::clear_guid() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.guid_ = 0u;
 }
-inline ::uint32_t SceneInfoPBComponent::guid() const {
+inline ::uint32_t RoomInfoPBComponent::guid() const {
   // @@protoc_insertion_point(field_get:SceneInfoPBComponent.guid)
   return _internal_guid();
 }
-inline void SceneInfoPBComponent::set_guid(::uint32_t value) {
+inline void RoomInfoPBComponent::set_guid(::uint32_t value) {
   _internal_set_guid(value);
   // @@protoc_insertion_point(field_set:SceneInfoPBComponent.guid)
 }
-inline ::uint32_t SceneInfoPBComponent::_internal_guid() const {
+inline ::uint32_t RoomInfoPBComponent::_internal_guid() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.guid_;
 }
-inline void SceneInfoPBComponent::_internal_set_guid(::uint32_t value) {
+inline void RoomInfoPBComponent::_internal_set_guid(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.guid_ = value;
 }
 
 // uint32 mirror_confid = 3;
-inline void SceneInfoPBComponent::clear_mirror_confid() {
+inline void RoomInfoPBComponent::clear_mirror_confid() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.mirror_confid_ = 0u;
 }
-inline ::uint32_t SceneInfoPBComponent::mirror_confid() const {
+inline ::uint32_t RoomInfoPBComponent::mirror_confid() const {
   // @@protoc_insertion_point(field_get:SceneInfoPBComponent.mirror_confid)
   return _internal_mirror_confid();
 }
-inline void SceneInfoPBComponent::set_mirror_confid(::uint32_t value) {
+inline void RoomInfoPBComponent::set_mirror_confid(::uint32_t value) {
   _internal_set_mirror_confid(value);
   // @@protoc_insertion_point(field_set:SceneInfoPBComponent.mirror_confid)
 }
-inline ::uint32_t SceneInfoPBComponent::_internal_mirror_confid() const {
+inline ::uint32_t RoomInfoPBComponent::_internal_mirror_confid() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.mirror_confid_;
 }
-inline void SceneInfoPBComponent::_internal_set_mirror_confid(::uint32_t value) {
+inline void RoomInfoPBComponent::_internal_set_mirror_confid(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.mirror_confid_ = value;
 }
 
 // uint32 dungen_confid = 4;
-inline void SceneInfoPBComponent::clear_dungen_confid() {
+inline void RoomInfoPBComponent::clear_dungen_confid() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.dungen_confid_ = 0u;
 }
-inline ::uint32_t SceneInfoPBComponent::dungen_confid() const {
+inline ::uint32_t RoomInfoPBComponent::dungen_confid() const {
   // @@protoc_insertion_point(field_get:SceneInfoPBComponent.dungen_confid)
   return _internal_dungen_confid();
 }
-inline void SceneInfoPBComponent::set_dungen_confid(::uint32_t value) {
+inline void RoomInfoPBComponent::set_dungen_confid(::uint32_t value) {
   _internal_set_dungen_confid(value);
   // @@protoc_insertion_point(field_set:SceneInfoPBComponent.dungen_confid)
 }
-inline ::uint32_t SceneInfoPBComponent::_internal_dungen_confid() const {
+inline ::uint32_t RoomInfoPBComponent::_internal_dungen_confid() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.dungen_confid_;
 }
-inline void SceneInfoPBComponent::_internal_set_dungen_confid(::uint32_t value) {
+inline void RoomInfoPBComponent::_internal_set_dungen_confid(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.dungen_confid_ = value;
 }
 
 // map<uint64, bool> creators = 5;
-inline int SceneInfoPBComponent::_internal_creators_size() const {
+inline int RoomInfoPBComponent::_internal_creators_size() const {
   return _internal_creators().size();
 }
-inline int SceneInfoPBComponent::creators_size() const {
+inline int RoomInfoPBComponent::creators_size() const {
   return _internal_creators_size();
 }
-inline void SceneInfoPBComponent::clear_creators() {
+inline void RoomInfoPBComponent::clear_creators() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.creators_.Clear();
 }
-inline const ::google::protobuf::Map<::uint64_t, bool>& SceneInfoPBComponent::_internal_creators() const {
+inline const ::google::protobuf::Map<::uint64_t, bool>& RoomInfoPBComponent::_internal_creators() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.creators_.GetMap();
 }
-inline const ::google::protobuf::Map<::uint64_t, bool>& SceneInfoPBComponent::creators() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::google::protobuf::Map<::uint64_t, bool>& RoomInfoPBComponent::creators() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_map:SceneInfoPBComponent.creators)
   return _internal_creators();
 }
-inline ::google::protobuf::Map<::uint64_t, bool>* SceneInfoPBComponent::_internal_mutable_creators() {
+inline ::google::protobuf::Map<::uint64_t, bool>* RoomInfoPBComponent::_internal_mutable_creators() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _impl_.creators_.MutableMap();
 }
-inline ::google::protobuf::Map<::uint64_t, bool>* SceneInfoPBComponent::mutable_creators() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::google::protobuf::Map<::uint64_t, bool>* RoomInfoPBComponent::mutable_creators() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_map:SceneInfoPBComponent.creators)
   return _internal_mutable_creators();
 }

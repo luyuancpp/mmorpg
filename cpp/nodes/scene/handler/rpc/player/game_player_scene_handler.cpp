@@ -52,7 +52,7 @@ void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSce
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "Handling EnterSceneS2CRequest for player: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
 
-	const auto sceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(player);
+	const auto sceneEntity = tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(player);
 	if (sceneEntity == nullptr)
 	{
 		LOG_ERROR << "Player " << tlsRegistryManager.actorRegistry.get<Guid>(player) << " has not entered any scene.";
@@ -60,7 +60,7 @@ void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSce
 	}
 
 	::EnterSceneS2C message;
-	message.mutable_scene_info()->CopyFrom(tlsRegistryManager.actorRegistry.get<SceneInfoPBComponent>(sceneEntity->roomEntity));
+	message.mutable_scene_info()->CopyFrom(tlsRegistryManager.actorRegistry.get<RoomInfoPBComponent>(sceneEntity->roomEntity));
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 ///<<< END WRITING YOUR CODE
 

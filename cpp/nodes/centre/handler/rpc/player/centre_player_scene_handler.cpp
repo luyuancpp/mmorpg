@@ -94,7 +94,7 @@ void CentrePlayerSceneHandler::SceneInfoC2S(entt::entity player,const ::CentreSc
 	///<<< BEGIN WRITING YOUR CODE
 		//给客户端发所有场景消息
 	SceneInfoS2C message;
-	for (const auto& [entity, info] : tlsRegistryManager.roomRegistry.view<SceneInfoPBComponent>().each())
+	for (const auto& [entity, info] : tlsRegistryManager.roomRegistry.view<RoomInfoPBComponent>().each())
 	{
 		message.mutable_scene_info()->Add()->CopyFrom(info);
 	}

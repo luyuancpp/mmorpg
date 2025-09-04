@@ -35,7 +35,7 @@ void PlayerChangeRoomUtil::SetCurrentChangeSceneState(entt::entity player, Chang
 }
 
 // 将场景信息复制到切换场景信息中
-void PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const SceneInfoPBComponent& sceneInfo) {
+void PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const RoomInfoPBComponent& sceneInfo) {
 	changeInfo.set_scene_confid(sceneInfo.scene_confid());
 	changeInfo.set_dungen_confid(sceneInfo.dungen_confid());
 	changeInfo.set_guid(sceneInfo.guid());

@@ -81,7 +81,7 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* playerSceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity);
+    const auto* playerSceneEntity = tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(playerEntity);
     const auto playerId = tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
     if (!playerSceneEntity)
     {
@@ -89,7 +89,7 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* sceneInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>((*playerSceneEntity).roomEntity);
+    const auto* sceneInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>((*playerSceneEntity).roomEntity);
     if (!sceneInfo)
     {
         LOG_ERROR << "Scene info not found for player: " << playerId;
@@ -154,7 +154,7 @@ bool PlayerSceneSystem::VerifyChangeSceneRequest(entt::entity playerEntity)
 
 	info.set_processing(true);
 
-	if (!tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity))
+	if (!tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(playerEntity))
 	{
 		LOG_ERROR << "SceneEntityComp missing for player: " << playerId;
 		PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneYourSceneIsNull, {});
@@ -203,9 +203,9 @@ entt::entity PlayerSceneSystem::ResolveTargetScene(entt::entity playerEntity)
 bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::entity toScene)
 {
 	auto playerId = tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
-	auto* fromSceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity);
-	const auto* fromSceneInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>(fromSceneEntity->roomEntity);
-	const auto* toSceneInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>(toScene);
+	auto* fromSceneEntity = tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(playerEntity);
+	const auto* fromSceneInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>(fromSceneEntity->roomEntity);
+	const auto* toSceneInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>(toScene);
 
 	if (!fromSceneInfo || !toSceneInfo)
 	{
@@ -247,10 +247,10 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::entity toScene)
 {
 	auto& changeInfo = *tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
-	auto* fromSceneComp = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity);
+	auto* fromSceneComp = tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(playerEntity);
 
-	auto fromNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(fromSceneComp->roomEntity).guid());
-	auto toNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(toScene).guid());
+	auto fromNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneComp->roomEntity).guid());
+	auto toNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(toScene).guid());
 
 	entt::entity fromNode{fromNodeGuid};
 	entt::entity toNode{ toNodeGuid };
@@ -272,7 +272,7 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 }
 
-void PlayerSceneSystem::HandleEnterScene(entt::entity playerEntity, const SceneInfoPBComponent& sceneInfo)
+void PlayerSceneSystem::HandleEnterScene(entt::entity playerEntity, const RoomInfoPBComponent& sceneInfo)
 {
 	ChangeSceneInfoPBComponent changeSceneInfo;
 	PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(changeSceneInfo, sceneInfo);
@@ -319,7 +319,7 @@ void PlayerSceneSystem::ProcessEnterGameNode(entt::entity playerEntity, entt::en
 
 void PlayerSceneSystem::PushInitialChangeSceneInfo(entt::entity playerEntity, entt::entity sceneEntity)
 {
-	const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(sceneEntity);
+	const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(sceneEntity);
 
 	ChangeSceneInfoPBComponent changeInfo;
 	PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(changeInfo, sceneInfo);

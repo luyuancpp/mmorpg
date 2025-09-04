@@ -510,7 +510,7 @@ EnterSceneC2SRequest::EnterSceneC2SRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComponent>(
+  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::RoomInfoPBComponent>(
                               arena, *from._impl_.scene_info_)
                         : nullptr;
 
@@ -601,7 +601,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> EnterSceneC2SRequest::_table_ = {
     {PROTOBUF_FIELD_OFFSET(EnterSceneC2SRequest, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
+    {::_pbi::TcParser::GetTable<::RoomInfoPBComponent>()},
   }}, {{
   }},
 };
@@ -694,7 +694,7 @@ void EnterSceneC2SRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, co
     ABSL_DCHECK(from._impl_.scene_info_ != nullptr);
     if (_this->_impl_.scene_info_ == nullptr) {
       _this->_impl_.scene_info_ =
-          ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComponent>(arena, *from._impl_.scene_info_);
+          ::google::protobuf::Message::CopyConstruct<::RoomInfoPBComponent>(arena, *from._impl_.scene_info_);
     } else {
       _this->_impl_.scene_info_->MergeFrom(*from._impl_.scene_info_);
     }
@@ -1020,7 +1020,7 @@ EnterSceneS2C::EnterSceneS2C(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComponent>(
+  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::RoomInfoPBComponent>(
                               arena, *from._impl_.scene_info_)
                         : nullptr;
 
@@ -1111,7 +1111,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> EnterSceneS2C::_table_ = {
     {PROTOBUF_FIELD_OFFSET(EnterSceneS2C, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
+    {::_pbi::TcParser::GetTable<::RoomInfoPBComponent>()},
   }}, {{
   }},
 };
@@ -1204,7 +1204,7 @@ void EnterSceneS2C::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::g
     ABSL_DCHECK(from._impl_.scene_info_ != nullptr);
     if (_this->_impl_.scene_info_ == nullptr) {
       _this->_impl_.scene_info_ =
-          ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComponent>(arena, *from._impl_.scene_info_);
+          ::google::protobuf::Message::CopyConstruct<::RoomInfoPBComponent>(arena, *from._impl_.scene_info_);
     } else {
       _this->_impl_.scene_info_->MergeFrom(*from._impl_.scene_info_);
     }
@@ -1368,7 +1368,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> SceneInfoS2C::_table_ = {
     {PROTOBUF_FIELD_OFFSET(SceneInfoS2C, _impl_.scene_info_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
+    {::_pbi::TcParser::GetTable<::RoomInfoPBComponent>()},
   }}, {{
   }},
 };
@@ -1717,7 +1717,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> SceneInfoResponse::_table_ = {
     {PROTOBUF_FIELD_OFFSET(SceneInfoResponse, _impl_.scene_info_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
+    {::_pbi::TcParser::GetTable<::RoomInfoPBComponent>()},
   }}, {{
   }},
 };

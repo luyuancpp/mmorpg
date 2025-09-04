@@ -11,7 +11,7 @@
 
 using SceneList = EntityUnorderedSet;
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
-using ScenePlayers = EntityUnorderedSet; // 弱引用，要解除玩家和场景的耦合
+using RoomPlayers = EntityUnorderedSet; // 弱引用，要解除玩家和场景的耦合
 
 
 struct MainRoomNode
@@ -61,13 +61,13 @@ public:
 
 	void AddScene(entt::entity scene_id)
 	{
-		const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(scene_id);
+		const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(scene_id);
 		configSceneLists[sceneInfo.scene_confid()].emplace(scene_id);
 	}
 
 	void RemoveScene(entt::entity scene_eid)
 	{
-		const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(scene_eid);
+		const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(scene_eid);
 		auto it = configSceneLists.find(sceneInfo.scene_confid());
 		if (it != configSceneLists.end())
 		{
@@ -92,7 +92,7 @@ public:
 
 		for (auto scene : sceneList)
 		{
-			const auto playerSize = tlsRegistryManager.roomRegistry.get<ScenePlayers>(scene).size();
+			const auto playerSize = tlsRegistryManager.roomRegistry.get<RoomPlayers>(scene).size();
 			if (playerSize >= kMaxScenePlayerSize) // 可以避免重复的大小比较
 			{
 				continue;

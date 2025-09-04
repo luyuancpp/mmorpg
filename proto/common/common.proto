@@ -30,7 +30,7 @@ message NetworkAddress
   uint32 port = 2;
 }
 
-message SceneInfoPBComponent
+message RoomInfoPBComponent
 {
   uint32 scene_confid = 1;//场景id
   uint32 guid = 2;//场景唯一id

@@ -4,7 +4,7 @@
 
 #include "modules/scene/comp/player_scene.h"
 
-class SceneInfoPBComponent;
+class RoomInfoPBComponent;
 
 // PlayerChangeSceneSystem 类定义
 class PlayerChangeRoomUtil {
@@ -19,7 +19,7 @@ public:
 	static void SetCurrentChangeSceneState(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState s);
 
 	// 将场景信息复制到切换场景信息中
-	static void CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const SceneInfoPBComponent& sceneInfo);
+	static void CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const RoomInfoPBComponent& sceneInfo);
 
 	// 处理玩家的场景切换队列
 	static void ProgressSceneChangeState(entt::entity player);

@@ -244,7 +244,7 @@ CentreEnterSceneRequest::CentreEnterSceneRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComponent>(
+  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::RoomInfoPBComponent>(
                               arena, *from._impl_.scene_info_)
                         : nullptr;
 
@@ -335,7 +335,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> CentreEnterSceneRequest::_table_ = {
     {PROTOBUF_FIELD_OFFSET(CentreEnterSceneRequest, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
+    {::_pbi::TcParser::GetTable<::RoomInfoPBComponent>()},
   }}, {{
   }},
 };
@@ -428,7 +428,7 @@ void CentreEnterSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
     ABSL_DCHECK(from._impl_.scene_info_ != nullptr);
     if (_this->_impl_.scene_info_ == nullptr) {
       _this->_impl_.scene_info_ =
-          ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComponent>(arena, *from._impl_.scene_info_);
+          ::google::protobuf::Message::CopyConstruct<::RoomInfoPBComponent>(arena, *from._impl_.scene_info_);
     } else {
       _this->_impl_.scene_info_->MergeFrom(*from._impl_.scene_info_);
     }

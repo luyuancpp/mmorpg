@@ -52,7 +52,7 @@ void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorde
     }
 
     // 获取实体的场景组件
-    const auto sceneComponent = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(entity);
+    const auto sceneComponent = tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(entity);
     if (!sceneComponent) {
         return;
     }
@@ -102,7 +102,7 @@ void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnordered
     }
 
     // 获取实体的场景组件
-    const auto sceneComponent = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(entity);
+    const auto sceneComponent = tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(entity);
     if (!sceneComponent) {
         return;
     }
