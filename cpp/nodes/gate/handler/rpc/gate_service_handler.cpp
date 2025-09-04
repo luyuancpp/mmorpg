@@ -119,15 +119,6 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 
 
 
-void GateHandler::RegisterNodeSession(::google::protobuf::RpcController* controller, const ::RegisterNodeSessionRequest* request,
-	::RegisterNodeSessionResponse* response,
-	::google::protobuf::Closure* done)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
-
 
 void GateHandler::Handshake(::google::protobuf::RpcController* controller, const ::HandshakeRequest* request,
 	::HandshakeResponse* response,
