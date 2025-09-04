@@ -1,7 +1,7 @@
 #include "player_scene_system.h"
 #include "muduo/base/Logging.h"
 #include "modules/scene/comp/scene_comp.h"
-#include "modules//scene/system/scene_system.h"
+#include "modules//scene/system/room_system.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "node/comp/game_node_comp.h"
@@ -22,7 +22,7 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 	// 尝试进入上次成功进入的场景
 	entt::entity currentSceneId = entt::entity{ sceneContext.scene_info().guid() };
 	if (tlsRegistryManager.sceneRegistry.valid(currentSceneId) &&
-		kSuccess == SceneUtil::CheckPlayerEnterScene({ .scene = currentSceneId, .enter = entt::null }))
+		kSuccess == RoomUtil::CheckPlayerEnterScene({ .room = currentSceneId, .enter = entt::null }))
 	{
 		return currentSceneId;
 	}
@@ -30,7 +30,7 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 	// 尝试进入上次登录但未成功进入的场景
 	entt::entity lastSceneId = entt::entity{ sceneContext.scene_info_last_time().guid() };
 	if (tlsRegistryManager.sceneRegistry.valid(lastSceneId) &&
-		kSuccess == SceneUtil::CheckPlayerEnterScene({ .scene = lastSceneId, .enter = entt::null }))
+		kSuccess == RoomUtil::CheckPlayerEnterScene({ .room = lastSceneId, .enter = entt::null }))
 	{
 		return lastSceneId;
 	}
@@ -223,8 +223,8 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 	}
 
 	auto& sceneNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	if (!sceneNodeRegistry.valid(SceneUtil::get_game_node_eid(fromSceneInfo->guid())) ||
-		!sceneNodeRegistry.valid(SceneUtil::get_game_node_eid(toSceneInfo->guid())))
+	if (!sceneNodeRegistry.valid(RoomUtil::get_game_node_eid(fromSceneInfo->guid())) ||
+		!sceneNodeRegistry.valid(RoomUtil::get_game_node_eid(toSceneInfo->guid())))
 	{
 		LOG_ERROR << "Invalid game node info for scene change";
 		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
@@ -233,7 +233,7 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 
 	const auto& changeInfo = *tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 	if (!changeInfo.ignore_full() &&
-		SceneUtil::CheckScenePlayerSize(toScene) != kSuccess)
+		RoomUtil::CheckScenePlayerSize(toScene) != kSuccess)
 	{
 		LOG_WARN << "Scene is full for player: " << playerId;
 		PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneSceneFull, {});
@@ -249,8 +249,8 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 	auto& changeInfo = *tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 	auto* fromSceneComp = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity);
 
-	auto fromNodeGuid = SceneUtil::GetGameNodeIdFromGuid(tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(fromSceneComp->sceneEntity).guid());
-	auto toNodeGuid = SceneUtil::GetGameNodeIdFromGuid(tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(toScene).guid());
+	auto fromNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(fromSceneComp->sceneEntity).guid());
+	auto toNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(toScene).guid());
 
 	entt::entity fromNode{fromNodeGuid};
 	entt::entity toNode{ toNodeGuid };
@@ -313,7 +313,7 @@ uint32_t PlayerSceneSystem::GetDefaultSceneConfigurationId()
 
 void PlayerSceneSystem::ProcessEnterGameNode(entt::entity playerEntity, entt::entity sceneEntity)
 {
-	const auto nodeId = SceneUtil::GetGameNodeIdFromSceneEntity(sceneEntity);
+	const auto nodeId = RoomUtil::GetGameNodeIdFromRoomEntity(sceneEntity);
 	ProcessPlayerEnterSceneNode(playerEntity, nodeId);
 }
 

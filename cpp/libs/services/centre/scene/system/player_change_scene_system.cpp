@@ -2,7 +2,7 @@
 
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
-#include "modules//scene/system/scene_system.h"
+#include "modules//scene/system/room_system.h"
 
 #include "muduo/base/Logging.h"
 #include "proto/logic/event/scene_event.pb.h"
@@ -136,13 +136,13 @@ void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {
 				return;
 			}
 
-			SceneUtil::LeaveScene({ player });
-			SceneUtil::EnterScene({ destScene, player });
+			RoomUtil::LeaveScene({ player });
+			RoomUtil::EnterScene({ destScene, player });
 			queue.dequeue();
 			OnEnterSceneOk(player);
 		}
 		else {
-			SceneUtil::LeaveScene({ player });
+			RoomUtil::LeaveScene({ player });
 			task.set_state(ChangeSceneInfoPBComponent::eLeaving);
 		}
 		break;
@@ -162,10 +162,10 @@ void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {
 	case ChangeSceneInfoPBComponent::eEnterSucceed: {
 		auto destScene = entt::entity{ task.guid() };
 		if (destScene == entt::null) {
-			SceneUtil::EnterDefaultScene({ player });
+			RoomUtil::EnterDefaultScene({ player });
 		}
 		else {
-			SceneUtil::EnterScene({ destScene, player });
+			RoomUtil::EnterScene({ destScene, player });
 		}
 		break;
 	}

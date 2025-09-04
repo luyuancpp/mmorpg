@@ -11,7 +11,7 @@
 #include "rpc/service_metadata/game_player_scene_service_metadata.h"
 #include "scene/system/player_change_scene_system.h"
 #include "scene/system/player_scene_system.h"
-#include "modules/scene/system/scene_system.h"
+#include "modules/scene/system/room_system.h"
 #include "engine/core/type_define/type_define.h"
 #include "rpc/service_metadata/game_player_service_metadata.h"
 #include "proto/logic/component/scene_comp.pb.h"
