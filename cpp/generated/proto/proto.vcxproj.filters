@@ -81,9 +81,6 @@
     <ClCompile Include="scene\game_scene.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="scene\game_service.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="scene\player_scene.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -234,6 +231,9 @@
     <ClCompile Include="login\login.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="scene\scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\common.pb.h">
@@ -303,9 +303,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="scene\game_scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\game_service.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="scene\player_scene.pb.h">
@@ -453,6 +450,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="login\login.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\scene.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
