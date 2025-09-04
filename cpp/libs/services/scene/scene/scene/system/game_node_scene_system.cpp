@@ -56,7 +56,7 @@ void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 	CallRemoteMethodOnClient(CentreSceneRegisterSceneMessageId, request, entt::to_integral(centre), eNodeType::CentreNodeService);
 }
 
-void GameNodeSceneSystem::HandleSceneCreation(const OnSceneCreate& message) {
+void GameNodeSceneSystem::HandleSceneCreation(const OnRoomCreated& message) {
 	entt::entity scene = entt::to_entity(message.entity());
 	tlsRegistryManager.roomRegistry.emplace<SceneGridListComp>(scene);
 
@@ -68,10 +68,10 @@ void GameNodeSceneSystem::HandleSceneCreation(const OnSceneCreate& message) {
 	}
 }
 
-void GameNodeSceneSystem::HandleAfterEnterSceneEvent(const AfterEnterScene& message) {
+void GameNodeSceneSystem::HandleAfterEnterSceneEvent(const AfterEnterRoom& message) {
 	// Placeholder for future implementations
 }
 
-void GameNodeSceneSystem::HandleBeforeLeaveSceneEvent(const BeforeLeaveScene& message) {
+void GameNodeSceneSystem::HandleBeforeLeaveSceneEvent(const BeforeLeaveRoom& message) {
 	// Placeholder for future implementations
 }

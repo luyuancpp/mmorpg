@@ -2,15 +2,15 @@
 
 #include "scene/scene/comp/grid_comp.h"
 
-class AfterEnterScene;
-class BeforeLeaveScene;
+class AfterEnterRoom;
+class BeforeLeaveRoom;
 
 struct Hex;
 
 class AoiSystem {
 public:
     static void Update(double delta);
-    static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
+    static void BeforeLeaveSceneHandler(const BeforeLeaveRoom& message);
 private:
     static void UpdateGridState(entt::entity entity, SceneGridListComp& gridList, const Hex& currentHex,
                                 GridId currentGridId, GridSet& gridsToEnter, GridSet& gridsToLeave);
