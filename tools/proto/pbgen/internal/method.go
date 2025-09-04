@@ -650,7 +650,7 @@ func getServiceRepliedHandlerCppStr(dst string, methods RPCMethods, _ string, _ 
 #include "rpc/{{ .ServiceInfoName }}{{ .ServiceInfoHeadInclude }}"
 #include "network/codec/message_response_dispatcher.h"
 
-extern MessageResponseDispatcher gResponseDispatcher;
+extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 {{ if .FirstCode }}
 {{ .FirstCode }}
@@ -660,7 +660,7 @@ void Init{{ .InitFuncName }}{{ .RepliedHandlerFileName }}()
 {
 {{- range .Methods }}
 {{- if .HasCode }}
-    gResponseDispatcher.registerMessageCallback<{{ .CppResponse }}>({{.KeyName}}{{$.MessageIdName}},
+    gRpcResponseDispatcher.registerMessageCallback<{{ .CppResponse }}>({{.KeyName}}{{$.MessageIdName}},
         std::bind(&{{ .FuncName }}, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 {{- end }}
 {{- end }}

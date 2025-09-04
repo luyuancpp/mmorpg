@@ -4,7 +4,7 @@
 #include "rpc/service_metadata/game_scene_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
 
-extern MessageResponseDispatcher gResponseDispatcher;
+extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -14,7 +14,7 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 void InitSceneSceneRepliedHandler()
 {
-    gResponseDispatcher.registerMessageCallback<::Empty>(SceneSceneTestMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::Empty>(SceneSceneTestMessageId,
         std::bind(&OnSceneSceneTestRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 

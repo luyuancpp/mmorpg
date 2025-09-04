@@ -9,7 +9,7 @@
 #include "threading/message_context.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 
-extern ProtobufDispatcher gResponseDispatcher;
+extern ProtobufDispatcher gRpcResponseDispatcher;
 
 void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RouteMessageResponse>& replied, Timestamp timestamp)
 {
