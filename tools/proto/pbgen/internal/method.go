@@ -876,7 +876,7 @@ void InitServiceHandler()
 
 func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
 	const repliedRegisterTemplate = `
-void InitRepliedHandler()
+void InitReply()
 {
 {{- range .InitFuncs }}
     void {{ . }}();
