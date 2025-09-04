@@ -30,7 +30,7 @@ void LogIfMessageTooLarge(const GameRpcMessage& rpcMessage) {
 }
 
 // 全局响应分发器
-MessageResponseDispatcher gResponseDispatcher(std::bind(&HandleUnknownProtobufMessage, _1, _2, _3));
+MessageResponseDispatcher gRpcResponseDispatcher(std::bind(&HandleUnknownProtobufMessage, _1, _2, _3));
 
 // ====================== GameChannel 类实现 ======================
 
@@ -272,7 +272,7 @@ void GameChannel::HandleResponseMessage(const TcpConnectionPtr& conn, const Game
     }
 
     LOG_TRACE << "Dispatching response for message ID: " << rpcMessage.message_id();
-    gResponseDispatcher.onProtobufMessage(rpcMessage.message_id(), conn, response, receiveTime);
+    gRpcResponseDispatcher.onProtobufMessage(rpcMessage.message_id(), conn, response, receiveTime);
 }
 
 void GameChannel::HandleRequestMessage(const TcpConnectionPtr& connection, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {

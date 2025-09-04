@@ -4,7 +4,7 @@
 #include "rpc/service_metadata/centre_service_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
 
-extern MessageResponseDispatcher gResponseDispatcher;
+extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -15,29 +15,29 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 void InitCentreRepliedHandler()
 {
-    gResponseDispatcher.registerMessageCallback<::Empty>(CentreGatePlayerServiceMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::Empty>(CentreGatePlayerServiceMessageId,
         std::bind(&OnCentreGatePlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(CentreGateSessionDisconnectMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::Empty>(CentreGateSessionDisconnectMessageId,
         std::bind(&OnCentreGateSessionDisconnectRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::CentreLoginResponse>(CentreLoginNodeAccountLoginMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::CentreLoginResponse>(CentreLoginNodeAccountLoginMessageId,
         std::bind(&OnCentreLoginNodeAccountLoginRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(CentreLoginNodeEnterGameMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::Empty>(CentreLoginNodeEnterGameMessageId,
         std::bind(&OnCentreLoginNodeEnterGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(CentreLoginNodeLeaveGameMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::Empty>(CentreLoginNodeLeaveGameMessageId,
         std::bind(&OnCentreLoginNodeLeaveGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(CentreLoginNodeSessionDisconnectMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::Empty>(CentreLoginNodeSessionDisconnectMessageId,
         std::bind(&OnCentreLoginNodeSessionDisconnectRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(CentrePlayerServiceMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(CentrePlayerServiceMessageId,
         std::bind(&OnCentrePlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(CentreEnterGsSucceedMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::Empty>(CentreEnterGsSucceedMessageId,
         std::bind(&OnCentreEnterGsSucceedRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(CentreRouteNodeStringMsgMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(CentreRouteNodeStringMsgMessageId,
         std::bind(&OnCentreRouteNodeStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::RoutePlayerMessageResponse>(CentreRoutePlayerStringMsgMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::RoutePlayerMessageResponse>(CentreRoutePlayerStringMsgMessageId,
         std::bind(&OnCentreRoutePlayerStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(CentreInitSceneNodeMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::Empty>(CentreInitSceneNodeMessageId,
         std::bind(&OnCentreInitSceneNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::NodeHandshakeResponse>(CentreHandshakeMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::NodeHandshakeResponse>(CentreNodeHandshakeMessageId,
         std::bind(&OnCentreHandshakeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 

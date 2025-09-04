@@ -4,7 +4,7 @@
 #include "rpc/service_metadata/centre_scene_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
 
-extern MessageResponseDispatcher gResponseDispatcher;
+extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -14,9 +14,9 @@ extern MessageResponseDispatcher gResponseDispatcher;
 
 void InitCentreSceneRepliedHandler()
 {
-    gResponseDispatcher.registerMessageCallback<::RegisterSceneResponse>(CentreSceneRegisterSceneMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::RegisterSceneResponse>(CentreSceneRegisterSceneMessageId,
         std::bind(&OnCentreSceneRegisterSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gResponseDispatcher.registerMessageCallback<::Empty>(CentreSceneUnRegisterSceneMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::Empty>(CentreSceneUnRegisterSceneMessageId,
         std::bind(&OnCentreSceneUnRegisterSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
