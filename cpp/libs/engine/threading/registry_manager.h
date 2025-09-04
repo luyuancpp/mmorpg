@@ -16,7 +16,7 @@ public:
 
 	entt::registry globalRegistry;
 	entt::registry actorRegistry;
-	entt::registry sceneRegistry;
+	entt::registry roomRegistry;
 	entt::registry itemRegistry;
 	entt::registry nodeGlobalRegistry;
 

@@ -21,16 +21,16 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 {
 	// 尝试进入上次成功进入的场景
 	entt::entity currentSceneId = entt::entity{ sceneContext.scene_info().guid() };
-	if (tlsRegistryManager.sceneRegistry.valid(currentSceneId) &&
-		kSuccess == RoomUtil::CheckPlayerEnterScene({ .room = currentSceneId, .enter = entt::null }))
+	if (tlsRegistryManager.roomRegistry.valid(currentSceneId) &&
+		kSuccess == RoomUtil::CheckPlayerEnterRoom({ .room = currentSceneId, .enter = entt::null }))
 	{
 		return currentSceneId;
 	}
 
 	// 尝试进入上次登录但未成功进入的场景
 	entt::entity lastSceneId = entt::entity{ sceneContext.scene_info_last_time().guid() };
-	if (tlsRegistryManager.sceneRegistry.valid(lastSceneId) &&
-		kSuccess == RoomUtil::CheckPlayerEnterScene({ .room = lastSceneId, .enter = entt::null }))
+	if (tlsRegistryManager.roomRegistry.valid(lastSceneId) &&
+		kSuccess == RoomUtil::CheckPlayerEnterRoom({ .room = lastSceneId, .enter = entt::null }))
 	{
 		return lastSceneId;
 	}
@@ -89,7 +89,7 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* sceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>((*playerSceneEntity).sceneEntity);
+    const auto* sceneInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>((*playerSceneEntity).sceneEntity);
     if (!sceneInfo)
     {
         LOG_ERROR << "Scene info not found for player: " << playerId;
@@ -176,11 +176,11 @@ entt::entity PlayerSceneSystem::ResolveTargetScene(entt::entity playerEntity)
 	if (info.guid() > 0)
 	{
 		toScene = entt::entity{ info.guid() };
-		if (!tlsRegistryManager.sceneRegistry.valid(toScene))
+		if (!tlsRegistryManager.roomRegistry.valid(toScene))
 		{
 			LOG_ERROR << "Target scene not valid for player: " << playerId;
 			PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneSceneNotFound, {});
-			PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
+			PlayerChangeRoomUtil::PopFrontChangeSceneQueue(playerEntity);
 			return entt::null;
 		}
 	}
@@ -193,7 +193,7 @@ entt::entity PlayerSceneSystem::ResolveTargetScene(entt::entity playerEntity)
 		{
 			LOG_WARN << "No available scene found for player: " << playerId;
 			PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneSceneFull, {});
-			PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
+			PlayerChangeRoomUtil::PopFrontChangeSceneQueue(playerEntity);
 		}
 	}
 
@@ -204,13 +204,13 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 {
 	auto playerId = tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
 	auto* fromSceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity);
-	const auto* fromSceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>(fromSceneEntity->sceneEntity);
-	const auto* toSceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>(toScene);
+	const auto* fromSceneInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>(fromSceneEntity->sceneEntity);
+	const auto* toSceneInfo = tlsRegistryManager.roomRegistry.try_get<SceneInfoPBComponent>(toScene);
 
 	if (!fromSceneInfo || !toSceneInfo)
 	{
 		LOG_ERROR << "Missing scene info from/to for player: " << playerId;
-		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
+		PlayerChangeRoomUtil::PopFrontChangeSceneQueue(playerEntity);
 		return false;
 	}
 
@@ -218,7 +218,7 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 	{
 		LOG_WARN << "Already in the target scene: " << playerId;
 		PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneYouInCurrentScene, {});
-		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
+		PlayerChangeRoomUtil::PopFrontChangeSceneQueue(playerEntity);
 		return false;
 	}
 
@@ -227,17 +227,17 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 		!sceneNodeRegistry.valid(RoomUtil::get_game_node_eid(toSceneInfo->guid())))
 	{
 		LOG_ERROR << "Invalid game node info for scene change";
-		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
+		PlayerChangeRoomUtil::PopFrontChangeSceneQueue(playerEntity);
 		return false;
 	}
 
 	const auto& changeInfo = *tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 	if (!changeInfo.ignore_full() &&
-		RoomUtil::CheckScenePlayerSize(toScene) != kSuccess)
+		RoomUtil::HasRoomSlot(toScene) != kSuccess)
 	{
 		LOG_WARN << "Scene is full for player: " << playerId;
 		PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneSceneFull, {});
-		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
+		PlayerChangeRoomUtil::PopFrontChangeSceneQueue(playerEntity);
 		return false;
 	}
 
@@ -249,8 +249,8 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 	auto& changeInfo = *tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 	auto* fromSceneComp = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity);
 
-	auto fromNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(fromSceneComp->sceneEntity).guid());
-	auto toNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(toScene).guid());
+	auto fromNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(fromSceneComp->sceneEntity).guid());
+	auto toNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(toScene).guid());
 
 	entt::entity fromNode{fromNodeGuid};
 	entt::entity toNode{ toNodeGuid };
@@ -269,14 +269,14 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 		changeInfo.set_is_cross_zone(true);
 	}
 
-	PlayerChangeSceneUtil::ProgressSceneChangeState(playerEntity);
+	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 }
 
 void PlayerSceneSystem::HandleEnterScene(entt::entity playerEntity, const SceneInfoPBComponent& sceneInfo)
 {
 	ChangeSceneInfoPBComponent changeSceneInfo;
-	PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeSceneInfo, sceneInfo);
-	if (const auto ret = PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeSceneInfo); ret != kSuccess)
+	PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(changeSceneInfo, sceneInfo);
+	if (const auto ret = PlayerChangeRoomUtil::PushChangeSceneInfo(playerEntity, changeSceneInfo); ret != kSuccess)
 	{
 		LOG_ERROR << "Failed to push change scene info for player " << tlsRegistryManager.actorRegistry.get<Guid>(playerEntity) << ": " << ret;
 		PlayerTipSystem::SendToPlayer(playerEntity, ret, {});
@@ -319,12 +319,12 @@ void PlayerSceneSystem::ProcessEnterGameNode(entt::entity playerEntity, entt::en
 
 void PlayerSceneSystem::PushInitialChangeSceneInfo(entt::entity playerEntity, entt::entity sceneEntity)
 {
-	const auto& sceneInfo = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(sceneEntity);
+	const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<SceneInfoPBComponent>(sceneEntity);
 
 	ChangeSceneInfoPBComponent changeInfo;
-	PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeInfo, sceneInfo);
+	PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(changeInfo, sceneInfo);
 	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs);
 	changeInfo.set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
 
-	PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo);
+	PlayerChangeRoomUtil::PushChangeSceneInfo(playerEntity, changeInfo);
 }

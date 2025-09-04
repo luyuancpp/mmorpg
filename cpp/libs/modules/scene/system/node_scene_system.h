@@ -15,7 +15,7 @@ struct GetSceneFilterParam
 	NodePressureState nodePressureState{ NodePressureState::kNoPressure };
 };
 
-struct CompelChangeSceneParam
+struct CompelChangeRoomParam
 {
 	inline bool IsNull() const
 	{

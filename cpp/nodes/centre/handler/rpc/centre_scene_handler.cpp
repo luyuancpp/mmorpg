@@ -17,7 +17,7 @@ void CentreSceneHandler::RegisterScene(::google::protobuf::RpcController* contro
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto&& roomInfo : request->scenes_info())
 	{
-		RoomUtil::CreateSceneToSceneNode(
+		RoomUtil::CreateRoomOnRoomNode(
 			{ .node = entt::entity{request->scene_node_id()}, .roomInfo = roomInfo });
 
 		LOG_INFO << "Scene " << roomInfo.DebugString()
@@ -37,7 +37,7 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 {
 	///<<< BEGIN WRITING YOUR CODE
 	const entt::entity scene{ request->scene() };
-	if (!tlsRegistryManager.sceneRegistry.valid(scene))
+	if (!tlsRegistryManager.roomRegistry.valid(scene))
 	{
 		LOG_ERROR << "Scene not found: " << request->scene();
 		return;
@@ -50,7 +50,7 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	RoomUtil::DestroyScene({ gameNode, scene });
+	RoomUtil::DestroyRoom({ gameNode, scene });
 	///<<< END WRITING YOUR CODE
 }
 

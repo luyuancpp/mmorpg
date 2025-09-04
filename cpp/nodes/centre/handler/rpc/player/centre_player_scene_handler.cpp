@@ -76,7 +76,7 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "PlayerNodeInfo not found for player: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
-		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(player);
+		PlayerChangeRoomUtil::PopFrontChangeSceneQueue(player);
 		return;
 	}
 
@@ -94,7 +94,7 @@ void CentrePlayerSceneHandler::SceneInfoC2S(entt::entity player,const ::CentreSc
 	///<<< BEGIN WRITING YOUR CODE
 		//给客户端发所有场景消息
 	SceneInfoS2C message;
-	for (const auto& [entity, info] : tlsRegistryManager.sceneRegistry.view<SceneInfoPBComponent>().each())
+	for (const auto& [entity, info] : tlsRegistryManager.roomRegistry.view<SceneInfoPBComponent>().each())
 	{
 		message.mutable_scene_info()->Add()->CopyFrom(info);
 	}

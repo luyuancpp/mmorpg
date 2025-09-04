@@ -229,7 +229,7 @@ void PlayerNodeSystem::Logout(Guid playerID)
 	if (tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity))
 	{
 		LOG_DEBUG << "Player in scene, removing from scene: " << playerID;
-		RoomUtil::LeaveScene({ playerEntity });
+		RoomUtil::LeaveRoom({ playerEntity });
 	}
 
 	GameNodeExitGameRequest exitGameRequest;

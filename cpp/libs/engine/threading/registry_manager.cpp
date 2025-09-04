@@ -11,7 +11,7 @@ void RegistryManager::Clear()
 {
 	globalRegistry.clear();
 	actorRegistry.clear();
-	sceneRegistry.clear();
+	roomRegistry.clear();
 	itemRegistry.clear();
 	nodeGlobalRegistry.clear();
 }

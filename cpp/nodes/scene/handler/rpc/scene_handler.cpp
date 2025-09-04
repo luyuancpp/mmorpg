@@ -402,7 +402,7 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
 	LOG_INFO << "Player with ID " << request->player_id() << " entering scene " << request->scene_id();
 
 	entt::entity roomEntity{ request->scene_id() };
-	RoomUtil::EnterScene({ .room = roomEntity, .enter = player });
+	RoomUtil::EnterRoom({ .room = roomEntity, .enter = player });
 	
 	PlayerSceneSystem::HandleEnterScene(player, roomEntity);
 

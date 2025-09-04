@@ -44,7 +44,7 @@ protected:
         tlsRegistryManager.globalRegistry.remove<ActorListCreateS2C>(GlobalEntity());
         tlsRegistryManager.globalRegistry.remove<ActorListDestroyS2C>(GlobalEntity());
 
-        tlsRegistryManager.sceneRegistry.clear();
+        tlsRegistryManager.roomRegistry.clear();
         tlsRegistryManager.actorRegistry.clear();
     }
 };
@@ -79,8 +79,8 @@ TEST_F(AoiSystemTest, TestScanNeighborGridIds) {
 // Test Update method for player movement
 TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
     // Mock data setup
-    auto scene_entity = tlsRegistryManager.sceneRegistry.create();
-    auto& scene_grid_list = tlsRegistryManager.sceneRegistry.emplace<SceneGridListComp>(scene_entity);
+    auto scene_entity = tlsRegistryManager.roomRegistry.create();
+    auto& scene_grid_list = tlsRegistryManager.roomRegistry.emplace<SceneGridListComp>(scene_entity);
 
     SceneEntityComp scene_entity_comp{ scene_entity };
 
@@ -104,7 +104,7 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
         EXPECT_EQ(scene_grid_list[grid_id].entities.size(), expected_entity_count[grid_id]);
     }
 
-    for (auto&& [scene, grid_list] : tlsRegistryManager.sceneRegistry.view<SceneGridListComp>().each()) {
+    for (auto&& [scene, grid_list] : tlsRegistryManager.roomRegistry.view<SceneGridListComp>().each()) {
         for (const auto& [_, entity_list] : grid_list) {
             EXPECT_FALSE(entity_list.entities.empty());
         }
@@ -116,8 +116,8 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
 // Test player movement across six neighboring hexes
 TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     // Mock data setup
-    auto scene_entity = tlsRegistryManager.sceneRegistry.create();
-    auto& scene_grid_list = tlsRegistryManager.sceneRegistry.emplace<SceneGridListComp>(scene_entity);
+    auto scene_entity = tlsRegistryManager.roomRegistry.create();
+    auto& scene_grid_list = tlsRegistryManager.roomRegistry.emplace<SceneGridListComp>(scene_entity);
 
     auto player_entity = tlsRegistryManager.actorRegistry.create();
 
@@ -157,7 +157,7 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     }
 
     std::size_t expected_size = 0;
-    for (auto&& [scene, grid_list] : tlsRegistryManager.sceneRegistry.view<SceneGridListComp>().each()) {
+    for (auto&& [scene, grid_list] : tlsRegistryManager.roomRegistry.view<SceneGridListComp>().each()) {
         for (const auto& [_, entity_list] : grid_list) {
             if (entity_list.entities.empty()) {
                 continue;
@@ -213,7 +213,7 @@ protected:
         entity2 = tlsRegistryManager.actorRegistry.create();
 
         // Set up mock components
-        auto sceneEntity = tlsRegistryManager.sceneRegistry.create();
+        auto sceneEntity = tlsRegistryManager.roomRegistry.create();
         sceneEntityComp1.sceneEntity = sceneEntity;
         sceneEntityComp2.sceneEntity = sceneEntity;
         tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(entity1, sceneEntityComp1);
@@ -228,7 +228,7 @@ protected:
 
 
         // Set up grid list
-        tlsRegistryManager.sceneRegistry.emplace<SceneGridListComp>(sceneEntityComp1.sceneEntity);
+        tlsRegistryManager.roomRegistry.emplace<SceneGridListComp>(sceneEntityComp1.sceneEntity);
     }
 
     void TearDown() override {
@@ -238,7 +238,7 @@ protected:
         tlsRegistryManager.globalRegistry.remove<ActorListDestroyS2C>(GlobalEntity());
 
         tlsRegistryManager.actorRegistry.clear();
-        tlsRegistryManager.sceneRegistry.clear();
+        tlsRegistryManager.roomRegistry.clear();
 
         entitiesToNotifyEntry.clear();
         entitiesToNotifyExit.clear();
