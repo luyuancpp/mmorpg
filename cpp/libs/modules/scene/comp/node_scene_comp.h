@@ -14,7 +14,7 @@ using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
 using ScenePlayers = EntityUnorderedSet; // 弱引用，要解除玩家和场景的耦合
 
 
-struct MainSceneNode
+struct MainRoomNode
 {
 };
 
@@ -30,7 +30,7 @@ struct CrossRoomSceneNode
 {
 };
 
-class NodeSceneComp
+class NodeNodeComp
 {
 public:
 	[[nodiscard]] const ConfigSceneListType& GetSceneLists() const

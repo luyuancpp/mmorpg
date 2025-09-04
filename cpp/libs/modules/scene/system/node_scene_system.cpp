@@ -18,7 +18,7 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParams& param, co
 	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	for (auto entity : nodeRegistry.view<ServerType>()) {
-		const auto& nodeSceneComp = nodeRegistry.get<NodeSceneComp>(entity);
+		const auto& nodeSceneComp = nodeRegistry.get<NodeNodeComp>(entity);
 
 		if (!nodeSceneComp.IsStateNormal() ||
 			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
@@ -46,7 +46,7 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParams& param, co
 		return entt::null;
 	}
 
-	const auto& nodeSceneComps = nodeRegistry.get<NodeSceneComp>(bestNode);
+	const auto& nodeSceneComps = nodeRegistry.get<NodeNodeComp>(bestNode);
 	auto bestScene = nodeSceneComps.GetSceneWithMinPlayerCountByConfigId(sceneConfigId);
 
 	if (bestScene == entt::null) {
@@ -63,7 +63,7 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParams& param, const GetScen
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	for (auto entity : registry.view<ServerType>()) {
-		if (const auto& nodeSceneComp = registry.get<NodeSceneComp>(entity);
+		if (const auto& nodeSceneComp = registry.get<NodeNodeComp>(entity);
 			!nodeSceneComp.IsStateNormal() ||
 			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
 			nodeSceneComp.GetNodePressureState() != filterStateParam.nodePressureState) {
@@ -86,7 +86,7 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParams& param, const GetScen
 	}
 
 	entt::entity bestScene{ entt::null };
-	const auto& nodeSceneComps = registry.get<NodeSceneComp>(bestNode);
+	const auto& nodeSceneComps = registry.get<NodeNodeComp>(bestNode);
 
 	for (const auto& sceneIt : nodeSceneComps.GetScenesByConfig(sceneConfigId)) {
 		auto scenePlayerSize = tlsRegistryManager.roomRegistry.get<ScenePlayers>(sceneIt).size();
@@ -109,30 +109,30 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParams& param, const GetScen
 entt::entity NodeSceneSystem::FindSceneWithMinPlayerCount(const GetSceneParams& param) {
 	constexpr GetSceneFilterParam filterParam;
 
-	auto bestScene = FindSceneWithMinPlayerCountTemplate<MainSceneNode>(param, filterParam);
+	auto bestScene = FindSceneWithMinPlayerCountTemplate<MainRoomNode>(param, filterParam);
 	if (bestScene != entt::null) {
 		return bestScene;
 	}
 
 	LOG_WARN << "No scene found with minimum player count";
-	return FindSceneWithMinPlayerCountTemplate<MainSceneNode>(param, filterParam);
+	return FindSceneWithMinPlayerCountTemplate<MainRoomNode>(param, filterParam);
 }
 
 entt::entity NodeSceneSystem::FindNotFullScene(const GetSceneParams& param) {
 	GetSceneFilterParam filterParam;
 
-	auto bestScene = FindNotFullSceneTemplate<MainSceneNode>(param, filterParam);
+	auto bestScene = FindNotFullSceneTemplate<MainRoomNode>(param, filterParam);
 	if (bestScene != entt::null) {
 		return bestScene;
 	}
 
 	LOG_WARN << "No scene found that is not full";
 	filterParam.nodePressureState = NodePressureState::kPressure;
-	return FindNotFullSceneTemplate<MainSceneNode>(param, filterParam);
+	return FindNotFullSceneTemplate<MainRoomNode>(param, filterParam);
 }
 
 void NodeSceneSystem::SetNodePressure(entt::entity node) {
-	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeSceneComp>(node);
+	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node);
 
 	if (nullptr == nodeSceneComp) {
 		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
@@ -144,7 +144,7 @@ void NodeSceneSystem::SetNodePressure(entt::entity node) {
 }
 
 void NodeSceneSystem::ClearNodePressure(entt::entity node) {
-	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeSceneComp>(node);
+	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node);
 
 	if (nullptr == nodeSceneComp) {
 		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
@@ -156,7 +156,7 @@ void NodeSceneSystem::ClearNodePressure(entt::entity node) {
 }
 
 void NodeSceneSystem::SetNodeState(entt::entity node, NodeState state) {
-	auto* const tryServerComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeSceneComp>(node);
+	auto* const tryServerComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node);
 
 	if (nullptr == tryServerComp) {
 		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
