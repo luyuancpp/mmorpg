@@ -15,7 +15,7 @@
     <ClCompile Include="handler\event\server_event_handler.cpp" />
     <ClCompile Include="handler\event\skill_event_handler.cpp" />
     <ClCompile Include="handler\rpc\game_scene_handler.cpp" />
-    <ClCompile Include="handler\rpc\game_service_handler.cpp" />
+    <ClCompile Include="handler\rpc\scene_handler.cpp" />
     <ClCompile Include="handler\rpc\player\game_client_player_handler.cpp" />
     <ClCompile Include="handler\rpc\player\game_player_handler.cpp" />
     <ClCompile Include="handler\rpc\player\game_player_scene_handler.cpp" />
@@ -50,7 +50,7 @@
     <ClInclude Include="handler\event\server_event_handler.h" />
     <ClInclude Include="handler\event\skill_event_handler.h" />
     <ClInclude Include="handler\rpc\game_scene_handler.h" />
-    <ClInclude Include="handler\rpc\game_service_handler.h" />
+    <ClInclude Include="handler\rpc\scene_handler.h" />
     <ClInclude Include="handler\rpc\player\game_client_player_handler.h" />
     <ClInclude Include="handler\rpc\player\game_player_handler.h" />
     <ClInclude Include="handler\rpc\player\game_player_scene_handler.h" />

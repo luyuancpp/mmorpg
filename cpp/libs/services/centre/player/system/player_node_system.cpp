@@ -11,7 +11,7 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "modules/scene/system/scene_system.h"
 #include "rpc/service_metadata/game_player_service_metadata.h"
-#include "rpc/service_metadata/game_service_service_metadata.h"
+#include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "engine/threading/redis_manager.h"
 #include "engine/core/utils/defer/defer.h"

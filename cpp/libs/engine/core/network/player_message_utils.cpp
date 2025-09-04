@@ -8,7 +8,7 @@
 #include "network/rpc_session.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "network/node_utils.h"
-#include <rpc/service_metadata/game_service_service_metadata.h>
+#include <rpc/service_metadata/scene_service_metadata.h>
 #include "threading/node_context_manager.h"
 #include "threading/player_manager.h"
 #include <threading/registry_manager.h>

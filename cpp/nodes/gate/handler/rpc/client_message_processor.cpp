@@ -11,7 +11,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "rpc/service_metadata/centre_service_service_metadata.h"
-#include "rpc/service_metadata/game_service_service_metadata.h"
+#include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
 #include "rpc/service_metadata/game_client_player_service_metadata.h"
 #include "proto/common/node.pb.h"

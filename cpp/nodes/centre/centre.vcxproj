@@ -196,7 +196,7 @@
     <ClCompile Include="handler\rpc\register_handler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="rpc_replies\game_scene_response_handler.cpp" />
-    <ClCompile Include="rpc_replies\game_service_response_handler.cpp" />
+    <ClCompile Include="rpc_replies\scene_response_handler.cpp" />
     <ClCompile Include="rpc_replies\gate_service_response_handler.cpp" />
     <ClCompile Include="rpc_replies\player\game_player_response_handler.cpp" />
     <ClCompile Include="rpc_replies\player\game_player_scene_response_handler.cpp" />
@@ -224,7 +224,7 @@
     <ClInclude Include="handler\rpc\player\centre_player_handler.h" />
     <ClInclude Include="handler\rpc\player\centre_player_scene_handler.h" />
     <ClInclude Include="rpc_replies\game_scene_response_handler.h" />
-    <ClInclude Include="rpc_replies\game_service_response_handler.h" />
+    <ClInclude Include="rpc_replies\scene_response_handler.h" />
     <ClInclude Include="rpc_replies\gate_service_response_handler.h" />
     <ClInclude Include="rpc_replies\player\game_player_response_handler.h" />
     <ClInclude Include="rpc_replies\player\game_player_scene_response_handler.h" />
