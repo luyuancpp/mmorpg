@@ -194,10 +194,10 @@ void Node::ReleaseNodeId() {
 	EtcdHelper::RevokeLeaseAndCleanup(leaseId);
 }
 
-void InitRepliedHandler();
+void InitReply();
 void Node::RegisterHandlers() {
 	InitMessageInfo();
-	InitRepliedHandler();
+	InitReply();
 }
 
 void Node::AsyncOutput(const char* msg, int len) {
