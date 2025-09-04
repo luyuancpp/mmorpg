@@ -1,8 +1,8 @@
 #include <memory>
 #include <unordered_map>
 #include "rpc/player_rpc_response_handler.h"
-#include "game_player_replied_handler.h"
-#include "game_player_scene_replied_handler.h"
+#include "game_player_response_handler.h"
+#include "game_player_scene_response_handler.h"
 #include "player_state_attribute_sync_response_handler.h"
 class ScenePlayerImpl : public ScenePlayer {};
 class SceneScenePlayerImpl : public SceneScenePlayer {};

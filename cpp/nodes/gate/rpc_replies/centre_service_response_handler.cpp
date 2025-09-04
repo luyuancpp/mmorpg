@@ -38,7 +38,7 @@ void InitCentreReply()
     gRpcResponseDispatcher.registerMessageCallback<::Empty>(CentreInitSceneNodeMessageId,
         std::bind(&OnCentreInitSceneNodeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::NodeHandshakeResponse>(CentreNodeHandshakeMessageId,
-        std::bind(&OnCentreHandshakeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        std::bind(&OnCentreNodeHandshakeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void OnCentreGatePlayerServiceReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
@@ -107,7 +107,7 @@ void OnCentreInitSceneNodeReply(const TcpConnectionPtr& conn, const std::shared_
 ///<<< END WRITING YOUR CODE
 }
 
-void OnCentreHandshakeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, Timestamp timestamp)
+void OnCentreNodeHandshakeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	gNode->GetNodeRegistrationManager().OnHandshakeReplied(*replied);
