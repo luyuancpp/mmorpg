@@ -19,7 +19,7 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/common/node.pb.h"
 #include "scene/system/player_change_scene_system.h"
-#include "modules/scene/system/scene_system.h"
+#include "modules/scene/system/room_system.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/service_metadata.h"
@@ -658,7 +658,7 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
     }
 
 	// Search for a matching client connection and register the game node
-    AddMainSceneNodeComponent(registry, sceneNodeId);
+    AddMainRoomToNodeComponent(registry, sceneNodeId);
 
 	LOG_INFO << "Add Scene node " << request->node_id() << " SceneNodeType : " << eSceneNodeType_Name(request->scene_node_type());
 

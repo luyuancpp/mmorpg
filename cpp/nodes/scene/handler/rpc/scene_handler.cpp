@@ -19,7 +19,7 @@
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/common/node.pb.h"
-#include "modules/scene/system/scene_system.h"
+#include "modules/scene/system/room_system.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
@@ -401,10 +401,10 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
 
 	LOG_INFO << "Player with ID " << request->player_id() << " entering scene " << request->scene_id();
 
-	entt::entity sceneEntity{ request->scene_id() };
-	SceneUtil::EnterScene({ .scene = sceneEntity, .enter = player });
+	entt::entity roomEntity{ request->scene_id() };
+	RoomUtil::EnterScene({ .room = roomEntity, .enter = player });
 	
-	PlayerSceneSystem::HandleEnterScene(player, sceneEntity);
+	PlayerSceneSystem::HandleEnterScene(player, roomEntity);
 
 ///<<< END WRITING YOUR CODE
 }

@@ -7,7 +7,7 @@
 #include "player/system/player_scene_system.h"
 #include "proto/scene/player_scene.pb.h"
 #include "modules/scene/comp/scene_comp.h"
-#include "modules/scene/system/scene_system.h"
+#include "modules/scene/system/room_system.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "network/player_message_utils.h"
 
@@ -33,7 +33,7 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_DEBUG << "Handling GsLeaveSceneRequest for player: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
-	SceneUtil::LeaveScene({ .leaver = player });
+	RoomUtil::LeaveScene({ .leaver = player });
 	if (request->change_scene_info().change_gs_type() == ChangeSceneInfoPBComponent::eDifferentGs) // 存储完毕以后才能换场景，防止回档
 	{
 		tlsRegistryManager.actorRegistry.emplace_or_replace<ChangeSceneInfoPBComponent>(player, request->change_scene_info());

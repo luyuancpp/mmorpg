@@ -4,8 +4,8 @@
 
 #include "scene/scene/comp/nav_comp.h"
 
-struct EnterSceneParam;
-struct CreateGameNodeSceneParam;
+struct EnterRoomParam;
+struct CreateSceneNodeRoomParam;
 class OnSceneCreate;
 class AfterEnterScene;
 class BeforeLeaveScene;

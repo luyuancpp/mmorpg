@@ -7,7 +7,7 @@
 #include "proto/logic/event/scene_event.pb.h"
 #include "proto/common/node.pb.h"
 #include "modules/scene/comp/scene_comp.h"
-#include "modules/scene/system/scene_system.h"
+#include "modules/scene/system/room_system.h"
 #include "rpc/service_metadata/centre_scene_service_metadata.h"
 #include "network/node_utils.h"
 #include "network/node_message_utils.h"
@@ -22,9 +22,9 @@ void GameNodeSceneSystem::InitializeNodeScenes() {
 
 	const auto& mainSceneConf = GetMainSceneAllTable();
 	for (auto& item : mainSceneConf.data()) {
-		CreateGameNodeSceneParam params{ .node = entt::entity{GetNodeInfo().node_id()}};
-		params.sceneInfo.set_scene_confid(item.id());
-		SceneUtil::CreateSceneToSceneNode(params);
+		CreateSceneNodeRoomParam params{ .node = entt::entity{GetNodeInfo().node_id()}};
+		params.roomInfo.set_scene_confid(item.id());
+		RoomUtil::CreateSceneToSceneNode(params);
 	}
 }
 

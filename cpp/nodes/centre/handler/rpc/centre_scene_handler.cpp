@@ -3,7 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
-#include "modules/scene/system/scene_system.h"
+#include "modules/scene/system/room_system.h"
 #include "proto/common/node.pb.h"
 #include "threading/node_context_manager.h"
 #include <threading/registry_manager.h>
@@ -15,12 +15,12 @@ void CentreSceneHandler::RegisterScene(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	for (auto&& sceneInfo : request->scenes_info())
+	for (auto&& roomInfo : request->scenes_info())
 	{
-		SceneUtil::CreateSceneToSceneNode(
-			{ .node = entt::entity{request->scene_node_id()}, .sceneInfo = sceneInfo });
+		RoomUtil::CreateSceneToSceneNode(
+			{ .node = entt::entity{request->scene_node_id()}, .roomInfo = roomInfo });
 
-		LOG_INFO << "Scene " << sceneInfo.DebugString()
+		LOG_INFO << "Scene " << roomInfo.DebugString()
 			<< " successfully created and attached to SceneNode ["
 			<< request->scene_node_id() << "].";
 	}
@@ -50,7 +50,7 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	SceneUtil::DestroyScene({ gameNode, scene });
+	RoomUtil::DestroyScene({ gameNode, scene });
 	///<<< END WRITING YOUR CODE
 }
 

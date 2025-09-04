@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
-#include "modules/scene/system/scene_system.h"
+#include "modules/scene/system/room_system.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "centre_node.h"
@@ -81,7 +81,7 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 	}
 
 	playerSessionSnapshotPB->mutable_node_id()->erase(eNodeType::SceneNodeService);
-	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, SceneUtil::GetGameNodeIdFromGuid(toScene));
+	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, RoomUtil::GetGameNodeIdFromGuid(toScene));
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
 	///<<< END WRITING YOUR CODE
 
