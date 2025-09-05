@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "modules/scene/system/node_room_system.h"
+#include "modules/scene/system/room_selector.h"
 #include "core/utils/id/node_id_generator.h"
 #include "proto/logic/component/scene_comp.pb.h"
 #include <proto/common/common.pb.h>
