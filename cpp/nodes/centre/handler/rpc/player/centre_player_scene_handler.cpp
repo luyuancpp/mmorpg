@@ -17,6 +17,7 @@
 #include "node/system/node/node_util.h"
 #include "threading/redis_manager.h"
 #include "engine/core/node/system/zone_utils.h"
+#include <modules/scene/system/room_common.h>
 ///<<< END WRITING YOUR CODE
 
 

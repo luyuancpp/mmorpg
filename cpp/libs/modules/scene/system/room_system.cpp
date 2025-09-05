@@ -25,11 +25,6 @@ static constexpr std::size_t kMaxRoomPlayer = 1000;
 // Type alias
 using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
 
-// Static function
-void SetServerSequenceNodeId(uint32_t nodeId) {
-	LOG_TRACE << "Setting server sequence node ID to: " << nodeId;
-	RoomUtil::SetSequenceNodeId(nodeId);
-}
 
 void AddMainRoomToNodeComponent(entt::registry& reg, const entt::entity node) {
 	LOG_TRACE << "Adding main room node components for entity: " << entt::to_integral(node);
@@ -48,8 +43,6 @@ RoomUtil::~RoomUtil() {
 	LOG_TRACE << "RoomSystem destructor called";
 	ClearAllRoomData();
 }
-
-void RoomUtil::SetSequenceNodeId(const uint32_t node_id) { nodeSequence.set_node_id(node_id); }
 
 void RoomUtil::ClearAllRoomData() {
 	LOG_TRACE << "Clearing room system data";

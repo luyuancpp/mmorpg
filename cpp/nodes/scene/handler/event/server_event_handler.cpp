@@ -7,9 +7,9 @@
 #include "network/rpc_client.h"
 #include "rpc/service_metadata/centre_service_service_metadata.h"
 #include "scene/scene/system/game_node_scene_system.h"
-#include "modules/scene/system/room_system.h"
 #include "network/node_message_utils.h"
 #include <proto/common/node.pb.h>
+#include <modules/scene/system/room_common.h>
 ///<<< END WRITING YOUR CODE
 
 
@@ -46,7 +46,7 @@ void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& event)
 void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    RoomUtil::SetSequenceNodeId(gNode->GetNodeId());
+    RoomCommon::SetSequenceNodeId(gNode->GetNodeId());
     GameNodeSceneSystem::InitializeNodeScenes();
 ///<<< END WRITING YOUR CODE
 }
