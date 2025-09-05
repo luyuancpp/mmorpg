@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "modules/scene/system/room_system.h"
+#include "modules/scene/system/room_common.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -99,9 +100,9 @@ TEST(SceneSystemTests, DestroyScene)
 
 	sceneSystem.DestroyRoom({ node1, scene });
 
-	EXPECT_TRUE(sceneSystem.IsRoomEmpty());
+	EXPECT_TRUE(RoomCommon::IsRoomEmpty());
 	EXPECT_FALSE(sceneSystem.ConfigRoomListNotEmpty(createParams1.roomInfo.scene_confid()));
-	EXPECT_TRUE(sceneSystem.IsRoomEmpty());
+	EXPECT_TRUE(RoomCommon::IsRoomEmpty());
 	EXPECT_EQ(sceneSystem.GetRoomsSize(), sceneSystem.GetRoomsSize());
 	EXPECT_FALSE(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(scene));
 }
