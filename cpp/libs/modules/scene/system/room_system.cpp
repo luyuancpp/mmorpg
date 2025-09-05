@@ -63,25 +63,6 @@ NodeId RoomUtil::GetGameNodeIdFromRoomEntity(entt::entity room) {
 	}
 }
 
-// Get total number of rooms associated with a specific configuration ID
-std::size_t RoomUtil::GetRoomsSize(uint32_t roomConfigId) {
-	std::size_t roomSize = 0;
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	for (auto node : registry.view<NodeNodeComp>()) {
-		auto& nodeRoomComp = registry.get<NodeNodeComp>(node);
-		roomSize += nodeRoomComp.GetScenesByConfig(roomConfigId).size();
-	}
-	LOG_TRACE << "Total rooms size for config ID " << roomConfigId << ": " << roomSize;
-	return roomSize;
-}
-
-// Get total number of rooms in the registry
-std::size_t RoomUtil::GetRoomsSize() {
-	std::size_t totalRooms = tlsRegistryManager.roomRegistry.storage<RoomInfoPBComponent>().size();
-	LOG_TRACE << "Total rooms in the registry: " << totalRooms;
-	return totalRooms;
-}
-
 // Check if room registry is empty
 bool RoomUtil::IsRoomEmpty() {
 	bool isEmpty = tlsRegistryManager.roomRegistry.storage<RoomInfoPBComponent>().empty();

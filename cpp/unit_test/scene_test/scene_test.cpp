@@ -40,9 +40,9 @@ TEST(SceneSystemTests, CreateMainScene)
 		{
 			sceneSystem.CreateRoomOnRoomNode(createParams);
 		}
-		EXPECT_EQ(sceneSystem.GetRoomsSize(i), kPerSceneConfigSize);
+		EXPECT_EQ(RoomCommon::GetRoomsSize(i), kPerSceneConfigSize);
 	}
-	EXPECT_EQ(sceneSystem.GetRoomsSize(), kConfigSceneListSize * kPerSceneConfigSize);
+	EXPECT_EQ(RoomCommon::GetRoomsSize(), kConfigSceneListSize * kPerSceneConfigSize);
 }
 
 TEST(SceneSystemTests, CreateScene2Server)
@@ -75,9 +75,9 @@ TEST(SceneSystemTests, CreateScene2Server)
 		EXPECT_EQ(1, nodeComp2->GetTotalSceneCount());
 	}
 
-	EXPECT_EQ(1, sceneSystem.GetRoomsSize(createParams1.roomInfo.scene_confid()));
-	EXPECT_EQ(1, sceneSystem.GetRoomsSize(createParams2.roomInfo.scene_confid()));
-	EXPECT_EQ(2, sceneSystem.GetRoomsSize());
+	EXPECT_EQ(1, RoomCommon::GetRoomsSize(createParams1.roomInfo.scene_confid()));
+	EXPECT_EQ(1, RoomCommon::GetRoomsSize(createParams2.roomInfo.scene_confid()));
+	EXPECT_EQ(2, RoomCommon::GetRoomsSize());
 }
 
 TEST(SceneSystemTests, DestroyScene)
@@ -89,8 +89,8 @@ TEST(SceneSystemTests, DestroyScene)
 	createParams1.node = node1;
 	const auto scene = sceneSystem.CreateRoomOnRoomNode(createParams1);
 
-	EXPECT_EQ(1, sceneSystem.GetRoomsSize());
-	EXPECT_EQ(1, sceneSystem.GetRoomsSize(createParams1.roomInfo.scene_confid()));
+	EXPECT_EQ(1, RoomCommon::GetRoomsSize());
+	EXPECT_EQ(1, RoomCommon::GetRoomsSize(createParams1.roomInfo.scene_confid()));
 
 	auto serverComp1 = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node1);
 	if (serverComp1)
@@ -103,7 +103,7 @@ TEST(SceneSystemTests, DestroyScene)
 	EXPECT_TRUE(RoomCommon::IsRoomEmpty());
 	EXPECT_FALSE(sceneSystem.ConfigRoomListNotEmpty(createParams1.roomInfo.scene_confid()));
 	EXPECT_TRUE(RoomCommon::IsRoomEmpty());
-	EXPECT_EQ(sceneSystem.GetRoomsSize(), sceneSystem.GetRoomsSize());
+	EXPECT_EQ(RoomCommon::GetRoomsSize(), RoomCommon::GetRoomsSize());
 	EXPECT_FALSE(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(scene));
 }
 
@@ -129,8 +129,8 @@ TEST(SceneSystemTests, DestroyServer)
 	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeNodeComp>(node1).GetTotalSceneCount());
 	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeNodeComp>(node2).GetTotalSceneCount());
 
-	EXPECT_EQ(2, sceneSystem.GetRoomsSize());
-	EXPECT_EQ(sceneSystem.GetRoomsSize(), sceneSystem.GetRoomsSize());
+	EXPECT_EQ(2, RoomCommon::GetRoomsSize());
+	EXPECT_EQ(RoomCommon::GetRoomsSize(), RoomCommon::GetRoomsSize());
 
 	sceneSystem.HandleDestroyRoomNode(node1);
 
@@ -140,21 +140,21 @@ TEST(SceneSystemTests, DestroyServer)
 	EXPECT_TRUE(tlsRegistryManager.roomRegistry.valid(scene2));
 
 	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeNodeComp>(node2).GetTotalSceneCount());
-	EXPECT_EQ(1, sceneSystem.GetRoomsSize());
-	EXPECT_EQ(0, sceneSystem.GetRoomsSize(createParams1.roomInfo.scene_confid()));
-	EXPECT_EQ(1, sceneSystem.GetRoomsSize(createParams2.roomInfo.scene_confid()));
+	EXPECT_EQ(1, RoomCommon::GetRoomsSize());
+	EXPECT_EQ(0, RoomCommon::GetRoomsSize(createParams1.roomInfo.scene_confid()));
+	EXPECT_EQ(1, RoomCommon::GetRoomsSize(createParams2.roomInfo.scene_confid()));
 
 	sceneSystem.HandleDestroyRoomNode(node2);
 
-	EXPECT_EQ(0, sceneSystem.GetRoomsSize());
+	EXPECT_EQ(0, RoomCommon::GetRoomsSize());
 	EXPECT_FALSE(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(node1));
 	EXPECT_FALSE(tlsRegistryManager.roomRegistry.valid(scene1));
 	EXPECT_FALSE(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(node2));
 	EXPECT_FALSE(tlsRegistryManager.roomRegistry.valid(scene2));
 
-	EXPECT_EQ(0, sceneSystem.GetRoomsSize(createParams1.roomInfo.scene_confid()));
-	EXPECT_EQ(0, sceneSystem.GetRoomsSize(createParams2.roomInfo.scene_confid()));
-	EXPECT_EQ(sceneSystem.GetRoomsSize(), sceneSystem.GetRoomsSize());
+	EXPECT_EQ(0, RoomCommon::GetRoomsSize(createParams1.roomInfo.scene_confid()));
+	EXPECT_EQ(0, RoomCommon::GetRoomsSize(createParams2.roomInfo.scene_confid()));
+	EXPECT_EQ(RoomCommon::GetRoomsSize(), RoomCommon::GetRoomsSize());
 }
 
 TEST(SceneSystemTests, PlayerLeaveEnterScene)
