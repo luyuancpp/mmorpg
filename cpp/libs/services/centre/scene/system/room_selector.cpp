@@ -24,7 +24,7 @@ entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const G
 			continue;
 		}
 
-		auto nodePlayerSize = (*nodeRegistry.get<RoomNodePlayerInfoPtrPbComponent>(entity)).player_size();
+		auto nodePlayerSize = (*nodeRegistry.get<RoomNodePlayerStatsPtrPbComponent>(entity)).player_size();
 		if (nodePlayerSize == 0) {
 			bestNode = entity;
 			minServerPlayerSize = nodePlayerSize;
@@ -68,7 +68,7 @@ entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const
 			continue;
 		}
 
-		auto nodePlayerSize = (*registry.get<RoomNodePlayerInfoPtrPbComponent>(entity)).player_size();
+		auto nodePlayerSize = (*registry.get<RoomNodePlayerStatsPtrPbComponent>(entity)).player_size();
 
 		if (nodePlayerSize >= kMaxServerPlayerSize) {
 			continue;

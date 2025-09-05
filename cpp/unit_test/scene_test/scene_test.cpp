@@ -219,8 +219,8 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 		EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<RoomEntityComp>(playerEntity).roomEntity == scene2);
 	}
 
-	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerInfoPtrPbComponent>(node1)->player_size(), playerSize / 2);
-	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerInfoPtrPbComponent>(node2)->player_size(), playerSize / 2);
+	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerStatsPtrPbComponent>(node1)->player_size(), playerSize / 2);
+	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerStatsPtrPbComponent>(node2)->player_size(), playerSize / 2);
 
 	LeaveRoomParam leaveParam1;
 	for (const auto& playerEntity : playerEntitySet1)
@@ -231,7 +231,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 		EXPECT_EQ(tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(playerEntity), nullptr);
 	}
 
-	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerInfoPtrPbComponent>(node1)->player_size(), 0);
+	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerStatsPtrPbComponent>(node1)->player_size(), 0);
 
 	LeaveRoomParam leaveParam2;
 	for (const auto& playerEntity : playerEntitiesSet2)
@@ -242,7 +242,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 		EXPECT_EQ(tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(playerEntity), nullptr);
 	}
 
-	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerInfoPtrPbComponent>(node2)->player_size(), 0);
+	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerStatsPtrPbComponent>(node2)->player_size(), 0);
 
 	auto& scenesPlayers11 = tlsRegistryManager.roomRegistry.get<RoomPlayers>(scene1);
 	auto& scenesPlayers22 = tlsRegistryManager.roomRegistry.get<RoomPlayers>(scene2);
@@ -364,8 +364,8 @@ TEST(GS, CompelToChangeScene)
 		sm.CompelPlayerChangeRoom(compelChangeParam1);
 		EXPECT_TRUE(tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(it)->roomEntity == scene2);
 	}
-	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerInfoPtrPbComponent>(node1)->player_size(), 0);
-	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerInfoPtrPbComponent>(node2)->player_size(), playerList1.size());
+	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerStatsPtrPbComponent>(node1)->player_size(), 0);
+	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerStatsPtrPbComponent>(node2)->player_size(), playerList1.size());
 	auto& scenesPlayers11 = tlsRegistryManager.roomRegistry.get<RoomPlayers>(scene1);
 	auto& scenesPlayers22 = tlsRegistryManager.roomRegistry.get<RoomPlayers>(scene2);
 	EXPECT_TRUE(scenesPlayers11.empty());
@@ -578,7 +578,7 @@ TEST(GS, WeightRoundRobinMainScene)
 
 			for (auto& it : node_list)
 			{
-				auto& ps = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerInfoPtrPbComponent>(it);
+				auto& ps = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerStatsPtrPbComponent>(it);
 				EXPECT_EQ((*ps).player_size(), server_player_size);
 			}
 			EXPECT_EQ(scene_sets.size(), std::size_t(2 * per_server_scene));
@@ -598,7 +598,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			}
 			for (auto& it : node_list)
 			{
-				auto& ps = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerInfoPtrPbComponent>(it);
+				auto& ps = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerStatsPtrPbComponent>(it);
 				EXPECT_EQ((*ps).player_size(), 0);
 			}
 			for (auto& it : player_scene1)
@@ -822,7 +822,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			// Verify player distribution across server entities
 			for (auto& it : serverEntities)
 			{
-				auto& ps = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerInfoPtrPbComponent>(it);
+				auto& ps = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerStatsPtrPbComponent>(it);
 				if (tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<TestNodeId>(it).node_id_ == 9)
 				{
 					EXPECT_EQ((*ps).player_size(), kMaxServerPlayerSize);
@@ -858,7 +858,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			// Verify all server entities have no players after leaving scenes
 			for (auto& it : serverEntities)
 			{
-				auto& ps = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerInfoPtrPbComponent>(it);
+				auto& ps = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerStatsPtrPbComponent>(it);
 				EXPECT_EQ((*ps).player_size(), 0);
 			}
 

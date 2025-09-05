@@ -114,7 +114,7 @@ uint32_t RoomCommon::HasRoomSlot(entt::entity room) {
 		return kEnterSceneNotFull;
 	}
 
-	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<RoomNodePlayerInfoPtrPbComponent>(room);
+	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<RoomNodePlayerStatsPtrPbComponent>(room);
 	if (!gsPlayerInfo) {
 		LOG_ERROR << "GameNodePlayerInfoPtr not found for room - Room ID: " << entt::to_integral(room);
 		return kEnterSceneGsInfoNull;
@@ -155,7 +155,7 @@ void RoomCommon::EnterRoom(const EnterRoomParam& param) {
 	}
 	tlsRegistryManager.actorRegistry.emplace<RoomEntityComp>(param.enter, param.room);
 
-	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<RoomNodePlayerInfoPtrPbComponent>(param.room);
+	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<RoomNodePlayerStatsPtrPbComponent>(param.room);
 	if (gsPlayerInfo) {
 		(*gsPlayerInfo)->set_player_size((*gsPlayerInfo)->player_size() + 1);
 	}
@@ -203,7 +203,7 @@ void RoomCommon::LeaveRoom(const LeaveRoomParam& param) {
 	roomPlayers.erase(param.leaver);
 	tlsRegistryManager.actorRegistry.remove<RoomEntityComp>(param.leaver);
 
-	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<RoomNodePlayerInfoPtrPbComponent>(roomEntity);
+	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<RoomNodePlayerStatsPtrPbComponent>(roomEntity);
 	if (gsPlayerInfo) {
 		(*gsPlayerInfo)->set_player_size((*gsPlayerInfo)->player_size() - 1);
 	}
@@ -239,7 +239,7 @@ void RoomCommon::DestroyRoom(const DestroyRoomParam& param) {
 	roomDestroyedEvent.set_entity(entt::to_integral(param.room));
 	dispatcher.trigger(roomDestroyedEvent);
 
-	pServerComp->RemoveScene(param.room);
+	pServerComp->RemoveRoom(param.room);
 
 	LOG_INFO << "Destroyed room with ID: " << roomInfo->guid();
 }
@@ -266,14 +266,14 @@ entt::entity RoomCommon::CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& p
 	tlsRegistryManager.roomRegistry.emplace<RoomPlayers>(room);
 
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	auto* serverPlayerInfo = registry.try_get<RoomNodePlayerInfoPtrPbComponent>(param.node);
+	auto* serverPlayerInfo = registry.try_get<RoomNodePlayerStatsPtrPbComponent>(param.node);
 	if (serverPlayerInfo) {
-		tlsRegistryManager.roomRegistry.emplace<RoomNodePlayerInfoPtrPbComponent>(room, *serverPlayerInfo);
+		tlsRegistryManager.roomRegistry.emplace<RoomNodePlayerStatsPtrPbComponent>(room, *serverPlayerInfo);
 	}
 
 	auto* pServerComp = registry.try_get<NodeRoomComp>(param.node);
 	if (pServerComp) {
-		pServerComp->AddScene(room);
+		pServerComp->AddRoom(room);
 	}
 
 	OnRoomCreated createRoomEvent;
