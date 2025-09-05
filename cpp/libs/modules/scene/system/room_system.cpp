@@ -40,12 +40,12 @@ void AddMainRoomToNodeComponent(entt::registry& reg, const entt::entity node) {
 // RoomUtil implementation
 RoomUtil::RoomUtil() {
 	LOG_TRACE << "RoomSystem constructor called";
-	Clear();
+	ClearAllRoomData();
 }
 
 RoomUtil::~RoomUtil() {
 	LOG_TRACE << "RoomSystem destructor called";
-	Clear();
+	ClearAllRoomData();
 }
 
 NodeId RoomUtil::GetGameNodeIdFromGuid(uint64_t room_id)
@@ -53,14 +53,14 @@ NodeId RoomUtil::GetGameNodeIdFromGuid(uint64_t room_id)
 	return nodeSequence.node_id(static_cast<NodeId>(room_id));
 }
 
-entt::entity RoomUtil::get_game_node_eid(uint64_t room_id)
+entt::entity RoomUtil::GetRoomNodeEntityId(uint64_t room_id)
 {
 	return entt::entity{ nodeSequence.node_id(static_cast<NodeId>(room_id)) };
 }
 
 void RoomUtil::SetSequenceNodeId(const uint32_t node_id) { nodeSequence.set_node_id(node_id); }
 
-void RoomUtil::Clear() {
+void RoomUtil::ClearAllRoomData() {
 	LOG_TRACE << "Clearing room system data";
 	tlsRegistryManager.roomRegistry.clear();
 	tlsRegistryManager.actorRegistry.clear();
