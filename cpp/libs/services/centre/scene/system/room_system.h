@@ -1,43 +1,11 @@
 ﻿#pragma once
 
-#include "modules/scene/system/room_selector.h"
 #include "core/utils/id/node_id_generator.h"
 #include "proto/logic/component/scene_comp.pb.h"
 #include <proto/common/common.pb.h>
-
-struct EnterDefaultRoomParam
-{
-    inline bool CheckValid() const
-    {
-        return enter != entt::null;
-    }
-
-    entt::entity enter{ entt::null };
-};
-
-struct CreateRoomOnNodeRoomParam
-{
-    inline bool CheckValid() const
-    {
-        return node != entt::null;
-    }
-
-    entt::entity node{ entt::null };
-    RoomInfoPBComponent roomInfo;
-};
-
-
-struct CompelChangeRoomParam
-{
-	inline bool IsNull() const
-	{
-		return player == entt::null || destNode == entt::null;
-	}
-
-	entt::entity player{ entt::null };
-	entt::entity destNode{ entt::null };
-	uint32_t sceneConfId{ 0 };
-};
+#include "entt/src/entt/entity/entity.hpp"
+#include "core/type_define/type_define.h"
+#include "modules/scene/system/room_param.h"
 
 void AddMainRoomToNodeComponent(entt::registry& reg, entt::entity server);
 

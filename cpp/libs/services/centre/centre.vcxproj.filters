@@ -7,6 +7,9 @@
     <ClCompile Include="redis\system\redis_system.cpp" />
     <ClCompile Include="scene\system\player_change_scene_system.cpp" />
     <ClCompile Include="scene\system\player_scene_system.cpp" />
+    <ClCompile Include="scene\system\room_selector.cpp" />
+    <ClCompile Include="scene\system\room_node_state.cpp" />
+    <ClCompile Include="scene\system\room_system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="kafka\system\kafka_system.h" />
@@ -18,5 +21,8 @@
     <ClInclude Include="scene\system\player_change_scene_system.h" />
     <ClInclude Include="scene\system\player_scene_system.h" />
     <ClInclude Include="type_alias\player_redis.h" />
+    <ClInclude Include="scene\system\room_selector.h" />
+    <ClInclude Include="scene\system\room_node_state.h" />
+    <ClInclude Include="scene\system\room_system.h" />
   </ItemGroup>
 </Project>

@@ -1,7 +1,6 @@
 #include "player_scene_system.h"
 #include "muduo/base/Logging.h"
 #include "modules/scene/comp/scene_comp.h"
-#include "modules//scene/system/room_system.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "node/comp/game_node_comp.h"
@@ -17,6 +16,8 @@
 #include "engine/threading/node_context_manager.h"
 #include "engine/threading/registry_manager.h"
 #include <modules/scene/system/room_common.h>
+#include "room_selector.h"
+#include "room_system.h"
 
 entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext)
 {

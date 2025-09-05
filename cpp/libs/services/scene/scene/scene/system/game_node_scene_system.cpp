@@ -7,13 +7,13 @@
 #include "proto/logic/event/scene_event.pb.h"
 #include "proto/common/node.pb.h"
 #include "modules/scene/comp/scene_comp.h"
-#include "modules/scene/system/room_system.h"
+#include "modules/scene/system/room_param.h"
 #include "rpc/service_metadata/centre_scene_service_metadata.h"
 #include "network/node_utils.h"
 #include "network/node_message_utils.h"
 #include "scene/scene/mananger/scene_nav_mananger.h"
 #include <threading/registry_manager.h>
-#include <modules/scene/system/room_server.h>
+#include <modules/scene/system/room_common.h>
 
 void GameNodeSceneSystem::InitializeNodeScenes() {
 	if (!(GetNodeInfo().scene_node_type() == eSceneNodeType::kMainSceneNode ||
@@ -25,7 +25,7 @@ void GameNodeSceneSystem::InitializeNodeScenes() {
 	for (auto& item : mainSceneConf.data()) {
 		CreateRoomOnNodeRoomParam params{ .node = entt::entity{GetNodeInfo().node_id()}};
 		params.roomInfo.set_scene_confid(item.id());
-		RoomServer::CreateRoomOnRoomNode(params);
+		RoomCommon::CreateRoomOnRoomNode(params);
 	}
 }
 
