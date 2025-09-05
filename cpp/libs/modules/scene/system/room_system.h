@@ -5,17 +5,6 @@
 #include "proto/logic/component/scene_comp.pb.h"
 #include <proto/common/common.pb.h>
 
-struct EnterRoomParam
-{
-    inline bool CheckValid() const
-    {
-        return room != entt::null && enter != entt::null;
-    }
-
-    entt::entity room{ entt::null };
-    entt::entity enter{ entt::null };
-};
-
 struct EnterDefaultRoomParam
 {
     inline bool CheckValid() const
@@ -24,16 +13,6 @@ struct EnterDefaultRoomParam
     }
 
     entt::entity enter{ entt::null };
-};
-
-struct LeaveRoomParam
-{
-    inline bool CheckValid() const
-    {
-        return leaver != entt::null;
-    }
-
-    entt::entity leaver{ entt::null };
 };
 
 struct CreateRoomOnNodeRoomParam
@@ -132,13 +111,5 @@ public:
      * @param dest_node The entity ID of the destination node.
      */
     static void ReplaceCrashRoomNode(entt::entity crash_node, entt::entity dest_node);
-
-    // Test-related methods
-
-    /**
-     * @brief IsSceneEmpty checks if there are any scenes currently active.
-     * @return True if no scenes are active, false otherwise.
-     */
-    static bool IsRoomEmpty();
 
 };

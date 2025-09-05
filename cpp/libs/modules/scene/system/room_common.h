@@ -1,8 +1,26 @@
 #pragma once
 #include <core/type_define/type_define.h>
 
-struct EnterRoomParam;
-struct LeaveRoomParam;
+struct EnterRoomParam
+{
+	inline bool CheckValid() const
+	{
+		return room != entt::null && enter != entt::null;
+	}
+
+	entt::entity room{ entt::null };
+	entt::entity enter{ entt::null };
+};
+
+struct LeaveRoomParam
+{
+	inline bool CheckValid() const
+	{
+		return leaver != entt::null;
+	}
+
+	entt::entity leaver{ entt::null };
+};
 
 // RoomCommon.h
 class RoomCommon {

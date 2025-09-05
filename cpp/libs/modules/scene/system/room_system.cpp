@@ -63,13 +63,6 @@ NodeId RoomUtil::GetGameNodeIdFromRoomEntity(entt::entity room) {
 	}
 }
 
-// Check if room registry is empty
-bool RoomUtil::IsRoomEmpty() {
-	bool isEmpty = tlsRegistryManager.roomRegistry.storage<RoomInfoPBComponent>().empty();
-	LOG_TRACE << "Room registry empty: " << (isEmpty ? "true" : "false");
-	return isEmpty;
-}
-
 
 // ✅ 2. 多节点负载均衡
 // 你在 CompelPlayerChangeRoom 中如果找不到房间就直接创建了：
