@@ -112,22 +112,6 @@ public:
 		return minPlayerScene;
 	}
 
-
-	void SetState(NodeState state)
-	{
-		nodeState = state;
-	}
-
-	[[nodiscard]] NodeState GetNodeState() const
-	{
-		return nodeState;
-	}
-
-	bool IsStateNormal() const
-	{
-		return nodeState == NodeState::kNormal;
-	}
-
 	void SetNodePressureState(NodePressureState state)
 	{
 		nodePressureState = state;
@@ -150,9 +134,17 @@ public:
 
 private:
 	RoomList configSceneLists;
-	NodeState nodeState{ NodeState::kNormal };
 	NodePressureState nodePressureState{ NodePressureState::kNoPressure };
 };
 
+
+struct NodeStateComp {
+	// 加上这个就能直接用枚举比较
+	operator NodeState() const {
+		return state;
+	}
+
+	NodeState state = NodeState::kNormal;
+};
 
 using RoomNodePlayerStatsPtrPbComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
