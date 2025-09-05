@@ -13,7 +13,7 @@
 #include <muduo/base/Logging.h>
 #include <modules/scene/comp/room_node_comp.h>
 #include <scene/system/room_node_state.h>
-#include <scene/system/room_selector.h>
+#include <scene/system/room_node_selector.h>
 
 const std::size_t kConfigSceneListSize = 50;
 const std::size_t kPerSceneConfigSize = 2;
