@@ -19,7 +19,7 @@ entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const G
 		const auto& nodeSceneComp = nodeRegistry.get<NodeRoomComp>(entity);
 
 		if (!nodeRegistry.get_or_emplace<NodeStateComp>(entity, NodeState::kNormal).IsNormal() ||
-			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
+			nodeSceneComp.GetRoomsByConfig(sceneConfigId).empty() ||
 			nodeRegistry.get_or_emplace<NodePressureComp>(entity, NodePressureState::kNoPressure) != filterStateParam.nodePressureState) {
 			continue;
 		}
@@ -63,7 +63,7 @@ entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const
 	for (auto entity : nodeRegistry.view<ServerType>()) {
 		if (const auto& nodeSceneComp = nodeRegistry.get<NodeRoomComp>(entity);
 			!nodeRegistry.get_or_emplace<NodeStateComp>(entity, NodeState::kNormal).IsNormal() ||
-			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
+			nodeSceneComp.GetRoomsByConfig(sceneConfigId).empty() ||
 			nodeRegistry.get_or_emplace<NodePressureComp>(entity, NodePressureState::kNoPressure) != filterStateParam.nodePressureState) {
 			continue;
 		}
@@ -86,7 +86,7 @@ entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const
 	entt::entity bestScene{ entt::null };
 	const auto& nodeSceneComps = nodeRegistry.get<NodeRoomComp>(bestNode);
 
-	for (const auto& sceneIt : nodeSceneComps.GetScenesByConfig(sceneConfigId)) {
+	for (const auto& sceneIt : nodeSceneComps.GetRoomsByConfig(sceneConfigId)) {
 		auto scenePlayerSize = tlsRegistryManager.roomRegistry.get<RoomPlayers>(sceneIt).size();
 
 		if (scenePlayerSize >= kMaxScenePlayerSize) {
