@@ -66,13 +66,13 @@ TEST(SceneSystemTests, CreateScene2Server)
 	const auto nodeComp1 = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeRoomComp>(node1);
 	if (nodeComp1)
 	{
-		EXPECT_EQ(1, nodeComp1->GetTotalSceneCount());
+		EXPECT_EQ(1, nodeComp1->GetTotalRoomCount());
 	}
 
 	const auto nodeComp2 = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeRoomComp>(node2);
 	if (nodeComp2)
 	{
-		EXPECT_EQ(1, nodeComp2->GetTotalSceneCount());
+		EXPECT_EQ(1, nodeComp2->GetTotalRoomCount());
 	}
 
 	EXPECT_EQ(1, RoomCommon::GetRoomsSize(createParams1.roomInfo.scene_confid()));
@@ -95,7 +95,7 @@ TEST(SceneSystemTests, DestroyScene)
 	auto serverComp1 = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeRoomComp>(node1);
 	if (serverComp1)
 	{
-		EXPECT_EQ(1, serverComp1->GetTotalSceneCount());
+		EXPECT_EQ(1, serverComp1->GetTotalRoomCount());
 	}
 
 	RoomCommon::DestroyRoom({ node1, scene });
@@ -126,8 +126,8 @@ TEST(SceneSystemTests, DestroyServer)
 	auto scene1 = RoomCommon::CreateRoomOnRoomNode(createParams1);
 	auto scene2 = RoomCommon::CreateRoomOnRoomNode(createParams2);
 
-	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeRoomComp>(node1).GetTotalSceneCount());
-	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeRoomComp>(node2).GetTotalSceneCount());
+	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeRoomComp>(node1).GetTotalRoomCount());
+	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeRoomComp>(node2).GetTotalRoomCount());
 
 	EXPECT_EQ(2, RoomCommon::GetRoomsSize());
 	EXPECT_EQ(RoomCommon::GetRoomsSize(), RoomCommon::GetRoomsSize());
@@ -139,7 +139,7 @@ TEST(SceneSystemTests, DestroyServer)
 	EXPECT_TRUE(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(node2));
 	EXPECT_TRUE(tlsRegistryManager.roomRegistry.valid(scene2));
 
-	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeRoomComp>(node2).GetTotalSceneCount());
+	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeRoomComp>(node2).GetTotalRoomCount());
 	EXPECT_EQ(1, RoomCommon::GetRoomsSize());
 	EXPECT_EQ(0, RoomCommon::GetRoomsSize(createParams1.roomInfo.scene_confid()));
 	EXPECT_EQ(1, RoomCommon::GetRoomsSize(createParams2.roomInfo.scene_confid()));
@@ -490,7 +490,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 	for (auto& it : nodeList)
 	{
 		auto& serverScene = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeRoomComp>(it);
-		EXPECT_EQ(serverScene.GetTotalSceneCount(), sceneList.size());
+		EXPECT_EQ(serverScene.GetTotalRoomCount(), sceneList.size());
 	}
 }
 

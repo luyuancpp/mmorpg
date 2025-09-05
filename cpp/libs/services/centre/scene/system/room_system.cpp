@@ -80,7 +80,7 @@ void RoomUtil::HandleDestroyRoomNode(entt::entity node) {
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	auto& nodeRoomComp = registry.get<NodeRoomComp>(node);
-	auto roomList = nodeRoomComp.GetSceneLists();
+	auto roomList = nodeRoomComp.GetRoomList();
 
 	// Destroy all rooms associated with the server node
 	for (auto& confIdRoomList : roomList | std::views::values) {
@@ -137,7 +137,7 @@ void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 void RoomUtil::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNode) {
 	auto& roomRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 	auto& crashNodeRoom = roomRegistry.get<NodeRoomComp>(crashNode);
-	auto roomList = crashNodeRoom.GetSceneLists();
+	auto roomList = crashNodeRoom.GetRoomList();
 
 	for (auto& confIdRoomList : roomList | std::views::values) {
 		for (auto room : confIdRoomList) {
