@@ -15,7 +15,7 @@
 #include "engine/threading/node_context_manager.h"
 #include "engine/threading/registry_manager.h"
 #include <modules/scene/system/room_common.h>
-#include "room_selector.h"
+#include "room_node_selector.h"
 #include "room_system.h"
 
 entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext)

@@ -16,7 +16,7 @@
 #include <threading/registry_manager.h>
 #include <modules/scene/comp/room_node_comp.h>
 #include <modules/scene/system/room_common.h>
-#include "room_selector.h"
+#include "room_node_selector.h"
 
 // Constants
 static constexpr std::size_t kMaxRoomPlayer = 1000;
