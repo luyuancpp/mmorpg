@@ -114,12 +114,6 @@ public:
     static std::size_t GetRoomsSize();
 
     /**
-     * @brief SetSequenceNodeId sets the node ID sequence for generating node IDs.
-     * @param node_id The starting node ID.
-     */
-    static void SetSequenceNodeId(const uint32_t node_id);
-
-    /**
      * @brief CheckScenePlayerSize checks the current number of players in a scene.
      * @param scene The entity ID of the scene to check.
      * @return The number of players in the scene.

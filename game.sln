@@ -48,7 +48,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gate", "cpp\nodes\gate\gate
 		{FC29015B-FD9B-4AC9-832D-F660D2D7169D} = {FC29015B-FD9B-4AC9-832D-F660D2D7169D}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scene", "cpp\nodes\scene\scene.vcxproj", "{6348AEF3-B5C7-43C9-AEAD-D707F104140F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "room", "cpp\nodes\scene\scene.vcxproj", "{6348AEF3-B5C7-43C9-AEAD-D707F104140F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{03F2DF47-F5B9-41E9-933B-903D317FEEB1} = {03F2DF47-F5B9-41E9-933B-903D317FEEB1}
 		{341399B9-CD77-43CA-B0BD-B4504A3EC82B} = {341399B9-CD77-43CA-B0BD-B4504A3EC82B}
@@ -85,6 +85,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "change_scene_test", "cpp\unit_test\change_scene_test\change_scene.vcxproj", "{96C26F40-AE31-4E5B-8318-F6D183AD8185}"
 	ProjectSection(ProjectDependencies) = postProject
 		{6348AEF3-B5C7-43C9-AEAD-D707F104140F} = {6348AEF3-B5C7-43C9-AEAD-D707F104140F}
+		{7581E55B-5BF0-4443-B28E-FFAC383F4C21} = {7581E55B-5BF0-4443-B28E-FFAC383F4C21}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "configuration_table_test", "cpp\unit_test\configuration_table_test\configuration_table_test.vcxproj", "{A0261F03-BBFD-4406-A62A-5F9CCCC67C0E}"
@@ -135,6 +136,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scene_test", "cpp\unit_test\scene_test\game_server_load_balance.vcxproj", "{33AAE8BA-41BB-4F7E-834E-9E7DCEBFE350}"
 	ProjectSection(ProjectDependencies) = postProject
 		{6348AEF3-B5C7-43C9-AEAD-D707F104140F} = {6348AEF3-B5C7-43C9-AEAD-D707F104140F}
+		{7581E55B-5BF0-4443-B28E-FFAC383F4C21} = {7581E55B-5BF0-4443-B28E-FFAC383F4C21}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "skill_test", "cpp\unit_test\skill_test\skill_test.vcxproj", "{17F4E9D4-2846-47ED-904F-48E055D8F19F}"
