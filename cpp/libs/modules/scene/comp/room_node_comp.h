@@ -34,15 +34,15 @@ struct CrossRoomSceneNode
 class NodeRoomComp
 {
 public:
-	[[nodiscard]] const RoomList& GetSceneLists() const
+	[[nodiscard]] const RoomList& GetRoomList() const
 	{
-		return configSceneLists;
+		return configRoomList;
 	}
 
-	std::size_t GetTotalSceneCount() const
+	std::size_t GetTotalRoomCount() const
 	{
 		std::size_t totalSize = 0;
-		for (const auto& scenes : configSceneLists | std::views::values)
+		for (const auto& scenes : configRoomList | std::views::values)
 		{
 			totalSize += scenes.size();
 		}
@@ -51,8 +51,8 @@ public:
 
 	[[nodiscard]] const SceneList& GetScenesByConfig(uint32_t scene_config_id) const
 	{
-		const auto it = configSceneLists.find(scene_config_id);
-		if (it == configSceneLists.end())
+		const auto it = configRoomList.find(scene_config_id);
+		if (it == configRoomList.end())
 		{
 			static const SceneList emptyList;
 			return emptyList;
@@ -63,14 +63,14 @@ public:
 	void AddRoom(entt::entity scene_id)
 	{
 		const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(scene_id);
-		configSceneLists[sceneInfo.scene_confid()].emplace(scene_id);
+		configRoomList[sceneInfo.scene_confid()].emplace(scene_id);
 	}
 
 	void RemoveRoom(entt::entity scene_eid)
 	{
 		const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(scene_eid);
-		auto it = configSceneLists.find(sceneInfo.scene_confid());
-		if (it != configSceneLists.end())
+		auto it = configRoomList.find(sceneInfo.scene_confid());
+		if (it != configRoomList.end())
 		{
 			it->second.erase(scene_eid);
 		}
@@ -113,7 +113,7 @@ public:
 	}
 
 private:
-	RoomList configSceneLists;
+	RoomList configRoomList;
 };
 
 
