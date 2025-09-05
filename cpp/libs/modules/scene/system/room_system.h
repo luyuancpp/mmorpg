@@ -95,19 +95,6 @@ public:
     static NodeId GetGameNodeIdFromRoomEntity(entt::entity room);
 
     /**
-     * @brief GetScenesSize retrieves the number of scenes for a specific scene configuration ID.
-     * @param scene_config_id The ID of the scene configuration.
-     * @return The number of scenes.
-     */
-    static std::size_t GetRoomsSize(uint32_t room_config_id);
-
-    /**
-     * @brief GetScenesSize retrieves the total number of scenes.
-     * @return The total number of scenes.
-     */
-    static std::size_t GetRoomsSize();
-
-    /**
      * @brief CheckScenePlayerSize checks the current number of players in a scene.
      * @param scene The entity ID of the scene to check.
      * @return The number of players in the scene.
