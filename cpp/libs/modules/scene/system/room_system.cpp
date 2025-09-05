@@ -109,7 +109,7 @@ void RoomUtil::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
 	}
 
 	// Get a room that is not full from the NodeRoomSystem
-	auto defaultRoom = NodeSceneSystem::FindNotFullRoom({});
+	auto defaultRoom = RoomNodeSelector::SelectAvailableRoomScene({});
 
 	// Enter the player into the retrieved default room
 	RoomCommon::EnterRoom({ defaultRoom, param.enter });
