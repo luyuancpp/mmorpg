@@ -70,19 +70,6 @@ bool RoomUtil::IsRoomEmpty() {
 	return isEmpty;
 }
 
-// Check if there are non-empty room lists for a specific configuration
-bool RoomUtil::ConfigRoomListNotEmpty(uint32_t roomConfigId) {
-	auto& roomNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	for (auto nodeEid : roomNodeRegistry.view<NodeNodeComp>()) {
-		auto& nodeRoomComp = roomNodeRegistry.get<NodeNodeComp>(nodeEid);
-		if (!nodeRoomComp.GetScenesByConfig(roomConfigId).empty()) {
-			LOG_TRACE << "Non-empty room list found for config ID: " << roomConfigId;
-			return true;
-		}
-	}
-	LOG_TRACE << "No non-empty room list found for config ID: " << roomConfigId;
-	return false;
-}
 
 // ✅ 2. 多节点负载均衡
 // 你在 CompelPlayerChangeRoom 中如果找不到房间就直接创建了：
@@ -184,53 +171,6 @@ void RoomUtil::HandleDestroyRoomNode(entt::entity node) {
 
 	// Log server destruction
 	LOG_INFO << "Destroyed server with ID: " << entt::to_integral(node);
-}
-
-
-// Check if a player can enter a room
-uint32_t RoomUtil::CheckPlayerEnterRoom(const EnterRoomParam& param) {
-	if (!tlsRegistryManager.roomRegistry.valid(param.room)) {
-		LOG_ERROR << "Invalid room entity when checking player enter room - Room ID: " << entt::to_integral(param.room);
-		return kInvalidEnterSceneParameters;
-	}
-
-	auto* roomInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>(param.room);
-	if (!roomInfo) {
-		LOG_ERROR << "RoomInfo not found when checking player enter room - Room ID: " << entt::to_integral(param.room);
-		return kInvalidEnterSceneParameters;
-	}
-
-	auto creatorId = tlsRegistryManager.actorRegistry.get<Guid>(param.enter);
-	if (roomInfo->creators().find(creatorId) == roomInfo->creators().end()) {
-		LOG_WARN << "Player cannot enter room due to creator restriction - Room ID: " << entt::to_integral(param.room);
-		return kCheckEnterSceneCreator;
-	}
-
-	return kSuccess;
-}
-
-
-// Check if room player size limits are respected
-uint32_t RoomUtil::HasRoomSlot(entt::entity room) {
-	auto& roomPlayers = tlsRegistryManager.roomRegistry.get<RoomPlayers>(room);
-
-	if (roomPlayers.size() >= kMaxRoomPlayer) {
-		LOG_WARN << "Room player size limit exceeded - Room ID: " << entt::to_integral(room);
-		return kEnterSceneNotFull;
-	}
-
-	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(room);
-	if (!gsPlayerInfo) {
-		LOG_ERROR << "GameNodePlayerInfoPtr not found for room - Room ID: " << entt::to_integral(room);
-		return kEnterSceneGsInfoNull;
-	}
-
-	if ((*gsPlayerInfo)->player_size() >= kMaxServerPlayerSize) {
-		LOG_WARN << "Game node player size limit exceeded - Room ID: " << entt::to_integral(room);
-		return kEnterSceneGsFull;
-	}
-
-	return kSuccess;
 }
 
 // Enter a player into a room

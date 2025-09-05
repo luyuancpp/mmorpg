@@ -23,7 +23,7 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 	// 尝试进入上次成功进入的场景
 	entt::entity currentSceneId = entt::entity{ sceneContext.scene_info().guid() };
 	if (tlsRegistryManager.roomRegistry.valid(currentSceneId) &&
-		kSuccess == RoomUtil::CheckPlayerEnterRoom({ .room = currentSceneId, .enter = entt::null }))
+		kSuccess == RoomCommon::CheckPlayerEnterRoom({ .room = currentSceneId, .enter = entt::null }))
 	{
 		return currentSceneId;
 	}
@@ -31,7 +31,7 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 	// 尝试进入上次登录但未成功进入的场景
 	entt::entity lastSceneId = entt::entity{ sceneContext.scene_info_last_time().guid() };
 	if (tlsRegistryManager.roomRegistry.valid(lastSceneId) &&
-		kSuccess == RoomUtil::CheckPlayerEnterRoom({ .room = lastSceneId, .enter = entt::null }))
+		kSuccess == RoomCommon::CheckPlayerEnterRoom({ .room = lastSceneId, .enter = entt::null }))
 	{
 		return lastSceneId;
 	}
@@ -234,7 +234,7 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 
 	const auto& changeInfo = *tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 	if (!changeInfo.ignore_full() &&
-		RoomUtil::HasRoomSlot(toScene) != kSuccess)
+		RoomCommon::HasRoomSlot(toScene) != kSuccess)
 	{
 		LOG_WARN << "Scene is full for player: " << playerId;
 		PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneSceneFull, {});

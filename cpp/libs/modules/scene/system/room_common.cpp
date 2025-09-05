@@ -217,3 +217,4 @@ void RoomCommon::LeaveRoom(const LeaveRoomParam& param) {
 		LOG_INFO << "Player left room - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.leaver) << ", Room ID: " << entt::to_integral(roomEntity);
 	}
 }
+

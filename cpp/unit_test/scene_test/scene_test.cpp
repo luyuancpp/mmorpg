@@ -101,7 +101,7 @@ TEST(SceneSystemTests, DestroyScene)
 	sceneSystem.DestroyRoom({ node1, scene });
 
 	EXPECT_TRUE(RoomCommon::IsRoomEmpty());
-	EXPECT_FALSE(sceneSystem.ConfigRoomListNotEmpty(createParams1.roomInfo.scene_confid()));
+	EXPECT_FALSE(RoomCommon::ConfigRoomListNotEmpty(createParams1.roomInfo.scene_confid()));
 	EXPECT_TRUE(RoomCommon::IsRoomEmpty());
 	EXPECT_EQ(RoomCommon::GetRoomsSize(), RoomCommon::GetRoomsSize());
 	EXPECT_FALSE(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(scene));
@@ -911,8 +911,8 @@ TEST(GS, CheckEnterRoomScene)
 	tlsRegistryManager.actorRegistry.emplace<Guid>(player2, 100); // Player 2 with GUID 100
 
 	// Test cases
-	EXPECT_EQ(kSuccess, RoomUtil::CheckPlayerEnterRoom({ .room = room, .enter = player1 }));
-	EXPECT_EQ(kCheckEnterSceneCreator, RoomUtil::CheckPlayerEnterRoom({ .room = room, .enter = player2 }));
+	EXPECT_EQ(kSuccess, RoomCommon::CheckPlayerEnterRoom({ .room = room, .enter = player1 }));
+	EXPECT_EQ(kCheckEnterSceneCreator, RoomCommon::CheckPlayerEnterRoom({ .room = room, .enter = player2 }));
 }
 
 

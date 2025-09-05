@@ -95,13 +95,6 @@ public:
     static NodeId GetGameNodeIdFromRoomEntity(entt::entity room);
 
     /**
-     * @brief CheckScenePlayerSize checks the current number of players in a scene.
-     * @param scene The entity ID of the scene to check.
-     * @return The number of players in the scene.
-     */
-    static uint32_t HasRoomSlot(entt::entity room);
-
-    /**
      * @brief CreateScene2GameNode creates a scene associated with a game node.
      * @param param Parameters for creating the scene.
      * @return The entity ID of the created scene.
@@ -119,13 +112,6 @@ public:
      * @param node The entity ID of the server node.
      */
     static void HandleDestroyRoomNode(entt::entity node);
-
-    /**
-     * @brief CheckPlayerEnterScene checks if a player can enter a scene.
-     * @param param Parameters for checking player entry.
-     * @return The result of the check (e.g., success or failure reason).
-     */
-    static uint32_t CheckPlayerEnterRoom(const EnterRoomParam& param);
 
     /**
      * @brief EnterScene handles the action of a player entering a scene.
@@ -159,13 +145,6 @@ public:
     static void ReplaceCrashRoomNode(entt::entity crash_node, entt::entity dest_node);
 
     // Test-related methods
-
-    /**
-     * @brief ConfigSceneListNotEmpty checks if the scene list for a scene configuration is not empty.
-     * @param scene_config_id The ID of the scene configuration.
-     * @return True if the scene list is not empty, false otherwise.
-     */
-    static bool ConfigRoomListNotEmpty(uint32_t scene_config_id);
 
     /**
      * @brief IsSceneEmpty checks if there are any scenes currently active.
