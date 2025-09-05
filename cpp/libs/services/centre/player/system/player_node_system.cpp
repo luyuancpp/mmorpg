@@ -27,6 +27,7 @@
 #include "engine/core/type_alias/player_session_type_alias.h"
 #include "engine/threading/node_context_manager.h"
 #include "engine/threading/player_manager.h"
+#include <modules/scene/system/room_common.h>
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData, const std::any& extra)
 {
@@ -229,7 +230,7 @@ void PlayerNodeSystem::Logout(Guid playerID)
 	if (tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(playerEntity))
 	{
 		LOG_DEBUG << "Player in scene, removing from scene: " << playerID;
-		RoomUtil::LeaveRoom({ playerEntity });
+		RoomCommon::LeaveRoom({ playerEntity });
 	}
 
 	GameNodeExitGameRequest exitGameRequest;
