@@ -26,7 +26,7 @@ void AddMainRoomToNodeComponent(entt::registry& reg, const entt::entity node) {
 	LOG_TRACE << "Adding main room node components for entity: " << entt::to_integral(node);
 	reg.emplace<MainRoomNode>(node);
 	reg.emplace<NodeRoomComp>(node);
-	reg.emplace<RoomNodePlayerInfoPtrPbComponent>(node, std::make_shared<GameNodePlayerInfoPBComponent>());
+	reg.emplace<RoomNodePlayerStatsPtrPbComponent>(node, std::make_shared<GameNodePlayerInfoPBComponent>());
 }
 
 // RoomUtil implementation
@@ -190,9 +190,9 @@ entt::entity RoomUtil::SelectBestNodeForRoom(uint32_t sceneConfId) {
 	entt::entity bestNode = entt::null;
 	std::size_t minPlayerCount = std::numeric_limits<std::size_t>::max();
 
-	for (auto node : registry.view<NodeRoomComp, RoomNodePlayerInfoPtrPbComponent>()) {
+	for (auto node : registry.view<NodeRoomComp, RoomNodePlayerStatsPtrPbComponent>()) {
 		const auto& nodeComp = registry.get<NodeRoomComp>(node);
-		const auto& playerInfoPtr = registry.get<RoomNodePlayerInfoPtrPbComponent>(node);
+		const auto& playerInfoPtr = registry.get<RoomNodePlayerStatsPtrPbComponent>(node);
 		if (!playerInfoPtr) continue;
 
 		// 如果该节点已经有该配置的房间，优先考虑

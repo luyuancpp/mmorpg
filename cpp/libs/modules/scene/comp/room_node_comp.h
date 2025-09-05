@@ -11,7 +11,7 @@
 #include "proto/logic/component/game_node_comp.pb.h"
 
 using SceneList = EntityUnorderedSet;
-using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
+using RoomList = std::unordered_map<uint32_t, SceneList>;
 using RoomPlayers = EntityUnorderedSet; // 弱引用，要解除玩家和场景的耦合
 
 
@@ -34,7 +34,7 @@ struct CrossRoomSceneNode
 class NodeRoomComp
 {
 public:
-	[[nodiscard]] const ConfigSceneListType& GetSceneLists() const
+	[[nodiscard]] const RoomList& GetSceneLists() const
 	{
 		return configSceneLists;
 	}
@@ -60,13 +60,13 @@ public:
 		return it->second;
 	}
 
-	void AddScene(entt::entity scene_id)
+	void AddRoom(entt::entity scene_id)
 	{
 		const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(scene_id);
 		configSceneLists[sceneInfo.scene_confid()].emplace(scene_id);
 	}
 
-	void RemoveScene(entt::entity scene_eid)
+	void RemoveRoom(entt::entity scene_eid)
 	{
 		const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(scene_eid);
 		auto it = configSceneLists.find(sceneInfo.scene_confid());
@@ -149,10 +149,10 @@ public:
 	}
 
 private:
-	ConfigSceneListType configSceneLists;
+	RoomList configSceneLists;
 	NodeState nodeState{ NodeState::kNormal };
 	NodePressureState nodePressureState{ NodePressureState::kNoPressure };
 };
 
 
-using RoomNodePlayerInfoPtrPbComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
+using RoomNodePlayerStatsPtrPbComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
