@@ -5,26 +5,12 @@
 #include <modules/scene/comp/room_node_comp.h>
 
 void RoomNodeStateSystem::MakeNodePressure(entt::entity node) {
-	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeRoomComp>(node);
-
-	if (nullptr == nodeSceneComp) {
-		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
-		return;
-	}
-
-	nodeSceneComp->SetNodePressureState(NodePressureState::kPressure);
+	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).emplace_or_replace<NodePressureComp>(node, NodePressureState::kPressure);
 	LOG_INFO << "Node entered pressure state, Node ID: " << entt::to_integral(node);
 }
 
 void RoomNodeStateSystem::ClearNodePressure(entt::entity node) {
-	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeRoomComp>(node);
-
-	if (nullptr == nodeSceneComp) {
-		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
-		return;
-	}
-
-	nodeSceneComp->SetNodePressureState(NodePressureState::kNoPressure);
+	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).emplace_or_replace<NodePressureComp>(node, NodePressureState::kNoPressure);
 	LOG_INFO << "Node exited pressure state, Node ID: " << entt::to_integral(node);
 }
 

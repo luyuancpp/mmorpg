@@ -112,29 +112,8 @@ public:
 		return minPlayerScene;
 	}
 
-	void SetNodePressureState(NodePressureState state)
-	{
-		nodePressureState = state;
-	}
-
-	[[nodiscard]] NodePressureState GetNodePressureState() const
-	{
-		return nodePressureState;
-	}
-
-	bool IsNodeNoPressure() const
-	{
-		return nodePressureState == NodePressureState::kNoPressure;
-	}
-
-	bool IsNodePressure() const
-	{
-		return nodePressureState == NodePressureState::kPressure;
-	}
-
 private:
 	RoomList configSceneLists;
-	NodePressureState nodePressureState{ NodePressureState::kNoPressure };
 };
 
 
@@ -144,7 +123,32 @@ struct NodeStateComp {
 		return state;
 	}
 
+	bool IsNormal() const {
+		return state == NodeState::kNormal;
+	}
+
 	NodeState state = NodeState::kNormal;
 };
+
+struct NodePressureComp {
+	operator NodePressureState() const {
+		return state;
+	}
+
+	// 可选：添加便捷比较
+	bool operator==(NodePressureState other) const {
+		return state == other;
+	}
+	bool operator!=(NodePressureState other) const {
+		return state != other;
+	}
+
+	bool IsPressure() const {
+		return state == NodePressureState::kPressure;
+	}
+
+	NodePressureState state = NodePressureState::kNoPressure;
+};
+
 
 using RoomNodePlayerStatsPtrPbComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
