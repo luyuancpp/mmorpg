@@ -14,11 +14,9 @@
 
 #include <ranges> // Only if using C++20 ranges
 #include <threading/registry_manager.h>
-#include <scene/comp/node_scene_comp.h>
-#include "room_common.h"
-#include "room_server.h"
-
-thread_local TransientNode12BitCompositeIdGenerator  nodeSequence; // Sequence for generating node IDs
+#include <modules/scene/comp/node_scene_comp.h>
+#include <modules/scene/system/room_common.h>
+#include "room_selector.h"
 
 // Constants
 static constexpr std::size_t kMaxRoomPlayer = 1000;
@@ -137,6 +135,7 @@ void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 }
 
 
+
 // Replace a crashed server node with a new node
 void RoomUtil::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNode) {
 	auto& roomRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
@@ -151,7 +150,7 @@ void RoomUtil::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNod
 			}
 			CreateRoomOnNodeRoomParam p{ .node = destNode };
 			p.roomInfo.set_scene_confid(roomInfo->scene_confid());
-			RoomServer::CreateRoomOnRoomNode(p);
+			RoomCommon::CreateRoomOnRoomNode(p);
 		}
 	}
 
@@ -181,7 +180,7 @@ entt::entity RoomUtil::FindOrCreateRoom(uint32_t sceneConfId) {
 	CreateRoomOnNodeRoomParam createParam{ .node = node };
 	createParam.roomInfo.set_scene_confid(sceneConfId);
 
-	room = RoomServer::CreateRoomOnRoomNode(createParam);
+	room = RoomCommon::CreateRoomOnRoomNode(createParam);
 	if (room == entt::null) {
 		LOG_ERROR << "FindOrCreateRoom: Failed to create room for sceneConfId = " << sceneConfId;
 	}

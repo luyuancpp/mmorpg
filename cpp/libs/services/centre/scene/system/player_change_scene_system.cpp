@@ -2,7 +2,7 @@
 
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
-#include "modules//scene/system/room_system.h"
+#include "scene/system/room_system.h"
 
 #include "muduo/base/Logging.h"
 #include "proto/logic/event/scene_event.pb.h"

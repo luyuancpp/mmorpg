@@ -3,12 +3,11 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
-#include "modules/scene/system/room_system.h"
 #include "proto/common/node.pb.h"
 #include "threading/node_context_manager.h"
 #include <threading/registry_manager.h>
-#include <modules/scene/system/room_server.h>
 #include <modules/scene/system/room_common.h>
+#include "modules/scene/system/room_param.h"
 ///<<< END WRITING YOUR CODE
 
 
@@ -19,7 +18,7 @@ void CentreSceneHandler::RegisterScene(::google::protobuf::RpcController* contro
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto&& roomInfo : request->scenes_info())
 	{
-		RoomServer::CreateRoomOnRoomNode(
+		RoomCommon::CreateRoomOnRoomNode(
 			{ .node = entt::entity{request->scene_node_id()}, .roomInfo = roomInfo });
 
 		LOG_INFO << "Scene " << roomInfo.DebugString()

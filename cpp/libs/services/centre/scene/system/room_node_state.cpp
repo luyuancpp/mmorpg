@@ -1,8 +1,8 @@
 #include "room_node_state.h"
 #include <core/node/constants/node_constants.h>
-#include <node_context_manager.h>
 #include <muduo/base/Logging.h>
-#include <scene/comp/node_scene_comp.h>
+#include <threading/node_context_manager.h>
+#include <modules/scene/comp/node_scene_comp.h>
 
 void RoomNodeStateSystem::MakeNodePressure(entt::entity node) {
 	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node);

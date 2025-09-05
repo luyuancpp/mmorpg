@@ -33,6 +33,8 @@ struct DestroyRoomParam
 	entt::entity room{ entt::null };
 };
 
+struct CreateRoomOnNodeRoomParam;
+
 // RoomCommon.h
 class RoomCommon {
 public:
@@ -56,4 +58,7 @@ public:
 
 	// 销毁房间（只负责本地）
 	static void DestroyRoom(const DestroyRoomParam& param);
+
+	static entt::entity CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& param);
+
 };

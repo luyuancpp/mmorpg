@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "modules/scene/system/room_system.h"
+#include "scene/system/room_system.h"
 #include "modules/scene/system/room_common.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
@@ -12,8 +12,8 @@
 #include <threading/registry_manager.h>
 #include <muduo/base/Logging.h>
 #include <modules/scene/comp/node_scene_comp.h>
-#include <modules/scene/system/room_server.h>
-#include <modules/scene/system/room_node_state.h>
+#include <scene/system/room_node_state.h>
+#include <scene/system/room_selector.h>
 
 using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
 
@@ -40,7 +40,7 @@ TEST(SceneSystemTests, CreateMainScene)
 		createParams.roomInfo.set_scene_confid(i);
 		for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
 		{
-			RoomServer::CreateRoomOnRoomNode(createParams);
+			RoomCommon::CreateRoomOnRoomNode(createParams);
 		}
 		EXPECT_EQ(RoomCommon::GetRoomsSize(i), kPerSceneConfigSize);
 	}
@@ -62,8 +62,8 @@ TEST(SceneSystemTests, CreateScene2Server)
 	createParams2.roomInfo.set_scene_confid(3);
 	createParams2.node = node2;
 
-	RoomServer::CreateRoomOnRoomNode(createParams1);
-	RoomServer::CreateRoomOnRoomNode(createParams2);
+	RoomCommon::CreateRoomOnRoomNode(createParams1);
+	RoomCommon::CreateRoomOnRoomNode(createParams2);
 
 	const auto nodeComp1 = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node1);
 	if (nodeComp1)
@@ -89,7 +89,7 @@ TEST(SceneSystemTests, DestroyScene)
 
 	CreateRoomOnNodeRoomParam createParams1;
 	createParams1.node = node1;
-	const auto scene = RoomServer::CreateRoomOnRoomNode(createParams1);
+	const auto scene = RoomCommon::CreateRoomOnRoomNode(createParams1);
 
 	EXPECT_EQ(1, RoomCommon::GetRoomsSize());
 	EXPECT_EQ(1, RoomCommon::GetRoomsSize(createParams1.roomInfo.scene_confid()));
@@ -125,8 +125,8 @@ TEST(SceneSystemTests, DestroyServer)
 	createParams2.roomInfo.set_scene_confid(2);
 	createParams2.node = node2;
 
-	auto scene1 = RoomServer::CreateRoomOnRoomNode(createParams1);
-	auto scene2 = RoomServer::CreateRoomOnRoomNode(createParams2);
+	auto scene1 = RoomCommon::CreateRoomOnRoomNode(createParams1);
+	auto scene2 = RoomCommon::CreateRoomOnRoomNode(createParams2);
 
 	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeNodeComp>(node1).GetTotalSceneCount());
 	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeNodeComp>(node2).GetTotalSceneCount());
@@ -175,8 +175,8 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 	createParams2.roomInfo.set_scene_confid(2);
 	createParams2.node = node2;
 
-	auto scene1 = RoomServer::CreateRoomOnRoomNode(createParams1);
-	auto scene2 = RoomServer::CreateRoomOnRoomNode(createParams2);
+	auto scene1 = RoomCommon::CreateRoomOnRoomNode(createParams1);
+	auto scene2 = RoomCommon::CreateRoomOnRoomNode(createParams2);
 
 	EnterRoomParam enterParam1;
 	enterParam1.room = scene1;
@@ -279,7 +279,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 		for (auto& it : serverEntities)
 		{
 			createServerSceneParam.node = it;
-			auto scene = RoomServer::CreateRoomOnRoomNode(createServerSceneParam);
+			auto scene = RoomCommon::CreateRoomOnRoomNode(createServerSceneParam);
 			if (sceneEntities.empty())
 			{
 				sceneEntities.emplace(scene);
@@ -338,8 +338,8 @@ TEST(GS, CompelToChangeScene)
 	server2Param.roomInfo.set_scene_confid(2);
 	server2Param.node = node2;
 
-	const auto scene1 = RoomServer::CreateRoomOnRoomNode(server1Param);
-	const auto scene2 = RoomServer::CreateRoomOnRoomNode(server2Param);
+	const auto scene1 = RoomCommon::CreateRoomOnRoomNode(server1Param);
+	const auto scene2 = RoomCommon::CreateRoomOnRoomNode(server2Param);
 
 	EnterRoomParam enterParam1;
 	enterParam1.room = scene1;
@@ -378,7 +378,6 @@ TEST(GS, CompelToChangeScene)
 TEST(GS, CrashWeightRoundRobinMainScene)
 {
 	RoomUtil sm;
-	RoomNodeSelector nsSys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
 	uint32_t perServerScene = 2;
@@ -397,7 +396,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 		for (auto& it : serverEntities)
 		{
 			createServerSceneParam.node = it;
-			auto e = RoomServer::CreateRoomOnRoomNode(createServerSceneParam);
+			auto e = RoomCommon::CreateRoomOnRoomNode(createServerSceneParam);
 			if (sceneEntities.empty())
 			{
 				sceneEntities.emplace(e);
@@ -430,7 +429,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 	weightRoundRobinScene.sceneConfigurationId = sceneConfigId0;
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto canEnter = nsSys.SelectLeastLoadedScene(weightRoundRobinScene);
+		auto canEnter = RoomNodeSelector::SelectLeastLoadedScene(weightRoundRobinScene);
 		EXPECT_TRUE(canEnter != entt::null);
 	}
 }
@@ -458,7 +457,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 		for (auto& it : nodeList)
 		{
 			createNodeSceneParam.node = it;
-			auto e = RoomServer::CreateRoomOnRoomNode(createNodeSceneParam);
+			auto e = RoomCommon::CreateRoomOnRoomNode(createNodeSceneParam);
 			sceneList.emplace(e);
 			if (firstScene == entt::null)
 			{
@@ -502,7 +501,6 @@ TEST(GS, WeightRoundRobinMainScene)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	RoomUtil sm;
-	RoomNodeSelector nssys;
 	EntityUnorderedSet node_list;
 	uint32_t server_size = 10;
 	uint32_t per_server_scene = 10;
@@ -520,11 +518,11 @@ TEST(GS, WeightRoundRobinMainScene)
 		for (auto& it : node_list)
 		{
 			create_server_scene_param.node = it;
-			RoomServer::CreateRoomOnRoomNode(create_server_scene_param);
+			RoomCommon::CreateRoomOnRoomNode(create_server_scene_param);
 		}
 	}
 
-	auto enter_leave_lambda = [&node_list, server_size, per_server_scene, &sm, &nssys]()->void
+	auto enter_leave_lambda = [&node_list, server_size, per_server_scene, &sm]()->void
 		{
 			uint32_t scene_config_id0 = 0;
 			uint32_t scene_config_id1 = 1;
@@ -540,7 +538,7 @@ TEST(GS, WeightRoundRobinMainScene)
 
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
-				auto can_enter = nssys.SelectLeastLoadedScene(weight_round_robin_scene);
+				auto can_enter = RoomNodeSelector::SelectLeastLoadedScene(weight_round_robin_scene);
 				auto p_e = tlsRegistryManager.actorRegistry.create();
 				enter_param1.enter = p_e;
 				enter_param1.room = can_enter;
@@ -561,7 +559,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			weight_round_robin_scene.sceneConfigurationId = scene_config_id1;
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
-				auto can_enter = nssys.SelectLeastLoadedScene(weight_round_robin_scene);
+				auto can_enter = RoomNodeSelector::SelectLeastLoadedScene(weight_round_robin_scene);
 				auto player = tlsRegistryManager.actorRegistry.create();
 				enter_param1.enter = player;
 				enter_param1.room = can_enter;
@@ -625,7 +623,6 @@ TEST(GS, ServerEnterLeavePressure)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	RoomUtil sm;
-	RoomNodeSelector nsSys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
 	uint32_t perServerScene = 10;
@@ -644,7 +641,7 @@ TEST(GS, ServerEnterLeavePressure)
 		for (auto& it : serverEntities)
 		{
 			createServerSceneParam.node = it;
-			RoomServer::CreateRoomOnRoomNode(createServerSceneParam);
+			RoomCommon::CreateRoomOnRoomNode(createServerSceneParam);
 		}
 	}
 
@@ -663,7 +660,7 @@ TEST(GS, ServerEnterLeavePressure)
 	// Enter players into scenes with sceneConfigId0
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		auto canEnter = nsSys.SelectLeastLoadedScene(weightRoundRobinScene);
+		auto canEnter = RoomNodeSelector::SelectLeastLoadedScene(weightRoundRobinScene);
 		auto playerEntity = tlsRegistryManager.actorRegistry.create();
 		enterParam1.enter = playerEntity;
 		enterParam1.room = canEnter;
@@ -680,7 +677,7 @@ TEST(GS, ServerEnterLeavePressure)
 	// Enter players into scenes with sceneConfigId1
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		auto canEnter = nsSys.SelectLeastLoadedScene(weightRoundRobinScene);
+		auto canEnter = RoomNodeSelector::SelectLeastLoadedScene(weightRoundRobinScene);
 		auto playerEntity = tlsRegistryManager.actorRegistry.create();
 		enterParam1.enter = playerEntity;
 		enterParam1.room = canEnter;
@@ -700,7 +697,7 @@ TEST(GS, EnterDefaultScene)
 		createGSSceneParam.roomInfo.set_scene_confid(i);
 		for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
 		{
-			RoomServer::CreateRoomOnRoomNode(createGSSceneParam);
+			RoomCommon::CreateRoomOnRoomNode(createGSSceneParam);
 		}
 	}
 
@@ -749,9 +746,9 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 		for (auto& it : serverEntities)
 		{
 			createServerSceneParam.node = it;
-			auto scene1 = RoomServer::CreateRoomOnRoomNode(createServerSceneParam);
+			auto scene1 = RoomCommon::CreateRoomOnRoomNode(createServerSceneParam);
 			tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).emplace<TestNodeId>(scene1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<TestNodeId>(it));
-			auto scene2 = RoomServer::CreateRoomOnRoomNode(createServerSceneParam);
+			auto scene2 = RoomCommon::CreateRoomOnRoomNode(createServerSceneParam);
 			tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).emplace<TestNodeId>(scene2, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<TestNodeId>(it));
 		}
 	}
@@ -903,7 +900,7 @@ TEST(GS, CheckEnterRoomScene)
 	{
 		sceneInfo.mutable_creators()->emplace(i, false); // Assuming creators are added with a boolean indicating creator status
 	}
-	auto room = RoomServer::CreateRoomOnRoomNode({ .node = CreateMainSceneNode(), .roomInfo = sceneInfo });
+	auto room = RoomCommon::CreateRoomOnRoomNode({ .node = CreateMainSceneNode(), .roomInfo = sceneInfo });
 
 	// Create players with different GUIDs
 	const auto player1 = tlsRegistryManager.actorRegistry.create();

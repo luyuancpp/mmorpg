@@ -6,10 +6,9 @@
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "scene/system/player_change_scene_system.h"
-#include "modules/scene/system/room_system.h"
 #include <threading/registry_manager.h>
 #include <modules/scene/system/room_common.h>
-#include <modules/scene/system/room_server.h>
+#include <scene/system/room_system.h>
 
 EntityVector globalSceneList;
 
@@ -46,7 +45,7 @@ TEST(PlayerChangeScene, CreateMainScene)
 		sceneInfo.set_scene_confid(i);
 		for (uint32_t j = 0; j < 2; ++j)
 		{
-			globalSceneList.push_back(RoomServer::CreateRoomOnRoomNode({ .node = mainSceneNode, .roomInfo = sceneInfo }));
+			globalSceneList.push_back(RoomCommon::CreateRoomOnRoomNode({ .node = mainSceneNode, .roomInfo = sceneInfo }));
 		}
 	}
 }
