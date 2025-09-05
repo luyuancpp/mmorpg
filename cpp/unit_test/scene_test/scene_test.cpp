@@ -13,6 +13,7 @@
 #include <muduo/base/Logging.h>
 #include <modules/scene/comp/node_scene_comp.h>
 #include <modules/scene/system/room_server.h>
+#include <modules/scene/system/room_node_state.h>
 
 using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
 
@@ -302,7 +303,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 			RoomCommon::EnterRoom(enterParam1);
 		}
 	}
-	RoomNodeSelector::SetNodeState(*serverEntities.begin(), NodeState::kMaintain);
+	RoomNodeStateSystem::MakeNodeState(*serverEntities.begin(), NodeState::kMaintain);
 
 	GetSceneParams weightRoundRobinScene;
 	weightRoundRobinScene.sceneConfigurationId = 0;
@@ -422,7 +423,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 		}
 	}
 
-	nsSys.SetNodeState(*serverEntities.begin(), NodeState::kCrash);
+	RoomNodeStateSystem::MakeNodeState(*serverEntities.begin(), NodeState::kCrash);
 
 	uint32_t sceneConfigId0 = 0;
 	GetSceneParams weightRoundRobinScene;
@@ -439,7 +440,6 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 TEST(GS, CrashMovePlayer2NewServer)
 {
 	RoomUtil sm;
-	RoomNodeSelector nsSys;
 	EntityUnorderedSet nodeList;
 	EntityUnorderedSet sceneList;
 	uint32_t nodeSize = 2;
@@ -482,7 +482,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 		RoomCommon::EnterRoom(enterParam1);
 	}
 
-	nsSys.SetNodeState(*nodeList.begin(), NodeState::kCrash);
+	RoomNodeStateSystem::MakeNodeState(*nodeList.begin(), NodeState::kCrash);
 
 	entt::entity crashNode = *nodeList.begin();
 	entt::entity replaceNode = *(++nodeList.begin());
@@ -649,7 +649,7 @@ TEST(GS, ServerEnterLeavePressure)
 	}
 
 	// Set pressure on the first server node
-	nsSys.MakeNodePressure(*serverEntities.begin());
+	RoomNodeStateSystem::MakeNodePressure(*serverEntities.begin());
 
 	uint32_t sceneConfigId0 = 0;
 	uint32_t sceneConfigId1 = 1;
@@ -672,7 +672,7 @@ TEST(GS, ServerEnterLeavePressure)
 	}
 
 	// Clear pressure on the first server node
-	nsSys.ClearNodePressure(*serverEntities.begin());
+	RoomNodeStateSystem::ClearNodePressure(*serverEntities.begin());
 
 	std::unordered_map<entt::entity, entt::entity> playerScene2;
 	weightRoundRobinScene.sceneConfigurationId = sceneConfigId1;

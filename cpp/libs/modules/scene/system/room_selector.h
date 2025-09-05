@@ -1,7 +1,7 @@
 #pragma once
 
-#include "engine/core/node/constants/node_constants.h"
 #include "engine/core/type_define/type_define.h"
+#include "engine/core/node/constants/node_constants.h"
 
 constexpr uint32_t kDefaultSceneId = 1;
 
@@ -24,13 +24,5 @@ public:
 	// Find a server with the scene where player count is not full, more efficient than the above function
 	static entt::entity SelectAvailableRoomScene(const GetSceneParams& param);
 
-	// Set node pressure state
-	static void MakeNodePressure(entt::entity node);
-
-	// Clear node pressure state
-	static void ClearNodePressure(entt::entity node);
-
-	// Set node state
-	static void SetNodeState(entt::entity node, NodeState node_state);
 };
 
