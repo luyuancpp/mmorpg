@@ -10,7 +10,7 @@
 using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
 
 template <typename ServerType>
-entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParams& param, const GetSceneFilterParam& filterStateParam) {
+entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const GetSceneFilterParam& filterStateParam) {
 	auto sceneConfigId = param.sceneConfigurationId;
 	entt::entity bestNode{ entt::null };
 	std::size_t minServerPlayerSize = UINT64_MAX;
@@ -57,7 +57,7 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParams& param, co
 }
 
 template <typename ServerType>
-entt::entity FindNotFullSceneTemplate(const GetSceneParams& param, const GetSceneFilterParam& filterStateParam) {
+entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const GetSceneFilterParam& filterStateParam) {
 	auto sceneConfigId = param.sceneConfigurationId;
 	entt::entity bestNode{ entt::null };
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
@@ -106,32 +106,32 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParams& param, const GetScen
 	return bestScene;
 }
 
-entt::entity NodeSceneSystem::FindSceneWithMinPlayerCount(const GetSceneParams& param) {
+entt::entity RoomNodeSelector::SelectLeastLoadedScene(const GetSceneParams& param) {
 	constexpr GetSceneFilterParam filterParam;
 
-	auto bestScene = FindSceneWithMinPlayerCountTemplate<MainRoomNode>(param, filterParam);
+	auto bestScene = SelectLeastLoadedSceneTemplate<MainRoomNode>(param, filterParam);
 	if (bestScene != entt::null) {
 		return bestScene;
 	}
 
 	LOG_WARN << "No scene found with minimum player count";
-	return FindSceneWithMinPlayerCountTemplate<MainRoomNode>(param, filterParam);
+	return SelectLeastLoadedSceneTemplate<MainRoomNode>(param, filterParam);
 }
 
-entt::entity NodeSceneSystem::FindNotFullRoom(const GetSceneParams& param) {
+entt::entity RoomNodeSelector::SelectAvailableRoomScene(const GetSceneParams& param) {
 	GetSceneFilterParam filterParam;
 
-	auto bestScene = FindNotFullSceneTemplate<MainRoomNode>(param, filterParam);
+	auto bestScene = SelectAvailableRoomSceneTemplate<MainRoomNode>(param, filterParam);
 	if (bestScene != entt::null) {
 		return bestScene;
 	}
 
 	LOG_WARN << "No scene found that is not full";
 	filterParam.nodePressureState = NodePressureState::kPressure;
-	return FindNotFullSceneTemplate<MainRoomNode>(param, filterParam);
+	return SelectAvailableRoomSceneTemplate<MainRoomNode>(param, filterParam);
 }
 
-void NodeSceneSystem::SetNodePressure(entt::entity node) {
+void RoomNodeSelector::MakeNodePressure(entt::entity node) {
 	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node);
 
 	if (nullptr == nodeSceneComp) {
@@ -143,7 +143,7 @@ void NodeSceneSystem::SetNodePressure(entt::entity node) {
 	LOG_INFO << "Node entered pressure state, Node ID: " << entt::to_integral(node);
 }
 
-void NodeSceneSystem::ClearNodePressure(entt::entity node) {
+void RoomNodeSelector::ClearNodePressure(entt::entity node) {
 	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node);
 
 	if (nullptr == nodeSceneComp) {
@@ -155,7 +155,7 @@ void NodeSceneSystem::ClearNodePressure(entt::entity node) {
 	LOG_INFO << "Node exited pressure state, Node ID: " << entt::to_integral(node);
 }
 
-void NodeSceneSystem::SetNodeState(entt::entity node, NodeState state) {
+void RoomNodeSelector::SetNodeState(entt::entity node, NodeState state) {
 	auto* const tryServerComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node);
 
 	if (nullptr == tryServerComp) {

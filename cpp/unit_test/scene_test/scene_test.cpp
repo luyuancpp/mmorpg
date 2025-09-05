@@ -260,7 +260,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	RoomUtil sm;
-	NodeSceneSystem nodeSystem;
+	RoomNodeSelector nodeSystem;
 	EntityUnorderedSet serverEntities;
 	const uint32_t serverSize = 2;
 	const uint32_t perServerScene = 2;
@@ -302,20 +302,20 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 			RoomCommon::EnterRoom(enterParam1);
 		}
 	}
-	NodeSceneSystem::SetNodeState(*serverEntities.begin(), NodeState::kMaintain);
+	RoomNodeSelector::SetNodeState(*serverEntities.begin(), NodeState::kMaintain);
 
 	GetSceneParams weightRoundRobinScene;
 	weightRoundRobinScene.sceneConfigurationId = 0;
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto canEnter = nodeSystem.FindSceneWithMinPlayerCount(weightRoundRobinScene);
+		auto canEnter = nodeSystem.SelectLeastLoadedScene(weightRoundRobinScene);
 		EXPECT_TRUE(canEnter != entt::null);
 	}
 
 	weightRoundRobinScene.sceneConfigurationId = 1;
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto canEnter = nodeSystem.FindSceneWithMinPlayerCount(weightRoundRobinScene);
+		auto canEnter = nodeSystem.SelectLeastLoadedScene(weightRoundRobinScene);
 		EXPECT_TRUE(canEnter != entt::null);
 	}
 }
@@ -377,7 +377,7 @@ TEST(GS, CompelToChangeScene)
 TEST(GS, CrashWeightRoundRobinMainScene)
 {
 	RoomUtil sm;
-	NodeSceneSystem nsSys;
+	RoomNodeSelector nsSys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
 	uint32_t perServerScene = 2;
@@ -429,7 +429,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 	weightRoundRobinScene.sceneConfigurationId = sceneConfigId0;
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto canEnter = nsSys.FindSceneWithMinPlayerCount(weightRoundRobinScene);
+		auto canEnter = nsSys.SelectLeastLoadedScene(weightRoundRobinScene);
 		EXPECT_TRUE(canEnter != entt::null);
 	}
 }
@@ -439,7 +439,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 TEST(GS, CrashMovePlayer2NewServer)
 {
 	RoomUtil sm;
-	NodeSceneSystem nsSys;
+	RoomNodeSelector nsSys;
 	EntityUnorderedSet nodeList;
 	EntityUnorderedSet sceneList;
 	uint32_t nodeSize = 2;
@@ -502,7 +502,7 @@ TEST(GS, WeightRoundRobinMainScene)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	RoomUtil sm;
-	NodeSceneSystem nssys;
+	RoomNodeSelector nssys;
 	EntityUnorderedSet node_list;
 	uint32_t server_size = 10;
 	uint32_t per_server_scene = 10;
@@ -540,7 +540,7 @@ TEST(GS, WeightRoundRobinMainScene)
 
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
-				auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
+				auto can_enter = nssys.SelectLeastLoadedScene(weight_round_robin_scene);
 				auto p_e = tlsRegistryManager.actorRegistry.create();
 				enter_param1.enter = p_e;
 				enter_param1.room = can_enter;
@@ -561,7 +561,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			weight_round_robin_scene.sceneConfigurationId = scene_config_id1;
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
-				auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
+				auto can_enter = nssys.SelectLeastLoadedScene(weight_round_robin_scene);
 				auto player = tlsRegistryManager.actorRegistry.create();
 				enter_param1.enter = player;
 				enter_param1.room = can_enter;
@@ -625,7 +625,7 @@ TEST(GS, ServerEnterLeavePressure)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	RoomUtil sm;
-	NodeSceneSystem nsSys;
+	RoomNodeSelector nsSys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
 	uint32_t perServerScene = 10;
@@ -649,7 +649,7 @@ TEST(GS, ServerEnterLeavePressure)
 	}
 
 	// Set pressure on the first server node
-	nsSys.SetNodePressure(*serverEntities.begin());
+	nsSys.MakeNodePressure(*serverEntities.begin());
 
 	uint32_t sceneConfigId0 = 0;
 	uint32_t sceneConfigId1 = 1;
@@ -663,7 +663,7 @@ TEST(GS, ServerEnterLeavePressure)
 	// Enter players into scenes with sceneConfigId0
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		auto canEnter = nsSys.FindSceneWithMinPlayerCount(weightRoundRobinScene);
+		auto canEnter = nsSys.SelectLeastLoadedScene(weightRoundRobinScene);
 		auto playerEntity = tlsRegistryManager.actorRegistry.create();
 		enterParam1.enter = playerEntity;
 		enterParam1.room = canEnter;
@@ -680,7 +680,7 @@ TEST(GS, ServerEnterLeavePressure)
 	// Enter players into scenes with sceneConfigId1
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		auto canEnter = nsSys.FindSceneWithMinPlayerCount(weightRoundRobinScene);
+		auto canEnter = nsSys.SelectLeastLoadedScene(weightRoundRobinScene);
 		auto playerEntity = tlsRegistryManager.actorRegistry.create();
 		enterParam1.enter = playerEntity;
 		enterParam1.room = canEnter;
@@ -727,7 +727,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	RoomUtil sm;
-	NodeSceneSystem nssys;
+	RoomNodeSelector nssys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 10;
 	uint32_t perServerScene = 10;
@@ -773,7 +773,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			// Enter players into scenes with sceneConfigId0
 			for (uint32_t i = 0; i < playerSize; ++i)
 			{
-				auto canEnter = nssys.FindNotFullRoom(weightRoundRobinScene);
+				auto canEnter = nssys.SelectAvailableRoomScene(weightRoundRobinScene);
 				if (canEnter == entt::null)
 				{
 					continue;
@@ -799,7 +799,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			weightRoundRobinScene.sceneConfigurationId = sceneConfigId1;
 			for (uint32_t i = 0; i < playerSize; ++i)
 			{
-				auto canEnter = nssys.FindNotFullRoom(weightRoundRobinScene);
+				auto canEnter = nssys.SelectAvailableRoomScene(weightRoundRobinScene);
 				if (canEnter == entt::null)
 				{
 					continue;
