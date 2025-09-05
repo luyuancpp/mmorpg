@@ -15,6 +15,7 @@
 #include <ranges> // Only if using C++20 ranges
 #include <threading/registry_manager.h>
 #include <scene/comp/node_scene_comp.h>
+#include "room_common.h"
 
 thread_local TransientNode12BitCompositeIdGenerator  nodeSequence; // Sequence for generating node IDs
 
@@ -48,11 +49,6 @@ RoomUtil::~RoomUtil() {
 	ClearAllRoomData();
 }
 
-NodeId RoomUtil::GetGameNodeIdFromGuid(uint64_t room_id)
-{
-	return nodeSequence.node_id(static_cast<NodeId>(room_id));
-}
-
 entt::entity RoomUtil::GetRoomNodeEntityId(uint64_t room_id)
 {
 	return entt::entity{ nodeSequence.node_id(static_cast<NodeId>(room_id)) };
@@ -71,7 +67,7 @@ void RoomUtil::ClearAllRoomData() {
 NodeId RoomUtil::GetGameNodeIdFromRoomEntity(entt::entity room) {
 	auto* roomInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>(room);
 	if (roomInfo) {
-		return GetGameNodeIdFromGuid(roomInfo->guid());
+		return RoomCommon::GetGameNodeIdFromGuid(roomInfo->guid());
 	}
 	else {
 		LOG_ERROR << "RoomInfo not found for entity: " << entt::to_integral(room);

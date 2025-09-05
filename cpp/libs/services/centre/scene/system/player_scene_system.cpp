@@ -249,8 +249,8 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 	auto& changeInfo = *tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
 	auto* fromSceneComp = tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(playerEntity);
 
-	auto fromNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneComp->roomEntity).guid());
-	auto toNodeGuid = RoomUtil::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(toScene).guid());
+	auto fromNodeGuid = RoomCommon::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneComp->roomEntity).guid());
+	auto toNodeGuid = RoomCommon::GetGameNodeIdFromGuid(tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(toScene).guid());
 
 	entt::entity fromNode{fromNodeGuid};
 	entt::entity toNode{ toNodeGuid };

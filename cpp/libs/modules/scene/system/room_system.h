@@ -88,13 +88,6 @@ public:
     // Static methods
 
     /**
-     * @brief GetGameNodeId calculates the Game Node ID from a scene ID.
-     * @param scene_id The scene ID to convert.
-     * @return The corresponding Game Node ID.
-     */
-    static NodeId GetGameNodeIdFromGuid(uint64_t room_id);
-
-    /**
      * @brief GetGameNodeId retrieves the Game Node ID associated with a scene entity.
      * @param scene The entity ID of the scene.
      * @return The Game Node ID.
