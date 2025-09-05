@@ -29,13 +29,6 @@ void RoomNodeStateSystem::ClearNodePressure(entt::entity node) {
 }
 
 void RoomNodeStateSystem::MakeNodeState(entt::entity node, NodeState state) {
-	auto* const tryServerComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeRoomComp>(node);
-
-	if (nullptr == tryServerComp) {
-		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
-		return;
-	}
-
-	tryServerComp->SetState(state);
+	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).emplace_or_replace<NodeStateComp>(node, NodeState::kNormal);
 	LOG_INFO << "Node state set successfully, Node ID: " << entt::to_integral(node) << ", State: " << static_cast<int>(state);
 }

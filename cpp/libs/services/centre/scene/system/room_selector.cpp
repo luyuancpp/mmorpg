@@ -18,7 +18,7 @@ entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const G
 	for (auto entity : nodeRegistry.view<ServerType>()) {
 		const auto& nodeSceneComp = nodeRegistry.get<NodeRoomComp>(entity);
 
-		if (!nodeSceneComp.IsStateNormal() ||
+		if (nodeRegistry.get_or_emplace<NodeStateComp>(entity, NodeState::kNormal) != NodeState::kNormal ||
 			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
 			nodeSceneComp.GetNodePressureState() != filterStateParam.nodePressureState) {
 			continue;
@@ -58,17 +58,17 @@ template <typename ServerType>
 entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const GetSceneFilterParam& filterStateParam) {
 	auto sceneConfigId = param.sceneConfigurationId;
 	entt::entity bestNode{ entt::null };
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
-	for (auto entity : registry.view<ServerType>()) {
-		if (const auto& nodeSceneComp = registry.get<NodeRoomComp>(entity);
-			!nodeSceneComp.IsStateNormal() ||
+	for (auto entity : nodeRegistry.view<ServerType>()) {
+		if (const auto& nodeSceneComp = nodeRegistry.get<NodeRoomComp>(entity);
+			nodeRegistry.get_or_emplace<NodeStateComp>(entity, NodeState::kNormal) != NodeState::kNormal ||
 			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
 			nodeSceneComp.GetNodePressureState() != filterStateParam.nodePressureState) {
 			continue;
 		}
 
-		auto nodePlayerSize = (*registry.get<RoomNodePlayerStatsPtrPbComponent>(entity)).player_size();
+		auto nodePlayerSize = (*nodeRegistry.get<RoomNodePlayerStatsPtrPbComponent>(entity)).player_size();
 
 		if (nodePlayerSize >= kMaxServerPlayerSize) {
 			continue;
@@ -84,7 +84,7 @@ entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const
 	}
 
 	entt::entity bestScene{ entt::null };
-	const auto& nodeSceneComps = registry.get<NodeRoomComp>(bestNode);
+	const auto& nodeSceneComps = nodeRegistry.get<NodeRoomComp>(bestNode);
 
 	for (const auto& sceneIt : nodeSceneComps.GetScenesByConfig(sceneConfigId)) {
 		auto scenePlayerSize = tlsRegistryManager.roomRegistry.get<RoomPlayers>(sceneIt).size();
