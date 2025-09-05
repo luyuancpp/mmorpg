@@ -95,12 +95,6 @@ public:
     static NodeId GetGameNodeIdFromRoomEntity(entt::entity room);
 
     /**
-     * @brief GenSceneGuid generates a unique scene GUID.
-     * @return The generated scene GUID.
-     */
-    static uint32_t GenRoomGuid();
-
-    /**
      * @brief GetScenesSize retrieves the number of scenes for a specific scene configuration ID.
      * @param scene_config_id The ID of the scene configuration.
      * @return The number of scenes.

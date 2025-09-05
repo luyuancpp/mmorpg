@@ -63,16 +63,6 @@ NodeId RoomUtil::GetGameNodeIdFromRoomEntity(entt::entity room) {
 	}
 }
 
-// Generate unique room ID
-uint32_t RoomUtil::GenRoomGuid() {
-	uint32_t roomId = nodeSequence.Generate();
-	while (tlsRegistryManager.roomRegistry.valid(entt::entity{ roomId })) {
-		roomId = nodeSequence.Generate();
-	}
-	LOG_INFO << "Generated new room ID: " << roomId;
-	return roomId;
-}
-
 // Get total number of rooms associated with a specific configuration ID
 std::size_t RoomUtil::GetRoomsSize(uint32_t roomConfigId) {
 	std::size_t roomSize = 0;
@@ -135,7 +125,7 @@ entt::entity RoomUtil::CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& par
 
 	RoomInfoPBComponent roomInfo(param.roomInfo);
 	if (roomInfo.guid() <= 0) {
-		roomInfo.set_guid(GenRoomGuid());
+		roomInfo.set_guid(RoomCommon::GenRoomGuid());
 	}
 
 	const auto room = TryCreateEntity(tlsRegistryManager.roomRegistry, entt::entity{ roomInfo.guid() });
