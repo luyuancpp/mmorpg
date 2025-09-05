@@ -18,9 +18,9 @@ entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const G
 	for (auto entity : nodeRegistry.view<ServerType>()) {
 		const auto& nodeSceneComp = nodeRegistry.get<NodeRoomComp>(entity);
 
-		if (nodeRegistry.get_or_emplace<NodeStateComp>(entity, NodeState::kNormal) != NodeState::kNormal ||
+		if (!nodeRegistry.get_or_emplace<NodeStateComp>(entity, NodeState::kNormal).IsNormal() ||
 			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
-			nodeSceneComp.GetNodePressureState() != filterStateParam.nodePressureState) {
+			nodeRegistry.get_or_emplace<NodePressureComp>(entity, NodePressureState::kNoPressure) != filterStateParam.nodePressureState) {
 			continue;
 		}
 
@@ -62,9 +62,9 @@ entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const
 
 	for (auto entity : nodeRegistry.view<ServerType>()) {
 		if (const auto& nodeSceneComp = nodeRegistry.get<NodeRoomComp>(entity);
-			nodeRegistry.get_or_emplace<NodeStateComp>(entity, NodeState::kNormal) != NodeState::kNormal ||
+			!nodeRegistry.get_or_emplace<NodeStateComp>(entity, NodeState::kNormal).IsNormal() ||
 			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
-			nodeSceneComp.GetNodePressureState() != filterStateParam.nodePressureState) {
+			nodeRegistry.get_or_emplace<NodePressureComp>(entity, NodePressureState::kNoPressure) != filterStateParam.nodePressureState) {
 			continue;
 		}
 
