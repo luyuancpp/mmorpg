@@ -178,6 +178,8 @@ TEST(PlayerChangeScene, ServerCrush)
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
+
 	PlayerChangeRoomUtil::OnTargetSceneNodeEnterComplete(playerEntity);
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
