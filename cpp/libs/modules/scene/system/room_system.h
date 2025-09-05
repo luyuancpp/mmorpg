@@ -1,6 +1,6 @@
 #pragma once
 
-#include "modules/scene/system/node_scene_system.h"
+#include "modules/scene/system/node_room_system.h"
 #include "core/utils/id/node_id_generator.h"
 #include "proto/logic/component/scene_comp.pb.h"
 #include <proto/common/common.pb.h>
@@ -58,6 +58,18 @@ struct DestroyRoomParam
     entt::entity room{ entt::null };
 };
 
+struct CompelChangeRoomParam
+{
+	inline bool IsNull() const
+	{
+		return player == entt::null || destNode == entt::null;
+	}
+
+	entt::entity player{ entt::null };
+	entt::entity destNode{ entt::null };
+	uint32_t sceneConfId{ 0 };
+};
+
 void AddMainRoomToNodeComponent(entt::registry& reg, entt::entity server);
 
 /**
@@ -71,7 +83,7 @@ public:
     ~RoomUtil();
 
     // Clear all scenes and related data
-    void Clear();
+    void ClearAllRoomData();
 
     // Static methods
 
@@ -94,7 +106,7 @@ public:
      * @param scene_id The scene ID of the game node.
      * @return The entity ID of the game node.
      */
-    static entt::entity get_game_node_eid(uint64_t room_id);
+    static entt::entity GetRoomNodeEntityId(uint64_t room_id);
 
     /**
      * @brief GenSceneGuid generates a unique scene GUID.

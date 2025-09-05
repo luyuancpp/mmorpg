@@ -223,8 +223,8 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 	}
 
 	auto& sceneNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	if (!sceneNodeRegistry.valid(RoomUtil::get_game_node_eid(fromSceneInfo->guid())) ||
-		!sceneNodeRegistry.valid(RoomUtil::get_game_node_eid(toSceneInfo->guid())))
+	if (!sceneNodeRegistry.valid(RoomUtil::GetRoomNodeEntityId(fromSceneInfo->guid())) ||
+		!sceneNodeRegistry.valid(RoomUtil::GetRoomNodeEntityId(toSceneInfo->guid())))
 	{
 		LOG_ERROR << "Invalid game node info for scene change";
 		PlayerChangeRoomUtil::PopFrontChangeSceneQueue(playerEntity);

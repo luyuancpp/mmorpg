@@ -15,18 +15,6 @@ struct GetSceneFilterParam
 	NodePressureState nodePressureState{ NodePressureState::kNoPressure };
 };
 
-struct CompelChangeRoomParam
-{
-	inline bool IsNull() const
-	{
-		return player == entt::null || destNode == entt::null;
-	}
-
-	entt::entity player{ entt::null };
-	entt::entity destNode{ entt::null };
-	uint32_t sceneConfId{ 0 };
-};
-
 class NodeSceneSystem
 {
 public:
