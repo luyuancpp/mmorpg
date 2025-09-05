@@ -7,6 +7,8 @@
 #include "proto/common/node.pb.h"
 #include "threading/node_context_manager.h"
 #include <threading/registry_manager.h>
+#include <modules/scene/system/room_server.h>
+#include <modules/scene/system/room_common.h>
 ///<<< END WRITING YOUR CODE
 
 
@@ -17,7 +19,7 @@ void CentreSceneHandler::RegisterScene(::google::protobuf::RpcController* contro
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto&& roomInfo : request->scenes_info())
 	{
-		RoomUtil::CreateRoomOnRoomNode(
+		RoomServer::CreateRoomOnRoomNode(
 			{ .node = entt::entity{request->scene_node_id()}, .roomInfo = roomInfo });
 
 		LOG_INFO << "Scene " << roomInfo.DebugString()
@@ -50,7 +52,7 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	RoomUtil::DestroyRoom({ gameNode, scene });
+	RoomCommon::DestroyRoom({ gameNode, scene });
 	///<<< END WRITING YOUR CODE
 }
 

@@ -9,6 +9,7 @@
 #include "modules/scene/system/room_system.h"
 #include <threading/registry_manager.h>
 #include <modules/scene/system/room_common.h>
+#include <modules/scene/system/room_server.h>
 
 EntityVector globalSceneList;
 
@@ -45,7 +46,7 @@ TEST(PlayerChangeScene, CreateMainScene)
 		sceneInfo.set_scene_confid(i);
 		for (uint32_t j = 0; j < 2; ++j)
 		{
-			globalSceneList.push_back(RoomUtil::CreateRoomOnRoomNode({ .node = mainSceneNode, .roomInfo = sceneInfo }));
+			globalSceneList.push_back(RoomServer::CreateRoomOnRoomNode({ .node = mainSceneNode, .roomInfo = sceneInfo }));
 		}
 	}
 }

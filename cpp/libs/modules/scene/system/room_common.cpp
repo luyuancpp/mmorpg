@@ -218,3 +218,29 @@ void RoomCommon::LeaveRoom(const LeaveRoomParam& param) {
 	}
 }
 
+void RoomCommon::DestroyRoom(const DestroyRoomParam& param) {
+	if (!param.CheckValid()) {
+		LOG_ERROR << "Invalid parameters for destroying room";
+		return;
+	}
+
+	auto* pServerComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(param.node);
+	if (!pServerComp) {
+		LOG_ERROR << "ServerComp not found for node";
+		return;
+	}
+
+	auto* roomInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>(param.room);
+	if (!roomInfo) {
+		LOG_ERROR << "RoomInfo not found for room";
+		return;
+	}
+
+	OnRoomDestroyed roomDestroyedEvent;
+	roomDestroyedEvent.set_entity(entt::to_integral(param.room));
+	dispatcher.trigger(roomDestroyedEvent);
+
+	pServerComp->RemoveScene(param.room);
+
+	LOG_INFO << "Destroyed room with ID: " << roomInfo->guid();
+}

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <core/type_define/type_define.h>
 
 struct EnterRoomParam
@@ -22,6 +22,17 @@ struct LeaveRoomParam
 	entt::entity leaver{ entt::null };
 };
 
+struct DestroyRoomParam
+{
+	inline bool CheckValid() const
+	{
+		return node != entt::null && room != entt::null;
+	}
+
+	entt::entity node{ entt::null };
+	entt::entity room{ entt::null };
+};
+
 // RoomCommon.h
 class RoomCommon {
 public:
@@ -42,4 +53,7 @@ public:
 
 	static void EnterRoom(const EnterRoomParam& param);
 	static void LeaveRoom(const LeaveRoomParam& param);
+
+	// 销毁房间（只负责本地）
+	static void DestroyRoom(const DestroyRoomParam& param);
 };
