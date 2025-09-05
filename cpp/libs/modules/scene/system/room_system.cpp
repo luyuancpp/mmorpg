@@ -16,6 +16,7 @@
 #include <threading/registry_manager.h>
 #include <scene/comp/node_scene_comp.h>
 #include "room_common.h"
+#include "room_server.h"
 
 thread_local TransientNode12BitCompositeIdGenerator  nodeSequence; // Sequence for generating node IDs
 
@@ -188,16 +189,11 @@ void RoomUtil::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
 
 // 这里只处理了同gs,如果是跨gs的room切换，应该别的地方处理
 void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
-	auto& destNodeRoom = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeNodeComp>(param.destNode);
-	auto roomEntity = destNodeRoom.GetSceneWithMinPlayerCountByConfigId(param.sceneConfId);
-
-	if (roomEntity == entt::null) {
-		CreateRoomOnNodeRoomParam p{ .node = param.destNode };
-		p.roomInfo.set_scene_confid(param.sceneConfId);
-		roomEntity = CreateRoomOnRoomNode(p);
-	}
+	// ✅ 使用 FindOrCreateRoom 替代原始杂糅逻辑
+	entt::entity roomEntity = RoomUtil::FindOrCreateRoom(param.sceneConfId);
 
 	RoomCommon::LeaveRoom({ param.player });
+
 	if (roomEntity == entt::null) {
 		EnterDefaultRoom({ param.player });
 		return;
@@ -205,6 +201,7 @@ void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 
 	RoomCommon::EnterRoom({ roomEntity, param.player });
 }
+
 
 // Replace a crashed server node with a new node
 void RoomUtil::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNode) {
@@ -226,4 +223,65 @@ void RoomUtil::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNod
 
 	Destroy(roomRegistry, crashNode);
 	LOG_INFO << "Replaced crashed server with new node: " << entt::to_integral(destNode);
+}
+
+
+entt::entity RoomUtil::FindOrCreateRoom(uint32_t sceneConfId) {
+	// 选择最优服务器节点
+	entt::entity node = SelectBestNodeForRoom(sceneConfId);
+	if (node == entt::null) {
+		LOG_ERROR << "FindOrCreateRoom: Failed to select a room node for sceneConfId = " << sceneConfId;
+		return entt::null;
+	}
+
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& nodeComp = registry.get<NodeNodeComp>(node);
+
+	// 查找已有房间
+	entt::entity room = nodeComp.GetSceneWithMinPlayerCountByConfigId(sceneConfId);
+	if (room != entt::null) {
+		return room;
+	}
+
+	// 创建新房间
+	CreateRoomOnNodeRoomParam createParam{ .node = node };
+	createParam.roomInfo.set_scene_confid(sceneConfId);
+
+	room = RoomServer::CreateRoomOnRoomNode(createParam);
+	if (room == entt::null) {
+		LOG_ERROR << "FindOrCreateRoom: Failed to create room for sceneConfId = " << sceneConfId;
+	}
+
+	return room;
+}
+
+entt::entity RoomUtil::SelectBestNodeForRoom(uint32_t sceneConfId) {
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	entt::entity bestNode = entt::null;
+	std::size_t minPlayerCount = std::numeric_limits<std::size_t>::max();
+
+	for (auto node : registry.view<NodeNodeComp, GameNodePlayerInfoPtrPBComponent>()) {
+		const auto& nodeComp = registry.get<NodeNodeComp>(node);
+		const auto& playerInfoPtr = registry.get<GameNodePlayerInfoPtrPBComponent>(node);
+		if (!playerInfoPtr) continue;
+
+		// 如果该节点已经有该配置的房间，优先考虑
+		auto existingScenes = nodeComp.GetScenesByConfig(sceneConfId);
+		if (!existingScenes.empty()) {
+			return node;
+		}
+
+		// 否则看节点的整体玩家数量是否最小
+		std::size_t playerSize = playerInfoPtr->player_size();
+		if (playerSize < minPlayerCount) {
+			minPlayerCount = playerSize;
+			bestNode = node;
+		}
+	}
+
+	if (bestNode == entt::null) {
+		LOG_WARN << "SelectBestNodeForRoom: No suitable node found for sceneConfId = " << sceneConfId;
+	}
+
+	return bestNode;
 }
