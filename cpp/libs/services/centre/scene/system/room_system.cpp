@@ -17,6 +17,7 @@
 #include <modules/scene/comp/room_node_comp.h>
 #include <modules/scene/system/room_common.h>
 #include "room_node_selector.h"
+#include "room_selector.h"
 
 // Constants
 static constexpr std::size_t kMaxRoomPlayer = 1000;
@@ -25,7 +26,7 @@ static constexpr std::size_t kMaxRoomPlayer = 1000;
 void AddMainRoomToNodeComponent(entt::registry& reg, const entt::entity node) {
 	LOG_TRACE << "Adding main room node components for entity: " << entt::to_integral(node);
 	reg.emplace<MainRoomNode>(node);
-	reg.emplace<NodeRoomComp>(node);
+	reg.emplace<RoomRegistryComp>(node);
 	reg.emplace<RoomNodePlayerStatsPtrPbComponent>(node, std::make_shared<GameNodePlayerInfoPBComponent>());
 }
 
@@ -79,7 +80,7 @@ NodeId RoomUtil::GetGameNodeIdFromRoomEntity(entt::entity room) {
 void RoomUtil::HandleDestroyRoomNode(entt::entity node) {
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
-	auto& nodeRoomComp = registry.get<NodeRoomComp>(node);
+	auto& nodeRoomComp = registry.get<RoomRegistryComp>(node);
 	auto roomList = nodeRoomComp.GetRoomMap();
 
 	// Destroy all rooms associated with the server node
@@ -136,7 +137,7 @@ void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 // Replace a crashed server node with a new node
 void RoomUtil::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNode) {
 	auto& roomRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	auto& crashNodeRoom = roomRegistry.get<NodeRoomComp>(crashNode);
+	auto& crashNodeRoom = roomRegistry.get<RoomRegistryComp>(crashNode);
 	auto roomList = crashNodeRoom.GetRoomMap();
 
 	for (auto& confIdRoomList : roomList | std::views::values) {
@@ -165,10 +166,10 @@ entt::entity RoomUtil::FindOrCreateRoom(uint32_t sceneConfId) {
 	}
 
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	auto& nodeComp = registry.get<NodeRoomComp>(node);
+	auto& nodeRoomComp = registry.get<RoomRegistryComp>(node);
 
 	// 查找已有房间
-	entt::entity room = nodeComp.GetSceneWithMinPlayerCountByConfigId(sceneConfId);
+	entt::entity room = RoomSelector::SelectRoomWithMinPlayers(nodeRoomComp, sceneConfId);
 	if (room != entt::null) {
 		return room;
 	}
@@ -190,8 +191,8 @@ entt::entity RoomUtil::SelectBestNodeForRoom(uint32_t sceneConfId) {
 	entt::entity bestNode = entt::null;
 	std::size_t minPlayerCount = std::numeric_limits<std::size_t>::max();
 
-	for (auto node : registry.view<NodeRoomComp, RoomNodePlayerStatsPtrPbComponent>()) {
-		const auto& nodeComp = registry.get<NodeRoomComp>(node);
+	for (auto node : registry.view<RoomRegistryComp, RoomNodePlayerStatsPtrPbComponent>()) {
+		const auto& nodeComp = registry.get<RoomRegistryComp>(node);
 		const auto& playerInfoPtr = registry.get<RoomNodePlayerStatsPtrPbComponent>(node);
 		if (!playerInfoPtr) continue;
 

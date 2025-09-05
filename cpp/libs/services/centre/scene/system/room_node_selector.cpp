@@ -6,6 +6,7 @@
 #include "proto/common/node.pb.h"
 #include "muduo/base/Logging.h"
 #include "threading/node_context_manager.h"
+#include "room_selector.h"
 
 template <typename ServerType>
 entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const GetSceneFilterParam& filterStateParam) {
@@ -16,7 +17,7 @@ entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const G
 	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	for (auto entity : nodeRegistry.view<ServerType>()) {
-		const auto& nodeSceneComp = nodeRegistry.get<NodeRoomComp>(entity);
+		const auto& nodeSceneComp = nodeRegistry.get<RoomRegistryComp>(entity);
 
 		if (!nodeRegistry.get_or_emplace<NodeStateComp>(entity, NodeState::kNormal).IsNormal() ||
 			nodeSceneComp.GetRoomsByConfig(sceneConfigId).empty() ||
@@ -44,8 +45,8 @@ entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const G
 		return entt::null;
 	}
 
-	const auto& nodeSceneComps = nodeRegistry.get<NodeRoomComp>(bestNode);
-	auto bestScene = nodeSceneComps.GetSceneWithMinPlayerCountByConfigId(sceneConfigId);
+	const auto& nodeSceneComps = nodeRegistry.get<RoomRegistryComp>(bestNode);
+	auto bestScene = RoomSelector::SelectRoomWithMinPlayers(nodeSceneComps, sceneConfigId);
 
 	if (bestScene == entt::null) {
 		LOG_WARN << "No scene found with minimum player count for node: " << entt::to_integral(bestNode);
@@ -61,7 +62,7 @@ entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const
 	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	for (auto entity : nodeRegistry.view<ServerType>()) {
-		if (const auto& nodeSceneComp = nodeRegistry.get<NodeRoomComp>(entity);
+		if (const auto& nodeSceneComp = nodeRegistry.get<RoomRegistryComp>(entity);
 			!nodeRegistry.get_or_emplace<NodeStateComp>(entity, NodeState::kNormal).IsNormal() ||
 			nodeSceneComp.GetRoomsByConfig(sceneConfigId).empty() ||
 			nodeRegistry.get_or_emplace<NodePressureComp>(entity, NodePressureState::kNoPressure) != filterStateParam.nodePressureState) {
@@ -84,7 +85,7 @@ entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const
 	}
 
 	entt::entity bestScene{ entt::null };
-	const auto& nodeSceneComps = nodeRegistry.get<NodeRoomComp>(bestNode);
+	const auto& nodeSceneComps = nodeRegistry.get<RoomRegistryComp>(bestNode);
 
 	for (const auto& sceneIt : nodeSceneComps.GetRoomsByConfig(sceneConfigId)) {
 		auto scenePlayerSize = tlsRegistryManager.roomRegistry.get<RoomPlayers>(sceneIt).size();

@@ -56,8 +56,8 @@ bool RoomCommon::IsRoomEmpty() {
 std::size_t RoomCommon::GetRoomsSize(uint32_t roomConfigId) {
 	std::size_t roomSize = 0;
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	for (auto node : registry.view<NodeRoomComp>()) {
-		auto& nodeRoomComp = registry.get<NodeRoomComp>(node);
+	for (auto node : registry.view<RoomRegistryComp>()) {
+		auto& nodeRoomComp = registry.get<RoomRegistryComp>(node);
 		roomSize += nodeRoomComp.GetRoomsByConfig(roomConfigId).size();
 	}
 	LOG_TRACE << "Total rooms size for config ID " << roomConfigId << ": " << roomSize;
@@ -73,8 +73,8 @@ std::size_t RoomCommon::GetRoomsSize() {
 
 bool RoomCommon::ConfigRoomListNotEmpty(uint32_t roomConfigId) {
 	auto& roomNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	for (auto nodeEid : roomNodeRegistry.view<NodeRoomComp>()) {
-		auto& nodeRoomComp = roomNodeRegistry.get<NodeRoomComp>(nodeEid);
+	for (auto nodeEid : roomNodeRegistry.view<RoomRegistryComp>()) {
+		auto& nodeRoomComp = roomNodeRegistry.get<RoomRegistryComp>(nodeEid);
 		if (!nodeRoomComp.GetRoomsByConfig(roomConfigId).empty()) {
 			LOG_TRACE << "Non-empty room list found for config ID: " << roomConfigId;
 			return true;
@@ -223,7 +223,7 @@ void RoomCommon::DestroyRoom(const DestroyRoomParam& param) {
 		return;
 	}
 
-	auto* pServerComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeRoomComp>(param.node);
+	auto* pServerComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<RoomRegistryComp>(param.node);
 	if (!pServerComp) {
 		LOG_ERROR << "ServerComp not found for node";
 		return;
@@ -271,7 +271,7 @@ entt::entity RoomCommon::CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& p
 		tlsRegistryManager.roomRegistry.emplace<RoomNodePlayerStatsPtrPbComponent>(room, *serverPlayerInfo);
 	}
 
-	auto* pServerComp = registry.try_get<NodeRoomComp>(param.node);
+	auto* pServerComp = registry.try_get<RoomRegistryComp>(param.node);
 	if (pServerComp) {
 		pServerComp->AddRoom(room);
 	}
