@@ -49,11 +49,6 @@ RoomUtil::~RoomUtil() {
 	ClearAllRoomData();
 }
 
-entt::entity RoomUtil::GetRoomNodeEntityId(uint64_t room_id)
-{
-	return entt::entity{ nodeSequence.node_id(static_cast<NodeId>(room_id)) };
-}
-
 void RoomUtil::SetSequenceNodeId(const uint32_t node_id) { nodeSequence.set_node_id(node_id); }
 
 void RoomUtil::ClearAllRoomData() {

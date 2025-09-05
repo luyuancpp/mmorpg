@@ -95,13 +95,6 @@ public:
     static NodeId GetGameNodeIdFromRoomEntity(entt::entity room);
 
     /**
-     * @brief get_game_node_eid retrieves the entity ID of a game node based on its scene ID.
-     * @param scene_id The scene ID of the game node.
-     * @return The entity ID of the game node.
-     */
-    static entt::entity GetRoomNodeEntityId(uint64_t room_id);
-
-    /**
      * @brief GenSceneGuid generates a unique scene GUID.
      * @return The generated scene GUID.
      */
