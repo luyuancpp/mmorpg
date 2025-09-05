@@ -173,48 +173,6 @@ void RoomUtil::HandleDestroyRoomNode(entt::entity node) {
 	LOG_INFO << "Destroyed server with ID: " << entt::to_integral(node);
 }
 
-// Enter a player into a room
-void RoomUtil::EnterRoom(const EnterRoomParam& param) {
-	if (!param.CheckValid()) {
-		LOG_ERROR << "Invalid parameters when entering room";
-		return;
-	}
-
-	if (!tlsRegistryManager.roomRegistry.valid(param.room))
-	{
-		LOG_ERROR << "Invalid room entity when entering room - Room ID: " << entt::to_integral(param.room);
-		return;
-	}
-
-	if (!tlsRegistryManager.actorRegistry.valid(param.enter))
-	{
-		LOG_ERROR << "Invalid player entity when entering room - Player : " << entt::to_integral(param.enter);
-		return;
-	}
-
-	auto& roomPlayers = tlsRegistryManager.roomRegistry.get<RoomPlayers>(param.room);
-	roomPlayers.emplace(param.enter);
-	if (tlsRegistryManager.actorRegistry.any_of<RoomEntityComp>(param.enter))
-	{
-		LOG_FATAL << tlsRegistryManager.actorRegistry.get<Guid>(param.enter);
-	}
-	tlsRegistryManager.actorRegistry.emplace<RoomEntityComp>(param.enter, param.room);
-
-	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(param.room);
-	if (gsPlayerInfo) {
-		(*gsPlayerInfo)->set_player_size((*gsPlayerInfo)->player_size() + 1);
-	}
-
-	AfterEnterRoom afterEnterRoom;
-	afterEnterRoom.set_entity(entt::to_integral(param.enter));
-	dispatcher.trigger(afterEnterRoom);
-
-	if (tlsRegistryManager.actorRegistry.any_of<Guid>(param.enter)) {
-		LOG_INFO << "Player entered room - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.enter) << ", Room ID: " << entt::to_integral(param.room);
-	}
-}
-
-
 // Enter a player into the default room
 void RoomUtil::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
 	if (!param.CheckValid()) {
@@ -226,7 +184,7 @@ void RoomUtil::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
 	auto defaultRoom = NodeSceneSystem::FindNotFullRoom({});
 
 	// Enter the player into the retrieved default room
-	EnterRoom({ defaultRoom, param.enter });
+	RoomCommon::EnterRoom({ defaultRoom, param.enter });
 
 	// Log the entry into the default room
 	if (tlsRegistryManager.actorRegistry.any_of<Guid>(param.enter))
@@ -252,7 +210,7 @@ void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 		return;
 	}
 
-	EnterRoom({ roomEntity, param.player });
+	RoomCommon::EnterRoom({ roomEntity, param.player });
 }
 
 // Replace a crashed server node with a new node

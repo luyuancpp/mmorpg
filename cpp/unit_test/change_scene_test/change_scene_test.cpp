@@ -8,6 +8,7 @@
 #include "scene/system/player_change_scene_system.h"
 #include "modules/scene/system/room_system.h"
 #include <threading/registry_manager.h>
+#include <modules/scene/system/room_common.h>
 
 EntityVector globalSceneList;
 
@@ -55,7 +56,7 @@ TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneEntity).guid();
-	RoomUtil::EnterRoom({ fromSceneEntity, playerEntity });
+	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
 	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eSameGs); // todo scene logic
@@ -69,7 +70,7 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneEntity).guid();
-	RoomUtil::EnterRoom({ fromSceneEntity, playerEntity });
+	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 
 	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
@@ -97,7 +98,7 @@ TEST(PlayerChangeScene, DiffGs)
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneEntity).guid();
-	RoomUtil::EnterRoom({ fromSceneEntity, playerEntity });
+	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 
 	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
@@ -121,7 +122,7 @@ TEST(PlayerChangeScene, SameGs)
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneEntity).guid();
-	RoomUtil::EnterRoom({ fromSceneEntity, playerEntity });
+	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 
 	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
@@ -136,7 +137,7 @@ TEST(PlayerChangeScene, CrossServerDiffGs)
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneEntity).guid();
-	RoomUtil::EnterRoom({ fromSceneEntity, playerEntity });
+	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 
 	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
@@ -160,7 +161,7 @@ TEST(PlayerChangeScene, ServerCrush)
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneEntity).guid();
-	RoomUtil::EnterRoom({ fromSceneEntity, playerEntity });
+	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 
 	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
@@ -172,7 +173,7 @@ TEST(PlayerChangeScene, ServerCrush)
 	PlayerChangeRoomUtil::PopFrontChangeSceneQueue(playerEntity); // crash
 	EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	RoomUtil::EnterRoom({ fromSceneEntity, playerEntity });
+	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 	EXPECT_EQ(kSuccess, PlayerChangeRoomUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eWaitingEnter);
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
