@@ -26,6 +26,7 @@
     <ClCompile Include="reward\system\reward_system.cpp" />
     <ClCompile Include="scene\system\node_room_system.cpp" />
     <ClCompile Include="scene\system\room_common.cpp" />
+    <ClCompile Include="scene\system\room_server.cpp" />
     <ClCompile Include="scene\system\room_system.cpp" />
     <ClCompile Include="time\system\time_system.cpp" />
   </ItemGroup>

@@ -1,12 +1,15 @@
-#pragma once
+ï»¿#pragma once
 
+#include "entt/src/entt/entity/entity.hpp"
 
-// RoomServer.h
+struct CreateRoomOnNodeRoomParam;
+struct DestroyRoomParam;
+
 class RoomServer {
 public:
-	// ´´½¨·¿¼ä£¨Ö»¸ºÔğ±¾µØ£©
+	// åˆ›å»ºæˆ¿é—´ï¼ˆåªè´Ÿè´£æœ¬åœ°ï¼‰
 	static entt::entity CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& param);
 
-	// Ïú»Ù·¿¼ä£¨Ö»¸ºÔğ±¾µØ£©
+	// é”€æ¯æˆ¿é—´ï¼ˆåªè´Ÿè´£æœ¬åœ°ï¼‰
 	static void DestroyRoom(const DestroyRoomParam& param);
 };
