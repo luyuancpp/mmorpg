@@ -13,6 +13,7 @@
 #include "network/node_message_utils.h"
 #include "scene/scene/mananger/scene_nav_mananger.h"
 #include <threading/registry_manager.h>
+#include <modules/scene/system/room_server.h>
 
 void GameNodeSceneSystem::InitializeNodeScenes() {
 	if (!(GetNodeInfo().scene_node_type() == eSceneNodeType::kMainSceneNode ||
@@ -24,7 +25,7 @@ void GameNodeSceneSystem::InitializeNodeScenes() {
 	for (auto& item : mainSceneConf.data()) {
 		CreateRoomOnNodeRoomParam params{ .node = entt::entity{GetNodeInfo().node_id()}};
 		params.roomInfo.set_scene_confid(item.id());
-		RoomUtil::CreateRoomOnRoomNode(params);
+		RoomServer::CreateRoomOnRoomNode(params);
 	}
 }
 

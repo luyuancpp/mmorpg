@@ -12,6 +12,7 @@
 #include <threading/registry_manager.h>
 #include <muduo/base/Logging.h>
 #include <modules/scene/comp/node_scene_comp.h>
+#include <modules/scene/system/room_server.h>
 
 using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
 
@@ -38,7 +39,7 @@ TEST(SceneSystemTests, CreateMainScene)
 		createParams.roomInfo.set_scene_confid(i);
 		for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
 		{
-			sceneSystem.CreateRoomOnRoomNode(createParams);
+			RoomServer::CreateRoomOnRoomNode(createParams);
 		}
 		EXPECT_EQ(RoomCommon::GetRoomsSize(i), kPerSceneConfigSize);
 	}
@@ -60,8 +61,8 @@ TEST(SceneSystemTests, CreateScene2Server)
 	createParams2.roomInfo.set_scene_confid(3);
 	createParams2.node = node2;
 
-	sceneSystem.CreateRoomOnRoomNode(createParams1);
-	sceneSystem.CreateRoomOnRoomNode(createParams2);
+	RoomServer::CreateRoomOnRoomNode(createParams1);
+	RoomServer::CreateRoomOnRoomNode(createParams2);
 
 	const auto nodeComp1 = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node1);
 	if (nodeComp1)
@@ -87,7 +88,7 @@ TEST(SceneSystemTests, DestroyScene)
 
 	CreateRoomOnNodeRoomParam createParams1;
 	createParams1.node = node1;
-	const auto scene = sceneSystem.CreateRoomOnRoomNode(createParams1);
+	const auto scene = RoomServer::CreateRoomOnRoomNode(createParams1);
 
 	EXPECT_EQ(1, RoomCommon::GetRoomsSize());
 	EXPECT_EQ(1, RoomCommon::GetRoomsSize(createParams1.roomInfo.scene_confid()));
@@ -98,7 +99,7 @@ TEST(SceneSystemTests, DestroyScene)
 		EXPECT_EQ(1, serverComp1->GetTotalSceneCount());
 	}
 
-	sceneSystem.DestroyRoom({ node1, scene });
+	RoomCommon::DestroyRoom({ node1, scene });
 
 	EXPECT_TRUE(RoomCommon::IsRoomEmpty());
 	EXPECT_FALSE(RoomCommon::ConfigRoomListNotEmpty(createParams1.roomInfo.scene_confid()));
@@ -123,8 +124,8 @@ TEST(SceneSystemTests, DestroyServer)
 	createParams2.roomInfo.set_scene_confid(2);
 	createParams2.node = node2;
 
-	auto scene1 = sceneSystem.CreateRoomOnRoomNode(createParams1);
-	auto scene2 = sceneSystem.CreateRoomOnRoomNode(createParams2);
+	auto scene1 = RoomServer::CreateRoomOnRoomNode(createParams1);
+	auto scene2 = RoomServer::CreateRoomOnRoomNode(createParams2);
 
 	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeNodeComp>(node1).GetTotalSceneCount());
 	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeNodeComp>(node2).GetTotalSceneCount());
@@ -173,8 +174,8 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 	createParams2.roomInfo.set_scene_confid(2);
 	createParams2.node = node2;
 
-	auto scene1 = sceneSystem.CreateRoomOnRoomNode(createParams1);
-	auto scene2 = sceneSystem.CreateRoomOnRoomNode(createParams2);
+	auto scene1 = RoomServer::CreateRoomOnRoomNode(createParams1);
+	auto scene2 = RoomServer::CreateRoomOnRoomNode(createParams2);
 
 	EnterRoomParam enterParam1;
 	enterParam1.room = scene1;
@@ -277,7 +278,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 		for (auto& it : serverEntities)
 		{
 			createServerSceneParam.node = it;
-			auto scene = sm.CreateRoomOnRoomNode(createServerSceneParam);
+			auto scene = RoomServer::CreateRoomOnRoomNode(createServerSceneParam);
 			if (sceneEntities.empty())
 			{
 				sceneEntities.emplace(scene);
@@ -336,8 +337,8 @@ TEST(GS, CompelToChangeScene)
 	server2Param.roomInfo.set_scene_confid(2);
 	server2Param.node = node2;
 
-	const auto scene1 = sm.CreateRoomOnRoomNode(server1Param);
-	const auto scene2 = sm.CreateRoomOnRoomNode(server2Param);
+	const auto scene1 = RoomServer::CreateRoomOnRoomNode(server1Param);
+	const auto scene2 = RoomServer::CreateRoomOnRoomNode(server2Param);
 
 	EnterRoomParam enterParam1;
 	enterParam1.room = scene1;
@@ -395,7 +396,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 		for (auto& it : serverEntities)
 		{
 			createServerSceneParam.node = it;
-			auto e = sm.CreateRoomOnRoomNode(createServerSceneParam);
+			auto e = RoomServer::CreateRoomOnRoomNode(createServerSceneParam);
 			if (sceneEntities.empty())
 			{
 				sceneEntities.emplace(e);
@@ -457,7 +458,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 		for (auto& it : nodeList)
 		{
 			createNodeSceneParam.node = it;
-			auto e = sm.CreateRoomOnRoomNode(createNodeSceneParam);
+			auto e = RoomServer::CreateRoomOnRoomNode(createNodeSceneParam);
 			sceneList.emplace(e);
 			if (firstScene == entt::null)
 			{
@@ -519,7 +520,7 @@ TEST(GS, WeightRoundRobinMainScene)
 		for (auto& it : node_list)
 		{
 			create_server_scene_param.node = it;
-			sm.CreateRoomOnRoomNode(create_server_scene_param);
+			RoomServer::CreateRoomOnRoomNode(create_server_scene_param);
 		}
 	}
 
@@ -643,7 +644,7 @@ TEST(GS, ServerEnterLeavePressure)
 		for (auto& it : serverEntities)
 		{
 			createServerSceneParam.node = it;
-			sm.CreateRoomOnRoomNode(createServerSceneParam);
+			RoomServer::CreateRoomOnRoomNode(createServerSceneParam);
 		}
 	}
 
@@ -699,7 +700,7 @@ TEST(GS, EnterDefaultScene)
 		createGSSceneParam.roomInfo.set_scene_confid(i);
 		for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
 		{
-			RoomUtil::CreateRoomOnRoomNode(createGSSceneParam);
+			RoomServer::CreateRoomOnRoomNode(createGSSceneParam);
 		}
 	}
 
@@ -748,9 +749,9 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 		for (auto& it : serverEntities)
 		{
 			createServerSceneParam.node = it;
-			auto scene1 = sm.CreateRoomOnRoomNode(createServerSceneParam);
+			auto scene1 = RoomServer::CreateRoomOnRoomNode(createServerSceneParam);
 			tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).emplace<TestNodeId>(scene1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<TestNodeId>(it));
-			auto scene2 = sm.CreateRoomOnRoomNode(createServerSceneParam);
+			auto scene2 = RoomServer::CreateRoomOnRoomNode(createServerSceneParam);
 			tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).emplace<TestNodeId>(scene2, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<TestNodeId>(it));
 		}
 	}
@@ -902,7 +903,7 @@ TEST(GS, CheckEnterRoomScene)
 	{
 		sceneInfo.mutable_creators()->emplace(i, false); // Assuming creators are added with a boolean indicating creator status
 	}
-	auto room = RoomUtil::CreateRoomOnRoomNode({ .node = CreateMainSceneNode(), .roomInfo = sceneInfo });
+	auto room = RoomServer::CreateRoomOnRoomNode({ .node = CreateMainSceneNode(), .roomInfo = sceneInfo });
 
 	// Create players with different GUIDs
 	const auto player1 = tlsRegistryManager.actorRegistry.create();

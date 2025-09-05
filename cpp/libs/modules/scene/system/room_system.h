@@ -26,16 +26,6 @@ struct CreateRoomOnNodeRoomParam
     RoomInfoPBComponent roomInfo;
 };
 
-struct DestroyRoomParam
-{
-    inline bool CheckValid() const
-    {
-        return node != entt::null && room != entt::null;
-    }
-
-    entt::entity node{ entt::null };
-    entt::entity room{ entt::null };
-};
 
 struct CompelChangeRoomParam
 {
@@ -72,10 +62,6 @@ public:
 
 
     static NodeId GetGameNodeIdFromRoomEntity(entt::entity room);
-
-    static entt::entity CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& param);
-
-    static void DestroyRoom(const DestroyRoomParam& param);
 
     static void HandleDestroyRoomNode(entt::entity node);
 
