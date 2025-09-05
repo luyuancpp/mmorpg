@@ -16,6 +16,7 @@
 #include "node/system/zone_utils.h"
 #include "engine/threading/node_context_manager.h"
 #include "engine/threading/registry_manager.h"
+#include <modules/scene/system/room_common.h>
 
 entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext)
 {
@@ -223,8 +224,8 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 	}
 
 	auto& sceneNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	if (!sceneNodeRegistry.valid(RoomUtil::GetRoomNodeEntityId(fromSceneInfo->guid())) ||
-		!sceneNodeRegistry.valid(RoomUtil::GetRoomNodeEntityId(toSceneInfo->guid())))
+	if (!sceneNodeRegistry.valid(RoomCommon::GetRoomNodeEntityId(fromSceneInfo->guid())) ||
+		!sceneNodeRegistry.valid(RoomCommon::GetRoomNodeEntityId(toSceneInfo->guid())))
 	{
 		LOG_ERROR << "Invalid game node info for scene change";
 		PlayerChangeRoomUtil::PopFrontChangeSceneQueue(playerEntity);
