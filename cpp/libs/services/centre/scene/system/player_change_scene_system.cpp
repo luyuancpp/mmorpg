@@ -138,7 +138,7 @@ void PlayerChangeRoomUtil::ProgressSceneChangeState(entt::entity player) {
 			}
 
 			RoomCommon::LeaveRoom({ player });
-			RoomUtil::EnterRoom({ destScene, player });
+			RoomCommon::EnterRoom({ destScene, player });
 			queue.dequeue();
 			OnEnterRoomOk(player);
 		}
@@ -166,7 +166,7 @@ void PlayerChangeRoomUtil::ProgressSceneChangeState(entt::entity player) {
 			RoomUtil::EnterDefaultRoom({ player });
 		}
 		else {
-			RoomUtil::EnterRoom({ destScene, player });
+			RoomCommon::EnterRoom({ destScene, player });
 		}
 		break;
 	}

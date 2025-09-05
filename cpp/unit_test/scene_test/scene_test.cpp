@@ -194,13 +194,13 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 		{
 			playerEntitySet1.emplace(playerEntity);
 			enterParam1.enter = playerEntity;
-			sceneSystem.EnterRoom(enterParam1);
+			RoomCommon::EnterRoom(enterParam1);
 		}
 		else
 		{
 			playerEntitiesSet2.emplace(playerEntity);
 			enterParam2.enter = playerEntity;
-			sceneSystem.EnterRoom(enterParam2);
+			RoomCommon::EnterRoom(enterParam2);
 		}
 	}
 
@@ -298,7 +298,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 			enterParam1.enter = tlsRegistryManager.actorRegistry.create();
 			enterParam1.room = sceneEntity;
 			playerScene1.emplace(enterParam1.enter, enterParam1.room);
-			sm.EnterRoom(enterParam1);
+			RoomCommon::EnterRoom(enterParam1);
 		}
 	}
 	NodeSceneSystem::SetNodeState(*serverEntities.begin(), NodeState::kMaintain);
@@ -352,7 +352,7 @@ TEST(GS, CompelToChangeScene)
 		auto player = tlsRegistryManager.actorRegistry.create();
 		playerList1.emplace(player);
 		enterParam1.enter = player;
-		sm.EnterRoom(enterParam1);
+		RoomCommon::EnterRoom(enterParam1);
 	}
 
 	CompelChangeRoomParam compelChangeParam1;
@@ -417,7 +417,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 			enterParam1.enter = pE;
 			enterParam1.room = it;
 			playerScene1.emplace(enterParam1.enter, enterParam1.room);
-			sm.EnterRoom(enterParam1);
+			RoomCommon::EnterRoom(enterParam1);
 		}
 	}
 
@@ -478,7 +478,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 		enterParam1.enter = player;
 		enterParam1.room = firstScene;
 		playerScene1.emplace(enterParam1.enter, enterParam1.room);
-		sm.EnterRoom(enterParam1);
+		RoomCommon::EnterRoom(enterParam1);
 	}
 
 	nsSys.SetNodeState(*nodeList.begin(), NodeState::kCrash);
@@ -545,7 +545,7 @@ TEST(GS, WeightRoundRobinMainScene)
 				enter_param1.room = can_enter;
 				player_scene1.emplace(enter_param1.enter, can_enter);
 				scene_sets.emplace(can_enter);
-				sm.EnterRoom(enter_param1);
+				RoomCommon::EnterRoom(enter_param1);
 			}
 
 			uint32_t player_scene_guid = 0;
@@ -566,7 +566,7 @@ TEST(GS, WeightRoundRobinMainScene)
 				enter_param1.room = can_enter;
 				player_scene2.emplace(enter_param1.enter, enter_param1.room);
 				scene_sets.emplace(can_enter);
-				sm.EnterRoom(enter_param1);
+				RoomCommon::EnterRoom(enter_param1);
 			}
 			player_scene_guid = 0;
 			for (auto& it : player_scene2)
@@ -667,7 +667,7 @@ TEST(GS, ServerEnterLeavePressure)
 		enterParam1.enter = playerEntity;
 		enterParam1.room = canEnter;
 		playerScene1.emplace(enterParam1.enter, enterParam1.room);
-		sm.EnterRoom(enterParam1);
+		RoomCommon::EnterRoom(enterParam1);
 	}
 
 	// Clear pressure on the first server node
@@ -684,7 +684,7 @@ TEST(GS, ServerEnterLeavePressure)
 		enterParam1.enter = playerEntity;
 		enterParam1.room = canEnter;
 		playerScene2.emplace(enterParam1.enter, enterParam1.room);
-		sm.EnterRoom(enterParam1);
+		RoomCommon::EnterRoom(enterParam1);
 	}
 }
 
@@ -782,7 +782,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 				enterParam1.room = canEnter;
 				playerScene1.emplace(enterParam1.enter, canEnter);
 				sceneSets.emplace(canEnter);
-				sm.EnterRoom(enterParam1);
+				RoomCommon::EnterRoom(enterParam1);
 			}
 
 			// Verify players are correctly placed in scenes and sceneConfigId0 is assigned
@@ -808,7 +808,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 				enterParam1.room = canEnter;
 				playerScene2.emplace(enterParam1.enter, enterParam1.room);
 				sceneSets.emplace(canEnter);
-				sm.EnterRoom(enterParam1);
+				RoomCommon::EnterRoom(enterParam1);
 			}
 
 			// Verify players are correctly placed in scenes and sceneConfigId1 is assigned

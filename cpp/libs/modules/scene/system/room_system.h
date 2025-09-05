@@ -113,11 +113,6 @@ public:
      */
     static void HandleDestroyRoomNode(entt::entity node);
 
-    /**
-     * @brief EnterScene handles the action of a player entering a scene.
-     * @param param Parameters for player entry.
-     */
-    static void EnterRoom(const EnterRoomParam& param);
 
     /**
      * @brief EnterDefaultScene handles the action of a player entering the default scene.
