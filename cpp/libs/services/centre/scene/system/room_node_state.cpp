@@ -2,10 +2,10 @@
 #include <core/node/constants/node_constants.h>
 #include <muduo/base/Logging.h>
 #include <threading/node_context_manager.h>
-#include <modules/scene/comp/node_scene_comp.h>
+#include <modules/scene/comp/room_node_comp.h>
 
 void RoomNodeStateSystem::MakeNodePressure(entt::entity node) {
-	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node);
+	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeRoomComp>(node);
 
 	if (nullptr == nodeSceneComp) {
 		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
@@ -17,7 +17,7 @@ void RoomNodeStateSystem::MakeNodePressure(entt::entity node) {
 }
 
 void RoomNodeStateSystem::ClearNodePressure(entt::entity node) {
-	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node);
+	auto* const nodeSceneComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeRoomComp>(node);
 
 	if (nullptr == nodeSceneComp) {
 		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
@@ -29,7 +29,7 @@ void RoomNodeStateSystem::ClearNodePressure(entt::entity node) {
 }
 
 void RoomNodeStateSystem::MakeNodeState(entt::entity node, NodeState state) {
-	auto* const tryServerComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(node);
+	auto* const tryServerComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeRoomComp>(node);
 
 	if (nullptr == tryServerComp) {
 		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);

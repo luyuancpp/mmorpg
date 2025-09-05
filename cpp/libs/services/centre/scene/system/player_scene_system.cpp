@@ -3,7 +3,6 @@
 #include "modules/scene/comp/scene_comp.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
-#include "node/comp/game_node_comp.h"
 #include "rpc/service_metadata/game_player_scene_service_metadata.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "scene/system/player_change_scene_system.h"

@@ -8,6 +8,7 @@
 
 #include "proto/common/common.pb.h"
 #include "engine/threading/registry_manager.h"
+#include "proto/logic/component/game_node_comp.pb.h"
 
 using SceneList = EntityUnorderedSet;
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
@@ -30,7 +31,7 @@ struct CrossRoomSceneNode
 {
 };
 
-class NodeNodeComp
+class NodeRoomComp
 {
 public:
 	[[nodiscard]] const ConfigSceneListType& GetSceneLists() const
@@ -153,3 +154,5 @@ private:
 	NodePressureState nodePressureState{ NodePressureState::kNoPressure };
 };
 
+
+using RoomNodePlayerInfoPtrPbComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
