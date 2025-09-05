@@ -126,12 +126,6 @@ public:
     static void EnterDefaultRoom(const EnterDefaultRoomParam& param);
 
     /**
-     * @brief LeaveScene handles the action of a player leaving a scene.
-     * @param param Parameters for player leaving.
-     */
-    static void LeaveRoom(const LeaveRoomParam& param);
-
-    /**
      * @brief CompelPlayerChangeScene forces a player to change scenes.
      * @param param Parameters for forcing player scene change.
      */

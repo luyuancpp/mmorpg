@@ -9,6 +9,7 @@
 #include "time/system/time_system.h"
 #include <engine/threading/registry_manager.h>
 #include <engine/threading/dispatcher_manager.h>
+#include <modules/scene/system/room_common.h>
 
 
 // 添加切换场景信息到队列
@@ -136,13 +137,13 @@ void PlayerChangeRoomUtil::ProgressSceneChangeState(entt::entity player) {
 				return;
 			}
 
-			RoomUtil::LeaveRoom({ player });
+			RoomCommon::LeaveRoom({ player });
 			RoomUtil::EnterRoom({ destScene, player });
 			queue.dequeue();
 			OnEnterRoomOk(player);
 		}
 		else {
-			RoomUtil::LeaveRoom({ player });
+			RoomCommon::LeaveRoom({ player });
 			task.set_state(ChangeSceneInfoPBComponent::eLeaving);
 		}
 		break;

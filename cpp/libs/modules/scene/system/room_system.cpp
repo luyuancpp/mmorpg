@@ -235,53 +235,6 @@ void RoomUtil::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
 	}
 }
 
-// Leave a player from a room
-void RoomUtil::LeaveRoom(const LeaveRoomParam& param) {
-	if (!param.CheckValid()) {
-		LOG_ERROR << "Invalid parameters when leaving room";
-		return;
-	}
-
-	if (!tlsRegistryManager.actorRegistry.valid(param.leaver)) {
-		LOG_ERROR << "Invalid player entity when leaving room - Player GUID: " << entt::to_integral(param.leaver);
-		return;
-	}
-
-	auto roomEntityComp = tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(param.leaver);
-	if (nullptr == roomEntityComp)
-	{
-		LOG_ERROR << "RoomEntityComp not found for player when leaving room - Player : " << entt::to_integral(param.leaver);
-		return;
-	}
-
-	auto roomEntity = roomEntityComp->roomEntity;
-	if (!tlsRegistryManager.roomRegistry.valid(roomEntity)) {
-		LOG_ERROR << "Invalid room entity when leaving room - Player : " << entt::to_integral(param.leaver);
-		return;
-	}
-
-	BeforeLeaveRoom beforeLeaveRoom;
-	beforeLeaveRoom.set_entity(entt::to_integral(param.leaver));
-	dispatcher.trigger(beforeLeaveRoom);
-
-	auto& roomPlayers = tlsRegistryManager.roomRegistry.get<RoomPlayers>(roomEntity);
-	roomPlayers.erase(param.leaver);
-	tlsRegistryManager.actorRegistry.remove<RoomEntityComp>(param.leaver);
-
-	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(roomEntity);
-	if (gsPlayerInfo) {
-		(*gsPlayerInfo)->set_player_size((*gsPlayerInfo)->player_size() - 1);
-	}
-
-	/*AfterLeaveRoom afterLeaveRoom;
-	afterLeaveRoom.set_entity(entt::to_integral(param.leaver));
-	dispatcher.trigger(afterLeaveRoom);*/
-
-	if (tlsRegistryManager.actorRegistry.any_of<Guid>(param.leaver)) {
-		LOG_INFO << "Player left room - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.leaver) << ", Room ID: " << entt::to_integral(roomEntity);
-	}
-}
-
 // 这里只处理了同gs,如果是跨gs的room切换，应该别的地方处理
 void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 	auto& destNodeRoom = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<NodeNodeComp>(param.destNode);
@@ -293,7 +246,7 @@ void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 		roomEntity = CreateRoomOnRoomNode(p);
 	}
 
-	LeaveRoom({ param.player });
+	RoomCommon::LeaveRoom({ param.player });
 	if (roomEntity == entt::null) {
 		EnterDefaultRoom({ param.player });
 		return;

@@ -226,7 +226,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 	for (const auto& playerEntity : playerEntitySet1)
 	{
 		leaveParam1.leaver = playerEntity;
-		sceneSystem.LeaveRoom(leaveParam1);
+		RoomCommon::LeaveRoom(leaveParam1);
 		EXPECT_FALSE(scenesPlayers1.find(playerEntity) != scenesPlayers1.end());
 		EXPECT_EQ(tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(playerEntity), nullptr);
 	}
@@ -237,7 +237,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 	for (const auto& playerEntity : playerEntitiesSet2)
 	{
 		leaveParam2.leaver = playerEntity;
-		sceneSystem.LeaveRoom(leaveParam2);
+		RoomCommon::LeaveRoom(leaveParam2);
 		EXPECT_FALSE(scenesPlayers2.find(playerEntity) != scenesPlayers2.end());
 		EXPECT_EQ(tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(playerEntity), nullptr);
 	}
@@ -591,13 +591,13 @@ TEST(GS, WeightRoundRobinMainScene)
 			{
 				auto& pse = tlsRegistryManager.actorRegistry.get<RoomEntityComp>(it.first);
 				leave_scene.leaver = it.first;
-				sm.LeaveRoom(leave_scene);
+				RoomCommon::LeaveRoom(leave_scene);
 			}
 			for (auto& it : player_scene2)
 			{
 				auto& pse = tlsRegistryManager.actorRegistry.get<RoomEntityComp>(it.first);
 				leave_scene.leaver = it.first;
-				sm.LeaveRoom(leave_scene);
+				RoomCommon::LeaveRoom(leave_scene);
 			}
 			for (auto& it : node_list)
 			{
@@ -849,14 +849,14 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			for (auto& it : playerScene1)
 			{
 				leaveScene.leaver = it.first;
-				sm.LeaveRoom(leaveScene);
+				RoomCommon::LeaveRoom(leaveScene);
 			}
 
 			// Leave scenes for playerScene2
 			for (auto& it : playerScene2)
 			{
 				leaveScene.leaver = it.first;
-				sm.LeaveRoom(leaveScene);
+				RoomCommon::LeaveRoom(leaveScene);
 			}
 
 			// Verify all server entities have no players after leaving scenes
