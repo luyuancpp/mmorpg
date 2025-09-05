@@ -58,7 +58,7 @@ std::size_t RoomCommon::GetRoomsSize(uint32_t roomConfigId) {
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 	for (auto node : registry.view<NodeRoomComp>()) {
 		auto& nodeRoomComp = registry.get<NodeRoomComp>(node);
-		roomSize += nodeRoomComp.GetScenesByConfig(roomConfigId).size();
+		roomSize += nodeRoomComp.GetRoomsByConfig(roomConfigId).size();
 	}
 	LOG_TRACE << "Total rooms size for config ID " << roomConfigId << ": " << roomSize;
 	return roomSize;
@@ -75,7 +75,7 @@ bool RoomCommon::ConfigRoomListNotEmpty(uint32_t roomConfigId) {
 	auto& roomNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 	for (auto nodeEid : roomNodeRegistry.view<NodeRoomComp>()) {
 		auto& nodeRoomComp = roomNodeRegistry.get<NodeRoomComp>(nodeEid);
-		if (!nodeRoomComp.GetScenesByConfig(roomConfigId).empty()) {
+		if (!nodeRoomComp.GetRoomsByConfig(roomConfigId).empty()) {
 			LOG_TRACE << "Non-empty room list found for config ID: " << roomConfigId;
 			return true;
 		}

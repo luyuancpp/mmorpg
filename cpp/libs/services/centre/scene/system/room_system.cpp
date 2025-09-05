@@ -80,7 +80,7 @@ void RoomUtil::HandleDestroyRoomNode(entt::entity node) {
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	auto& nodeRoomComp = registry.get<NodeRoomComp>(node);
-	auto roomList = nodeRoomComp.GetRoomList();
+	auto roomList = nodeRoomComp.GetRoomMap();
 
 	// Destroy all rooms associated with the server node
 	for (auto& confIdRoomList : roomList | std::views::values) {
@@ -137,7 +137,7 @@ void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 void RoomUtil::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNode) {
 	auto& roomRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 	auto& crashNodeRoom = roomRegistry.get<NodeRoomComp>(crashNode);
-	auto roomList = crashNodeRoom.GetRoomList();
+	auto roomList = crashNodeRoom.GetRoomMap();
 
 	for (auto& confIdRoomList : roomList | std::views::values) {
 		for (auto room : confIdRoomList) {
@@ -196,7 +196,7 @@ entt::entity RoomUtil::SelectBestNodeForRoom(uint32_t sceneConfId) {
 		if (!playerInfoPtr) continue;
 
 		// 如果该节点已经有该配置的房间，优先考虑
-		auto existingScenes = nodeComp.GetScenesByConfig(sceneConfId);
+		auto existingScenes = nodeComp.GetRoomsByConfig(sceneConfId);
 		if (!existingScenes.empty()) {
 			return node;
 		}
