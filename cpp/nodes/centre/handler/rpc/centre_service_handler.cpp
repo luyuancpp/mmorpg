@@ -11,7 +11,6 @@
 #include "network/network_constants.h"
 #include "network/rpc_session.h"
 #include "network/error_handling_system.h"
-#include "node/comp/game_node_comp.h"
 #include "table/proto/tip/login_error_tip.pb.h"
 #include "player/system/player_node_system.h"
 #include "proto/logic/component/player_comp.pb.h"
@@ -19,7 +18,6 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/common/node.pb.h"
 #include "scene/system/player_change_scene_system.h"
-#include "modules/scene/system/room_system.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/service_metadata.h"
@@ -36,7 +34,8 @@
 #include "threading/node_context_manager.h"
 #include "threading/player_manager.h"
 #include "threading/message_context.h"
-#include <modules/scene/comp/node_scene_comp.h>
+#include <modules/scene/comp/room_node_comp.h>
+#include <scene/system/room_system.h>
 
 using namespace muduo;
 using namespace muduo::net;

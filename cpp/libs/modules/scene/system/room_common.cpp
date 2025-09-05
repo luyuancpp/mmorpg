@@ -4,10 +4,9 @@
 #include <registry_manager.h>
 #include <node_context_manager.h>
 #include <proto/common/common.pb.h>
-#include <scene/comp/node_scene_comp.h>
+#include <scene/comp/room_node_comp.h>
 #include <table/proto/tip/scene_error_tip.pb.h>
 #include <table/proto/tip/common_error_tip.pb.h>
-#include <services/centre/node/comp/game_node_comp.h>
 #include <proto/logic/event/scene_event.pb.h>
 #include <dispatcher_manager.h>
 #include <scene/comp/scene_comp.h>
@@ -57,8 +56,8 @@ bool RoomCommon::IsRoomEmpty() {
 std::size_t RoomCommon::GetRoomsSize(uint32_t roomConfigId) {
 	std::size_t roomSize = 0;
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	for (auto node : registry.view<NodeNodeComp>()) {
-		auto& nodeRoomComp = registry.get<NodeNodeComp>(node);
+	for (auto node : registry.view<NodeRoomComp>()) {
+		auto& nodeRoomComp = registry.get<NodeRoomComp>(node);
 		roomSize += nodeRoomComp.GetScenesByConfig(roomConfigId).size();
 	}
 	LOG_TRACE << "Total rooms size for config ID " << roomConfigId << ": " << roomSize;
@@ -74,8 +73,8 @@ std::size_t RoomCommon::GetRoomsSize() {
 
 bool RoomCommon::ConfigRoomListNotEmpty(uint32_t roomConfigId) {
 	auto& roomNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	for (auto nodeEid : roomNodeRegistry.view<NodeNodeComp>()) {
-		auto& nodeRoomComp = roomNodeRegistry.get<NodeNodeComp>(nodeEid);
+	for (auto nodeEid : roomNodeRegistry.view<NodeRoomComp>()) {
+		auto& nodeRoomComp = roomNodeRegistry.get<NodeRoomComp>(nodeEid);
 		if (!nodeRoomComp.GetScenesByConfig(roomConfigId).empty()) {
 			LOG_TRACE << "Non-empty room list found for config ID: " << roomConfigId;
 			return true;
@@ -115,7 +114,7 @@ uint32_t RoomCommon::HasRoomSlot(entt::entity room) {
 		return kEnterSceneNotFull;
 	}
 
-	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(room);
+	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<RoomNodePlayerInfoPtrPbComponent>(room);
 	if (!gsPlayerInfo) {
 		LOG_ERROR << "GameNodePlayerInfoPtr not found for room - Room ID: " << entt::to_integral(room);
 		return kEnterSceneGsInfoNull;
@@ -156,7 +155,7 @@ void RoomCommon::EnterRoom(const EnterRoomParam& param) {
 	}
 	tlsRegistryManager.actorRegistry.emplace<RoomEntityComp>(param.enter, param.room);
 
-	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(param.room);
+	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<RoomNodePlayerInfoPtrPbComponent>(param.room);
 	if (gsPlayerInfo) {
 		(*gsPlayerInfo)->set_player_size((*gsPlayerInfo)->player_size() + 1);
 	}
@@ -204,7 +203,7 @@ void RoomCommon::LeaveRoom(const LeaveRoomParam& param) {
 	roomPlayers.erase(param.leaver);
 	tlsRegistryManager.actorRegistry.remove<RoomEntityComp>(param.leaver);
 
-	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<GameNodePlayerInfoPtrPBComponent>(roomEntity);
+	auto* gsPlayerInfo = tlsRegistryManager.roomRegistry.try_get<RoomNodePlayerInfoPtrPbComponent>(roomEntity);
 	if (gsPlayerInfo) {
 		(*gsPlayerInfo)->set_player_size((*gsPlayerInfo)->player_size() - 1);
 	}
@@ -224,7 +223,7 @@ void RoomCommon::DestroyRoom(const DestroyRoomParam& param) {
 		return;
 	}
 
-	auto* pServerComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeNodeComp>(param.node);
+	auto* pServerComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<NodeRoomComp>(param.node);
 	if (!pServerComp) {
 		LOG_ERROR << "ServerComp not found for node";
 		return;
@@ -267,12 +266,12 @@ entt::entity RoomCommon::CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& p
 	tlsRegistryManager.roomRegistry.emplace<RoomPlayers>(room);
 
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	auto* serverPlayerInfo = registry.try_get<GameNodePlayerInfoPtrPBComponent>(param.node);
+	auto* serverPlayerInfo = registry.try_get<RoomNodePlayerInfoPtrPbComponent>(param.node);
 	if (serverPlayerInfo) {
-		tlsRegistryManager.roomRegistry.emplace<GameNodePlayerInfoPtrPBComponent>(room, *serverPlayerInfo);
+		tlsRegistryManager.roomRegistry.emplace<RoomNodePlayerInfoPtrPbComponent>(room, *serverPlayerInfo);
 	}
 
-	auto* pServerComp = registry.try_get<NodeNodeComp>(param.node);
+	auto* pServerComp = registry.try_get<NodeRoomComp>(param.node);
 	if (pServerComp) {
 		pServerComp->AddScene(room);
 	}

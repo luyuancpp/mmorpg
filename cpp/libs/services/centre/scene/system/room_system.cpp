@@ -14,22 +14,19 @@
 
 #include <ranges> // Only if using C++20 ranges
 #include <threading/registry_manager.h>
-#include <modules/scene/comp/node_scene_comp.h>
+#include <modules/scene/comp/room_node_comp.h>
 #include <modules/scene/system/room_common.h>
 #include "room_selector.h"
 
 // Constants
 static constexpr std::size_t kMaxRoomPlayer = 1000;
 
-// Type alias
-using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
-
 
 void AddMainRoomToNodeComponent(entt::registry& reg, const entt::entity node) {
 	LOG_TRACE << "Adding main room node components for entity: " << entt::to_integral(node);
 	reg.emplace<MainRoomNode>(node);
-	reg.emplace<NodeNodeComp>(node);
-	reg.emplace<GameNodePlayerInfoPtrPBComponent>(node, std::make_shared<GameNodePlayerInfoPBComponent>());
+	reg.emplace<NodeRoomComp>(node);
+	reg.emplace<RoomNodePlayerInfoPtrPbComponent>(node, std::make_shared<GameNodePlayerInfoPBComponent>());
 }
 
 // RoomUtil implementation
@@ -82,7 +79,7 @@ NodeId RoomUtil::GetGameNodeIdFromRoomEntity(entt::entity room) {
 void RoomUtil::HandleDestroyRoomNode(entt::entity node) {
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
-	auto& nodeRoomComp = registry.get<NodeNodeComp>(node);
+	auto& nodeRoomComp = registry.get<NodeRoomComp>(node);
 	auto roomList = nodeRoomComp.GetSceneLists();
 
 	// Destroy all rooms associated with the server node
@@ -139,7 +136,7 @@ void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 // Replace a crashed server node with a new node
 void RoomUtil::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNode) {
 	auto& roomRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	auto& crashNodeRoom = roomRegistry.get<NodeNodeComp>(crashNode);
+	auto& crashNodeRoom = roomRegistry.get<NodeRoomComp>(crashNode);
 	auto roomList = crashNodeRoom.GetSceneLists();
 
 	for (auto& confIdRoomList : roomList | std::views::values) {
@@ -168,7 +165,7 @@ entt::entity RoomUtil::FindOrCreateRoom(uint32_t sceneConfId) {
 	}
 
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	auto& nodeComp = registry.get<NodeNodeComp>(node);
+	auto& nodeComp = registry.get<NodeRoomComp>(node);
 
 	// 查找已有房间
 	entt::entity room = nodeComp.GetSceneWithMinPlayerCountByConfigId(sceneConfId);
@@ -193,9 +190,9 @@ entt::entity RoomUtil::SelectBestNodeForRoom(uint32_t sceneConfId) {
 	entt::entity bestNode = entt::null;
 	std::size_t minPlayerCount = std::numeric_limits<std::size_t>::max();
 
-	for (auto node : registry.view<NodeNodeComp, GameNodePlayerInfoPtrPBComponent>()) {
-		const auto& nodeComp = registry.get<NodeNodeComp>(node);
-		const auto& playerInfoPtr = registry.get<GameNodePlayerInfoPtrPBComponent>(node);
+	for (auto node : registry.view<NodeRoomComp, RoomNodePlayerInfoPtrPbComponent>()) {
+		const auto& nodeComp = registry.get<NodeRoomComp>(node);
+		const auto& playerInfoPtr = registry.get<RoomNodePlayerInfoPtrPbComponent>(node);
 		if (!playerInfoPtr) continue;
 
 		// 如果该节点已经有该配置的房间，优先考虑

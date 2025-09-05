@@ -13,7 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="kafka\system\kafka_system.h" />
-    <ClInclude Include="node\comp\game_node_comp.h" />
     <ClInclude Include="player\comp\player_comp.h" />
     <ClInclude Include="player\system\player_node_system.h" />
     <ClInclude Include="player\system\player_tip_system.h" />

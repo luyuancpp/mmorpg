@@ -36,7 +36,7 @@
     <ClInclude Include="mission\system\mission_system.h" />
     <ClInclude Include="reward\comp\reward_comp.h" />
     <ClInclude Include="reward\system\reward_system.h" />
-    <ClInclude Include="scene\comp\node_scene_comp.h" />
+    <ClInclude Include="scene\comp\room_node_comp.h" />
     <ClInclude Include="scene\comp\player_scene.h" />
     <ClInclude Include="scene\comp\scene_comp.h" />
     <ClInclude Include="scene\system\room_common.h" />

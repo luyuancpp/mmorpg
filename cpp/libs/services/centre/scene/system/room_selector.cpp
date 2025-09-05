@@ -1,13 +1,11 @@
 ﻿#include "room_selector.h"
 #include <ranges>
-#include "modules/scene/comp/node_scene_comp.h"
+#include "modules/scene/comp/room_node_comp.h"
 
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "proto/common/node.pb.h"
 #include "muduo/base/Logging.h"
 #include "threading/node_context_manager.h"
-
-using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
 
 template <typename ServerType>
 entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const GetSceneFilterParam& filterStateParam) {
@@ -18,7 +16,7 @@ entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const G
 	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	for (auto entity : nodeRegistry.view<ServerType>()) {
-		const auto& nodeSceneComp = nodeRegistry.get<NodeNodeComp>(entity);
+		const auto& nodeSceneComp = nodeRegistry.get<NodeRoomComp>(entity);
 
 		if (!nodeSceneComp.IsStateNormal() ||
 			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
@@ -26,7 +24,7 @@ entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const G
 			continue;
 		}
 
-		auto nodePlayerSize = (*nodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(entity)).player_size();
+		auto nodePlayerSize = (*nodeRegistry.get<RoomNodePlayerInfoPtrPbComponent>(entity)).player_size();
 		if (nodePlayerSize == 0) {
 			bestNode = entity;
 			minServerPlayerSize = nodePlayerSize;
@@ -46,7 +44,7 @@ entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const G
 		return entt::null;
 	}
 
-	const auto& nodeSceneComps = nodeRegistry.get<NodeNodeComp>(bestNode);
+	const auto& nodeSceneComps = nodeRegistry.get<NodeRoomComp>(bestNode);
 	auto bestScene = nodeSceneComps.GetSceneWithMinPlayerCountByConfigId(sceneConfigId);
 
 	if (bestScene == entt::null) {
@@ -63,14 +61,14 @@ entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	for (auto entity : registry.view<ServerType>()) {
-		if (const auto& nodeSceneComp = registry.get<NodeNodeComp>(entity);
+		if (const auto& nodeSceneComp = registry.get<NodeRoomComp>(entity);
 			!nodeSceneComp.IsStateNormal() ||
 			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
 			nodeSceneComp.GetNodePressureState() != filterStateParam.nodePressureState) {
 			continue;
 		}
 
-		auto nodePlayerSize = (*registry.get<GameNodePlayerInfoPtrPBComponent>(entity)).player_size();
+		auto nodePlayerSize = (*registry.get<RoomNodePlayerInfoPtrPbComponent>(entity)).player_size();
 
 		if (nodePlayerSize >= kMaxServerPlayerSize) {
 			continue;
@@ -86,7 +84,7 @@ entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const
 	}
 
 	entt::entity bestScene{ entt::null };
-	const auto& nodeSceneComps = registry.get<NodeNodeComp>(bestNode);
+	const auto& nodeSceneComps = registry.get<NodeRoomComp>(bestNode);
 
 	for (const auto& sceneIt : nodeSceneComps.GetScenesByConfig(sceneConfigId)) {
 		auto scenePlayerSize = tlsRegistryManager.roomRegistry.get<RoomPlayers>(sceneIt).size();
