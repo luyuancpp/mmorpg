@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="kafka\system\kafka_system.cpp" />
-    <ClCompile Include="player\system\player_node_system.cpp" />
-    <ClCompile Include="player\system\player_tip_system.cpp" />
-    <ClCompile Include="redis\system\redis_system.cpp" />
+    <ClCompile Include="kafka\system\kafka.cpp" />
+    <ClCompile Include="player\system\player_node.cpp" />
+    <ClCompile Include="player\system\player_tip.cpp" />
+    <ClCompile Include="redis\system\redis.cpp" />
     <ClCompile Include="scene\system\player_change_room.cpp" />
     <ClCompile Include="scene\system\player_room.cpp" />
     <ClCompile Include="scene\system\room_node_selector.cpp" />
@@ -13,11 +13,11 @@
     <ClCompile Include="scene\system\room_selector.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="kafka\system\kafka_system.h" />
-    <ClInclude Include="player\comp\player_comp.h" />
-    <ClInclude Include="player\system\player_node_system.h" />
-    <ClInclude Include="player\system\player_tip_system.h" />
-    <ClInclude Include="redis\system\redis_system.h" />
+    <ClInclude Include="kafka\system\kafka.h" />
+    <ClInclude Include="player\comp\player.h" />
+    <ClInclude Include="player\system\player_node.h" />
+    <ClInclude Include="player\system\player_tip.h" />
+    <ClInclude Include="redis\system\redis.h" />
     <ClInclude Include="scene\system\player_change_room.h" />
     <ClInclude Include="scene\system\player_room.h" />
     <ClInclude Include="type_alias\player_redis.h" />

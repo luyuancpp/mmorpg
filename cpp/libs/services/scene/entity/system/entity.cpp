@@ -1,4 +1,4 @@
-#include "entity_system.h"
+#include "entity.h"
 
 #include "proto/logic/component/npc_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"

@@ -8,7 +8,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "centre_node.h"
 #include "scene/system/player_room.h"
-#include "player/system/player_tip_system.h"
+#include "player/system/player_tip.h"
 #include "scene/system/player_change_room.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "network/player_message_utils.h"

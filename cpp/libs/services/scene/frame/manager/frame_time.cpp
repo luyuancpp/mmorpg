@@ -1,3 +1,3 @@
-#include "frame_time_manager.h"
+#include "frame_time.h"
 
  thread_local FrameTimeManager  tlsFrameTimeManager;

@@ -2,7 +2,7 @@
 
 #include "table/code/condition_table.h"
 #include "table/code/mission_table.h"
-#include "modules/mission/constants/mission_constants.h"
+#include "modules/mission/constants/mission.h"
 #include "modules/mission/comp/mission_comp.h"
 #include "modules/mission/system/mission.h"
 #include "table/proto/tip/common_error_tip.pb.h"

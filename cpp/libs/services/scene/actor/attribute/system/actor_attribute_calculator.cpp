@@ -1,9 +1,9 @@
-﻿#include "actor_attribute_calculator_system.h"
+﻿#include "actor_attribute_calculator.h"
 
 #include <array>
 #include <ranges>
 
-#include "actor/attribute/comp/actor_attribute_comp.h"
+#include "actor/attribute/comp/actor_attribute.h"
 
 #include "table/code/buff_table.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"

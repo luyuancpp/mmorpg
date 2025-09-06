@@ -4,11 +4,11 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "actor/action_state/constants/actor_state_constants.h"
-#include "actor/action_state/system/actor_action_state_system.h"
-#include "actor/attribute/system/actor_attribute_calculator_system.h"
-#include "actor/attribute/system/actor_state_attribute_sync_system.h"
+#include "actor/action_state/system/actor_action_state.h"
+#include "actor/attribute/system/actor_attribute_calculator.h"
+#include "actor/attribute/system/actor_state_attribute_sync.h"
 #include "scene/combat_state/system/combat_state_system.h"
-#include "scene/combat/buff/system/buff_system.h"
+#include "scene/combat/buff/system/buff.h"
 #include "scene/combat/skill/system/skill_system.h"
 #include "mount/system/mount_system.h"
 #include "scene/scene/system/interest_system.h"

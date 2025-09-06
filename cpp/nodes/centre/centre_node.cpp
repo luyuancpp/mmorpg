@@ -7,8 +7,8 @@
 #include "muduo/net/EventLoop.h"
 #include "network/rpc_session.h"
 #include "proto/common/node.pb.h"
-#include "kafka/system/kafka_system.h"
-#include "redis/system/redis_system.h"
+#include "kafka/system/kafka.h"
+#include "redis/system/redis.h"
 
 using namespace muduo;
 using namespace net;
