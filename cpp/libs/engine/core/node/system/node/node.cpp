@@ -25,7 +25,7 @@
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "threading/redis_manager.h"
-#include "time/system/time_system.h"
+#include "time/system/time.h"
 #include "network/network_utils.h"
 #include "proto_helpers/proto_util.h"
 #include "core/utils/debug/stacktrace_system.h"

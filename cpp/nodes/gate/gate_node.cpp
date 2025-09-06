@@ -8,7 +8,7 @@
 #include "proto/common/node.pb.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "node/system/node/node_util.h"
-#include "session/system/session_system.h"
+#include "session/system/session.h"
 #include "grpc_client/grpc_init_client.h"
 #include "session/manager/session_manager.h"
 

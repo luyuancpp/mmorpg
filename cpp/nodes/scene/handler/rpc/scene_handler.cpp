@@ -6,7 +6,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "muduo/net/InetAddress.h"
 #include "scene_node.h"
-#include "session/system/session_system.h"
+#include "session/system/session.h"
 #include "core/network/message_system.h"
 #include "player/system/player_node.h"
 #include "player/system/player_scene.h"

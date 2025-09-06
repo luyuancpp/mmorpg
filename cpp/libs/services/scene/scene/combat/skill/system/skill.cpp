@@ -25,7 +25,7 @@
 
 #include "time/comp/timer_task_comp.h"
 #include "time/system/cooldown_time.h"
-#include "time/system/time_system.h"
+#include "time/system/time.h"
 #include <core/system/id_generator.h>
 #include <threading/dispatcher_manager.h>
 
