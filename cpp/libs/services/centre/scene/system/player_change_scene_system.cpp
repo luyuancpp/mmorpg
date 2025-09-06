@@ -163,7 +163,7 @@ void PlayerChangeRoomUtil::ProgressSceneChangeState(entt::entity player) {
 	case ChangeSceneInfoPBComponent::eEnterSucceed: {
 		auto destScene = entt::entity{ task.guid() };
 		if (destScene == entt::null) {
-			RoomUtil::EnterDefaultRoom({ player });
+			RoomSystem::EnterDefaultRoom({ player });
 		}
 		else {
 			RoomCommon::EnterRoom({ destScene, player });

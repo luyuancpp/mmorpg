@@ -187,9 +187,9 @@ entt::entity PlayerSceneSystem::ResolveTargetScene(entt::entity playerEntity)
 	}
 	else
 	{
-		GetSceneParams params;
-		params.sceneConfigurationId = info.scene_confid();
-		toScene = RoomNodeSelector::SelectLeastLoadedScene(params);
+		GetRoomParams params;
+		params.roomConfigurationId = info.scene_confid();
+		toScene = RoomNodeSelector::SelectLeastLoadedRoom(params);
 		if (toScene == entt::null)
 		{
 			LOG_WARN << "No available scene found for player: " << playerId;
@@ -314,7 +314,7 @@ uint32_t PlayerSceneSystem::GetDefaultSceneConfigurationId()
 
 void PlayerSceneSystem::ProcessEnterGameNode(entt::entity playerEntity, entt::entity sceneEntity)
 {
-	const auto nodeId = RoomUtil::GetGameNodeIdFromRoomEntity(sceneEntity);
+	const auto nodeId = RoomSystem::GetGameNodeIdFromRoomEntity(sceneEntity);
 	ProcessPlayerEnterSceneNode(playerEntity, nodeId);
 }
 

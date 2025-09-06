@@ -27,7 +27,7 @@ entt::entity CreateMainSceneNode()
 
 TEST(SceneSystemTests, CreateMainScene)
 {
-	const RoomUtil sceneSystem;
+	const RoomSystem sceneSystem;
 
 	CreateRoomOnNodeRoomParam createParams;
 	const auto serverEntity1 = CreateMainSceneNode();
@@ -47,7 +47,7 @@ TEST(SceneSystemTests, CreateMainScene)
 
 TEST(SceneSystemTests, CreateScene2Server)
 {
-	RoomUtil sceneSystem;
+	RoomSystem sceneSystem;
 	const auto node1 = CreateMainSceneNode();
 	const auto node2 = CreateMainSceneNode();
 
@@ -82,7 +82,7 @@ TEST(SceneSystemTests, CreateScene2Server)
 
 TEST(SceneSystemTests, DestroyScene)
 {
-	RoomUtil sceneSystem;
+	RoomSystem sceneSystem;
 	const auto node1 = CreateMainSceneNode();
 
 	CreateRoomOnNodeRoomParam createParams1;
@@ -109,7 +109,7 @@ TEST(SceneSystemTests, DestroyScene)
 
 TEST(SceneSystemTests, DestroyServer)
 {
-	RoomUtil sceneSystem;
+	RoomSystem sceneSystem;
 
 	auto node1 = CreateMainSceneNode();
 	auto node2 = CreateMainSceneNode();
@@ -159,7 +159,7 @@ TEST(SceneSystemTests, DestroyServer)
 
 TEST(SceneSystemTests, PlayerLeaveEnterScene)
 {
-	RoomUtil sceneSystem;
+	RoomSystem sceneSystem;
 
 	auto node1 = CreateMainSceneNode();
 	auto node2 = CreateMainSceneNode();
@@ -258,7 +258,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 TEST(GS, MainTainWeightRoundRobinMainScene)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
-	RoomUtil sm;
+	RoomSystem sm;
 	RoomNodeSelector nodeSystem;
 	EntityUnorderedSet serverEntities;
 	const uint32_t serverSize = 2;
@@ -303,18 +303,18 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 	}
 	RoomNodeStateSystem::MakeNodeState(*serverEntities.begin(), NodeState::kMaintain);
 
-	GetSceneParams weightRoundRobinScene;
-	weightRoundRobinScene.sceneConfigurationId = 0;
+	GetRoomParams weightRoundRobinScene;
+	weightRoundRobinScene.roomConfigurationId = 0;
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto canEnter = nodeSystem.SelectLeastLoadedScene(weightRoundRobinScene);
+		auto canEnter = nodeSystem.SelectLeastLoadedRoom(weightRoundRobinScene);
 		EXPECT_TRUE(canEnter != entt::null);
 	}
 
-	weightRoundRobinScene.sceneConfigurationId = 1;
+	weightRoundRobinScene.roomConfigurationId = 1;
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto canEnter = nodeSystem.SelectLeastLoadedScene(weightRoundRobinScene);
+		auto canEnter = nodeSystem.SelectLeastLoadedRoom(weightRoundRobinScene);
 		EXPECT_TRUE(canEnter != entt::null);
 	}
 }
@@ -322,7 +322,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 
 TEST(GS, CompelToChangeScene)
 {
-	RoomUtil sm;
+	RoomSystem sm;
 
 	auto node1 = CreateMainSceneNode();
 	auto node2 = CreateMainSceneNode();
@@ -375,7 +375,7 @@ TEST(GS, CompelToChangeScene)
 
 TEST(GS, CrashWeightRoundRobinMainScene)
 {
-	RoomUtil sm;
+	RoomSystem sm;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
 	uint32_t perServerScene = 2;
@@ -423,11 +423,11 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 	RoomNodeStateSystem::MakeNodeState(*serverEntities.begin(), NodeState::kCrash);
 
 	uint32_t sceneConfigId0 = 0;
-	GetSceneParams weightRoundRobinScene;
-	weightRoundRobinScene.sceneConfigurationId = sceneConfigId0;
+	GetRoomParams weightRoundRobinScene;
+	weightRoundRobinScene.roomConfigurationId = sceneConfigId0;
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto canEnter = RoomNodeSelector::SelectLeastLoadedScene(weightRoundRobinScene);
+		auto canEnter = RoomNodeSelector::SelectLeastLoadedRoom(weightRoundRobinScene);
 		EXPECT_TRUE(canEnter != entt::null);
 	}
 }
@@ -436,7 +436,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 //崩溃时候的消息不能处理
 TEST(GS, CrashMovePlayer2NewServer)
 {
-	RoomUtil sm;
+	RoomSystem sm;
 	EntityUnorderedSet nodeList;
 	EntityUnorderedSet sceneList;
 	uint32_t nodeSize = 2;
@@ -498,7 +498,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 TEST(GS, WeightRoundRobinMainScene)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
-	RoomUtil sm;
+	RoomSystem sm;
 	EntityUnorderedSet node_list;
 	uint32_t server_size = 10;
 	uint32_t per_server_scene = 10;
@@ -524,8 +524,8 @@ TEST(GS, WeightRoundRobinMainScene)
 		{
 			uint32_t scene_config_id0 = 0;
 			uint32_t scene_config_id1 = 1;
-			GetSceneParams weight_round_robin_scene;
-			weight_round_robin_scene.sceneConfigurationId = scene_config_id0;
+			GetRoomParams weight_round_robin_scene;
+			weight_round_robin_scene.roomConfigurationId = scene_config_id0;
 
 			uint32_t player_size = 1000;
 
@@ -536,7 +536,7 @@ TEST(GS, WeightRoundRobinMainScene)
 
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
-				auto can_enter = RoomNodeSelector::SelectLeastLoadedScene(weight_round_robin_scene);
+				auto can_enter = RoomNodeSelector::SelectLeastLoadedRoom(weight_round_robin_scene);
 				auto p_e = tlsRegistryManager.actorRegistry.create();
 				enter_param1.enter = p_e;
 				enter_param1.room = can_enter;
@@ -554,10 +554,10 @@ TEST(GS, WeightRoundRobinMainScene)
 			}
 
 			std::unordered_map<entt::entity, entt::entity> player_scene2;
-			weight_round_robin_scene.sceneConfigurationId = scene_config_id1;
+			weight_round_robin_scene.roomConfigurationId = scene_config_id1;
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
-				auto can_enter = RoomNodeSelector::SelectLeastLoadedScene(weight_round_robin_scene);
+				auto can_enter = RoomNodeSelector::SelectLeastLoadedRoom(weight_round_robin_scene);
 				auto player = tlsRegistryManager.actorRegistry.create();
 				enter_param1.enter = player;
 				enter_param1.room = can_enter;
@@ -620,7 +620,7 @@ TEST(GS, WeightRoundRobinMainScene)
 TEST(GS, ServerEnterLeavePressure)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
-	RoomUtil sm;
+	RoomSystem sm;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
 	uint32_t perServerScene = 10;
@@ -649,8 +649,8 @@ TEST(GS, ServerEnterLeavePressure)
 	uint32_t sceneConfigId0 = 0;
 	uint32_t sceneConfigId1 = 1;
 
-	GetSceneParams weightRoundRobinScene;
-	weightRoundRobinScene.sceneConfigurationId = sceneConfigId0;
+	GetRoomParams weightRoundRobinScene;
+	weightRoundRobinScene.roomConfigurationId = sceneConfigId0;
 
 	std::unordered_map<entt::entity, entt::entity> playerScene1;
 	EnterRoomParam enterParam1;
@@ -658,7 +658,7 @@ TEST(GS, ServerEnterLeavePressure)
 	// Enter players into scenes with sceneConfigId0
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		auto canEnter = RoomNodeSelector::SelectLeastLoadedScene(weightRoundRobinScene);
+		auto canEnter = RoomNodeSelector::SelectLeastLoadedRoom(weightRoundRobinScene);
 		auto playerEntity = tlsRegistryManager.actorRegistry.create();
 		enterParam1.enter = playerEntity;
 		enterParam1.room = canEnter;
@@ -670,12 +670,12 @@ TEST(GS, ServerEnterLeavePressure)
 	RoomNodeStateSystem::ClearNodePressure(*serverEntities.begin());
 
 	std::unordered_map<entt::entity, entt::entity> playerScene2;
-	weightRoundRobinScene.sceneConfigurationId = sceneConfigId1;
+	weightRoundRobinScene.roomConfigurationId = sceneConfigId1;
 
 	// Enter players into scenes with sceneConfigId1
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		auto canEnter = RoomNodeSelector::SelectLeastLoadedScene(weightRoundRobinScene);
+		auto canEnter = RoomNodeSelector::SelectLeastLoadedRoom(weightRoundRobinScene);
 		auto playerEntity = tlsRegistryManager.actorRegistry.create();
 		enterParam1.enter = playerEntity;
 		enterParam1.room = canEnter;
@@ -704,7 +704,7 @@ TEST(GS, EnterDefaultScene)
 
 	// Enter the default scene with the player
 	const EnterDefaultRoomParam enterParam{ player };
-	RoomUtil::EnterDefaultRoom(enterParam);
+	RoomSystem::EnterDefaultRoom(enterParam);
 
 	// Verify the player is in the default scene
 	const auto [sceneEntity] = tlsRegistryManager.actorRegistry.get<RoomEntityComp>(player);
@@ -721,7 +721,7 @@ struct TestNodeId
 TEST(GS, GetNotFullMainSceneWhenSceneFull)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
-	RoomUtil sm;
+	RoomSystem sm;
 	RoomNodeSelector nssys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 10;
@@ -756,8 +756,8 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 		{
 			uint32_t sceneConfigId0 = 0;
 			uint32_t sceneConfigId1 = 1;
-			GetSceneParams weightRoundRobinScene;
-			weightRoundRobinScene.sceneConfigurationId = sceneConfigId0;
+			GetRoomParams weightRoundRobinScene;
+			weightRoundRobinScene.roomConfigurationId = sceneConfigId0;
 
 			uint32_t playerSize = 1001;
 
@@ -791,7 +791,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 
 			// Enter players into scenes with sceneConfigId1
 			std::unordered_map<entt::entity, entt::entity> playerScene2;
-			weightRoundRobinScene.sceneConfigurationId = sceneConfigId1;
+			weightRoundRobinScene.roomConfigurationId = sceneConfigId1;
 			for (uint32_t i = 0; i < playerSize; ++i)
 			{
 				auto canEnter = nssys.SelectAvailableRoom(weightRoundRobinScene);
@@ -817,7 +817,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 
 			// Calculate expected player distribution across servers
 			std::size_t serverPlayerSize = playerSize * 2 / serverSize;
-			std::size_t remainServerSize = playerSize * 2 - kMaxScenePlayerSize * 2;
+			std::size_t remainServerSize = playerSize * 2 - kMaxPlayersPerRoom * 2;
 
 			// Verify player distribution across server entities
 			for (auto& it : serverEntities)

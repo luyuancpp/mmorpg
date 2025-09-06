@@ -12,7 +12,7 @@ entt::entity RoomSelector::SelectRoomWithMinPlayers(const RoomRegistryComp& comp
 
 	for (auto room : rooms) {
 		std::size_t playerCount = tlsRegistryManager.roomRegistry.get<RoomPlayers>(room).size();
-		if (playerCount >= kMaxScenePlayerSize) continue;
+		if (playerCount >= kMaxPlayersPerRoom) continue;
 		if (playerCount < minPlayers) {
 			minPlayers = playerCount;
 			best = room;

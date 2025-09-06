@@ -31,17 +31,17 @@ void AddMainRoomToNodeComponent(entt::registry& reg, const entt::entity node) {
 }
 
 // RoomUtil implementation
-RoomUtil::RoomUtil() {
+RoomSystem::RoomSystem() {
 	LOG_TRACE << "RoomSystem constructor called";
 	ClearAllRoomData();
 }
 
-RoomUtil::~RoomUtil() {
+RoomSystem::~RoomSystem() {
 	LOG_TRACE << "RoomSystem destructor called";
 	ClearAllRoomData();
 }
 
-void RoomUtil::ClearAllRoomData() {
+void RoomSystem::ClearAllRoomData() {
 	LOG_TRACE << "Clearing room system data";
 	tlsRegistryManager.roomRegistry.clear();
 	tlsRegistryManager.actorRegistry.clear();
@@ -49,7 +49,7 @@ void RoomUtil::ClearAllRoomData() {
 }
 
 // Get game node ID associated with a room entity
-NodeId RoomUtil::GetGameNodeIdFromRoomEntity(entt::entity room) {
+NodeId RoomSystem::GetGameNodeIdFromRoomEntity(entt::entity room) {
 	auto* roomInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>(room);
 	if (roomInfo) {
 		return RoomCommon::GetGameNodeIdFromGuid(roomInfo->guid());
@@ -77,7 +77,7 @@ NodeId RoomUtil::GetGameNodeIdFromRoomEntity(entt::entity room) {
 // Create a new room associated with a game node
 
 // Handle server node destruction
-void RoomUtil::HandleDestroyRoomNode(entt::entity node) {
+void RoomSystem::HandleDestroyRoomNode(entt::entity node) {
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	auto& nodeRoomComp = registry.get<RoomRegistryComp>(node);
@@ -98,7 +98,7 @@ void RoomUtil::HandleDestroyRoomNode(entt::entity node) {
 }
 
 // Enter a player into the default room
-void RoomUtil::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
+void RoomSystem::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
 	if (!param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters when entering default room";
 		return;
@@ -118,9 +118,9 @@ void RoomUtil::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
 }
 
 // 这里只处理了同gs,如果是跨gs的room切换，应该别的地方处理
-void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
+void RoomSystem::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 	// ✅ 使用 FindOrCreateRoom 替代原始杂糅逻辑
-	entt::entity roomEntity = RoomUtil::FindOrCreateRoom(param.roomConfId);
+	entt::entity roomEntity = RoomSystem::FindOrCreateRoom(param.roomConfId);
 
 	RoomCommon::LeaveRoom({ param.player });
 
@@ -135,7 +135,7 @@ void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 
 
 // Replace a crashed server node with a new node
-void RoomUtil::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNode) {
+void RoomSystem::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNode) {
 	auto& roomRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 	auto& crashNodeRoom = roomRegistry.get<RoomRegistryComp>(crashNode);
 	auto roomList = crashNodeRoom.GetRoomMap();
@@ -157,7 +157,7 @@ void RoomUtil::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNod
 }
 
 
-entt::entity RoomUtil::FindOrCreateRoom(uint32_t roomConfId) {
+entt::entity RoomSystem::FindOrCreateRoom(uint32_t roomConfId) {
 	// 选择最优服务器节点
 	entt::entity node = SelectBestNodeForRoom(roomConfId);
 	if (node == entt::null) {
@@ -186,7 +186,7 @@ entt::entity RoomUtil::FindOrCreateRoom(uint32_t roomConfId) {
 	return room;
 }
 
-entt::entity RoomUtil::SelectBestNodeForRoom(uint32_t roomConfId) {
+entt::entity RoomSystem::SelectBestNodeForRoom(uint32_t roomConfId) {
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 	entt::entity bestNode = entt::null;
 	std::size_t minPlayerCount = std::numeric_limits<std::size_t>::max();
