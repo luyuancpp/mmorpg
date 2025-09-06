@@ -1,7 +1,7 @@
-#include "kafka_system.h"
-#include "player/constants/player_constants.h"
+#include "kafka.h"
+#include "player/constants/player.h"
 #include <muduo/base/Logging.h>
-#include "player/system/player_node_system.h"
+#include "player/system/player_node.h"
 #include "proto/logic/event/player_migration_event.pb.h"
 
 void KafkaSystem::KafkaMessageHandler(const std::string& topic, const std::string& message)

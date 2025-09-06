@@ -8,7 +8,7 @@
 #include "scene_node.h"
 #include "session/system/session_system.h"
 #include "core/network/message_system.h"
-#include "player/system/player_node_system.h"
+#include "player/system/player_node.h"
 #include "player/system/player_scene_system.h"
 #include "scene/scene/system/game_node_scene_system.h"
 #include "rpc/player_service_interface.h"

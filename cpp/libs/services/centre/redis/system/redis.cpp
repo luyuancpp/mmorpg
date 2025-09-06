@@ -1,8 +1,8 @@
-#include "redis_system.h"
+#include "redis.h"
 
 #include "muduo/net/EventLoop.h"
 
-#include "player/system/player_node_system.h"
+#include "player/system/player_node.h"
 
 #include "type_alias/player_redis.h"
 #include "engine/threading/redis_manager.h"

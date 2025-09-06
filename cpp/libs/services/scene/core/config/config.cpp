@@ -1,4 +1,4 @@
-#include "config_system.h"
+#include "config.h"
 
 #include "scene/scene/system/navigation_system.h"
 

@@ -1,9 +1,9 @@
-﻿#include "player_node_system.h"
+﻿#include "player_node.h"
 #include "muduo/base/Logging.h"
 
 #include "modules/scene/comp/scene_comp.h"
 #include "session/system/session_system.h"
-#include "player/comp/player_comp.h"
+#include "player/comp/player.h"
 #include "scene/system/player_change_room.h"
 #include "scene/system/player_room.h"
 #include "proto/logic/component/player_comp.pb.h"

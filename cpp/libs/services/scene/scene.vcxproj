@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -19,35 +19,36 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="actor\action_state\constants\actor_effect_state_constants.h" />
+    <ClInclude Include="actor\action_state\constants\actor_effect_state.h" />
     <ClInclude Include="actor\action_state\constants\actor_state_constants.h" />
-    <ClInclude Include="actor\action_state\system\actor_action_state_system.h" />
-    <ClInclude Include="actor\attribute\comp\actor_attribute_comp.h" />
+    <ClInclude Include="actor\action_state\system\actor_action_state.h" />
+    <ClInclude Include="actor\attribute\comp\actor_attribute.h" />
     <ClInclude Include="actor\attribute\constants\actor_state_attribute_calculator_constants.h" />
     <ClInclude Include="actor\attribute\constants\actor_state_attribute_constants.h" />
-    <ClInclude Include="actor\attribute\system\actor_attribute_calculator_system.h" />
-    <ClInclude Include="actor\attribute\system\actor_state_attribute_sync_system.h" />
-    <ClInclude Include="core\config\config_system.h" />
+    <ClInclude Include="actor\attribute\system\actor_attribute_calculator.h" />
+    <ClInclude Include="actor\attribute\system\actor_state_attribute_sync.h" />
+    <ClInclude Include="core\config\config.h" />
     <ClInclude Include="core\constants\fps_constants.h" />
     <ClInclude Include="core\network\message_system.h" />
     <ClInclude Include="core\system\id_generator_manager.h" />
     <ClInclude Include="core\system\redis_system.h" />
-    <ClInclude Include="entity\system\entity_system.h" />
-    <ClInclude Include="frame\manager\frame_time_manager.h" />
-    <ClInclude Include="kafka\system\kafka_system.h" />
+    <ClInclude Include="entity\system\entity.h" />
+    <ClInclude Include="frame\manager\frame_time.h" />
+    <ClInclude Include="kafka\system\kafka.h" />
     <ClInclude Include="mount\system\mount_system.h" />
     <ClInclude Include="npc\system\npc_system.h" />
-    <ClInclude Include="player\constants\player_constants.h" />
+    <ClInclude Include="player\constants\player.h" />
     <ClInclude Include="player\system\player_data_loader_system.h" />
-    <ClInclude Include="player\system\player_node_system.h" />
+    <ClInclude Include="player\system\player_node.h" />
     <ClInclude Include="player\system\player_scene_system.h" />
     <ClInclude Include="player\system\player_skill_system.h" />
     <ClInclude Include="player\system\player_tip_system.h" />
     <ClInclude Include="scene\combat\buff\comp\buff_comp.h" />
     <ClInclude Include="scene\combat\buff\constants\buff_constants.h" />
-    <ClInclude Include="scene\combat\buff\system\buff_impl_system.h" />
-    <ClInclude Include="scene\combat\buff\system\buff_system.h" />
-    <ClInclude Include="scene\combat\buff\system\modifier_buff_impl_system.h" />
+    <ClInclude Include="scene\combat\buff\system\buff_impl.h" />
+    <ClInclude Include="scene\combat\buff\system\buff.h" />
+    <ClInclude Include="scene\combat\buff\system\modifier_buff_impl.h" />
+    <ClInclude Include="scene\combat\buff\system\motion_modifier_impl.h" />
     <ClInclude Include="scene\combat\buff\system\motion_modifier_impl_system.h" />
     <ClInclude Include="scene\combat\projectile\system\projectile_system.h" />
     <ClInclude Include="scene\combat\skill\comp\skill_comp.h" />
@@ -79,28 +80,29 @@
     <ClInclude Include="world\world.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="actor\action_state\system\actor_action_state_system.cpp" />
-    <ClCompile Include="actor\attribute\comp\actor_attribute_comp.cpp" />
-    <ClCompile Include="actor\attribute\system\actor_attribute_calculator_system.cpp" />
-    <ClCompile Include="actor\attribute\system\actor_state_attribute_sync_system.cpp" />
-    <ClCompile Include="core\config\config_system.cpp" />
+    <ClCompile Include="actor\action_state\system\actor_action_state.cpp" />
+    <ClCompile Include="actor\attribute\comp\actor_attribute.cpp" />
+    <ClCompile Include="actor\attribute\system\actor_attribute_calculator.cpp" />
+    <ClCompile Include="actor\attribute\system\actor_state_attribute_sync.cpp" />
+    <ClCompile Include="core\config\config.cpp" />
     <ClCompile Include="core\network\message_system.cpp" />
     <ClCompile Include="core\system\id_generator_manager.cpp" />
     <ClCompile Include="core\system\redis_system.cpp" />
-    <ClCompile Include="entity\system\entity_system.cpp" />
-    <ClCompile Include="frame\manager\frame_time_manager.cpp" />
-    <ClCompile Include="kafka\system\kafka_system.cpp" />
+    <ClCompile Include="entity\system\entity.cpp" />
+    <ClCompile Include="frame\manager\frame_time.cpp" />
+    <ClCompile Include="kafka\system\kafka.cpp" />
     <ClCompile Include="mount\system\mount_system.cpp" />
     <ClCompile Include="npc\system\npc_system.cpp" />
-    <ClCompile Include="player\system\player_node_system.cpp" />
+    <ClCompile Include="player\system\player_node.cpp" />
     <ClCompile Include="player\system\player_player_database_1_system.cpp" />
     <ClCompile Include="player\system\player_player_database_system.cpp" />
     <ClCompile Include="player\system\player_scene_system.cpp" />
     <ClCompile Include="player\system\player_skill_system.cpp" />
     <ClCompile Include="player\system\player_tip_system.cpp" />
-    <ClCompile Include="scene\combat\buff\system\buff_impl_system.cpp" />
-    <ClCompile Include="scene\combat\buff\system\buff_system.cpp" />
-    <ClCompile Include="scene\combat\buff\system\modifier_buff_impl_system.cpp" />
+    <ClCompile Include="scene\combat\buff\system\buff_impl.cpp" />
+    <ClCompile Include="scene\combat\buff\system\buff.cpp" />
+    <ClCompile Include="scene\combat\buff\system\modifier_buff_impl.cpp" />
+    <ClCompile Include="scene\combat\buff\system\motion_modifier_impl.cpp" />
     <ClCompile Include="scene\combat\buff\system\motion_modifier_impl_system.cpp" />
     <ClCompile Include="scene\combat\projectile\system\projectile_system.cpp" />
     <ClCompile Include="scene\combat\skill\system\skill_system.cpp" />

@@ -1,4 +1,4 @@
-#include "actor_state_attribute_sync_system.h"
+#include "actor_state_attribute_sync.h"
 
 // 引入必要的头文件
 #include "proto/scene/player_state_attribute_sync.pb.h"
@@ -10,7 +10,7 @@
 #include "scene/scene/system/view_system.h"
 #include "rpc/service_metadata/player_state_attribute_sync_service_metadata.h"
 
-#include "frame/manager/frame_time_manager.h"
+#include "frame/manager/frame_time.h"
 #include "network/player_message_utils.h"
 #include <threading/registry_manager.h>
 

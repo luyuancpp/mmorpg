@@ -3,7 +3,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/mount_error_tip.pb.h"
 #include "actor/action_state/constants/actor_state_constants.h"
-#include "actor/action_state/system/actor_action_state_system.h"
+#include "actor/action_state/system/actor_action_state.h"
 #include "macros/return_define.h"
 
 inline uint32_t MountSystem::MountActor(const entt::entity actorEntity)

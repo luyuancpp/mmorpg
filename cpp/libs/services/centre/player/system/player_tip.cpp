@@ -1,4 +1,4 @@
-#include "player_tip_system.h"
+#include "player_tip.h"
 
 #include "engine/core/network/player_message_utils.h"
 #include "rpc/service_metadata/centre_player_service_metadata.h"

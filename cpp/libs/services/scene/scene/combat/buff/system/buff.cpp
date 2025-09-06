@@ -1,13 +1,13 @@
-﻿#include "buff_system.h"
+﻿#include "buff.h"
 #include <ranges>
 #include "table/code/buff_table.h"
-#include "scene/combat/buff/system/buff_impl_system.h"
+#include "scene/combat/buff/system/buff_impl.h"
 #include "proto/logic/component/buff_comp.pb.h"
 #include <ranges>
 #include <muduo/base/Logging.h>
 #include "table/proto/tip/buff_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
-#include "modifier_buff_impl_system.h"
+#include "modifier_buff_impl.h"
 #include "motion_modifier_impl_system.h"
 #include "scene/combat/buff/comp/buff_comp.h"
 #include "scene/combat/buff/constants/buff_constants.h"
