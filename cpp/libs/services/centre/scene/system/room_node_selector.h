@@ -5,12 +5,12 @@
 
 constexpr uint32_t kDefaultSceneId = 1;
 
-struct GetSceneParams
+struct GetRoomParams
 {
-	uint32_t sceneConfigurationId{ kDefaultSceneId };
+	uint32_t roomConfigurationId{ kDefaultSceneId };
 };
 
-struct GetSceneFilterParam
+struct GetRoomFilterParam
 {
 	NodePressureState nodePressureState{ NodePressureState::kNoPressure };
 };
@@ -19,10 +19,10 @@ class RoomNodeSelector
 {
 public:
 	// Find a scene with the minimum player count among servers, less efficient
-	static entt::entity SelectLeastLoadedScene(const GetSceneParams& param);
+	static entt::entity SelectLeastLoadedRoom(const GetRoomParams& param);
 
 	// Find a server with the scene where player count is not full, more efficient than the above function
-	static entt::entity SelectAvailableRoom(const GetSceneParams& param);
+	static entt::entity SelectAvailableRoom(const GetRoomParams& param);
 
 };
 

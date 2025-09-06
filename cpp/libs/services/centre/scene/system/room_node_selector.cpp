@@ -9,18 +9,18 @@
 #include "room_selector.h"
 
 template <typename ServerType>
-entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const GetSceneFilterParam& filterStateParam) {
-	auto sceneConfigId = param.sceneConfigurationId;
+entt::entity SelectLeastLoadedRoomTemplate(const GetRoomParams& param, const GetRoomFilterParam& filterStateParam) {
+	auto roomConfigId = param.roomConfigurationId;
 	entt::entity bestNode{ entt::null };
 	std::size_t minServerPlayerSize = UINT64_MAX;
 
 	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	for (auto entity : nodeRegistry.view<ServerType>()) {
-		const auto& nodeSceneComp = nodeRegistry.get<RoomRegistryComp>(entity);
+		const auto& roomRegistryComp = nodeRegistry.get<RoomRegistryComp>(entity);
 
 		if (!nodeRegistry.get_or_emplace<NodeStateComp>(entity, NodeState::kNormal).IsNormal() ||
-			nodeSceneComp.GetRoomsByConfig(sceneConfigId).empty() ||
+			roomRegistryComp.GetRoomsByConfig(roomConfigId).empty() ||
 			nodeRegistry.get_or_emplace<NodePressureComp>(entity, NodePressureState::kNoPressure) != filterStateParam.nodePressureState) {
 			continue;
 		}
@@ -41,30 +41,30 @@ entt::entity SelectLeastLoadedSceneTemplate(const GetSceneParams& param, const G
 	}
 
 	if (entt::null == bestNode) {
-		LOG_WARN << "No suitable node found for scene configuration ID: " << sceneConfigId;
+		LOG_WARN << "No suitable node found for scene configuration ID: " << roomConfigId;
 		return entt::null;
 	}
 
-	const auto& nodeSceneComps = nodeRegistry.get<RoomRegistryComp>(bestNode);
-	auto bestScene = RoomSelector::SelectRoomWithMinPlayers(nodeSceneComps, sceneConfigId);
+	const auto& roomRegistryComp = nodeRegistry.get<RoomRegistryComp>(bestNode);
+	auto roomScene = RoomSelector::SelectRoomWithMinPlayers(roomRegistryComp, roomConfigId);
 
-	if (bestScene == entt::null) {
+	if (roomScene == entt::null) {
 		LOG_WARN << "No scene found with minimum player count for node: " << entt::to_integral(bestNode);
 	}
 
-	return bestScene;
+	return roomScene;
 }
 
 template <typename ServerType>
-entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const GetSceneFilterParam& filterStateParam) {
-	auto sceneConfigId = param.sceneConfigurationId;
+entt::entity SelectAvailableRoomRoomTemplate(const GetRoomParams& param, const GetRoomFilterParam& filterStateParam) {
+	auto roomConfigId = param.roomConfigurationId;
 	entt::entity bestNode{ entt::null };
 	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	for (auto entity : nodeRegistry.view<ServerType>()) {
-		if (const auto& nodeSceneComp = nodeRegistry.get<RoomRegistryComp>(entity);
+		if (const auto& roomRegistryComp = nodeRegistry.get<RoomRegistryComp>(entity);
 			!nodeRegistry.get_or_emplace<NodeStateComp>(entity, NodeState::kNormal).IsNormal() ||
-			nodeSceneComp.GetRoomsByConfig(sceneConfigId).empty() ||
+			roomRegistryComp.GetRoomsByConfig(roomConfigId).empty() ||
 			nodeRegistry.get_or_emplace<NodePressureComp>(entity, NodePressureState::kNoPressure) != filterStateParam.nodePressureState) {
 			continue;
 		}
@@ -80,52 +80,51 @@ entt::entity SelectAvailableRoomSceneTemplate(const GetSceneParams& param, const
 	}
 
 	if (entt::null == bestNode) {
-		LOG_WARN << "No suitable node found for scene configuration ID: " << sceneConfigId;
+		LOG_WARN << "No suitable node found for scene configuration ID: " << roomConfigId;
 		return entt::null;
 	}
 
-	entt::entity bestScene{ entt::null };
-	const auto& nodeSceneComps = nodeRegistry.get<RoomRegistryComp>(bestNode);
+	entt::entity bestRoom{ entt::null };
+	const auto& roomRegistryComp = nodeRegistry.get<RoomRegistryComp>(bestNode);
 
-	for (const auto& sceneIt : nodeSceneComps.GetRoomsByConfig(sceneConfigId)) {
-		auto scenePlayerSize = tlsRegistryManager.roomRegistry.get<RoomPlayers>(sceneIt).size();
-
-		if (scenePlayerSize >= kMaxScenePlayerSize) {
+	for (const auto& roomIt : roomRegistryComp.GetRoomsByConfig(roomConfigId)) {
+		auto roomPlayerSize = tlsRegistryManager.roomRegistry.get<RoomPlayers>(roomIt).size();
+		if (roomPlayerSize >= kMaxPlayersPerRoom) {
 			continue;
 		}
 
-		bestScene = sceneIt;
+		bestRoom = roomIt;
 		break;
 	}
 
-	if (bestScene == entt::null) {
+	if (bestRoom == entt::null) {
 		LOG_WARN << "No scene found that is not full for node: " << entt::to_integral(bestNode);
 	}
 
-	return bestScene;
+	return bestRoom;
 }
 
-entt::entity RoomNodeSelector::SelectLeastLoadedScene(const GetSceneParams& param) {
-	constexpr GetSceneFilterParam filterParam;
+entt::entity RoomNodeSelector::SelectLeastLoadedRoom(const GetRoomParams& param) {
+	constexpr GetRoomFilterParam filterParam;
 
-	auto bestScene = SelectLeastLoadedSceneTemplate<MainRoomNode>(param, filterParam);
-	if (bestScene != entt::null) {
-		return bestScene;
+	auto bestRoom = SelectLeastLoadedRoomTemplate<MainRoomNode>(param, filterParam);
+	if (bestRoom != entt::null) {
+		return bestRoom;
 	}
 
-	LOG_WARN << "No scene found with minimum player count";
-	return SelectLeastLoadedSceneTemplate<MainRoomNode>(param, filterParam);
+	LOG_WARN << "No room found with minimum player count";
+	return SelectLeastLoadedRoomTemplate<MainRoomNode>(param, filterParam);
 }
 
-entt::entity RoomNodeSelector::SelectAvailableRoom(const GetSceneParams& param) {
-	GetSceneFilterParam filterParam;
+entt::entity RoomNodeSelector::SelectAvailableRoom(const GetRoomParams& param) {
+	GetRoomFilterParam filterParam;
 
-	auto bestScene = SelectAvailableRoomSceneTemplate<MainRoomNode>(param, filterParam);
-	if (bestScene != entt::null) {
-		return bestScene;
+	auto bestRoom = SelectAvailableRoomRoomTemplate<MainRoomNode>(param, filterParam);
+	if (bestRoom != entt::null) {
+		return bestRoom;
 	}
 
-	LOG_WARN << "No scene found that is not full";
+	LOG_WARN << "No room found that is not full";
 	filterParam.nodePressureState = NodePressureState::kPressure;
-	return SelectAvailableRoomSceneTemplate<MainRoomNode>(param, filterParam);
+	return SelectAvailableRoomRoomTemplate<MainRoomNode>(param, filterParam);
 }

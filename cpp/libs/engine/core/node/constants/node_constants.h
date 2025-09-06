@@ -4,7 +4,7 @@
 #include <cstddef>
 
 inline static constexpr std::size_t kMaxServerPlayerSize = 2000;
-inline static constexpr std::size_t kMaxScenePlayerSize = 1000;
+inline static constexpr std::size_t kMaxPlayersPerRoom = 1000;
 
 enum class NodeState : uint8_t
 {

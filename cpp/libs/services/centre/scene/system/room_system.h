@@ -12,12 +12,12 @@ void AddMainRoomToNodeComponent(entt::registry& reg, entt::entity server);
 /**
  * @brief The ScenesSystem class handles operations related to scenes in the game.
  */
-class RoomUtil
+class RoomSystem
 {
 public:
     // Constructor and Destructor
-    RoomUtil();
-    ~RoomUtil();
+    RoomSystem();
+    ~RoomSystem();
 
     // Clear all scenes and related data
     void ClearAllRoomData();
