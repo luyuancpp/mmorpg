@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "scene/system/room_system.h"
+#include "scene/system/room.h"
 #include "modules/scene/system/room_common.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "table/proto/tip/scene_error_tip.pb.h"

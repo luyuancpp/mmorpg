@@ -17,7 +17,7 @@
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/common/node.pb.h"
-#include "scene/system/player_change_scene_system.h"
+#include "scene/system/player_change_room.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/service_metadata.h"
@@ -35,7 +35,7 @@
 #include "threading/player_manager.h"
 #include "threading/message_context.h"
 #include <modules/scene/comp/room_node_comp.h>
-#include <scene/system/room_system.h>
+#include <scene/system/room.h>
 
 using namespace muduo;
 using namespace muduo::net;

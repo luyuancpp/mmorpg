@@ -23,12 +23,12 @@
     <ClCompile Include="player\system\player_node_system.cpp" />
     <ClCompile Include="player\system\player_tip_system.cpp" />
     <ClCompile Include="redis\system\redis_system.cpp" />
-    <ClCompile Include="scene\system\player_change_scene_system.cpp" />
-    <ClCompile Include="scene\system\player_scene_system.cpp" />
+    <ClCompile Include="scene\system\player_change_room.cpp" />
+    <ClCompile Include="scene\system\player_room.cpp" />
     <ClCompile Include="scene\system\room_node_state.cpp" />
     <ClCompile Include="scene\system\room_node_selector.cpp" />
     <ClCompile Include="scene\system\room_selector.cpp" />
-    <ClCompile Include="scene\system\room_system.cpp" />
+    <ClCompile Include="scene\system\room.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="kafka\system\kafka_system.h" />
@@ -36,12 +36,12 @@
     <ClInclude Include="player\system\player_node_system.h" />
     <ClInclude Include="player\system\player_tip_system.h" />
     <ClInclude Include="redis\system\redis_system.h" />
-    <ClInclude Include="scene\system\player_change_scene_system.h" />
-    <ClInclude Include="scene\system\player_scene_system.h" />
+    <ClInclude Include="scene\system\player_change_room.h" />
+    <ClInclude Include="scene\system\player_room.h" />
     <ClInclude Include="scene\system\room_node_state.h" />
     <ClInclude Include="scene\system\room_node_selector.h" />
     <ClInclude Include="scene\system\room_selector.h" />
-    <ClInclude Include="scene\system\room_system.h" />
+    <ClInclude Include="scene\system\room.h" />
     <ClInclude Include="type_alias\player_redis.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
