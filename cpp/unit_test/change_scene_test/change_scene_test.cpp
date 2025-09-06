@@ -5,10 +5,10 @@
 
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
-#include "scene/system/player_change_scene_system.h"
+#include "scene/system/player_change_room.h"
 #include <threading/registry_manager.h>
 #include <modules/scene/system/room_common.h>
-#include <scene/system/room_system.h>
+#include <scene/system/room.h>
 
 EntityVector globalSceneList;
 

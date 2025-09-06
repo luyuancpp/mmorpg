@@ -22,7 +22,7 @@
     <ClCompile Include="bag\bag_system.cpp" />
     <ClCompile Include="bag\item_system.cpp" />
     <ClCompile Include="mission\comp\mission_comp.cpp" />
-    <ClCompile Include="mission\system\mission_system.cpp" />
+    <ClCompile Include="mission\system\mission.cpp" />
     <ClCompile Include="reward\system\reward_system.cpp" />
     <ClCompile Include="scene\system\room_common.cpp" />
     <ClCompile Include="time\system\time_system.cpp" />
@@ -33,7 +33,7 @@
     <ClInclude Include="mission\comp\missions_config_comp.h" />
     <ClInclude Include="mission\comp\mission_comp.h" />
     <ClInclude Include="mission\constants\mission_constants.h" />
-    <ClInclude Include="mission\system\mission_system.h" />
+    <ClInclude Include="mission\system\mission.h" />
     <ClInclude Include="reward\comp\reward_comp.h" />
     <ClInclude Include="reward\system\reward_system.h" />
     <ClInclude Include="scene\comp\room_node_comp.h" />

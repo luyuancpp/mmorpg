@@ -1,8 +1,8 @@
-#include "player_change_scene_system.h"
+#include "player_change_room.h"
 
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
-#include "scene/system/room_system.h"
+#include "scene/system/room.h"
 
 #include "muduo/base/Logging.h"
 #include "proto/logic/event/scene_event.pb.h"

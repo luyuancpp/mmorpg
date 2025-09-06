@@ -1,11 +1,11 @@
-#include "player_scene_system.h"
+#include "player_room.h"
 #include "muduo/base/Logging.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "rpc/service_metadata/game_player_scene_service_metadata.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
-#include "scene/system/player_change_scene_system.h"
+#include "scene/system/player_change_room.h"
 #include "player/system/player_tip_system.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
@@ -16,7 +16,7 @@
 #include "engine/threading/registry_manager.h"
 #include <modules/scene/system/room_common.h>
 #include "room_node_selector.h"
-#include "room_system.h"
+#include "room.h"
 
 entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext)
 {

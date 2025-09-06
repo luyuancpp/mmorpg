@@ -11,7 +11,7 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 #include "muduo/base/Logging.h"
 #include "engine/core/type_define/type_define.h"
 
-#include "scene/system/player_change_scene_system.h"
+#include "scene/system/player_change_room.h"
 #include "core/utils/registry/game_registry.h"
 #include "player/system/player_node_system.h"
 #include "proto/logic/component/player_network_comp.pb.h"
