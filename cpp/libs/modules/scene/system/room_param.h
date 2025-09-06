@@ -33,5 +33,5 @@ struct CompelChangeRoomParam
 
 	entt::entity player{ entt::null };
 	entt::entity destNode{ entt::null };
-	uint32_t sceneConfId{ 0 };
+	uint32_t roomConfId{ 0 };
 };

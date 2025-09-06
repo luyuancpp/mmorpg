@@ -105,7 +105,7 @@ void RoomUtil::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
 	}
 
 	// Get a room that is not full from the NodeRoomSystem
-	auto defaultRoom = RoomNodeSelector::SelectAvailableRoomScene({});
+	auto defaultRoom = RoomNodeSelector::SelectAvailableRoom({});
 
 	// Enter the player into the retrieved default room
 	RoomCommon::EnterRoom({ defaultRoom, param.enter });
@@ -120,7 +120,7 @@ void RoomUtil::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
 // 这里只处理了同gs,如果是跨gs的room切换，应该别的地方处理
 void RoomUtil::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 	// ✅ 使用 FindOrCreateRoom 替代原始杂糅逻辑
-	entt::entity roomEntity = RoomUtil::FindOrCreateRoom(param.sceneConfId);
+	entt::entity roomEntity = RoomUtil::FindOrCreateRoom(param.roomConfId);
 
 	RoomCommon::LeaveRoom({ param.player });
 
@@ -157,11 +157,11 @@ void RoomUtil::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNod
 }
 
 
-entt::entity RoomUtil::FindOrCreateRoom(uint32_t sceneConfId) {
+entt::entity RoomUtil::FindOrCreateRoom(uint32_t roomConfId) {
 	// 选择最优服务器节点
-	entt::entity node = SelectBestNodeForRoom(sceneConfId);
+	entt::entity node = SelectBestNodeForRoom(roomConfId);
 	if (node == entt::null) {
-		LOG_ERROR << "FindOrCreateRoom: Failed to select a room node for sceneConfId = " << sceneConfId;
+		LOG_ERROR << "FindOrCreateRoom: Failed to select a room node for roomConfId = " << roomConfId;
 		return entt::null;
 	}
 
@@ -169,24 +169,24 @@ entt::entity RoomUtil::FindOrCreateRoom(uint32_t sceneConfId) {
 	auto& nodeRoomComp = registry.get<RoomRegistryComp>(node);
 
 	// 查找已有房间
-	entt::entity room = RoomSelector::SelectRoomWithMinPlayers(nodeRoomComp, sceneConfId);
+	entt::entity room = RoomSelector::SelectRoomWithMinPlayers(nodeRoomComp, roomConfId);
 	if (room != entt::null) {
 		return room;
 	}
 
 	// 创建新房间
 	CreateRoomOnNodeRoomParam createParam{ .node = node };
-	createParam.roomInfo.set_scene_confid(sceneConfId);
+	createParam.roomInfo.set_scene_confid(roomConfId);
 
 	room = RoomCommon::CreateRoomOnRoomNode(createParam);
 	if (room == entt::null) {
-		LOG_ERROR << "FindOrCreateRoom: Failed to create room for sceneConfId = " << sceneConfId;
+		LOG_ERROR << "FindOrCreateRoom: Failed to create room for roomConfId = " << roomConfId;
 	}
 
 	return room;
 }
 
-entt::entity RoomUtil::SelectBestNodeForRoom(uint32_t sceneConfId) {
+entt::entity RoomUtil::SelectBestNodeForRoom(uint32_t roomConfId) {
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 	entt::entity bestNode = entt::null;
 	std::size_t minPlayerCount = std::numeric_limits<std::size_t>::max();
@@ -197,8 +197,8 @@ entt::entity RoomUtil::SelectBestNodeForRoom(uint32_t sceneConfId) {
 		if (!playerInfoPtr) continue;
 
 		// 如果该节点已经有该配置的房间，优先考虑
-		auto existingScenes = nodeComp.GetRoomsByConfig(sceneConfId);
-		if (!existingScenes.empty()) {
+		auto existingRooms = nodeComp.GetRoomsByConfig(roomConfId);
+		if (!existingRooms.empty()) {
 			return node;
 		}
 
@@ -211,7 +211,7 @@ entt::entity RoomUtil::SelectBestNodeForRoom(uint32_t sceneConfId) {
 	}
 
 	if (bestNode == entt::null) {
-		LOG_WARN << "SelectBestNodeForRoom: No suitable node found for sceneConfId = " << sceneConfId;
+		LOG_WARN << "SelectBestNodeForRoom: No suitable node found for roomConfId = " << roomConfId;
 	}
 
 	return bestNode;

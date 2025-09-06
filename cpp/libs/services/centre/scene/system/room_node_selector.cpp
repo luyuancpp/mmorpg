@@ -117,7 +117,7 @@ entt::entity RoomNodeSelector::SelectLeastLoadedScene(const GetSceneParams& para
 	return SelectLeastLoadedSceneTemplate<MainRoomNode>(param, filterParam);
 }
 
-entt::entity RoomNodeSelector::SelectAvailableRoomScene(const GetSceneParams& param) {
+entt::entity RoomNodeSelector::SelectAvailableRoom(const GetSceneParams& param) {
 	GetSceneFilterParam filterParam;
 
 	auto bestScene = SelectAvailableRoomSceneTemplate<MainRoomNode>(param, filterParam);

@@ -357,7 +357,7 @@ TEST(GS, CompelToChangeScene)
 
 	CompelChangeRoomParam compelChangeParam1;
 	compelChangeParam1.destNode = node2;
-	compelChangeParam1.sceneConfId = server2Param.roomInfo.scene_confid();
+	compelChangeParam1.roomConfId = server2Param.roomInfo.scene_confid();
 	for (auto& it : playerList1)
 	{
 		compelChangeParam1.player = it;
@@ -768,7 +768,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			// Enter players into scenes with sceneConfigId0
 			for (uint32_t i = 0; i < playerSize; ++i)
 			{
-				auto canEnter = nssys.SelectAvailableRoomScene(weightRoundRobinScene);
+				auto canEnter = nssys.SelectAvailableRoom(weightRoundRobinScene);
 				if (canEnter == entt::null)
 				{
 					continue;
@@ -794,7 +794,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			weightRoundRobinScene.sceneConfigurationId = sceneConfigId1;
 			for (uint32_t i = 0; i < playerSize; ++i)
 			{
-				auto canEnter = nssys.SelectAvailableRoomScene(weightRoundRobinScene);
+				auto canEnter = nssys.SelectAvailableRoom(weightRoundRobinScene);
 				if (canEnter == entt::null)
 				{
 					continue;
