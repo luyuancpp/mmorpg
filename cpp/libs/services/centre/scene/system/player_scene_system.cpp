@@ -39,13 +39,13 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 	// 尝试找空闲的当前配置场景
 	if (sceneContext.scene_info().scene_confid() > 0)
 	{
-		entt::entity candidate = RoomNodeSelector::SelectAvailableRoomScene({ sceneContext.scene_info().scene_confid() });
+		entt::entity candidate = RoomNodeSelector::SelectAvailableRoom({ sceneContext.scene_info().scene_confid() });
 		if (candidate != entt::null)
 			return candidate;
 	}
 
 	// fallback：默认配置场景
-	return RoomNodeSelector::SelectAvailableRoomScene({ GetDefaultSceneConfigurationId() });
+	return RoomNodeSelector::SelectAvailableRoom({ GetDefaultSceneConfigurationId() });
 }
 
 

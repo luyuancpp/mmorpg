@@ -10,10 +10,8 @@
 #include "engine/threading/registry_manager.h"
 #include "proto/logic/component/game_node_comp.pb.h"
 
-using SceneList = EntityUnorderedSet;
-using RoomList = std::unordered_map<uint32_t, SceneList>;
+using RoomList = std::unordered_map<uint32_t, EntityUnorderedSet>;
 using RoomPlayers = EntityUnorderedSet; // 弱引用，要解除玩家和场景的耦合
-
 
 struct MainRoomNode
 {

@@ -22,7 +22,7 @@ public:
 	static entt::entity SelectLeastLoadedScene(const GetSceneParams& param);
 
 	// Find a server with the scene where player count is not full, more efficient than the above function
-	static entt::entity SelectAvailableRoomScene(const GetSceneParams& param);
+	static entt::entity SelectAvailableRoom(const GetSceneParams& param);
 
 };
 
