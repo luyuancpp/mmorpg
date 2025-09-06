@@ -1,17 +1,17 @@
-﻿#include "skill_system.h"
+﻿#include "skill.h"
 
 #include <muduo/base/Logging.h>
 
 #include "table/proto/tip/entity_error_tip.pb.h"
 #include "table/code/skillpermission_table.h"
 #include "table/code/skill_table.h"
-#include "actor/action_state/constants/actor_state_constants.h"
+#include "actor/action_state/constants/actor_state.h"
 #include "actor/action_state/system/actor_action_state.h"
-#include "scene/combat_state/system/combat_state_system.h"
+#include "scene/combat_state/system/combat_state.h"
 #include "scene/combat/buff/system/buff.h"
-#include "scene/combat/skill/comp/skill_comp.h"
-#include "scene/combat/skill/constants/skill_constants.h"
-#include "scene/scene/system/view_system.h"
+#include "scene/combat/skill/comp/skill.h"
+#include "scene/combat/skill/constants/skill.h"
+#include "scene/scene/system/view.h"
 #include "proto/logic/event/combat_event.pb.h"
 #include "proto/logic/event/skill_event.pb.h"
 #include "macros/return_define.h"
@@ -24,9 +24,9 @@
 #include "proto/logic/component/actor_combat_state_comp.pb.h"
 
 #include "time/comp/timer_task_comp.h"
-#include "time/system/cooldown_time_system.h"
+#include "time/system/cooldown_time.h"
 #include "time/system/time_system.h"
-#include <core/system/id_generator_manager.h>
+#include <core/system/id_generator.h>
 #include <threading/dispatcher_manager.h>
 
 uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const SkillContextCompMap& targetBuffList) {

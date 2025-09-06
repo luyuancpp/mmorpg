@@ -6,8 +6,8 @@
 #include "proto/logic/component/actor_attribute_state_comp.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_constants.h"
 #include "core/network/message_system.h"
-#include "scene/scene/comp/scene_node_scene_comp.h"
-#include "scene/scene/system/view_system.h"
+#include "scene/scene/comp/scene_node_scene.h"
+#include "scene/scene/system/view.h"
 #include "rpc/service_metadata/player_state_attribute_sync_service_metadata.h"
 
 #include "frame/manager/frame_time.h"

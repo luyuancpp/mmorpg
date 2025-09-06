@@ -1,4 +1,4 @@
-#include "player_tip_system.h"
+#include "player_tip.h"
 
 #include "core/network/message_system.h"
 #include "muduo/base/Logging.h"

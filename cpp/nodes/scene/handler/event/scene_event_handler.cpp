@@ -4,9 +4,9 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
-#include "scene/scene/system/aoi_system.h"
-#include "scene/scene/system/game_node_scene_system.h"
-#include "scene/scene/system/scene_crowd_system.h"
+#include "scene/scene/system/aoi.h"
+#include "scene/scene/system/game_node_scene.h"
+#include "scene/scene/system/scene_crowd.h"
 ///<<< END WRITING YOUR CODE
 
 

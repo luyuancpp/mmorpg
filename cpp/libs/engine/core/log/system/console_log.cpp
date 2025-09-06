@@ -1,4 +1,4 @@
-#include "console_log_system.h"
+#include "console_log.h"
 
 #include <stdio.h>
 #include <string>

@@ -1,4 +1,4 @@
-#include "id_generator_manager.h"
+#include "id_generator.h"
 
 thread_local ThreadLocalIdGeneratorManager tlsIdGeneratorManager;
 

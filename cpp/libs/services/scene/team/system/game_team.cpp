@@ -1,4 +1,4 @@
-﻿#include "game_team_system.h"
+﻿#include "game_team.h"
 
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "actor/action_state/system/actor_action_state.h"

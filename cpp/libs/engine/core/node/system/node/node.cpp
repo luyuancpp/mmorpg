@@ -11,7 +11,7 @@
 #include "grpc_client/grpc_init_client.h"
 #include "grpc_client/etcd/etcd_grpc_client.h"
 #include "log/constants/log_constants.h"
-#include "log/system/console_log_system.h"
+#include "log/system/console_log.h"
 #include "proto/logic/event/server_event.pb.h"
 #include "muduo/base/TimeZone.h"
 #include "network/process_info.h"

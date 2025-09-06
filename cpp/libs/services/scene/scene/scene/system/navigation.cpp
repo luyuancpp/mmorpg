@@ -1,4 +1,4 @@
-#include "navigation_system.h"
+#include "navigation.h"
 
 
 #include "ue5navmesh/Public/Detour/DetourNavMesh.h"
@@ -6,10 +6,10 @@
 #include "table/code/mainscene_table.h"
 #include "DetourCrowd/DetourCrowd.h"
 #include "core/network/message_system.h"
-#include "scene/scene/system/recast_system.h"
+#include "scene/scene/system/recast.h"
 #include "proto/logic/event/scene_event.pb.h"
-#include "scene/scene/constants/nav_constants.h"
-#include "scene/scene/mananger/scene_nav_mananger.h"
+#include "scene/scene/constants/nav.h"
+#include "scene/scene/mananger/scene_nav.h"
 
 void NavigationSystem::LoadMainSceneNavBins() {
 	auto& configAll = GetMainSceneAllTable();

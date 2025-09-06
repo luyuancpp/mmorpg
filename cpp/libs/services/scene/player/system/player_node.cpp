@@ -22,10 +22,10 @@
 #include "proto/logic/event/player_migration_event.pb.h"
 #include "node/system/zone_utils.h"
 #include "table/proto/tip/cross_server_error_tip.pb.h"
-#include "player_tip_system.h"
+#include "player_tip.h"
 #include <engine/infra/messaging/kafka/kafka_producer.h>
 #include "threading/player_manager.h"
-#include "core/system/redis_system.h"
+#include "core/system/redis.h"
 #include <threading/dispatcher_manager.h>
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)

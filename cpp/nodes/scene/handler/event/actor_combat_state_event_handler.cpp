@@ -3,7 +3,7 @@
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "scene/combat_state/system/combat_state_system.h"
+#include "scene/combat_state/system/combat_state.h"
 #include <threading/dispatcher_manager.h>
 ///<<< END WRITING YOUR CODE
 

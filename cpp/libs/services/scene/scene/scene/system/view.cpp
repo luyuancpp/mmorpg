@@ -1,10 +1,10 @@
-﻿#include "view_system.h"
+﻿#include "view.h"
 
-#include "grid_system.h"
+#include "grid.h"
 #include "proto/logic/component/comp.pb.h"
 #include "Detour/DetourCommon.h"
 #include "core/network/message_system.h"
-#include "scene/scene/constants/view_constants.h"
+#include "scene/scene/constants/view.h"
 #include "proto/scene/player_scene.pb.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"

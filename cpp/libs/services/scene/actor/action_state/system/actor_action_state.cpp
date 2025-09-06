@@ -4,7 +4,7 @@
 
 #include "table/code/actoractionstate_table.h"
 #include "table/proto/tip/common_error_tip.pb.h"
-#include "actor/action_state/constants/actor_state_constants.h"
+#include "actor/action_state/constants/actor_state.h"
 #include "engine/core/macros/return_define.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/event/actor_event.pb.h"
