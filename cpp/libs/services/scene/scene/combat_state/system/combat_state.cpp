@@ -1,4 +1,4 @@
-﻿#include "combat_state_system.h"
+﻿#include "combat_state.h"
 
 #include <ranges>
 
@@ -6,7 +6,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "actor/attribute/system/actor_attribute_calculator.h"
-#include "scene//combat_state/constants/combat_state_constants.h"
+#include "scene//combat_state/constants/combat_state.h"
 #include "proto/logic/component/actor_combat_state_comp.pb.h"
 #include "proto/logic/event/actor_combat_state_event.pb.h"
 

@@ -8,12 +8,12 @@
 #include "table/proto/tip/buff_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "modifier_buff_impl.h"
-#include "motion_modifier_impl_system.h"
-#include "scene/combat/buff/comp/buff_comp.h"
-#include "scene/combat/buff/constants/buff_constants.h"
+#include "motion_modifier_impl.h"
+#include "scene/combat/buff/comp/buff.h"
+#include "scene/combat/buff/constants/buff.h"
 #include "proto/logic/event/skill_event.pb.h"
 #include "core/utils/utility/utility.h"
-#include "core/system/id_generator_manager.h"
+#include "core/system/id_generator.h"
 
 // Buff ID生成逻辑
 uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)

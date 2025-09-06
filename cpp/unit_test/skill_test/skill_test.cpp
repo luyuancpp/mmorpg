@@ -1,12 +1,12 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "scene/combat/skill/system/skill_system.h"
+#include "scene/combat/skill/system/skill.h"
 
 #include "table/code/skill_table.h"
-#include "scene/combat/skill/comp/skill_comp.h"
-#include "scene/combat/skill/constants/skill_constants.h"
+#include "scene/combat/skill/comp/skill.h"
+#include "scene/combat/skill/constants/skill.h"
 #include "time/comp/timer_task_comp.h"
-#include "time/system/cooldown_time_system.h"
+#include "time/system/cooldown_time.h"
 #include "table/proto/tip/skill_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include <threading/registry_manager.h>

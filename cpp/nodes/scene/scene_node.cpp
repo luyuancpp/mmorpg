@@ -16,7 +16,7 @@
 #include "proto/centre/centre_service.pb.h"
 #include "core/network/message_system.h"
 #include "kafka/system/kafka.h"
-#include "core/system/redis_system.h"
+#include "core/system/redis.h"
 
 using namespace muduo::net;
 

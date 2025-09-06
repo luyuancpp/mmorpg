@@ -1,4 +1,4 @@
-#include "player_skill_system.h"
+#include "player_skill.h"
 
 #include "table/code/class_table.h"
 #include "proto/logic/component/player_skill_comp.pb.h"

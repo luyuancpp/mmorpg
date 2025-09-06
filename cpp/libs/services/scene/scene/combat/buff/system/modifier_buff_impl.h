@@ -2,7 +2,7 @@
 #include "table/code/buff_table.h"
 #include <entt/src/entt/entity/entity.hpp>
 
-#include "scene/combat/skill/comp/skill_comp.h"
+#include "scene/combat/skill/comp/skill.h"
 
 struct BuffComp;
 

@@ -3,7 +3,7 @@
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "npc/system/npc_system.h"
+#include "npc/system/npc.h"
 #include <threading/registry_manager.h>
 #include <muduo/base/Logging.h>
 ///<<< END WRITING YOUR CODE

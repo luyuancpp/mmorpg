@@ -1,4 +1,4 @@
-#include "npc_system.h"
+#include "npc.h"
 
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/event/actor_event.pb.h"

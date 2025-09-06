@@ -1,5 +1,5 @@
 ﻿#include <gtest/gtest.h>
-#include "time/system/cooldown_time_system.h"  
+#include "time/system/cooldown_time.h"  
 
 // Test Fixture
 class CoolDownTimeMillisecondUtilTest  : public ::testing::Test {

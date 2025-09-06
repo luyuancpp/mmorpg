@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "scene/scene/comp/grid_comp.h"
+#include "scene/scene/comp/grid.h"
 
 class AfterEnterRoom;
 class BeforeLeaveRoom;

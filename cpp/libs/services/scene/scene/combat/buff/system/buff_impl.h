@@ -3,9 +3,9 @@
 #include "table/code/buff_table.h"
 #include "scene/combat/buff/system/buff.h"
 #include "table/proto/tip/common_error_tip.pb.h"
-#include "scene//combat_state/constants/combat_state_constants.h"
-#include "scene/combat/buff/comp/buff_comp.h"
-#include "scene/combat/buff/constants/buff_constants.h"
+#include "scene//combat_state/constants/combat_state.h"
+#include "scene/combat/buff/comp/buff.h"
+#include "scene/combat/buff/constants/buff.h"
 #include "proto/logic/event/actor_combat_state_event.pb.h"
 
 #include "time/system/time_system.h"

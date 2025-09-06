@@ -9,8 +9,8 @@
 #include "session/system/session_system.h"
 #include "core/network/message_system.h"
 #include "player/system/player_node.h"
-#include "player/system/player_scene_system.h"
-#include "scene/scene/system/game_node_scene_system.h"
+#include "player/system/player_scene.h"
+#include "scene/scene/system/game_node_scene.h"
 #include "rpc/player_service_interface.h"
 #include "network/rpc_session.h"
 #include "network/network_constants.h"
@@ -28,7 +28,7 @@
 #include "network/player_message_utils.h"
 #include "threading/node_context_manager.h"
 #include "threading/player_manager.h"
-#include "core/system/redis_system.h"
+#include "core/system/redis.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 

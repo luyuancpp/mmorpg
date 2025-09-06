@@ -5,7 +5,7 @@
 #include "table/proto/tip/buff_error_tip.pb.h"
 
 #include "proto/logic/event/buff_event.pb.h"
-#include "scene/combat/buff/comp/buff_comp.h"
+#include "scene/combat/buff/comp/buff.h"
 #include "time/comp/timer_task_comp.h"
 #include "table/proto/tip/buff_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"

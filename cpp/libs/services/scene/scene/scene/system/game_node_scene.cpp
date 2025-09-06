@@ -1,9 +1,9 @@
-#include "game_node_scene_system.h"
+#include "game_node_scene.h"
 
 #include "table/code/mainscene_table.h"
 #include "core/network/message_system.h"
-#include "player/system/player_scene_system.h"
-#include "scene/scene/comp/grid_comp.h"
+#include "player/system/player_scene.h"
+#include "scene/scene/comp/grid.h"
 #include "proto/logic/event/scene_event.pb.h"
 #include "proto/common/node.pb.h"
 #include "modules/scene/comp/scene_comp.h"
@@ -11,7 +11,7 @@
 #include "rpc/service_metadata/centre_scene_service_metadata.h"
 #include "network/node_utils.h"
 #include "network/node_message_utils.h"
-#include "scene/scene/mananger/scene_nav_mananger.h"
+#include "scene/scene/mananger/scene_nav.h"
 #include <threading/registry_manager.h>
 #include <modules/scene/system/room_common.h>
 

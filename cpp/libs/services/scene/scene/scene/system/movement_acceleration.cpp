@@ -1,4 +1,4 @@
-#include "movement_acceleration_system.h"
+#include "movement_acceleration.h"
 
 #include "proto/logic/component/comp.pb.h"
 #include "proto/logic/component/actor_comp.pb.h"

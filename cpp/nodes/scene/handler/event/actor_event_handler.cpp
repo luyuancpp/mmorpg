@@ -3,15 +3,15 @@
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "actor/action_state/constants/actor_state_constants.h"
+#include "actor/action_state/constants/actor_state.h"
 #include "actor/action_state/system/actor_action_state.h"
 #include "actor/attribute/system/actor_attribute_calculator.h"
 #include "actor/attribute/system/actor_state_attribute_sync.h"
-#include "scene/combat_state/system/combat_state_system.h"
+#include "scene/combat_state/system/combat_state.h"
 #include "scene/combat/buff/system/buff.h"
-#include "scene/combat/skill/system/skill_system.h"
-#include "mount/system/mount_system.h"
-#include "scene/scene/system/interest_system.h"
+#include "scene/combat/skill/system/skill.h"
+#include "mount/system/mount.h"
+#include "scene/scene/system/interest.h"
 ///<<< END WRITING YOUR CODE
 
 

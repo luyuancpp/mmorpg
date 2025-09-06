@@ -1,9 +1,9 @@
-﻿#include "grid_system.h"
+﻿#include "grid.h"
 
 #include <muduo/base/Logging.h>
 
 #include "hexagons_grid.h"
-#include "view_system.h"
+#include "view.h"
 #include "proto/logic/component/actor_comp.pb.h"
 
 #include <threading/registry_manager.h>

@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "core/network/message_system.h"
 #include "player/system/player_node.h"
-#include "player/system/player_scene_system.h"
+#include "player/system/player_scene.h"
 #include "proto/scene/player_scene.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
