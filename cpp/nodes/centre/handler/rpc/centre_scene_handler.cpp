@@ -37,10 +37,10 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	const entt::entity scene{ request->scene() };
-	if (!tlsRegistryManager.roomRegistry.valid(scene))
+	const entt::entity room{ request->scene() };
+	if (!tlsRegistryManager.roomRegistry.valid(room))
 	{
-		LOG_ERROR << "Scene not found: " << request->scene();
+		LOG_ERROR << "Room not found: " << request->scene();
 		return;
 	}
 
@@ -51,7 +51,7 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	RoomCommon::DestroyRoom({ gameNode, scene });
+	RoomCommon::DestroyRoom({ gameNode, room });
 	///<<< END WRITING YOUR CODE
 }
 
