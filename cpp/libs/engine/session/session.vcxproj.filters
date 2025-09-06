@@ -2,9 +2,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="comp\session_comp.h" />
-    <ClInclude Include="system\session_system.h" />
+    <ClInclude Include="system\session.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="system\session_system.cpp" />
+    <ClCompile Include="system\session.cpp" />
   </ItemGroup>
 </Project>

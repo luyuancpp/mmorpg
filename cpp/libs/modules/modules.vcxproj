@@ -25,7 +25,6 @@
     <ClCompile Include="mission\system\mission.cpp" />
     <ClCompile Include="reward\system\reward.cpp" />
     <ClCompile Include="scene\system\room_common.cpp" />
-    <ClCompile Include="time\system\time_system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bag\bag_system.h" />
@@ -41,10 +40,6 @@
     <ClInclude Include="scene\comp\scene_comp.h" />
     <ClInclude Include="scene\system\room_common.h" />
     <ClInclude Include="scene\system\room_param.h" />
-    <ClInclude Include="time\constants\time_constants.h" />
-    <ClInclude Include="time\system\cooldown_time_system.h" />
-    <ClInclude Include="time\system\time_meter_system.h" />
-    <ClInclude Include="time\system\time_system.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

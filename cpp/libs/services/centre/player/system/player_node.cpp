@@ -2,7 +2,7 @@
 #include "muduo/base/Logging.h"
 
 #include "modules/scene/comp/scene_comp.h"
-#include "session/system/session_system.h"
+#include "session/system/session.h"
 #include "player/comp/player.h"
 #include "scene/system/player_change_room.h"
 #include "scene/system/player_room.h"

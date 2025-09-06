@@ -6,7 +6,7 @@
 
 #include "muduo/base/Logging.h"
 #include "proto/logic/event/scene_event.pb.h"
-#include "time/system/time_system.h"
+#include "time/system/time.h"
 #include <engine/threading/registry_manager.h>
 #include <engine/threading/dispatcher_manager.h>
 #include <modules/scene/system/room_common.h>

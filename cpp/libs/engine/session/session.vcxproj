@@ -20,10 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="comp\session_comp.h" />
-    <ClInclude Include="system\session_system.h" />
+    <ClInclude Include="system\session.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="system\session_system.cpp" />
+    <ClCompile Include="system\session.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
