@@ -583,28 +583,6 @@
                     |-- actor_combat_state_event_handler.h
                     |-- actor_event_handler.cpp
                     |-- actor_event_handler.h
-                    |-- buff_event_handler.cpp
-                    |-- buff_event_handler.h
-                    |-- combat_event_handler.cpp
-                    |-- combat_event_handler.h
-                    |-- event_handler.cpp
-                    |-- event_handler.h
-                    |-- mission_event_handler.cpp
-                    |-- mission_event_handler.h
-                    |-- node_event_handler.cpp
-                    |-- node_event_handler.h
-                    |-- npc_event_handler.cpp
-                    |-- npc_event_handler.h
-                    |-- player_event_handler.cpp
-                    |-- player_event_handler.h
-                    |-- player_migration_event_handler.cpp
-                    |-- player_migration_event_handler.h
-                    |-- scene_event_handler.cpp
-                    |-- scene_event_handler.h
-                    |-- server_event_handler.cpp
-                    |-- server_event_handler.h
-                    |-- skill_event_handler.cpp
-                    |-- skill_event_handler.h
                 |-- rpc
                     |-- player
                         |-- centre_player_handler.cpp
@@ -678,28 +656,6 @@
                     |-- actor_combat_state_event_handler.h
                     |-- actor_event_handler.cpp
                     |-- actor_event_handler.h
-                    |-- buff_event_handler.cpp
-                    |-- buff_event_handler.h
-                    |-- combat_event_handler.cpp
-                    |-- combat_event_handler.h
-                    |-- event_handler.cpp
-                    |-- event_handler.h
-                    |-- mission_event_handler.cpp
-                    |-- mission_event_handler.h
-                    |-- node_event_handler.cpp
-                    |-- node_event_handler.h
-                    |-- npc_event_handler.cpp
-                    |-- npc_event_handler.h
-                    |-- player_event_handler.cpp
-                    |-- player_event_handler.h
-                    |-- player_migration_event_handler.cpp
-                    |-- player_migration_event_handler.h
-                    |-- scene_event_handler.cpp
-                    |-- scene_event_handler.h
-                    |-- server_event_handler.cpp
-                    |-- server_event_handler.h
-                    |-- skill_event_handler.cpp
-                    |-- skill_event_handler.h
                 |-- rpc
                     |-- player
                         |-- game_client_player_handler.cpp
