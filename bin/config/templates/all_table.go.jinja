@@ -1,0 +1,47 @@
+package table
+
+import (
+    "log"
+    "sync"
+)
+
+var loadSuccessCallback func()
+
+// LoadTables 加载所有配置表（同步）
+func LoadTables(configDir string) {
+    {%- for item in sheetnames %}
+    if err := {{ item }}TableManagerInstance.Load(configDir); err != nil {
+        log.Fatalf("failed to load {{ item }} table: %%v", err)
+    }
+    {%- endfor %}
+
+    if loadSuccessCallback != nil {
+        loadSuccessCallback()
+    }
+}
+
+// LoadTablesAsync 异步加载所有配置表（使用 goroutines + WaitGroup）
+func LoadTablesAsync(configDir string) {
+    var wg sync.WaitGroup
+    wg.Add({{ sheetnames | length }})
+
+    {%- for item in sheetnames %}
+    go func() {
+        defer wg.Done()
+        if err := {{ item }}TableManagerInstance.Load(configDir); err != nil {
+            log.Fatalf("failed to load {{ item }} table: %%v", err)
+        }
+    }()
+    {%- endfor %}
+
+    wg.Wait()
+
+    if loadSuccessCallback != nil {
+        loadSuccessCallback()
+    }
+}
+
+// OnTablesLoadSuccess 注册加载完成后的回调
+func OnTablesLoadSuccess(cb func()) {
+    loadSuccessCallback = cb
+}
