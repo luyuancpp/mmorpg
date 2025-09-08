@@ -24,7 +24,7 @@
 #include "proto/logic/component/actor_combat_state_comp.pb.h"
 
 #include "time/comp/timer_task_comp.h"
-#include "time/system/cooldown_time.h"
+#include "time/system/time_cooldown.h"
 #include "time/system/time.h"
 #include <core/system/id_generator.h>
 #include <threading/dispatcher_manager.h>
@@ -45,7 +45,7 @@ void SkillSystem::InitializeActorComponents(entt::entity entity) {
 void SkillSystem::StartCooldown(entt::entity caster, const SkillTable* skillTable) {
 	if (auto* coolDownComp = tlsRegistryManager.actorRegistry.try_get<CooldownTimeListComp>(caster)) {
 		CooldownTimeComp comp;
-		comp.set_start(TimeUtil::NowMilliseconds());
+		comp.set_start(TimeSystem::NowMilliseconds());
 		comp.set_cooldown_table_id(skillTable->cooldown_id());
 
 		const auto coolDownList = coolDownComp->mutable_cooldown_list();
@@ -69,7 +69,7 @@ std::shared_ptr<SkillContextPBComponent> CreateSkillContext(entt::entity caster,
 	context->set_caster(entt::to_integral(caster));
 	context->set_skilltableid(request->skill_table_id());
 	context->set_target(request->target_id());
-	context->set_casttime(TimeUtil::NowMilliseconds());
+	context->set_casttime(TimeSystem::NowMilliseconds());
 	context->set_skillid(GenerateUniqueSkillId(tlsRegistryManager.actorRegistry.get<SkillContextCompMap>(caster), {}));
 	return context;
 }

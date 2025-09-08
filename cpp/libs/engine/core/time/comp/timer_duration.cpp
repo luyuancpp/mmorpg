@@ -27,7 +27,7 @@ TimerDuration::TimerDuration(const std::string & sBeginTime, const std::string &
 
 void TimerDuration::CalcBeginEndTime()
 {
-    CalcBeginEndTime(TimeUtil::NowSecondsUTC());
+    CalcBeginEndTime(TimeSystem::NowSecondsUTC());
 }
 
 void TimerDuration::CalcBeginEndTime(uint64_t tNow)

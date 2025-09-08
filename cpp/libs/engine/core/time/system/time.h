@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-class TimeUtil
+class TimeSystem
 {
 public:
 	static uint64_t NowMicroseconds();
