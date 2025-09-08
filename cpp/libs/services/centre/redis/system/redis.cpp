@@ -2,7 +2,7 @@
 
 #include "muduo/net/EventLoop.h"
 
-#include "player/system/player_node.h"
+#include "player/system/player_lifecycle.h"
 
 #include "type_alias/player_redis.h"
 #include "engine/threading/redis_manager.h"

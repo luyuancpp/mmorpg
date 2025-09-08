@@ -60,7 +60,7 @@ entt::entity FindRoomWithMinPlayers(entt::entity nodeEntity, uint32_t configId) 
 	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 	const auto& roomRegistry = nodeRegistry.get<RoomRegistryComp>(nodeEntity);
 
-	auto room = RoomSelector::SelectRoomWithMinPlayers(roomRegistry, configId);
+	auto room = RoomSelectorSystem::SelectRoomWithMinPlayers(roomRegistry, configId);
 
 	if (room == entt::null) {
 		LOG_WARN << "No suitable room found with minimum players on node: " << entt::to_integral(nodeEntity);
@@ -86,7 +86,7 @@ entt::entity FindFirstAvailableRoom(entt::entity nodeEntity, uint32_t configId) 
 }
 
 // 外部接口：选择负载最小的房间
-entt::entity RoomNodeSelector::SelectLeastLoadedRoom(const GetRoomParams& param) {
+entt::entity RoomNodeSelectorSystem::SelectLeastLoadedRoom(const GetRoomParams& param) {
 	constexpr GetRoomFilterParam defaultFilter;
 
 	auto node = FindBestNode<MainRoomNode>(param.roomConfigurationId, defaultFilter.nodePressureState, true);
@@ -96,7 +96,7 @@ entt::entity RoomNodeSelector::SelectLeastLoadedRoom(const GetRoomParams& param)
 }
 
 // 外部接口：选择第一个可用房间
-entt::entity RoomNodeSelector::SelectAvailableRoom(const GetRoomParams& param) {
+entt::entity RoomNodeSelectorSystem::SelectAvailableRoom(const GetRoomParams& param) {
 	GetRoomFilterParam filter;
 
 	auto node = FindBestNode<MainRoomNode>(param.roomConfigurationId, filter.nodePressureState, false);

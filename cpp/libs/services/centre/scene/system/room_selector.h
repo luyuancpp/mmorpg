@@ -5,7 +5,7 @@
 
 class RoomRegistryComp;
 
-class RoomSelector {
+class RoomSelectorSystem {
 public:
 	static entt::entity SelectRoomWithMinPlayers(const RoomRegistryComp& comp, uint32_t configId);
 };

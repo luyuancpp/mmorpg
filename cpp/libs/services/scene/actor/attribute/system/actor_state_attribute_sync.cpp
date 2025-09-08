@@ -161,6 +161,9 @@ void ActorStateAttributeSyncSystem::SyncBasicAttributes(entt::entity entity) {
 
     // 获取当前实体的增量同步消息
     auto& syncMessage = tlsRegistryManager.actorRegistry.get<BaseAttributeSyncDataS2C>(entity);
+	if (syncMessage.ByteSizeLong() <= 0) {
+		return;
+	}
     BroadcastMessageToPlayers(ScenePlayerSyncSyncBaseAttributeMessageId, syncMessage, aoiListComp->aoiList);
 
     // 发送后清空消息，准备下一次增量数据
@@ -174,14 +177,12 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
         case eAttributeSyncFrequency::kSyncEvery2Frames:
         {
             auto& syncMessage = tlsRegistryManager.actorRegistry.get<AttributeDelta2FramesS2C>(entity);
-
             if (syncMessage.ByteSizeLong() <= 0)
             {
                 return;
             }
 
             BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute2FramesMessageId, syncMessage, nearbyEntities);
-
             syncMessage.Clear();
         }
         break;

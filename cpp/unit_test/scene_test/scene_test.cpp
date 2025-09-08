@@ -259,7 +259,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	RoomSystem sm;
-	RoomNodeSelector nodeSystem;
+	RoomNodeSelectorSystem nodeSystem;
 	EntityUnorderedSet serverEntities;
 	const uint32_t serverSize = 2;
 	const uint32_t perServerScene = 2;
@@ -427,7 +427,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 	weightRoundRobinScene.roomConfigurationId = sceneConfigId0;
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
-		auto canEnter = RoomNodeSelector::SelectLeastLoadedRoom(weightRoundRobinScene);
+		auto canEnter = RoomNodeSelectorSystem::SelectLeastLoadedRoom(weightRoundRobinScene);
 		EXPECT_TRUE(canEnter != entt::null);
 	}
 }
@@ -536,7 +536,7 @@ TEST(GS, WeightRoundRobinMainScene)
 
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
-				auto can_enter = RoomNodeSelector::SelectLeastLoadedRoom(weight_round_robin_scene);
+				auto can_enter = RoomNodeSelectorSystem::SelectLeastLoadedRoom(weight_round_robin_scene);
 				auto p_e = tlsRegistryManager.actorRegistry.create();
 				enter_param1.enter = p_e;
 				enter_param1.room = can_enter;
@@ -557,7 +557,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			weight_round_robin_scene.roomConfigurationId = scene_config_id1;
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
-				auto can_enter = RoomNodeSelector::SelectLeastLoadedRoom(weight_round_robin_scene);
+				auto can_enter = RoomNodeSelectorSystem::SelectLeastLoadedRoom(weight_round_robin_scene);
 				auto player = tlsRegistryManager.actorRegistry.create();
 				enter_param1.enter = player;
 				enter_param1.room = can_enter;
@@ -658,7 +658,7 @@ TEST(GS, ServerEnterLeavePressure)
 	// Enter players into scenes with sceneConfigId0
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		auto canEnter = RoomNodeSelector::SelectLeastLoadedRoom(weightRoundRobinScene);
+		auto canEnter = RoomNodeSelectorSystem::SelectLeastLoadedRoom(weightRoundRobinScene);
 		auto playerEntity = tlsRegistryManager.actorRegistry.create();
 		enterParam1.enter = playerEntity;
 		enterParam1.room = canEnter;
@@ -675,7 +675,7 @@ TEST(GS, ServerEnterLeavePressure)
 	// Enter players into scenes with sceneConfigId1
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		auto canEnter = RoomNodeSelector::SelectLeastLoadedRoom(weightRoundRobinScene);
+		auto canEnter = RoomNodeSelectorSystem::SelectLeastLoadedRoom(weightRoundRobinScene);
 		auto playerEntity = tlsRegistryManager.actorRegistry.create();
 		enterParam1.enter = playerEntity;
 		enterParam1.room = canEnter;
@@ -722,7 +722,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	RoomSystem sm;
-	RoomNodeSelector nssys;
+	RoomNodeSelectorSystem nssys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 10;
 	uint32_t perServerScene = 10;
