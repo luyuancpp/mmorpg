@@ -15,7 +15,7 @@ struct GetRoomFilterParam
 	NodePressureState nodePressureState{ NodePressureState::kNoPressure };
 };
 
-class RoomNodeSelector
+class RoomNodeSelectorSystem
 {
 public:
 	// Find a scene with the minimum player count among servers, less efficient

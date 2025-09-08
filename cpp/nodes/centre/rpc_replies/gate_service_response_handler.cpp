@@ -13,7 +13,7 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 #include "scene/system/player_change_room.h"
 #include "core/utils/registry/game_registry.h"
-#include "player/system/player_node.h"
+#include "player/system/player_lifecycle.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 

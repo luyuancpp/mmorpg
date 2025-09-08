@@ -39,13 +39,13 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 	// 尝试找空闲的当前配置场景
 	if (sceneContext.scene_info().scene_confid() > 0)
 	{
-		entt::entity candidate = RoomNodeSelector::SelectAvailableRoom({ sceneContext.scene_info().scene_confid() });
+		entt::entity candidate = RoomNodeSelectorSystem::SelectAvailableRoom({ sceneContext.scene_info().scene_confid() });
 		if (candidate != entt::null)
 			return candidate;
 	}
 
 	// fallback：默认配置场景
-	return RoomNodeSelector::SelectAvailableRoom({ GetDefaultSceneConfigurationId() });
+	return RoomNodeSelectorSystem::SelectAvailableRoom({ GetDefaultSceneConfigurationId() });
 }
 
 
@@ -189,7 +189,7 @@ entt::entity PlayerSceneSystem::ResolveTargetScene(entt::entity playerEntity)
 	{
 		GetRoomParams params;
 		params.roomConfigurationId = info.scene_confid();
-		toScene = RoomNodeSelector::SelectLeastLoadedRoom(params);
+		toScene = RoomNodeSelectorSystem::SelectLeastLoadedRoom(params);
 		if (toScene == entt::null)
 		{
 			LOG_WARN << "No available scene found for player: " << playerId;

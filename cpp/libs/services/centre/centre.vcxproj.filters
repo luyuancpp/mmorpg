@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="kafka\system\kafka.cpp" />
-    <ClCompile Include="player\system\player_node.cpp" />
+    <ClCompile Include="player\system\player_lifecycle.cpp" />
     <ClCompile Include="player\system\player_tip.cpp" />
     <ClCompile Include="redis\system\redis.cpp" />
     <ClCompile Include="scene\system\player_change_room.cpp" />
@@ -15,7 +15,7 @@
   <ItemGroup>
     <ClInclude Include="kafka\system\kafka.h" />
     <ClInclude Include="player\comp\player.h" />
-    <ClInclude Include="player\system\player_node.h" />
+    <ClInclude Include="player\system\player_lifecycle.h" />
     <ClInclude Include="player\system\player_tip.h" />
     <ClInclude Include="redis\system\redis.h" />
     <ClInclude Include="scene\system\player_change_room.h" />

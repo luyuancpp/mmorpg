@@ -105,7 +105,7 @@ void RoomSystem::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
 	}
 
 	// Get a room that is not full from the NodeRoomSystem
-	auto defaultRoom = RoomNodeSelector::SelectAvailableRoom({});
+	auto defaultRoom = RoomNodeSelectorSystem::SelectAvailableRoom({});
 
 	// Enter the player into the retrieved default room
 	RoomCommon::EnterRoom({ defaultRoom, param.enter });
@@ -169,7 +169,7 @@ entt::entity RoomSystem::FindOrCreateRoom(uint32_t roomConfId) {
 	auto& nodeRoomComp = registry.get<RoomRegistryComp>(node);
 
 	// 查找已有房间
-	entt::entity room = RoomSelector::SelectRoomWithMinPlayers(nodeRoomComp, roomConfId);
+	entt::entity room = RoomSelectorSystem::SelectRoomWithMinPlayers(nodeRoomComp, roomConfId);
 	if (room != entt::null) {
 		return room;
 	}

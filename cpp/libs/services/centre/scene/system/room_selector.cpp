@@ -3,7 +3,7 @@
 #include <node/constants/node_constants.h>
 #include "modules/scene/comp/room_node_comp.h"
 
-entt::entity RoomSelector::SelectRoomWithMinPlayers(const RoomRegistryComp& comp, uint32_t configId) {
+entt::entity RoomSelectorSystem::SelectRoomWithMinPlayers(const RoomRegistryComp& comp, uint32_t configId) {
 	const auto& rooms = comp.GetRoomsByConfig(configId);
 	if (rooms.empty()) return entt::null;
 
