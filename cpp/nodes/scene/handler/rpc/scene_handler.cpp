@@ -8,7 +8,7 @@
 #include "scene_node.h"
 #include "session/system/session.h"
 #include "core/network/message_system.h"
-#include "player/system/player_node.h"
+#include "player/system/player_lifecycle.h"
 #include "player/system/player_scene.h"
 #include "scene/scene/system/game_node_scene.h"
 #include "rpc/player_service_interface.h"
@@ -46,7 +46,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 		<< ", centre_node_id: " << request->centre_node_id();
 
 	// 1 清除玩家会话，处理连续顶号进入情况
-	PlayerNodeSystem::RemovePlayerSessionSilently(request->player_id());
+	PlayerLifecycleSystem::RemovePlayerSessionSilently(request->player_id());
 
 	auto playerIt = tlsPlayerList.find(request->player_id());
 
@@ -56,7 +56,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// 2 检查玩家是否已经在线，若在线则直接进入
 	if (playerIt != tlsPlayerList.end())
 	{
-		PlayerNodeSystem::EnterGs(playerIt->second, enterInfo);
+		PlayerLifecycleSystem::EnterGs(playerIt->second, enterInfo);
 		return;
 	}
 
@@ -359,7 +359,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	PlayerNodeSystem::RemovePlayerSession(request->player_id());
+	PlayerLifecycleSystem::RemovePlayerSession(request->player_id());
 
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
 	if (const entt::entity gateNodeId{ GetGateNodeId(request->session_id()) };
@@ -380,7 +380,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 
 	tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(request->session_id());
 
-	PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(player);
+	PlayerLifecycleSystem::HandleSceneNodePlayerRegisteredAtGateNode(player);
 ///<<< END WRITING YOUR CODE
 }
 

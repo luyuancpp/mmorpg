@@ -8,7 +8,7 @@ class ChangeSceneInfoPBComponent;
 class PlayerMigrationPbEvent;
 class PlayerGameNodeEnteryInfoPBComponent;
 
-class PlayerNodeSystem
+class PlayerLifecycleSystem
 {
 public:
 	//如果异步加载过程中玩家断开链接了？会不会造成数据覆盖

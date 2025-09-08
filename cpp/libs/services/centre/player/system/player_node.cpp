@@ -29,7 +29,7 @@
 #include "engine/threading/player_manager.h"
 #include <modules/scene/system/room_common.h>
 
-void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData, const std::any& extra)
+void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData, const std::any& extra)
 {
 	//load 回来之前断开连接了,然后又加到redis了 这种怎么办,session id 变了咋办
 
@@ -62,13 +62,13 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	LOG_INFO << "Player login enter scene handled: " << playerId;
 }
 
-void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_centre_database& playerData)
+void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, player_centre_database& playerData)
 {
 	LOG_INFO << "Handling async save for player: " << playerId;
 	// Placeholder for handling saved player data asynchronously
 }
 
-void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
+void PlayerLifecycleSystem::ProcessPlayerSessionState(entt::entity player)
 {
 	if (const auto* const enterGameFlag = tlsRegistryManager.actorRegistry.try_get<PlayerEnterGameStatePbComp>(player))
 	{
@@ -76,11 +76,11 @@ void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
 
 		if (enterGameFlag->enter_gs_type() != LOGIN_NONE && enterGameFlag->enter_gs_type() != LOGIN_RECONNECT)
 		{
-			PlayerNodeSystem::HandlePlayerLogin(player);
+			PlayerLifecycleSystem::HandlePlayerLogin(player);
 		}
 		else
 		{
-			PlayerNodeSystem::HandlePlayerReconnection(player);
+			PlayerLifecycleSystem::HandlePlayerReconnection(player);
 		}
 
 		tlsRegistryManager.actorRegistry.remove<PlayerEnterGameStatePbComp>(player);
@@ -88,7 +88,7 @@ void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
 	}
 }
 
-void PlayerNodeSystem::HandlePlayerLogin(entt::entity playerEntity)
+void PlayerLifecycleSystem::HandlePlayerLogin(entt::entity playerEntity)
 {
 	const auto enterGameFlag = tlsRegistryManager.actorRegistry.try_get<PlayerEnterGameStatePbComp>(playerEntity);
 	if (!enterGameFlag)
@@ -106,12 +106,12 @@ void PlayerNodeSystem::HandlePlayerLogin(entt::entity playerEntity)
 	LOG_DEBUG << "Sent Centre2GsLoginRequest to game scene";
 }
 
-void PlayerNodeSystem::HandlePlayerReconnection(entt::entity player)
+void PlayerLifecycleSystem::HandlePlayerReconnection(entt::entity player)
 {
 	LOG_INFO << "Handling player reconnection for entity: " << static_cast<uint32_t>(player);
 }
 
-void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
+void PlayerLifecycleSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 {
 	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!sessionPB)
@@ -153,7 +153,7 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	LOG_DEBUG << "Called remote method GatePlayerEnterGameNodeMessageId for session_id: " << sessionPB->gate_session_id();
 }
 
-void PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
+void PlayerLifecycleSystem::HandleSceneNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
 {
 	const auto* const sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!sessionPB)
@@ -185,13 +185,13 @@ void PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(entt::entity pl
 	LOG_DEBUG << "Sent session update to scene node";
 }
 
-void PlayerNodeSystem::HandleNormalExit(Guid playerID)
+void PlayerLifecycleSystem::HandleNormalExit(Guid playerID)
 {
 	LOG_INFO << "Handling normal exit for player: " << playerID;
 	Logout(playerID);
 }
 
-void PlayerNodeSystem::HandleAbnormalExit(Guid playerID)
+void PlayerLifecycleSystem::HandleAbnormalExit(Guid playerID)
 {
 	LOG_INFO << "Handling abnormal exit for player: " << playerID;
 
@@ -211,7 +211,7 @@ void PlayerNodeSystem::HandleAbnormalExit(Guid playerID)
 		});
 }
 
-void PlayerNodeSystem::Logout(Guid playerID)
+void PlayerLifecycleSystem::Logout(Guid playerID)
 {
 	// TODO: Handle leave during login
 	// TODO: Immediate logout on disconnect will be revisited later

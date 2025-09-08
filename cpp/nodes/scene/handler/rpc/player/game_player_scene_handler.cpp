@@ -3,7 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "core/network/message_system.h"
-#include "player/system/player_node.h"
+#include "player/system/player_lifecycle.h"
 #include "player/system/player_scene.h"
 #include "proto/scene/player_scene.pb.h"
 #include "modules/scene/comp/scene_comp.h"
@@ -38,7 +38,7 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 	{
 		tlsRegistryManager.actorRegistry.emplace_or_replace<ChangeSceneInfoPBComponent>(player, request->change_scene_info());
 		// 离开gs 清除session
-		PlayerNodeSystem::HandleExitGameNode(player);
+		PlayerLifecycleSystem::HandleExitGameNode(player);
 		LOG_DEBUG << "Player " << tlsRegistryManager.actorRegistry.get<Guid>(player) << " session cleared after leaving scene.";
 	}
 ///<<< END WRITING YOUR CODE

@@ -1,4 +1,4 @@
-#include "player_node.h"
+#include "player_lifecycle.h"
 #include "proto/logic/event/actor_event.pb.h"
 #include "core/network/message_system.h"
 #include "proto/centre/centre_service.pb.h"
@@ -28,14 +28,14 @@
 #include "core/system/redis.h"
 #include <threading/dispatcher_manager.h>
 
-void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)
+void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)
 {
 	LOG_INFO << "HandlePlayerAsyncLoaded: Loading player " << playerId;
 	auto enterInfo = std::any_cast<PlayerGameNodeEnteryInfoPBComponent>(extra);
 	InitPlayerFromAllData(message, enterInfo);
 }
 
-void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData& message)
+void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData& message)
 {
 	LOG_INFO << "HandlePlayerAsyncSaved: Saving complete for player: " << playerId;
 
@@ -62,7 +62,7 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData& mess
 }
 
 //考虑: 没load 完再次进入别的gs
-void PlayerNodeSystem::EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo){
+void PlayerLifecycleSystem::EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo){
 	LOG_INFO << "EnterGs: Player " << tlsRegistryManager.actorRegistry.get<Guid>(player) << " entering Game Node";
 
 	auto& playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
@@ -78,7 +78,7 @@ void PlayerNodeSystem::EnterGs(const entt::entity player, const PlayerGameNodeEn
 	//否则两个不同的gs可能离开场景的消息后于进入场景的消息到达客户端
 }
 
-void PlayerNodeSystem::NotifyEnterGsSucceed(entt::entity player, NodeId centreNodeId)
+void PlayerLifecycleSystem::NotifyEnterGsSucceed(entt::entity player, NodeId centreNodeId)
 {
 	EnterGameNodeSuccessRequest request;
 	request.set_player_id(tlsRegistryManager.actorRegistry.get<Guid>(player));
@@ -90,11 +90,11 @@ void PlayerNodeSystem::NotifyEnterGsSucceed(entt::entity player, NodeId centreNo
 	// This ensures that the message order received by clients is consistent
 }
 
-void PlayerNodeSystem::LeaveGs(entt::entity player)
+void PlayerLifecycleSystem::LeaveGs(entt::entity player)
 {
 }
 
-void PlayerNodeSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsType)
+void PlayerLifecycleSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsType)
 {
 	switch (enterGsType)
 	{
@@ -113,13 +113,13 @@ void PlayerNodeSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsType)
 	}
 }
 
-void PlayerNodeSystem::HandleSceneNodePlayerRegisteredAtGateNode(entt::entity player)
+void PlayerLifecycleSystem::HandleSceneNodePlayerRegisteredAtGateNode(entt::entity player)
 {
 
 }
 
 //todo 检测
-void PlayerNodeSystem::RemovePlayerSession(const Guid playerId)
+void PlayerLifecycleSystem::RemovePlayerSession(const Guid playerId)
 {
 	auto playerIt = tlsPlayerList.find(playerId);
 	if (playerIt == tlsPlayerList.end())
@@ -130,7 +130,7 @@ void PlayerNodeSystem::RemovePlayerSession(const Guid playerId)
 	RemovePlayerSession(playerIt->second);
 }
 
-void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
+void PlayerLifecycleSystem::RemovePlayerSession(entt::entity player)
 {
 	auto* const playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (playerSessionSnapshotPB == nullptr)
@@ -145,7 +145,7 @@ void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
 	playerSessionSnapshotPB->set_gate_session_id(kInvalidSessionId);
 }
 
-void PlayerNodeSystem::RemovePlayerSessionSilently(Guid player_id)
+void PlayerLifecycleSystem::RemovePlayerSessionSilently(Guid player_id)
 {
 	auto playerIt = tlsPlayerList.find(player_id);
 	if (playerIt == tlsPlayerList.end())
@@ -155,7 +155,7 @@ void PlayerNodeSystem::RemovePlayerSessionSilently(Guid player_id)
 	RemovePlayerSession(playerIt->second);
 }
 
-void PlayerNodeSystem::DestroyPlayer(Guid playerId)
+void PlayerLifecycleSystem::DestroyPlayer(Guid playerId)
 {
 	LOG_INFO << "Destroying player: " << playerId;
 
@@ -163,7 +163,7 @@ void PlayerNodeSystem::DestroyPlayer(Guid playerId)
 	Destroy(tlsRegistryManager.actorRegistry, GetPlayer(playerId));
 }
 
-void PlayerNodeSystem::HandleExitGameNode(entt::entity player)
+void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 {
 	LOG_INFO << "HandleExitGameNode: Player " << tlsRegistryManager.actorRegistry.get<Guid>(player) << " is exiting the Game Node";
 
@@ -181,13 +181,13 @@ void PlayerNodeSystem::HandleExitGameNode(entt::entity player)
 
 	tlsRegistryManager.actorRegistry.emplace<UnregisterPlayer>(player);
 
-	PlayerNodeSystem::SavePlayerToRedis(player);
+	PlayerLifecycleSystem::SavePlayerToRedis(player);
 
 	//todo 存完之后center 才能再次登录
 
 }
 
-void PlayerNodeSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
+void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 {
 	auto changeInfo = tlsRegistryManager.actorRegistry.try_get<ChangeSceneInfoPBComponent>(playerEntity);
 	if (!changeInfo)
@@ -227,7 +227,7 @@ void PlayerNodeSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	tlsRegistryManager.actorRegistry.remove<ChangeSceneInfoPBComponent>(playerEntity);
 }
 
-void PlayerNodeSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& msg) {
+void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& msg) {
 	PlayerAllData playerAllDataMessage;
 	if (!playerAllDataMessage.ParseFromString(msg.serialized_player_data())) {
 		LOG_ERROR << "Parse failed for player migration data";
@@ -241,7 +241,7 @@ void PlayerNodeSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& msg) 
 	SavePlayerToRedis(player);
 }
 
-entt::entity PlayerNodeSystem::InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEnteryInfoPBComponent& enterInfo)
+entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEnteryInfoPBComponent& enterInfo)
 {
 	auto playerId = playerAllData.player_database_data().player_id();
 
@@ -300,7 +300,7 @@ entt::entity PlayerNodeSystem::InitPlayerFromAllData(const PlayerAllData& player
 	return player;
 }
 
-void PlayerNodeSystem::SavePlayerToRedis(entt::entity player)
+void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 {
 	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{
