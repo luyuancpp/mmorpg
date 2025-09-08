@@ -16,7 +16,7 @@
 uint32_t PlayerChangeRoomUtil::PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo) {
 	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	changeSceneQueue.enqueue(changeInfo);
-	changeSceneQueue.front()->set_change_time(TimeUtil::NowSecondsUTC());
+	changeSceneQueue.front()->set_change_time(TimeSystem::NowSecondsUTC());
 	return kSuccess;
 }
 

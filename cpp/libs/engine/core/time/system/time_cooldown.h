@@ -61,7 +61,7 @@ public:
 
 	// 获取当前时间（以毫秒为单位）
 	inline static uint64_t NowMilliseconds() {
-		return TimeUtil::NowMilliseconds();
+		return TimeSystem::NowMilliseconds();
 	}
 
 	inline static bool IsCooldownComplete(const CooldownTimeComp& cooldownTimeComp) {

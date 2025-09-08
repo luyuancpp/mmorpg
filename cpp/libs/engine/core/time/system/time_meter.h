@@ -8,7 +8,7 @@ class TimeMeterSecondSystem {
 public:
     // 返回剩余时间（秒）
     static uint64_t Remaining(const TimeMeterComp& timeMeterComp) {
-        uint64_t currentSeconds = TimeUtil::NowSecondsUTC();
+        uint64_t currentSeconds = TimeSystem::NowSecondsUTC();
         uint64_t elapsed = (currentSeconds > timeMeterComp.start())
             ? currentSeconds - timeMeterComp.start()
             : 0;
@@ -24,7 +24,7 @@ public:
 
     // 检查当前时间是否在开始时间之前
     static bool IsBeforeStart(const TimeMeterComp& timeMeterComp) {
-        return TimeUtil::NowSecondsUTC() < timeMeterComp.start();
+        return TimeSystem::NowSecondsUTC() < timeMeterComp.start();
     }
 
     // 检查当前时间是否未开始（即是否在开始时间之前）
@@ -34,7 +34,7 @@ public:
 
     // 重置时间测量器
     static void Reset(TimeMeterComp& timeMeterComp) {
-        timeMeterComp.set_start(TimeUtil::NowSecondsUTC());
+        timeMeterComp.set_start(TimeSystem::NowSecondsUTC());
     }
 
 

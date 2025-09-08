@@ -10,7 +10,7 @@ MessageLimiter::MessageLimiter(uint8_t defaultMaxRequests, uint64_t defaultTimeW
 
 uint32_t MessageLimiter::CanSend(uint32_t messageId) {
     // 获取当前时间（毫秒）
-    const auto currentTime = TimeUtil::NowSeconds();
+    const auto currentTime = TimeSystem::NowSeconds();
 
     // 获取当前消息ID的时间戳记录
     auto& messageTimestamps = requestRecords[messageId];

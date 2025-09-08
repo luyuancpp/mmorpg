@@ -65,7 +65,7 @@
     <ClInclude Include="time\comp\timer_task_comp.h" />
     <ClInclude Include="time\constants\time_constants.h" />
     <ClInclude Include="time\system\time.h" />
-    <ClInclude Include="time\system\cooldown_time.h" />
+    <ClInclude Include="time\system\time_cooldown.h" />
     <ClInclude Include="time\system\time_meter.h" />
     <ClInclude Include="network\codec\codec.h" />
     <ClInclude Include="network\codec\dispatcher.h" />

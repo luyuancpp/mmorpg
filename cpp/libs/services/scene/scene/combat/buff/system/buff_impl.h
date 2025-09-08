@@ -77,7 +77,7 @@ public:
 
             if (buffTable->bufftype() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
                 if (const auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr)) {
-                    dataPtr->set_last_time(TimeUtil::NowMilliseconds());
+                    dataPtr->set_last_time(TimeSystem::NowMilliseconds());
                 }
 
                 BuffSystem::RemoveSubBuff(buffComp, buffsToRemoveTarget);
@@ -120,7 +120,7 @@ private:
         auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr);
         if (!dataPtr) return false;
 
-        auto elapsedTime = TimeUtil::NowMilliseconds() - dataPtr->last_time();
+        auto elapsedTime = TimeSystem::NowMilliseconds() - dataPtr->last_time();
         if (static_cast<double>(elapsedTime) > buffTable->nodamageorskillhitinlastseconds()) {
             return true; // 条件满足
         }

@@ -94,7 +94,7 @@ void Node::InitRpcServer() {
 	info.set_node_type(GetNodeType());
 	info.set_scene_node_type(tlsNodeConfigManager.GetGameConfig().scene_node_type());
 	info.set_protocol_type(PROTOCOL_TCP);
-	info.set_launch_time(TimeUtil::NowMicrosecondsUTC());
+	info.set_launch_time(TimeSystem::NowMicrosecondsUTC());
 	info.set_zone_id(tlsNodeConfigManager.GetGameConfig().zone_id());
 
 	info.set_node_uuid(boost::uuids::to_string(gen()));

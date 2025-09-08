@@ -6,7 +6,7 @@
 #include "scene/combat/skill/comp/skill.h"
 #include "scene/combat/skill/constants/skill.h"
 #include "time/comp/timer_task_comp.h"
-#include "time/system/cooldown_time.h"
+#include "time/system/time_cooldown.h"
 #include "table/proto/tip/skill_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include <threading/registry_manager.h>

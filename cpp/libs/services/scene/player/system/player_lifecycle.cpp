@@ -267,7 +267,7 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& p
 	// 5. 初始化必要数据（仅首次注册时）
 	if (playerAllData.player_database_data().uint64_pb_component().registration_timestamp() <= 0)
 	{
-		tlsRegistryManager.actorRegistry.get<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeUtil::NowSecondsUTC());
+		tlsRegistryManager.actorRegistry.get<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeSystem::NowSecondsUTC());
 		tlsRegistryManager.actorRegistry.get<LevelPbComponent>(player).set_level(1);
 
 		RegisterPlayerEvent registerPlayer;
