@@ -1,0 +1,7 @@
+package table
+
+const (
+{%- for item in constants %}
+    {{ item.name }} = {{ item.value }}
+{%- endfor %}
+)

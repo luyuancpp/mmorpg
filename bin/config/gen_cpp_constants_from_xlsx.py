@@ -24,8 +24,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
-class ExcelToCppConverter:
+class ExcelConstantsGenerator:
     def __init__(self, excel_file: str):
         self.excel_file = excel_file
         self.is_global_file = 'globalvariable' in os.path.basename(excel_file).lower()
@@ -147,6 +146,73 @@ class ExcelToCppConverter:
                 f.write(cpp_code)
             logger.info(f"Generated file: {output_path}")
 
+    def generate_and_save_go_constants(self):
+        if not self.should_process():
+            logger.info(f"[GO] No 'constants_name' column found, skipping: {self.excel_file}")
+            return
+
+        env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'))
+        template = env.get_template("constants.go.j2")
+
+        if self.is_global_file:
+            constants_map = {}
+            single_list = []
+
+            for row in self.worksheet.iter_rows(min_row=20, values_only=True):
+                id_value = row[0]
+                const_raw = row[self.constants_name_index]
+                if id_value is None:
+                    continue
+
+                const_name = str(const_raw) if const_raw else str(id_value)
+
+                if '_' in const_name:
+                    parts = const_name.split('_')
+                    if len(parts) >= 2:
+                        key = (parts[0], parts[1])
+                        go_const_name = f'K{self.sheet}_{const_name}'
+                        constants_map.setdefault(key, []).append({'name': go_const_name, 'value': id_value})
+                    else:
+                        logger.warning(f"[GO] Invalid underscore format in: {const_name}")
+                else:
+                    go_const_name = f'K{self.sheet}_{const_name}'
+                    single_list.append({'name': go_const_name, 'value': id_value})
+
+            for key, const_list in constants_map.items():
+                first, second = key
+                go_code = template.render(constants=const_list)
+                filename = f"global_{first}_{second}_table_id_constants.go".lower()
+                output_path = os.path.join(constants.GENERATOR_CONSTANTS_NAME_GO_DIR, filename)
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(go_code)
+                logger.info(f"[GO] Generated file: {output_path}")
+
+            if single_list:
+                go_code = template.render(constants=single_list)
+                filename = f"{self.sheet.lower()}_table_id_constants.go"
+                output_path = os.path.join(constants.GENERATOR_CONSTANTS_NAME_GO_DIR, filename)
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(go_code)
+                logger.info(f"[GO] Generated fallback file: {output_path}")
+
+        else:
+            constants_list = []
+            for row in self.worksheet.iter_rows(min_row=20, values_only=True):
+                id_value = row[0]
+                if id_value is None:
+                    continue
+                const_raw = row[self.constants_name_index]
+                if not const_raw:
+                    continue
+                go_name = f'K{self.sheet}_{const_raw}'
+                constants_list.append({'name': go_name, 'value': id_value})
+
+            go_code = template.render(constants=constants_list)
+            output_path = os.path.join(constants.GENERATOR_CONSTANTS_NAME_GO_DIR,
+                                       f"{self.sheet.lower()}_table_id_constants.go")
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(go_code)
+            logger.info(f"[GO] Generated file: {output_path}")
 
 def process_file(file_path: str):
     logger.info(f"Start processing file: {file_path}")
@@ -156,8 +222,9 @@ def process_file(file_path: str):
         return
 
     try:
-        converter = ExcelToCppConverter(file_path)
+        converter = ExcelConstantsGenerator(file_path)
         converter.generate_and_save_cpp_constants()
+        converter.generate_and_save_go_constants()
         logger.info(f"Finished processing: {file_path}")
     except Exception as e:
         logger.error(f"Error processing file: {file_path}, error: {e}")
@@ -169,6 +236,7 @@ def process_file(file_path: str):
 def main():
     try:
         os.makedirs(constants.GENERATOR_CONSTANTS_NAME_DIR, exist_ok=True)
+        os.makedirs(constants.GENERATOR_CONSTANTS_NAME_GO_DIR, exist_ok=True)
 
         xlsx_files = utils.get_xlsx_files(constants.XLSX_DIR)
         if not xlsx_files:

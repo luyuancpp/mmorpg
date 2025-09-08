@@ -116,6 +116,43 @@ class ExcelToCppConverter:
         self._save_mapping(id_to_index)
         return cpp_constants
 
+    def generate_go_constants(self) -> str:
+        """Generate Go constants from the Excel data using Jinja2 template."""
+        id_to_index = self._load_existing_mapping()
+        unused_indexes = self._find_unused_indexes(id_to_index)
+        current_index = max(id_to_index.values(), default=-1) + 1
+
+        # Iterate through rows to assign ID to index
+        for row in self.worksheet.iter_rows(min_row=20, values_only=True):
+            id_value = row[0]
+            if id_value is None:
+                continue
+
+            if id_value not in id_to_index:
+                if unused_indexes:
+                    index = unused_indexes.pop(0)
+                else:
+                    index = current_index
+                    current_index += 1
+                id_to_index[id_value] = index
+
+        # Render the Go template
+        template = self.template_env.get_template("go_config_id_bit_template.go.j2")
+        go_constants = template.render(
+            sheet=self.sheet,
+            id_to_index=id_to_index,
+            max_bit_index=self._find_max_bit_index()
+        )
+
+        # Save the mapping (same mapping as C++)
+        self._save_mapping(id_to_index)
+        return go_constants
+
+    def save_go_constants_to_file(self, go_constants: str) -> None:
+        output_file = join(constants.GENERATOR_TABLE_INDEX_GO_DIR, f"{self.sheet.lower()}_table_id_bit_index.go")
+        with open(output_file, 'w', encoding='utf-8') as file:
+            file.write(go_constants)
+
     def save_cpp_constants_to_file(self, cpp_constants: str) -> None:
         """Save the generated C++ constants to a file."""
         output_file = join(constants.GENERATOR_TABLE_INDEX_DIR, f"{self.sheet.lower()}_table_id_bit_index.h")
@@ -129,18 +166,25 @@ def get_xlsx_files(directory: str) -> List[str]:
             if isfile(join(directory, filename)) and filename.endswith('.xlsx')]
 
 def process_file(excel_file: str) -> None:
-    """Process each Excel file and generate the corresponding C++ constants file."""
+    """Process each Excel file and generate the corresponding C++ and Go constants files."""
     converter = ExcelToCppConverter(excel_file)
     if converter.should_process():
+        # 生成 C++
         cpp_constants = converter.generate_cpp_constants()
         converter.save_cpp_constants_to_file(cpp_constants)
+
+        # 额外生成 Go
+        go_constants = converter.generate_go_constants()
+        converter.save_go_constants_to_file(go_constants)
     else:
         logger.debug(f"Skipping file {excel_file} as it does not contain a valid 'bit_index' value in the 7th row.")
+
 
 
 def main() -> None:
     """Main function to process all Excel files."""
     os.makedirs(constants.GENERATOR_TABLE_INDEX_DIR, exist_ok=True)
+    os.makedirs(constants.GENERATOR_TABLE_INDEX_GO_DIR, exist_ok=True)
     os.makedirs(constants.GENERATOR_TABLE_INDEX_MAPPING_DIR, exist_ok=True)
 
     try:
