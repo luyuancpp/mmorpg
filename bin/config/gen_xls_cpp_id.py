@@ -15,7 +15,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 cpp_dir = "generated/cpp/"
-gen_file_list = ["global_variable"]
 
 def generate_id_enum(sheet):
     """Generate a C++ enum definition based on the provided sheet."""
@@ -36,7 +35,7 @@ def generate_id_cpp(workbook):
     """Generate C++ enum files for the first sheet in the workbook."""
     workbook_data = {}
     first_sheet_name = workbook.sheetnames[0]  # Only get the first sheet
-    if first_sheet_name in gen_file_list:
+    if first_sheet_name in generate_common.GEN_FILE_LIST:
         sheet = workbook[first_sheet_name]
         file_data = generate_id_enum(sheet)
         workbook_data[first_sheet_name] = file_data
@@ -54,11 +53,12 @@ def main():
                 workbook = openpyxl.load_workbook(full_path)
                 workbook_data = generate_id_cpp(workbook)
                 for sheet_name, data in workbook_data.items():
-                    output_file_path = os.path.join(cpp_dir, f"{sheet_name}_config_id.h")
+                    output_file_path = os.path.join(cpp_dir, f"{sheet_name.lower()}_table_id.h")
                     generate_common.mywrite(data, output_file_path)
                     logger.info(f"Generated C++ enum file: {output_file_path}")
             except Exception as e:
                 logger.error(f"Failed to process file {full_path}: {e}")
+
 
 if __name__ == "__main__":
     main()
