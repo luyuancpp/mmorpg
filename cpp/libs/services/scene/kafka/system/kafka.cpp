@@ -1,7 +1,7 @@
 #include "kafka.h"
 #include "player/constants/player.h"
 #include <muduo/base/Logging.h>
-#include "player/system/player_node.h"
+#include "player/system/player_lifecycle.h"
 #include "proto/logic/event/player_migration_event.pb.h"
 
 void KafkaSystem::KafkaMessageHandler(const std::string& topic, const std::string& message)
@@ -11,7 +11,7 @@ void KafkaSystem::KafkaMessageHandler(const std::string& topic, const std::strin
 		PlayerMigrationPbEvent serverEvent;
 		if (serverEvent.ParseFromString(message))
 		{
-			PlayerNodeSystem::HandlePlayerMigration(serverEvent);
+			PlayerLifecycleSystem::HandlePlayerMigration(serverEvent);
 		}
 		else
 		{

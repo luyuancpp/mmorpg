@@ -3,7 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "player/system/player_node.h"
+#include "player/system/player_lifecycle.h"
 #include "player/system/player_scene.h"
 #include "muduo/base/Logging.h"
 #include "proto/logic/component/player_login_comp.pb.h"
@@ -22,7 +22,7 @@ void ScenePlayerHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLog
 		return;
 	}
 
-	PlayerNodeSystem::OnPlayerLogin(player, request->enter_gs_type());
+	PlayerLifecycleSystem::OnPlayerLogin(player, request->enter_gs_type());
 	///<<< END WRITING YOUR CODE
 
 }
@@ -35,7 +35,7 @@ void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRe
 	LOG_INFO << "ExitGame: Received player exit request. Player entity = " << entt::to_integral(player)
 		<< ", playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(player);
 
-	PlayerNodeSystem::HandleExitGameNode(player);
+	PlayerLifecycleSystem::HandleExitGameNode(player);
 
 ///<<< END WRITING YOUR CODE
 

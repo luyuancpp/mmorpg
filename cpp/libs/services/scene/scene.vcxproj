@@ -39,7 +39,7 @@
     <ClInclude Include="npc\system\npc.h" />
     <ClInclude Include="player\constants\player.h" />
     <ClInclude Include="player\system\player_data_loader_system.h" />
-    <ClInclude Include="player\system\player_node.h" />
+    <ClInclude Include="player\system\player_lifecycle.h" />
     <ClInclude Include="player\system\player_scene.h" />
     <ClInclude Include="player\system\player_skill.h" />
     <ClInclude Include="player\system\player_tip.h" />
@@ -49,7 +49,6 @@
     <ClInclude Include="scene\combat\buff\system\buff.h" />
     <ClInclude Include="scene\combat\buff\system\modifier_buff_impl.h" />
     <ClInclude Include="scene\combat\buff\system\motion_modifier_impl.h" />
-
     <ClInclude Include="scene\combat\projectile\system\projectile.h" />
     <ClInclude Include="scene\combat\skill\comp\skill.h" />
     <ClInclude Include="scene\combat\skill\constants\skill.h" />
@@ -93,7 +92,7 @@
     <ClCompile Include="kafka\system\kafka.cpp" />
     <ClCompile Include="mount\system\mount.cpp" />
     <ClCompile Include="npc\system\npc.cpp" />
-    <ClCompile Include="player\system\player_node.cpp" />
+    <ClCompile Include="player\system\player_lifecycle.cpp" />
     <ClCompile Include="player\system\player_player_database_1_system.cpp" />
     <ClCompile Include="player\system\player_player_database_system.cpp" />
     <ClCompile Include="player\system\player_scene.cpp" />

@@ -161,7 +161,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 
 	LOG_INFO << "Handling disconnect for player: " << playerId;
 
-	PlayerNodeSystem::HandleNormalExit(playerId);
+	PlayerLifecycleSystem::HandleNormalExit(playerId);
 
 ///<<< END WRITING YOUR CODE
 }
@@ -267,8 +267,8 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		}
 
 		// ✅ 进入场景
-		PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
-		PlayerNodeSystem::ProcessPlayerSessionState(player);
+		PlayerLifecycleSystem::AddGameNodePlayerToGateNode(player);
+		PlayerLifecycleSystem::ProcessPlayerSessionState(player);
 	}
 
 	///<<< END WRITING YOUR CODE
@@ -287,7 +287,7 @@ void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* contro
 
 	defer(GlobalSessionList().erase(request->session_info().session_id()));
 	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
-	PlayerNodeSystem::HandleNormalExit(player_id);
+	PlayerLifecycleSystem::HandleNormalExit(player_id);
 	//todo statistics
 ///<<< END WRITING YOUR CODE
 }
@@ -306,7 +306,7 @@ void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController
 
 	defer(GlobalSessionList().erase(request->session_info().session_id()));
 	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
-	PlayerNodeSystem::HandleNormalExit(player_id);
+	PlayerLifecycleSystem::HandleNormalExit(player_id);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -473,7 +473,7 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	auto& nodeIdMap = *sessionPB->mutable_node_id();
 	nodeIdMap[eNodeType::SceneNodeService] = request->scene_node_id();
 
-	PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
+	PlayerLifecycleSystem::AddGameNodePlayerToGateNode(player);
 
 	PlayerChangeRoomUtil::SetCurrentChangeSceneState(player, ChangeSceneInfoPBComponent::eEnterSucceed);
 	PlayerChangeRoomUtil::ProgressSceneChangeState(player);
