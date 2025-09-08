@@ -37,7 +37,7 @@ commands = [
     "python gen_xlsx_cpp_tip_to_proto.py",
     "python operator_xlsx_to_proto.py",
     "python gen_xls_to_cpp_config.py",
-    "python gen_xls_cpp_id.py",
+    "python gen_xls_cpp_table_id.py",
     "python gen_xls_go_table_id.py",
     "python gen_cpp_proto.py",
     "python gen_go_proto.py",
