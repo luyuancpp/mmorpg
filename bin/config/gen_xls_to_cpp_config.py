@@ -4,43 +4,57 @@
 import concurrent.futures
 import os
 import openpyxl
-import generate_common
-import concurrent.futures
-from pathlib import Path
-from multiprocessing import cpu_count
-from pathlib import Path
-from multiprocessing import cpu_count
-import openpyxl
 import logging
+from pathlib import Path
+from multiprocessing import cpu_count
 from jinja2 import Environment, FileSystemLoader
 
+import generate_common  # 你项目中的工具模块
 
-# Configure logging
+# 日志配置
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Global Variables
-KEY_ROW_IDX = 4
+# 常量定义
 CPP_DIR = Path("generated/cpp")
+GO_DIR = Path("generated/go")
 XLS_DIR = Path("xlsx")
 
-def get_column_names(sheet):
-    """Get column names from the Excel sheet."""
-    return [cell.value for cell in sheet[KEY_ROW_IDX] if cell.value is not None]
+# 类型转换函数
+def get_cpp_type_name(type_name):
+    if type_name == 'string':
+        return 'std::string'
+    elif 'int' in type_name:
+        return f'{type_name}_t'
+    return type_name
 
+def get_cpp_type_param_name_with_ref(type_name):
+    if type_name == 'string':
+        return 'const std::string&'
+    elif 'int' in type_name:
+        return f'{type_name}_t'
+    return type_name
 
-def get_key_row_data(row, column_names):
-    """Extract key row data from the Excel sheet."""
-    return {str(row[i].value): row[i].value for i in range(len(row)) if column_names[i].strip().lower() == "key"}
+def convert_to_go_type(col_type):
+    if "int32" in col_type:
+        return "int32"
+    elif "int64" in col_type:
+        return "int64"
+    elif "float" in col_type:
+        return "float32"
+    elif "double" in col_type:
+        return "float64"
+    elif "bool" in col_type:
+        return "bool"
+    elif "string" in col_type:
+        return "string"
+    return "interface{}"
 
-
+# 提取工作簿数据
 def get_workbook_data(workbook):
-    """Extract data from the first sheet of the workbook."""
     workbook_data = {}
     sheet_names = workbook.sheetnames
-    if sheet_names:  # Read only the first sheet
+    if sheet_names:
         sheet = workbook[sheet_names[0]]
-
-        # Check if A5 cell value is 'multi' or None
         cell_value = sheet['A5'].value
         use_flat_multimap = cell_value is not None and cell_value.lower() == 'multi'
         first_19_rows_per_column = generate_common.get_first_19_rows_per_column(sheet)
@@ -50,37 +64,19 @@ def get_workbook_data(workbook):
         }
     return workbook_data
 
-
-def get_cpp_type_name(type_name):
-    """Return C++ type name based on the provided type_name."""
-    if type_name == 'string':
-        return 'std::string'
-    elif 'int' in type_name:
-        return f'{type_name}_t'
-    return type_name
-
-
-def get_cpp_type_param_name_with_ref(type_name):
-    """Return C++ type parameter name with reference."""
-    if type_name == 'string':
-        return 'const std::string&'
-    elif 'int' in type_name:
-        return f'{type_name}_t'
-    return type_name
-
+# 处理单个 xlsx 文件
 def process_workbook(filename):
-    """Process a single workbook file and generate corresponding header and implementation files."""
     try:
         workbook = openpyxl.load_workbook(filename)
         workbook_data = get_workbook_data(workbook)
         for sheetname, data in workbook_data.items():
             header_filename = f"{sheetname.lower()}_table.h"
             cpp_filename = f"{sheetname.lower()}_table.cpp"
+            go_filename = f"{sheetname.lower()}_table.go"
 
-            # Create a Jinja2 environment and load the templates
             env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'), auto_reload=True)
 
-            # Render the header templates
+            # === C++ 头文件 ===
             header_template = env.get_template('config_template.h.jinja')
             header_content = header_template.render(
                 datastring=data['get_first_19_rows_per_column'],
@@ -90,10 +86,9 @@ def process_workbook(filename):
                 get_cpp_type_param_name_with_ref=get_cpp_type_param_name_with_ref,
                 get_cpp_type_name=get_cpp_type_name
             )
-
             generate_common.mywrite(header_content, CPP_DIR / header_filename)
 
-            # Render the implementation templates
+            # === C++ 实现文件 ===
             implementation_template = env.get_template('config_template.cpp.jinja')
             implementation_content = implementation_template.render(
                 datastring=data['get_first_19_rows_per_column'],
@@ -101,16 +96,26 @@ def process_workbook(filename):
                 generate_common=generate_common,
                 get_cpp_type_param_name_with_ref=get_cpp_type_param_name_with_ref,
                 get_cpp_type_name=get_cpp_type_name
-
             )
-
             generate_common.mywrite(implementation_content, CPP_DIR / cpp_filename)
+
+            # === Go 文件 ===
+            go_template = env.get_template("config_template.go.jinja")
+            go_content = go_template.render(
+                datastring=data['get_first_19_rows_per_column'],
+                sheetname=sheetname,
+                generate_common=generate_common,
+                convert_to_go_type=convert_to_go_type,  # 动态转换
+                proto_import_path="your/proto/package/path"  # ⚠️ 请修改为你真实路径
+            )
+            GO_DIR.mkdir(parents=True, exist_ok=True)
+            generate_common.mywrite(go_content, GO_DIR / go_filename)
+
     except Exception as e:
         logging.error(f"Failed to load or process workbook {filename}: {e}")
 
-
+# 生成 all_table.h / .cpp
 def generate_all_config():
-    # 收集所有 sheet 名
     sheetnames = set()
     xlsx_files = sorted(XLS_DIR.glob('*.xlsx'), key=lambda f: f.stat().st_size, reverse=True)
     for filepath in xlsx_files:
@@ -121,10 +126,9 @@ def generate_all_config():
         except Exception as e:
             logging.error(f"Failed to process file {filepath}: {e}")
 
-    sheetnames = sorted(sheetnames)  # 保持稳定输出
+    sheetnames = sorted(sheetnames)
     cpucount = cpu_count()
 
-    # 初始化模板引擎
     env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'))
     header_template = env.get_template("all_table.h.jinja")
     cpp_template = env.get_template("all_table.cpp.jinja")
@@ -132,20 +136,24 @@ def generate_all_config():
     header_content = header_template.render()
     cpp_content = cpp_template.render(sheetnames=sheetnames, cpucount=cpucount)
 
+    go_template = env.get_template("all_table.go.jinja")
+    go_content = go_template.render(sheetnames=sheetnames)
+
+    GO_DIR.mkdir(parents=True, exist_ok=True)
+    generate_common.mywrite(go_content, GO_DIR / "all_table.go")
+
     return header_content, cpp_content
 
+# 主函数
 def main():
-    """Main function to generate all configuration files."""
     CPP_DIR.mkdir(parents=True, exist_ok=True)
+    GO_DIR.mkdir(parents=True, exist_ok=True)
 
-    # List of Excel files
     xlsx_files = [XLS_DIR / filename for filename in os.listdir(XLS_DIR) if filename.endswith('.xlsx')]
 
-    # Process Excel files in parallel
     with concurrent.futures.ProcessPoolExecutor() as executor:
         executor.map(process_workbook, xlsx_files)
 
-    # Generate header and implementation files for all configurations
     header_content, cpp_content = generate_all_config()
     generate_common.mywrite(header_content, CPP_DIR / "all_table.h")
     generate_common.mywrite(cpp_content, CPP_DIR / "all_table.cpp")

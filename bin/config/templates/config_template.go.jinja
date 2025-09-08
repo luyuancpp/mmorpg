@@ -1,0 +1,70 @@
+package table
+
+import (
+    "fmt"
+    "os"
+    "path/filepath"
+
+    "google.golang.org/protobuf/encoding/protojson"
+    pb "{{ proto_import_path }}"
+)
+
+type {{ sheetname }}TableManager struct {
+    data []*pb.{{ sheetname }}
+    kvData map[int32]*pb.{{ sheetname }}
+    {%- for data in datastring %}
+        {%- if data and data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL %}
+    kv{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data map[{{ convert_to_go_type(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}]*pb.{{ sheetname }}
+        {%- endif %}
+    {%- endfor %}
+}
+
+func New{{ sheetname }}TableManager() *{{ sheetname }}TableManager {
+    return &{{ sheetname }}TableManager{
+        kvData: make(map[int32]*pb.{{ sheetname }}),
+        {%- for data in datastring %}
+            {%- if data and data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL %}
+        kv{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data: make(map[{{ convert_to_go_type(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}]*pb.{{ sheetname }}),
+            {%- endif %}
+        {%- endfor %}
+    }
+}
+
+func (m *{{ sheetname }}TableManager) Load(configDir string) error {
+    path := filepath.Join(configDir, "{{ sheetname | lower }}.json")
+    raw, err := os.ReadFile(path)
+    if err != nil {
+        return fmt.Errorf("failed to read file: %%w", err)
+    }
+
+    var container pb.{{ sheetname }}List
+    if err := protojson.Unmarshal(raw, &container); err != nil {
+        return fmt.Errorf("failed to parse json: %%w", err)
+    }
+
+    for _, row := range container.Data {
+        m.kvData[row.Id] = row
+        {%- for data in datastring %}
+            {%- if data and data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL %}
+        m.kv{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data[row.{{ data[generate_common.COL_OBJ_COLUMN_NAME] | capitalize }}] = row
+            {%- endif %}
+        {%- endfor %}
+    }
+
+    m.data = container.Data
+    return nil
+}
+
+func (m *{{ sheetname }}TableManager) GetById(id int32) (*pb.{{ sheetname }}, bool) {
+    row, ok := m.kvData[id]
+    return row, ok
+}
+
+{%- for data in datastring %}
+    {%- if data and data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL %}
+func (m *{{ sheetname }}TableManager) GetBy{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}(key {{ convert_to_go_type(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}) (*pb.{{ sheetname }}, bool) {
+    row, ok := m.kv{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data[key]
+    return row, ok
+}
+    {%- endif %}
+{%- endfor %}
