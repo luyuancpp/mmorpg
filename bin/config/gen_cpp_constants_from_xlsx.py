@@ -72,14 +72,6 @@ class ExcelToCppConverter:
             return f'k{self.sheet}_{row[self.constants_name_index]}'
         return f'k{self.sheet}_{id_value}'
 
-    def save_cpp_constants_to_file(self, cpp_code: str) -> None:
-        output_path = os.path.join(
-            constants.GENERATOR_CONSTANTS_NAME_DIR,
-            f"{self.sheet.lower()}_table_id_constants.h"
-        )
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(cpp_code)
-
     def close(self):
         if hasattr(self, 'workbook'):
             self.workbook.close()
