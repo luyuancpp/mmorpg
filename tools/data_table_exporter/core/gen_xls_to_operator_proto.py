@@ -8,7 +8,8 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from openpyxl import load_workbook  # Use openpyxl for better support of .xlsx files
 
-from core.constants import PROJECT_GENERATED_CODE_PROTO_OPERATOR_DIR, GENERATOR_STORAGE_OPERATOR_DIR
+from core.constants import PROJECT_GENERATED_CODE_PROTO_OPERATOR_DIR, GENERATOR_STORAGE_OPERATOR_DIR, \
+    PROJECT_OPERATOR_XLSX
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
