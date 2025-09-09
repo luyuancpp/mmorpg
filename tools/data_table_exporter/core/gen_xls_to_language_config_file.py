@@ -2,7 +2,6 @@
 # coding=utf-8
 
 import concurrent.futures
-import os
 import openpyxl
 import logging
 from pathlib import Path
@@ -15,6 +14,7 @@ from core.constants import PROJECT_GENERATED_CODE_CPP_DIR, PROJECT_GENERATED_COD
 # 日志配置
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+
 # 类型转换函数
 def get_cpp_type_name(type_name):
     if type_name == 'string':
@@ -23,12 +23,14 @@ def get_cpp_type_name(type_name):
         return f'{type_name}_t'
     return type_name
 
+
 def get_cpp_type_param_name_with_ref(type_name):
     if type_name == 'string':
         return 'const std::string&'
     elif 'int' in type_name:
         return f'{type_name}_t'
     return type_name
+
 
 def convert_to_go_type(col_type):
     if "int32" in col_type:
@@ -45,8 +47,9 @@ def convert_to_go_type(col_type):
         return "string"
     return "interface{}"
 
-# 提取工作簿数据
+
 def get_workbook_data(workbook):
+    """提取工作簿中第一张 sheet 的必要元数据"""
     workbook_data = {}
     sheet_names = workbook.sheetnames
     if sheet_names:
@@ -60,19 +63,17 @@ def get_workbook_data(workbook):
         }
     return workbook_data
 
-# 处理单个 xlsx 文件
-def process_workbook(filename):
+
+def process_workbook(filepath: Path):
+    """处理单个 xlsx 文件生成代码"""
     try:
-        workbook = openpyxl.load_workbook(filename)
+        workbook = openpyxl.load_workbook(filepath)
         workbook_data = get_workbook_data(workbook)
         for sheetname, data in workbook_data.items():
-            header_filename = f"{sheetname.lower()}_table.h"
-            cpp_filename = f"{sheetname.lower()}_table.cpp"
-            go_filename = f"{sheetname.lower()}_table.go"
-
+            sheetname_lower = sheetname.lower()
             env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'), auto_reload=True)
 
-            # === C++ 头文件 ===
+            # === C++ Header ===
             header_template = env.get_template('config_template.h.jinja')
             header_content = header_template.render(
                 datastring=data['get_first_19_rows_per_column'],
@@ -82,38 +83,39 @@ def process_workbook(filename):
                 get_cpp_type_param_name_with_ref=get_cpp_type_param_name_with_ref,
                 get_cpp_type_name=get_cpp_type_name
             )
-            generate_common.mywrite(header_content, PROJECT_GENERATED_CODE_CPP_DIR / header_filename)
+            generate_common.mywrite(header_content, PROJECT_GENERATED_CODE_CPP_DIR / f"{sheetname_lower}_table.h")
 
-            # === C++ 实现文件 ===
-            implementation_template = env.get_template('config_template.cpp.jinja')
-            implementation_content = implementation_template.render(
+            # === C++ Implementation ===
+            cpp_template = env.get_template('config_template.cpp.jinja')
+            cpp_content = cpp_template.render(
                 datastring=data['get_first_19_rows_per_column'],
                 sheetname=sheetname,
                 generate_common=generate_common,
                 get_cpp_type_param_name_with_ref=get_cpp_type_param_name_with_ref,
                 get_cpp_type_name=get_cpp_type_name
             )
-            generate_common.mywrite(implementation_content, PROJECT_GENERATED_CODE_CPP_DIR / cpp_filename)
+            generate_common.mywrite(cpp_content, PROJECT_GENERATED_CODE_CPP_DIR / f"{sheetname_lower}_table.cpp")
 
-            # === Go 文件 ===
+            # === Go Code ===
             go_template = env.get_template("config_template.go.jinja")
             go_content = go_template.render(
                 datastring=data['get_first_19_rows_per_column'],
                 sheetname=sheetname,
                 generate_common=generate_common,
-                convert_to_go_type=convert_to_go_type,  # 动态转换
-                proto_import_path="your/proto/package/path"  # ⚠️ 请修改为你真实路径
+                convert_to_go_type=convert_to_go_type,
+                proto_import_path="your/proto/package/path"  # ⚠️ 修改为你的真实路径
             )
             PROJECT_GENERATED_CODE_GO_DIR.mkdir(parents=True, exist_ok=True)
-            generate_common.mywrite(go_content, PROJECT_GENERATED_CODE_GO_DIR / go_filename)
+            generate_common.mywrite(go_content, PROJECT_GENERATED_CODE_GO_DIR / f"{sheetname_lower}_table.go")
 
     except Exception as e:
-        logging.error(f"Failed to load or process workbook {filename}: {e}")
+        logging.error(f"Failed to load or process workbook {filepath.name}: {e}")
 
-# 生成 all_table.h / .cpp
+
 def generate_all_config():
+    """生成 all_table.h / all_table.cpp / all_table.go 等聚合文件"""
     sheetnames = set()
-    xlsx_files = sorted(Path(XLSX_DIR).glob('*.xlsx'), key=lambda f: f.stat().st_size, reverse=True)
+    xlsx_files = sorted(XLSX_DIR.glob("*.xlsx"), key=lambda f: f.stat().st_size, reverse=True)
     for filepath in xlsx_files:
         try:
             workbook = openpyxl.load_workbook(filepath)
@@ -128,11 +130,10 @@ def generate_all_config():
     env = Environment(loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'))
     header_template = env.get_template("all_table.h.jinja")
     cpp_template = env.get_template("all_table.cpp.jinja")
+    go_template = env.get_template("all_table.go.jinja")
 
     header_content = header_template.render()
     cpp_content = cpp_template.render(sheetnames=sheetnames, cpucount=cpucount)
-
-    go_template = env.get_template("all_table.go.jinja")
     go_content = go_template.render(sheetnames=sheetnames)
 
     PROJECT_GENERATED_CODE_GO_DIR.mkdir(parents=True, exist_ok=True)
@@ -140,19 +141,21 @@ def generate_all_config():
 
     return header_content, cpp_content
 
-# 主函数
-def main(XLS_DIR=None):
+
+def main(XLS_DIR: Path = None):
+    """主函数，支持传入自定义 Excel 目录"""
+    xls_dir = XLS_DIR or XLSX_DIR
     PROJECT_GENERATED_CODE_CPP_DIR.mkdir(parents=True, exist_ok=True)
     PROJECT_GENERATED_CODE_GO_DIR.mkdir(parents=True, exist_ok=True)
 
-    xlsx_files = [XLS_DIR / filename for filename in os.listdir(XLS_DIR) if filename.endswith('.xlsx')]
-
+    xlsx_files = list(xls_dir.glob("*.xlsx"))
     with concurrent.futures.ProcessPoolExecutor() as executor:
         executor.map(process_workbook, xlsx_files)
 
     header_content, cpp_content = generate_all_config()
     generate_common.mywrite(header_content, PROJECT_GENERATED_CODE_CPP_DIR / "all_table.h")
     generate_common.mywrite(cpp_content, PROJECT_GENERATED_CODE_CPP_DIR / "all_table.cpp")
+
 
 if __name__ == "__main__":
     main()
