@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message Rewardreward {
+	uint32 reward_item = 1;
+	uint32 reward_count = 2;
+}
+
+message RewardTable {
+	uint32 id = 1;
+	repeated Rewardreward reward = 2;
+}
+
+message RewardTabledData {
+	repeated RewardTable data = 1;
+}

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message MissionTable {
+	uint32 id = 1;
+	repeated uint32 condition_id = 2;
+	uint32 mission_type = 3;
+	uint32 mission_sub_type = 4;
+	uint32 condition_order = 5;
+	uint32 auto_reward = 6;
+	uint32 reward_id = 7;
+	repeated uint32 next_mission_id = 8;
+}
+
+message MissionTabledData {
+	repeated MissionTable data = 1;
+}

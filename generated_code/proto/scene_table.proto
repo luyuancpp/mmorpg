@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message SceneTable {
+	uint32 id = 1;
+	uint32 dungeon_id = 2;
+}
+
+message SceneTabledData {
+	repeated SceneTable data = 1;
+}

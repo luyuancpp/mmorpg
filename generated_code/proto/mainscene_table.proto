@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message MainSceneTable {
+	uint32 id = 1;
+	string nav_bin_file = 2;
+}
+
+message MainSceneTabledData {
+	repeated MainSceneTable data = 1;
+}

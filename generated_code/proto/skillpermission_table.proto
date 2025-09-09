@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message SkillPermissionTable {
+	uint32 id = 1;
+	repeated uint32 skilltype = 2;
+}
+
+message SkillPermissionTabledData {
+	repeated SkillPermissionTable data = 1;
+}

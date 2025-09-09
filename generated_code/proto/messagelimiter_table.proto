@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message MessageLimiterTable {
+	uint32 id = 1;
+	uint32 MaxRequests = 2;
+	uint32 TimeWindow = 3;
+	uint32 TipMessage = 4;
+}
+
+message MessageLimiterTabledData {
+	repeated MessageLimiterTable data = 1;
+}

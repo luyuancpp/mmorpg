@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message GlobalVariableTable {
+	uint32 id = 1;
+	uint32 touint32 = 2;
+	int32 toint32 = 3;
+	string tostring = 4;
+	float tofloat = 5;
+	double todouble = 6;
+}
+
+message GlobalVariableTabledData {
+	repeated GlobalVariableTable data = 1;
+}
