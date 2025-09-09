@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message ConditionTable {
+	uint32 id = 1;
+	uint32 condition_type = 2;
+	repeated uint32 condition1 = 3;
+	repeated uint32 condition2 = 4;
+	repeated uint32 condition3 = 5;
+	repeated uint32 condition4 = 6;
+	uint32 amount_type = 7;
+	uint32 amount = 8;
+	uint32 comparison = 9;
+}
+
+message ConditionTabledData {
+	repeated ConditionTable data = 1;
+}

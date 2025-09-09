@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message ActorActionStatestate {
+	uint32 state_mode = 1;
+	uint32 state_tip = 2;
+}
+
+message ActorActionStateTable {
+	uint32 id = 1;
+	repeated ActorActionStatestate state = 2;
+}
+
+message ActorActionStateTabledData {
+	repeated ActorActionStateTable data = 1;
+}
