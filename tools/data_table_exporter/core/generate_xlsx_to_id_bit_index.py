@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import os
 import json
 import logging
 import concurrent.futures
-from os import listdir
-from os.path import isfile, join
 import openpyxl
 import multiprocessing
 from typing import List, Optional, Dict
+from pathlib import Path
 
-import generate_common  # Assuming generate_common contains the necessary functions
+import generate_common
 from core import constants
 from jinja2 import Environment, FileSystemLoader
 
@@ -19,23 +17,23 @@ from jinja2 import Environment, FileSystemLoader
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+
 class ExcelToCppConverter:
-    def __init__(self, excel_file: str):
+    def __init__(self, excel_file: Path):
         self.excel_file = excel_file
         self.workbook = openpyxl.load_workbook(excel_file)
         self.sheet = self.workbook.sheetnames[0]
         self.worksheet = self.workbook[self.sheet]
         self.bit_index_col = self._find_bit_index_column()
-        self.mapping_file = join(constants.GENERATOR_TABLE_INDEX_MAPPING_DIR, f"{self.sheet.lower()}_mapping.json")
+        self.mapping_file = constants.GENERATOR_TABLE_INDEX_MAPPING_DIR / f"{self.sheet.lower()}_mapping.json"
 
         # Initialize Jinja2 environment
         self.template_env = Environment(
-            loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'),  # Path to your template folder
+            loader=FileSystemLoader(generate_common.TEMPLATE_DIR, encoding='utf-8'),
             autoescape=True
         )
 
     def _find_bit_index_column(self) -> Optional[int]:
-        """Find the index of the column where the 7th row contains 'bit_index'."""
         headers = [cell.value for cell in self.worksheet[1]]
         for col_idx in range(len(headers)):
             cell_value = self.worksheet.cell(row=generate_common.XLSX_TABLE_BIT_BEGIN_INDEX, column=col_idx + 1).value
@@ -44,32 +42,25 @@ class ExcelToCppConverter:
         return None
 
     def _load_existing_mapping(self) -> Dict[int, int]:
-        """Load existing ID to index mapping from a JSON file."""
-        if os.path.exists(self.mapping_file):
-            with open(self.mapping_file, 'r') as file:
-                try:
-                    # Load the JSON data
+        if self.mapping_file.exists():
+            try:
+                with self.mapping_file.open('r', encoding='utf-8') as file:
                     data = json.load(file)
-                    return {int(k): v for k, v in data.items()}  # Convert keys to integers
-                except json.JSONDecodeError:
-                    logger.error("Error: JSON file is not valid.")
-                    return {}
+                    return {int(k): v for k, v in data.items()}
+            except json.JSONDecodeError:
+                logger.error("Error: JSON file is not valid.")
         return {}
 
     def _save_mapping(self, mapping: Dict[int, int]) -> None:
-        """Save the ID to index mapping to a JSON file."""
-        with open(self.mapping_file, 'w', encoding='utf-8') as file:
+        with self.mapping_file.open('w', encoding='utf-8') as file:
             json.dump(mapping, file, indent=4)
 
     def _find_unused_indexes(self, id_to_index: Dict[int, int]) -> List[int]:
-        """Find and return a list of unused indexes."""
         used_indexes = set(id_to_index.values())
         all_indexes = set(range(len(id_to_index)))
-        unused_indexes = sorted(all_indexes - used_indexes)
-        return unused_indexes
+        return sorted(all_indexes - used_indexes)
 
     def _find_max_bit_index(self) -> int:
-        """Find the maximum bit index in the 7th row."""
         max_bit_index = -1
         if self.bit_index_col is not None:
             for row in self.worksheet.iter_rows(min_row=20, values_only=True):
@@ -79,30 +70,22 @@ class ExcelToCppConverter:
         return max_bit_index
 
     def should_process(self) -> bool:
-        """Check if the worksheet contains a valid 'bit_index' column."""
         return self.bit_index_col is not None
 
     def generate_cpp_constants(self) -> str:
-        """Generate C++ constants from the Excel data using Jinja2 template."""
         id_to_index = self._load_existing_mapping()
         unused_indexes = self._find_unused_indexes(id_to_index)
         current_index = max(id_to_index.values(), default=-1) + 1
 
-        # Iterate through rows to assign ID to index
         for row in self.worksheet.iter_rows(min_row=20, values_only=True):
             id_value = row[0]
             if id_value is None:
-                continue  # Skip rows with no ID
-
+                continue
             if id_value not in id_to_index:
-                if unused_indexes:
-                    index = unused_indexes.pop(0)
-                else:
-                    index = current_index
-                    current_index += 1
+                index = unused_indexes.pop(0) if unused_indexes else current_index
+                current_index += 1 if not unused_indexes else 0
                 id_to_index[id_value] = index
 
-        # Render the template
         template = self.template_env.get_template("cpp_config_id_bit_template.h.j2")
         cpp_constants = template.render(
             sheet=self.sheet,
@@ -110,31 +93,23 @@ class ExcelToCppConverter:
             max_bit_index=self._find_max_bit_index()
         )
 
-        # Save the mapping
         self._save_mapping(id_to_index)
         return cpp_constants
 
     def generate_go_constants(self) -> str:
-        """Generate Go constants from the Excel data using Jinja2 template."""
         id_to_index = self._load_existing_mapping()
         unused_indexes = self._find_unused_indexes(id_to_index)
         current_index = max(id_to_index.values(), default=-1) + 1
 
-        # Iterate through rows to assign ID to index
         for row in self.worksheet.iter_rows(min_row=20, values_only=True):
             id_value = row[0]
             if id_value is None:
                 continue
-
             if id_value not in id_to_index:
-                if unused_indexes:
-                    index = unused_indexes.pop(0)
-                else:
-                    index = current_index
-                    current_index += 1
+                index = unused_indexes.pop(0) if unused_indexes else current_index
+                current_index += 1 if not unused_indexes else 0
                 id_to_index[id_value] = index
 
-        # Render the Go template
         template = self.template_env.get_template("go_config_id_bit_template.go.j2")
         go_constants = template.render(
             sheet=self.sheet,
@@ -142,66 +117,50 @@ class ExcelToCppConverter:
             max_bit_index=self._find_max_bit_index()
         )
 
-        # Save the mapping (same mapping as C++)
         self._save_mapping(id_to_index)
         return go_constants
 
     def save_go_constants_to_file(self, go_constants: str) -> None:
-        output_file = join(constants.GENERATOR_TABLE_INDEX_GO_DIR, f"{self.sheet.lower()}_table_id_bit_index.go")
-        with open(output_file, 'w', encoding='utf-8') as file:
-            file.write(go_constants)
+        output_file = constants.GENERATOR_TABLE_INDEX_GO_DIR / f"{self.sheet.lower()}_table_id_bit_index.go"
+        output_file.write_text(go_constants, encoding='utf-8')
 
     def save_cpp_constants_to_file(self, cpp_constants: str) -> None:
-        """Save the generated C++ constants to a file."""
-        output_file = join(constants.GENERATOR_TABLE_INDEX_DIR, f"{self.sheet.lower()}_table_id_bit_index.h")
-        with open(output_file, 'w', encoding='utf-8') as file:
-            file.write(cpp_constants)
+        output_file = constants.GENERATOR_TABLE_INDEX_DIR / f"{self.sheet.lower()}_table_id_bit_index.h"
+        output_file.write_text(cpp_constants, encoding='utf-8')
 
 
-def get_xlsx_files(directory: str) -> List[str]:
-    """List all .xlsx files in the specified directory."""
-    return [join(directory, filename) for filename in listdir(directory)
-            if isfile(join(directory, filename)) and filename.endswith('.xlsx')]
+def get_xlsx_files(directory: Path) -> List[Path]:
+    return [file for file in directory.glob("*.xlsx") if file.is_file()]
 
-def process_file(excel_file: str) -> None:
-    """Process each Excel file and generate the corresponding C++ and Go constants files."""
+
+def process_file(excel_file: Path) -> None:
     converter = ExcelToCppConverter(excel_file)
     if converter.should_process():
-        # 生成 C++
         cpp_constants = converter.generate_cpp_constants()
         converter.save_cpp_constants_to_file(cpp_constants)
 
-        # 额外生成 Go
         go_constants = converter.generate_go_constants()
         converter.save_go_constants_to_file(go_constants)
     else:
-        logger.debug(f"Skipping file {excel_file} as it does not contain a valid 'bit_index' value in the 7th row.")
-
+        logger.debug(f"Skipping file {excel_file} due to missing 'bit_index'.")
 
 
 def main() -> None:
-    """Main function to process all Excel files."""
-    os.makedirs(constants.GENERATOR_TABLE_INDEX_DIR, exist_ok=True)
-    os.makedirs(constants.GENERATOR_TABLE_INDEX_GO_DIR, exist_ok=True)
-    os.makedirs(constants.GENERATOR_TABLE_INDEX_MAPPING_DIR, exist_ok=True)
+    constants.GENERATOR_TABLE_INDEX_DIR.mkdir(parents=True, exist_ok=True)
+    constants.GENERATOR_TABLE_INDEX_GO_DIR.mkdir(parents=True, exist_ok=True)
+    constants.GENERATOR_TABLE_INDEX_MAPPING_DIR.mkdir(parents=True, exist_ok=True)
 
     try:
         xlsx_files = get_xlsx_files(constants.XLSX_DIR)
         num_threads = min(multiprocessing.cpu_count(), len(xlsx_files))
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-            try:
-                futures = [executor.submit(process_file, file_path) for file_path in xlsx_files]
-                for future in concurrent.futures.as_completed(futures):
-                    try:
-                        future.result()
-                    except Exception as e:
-                        logger.error(f"任务执行失败: {str(e)}")
-            except Exception as e:
-                logger.error(f"线程池执行失败: {str(e)}")
-            finally:
-                # 确保所有任务都完成
-                executor.shutdown(wait=True)
+            futures = [executor.submit(process_file, file_path) for file_path in xlsx_files]
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    logger.error(f"任务执行失败: {str(e)}")
     except Exception as e:
         logger.error(f"主程序执行失败: {str(e)}")
 
