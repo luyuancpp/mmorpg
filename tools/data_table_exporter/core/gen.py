@@ -1,34 +1,39 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import os
 import subprocess
 import logging
+from pathlib import Path
 import constants
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# List of directories to create
+# Base directory references
+GEN_CODE_DIR = constants.PROJECT_GENERATED_CODE_DIR
+GEN_JSON_DIR = constants.PROJECT_GENERATED_JSON_DIR
+PROJECT_DIR = constants.PROJECT_DIR
+
+# List of directories to create (Path 类型)
 directories = [
-    constants.PROJECT_GENERATED_CODE_DIR + "cpp/",
-    constants.PROJECT_GENERATED_CODE_DIR + "proto/",
-    constants.PROJECT_GENERATED_CODE_DIR + "proto/cpp/",
-    constants.PROJECT_GENERATED_CODE_DIR + "proto/go/",
-    constants.PROJECT_GENERATED_CODE_DIR + "cpp_table_id_constants_name/",
-    constants.PROJECT_GENERATED_JSON_DIR + "json/",
-    "../../cpp/generated/table/code/",
-    "../../cpp/generated/table/code/constants/",
-    "../../cpp/generated/table/code/bit_index",
-    "../../cpp/generated/table/proto/operator/",
-    "../../cpp/generated/table/proto/tip/",
+    GEN_CODE_DIR / "cpp",
+    GEN_CODE_DIR / "proto",
+    GEN_CODE_DIR / "proto" / "cpp",
+    GEN_CODE_DIR / "proto" / "go",
+    GEN_CODE_DIR / "cpp_table_id_constants_name",
+    GEN_JSON_DIR / "json",
+    PROJECT_DIR / "cpp" / "generated" / "table" / "code",
+    PROJECT_DIR / "cpp" / "generated" / "table" / "code" / "constants",
+    PROJECT_DIR / "cpp" / "generated" / "table" / "code" / "bit_index",
+    PROJECT_DIR / "cpp" / "generated" / "table" / "proto" / "operator",
+    PROJECT_DIR / "cpp" / "generated" / "table" / "proto" / "tip",
 ]
 
 # Create directories if they don't exist
 for directory in directories:
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    if not directory.exists():
+        directory.mkdir(parents=True, exist_ok=True)
         logger.info(f"Created directory: {directory}")
 
 # Define commands to execute
@@ -45,10 +50,8 @@ commands = [
     "python gen_constants_from_xlsx.py",
     "python generate_xlsx_to_id_bit_index.py",
     "python md5tool.py md5copy ../../generated_tables/cpp/ ../../cpp/generated/table/code/",
-    "python md5tool.py md5copy ..././generated_tables/cpp_table_id_bit_index/ "
-    "../../cpp/generated/table/code/bit_index/",
-    "python md5tool.py md5copy ../../generated_tables/cpp_table_id_constants_name/ "
-    "../../cpp/generated/table/code/constants/",
+    "python md5tool.py md5copy ../../generated_tables/cpp_table_id_bit_index/ ../../cpp/generated/table/code/bit_index/",
+    "python md5tool.py md5copy ../../generated_tables/cpp_table_id_constants_name/ ../../cpp/generated/table/code/constants/",
     "python md5tool.py md5copy ../../generated_tables/proto/cpp/ ../../cpp/generated/table/proto",
     "python md5tool.py md5copy ../../generated_tables/proto/cpp/operator/ ../../cpp/generated/table/proto/operator/",
     "python md5tool.py md5copy ../../generated_tables/proto/cpp/tip/ ../../cpp/generated/table/proto/tip/",
