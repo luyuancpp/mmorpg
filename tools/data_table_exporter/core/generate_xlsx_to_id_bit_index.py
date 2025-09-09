@@ -125,7 +125,7 @@ class ExcelToCppConverter:
         output_file.write_text(go_constants, encoding='utf-8')
 
     def save_cpp_constants_to_file(self, cpp_constants: str) -> None:
-        output_file = constants.GENERATOR_TABLE_INDEX_DIR / f"{self.sheet.lower()}_table_id_bit_index.h"
+        output_file = constants.SRC_CPP_ID_BIT1 / f"{self.sheet.lower()}_table_id_bit_index.h"
         output_file.write_text(cpp_constants, encoding='utf-8')
 
 
@@ -146,7 +146,7 @@ def process_file(excel_file: Path) -> None:
 
 
 def main() -> None:
-    constants.GENERATOR_TABLE_INDEX_DIR.mkdir(parents=True, exist_ok=True)
+    constants.SRC_CPP_ID_BIT1.mkdir(parents=True, exist_ok=True)
     constants.GENERATOR_TABLE_INDEX_GO_DIR.mkdir(parents=True, exist_ok=True)
     constants.GENERATOR_TABLE_INDEX_MAPPING_DIR.mkdir(parents=True, exist_ok=True)
 
