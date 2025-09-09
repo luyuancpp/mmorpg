@@ -49,15 +49,17 @@ commands = [
     "python gen_go_pb.py",
     "python gen_constants_from_xlsx.py",
     "python generate_xlsx_to_id_bit_index.py",
-    "python md5tool.py md5copy ../../../generated_tables/cpp/ ../../../cpp/generated/table/code/",
-    "python md5tool.py md5copy ../../../generated_tables/cpp_table_id_bit_index/ ../../../cpp/generated/table/code/bit_index/",
-    "python md5tool.py md5copy ../../../generated_tables/cpp_table_id_constants_name/ ../../../cpp/generated/table/code/constants/",
-    "python md5tool.py md5copy ../../../generated_tables/proto/cpp/ ../../../cpp/generated/table/proto",
-    "python md5tool.py md5copy ../../../generated_tables/proto/cpp/operator/ ../../../cpp/generated/table/proto/operator/",
-    "python md5tool.py md5copy ../../../generated_tables/proto/cpp/tip/ ../../../cpp/generated/table/proto/tip/",
-    "python md5tool.py md5copy ../../../generated_tables/proto/go/pb/game/ ../../../go/login/pb/game/",
-    "python md5tool.py md5copy ../../../generated_tables/proto/go/pb/game/ ../../../go/db/pb/game/",
+
+    f"python md5tool.py md5copy {constants.SRC_CPP} {constants.DST_CPP_CODE}",
+    f"python md5tool.py md5copy {constants.SRC_CPP_ID_BIT} {constants.DST_CPP_BIT}",
+    f"python md5tool.py md5copy {constants.SRC_CPP_CONSTANTS} {constants.DST_CPP_CONSTANTS}",
+    f"python md5tool.py md5copy {constants.SRC_PROTO_CPP} {constants.DST_PROTO_CPP}",
+    f"python md5tool.py md5copy {constants.SRC_PROTO_CPP_OPERATOR} {constants.DST_PROTO_CPP_OPERATOR}",
+    f"python md5tool.py md5copy {constants.SRC_PROTO_CPP_TIP} {constants.DST_PROTO_CPP_TIP}",
+    f"python md5tool.py md5copy {constants.SRC_PROTO_GO} {constants.DST_PROTO_GO_LOGIN}",
+    f"python md5tool.py md5copy {constants.SRC_PROTO_GO} {constants.DST_PROTO_GO_DB}",
 ]
+
 
 # Execute commands and capture return codes
 for command in commands:

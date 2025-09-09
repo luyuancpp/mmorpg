@@ -41,3 +41,29 @@ GENERATOR_STORAGE_OPERATOR_FILE_DIR = GENERATOR_STORAGE_OPERATOR_DIR / "id_pool.
 
 GENERATOR_TABLE_INDEX_MAPPING_DIR = GENERATOR_STORAGE_DIR / "mapping" / "table_index_mapping"
 GENERATOR_TIP_MAPPING_DIR = GENERATOR_STORAGE_DIR / "mapping" / "tip_enum_ids"
+
+
+
+# 假设 PROJECT_DIR 已经是 Path 类型
+GENERATED_TABLES_DIR = PROJECT_DIR / ".." /  "generated_tables"
+CPP_GEN_DIR = PROJECT_DIR / "cpp" / "generated" / "table"
+GO_GEN_DIR = PROJECT_DIR / "go"
+
+# 源目录路径
+SRC_CPP = GENERATED_TABLES_DIR / "cpp"
+SRC_CPP_ID_BIT = GENERATED_TABLES_DIR / "cpp_table_id_bit_index"
+SRC_CPP_CONSTANTS = GENERATED_TABLES_DIR / "cpp_table_id_constants_name"
+SRC_PROTO_CPP = GENERATED_TABLES_DIR / "proto" / "cpp"
+SRC_PROTO_CPP_OPERATOR = SRC_PROTO_CPP / "operator"
+SRC_PROTO_CPP_TIP = SRC_PROTO_CPP / "tip"
+SRC_PROTO_GO = GENERATED_TABLES_DIR / "proto" / "go" / "pb" / "game"
+
+# 目标目录路径
+DST_CPP_CODE = CPP_GEN_DIR / "code"
+DST_CPP_BIT = DST_CPP_CODE / "bit_index"
+DST_CPP_CONSTANTS = DST_CPP_CODE / "constants"
+DST_PROTO_CPP = CPP_GEN_DIR / "proto"
+DST_PROTO_CPP_OPERATOR = DST_PROTO_CPP / "operator"
+DST_PROTO_CPP_TIP = DST_PROTO_CPP / "tip"
+DST_PROTO_GO_LOGIN = GO_GEN_DIR / "login" / "pb" / "game"
+DST_PROTO_GO_DB = GO_GEN_DIR / "db" / "pb" / "game"
