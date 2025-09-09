@@ -7,26 +7,20 @@ import logging
 import concurrent.futures
 from os import listdir
 from os.path import isfile, join
-from typing import Any, Union
+from typing import Any, Union, List, Dict
 
 import openpyxl
-import generate_common  # Assuming generate_common contains the necessary functions
+import generate_common  # 假设这个模块包含必要函数
 from core import constants
-from constants import PROJECT_GENERATED_JSON_DIR
-from constants import XLSX_DIR
+from constants import PROJECT_GENERATED_JSON_DIR, XLSX_DIR
 
-# Configuration Constants
-
-
-# Setup Logging
+# 配置日志
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
-def get_column_names(sheet: openpyxl.worksheet.worksheet.Worksheet) -> list[str]:
-    """
-    Get column names from the sheet based on specified conditions.
-    """
+def get_column_names(sheet: openpyxl.worksheet.worksheet.Worksheet) -> List[str]:
+    """根据条件获取第一行列名，第四行判断是否符合 SERVER_GEN_TYPE"""
     return [
         sheet.cell(row=1, column=col_idx + 1).value
         if sheet.cell(row=4, column=col_idx + 1).value in constants.SERVER_GEN_TYPE
@@ -36,44 +30,31 @@ def get_column_names(sheet: openpyxl.worksheet.worksheet.Worksheet) -> list[str]
 
 
 def process_cell_value(cell: openpyxl.cell.cell.Cell, field_type: str) -> Union[float, int, str, Any]:
-    """
-    Process cell value to ensure the correct type based on the provided field_type.
-
-    Args:
-        cell (openpyxl.cell.cell.Cell): The Excel cell whose value needs processing.
-        field_type (str): The type to which the cell value should be converted. Can be "float", "int", "string".
-
-    Returns:
-        Union[float, int, str, Any]: The processed cell value in the desired type.
-    """
+    """处理单元格值，转换成指定的类型"""
     cell_value = cell.value
 
     if field_type == "string":
-        # 如果 field_type 是 "string"，并且 cell_value 为空（None 或 空字符串），返回 None
-        if cell_value is None or cell_value == "":
+        if cell_value in (None, ""):
             return None
         return str(cell_value)
 
-    if field_type == "float" or field_type == "double":
+    if field_type in ("float", "double"):
         try:
             return float(cell_value)
-        except ValueError:
-            return None  # 如果无法转换为 float，返回 None 或进行适当的处理
+        except (ValueError, TypeError):
+            return None
 
     if isinstance(cell_value, float) and cell_value.is_integer():
-        return int(cell_value)  # 如果值是浮动且是整数，转换为整数
+        return int(cell_value)
 
     if isinstance(cell_value, int):
-        return cell_value  # 如果值是整数，直接返回
+        return cell_value
 
-    # 如果没有特定转换，返回原始的 cell_value
     return cell_value
 
 
-def handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, column_names, prev_cell):
-    """
-    Handle data for map fields and update row data accordingly.
-    """
+def handle_map_field_data(cell, row_data: dict, col_name: str, cell_value, map_field_data: dict, column_names: List[str], prev_cell):
+    """处理 map 类型字段数据"""
     prev_column_name = column_names[prev_cell.col_idx - 1] if prev_cell else None
     if cell_value in (None, '') and cell.row >= generate_common.BEGIN_ROW_IDX:
         return
@@ -81,31 +62,29 @@ def handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, 
     prev_obj_name = generate_common.column_name_to_obj_name(prev_column_name, "_") if prev_column_name else None
     obj_name = generate_common.column_name_to_obj_name(col_name, "_")
 
-    if generate_common.SET_CELL == map_field_data[col_name]:
+    if generate_common.SET_CELL == map_field_data.get(col_name):
         row_data.setdefault(col_name, {})[cell_value] = True
-    elif (prev_column_name in map_field_data and generate_common.MAP_KEY_CELL == map_field_data[prev_column_name]
-          and prev_obj_name == obj_name):
+    elif (prev_column_name in map_field_data and
+          generate_common.MAP_KEY_CELL == map_field_data.get(prev_column_name) and
+          prev_obj_name == obj_name):
         row_data.setdefault(obj_name, {})[prev_cell.value] = cell_value
 
 
-def handle_array_data(cell, row_data, col_name, cell_value):
-    """
-    Handle data for array fields and update row data accordingly.
-    """
+def handle_array_data(cell, row_data: dict, col_name: str, cell_value):
+    """处理数组类型字段"""
     if cell_value in (None, '', 0, -1) and cell.row >= generate_common.BEGIN_ROW_IDX:
         return
     row_data.setdefault(col_name, []).append(cell_value)
 
 
-def handle_group_data(cell, row_data, col_name, cell_value, prev_cell):
-    """
-    Handle data for group fields and update row data accordingly.
-    """
+def handle_group_data(cell, row_data: dict, col_name: str, cell_value, prev_cell):
+    """处理分组字段数据"""
     if cell_value in (None, '', 0, -1) and cell.row >= generate_common.BEGIN_ROW_IDX:
         return
 
     obj_name = generate_common.column_name_to_obj_name(col_name, "_")
     member_dict = {col_name: cell_value}
+
     if obj_name in row_data:
         last_element = row_data[obj_name][-1]
         if col_name in last_element:
@@ -116,10 +95,8 @@ def handle_group_data(cell, row_data, col_name, cell_value, prev_cell):
         row_data[obj_name] = [member_dict]
 
 
-def process_row(sheet, row, column_names):
-    """
-    Process an individual row to extract data based on column names.
-    """
+def process_row(sheet, row, column_names: List[str]) -> dict:
+    """处理单行数据"""
     sheet_data = generate_common.get_sheet_data(sheet, column_names)
     array_data = sheet_data[generate_common.SHEET_ARRAY_DATA_INDEX]
     field_type_data = sheet_data[generate_common.FILE_TYPE_INDEX]
@@ -129,18 +106,19 @@ def process_row(sheet, row, column_names):
     row_data = {}
     prev_cell = None
 
-    for counter, cell in enumerate(row):
-        if counter >= len(column_names):
+    for idx, cell in enumerate(row):
+        if idx >= len(column_names):
             logger.warning(f"Row {cell.row} in sheet '{sheet.title}' has more cells than column names.")
             break
 
-        col_name = column_names[counter]
+        col_name = column_names[idx]
         if not col_name.strip():
             continue
 
-        cell_value = process_cell_value(cell, field_type_data[col_name])
+        cell_value = process_cell_value(cell, field_type_data.get(col_name, ""))
         if cell_value is None:
             continue
+
         if col_name in map_field_data or generate_common.is_key_in_map(group_data, col_name, map_field_data, column_names):
             handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, column_names, prev_cell)
         elif col_name in array_data:
@@ -149,7 +127,7 @@ def process_row(sheet, row, column_names):
             handle_group_data(cell, row_data, col_name, cell_value, prev_cell)
         else:
             if cell_value in (None, '') and cell.row >= generate_common.BEGIN_ROW_IDX:
-                logger.error(f"Sheet '{sheet.title}', Cell {cell.coordinate} is empty or contains invalid data.")
+                logger.error(f"Sheet '{sheet.title}', Cell {cell.coordinate} is empty or invalid.")
             row_data[col_name] = cell_value
 
         prev_cell = cell
@@ -157,53 +135,46 @@ def process_row(sheet, row, column_names):
     return row_data
 
 
-def extract_sheet_data(sheet, column_names):
-    """
-    Extract data from all rows in the sheet.
-    """
-    return [process_row(sheet, row, column_names) for row in
-            sheet.iter_rows(min_row=generate_common.BEGIN_ROW_IDX + 1, values_only=False)]
+def extract_sheet_data(sheet, column_names: List[str]) -> List[dict]:
+    """提取整个 sheet 的数据"""
+    return [
+        process_row(sheet, row, column_names)
+        for row in sheet.iter_rows(min_row=generate_common.BEGIN_ROW_IDX + 1, values_only=False)
+    ]
 
 
-def extract_workbook_data(workbook: openpyxl.Workbook) -> dict:
-    """
-    Extract data from the first sheet in the workbook.
-    """
-    workbook_data = {}
+def extract_workbook_data(workbook: openpyxl.Workbook) -> Dict[str, List[dict]]:
+    """提取 workbook 数据，默认取第一个 sheet"""
+    data = {}
     if workbook.sheetnames:
         sheet_name = workbook.sheetnames[0]
         sheet = workbook[sheet_name]
         if sheet.cell(row=1, column=1).value != "id":
-            logger.error(f"{sheet_name} first column must be 'id'")
+            logger.error(f"{sheet_name} 首列必须是 'id'")
         else:
             column_names = get_column_names(sheet)
-            workbook_data[sheet_name] = extract_sheet_data(sheet, column_names)
+            data[sheet_name] = extract_sheet_data(sheet, column_names)
     else:
-        logger.error("No sheets found in the workbook.")
-
-    return workbook_data
+        logger.error("工作簿中没有找到任何 sheet。")
+    return data
 
 
 def save_json(data: dict, file_path: str) -> None:
-    """
-    Save data to a JSON file with compact and readable formatting.
-    """
+    """保存 json 文件"""
     json_data = json.dumps({"data": data}, sort_keys=True, indent=1, separators=(',', ': '))
-    json_data = json_data.replace('"[', '[').replace(']"', ']')  # Remove unnecessary quotes around lists
-    json_data = json_data.replace('\r\n', '\n').replace('\r', '\n')  # Ensure only LF (\n) for newlines
+    json_data = json_data.replace('"[', '[').replace(']"', ']')
+    json_data = json_data.replace('\r\n', '\n').replace('\r', '\n')
 
     try:
         with open(file_path, 'w', encoding='utf-8', newline='') as f:
             f.write(json_data)
-            logger.info(f"Generated JSON file: {file_path}")
+            logger.info(f"生成 JSON 文件: {file_path}")
     except IOError as e:
-        logger.error(f"Error saving JSON file {file_path}: {e}")
+        logger.error(f"保存 JSON 文件 {file_path} 出错: {e}")
 
 
 def process_excel_file(file_path: str) -> None:
-    """
-    Process an individual Excel file and generate a JSON file for the first sheet.
-    """
+    """处理单个 Excel 文件，生成 JSON"""
     try:
         workbook = openpyxl.load_workbook(file_path)
         workbook_data = extract_workbook_data(workbook)
@@ -213,20 +184,21 @@ def process_excel_file(file_path: str) -> None:
             save_json(data, json_file_path)
 
     except Exception as e:
-        logger.error(f"Failed to process file {file_path}: {e}")
+        logger.error(f"处理文件 {file_path} 失败: {e}")
 
 
 def main() -> None:
-    """
-    Main function to process all Excel files in the specified directory.
-    """
+    """主函数，批量处理 XLSX_DIR 下所有 Excel 文件"""
     os.makedirs(PROJECT_GENERATED_JSON_DIR, exist_ok=True)
 
-    files = [join(XLSX_DIR, filename) for filename in listdir(XLSX_DIR) if
-             isfile(join(XLSX_DIR, filename)) and filename.endswith('.xlsx')]
+    files = [
+        join(XLSX_DIR, filename)
+        for filename in listdir(XLSX_DIR)
+        if isfile(join(XLSX_DIR, filename)) and filename.endswith('.xlsx')
+    ]
 
-    num_threads = os.cpu_count() or 1
-    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+    max_workers = os.cpu_count() or 1
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         executor.map(process_excel_file, files)
 
 
