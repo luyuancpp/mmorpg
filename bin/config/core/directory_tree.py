@@ -14,4 +14,4 @@ def generate_directory_tree(start_path, file_out):
             for file in files:
                 f.write(f"{sub_indent}{file}\n")
 
-generate_directory_tree('./', 'directory_tree.txt')
+generate_directory_tree('../', 'directory_tree.txt')

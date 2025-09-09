@@ -15,7 +15,7 @@ from common import constants
 from config import XLSX_DIR
 
 # Configuration Constants
-JSON_DIR = "generated/json/"
+JSON_DIR = "../generated/json/"
 
 
 # Setup Logging

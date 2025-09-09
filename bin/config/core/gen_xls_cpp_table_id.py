@@ -6,7 +6,7 @@ import openpyxl
 import generate_common  # Ensure generate_common provides BEGIN_ROW_IDX and mywrite functions
 import logging
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile
 
 from config import XLSX_DIR
 

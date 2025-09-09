@@ -13,7 +13,7 @@ import generate_common
 from config import XLSX_DIR
 
 # Configuration Constants
-PROTO_DIR = "generated/proto/"
+PROTO_DIR = "../generated/proto/"
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
