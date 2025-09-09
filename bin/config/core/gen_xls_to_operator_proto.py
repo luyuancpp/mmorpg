@@ -12,9 +12,9 @@ from openpyxl import load_workbook  # Use openpyxl for better support of .xlsx f
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Path configurations
-excel_file_path = 'xlsx/operator/Operator.xlsx'
-output_dir = 'generated/proto/operator'
-temp_file_path = 'generated/proto/operator/temp_id_mapping.json'
+excel_file_path = '../xlsx/operator/Operator.xlsx'
+output_dir = '../generated/proto/operator'
+temp_file_path = '../generated/proto/operator/temp_id_mapping.json'
 
 # Ensure output directory exists
 os.makedirs(output_dir, exist_ok=True)
@@ -119,7 +119,6 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
 
     except Exception as e:
         logging.error(f"Error generating Proto file for group {group_name}: {str(e)}")
-
 
 def generate_proto_files(groups):
     """Generates Proto files for all groups using ThreadPoolExecutor."""

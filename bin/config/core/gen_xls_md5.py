@@ -4,9 +4,7 @@
 import os
 import logging
 import md5tool
-import generate_common
 from concurrent.futures import ThreadPoolExecutor
-from config import XLSX_DIR
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # 常量定义
 CPP_DIR = Path("generated/cpp")
 GO_DIR = Path("generated/go")
-XLS_DIR = Path("xlsx")
+XLS_DIR = Path("../xlsx")
 
 # 类型转换函数
 def get_cpp_type_name(type_name):

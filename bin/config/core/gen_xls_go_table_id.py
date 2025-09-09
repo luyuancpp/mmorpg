@@ -5,7 +5,7 @@ import os
 import openpyxl
 import logging
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile
 
 import generate_common  # 你项目已有模块，需包含 BEGIN_ROW_IDX 和 mywrite
 from config import XLSX_DIR

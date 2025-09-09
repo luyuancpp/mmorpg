@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s -
 excel_file_path = XLSX_DIR +'/tip/Tip.xlsx'
 
 # Output directory for Proto files
-output_dir = 'generated/proto/tip'
+output_dir = '../generated/proto/tip'
 
 # Path to JSON file to store existing enum IDs
 json_file_path = constants.GENERATOR_TIP_MAPPING_DIR + 'tip_enum_ids.json'
