@@ -1,18 +1,14 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import os
 import openpyxl
 import logging
 import concurrent.futures
 import multiprocessing
 from typing import Dict, List, Optional
-from os import listdir
-from os.path import isfile, join
+from pathlib import Path
 import generate_common
 from constants import XLSX_DIR, PROTO_DIR
-
-# Configuration Constants
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -154,22 +150,22 @@ def process_file(file_path: str) -> None:
 
 def save_proto_file(content: str, sheet_name: str) -> None:
     """Save the generated .proto content to a file."""
-    proto_file_path = os.path.join(PROTO_DIR, f'{sheet_name}_table.proto')
+    proto_file_path = PROTO_DIR / f'{sheet_name}_table.proto'
     try:
-        with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
+        with proto_file_path.open('w', encoding='utf-8') as proto_file:
             proto_file.write(content)
             logger.info(f"Generated .proto file: {proto_file_path}")
     except Exception as e:
         logger.error(f"Error saving proto file '{proto_file_path}': {e}")
 
-def get_xlsx_files(directory: str) -> List[str]:
+def get_xlsx_files(directory: Path) -> List[str]:
     """List all .xlsx files in the specified directory."""
-    return [join(directory, filename) for filename in listdir(directory) if isfile(join(directory, filename)) and filename.endswith('.xlsx')]
+    return [str(f) for f in directory.glob('*.xlsx') if f.is_file()]
 
 def main() -> None:
     """Main function to process all Excel files and generate .proto files."""
     try:
-        os.makedirs(PROTO_DIR, exist_ok=True)
+        PROTO_DIR.mkdir(parents=True, exist_ok=True)
     except Exception as e:
         logger.error(f"Failed to create proto directory: {e}")
         return
