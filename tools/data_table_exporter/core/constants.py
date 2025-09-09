@@ -1,4 +1,6 @@
 # constants.py
+from pathlib import Path
+
 
 # 常量定义
 DESIGNER = "designer"
@@ -14,11 +16,11 @@ XLSX_DIR = PROJECT_DIR + "data_tables/"
 
 GENERATOR_TABLE_INDEX_DIR = PROJECT_GENERATED_CODE_DIR + "cpp/cpp_table_id_bit_index/"
 GENERATOR_CONSTANTS_NAME_DIR = PROJECT_GENERATED_CODE_DIR + "cpp_table_id_constants_name/"
-PROJECT_GENERATED_CODE_CPP_DIR = PROJECT_DIR + "generated_code/cpp/"
+PROJECT_GENERATED_CODE_CPP_DIR = Path(PROJECT_DIR) / "generated_code" / "cpp"
 
 GENERATOR_TABLE_INDEX_GO_DIR = PROJECT_GENERATED_CODE_DIR + "go/go_table_id_bit_index/"
 GENERATOR_CONSTANTS_NAME_GO_DIR = PROJECT_GENERATED_CODE_DIR + "go/go_table_id_constants_name/"
-PROJECT_GENERATED_CODE_GO_DIR = PROJECT_DIR + "generated_code/go/"
+PROJECT_GENERATED_CODE_GO_DIR = Path(PROJECT_DIR) / "generated_code" / "go"
 
 PROTO_DIR =  PROJECT_GENERATED_CODE_DIR + "proto/"
 

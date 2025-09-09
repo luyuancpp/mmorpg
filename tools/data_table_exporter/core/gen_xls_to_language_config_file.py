@@ -10,7 +10,7 @@ from multiprocessing import cpu_count
 from jinja2 import Environment, FileSystemLoader
 
 import generate_common  # 你项目中的工具模块
-from core.constants import PROJECT_GENERATED_CODE_CPP_DIR, PROJECT_GENERATED_CODE_GO_DIR
+from core.constants import PROJECT_GENERATED_CODE_CPP_DIR, PROJECT_GENERATED_CODE_GO_DIR, XLSX_DIR
 
 # 日志配置
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -104,16 +104,16 @@ def process_workbook(filename):
                 convert_to_go_type=convert_to_go_type,  # 动态转换
                 proto_import_path="your/proto/package/path"  # ⚠️ 请修改为你真实路径
             )
-            GO_DIR.mkdir(parents=True, exist_ok=True)
-            generate_common.mywrite(go_content, GO_DIR / go_filename)
+            PROJECT_GENERATED_CODE_GO_DIR.mkdir(parents=True, exist_ok=True)
+            generate_common.mywrite(go_content, PROJECT_GENERATED_CODE_GO_DIR / go_filename)
 
     except Exception as e:
         logging.error(f"Failed to load or process workbook {filename}: {e}")
 
 # 生成 all_table.h / .cpp
-def generate_all_config(XLS_DIR=None):
+def generate_all_config():
     sheetnames = set()
-    xlsx_files = sorted(XLS_DIR.glob('*.xlsx'), key=lambda f: f.stat().st_size, reverse=True)
+    xlsx_files = sorted(Path(XLSX_DIR).glob('*.xlsx'), key=lambda f: f.stat().st_size, reverse=True)
     for filepath in xlsx_files:
         try:
             workbook = openpyxl.load_workbook(filepath)
