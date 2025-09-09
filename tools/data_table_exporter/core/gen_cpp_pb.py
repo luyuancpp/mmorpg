@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import os
 import subprocess
 import logging
+from pathlib import Path
 import constants
 
 # 配置日志
@@ -11,36 +11,36 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
-def compile_protobuf_files(source_dir, include_dirs, output_dir):
+def compile_protobuf_files(source_dir: Path, include_dirs: list[Path], output_dir: Path):
     """
     编译 source_dir 下所有 .proto 文件到 C++ 代码。
 
     Args:
-    - source_dir (str): .proto 文件所在目录
-    - include_dirs (list[str]): 依赖的 proto 头文件目录
-    - output_dir (str): 生成的 C++ 文件输出目录
+    - source_dir (Path): .proto 文件所在目录
+    - include_dirs (list[Path]): 依赖的 proto 头文件目录
+    - output_dir (Path): 生成的 C++ 文件输出目录
     """
     proto_files = []
+
     for dirpath, _, filenames in os.walk(source_dir):
         for filename in filenames:
             if filename.endswith(".proto"):
-                # 使用相对路径，并统一使用 '/' 作为分隔符
-                rel_path = os.path.relpath(os.path.join(dirpath, filename), start=source_dir)
-                rel_path = rel_path.replace(os.path.sep, '/')
+                abs_file = Path(dirpath) / filename
+                rel_path = abs_file.relative_to(source_dir).as_posix()
                 proto_files.append(rel_path)
 
     if not proto_files:
         logger.warning(f"No .proto files found in {source_dir}")
         return
 
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # 构建 protoc 命令
-    command = ["protoc", f"--proto_path={os.path.abspath(source_dir)}"]
+    command = ["protoc", f"--proto_path={source_dir.resolve()}"]
     for inc in include_dirs:
-        command.append(f"--proto_path={os.path.abspath(inc)}")
+        command.append(f"--proto_path={inc.resolve()}")
 
-    command.append(f"--cpp_out={os.path.abspath(output_dir)}")
+    command.append(f"--cpp_out={output_dir.resolve()}")
     command.extend(proto_files)
 
     try:
@@ -75,23 +75,23 @@ if __name__ == "__main__":
 
     # 公共依赖目录（protobuf 源码路径、第三方 proto 等）
     common_includes = [
-        "../../third_party/grpc/third_party/protobuf/src",
-        constants.PROJECT_GENERATED_CODE_DIR + "proto",  # 自己的 proto 根目录
+        Path("../../third_party/grpc/third_party/protobuf/src"),
+        Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto",
     ]
 
     # 多个 proto 源目录配置
     proto_jobs = [
         {
-            "source_dir": constants.PROJECT_GENERATED_CODE_DIR + "proto/",
-            "output_dir": constants.PROJECT_GENERATED_CODE_DIR + "proto/cpp/",
+            "source_dir": Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto",
+            "output_dir": Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto/cpp",
         },
         {
-            "source_dir": constants.PROJECT_GENERATED_CODE_DIR + "proto/tip/",
-            "output_dir": constants.PROJECT_GENERATED_CODE_DIR + "proto/cpp/tip/",
+            "source_dir": Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto/tip",
+            "output_dir": Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto/cpp/tip",
         },
         {
-            "source_dir": constants.PROJECT_GENERATED_CODE_DIR + "proto/operator",
-            "output_dir": constants.PROJECT_GENERATED_CODE_DIR + "proto/cpp/operator",
+            "source_dir": Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto/operator",
+            "output_dir": Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto/cpp/operator",
         },
     ]
 
