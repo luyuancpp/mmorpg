@@ -15,7 +15,7 @@ PROJECT_GENERATED_CODE_DIR = PROJECT_DIR + "generated_code/"
 XLSX_DIR = PROJECT_DIR + "data_tables/"
 
 GENERATOR_TABLE_INDEX_DIR = PROJECT_GENERATED_CODE_DIR + "cpp/cpp_table_id_bit_index/"
-GENERATOR_CONSTANTS_NAME_DIR = PROJECT_GENERATED_CODE_DIR + "cpp_table_id_constants_name/"
+GENERATOR_CONSTANTS_NAME_DIR = PROJECT_GENERATED_CODE_DIR + "cpp/cpp_table_id_constants_name/"
 PROJECT_GENERATED_CODE_CPP_DIR = Path(PROJECT_DIR) / "generated_code" / "cpp"
 
 GENERATOR_TABLE_INDEX_GO_DIR = PROJECT_GENERATED_CODE_DIR + "go/go_table_id_bit_index/"
