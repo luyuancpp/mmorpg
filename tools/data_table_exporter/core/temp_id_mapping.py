@@ -2,7 +2,7 @@ import os
 import json
 
 # 定义临时文件路径
-temp_file_path = 'temp_id_mapping.json'
+temp_file_path = 'id_pool.json'
 
 def read_temp_id_mapping():
     """读取临时ID映射文件"""
