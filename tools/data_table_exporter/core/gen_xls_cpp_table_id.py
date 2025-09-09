@@ -1,20 +1,17 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import os
 import openpyxl
 import generate_common  # Ensure generate_common provides BEGIN_ROW_IDX and mywrite functions
 import logging
-from os import listdir
-from os.path import isfile
-
+from pathlib import Path
 from core.constants import XLSX_DIR
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-cpp_dir = "generated/cpp/"
+cpp_dir = Path("generated/cpp/")
 
 def generate_id_enum(sheet):
     """Generate a C++ enum definition based on the provided sheet."""
@@ -43,22 +40,20 @@ def generate_id_cpp(workbook):
 
 def main():
     """Main function to process all Excel files and generate C++ enum files."""
-    if not os.path.exists(cpp_dir):
-        os.makedirs(cpp_dir)
+    if not cpp_dir.exists():
+        cpp_dir.mkdir(parents=True, exist_ok=True)
 
-    for filename in listdir(XLSX_DIR):
-        full_path = os.path.join(XLSX_DIR, filename)
-        if isfile(full_path) and filename.endswith('.xlsx'):
+    for filepath in XLSX_DIR.glob("*.xlsx"):
+        if filepath.is_file():
             try:
-                workbook = openpyxl.load_workbook(full_path)
+                workbook = openpyxl.load_workbook(filepath)
                 workbook_data = generate_id_cpp(workbook)
                 for sheet_name, data in workbook_data.items():
-                    output_file_path = os.path.join(cpp_dir, f"{sheet_name.lower()}_table_id.h")
-                    generate_common.mywrite(data, output_file_path)
+                    output_file_path = cpp_dir / f"{sheet_name.lower()}_table_id.h"
+                    generate_common.mywrite(data, str(output_file_path))
                     logger.info(f"Generated C++ enum file: {output_file_path}")
             except Exception as e:
-                logger.error(f"Failed to process file {full_path}: {e}")
-
+                logger.error(f"Failed to process file {filepath}: {e}")
 
 if __name__ == "__main__":
     main()
