@@ -10,14 +10,10 @@ from multiprocessing import cpu_count
 from jinja2 import Environment, FileSystemLoader
 
 import generate_common  # 你项目中的工具模块
+from core.constants import PROJECT_GENERATED_CODE_CPP_DIR, PROJECT_GENERATED_CODE_GO_DIR
 
 # 日志配置
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# 常量定义
-CPP_DIR = Path("generated/cpp")
-GO_DIR = Path("generated/go")
-XLS_DIR = Path("../xlsx")
 
 # 类型转换函数
 def get_cpp_type_name(type_name):
@@ -86,7 +82,7 @@ def process_workbook(filename):
                 get_cpp_type_param_name_with_ref=get_cpp_type_param_name_with_ref,
                 get_cpp_type_name=get_cpp_type_name
             )
-            generate_common.mywrite(header_content, CPP_DIR / header_filename)
+            generate_common.mywrite(header_content, PROJECT_GENERATED_CODE_CPP_DIR / header_filename)
 
             # === C++ 实现文件 ===
             implementation_template = env.get_template('config_template.cpp.jinja')
@@ -97,7 +93,7 @@ def process_workbook(filename):
                 get_cpp_type_param_name_with_ref=get_cpp_type_param_name_with_ref,
                 get_cpp_type_name=get_cpp_type_name
             )
-            generate_common.mywrite(implementation_content, CPP_DIR / cpp_filename)
+            generate_common.mywrite(implementation_content, PROJECT_GENERATED_CODE_CPP_DIR / cpp_filename)
 
             # === Go 文件 ===
             go_template = env.get_template("config_template.go.jinja")
@@ -115,7 +111,7 @@ def process_workbook(filename):
         logging.error(f"Failed to load or process workbook {filename}: {e}")
 
 # 生成 all_table.h / .cpp
-def generate_all_config():
+def generate_all_config(XLS_DIR=None):
     sheetnames = set()
     xlsx_files = sorted(XLS_DIR.glob('*.xlsx'), key=lambda f: f.stat().st_size, reverse=True)
     for filepath in xlsx_files:
@@ -139,15 +135,15 @@ def generate_all_config():
     go_template = env.get_template("all_table.go.jinja")
     go_content = go_template.render(sheetnames=sheetnames)
 
-    GO_DIR.mkdir(parents=True, exist_ok=True)
-    generate_common.mywrite(go_content, GO_DIR / "all_table.go")
+    PROJECT_GENERATED_CODE_GO_DIR.mkdir(parents=True, exist_ok=True)
+    generate_common.mywrite(go_content, PROJECT_GENERATED_CODE_GO_DIR / "all_table.go")
 
     return header_content, cpp_content
 
 # 主函数
-def main():
-    CPP_DIR.mkdir(parents=True, exist_ok=True)
-    GO_DIR.mkdir(parents=True, exist_ok=True)
+def main(XLS_DIR=None):
+    PROJECT_GENERATED_CODE_CPP_DIR.mkdir(parents=True, exist_ok=True)
+    PROJECT_GENERATED_CODE_GO_DIR.mkdir(parents=True, exist_ok=True)
 
     xlsx_files = [XLS_DIR / filename for filename in os.listdir(XLS_DIR) if filename.endswith('.xlsx')]
 
@@ -155,8 +151,8 @@ def main():
         executor.map(process_workbook, xlsx_files)
 
     header_content, cpp_content = generate_all_config()
-    generate_common.mywrite(header_content, CPP_DIR / "all_table.h")
-    generate_common.mywrite(cpp_content, CPP_DIR / "all_table.cpp")
+    generate_common.mywrite(header_content, PROJECT_GENERATED_CODE_CPP_DIR / "all_table.h")
+    generate_common.mywrite(cpp_content, PROJECT_GENERATED_CODE_CPP_DIR / "all_table.cpp")
 
 if __name__ == "__main__":
     main()
