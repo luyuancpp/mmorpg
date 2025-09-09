@@ -4,6 +4,7 @@
 import os
 import subprocess
 import logging
+import constants
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -74,23 +75,23 @@ if __name__ == "__main__":
 
     # 公共 proto include 目录
     common_includes = [
-        "generated/proto",  # 你的 proto 根目录
+         constants.PROJECT_GENERATED_CODE_DIR + "/proto",  # 你的 proto 根目录
         "../../third_party/grpc/third_party/protobuf/src",
     ]
 
     # 多个任务配置（不同 source_dir -> 不同输出目录）
     proto_jobs = [
         {
-            "source_dir": "generated/proto",
-            "output_dir": "generated/proto/go",
+            "source_dir":  constants.PROJECT_GENERATED_CODE_DIR + "proto",
+            "output_dir":  constants.PROJECT_GENERATED_CODE_DIR + "proto/go",
         },
         {
-            "source_dir": "generated/proto/tip",
-            "output_dir": "generated/proto/go/tip",
+            "source_dir":  constants.PROJECT_GENERATED_CODE_DIR + "proto/tip",
+            "output_dir":  constants.PROJECT_GENERATED_CODE_DIR + "proto/go/tip",
         },
         {
-            "source_dir": "generated/proto/operator",
-            "output_dir": "generated/proto/go/operator",
+            "source_dir":  constants.PROJECT_GENERATED_CODE_DIR + "proto/operator",
+            "output_dir":  constants.PROJECT_GENERATED_CODE_DIR + "proto/go/operator",
         },
     ]
 

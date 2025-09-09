@@ -8,7 +8,7 @@ from pathlib import Path
 
 BEGIN_ROW_IDX = 19
 FIELD_INFO_END_ROW_INDEX = 18
-md5_output_dir = "generated/xlsx/md5/"
+md5_output_dir = "../../generated_tables/xlsx/md5/"
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

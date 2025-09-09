@@ -7,9 +7,10 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from openpyxl import load_workbook
 import generate_common  # Assuming generate_common contains the necessary functions
-from common import constants
+from core import constants
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from config import XLSX_DIR
+
+from core.constants import XLSX_DIR, PROJECT_GENERATED_CODE_PROTO_TIP_DIR
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -17,14 +18,11 @@ logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s -
 # Path to your Excel file
 excel_file_path = XLSX_DIR +'/tip/Tip.xlsx'
 
-# Output directory for Proto files
-output_dir = '../generated/proto/tip'
-
 # Path to JSON file to store existing enum IDs
 json_file_path = constants.GENERATOR_TIP_MAPPING_DIR + 'tip_enum_ids.json'
 
 # Create the output directory if it doesn't exist
-os.makedirs(output_dir, exist_ok=True)
+os.makedirs(PROJECT_GENERATED_CODE_PROTO_TIP_DIR, exist_ok=True)
 
 
 def load_existing_ids(json_path):
@@ -105,7 +103,7 @@ def generate_proto_file(group_name, group_data):
             group_data=group_data
         )
 
-        proto_file_path = os.path.join(output_dir, f"{group_name.lower()}_tip.proto")
+        proto_file_path = os.path.join(PROJECT_GENERATED_CODE_PROTO_TIP_DIR, f"{group_name.lower()}_tip.proto")
         with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
             proto_file.write(proto_content)
 

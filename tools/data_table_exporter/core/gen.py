@@ -4,6 +4,7 @@
 import os
 import subprocess
 import logging
+import constants
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -11,12 +12,12 @@ logger = logging.getLogger(__name__)
 
 # List of directories to create
 directories = [
-    "generated/cpp/",
-    "generated/proto/",
-    "generated/proto/cpp/",
-    "generated/proto/go/",
-    "generated/cpp_table_id_constants_name/",
-    "generated/json",
+    constants.PROJECT_GENERATED_CODE_DIR + "cpp/",
+    constants.PROJECT_GENERATED_CODE_DIR + "proto/",
+    constants.PROJECT_GENERATED_CODE_DIR + "proto/cpp/",
+    constants.PROJECT_GENERATED_CODE_DIR + "proto/go/",
+    constants.PROJECT_GENERATED_CODE_DIR + "cpp_table_id_constants_name/",
+    constants.PROJECT_GENERATED_JSON_DIR + "json/",
     "../../cpp/generated/table/code/",
     "../../cpp/generated/table/code/constants/",
     "../../cpp/generated/table/code/bit_index",
@@ -43,16 +44,16 @@ commands = [
     "python gen_go_pb.py",
     "python gen_constants_from_xlsx.py",
     "python generate_xlsx_to_id_bit_index.py",
-    "python md5tool.py md5copy ./generated/cpp/ ../../cpp/generated/table/code/",
-    "python md5tool.py md5copy ./generated/cpp_table_id_bit_index/ "
+    "python md5tool.py md5copy ../../generated_tables/cpp/ ../../cpp/generated/table/code/",
+    "python md5tool.py md5copy ..././generated_tables/cpp_table_id_bit_index/ "
     "../../cpp/generated/table/code/bit_index/",
-    "python md5tool.py md5copy ./generated/cpp_table_id_constants_name/ "
+    "python md5tool.py md5copy ../../generated_tables/cpp_table_id_constants_name/ "
     "../../cpp/generated/table/code/constants/",
-    "python md5tool.py md5copy ./generated/proto/cpp/ ../../cpp/generated/table/proto",
-    "python md5tool.py md5copy ./generated/proto/cpp/operator/ ../../cpp/generated/table/proto/operator/",
-    "python md5tool.py md5copy ./generated/proto/cpp/tip/ ../../cpp/generated/table/proto/tip/",
-    "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../go/login/pb/game/",
-    "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../go/db/pb/game/",
+    "python md5tool.py md5copy ../../generated_tables/proto/cpp/ ../../cpp/generated/table/proto",
+    "python md5tool.py md5copy ../../generated_tables/proto/cpp/operator/ ../../cpp/generated/table/proto/operator/",
+    "python md5tool.py md5copy ../../generated_tables/proto/cpp/tip/ ../../cpp/generated/table/proto/tip/",
+    "python md5tool.py md5copy ../../generated_tables/proto/go/pb/game/ ../../go/login/pb/game/",
+    "python md5tool.py md5copy ../../generated_tables/proto/go/pb/game/ ../../go/db/pb/game/",
 ]
 
 # Execute commands and capture return codes
