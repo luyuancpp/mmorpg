@@ -8,7 +8,7 @@ from os import listdir
 from os.path import isfile
 
 import generate_common  # 你项目已有模块，需包含 BEGIN_ROW_IDX 和 mywrite
-from config import XLSX_DIR
+from core.constants import XLSX_DIR
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

@@ -8,16 +8,16 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from openpyxl import load_workbook  # Use openpyxl for better support of .xlsx files
 
+from core.constants import PROJECT_GENERATED_CODE_PROTO_OPERATOR_DIR, GENERATOR_STORAGE_OPERATOR_DIR
+
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Path configurations
-excel_file_path = '../xlsx/operator/Operator.xlsx'
-output_dir = '../generated/proto/operator'
-temp_file_path = '../generated/proto/operator/temp_id_mapping.json'
+temp_file_path = GENERATOR_STORAGE_OPERATOR_DIR
 
 # Ensure output directory exists
-os.makedirs(output_dir, exist_ok=True)
+os.makedirs(GENERATOR_STORAGE_OPERATOR_DIR, exist_ok=True)
 
 # Use a lock for thread-safe file access
 file_lock = threading.Lock()
@@ -106,7 +106,7 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
 
         proto_content += '};\n'
 
-        proto_file_path = os.path.join(output_dir, f"{group_name.lower()}_operator.proto")
+        proto_file_path = os.path.join(PROJECT_GENERATED_CODE_PROTO_OPERATOR_DIR, f"{group_name.lower()}_operator.proto")
 
         with file_lock:
             with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
@@ -137,7 +137,7 @@ def generate_proto_files(groups):
 
 def main():
     """Main function to read Excel data and generate Proto files."""
-    groups = read_excel_data(excel_file_path)
+    groups = read_excel_data(PROJECT_OPERATOR_XLSX)
     if groups:
         generate_proto_files(groups)
         logging.info("Proto generation completed.")

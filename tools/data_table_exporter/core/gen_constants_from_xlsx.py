@@ -15,7 +15,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 import utils
 import generate_common
-from common import constants
+from core import constants
 
 # Set up logging configuration
 logging.basicConfig(
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class ExcelConstantsGenerator:
     def __init__(self, excel_file: str):
         self.excel_file = excel_file
-        self.is_global_file = 'globalvariable' in os.path.basename(excel_file).lower()
+        self.is_global_file = 'GlobalVariable' in os.path.basename(excel_file).lower()
         try:
             self.workbook = openpyxl.load_workbook(excel_file)
             self.sheet = self.workbook.sheetnames[0]

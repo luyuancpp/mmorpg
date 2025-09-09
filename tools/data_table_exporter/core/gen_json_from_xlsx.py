@@ -11,11 +11,11 @@ from typing import Any, Union
 
 import openpyxl
 import generate_common  # Assuming generate_common contains the necessary functions
-from common import constants
-from config import XLSX_DIR
+from core import constants
+from constants import PROJECT_GENERATED_JSON_DIR
+from constants import XLSX_DIR
 
 # Configuration Constants
-JSON_DIR = "../generated/json/"
 
 
 # Setup Logging
@@ -209,7 +209,7 @@ def process_excel_file(file_path: str) -> None:
         workbook_data = extract_workbook_data(workbook)
 
         for sheet_name, data in workbook_data.items():
-            json_file_path = os.path.join(JSON_DIR, f"{sheet_name}.json")
+            json_file_path = os.path.join(PROJECT_GENERATED_JSON_DIR, f"{sheet_name}.json")
             save_json(data, json_file_path)
 
     except Exception as e:
@@ -220,7 +220,7 @@ def main() -> None:
     """
     Main function to process all Excel files in the specified directory.
     """
-    os.makedirs(JSON_DIR, exist_ok=True)
+    os.makedirs(PROJECT_GENERATED_JSON_DIR, exist_ok=True)
 
     files = [join(XLSX_DIR, filename) for filename in listdir(XLSX_DIR) if
              isfile(join(XLSX_DIR, filename)) and filename.endswith('.xlsx')]
