@@ -9,7 +9,7 @@ COMMON_TYPE = "common"
 SERVER_GEN_TYPE = [SERVER_TYPE, COMMON_TYPE]
 
 # 项目根目录（建议使用绝对路径；可根据实际调整）
-PROJECT_DIR = Path(__file__).resolve().parent.parent.parent  # ../../../
+PROJECT_DIR = Path("../../../")
 
 # 项目结构路径
 PROJECT_GENERATED_JSON_DIR = PROJECT_DIR / "generated_tables"
