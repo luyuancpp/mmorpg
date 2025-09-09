@@ -51,9 +51,7 @@ compile_commands.json
 *.user
 x64/
 .vs/
-bin/config/xlwt/
-bin/config/xlrd/
-bin/config/generated/
+generated_code/
 bin/zlib*
 tools/server/pbgen/.idea/
 tools/server/pbgen/bin/
