@@ -1,47 +1,47 @@
 ﻿#!/usr/bin/env python
 # coding=utf-8
 
-import os
 import subprocess
 import logging
+from pathlib import Path
 import constants
+import os
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def compile_protobuf_files_go(source_dir, include_dirs, output_dir):
+def compile_protobuf_files_go(source_dir: Path, include_dirs: list[Path], output_dir: Path):
     """
     编译 source_dir 下所有 .proto 文件到 Go 代码。
 
     Args:
-    - source_dir (str): .proto 文件所在目录
-    - include_dirs (list[str]): 依赖的 proto 头文件目录
-    - output_dir (str): 生成的 Go 文件输出目录
+    - source_dir (Path): .proto 文件所在目录
+    - include_dirs (list[Path]): 依赖的 proto 头文件目录
+    - output_dir (Path): 生成的 Go 文件输出目录
     """
     proto_files = []
     for dirpath, _, filenames in os.walk(source_dir):
         for filename in filenames:
             if filename.endswith(".proto"):
-                # 相对路径并统一用 '/' 分隔符
-                rel_path = os.path.relpath(os.path.join(dirpath, filename), start=source_dir)
-                rel_path = rel_path.replace(os.path.sep, '/')
+                abs_file = Path(dirpath) / filename
+                rel_path = abs_file.relative_to(source_dir).as_posix()  # 统一用 '/'
                 proto_files.append(rel_path)
 
     if not proto_files:
         logger.warning(f"No .proto files found in {source_dir}")
         return
 
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # 构造 protoc 命令
-    command = ["protoc", f"-I={os.path.abspath(source_dir)}"]
+    command = ["protoc", f"-I={source_dir.resolve()}"]
     for inc in include_dirs:
-        command.append(f"-I={os.path.abspath(inc)}")
+        command.append(f"-I={inc.resolve()}")
 
-    command.append(f"--go_out={os.path.abspath(output_dir)}")
-    command.append(f"--go-grpc_out={os.path.abspath(output_dir)}")
+    command.append(f"--go_out={output_dir.resolve()}")
+    command.append(f"--go-grpc_out={output_dir.resolve()}")
     command.extend(proto_files)
 
     try:
@@ -75,23 +75,23 @@ if __name__ == "__main__":
 
     # 公共 proto include 目录
     common_includes = [
-         constants.PROJECT_GENERATED_CODE_DIR + "/proto",  # 你的 proto 根目录
-        "../../third_party/grpc/third_party/protobuf/src",
+        Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto",  # 你的 proto 根目录
+        Path("../../third_party/grpc/third_party/protobuf/src"),
     ]
 
     # 多个任务配置（不同 source_dir -> 不同输出目录）
     proto_jobs = [
         {
-            "source_dir":  constants.PROJECT_GENERATED_CODE_DIR + "proto",
-            "output_dir":  constants.PROJECT_GENERATED_CODE_DIR + "proto/go",
+            "source_dir": Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto",
+            "output_dir": Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto/go",
         },
         {
-            "source_dir":  constants.PROJECT_GENERATED_CODE_DIR + "proto/tip",
-            "output_dir":  constants.PROJECT_GENERATED_CODE_DIR + "proto/go/tip",
+            "source_dir": Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto/tip",
+            "output_dir": Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto/go/tip",
         },
         {
-            "source_dir":  constants.PROJECT_GENERATED_CODE_DIR + "proto/operator",
-            "output_dir":  constants.PROJECT_GENERATED_CODE_DIR + "proto/go/operator",
+            "source_dir": Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto/operator",
+            "output_dir": Path(constants.PROJECT_GENERATED_CODE_DIR) / "proto/go/operator",
         },
     ]
 
