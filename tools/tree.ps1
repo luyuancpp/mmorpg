@@ -1,17 +1,18 @@
 ﻿# ==== 配置部分 ====
-$RootPath = "D:\game\luyuan\\mmorpg\cpp"               # 根目录
+$RootPath = "D:\\game\\luyuan\\mmorpg\\"               # 根目录
 $ExcludePaths = @(
-"D:\game\luyuan\mmorpg\cpp\libs\engine\muduo_windows",
-"D:\game\luyuan\mmorpg\cpp\unit_test"
+
 )
 
 $OutputFile = "D:\game\luyuan\\mmorpg\tools\tree.txt"  # 输出文件路径
+$MaxDepth = 3  # 最大递归深度（含根目录）
 
 # ==== 主函数 ====
 function Show-Tree {
     param (
         [string]$Path,
-        [int]$Indent = 0
+        [int]$Indent = 0,
+        [int]$Depth = 1
     )
 
     # 检查是否在排除路径中
@@ -24,9 +25,14 @@ function Show-Tree {
     $prefix = ' ' * $Indent + '|-- '
     Add-Content -Path $OutputFile -Value "$prefix$(Split-Path $Path -Leaf)"
 
+    # 如果已达最大深度，则停止递归
+    if ($Depth -ge $MaxDepth) {
+        return
+    }
+
     # 列出子目录
     Get-ChildItem -Path $Path -Directory -Force | Sort-Object Name | ForEach-Object {
-        Show-Tree -Path $_.FullName -Indent ($Indent + 4)
+        Show-Tree -Path $_.FullName -Indent ($Indent + 4) -Depth ($Depth + 1)
     }
 
     # 列出文件
