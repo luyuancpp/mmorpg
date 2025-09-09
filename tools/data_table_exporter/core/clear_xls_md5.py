@@ -3,7 +3,8 @@
 
 import os
 import logging
-from config import XLSX_DIR
+
+from core.constants import XLSX_DIR
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
