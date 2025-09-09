@@ -9,16 +9,17 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from openpyxl import load_workbook  # Use openpyxl for better support of .xlsx files
 
 from core.constants import PROJECT_GENERATED_CODE_PROTO_OPERATOR_DIR, GENERATOR_STORAGE_OPERATOR_DIR, \
-    PROJECT_OPERATOR_XLSX
+    PROJECT_OPERATOR_XLSX, GENERATOR_STORAGE_OPERATOR_FILE_DIR
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Path configurations
-temp_file_path = GENERATOR_STORAGE_OPERATOR_DIR
+temp_file_path = GENERATOR_STORAGE_OPERATOR_FILE_DIR
 
 # Ensure output directory exists
 os.makedirs(GENERATOR_STORAGE_OPERATOR_DIR, exist_ok=True)
+os.makedirs(PROJECT_GENERATED_CODE_PROTO_OPERATOR_DIR, exist_ok=True)
 
 # Use a lock for thread-safe file access
 file_lock = threading.Lock()
