@@ -1,0 +1,10 @@
+{
+ "data": [
+  {
+   "MaxRequests": 10,
+   "TimeWindow": 1,
+   "TipMessage": 1,
+   "id": 68
+  }
+ ]
+}

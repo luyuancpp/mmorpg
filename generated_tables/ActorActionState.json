@@ -1,0 +1,36 @@
+{
+ "data": [
+  {
+   "id": 0,
+   "state": [
+    {
+     "state_mode": 1,
+     "state_tip": 1
+    },
+    {
+     "state_mode": 1,
+     "state_tip": 1
+    },
+    {
+     "state_mode": 1,
+     "state_tip": 1
+    }
+   ]
+  },
+  {
+   "id": 1,
+   "state": [
+    {
+     "state_mode": 1,
+     "state_tip": 1
+    }
+   ]
+  },
+  {
+   "id": 2
+  },
+  {
+   "id": 3
+  }
+ ]
+}
