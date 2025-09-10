@@ -19,7 +19,6 @@ DATA_TABLES_DIR = PROJECT_DIR / "data_tables"
 # C++ 代码生成相关
 SRC_CPP_ID_BIT1 = PROJECT_GENERATED_CODE_DIR / "cpp" / "cpp_table_id_bit_index"
 GENERATOR_CONSTANTS_NAME_DIR = PROJECT_GENERATED_CODE_DIR / "cpp" / "cpp_table_id_constants_name"
-SRC_CPP1 = PROJECT_GENERATED_CODE_DIR / "cpp"
 
 # Go 代码生成相关
 GENERATOR_TABLE_INDEX_GO_DIR = PROJECT_GENERATED_CODE_DIR / "go" / "go_table_id_bit_index"

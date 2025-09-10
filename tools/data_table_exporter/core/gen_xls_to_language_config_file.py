@@ -9,7 +9,7 @@ from multiprocessing import cpu_count
 from jinja2 import Environment, FileSystemLoader
 
 import generate_common  # 你项目中的工具模块
-from core.constants import SRC_CPP1, PROJECT_GENERATED_CODE_GO_DIR, DATA_TABLES_DIR
+from core.constants import SRC_CPP, PROJECT_GENERATED_CODE_GO_DIR, DATA_TABLES_DIR
 
 # 日志配置
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -83,7 +83,7 @@ def process_workbook(filepath: Path):
                 get_cpp_type_param_name_with_ref=get_cpp_type_param_name_with_ref,
                 get_cpp_type_name=get_cpp_type_name
             )
-            generate_common.mywrite(header_content, SRC_CPP1 / f"{sheetname_lower}_table.h")
+            generate_common.mywrite(header_content, SRC_CPP / f"{sheetname_lower}_table.h")
 
             # === C++ Implementation ===
             cpp_template = env.get_template('config_template.cpp.jinja')
@@ -94,7 +94,7 @@ def process_workbook(filepath: Path):
                 get_cpp_type_param_name_with_ref=get_cpp_type_param_name_with_ref,
                 get_cpp_type_name=get_cpp_type_name
             )
-            generate_common.mywrite(cpp_content, SRC_CPP1 / f"{sheetname_lower}_table.cpp")
+            generate_common.mywrite(cpp_content, SRC_CPP / f"{sheetname_lower}_table.cpp")
 
             # === Go Code ===
             go_template = env.get_template("config_template.go.jinja")
@@ -145,7 +145,7 @@ def generate_all_config():
 def main(XLS_DIR: Path = None):
     """主函数，支持传入自定义 Excel 目录"""
     xls_dir = XLS_DIR or DATA_TABLES_DIR
-    SRC_CPP1.mkdir(parents=True, exist_ok=True)
+    SRC_CPP.mkdir(parents=True, exist_ok=True)
     PROJECT_GENERATED_CODE_GO_DIR.mkdir(parents=True, exist_ok=True)
 
     xlsx_files = list(xls_dir.glob("*.xlsx"))
@@ -153,8 +153,8 @@ def main(XLS_DIR: Path = None):
         executor.map(process_workbook, xlsx_files)
 
     header_content, cpp_content = generate_all_config()
-    generate_common.mywrite(header_content, SRC_CPP1 / "all_table.h")
-    generate_common.mywrite(cpp_content, SRC_CPP1 / "all_table.cpp")
+    generate_common.mywrite(header_content, SRC_CPP / "all_table.h")
+    generate_common.mywrite(cpp_content, SRC_CPP / "all_table.cpp")
 
 
 if __name__ == "__main__":
