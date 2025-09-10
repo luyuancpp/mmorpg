@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 import generate_common  # 你项目已有模块，需包含 BEGIN_ROW_IDX 和 mywrite
-from core.constants import XLSX_DIR  # XLSX_DIR 是 Path 类型
+from core.constants import DATA_TABLES_DIR  # XLSX_DIR 是 Path 类型
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -51,7 +51,7 @@ def process_workbook(filepath: Path):
 def main():
     GO_DIR.mkdir(parents=True, exist_ok=True)
 
-    for filepath in XLSX_DIR.glob("*.xlsx"):
+    for filepath in DATA_TABLES_DIR.glob("*.xlsx"):
         if filepath.is_file():
             process_workbook(filepath)
 

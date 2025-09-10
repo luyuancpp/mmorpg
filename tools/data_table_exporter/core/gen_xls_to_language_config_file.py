@@ -9,7 +9,7 @@ from multiprocessing import cpu_count
 from jinja2 import Environment, FileSystemLoader
 
 import generate_common  # 你项目中的工具模块
-from core.constants import SRC_CPP1, PROJECT_GENERATED_CODE_GO_DIR, XLSX_DIR
+from core.constants import SRC_CPP1, PROJECT_GENERATED_CODE_GO_DIR, DATA_TABLES_DIR
 
 # 日志配置
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -115,7 +115,7 @@ def process_workbook(filepath: Path):
 def generate_all_config():
     """生成 all_table.h / all_table.cpp / all_table.go 等聚合文件"""
     sheetnames = set()
-    xlsx_files = sorted(XLSX_DIR.glob("*.xlsx"), key=lambda f: f.stat().st_size, reverse=True)
+    xlsx_files = sorted(DATA_TABLES_DIR.glob("*.xlsx"), key=lambda f: f.stat().st_size, reverse=True)
     for filepath in xlsx_files:
         try:
             workbook = openpyxl.load_workbook(filepath)
@@ -144,7 +144,7 @@ def generate_all_config():
 
 def main(XLS_DIR: Path = None):
     """主函数，支持传入自定义 Excel 目录"""
-    xls_dir = XLS_DIR or XLSX_DIR
+    xls_dir = XLS_DIR or DATA_TABLES_DIR
     SRC_CPP1.mkdir(parents=True, exist_ok=True)
     PROJECT_GENERATED_CODE_GO_DIR.mkdir(parents=True, exist_ok=True)
 

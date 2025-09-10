@@ -12,7 +12,7 @@ from typing import Any, Union, List, Dict
 import openpyxl
 import generate_common  # 假设这个模块包含必要函数
 from core import constants
-from constants import PROJECT_GENERATED_JSON_DIR, XLSX_DIR
+from constants import PROJECT_GENERATED_JSON_DIR, DATA_TABLES_DIR
 
 # 配置日志
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -192,9 +192,9 @@ def main() -> None:
     os.makedirs(PROJECT_GENERATED_JSON_DIR, exist_ok=True)
 
     files = [
-        join(XLSX_DIR, filename)
-        for filename in listdir(XLSX_DIR)
-        if isfile(join(XLSX_DIR, filename)) and filename.endswith('.xlsx')
+        join(DATA_TABLES_DIR, filename)
+        for filename in listdir(DATA_TABLES_DIR)
+        if isfile(join(DATA_TABLES_DIR, filename)) and filename.endswith('.xlsx')
     ]
 
     max_workers = os.cpu_count() or 1

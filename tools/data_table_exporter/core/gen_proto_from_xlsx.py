@@ -8,7 +8,7 @@ import multiprocessing
 from typing import Dict, List, Optional
 from pathlib import Path
 import generate_common
-from constants import XLSX_DIR, PROTO_DIR
+from constants import DATA_TABLES_DIR, PROTO_DIR
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -171,7 +171,7 @@ def main() -> None:
         return
 
     try:
-        xlsx_files = get_xlsx_files(XLSX_DIR)
+        xlsx_files = get_xlsx_files(DATA_TABLES_DIR)
     except Exception as e:
         logger.error(f"Failed to list .xlsx files: {e}")
         return

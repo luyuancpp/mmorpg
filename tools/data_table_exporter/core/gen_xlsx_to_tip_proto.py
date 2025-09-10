@@ -11,13 +11,13 @@ import generate_common  # Assuming generate_common contains the necessary functi
 from core import constants
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from core.constants import XLSX_DIR, PROJECT_GENERATED_CODE_PROTO_TIP_DIR
+from core.constants import DATA_TABLES_DIR, PROJECT_GENERATED_CODE_PROTO_TIP_DIR
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # === 路径处理（使用 pathlib） ===
-excel_file_path = XLSX_DIR / "tip" / "Tip.xlsx"
+excel_file_path = DATA_TABLES_DIR / "tip" / "Tip.xlsx"
 json_file_path = constants.GENERATOR_TIP_MAPPING_DIR / "tip_enum_ids.json"
 
 # 确保输出目录存在

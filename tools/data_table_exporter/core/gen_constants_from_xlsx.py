@@ -229,7 +229,7 @@ def main():
         constants.GENERATOR_CONSTANTS_NAME_DIR.mkdir(parents=True, exist_ok=True)
         constants.GENERATOR_CONSTANTS_NAME_GO_DIR.mkdir(parents=True, exist_ok=True)
 
-        xlsx_files = utils.get_xlsx_files(constants.XLSX_DIR)
+        xlsx_files = utils.get_xlsx_files(constants.DATA_TABLES_DIR)
         if not xlsx_files:
             logger.warning("No Excel files found to process")
             return
