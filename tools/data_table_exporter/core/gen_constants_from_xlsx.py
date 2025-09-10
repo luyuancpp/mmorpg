@@ -112,14 +112,14 @@ class ExcelConstantsGenerator:
                 first, second = key
                 cpp_code = template.render(constants=const_list)
                 filename = f"global_{first}_{second}_table_id_constants.h".lower()
-                output_path = constants.GENERATOR_CONSTANTS_NAME_DIR / filename
+                output_path = constants.SRC_CPP_CONSTANTS / filename
                 output_path.write_text(cpp_code, encoding='utf-8')
                 logger.info(f"Generated file: {output_path}")
 
             if single_list:
                 cpp_code = template.render(constants=single_list)
                 filename = f"{self.sheet.lower()}_table_id_constants.h"
-                output_path = constants.GENERATOR_CONSTANTS_NAME_DIR / filename
+                output_path = constants.SRC_CPP_CONSTANTS / filename
                 output_path.write_text(cpp_code, encoding='utf-8')
                 logger.info(f"Generated fallback file: {output_path}")
 
@@ -136,7 +136,7 @@ class ExcelConstantsGenerator:
                 constants_list.append({'name': cpp_name, 'value': id_value})
 
             cpp_code = template.render(constants=constants_list)
-            output_path = constants.GENERATOR_CONSTANTS_NAME_DIR / f"{self.sheet.lower()}_table_id_constants.h"
+            output_path = constants.SRC_CPP_CONSTANTS / f"{self.sheet.lower()}_table_id_constants.h"
             output_path.write_text(cpp_code, encoding='utf-8')
             logger.info(f"Generated file: {output_path}")
 
@@ -176,14 +176,14 @@ class ExcelConstantsGenerator:
                 first, second = key
                 go_code = template.render(constants=const_list)
                 filename = f"global_{first}_{second}_table_id_constants.go".lower()
-                output_path = constants.GENERATOR_CONSTANTS_NAME_GO_DIR / filename
+                output_path = constants.SRC_GO_CONSTANTS / filename
                 output_path.write_text(go_code, encoding='utf-8')
                 logger.info(f"[GO] Generated file: {output_path}")
 
             if single_list:
                 go_code = template.render(constants=single_list)
                 filename = f"{self.sheet.lower()}_table_id_constants.go"
-                output_path = constants.GENERATOR_CONSTANTS_NAME_GO_DIR / filename
+                output_path = constants.SRC_GO_CONSTANTS / filename
                 output_path.write_text(go_code, encoding='utf-8')
                 logger.info(f"[GO] Generated fallback file: {output_path}")
 
@@ -200,7 +200,7 @@ class ExcelConstantsGenerator:
                 constants_list.append({'name': go_name, 'value': id_value})
 
             go_code = template.render(constants=constants_list)
-            output_path = constants.GENERATOR_CONSTANTS_NAME_GO_DIR / f"{self.sheet.lower()}_table_id_constants.go"
+            output_path = constants.SRC_GO_CONSTANTS / f"{self.sheet.lower()}_table_id_constants.go"
             output_path.write_text(go_code, encoding='utf-8')
             logger.info(f"[GO] Generated file: {output_path}")
 
@@ -226,8 +226,8 @@ def process_file(file_path: Path):
 
 def main():
     try:
-        constants.GENERATOR_CONSTANTS_NAME_DIR.mkdir(parents=True, exist_ok=True)
-        constants.GENERATOR_CONSTANTS_NAME_GO_DIR.mkdir(parents=True, exist_ok=True)
+        constants.SRC_CPP_CONSTANTS.mkdir(parents=True, exist_ok=True)
+        constants.SRC_GO_CONSTANTS.mkdir(parents=True, exist_ok=True)
 
         xlsx_files = utils.get_xlsx_files(constants.DATA_TABLES_DIR)
         if not xlsx_files:
