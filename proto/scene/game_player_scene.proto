@@ -17,7 +17,7 @@ message GsEnterSceneRequest
 
 message GsLeaveSceneRequest
 {
-  ChangeSceneInfoPBComponent change_scene_info = 2;
+  ChangeRoomInfoPBComponent change_scene_info = 2;
 }
 
 

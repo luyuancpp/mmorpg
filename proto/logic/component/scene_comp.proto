@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message ChangeSceneInfoPBComponent
+message ChangeRoomInfoPBComponent
 {
 
   enum eChangeGsType
