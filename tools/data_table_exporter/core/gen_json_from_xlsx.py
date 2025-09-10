@@ -10,17 +10,17 @@ from os.path import isfile, join
 from typing import Any, Union, List, Dict
 
 import openpyxl
-import generate_common  # 假设这个模块包含必要函数
+import generate_common  # Assumed to contain necessary functions
 from core import constants
 from constants import PROJECT_GENERATED_JSON_DIR, DATA_TABLES_DIR
 
-# 配置日志
+# Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
 def get_column_names(sheet: openpyxl.worksheet.worksheet.Worksheet) -> List[str]:
-    """根据条件获取第一行列名，第四行判断是否符合 SERVER_GEN_TYPE"""
+    """Get column names from first row if fourth row cell is in SERVER_GEN_TYPE"""
     return [
         sheet.cell(row=1, column=col_idx + 1).value
         if sheet.cell(row=4, column=col_idx + 1).value in constants.SERVER_GEN_TYPE
@@ -30,7 +30,7 @@ def get_column_names(sheet: openpyxl.worksheet.worksheet.Worksheet) -> List[str]
 
 
 def process_cell_value(cell: openpyxl.cell.cell.Cell, field_type: str) -> Union[float, int, str, Any]:
-    """处理单元格值，转换成指定的类型"""
+    """Convert cell value to the specified type"""
     cell_value = cell.value
 
     if field_type == "string":
@@ -54,7 +54,7 @@ def process_cell_value(cell: openpyxl.cell.cell.Cell, field_type: str) -> Union[
 
 
 def handle_map_field_data(cell, row_data: dict, col_name: str, cell_value, map_field_data: dict, column_names: List[str], prev_cell):
-    """处理 map 类型字段数据"""
+    """Handle map-type field data"""
     prev_column_name = column_names[prev_cell.col_idx - 1] if prev_cell else None
     if cell_value in (None, '') and cell.row >= generate_common.BEGIN_ROW_IDX:
         return
@@ -71,14 +71,14 @@ def handle_map_field_data(cell, row_data: dict, col_name: str, cell_value, map_f
 
 
 def handle_array_data(cell, row_data: dict, col_name: str, cell_value):
-    """处理数组类型字段"""
+    """Handle array-type field data"""
     if cell_value in (None, '', 0, -1) and cell.row >= generate_common.BEGIN_ROW_IDX:
         return
     row_data.setdefault(col_name, []).append(cell_value)
 
 
 def handle_group_data(cell, row_data: dict, col_name: str, cell_value, prev_cell):
-    """处理分组字段数据"""
+    """Handle grouped field data"""
     if cell_value in (None, '', 0, -1) and cell.row >= generate_common.BEGIN_ROW_IDX:
         return
 
@@ -96,7 +96,7 @@ def handle_group_data(cell, row_data: dict, col_name: str, cell_value, prev_cell
 
 
 def process_row(sheet, row, column_names: List[str]) -> dict:
-    """处理单行数据"""
+    """Process a single row of data"""
     sheet_data = generate_common.get_sheet_data(sheet, column_names)
     array_data = sheet_data[generate_common.SHEET_ARRAY_DATA_INDEX]
     field_type_data = sheet_data[generate_common.FILE_TYPE_INDEX]
@@ -136,7 +136,7 @@ def process_row(sheet, row, column_names: List[str]) -> dict:
 
 
 def extract_sheet_data(sheet, column_names: List[str]) -> List[dict]:
-    """提取整个 sheet 的数据"""
+    """Extract data from entire sheet"""
     return [
         process_row(sheet, row, column_names)
         for row in sheet.iter_rows(min_row=generate_common.BEGIN_ROW_IDX + 1, values_only=False)
@@ -144,23 +144,23 @@ def extract_sheet_data(sheet, column_names: List[str]) -> List[dict]:
 
 
 def extract_workbook_data(workbook: openpyxl.Workbook) -> Dict[str, List[dict]]:
-    """提取 workbook 数据，默认取第一个 sheet"""
+    """Extract data from the workbook; only the first sheet is used"""
     data = {}
     if workbook.sheetnames:
         sheet_name = workbook.sheetnames[0]
         sheet = workbook[sheet_name]
         if sheet.cell(row=1, column=1).value != "id":
-            logger.error(f"{sheet_name} 首列必须是 'id'")
+            logger.error(f"The first column of sheet '{sheet_name}' must be 'id'.")
         else:
             column_names = get_column_names(sheet)
             data[sheet_name] = extract_sheet_data(sheet, column_names)
     else:
-        logger.error("工作簿中没有找到任何 sheet。")
+        logger.error("No sheets found in the workbook.")
     return data
 
 
 def save_json(data: dict, file_path: str) -> None:
-    """保存 json 文件"""
+    """Save data to a JSON file"""
     json_data = json.dumps({"data": data}, sort_keys=True, indent=1, separators=(',', ': '))
     json_data = json_data.replace('"[', '[').replace(']"', ']')
     json_data = json_data.replace('\r\n', '\n').replace('\r', '\n')
@@ -168,13 +168,13 @@ def save_json(data: dict, file_path: str) -> None:
     try:
         with open(file_path, 'w', encoding='utf-8', newline='') as f:
             f.write(json_data)
-            logger.info(f"生成 JSON 文件: {file_path}")
+            logger.info(f"Generated JSON file: {file_path}")
     except IOError as e:
-        logger.error(f"保存 JSON 文件 {file_path} 出错: {e}")
+        logger.error(f"Failed to save JSON file {file_path}: {e}")
 
 
 def process_excel_file(file_path: str) -> None:
-    """处理单个 Excel 文件，生成 JSON"""
+    """Process a single Excel file and generate JSON"""
     try:
         workbook = openpyxl.load_workbook(file_path)
         workbook_data = extract_workbook_data(workbook)
@@ -184,11 +184,11 @@ def process_excel_file(file_path: str) -> None:
             save_json(data, json_file_path)
 
     except Exception as e:
-        logger.error(f"处理文件 {file_path} 失败: {e}")
+        logger.error(f"Failed to process file {file_path}: {e}")
 
 
 def main() -> None:
-    """主函数，批量处理 XLSX_DIR 下所有 Excel 文件"""
+    """Main function to process all Excel files in the specified directory"""
     os.makedirs(PROJECT_GENERATED_JSON_DIR, exist_ok=True)
 
     files = [
