@@ -8,7 +8,7 @@ option cc_generic_services = true;
 
 message CentreEnterSceneRequest
 {
-  SceneInfoPBComponent scene_info = 1;
+  RoomInfoPBComponent scene_info = 1;
 }
 
 message CentreLeaveSceneRequest

@@ -1,8 +1,6 @@
 syntax = "proto3";
 package mvccpb;
 
-import "proto/etcd/version.proto";
-
 option go_package = "game/etcdserverpb";
 
 message KeyValue {

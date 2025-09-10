@@ -3,7 +3,6 @@ syntax = "proto3";
 option go_package = "pb/game";
 
 import "proto/common/empty.proto";
-import "proto/common/session.proto";
 import "proto/common/tip.proto";
 import "proto/common/user_accounts.proto";
 

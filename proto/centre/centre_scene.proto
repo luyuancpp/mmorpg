@@ -10,7 +10,7 @@ option cc_generic_services = true;
 message RegisterSceneRequest
 {
 	uint32 scene_node_id = 1;
-	repeated SceneInfoPBComponent scenes_info = 2;
+	repeated RoomInfoPBComponent scenes_info = 2;
 }
 
 message RegisterSceneResponse

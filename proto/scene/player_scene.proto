@@ -11,7 +11,7 @@ option cc_generic_services = true;
 
 message EnterSceneC2SRequest
 {
-  SceneInfoPBComponent scene_info = 1;
+  RoomInfoPBComponent scene_info = 1;
 }
 
 message EnterSceneC2SResponse
@@ -21,12 +21,12 @@ message EnterSceneC2SResponse
 
 message EnterSceneS2C
 {
-  SceneInfoPBComponent scene_info = 1;
+  RoomInfoPBComponent scene_info = 1;
 }
 
 message SceneInfoS2C
 {
-  repeated SceneInfoPBComponent scene_info = 1;
+  repeated RoomInfoPBComponent scene_info = 1;
 }
 
 message SceneInfoRequest
@@ -35,7 +35,7 @@ message SceneInfoRequest
 
 message SceneInfoResponse
 {
-  repeated SceneInfoPBComponent scene_info = 1;
+  repeated RoomInfoPBComponent scene_info = 1;
 }
 
 message ActorCreateS2C
