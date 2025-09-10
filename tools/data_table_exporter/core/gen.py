@@ -21,6 +21,7 @@ directories = [
     GEN_CODE_DIR / "proto",
     GEN_CODE_DIR / "proto" / "cpp",
     GEN_CODE_DIR / "proto" / "go",
+    constants.DST_PROTO_GO,
     GEN_CODE_DIR / "cpp_table_id_constants_name",
     GEN_JSON_DIR / "json",
     PROJECT_DIR / "cpp" / "generated" / "table" / "code",
@@ -56,8 +57,7 @@ commands = [
     f"python md5tool.py md5copy {constants.SRC_PROTO_CPP} {constants.DST_PROTO_CPP}",
     f"python md5tool.py md5copy {constants.SRC_PROTO_CPP_OPERATOR} {constants.DST_PROTO_CPP_OPERATOR}",
     f"python md5tool.py md5copy {constants.SRC_PROTO_CPP_TIP} {constants.DST_PROTO_CPP_TIP}",
-    f"python md5tool.py md5copy {constants.SRC_PROTO_GO} {constants.DST_PROTO_GO_LOGIN}",
-    f"python md5tool.py md5copy {constants.SRC_PROTO_GO} {constants.DST_PROTO_GO_DB}",
+    f"python md5tool.py md5copy {constants.SRC_PROTO_GO} {constants.DST_PROTO_GO}",
 ]
 
 
