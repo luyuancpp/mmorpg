@@ -151,7 +151,7 @@ def main() -> None:
     constants.GENERATOR_TABLE_INDEX_MAPPING_DIR.mkdir(parents=True, exist_ok=True)
 
     try:
-        xlsx_files = get_xlsx_files(constants.XLSX_DIR)
+        xlsx_files = get_xlsx_files(constants.DATA_TABLES_DIR)
         num_threads = min(multiprocessing.cpu_count(), len(xlsx_files))
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:

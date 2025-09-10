@@ -5,7 +5,7 @@ import openpyxl
 import generate_common  # Ensure generate_common provides BEGIN_ROW_IDX and mywrite functions
 import logging
 from pathlib import Path
-from core.constants import XLSX_DIR
+from core.constants import DATA_TABLES_DIR
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -43,7 +43,7 @@ def main():
     if not cpp_dir.exists():
         cpp_dir.mkdir(parents=True, exist_ok=True)
 
-    for filepath in XLSX_DIR.glob("*.xlsx"):
+    for filepath in DATA_TABLES_DIR.glob("*.xlsx"):
         if filepath.is_file():
             try:
                 workbook = openpyxl.load_workbook(filepath)
