@@ -192,6 +192,21 @@
     <ClInclude Include="proto\testmultikey_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="code\bit_index\mission_table_id_bit_index.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\bit_index\reward_table_id_bit_index.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\constants\actoractioncombatstate_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\constants\actoractionstate_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\constants\globalvariable_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="code\actoractioncombatstate_table.cpp">
