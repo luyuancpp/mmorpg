@@ -81,7 +81,7 @@ public:
 	{
 	}
 
-	inline const std::string full_name() const { return MessageValue::GetDescriptor()->full_name(); }
+	inline const std::string full_name() const { return std::string(MessageValue::GetDescriptor()->full_name()); }
 
 	void SetSaveCallback(const EventCallback& cb) { save_callback_ = cb; }
 	void SetLoadCallback(const EventCallback& cb) { load_callback_ = cb; }

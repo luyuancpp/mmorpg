@@ -30,6 +30,7 @@
     <ClInclude Include="code\constants\actoractioncombatstate_table_id_constants.h" />
     <ClInclude Include="code\constants\actoractionstate_table_id_constants.h" />
     <ClInclude Include="code\constants\globalvariable_table_id_constants.h" />
+    <ClInclude Include="code\constants\global_abnormal_logout_table_id_constants.h" />
     <ClInclude Include="code\cooldown_table.h" />
     <ClInclude Include="code\globalvariable_table.h" />
     <ClInclude Include="code\item_table.h" />
@@ -244,7 +245,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>../../libs/base/common/;../../../third_party/muduo/contrib/windows/include/;../../../third_party/muduo;../../../third_party/boost/;../../../third_party/exprtk/;../../../third_party/;../../../third_party/grpc/third_party/protobuf/src/;../../../third_party/grpc/third_party/abseil-cpp/;../../generated/;../../libs/engine/config/;../../libs/;../../libs/engine/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4244;4082;4267;4819;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
