@@ -22,7 +22,6 @@ directories = [
     GEN_CODE_DIR / "proto" / "cpp",
     GEN_CODE_DIR / "proto" / "go",
     paths.DST_PROTO_GO,
-    GEN_CODE_DIR / "cpp_table_id_constants_name",
     GEN_JSON_DIR / "json",
     paths.SRC_CPP,
     paths.SRC_GO,
@@ -63,15 +62,14 @@ commands = [
     "python gen_constants_from_xlsx.py",
     "python generate_xlsx_to_id_bit_index.py",
 
-    f"python md5tool.py md5copy {paths.SRC_CPP} {paths.DST_CPP_CODE}",
-    f"python md5tool.py md5copy {paths.SRC_CPP_ID_BIT} {paths.DST_CPP_BIT}",
-    f"python md5tool.py md5copy {paths.SRC_CPP_CONSTANTS} {paths.DST_CPP_CONSTANTS}",
-    f"python md5tool.py md5copy {paths.SRC_PROTO_CPP} {paths.DST_PROTO_CPP}",
-    f"python md5tool.py md5copy {paths.SRC_PROTO_CPP_OPERATOR} {paths.DST_PROTO_CPP_OPERATOR}",
-    f"python md5tool.py md5copy {paths.SRC_PROTO_CPP_TIP} {paths.DST_PROTO_CPP_TIP}",
-    f"python md5tool.py md5copy {paths.SRC_PROTO_GO} {paths.DST_PROTO_GO}",
+    f"python md5tool.py md5copy {paths.SRC_CPP.as_posix()} {paths.DST_CPP_CODE.as_posix()}",
+    f"python md5tool.py md5copy {paths.SRC_CPP_ID_BIT.as_posix()} {paths.DST_CPP_BIT.as_posix()}",
+    f"python md5tool.py md5copy {paths.SRC_CPP_CONSTANTS.as_posix()} {paths.DST_CPP_CONSTANTS.as_posix()}",
+    f"python md5tool.py md5copy {paths.SRC_PROTO_CPP.as_posix()} {paths.DST_PROTO_CPP.as_posix()}",
+    f"python md5tool.py md5copy {paths.SRC_PROTO_CPP_OPERATOR.as_posix()} {paths.DST_PROTO_CPP_OPERATOR.as_posix()}",
+    f"python md5tool.py md5copy {paths.SRC_PROTO_CPP_TIP.as_posix()} {paths.DST_PROTO_CPP_TIP.as_posix()}",
+    f"python md5tool.py md5copy {paths.SRC_PROTO_GO.as_posix()} {paths.DST_PROTO_GO.as_posix()}",
 ]
-
 
 # Execute commands and capture return codes
 for command in commands:

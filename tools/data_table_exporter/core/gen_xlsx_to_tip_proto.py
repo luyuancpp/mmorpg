@@ -18,11 +18,11 @@ logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s -
 
 # === Path setup (using pathlib) ===
 excel_file_path = DATA_TABLES_DIR / "tip" / "Tip.xlsx"
-json_file_path = constants.GENERATOR_TIP_MAPPING_DIR / "tip_enum_ids.json"
+json_file_path = paths.GENERATOR_TIP_MAPPING_DIR / "tip_enum_ids.json"
 
 # Ensure output directories exist
 PROJECT_GENERATED_CODE_PROTO_TIP_DIR.mkdir(parents=True, exist_ok=True)
-constants.GENERATOR_TIP_MAPPING_DIR.mkdir(parents=True, exist_ok=True)
+paths.GENERATOR_TIP_MAPPING_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def load_existing_ids(json_path: Path):
