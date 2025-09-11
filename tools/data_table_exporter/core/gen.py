@@ -69,6 +69,9 @@ for command in commands:
         if result.stdout:
             logger.info(result.stdout.strip())
         if result.stderr:
-            logger.error(result.stderr.strip())
+            if "ERROR" in result.stderr:
+                logger.error(result.stderr.strip())
+            else:
+                logger.info(result.stderr.strip())
     except subprocess.CalledProcessError as e:
         logger.error(f"Error running command '{command}': {e}")
