@@ -42,7 +42,7 @@ GO_GEN_DIR = PROJECT_DIR / "go"
 
 # 源目录路径
 SRC_CPP = GENERATED_CODE_DIR / "cpp"
-SRC_GO = GENERATED_CODE_DIR / "GO"
+SRC_GO = GENERATED_CODE_DIR / "go"
 SRC_CPP_ID_BIT = SRC_CPP / "id_bit_index"
 SRC_CPP_CONSTANTS = SRC_CPP / "id_constants_name"
 SRC_PROTO_CPP = GENERATED_CODE_DIR / "proto" / "cpp"
