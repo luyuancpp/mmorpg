@@ -10,16 +10,16 @@ class RoomInfoPBComponent;
 class PlayerChangeRoomUtil {
 public:
 	// 添加切换场景信息到队列
-	static uint32_t PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo);
+	static uint32_t PushChangeSceneInfo(entt::entity player, const ChangeRoomInfoPBComponent& changeInfo);
 
 	// 移除队列中首个切换场景信息
 	static void PopFrontChangeSceneQueue(entt::entity player);
 
 	// 设置当前切换场景信息的切换状态
-	static void SetCurrentChangeSceneState(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState s);
+	static void SetCurrentChangeSceneState(entt::entity player, ChangeRoomInfoPBComponent::eChangeSceneState s);
 
 	// 将场景信息复制到切换场景信息中
-	static void CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const RoomInfoPBComponent& sceneInfo);
+	static void CopySceneInfoToChangeInfo(ChangeRoomInfoPBComponent& changeInfo, const RoomInfoPBComponent& sceneInfo);
 
 	// 处理玩家的场景切换队列
 	static void ProgressSceneChangeState(entt::entity player);

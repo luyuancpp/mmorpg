@@ -29,7 +29,7 @@ entt::entity CreatePlayerEntity()
 	return playerEntity;
 }
 
-ChangeSceneInfoPBComponent& GetPlayerFrontChangeSceneInfo(entt::entity playerEntity)
+ChangeRoomInfoPBComponent& GetPlayerFrontChangeSceneInfo(entt::entity playerEntity)
 {
 	// Get the front change scene info for the player
 	return *tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).front();
@@ -57,9 +57,9 @@ TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneEntity).guid();
 	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
-	ChangeSceneInfoPBComponent changeInfo;
+	ChangeRoomInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
-	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eSameGs); // todo scene logic
+	changeInfo.set_change_gs_type(ChangeRoomInfoPBComponent::eSameGs); // todo scene logic
 	EXPECT_EQ(kSuccess, PlayerChangeRoomUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
@@ -72,17 +72,17 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 	const auto sceneId = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneEntity).guid();
 	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 
-	ChangeSceneInfoPBComponent changeInfo;
+	ChangeRoomInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
-	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs); // todo scene logic
-	changeInfo.set_state(ChangeSceneInfoPBComponent::ePendingLeave);
+	changeInfo.set_change_gs_type(ChangeRoomInfoPBComponent::eDifferentGs); // todo scene logic
+	changeInfo.set_state(ChangeRoomInfoPBComponent::ePendingLeave);
 	EXPECT_EQ(kSuccess, PlayerChangeRoomUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eWaitingEnter);
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeRoomInfoPBComponent::eWaitingEnter);
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeRoomInfoPBComponent::eEnterSucceed);
 
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
@@ -100,14 +100,14 @@ TEST(PlayerChangeScene, DiffGs)
 	const auto sceneId = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneEntity).guid();
 	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 
-	ChangeSceneInfoPBComponent changeInfo;
+	ChangeRoomInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
-	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs);
+	changeInfo.set_change_gs_type(ChangeRoomInfoPBComponent::eDifferentGs);
 	EXPECT_EQ(kSuccess, PlayerChangeRoomUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeRoomInfoPBComponent::eEnterSucceed);
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
@@ -124,9 +124,9 @@ TEST(PlayerChangeScene, SameGs)
 	const auto sceneId = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneEntity).guid();
 	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 
-	ChangeSceneInfoPBComponent changeInfo;
+	ChangeRoomInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
-	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eSameGs); // todo scene logic
+	changeInfo.set_change_gs_type(ChangeRoomInfoPBComponent::eSameGs); // todo scene logic
 	EXPECT_EQ(kSuccess, PlayerChangeRoomUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
@@ -139,14 +139,14 @@ TEST(PlayerChangeScene, CrossServerDiffGs)
 	const auto sceneId = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneEntity).guid();
 	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 
-	ChangeSceneInfoPBComponent changeInfo;
+	ChangeRoomInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
-	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs); // todo scene logic
+	changeInfo.set_change_gs_type(ChangeRoomInfoPBComponent::eDifferentGs); // todo scene logic
 	EXPECT_EQ(kSuccess, PlayerChangeRoomUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeRoomInfoPBComponent::eEnterSucceed);
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
@@ -163,23 +163,23 @@ TEST(PlayerChangeScene, ServerCrush)
 	const auto sceneId = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(fromSceneEntity).guid();
 	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 
-	ChangeSceneInfoPBComponent changeInfo;
+	ChangeRoomInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
-	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs); // todo scene logic
+	changeInfo.set_change_gs_type(ChangeRoomInfoPBComponent::eDifferentGs); // todo scene logic
 	EXPECT_EQ(kSuccess, PlayerChangeRoomUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eWaitingEnter);
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeRoomInfoPBComponent::eWaitingEnter);
 	PlayerChangeRoomUtil::PopFrontChangeSceneQueue(playerEntity); // crash
 	EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
 	RoomCommon::EnterRoom({ fromSceneEntity, playerEntity });
 	EXPECT_EQ(kSuccess, PlayerChangeRoomUtil::PushChangeSceneInfo(playerEntity, changeInfo));
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eWaitingEnter);
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeRoomInfoPBComponent::eWaitingEnter);
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);
 	EXPECT_FALSE(tlsRegistryManager.actorRegistry.get<ChangeSceneQueuePBComponent>(playerEntity).empty());
 
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_state(ChangeRoomInfoPBComponent::eEnterSucceed);
 
 	PlayerChangeRoomUtil::OnTargetSceneNodeEnterComplete(playerEntity);
 	PlayerChangeRoomUtil::ProgressSceneChangeState(playerEntity);

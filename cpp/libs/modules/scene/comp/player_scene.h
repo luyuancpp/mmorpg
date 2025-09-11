@@ -4,4 +4,4 @@
 #include "core/utils/data_structures/fast_queue.h"
 
 
-using ChangeSceneQueuePBComponent = FastQueue<ChangeSceneInfoPBComponent>;
+using ChangeSceneQueuePBComponent = FastQueue<ChangeRoomInfoPBComponent>;

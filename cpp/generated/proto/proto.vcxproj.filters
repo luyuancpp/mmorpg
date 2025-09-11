@@ -99,9 +99,6 @@
     <ClCompile Include="player_locator\player_locator.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="logic\client_player\player_common.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="logic\component\actor_attribute_state_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -318,9 +315,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="player_locator\player_locator.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\client_player\player_common.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="logic\component\actor_attribute_state_comp.pb.h">

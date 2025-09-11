@@ -262,11 +262,11 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 	changeInfo.set_to_zone_id(toZone);
 
 	if (fromZone == toZone) {
-		changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eSameGs);
+		changeInfo.set_change_gs_type(ChangeRoomInfoPBComponent::eSameGs);
 		changeInfo.set_is_cross_zone(false);
 	}
 	else {
-		changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs);
+		changeInfo.set_change_gs_type(ChangeRoomInfoPBComponent::eDifferentGs);
 		changeInfo.set_is_cross_zone(true);
 	}
 
@@ -275,7 +275,7 @@ void PlayerSceneSystem::ProcessSceneChange(entt::entity playerEntity, entt::enti
 
 void PlayerSceneSystem::HandleEnterScene(entt::entity playerEntity, const RoomInfoPBComponent& sceneInfo)
 {
-	ChangeSceneInfoPBComponent changeSceneInfo;
+	ChangeRoomInfoPBComponent changeSceneInfo;
 	PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(changeSceneInfo, sceneInfo);
 	if (const auto ret = PlayerChangeRoomUtil::PushChangeSceneInfo(playerEntity, changeSceneInfo); ret != kSuccess)
 	{
@@ -322,10 +322,10 @@ void PlayerSceneSystem::PushInitialChangeSceneInfo(entt::entity playerEntity, en
 {
 	const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(sceneEntity);
 
-	ChangeSceneInfoPBComponent changeInfo;
+	ChangeRoomInfoPBComponent changeInfo;
 	PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(changeInfo, sceneInfo);
-	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs);
-	changeInfo.set_state(ChangeSceneInfoPBComponent::eEnterSucceed);
+	changeInfo.set_change_gs_type(ChangeRoomInfoPBComponent::eDifferentGs);
+	changeInfo.set_state(ChangeRoomInfoPBComponent::eEnterSucceed);
 
 	PlayerChangeRoomUtil::PushChangeSceneInfo(playerEntity, changeInfo);
 }
