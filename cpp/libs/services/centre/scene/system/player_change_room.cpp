@@ -117,7 +117,7 @@ void PlayerChangeRoomUtil::OnTargetSceneNodeEnterComplete(entt::entity player) {
 
 // 确认玩家成功进入场景后的操作
 void PlayerChangeRoomUtil::OnEnterRoomOk(entt::entity player) {
-	S2CEnterScene ev;
+	S2CEnterRoom ev;
 	ev.set_entity(entt::to_integral(player));
 	dispatcher.trigger(ev);
 }
