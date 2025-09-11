@@ -60,7 +60,7 @@ class AfterLeaveRoom;
 struct AfterLeaveRoomDefaultTypeInternal;
 extern AfterLeaveRoomDefaultTypeInternal _AfterLeaveRoom_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull AfterLeaveRoom_class_data_;
-class BeforeEnterScene;
+class BeforeEnterRoom;
 struct BeforeEnterSceneDefaultTypeInternal;
 extern BeforeEnterSceneDefaultTypeInternal _BeforeEnterScene_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull BeforeEnterScene_class_data_;
@@ -855,30 +855,30 @@ class BeforeLeaveRoom final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull BeforeLeaveRoom_class_data_;
 // -------------------------------------------------------------------
 
-class BeforeEnterScene final : public ::google::protobuf::Message
+class BeforeEnterRoom final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:BeforeEnterScene) */ {
  public:
-  inline BeforeEnterScene() : BeforeEnterScene(nullptr) {}
-  ~BeforeEnterScene() PROTOBUF_FINAL;
+  inline BeforeEnterRoom() : BeforeEnterRoom(nullptr) {}
+  ~BeforeEnterRoom() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(BeforeEnterScene* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(BeforeEnterRoom* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(BeforeEnterScene));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(BeforeEnterRoom));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR BeforeEnterScene(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR BeforeEnterRoom(::google::protobuf::internal::ConstantInitialized);
 
-  inline BeforeEnterScene(const BeforeEnterScene& from) : BeforeEnterScene(nullptr, from) {}
-  inline BeforeEnterScene(BeforeEnterScene&& from) noexcept
-      : BeforeEnterScene(nullptr, ::std::move(from)) {}
-  inline BeforeEnterScene& operator=(const BeforeEnterScene& from) {
+  inline BeforeEnterRoom(const BeforeEnterRoom& from) : BeforeEnterRoom(nullptr, from) {}
+  inline BeforeEnterRoom(BeforeEnterRoom&& from) noexcept
+      : BeforeEnterRoom(nullptr, ::std::move(from)) {}
+  inline BeforeEnterRoom& operator=(const BeforeEnterRoom& from) {
     CopyFrom(from);
     return *this;
   }
-  inline BeforeEnterScene& operator=(BeforeEnterScene&& from) noexcept {
+  inline BeforeEnterRoom& operator=(BeforeEnterRoom&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -906,13 +906,13 @@ class BeforeEnterScene final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const BeforeEnterScene& default_instance() {
-    return *reinterpret_cast<const BeforeEnterScene*>(
+  static const BeforeEnterRoom& default_instance() {
+    return *reinterpret_cast<const BeforeEnterRoom*>(
         &_BeforeEnterScene_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 2;
-  friend void swap(BeforeEnterScene& a, BeforeEnterScene& b) { a.Swap(&b); }
-  inline void Swap(BeforeEnterScene* PROTOBUF_NONNULL other) {
+  friend void swap(BeforeEnterRoom& a, BeforeEnterRoom& b) { a.Swap(&b); }
+  inline void Swap(BeforeEnterRoom* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -920,7 +920,7 @@ class BeforeEnterScene final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(BeforeEnterScene* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(BeforeEnterRoom* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -928,13 +928,13 @@ class BeforeEnterScene final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  BeforeEnterScene* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<BeforeEnterScene>(arena);
+  BeforeEnterRoom* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<BeforeEnterRoom>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const BeforeEnterScene& from);
+  void CopyFrom(const BeforeEnterRoom& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const BeforeEnterScene& from) { BeforeEnterScene::MergeImpl(*this, from); }
+  void MergeFrom(const BeforeEnterRoom& from) { BeforeEnterRoom::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -970,18 +970,18 @@ class BeforeEnterScene final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(BeforeEnterScene* PROTOBUF_NONNULL other);
+  void InternalSwap(BeforeEnterRoom* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
   static ::absl::string_view FullMessageName() { return "BeforeEnterScene"; }
 
  protected:
-  explicit BeforeEnterScene(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  BeforeEnterScene(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BeforeEnterScene& from);
-  BeforeEnterScene(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BeforeEnterScene&& from) noexcept
-      : BeforeEnterScene(arena) {
+  explicit BeforeEnterRoom(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  BeforeEnterRoom(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BeforeEnterRoom& from);
+  BeforeEnterRoom(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BeforeEnterRoom&& from) noexcept
+      : BeforeEnterRoom(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -1033,7 +1033,7 @@ class BeforeEnterScene final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const BeforeEnterScene& from_msg);
+        const BeforeEnterRoom& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t entity_;
@@ -1500,25 +1500,25 @@ inline void OnRoomDestroyed::_internal_set_entity(::uint64_t value) {
 // BeforeEnterScene
 
 // uint64 entity = 1;
-inline void BeforeEnterScene::clear_entity() {
+inline void BeforeEnterRoom::clear_entity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.entity_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t BeforeEnterScene::entity() const {
+inline ::uint64_t BeforeEnterRoom::entity() const {
   // @@protoc_insertion_point(field_get:BeforeEnterScene.entity)
   return _internal_entity();
 }
-inline void BeforeEnterScene::set_entity(::uint64_t value) {
+inline void BeforeEnterRoom::set_entity(::uint64_t value) {
   _internal_set_entity(value);
   _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:BeforeEnterScene.entity)
 }
-inline ::uint64_t BeforeEnterScene::_internal_entity() const {
+inline ::uint64_t BeforeEnterRoom::_internal_entity() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.entity_;
 }
-inline void BeforeEnterScene::_internal_set_entity(::uint64_t value) {
+inline void BeforeEnterRoom::_internal_set_entity(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.entity_ = value;
 }
