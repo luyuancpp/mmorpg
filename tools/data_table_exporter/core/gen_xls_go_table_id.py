@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 import generate_common  # 你项目已有模块，需包含 BEGIN_ROW_IDX 和 mywrite
-from core.constants import DATA_TABLES_DIR  # XLSX_DIR 是 Path 类型
+from core.paths import DATA_TABLES_DIR  # XLSX_DIR 是 Path 类型
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

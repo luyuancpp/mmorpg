@@ -15,7 +15,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 import utils
 import generate_common
-from core import constants
+from core import paths
 
 # Set up logging configuration
 logging.basicConfig(
@@ -119,7 +119,7 @@ class ExcelConstantsGenerator:
             if single_list:
                 cpp_code = template.render(constants=single_list)
                 filename = f"{self.sheet.lower()}_table_id_constants.h"
-                output_path = constants.SRC_CPP_CONSTANTS / filename
+                output_path = paths.SRC_CPP_CONSTANTS / filename
                 output_path.write_text(cpp_code, encoding='utf-8')
                 logger.info(f"Generated fallback file: {output_path}")
 
@@ -176,14 +176,14 @@ class ExcelConstantsGenerator:
                 first, second = key
                 go_code = template.render(constants=const_list)
                 filename = f"global_{first}_{second}_table_id_constants.go".lower()
-                output_path = constants.SRC_GO_CONSTANTS / filename
+                output_path = paths.SRC_GO_CONSTANTS / filename
                 output_path.write_text(go_code, encoding='utf-8')
                 logger.info(f"[GO] Generated file: {output_path}")
 
             if single_list:
                 go_code = template.render(constants=single_list)
                 filename = f"{self.sheet.lower()}_table_id_constants.go"
-                output_path = constants.SRC_GO_CONSTANTS / filename
+                output_path = paths.SRC_GO_CONSTANTS / filename
                 output_path.write_text(go_code, encoding='utf-8')
                 logger.info(f"[GO] Generated fallback file: {output_path}")
 
@@ -226,10 +226,10 @@ def process_file(file_path: Path):
 
 def main():
     try:
-        constants.SRC_CPP_CONSTANTS.mkdir(parents=True, exist_ok=True)
-        constants.SRC_GO_CONSTANTS.mkdir(parents=True, exist_ok=True)
+        paths.SRC_CPP_CONSTANTS.mkdir(parents=True, exist_ok=True)
+        paths.SRC_GO_CONSTANTS.mkdir(parents=True, exist_ok=True)
 
-        xlsx_files = utils.get_xlsx_files(constants.DATA_TABLES_DIR)
+        xlsx_files = utils.get_xlsx_files(paths.DATA_TABLES_DIR)
         if not xlsx_files:
             logger.warning("No Excel files found to process")
             return

@@ -8,7 +8,7 @@ import multiprocessing
 from typing import Dict, List, Optional
 from pathlib import Path
 import generate_common
-from constants import DATA_TABLES_DIR, PROTO_DIR
+from paths import DATA_TABLES_DIR, PROTO_DIR
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

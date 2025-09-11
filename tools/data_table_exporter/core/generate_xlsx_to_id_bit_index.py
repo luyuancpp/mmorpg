@@ -10,7 +10,7 @@ from typing import List, Optional, Dict
 from pathlib import Path
 
 import generate_common
-from core import constants
+from core import paths
 from jinja2 import Environment, FileSystemLoader
 
 # Setup Logging
@@ -25,7 +25,7 @@ class ExcelToCppConverter:
         self.sheet = self.workbook.sheetnames[0]
         self.worksheet = self.workbook[self.sheet]
         self.bit_index_col = self._find_bit_index_column()
-        self.mapping_file = constants.GENERATOR_TABLE_INDEX_MAPPING_DIR / f"{self.sheet.lower()}_mapping.json"
+        self.mapping_file = paths.GENERATOR_TABLE_INDEX_MAPPING_DIR / f"{self.sheet.lower()}_mapping.json"
 
         # Initialize Jinja2 environment
         self.template_env = Environment(
@@ -121,11 +121,11 @@ class ExcelToCppConverter:
         return go_constants
 
     def save_go_constants_to_file(self, go_constants: str) -> None:
-        output_file = constants.SRC_GO_ID_BIT / f"{self.sheet.lower()}_table_id_bit_index.go"
+        output_file = paths.SRC_GO_ID_BIT / f"{self.sheet.lower()}_table_id_bit_index.go"
         output_file.write_text(go_constants, encoding='utf-8')
 
     def save_cpp_constants_to_file(self, cpp_constants: str) -> None:
-        output_file = constants.SRC_CPP_ID_BIT / f"{self.sheet.lower()}_table_id_bit_index.h"
+        output_file = paths.SRC_CPP_ID_BIT / f"{self.sheet.lower()}_table_id_bit_index.h"
         output_file.write_text(cpp_constants, encoding='utf-8')
 
 
@@ -146,12 +146,12 @@ def process_file(excel_file: Path) -> None:
 
 
 def main() -> None:
-    constants.SRC_CPP_ID_BIT.mkdir(parents=True, exist_ok=True)
-    constants.SRC_GO_ID_BIT.mkdir(parents=True, exist_ok=True)
-    constants.GENERATOR_TABLE_INDEX_MAPPING_DIR.mkdir(parents=True, exist_ok=True)
+    paths.SRC_CPP_ID_BIT.mkdir(parents=True, exist_ok=True)
+    paths.SRC_GO_ID_BIT.mkdir(parents=True, exist_ok=True)
+    paths.GENERATOR_TABLE_INDEX_MAPPING_DIR.mkdir(parents=True, exist_ok=True)
 
     try:
-        xlsx_files = get_xlsx_files(constants.DATA_TABLES_DIR)
+        xlsx_files = get_xlsx_files(paths.DATA_TABLES_DIR)
         num_threads = min(multiprocessing.cpu_count(), len(xlsx_files))
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
