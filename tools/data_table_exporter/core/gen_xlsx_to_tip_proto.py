@@ -16,11 +16,11 @@ from core.constants import DATA_TABLES_DIR, PROJECT_GENERATED_CODE_PROTO_TIP_DIR
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# === 路径处理（使用 pathlib） ===
+# === Path setup (using pathlib) ===
 excel_file_path = DATA_TABLES_DIR / "tip" / "Tip.xlsx"
 json_file_path = constants.GENERATOR_TIP_MAPPING_DIR / "tip_enum_ids.json"
 
-# 确保输出目录存在
+# Ensure output directories exist
 PROJECT_GENERATED_CODE_PROTO_TIP_DIR.mkdir(parents=True, exist_ok=True)
 constants.GENERATOR_TIP_MAPPING_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -121,9 +121,9 @@ def generate_proto_files(groups):
                 try:
                     future.result()
                 except Exception as e:
-                    logging.error(f"任务执行失败: {e}")
+                    logging.error(f"Task execution failed: {e}")
     except Exception as e:
-        logging.error(f"Proto文件生成失败: {e}")
+        logging.error(f"Failed to generate Proto files: {e}")
 
 
 def main():
