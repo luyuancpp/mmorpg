@@ -22,15 +22,9 @@
     <ClInclude Include="code\actoractioncombatstate_table.h" />
     <ClInclude Include="code\actoractionstate_table.h" />
     <ClInclude Include="code\all_table.h" />
-    <ClInclude Include="code\bit_index\mission_table_id_bit_index.h" />
-    <ClInclude Include="code\bit_index\reward_table_id_bit_index.h" />
     <ClInclude Include="code\buff_table.h" />
     <ClInclude Include="code\class_table.h" />
     <ClInclude Include="code\condition_table.h" />
-    <ClInclude Include="code\constants\actoractioncombatstate_table_id_constants.h" />
-    <ClInclude Include="code\constants\actoractionstate_table_id_constants.h" />
-    <ClInclude Include="code\constants\globalvariable_table_id_constants.h" />
-    <ClInclude Include="code\constants\global_abnormal_logout_table_id_constants.h" />
     <ClInclude Include="code\cooldown_table.h" />
     <ClInclude Include="code\globalvariable_table.h" />
     <ClInclude Include="code\item_table.h" />
