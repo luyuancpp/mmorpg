@@ -47,8 +47,11 @@ for directory in directories:
     if not directory.exists():
         directory.mkdir(parents=True, exist_ok=True)
         logger.info(f"Created directory: {directory}")
+from md5copy_utils import md5_copy  # 放在你的 import 区域
 
-# Define commands to execute
+# ...
+
+# 继续保留原先生成文件的命令
 commands = [
     "python gen_json_from_xlsx.py",
     "python gen_proto_from_xlsx.py",
@@ -61,17 +64,9 @@ commands = [
     "python gen_go_pb.py",
     "python gen_constants_from_xlsx.py",
     "python generate_xlsx_to_id_bit_index.py",
-
-    f"python md5tool.py md5copy {paths.SRC_CPP.as_posix()} {paths.DST_CPP_CODE.as_posix()}",
-    f"python md5tool.py md5copy {paths.SRC_CPP_ID_BIT.as_posix()} {paths.DST_CPP_BIT.as_posix()}",
-    f"python md5tool.py md5copy {paths.SRC_CPP_CONSTANTS.as_posix()} {paths.DST_CPP_CONSTANTS.as_posix()}",
-    f"python md5tool.py md5copy {paths.SRC_PROTO_CPP.as_posix()} {paths.DST_PROTO_CPP.as_posix()}",
-    f"python md5tool.py md5copy {paths.SRC_PROTO_CPP_OPERATOR.as_posix()} {paths.DST_PROTO_CPP_OPERATOR.as_posix()}",
-    f"python md5tool.py md5copy {paths.SRC_PROTO_CPP_TIP.as_posix()} {paths.DST_PROTO_CPP_TIP.as_posix()}",
-    f"python md5tool.py md5copy {paths.SRC_PROTO_GO.as_posix()} {paths.DST_PROTO_GO.as_posix()}",
 ]
 
-# Execute commands and capture return codes
+# 执行命令行生成任务
 for command in commands:
     try:
         logger.info(f"Running command: {command}")
@@ -85,3 +80,18 @@ for command in commands:
                 logger.info(result.stderr.strip())
     except subprocess.CalledProcessError as e:
         logger.error(f"Error running command '{command}': {e}")
+
+# 执行 md5copy 复制任务（替代 md5tool.py）
+copy_tasks = [
+    (paths.SRC_CPP, paths.DST_CPP_CODE),
+    (paths.SRC_CPP_ID_BIT, paths.DST_CPP_BIT),
+    (paths.SRC_CPP_CONSTANTS, paths.DST_CPP_CONSTANTS),
+    (paths.SRC_PROTO_CPP, paths.DST_PROTO_CPP),
+    (paths.SRC_PROTO_CPP_OPERATOR, paths.DST_PROTO_CPP_OPERATOR),
+    (paths.SRC_PROTO_CPP_TIP, paths.DST_PROTO_CPP_TIP),
+    (paths.SRC_PROTO_GO, paths.DST_PROTO_GO),
+]
+
+for src, dst in copy_tasks:
+    logger.info(f"Copying from {src} to {dst} with MD5 check...")
+    md5_copy(str(src), str(dst))
