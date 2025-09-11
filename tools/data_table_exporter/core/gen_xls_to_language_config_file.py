@@ -9,7 +9,7 @@ from multiprocessing import cpu_count
 from jinja2 import Environment, FileSystemLoader
 
 import generate_common  # 你项目中的工具模块
-from core.constants import SRC_CPP, PROJECT_GENERATED_CODE_GO_DIR, DATA_TABLES_DIR
+from core.paths import SRC_CPP, PROJECT_GENERATED_CODE_GO_DIR, DATA_TABLES_DIR
 
 # 日志配置
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

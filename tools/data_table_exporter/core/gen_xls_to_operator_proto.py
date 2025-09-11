@@ -9,7 +9,7 @@ from pathlib import Path
 
 from openpyxl import load_workbook  # Use openpyxl for better support of .xlsx files
 
-from core.constants import (
+from core.paths import (
     PROJECT_GENERATED_CODE_PROTO_OPERATOR_DIR,
     GENERATOR_STORAGE_OPERATOR_DIR,
     PROJECT_OPERATOR_XLSX,

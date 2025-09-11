@@ -11,8 +11,8 @@ from typing import Any, Union, List, Dict
 
 import openpyxl
 import generate_common  # Assumed to contain necessary functions
-from core import constants
-from constants import PROJECT_GENERATED_JSON_DIR, DATA_TABLES_DIR
+from core import paths
+from paths import PROJECT_GENERATED_JSON_DIR, DATA_TABLES_DIR
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,7 +23,7 @@ def get_column_names(sheet: openpyxl.worksheet.worksheet.Worksheet) -> List[str]
     """Get column names from first row if fourth row cell is in SERVER_GEN_TYPE"""
     return [
         sheet.cell(row=1, column=col_idx + 1).value
-        if sheet.cell(row=4, column=col_idx + 1).value in constants.SERVER_GEN_TYPE
+        if sheet.cell(row=4, column=col_idx + 1).value in paths.SERVER_GEN_TYPE
         else ""
         for col_idx in range(sheet.max_column)
     ]

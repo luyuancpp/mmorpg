@@ -1,4 +1,4 @@
-# constants.py
+# paths.py
 from pathlib import Path
 
 # 常量定义
@@ -43,14 +43,14 @@ GO_GEN_DIR = PROJECT_DIR / "go"
 # 源目录路径
 SRC_CPP = GENERATED_CODE_DIR / "cpp"
 SRC_GO = GENERATED_CODE_DIR / "GO"
-SRC_CPP_ID_BIT = SRC_CPP / "cpp_table_id_bit_index"
-SRC_CPP_CONSTANTS = SRC_CPP / "cpp_table_id_constants_name"
+SRC_CPP_ID_BIT = SRC_CPP / "id_bit_index"
+SRC_CPP_CONSTANTS = SRC_CPP / "id_constants_name"
 SRC_PROTO_CPP = GENERATED_CODE_DIR / "proto" / "cpp"
 SRC_PROTO_CPP_OPERATOR = SRC_PROTO_CPP / "operator"
 SRC_PROTO_CPP_TIP = SRC_PROTO_CPP / "tip"
 SRC_PROTO_GO = GENERATED_CODE_DIR / "proto" / "go" / "pb" / "game"
-SRC_GO_ID_BIT = SRC_GO / "go" / "table_id_bit_index"
-SRC_GO_CONSTANTS = SRC_GO /  "table_id_constants_name"
+SRC_GO_ID_BIT = SRC_GO / "go" / "bit_index"
+SRC_GO_CONSTANTS = SRC_GO /  "constants_name"
 
 # 目标目录路径
 DST_CPP_CODE = CPP_GEN_DIR / "code"

@@ -5,7 +5,7 @@ import openpyxl
 import generate_common  # Ensure generate_common provides BEGIN_ROW_IDX and mywrite functions
 import logging
 from pathlib import Path
-from core.constants import DATA_TABLES_DIR
+from core.paths import DATA_TABLES_DIR
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

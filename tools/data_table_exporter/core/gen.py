@@ -4,16 +4,16 @@
 import subprocess
 import logging
 from pathlib import Path
-import constants
+import paths
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # Base directory references
-GEN_CODE_DIR = constants.PROJECT_GENERATED_CODE_DIR
-GEN_JSON_DIR = constants.PROJECT_GENERATED_JSON_DIR
-PROJECT_DIR = constants.PROJECT_DIR
+GEN_CODE_DIR = paths.PROJECT_GENERATED_CODE_DIR
+GEN_JSON_DIR = paths.PROJECT_GENERATED_JSON_DIR
+PROJECT_DIR = paths.PROJECT_DIR
 
 # List of directories to create (Path 类型)
 directories = [
@@ -21,14 +21,26 @@ directories = [
     GEN_CODE_DIR / "proto",
     GEN_CODE_DIR / "proto" / "cpp",
     GEN_CODE_DIR / "proto" / "go",
-    constants.DST_PROTO_GO,
+    paths.DST_PROTO_GO,
     GEN_CODE_DIR / "cpp_table_id_constants_name",
     GEN_JSON_DIR / "json",
-    PROJECT_DIR / "cpp" / "generated" / "table" / "code",
-    PROJECT_DIR / "cpp" / "generated" / "table" / "code" / "constants",
-    PROJECT_DIR / "cpp" / "generated" / "table" / "code" / "bit_index",
-    PROJECT_DIR / "cpp" / "generated" / "table" / "proto" / "operator",
-    PROJECT_DIR / "cpp" / "generated" / "table" / "proto" / "tip",
+    paths.SRC_CPP,
+    paths.SRC_GO,
+    paths.SRC_CPP_ID_BIT,
+    paths.SRC_CPP_CONSTANTS,
+    paths.SRC_PROTO_CPP,
+    paths.SRC_PROTO_CPP_OPERATOR,
+    paths.SRC_PROTO_CPP_TIP,
+    paths.SRC_PROTO_GO,
+    paths.SRC_GO_ID_BIT,
+    paths.SRC_GO_CONSTANTS,
+    paths.DST_CPP_CODE,
+    paths.DST_CPP_BIT,
+    paths.DST_CPP_CONSTANTS,
+    paths.DST_PROTO_CPP,
+    paths.DST_PROTO_CPP_OPERATOR,
+    paths.DST_PROTO_CPP_TIP,
+    paths.DST_PROTO_GO,
 ]
 
 # Create directories if they don't exist
@@ -51,13 +63,13 @@ commands = [
     "python gen_constants_from_xlsx.py",
     "python generate_xlsx_to_id_bit_index.py",
 
-    f"python md5tool.py md5copy {constants.SRC_CPP} {constants.DST_CPP_CODE}",
-    f"python md5tool.py md5copy {constants.SRC_CPP_ID_BIT} {constants.DST_CPP_BIT}",
-    f"python md5tool.py md5copy {constants.SRC_CPP_CONSTANTS} {constants.DST_CPP_CONSTANTS}",
-    f"python md5tool.py md5copy {constants.SRC_PROTO_CPP} {constants.DST_PROTO_CPP}",
-    f"python md5tool.py md5copy {constants.SRC_PROTO_CPP_OPERATOR} {constants.DST_PROTO_CPP_OPERATOR}",
-    f"python md5tool.py md5copy {constants.SRC_PROTO_CPP_TIP} {constants.DST_PROTO_CPP_TIP}",
-    f"python md5tool.py md5copy {constants.SRC_PROTO_GO} {constants.DST_PROTO_GO}",
+    f"python md5tool.py md5copy {paths.SRC_CPP} {paths.DST_CPP_CODE}",
+    f"python md5tool.py md5copy {paths.SRC_CPP_ID_BIT} {paths.DST_CPP_BIT}",
+    f"python md5tool.py md5copy {paths.SRC_CPP_CONSTANTS} {paths.DST_CPP_CONSTANTS}",
+    f"python md5tool.py md5copy {paths.SRC_PROTO_CPP} {paths.DST_PROTO_CPP}",
+    f"python md5tool.py md5copy {paths.SRC_PROTO_CPP_OPERATOR} {paths.DST_PROTO_CPP_OPERATOR}",
+    f"python md5tool.py md5copy {paths.SRC_PROTO_CPP_TIP} {paths.DST_PROTO_CPP_TIP}",
+    f"python md5tool.py md5copy {paths.SRC_PROTO_GO} {paths.DST_PROTO_GO}",
 ]
 
 

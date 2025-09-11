@@ -8,10 +8,10 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 import generate_common  # Assuming generate_common contains the necessary functions
-from core import constants
+from core import paths
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from core.constants import DATA_TABLES_DIR, PROJECT_GENERATED_CODE_PROTO_TIP_DIR
+from core.paths import DATA_TABLES_DIR, PROJECT_GENERATED_CODE_PROTO_TIP_DIR
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')

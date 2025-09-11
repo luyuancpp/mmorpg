@@ -4,7 +4,7 @@
 import os
 import logging
 
-from core.constants import DATA_TABLES_DIR
+from core.paths import DATA_TABLES_DIR
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
