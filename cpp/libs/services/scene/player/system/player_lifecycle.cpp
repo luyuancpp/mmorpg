@@ -189,7 +189,7 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 
 void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 {
-	auto changeInfo = tlsRegistryManager.actorRegistry.try_get<ChangeSceneInfoPBComponent>(playerEntity);
+	auto changeInfo = tlsRegistryManager.actorRegistry.try_get<ChangeRoomInfoPBComponent>(playerEntity);
 	if (!changeInfo)
 	{
 		return;
@@ -224,7 +224,7 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 
 	PlayerTipSystem::SendToPlayer(playerEntity, kSceneTransferInProgress, {});
 
-	tlsRegistryManager.actorRegistry.remove<ChangeSceneInfoPBComponent>(playerEntity);
+	tlsRegistryManager.actorRegistry.remove<ChangeRoomInfoPBComponent>(playerEntity);
 }
 
 void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& msg) {

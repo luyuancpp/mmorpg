@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class ExcelConstantsGenerator:
     def __init__(self, excel_file: Path):
         self.excel_file = excel_file
-        self.is_global_file = 'GlobalVariable' in self.excel_file.name.lower()
+        self.is_global_file = 'globalvariable' in self.excel_file.name.lower()
         try:
             self.workbook = openpyxl.load_workbook(self.excel_file)
             self.sheet = self.workbook.sheetnames[0]

@@ -36,16 +36,16 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 	RoomCommon::LeaveRoom({ .leaver = player });
 
 	const auto& changeInfo = request->change_scene_info();
-	if (request->change_scene_info().change_gs_type() == ChangeSceneInfoPBComponent::eDifferentGs) // 存储完毕以后才能换场景，防止回档
+	if (request->change_scene_info().change_gs_type() == ChangeRoomInfoPBComponent::eDifferentGs) // 存储完毕以后才能换场景，防止回档
 	{
 		// 检查 state 是否为允许切场景的状态
-		if (changeInfo.state() != ChangeSceneInfoPBComponent::ePendingLeave &&
-			changeInfo.state() != ChangeSceneInfoPBComponent::eLeaving) {
+		if (changeInfo.state() != ChangeRoomInfoPBComponent::ePendingLeave &&
+			changeInfo.state() != ChangeRoomInfoPBComponent::eLeaving) {
 			LOG_ERROR << "Invalid change_scene state for player: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
 			return;
 		}
 
-		tlsRegistryManager.actorRegistry.emplace_or_replace<ChangeSceneInfoPBComponent>(player, changeInfo);
+		tlsRegistryManager.actorRegistry.emplace_or_replace<ChangeRoomInfoPBComponent>(player, changeInfo);
 		// 离开gs 清除session
 		PlayerLifecycleSystem::HandleExitGameNode(player);
 		LOG_DEBUG << "Player " << tlsRegistryManager.actorRegistry.get<Guid>(player) << " session cleared after leaving scene.";

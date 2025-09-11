@@ -13,7 +13,7 @@
 
 
 // 添加切换场景信息到队列
-uint32_t PlayerChangeRoomUtil::PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo) {
+uint32_t PlayerChangeRoomUtil::PushChangeSceneInfo(entt::entity player, const ChangeRoomInfoPBComponent& changeInfo) {
 	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	changeSceneQueue.enqueue(changeInfo);
 	changeSceneQueue.front()->set_change_time(TimeSystem::NowSecondsUTC());
@@ -27,7 +27,7 @@ void PlayerChangeRoomUtil::PopFrontChangeSceneQueue(entt::entity player) {
 }
 
 // 设置当前切换场景信息的切换状态
-void PlayerChangeRoomUtil::SetCurrentChangeSceneState(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState s) {
+void PlayerChangeRoomUtil::SetCurrentChangeSceneState(entt::entity player, ChangeRoomInfoPBComponent::eChangeSceneState s) {
 	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (changeSceneQueue.empty()) {
 		return;
@@ -36,7 +36,7 @@ void PlayerChangeRoomUtil::SetCurrentChangeSceneState(entt::entity player, Chang
 }
 
 // 将场景信息复制到切换场景信息中
-void PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const RoomInfoPBComponent& sceneInfo) {
+void PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(ChangeRoomInfoPBComponent& changeInfo, const RoomInfoPBComponent& sceneInfo) {
 	changeInfo.set_scene_confid(sceneInfo.scene_confid());
 	changeInfo.set_dungen_confid(sceneInfo.dungen_confid());
 	changeInfo.set_guid(sceneInfo.guid());
@@ -108,8 +108,8 @@ void PlayerChangeRoomUtil::OnTargetSceneNodeEnterComplete(entt::entity player) {
 	if (queue.empty()) return;
 
 	auto& task = *queue.front();
-	if (task.state() == ChangeSceneInfoPBComponent::eEnterSucceed) {
-		task.set_state(ChangeSceneInfoPBComponent::eGateEnterSucceed);
+	if (task.state() == ChangeRoomInfoPBComponent::eEnterSucceed) {
+		task.set_state(ChangeRoomInfoPBComponent::eGateEnterSucceed);
 		LOG_INFO << "[SceneChange] Player " << entt::to_integral(player) << " fully entered target scene";
 	}
 }
@@ -129,8 +129,8 @@ void PlayerChangeRoomUtil::ProgressSceneChangeState(entt::entity player) {
 	auto& task = *queue.front();
 
 	switch (task.state()) {
-	case ChangeSceneInfoPBComponent::ePendingLeave:
-		if (task.change_gs_type() == ChangeSceneInfoPBComponent::eSameGs) {
+	case ChangeRoomInfoPBComponent::ePendingLeave:
+		if (task.change_gs_type() == ChangeRoomInfoPBComponent::eSameGs) {
 			auto destScene = entt::entity{ task.guid() };
 			if (destScene == entt::null) {
 				queue.dequeue();
@@ -144,10 +144,10 @@ void PlayerChangeRoomUtil::ProgressSceneChangeState(entt::entity player) {
 		}
 		else {
 			RoomCommon::LeaveRoom({ player });
-			task.set_state(ChangeSceneInfoPBComponent::eLeaving);
+			task.set_state(ChangeRoomInfoPBComponent::eLeaving);
 		}
 		break;
-	case ChangeSceneInfoPBComponent::eLeaving:
+	case ChangeRoomInfoPBComponent::eLeaving:
 		// 等待中心节点收到【离开成功的通知】，再调用 SetState(player, eWaitingEnter);
 		//当前的系统没有处理因网络/RPC超时卡在某个状态的逻辑，例如：
 		//todo 
@@ -156,11 +156,11 @@ void PlayerChangeRoomUtil::ProgressSceneChangeState(entt::entity player) {
 
 		//	eWaitingEnter：目标GS没有及时回复“我加载好了”。
 		break;
-	case ChangeSceneInfoPBComponent::eWaitingEnter:
+	case ChangeRoomInfoPBComponent::eWaitingEnter:
 		// 等待中心服务器或目标节点 RPC 通知我们切换完成
 		break;
 
-	case ChangeSceneInfoPBComponent::eEnterSucceed: {
+	case ChangeRoomInfoPBComponent::eEnterSucceed: {
 		auto destScene = entt::entity{ task.guid() };
 		if (destScene == entt::null) {
 			RoomSystem::EnterDefaultRoom({ player });
@@ -171,7 +171,7 @@ void PlayerChangeRoomUtil::ProgressSceneChangeState(entt::entity player) {
 		break;
 	}
 
-	case ChangeSceneInfoPBComponent::eGateEnterSucceed:
+	case ChangeRoomInfoPBComponent::eGateEnterSucceed:
 		queue.dequeue();
 		OnEnterRoomOk(player);
 		break;

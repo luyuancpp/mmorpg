@@ -4,7 +4,7 @@
 #include "proto/db/mysql_database_table.pb.h"
 
 class PlayerGameNodeEnteryInfoPBComponent;
-class ChangeSceneInfoPBComponent;
+class ChangeRoomInfoPBComponent;
 class PlayerMigrationPbEvent;
 class PlayerGameNodeEnteryInfoPBComponent;
 

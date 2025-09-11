@@ -36,7 +36,6 @@
     <ClCompile Include="db\db.pb.cc" />
     <ClCompile Include="db\db_base.grpc.pb.cc" />
     <ClCompile Include="db\db_base.pb.cc" />
-    <ClCompile Include="logic\client_player\player_common.pb.cc" />
     <ClCompile Include="logic\component\actor_attribute_state_comp.pb.cc" />
     <ClCompile Include="logic\component\actor_combat_state_comp.pb.cc" />
     <ClCompile Include="logic\component\actor_comp.pb.cc" />
@@ -111,7 +110,6 @@
     <ClInclude Include="db\db.pb.h" />
     <ClInclude Include="db\db_base.grpc.pb.h" />
     <ClInclude Include="db\db_base.pb.h" />
-    <ClInclude Include="logic\client_player\player_common.pb.h" />
     <ClInclude Include="logic\component\actor_attribute_state_comp.pb.h" />
     <ClInclude Include="logic\component\actor_combat_state_comp.pb.h" />
     <ClInclude Include="logic\component\actor_comp.pb.h" />
@@ -273,7 +271,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>../;../../../third_party/grpc/include/;../../../third_party/;../../../third_party/grpc/third_party/protobuf/src/;../../../third_party/grpc/third_party/abseil-cpp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4244;4082;4267;4819;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>

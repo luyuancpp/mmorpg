@@ -6,7 +6,7 @@
 
 class PlayerSceneContextPBComponent;
 class RoomInfoPBComponent;
-class ChangeSceneInfoPBComponent;
+class ChangeRoomInfoPBComponent;
 
 class PlayerSceneSystem
 {
