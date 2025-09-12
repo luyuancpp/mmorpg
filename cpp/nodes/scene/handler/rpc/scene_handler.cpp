@@ -380,7 +380,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 
 	tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(request->session_id());
 
-	PlayerLifecycleSystem::HandleSceneNodePlayerRegisteredAtGateNode(player);
+	PlayerLifecycleSystem::HandleRoomNodePlayerRegisteredAtGate(player);
 ///<<< END WRITING YOUR CODE
 }
 

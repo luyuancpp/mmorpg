@@ -61,9 +61,9 @@ struct AfterLeaveRoomDefaultTypeInternal;
 extern AfterLeaveRoomDefaultTypeInternal _AfterLeaveRoom_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull AfterLeaveRoom_class_data_;
 class BeforeEnterRoom;
-struct BeforeEnterSceneDefaultTypeInternal;
-extern BeforeEnterSceneDefaultTypeInternal _BeforeEnterScene_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull BeforeEnterScene_class_data_;
+struct BeforeEnterRoomDefaultTypeInternal;
+extern BeforeEnterRoomDefaultTypeInternal _BeforeEnterRoom_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull BeforeEnterRoom_class_data_;
 class BeforeLeaveRoom;
 struct BeforeLeaveRoomDefaultTypeInternal;
 extern BeforeLeaveRoomDefaultTypeInternal _BeforeLeaveRoom_default_instance_;
@@ -856,7 +856,7 @@ extern const ::google::protobuf::internal::ClassDataFull BeforeLeaveRoom_class_d
 // -------------------------------------------------------------------
 
 class BeforeEnterRoom final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:BeforeEnterScene) */ {
+/* @@protoc_insertion_point(class_definition:BeforeEnterRoom) */ {
  public:
   inline BeforeEnterRoom() : BeforeEnterRoom(nullptr) {}
   ~BeforeEnterRoom() PROTOBUF_FINAL;
@@ -908,7 +908,7 @@ class BeforeEnterRoom final : public ::google::protobuf::Message
   }
   static const BeforeEnterRoom& default_instance() {
     return *reinterpret_cast<const BeforeEnterRoom*>(
-        &_BeforeEnterScene_default_instance_);
+        &_BeforeEnterRoom_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 2;
   friend void swap(BeforeEnterRoom& a, BeforeEnterRoom& b) { a.Swap(&b); }
@@ -974,7 +974,7 @@ class BeforeEnterRoom final : public ::google::protobuf::Message
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "BeforeEnterScene"; }
+  static ::absl::string_view FullMessageName() { return "BeforeEnterRoom"; }
 
  protected:
   explicit BeforeEnterRoom(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
@@ -1010,7 +1010,7 @@ class BeforeEnterRoom final : public ::google::protobuf::Message
   void _internal_set_entity(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:BeforeEnterScene)
+  // @@protoc_insertion_point(class_scope:BeforeEnterRoom)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1043,7 +1043,7 @@ class BeforeEnterRoom final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2flogic_2fevent_2fscene_5fevent_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull BeforeEnterScene_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull BeforeEnterRoom_class_data_;
 // -------------------------------------------------------------------
 
 class AfterLeaveRoom final : public ::google::protobuf::Message
@@ -1497,7 +1497,7 @@ inline void OnRoomDestroyed::_internal_set_entity(::uint64_t value) {
 
 // -------------------------------------------------------------------
 
-// BeforeEnterScene
+// BeforeEnterRoom
 
 // uint64 entity = 1;
 inline void BeforeEnterRoom::clear_entity() {
@@ -1506,13 +1506,13 @@ inline void BeforeEnterRoom::clear_entity() {
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
 inline ::uint64_t BeforeEnterRoom::entity() const {
-  // @@protoc_insertion_point(field_get:BeforeEnterScene.entity)
+  // @@protoc_insertion_point(field_get:BeforeEnterRoom.entity)
   return _internal_entity();
 }
 inline void BeforeEnterRoom::set_entity(::uint64_t value) {
   _internal_set_entity(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:BeforeEnterScene.entity)
+  // @@protoc_insertion_point(field_set:BeforeEnterRoom.entity)
 }
 inline ::uint64_t BeforeEnterRoom::_internal_entity() const {
   ::google::protobuf::internal::TSanRead(&_impl_);

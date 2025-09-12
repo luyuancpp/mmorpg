@@ -113,7 +113,7 @@ void PlayerLifecycleSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsT
 	}
 }
 
-void PlayerLifecycleSystem::HandleSceneNodePlayerRegisteredAtGateNode(entt::entity player)
+void PlayerLifecycleSystem::HandleRoomNodePlayerRegisteredAtGate(entt::entity player)
 {
 
 }

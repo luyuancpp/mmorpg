@@ -133,22 +133,22 @@ inline constexpr BeforeEnterRoom::Impl_::Impl_(
 template <typename>
 PROTOBUF_CONSTEXPR BeforeEnterRoom::BeforeEnterRoom(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(BeforeEnterScene_class_data_.base()),
+    : ::google::protobuf::Message(BeforeEnterRoom_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct BeforeEnterSceneDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR BeforeEnterSceneDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~BeforeEnterSceneDefaultTypeInternal() {}
+struct BeforeEnterRoomDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BeforeEnterRoomDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BeforeEnterRoomDefaultTypeInternal() {}
   union {
     BeforeEnterRoom _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BeforeEnterSceneDefaultTypeInternal _BeforeEnterScene_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BeforeEnterRoomDefaultTypeInternal _BeforeEnterRoom_default_instance_;
 
 inline constexpr AfterLeaveRoom::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -256,7 +256,7 @@ static const ::_pbi::MigrationSchema
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_OnRoomCreated_default_instance_._instance,
     &::_OnRoomDestroyed_default_instance_._instance,
-    &::_BeforeEnterScene_default_instance_._instance,
+    &::_BeforeEnterRoom_default_instance_._instance,
     &::_AfterEnterRoom_default_instance_._instance,
     &::_BeforeLeaveRoom_default_instance_._instance,
     &::_AfterLeaveRoom_default_instance_._instance,
@@ -266,18 +266,18 @@ const char descriptor_table_protodef_proto_2flogic_2fevent_2fscene_5fevent_2epro
     protodesc_cold) = {
     "\n#proto/logic/event/scene_event.proto\"\037\n"
     "\rOnRoomCreated\022\016\n\006entity\030\001 \001(\004\"!\n\017OnRoom"
-    "Destroyed\022\016\n\006entity\030\001 \001(\004\"\"\n\020BeforeEnter"
-    "Scene\022\016\n\006entity\030\001 \001(\004\" \n\016AfterEnterRoom\022"
-    "\016\n\006entity\030\001 \001(\004\"!\n\017BeforeLeaveRoom\022\016\n\006en"
-    "tity\030\001 \001(\004\" \n\016AfterLeaveRoom\022\016\n\006entity\030\001"
-    " \001(\004\"\036\n\014S2CEnterRoom\022\016\n\006entity\030\001 \001(\004B\tZ\007"
-    "pb/gameb\006proto3"
+    "Destroyed\022\016\n\006entity\030\001 \001(\004\"!\n\017BeforeEnter"
+    "Room\022\016\n\006entity\030\001 \001(\004\" \n\016AfterEnterRoom\022\016"
+    "\n\006entity\030\001 \001(\004\"!\n\017BeforeLeaveRoom\022\016\n\006ent"
+    "ity\030\001 \001(\004\" \n\016AfterLeaveRoom\022\016\n\006entity\030\001 "
+    "\001(\004\"\036\n\014S2CEnterRoom\022\016\n\006entity\030\001 \001(\004B\tZ\007p"
+    "b/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fevent_2fscene_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fevent_2fscene_5fevent_2eproto = {
     false,
     false,
-    295,
+    294,
     descriptor_table_protodef_proto_2flogic_2fevent_2fscene_5fevent_2eproto,
     "proto/logic/event/scene_event.proto",
     &descriptor_table_proto_2flogic_2fevent_2fscene_5fevent_2eproto_once,
@@ -772,17 +772,17 @@ class BeforeEnterRoom::_Internal {
 
 BeforeEnterRoom::BeforeEnterRoom(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, BeforeEnterScene_class_data_.base()) {
+    : ::google::protobuf::Message(arena, BeforeEnterRoom_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:BeforeEnterScene)
+  // @@protoc_insertion_point(arena_constructor:BeforeEnterRoom)
 }
 BeforeEnterRoom::BeforeEnterRoom(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BeforeEnterRoom& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, BeforeEnterScene_class_data_.base()),
+    : ::google::protobuf::Message(arena, BeforeEnterRoom_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -800,7 +800,7 @@ inline void BeforeEnterRoom::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   _impl_.entity_ = {};
 }
 BeforeEnterRoom::~BeforeEnterRoom() {
-  // @@protoc_insertion_point(destructor:BeforeEnterScene)
+  // @@protoc_insertion_point(destructor:BeforeEnterRoom)
   SharedDtor(*this);
 }
 inline void BeforeEnterRoom::SharedDtor(MessageLite& self) {
@@ -822,7 +822,7 @@ constexpr auto BeforeEnterRoom::InternalNewImpl_() {
 constexpr auto BeforeEnterRoom::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_BeforeEnterScene_default_instance_._instance,
+          &_BeforeEnterRoom_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
@@ -843,14 +843,14 @@ constexpr auto BeforeEnterRoom::InternalGenerateClassData_() {
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull BeforeEnterScene_class_data_ =
+    ::google::protobuf::internal::ClassDataFull BeforeEnterRoom_class_data_ =
         BeforeEnterRoom::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
 BeforeEnterRoom::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&BeforeEnterScene_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(BeforeEnterScene_class_data_.tc_table);
-  return BeforeEnterScene_class_data_.base();
+  ::google::protobuf::internal::PrefetchToLocalCache(&BeforeEnterRoom_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(BeforeEnterRoom_class_data_.tc_table);
+  return BeforeEnterRoom_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
@@ -865,7 +865,7 @@ BeforeEnterRoom::_table_ = {
     1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    BeforeEnterScene_class_data_.base(),
+    BeforeEnterRoom_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
@@ -887,7 +887,7 @@ BeforeEnterRoom::_table_ = {
   }},
 };
 PROTOBUF_NOINLINE void BeforeEnterRoom::Clear() {
-// @@protoc_insertion_point(message_clear_start:BeforeEnterScene)
+// @@protoc_insertion_point(message_clear_start:BeforeEnterRoom)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -909,7 +909,7 @@ PROTOBUF_NOINLINE void BeforeEnterRoom::Clear() {
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
   const BeforeEnterRoom& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:BeforeEnterScene)
+  // @@protoc_insertion_point(serialize_to_array_start:BeforeEnterRoom)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -927,7 +927,7 @@ PROTOBUF_NOINLINE void BeforeEnterRoom::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:BeforeEnterScene)
+  // @@protoc_insertion_point(serialize_to_array_end:BeforeEnterRoom)
   return target;
 }
 
@@ -938,7 +938,7 @@ PROTOBUF_NOINLINE void BeforeEnterRoom::Clear() {
 ::size_t BeforeEnterRoom::ByteSizeLong() const {
   const BeforeEnterRoom& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:BeforeEnterScene)
+  // @@protoc_insertion_point(message_byte_size_start:BeforeEnterRoom)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -962,7 +962,7 @@ PROTOBUF_NOINLINE void BeforeEnterRoom::Clear() {
 void BeforeEnterRoom::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
   auto* const _this = static_cast<BeforeEnterRoom*>(&to_msg);
   auto& from = static_cast<const BeforeEnterRoom&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:BeforeEnterScene)
+  // @@protoc_insertion_point(class_specific_merge_from_start:BeforeEnterRoom)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -978,7 +978,7 @@ void BeforeEnterRoom::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
 }
 
 void BeforeEnterRoom::CopyFrom(const BeforeEnterRoom& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:BeforeEnterScene)
+// @@protoc_insertion_point(class_specific_copy_from_start:BeforeEnterRoom)
   if (&from == this) return;
   Clear();
   MergeFrom(from);

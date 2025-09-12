@@ -42,6 +42,7 @@
     <ClInclude Include="code\scene_table.h" />
     <ClInclude Include="code\skillpermission_table.h" />
     <ClInclude Include="code\skill_table.h" />
+    <ClInclude Include="code\table_id\globalvariable_table_id.h" />
     <ClInclude Include="code\testmultikey_table.h" />
     <ClInclude Include="code\test_table.h" />
     <ClInclude Include="cpp_table_id_bit_index\mission_table_id_bit_index.h" />
