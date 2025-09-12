@@ -107,7 +107,6 @@ const (
 	LoginDirectory       = OutputRoot + "go/login/"
 	GoGeneratorDirectory = GoNodeDirectory + "generated/"
 	LoginMessageIdGoFile = GoGeneratorDirectory + MessageIdGoFile
-	DbGoDirectory        = GoNodeDirectory + "db/"
 
 	GeneratedRpcName      = "rpc/"
 	GeneratedRpcDirectory = GeneratedOutputDirectory + GeneratedRpcName
