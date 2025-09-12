@@ -203,7 +203,7 @@ func BuildProtoGrpc(protoPath string) error {
 	return nil
 }
 
-func generateLoginGoProto(protoFiles []string, outputDir string) error {
+func generateGoProto(protoFiles []string, outputDir string) error {
 	sysType := runtime.GOOS
 	var cmd *exec.Cmd
 
@@ -269,7 +269,7 @@ func GenerateGoGRPCFromProto(protoPath string) error {
 	// 4. 为所有注册的 grpc 节点目录生成 Go gRPC 代码
 	for nodeDir := range config.GrpcServices {
 		outputDir := filepath.Join(config.NodeGoDirectory, nodeDir)
-		generateLoginGoProto(protoFiles, outputDir)
+		generateGoProto(protoFiles, outputDir)
 	}
 
 	return nil
@@ -290,7 +290,7 @@ func isInAllowedProtoDir(protoPath string) bool {
 		config.GrpcServices[baseDirName]
 }
 
-func BuildProtoGoLogin(protoPath string) error {
+func BuildProtoGo(protoPath string) error {
 	// 读取 proto 目录
 	fds, err := os.ReadDir(protoPath)
 	if err != nil {
@@ -305,16 +305,6 @@ func BuildProtoGoLogin(protoPath string) error {
 		if fd.Name() == config.DbProtoFileName {
 			continue
 		}
-
-		if !(util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
-			util.IsPathInProtoDirs(protoPath, config.LoginProtoDirIndex) ||
-			util.IsPathInProtoDirs(protoPath, config.DbProtoDirIndex) ||
-			util.IsPathInProtoDirs(protoPath, config.CenterProtoDirIndex) ||
-			util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
-			util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex)) {
-			continue
-		}
-
 		fullPath := filepath.ToSlash(filepath.Join(protoPath, fd.Name()))
 		protoFiles = append(protoFiles, fullPath)
 	}
@@ -324,7 +314,7 @@ func BuildProtoGoLogin(protoPath string) error {
 		return nil
 	}
 
-	return generateLoginGoProto(protoFiles, config.LoginDirectory)
+	return generateGoProto(protoFiles, config.GoGeneratorDirectory)
 }
 
 func generateGoDbProto(protoFiles []string, outputDir string) error {
@@ -562,7 +552,7 @@ func BuildAllProtoc() {
 		util.Wg.Add(1)
 		go func(i int) {
 			defer util.Wg.Done()
-			err := BuildProtoGoLogin(config.ProtoDirs[i])
+			err := BuildProtoGo(config.ProtoDirs[i])
 			if err != nil {
 				log.Println(err)
 			}

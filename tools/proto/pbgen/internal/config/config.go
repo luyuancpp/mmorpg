@@ -90,6 +90,8 @@ const (
 	PbDescDirectory       = TempFileGenerationDir + "proto_desc/"
 	AllInOneProtoDescFile = PbDescDirectory + "all_in_one.pb.desc"
 
+	GoNodeDirectory = OutputRoot + "go/"
+
 	PbcProtoOutputDirectory  = OutputRoot + GeneratedDirectory + ProtoDirName
 	GeneratedOutputDirectory = OutputRoot + GeneratedDirectory
 	GrpcOutputDirectory      = OutputRoot + GeneratedDirectory
@@ -104,9 +106,9 @@ const (
 	RobotMessageIdFilePath = RobotGoGamePbDirectory + MessageIdGoFile
 
 	LoginDirectory       = OutputRoot + "go/login/"
-	LoginGoGameDirectory = LoginDirectory + GoPbGameDirectory
-	LoginMessageIdGoFile = LoginGoGameDirectory + MessageIdGoFile
-	DbGoDirectory        = OutputRoot + "go/db/"
+	GoGeneratorDirectory = GoNodeDirectory + "generated" + GoPbGameDirectory
+	LoginMessageIdGoFile = GoGeneratorDirectory + MessageIdGoFile
+	DbGoDirectory        = GoNodeDirectory + "db/"
 
 	GeneratedRpcName      = "rpc/"
 	GeneratedRpcDirectory = GeneratedOutputDirectory + GeneratedRpcName
