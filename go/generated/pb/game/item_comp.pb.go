@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/logic/constants/scene.proto
+// source: proto/logic/component/item_comp.proto
 
 package game
 
@@ -20,14 +20,14 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-var File_proto_logic_constants_scene_proto protoreflect.FileDescriptor
+var File_proto_logic_component_item_comp_proto protoreflect.FileDescriptor
 
-const file_proto_logic_constants_scene_proto_rawDesc = "" +
+const file_proto_logic_component_item_comp_proto_rawDesc = "" +
 	"\n" +
-	"!proto/logic/constants/scene.protoB\tZ\apb/gameb\x06proto3"
+	"%proto/logic/component/item_comp.protoB\tZ\apb/gameb\x06proto3"
 
-var file_proto_logic_constants_scene_proto_goTypes = []any{}
-var file_proto_logic_constants_scene_proto_depIdxs = []int32{
+var file_proto_logic_component_item_comp_proto_goTypes = []any{}
+var file_proto_logic_component_item_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -35,25 +35,25 @@ var file_proto_logic_constants_scene_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_proto_logic_constants_scene_proto_init() }
-func file_proto_logic_constants_scene_proto_init() {
-	if File_proto_logic_constants_scene_proto != nil {
+func init() { file_proto_logic_component_item_comp_proto_init() }
+func file_proto_logic_component_item_comp_proto_init() {
+	if File_proto_logic_component_item_comp_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_logic_constants_scene_proto_rawDesc), len(file_proto_logic_constants_scene_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_logic_component_item_comp_proto_rawDesc), len(file_proto_logic_component_item_comp_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_proto_logic_constants_scene_proto_goTypes,
-		DependencyIndexes: file_proto_logic_constants_scene_proto_depIdxs,
+		GoTypes:           file_proto_logic_component_item_comp_proto_goTypes,
+		DependencyIndexes: file_proto_logic_component_item_comp_proto_depIdxs,
 	}.Build()
-	File_proto_logic_constants_scene_proto = out.File
-	file_proto_logic_constants_scene_proto_goTypes = nil
-	file_proto_logic_constants_scene_proto_depIdxs = nil
+	File_proto_logic_component_item_comp_proto = out.File
+	file_proto_logic_component_item_comp_proto_goTypes = nil
+	file_proto_logic_component_item_comp_proto_depIdxs = nil
 }

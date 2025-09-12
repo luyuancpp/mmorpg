@@ -1,6 +1,7 @@
 package util
 
 import (
+	"path"
 	"pbgen/internal/config"
 	"strings"
 )
@@ -20,4 +21,10 @@ func IsPathInOtherProtoDirs(path string, selfIndex int) bool {
 
 func IsPathInProtoDirs(path string, selfIndex int) bool {
 	return strings.Contains(config.ProtoDirectoryNames[selfIndex], path) || strings.Contains(path, config.ProtoDirectoryNames[selfIndex])
+}
+
+func CheckGrpcServiceExistence(protoPath string) bool {
+	basePath := strings.ToLower(path.Base(protoPath))
+	_, ok := config.GrpcServices[basePath]
+	return ok
 }
