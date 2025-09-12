@@ -100,13 +100,12 @@ const (
 	GrpcProtoOutputDirectory = OutputRoot + GeneratedDirectory + ProtoDirName
 
 	RobotGoOutputDirectory = OutputRoot + RobotDirectory
-	GoPbGameDirectory      = "pb/game/"
-	RobotGoGamePbDirectory = RobotGoOutputDirectory + GoPbGameDirectory
+	RobotGoGamePbDirectory = RobotGoOutputDirectory + "pb/game/"
 	MessageIdGoFile        = "message_id.go"
 	RobotMessageIdFilePath = RobotGoGamePbDirectory + MessageIdGoFile
 
 	LoginDirectory       = OutputRoot + "go/login/"
-	GoGeneratorDirectory = GoNodeDirectory + "generated/" + GoPbGameDirectory
+	GoGeneratorDirectory = GoNodeDirectory + "generated/"
 	LoginMessageIdGoFile = GoGeneratorDirectory + MessageIdGoFile
 	DbGoDirectory        = GoNodeDirectory + "db/"
 
