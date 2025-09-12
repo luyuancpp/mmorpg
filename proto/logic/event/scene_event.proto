@@ -12,7 +12,7 @@ message OnRoomDestroyed
   uint64 entity = 1;
 }
 
-message BeforeEnterScene
+message BeforeEnterRoom
 {
   uint64 entity = 1;
 }

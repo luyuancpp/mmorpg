@@ -210,6 +210,9 @@
     <ClInclude Include="code\constants\global_abnormal_logout_table_id_constants.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="code\table_id\globalvariable_table_id.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="code\actoractioncombatstate_table.cpp">

@@ -50,7 +50,7 @@ void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::sha
 		return;
 	}
 	
-	PlayerLifecycleSystem::HandleSceneNodePlayerRegisteredAtGateNode(player);
+	PlayerLifecycleSystem::HandleRoomNodePlayerRegisteredAtGate(player);
 	PlayerLifecycleSystem::ProcessPlayerSessionState(player);
 	PlayerChangeRoomUtil::OnTargetSceneNodeEnterComplete(player);
 	PlayerChangeRoomUtil::ProgressSceneChangeState(player);

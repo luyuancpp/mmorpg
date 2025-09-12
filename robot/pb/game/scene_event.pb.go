@@ -109,27 +109,27 @@ func (x *OnRoomDestroyed) GetEntity() uint64 {
 	return 0
 }
 
-type BeforeEnterScene struct {
+type BeforeEnterRoom struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BeforeEnterScene) Reset() {
-	*x = BeforeEnterScene{}
+func (x *BeforeEnterRoom) Reset() {
+	*x = BeforeEnterRoom{}
 	mi := &file_proto_logic_event_scene_event_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BeforeEnterScene) String() string {
+func (x *BeforeEnterRoom) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BeforeEnterScene) ProtoMessage() {}
+func (*BeforeEnterRoom) ProtoMessage() {}
 
-func (x *BeforeEnterScene) ProtoReflect() protoreflect.Message {
+func (x *BeforeEnterRoom) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_logic_event_scene_event_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -141,12 +141,12 @@ func (x *BeforeEnterScene) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BeforeEnterScene.ProtoReflect.Descriptor instead.
-func (*BeforeEnterScene) Descriptor() ([]byte, []int) {
+// Deprecated: Use BeforeEnterRoom.ProtoReflect.Descriptor instead.
+func (*BeforeEnterRoom) Descriptor() ([]byte, []int) {
 	return file_proto_logic_event_scene_event_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *BeforeEnterScene) GetEntity() uint64 {
+func (x *BeforeEnterRoom) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
@@ -337,8 +337,8 @@ const file_proto_logic_event_scene_event_proto_rawDesc = "" +
 	"\rOnRoomCreated\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\")\n" +
 	"\x0fOnRoomDestroyed\x12\x16\n" +
-	"\x06entity\x18\x01 \x01(\x04R\x06entity\"*\n" +
-	"\x10BeforeEnterScene\x12\x16\n" +
+	"\x06entity\x18\x01 \x01(\x04R\x06entity\")\n" +
+	"\x0fBeforeEnterRoom\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\"(\n" +
 	"\x0eAfterEnterRoom\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\")\n" +
@@ -363,13 +363,13 @@ func file_proto_logic_event_scene_event_proto_rawDescGZIP() []byte {
 
 var file_proto_logic_event_scene_event_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_proto_logic_event_scene_event_proto_goTypes = []any{
-	(*OnRoomCreated)(nil),    // 0: OnRoomCreated
-	(*OnRoomDestroyed)(nil),  // 1: OnRoomDestroyed
-	(*BeforeEnterScene)(nil), // 2: BeforeEnterScene
-	(*AfterEnterRoom)(nil),   // 3: AfterEnterRoom
-	(*BeforeLeaveRoom)(nil),  // 4: BeforeLeaveRoom
-	(*AfterLeaveRoom)(nil),   // 5: AfterLeaveRoom
-	(*S2CEnterRoom)(nil),     // 6: S2CEnterRoom
+	(*OnRoomCreated)(nil),   // 0: OnRoomCreated
+	(*OnRoomDestroyed)(nil), // 1: OnRoomDestroyed
+	(*BeforeEnterRoom)(nil), // 2: BeforeEnterRoom
+	(*AfterEnterRoom)(nil),  // 3: AfterEnterRoom
+	(*BeforeLeaveRoom)(nil), // 4: BeforeLeaveRoom
+	(*AfterLeaveRoom)(nil),  // 5: AfterLeaveRoom
+	(*S2CEnterRoom)(nil),    // 6: S2CEnterRoom
 }
 var file_proto_logic_event_scene_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
