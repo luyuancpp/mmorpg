@@ -6,13 +6,11 @@ import logging
 from pathlib import Path
 
 import generate_common  # 你项目已有模块，需包含 BEGIN_ROW_IDX 和 mywrite
-from core.paths import DATA_TABLES_DIR  # XLSX_DIR 是 Path 类型
+from core.paths import DATA_TABLES_DIR, SRC_GO_TABLE_ID  # XLSX_DIR 是 Path 类型
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
-GO_DIR = Path("generated/go/table_id/")
 
 def to_pascal_case(s: str) -> str:
     """转为 PascalCase，例如 global_variable -> GlobalVariable"""
@@ -42,14 +40,14 @@ def process_workbook(filepath: Path):
 
         sheet = workbook[sheetname]
         go_content = generate_go_const(sheet)
-        output_file = GO_DIR / f"{sheetname.lower()}_table_id.go"
+        output_file = SRC_GO_TABLE_ID / f"{sheetname.lower()}_table_id.go"
         generate_common.mywrite(go_content, str(output_file))
         logger.info(f"Generated Go const file: {output_file}")
     except Exception as e:
         logger.error(f"Failed to process {filepath.name}: {e}")
 
 def main():
-    GO_DIR.mkdir(parents=True, exist_ok=True)
+    SRC_GO_TABLE_ID.mkdir(parents=True, exist_ok=True)
 
     for filepath in DATA_TABLES_DIR.glob("*.xlsx"):
         if filepath.is_file():

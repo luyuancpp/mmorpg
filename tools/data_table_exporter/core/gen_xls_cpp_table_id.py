@@ -5,13 +5,11 @@ import openpyxl
 import generate_common  # Ensure generate_common provides BEGIN_ROW_IDX and mywrite functions
 import logging
 from pathlib import Path
-from core.paths import DATA_TABLES_DIR
+from core.paths import DATA_TABLES_DIR, SRC_CPP_TABLE_ID
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
-cpp_dir = Path("generated/cpp/")
 
 def generate_id_enum(sheet):
     """Generate a C++ enum definition based on the provided sheet."""
@@ -40,8 +38,8 @@ def generate_id_cpp(workbook):
 
 def main():
     """Main function to process all Excel files and generate C++ enum files."""
-    if not cpp_dir.exists():
-        cpp_dir.mkdir(parents=True, exist_ok=True)
+    if not SRC_CPP_TABLE_ID.exists():
+        SRC_CPP_TABLE_ID.mkdir(parents=True, exist_ok=True)
 
     for filepath in DATA_TABLES_DIR.glob("*.xlsx"):
         if filepath.is_file():
@@ -49,7 +47,7 @@ def main():
                 workbook = openpyxl.load_workbook(filepath)
                 workbook_data = generate_id_cpp(workbook)
                 for sheet_name, data in workbook_data.items():
-                    output_file_path = cpp_dir / f"{sheet_name.lower()}_table_id.h"
+                    output_file_path = SRC_CPP_TABLE_ID / f"{sheet_name.lower()}_table_id.h"
                     generate_common.mywrite(data, str(output_file_path))
                     logger.info(f"Generated C++ enum file: {output_file_path}")
             except Exception as e:
