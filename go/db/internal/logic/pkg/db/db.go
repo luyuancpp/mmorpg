@@ -2,9 +2,9 @@ package db
 
 import (
 	"database/sql"
-	"db/internal/config"
-	"db/pb/game"
 	"fmt"
+	"game/db/internal/config"
+	"game/generated/pb/game"
 	"github.com/go-sql-driver/mysql"
 	pbmysql "github.com/luyuancpp/pbmysql-go"
 	"github.com/zeromicro/go-zero/core/logx"
