@@ -1,1 +1,0 @@
-守望先锋实现的 ECS 框架有以下几个规则：system内无状态，component内无函数，system间禁止互相调用，system间有共享Utility函数使用，system中的遍历通过 “主component+它的兄弟姐妹component” 的方式实现，允许不少component是单例component。
