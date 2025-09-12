@@ -317,73 +317,6 @@ func BuildProtoGo(protoPath string) error {
 	return generateGoProto(protoFiles, config.GoGeneratorDirectory)
 }
 
-func generateGoDbProto(protoFiles []string, outputDir string) error {
-	sysType := runtime.GOOS
-	var cmd *exec.Cmd
-
-	args := []string{
-		"--go_out=" + outputDir,
-	}
-	args = append(args, protoFiles...)
-	args = append(args,
-		"--proto_path="+config.ProtoParentIncludePathDir,
-		"--proto_path="+config.ProtoBufferDirectory,
-	)
-
-	if sysType == "linux" {
-		cmd = exec.Command("protoc", args...)
-	} else {
-		cmd = exec.Command("./protoc.exe", args...)
-	}
-
-	var out, stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	log.Println("Running:", cmd.String())
-	if err := cmd.Run(); err != nil {
-		fmt.Println("protoc error:", stderr.String())
-		return err
-	}
-
-	return nil
-}
-
-func BuildProtoGoDb(protoPath string) error {
-	// 读取 protoPath 下所有文件
-	fds, err := os.ReadDir(protoPath)
-	if err != nil {
-		return err
-	}
-
-	var protoFiles []string
-
-	for _, fd := range fds {
-		if !util.IsProtoFile(fd) {
-			continue
-		}
-		if fd.Name() == config.DbProtoFileName {
-			continue
-		}
-		if !(util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
-			util.IsPathInProtoDirs(protoPath, config.DbProtoDirIndex) ||
-			util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
-			util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex)) {
-			continue
-		}
-
-		fullPath := filepath.ToSlash(filepath.Join(protoPath, fd.Name()))
-		protoFiles = append(protoFiles, fullPath)
-	}
-
-	if len(protoFiles) == 0 {
-		log.Println("No proto files matched for Go DB generation in:", protoPath)
-		return nil
-	}
-
-	return generateGoDbProto(protoFiles, config.DbGoDirectory)
-}
-
 func generateRobotGoProto(protoFiles []string, outputDir string) error {
 	sysType := runtime.GOOS
 	var cmd *exec.Cmd
@@ -535,15 +468,6 @@ func BuildAllProtoc() {
 		go func(i int) {
 			defer util.Wg.Done()
 			err := GenerateGoGRPCFromProto(config.ProtoDirs[i])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
-
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			err := BuildProtoGoDb(config.ProtoDirs[i])
 			if err != nil {
 				log.Println(err)
 			}
