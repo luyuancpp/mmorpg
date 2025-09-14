@@ -270,14 +270,14 @@ const char descriptor_table_protodef_proto_2flogic_2fevent_2fscene_5fevent_2epro
     "Room\022\016\n\006entity\030\001 \001(\004\" \n\016AfterEnterRoom\022\016"
     "\n\006entity\030\001 \001(\004\"!\n\017BeforeLeaveRoom\022\016\n\006ent"
     "ity\030\001 \001(\004\" \n\016AfterLeaveRoom\022\016\n\006entity\030\001 "
-    "\001(\004\"\036\n\014S2CEnterRoom\022\016\n\006entity\030\001 \001(\004B\tZ\007p"
-    "b/gameb\006proto3"
+    "\001(\004\"\036\n\014S2CEnterRoom\022\016\n\006entity\030\001 \001(\004B\023Z\021g"
+    "enerated/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fevent_2fscene_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fevent_2fscene_5fevent_2eproto = {
     false,
     false,
-    294,
+    304,
     descriptor_table_protodef_proto_2flogic_2fevent_2fscene_5fevent_2eproto,
     "proto/logic/event/scene_event.proto",
     &descriptor_table_proto_2flogic_2fevent_2fscene_5fevent_2eproto_once,

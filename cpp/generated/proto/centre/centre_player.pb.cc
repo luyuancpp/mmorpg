@@ -83,8 +83,8 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_2eproto[] 
     "n\030\001 \001(\0132\017.TipInfoMessage\022\020\n\010operator\030\002 \001"
     "(\t2q\n\023CentrePlayerUtility\022*\n\017SendTipToCl"
     "ient\022\017.TipInfoMessage\032\006.Empty\022.\n\nKickPla"
-    "yer\022\030.CentreKickPlayerRequest\032\006.EmptyB\014Z"
-    "\007pb/game\200\001\001b\006proto3"
+    "yer\022\030.CentreKickPlayerRequest\032\006.EmptyB\026Z"
+    "\021generated/pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcentre_2fcentre_5fplayer_2eproto_deps[2] = {
@@ -95,7 +95,7 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fplayer_2epro
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fplayer_2eproto = {
     false,
     false,
-    299,
+    309,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_2eproto,
     "proto/centre/centre_player.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fplayer_2eproto_once,

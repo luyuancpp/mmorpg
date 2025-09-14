@@ -126,7 +126,7 @@ const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABS
     "8\n\022BroadcastToPlayers\022\032.BroadcastToPlaye"
     "rsRequest\032\006.Empty\022>\n\rNodeHandshake\022\025.Nod"
     "eHandshakeRequest\032\026.NodeHandshakeRespons"
-    "eB\014Z\007pb/game\200\001\001b\006proto3"
+    "eB\026Z\021generated/pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps[3] = {
@@ -138,7 +138,7 @@ static ::absl::once_flag descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgate_2fgate_5fservice_2eproto = {
     false,
     false,
-    743,
+    753,
     descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto,
     "proto/gate/gate_service.proto",
     &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_once,

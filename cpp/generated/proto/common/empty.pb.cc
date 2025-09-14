@@ -61,14 +61,14 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 };
 const char descriptor_table_protodef_proto_2fcommon_2fempty_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\030proto/common/empty.proto\"\007\n\005EmptyB\tZ\007p"
-    "b/gameb\006proto3"
+    "\n\030proto/common/empty.proto\"\007\n\005EmptyB\023Z\021g"
+    "enerated/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fempty_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fempty_2eproto = {
     false,
     false,
-    54,
+    64,
     descriptor_table_protodef_proto_2fcommon_2fempty_2eproto,
     "proto/common/empty.proto",
     &descriptor_table_proto_2fcommon_2fempty_2eproto_once,

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "pb/game";
+option go_package = "generated/pb/game";
 
 import "proto/db/db_base.proto";
 import "proto/common/user_accounts.proto";

@@ -138,8 +138,8 @@ const char descriptor_table_protodef_proto_2fplayer_5flocator_2fplayer_5flocator
     "erlocator.PlayerLocation\032\006.Empty\022E\n\013GetL"
     "ocation\022\027.playerlocator.PlayerId\032\035.playe"
     "rlocator.PlayerLocation\022.\n\013MarkOffline\022\027"
-    ".playerlocator.PlayerId\032\006.EmptyB\tZ\007pb/ga"
-    "meb\006proto3"
+    ".playerlocator.PlayerId\032\006.EmptyB\023Z\021gener"
+    "ated/pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fplayer_5flocator_2fplayer_5flocator_2eproto_deps[1] = {
@@ -149,7 +149,7 @@ static ::absl::once_flag descriptor_table_proto_2fplayer_5flocator_2fplayer_5flo
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fplayer_5flocator_2fplayer_5flocator_2eproto = {
     false,
     false,
-    450,
+    460,
     descriptor_table_protodef_proto_2fplayer_5flocator_2fplayer_5flocator_2eproto,
     "proto/player_locator/player_locator.proto",
     &descriptor_table_proto_2fplayer_5flocator_2fplayer_5flocator_2eproto_once,

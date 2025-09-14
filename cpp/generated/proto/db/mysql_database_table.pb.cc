@@ -258,7 +258,7 @@ const char descriptor_table_protodef_proto_2fdb_2fmysql_5fdatabase_5ftable_2epro
     "nent\030\007 \001(\0132\021.LevelPbComponent:\034\222\222\364\001\tplay"
     "er_id\262\222\364\001\tplayer_id\"D\n\021player_database_1"
     "\022\021\n\tplayer_id\030\001 \001(\004:\034\222\222\364\001\tplayer_id\262\222\364\001\t"
-    "player_idB\tZ\007pb/gameb\006proto3"
+    "player_idB\023Z\021generated/pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fdb_2fmysql_5fdatabase_5ftable_2eproto_deps[6] = {
@@ -273,7 +273,7 @@ static ::absl::once_flag descriptor_table_proto_2fdb_2fmysql_5fdatabase_5ftable_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdb_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    1028,
+    1038,
     descriptor_table_protodef_proto_2fdb_2fmysql_5fdatabase_5ftable_2eproto,
     "proto/db/mysql_database_table.proto",
     &descriptor_table_proto_2fdb_2fmysql_5fdatabase_5ftable_2eproto_once,
