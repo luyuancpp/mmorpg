@@ -56,7 +56,7 @@ func main() {
 	db.InitDB()
 
 	s := zrpc.MustNewServer(config.AppConfig.RpcServerConf, func(grpcServer *grpc.Server) {
-		game.RegisterDbServer(grpcServer, server.NewDbserviceServer(ctx))
+		game.RegisterDbServer(grpcServer, server.NewDbServer(ctx))
 		if config.AppConfig.Mode == service.DevMode || config.AppConfig.Mode == service.TestMode {
 			reflection.Register(grpcServer)
 		}

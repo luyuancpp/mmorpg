@@ -139,7 +139,8 @@ func getTablesFromJSON() ([]proto.Message, error) {
 			continue
 		}
 
-		msg := proto.MessageV1(msgType.New())
+		// 使用 msgType.New() 创建新的 Protobuf 消息实例
+		msg := msgType.New().Interface() // 返回 proto.Message 类型
 		messages = append(messages, msg)
 	}
 
@@ -147,7 +148,11 @@ func getTablesFromJSON() ([]proto.Message, error) {
 }
 
 func createDBTable() {
-	tables := getTablesFromJSON()
+	tables, err := getTablesFromJSON() // 处理返回的错误
+	if err != nil {
+		log.Fatalf("error getting tables: %v", err)
+		return
+	}
 
 	for _, table := range tables {
 		DB.PBDB.RegisterTable(table)
@@ -158,6 +163,12 @@ func createDBTable() {
 			return
 		}
 	}
+}
+
+// 你需要定义 getTables 函数，假设它返回一个包含表的列表
+func getTables() []proto.Message {
+	// 示例：返回一个空的切片，具体内容你可以根据需要调整
+	return []proto.Message{}
 }
 
 func alterDBTable() {

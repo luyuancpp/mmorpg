@@ -3,11 +3,11 @@ package node
 import (
 	"context"
 	"fmt"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/zeromicro/go-zero/core/logx"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/namespace"
+	"google.golang.org/protobuf/encoding/protojson"
 	"log"
 	"login/internal/config"
 	"login/pb/game"
@@ -69,7 +69,7 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 					continue
 				}
 
-				unmarshaler := jsonpb.Unmarshaler{}
+				unmarshaler := protojson.Unmarshaler{}
 				if err := unmarshaler.Unmarshal(strings.NewReader(string(data)), &info); err != nil {
 					logx.Infof("Invalid protobuf JSON for key=%s: %v", key, err)
 					continue
