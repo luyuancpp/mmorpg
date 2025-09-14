@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"game/db/internal/config"
 	"game/generated/pb/game"
@@ -9,7 +10,11 @@ import (
 	pbmysql "github.com/luyuancpp/pbmysql-go"
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
+	"io/ioutil"
 	"log"
+	"os"
 )
 
 type GameDB struct {
@@ -94,20 +99,57 @@ func InitDB() {
 	alterDBTable()
 }
 
-// 返回一个包含多个 Protobuf 消息实例的切片
-func getTables() []proto.Message {
-	// 创建并返回 Protobuf 消息的切片
-	return []proto.Message{
-		&game.UserAccounts{},
-		&game.AccountShareDatabase{},
-		&game.PlayerCentreDatabase{},
-		&game.PlayerDatabase{},
-		&game.PlayerDatabase_1{},
+// 读取 JSON 文件并返回包含消息类型名称的切片
+func readJSONFile(filePath string) ([]string, error) {
+	// 读取文件内容
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
 	}
+
+	// 定义结构体用来解析 JSON 数据
+	var jsonData struct {
+		Messages []string `json:"messages"`
+	}
+
+	// 解析 JSON 内容
+	err = json.Unmarshal(data, &jsonData)
+	if err != nil {
+		return nil, err
+	}
+
+	// 返回消息类型名称切片
+	return jsonData.Messages, nil
+}
+
+// 根据消息类型名称动态创建 Protobuf 消息实例
+func getTablesFromJSON() ([]proto.Message, error) {
+	// 读取 JSON 文件
+	messageNames, err := readJSONFile(config.AppConfig.ServerConfig.JsonPath)
+	if err != nil {
+		return nil, fmt.Errorf("读取 JSON 文件出错: %v", err)
+	}
+
+	var messages []proto.Message
+
+	// 遍历消息类型名称
+	for _, typeName := range messageNames {
+		// 动态查找 Protobuf 消息类型
+		msgType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(typeName))
+		if err != nil {
+			logx.Error(err)
+			continue
+		}
+
+		msg := proto.MessageV1(msgType.New())
+		messages = append(messages, msg)
+	}
+
+	return messages, nil
 }
 
 func createDBTable() {
-	tables := getTables()
+	tables := getTablesFromJSON()
 
 	for _, table := range tables {
 		DB.PBDB.RegisterTable(table)

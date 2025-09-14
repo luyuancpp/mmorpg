@@ -6,6 +6,7 @@ Etcd:
   Key: dbservice.rpc
 ServerConfig:
   QueueShardCount: 50
+  JsonPath: "../../../mysql_database_table_list.json"  # 添加 JSON 文件路径
   Database:
     Hosts: "127.0.0.1:3306"
     User: "root"

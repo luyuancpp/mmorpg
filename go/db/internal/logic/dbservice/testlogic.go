@@ -3,8 +3,8 @@ package dbservicelogic
 import (
 	"context"
 
-	"db/internal/svc"
-	"db/pb/game"
+	"game/db/internal/svc"
+	"game/db/pb/game"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

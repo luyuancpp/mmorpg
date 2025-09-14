@@ -11,6 +11,7 @@ type ServerConfig struct {
 	Database        DatabaseConfig `json:"Database"`
 	RedisClient     RedisConfig    `json:"RedisClient"`
 	QueueShardCount uint64         `json:"QueueShardCount"`
+	JsonPath        string         `json:"JsonPath"`
 }
 
 type DatabaseConfig struct {
