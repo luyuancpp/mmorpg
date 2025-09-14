@@ -284,13 +284,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fconfig_2eproto[] ABSL_ATTR
     " \001(\r\022/\n\nzone_redis\030\007 \001(\0132\033.GameConfig.Zo"
     "neRedisConfig\032K\n\017ZoneRedisConfig\022\014\n\004host"
     "\030\003 \001(\t\022\014\n\004port\030\004 \001(\r\022\020\n\010password\030\005 \001(\t\022\n"
-    "\n\002db\030\006 \001(\rB\023Z\021generated/pb/gameb\006proto3"
+    "\n\002db\030\006 \001(\rB\030Z\026game/generated/pb/gameb\006pr"
+    "oto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fconfig_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fconfig_2eproto = {
     false,
     false,
-    679,
+    684,
     descriptor_table_protodef_proto_2fcommon_2fconfig_2eproto,
     "proto/common/config.proto",
     &descriptor_table_proto_2fcommon_2fconfig_2eproto_once,

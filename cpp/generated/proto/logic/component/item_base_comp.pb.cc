@@ -80,14 +80,14 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fitem_5fbase_5fc
     protodesc_cold) = {
     "\n*proto/logic/component/item_base_comp.p"
     "roto\"C\n\017ItemPBComponent\022\017\n\007item_id\030\001 \001(\004"
-    "\022\021\n\tconfig_id\030\002 \001(\r\022\014\n\004size\030\003 \001(\rB\023Z\021gen"
-    "erated/pb/gameb\006proto3"
+    "\022\021\n\tconfig_id\030\002 \001(\r\022\014\n\004size\030\003 \001(\rB\030Z\026gam"
+    "e/generated/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fitem_5fbase_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fitem_5fbase_5fcomp_2eproto = {
     false,
     false,
-    142,
+    147,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fitem_5fbase_5fcomp_2eproto,
     "proto/logic/component/item_base_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fitem_5fbase_5fcomp_2eproto_once,

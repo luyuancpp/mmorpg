@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "generated/pb/game";
+option go_package = "game/generated/pb/game";
 
 // 定义一个枚举类型来标识测试标志
 enum eTestFlagType 
