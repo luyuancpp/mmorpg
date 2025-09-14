@@ -1,0 +1,188 @@
+{
+ "data": [
+  {
+   "id": 1,
+   "immunetag1": {
+    "Control": "None",
+    "Wood": "None"
+   },
+   "in32key": 8,
+   "level": 0,
+   "min32key": 10,
+   "mstringkey": "aa",
+   "muint32key": 17,
+   "stringkey": "aa",
+   "tag1": {
+    "Metal": "Control"
+   },
+   "uint32key": 14
+  },
+  {
+   "effect": [
+    1,
+    1
+   ],
+   "id": 2,
+   "immunetag1": {
+    "Control": "None",
+    "Water": "None"
+   },
+   "in32key": 9,
+   "level": 1,
+   "min32key": 10,
+   "mstringkey": "bb",
+   "muint32key": 17,
+   "stringkey": "bb",
+   "tag1": {
+    "Wood": "Control"
+   },
+   "testobj1": [
+    {
+     "testobj1_key": 1,
+     "testobj1_value": 1
+    },
+    {
+     "testobj1_key": 1,
+     "testobj1_value": 1
+    }
+   ],
+   "uint32key": 15
+  },
+  {
+   "effect": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "id": 3,
+   "immunetag1": {
+    "Control": "None",
+    "None": "None"
+   },
+   "in32key": 10,
+   "level": 1,
+   "min32key": 10,
+   "mstringkey": "cc",
+   "muint32key": 3,
+   "stringkey": "cc",
+   "tag1": {
+    "Water": "Control"
+   },
+   "testobj1": [
+    {
+     "testobj1_key": 1,
+     "testobj1_value": 1
+    },
+    {
+     "testobj1_key": 1,
+     "testobj1_value": 1
+    }
+   ],
+   "uint32key": 16
+  },
+  {
+   "effect": [
+    1
+   ],
+   "id": 4,
+   "immunetag1": {
+    "Control": "None",
+    "Earth": "None"
+   },
+   "in32key": 11,
+   "level": 1,
+   "min32key": 10,
+   "mstringkey": "dd",
+   "muint32key": 4,
+   "stringkey": "dd",
+   "tag1": {
+    "Fire": "Control"
+   },
+   "testobj1": [
+    {
+     "testobj1_key": 1,
+     "testobj1_value": 1
+    },
+    {
+     "testobj1_key": 1,
+     "testobj1_value": 1
+    },
+    {
+     "testobj1_key": 1,
+     "testobj1_value": 1
+    }
+   ],
+   "uint32key": 17
+  },
+  {
+   "effect": [
+    1,
+    1,
+    1
+   ],
+   "id": 5,
+   "immunetag1": {
+    "Control": "None",
+    "Metal": "None"
+   },
+   "in32key": 12,
+   "level": 100,
+   "min32key": 10,
+   "mstringkey": "aa",
+   "muint32key": 5,
+   "stringkey": "aa",
+   "tag1": {
+    "Earth": "Control"
+   },
+   "testobj1": [
+    {
+     "testobj1_key": 100,
+     "testobj1_value": 100
+    },
+    {
+     "testobj1_key": 100,
+     "testobj1_value": 100
+    }
+   ],
+   "uint32key": 18
+  },
+  {
+   "effect": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "id": 6,
+   "immunetag1": {
+    "Control": "None",
+    "Wood": "None"
+   },
+   "in32key": 13,
+   "level": 100,
+   "min32key": 10,
+   "mstringkey": "bb",
+   "muint32key": 6,
+   "stringkey": "bb",
+   "tag1": {
+    "Metal": "Control"
+   },
+   "testobj1": [
+    {
+     "testobj1_key": 100,
+     "testobj1_value": 100
+    },
+    {
+     "testobj1_key": 100,
+     "testobj1_value": 100
+    }
+   ],
+   "uint32key": 19
+  }
+ ]
+}
