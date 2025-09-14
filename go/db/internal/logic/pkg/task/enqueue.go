@@ -1,8 +1,8 @@
 package task
 
 import (
-	"db/internal/config"
 	"fmt"
+	"game/db/internal/config"
 )
 
 func GetQueueName(playerId uint64) string {
