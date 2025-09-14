@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "game/generated/pb/game";
+option go_package = "generated/pb/game";
 
 //https://github.com/raysan5/raylib.git
 //https://github.com/recastnavigation/recastnavigation.git

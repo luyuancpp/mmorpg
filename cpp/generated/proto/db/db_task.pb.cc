@@ -145,14 +145,14 @@ const char descriptor_table_protodef_proto_2fdb_2fdb_5ftask_2eproto[] ABSL_ATTRI
     "sk\022\013\n\003key\030\001 \001(\004\022\022\n\nwhere_case\030\002 \001(\t\022\n\n\002o"
     "p\030\003 \001(\t\022\020\n\010msg_type\030\004 \001(\t\022\014\n\004body\030\005 \001(\014\022"
     "\017\n\007task_id\030\006 \001(\t\":\n\nTaskResult\022\017\n\007succes"
-    "s\030\001 \001(\010\022\014\n\004data\030\002 \001(\014\022\r\n\005error\030\003 \001(\tB\030Z\026"
-    "game/generated/pb/gameb\006proto3"
+    "s\030\001 \001(\010\022\014\n\004data\030\002 \001(\014\022\r\n\005error\030\003 \001(\tB\023Z\021"
+    "generated/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fdb_2fdb_5ftask_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdb_2fdb_5ftask_2eproto = {
     false,
     false,
-    230,
+    225,
     descriptor_table_protodef_proto_2fdb_2fdb_5ftask_2eproto,
     "proto/db/db_task.proto",
     &descriptor_table_proto_2fdb_2fdb_5ftask_2eproto_once,

@@ -355,8 +355,7 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto[]
     "rMessageResponse\022.\n\rInitSceneNode\022\025.Init"
     "SceneNodeRequest\032\006.Empty\022>\n\rNodeHandshak"
     "e\022\025.NodeHandshakeRequest\032\026.NodeHandshake"
-    "ResponseB\033Z\026game/generated/pb/game\200\001\001b\006p"
-    "roto3"
+    "ResponseB\026Z\021generated/pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_deps[5] = {
@@ -370,7 +369,7 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fservice_2epr
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto = {
     false,
     false,
-    1565,
+    1560,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fservice_2eproto,
     "proto/centre/centre_service.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fservice_2eproto_once,

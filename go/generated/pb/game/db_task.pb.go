@@ -182,7 +182,7 @@ const file_proto_db_db_task_proto_rawDesc = "" +
 	"TaskResult\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x12\n" +
 	"\x04data\x18\x02 \x01(\fR\x04data\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05errorB\x18Z\x16game/generated/pb/gameb\x06proto3"
+	"\x05error\x18\x03 \x01(\tR\x05errorB\x13Z\x11generated/pb/gameb\x06proto3"
 
 var (
 	file_proto_db_db_task_proto_rawDescOnce sync.Once

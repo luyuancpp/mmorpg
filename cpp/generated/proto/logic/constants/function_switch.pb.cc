@@ -37,13 +37,13 @@ const char descriptor_table_protodef_proto_2flogic_2fconstants_2ffunction_5fswit
     "\n+proto/logic/constants/function_switch."
     "proto*M\n\026eFunctionSwitchBitType\022\027\n\023kFunc"
     "tionSwitchTeam\020\000\022\032\n\026kFunctionSwitchFrien"
-    "ds\020\001B\030Z\026game/generated/pb/gameb\006proto3"
+    "ds\020\001B\023Z\021generated/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fconstants_2ffunction_5fswitch_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fconstants_2ffunction_5fswitch_2eproto = {
     false,
     false,
-    158,
+    153,
     descriptor_table_protodef_proto_2flogic_2fconstants_2ffunction_5fswitch_2eproto,
     "proto/logic/constants/function_switch.proto",
     &descriptor_table_proto_2flogic_2fconstants_2ffunction_5fswitch_2eproto_once,

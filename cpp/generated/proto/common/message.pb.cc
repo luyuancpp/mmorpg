@@ -1177,8 +1177,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fmessage_2eproto[] ABSL_ATT
     "(\t\022\034\n\tself_node\030\003 \001(\0132\t.NodeInfo\"]\n\025Node"
     "HandshakeResponse\022&\n\rerror_message\030\001 \001(\013"
     "2\017.TipInfoMessage\022\034\n\tpeer_node\030\002 \001(\0132\t.N"
-    "odeInfoB\030Z\026game/generated/pb/gameb\006proto"
-    "3"
+    "odeInfoB\023Z\021generated/pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fmessage_2eproto_deps[3] = {
@@ -1190,7 +1189,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fmessage_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fmessage_2eproto = {
     false,
     false,
-    2841,
+    2836,
     descriptor_table_protodef_proto_2fcommon_2fmessage_2eproto,
     "proto/common/message.proto",
     &descriptor_table_proto_2fcommon_2fmessage_2eproto_once,

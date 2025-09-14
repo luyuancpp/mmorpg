@@ -6,7 +6,7 @@ import (
 	"game/db/internal/config"
 	"game/db/internal/logic/pkg/db"
 	task2 "game/db/internal/logic/pkg/task"
-	server "game/db/internal/server/dbservice"
+	server "game/db/internal/server/db"
 	"game/db/internal/svc"
 	"game/generated/pb/game"
 	"github.com/hibiken/asynq"

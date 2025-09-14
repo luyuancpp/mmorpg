@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "game/generated/pb/game";
+option go_package = "generated/pb/game";
 
 import "proto/db/mysql_database_table.proto";
 

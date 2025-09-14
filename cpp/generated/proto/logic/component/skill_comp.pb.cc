@@ -164,8 +164,8 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fskill_5fcomp_2e
     "tate\030\007 \001(\t\022D\n\016additionalData\030\010 \003(\0132,.Ski"
     "llContextPBComponent.AdditionalDataEntry"
     "\0325\n\023AdditionalDataEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005"
-    "value\030\002 \001(\r:\0028\001B\030Z\026game/generated/pb/gam"
-    "eb\006proto3"
+    "value\030\002 \001(\r:\0028\001B\023Z\021generated/pb/gameb\006pr"
+    "oto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2flogic_2fcomponent_2fskill_5fcomp_2eproto_deps[1] = {
@@ -175,7 +175,7 @@ static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fskill_5fco
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fskill_5fcomp_2eproto = {
     false,
     false,
-    449,
+    444,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fskill_5fcomp_2eproto,
     "proto/logic/component/skill_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fskill_5fcomp_2eproto_once,

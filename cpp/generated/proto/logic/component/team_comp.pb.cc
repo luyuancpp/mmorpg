@@ -73,14 +73,14 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fteam_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n%proto/logic/component/team_comp.proto\""
-    "\031\n\006TeamId\022\017\n\007team_id\030\001 \001(\004B\030Z\026game/gener"
-    "ated/pb/gameb\006proto3"
+    "\031\n\006TeamId\022\017\n\007team_id\030\001 \001(\004B\023Z\021generated/"
+    "pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fteam_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fteam_5fcomp_2eproto = {
     false,
     false,
-    100,
+    95,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fteam_5fcomp_2eproto,
     "proto/logic/component/team_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fteam_5fcomp_2eproto_once,

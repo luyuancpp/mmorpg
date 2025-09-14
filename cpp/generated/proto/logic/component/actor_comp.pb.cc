@@ -456,8 +456,8 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2factor_5fcomp_2e
     "el\030\001 \001(\r\"\204\001\n\025ActorStatePbComponent\0229\n\nst"
     "ate_list\030\001 \003(\0132%.ActorStatePbComponent.S"
     "tateListEntry\0320\n\016StateListEntry\022\013\n\003key\030\001"
-    " \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001B\030Z\026game/generate"
-    "d/pb/gameb\006proto3"
+    " \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001B\023Z\021generated/pb/"
+    "gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto_deps[1] = {
@@ -467,7 +467,7 @@ static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2factor_5fco
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto = {
     false,
     false,
-    777,
+    772,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto,
     "proto/logic/component/actor_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto_once,
