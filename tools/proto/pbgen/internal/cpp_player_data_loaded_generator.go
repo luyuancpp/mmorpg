@@ -144,7 +144,7 @@ func CppPlayerDataLoadGenerator() {
 			//printMessageFields(messageDesc)
 
 			handleName := strcase.ToCamel(*messageDesc.Name)
-			md5FilePath := config.PlayerStorageTempDirectory + "player_" + messageDescName + config.CppSystemExtension
+			md5FilePath := config.PlayerStorageTempDirectory + "player_" + messageDescName
 			filedList := generateDatabaseFiles(messageDesc)
 			messageType := *messageDesc.Name
 
@@ -160,7 +160,7 @@ func CppPlayerDataLoadGenerator() {
 				return
 			}
 
-			destFilePath := config.PlayerStorageSystemDirectory + "player_" + messageDescName + config.CppSystemExtension
+			destFilePath := config.PlayerStorageSystemDirectory + "player_" + messageDescName
 
 			err = CopyFileIfChanged(md5FilePath, destFilePath)
 			if err != nil {
