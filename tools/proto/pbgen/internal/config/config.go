@@ -133,6 +133,8 @@ const (
 	UtilGeneratorDirectory = OutputRoot + GeneratedDirectory + "proto_helpers/"
 	GenUtilFileCppPath     = UtilGeneratorDirectory + "proto_util.cpp"
 	GenUtilFileHeadPath    = UtilGeneratorDirectory + "proto_util.h"
+	GeneratedPath          = OutputRoot + "generated/"
+	TableGeneratorPath     = GeneratedPath + "generated_data/"
 )
 
 // ----------- 文件名 -----------
