@@ -145,7 +145,7 @@ const (
 	RegisterRepliedHandlerCppExtension = "register" + CppRepliedHandlerEx
 	RegisterHandlerCppExtension        = "register" + HandlerCppExtension
 	DbProtoFileName                    = "db_base.proto"
-	PlayerDataLoaderName               = "player_data_loader_system.h"
+	PlayerDataLoaderName               = "player_data_loader.h"
 )
 
 // ----------- 代码相关字符串常量 -----------
