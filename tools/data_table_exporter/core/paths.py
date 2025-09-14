@@ -11,9 +11,11 @@ SERVER_GEN_TYPE = [SERVER_TYPE, COMMON_TYPE]
 # 项目根目录（建议使用绝对路径；可根据实际调整）
 PROJECT_DIR = Path("../../../")
 
+GENERATOR_DIR = PROJECT_DIR / "generated"
+
 # 项目结构路径
-PROJECT_GENERATED_JSON_DIR = PROJECT_DIR / "generated_tables"
-PROJECT_GENERATED_CODE_DIR = PROJECT_DIR / "generated_code"
+PROJECT_GENERATED_JSON_DIR = GENERATOR_DIR / "generated_tables"
+PROJECT_GENERATED_CODE_DIR = GENERATOR_DIR / "generated_code"
 DATA_TABLES_DIR = PROJECT_DIR / "data_tables"
 
 # Go 代码生成相关
