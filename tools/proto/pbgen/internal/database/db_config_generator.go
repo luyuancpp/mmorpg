@@ -3,12 +3,13 @@ package database
 import (
 	"encoding/json"
 	"fmt"
-	"google.golang.org/protobuf/compiler/protogen"
-	"google.golang.org/protobuf/types/pluginpb"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 	"log"
 	"os"
 	"pbgen/internal/config"
 	"pbgen/util"
+	"strings"
 )
 
 // MessageListConfig 定义消息名列表结构
@@ -16,49 +17,36 @@ type MessageListConfig struct {
 	Messages []string `json:"messages"`
 }
 
-// parseProtoFiles 解析指定的 proto 文件夹并提取所有 message 名字
+// parseProtoFile 解析指定的 proto 文件夹并提取所有 message 名字
 func parseProtoFile(protoFile string) ([]string, error) {
 	// 存储所有的 message 名称
 	var messageNames []string
 
-	// 使用 protogen.Options 解析指定的 proto 文件
-	opts := protogen.Options{}
-
-	// 初始化 CodeGeneratorRequest 请求
-	req := &pluginpb.CodeGeneratorRequest{
-		// 初始化 FileToGenerate 数组
-	}
-
-	// 收集 protoDir 中的所有 .proto 文件
-	req.FileToGenerate = append(req.FileToGenerate, protoFile)
-
-	// 确保至少有一个 proto 文件被找到
-	if len(req.FileToGenerate) == 0 {
-		return nil, fmt.Errorf("no .proto files found in the directory")
-	}
-
-	// 创建 protogen 插件
-	_, err := opts.New(req)
+	// 读取 all_in_one.pb.desc 文件
+	descData, err := os.ReadFile(config.AllInOneProtoDescFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create plugin: %v", err)
+		return nil, fmt.Errorf("failed to read descriptor file: %v", err)
 	}
 
-	opts.Run(func(gen *protogen.Plugin) error {
-		// 遍历每个文件
-		for _, file := range gen.Files {
-			// 遍历文件中的所有消息类型
-			for _, message := range file.Messages {
-				// 将 message 名字加入到 messageNames 列表中
-				messageNames = append(messageNames, string(message.Desc.Name()))
-			}
+	// 反序列化 descriptor 文件为 FileDescriptorSet
+	fdSet := &descriptorpb.FileDescriptorSet{}
+	if err := proto.Unmarshal(descData, fdSet); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal descriptor file: %v", err)
+	}
+
+	// 定义一个处理函数，遍历所有的文件并提取 message 名称
+	// 遍历每个文件
+	for _, file := range fdSet.GetFile() {
+		if !strings.Contains(file.GetName(), protoFile) {
+			continue
 		}
-		// 返回 nil 表示没有错误
-		return nil
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to run plugin: %v", err)
+		// 遍历文件中的所有消息类型
+		for _, message := range file.GetMessageType() {
+			// 将 message 名字加入到 messageNames 列表中
+			messageNames = append(messageNames, message.GetName())
+		}
 	}
+	// 返回 nil 表示没有错误
 
 	// 返回解析的 message 名称列表
 	return messageNames, nil
@@ -76,7 +64,7 @@ func generateJSONConfig(protoFile string, messages []string) error {
 	}
 
 	// 保存 JSON 到文件
-	err = os.WriteFile(config.GeneratedOutputDirectory+config.DBTableMessageListJson, data, 0644)
+	err = os.WriteFile(config.TableGeneratorPath+config.DBTableMessageListJson, data, 0644)
 	if err != nil {
 		return err
 	}
@@ -94,7 +82,7 @@ func GenerateDbProtoConfigFile() {
 		// 解析 proto 文件并获取消息名字列表
 		defer util.Wg.Done()
 
-		protoFile := config.ProtoDirs[config.DbProtoDirIndex] + config.DbTableName
+		protoFile := config.DbTableName
 
 		// 获取 message 名字列表
 		messageNames, err := parseProtoFile(protoFile)
