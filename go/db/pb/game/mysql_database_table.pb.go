@@ -317,58 +317,6 @@ func (x *PlayerDatabase_1) GetPlayerId() uint64 {
 	return 0
 }
 
-type PlayerAllData struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	PlayerDatabaseData   *PlayerDatabase        `protobuf:"bytes,2,opt,name=player_database_data,json=playerDatabaseData,proto3" json:"player_database_data,omitempty"`
-	PlayerDatabase_1Data *PlayerDatabase_1      `protobuf:"bytes,3,opt,name=player_database_1_data,json=playerDatabase1Data,proto3" json:"player_database_1_data,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
-}
-
-func (x *PlayerAllData) Reset() {
-	*x = PlayerAllData{}
-	mi := &file_proto_db_mysql_database_table_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PlayerAllData) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PlayerAllData) ProtoMessage() {}
-
-func (x *PlayerAllData) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_db_mysql_database_table_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PlayerAllData.ProtoReflect.Descriptor instead.
-func (*PlayerAllData) Descriptor() ([]byte, []int) {
-	return file_proto_db_mysql_database_table_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *PlayerAllData) GetPlayerDatabaseData() *PlayerDatabase {
-	if x != nil {
-		return x.PlayerDatabaseData
-	}
-	return nil
-}
-
-func (x *PlayerAllData) GetPlayerDatabase_1Data() *PlayerDatabase_1 {
-	if x != nil {
-		return x.PlayerDatabase_1Data
-	}
-	return nil
-}
-
 var File_proto_db_mysql_database_table_proto protoreflect.FileDescriptor
 
 const file_proto_db_mysql_database_table_proto_rawDesc = "" +
@@ -395,10 +343,7 @@ const file_proto_db_mysql_database_table_proto_rawDesc = "" +
 	"\x1cderived_attributes_component\x18\x06 \x01(\v2\x1a.BaseAttributesPbComponentR\x1aderivedAttributesComponent\x12:\n" +
 	"\x0flevel_component\x18\a \x01(\v2\x11.LevelPbComponentR\x0elevelComponent:\x1c\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\"N\n" +
 	"\x11player_database_1\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId:\x1c\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\"\x9c\x01\n" +
-	"\rPlayerAllData\x12B\n" +
-	"\x14player_database_data\x18\x02 \x01(\v2\x10.player_databaseR\x12playerDatabaseData\x12G\n" +
-	"\x16player_database_1_data\x18\x03 \x01(\v2\x12.player_database_1R\x13playerDatabase1DataB\tZ\apb/gameb\x06proto3"
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId:\x1c\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_idB\tZ\apb/gameb\x06proto3"
 
 var (
 	file_proto_db_mysql_database_table_proto_rawDescOnce sync.Once
@@ -412,39 +357,36 @@ func file_proto_db_mysql_database_table_proto_rawDescGZIP() []byte {
 	return file_proto_db_mysql_database_table_proto_rawDescData
 }
 
-var file_proto_db_mysql_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_db_mysql_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_proto_db_mysql_database_table_proto_goTypes = []any{
 	(*UserAccounts)(nil),                  // 0: user_accounts
 	(*AccountShareDatabase)(nil),          // 1: account_share_database
 	(*PlayerCentreDatabase)(nil),          // 2: player_centre_database
 	(*PlayerDatabase)(nil),                // 3: player_database
 	(*PlayerDatabase_1)(nil),              // 4: player_database_1
-	(*PlayerAllData)(nil),                 // 5: PlayerAllData
-	(*AccountSimplePlayerList)(nil),       // 6: AccountSimplePlayerList
-	(*PlayerSceneContextPBComponent)(nil), // 7: PlayerSceneContextPBComponent
-	(*Transform)(nil),                     // 8: Transform
-	(*PlayerUint64PBComponent)(nil),       // 9: PlayerUint64PBComponent
-	(*PlayerSkillListPBComponent)(nil),    // 10: PlayerSkillListPBComponent
-	(*PlayerUint32PbComponent)(nil),       // 11: PlayerUint32PbComponent
-	(*BaseAttributesPbComponent)(nil),     // 12: BaseAttributesPbComponent
-	(*LevelPbComponent)(nil),              // 13: LevelPbComponent
+	(*AccountSimplePlayerList)(nil),       // 5: AccountSimplePlayerList
+	(*PlayerSceneContextPBComponent)(nil), // 6: PlayerSceneContextPBComponent
+	(*Transform)(nil),                     // 7: Transform
+	(*PlayerUint64PBComponent)(nil),       // 8: PlayerUint64PBComponent
+	(*PlayerSkillListPBComponent)(nil),    // 9: PlayerSkillListPBComponent
+	(*PlayerUint32PbComponent)(nil),       // 10: PlayerUint32PbComponent
+	(*BaseAttributesPbComponent)(nil),     // 11: BaseAttributesPbComponent
+	(*LevelPbComponent)(nil),              // 12: LevelPbComponent
 }
 var file_proto_db_mysql_database_table_proto_depIdxs = []int32{
-	6,  // 0: user_accounts.simple_players:type_name -> AccountSimplePlayerList
-	7,  // 1: player_centre_database.scene_info:type_name -> PlayerSceneContextPBComponent
-	8,  // 2: player_database.transform:type_name -> Transform
-	9,  // 3: player_database.uint64_pb_component:type_name -> PlayerUint64PBComponent
-	10, // 4: player_database.skill_list:type_name -> PlayerSkillListPBComponent
-	11, // 5: player_database.uint32_pb_component:type_name -> PlayerUint32PbComponent
-	12, // 6: player_database.derived_attributes_component:type_name -> BaseAttributesPbComponent
-	13, // 7: player_database.level_component:type_name -> LevelPbComponent
-	3,  // 8: PlayerAllData.player_database_data:type_name -> player_database
-	4,  // 9: PlayerAllData.player_database_1_data:type_name -> player_database_1
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	5,  // 0: user_accounts.simple_players:type_name -> AccountSimplePlayerList
+	6,  // 1: player_centre_database.scene_info:type_name -> PlayerSceneContextPBComponent
+	7,  // 2: player_database.transform:type_name -> Transform
+	8,  // 3: player_database.uint64_pb_component:type_name -> PlayerUint64PBComponent
+	9,  // 4: player_database.skill_list:type_name -> PlayerSkillListPBComponent
+	10, // 5: player_database.uint32_pb_component:type_name -> PlayerUint32PbComponent
+	11, // 6: player_database.derived_attributes_component:type_name -> BaseAttributesPbComponent
+	12, // 7: player_database.level_component:type_name -> LevelPbComponent
+	8,  // [8:8] is the sub-list for method output_type
+	8,  // [8:8] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_proto_db_mysql_database_table_proto_init() }
@@ -463,7 +405,7 @@ func file_proto_db_mysql_database_table_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_db_mysql_database_table_proto_rawDesc), len(file_proto_db_mysql_database_table_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

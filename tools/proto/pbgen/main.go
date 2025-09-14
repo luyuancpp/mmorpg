@@ -8,6 +8,7 @@ import (
 	"os"
 	"pbgen/internal"
 	"pbgen/internal/config"
+	"pbgen/internal/database"
 	"pbgen/util"
 	"time"
 )
@@ -76,6 +77,7 @@ func main() {
 	util.Wg.Wait()
 
 	internal.WriteServiceRegisterInfoFile()
+	database.GenerateDbProtoConfigFile()
 	util.Wg.Wait()
 
 	internal.GoRobotHandlerGenerator()

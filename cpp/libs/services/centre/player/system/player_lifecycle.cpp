@@ -175,7 +175,6 @@ void PlayerLifecycleSystem::HandleRoomNodePlayerRegisteredAtGate(entt::entity pl
 		return;
 	}
 
-
 	LOG_INFO << "Player registered at gate node, session: " << sessionPB->gate_session_id() << ", playerId: " << *playerId;
 
 	RegisterPlayerSessionRequest request;
