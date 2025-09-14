@@ -285,7 +285,8 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fskill_2eproto[] AB
     "\032\006.Empty\0226\n\026NotifySkillInterrupted\022\024.Ski"
     "llInterruptedS2C\032\006.Empty\022;\n\014GetSkillList"
     "\022\024.GetSkillListRequest\032\025.GetSkillListRes"
-    "ponseB\026Z\021generated/pb/game\200\001\001b\006proto3"
+    "ponseB\033Z\026game/generated/pb/game\200\001\001b\006prot"
+    "o3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto_deps[6] = {
@@ -300,7 +301,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto = {
     false,
     false,
-    1117,
+    1122,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fskill_2eproto,
     "proto/scene/player_skill.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto_once,

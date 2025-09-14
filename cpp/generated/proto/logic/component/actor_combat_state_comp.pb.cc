@@ -162,13 +162,13 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2factor_5fcombat_
     "onent.StatesEntry\032M\n\013StatesEntry\022\013\n\003key\030"
     "\001 \001(\r\022-\n\005value\030\002 \001(\0132\036.CombatStateDetail"
     "sPbComponent:\0028\001*\034\n\014eCombatState\022\014\n\010kSil"
-    "ence\020\000B\023Z\021generated/pb/gameb\006proto3"
+    "ence\020\000B\030Z\026game/generated/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto = {
     false,
     false,
-    435,
+    440,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto,
     "proto/logic/component/actor_combat_state_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_once,

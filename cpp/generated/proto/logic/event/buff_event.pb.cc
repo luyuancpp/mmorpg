@@ -80,14 +80,14 @@ const char descriptor_table_protodef_proto_2flogic_2fevent_2fbuff_5fevent_2eprot
     protodesc_cold) = {
     "\n\"proto/logic/event/buff_event.proto\"K\n\014"
     "BuffTestEvet\022\016\n\006period\030\001 \001(\004\022\026\n\016periodic"
-    "_timer\030\002 \001(\004\022\023\n\013period_done\030\003 \001(\rB\023Z\021gen"
-    "erated/pb/gameb\006proto3"
+    "_timer\030\002 \001(\004\022\023\n\013period_done\030\003 \001(\rB\030Z\026gam"
+    "e/generated/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fevent_2fbuff_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fevent_2fbuff_5fevent_2eproto = {
     false,
     false,
-    142,
+    147,
     descriptor_table_protodef_proto_2flogic_2fevent_2fbuff_5fevent_2eproto,
     "proto/logic/event/buff_event.proto",
     &descriptor_table_proto_2flogic_2fevent_2fbuff_5fevent_2eproto_once,

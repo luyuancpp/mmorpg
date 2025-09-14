@@ -53,14 +53,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fnode_2eproto[] ABSL_ATTRIB
     "\tkRoomNode\020\001\022\027\n\023kMainSceneCrossNode\020\002\022\027\n"
     "\023kRoomSceneCrossNode\020\003*K\n\021eNodeProtocolT"
     "ype\022\020\n\014PROTOCOL_TCP\020\000\022\021\n\rPROTOCOL_GRPC\020\001"
-    "\022\021\n\rPROTOCOL_HTTP\020\002B\023Z\021generated/pb/game"
-    "b\006proto3"
+    "\022\021\n\rPROTOCOL_HTTP\020\002B\030Z\026game/generated/pb"
+    "/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fnode_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fnode_2eproto = {
     false,
     false,
-    808,
+    813,
     descriptor_table_protodef_proto_2fcommon_2fnode_2eproto,
     "proto/common/node.proto",
     &descriptor_table_proto_2fcommon_2fnode_2eproto_once,
