@@ -149,8 +149,8 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_5fscene_2e
     "ePlayerComplete\022/.CentreLeaveSceneAsyncS"
     "avePlayerCompleteRequest\032\026.google.protob"
     "uf.Empty\022\?\n\014SceneInfoC2S\022\027.CentreSceneIn"
-    "foRequest\032\026.google.protobuf.EmptyB\014Z\007pb/"
-    "game\200\001\001b\006proto3"
+    "foRequest\032\026.google.protobuf.EmptyB\026Z\021gen"
+    "erated/pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto_deps[2] = {
@@ -161,7 +161,7 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fsce
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto = {
     false,
     false,
-    615,
+    625,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto,
     "proto/centre/centre_player_scene.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto_once,

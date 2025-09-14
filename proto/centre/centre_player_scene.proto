@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "pb/game";
+option go_package = "generated/pb/game";
 
 import "google/protobuf/empty.proto";
 import "proto/common/common.proto";

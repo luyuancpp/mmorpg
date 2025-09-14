@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "pb/game";  // Go语言生成的代码包位置
+option go_package = "generated/pb/game";  // Go语言生成的代码包位置
 
 // 定义 gRPC 操作的枚举类型
 enum GrpcOperation {

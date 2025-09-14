@@ -35,8 +35,8 @@ static constexpr ::_pb::Message* PROTOBUF_NONNULL const* PROTOBUF_NULLABLE
 const char descriptor_table_protodef_proto_2fdb_2fdb_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\021proto/db/db.proto\032\030proto/common/empty."
-    "proto2\034\n\002db\022\026\n\004Test\022\006.Empty\032\006.EmptyB\tZ\007p"
-    "b/gameb\006proto3"
+    "proto2\034\n\002db\022\026\n\004Test\022\006.Empty\032\006.EmptyB\023Z\021g"
+    "enerated/pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fdb_2fdb_2eproto_deps[1] = {
@@ -46,7 +46,7 @@ static ::absl::once_flag descriptor_table_proto_2fdb_2fdb_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdb_2fdb_2eproto = {
     false,
     false,
-    94,
+    104,
     descriptor_table_protodef_proto_2fdb_2fdb_2eproto,
     "proto/db/db.proto",
     &descriptor_table_proto_2fdb_2fdb_2eproto_once,

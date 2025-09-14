@@ -76,14 +76,14 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5flogin_
     "p.proto\"3\n\032PlayerEnterGameStatePbComp\022\025\n"
     "\renter_gs_type\030\001 \001(\r*V\n\013EnterGsType\022\016\n\nL"
     "OGIN_NONE\020\000\022\017\n\013LOGIN_FIRST\020\001\022\021\n\rLOGIN_RE"
-    "PLACE\020\002\022\023\n\017LOGIN_RECONNECT\020\003B\tZ\007pb/gameb"
-    "\006proto3"
+    "PLACE\020\002\022\023\n\017LOGIN_RECONNECT\020\003B\023Z\021generate"
+    "d/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto = {
     false,
     false,
-    207,
+    217,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto,
     "proto/logic/component/player_login_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto_once,

@@ -379,8 +379,8 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto[] AB
     "otifyActorDestroy\022\020.ActorDestroyS2C\032\006.Em"
     "pty\0224\n\025NotifyActorListCreate\022\023.ActorList"
     "CreateS2C\032\006.Empty\0226\n\026NotifyActorListDest"
-    "roy\022\024.ActorListDestroyS2C\032\006.EmptyB\014Z\007pb/"
-    "game\200\001\001b\006proto3"
+    "roy\022\024.ActorListDestroyS2C\032\006.EmptyB\026Z\021gen"
+    "erated/pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_deps[5] = {
@@ -394,7 +394,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto = {
     false,
     false,
-    1215,
+    1225,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto,
     "proto/scene/player_scene.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_once,
