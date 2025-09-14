@@ -174,14 +174,14 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2factor_5fattribu
     "(\010:\0028\001\"^\n\037CalculatedAttributesPbComponen"
     "t\022\024\n\014attack_power\030\001 \001(\004\022\025\n\rdefense_power"
     "\030\002 \001(\004\022\016\n\006isDead\030\003 \001(\010\"2\n\034DerivedAttribu"
-    "tesPbComponent\022\022\n\nmax_health\030\001 \001(\004B\030Z\026ga"
-    "me/generated/pb/gameb\006proto3"
+    "tesPbComponent\022\022\n\nmax_health\030\001 \001(\004B\023Z\021ge"
+    "nerated/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto = {
     false,
     false,
-    388,
+    383,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto,
     "proto/logic/component/actor_attribute_state_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto_once,

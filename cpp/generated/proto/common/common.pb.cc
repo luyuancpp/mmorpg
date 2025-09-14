@@ -283,14 +283,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_2eproto[] ABSL_ATTR
     "r_confid\030\003 \001(\r\022\025\n\rdungen_confid\030\004 \001(\r\0224\n"
     "\010creators\030\005 \003(\0132\".RoomInfoPBComponent.Cr"
     "eatorsEntry\032/\n\rCreatorsEntry\022\013\n\003key\030\001 \001("
-    "\004\022\r\n\005value\030\002 \001(\010:\0028\001B\030Z\026game/generated/p"
-    "b/gameb\006proto3"
+    "\004\022\r\n\005value\030\002 \001(\010:\0028\001B\023Z\021generated/pb/gam"
+    "eb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_2eproto = {
     false,
     false,
-    614,
+    609,
     descriptor_table_protodef_proto_2fcommon_2fcommon_2eproto,
     "proto/common/common.proto",
     &descriptor_table_proto_2fcommon_2fcommon_2eproto_once,

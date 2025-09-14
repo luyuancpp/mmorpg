@@ -108,14 +108,14 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5fskill_
     "p.proto\"<\n\026PlayerSkillPBComponent\022\n\n\002id\030"
     "\001 \001(\004\022\026\n\016skill_table_id\030\002 \001(\r\"I\n\032PlayerS"
     "killListPBComponent\022+\n\nskill_list\030\001 \003(\0132"
-    "\027.PlayerSkillPBComponentB\030Z\026game/generat"
-    "ed/pb/gameb\006proto3"
+    "\027.PlayerSkillPBComponentB\023Z\021generated/pb"
+    "/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto = {
     false,
     false,
-    218,
+    213,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto,
     "proto/logic/component/player_skill_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto_once,

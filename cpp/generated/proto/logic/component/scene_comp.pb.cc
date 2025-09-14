@@ -120,14 +120,14 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fscene_5fcomp_2e
     "\022\013\n\007eSameGs\020\000\022\020\n\014eDifferentGs\020\001\"|\n\021eChan"
     "geSceneState\022\021\n\rePendingLeave\020\000\022\014\n\010eLeav"
     "ing\020\001\022\021\n\reWaitingEnter\020\002\022\021\n\reEnterSuccee"
-    "d\020\003\022\025\n\021eGateEnterSucceed\020\004\022\t\n\005eDone\020\005B\030Z"
-    "\026game/generated/pb/gameb\006proto3"
+    "d\020\003\022\025\n\021eGateEnterSucceed\020\004\022\t\n\005eDone\020\005B\023Z"
+    "\021generated/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto = {
     false,
     false,
-    551,
+    546,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto,
     "proto/logic/component/scene_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto_once,

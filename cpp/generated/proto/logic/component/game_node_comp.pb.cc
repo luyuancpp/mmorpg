@@ -74,14 +74,14 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fgame_5fnode_5fc
     protodesc_cold) = {
     "\n*proto/logic/component/game_node_comp.p"
     "roto\"4\n\035GameNodePlayerInfoPBComponent\022\023\n"
-    "\013player_size\030\001 \001(\rB\030Z\026game/generated/pb/"
-    "gameb\006proto3"
+    "\013player_size\030\001 \001(\rB\023Z\021generated/pb/gameb"
+    "\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fgame_5fnode_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fgame_5fnode_5fcomp_2eproto = {
     false,
     false,
-    132,
+    127,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fgame_5fnode_5fcomp_2eproto,
     "proto/logic/component/game_node_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fgame_5fnode_5fcomp_2eproto_once,

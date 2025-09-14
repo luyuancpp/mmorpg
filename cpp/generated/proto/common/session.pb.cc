@@ -77,13 +77,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fsession_2eproto[] ABSL_ATT
     protodesc_cold) = {
     "\n\032proto/common/session.proto\"7\n\016SessionD"
     "etails\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030"
-    "\002 \001(\004B\030Z\026game/generated/pb/gameb\006proto3"
+    "\002 \001(\004B\023Z\021generated/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fsession_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fsession_2eproto = {
     false,
     false,
-    119,
+    114,
     descriptor_table_protodef_proto_2fcommon_2fsession_2eproto,
     "proto/common/session.proto",
     &descriptor_table_proto_2fcommon_2fsession_2eproto_once,

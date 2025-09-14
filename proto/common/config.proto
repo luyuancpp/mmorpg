@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "game/generated/pb/game";
+option go_package = "generated/pb/game";
 
 // 服务配置，避免与 protobuf 的 Service 冲突
 message ServiceConfig {

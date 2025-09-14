@@ -77,13 +77,13 @@ const char descriptor_table_protodef_proto_2flogic_2fevent_2fcombat_5fevent_2epr
     protodesc_cold) = {
     "\n$proto/logic/event/combat_event.proto\"-"
     "\n\013BeKillEvent\022\016\n\006caster\030\001 \001(\004\022\016\n\006target\030"
-    "\002 \001(\004B\030Z\026game/generated/pb/gameb\006proto3"
+    "\002 \001(\004B\023Z\021generated/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fevent_2fcombat_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fevent_2fcombat_5fevent_2eproto = {
     false,
     false,
-    119,
+    114,
     descriptor_table_protodef_proto_2flogic_2fevent_2fcombat_5fevent_2eproto,
     "proto/logic/event/combat_event.proto",
     &descriptor_table_proto_2flogic_2fevent_2fcombat_5fevent_2eproto_once,

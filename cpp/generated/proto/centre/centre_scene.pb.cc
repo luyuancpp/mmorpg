@@ -144,8 +144,8 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fscene_2eproto[] A
     "\r2\201\001\n\013CentreScene\022>\n\rRegisterScene\022\025.Reg"
     "isterSceneRequest\032\026.RegisterSceneRespons"
     "e\0222\n\017UnRegisterScene\022\027.UnRegisterSceneRe"
-    "quest\032\006.EmptyB\033Z\026game/generated/pb/game\200"
-    "\001\001b\006proto3"
+    "quest\032\006.EmptyB\026Z\021generated/pb/game\200\001\001b\006p"
+    "roto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcentre_2fcentre_5fscene_2eproto_deps[2] = {
@@ -156,7 +156,7 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fscene_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fscene_2eproto = {
     false,
     false,
-    450,
+    445,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fscene_2eproto,
     "proto/centre/centre_scene.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fscene_2eproto_once,

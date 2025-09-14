@@ -454,8 +454,8 @@ const char descriptor_table_protodef_proto_2flogin_2flogin_2eproto[] ABSL_ATTRIB
     "quest\032\032.loginpb.EnterGameResponse\022.\n\tLea"
     "veGame\022\031.loginpb.LeaveGameRequest\032\006.Empt"
     "y\0229\n\nDisconnect\022#.loginpb.LoginNodeDisco"
-    "nnectRequest\032\006.EmptyB\030Z\026game/generated/p"
-    "b/gameb\006proto3"
+    "nnectRequest\032\006.EmptyB\023Z\021generated/pb/gam"
+    "eb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2flogin_2flogin_2eproto_deps[3] = {
@@ -467,7 +467,7 @@ static ::absl::once_flag descriptor_table_proto_2flogin_2flogin_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogin_2flogin_2eproto = {
     false,
     false,
-    1334,
+    1329,
     descriptor_table_protodef_proto_2flogin_2flogin_2eproto,
     "proto/login/login.proto",
     &descriptor_table_proto_2flogin_2flogin_2eproto_once,
