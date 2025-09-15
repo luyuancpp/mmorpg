@@ -7,6 +7,7 @@ import (
 	"game/generated/pb/game"
 	"github.com/zeromicro/go-zero/core/logx"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type NodeAllocator struct {
@@ -66,19 +67,22 @@ func (na *NodeAllocator) putIfAbsent(ctx context.Context, nodeID uint32, info *g
 
 	info.NodeId = nodeID
 
-	marshaler := &jsonpb.Marshaler{}
-
-	result, err := marshaler.MarshalToString(info)
+	// 使用 protojson.Marshal 序列化
+	result, err := protojson.Marshal(info)
 	if err != nil {
-		logx.Errorf("Error marshaling:", err)
+		logx.Errorf("Error marshaling: %v", err)
 		return false, err
 	}
 
+	// 将 []byte 转换为 string
+	resultStr := string(result)
+
+	// 使用转换后的字符串执行 Etcd 操作
 	txn := na.Client.Txn(ctx)
 	txnResp, err := txn.If(
 		clientv3.Compare(clientv3.Version(key), "=", 0),
 	).Then(
-		clientv3.OpPut(key, result, clientv3.WithLease(leaseID)),
+		clientv3.OpPut(key, resultStr, clientv3.WithLease(leaseID)),
 	).Commit()
 
 	if err != nil {
