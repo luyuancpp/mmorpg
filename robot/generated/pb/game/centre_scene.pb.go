@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/centre/centre_scene.proto
+// source: proto/service/rpc/centre/centre_scene.proto
 
 package game
 
@@ -31,7 +31,7 @@ type RegisterSceneRequest struct {
 
 func (x *RegisterSceneRequest) Reset() {
 	*x = RegisterSceneRequest{}
-	mi := &file_proto_centre_centre_scene_proto_msgTypes[0]
+	mi := &file_proto_service_rpc_centre_centre_scene_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *RegisterSceneRequest) String() string {
 func (*RegisterSceneRequest) ProtoMessage() {}
 
 func (x *RegisterSceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_centre_centre_scene_proto_msgTypes[0]
+	mi := &file_proto_service_rpc_centre_centre_scene_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *RegisterSceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterSceneRequest.ProtoReflect.Descriptor instead.
 func (*RegisterSceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_centre_centre_scene_proto_rawDescGZIP(), []int{0}
+	return file_proto_service_rpc_centre_centre_scene_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *RegisterSceneRequest) GetSceneNodeId() uint32 {
@@ -81,7 +81,7 @@ type RegisterSceneResponse struct {
 
 func (x *RegisterSceneResponse) Reset() {
 	*x = RegisterSceneResponse{}
-	mi := &file_proto_centre_centre_scene_proto_msgTypes[1]
+	mi := &file_proto_service_rpc_centre_centre_scene_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -93,7 +93,7 @@ func (x *RegisterSceneResponse) String() string {
 func (*RegisterSceneResponse) ProtoMessage() {}
 
 func (x *RegisterSceneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_centre_centre_scene_proto_msgTypes[1]
+	mi := &file_proto_service_rpc_centre_centre_scene_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -106,7 +106,7 @@ func (x *RegisterSceneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterSceneResponse.ProtoReflect.Descriptor instead.
 func (*RegisterSceneResponse) Descriptor() ([]byte, []int) {
-	return file_proto_centre_centre_scene_proto_rawDescGZIP(), []int{1}
+	return file_proto_service_rpc_centre_centre_scene_proto_rawDescGZIP(), []int{1}
 }
 
 type UnRegisterSceneRequest struct {
@@ -120,7 +120,7 @@ type UnRegisterSceneRequest struct {
 
 func (x *UnRegisterSceneRequest) Reset() {
 	*x = UnRegisterSceneRequest{}
-	mi := &file_proto_centre_centre_scene_proto_msgTypes[2]
+	mi := &file_proto_service_rpc_centre_centre_scene_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -132,7 +132,7 @@ func (x *UnRegisterSceneRequest) String() string {
 func (*UnRegisterSceneRequest) ProtoMessage() {}
 
 func (x *UnRegisterSceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_centre_centre_scene_proto_msgTypes[2]
+	mi := &file_proto_service_rpc_centre_centre_scene_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -145,7 +145,7 @@ func (x *UnRegisterSceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnRegisterSceneRequest.ProtoReflect.Descriptor instead.
 func (*UnRegisterSceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_centre_centre_scene_proto_rawDescGZIP(), []int{2}
+	return file_proto_service_rpc_centre_centre_scene_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *UnRegisterSceneRequest) GetSceneNodeId() uint32 {
@@ -169,11 +169,11 @@ func (x *UnRegisterSceneRequest) GetReason() uint32 {
 	return 0
 }
 
-var File_proto_centre_centre_scene_proto protoreflect.FileDescriptor
+var File_proto_service_rpc_centre_centre_scene_proto protoreflect.FileDescriptor
 
-const file_proto_centre_centre_scene_proto_rawDesc = "" +
+const file_proto_service_rpc_centre_centre_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x1fproto/centre/centre_scene.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\"q\n" +
+	"+proto/service/rpc/centre/centre_scene.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\"q\n" +
 	"\x14RegisterSceneRequest\x12\"\n" +
 	"\rscene_node_id\x18\x01 \x01(\rR\vsceneNodeId\x125\n" +
 	"\vscenes_info\x18\x02 \x03(\v2\x14.RoomInfoPBComponentR\n" +
@@ -188,26 +188,26 @@ const file_proto_centre_centre_scene_proto_rawDesc = "" +
 	"\x0fUnRegisterScene\x12\x17.UnRegisterSceneRequest\x1a\x06.EmptyB\x16Z\x11generated/pb/game\x80\x01\x01b\x06proto3"
 
 var (
-	file_proto_centre_centre_scene_proto_rawDescOnce sync.Once
-	file_proto_centre_centre_scene_proto_rawDescData []byte
+	file_proto_service_rpc_centre_centre_scene_proto_rawDescOnce sync.Once
+	file_proto_service_rpc_centre_centre_scene_proto_rawDescData []byte
 )
 
-func file_proto_centre_centre_scene_proto_rawDescGZIP() []byte {
-	file_proto_centre_centre_scene_proto_rawDescOnce.Do(func() {
-		file_proto_centre_centre_scene_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_centre_centre_scene_proto_rawDesc), len(file_proto_centre_centre_scene_proto_rawDesc)))
+func file_proto_service_rpc_centre_centre_scene_proto_rawDescGZIP() []byte {
+	file_proto_service_rpc_centre_centre_scene_proto_rawDescOnce.Do(func() {
+		file_proto_service_rpc_centre_centre_scene_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_rpc_centre_centre_scene_proto_rawDesc), len(file_proto_service_rpc_centre_centre_scene_proto_rawDesc)))
 	})
-	return file_proto_centre_centre_scene_proto_rawDescData
+	return file_proto_service_rpc_centre_centre_scene_proto_rawDescData
 }
 
-var file_proto_centre_centre_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_proto_centre_centre_scene_proto_goTypes = []any{
+var file_proto_service_rpc_centre_centre_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_proto_service_rpc_centre_centre_scene_proto_goTypes = []any{
 	(*RegisterSceneRequest)(nil),   // 0: RegisterSceneRequest
 	(*RegisterSceneResponse)(nil),  // 1: RegisterSceneResponse
 	(*UnRegisterSceneRequest)(nil), // 2: UnRegisterSceneRequest
 	(*RoomInfoPBComponent)(nil),    // 3: RoomInfoPBComponent
 	(*Empty)(nil),                  // 4: Empty
 }
-var file_proto_centre_centre_scene_proto_depIdxs = []int32{
+var file_proto_service_rpc_centre_centre_scene_proto_depIdxs = []int32{
 	3, // 0: RegisterSceneRequest.scenes_info:type_name -> RoomInfoPBComponent
 	0, // 1: CentreScene.RegisterScene:input_type -> RegisterSceneRequest
 	2, // 2: CentreScene.UnRegisterScene:input_type -> UnRegisterSceneRequest
@@ -220,9 +220,9 @@ var file_proto_centre_centre_scene_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_proto_centre_centre_scene_proto_init() }
-func file_proto_centre_centre_scene_proto_init() {
-	if File_proto_centre_centre_scene_proto != nil {
+func init() { file_proto_service_rpc_centre_centre_scene_proto_init() }
+func file_proto_service_rpc_centre_centre_scene_proto_init() {
+	if File_proto_service_rpc_centre_centre_scene_proto != nil {
 		return
 	}
 	file_proto_common_empty_proto_init()
@@ -231,17 +231,17 @@ func file_proto_centre_centre_scene_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_centre_centre_scene_proto_rawDesc), len(file_proto_centre_centre_scene_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_rpc_centre_centre_scene_proto_rawDesc), len(file_proto_service_rpc_centre_centre_scene_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_centre_centre_scene_proto_goTypes,
-		DependencyIndexes: file_proto_centre_centre_scene_proto_depIdxs,
-		MessageInfos:      file_proto_centre_centre_scene_proto_msgTypes,
+		GoTypes:           file_proto_service_rpc_centre_centre_scene_proto_goTypes,
+		DependencyIndexes: file_proto_service_rpc_centre_centre_scene_proto_depIdxs,
+		MessageInfos:      file_proto_service_rpc_centre_centre_scene_proto_msgTypes,
 	}.Build()
-	File_proto_centre_centre_scene_proto = out.File
-	file_proto_centre_centre_scene_proto_goTypes = nil
-	file_proto_centre_centre_scene_proto_depIdxs = nil
+	File_proto_service_rpc_centre_centre_scene_proto = out.File
+	file_proto_service_rpc_centre_centre_scene_proto_goTypes = nil
+	file_proto_service_rpc_centre_centre_scene_proto_depIdxs = nil
 }

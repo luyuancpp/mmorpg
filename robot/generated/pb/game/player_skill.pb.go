@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/scene/player_skill.proto
+// source: proto/service/rpc/scene/player_skill.proto
 
 package game
 
@@ -33,7 +33,7 @@ type ReleaseSkillSkillRequest struct {
 
 func (x *ReleaseSkillSkillRequest) Reset() {
 	*x = ReleaseSkillSkillRequest{}
-	mi := &file_proto_scene_player_skill_proto_msgTypes[0]
+	mi := &file_proto_service_rpc_scene_player_skill_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +45,7 @@ func (x *ReleaseSkillSkillRequest) String() string {
 func (*ReleaseSkillSkillRequest) ProtoMessage() {}
 
 func (x *ReleaseSkillSkillRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_skill_proto_msgTypes[0]
+	mi := &file_proto_service_rpc_scene_player_skill_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +58,7 @@ func (x *ReleaseSkillSkillRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseSkillSkillRequest.ProtoReflect.Descriptor instead.
 func (*ReleaseSkillSkillRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_skill_proto_rawDescGZIP(), []int{0}
+	return file_proto_service_rpc_scene_player_skill_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ReleaseSkillSkillRequest) GetSkillTableId() uint32 {
@@ -98,7 +98,7 @@ type ReleaseSkillSkillResponse struct {
 
 func (x *ReleaseSkillSkillResponse) Reset() {
 	*x = ReleaseSkillSkillResponse{}
-	mi := &file_proto_scene_player_skill_proto_msgTypes[1]
+	mi := &file_proto_service_rpc_scene_player_skill_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -110,7 +110,7 @@ func (x *ReleaseSkillSkillResponse) String() string {
 func (*ReleaseSkillSkillResponse) ProtoMessage() {}
 
 func (x *ReleaseSkillSkillResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_skill_proto_msgTypes[1]
+	mi := &file_proto_service_rpc_scene_player_skill_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -123,7 +123,7 @@ func (x *ReleaseSkillSkillResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseSkillSkillResponse.ProtoReflect.Descriptor instead.
 func (*ReleaseSkillSkillResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_skill_proto_rawDescGZIP(), []int{1}
+	return file_proto_service_rpc_scene_player_skill_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ReleaseSkillSkillResponse) GetErrorMessage() *TipInfoMessage {
@@ -146,7 +146,7 @@ type SkillInterruptedS2C struct {
 
 func (x *SkillInterruptedS2C) Reset() {
 	*x = SkillInterruptedS2C{}
-	mi := &file_proto_scene_player_skill_proto_msgTypes[2]
+	mi := &file_proto_service_rpc_scene_player_skill_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -158,7 +158,7 @@ func (x *SkillInterruptedS2C) String() string {
 func (*SkillInterruptedS2C) ProtoMessage() {}
 
 func (x *SkillInterruptedS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_skill_proto_msgTypes[2]
+	mi := &file_proto_service_rpc_scene_player_skill_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -171,7 +171,7 @@ func (x *SkillInterruptedS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SkillInterruptedS2C.ProtoReflect.Descriptor instead.
 func (*SkillInterruptedS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_skill_proto_rawDescGZIP(), []int{2}
+	return file_proto_service_rpc_scene_player_skill_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SkillInterruptedS2C) GetEntity() uint64 {
@@ -222,7 +222,7 @@ type SkillUsedS2C struct {
 
 func (x *SkillUsedS2C) Reset() {
 	*x = SkillUsedS2C{}
-	mi := &file_proto_scene_player_skill_proto_msgTypes[3]
+	mi := &file_proto_service_rpc_scene_player_skill_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -234,7 +234,7 @@ func (x *SkillUsedS2C) String() string {
 func (*SkillUsedS2C) ProtoMessage() {}
 
 func (x *SkillUsedS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_skill_proto_msgTypes[3]
+	mi := &file_proto_service_rpc_scene_player_skill_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -247,7 +247,7 @@ func (x *SkillUsedS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SkillUsedS2C.ProtoReflect.Descriptor instead.
 func (*SkillUsedS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_skill_proto_rawDescGZIP(), []int{3}
+	return file_proto_service_rpc_scene_player_skill_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SkillUsedS2C) GetEntity() uint64 {
@@ -294,7 +294,7 @@ type GetSkillListRequest struct {
 
 func (x *GetSkillListRequest) Reset() {
 	*x = GetSkillListRequest{}
-	mi := &file_proto_scene_player_skill_proto_msgTypes[4]
+	mi := &file_proto_service_rpc_scene_player_skill_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -306,7 +306,7 @@ func (x *GetSkillListRequest) String() string {
 func (*GetSkillListRequest) ProtoMessage() {}
 
 func (x *GetSkillListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_skill_proto_msgTypes[4]
+	mi := &file_proto_service_rpc_scene_player_skill_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -319,7 +319,7 @@ func (x *GetSkillListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSkillListRequest.ProtoReflect.Descriptor instead.
 func (*GetSkillListRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_skill_proto_rawDescGZIP(), []int{4}
+	return file_proto_service_rpc_scene_player_skill_proto_rawDescGZIP(), []int{4}
 }
 
 // 获取技能列表响应
@@ -333,7 +333,7 @@ type GetSkillListResponse struct {
 
 func (x *GetSkillListResponse) Reset() {
 	*x = GetSkillListResponse{}
-	mi := &file_proto_scene_player_skill_proto_msgTypes[5]
+	mi := &file_proto_service_rpc_scene_player_skill_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -345,7 +345,7 @@ func (x *GetSkillListResponse) String() string {
 func (*GetSkillListResponse) ProtoMessage() {}
 
 func (x *GetSkillListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_skill_proto_msgTypes[5]
+	mi := &file_proto_service_rpc_scene_player_skill_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -358,7 +358,7 @@ func (x *GetSkillListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSkillListResponse.ProtoReflect.Descriptor instead.
 func (*GetSkillListResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_skill_proto_rawDescGZIP(), []int{5}
+	return file_proto_service_rpc_scene_player_skill_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetSkillListResponse) GetErrorMessage() *TipInfoMessage {
@@ -375,11 +375,11 @@ func (x *GetSkillListResponse) GetSkillList() *PlayerSkillListPBComponent {
 	return nil
 }
 
-var File_proto_scene_player_skill_proto protoreflect.FileDescriptor
+var File_proto_service_rpc_scene_player_skill_proto protoreflect.FileDescriptor
 
-const file_proto_scene_player_skill_proto_rawDesc = "" +
+const file_proto_service_rpc_scene_player_skill_proto_rawDesc = "" +
 	"\n" +
-	"\x1eproto/scene/player_skill.proto\x1a\x16proto/common/tip.proto\x1a proto/logic/component/comp.proto\x1a\x18proto/common/empty.proto\x1a-proto/logic/component/player_skill_comp.proto\x1a&proto/logic/component/skill_comp.proto\x1a&proto/logic/component/actor_comp.proto\"\xaa\x01\n" +
+	"*proto/service/rpc/scene/player_skill.proto\x1a\x16proto/common/tip.proto\x1a proto/logic/component/comp.proto\x1a\x18proto/common/empty.proto\x1a-proto/logic/component/player_skill_comp.proto\x1a&proto/logic/component/skill_comp.proto\x1a&proto/logic/component/actor_comp.proto\"\xaa\x01\n" +
 	"\x18ReleaseSkillSkillRequest\x12$\n" +
 	"\x0eskill_table_id\x18\x01 \x01(\rR\fskillTableId\x12\x1b\n" +
 	"\ttarget_id\x18\x02 \x01(\x04R\btargetId\x12$\n" +
@@ -413,19 +413,19 @@ const file_proto_scene_player_skill_proto_rawDesc = "" +
 	"\fGetSkillList\x12\x14.GetSkillListRequest\x1a\x15.GetSkillListResponseB\x16Z\x11generated/pb/game\x80\x01\x01b\x06proto3"
 
 var (
-	file_proto_scene_player_skill_proto_rawDescOnce sync.Once
-	file_proto_scene_player_skill_proto_rawDescData []byte
+	file_proto_service_rpc_scene_player_skill_proto_rawDescOnce sync.Once
+	file_proto_service_rpc_scene_player_skill_proto_rawDescData []byte
 )
 
-func file_proto_scene_player_skill_proto_rawDescGZIP() []byte {
-	file_proto_scene_player_skill_proto_rawDescOnce.Do(func() {
-		file_proto_scene_player_skill_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_scene_player_skill_proto_rawDesc), len(file_proto_scene_player_skill_proto_rawDesc)))
+func file_proto_service_rpc_scene_player_skill_proto_rawDescGZIP() []byte {
+	file_proto_service_rpc_scene_player_skill_proto_rawDescOnce.Do(func() {
+		file_proto_service_rpc_scene_player_skill_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_rpc_scene_player_skill_proto_rawDesc), len(file_proto_service_rpc_scene_player_skill_proto_rawDesc)))
 	})
-	return file_proto_scene_player_skill_proto_rawDescData
+	return file_proto_service_rpc_scene_player_skill_proto_rawDescData
 }
 
-var file_proto_scene_player_skill_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_proto_scene_player_skill_proto_goTypes = []any{
+var file_proto_service_rpc_scene_player_skill_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_service_rpc_scene_player_skill_proto_goTypes = []any{
 	(*ReleaseSkillSkillRequest)(nil),   // 0: ReleaseSkillSkillRequest
 	(*ReleaseSkillSkillResponse)(nil),  // 1: ReleaseSkillSkillResponse
 	(*SkillInterruptedS2C)(nil),        // 2: SkillInterruptedS2C
@@ -438,7 +438,7 @@ var file_proto_scene_player_skill_proto_goTypes = []any{
 	(*PlayerSkillListPBComponent)(nil), // 9: PlayerSkillListPBComponent
 	(*Empty)(nil),                      // 10: Empty
 }
-var file_proto_scene_player_skill_proto_depIdxs = []int32{
+var file_proto_service_rpc_scene_player_skill_proto_depIdxs = []int32{
 	6,  // 0: ReleaseSkillSkillRequest.position:type_name -> Vector3
 	7,  // 1: ReleaseSkillSkillRequest.rotation:type_name -> Rotation
 	8,  // 2: ReleaseSkillSkillResponse.error_message:type_name -> TipInfoMessage
@@ -460,9 +460,9 @@ var file_proto_scene_player_skill_proto_depIdxs = []int32{
 	0,  // [0:6] is the sub-list for field type_name
 }
 
-func init() { file_proto_scene_player_skill_proto_init() }
-func file_proto_scene_player_skill_proto_init() {
-	if File_proto_scene_player_skill_proto != nil {
+func init() { file_proto_service_rpc_scene_player_skill_proto_init() }
+func file_proto_service_rpc_scene_player_skill_proto_init() {
+	if File_proto_service_rpc_scene_player_skill_proto != nil {
 		return
 	}
 	file_proto_common_tip_proto_init()
@@ -475,17 +475,17 @@ func file_proto_scene_player_skill_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_player_skill_proto_rawDesc), len(file_proto_scene_player_skill_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_rpc_scene_player_skill_proto_rawDesc), len(file_proto_service_rpc_scene_player_skill_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_scene_player_skill_proto_goTypes,
-		DependencyIndexes: file_proto_scene_player_skill_proto_depIdxs,
-		MessageInfos:      file_proto_scene_player_skill_proto_msgTypes,
+		GoTypes:           file_proto_service_rpc_scene_player_skill_proto_goTypes,
+		DependencyIndexes: file_proto_service_rpc_scene_player_skill_proto_depIdxs,
+		MessageInfos:      file_proto_service_rpc_scene_player_skill_proto_msgTypes,
 	}.Build()
-	File_proto_scene_player_skill_proto = out.File
-	file_proto_scene_player_skill_proto_goTypes = nil
-	file_proto_scene_player_skill_proto_depIdxs = nil
+	File_proto_service_rpc_scene_player_skill_proto = out.File
+	file_proto_service_rpc_scene_player_skill_proto_goTypes = nil
+	file_proto_service_rpc_scene_player_skill_proto_depIdxs = nil
 }

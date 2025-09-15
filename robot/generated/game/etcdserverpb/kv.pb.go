@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/etcd/kv.proto
+// source: proto/middleware/etcd/kv.proto
 
 package etcdserverpb
 
@@ -51,11 +51,11 @@ func (x Event_EventType) String() string {
 }
 
 func (Event_EventType) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_etcd_kv_proto_enumTypes[0].Descriptor()
+	return file_proto_middleware_etcd_kv_proto_enumTypes[0].Descriptor()
 }
 
 func (Event_EventType) Type() protoreflect.EnumType {
-	return &file_proto_etcd_kv_proto_enumTypes[0]
+	return &file_proto_middleware_etcd_kv_proto_enumTypes[0]
 }
 
 func (x Event_EventType) Number() protoreflect.EnumNumber {
@@ -64,7 +64,7 @@ func (x Event_EventType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Event_EventType.Descriptor instead.
 func (Event_EventType) EnumDescriptor() ([]byte, []int) {
-	return file_proto_etcd_kv_proto_rawDescGZIP(), []int{1, 0}
+	return file_proto_middleware_etcd_kv_proto_rawDescGZIP(), []int{1, 0}
 }
 
 type KeyValue struct {
@@ -91,7 +91,7 @@ type KeyValue struct {
 
 func (x *KeyValue) Reset() {
 	*x = KeyValue{}
-	mi := &file_proto_etcd_kv_proto_msgTypes[0]
+	mi := &file_proto_middleware_etcd_kv_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -103,7 +103,7 @@ func (x *KeyValue) String() string {
 func (*KeyValue) ProtoMessage() {}
 
 func (x *KeyValue) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_etcd_kv_proto_msgTypes[0]
+	mi := &file_proto_middleware_etcd_kv_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -116,7 +116,7 @@ func (x *KeyValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KeyValue.ProtoReflect.Descriptor instead.
 func (*KeyValue) Descriptor() ([]byte, []int) {
-	return file_proto_etcd_kv_proto_rawDescGZIP(), []int{0}
+	return file_proto_middleware_etcd_kv_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *KeyValue) GetKey() []byte {
@@ -181,7 +181,7 @@ type Event struct {
 
 func (x *Event) Reset() {
 	*x = Event{}
-	mi := &file_proto_etcd_kv_proto_msgTypes[1]
+	mi := &file_proto_middleware_etcd_kv_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -193,7 +193,7 @@ func (x *Event) String() string {
 func (*Event) ProtoMessage() {}
 
 func (x *Event) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_etcd_kv_proto_msgTypes[1]
+	mi := &file_proto_middleware_etcd_kv_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -206,7 +206,7 @@ func (x *Event) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Event.ProtoReflect.Descriptor instead.
 func (*Event) Descriptor() ([]byte, []int) {
-	return file_proto_etcd_kv_proto_rawDescGZIP(), []int{1}
+	return file_proto_middleware_etcd_kv_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Event) GetType() Event_EventType {
@@ -230,11 +230,11 @@ func (x *Event) GetPrevKv() *KeyValue {
 	return nil
 }
 
-var File_proto_etcd_kv_proto protoreflect.FileDescriptor
+var File_proto_middleware_etcd_kv_proto protoreflect.FileDescriptor
 
-const file_proto_etcd_kv_proto_rawDesc = "" +
+const file_proto_middleware_etcd_kv_proto_rawDesc = "" +
 	"\n" +
-	"\x13proto/etcd/kv.proto\x12\x06mvccpb\"\xae\x01\n" +
+	"\x1eproto/middleware/etcd/kv.proto\x12\x06mvccpb\"\xae\x01\n" +
 	"\bKeyValue\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\fR\x03key\x12'\n" +
 	"\x0fcreate_revision\x18\x02 \x01(\x03R\x0ecreateRevision\x12!\n" +
@@ -252,25 +252,25 @@ const file_proto_etcd_kv_proto_rawDesc = "" +
 	"\x06DELETE\x10\x01B\x1dZ\x1bgenerated/game/etcdserverpbb\x06proto3"
 
 var (
-	file_proto_etcd_kv_proto_rawDescOnce sync.Once
-	file_proto_etcd_kv_proto_rawDescData []byte
+	file_proto_middleware_etcd_kv_proto_rawDescOnce sync.Once
+	file_proto_middleware_etcd_kv_proto_rawDescData []byte
 )
 
-func file_proto_etcd_kv_proto_rawDescGZIP() []byte {
-	file_proto_etcd_kv_proto_rawDescOnce.Do(func() {
-		file_proto_etcd_kv_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_etcd_kv_proto_rawDesc), len(file_proto_etcd_kv_proto_rawDesc)))
+func file_proto_middleware_etcd_kv_proto_rawDescGZIP() []byte {
+	file_proto_middleware_etcd_kv_proto_rawDescOnce.Do(func() {
+		file_proto_middleware_etcd_kv_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_middleware_etcd_kv_proto_rawDesc), len(file_proto_middleware_etcd_kv_proto_rawDesc)))
 	})
-	return file_proto_etcd_kv_proto_rawDescData
+	return file_proto_middleware_etcd_kv_proto_rawDescData
 }
 
-var file_proto_etcd_kv_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_etcd_kv_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_proto_etcd_kv_proto_goTypes = []any{
+var file_proto_middleware_etcd_kv_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_proto_middleware_etcd_kv_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_middleware_etcd_kv_proto_goTypes = []any{
 	(Event_EventType)(0), // 0: mvccpb.Event.EventType
 	(*KeyValue)(nil),     // 1: mvccpb.KeyValue
 	(*Event)(nil),        // 2: mvccpb.Event
 }
-var file_proto_etcd_kv_proto_depIdxs = []int32{
+var file_proto_middleware_etcd_kv_proto_depIdxs = []int32{
 	0, // 0: mvccpb.Event.type:type_name -> mvccpb.Event.EventType
 	1, // 1: mvccpb.Event.kv:type_name -> mvccpb.KeyValue
 	1, // 2: mvccpb.Event.prev_kv:type_name -> mvccpb.KeyValue
@@ -281,27 +281,27 @@ var file_proto_etcd_kv_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_proto_etcd_kv_proto_init() }
-func file_proto_etcd_kv_proto_init() {
-	if File_proto_etcd_kv_proto != nil {
+func init() { file_proto_middleware_etcd_kv_proto_init() }
+func file_proto_middleware_etcd_kv_proto_init() {
+	if File_proto_middleware_etcd_kv_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_etcd_kv_proto_rawDesc), len(file_proto_etcd_kv_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_middleware_etcd_kv_proto_rawDesc), len(file_proto_middleware_etcd_kv_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_proto_etcd_kv_proto_goTypes,
-		DependencyIndexes: file_proto_etcd_kv_proto_depIdxs,
-		EnumInfos:         file_proto_etcd_kv_proto_enumTypes,
-		MessageInfos:      file_proto_etcd_kv_proto_msgTypes,
+		GoTypes:           file_proto_middleware_etcd_kv_proto_goTypes,
+		DependencyIndexes: file_proto_middleware_etcd_kv_proto_depIdxs,
+		EnumInfos:         file_proto_middleware_etcd_kv_proto_enumTypes,
+		MessageInfos:      file_proto_middleware_etcd_kv_proto_msgTypes,
 	}.Build()
-	File_proto_etcd_kv_proto = out.File
-	file_proto_etcd_kv_proto_goTypes = nil
-	file_proto_etcd_kv_proto_depIdxs = nil
+	File_proto_middleware_etcd_kv_proto = out.File
+	file_proto_middleware_etcd_kv_proto_goTypes = nil
+	file_proto_middleware_etcd_kv_proto_depIdxs = nil
 }
