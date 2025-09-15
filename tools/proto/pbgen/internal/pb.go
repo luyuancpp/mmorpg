@@ -277,21 +277,6 @@ func GenerateGoGRPCFromProto(protoPath string) error {
 	return nil
 }
 
-// isInAllowedProtoDir 判断 protoPath 是否是允许处理的目录或 grpc service 目录
-func isInAllowedProtoDir(protoPath string) bool {
-	baseDirName := strings.ToLower(filepath.Base(protoPath)) // 提取最后一级目录名作为 key
-
-	if util.IsPathInProtoDirs(protoPath, config.DbProtoDirIndex) ||
-		util.IsPathInProtoDirs(protoPath, config.LoginProtoDirIndex) ||
-		util.IsPathInProtoDirs(protoPath, config.EtcdProtoDirIndex) {
-		return false
-	}
-	return util.IsPathInProtoDirs(protoPath, config.CommonProtoDirIndex) ||
-		util.IsPathInProtoDirs(protoPath, config.LogicComponentProtoDirIndex) ||
-		util.IsPathInProtoDirs(protoPath, config.ConstantsDirIndex) ||
-		config.GrpcServices[baseDirName]
-}
-
 func BuildProtoGo(protoPath string) error {
 	// 读取 proto 目录
 	fds, err := os.ReadDir(protoPath)
