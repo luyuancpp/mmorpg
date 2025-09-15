@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"game/db/internal/logic/pkg/db"
-	"game/db/pb/taskpb"
+	game "game/generated/pb/game"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -16,7 +16,7 @@ import (
 
 func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 	return func(ctx context.Context, t *asynq.Task) error {
-		var task taskpb.DBTask
+		var task game.DBTask
 		if err := proto.Unmarshal(t.Payload(), &task); err != nil {
 			logx.Errorf("Failed to unmarshal DBTask payload: %v", err)
 			return fmt.Errorf("unmarshal DBTask failed: %v", err)
@@ -68,7 +68,7 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 
 		// 返回结果写入 Redis
 		if task.TaskId != "" {
-			result := &taskpb.TaskResult{
+			result := &game.TaskResult{
 				Success: resultErr == "",
 				Data:    resultData,
 				Error:   resultErr,
