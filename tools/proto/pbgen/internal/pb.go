@@ -121,7 +121,7 @@ func BuildProtoGrpc(protoPath string) error {
 	os.MkdirAll(config.GrpcOutputDirectory, os.FileMode(0777))
 
 	basePath := strings.ToLower(path.Base(protoPath))
-	if _, ok := config.GrpcServices[basePath]; !ok {
+	if !util.CheckGrpcServiceExistence(basePath) {
 		return nil
 	}
 
@@ -423,6 +423,57 @@ func BuildAllProtoc() {
 	// Iterate over configured proto directories
 	for i := 0; i < len(config.ProtoDirs); i++ {
 
+		util.Wg.Add(1)
+		go func(i int) {
+			defer util.Wg.Done()
+			// Execute functions concurrently for each directory
+			err := BuildProto(config.ProtoDirs[i])
+			if err != nil {
+				log.Println(err)
+			}
+		}(i)
+
+		util.Wg.Add(1)
+		go func(i int) {
+			defer util.Wg.Done()
+			err := BuildProtoGrpc(config.ProtoDirs[i])
+			if err != nil {
+				log.Println(err)
+			}
+		}(i)
+
+		util.Wg.Add(1)
+		go func(i int) {
+			defer util.Wg.Done()
+			err := BuildProtoRobotGo(config.ProtoDirs[i])
+			if err != nil {
+				log.Println(err)
+			}
+		}(i)
+
+		util.Wg.Add(1)
+		go func(i int) {
+			defer util.Wg.Done()
+			err := GenerateGoGRPCFromProto(config.ProtoDirs[i])
+			if err != nil {
+				log.Println(err)
+			}
+		}(i)
+
+		util.Wg.Add(1)
+		go func(i int) {
+			defer util.Wg.Done()
+			err := BuildProtoGo(config.ProtoDirs[i])
+			if err != nil {
+				log.Println(err)
+			}
+		}(i)
+	}
+}
+
+func BuildGrpcProtoc() {
+	// Iterate over configured proto directories
+	for i := 0; i < len(config.ProtoDirs); i++ {
 		util.Wg.Add(1)
 		go func(i int) {
 			defer util.Wg.Done()

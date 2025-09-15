@@ -200,7 +200,7 @@ func InitServiceId() {
 }
 
 func GetProtocol(dirName string) uint32 {
-	if config.GrpcServices[dirName] {
+	if util.CheckGrpcServiceExistence(dirName) {
 		return config.GrpcNode
 	}
 	return config.TcpNode

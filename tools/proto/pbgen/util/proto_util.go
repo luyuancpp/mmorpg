@@ -25,6 +25,5 @@ func IsPathInProtoDirs(path string, selfIndex int) bool {
 
 func CheckGrpcServiceExistence(protoPath string) bool {
 	basePath := strings.ToLower(path.Base(protoPath))
-	_, ok := config.GrpcServices[basePath]
-	return ok
+	return strings.Contains(strings.ToLower(basePath), "service/grpc")
 }
