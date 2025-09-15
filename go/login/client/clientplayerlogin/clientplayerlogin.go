@@ -7,7 +7,7 @@ package clientplayerlogin
 import (
 	"context"
 
-	"game/game/generated/generated/pb/game"
+	"game/generated/pb/game/generated/pb/game"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
