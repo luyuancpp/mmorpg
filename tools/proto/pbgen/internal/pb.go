@@ -238,10 +238,6 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 // GenerateGoGRPCFromProto processes .proto files in the given directory
 // and generates Go gRPC code for allowed services.
 func GenerateGoGRPCFromProto(protoPath string) error {
-	if !util.CheckGrpcServiceExistence(protoPath) {
-		return nil
-	}
-
 	// 1. 读取 protoPath 目录下的所有文件
 	files, err := os.ReadDir(protoPath)
 	if err != nil {
@@ -268,7 +264,7 @@ func GenerateGoGRPCFromProto(protoPath string) error {
 
 	// 4. 为所有注册的 grpc 节点目录生成 Go gRPC 代码
 	basePath := strings.ToLower(path.Base(protoPath))
-	outputDir := filepath.Join(config.NodeGoDirectory, basePath)
+	outputDir := config.NodeGoDirectory + basePath
 	err = generateGoProto(protoFiles, outputDir)
 	if err != nil {
 		return err
@@ -301,7 +297,10 @@ func BuildProtoGo(protoPath string) error {
 		return nil
 	}
 
-	return generateGoProto(protoFiles, config.GoGeneratorDirectory)
+	basePath := strings.ToLower(path.Base(protoPath))
+	outputDir := config.NodeGoDirectory + basePath
+
+	return generateGoProto(protoFiles, outputDir)
 }
 
 func generateRobotGoProto(protoFiles []string, outputDir string) error {
@@ -454,14 +453,6 @@ func BuildAllProtoc() {
 			}
 		}(i)
 
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			err := BuildProtoGo(config.ProtoDirs[i])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
 	}
 }
 
