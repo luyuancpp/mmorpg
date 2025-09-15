@@ -3,10 +3,10 @@ package dataloader
 import (
 	"context"
 	"errors"
+	"game/login/internal/logic/pkg/taskmanager"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
-	"login/internal/logic/pkg/taskmanager"
 )
 
 // 定义数据加载完成后的回调函数类型
