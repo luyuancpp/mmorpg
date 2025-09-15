@@ -3,9 +3,9 @@ package task
 import (
 	"context"
 	"fmt"
+	"game/login/internal/config"
 	"github.com/hibiken/asynq"
 	"github.com/zeromicro/go-zero/core/logx"
-	"login/internal/config"
 )
 
 func EnqueueTaskWithID(ctx context.Context, client *asynq.Client, playerID uint64, taskID string, payload []byte) (string, error) {

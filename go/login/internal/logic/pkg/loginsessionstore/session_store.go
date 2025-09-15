@@ -8,7 +8,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
 
-	"login/pb/game"
+	"game/generated/pb/game"
 )
 
 func sessionKey(sessionId uint64) string {
