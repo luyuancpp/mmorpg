@@ -25,7 +25,7 @@ directories = [
     GEN_JSON_DIR / "json",
     paths.SRC_CPP,
     paths.SRC_GO,
-    paths.SRC_CPP_ID_BIT,
+    paths.SRC_CPP_ID_BIT_INDEX,
     paths.SRC_CPP_CONSTANTS,
     paths.SRC_PROTO_CPP,
     paths.SRC_PROTO_CPP_OPERATOR,
@@ -34,7 +34,7 @@ directories = [
     paths.SRC_GO_ID_BIT,
     paths.SRC_GO_CONSTANTS,
     paths.DST_CPP_CODE,
-    paths.DST_CPP_BIT,
+    paths.DST_CPP_ID_BIT_INDEX,
     paths.DST_CPP_CONSTANTS,
     paths.DST_PROTO_CPP,
     paths.DST_PROTO_CPP_OPERATOR,
@@ -43,7 +43,7 @@ directories = [
     paths.SRC_CPP_TABLE_ID,
     paths.DST_CPP_TABLE_ID,
     paths.SRC_GO_TABLE_ID,
-    paths.GO_GEN_DIR,
+    paths.GO_GENERATED_DIR,
 ]
 
 # Create directories if they don't exist
@@ -88,14 +88,14 @@ for command in commands:
 # 执行 md5copy 复制任务（替代 md5tool.py）
 copy_tasks = [
     (paths.SRC_CPP, paths.DST_CPP_CODE),
-    (paths.SRC_CPP_ID_BIT, paths.DST_CPP_BIT),
+    (paths.SRC_CPP_ID_BIT_INDEX, paths.DST_CPP_ID_BIT_INDEX),
     (paths.SRC_CPP_CONSTANTS, paths.DST_CPP_CONSTANTS),
     (paths.SRC_PROTO_CPP, paths.DST_PROTO_CPP),
     (paths.SRC_PROTO_CPP_OPERATOR, paths.DST_PROTO_CPP_OPERATOR),
     (paths.SRC_PROTO_CPP_TIP, paths.DST_PROTO_CPP_TIP),
     (paths.SRC_PROTO_GO, paths.DST_PROTO_GO),
     (paths.SRC_CPP_TABLE_ID, paths.DST_CPP_TABLE_ID),
-    (paths.SRC_GO_TABLE_ID, paths.GO_GEN_DIR),
+    (paths.SRC_GO_TABLE_ID, paths.GO_GENERATED_DIR),
 ]
 
 for src, dst in copy_tasks:

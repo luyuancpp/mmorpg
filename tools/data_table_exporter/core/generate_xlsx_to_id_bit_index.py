@@ -25,7 +25,7 @@ class ExcelToCppConverter:
         self.sheet = self.workbook.sheetnames[0]
         self.worksheet = self.workbook[self.sheet]
         self.bit_index_col = self._find_bit_index_column()
-        self.mapping_file = paths.GENERATOR_TABLE_INDEX_MAPPING_DIR / f"{self.sheet.lower()}_mapping.json"
+        self.mapping_file = paths.GENERATOR_STORAGE_TABLE_INDEX_DIR / f"{self.sheet.lower()}_mapping.json"
 
         # Initialize Jinja2 environment
         self.template_env = Environment(
@@ -125,7 +125,7 @@ class ExcelToCppConverter:
         output_file.write_text(go_constants, encoding='utf-8')
 
     def save_cpp_constants_to_file(self, cpp_constants: str) -> None:
-        output_file = paths.SRC_CPP_ID_BIT / f"{self.sheet.lower()}_table_id_bit_index.h"
+        output_file = paths.SRC_CPP_ID_BIT_INDEX / f"{self.sheet.lower()}_table_id_bit_index.h"
         output_file.write_text(cpp_constants, encoding='utf-8')
 
 
@@ -146,9 +146,9 @@ def process_file(excel_file: Path) -> None:
 
 
 def main() -> None:
-    paths.SRC_CPP_ID_BIT.mkdir(parents=True, exist_ok=True)
+    paths.SRC_CPP_ID_BIT_INDEX.mkdir(parents=True, exist_ok=True)
     paths.SRC_GO_ID_BIT.mkdir(parents=True, exist_ok=True)
-    paths.GENERATOR_TABLE_INDEX_MAPPING_DIR.mkdir(parents=True, exist_ok=True)
+    paths.GENERATOR_STORAGE_TABLE_INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
     try:
         xlsx_files = get_xlsx_files(paths.DATA_TABLES_DIR)

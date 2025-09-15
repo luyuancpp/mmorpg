@@ -11,18 +11,18 @@ import generate_common  # Assuming generate_common contains the necessary functi
 from core import paths
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from core.paths import DATA_TABLES_DIR, PROJECT_GENERATED_CODE_PROTO_TIP_DIR
+from core.paths import DATA_TABLES_DIR, PROTO_TIP_DIR
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # === Path setup (using pathlib) ===
 excel_file_path = DATA_TABLES_DIR / "tip" / "Tip.xlsx"
-json_file_path = paths.GENERATOR_TIP_MAPPING_DIR / "tip_enum_ids.json"
+json_file_path = paths.GENERATOR_STORAGE_TIP_DIR / "tip_enum_ids.json"
 
 # Ensure output directories exist
-PROJECT_GENERATED_CODE_PROTO_TIP_DIR.mkdir(parents=True, exist_ok=True)
-paths.GENERATOR_TIP_MAPPING_DIR.mkdir(parents=True, exist_ok=True)
+PROTO_TIP_DIR.mkdir(parents=True, exist_ok=True)
+paths.GENERATOR_STORAGE_TIP_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def load_existing_ids(json_path: Path):
@@ -99,7 +99,7 @@ def generate_proto_file(group_name, group_data):
             group_data=group_data
         )
 
-        proto_file_path = PROJECT_GENERATED_CODE_PROTO_TIP_DIR / f"{group_name.lower()}_tip.proto"
+        proto_file_path = PROTO_TIP_DIR / f"{group_name.lower()}_tip.proto"
         proto_file_path.write_text(proto_content, encoding='utf-8')
 
         logging.info(f"Proto enums file generated: {proto_file_path}")

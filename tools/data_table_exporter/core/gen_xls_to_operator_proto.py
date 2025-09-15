@@ -10,10 +10,10 @@ from pathlib import Path
 from openpyxl import load_workbook  # Use openpyxl for better support of .xlsx files
 
 from core.paths import (
-    PROJECT_GENERATED_CODE_PROTO_OPERATOR_DIR,
+    PROTO_OPERATOR_DIR,
     GENERATOR_STORAGE_OPERATOR_DIR,
     PROJECT_OPERATOR_XLSX,
-    GENERATOR_STORAGE_OPERATOR_FILE_DIR
+    GENERATOR_STORAGE_OPERATOR_FILE
 )
 
 # Configure logging
@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s -
 
 # Ensure output directories exist
 GENERATOR_STORAGE_OPERATOR_DIR.mkdir(parents=True, exist_ok=True)
-PROJECT_GENERATED_CODE_PROTO_OPERATOR_DIR.mkdir(parents=True, exist_ok=True)
+PROTO_OPERATOR_DIR.mkdir(parents=True, exist_ok=True)
 
 # Use a lock for thread-safe file access
 file_lock = threading.Lock()
@@ -29,8 +29,8 @@ file_lock = threading.Lock()
 def read_temp_id_mapping():
     """Reads existing ID mappings from temp file."""
     try:
-        if GENERATOR_STORAGE_OPERATOR_FILE_DIR.exists():
-            with GENERATOR_STORAGE_OPERATOR_FILE_DIR.open('r', encoding='utf-8') as f:
+        if GENERATOR_STORAGE_OPERATOR_FILE.exists():
+            with GENERATOR_STORAGE_OPERATOR_FILE.open('r', encoding='utf-8') as f:
                 return json.load(f)
         else:
             return {}
@@ -43,7 +43,7 @@ def write_temp_id_mapping(mapping):
     """Writes ID mappings to temp file."""
     try:
         with file_lock:
-            with GENERATOR_STORAGE_OPERATOR_FILE_DIR.open('w', encoding='utf-8') as f:
+            with GENERATOR_STORAGE_OPERATOR_FILE.open('w', encoding='utf-8') as f:
                 json.dump(mapping, f, indent=2)
     except Exception as e:
         logging.error(f"Error writing ID mapping file: {str(e)}")
@@ -109,7 +109,7 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
 
         proto_content += '};\n'
 
-        proto_file_path = PROJECT_GENERATED_CODE_PROTO_OPERATOR_DIR / f"{group_name.lower()}_operator.proto"
+        proto_file_path = PROTO_OPERATOR_DIR / f"{group_name.lower()}_operator.proto"
 
         with file_lock:
             proto_file_path.write_text(proto_content, encoding='utf-8')
