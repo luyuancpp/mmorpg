@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const {{ sheetname }}TabledData& All() const { return data_; }
+    const {{ sheetname }}TableData& All() const { return data_; }
 
     std::pair<const {{ sheetname }}Table*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const {{ sheetname }}Table*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -57,7 +57,7 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    {{ sheetname }}TabledData data_;
+    {{ sheetname }}TableData data_;
     KeyValueDataType kv_data_;
     {% for data in datastring if data %}
         {%- if data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL -%}
@@ -70,7 +70,7 @@ private:
     {%- endfor %}
 };
 
-inline const {{ sheetname }}TabledData& Get{{ sheetname }}AllTable() {
+inline const {{ sheetname }}TableData& Get{{ sheetname }}AllTable() {
     return {{ sheetname }}TableManager::Instance().All();
 }
 

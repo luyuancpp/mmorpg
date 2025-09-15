@@ -62,30 +62,30 @@ struct ConditionTableDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ConditionTableDefaultTypeInternal _ConditionTable_default_instance_;
 
-inline constexpr ConditionTabledData::Impl_::Impl_(
+inline constexpr ConditionTableData::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : data_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR ConditionTabledData::ConditionTabledData(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ConditionTableData::ConditionTableData(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(ConditionTabledData_class_data_.base()),
+    : ::google::protobuf::Message(ConditionTableData_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct ConditionTabledDataDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ConditionTabledDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ConditionTabledDataDefaultTypeInternal() {}
+struct ConditionTableDataDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ConditionTableDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ConditionTableDataDefaultTypeInternal() {}
   union {
-    ConditionTabledData _instance;
+    ConditionTableData _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ConditionTabledDataDefaultTypeInternal _ConditionTabledData_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ConditionTableDataDefaultTypeInternal _ConditionTableData_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_condition_5ftable_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -115,17 +115,17 @@ const ::uint32_t
         3,
         4,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::ConditionTabledData, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::ConditionTableData, _impl_.data_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::ConditionTable)},
-        {21, sizeof(::ConditionTabledData)},
+        {21, sizeof(::ConditionTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_ConditionTable_default_instance_._instance,
-    &::_ConditionTabledData_default_instance_._instance,
+    &::_ConditionTableData_default_instance_._instance,
 };
 const char descriptor_table_protodef_condition_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -134,15 +134,15 @@ const char descriptor_table_protodef_condition_5ftable_2eproto[] ABSL_ATTRIBUTE_
     "\n\ncondition1\030\003 \003(\r\022\022\n\ncondition2\030\004 \003(\r\022\022"
     "\n\ncondition3\030\005 \003(\r\022\022\n\ncondition4\030\006 \003(\r\022\023"
     "\n\013amount_type\030\007 \001(\r\022\016\n\006amount\030\010 \001(\r\022\022\n\nc"
-    "omparison\030\t \001(\r\"4\n\023ConditionTabledData\022\035"
-    "\n\004data\030\001 \003(\0132\017.ConditionTableB\tZ\007pb/game"
-    "b\006proto3"
+    "omparison\030\t \001(\r\"3\n\022ConditionTableData\022\035\n"
+    "\004data\030\001 \003(\0132\017.ConditionTableB\024Z\022generate"
+    "d/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_condition_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_condition_5ftable_2eproto = {
     false,
     false,
-    288,
+    298,
     descriptor_table_protodef_condition_5ftable_2eproto,
     "condition_table.proto",
     &descriptor_table_condition_5ftable_2eproto_once,
@@ -686,119 +686,119 @@ void ConditionTable::InternalSwap(ConditionTable* PROTOBUF_RESTRICT PROTOBUF_NON
 }
 // ===================================================================
 
-class ConditionTabledData::_Internal {
+class ConditionTableData::_Internal {
  public:
 };
 
-ConditionTabledData::ConditionTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+ConditionTableData::ConditionTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ConditionTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ConditionTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:ConditionTabledData)
+  // @@protoc_insertion_point(arena_constructor:ConditionTableData)
 }
-PROTOBUF_NDEBUG_INLINE ConditionTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ConditionTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::ConditionTabledData& from_msg)
+    const ::ConditionTableData& from_msg)
       : data_{visibility, arena, from.data_},
         _cached_size_{0} {}
 
-ConditionTabledData::ConditionTabledData(
+ConditionTableData::ConditionTableData(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const ConditionTabledData& from)
+    const ConditionTableData& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ConditionTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ConditionTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  ConditionTabledData* const _this = this;
+  ConditionTableData* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:ConditionTabledData)
+  // @@protoc_insertion_point(copy_constructor:ConditionTableData)
 }
-PROTOBUF_NDEBUG_INLINE ConditionTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ConditionTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : data_{visibility, arena},
         _cached_size_{0} {}
 
-inline void ConditionTabledData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void ConditionTableData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-ConditionTabledData::~ConditionTabledData() {
-  // @@protoc_insertion_point(destructor:ConditionTabledData)
+ConditionTableData::~ConditionTableData() {
+  // @@protoc_insertion_point(destructor:ConditionTableData)
   SharedDtor(*this);
 }
-inline void ConditionTabledData::SharedDtor(MessageLite& self) {
-  ConditionTabledData& this_ = static_cast<ConditionTabledData&>(self);
+inline void ConditionTableData::SharedDtor(MessageLite& self) {
+  ConditionTableData& this_ = static_cast<ConditionTableData&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL ConditionTabledData::PlacementNew_(
+inline void* PROTOBUF_NONNULL ConditionTableData::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) ConditionTabledData(arena);
+  return ::new (mem) ConditionTableData(arena);
 }
-constexpr auto ConditionTabledData::InternalNewImpl_() {
+constexpr auto ConditionTableData::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(ConditionTabledData, _impl_.data_) +
-          decltype(ConditionTabledData::_impl_.data_)::
+      PROTOBUF_FIELD_OFFSET(ConditionTableData, _impl_.data_) +
+          decltype(ConditionTableData::_impl_.data_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::ZeroInit(
-        sizeof(ConditionTabledData), alignof(ConditionTabledData), *arena_bits);
+        sizeof(ConditionTableData), alignof(ConditionTableData), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&ConditionTabledData::PlacementNew_,
-                                 sizeof(ConditionTabledData),
-                                 alignof(ConditionTabledData));
+    return ::google::protobuf::internal::MessageCreator(&ConditionTableData::PlacementNew_,
+                                 sizeof(ConditionTableData),
+                                 alignof(ConditionTableData));
   }
 }
-constexpr auto ConditionTabledData::InternalGenerateClassData_() {
+constexpr auto ConditionTableData::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_ConditionTabledData_default_instance_._instance,
+          &_ConditionTableData_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &ConditionTabledData::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<ConditionTabledData>(),
+          &ConditionTableData::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ConditionTableData>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &ConditionTabledData::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<ConditionTabledData>(), &ConditionTabledData::ByteSizeLong,
-              &ConditionTabledData::_InternalSerialize,
+          &ConditionTableData::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ConditionTableData>(), &ConditionTableData::ByteSizeLong,
+              &ConditionTableData::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(ConditionTabledData, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(ConditionTableData, _impl_._cached_size_),
           false,
       },
-      &ConditionTabledData::kDescriptorMethods,
+      &ConditionTableData::kDescriptorMethods,
       &descriptor_table_condition_5ftable_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull ConditionTabledData_class_data_ =
-        ConditionTabledData::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull ConditionTableData_class_data_ =
+        ConditionTableData::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ConditionTabledData::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ConditionTabledData_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(ConditionTabledData_class_data_.tc_table);
-  return ConditionTabledData_class_data_.base();
+ConditionTableData::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ConditionTableData_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ConditionTableData_class_data_.tc_table);
+  return ConditionTableData_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-ConditionTabledData::_table_ = {
+ConditionTableData::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -809,21 +809,21 @@ ConditionTabledData::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    ConditionTabledData_class_data_.base(),
+    ConditionTableData_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::ConditionTabledData>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ConditionTableData>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .ConditionTable data = 1;
     {::_pbi::TcParser::FastMtR1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(ConditionTabledData, _impl_.data_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(ConditionTableData, _impl_.data_)}},
   }}, {{
     65535, 65535
   }}, {{
     // repeated .ConditionTable data = 1;
-    {PROTOBUF_FIELD_OFFSET(ConditionTabledData, _impl_.data_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ConditionTableData, _impl_.data_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
@@ -832,8 +832,8 @@ ConditionTabledData::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void ConditionTabledData::Clear() {
-// @@protoc_insertion_point(message_clear_start:ConditionTabledData)
+PROTOBUF_NOINLINE void ConditionTableData::Clear() {
+// @@protoc_insertion_point(message_clear_start:ConditionTableData)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -844,17 +844,17 @@ PROTOBUF_NOINLINE void ConditionTabledData::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL ConditionTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ConditionTableData::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const ConditionTabledData& this_ = static_cast<const ConditionTabledData&>(base);
+  const ConditionTableData& this_ = static_cast<const ConditionTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL ConditionTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ConditionTableData::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const ConditionTabledData& this_ = *this;
+  const ConditionTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:ConditionTabledData)
+  // @@protoc_insertion_point(serialize_to_array_start:ConditionTableData)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -874,18 +874,18 @@ PROTOBUF_NOINLINE void ConditionTabledData::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:ConditionTabledData)
+  // @@protoc_insertion_point(serialize_to_array_end:ConditionTableData)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t ConditionTabledData::ByteSizeLong(const MessageLite& base) {
-  const ConditionTabledData& this_ = static_cast<const ConditionTabledData&>(base);
+::size_t ConditionTableData::ByteSizeLong(const MessageLite& base) {
+  const ConditionTableData& this_ = static_cast<const ConditionTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t ConditionTabledData::ByteSizeLong() const {
-  const ConditionTabledData& this_ = *this;
+::size_t ConditionTableData::ByteSizeLong() const {
+  const ConditionTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:ConditionTabledData)
+  // @@protoc_insertion_point(message_byte_size_start:ConditionTableData)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -906,10 +906,10 @@ PROTOBUF_NOINLINE void ConditionTabledData::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void ConditionTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<ConditionTabledData*>(&to_msg);
-  auto& from = static_cast<const ConditionTabledData&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:ConditionTabledData)
+void ConditionTableData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ConditionTableData*>(&to_msg);
+  auto& from = static_cast<const ConditionTableData&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ConditionTableData)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -919,21 +919,21 @@ void ConditionTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void ConditionTabledData::CopyFrom(const ConditionTabledData& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:ConditionTabledData)
+void ConditionTableData::CopyFrom(const ConditionTableData& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ConditionTableData)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void ConditionTabledData::InternalSwap(ConditionTabledData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void ConditionTableData::InternalSwap(ConditionTableData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.data_.InternalSwap(&other->_impl_.data_);
 }
 
-::google::protobuf::Metadata ConditionTabledData::GetMetadata() const {
+::google::protobuf::Metadata ConditionTableData::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

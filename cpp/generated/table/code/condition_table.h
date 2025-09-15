@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const ConditionTabledData& All() const { return data_; }
+    const ConditionTableData& All() const { return data_; }
 
     std::pair<const ConditionTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const ConditionTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -36,12 +36,12 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    ConditionTabledData data_;
+    ConditionTableData data_;
     KeyValueDataType kv_data_;
     
 };
 
-inline const ConditionTabledData& GetConditionAllTable() {
+inline const ConditionTableData& GetConditionAllTable() {
     return ConditionTableManager::Instance().All();
 }
 

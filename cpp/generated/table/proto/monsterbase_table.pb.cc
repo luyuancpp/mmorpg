@@ -50,30 +50,30 @@ struct MonsterBaseTableDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MonsterBaseTableDefaultTypeInternal _MonsterBaseTable_default_instance_;
 
-inline constexpr MonsterBaseTabledData::Impl_::Impl_(
+inline constexpr MonsterBaseTableData::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : data_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR MonsterBaseTabledData::MonsterBaseTabledData(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR MonsterBaseTableData::MonsterBaseTableData(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(MonsterBaseTabledData_class_data_.base()),
+    : ::google::protobuf::Message(MonsterBaseTableData_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct MonsterBaseTabledDataDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MonsterBaseTabledDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MonsterBaseTabledDataDefaultTypeInternal() {}
+struct MonsterBaseTableDataDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MonsterBaseTableDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MonsterBaseTableDataDefaultTypeInternal() {}
   union {
-    MonsterBaseTabledData _instance;
+    MonsterBaseTableData _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MonsterBaseTabledDataDefaultTypeInternal _MonsterBaseTabledData_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MonsterBaseTableDataDefaultTypeInternal _MonsterBaseTableData_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_monsterbase_5ftable_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -87,30 +87,30 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::MonsterBaseTable, _impl_.id_),
         0,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::MonsterBaseTabledData, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::MonsterBaseTableData, _impl_.data_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::MonsterBaseTable)},
-        {5, sizeof(::MonsterBaseTabledData)},
+        {5, sizeof(::MonsterBaseTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_MonsterBaseTable_default_instance_._instance,
-    &::_MonsterBaseTabledData_default_instance_._instance,
+    &::_MonsterBaseTableData_default_instance_._instance,
 };
 const char descriptor_table_protodef_monsterbase_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\027monsterbase_table.proto\"\036\n\020MonsterBase"
-    "Table\022\n\n\002id\030\001 \001(\r\"8\n\025MonsterBaseTabledDa"
-    "ta\022\037\n\004data\030\001 \003(\0132\021.MonsterBaseTableB\tZ\007p"
-    "b/gameb\006proto3"
+    "Table\022\n\n\002id\030\001 \001(\r\"7\n\024MonsterBaseTableDat"
+    "a\022\037\n\004data\030\001 \003(\0132\021.MonsterBaseTableB\024Z\022ge"
+    "nerated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_monsterbase_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_monsterbase_5ftable_2eproto = {
     false,
     false,
-    134,
+    144,
     descriptor_table_protodef_monsterbase_5ftable_2eproto,
     "monsterbase_table.proto",
     &descriptor_table_monsterbase_5ftable_2eproto_once,
@@ -360,119 +360,119 @@ void MonsterBaseTable::InternalSwap(MonsterBaseTable* PROTOBUF_RESTRICT PROTOBUF
 }
 // ===================================================================
 
-class MonsterBaseTabledData::_Internal {
+class MonsterBaseTableData::_Internal {
  public:
 };
 
-MonsterBaseTabledData::MonsterBaseTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+MonsterBaseTableData::MonsterBaseTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MonsterBaseTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, MonsterBaseTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:MonsterBaseTabledData)
+  // @@protoc_insertion_point(arena_constructor:MonsterBaseTableData)
 }
-PROTOBUF_NDEBUG_INLINE MonsterBaseTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE MonsterBaseTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::MonsterBaseTabledData& from_msg)
+    const ::MonsterBaseTableData& from_msg)
       : data_{visibility, arena, from.data_},
         _cached_size_{0} {}
 
-MonsterBaseTabledData::MonsterBaseTabledData(
+MonsterBaseTableData::MonsterBaseTableData(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const MonsterBaseTabledData& from)
+    const MonsterBaseTableData& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MonsterBaseTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, MonsterBaseTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  MonsterBaseTabledData* const _this = this;
+  MonsterBaseTableData* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:MonsterBaseTabledData)
+  // @@protoc_insertion_point(copy_constructor:MonsterBaseTableData)
 }
-PROTOBUF_NDEBUG_INLINE MonsterBaseTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE MonsterBaseTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : data_{visibility, arena},
         _cached_size_{0} {}
 
-inline void MonsterBaseTabledData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void MonsterBaseTableData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-MonsterBaseTabledData::~MonsterBaseTabledData() {
-  // @@protoc_insertion_point(destructor:MonsterBaseTabledData)
+MonsterBaseTableData::~MonsterBaseTableData() {
+  // @@protoc_insertion_point(destructor:MonsterBaseTableData)
   SharedDtor(*this);
 }
-inline void MonsterBaseTabledData::SharedDtor(MessageLite& self) {
-  MonsterBaseTabledData& this_ = static_cast<MonsterBaseTabledData&>(self);
+inline void MonsterBaseTableData::SharedDtor(MessageLite& self) {
+  MonsterBaseTableData& this_ = static_cast<MonsterBaseTableData&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL MonsterBaseTabledData::PlacementNew_(
+inline void* PROTOBUF_NONNULL MonsterBaseTableData::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) MonsterBaseTabledData(arena);
+  return ::new (mem) MonsterBaseTableData(arena);
 }
-constexpr auto MonsterBaseTabledData::InternalNewImpl_() {
+constexpr auto MonsterBaseTableData::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(MonsterBaseTabledData, _impl_.data_) +
-          decltype(MonsterBaseTabledData::_impl_.data_)::
+      PROTOBUF_FIELD_OFFSET(MonsterBaseTableData, _impl_.data_) +
+          decltype(MonsterBaseTableData::_impl_.data_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::ZeroInit(
-        sizeof(MonsterBaseTabledData), alignof(MonsterBaseTabledData), *arena_bits);
+        sizeof(MonsterBaseTableData), alignof(MonsterBaseTableData), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&MonsterBaseTabledData::PlacementNew_,
-                                 sizeof(MonsterBaseTabledData),
-                                 alignof(MonsterBaseTabledData));
+    return ::google::protobuf::internal::MessageCreator(&MonsterBaseTableData::PlacementNew_,
+                                 sizeof(MonsterBaseTableData),
+                                 alignof(MonsterBaseTableData));
   }
 }
-constexpr auto MonsterBaseTabledData::InternalGenerateClassData_() {
+constexpr auto MonsterBaseTableData::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_MonsterBaseTabledData_default_instance_._instance,
+          &_MonsterBaseTableData_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &MonsterBaseTabledData::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<MonsterBaseTabledData>(),
+          &MonsterBaseTableData::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MonsterBaseTableData>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &MonsterBaseTabledData::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<MonsterBaseTabledData>(), &MonsterBaseTabledData::ByteSizeLong,
-              &MonsterBaseTabledData::_InternalSerialize,
+          &MonsterBaseTableData::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MonsterBaseTableData>(), &MonsterBaseTableData::ByteSizeLong,
+              &MonsterBaseTableData::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(MonsterBaseTabledData, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(MonsterBaseTableData, _impl_._cached_size_),
           false,
       },
-      &MonsterBaseTabledData::kDescriptorMethods,
+      &MonsterBaseTableData::kDescriptorMethods,
       &descriptor_table_monsterbase_5ftable_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull MonsterBaseTabledData_class_data_ =
-        MonsterBaseTabledData::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull MonsterBaseTableData_class_data_ =
+        MonsterBaseTableData::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MonsterBaseTabledData::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MonsterBaseTabledData_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(MonsterBaseTabledData_class_data_.tc_table);
-  return MonsterBaseTabledData_class_data_.base();
+MonsterBaseTableData::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MonsterBaseTableData_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MonsterBaseTableData_class_data_.tc_table);
+  return MonsterBaseTableData_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-MonsterBaseTabledData::_table_ = {
+MonsterBaseTableData::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -483,21 +483,21 @@ MonsterBaseTabledData::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    MonsterBaseTabledData_class_data_.base(),
+    MonsterBaseTableData_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::MonsterBaseTabledData>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::MonsterBaseTableData>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .MonsterBaseTable data = 1;
     {::_pbi::TcParser::FastMtR1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(MonsterBaseTabledData, _impl_.data_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(MonsterBaseTableData, _impl_.data_)}},
   }}, {{
     65535, 65535
   }}, {{
     // repeated .MonsterBaseTable data = 1;
-    {PROTOBUF_FIELD_OFFSET(MonsterBaseTabledData, _impl_.data_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MonsterBaseTableData, _impl_.data_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
@@ -506,8 +506,8 @@ MonsterBaseTabledData::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void MonsterBaseTabledData::Clear() {
-// @@protoc_insertion_point(message_clear_start:MonsterBaseTabledData)
+PROTOBUF_NOINLINE void MonsterBaseTableData::Clear() {
+// @@protoc_insertion_point(message_clear_start:MonsterBaseTableData)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -518,17 +518,17 @@ PROTOBUF_NOINLINE void MonsterBaseTabledData::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL MonsterBaseTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL MonsterBaseTableData::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const MonsterBaseTabledData& this_ = static_cast<const MonsterBaseTabledData&>(base);
+  const MonsterBaseTableData& this_ = static_cast<const MonsterBaseTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL MonsterBaseTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL MonsterBaseTableData::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const MonsterBaseTabledData& this_ = *this;
+  const MonsterBaseTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:MonsterBaseTabledData)
+  // @@protoc_insertion_point(serialize_to_array_start:MonsterBaseTableData)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -548,18 +548,18 @@ PROTOBUF_NOINLINE void MonsterBaseTabledData::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:MonsterBaseTabledData)
+  // @@protoc_insertion_point(serialize_to_array_end:MonsterBaseTableData)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t MonsterBaseTabledData::ByteSizeLong(const MessageLite& base) {
-  const MonsterBaseTabledData& this_ = static_cast<const MonsterBaseTabledData&>(base);
+::size_t MonsterBaseTableData::ByteSizeLong(const MessageLite& base) {
+  const MonsterBaseTableData& this_ = static_cast<const MonsterBaseTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t MonsterBaseTabledData::ByteSizeLong() const {
-  const MonsterBaseTabledData& this_ = *this;
+::size_t MonsterBaseTableData::ByteSizeLong() const {
+  const MonsterBaseTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:MonsterBaseTabledData)
+  // @@protoc_insertion_point(message_byte_size_start:MonsterBaseTableData)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -580,10 +580,10 @@ PROTOBUF_NOINLINE void MonsterBaseTabledData::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void MonsterBaseTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<MonsterBaseTabledData*>(&to_msg);
-  auto& from = static_cast<const MonsterBaseTabledData&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:MonsterBaseTabledData)
+void MonsterBaseTableData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<MonsterBaseTableData*>(&to_msg);
+  auto& from = static_cast<const MonsterBaseTableData&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:MonsterBaseTableData)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -593,21 +593,21 @@ void MonsterBaseTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, c
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void MonsterBaseTabledData::CopyFrom(const MonsterBaseTabledData& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:MonsterBaseTabledData)
+void MonsterBaseTableData::CopyFrom(const MonsterBaseTableData& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:MonsterBaseTableData)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void MonsterBaseTabledData::InternalSwap(MonsterBaseTabledData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void MonsterBaseTableData::InternalSwap(MonsterBaseTableData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.data_.InternalSwap(&other->_impl_.data_);
 }
 
-::google::protobuf::Metadata MonsterBaseTabledData::GetMetadata() const {
+::google::protobuf::Metadata MonsterBaseTableData::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

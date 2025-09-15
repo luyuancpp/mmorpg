@@ -36,14 +36,14 @@ const char descriptor_table_protodef_bag_5foperator_2eproto[] ABSL_ATTRIBUTE_SEC
     protodesc_cold) = {
     "\n\022bag_operator.proto*P\n\003bag\022\n\n\006kBagOK\020\000\022"
     "\014\n\010kUseItem\020\002\022\027\n\023kActivityRewardItem\020\003\022\026"
-    "\n\022kMissionRewardItem\020\004B\tZ\007pb/gameb\006proto"
-    "3"
+    "\n\022kMissionRewardItem\020\004B\024Z\022generated/pb/t"
+    "ableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_bag_5foperator_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_bag_5foperator_2eproto = {
     false,
     false,
-    121,
+    132,
     descriptor_table_protodef_bag_5foperator_2eproto,
     "bag_operator.proto",
     &descriptor_table_bag_5foperator_2eproto_once,

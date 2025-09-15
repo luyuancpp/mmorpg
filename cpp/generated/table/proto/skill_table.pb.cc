@@ -155,30 +155,30 @@ struct SkillTableDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillTableDefaultTypeInternal _SkillTable_default_instance_;
 
-inline constexpr SkillTabledData::Impl_::Impl_(
+inline constexpr SkillTableData::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : data_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR SkillTabledData::SkillTabledData(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR SkillTableData::SkillTableData(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(SkillTabledData_class_data_.base()),
+    : ::google::protobuf::Message(SkillTableData_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct SkillTabledDataDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR SkillTabledDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~SkillTabledDataDefaultTypeInternal() {}
+struct SkillTableDataDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SkillTableDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SkillTableDataDefaultTypeInternal() {}
   union {
-    SkillTabledData _instance;
+    SkillTableData _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillTabledDataDefaultTypeInternal _SkillTabledData_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillTableDataDefaultTypeInternal _SkillTableData_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_skill_5ftable_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -257,7 +257,7 @@ const ::uint32_t
         16,
         0,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::SkillTabledData, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::SkillTableData, _impl_.data_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -266,14 +266,14 @@ static const ::_pbi::MigrationSchema
         {7, sizeof(::Skillrequiredresource)},
         {14, sizeof(::Skillrequestresource)},
         {21, sizeof(::SkillTable)},
-        {70, sizeof(::SkillTabledData)},
+        {70, sizeof(::SkillTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_Skillrequireditem_default_instance_._instance,
     &::_Skillrequiredresource_default_instance_._instance,
     &::_Skillrequestresource_default_instance_._instance,
     &::_SkillTable_default_instance_._instance,
-    &::_SkillTabledData_default_instance_._instance,
+    &::_SkillTableData_default_instance_._instance,
 };
 const char descriptor_table_protodef_skill_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -297,15 +297,15 @@ const char descriptor_table_protodef_skill_5ftable_2eproto[] ABSL_ATTRIBUTE_SECT
     "tresource\022\r\n\005range\030\021 \001(\001\022\021\n\tmax_range\030\022 "
     "\001(\001\022\021\n\tmin_range\030\023 \001(\001\022\023\n\013self_status\030\024 "
     "\001(\r\022\027\n\017required_status\030\025 \001(\r\022\023\n\013cooldown"
-    "_id\030\026 \001(\r\022\016\n\006damage\030\027 \001(\t\",\n\017SkillTabled"
-    "Data\022\031\n\004data\030\001 \003(\0132\013.SkillTableB\tZ\007pb/ga"
-    "meb\006proto3"
+    "_id\030\026 \001(\r\022\016\n\006damage\030\027 \001(\t\"+\n\016SkillTableD"
+    "ata\022\031\n\004data\030\001 \003(\0132\013.SkillTableB\024Z\022genera"
+    "ted/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_skill_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_skill_5ftable_2eproto = {
     false,
     false,
-    890,
+    900,
     descriptor_table_protodef_skill_5ftable_2eproto,
     "skill_table.proto",
     &descriptor_table_skill_5ftable_2eproto_once,
@@ -2112,119 +2112,119 @@ void SkillTable::InternalSwap(SkillTable* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
 }
 // ===================================================================
 
-class SkillTabledData::_Internal {
+class SkillTableData::_Internal {
  public:
 };
 
-SkillTabledData::SkillTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+SkillTableData::SkillTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, SkillTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, SkillTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:SkillTabledData)
+  // @@protoc_insertion_point(arena_constructor:SkillTableData)
 }
-PROTOBUF_NDEBUG_INLINE SkillTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE SkillTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::SkillTabledData& from_msg)
+    const ::SkillTableData& from_msg)
       : data_{visibility, arena, from.data_},
         _cached_size_{0} {}
 
-SkillTabledData::SkillTabledData(
+SkillTableData::SkillTableData(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const SkillTabledData& from)
+    const SkillTableData& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, SkillTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, SkillTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  SkillTabledData* const _this = this;
+  SkillTableData* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:SkillTabledData)
+  // @@protoc_insertion_point(copy_constructor:SkillTableData)
 }
-PROTOBUF_NDEBUG_INLINE SkillTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE SkillTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : data_{visibility, arena},
         _cached_size_{0} {}
 
-inline void SkillTabledData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void SkillTableData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-SkillTabledData::~SkillTabledData() {
-  // @@protoc_insertion_point(destructor:SkillTabledData)
+SkillTableData::~SkillTableData() {
+  // @@protoc_insertion_point(destructor:SkillTableData)
   SharedDtor(*this);
 }
-inline void SkillTabledData::SharedDtor(MessageLite& self) {
-  SkillTabledData& this_ = static_cast<SkillTabledData&>(self);
+inline void SkillTableData::SharedDtor(MessageLite& self) {
+  SkillTableData& this_ = static_cast<SkillTableData&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL SkillTabledData::PlacementNew_(
+inline void* PROTOBUF_NONNULL SkillTableData::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) SkillTabledData(arena);
+  return ::new (mem) SkillTableData(arena);
 }
-constexpr auto SkillTabledData::InternalNewImpl_() {
+constexpr auto SkillTableData::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(SkillTabledData, _impl_.data_) +
-          decltype(SkillTabledData::_impl_.data_)::
+      PROTOBUF_FIELD_OFFSET(SkillTableData, _impl_.data_) +
+          decltype(SkillTableData::_impl_.data_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::ZeroInit(
-        sizeof(SkillTabledData), alignof(SkillTabledData), *arena_bits);
+        sizeof(SkillTableData), alignof(SkillTableData), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&SkillTabledData::PlacementNew_,
-                                 sizeof(SkillTabledData),
-                                 alignof(SkillTabledData));
+    return ::google::protobuf::internal::MessageCreator(&SkillTableData::PlacementNew_,
+                                 sizeof(SkillTableData),
+                                 alignof(SkillTableData));
   }
 }
-constexpr auto SkillTabledData::InternalGenerateClassData_() {
+constexpr auto SkillTableData::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_SkillTabledData_default_instance_._instance,
+          &_SkillTableData_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &SkillTabledData::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<SkillTabledData>(),
+          &SkillTableData::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<SkillTableData>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &SkillTabledData::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<SkillTabledData>(), &SkillTabledData::ByteSizeLong,
-              &SkillTabledData::_InternalSerialize,
+          &SkillTableData::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<SkillTableData>(), &SkillTableData::ByteSizeLong,
+              &SkillTableData::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(SkillTabledData, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(SkillTableData, _impl_._cached_size_),
           false,
       },
-      &SkillTabledData::kDescriptorMethods,
+      &SkillTableData::kDescriptorMethods,
       &descriptor_table_skill_5ftable_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull SkillTabledData_class_data_ =
-        SkillTabledData::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull SkillTableData_class_data_ =
+        SkillTableData::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-SkillTabledData::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&SkillTabledData_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(SkillTabledData_class_data_.tc_table);
-  return SkillTabledData_class_data_.base();
+SkillTableData::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SkillTableData_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(SkillTableData_class_data_.tc_table);
+  return SkillTableData_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-SkillTabledData::_table_ = {
+SkillTableData::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -2235,21 +2235,21 @@ SkillTabledData::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    SkillTabledData_class_data_.base(),
+    SkillTableData_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::SkillTabledData>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::SkillTableData>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .SkillTable data = 1;
     {::_pbi::TcParser::FastMtR1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTabledData, _impl_.data_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTableData, _impl_.data_)}},
   }}, {{
     65535, 65535
   }}, {{
     // repeated .SkillTable data = 1;
-    {PROTOBUF_FIELD_OFFSET(SkillTabledData, _impl_.data_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(SkillTableData, _impl_.data_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
@@ -2258,8 +2258,8 @@ SkillTabledData::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void SkillTabledData::Clear() {
-// @@protoc_insertion_point(message_clear_start:SkillTabledData)
+PROTOBUF_NOINLINE void SkillTableData::Clear() {
+// @@protoc_insertion_point(message_clear_start:SkillTableData)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -2270,17 +2270,17 @@ PROTOBUF_NOINLINE void SkillTabledData::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL SkillTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL SkillTableData::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const SkillTabledData& this_ = static_cast<const SkillTabledData&>(base);
+  const SkillTableData& this_ = static_cast<const SkillTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL SkillTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL SkillTableData::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const SkillTabledData& this_ = *this;
+  const SkillTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:SkillTabledData)
+  // @@protoc_insertion_point(serialize_to_array_start:SkillTableData)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -2300,18 +2300,18 @@ PROTOBUF_NOINLINE void SkillTabledData::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:SkillTabledData)
+  // @@protoc_insertion_point(serialize_to_array_end:SkillTableData)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t SkillTabledData::ByteSizeLong(const MessageLite& base) {
-  const SkillTabledData& this_ = static_cast<const SkillTabledData&>(base);
+::size_t SkillTableData::ByteSizeLong(const MessageLite& base) {
+  const SkillTableData& this_ = static_cast<const SkillTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t SkillTabledData::ByteSizeLong() const {
-  const SkillTabledData& this_ = *this;
+::size_t SkillTableData::ByteSizeLong() const {
+  const SkillTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:SkillTabledData)
+  // @@protoc_insertion_point(message_byte_size_start:SkillTableData)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -2332,10 +2332,10 @@ PROTOBUF_NOINLINE void SkillTabledData::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void SkillTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<SkillTabledData*>(&to_msg);
-  auto& from = static_cast<const SkillTabledData&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:SkillTabledData)
+void SkillTableData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<SkillTableData*>(&to_msg);
+  auto& from = static_cast<const SkillTableData&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:SkillTableData)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -2345,21 +2345,21 @@ void SkillTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void SkillTabledData::CopyFrom(const SkillTabledData& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:SkillTabledData)
+void SkillTableData::CopyFrom(const SkillTableData& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:SkillTableData)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void SkillTabledData::InternalSwap(SkillTabledData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void SkillTableData::InternalSwap(SkillTableData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.data_.InternalSwap(&other->_impl_.data_);
 }
 
-::google::protobuf::Metadata SkillTabledData::GetMetadata() const {
+::google::protobuf::Metadata SkillTableData::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

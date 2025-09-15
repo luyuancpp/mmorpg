@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const ItemTabledData& All() const { return data_; }
+    const ItemTableData& All() const { return data_; }
 
     std::pair<const ItemTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const ItemTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -36,12 +36,12 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    ItemTabledData data_;
+    ItemTableData data_;
     KeyValueDataType kv_data_;
     
 };
 
-inline const ItemTabledData& GetItemAllTable() {
+inline const ItemTableData& GetItemAllTable() {
     return ItemTableManager::Instance().All();
 }
 

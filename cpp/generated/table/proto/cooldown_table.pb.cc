@@ -51,30 +51,30 @@ struct CooldownTableDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CooldownTableDefaultTypeInternal _CooldownTable_default_instance_;
 
-inline constexpr CooldownTabledData::Impl_::Impl_(
+inline constexpr CooldownTableData::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : data_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR CooldownTabledData::CooldownTabledData(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR CooldownTableData::CooldownTableData(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(CooldownTabledData_class_data_.base()),
+    : ::google::protobuf::Message(CooldownTableData_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct CooldownTabledDataDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CooldownTabledDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CooldownTabledDataDefaultTypeInternal() {}
+struct CooldownTableDataDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CooldownTableDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CooldownTableDataDefaultTypeInternal() {}
   union {
-    CooldownTabledData _instance;
+    CooldownTableData _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CooldownTabledDataDefaultTypeInternal _CooldownTabledData_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CooldownTableDataDefaultTypeInternal _CooldownTableData_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_cooldown_5ftable_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -90,30 +90,30 @@ const ::uint32_t
         0,
         1,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::CooldownTabledData, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::CooldownTableData, _impl_.data_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::CooldownTable)},
-        {7, sizeof(::CooldownTabledData)},
+        {7, sizeof(::CooldownTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_CooldownTable_default_instance_._instance,
-    &::_CooldownTabledData_default_instance_._instance,
+    &::_CooldownTableData_default_instance_._instance,
 };
 const char descriptor_table_protodef_cooldown_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\024cooldown_table.proto\"-\n\rCooldownTable\022"
-    "\n\n\002id\030\001 \001(\r\022\020\n\010duration\030\002 \001(\r\"2\n\022Cooldow"
-    "nTabledData\022\034\n\004data\030\001 \003(\0132\016.CooldownTabl"
-    "eB\tZ\007pb/gameb\006proto3"
+    "\n\n\002id\030\001 \001(\r\022\020\n\010duration\030\002 \001(\r\"1\n\021Cooldow"
+    "nTableData\022\034\n\004data\030\001 \003(\0132\016.CooldownTable"
+    "B\024Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_cooldown_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_cooldown_5ftable_2eproto = {
     false,
     false,
-    140,
+    150,
     descriptor_table_protodef_cooldown_5ftable_2eproto,
     "cooldown_table.proto",
     &descriptor_table_cooldown_5ftable_2eproto_once,
@@ -408,119 +408,119 @@ void CooldownTable::InternalSwap(CooldownTable* PROTOBUF_RESTRICT PROTOBUF_NONNU
 }
 // ===================================================================
 
-class CooldownTabledData::_Internal {
+class CooldownTableData::_Internal {
  public:
 };
 
-CooldownTabledData::CooldownTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+CooldownTableData::CooldownTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, CooldownTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, CooldownTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:CooldownTabledData)
+  // @@protoc_insertion_point(arena_constructor:CooldownTableData)
 }
-PROTOBUF_NDEBUG_INLINE CooldownTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE CooldownTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::CooldownTabledData& from_msg)
+    const ::CooldownTableData& from_msg)
       : data_{visibility, arena, from.data_},
         _cached_size_{0} {}
 
-CooldownTabledData::CooldownTabledData(
+CooldownTableData::CooldownTableData(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const CooldownTabledData& from)
+    const CooldownTableData& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, CooldownTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, CooldownTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  CooldownTabledData* const _this = this;
+  CooldownTableData* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:CooldownTabledData)
+  // @@protoc_insertion_point(copy_constructor:CooldownTableData)
 }
-PROTOBUF_NDEBUG_INLINE CooldownTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE CooldownTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : data_{visibility, arena},
         _cached_size_{0} {}
 
-inline void CooldownTabledData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void CooldownTableData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-CooldownTabledData::~CooldownTabledData() {
-  // @@protoc_insertion_point(destructor:CooldownTabledData)
+CooldownTableData::~CooldownTableData() {
+  // @@protoc_insertion_point(destructor:CooldownTableData)
   SharedDtor(*this);
 }
-inline void CooldownTabledData::SharedDtor(MessageLite& self) {
-  CooldownTabledData& this_ = static_cast<CooldownTabledData&>(self);
+inline void CooldownTableData::SharedDtor(MessageLite& self) {
+  CooldownTableData& this_ = static_cast<CooldownTableData&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL CooldownTabledData::PlacementNew_(
+inline void* PROTOBUF_NONNULL CooldownTableData::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) CooldownTabledData(arena);
+  return ::new (mem) CooldownTableData(arena);
 }
-constexpr auto CooldownTabledData::InternalNewImpl_() {
+constexpr auto CooldownTableData::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(CooldownTabledData, _impl_.data_) +
-          decltype(CooldownTabledData::_impl_.data_)::
+      PROTOBUF_FIELD_OFFSET(CooldownTableData, _impl_.data_) +
+          decltype(CooldownTableData::_impl_.data_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::ZeroInit(
-        sizeof(CooldownTabledData), alignof(CooldownTabledData), *arena_bits);
+        sizeof(CooldownTableData), alignof(CooldownTableData), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&CooldownTabledData::PlacementNew_,
-                                 sizeof(CooldownTabledData),
-                                 alignof(CooldownTabledData));
+    return ::google::protobuf::internal::MessageCreator(&CooldownTableData::PlacementNew_,
+                                 sizeof(CooldownTableData),
+                                 alignof(CooldownTableData));
   }
 }
-constexpr auto CooldownTabledData::InternalGenerateClassData_() {
+constexpr auto CooldownTableData::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_CooldownTabledData_default_instance_._instance,
+          &_CooldownTableData_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &CooldownTabledData::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<CooldownTabledData>(),
+          &CooldownTableData::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<CooldownTableData>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &CooldownTabledData::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<CooldownTabledData>(), &CooldownTabledData::ByteSizeLong,
-              &CooldownTabledData::_InternalSerialize,
+          &CooldownTableData::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<CooldownTableData>(), &CooldownTableData::ByteSizeLong,
+              &CooldownTableData::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(CooldownTabledData, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(CooldownTableData, _impl_._cached_size_),
           false,
       },
-      &CooldownTabledData::kDescriptorMethods,
+      &CooldownTableData::kDescriptorMethods,
       &descriptor_table_cooldown_5ftable_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull CooldownTabledData_class_data_ =
-        CooldownTabledData::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull CooldownTableData_class_data_ =
+        CooldownTableData::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-CooldownTabledData::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&CooldownTabledData_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(CooldownTabledData_class_data_.tc_table);
-  return CooldownTabledData_class_data_.base();
+CooldownTableData::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CooldownTableData_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(CooldownTableData_class_data_.tc_table);
+  return CooldownTableData_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-CooldownTabledData::_table_ = {
+CooldownTableData::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -531,21 +531,21 @@ CooldownTabledData::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    CooldownTabledData_class_data_.base(),
+    CooldownTableData_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::CooldownTabledData>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::CooldownTableData>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .CooldownTable data = 1;
     {::_pbi::TcParser::FastMtR1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(CooldownTabledData, _impl_.data_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(CooldownTableData, _impl_.data_)}},
   }}, {{
     65535, 65535
   }}, {{
     // repeated .CooldownTable data = 1;
-    {PROTOBUF_FIELD_OFFSET(CooldownTabledData, _impl_.data_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(CooldownTableData, _impl_.data_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
@@ -554,8 +554,8 @@ CooldownTabledData::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void CooldownTabledData::Clear() {
-// @@protoc_insertion_point(message_clear_start:CooldownTabledData)
+PROTOBUF_NOINLINE void CooldownTableData::Clear() {
+// @@protoc_insertion_point(message_clear_start:CooldownTableData)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -566,17 +566,17 @@ PROTOBUF_NOINLINE void CooldownTabledData::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL CooldownTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL CooldownTableData::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const CooldownTabledData& this_ = static_cast<const CooldownTabledData&>(base);
+  const CooldownTableData& this_ = static_cast<const CooldownTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL CooldownTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL CooldownTableData::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const CooldownTabledData& this_ = *this;
+  const CooldownTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:CooldownTabledData)
+  // @@protoc_insertion_point(serialize_to_array_start:CooldownTableData)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -596,18 +596,18 @@ PROTOBUF_NOINLINE void CooldownTabledData::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:CooldownTabledData)
+  // @@protoc_insertion_point(serialize_to_array_end:CooldownTableData)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t CooldownTabledData::ByteSizeLong(const MessageLite& base) {
-  const CooldownTabledData& this_ = static_cast<const CooldownTabledData&>(base);
+::size_t CooldownTableData::ByteSizeLong(const MessageLite& base) {
+  const CooldownTableData& this_ = static_cast<const CooldownTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t CooldownTabledData::ByteSizeLong() const {
-  const CooldownTabledData& this_ = *this;
+::size_t CooldownTableData::ByteSizeLong() const {
+  const CooldownTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:CooldownTabledData)
+  // @@protoc_insertion_point(message_byte_size_start:CooldownTableData)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -628,10 +628,10 @@ PROTOBUF_NOINLINE void CooldownTabledData::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void CooldownTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<CooldownTabledData*>(&to_msg);
-  auto& from = static_cast<const CooldownTabledData&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:CooldownTabledData)
+void CooldownTableData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<CooldownTableData*>(&to_msg);
+  auto& from = static_cast<const CooldownTableData&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:CooldownTableData)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -641,21 +641,21 @@ void CooldownTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, cons
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void CooldownTabledData::CopyFrom(const CooldownTabledData& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:CooldownTabledData)
+void CooldownTableData::CopyFrom(const CooldownTableData& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:CooldownTableData)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void CooldownTabledData::InternalSwap(CooldownTabledData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void CooldownTableData::InternalSwap(CooldownTableData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.data_.InternalSwap(&other->_impl_.data_);
 }
 
-::google::protobuf::Metadata CooldownTabledData::GetMetadata() const {
+::google::protobuf::Metadata CooldownTableData::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

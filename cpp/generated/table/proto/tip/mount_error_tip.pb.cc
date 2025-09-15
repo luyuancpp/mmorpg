@@ -36,13 +36,13 @@ const char descriptor_table_protodef_mount_5ferror_5ftip_2eproto[] ABSL_ATTRIBUT
     protodesc_cold) = {
     "\n\025mount_error_tip.proto*7\n\013mount_error\022\022"
     "\n\016kMount_errorOK\020\000\022\024\n\020kMountNotMounted\020~"
-    "B\tZ\007pb/gameb\006proto3"
+    "B\024Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_mount_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_mount_5ferror_5ftip_2eproto = {
     false,
     false,
-    99,
+    110,
     descriptor_table_protodef_mount_5ferror_5ftip_2eproto,
     "mount_error_tip.proto",
     &descriptor_table_mount_5ferror_5ftip_2eproto_once,

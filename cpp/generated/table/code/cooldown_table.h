@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const CooldownTabledData& All() const { return data_; }
+    const CooldownTableData& All() const { return data_; }
 
     std::pair<const CooldownTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const CooldownTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -36,12 +36,12 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    CooldownTabledData data_;
+    CooldownTableData data_;
     KeyValueDataType kv_data_;
     
 };
 
-inline const CooldownTabledData& GetCooldownAllTable() {
+inline const CooldownTableData& GetCooldownAllTable() {
     return CooldownTableManager::Instance().All();
 }
 

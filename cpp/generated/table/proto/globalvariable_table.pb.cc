@@ -57,30 +57,30 @@ struct GlobalVariableTableDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GlobalVariableTableDefaultTypeInternal _GlobalVariableTable_default_instance_;
 
-inline constexpr GlobalVariableTabledData::Impl_::Impl_(
+inline constexpr GlobalVariableTableData::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : data_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR GlobalVariableTabledData::GlobalVariableTabledData(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR GlobalVariableTableData::GlobalVariableTableData(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(GlobalVariableTabledData_class_data_.base()),
+    : ::google::protobuf::Message(GlobalVariableTableData_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct GlobalVariableTabledDataDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR GlobalVariableTabledDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~GlobalVariableTabledDataDefaultTypeInternal() {}
+struct GlobalVariableTableDataDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GlobalVariableTableDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GlobalVariableTableDataDefaultTypeInternal() {}
   union {
-    GlobalVariableTabledData _instance;
+    GlobalVariableTableData _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GlobalVariableTabledDataDefaultTypeInternal _GlobalVariableTabledData_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GlobalVariableTableDataDefaultTypeInternal _GlobalVariableTableData_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_globalvariable_5ftable_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -104,32 +104,33 @@ const ::uint32_t
         4,
         5,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::GlobalVariableTabledData, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::GlobalVariableTableData, _impl_.data_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::GlobalVariableTable)},
-        {15, sizeof(::GlobalVariableTabledData)},
+        {15, sizeof(::GlobalVariableTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_GlobalVariableTable_default_instance_._instance,
-    &::_GlobalVariableTabledData_default_instance_._instance,
+    &::_GlobalVariableTableData_default_instance_._instance,
 };
 const char descriptor_table_protodef_globalvariable_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\032globalvariable_table.proto\"y\n\023GlobalVa"
     "riableTable\022\n\n\002id\030\001 \001(\r\022\020\n\010touint32\030\002 \001("
     "\r\022\017\n\007toint32\030\003 \001(\005\022\020\n\010tostring\030\004 \001(\t\022\017\n\007"
-    "tofloat\030\005 \001(\002\022\020\n\010todouble\030\006 \001(\001\">\n\030Globa"
-    "lVariableTabledData\022\"\n\004data\030\001 \003(\0132\024.Glob"
-    "alVariableTableB\tZ\007pb/gameb\006proto3"
+    "tofloat\030\005 \001(\002\022\020\n\010todouble\030\006 \001(\001\"=\n\027Globa"
+    "lVariableTableData\022\"\n\004data\030\001 \003(\0132\024.Globa"
+    "lVariableTableB\024Z\022generated/pb/tableb\006pr"
+    "oto3"
 };
 static ::absl::once_flag descriptor_table_globalvariable_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_globalvariable_5ftable_2eproto = {
     false,
     false,
-    234,
+    244,
     descriptor_table_protodef_globalvariable_5ftable_2eproto,
     "globalvariable_table.proto",
     &descriptor_table_globalvariable_5ftable_2eproto_once,
@@ -568,119 +569,119 @@ void GlobalVariableTable::InternalSwap(GlobalVariableTable* PROTOBUF_RESTRICT PR
 }
 // ===================================================================
 
-class GlobalVariableTabledData::_Internal {
+class GlobalVariableTableData::_Internal {
  public:
 };
 
-GlobalVariableTabledData::GlobalVariableTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+GlobalVariableTableData::GlobalVariableTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, GlobalVariableTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, GlobalVariableTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:GlobalVariableTabledData)
+  // @@protoc_insertion_point(arena_constructor:GlobalVariableTableData)
 }
-PROTOBUF_NDEBUG_INLINE GlobalVariableTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE GlobalVariableTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::GlobalVariableTabledData& from_msg)
+    const ::GlobalVariableTableData& from_msg)
       : data_{visibility, arena, from.data_},
         _cached_size_{0} {}
 
-GlobalVariableTabledData::GlobalVariableTabledData(
+GlobalVariableTableData::GlobalVariableTableData(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const GlobalVariableTabledData& from)
+    const GlobalVariableTableData& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, GlobalVariableTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, GlobalVariableTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  GlobalVariableTabledData* const _this = this;
+  GlobalVariableTableData* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:GlobalVariableTabledData)
+  // @@protoc_insertion_point(copy_constructor:GlobalVariableTableData)
 }
-PROTOBUF_NDEBUG_INLINE GlobalVariableTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE GlobalVariableTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : data_{visibility, arena},
         _cached_size_{0} {}
 
-inline void GlobalVariableTabledData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void GlobalVariableTableData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-GlobalVariableTabledData::~GlobalVariableTabledData() {
-  // @@protoc_insertion_point(destructor:GlobalVariableTabledData)
+GlobalVariableTableData::~GlobalVariableTableData() {
+  // @@protoc_insertion_point(destructor:GlobalVariableTableData)
   SharedDtor(*this);
 }
-inline void GlobalVariableTabledData::SharedDtor(MessageLite& self) {
-  GlobalVariableTabledData& this_ = static_cast<GlobalVariableTabledData&>(self);
+inline void GlobalVariableTableData::SharedDtor(MessageLite& self) {
+  GlobalVariableTableData& this_ = static_cast<GlobalVariableTableData&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL GlobalVariableTabledData::PlacementNew_(
+inline void* PROTOBUF_NONNULL GlobalVariableTableData::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) GlobalVariableTabledData(arena);
+  return ::new (mem) GlobalVariableTableData(arena);
 }
-constexpr auto GlobalVariableTabledData::InternalNewImpl_() {
+constexpr auto GlobalVariableTableData::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(GlobalVariableTabledData, _impl_.data_) +
-          decltype(GlobalVariableTabledData::_impl_.data_)::
+      PROTOBUF_FIELD_OFFSET(GlobalVariableTableData, _impl_.data_) +
+          decltype(GlobalVariableTableData::_impl_.data_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::ZeroInit(
-        sizeof(GlobalVariableTabledData), alignof(GlobalVariableTabledData), *arena_bits);
+        sizeof(GlobalVariableTableData), alignof(GlobalVariableTableData), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&GlobalVariableTabledData::PlacementNew_,
-                                 sizeof(GlobalVariableTabledData),
-                                 alignof(GlobalVariableTabledData));
+    return ::google::protobuf::internal::MessageCreator(&GlobalVariableTableData::PlacementNew_,
+                                 sizeof(GlobalVariableTableData),
+                                 alignof(GlobalVariableTableData));
   }
 }
-constexpr auto GlobalVariableTabledData::InternalGenerateClassData_() {
+constexpr auto GlobalVariableTableData::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_GlobalVariableTabledData_default_instance_._instance,
+          &_GlobalVariableTableData_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &GlobalVariableTabledData::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<GlobalVariableTabledData>(),
+          &GlobalVariableTableData::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GlobalVariableTableData>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &GlobalVariableTabledData::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<GlobalVariableTabledData>(), &GlobalVariableTabledData::ByteSizeLong,
-              &GlobalVariableTabledData::_InternalSerialize,
+          &GlobalVariableTableData::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GlobalVariableTableData>(), &GlobalVariableTableData::ByteSizeLong,
+              &GlobalVariableTableData::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(GlobalVariableTabledData, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(GlobalVariableTableData, _impl_._cached_size_),
           false,
       },
-      &GlobalVariableTabledData::kDescriptorMethods,
+      &GlobalVariableTableData::kDescriptorMethods,
       &descriptor_table_globalvariable_5ftable_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull GlobalVariableTabledData_class_data_ =
-        GlobalVariableTabledData::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull GlobalVariableTableData_class_data_ =
+        GlobalVariableTableData::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-GlobalVariableTabledData::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&GlobalVariableTabledData_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(GlobalVariableTabledData_class_data_.tc_table);
-  return GlobalVariableTabledData_class_data_.base();
+GlobalVariableTableData::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GlobalVariableTableData_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GlobalVariableTableData_class_data_.tc_table);
+  return GlobalVariableTableData_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-GlobalVariableTabledData::_table_ = {
+GlobalVariableTableData::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -691,21 +692,21 @@ GlobalVariableTabledData::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    GlobalVariableTabledData_class_data_.base(),
+    GlobalVariableTableData_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::GlobalVariableTabledData>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::GlobalVariableTableData>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .GlobalVariableTable data = 1;
     {::_pbi::TcParser::FastMtR1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(GlobalVariableTabledData, _impl_.data_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(GlobalVariableTableData, _impl_.data_)}},
   }}, {{
     65535, 65535
   }}, {{
     // repeated .GlobalVariableTable data = 1;
-    {PROTOBUF_FIELD_OFFSET(GlobalVariableTabledData, _impl_.data_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(GlobalVariableTableData, _impl_.data_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
@@ -714,8 +715,8 @@ GlobalVariableTabledData::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void GlobalVariableTabledData::Clear() {
-// @@protoc_insertion_point(message_clear_start:GlobalVariableTabledData)
+PROTOBUF_NOINLINE void GlobalVariableTableData::Clear() {
+// @@protoc_insertion_point(message_clear_start:GlobalVariableTableData)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -726,17 +727,17 @@ PROTOBUF_NOINLINE void GlobalVariableTabledData::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL GlobalVariableTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL GlobalVariableTableData::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const GlobalVariableTabledData& this_ = static_cast<const GlobalVariableTabledData&>(base);
+  const GlobalVariableTableData& this_ = static_cast<const GlobalVariableTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL GlobalVariableTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL GlobalVariableTableData::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const GlobalVariableTabledData& this_ = *this;
+  const GlobalVariableTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:GlobalVariableTabledData)
+  // @@protoc_insertion_point(serialize_to_array_start:GlobalVariableTableData)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -756,18 +757,18 @@ PROTOBUF_NOINLINE void GlobalVariableTabledData::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:GlobalVariableTabledData)
+  // @@protoc_insertion_point(serialize_to_array_end:GlobalVariableTableData)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t GlobalVariableTabledData::ByteSizeLong(const MessageLite& base) {
-  const GlobalVariableTabledData& this_ = static_cast<const GlobalVariableTabledData&>(base);
+::size_t GlobalVariableTableData::ByteSizeLong(const MessageLite& base) {
+  const GlobalVariableTableData& this_ = static_cast<const GlobalVariableTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t GlobalVariableTabledData::ByteSizeLong() const {
-  const GlobalVariableTabledData& this_ = *this;
+::size_t GlobalVariableTableData::ByteSizeLong() const {
+  const GlobalVariableTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:GlobalVariableTabledData)
+  // @@protoc_insertion_point(message_byte_size_start:GlobalVariableTableData)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -788,10 +789,10 @@ PROTOBUF_NOINLINE void GlobalVariableTabledData::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void GlobalVariableTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<GlobalVariableTabledData*>(&to_msg);
-  auto& from = static_cast<const GlobalVariableTabledData&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:GlobalVariableTabledData)
+void GlobalVariableTableData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<GlobalVariableTableData*>(&to_msg);
+  auto& from = static_cast<const GlobalVariableTableData&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:GlobalVariableTableData)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -801,21 +802,21 @@ void GlobalVariableTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void GlobalVariableTabledData::CopyFrom(const GlobalVariableTabledData& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:GlobalVariableTabledData)
+void GlobalVariableTableData::CopyFrom(const GlobalVariableTableData& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:GlobalVariableTableData)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void GlobalVariableTabledData::InternalSwap(GlobalVariableTabledData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void GlobalVariableTableData::InternalSwap(GlobalVariableTableData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.data_.InternalSwap(&other->_impl_.data_);
 }
 
-::google::protobuf::Metadata GlobalVariableTabledData::GetMetadata() const {
+::google::protobuf::Metadata GlobalVariableTableData::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -77,30 +77,30 @@ struct RewardTableDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RewardTableDefaultTypeInternal _RewardTable_default_instance_;
 
-inline constexpr RewardTabledData::Impl_::Impl_(
+inline constexpr RewardTableData::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : data_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR RewardTabledData::RewardTabledData(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR RewardTableData::RewardTableData(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(RewardTabledData_class_data_.base()),
+    : ::google::protobuf::Message(RewardTableData_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct RewardTabledDataDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RewardTabledDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RewardTabledDataDefaultTypeInternal() {}
+struct RewardTableDataDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RewardTableDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RewardTableDataDefaultTypeInternal() {}
   union {
-    RewardTabledData _instance;
+    RewardTableData _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RewardTabledDataDefaultTypeInternal _RewardTabledData_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RewardTableDataDefaultTypeInternal _RewardTableData_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_reward_5ftable_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -123,34 +123,34 @@ const ::uint32_t
         0,
         ~0u,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::RewardTabledData, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::RewardTableData, _impl_.data_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::Rewardreward)},
         {7, sizeof(::RewardTable)},
-        {14, sizeof(::RewardTabledData)},
+        {14, sizeof(::RewardTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_Rewardreward_default_instance_._instance,
     &::_RewardTable_default_instance_._instance,
-    &::_RewardTabledData_default_instance_._instance,
+    &::_RewardTableData_default_instance_._instance,
 };
 const char descriptor_table_protodef_reward_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\022reward_table.proto\"9\n\014Rewardreward\022\023\n\013"
     "reward_item\030\001 \001(\r\022\024\n\014reward_count\030\002 \001(\r\""
     "8\n\013RewardTable\022\n\n\002id\030\001 \001(\r\022\035\n\006reward\030\002 \003"
-    "(\0132\r.Rewardreward\".\n\020RewardTabledData\022\032\n"
-    "\004data\030\001 \003(\0132\014.RewardTableB\tZ\007pb/gameb\006pr"
-    "oto3"
+    "(\0132\r.Rewardreward\"-\n\017RewardTableData\022\032\n\004"
+    "data\030\001 \003(\0132\014.RewardTableB\024Z\022generated/pb"
+    "/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_reward_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_reward_5ftable_2eproto = {
     false,
     false,
-    204,
+    214,
     descriptor_table_protodef_reward_5ftable_2eproto,
     "reward_table.proto",
     &descriptor_table_reward_5ftable_2eproto_once,
@@ -740,119 +740,119 @@ void RewardTable::InternalSwap(RewardTable* PROTOBUF_RESTRICT PROTOBUF_NONNULL o
 }
 // ===================================================================
 
-class RewardTabledData::_Internal {
+class RewardTableData::_Internal {
  public:
 };
 
-RewardTabledData::RewardTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+RewardTableData::RewardTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, RewardTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, RewardTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:RewardTabledData)
+  // @@protoc_insertion_point(arena_constructor:RewardTableData)
 }
-PROTOBUF_NDEBUG_INLINE RewardTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE RewardTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::RewardTabledData& from_msg)
+    const ::RewardTableData& from_msg)
       : data_{visibility, arena, from.data_},
         _cached_size_{0} {}
 
-RewardTabledData::RewardTabledData(
+RewardTableData::RewardTableData(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const RewardTabledData& from)
+    const RewardTableData& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, RewardTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, RewardTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  RewardTabledData* const _this = this;
+  RewardTableData* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:RewardTabledData)
+  // @@protoc_insertion_point(copy_constructor:RewardTableData)
 }
-PROTOBUF_NDEBUG_INLINE RewardTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE RewardTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : data_{visibility, arena},
         _cached_size_{0} {}
 
-inline void RewardTabledData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void RewardTableData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-RewardTabledData::~RewardTabledData() {
-  // @@protoc_insertion_point(destructor:RewardTabledData)
+RewardTableData::~RewardTableData() {
+  // @@protoc_insertion_point(destructor:RewardTableData)
   SharedDtor(*this);
 }
-inline void RewardTabledData::SharedDtor(MessageLite& self) {
-  RewardTabledData& this_ = static_cast<RewardTabledData&>(self);
+inline void RewardTableData::SharedDtor(MessageLite& self) {
+  RewardTableData& this_ = static_cast<RewardTableData&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL RewardTabledData::PlacementNew_(
+inline void* PROTOBUF_NONNULL RewardTableData::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) RewardTabledData(arena);
+  return ::new (mem) RewardTableData(arena);
 }
-constexpr auto RewardTabledData::InternalNewImpl_() {
+constexpr auto RewardTableData::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(RewardTabledData, _impl_.data_) +
-          decltype(RewardTabledData::_impl_.data_)::
+      PROTOBUF_FIELD_OFFSET(RewardTableData, _impl_.data_) +
+          decltype(RewardTableData::_impl_.data_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::ZeroInit(
-        sizeof(RewardTabledData), alignof(RewardTabledData), *arena_bits);
+        sizeof(RewardTableData), alignof(RewardTableData), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&RewardTabledData::PlacementNew_,
-                                 sizeof(RewardTabledData),
-                                 alignof(RewardTabledData));
+    return ::google::protobuf::internal::MessageCreator(&RewardTableData::PlacementNew_,
+                                 sizeof(RewardTableData),
+                                 alignof(RewardTableData));
   }
 }
-constexpr auto RewardTabledData::InternalGenerateClassData_() {
+constexpr auto RewardTableData::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_RewardTabledData_default_instance_._instance,
+          &_RewardTableData_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &RewardTabledData::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<RewardTabledData>(),
+          &RewardTableData::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RewardTableData>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &RewardTabledData::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<RewardTabledData>(), &RewardTabledData::ByteSizeLong,
-              &RewardTabledData::_InternalSerialize,
+          &RewardTableData::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RewardTableData>(), &RewardTableData::ByteSizeLong,
+              &RewardTableData::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(RewardTabledData, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(RewardTableData, _impl_._cached_size_),
           false,
       },
-      &RewardTabledData::kDescriptorMethods,
+      &RewardTableData::kDescriptorMethods,
       &descriptor_table_reward_5ftable_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull RewardTabledData_class_data_ =
-        RewardTabledData::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull RewardTableData_class_data_ =
+        RewardTableData::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-RewardTabledData::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&RewardTabledData_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(RewardTabledData_class_data_.tc_table);
-  return RewardTabledData_class_data_.base();
+RewardTableData::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RewardTableData_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RewardTableData_class_data_.tc_table);
+  return RewardTableData_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-RewardTabledData::_table_ = {
+RewardTableData::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -863,21 +863,21 @@ RewardTabledData::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    RewardTabledData_class_data_.base(),
+    RewardTableData_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::RewardTabledData>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::RewardTableData>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .RewardTable data = 1;
     {::_pbi::TcParser::FastMtR1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(RewardTabledData, _impl_.data_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(RewardTableData, _impl_.data_)}},
   }}, {{
     65535, 65535
   }}, {{
     // repeated .RewardTable data = 1;
-    {PROTOBUF_FIELD_OFFSET(RewardTabledData, _impl_.data_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(RewardTableData, _impl_.data_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
@@ -886,8 +886,8 @@ RewardTabledData::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void RewardTabledData::Clear() {
-// @@protoc_insertion_point(message_clear_start:RewardTabledData)
+PROTOBUF_NOINLINE void RewardTableData::Clear() {
+// @@protoc_insertion_point(message_clear_start:RewardTableData)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -898,17 +898,17 @@ PROTOBUF_NOINLINE void RewardTabledData::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL RewardTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL RewardTableData::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const RewardTabledData& this_ = static_cast<const RewardTabledData&>(base);
+  const RewardTableData& this_ = static_cast<const RewardTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL RewardTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL RewardTableData::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const RewardTabledData& this_ = *this;
+  const RewardTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:RewardTabledData)
+  // @@protoc_insertion_point(serialize_to_array_start:RewardTableData)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -928,18 +928,18 @@ PROTOBUF_NOINLINE void RewardTabledData::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:RewardTabledData)
+  // @@protoc_insertion_point(serialize_to_array_end:RewardTableData)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t RewardTabledData::ByteSizeLong(const MessageLite& base) {
-  const RewardTabledData& this_ = static_cast<const RewardTabledData&>(base);
+::size_t RewardTableData::ByteSizeLong(const MessageLite& base) {
+  const RewardTableData& this_ = static_cast<const RewardTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t RewardTabledData::ByteSizeLong() const {
-  const RewardTabledData& this_ = *this;
+::size_t RewardTableData::ByteSizeLong() const {
+  const RewardTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:RewardTabledData)
+  // @@protoc_insertion_point(message_byte_size_start:RewardTableData)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -960,10 +960,10 @@ PROTOBUF_NOINLINE void RewardTabledData::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void RewardTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<RewardTabledData*>(&to_msg);
-  auto& from = static_cast<const RewardTabledData&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:RewardTabledData)
+void RewardTableData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<RewardTableData*>(&to_msg);
+  auto& from = static_cast<const RewardTableData&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:RewardTableData)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -973,21 +973,21 @@ void RewardTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void RewardTabledData::CopyFrom(const RewardTabledData& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:RewardTabledData)
+void RewardTableData::CopyFrom(const RewardTableData& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:RewardTableData)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void RewardTabledData::InternalSwap(RewardTabledData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void RewardTableData::InternalSwap(RewardTableData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.data_.InternalSwap(&other->_impl_.data_);
 }
 
-::google::protobuf::Metadata RewardTabledData::GetMetadata() const {
+::google::protobuf::Metadata RewardTableData::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -60,6 +60,10 @@ class BuffTable;
 struct BuffTableDefaultTypeInternal;
 extern BuffTableDefaultTypeInternal _BuffTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull BuffTable_class_data_;
+class BuffTableData;
+struct BuffTableDataDefaultTypeInternal;
+extern BuffTableDataDefaultTypeInternal _BuffTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull BuffTableData_class_data_;
 class BuffTable_DispeltagEntry_DoNotUse;
 struct BuffTable_DispeltagEntry_DoNotUseDefaultTypeInternal;
 extern BuffTable_DispeltagEntry_DoNotUseDefaultTypeInternal _BuffTable_DispeltagEntry_DoNotUse_default_instance_;
@@ -72,10 +76,6 @@ class BuffTable_TagEntry_DoNotUse;
 struct BuffTable_TagEntry_DoNotUseDefaultTypeInternal;
 extern BuffTable_TagEntry_DoNotUseDefaultTypeInternal _BuffTable_TagEntry_DoNotUse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull BuffTable_TagEntry_DoNotUse_class_data_;
-class BuffTabledData;
-struct BuffTabledDataDefaultTypeInternal;
-extern BuffTabledDataDefaultTypeInternal _BuffTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull BuffTabledData_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -707,30 +707,30 @@ class BuffTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull BuffTable_class_data_;
 // -------------------------------------------------------------------
 
-class BuffTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:BuffTabledData) */ {
+class BuffTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:BuffTableData) */ {
  public:
-  inline BuffTabledData() : BuffTabledData(nullptr) {}
-  ~BuffTabledData() PROTOBUF_FINAL;
+  inline BuffTableData() : BuffTableData(nullptr) {}
+  ~BuffTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(BuffTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(BuffTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(BuffTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(BuffTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR BuffTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR BuffTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline BuffTabledData(const BuffTabledData& from) : BuffTabledData(nullptr, from) {}
-  inline BuffTabledData(BuffTabledData&& from) noexcept
-      : BuffTabledData(nullptr, ::std::move(from)) {}
-  inline BuffTabledData& operator=(const BuffTabledData& from) {
+  inline BuffTableData(const BuffTableData& from) : BuffTableData(nullptr, from) {}
+  inline BuffTableData(BuffTableData&& from) noexcept
+      : BuffTableData(nullptr, ::std::move(from)) {}
+  inline BuffTableData& operator=(const BuffTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline BuffTabledData& operator=(BuffTabledData&& from) noexcept {
+  inline BuffTableData& operator=(BuffTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -758,13 +758,13 @@ class BuffTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const BuffTabledData& default_instance() {
-    return *reinterpret_cast<const BuffTabledData*>(
-        &_BuffTabledData_default_instance_);
+  static const BuffTableData& default_instance() {
+    return *reinterpret_cast<const BuffTableData*>(
+        &_BuffTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 4;
-  friend void swap(BuffTabledData& a, BuffTabledData& b) { a.Swap(&b); }
-  inline void Swap(BuffTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(BuffTableData& a, BuffTableData& b) { a.Swap(&b); }
+  inline void Swap(BuffTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -772,7 +772,7 @@ class BuffTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(BuffTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(BuffTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -780,13 +780,13 @@ class BuffTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  BuffTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<BuffTabledData>(arena);
+  BuffTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<BuffTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const BuffTabledData& from);
+  void CopyFrom(const BuffTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const BuffTabledData& from) { BuffTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const BuffTableData& from) { BuffTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -822,18 +822,18 @@ class BuffTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(BuffTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(BuffTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "BuffTabledData"; }
+  static ::absl::string_view FullMessageName() { return "BuffTableData"; }
 
  protected:
-  explicit BuffTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  BuffTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BuffTabledData& from);
-  BuffTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BuffTabledData&& from) noexcept
-      : BuffTabledData(arena) {
+  explicit BuffTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  BuffTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BuffTableData& from);
+  BuffTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BuffTableData&& from) noexcept
+      : BuffTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -869,7 +869,7 @@ class BuffTabledData final : public ::google::protobuf::Message
   const ::BuffTable& data(int index) const;
   ::BuffTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::BuffTable>& data() const;
-  // @@protoc_insertion_point(class_scope:BuffTabledData)
+  // @@protoc_insertion_point(class_scope:BuffTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -892,7 +892,7 @@ class BuffTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const BuffTabledData& from_msg);
+        const BuffTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::BuffTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -901,7 +901,7 @@ class BuffTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_buff_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull BuffTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull BuffTableData_class_data_;
 
 // ===================================================================
 
@@ -1618,54 +1618,54 @@ inline void BuffTable::set_allocated_bonusdamage(::std::string* PROTOBUF_NULLABL
 
 // -------------------------------------------------------------------
 
-// BuffTabledData
+// BuffTableData
 
 // repeated .BuffTable data = 1;
-inline int BuffTabledData::_internal_data_size() const {
+inline int BuffTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int BuffTabledData::data_size() const {
+inline int BuffTableData::data_size() const {
   return _internal_data_size();
 }
-inline void BuffTabledData::clear_data() {
+inline void BuffTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::BuffTable* PROTOBUF_NONNULL BuffTabledData::mutable_data(int index)
+inline ::BuffTable* PROTOBUF_NONNULL BuffTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:BuffTabledData.data)
+  // @@protoc_insertion_point(field_mutable:BuffTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::BuffTable>* PROTOBUF_NONNULL BuffTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::BuffTable>* PROTOBUF_NONNULL BuffTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:BuffTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:BuffTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::BuffTable& BuffTabledData::data(int index) const
+inline const ::BuffTable& BuffTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:BuffTabledData.data)
+  // @@protoc_insertion_point(field_get:BuffTableData.data)
   return _internal_data().Get(index);
 }
-inline ::BuffTable* PROTOBUF_NONNULL BuffTabledData::add_data()
+inline ::BuffTable* PROTOBUF_NONNULL BuffTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::BuffTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:BuffTabledData.data)
+  // @@protoc_insertion_point(field_add:BuffTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::BuffTable>& BuffTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::BuffTable>& BuffTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:BuffTabledData.data)
+  // @@protoc_insertion_point(field_list:BuffTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::BuffTable>&
-BuffTabledData::_internal_data() const {
+BuffTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::BuffTable>* PROTOBUF_NONNULL
-BuffTabledData::_internal_mutable_data() {
+BuffTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

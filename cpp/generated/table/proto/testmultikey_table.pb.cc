@@ -188,30 +188,30 @@ struct TestMultiKeyTableDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TestMultiKeyTableDefaultTypeInternal _TestMultiKeyTable_default_instance_;
 
-inline constexpr TestMultiKeyTabledData::Impl_::Impl_(
+inline constexpr TestMultiKeyTableData::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : data_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR TestMultiKeyTabledData::TestMultiKeyTabledData(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR TestMultiKeyTableData::TestMultiKeyTableData(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(TestMultiKeyTabledData_class_data_.base()),
+    : ::google::protobuf::Message(TestMultiKeyTableData_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct TestMultiKeyTabledDataDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR TestMultiKeyTabledDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~TestMultiKeyTabledDataDefaultTypeInternal() {}
+struct TestMultiKeyTableDataDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR TestMultiKeyTableDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~TestMultiKeyTableDataDefaultTypeInternal() {}
   union {
-    TestMultiKeyTabledData _instance;
+    TestMultiKeyTableData _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TestMultiKeyTabledDataDefaultTypeInternal _TestMultiKeyTabledData_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TestMultiKeyTableDataDefaultTypeInternal _TestMultiKeyTableData_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_testmultikey_5ftable_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -282,7 +282,7 @@ const ::uint32_t
         6,
         7,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::TestMultiKeyTabledData, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::TestMultiKeyTableData, _impl_.data_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -293,7 +293,7 @@ static const ::_pbi::MigrationSchema
         {21, sizeof(::TestMultiKeyTable_Tag1Entry_DoNotUse)},
         {28, sizeof(::TestMultiKeyTable_Immunetag1Entry_DoNotUse)},
         {35, sizeof(::TestMultiKeyTable)},
-        {62, sizeof(::TestMultiKeyTabledData)},
+        {62, sizeof(::TestMultiKeyTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_TestMultiKeytag1_default_instance_._instance,
@@ -302,7 +302,7 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_TestMultiKeyTable_Tag1Entry_DoNotUse_default_instance_._instance,
     &::_TestMultiKeyTable_Immunetag1Entry_DoNotUse_default_instance_._instance,
     &::_TestMultiKeyTable_default_instance_._instance,
-    &::_TestMultiKeyTabledData_default_instance_._instance,
+    &::_TestMultiKeyTableData_default_instance_._instance,
 };
 const char descriptor_table_protodef_testmultikey_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -322,15 +322,15 @@ const char descriptor_table_protodef_testmultikey_5ftable_2eproto[] ABSL_ATTRIBU
     "32key\030\013 \001(\r\022\020\n\010min32key\030\014 \001(\005\032+\n\tTag1Ent"
     "ry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\0321\n\017Im"
     "munetag1Entry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001("
-    "\t:\0028\001\":\n\026TestMultiKeyTabledData\022 \n\004data\030"
-    "\001 \003(\0132\022.TestMultiKeyTableB\tZ\007pb/gameb\006pr"
-    "oto3"
+    "\t:\0028\001\"9\n\025TestMultiKeyTableData\022 \n\004data\030\001"
+    " \003(\0132\022.TestMultiKeyTableB\024Z\022generated/pb"
+    "/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_testmultikey_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_testmultikey_5ftable_2eproto = {
     false,
     false,
-    724,
+    734,
     descriptor_table_protodef_testmultikey_5ftable_2eproto,
     "testmultikey_table.proto",
     &descriptor_table_testmultikey_5ftable_2eproto_once,
@@ -2139,119 +2139,119 @@ void TestMultiKeyTable::InternalSwap(TestMultiKeyTable* PROTOBUF_RESTRICT PROTOB
 }
 // ===================================================================
 
-class TestMultiKeyTabledData::_Internal {
+class TestMultiKeyTableData::_Internal {
  public:
 };
 
-TestMultiKeyTabledData::TestMultiKeyTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+TestMultiKeyTableData::TestMultiKeyTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, TestMultiKeyTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, TestMultiKeyTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:TestMultiKeyTabledData)
+  // @@protoc_insertion_point(arena_constructor:TestMultiKeyTableData)
 }
-PROTOBUF_NDEBUG_INLINE TestMultiKeyTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE TestMultiKeyTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::TestMultiKeyTabledData& from_msg)
+    const ::TestMultiKeyTableData& from_msg)
       : data_{visibility, arena, from.data_},
         _cached_size_{0} {}
 
-TestMultiKeyTabledData::TestMultiKeyTabledData(
+TestMultiKeyTableData::TestMultiKeyTableData(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const TestMultiKeyTabledData& from)
+    const TestMultiKeyTableData& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, TestMultiKeyTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, TestMultiKeyTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  TestMultiKeyTabledData* const _this = this;
+  TestMultiKeyTableData* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:TestMultiKeyTabledData)
+  // @@protoc_insertion_point(copy_constructor:TestMultiKeyTableData)
 }
-PROTOBUF_NDEBUG_INLINE TestMultiKeyTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE TestMultiKeyTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : data_{visibility, arena},
         _cached_size_{0} {}
 
-inline void TestMultiKeyTabledData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void TestMultiKeyTableData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-TestMultiKeyTabledData::~TestMultiKeyTabledData() {
-  // @@protoc_insertion_point(destructor:TestMultiKeyTabledData)
+TestMultiKeyTableData::~TestMultiKeyTableData() {
+  // @@protoc_insertion_point(destructor:TestMultiKeyTableData)
   SharedDtor(*this);
 }
-inline void TestMultiKeyTabledData::SharedDtor(MessageLite& self) {
-  TestMultiKeyTabledData& this_ = static_cast<TestMultiKeyTabledData&>(self);
+inline void TestMultiKeyTableData::SharedDtor(MessageLite& self) {
+  TestMultiKeyTableData& this_ = static_cast<TestMultiKeyTableData&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL TestMultiKeyTabledData::PlacementNew_(
+inline void* PROTOBUF_NONNULL TestMultiKeyTableData::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) TestMultiKeyTabledData(arena);
+  return ::new (mem) TestMultiKeyTableData(arena);
 }
-constexpr auto TestMultiKeyTabledData::InternalNewImpl_() {
+constexpr auto TestMultiKeyTableData::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(TestMultiKeyTabledData, _impl_.data_) +
-          decltype(TestMultiKeyTabledData::_impl_.data_)::
+      PROTOBUF_FIELD_OFFSET(TestMultiKeyTableData, _impl_.data_) +
+          decltype(TestMultiKeyTableData::_impl_.data_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::ZeroInit(
-        sizeof(TestMultiKeyTabledData), alignof(TestMultiKeyTabledData), *arena_bits);
+        sizeof(TestMultiKeyTableData), alignof(TestMultiKeyTableData), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&TestMultiKeyTabledData::PlacementNew_,
-                                 sizeof(TestMultiKeyTabledData),
-                                 alignof(TestMultiKeyTabledData));
+    return ::google::protobuf::internal::MessageCreator(&TestMultiKeyTableData::PlacementNew_,
+                                 sizeof(TestMultiKeyTableData),
+                                 alignof(TestMultiKeyTableData));
   }
 }
-constexpr auto TestMultiKeyTabledData::InternalGenerateClassData_() {
+constexpr auto TestMultiKeyTableData::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_TestMultiKeyTabledData_default_instance_._instance,
+          &_TestMultiKeyTableData_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &TestMultiKeyTabledData::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<TestMultiKeyTabledData>(),
+          &TestMultiKeyTableData::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<TestMultiKeyTableData>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &TestMultiKeyTabledData::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<TestMultiKeyTabledData>(), &TestMultiKeyTabledData::ByteSizeLong,
-              &TestMultiKeyTabledData::_InternalSerialize,
+          &TestMultiKeyTableData::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<TestMultiKeyTableData>(), &TestMultiKeyTableData::ByteSizeLong,
+              &TestMultiKeyTableData::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(TestMultiKeyTabledData, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(TestMultiKeyTableData, _impl_._cached_size_),
           false,
       },
-      &TestMultiKeyTabledData::kDescriptorMethods,
+      &TestMultiKeyTableData::kDescriptorMethods,
       &descriptor_table_testmultikey_5ftable_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull TestMultiKeyTabledData_class_data_ =
-        TestMultiKeyTabledData::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull TestMultiKeyTableData_class_data_ =
+        TestMultiKeyTableData::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-TestMultiKeyTabledData::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&TestMultiKeyTabledData_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(TestMultiKeyTabledData_class_data_.tc_table);
-  return TestMultiKeyTabledData_class_data_.base();
+TestMultiKeyTableData::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&TestMultiKeyTableData_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(TestMultiKeyTableData_class_data_.tc_table);
+  return TestMultiKeyTableData_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-TestMultiKeyTabledData::_table_ = {
+TestMultiKeyTableData::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -2262,21 +2262,21 @@ TestMultiKeyTabledData::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    TestMultiKeyTabledData_class_data_.base(),
+    TestMultiKeyTableData_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::TestMultiKeyTabledData>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::TestMultiKeyTableData>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .TestMultiKeyTable data = 1;
     {::_pbi::TcParser::FastMtR1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeyTabledData, _impl_.data_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeyTableData, _impl_.data_)}},
   }}, {{
     65535, 65535
   }}, {{
     // repeated .TestMultiKeyTable data = 1;
-    {PROTOBUF_FIELD_OFFSET(TestMultiKeyTabledData, _impl_.data_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(TestMultiKeyTableData, _impl_.data_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
@@ -2285,8 +2285,8 @@ TestMultiKeyTabledData::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void TestMultiKeyTabledData::Clear() {
-// @@protoc_insertion_point(message_clear_start:TestMultiKeyTabledData)
+PROTOBUF_NOINLINE void TestMultiKeyTableData::Clear() {
+// @@protoc_insertion_point(message_clear_start:TestMultiKeyTableData)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -2297,17 +2297,17 @@ PROTOBUF_NOINLINE void TestMultiKeyTabledData::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL TestMultiKeyTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL TestMultiKeyTableData::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const TestMultiKeyTabledData& this_ = static_cast<const TestMultiKeyTabledData&>(base);
+  const TestMultiKeyTableData& this_ = static_cast<const TestMultiKeyTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL TestMultiKeyTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL TestMultiKeyTableData::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const TestMultiKeyTabledData& this_ = *this;
+  const TestMultiKeyTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:TestMultiKeyTabledData)
+  // @@protoc_insertion_point(serialize_to_array_start:TestMultiKeyTableData)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -2327,18 +2327,18 @@ PROTOBUF_NOINLINE void TestMultiKeyTabledData::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:TestMultiKeyTabledData)
+  // @@protoc_insertion_point(serialize_to_array_end:TestMultiKeyTableData)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t TestMultiKeyTabledData::ByteSizeLong(const MessageLite& base) {
-  const TestMultiKeyTabledData& this_ = static_cast<const TestMultiKeyTabledData&>(base);
+::size_t TestMultiKeyTableData::ByteSizeLong(const MessageLite& base) {
+  const TestMultiKeyTableData& this_ = static_cast<const TestMultiKeyTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t TestMultiKeyTabledData::ByteSizeLong() const {
-  const TestMultiKeyTabledData& this_ = *this;
+::size_t TestMultiKeyTableData::ByteSizeLong() const {
+  const TestMultiKeyTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:TestMultiKeyTabledData)
+  // @@protoc_insertion_point(message_byte_size_start:TestMultiKeyTableData)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -2359,10 +2359,10 @@ PROTOBUF_NOINLINE void TestMultiKeyTabledData::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void TestMultiKeyTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<TestMultiKeyTabledData*>(&to_msg);
-  auto& from = static_cast<const TestMultiKeyTabledData&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:TestMultiKeyTabledData)
+void TestMultiKeyTableData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<TestMultiKeyTableData*>(&to_msg);
+  auto& from = static_cast<const TestMultiKeyTableData&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:TestMultiKeyTableData)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -2372,21 +2372,21 @@ void TestMultiKeyTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, 
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void TestMultiKeyTabledData::CopyFrom(const TestMultiKeyTabledData& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:TestMultiKeyTabledData)
+void TestMultiKeyTableData::CopyFrom(const TestMultiKeyTableData& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:TestMultiKeyTableData)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void TestMultiKeyTabledData::InternalSwap(TestMultiKeyTabledData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void TestMultiKeyTableData::InternalSwap(TestMultiKeyTableData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.data_.InternalSwap(&other->_impl_.data_);
 }
 
-::google::protobuf::Metadata TestMultiKeyTabledData::GetMetadata() const {
+::google::protobuf::Metadata TestMultiKeyTableData::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

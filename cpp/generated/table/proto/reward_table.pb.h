@@ -56,10 +56,10 @@ class RewardTable;
 struct RewardTableDefaultTypeInternal;
 extern RewardTableDefaultTypeInternal _RewardTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull RewardTable_class_data_;
-class RewardTabledData;
-struct RewardTabledDataDefaultTypeInternal;
-extern RewardTabledDataDefaultTypeInternal _RewardTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull RewardTabledData_class_data_;
+class RewardTableData;
+struct RewardTableDataDefaultTypeInternal;
+extern RewardTableDataDefaultTypeInternal _RewardTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull RewardTableData_class_data_;
 class Rewardreward;
 struct RewardrewardDefaultTypeInternal;
 extern RewardrewardDefaultTypeInternal _Rewardreward_default_instance_;
@@ -488,30 +488,30 @@ class RewardTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull RewardTable_class_data_;
 // -------------------------------------------------------------------
 
-class RewardTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:RewardTabledData) */ {
+class RewardTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:RewardTableData) */ {
  public:
-  inline RewardTabledData() : RewardTabledData(nullptr) {}
-  ~RewardTabledData() PROTOBUF_FINAL;
+  inline RewardTableData() : RewardTableData(nullptr) {}
+  ~RewardTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(RewardTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(RewardTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(RewardTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(RewardTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR RewardTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR RewardTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline RewardTabledData(const RewardTabledData& from) : RewardTabledData(nullptr, from) {}
-  inline RewardTabledData(RewardTabledData&& from) noexcept
-      : RewardTabledData(nullptr, ::std::move(from)) {}
-  inline RewardTabledData& operator=(const RewardTabledData& from) {
+  inline RewardTableData(const RewardTableData& from) : RewardTableData(nullptr, from) {}
+  inline RewardTableData(RewardTableData&& from) noexcept
+      : RewardTableData(nullptr, ::std::move(from)) {}
+  inline RewardTableData& operator=(const RewardTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline RewardTabledData& operator=(RewardTabledData&& from) noexcept {
+  inline RewardTableData& operator=(RewardTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -539,13 +539,13 @@ class RewardTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const RewardTabledData& default_instance() {
-    return *reinterpret_cast<const RewardTabledData*>(
-        &_RewardTabledData_default_instance_);
+  static const RewardTableData& default_instance() {
+    return *reinterpret_cast<const RewardTableData*>(
+        &_RewardTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 2;
-  friend void swap(RewardTabledData& a, RewardTabledData& b) { a.Swap(&b); }
-  inline void Swap(RewardTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(RewardTableData& a, RewardTableData& b) { a.Swap(&b); }
+  inline void Swap(RewardTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -553,7 +553,7 @@ class RewardTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(RewardTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(RewardTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -561,13 +561,13 @@ class RewardTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  RewardTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<RewardTabledData>(arena);
+  RewardTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<RewardTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const RewardTabledData& from);
+  void CopyFrom(const RewardTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const RewardTabledData& from) { RewardTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const RewardTableData& from) { RewardTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -603,18 +603,18 @@ class RewardTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(RewardTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(RewardTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "RewardTabledData"; }
+  static ::absl::string_view FullMessageName() { return "RewardTableData"; }
 
  protected:
-  explicit RewardTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  RewardTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RewardTabledData& from);
-  RewardTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, RewardTabledData&& from) noexcept
-      : RewardTabledData(arena) {
+  explicit RewardTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  RewardTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RewardTableData& from);
+  RewardTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, RewardTableData&& from) noexcept
+      : RewardTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -650,7 +650,7 @@ class RewardTabledData final : public ::google::protobuf::Message
   const ::RewardTable& data(int index) const;
   ::RewardTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::RewardTable>& data() const;
-  // @@protoc_insertion_point(class_scope:RewardTabledData)
+  // @@protoc_insertion_point(class_scope:RewardTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -673,7 +673,7 @@ class RewardTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const RewardTabledData& from_msg);
+        const RewardTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::RewardTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -682,7 +682,7 @@ class RewardTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_reward_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull RewardTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull RewardTableData_class_data_;
 
 // ===================================================================
 
@@ -828,54 +828,54 @@ RewardTable::_internal_mutable_reward() {
 
 // -------------------------------------------------------------------
 
-// RewardTabledData
+// RewardTableData
 
 // repeated .RewardTable data = 1;
-inline int RewardTabledData::_internal_data_size() const {
+inline int RewardTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int RewardTabledData::data_size() const {
+inline int RewardTableData::data_size() const {
   return _internal_data_size();
 }
-inline void RewardTabledData::clear_data() {
+inline void RewardTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::RewardTable* PROTOBUF_NONNULL RewardTabledData::mutable_data(int index)
+inline ::RewardTable* PROTOBUF_NONNULL RewardTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:RewardTabledData.data)
+  // @@protoc_insertion_point(field_mutable:RewardTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::RewardTable>* PROTOBUF_NONNULL RewardTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::RewardTable>* PROTOBUF_NONNULL RewardTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:RewardTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:RewardTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::RewardTable& RewardTabledData::data(int index) const
+inline const ::RewardTable& RewardTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:RewardTabledData.data)
+  // @@protoc_insertion_point(field_get:RewardTableData.data)
   return _internal_data().Get(index);
 }
-inline ::RewardTable* PROTOBUF_NONNULL RewardTabledData::add_data()
+inline ::RewardTable* PROTOBUF_NONNULL RewardTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::RewardTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:RewardTabledData.data)
+  // @@protoc_insertion_point(field_add:RewardTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::RewardTable>& RewardTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::RewardTable>& RewardTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:RewardTabledData.data)
+  // @@protoc_insertion_point(field_list:RewardTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::RewardTable>&
-RewardTabledData::_internal_data() const {
+RewardTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::RewardTable>* PROTOBUF_NONNULL
-RewardTabledData::_internal_mutable_data() {
+RewardTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

@@ -10,8 +10,8 @@ import (
 )
 
 type {{ sheetname }}TableManager struct {
-    data []*pb.{{ sheetname }}
-    kvData map[int32]*pb.{{ sheetname }}
+    data []*pb.{{ sheetname }}Table
+    kvData map[int32]*pb.{{ sheetname }}Table
     {%- for data in datastring %}
         {%- if data and data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL %}
     kv{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data map[{{ convert_to_go_type(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}]*pb.{{ sheetname }}
@@ -21,7 +21,7 @@ type {{ sheetname }}TableManager struct {
 
 func New{{ sheetname }}TableManager() *{{ sheetname }}TableManager {
     return &{{ sheetname }}TableManager{
-        kvData: make(map[int32]*pb.{{ sheetname }}),
+        kvData: make(map[int32]*pb.{{ sheetname }}Table),
         {%- for data in datastring %}
             {%- if data and data[generate_common.COL_OBJ_TABLE_KEY_INDEX] == generate_common.TABLE_KEY_CELL %}
         kv{{ data[generate_common.COL_OBJ_COLUMN_NAME] | title }}Data: make(map[{{ convert_to_go_type(data[generate_common.COL_OBJ_COLUMN_TYPE]) }}]*pb.{{ sheetname }}),
@@ -37,7 +37,7 @@ func (m *{{ sheetname }}TableManager) Load(configDir string) error {
         return fmt.Errorf("failed to read file: %%w", err)
     }
 
-    var container pb.{{ sheetname }}List
+    var container pb.{{ sheetname }}TableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
         return fmt.Errorf("failed to parse json: %%w", err)
     }

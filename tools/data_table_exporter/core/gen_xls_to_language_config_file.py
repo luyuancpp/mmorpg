@@ -103,7 +103,7 @@ def process_workbook(filepath: Path):
                 sheetname=sheetname,
                 generate_common=generate_common,
                 convert_to_go_type=convert_to_go_type,
-                proto_import_path="generated/pb/table"  # ⚠️ 修改为你的真实路径
+                proto_import_path="game/generated/pb/table"  # ⚠️ 修改为你的真实路径
             )
             PROJECT_GENERATED_CODE_TABLE_PB_GO_DIR.mkdir(parents=True, exist_ok=True)
             generate_common.mywrite(go_content, PROJECT_GENERATED_CODE_TABLE_PB_GO_DIR / f"{sheetname_lower}_table.go")

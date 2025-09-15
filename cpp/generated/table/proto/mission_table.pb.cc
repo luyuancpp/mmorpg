@@ -59,30 +59,30 @@ struct MissionTableDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionTableDefaultTypeInternal _MissionTable_default_instance_;
 
-inline constexpr MissionTabledData::Impl_::Impl_(
+inline constexpr MissionTableData::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : data_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR MissionTabledData::MissionTabledData(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR MissionTableData::MissionTableData(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(MissionTabledData_class_data_.base()),
+    : ::google::protobuf::Message(MissionTableData_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct MissionTabledDataDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MissionTabledDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MissionTabledDataDefaultTypeInternal() {}
+struct MissionTableDataDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MissionTableDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MissionTableDataDefaultTypeInternal() {}
   union {
-    MissionTabledData _instance;
+    MissionTableData _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionTabledDataDefaultTypeInternal _MissionTabledData_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionTableDataDefaultTypeInternal _MissionTableData_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_mission_5ftable_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -110,17 +110,17 @@ const ::uint32_t
         5,
         ~0u,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::MissionTabledData, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::MissionTableData, _impl_.data_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::MissionTable)},
-        {19, sizeof(::MissionTabledData)},
+        {19, sizeof(::MissionTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_MissionTable_default_instance_._instance,
-    &::_MissionTabledData_default_instance_._instance,
+    &::_MissionTableData_default_instance_._instance,
 };
 const char descriptor_table_protodef_mission_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -129,14 +129,15 @@ const char descriptor_table_protodef_mission_5ftable_2eproto[] ABSL_ATTRIBUTE_SE
     "ion_type\030\003 \001(\r\022\030\n\020mission_sub_type\030\004 \001(\r"
     "\022\027\n\017condition_order\030\005 \001(\r\022\023\n\013auto_reward"
     "\030\006 \001(\r\022\021\n\treward_id\030\007 \001(\r\022\027\n\017next_missio"
-    "n_id\030\010 \003(\r\"0\n\021MissionTabledData\022\033\n\004data\030"
-    "\001 \003(\0132\r.MissionTableB\tZ\007pb/gameb\006proto3"
+    "n_id\030\010 \003(\r\"/\n\020MissionTableData\022\033\n\004data\030\001"
+    " \003(\0132\r.MissionTableB\024Z\022generated/pb/tabl"
+    "eb\006proto3"
 };
 static ::absl::once_flag descriptor_table_mission_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_mission_5ftable_2eproto = {
     false,
     false,
-    279,
+    289,
     descriptor_table_protodef_mission_5ftable_2eproto,
     "mission_table.proto",
     &descriptor_table_mission_5ftable_2eproto_once,
@@ -634,119 +635,119 @@ void MissionTable::InternalSwap(MissionTable* PROTOBUF_RESTRICT PROTOBUF_NONNULL
 }
 // ===================================================================
 
-class MissionTabledData::_Internal {
+class MissionTableData::_Internal {
  public:
 };
 
-MissionTabledData::MissionTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+MissionTableData::MissionTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MissionTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, MissionTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:MissionTabledData)
+  // @@protoc_insertion_point(arena_constructor:MissionTableData)
 }
-PROTOBUF_NDEBUG_INLINE MissionTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE MissionTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::MissionTabledData& from_msg)
+    const ::MissionTableData& from_msg)
       : data_{visibility, arena, from.data_},
         _cached_size_{0} {}
 
-MissionTabledData::MissionTabledData(
+MissionTableData::MissionTableData(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const MissionTabledData& from)
+    const MissionTableData& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MissionTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, MissionTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  MissionTabledData* const _this = this;
+  MissionTableData* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:MissionTabledData)
+  // @@protoc_insertion_point(copy_constructor:MissionTableData)
 }
-PROTOBUF_NDEBUG_INLINE MissionTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE MissionTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : data_{visibility, arena},
         _cached_size_{0} {}
 
-inline void MissionTabledData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void MissionTableData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-MissionTabledData::~MissionTabledData() {
-  // @@protoc_insertion_point(destructor:MissionTabledData)
+MissionTableData::~MissionTableData() {
+  // @@protoc_insertion_point(destructor:MissionTableData)
   SharedDtor(*this);
 }
-inline void MissionTabledData::SharedDtor(MessageLite& self) {
-  MissionTabledData& this_ = static_cast<MissionTabledData&>(self);
+inline void MissionTableData::SharedDtor(MessageLite& self) {
+  MissionTableData& this_ = static_cast<MissionTableData&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL MissionTabledData::PlacementNew_(
+inline void* PROTOBUF_NONNULL MissionTableData::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) MissionTabledData(arena);
+  return ::new (mem) MissionTableData(arena);
 }
-constexpr auto MissionTabledData::InternalNewImpl_() {
+constexpr auto MissionTableData::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(MissionTabledData, _impl_.data_) +
-          decltype(MissionTabledData::_impl_.data_)::
+      PROTOBUF_FIELD_OFFSET(MissionTableData, _impl_.data_) +
+          decltype(MissionTableData::_impl_.data_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::ZeroInit(
-        sizeof(MissionTabledData), alignof(MissionTabledData), *arena_bits);
+        sizeof(MissionTableData), alignof(MissionTableData), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&MissionTabledData::PlacementNew_,
-                                 sizeof(MissionTabledData),
-                                 alignof(MissionTabledData));
+    return ::google::protobuf::internal::MessageCreator(&MissionTableData::PlacementNew_,
+                                 sizeof(MissionTableData),
+                                 alignof(MissionTableData));
   }
 }
-constexpr auto MissionTabledData::InternalGenerateClassData_() {
+constexpr auto MissionTableData::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_MissionTabledData_default_instance_._instance,
+          &_MissionTableData_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &MissionTabledData::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<MissionTabledData>(),
+          &MissionTableData::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MissionTableData>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &MissionTabledData::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<MissionTabledData>(), &MissionTabledData::ByteSizeLong,
-              &MissionTabledData::_InternalSerialize,
+          &MissionTableData::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MissionTableData>(), &MissionTableData::ByteSizeLong,
+              &MissionTableData::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(MissionTabledData, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(MissionTableData, _impl_._cached_size_),
           false,
       },
-      &MissionTabledData::kDescriptorMethods,
+      &MissionTableData::kDescriptorMethods,
       &descriptor_table_mission_5ftable_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull MissionTabledData_class_data_ =
-        MissionTabledData::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull MissionTableData_class_data_ =
+        MissionTableData::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MissionTabledData::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MissionTabledData_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(MissionTabledData_class_data_.tc_table);
-  return MissionTabledData_class_data_.base();
+MissionTableData::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MissionTableData_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MissionTableData_class_data_.tc_table);
+  return MissionTableData_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-MissionTabledData::_table_ = {
+MissionTableData::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -757,21 +758,21 @@ MissionTabledData::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    MissionTabledData_class_data_.base(),
+    MissionTableData_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::MissionTabledData>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::MissionTableData>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .MissionTable data = 1;
     {::_pbi::TcParser::FastMtR1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(MissionTabledData, _impl_.data_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(MissionTableData, _impl_.data_)}},
   }}, {{
     65535, 65535
   }}, {{
     // repeated .MissionTable data = 1;
-    {PROTOBUF_FIELD_OFFSET(MissionTabledData, _impl_.data_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionTableData, _impl_.data_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
@@ -780,8 +781,8 @@ MissionTabledData::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void MissionTabledData::Clear() {
-// @@protoc_insertion_point(message_clear_start:MissionTabledData)
+PROTOBUF_NOINLINE void MissionTableData::Clear() {
+// @@protoc_insertion_point(message_clear_start:MissionTableData)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -792,17 +793,17 @@ PROTOBUF_NOINLINE void MissionTabledData::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL MissionTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL MissionTableData::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const MissionTabledData& this_ = static_cast<const MissionTabledData&>(base);
+  const MissionTableData& this_ = static_cast<const MissionTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL MissionTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL MissionTableData::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const MissionTabledData& this_ = *this;
+  const MissionTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:MissionTabledData)
+  // @@protoc_insertion_point(serialize_to_array_start:MissionTableData)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -822,18 +823,18 @@ PROTOBUF_NOINLINE void MissionTabledData::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:MissionTabledData)
+  // @@protoc_insertion_point(serialize_to_array_end:MissionTableData)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t MissionTabledData::ByteSizeLong(const MessageLite& base) {
-  const MissionTabledData& this_ = static_cast<const MissionTabledData&>(base);
+::size_t MissionTableData::ByteSizeLong(const MessageLite& base) {
+  const MissionTableData& this_ = static_cast<const MissionTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t MissionTabledData::ByteSizeLong() const {
-  const MissionTabledData& this_ = *this;
+::size_t MissionTableData::ByteSizeLong() const {
+  const MissionTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:MissionTabledData)
+  // @@protoc_insertion_point(message_byte_size_start:MissionTableData)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -854,10 +855,10 @@ PROTOBUF_NOINLINE void MissionTabledData::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void MissionTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<MissionTabledData*>(&to_msg);
-  auto& from = static_cast<const MissionTabledData&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:MissionTabledData)
+void MissionTableData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<MissionTableData*>(&to_msg);
+  auto& from = static_cast<const MissionTableData&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:MissionTableData)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -867,21 +868,21 @@ void MissionTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void MissionTabledData::CopyFrom(const MissionTabledData& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:MissionTabledData)
+void MissionTableData::CopyFrom(const MissionTableData& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:MissionTableData)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void MissionTabledData::InternalSwap(MissionTabledData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void MissionTableData::InternalSwap(MissionTableData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.data_.InternalSwap(&other->_impl_.data_);
 }
 
-::google::protobuf::Metadata MissionTabledData::GetMetadata() const {
+::google::protobuf::Metadata MissionTableData::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -40,14 +40,14 @@ const char descriptor_table_protodef_mission_5ferror_5ftip_2eproto[] ABSL_ATTRIB
     "eted\020^\022\035\n\031kMissionIdNotInRewardList\020_\022#\n"
     "\037kPlayerMissionComponentNotFound\020`\022\026\n\022kM"
     "issionIdRepeated\020a\022\032\n\026kConditionIdOutOfR"
-    "ange\020b\022\031\n\025kMissionNotInProgress\020cB\tZ\007pb/"
-    "gameb\006proto3"
+    "ange\020b\022\031\n\025kMissionNotInProgress\020cB\024Z\022gen"
+    "erated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_mission_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_mission_5ferror_5ftip_2eproto = {
     false,
     false,
-    292,
+    303,
     descriptor_table_protodef_mission_5ferror_5ftip_2eproto,
     "mission_error_tip.proto",
     &descriptor_table_mission_5ferror_5ftip_2eproto_once,

@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const MissionTabledData& All() const { return data_; }
+    const MissionTableData& All() const { return data_; }
 
     std::pair<const MissionTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const MissionTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -36,12 +36,12 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    MissionTabledData data_;
+    MissionTableData data_;
     KeyValueDataType kv_data_;
     
 };
 
-inline const MissionTabledData& GetMissionAllTable() {
+inline const MissionTableData& GetMissionAllTable() {
     return MissionTableManager::Instance().All();
 }
 

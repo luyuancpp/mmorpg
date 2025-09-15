@@ -56,10 +56,10 @@ class MonsterBaseTable;
 struct MonsterBaseTableDefaultTypeInternal;
 extern MonsterBaseTableDefaultTypeInternal _MonsterBaseTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull MonsterBaseTable_class_data_;
-class MonsterBaseTabledData;
-struct MonsterBaseTabledDataDefaultTypeInternal;
-extern MonsterBaseTabledDataDefaultTypeInternal _MonsterBaseTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull MonsterBaseTabledData_class_data_;
+class MonsterBaseTableData;
+struct MonsterBaseTableDataDefaultTypeInternal;
+extern MonsterBaseTableDataDefaultTypeInternal _MonsterBaseTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull MonsterBaseTableData_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -262,30 +262,30 @@ class MonsterBaseTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull MonsterBaseTable_class_data_;
 // -------------------------------------------------------------------
 
-class MonsterBaseTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:MonsterBaseTabledData) */ {
+class MonsterBaseTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:MonsterBaseTableData) */ {
  public:
-  inline MonsterBaseTabledData() : MonsterBaseTabledData(nullptr) {}
-  ~MonsterBaseTabledData() PROTOBUF_FINAL;
+  inline MonsterBaseTableData() : MonsterBaseTableData(nullptr) {}
+  ~MonsterBaseTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(MonsterBaseTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(MonsterBaseTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(MonsterBaseTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MonsterBaseTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR MonsterBaseTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR MonsterBaseTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline MonsterBaseTabledData(const MonsterBaseTabledData& from) : MonsterBaseTabledData(nullptr, from) {}
-  inline MonsterBaseTabledData(MonsterBaseTabledData&& from) noexcept
-      : MonsterBaseTabledData(nullptr, ::std::move(from)) {}
-  inline MonsterBaseTabledData& operator=(const MonsterBaseTabledData& from) {
+  inline MonsterBaseTableData(const MonsterBaseTableData& from) : MonsterBaseTableData(nullptr, from) {}
+  inline MonsterBaseTableData(MonsterBaseTableData&& from) noexcept
+      : MonsterBaseTableData(nullptr, ::std::move(from)) {}
+  inline MonsterBaseTableData& operator=(const MonsterBaseTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline MonsterBaseTabledData& operator=(MonsterBaseTabledData&& from) noexcept {
+  inline MonsterBaseTableData& operator=(MonsterBaseTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -313,13 +313,13 @@ class MonsterBaseTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const MonsterBaseTabledData& default_instance() {
-    return *reinterpret_cast<const MonsterBaseTabledData*>(
-        &_MonsterBaseTabledData_default_instance_);
+  static const MonsterBaseTableData& default_instance() {
+    return *reinterpret_cast<const MonsterBaseTableData*>(
+        &_MonsterBaseTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(MonsterBaseTabledData& a, MonsterBaseTabledData& b) { a.Swap(&b); }
-  inline void Swap(MonsterBaseTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(MonsterBaseTableData& a, MonsterBaseTableData& b) { a.Swap(&b); }
+  inline void Swap(MonsterBaseTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -327,7 +327,7 @@ class MonsterBaseTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(MonsterBaseTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(MonsterBaseTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -335,13 +335,13 @@ class MonsterBaseTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  MonsterBaseTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<MonsterBaseTabledData>(arena);
+  MonsterBaseTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MonsterBaseTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const MonsterBaseTabledData& from);
+  void CopyFrom(const MonsterBaseTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const MonsterBaseTabledData& from) { MonsterBaseTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const MonsterBaseTableData& from) { MonsterBaseTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -377,18 +377,18 @@ class MonsterBaseTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(MonsterBaseTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(MonsterBaseTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "MonsterBaseTabledData"; }
+  static ::absl::string_view FullMessageName() { return "MonsterBaseTableData"; }
 
  protected:
-  explicit MonsterBaseTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  MonsterBaseTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MonsterBaseTabledData& from);
-  MonsterBaseTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MonsterBaseTabledData&& from) noexcept
-      : MonsterBaseTabledData(arena) {
+  explicit MonsterBaseTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MonsterBaseTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MonsterBaseTableData& from);
+  MonsterBaseTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MonsterBaseTableData&& from) noexcept
+      : MonsterBaseTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -424,7 +424,7 @@ class MonsterBaseTabledData final : public ::google::protobuf::Message
   const ::MonsterBaseTable& data(int index) const;
   ::MonsterBaseTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::MonsterBaseTable>& data() const;
-  // @@protoc_insertion_point(class_scope:MonsterBaseTabledData)
+  // @@protoc_insertion_point(class_scope:MonsterBaseTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -447,7 +447,7 @@ class MonsterBaseTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const MonsterBaseTabledData& from_msg);
+        const MonsterBaseTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::MonsterBaseTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -456,7 +456,7 @@ class MonsterBaseTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_monsterbase_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull MonsterBaseTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull MonsterBaseTableData_class_data_;
 
 // ===================================================================
 
@@ -500,54 +500,54 @@ inline void MonsterBaseTable::_internal_set_id(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
-// MonsterBaseTabledData
+// MonsterBaseTableData
 
 // repeated .MonsterBaseTable data = 1;
-inline int MonsterBaseTabledData::_internal_data_size() const {
+inline int MonsterBaseTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int MonsterBaseTabledData::data_size() const {
+inline int MonsterBaseTableData::data_size() const {
   return _internal_data_size();
 }
-inline void MonsterBaseTabledData::clear_data() {
+inline void MonsterBaseTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::MonsterBaseTable* PROTOBUF_NONNULL MonsterBaseTabledData::mutable_data(int index)
+inline ::MonsterBaseTable* PROTOBUF_NONNULL MonsterBaseTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:MonsterBaseTabledData.data)
+  // @@protoc_insertion_point(field_mutable:MonsterBaseTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::MonsterBaseTable>* PROTOBUF_NONNULL MonsterBaseTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::MonsterBaseTable>* PROTOBUF_NONNULL MonsterBaseTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:MonsterBaseTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:MonsterBaseTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::MonsterBaseTable& MonsterBaseTabledData::data(int index) const
+inline const ::MonsterBaseTable& MonsterBaseTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:MonsterBaseTabledData.data)
+  // @@protoc_insertion_point(field_get:MonsterBaseTableData.data)
   return _internal_data().Get(index);
 }
-inline ::MonsterBaseTable* PROTOBUF_NONNULL MonsterBaseTabledData::add_data()
+inline ::MonsterBaseTable* PROTOBUF_NONNULL MonsterBaseTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::MonsterBaseTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:MonsterBaseTabledData.data)
+  // @@protoc_insertion_point(field_add:MonsterBaseTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::MonsterBaseTable>& MonsterBaseTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::MonsterBaseTable>& MonsterBaseTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:MonsterBaseTabledData.data)
+  // @@protoc_insertion_point(field_list:MonsterBaseTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::MonsterBaseTable>&
-MonsterBaseTabledData::_internal_data() const {
+MonsterBaseTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::MonsterBaseTable>* PROTOBUF_NONNULL
-MonsterBaseTabledData::_internal_mutable_data() {
+MonsterBaseTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

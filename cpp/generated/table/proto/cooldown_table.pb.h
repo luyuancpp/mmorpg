@@ -56,10 +56,10 @@ class CooldownTable;
 struct CooldownTableDefaultTypeInternal;
 extern CooldownTableDefaultTypeInternal _CooldownTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull CooldownTable_class_data_;
-class CooldownTabledData;
-struct CooldownTabledDataDefaultTypeInternal;
-extern CooldownTabledDataDefaultTypeInternal _CooldownTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull CooldownTabledData_class_data_;
+class CooldownTableData;
+struct CooldownTableDataDefaultTypeInternal;
+extern CooldownTableDataDefaultTypeInternal _CooldownTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull CooldownTableData_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -274,30 +274,30 @@ class CooldownTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull CooldownTable_class_data_;
 // -------------------------------------------------------------------
 
-class CooldownTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:CooldownTabledData) */ {
+class CooldownTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:CooldownTableData) */ {
  public:
-  inline CooldownTabledData() : CooldownTabledData(nullptr) {}
-  ~CooldownTabledData() PROTOBUF_FINAL;
+  inline CooldownTableData() : CooldownTableData(nullptr) {}
+  ~CooldownTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(CooldownTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(CooldownTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(CooldownTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(CooldownTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR CooldownTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR CooldownTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline CooldownTabledData(const CooldownTabledData& from) : CooldownTabledData(nullptr, from) {}
-  inline CooldownTabledData(CooldownTabledData&& from) noexcept
-      : CooldownTabledData(nullptr, ::std::move(from)) {}
-  inline CooldownTabledData& operator=(const CooldownTabledData& from) {
+  inline CooldownTableData(const CooldownTableData& from) : CooldownTableData(nullptr, from) {}
+  inline CooldownTableData(CooldownTableData&& from) noexcept
+      : CooldownTableData(nullptr, ::std::move(from)) {}
+  inline CooldownTableData& operator=(const CooldownTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline CooldownTabledData& operator=(CooldownTabledData&& from) noexcept {
+  inline CooldownTableData& operator=(CooldownTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -325,13 +325,13 @@ class CooldownTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const CooldownTabledData& default_instance() {
-    return *reinterpret_cast<const CooldownTabledData*>(
-        &_CooldownTabledData_default_instance_);
+  static const CooldownTableData& default_instance() {
+    return *reinterpret_cast<const CooldownTableData*>(
+        &_CooldownTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(CooldownTabledData& a, CooldownTabledData& b) { a.Swap(&b); }
-  inline void Swap(CooldownTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(CooldownTableData& a, CooldownTableData& b) { a.Swap(&b); }
+  inline void Swap(CooldownTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -339,7 +339,7 @@ class CooldownTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(CooldownTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(CooldownTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -347,13 +347,13 @@ class CooldownTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  CooldownTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<CooldownTabledData>(arena);
+  CooldownTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<CooldownTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const CooldownTabledData& from);
+  void CopyFrom(const CooldownTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const CooldownTabledData& from) { CooldownTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const CooldownTableData& from) { CooldownTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -389,18 +389,18 @@ class CooldownTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(CooldownTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(CooldownTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "CooldownTabledData"; }
+  static ::absl::string_view FullMessageName() { return "CooldownTableData"; }
 
  protected:
-  explicit CooldownTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  CooldownTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CooldownTabledData& from);
-  CooldownTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, CooldownTabledData&& from) noexcept
-      : CooldownTabledData(arena) {
+  explicit CooldownTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  CooldownTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CooldownTableData& from);
+  CooldownTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, CooldownTableData&& from) noexcept
+      : CooldownTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -436,7 +436,7 @@ class CooldownTabledData final : public ::google::protobuf::Message
   const ::CooldownTable& data(int index) const;
   ::CooldownTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::CooldownTable>& data() const;
-  // @@protoc_insertion_point(class_scope:CooldownTabledData)
+  // @@protoc_insertion_point(class_scope:CooldownTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -459,7 +459,7 @@ class CooldownTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const CooldownTabledData& from_msg);
+        const CooldownTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::CooldownTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -468,7 +468,7 @@ class CooldownTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_cooldown_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull CooldownTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull CooldownTableData_class_data_;
 
 // ===================================================================
 
@@ -536,54 +536,54 @@ inline void CooldownTable::_internal_set_duration(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
-// CooldownTabledData
+// CooldownTableData
 
 // repeated .CooldownTable data = 1;
-inline int CooldownTabledData::_internal_data_size() const {
+inline int CooldownTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int CooldownTabledData::data_size() const {
+inline int CooldownTableData::data_size() const {
   return _internal_data_size();
 }
-inline void CooldownTabledData::clear_data() {
+inline void CooldownTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::CooldownTable* PROTOBUF_NONNULL CooldownTabledData::mutable_data(int index)
+inline ::CooldownTable* PROTOBUF_NONNULL CooldownTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:CooldownTabledData.data)
+  // @@protoc_insertion_point(field_mutable:CooldownTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::CooldownTable>* PROTOBUF_NONNULL CooldownTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::CooldownTable>* PROTOBUF_NONNULL CooldownTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:CooldownTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:CooldownTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::CooldownTable& CooldownTabledData::data(int index) const
+inline const ::CooldownTable& CooldownTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:CooldownTabledData.data)
+  // @@protoc_insertion_point(field_get:CooldownTableData.data)
   return _internal_data().Get(index);
 }
-inline ::CooldownTable* PROTOBUF_NONNULL CooldownTabledData::add_data()
+inline ::CooldownTable* PROTOBUF_NONNULL CooldownTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::CooldownTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:CooldownTabledData.data)
+  // @@protoc_insertion_point(field_add:CooldownTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::CooldownTable>& CooldownTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::CooldownTable>& CooldownTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:CooldownTabledData.data)
+  // @@protoc_insertion_point(field_list:CooldownTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::CooldownTable>&
-CooldownTabledData::_internal_data() const {
+CooldownTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::CooldownTable>* PROTOBUF_NONNULL
-CooldownTabledData::_internal_mutable_data() {
+CooldownTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

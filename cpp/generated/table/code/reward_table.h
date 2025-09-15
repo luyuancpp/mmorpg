@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const RewardTabledData& All() const { return data_; }
+    const RewardTableData& All() const { return data_; }
 
     std::pair<const RewardTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const RewardTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -36,12 +36,12 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    RewardTabledData data_;
+    RewardTableData data_;
     KeyValueDataType kv_data_;
     
 };
 
-inline const RewardTabledData& GetRewardAllTable() {
+inline const RewardTableData& GetRewardAllTable() {
     return RewardTableManager::Instance().All();
 }
 

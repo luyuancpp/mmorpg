@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const ActorActionStateTabledData& All() const { return data_; }
+    const ActorActionStateTableData& All() const { return data_; }
 
     std::pair<const ActorActionStateTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const ActorActionStateTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -36,12 +36,12 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    ActorActionStateTabledData data_;
+    ActorActionStateTableData data_;
     KeyValueDataType kv_data_;
     
 };
 
-inline const ActorActionStateTabledData& GetActorActionStateAllTable() {
+inline const ActorActionStateTableData& GetActorActionStateAllTable() {
     return ActorActionStateTableManager::Instance().All();
 }
 

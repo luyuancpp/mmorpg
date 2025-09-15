@@ -56,10 +56,10 @@ class SkillPermissionTable;
 struct SkillPermissionTableDefaultTypeInternal;
 extern SkillPermissionTableDefaultTypeInternal _SkillPermissionTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull SkillPermissionTable_class_data_;
-class SkillPermissionTabledData;
-struct SkillPermissionTabledDataDefaultTypeInternal;
-extern SkillPermissionTabledDataDefaultTypeInternal _SkillPermissionTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull SkillPermissionTabledData_class_data_;
+class SkillPermissionTableData;
+struct SkillPermissionTableDataDefaultTypeInternal;
+extern SkillPermissionTableDataDefaultTypeInternal _SkillPermissionTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SkillPermissionTableData_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -283,30 +283,30 @@ class SkillPermissionTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull SkillPermissionTable_class_data_;
 // -------------------------------------------------------------------
 
-class SkillPermissionTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:SkillPermissionTabledData) */ {
+class SkillPermissionTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:SkillPermissionTableData) */ {
  public:
-  inline SkillPermissionTabledData() : SkillPermissionTabledData(nullptr) {}
-  ~SkillPermissionTabledData() PROTOBUF_FINAL;
+  inline SkillPermissionTableData() : SkillPermissionTableData(nullptr) {}
+  ~SkillPermissionTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(SkillPermissionTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(SkillPermissionTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(SkillPermissionTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SkillPermissionTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR SkillPermissionTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR SkillPermissionTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline SkillPermissionTabledData(const SkillPermissionTabledData& from) : SkillPermissionTabledData(nullptr, from) {}
-  inline SkillPermissionTabledData(SkillPermissionTabledData&& from) noexcept
-      : SkillPermissionTabledData(nullptr, ::std::move(from)) {}
-  inline SkillPermissionTabledData& operator=(const SkillPermissionTabledData& from) {
+  inline SkillPermissionTableData(const SkillPermissionTableData& from) : SkillPermissionTableData(nullptr, from) {}
+  inline SkillPermissionTableData(SkillPermissionTableData&& from) noexcept
+      : SkillPermissionTableData(nullptr, ::std::move(from)) {}
+  inline SkillPermissionTableData& operator=(const SkillPermissionTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline SkillPermissionTabledData& operator=(SkillPermissionTabledData&& from) noexcept {
+  inline SkillPermissionTableData& operator=(SkillPermissionTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -334,13 +334,13 @@ class SkillPermissionTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const SkillPermissionTabledData& default_instance() {
-    return *reinterpret_cast<const SkillPermissionTabledData*>(
-        &_SkillPermissionTabledData_default_instance_);
+  static const SkillPermissionTableData& default_instance() {
+    return *reinterpret_cast<const SkillPermissionTableData*>(
+        &_SkillPermissionTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(SkillPermissionTabledData& a, SkillPermissionTabledData& b) { a.Swap(&b); }
-  inline void Swap(SkillPermissionTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(SkillPermissionTableData& a, SkillPermissionTableData& b) { a.Swap(&b); }
+  inline void Swap(SkillPermissionTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -348,7 +348,7 @@ class SkillPermissionTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(SkillPermissionTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(SkillPermissionTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -356,13 +356,13 @@ class SkillPermissionTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  SkillPermissionTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<SkillPermissionTabledData>(arena);
+  SkillPermissionTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SkillPermissionTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const SkillPermissionTabledData& from);
+  void CopyFrom(const SkillPermissionTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const SkillPermissionTabledData& from) { SkillPermissionTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const SkillPermissionTableData& from) { SkillPermissionTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -398,18 +398,18 @@ class SkillPermissionTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(SkillPermissionTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(SkillPermissionTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "SkillPermissionTabledData"; }
+  static ::absl::string_view FullMessageName() { return "SkillPermissionTableData"; }
 
  protected:
-  explicit SkillPermissionTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  SkillPermissionTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SkillPermissionTabledData& from);
-  SkillPermissionTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SkillPermissionTabledData&& from) noexcept
-      : SkillPermissionTabledData(arena) {
+  explicit SkillPermissionTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SkillPermissionTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SkillPermissionTableData& from);
+  SkillPermissionTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SkillPermissionTableData&& from) noexcept
+      : SkillPermissionTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -445,7 +445,7 @@ class SkillPermissionTabledData final : public ::google::protobuf::Message
   const ::SkillPermissionTable& data(int index) const;
   ::SkillPermissionTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::SkillPermissionTable>& data() const;
-  // @@protoc_insertion_point(class_scope:SkillPermissionTabledData)
+  // @@protoc_insertion_point(class_scope:SkillPermissionTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -468,7 +468,7 @@ class SkillPermissionTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const SkillPermissionTabledData& from_msg);
+        const SkillPermissionTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::SkillPermissionTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -477,7 +477,7 @@ class SkillPermissionTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_skillpermission_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull SkillPermissionTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull SkillPermissionTableData_class_data_;
 
 // ===================================================================
 
@@ -567,54 +567,54 @@ SkillPermissionTable::_internal_mutable_skilltype() {
 
 // -------------------------------------------------------------------
 
-// SkillPermissionTabledData
+// SkillPermissionTableData
 
 // repeated .SkillPermissionTable data = 1;
-inline int SkillPermissionTabledData::_internal_data_size() const {
+inline int SkillPermissionTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int SkillPermissionTabledData::data_size() const {
+inline int SkillPermissionTableData::data_size() const {
   return _internal_data_size();
 }
-inline void SkillPermissionTabledData::clear_data() {
+inline void SkillPermissionTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::SkillPermissionTable* PROTOBUF_NONNULL SkillPermissionTabledData::mutable_data(int index)
+inline ::SkillPermissionTable* PROTOBUF_NONNULL SkillPermissionTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:SkillPermissionTabledData.data)
+  // @@protoc_insertion_point(field_mutable:SkillPermissionTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::SkillPermissionTable>* PROTOBUF_NONNULL SkillPermissionTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::SkillPermissionTable>* PROTOBUF_NONNULL SkillPermissionTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:SkillPermissionTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:SkillPermissionTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::SkillPermissionTable& SkillPermissionTabledData::data(int index) const
+inline const ::SkillPermissionTable& SkillPermissionTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:SkillPermissionTabledData.data)
+  // @@protoc_insertion_point(field_get:SkillPermissionTableData.data)
   return _internal_data().Get(index);
 }
-inline ::SkillPermissionTable* PROTOBUF_NONNULL SkillPermissionTabledData::add_data()
+inline ::SkillPermissionTable* PROTOBUF_NONNULL SkillPermissionTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::SkillPermissionTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:SkillPermissionTabledData.data)
+  // @@protoc_insertion_point(field_add:SkillPermissionTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::SkillPermissionTable>& SkillPermissionTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::SkillPermissionTable>& SkillPermissionTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:SkillPermissionTabledData.data)
+  // @@protoc_insertion_point(field_list:SkillPermissionTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::SkillPermissionTable>&
-SkillPermissionTabledData::_internal_data() const {
+SkillPermissionTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::SkillPermissionTable>* PROTOBUF_NONNULL
-SkillPermissionTabledData::_internal_mutable_data() {
+SkillPermissionTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

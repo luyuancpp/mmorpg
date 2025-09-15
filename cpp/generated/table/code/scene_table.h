@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const SceneTabledData& All() const { return data_; }
+    const SceneTableData& All() const { return data_; }
 
     std::pair<const SceneTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const SceneTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -36,12 +36,12 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    SceneTabledData data_;
+    SceneTableData data_;
     KeyValueDataType kv_data_;
     
 };
 
-inline const SceneTabledData& GetSceneAllTable() {
+inline const SceneTableData& GetSceneAllTable() {
     return SceneTableManager::Instance().All();
 }
 
