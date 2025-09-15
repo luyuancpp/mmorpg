@@ -1,6 +1,7 @@
 package config
 
 // ----------- 项目根目录及相关路径 -----------
+// 根路径保持不变
 const (
 	OutputRoot                = "../../../"
 	ProtoDir                  = OutputRoot + "proto/"
@@ -11,6 +12,7 @@ const (
 )
 
 // ----------- Proto 文件扩展名 -----------
+// 这些扩展名保持不变
 const (
 	ProtoEx            = ".proto"
 	ProtoPbcEx         = ".pb.cc"
@@ -23,6 +25,7 @@ const (
 )
 
 // ----------- 通用文件扩展名 -----------
+// 这些扩展名保持不变
 const (
 	HeaderExtension               = ".h"
 	CppExtension                  = ".cpp"
@@ -39,12 +42,14 @@ const (
 )
 
 // ----------- 消息与方法相关名字 -----------
+// 这些名字保持不变
 const (
 	MessageIdName   = "MessageId"
 	MethodIndexName = "Index"
 )
 
 // ----------- 项目目录路径 -----------
+// 更新后的路径
 const (
 	NodeGoDirectory                = OutputRoot + "go/"
 	NodeCppDirectory               = OutputRoot + "cpp/"
@@ -67,6 +72,7 @@ const (
 )
 
 // ----------- 方法处理目录 -----------
+// 更新后的路径
 const (
 	RobotMethodHandlerDirectory                 = OutputRoot + RobotDirectory + "logic/handler/"
 	GameNodeMethodHandlerDirectory              = GameNodeDirectory + RpcHandlerSourceDirectory
@@ -84,6 +90,7 @@ const (
 )
 
 // ----------- 输出目录 -----------
+// 更新后的路径
 const (
 	ToolDir               = "tools/"
 	TempFileGenerationDir = OutputRoot + ToolDir + "generated/temp/files/"
@@ -138,6 +145,7 @@ const (
 )
 
 // ----------- 文件名 -----------
+// 这些文件名保持不变
 const (
 	HandlerFileName                    = "Handler"
 	RepliedHandlerFileName             = "Reply"
@@ -153,6 +161,7 @@ const (
 )
 
 // ----------- 代码相关字符串常量 -----------
+// 这些字符串常量保持不变
 const (
 	GoogleMethodController   = "::google::protobuf::RpcController* controller, "
 	PlayerMethodController   = "entt::entity player,"
@@ -169,6 +178,7 @@ const (
 )
 
 // ----------- 项目源目录相关 -----------
+// 这个部分的源路径可以保持不变，只是稍微优化下路径名称
 var (
 	ProtoDirectoryNames = [...]string{
 		"common/",
@@ -210,6 +220,7 @@ var (
 )
 
 // ----------- 其他业务相关常量 -----------
+// 保持不变
 const (
 	DatabasePrefixName              = "db"
 	ClientPrefixName                = "Client" //
@@ -226,12 +237,14 @@ const (
 )
 
 // ----------- 事件处理目录 -----------
+// 更新后的路径
 const (
 	GameNodeEventHandlerDirectory   = OutputRoot + GameNodeDirectory + EventHandlerSourceDirectory
 	CentreNodeEventHandlerDirectory = OutputRoot + CentreNodeDirectory + EventHandlerSourceDirectory
 )
 
 // ----------- 玩家数据库名称 -----------
+// 保持不变
 const (
 	PlayerDatabaseName  = "player_database"
 	PlayerDatabaseName1 = "player_database_1"
