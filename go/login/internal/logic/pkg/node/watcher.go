@@ -57,6 +57,7 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 				var info game.NodeInfo
 				var data []byte
 
+				// 根据事件类型，选择正确的 data（Value 或 PrevKv.Value）
 				switch ev.Type {
 				case clientv3.EventTypePut:
 					data = ev.Kv.Value
@@ -64,19 +65,21 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 					data = ev.PrevKv.Value
 				}
 
+				// 如果没有数据，跳过该事件
 				if len(data) == 0 {
 					logx.Debugf("Empty data for key=%s, event=%s", key, ev.Type)
 					continue
 				}
 
-				unmarshaler := protojson.Unmarshaler{}
-				if err := unmarshaler.Unmarshal(strings.NewReader(string(data)), &info); err != nil {
+				// 使用 protojson.Unmarshal 直接反序列化数据
+				if err := protojson.Unmarshal(data, &info); err != nil {
 					logx.Infof("Invalid protobuf JSON for key=%s: %v", key, err)
 					continue
 				}
 
 				logx.Infof("Event Type: %s, Key: %s, NodeInfo: %+v", ev.Type, key, info)
 
+				// 根据事件类型将数据发送到 events 通道
 				switch ev.Type {
 				case clientv3.EventTypePut:
 					events <- NodeEvent{Type: NodeAdded, Info: &info}
@@ -121,7 +124,7 @@ func (nw *NodeWatcher) Range() ([]game.NodeInfo, error) {
 			logx.Debugf("Parsing node data: %s", string(kv.Value)) // 简单输出，以避免过多日志
 
 			// 解析 JSON 数据
-			if err := jsonpb.UnmarshalString(string(kv.Value), &nodeInfo); err != nil {
+			if err := protojson.UnmarshalString(string(kv.Value), &nodeInfo); err != nil {
 				logx.Errorf("Invalid NodeInfo JSON for key=%s: %v", string(kv.Key), err)
 				return
 			}
