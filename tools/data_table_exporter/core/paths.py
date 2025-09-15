@@ -23,7 +23,7 @@ DATA_TABLES_DIR = PROJECT_DIR / "data_tables"                    # 数据表目�
 # -----------------------------
 # Go 代码生成相关
 # -----------------------------
-PROJECT_GENERATED_CODE_TABLE_PB_GO_DIR = PROJECT_DIR / "go" / "generated" / "table"
+PROJECT_GENERATED_GO_PROTO_DIR = PROJECT_DIR / "go" / "generated" / "table"
 
 # -----------------------------
 # Proto 文件路径
