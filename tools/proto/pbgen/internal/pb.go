@@ -371,10 +371,10 @@ func BuildProtocDescAllInOne() {
 		defer util.Wg.Done()
 
 		var allProtoFiles []string
-
 		for _, dir := range config.ProtoDirs {
 			fds, err := os.ReadDir(dir)
 			if err != nil {
+				log.Fatal(err)
 			}
 			for _, fd := range fds {
 				if util.IsProtoFile(fd) {

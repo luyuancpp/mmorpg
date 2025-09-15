@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "generated/pb/game";
 
-import "proto/db/db_base.proto";
+import "proto/service/grpc/db/db_base.proto";
 import "proto/common/user_accounts.proto";
 import "proto/logic/component/player_scene_comp.proto";
 import "proto/logic/component/actor_comp.proto";

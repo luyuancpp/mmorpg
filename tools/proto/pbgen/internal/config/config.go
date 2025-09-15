@@ -176,7 +176,7 @@ var (
 		"logic/",
 		"service/grpc/player_locator/",
 		"logic/constants/",
-		"service/grpc/etcd/",
+		"middleware/etcd/",
 		"service/grpc/login/",
 		"service/grpc/db/",
 		"service/rpc/centre/",
