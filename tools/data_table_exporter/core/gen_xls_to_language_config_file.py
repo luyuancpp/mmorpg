@@ -9,7 +9,7 @@ from multiprocessing import cpu_count
 from jinja2 import Environment, FileSystemLoader
 
 import generate_common  # 你项目中的工具模块
-from core.paths import SRC_CPP, PROJECT_GENERATED_CODE_TABLE_GO_DIR, DATA_TABLES_DIR
+from core.paths import SRC_CPP, PROJECT_GENERATED_CODE_TABLE_PB_GO_DIR, DATA_TABLES_DIR
 
 # 日志配置
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -105,8 +105,8 @@ def process_workbook(filepath: Path):
                 convert_to_go_type=convert_to_go_type,
                 proto_import_path="generated/pb/table"  # ⚠️ 修改为你的真实路径
             )
-            PROJECT_GENERATED_CODE_TABLE_GO_DIR.mkdir(parents=True, exist_ok=True)
-            generate_common.mywrite(go_content, PROJECT_GENERATED_CODE_TABLE_GO_DIR / f"{sheetname_lower}_table.go")
+            PROJECT_GENERATED_CODE_TABLE_PB_GO_DIR.mkdir(parents=True, exist_ok=True)
+            generate_common.mywrite(go_content, PROJECT_GENERATED_CODE_TABLE_PB_GO_DIR / f"{sheetname_lower}_table.go")
 
     except Exception as e:
         logging.error(f"Failed to load or process workbook {filepath.name}: {e}")
@@ -136,8 +136,8 @@ def generate_all_config():
     cpp_content = cpp_template.render(sheetnames=sheetnames, cpucount=cpucount)
     go_content = go_template.render(sheetnames=sheetnames)
 
-    PROJECT_GENERATED_CODE_TABLE_GO_DIR.mkdir(parents=True, exist_ok=True)
-    generate_common.mywrite(go_content, PROJECT_GENERATED_CODE_TABLE_GO_DIR / "all_table.go")
+    PROJECT_GENERATED_CODE_TABLE_PB_GO_DIR.mkdir(parents=True, exist_ok=True)
+    generate_common.mywrite(go_content, PROJECT_GENERATED_CODE_TABLE_PB_GO_DIR / "all_table.go")
 
     return header_content, cpp_content
 
@@ -146,7 +146,7 @@ def main(XLS_DIR: Path = None):
     """主函数，支持传入自定义 Excel 目录"""
     xls_dir = XLS_DIR or DATA_TABLES_DIR
     SRC_CPP.mkdir(parents=True, exist_ok=True)
-    PROJECT_GENERATED_CODE_TABLE_GO_DIR.mkdir(parents=True, exist_ok=True)
+    PROJECT_GENERATED_CODE_TABLE_PB_GO_DIR.mkdir(parents=True, exist_ok=True)
 
     xlsx_files = list(xls_dir.glob("*.xlsx"))
     with concurrent.futures.ProcessPoolExecutor() as executor:
