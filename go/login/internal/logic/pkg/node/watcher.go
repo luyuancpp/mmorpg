@@ -11,7 +11,6 @@ import (
 	"go.etcd.io/etcd/client/v3/namespace"
 	"google.golang.org/protobuf/encoding/protojson"
 	"log"
-	"strings"
 	"sync"
 	"time"
 )
@@ -124,7 +123,7 @@ func (nw *NodeWatcher) Range() ([]game.NodeInfo, error) {
 			logx.Debugf("Parsing node data: %s", string(kv.Value)) // 简单输出，以避免过多日志
 
 			// 解析 JSON 数据
-			if err := protojson.UnmarshalString(string(kv.Value), &nodeInfo); err != nil {
+			if err := protojson.Unmarshal(kv.Value, &nodeInfo); err != nil {
 				logx.Errorf("Invalid NodeInfo JSON for key=%s: %v", string(kv.Key), err)
 				return
 			}
