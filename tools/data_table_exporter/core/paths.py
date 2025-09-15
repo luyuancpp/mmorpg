@@ -19,7 +19,7 @@ PROJECT_GENERATED_CODE_DIR = GENERATOR_DIR / "generated_code"
 DATA_TABLES_DIR = PROJECT_DIR / "data_tables"
 
 # Go 代码生成相关
-PROJECT_GENERATED_CODE_GO_DIR = PROJECT_GENERATED_CODE_DIR / "go"
+PROJECT_GENERATED_CODE_TABLE_GO_DIR = PROJECT_DIR / "go" / "generated" / "table"
 
 # Proto 文件路径
 PROTO_DIR = PROJECT_GENERATED_CODE_DIR / "proto"
@@ -38,7 +38,7 @@ GENERATOR_TABLE_INDEX_MAPPING_DIR = GENERATOR_STORAGE_DIR / "mapping" / "table_i
 GENERATOR_TIP_MAPPING_DIR = GENERATOR_STORAGE_DIR / "mapping" / "tip_enum_ids"
 
 # 假设 PROJECT_DIR 已经是 Path 类型
-GENERATED_CODE_DIR = PROJECT_DIR /  "generated_code"
+GENERATED_CODE_DIR = GENERATOR_DIR /  "generated_code"
 CPP_GEN_DIR = PROJECT_DIR / "cpp" / "generated" / "table"
 GO_GEN_DIR = PROJECT_DIR / "go"
 
