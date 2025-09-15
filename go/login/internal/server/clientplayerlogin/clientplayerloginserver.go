@@ -7,7 +7,7 @@ package server
 import (
 	"context"
 
-	"game/login/game/generated/pb/game"
+	"game/game/generated/generated/pb/game"
 	"game/login/internal/logic/clientplayerlogin"
 	"game/login/internal/svc"
 )

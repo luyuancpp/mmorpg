@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "pb/game";
+option go_package = "generated/pb/table";
 
 {% for sheet_name, data in workbook_data.items() %}
 message {{ sheet_name }} {

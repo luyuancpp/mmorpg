@@ -55,7 +55,7 @@ def create_proto_header() -> str:
     """Create the initial header for the .proto file."""
     return (
         'syntax = "proto3";\n\n'
-        'option go_package = "pb/game";\n\n'
+        'option go_package = "generated/pb/table";\n\n'
     )
 
 def generate_group_messages(sheet_name: str, data: Dict, column_names: List[str]) -> str:
