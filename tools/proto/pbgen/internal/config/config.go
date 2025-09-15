@@ -12,20 +12,16 @@ const (
 )
 
 // ----------- Proto 文件扩展名 -----------
-// 这些扩展名保持不变
 const (
-	ProtoEx            = ".proto"
-	ProtoPbcEx         = ".pb.cc"
-	ProtoPbhEx         = ".pb.h"
-	ProtoGoEx          = ".pb.go"
-	GrpcPbcEx          = ".grpc.pb.cc"
-	GrpcPbhEx          = ".grpc.pb.h"
-	ProtoDescExtension = ".desc"
-	ProtoDirName       = "proto/"
+	ProtoEx      = ".proto"
+	ProtoPbcEx   = ".pb.cc"
+	ProtoPbhEx   = ".pb.h"
+	GrpcPbcEx    = ".grpc.pb.cc"
+	GrpcPbhEx    = ".grpc.pb.h"
+	ProtoDirName = "proto/"
 )
 
 // ----------- 通用文件扩展名 -----------
-// 这些扩展名保持不变
 const (
 	HeaderExtension               = ".h"
 	CppExtension                  = ".cpp"
@@ -35,28 +31,23 @@ const (
 	RepliedHandlerHeaderExtension = "_response_handler.h"
 	CppRepliedHandlerEx           = "_response_handler.cpp"
 	CppSol2Extension              = "_sol2.cpp"
-	CppSystemExtension            = "_system.cpp"
 	GrpcClientExtension           = "_grpc_client"
 	GrpcClientHeaderExtension     = GrpcClientExtension + HeaderExtension
 	GrpcClientCppExtension        = GrpcClientExtension + CppExtension
 )
 
 // ----------- 消息与方法相关名字 -----------
-// 这些名字保持不变
 const (
 	MessageIdName   = "MessageId"
 	MethodIndexName = "Index"
 )
 
 // ----------- 项目目录路径 -----------
-// 更新后的路径
 const (
 	NodeGoDirectory                = OutputRoot + "go/"
 	NodeCppDirectory               = OutputRoot + "cpp/"
 	NodePkgDirectory               = "cpp/libs/"
-	NodeLibBaseDirectory           = NodePkgDirectory + "engine/"
 	NodeLibGameDirectory           = NodePkgDirectory + "services/"
-	NodesLibDirectory              = "nodes/"
 	NodePkgLogicSceneNodeDirectory = NodeLibGameDirectory + "scene/"
 	GameNodeDirectory              = NodeCppDirectory + "nodes/scene/"
 	CentreNodeDirectory            = NodeCppDirectory + "nodes/centre/"
@@ -72,7 +63,6 @@ const (
 )
 
 // ----------- 方法处理目录 -----------
-// 更新后的路径
 const (
 	RobotMethodHandlerDirectory                 = OutputRoot + RobotDirectory + "logic/handler/"
 	GameNodeMethodHandlerDirectory              = GameNodeDirectory + RpcHandlerSourceDirectory
@@ -111,7 +101,6 @@ const (
 	MessageIdGoFile        = "message_id.go"
 	RobotMessageIdFilePath = RobotGoGamePbDirectory + GeneratorDirectory + MessageIdGoFile
 
-	LoginDirectory       = OutputRoot + "go/login/"
 	GoGeneratorDirectory = GoNodeDirectory
 	LoginMessageIdGoFile = GoGeneratorDirectory + MessageIdGoFile
 
@@ -178,7 +167,6 @@ const (
 )
 
 // ----------- 项目源目录相关 -----------
-// 这个部分的源路径可以保持不变，只是稍微优化下路径名称
 var (
 	ProtoDirectoryNames = [...]string{
 		"common/",
@@ -186,17 +174,17 @@ var (
 		"logic/event/",
 		"logic/shared/",
 		"logic/",
-		"player_locator/",
+		"service/grpc/player_locator/",
 		"logic/constants/",
-		"etcd/",
-		"login/",
-		"db/",
-		"centre/",
-		"scene/",
-		"gate/",
-		"chat/",
-		"team/",
-		"mail/",
+		"service/grpc/etcd/",
+		"service/grpc/login/",
+		"service/grpc/db/",
+		"service/rpc/centre/",
+		"service/rpc/scene/",
+		"service/rpc/gate/",
+		"service/grpc/chat/",
+		"service/grpc/team/",
+		"service/grpc/mail/",
 	}
 
 	ProtoDirs []string
@@ -220,7 +208,6 @@ var (
 )
 
 // ----------- 其他业务相关常量 -----------
-// 保持不变
 const (
 	DatabasePrefixName              = "db"
 	ClientPrefixName                = "Client" //
@@ -237,14 +224,12 @@ const (
 )
 
 // ----------- 事件处理目录 -----------
-// 更新后的路径
 const (
 	GameNodeEventHandlerDirectory   = OutputRoot + GameNodeDirectory + EventHandlerSourceDirectory
 	CentreNodeEventHandlerDirectory = OutputRoot + CentreNodeDirectory + EventHandlerSourceDirectory
 )
 
 // ----------- 玩家数据库名称 -----------
-// 保持不变
 const (
 	PlayerDatabaseName  = "player_database"
 	PlayerDatabaseName1 = "player_database_1"
