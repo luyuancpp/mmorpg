@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/gate/gate_service.proto
+// source: proto/service/rpc/gate/gate_service.proto
 
 package game
 
@@ -30,7 +30,7 @@ type KickSessionRequest struct {
 
 func (x *KickSessionRequest) Reset() {
 	*x = KickSessionRequest{}
-	mi := &file_proto_gate_gate_service_proto_msgTypes[0]
+	mi := &file_proto_service_rpc_gate_gate_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *KickSessionRequest) String() string {
 func (*KickSessionRequest) ProtoMessage() {}
 
 func (x *KickSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_gate_gate_service_proto_msgTypes[0]
+	mi := &file_proto_service_rpc_gate_gate_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *KickSessionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KickSessionRequest.ProtoReflect.Descriptor instead.
 func (*KickSessionRequest) Descriptor() ([]byte, []int) {
-	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{0}
+	return file_proto_service_rpc_gate_gate_service_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *KickSessionRequest) GetSessionId() uint64 {
@@ -75,7 +75,7 @@ type BroadcastToPlayersRequest struct {
 
 func (x *BroadcastToPlayersRequest) Reset() {
 	*x = BroadcastToPlayersRequest{}
-	mi := &file_proto_gate_gate_service_proto_msgTypes[1]
+	mi := &file_proto_service_rpc_gate_gate_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -87,7 +87,7 @@ func (x *BroadcastToPlayersRequest) String() string {
 func (*BroadcastToPlayersRequest) ProtoMessage() {}
 
 func (x *BroadcastToPlayersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_gate_gate_service_proto_msgTypes[1]
+	mi := &file_proto_service_rpc_gate_gate_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -100,7 +100,7 @@ func (x *BroadcastToPlayersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BroadcastToPlayersRequest.ProtoReflect.Descriptor instead.
 func (*BroadcastToPlayersRequest) Descriptor() ([]byte, []int) {
-	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{1}
+	return file_proto_service_rpc_gate_gate_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *BroadcastToPlayersRequest) GetSessionList() []uint64 {
@@ -117,11 +117,11 @@ func (x *BroadcastToPlayersRequest) GetMessageContent() *MessageContent {
 	return nil
 }
 
-var File_proto_gate_gate_service_proto protoreflect.FileDescriptor
+var File_proto_service_rpc_gate_gate_service_proto protoreflect.FileDescriptor
 
-const file_proto_gate_gate_service_proto_rawDesc = "" +
+const file_proto_service_rpc_gate_gate_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1dproto/gate/gate_service.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\x1a\x1aproto/common/message.proto\"3\n" +
+	")proto/service/rpc/gate/gate_service.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\x1a\x1aproto/common/message.proto\"3\n" +
 	"\x12KickSessionRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\"x\n" +
@@ -138,19 +138,19 @@ const file_proto_gate_gate_service_proto_rawDesc = "" +
 	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB\x16Z\x11generated/pb/game\x80\x01\x01b\x06proto3"
 
 var (
-	file_proto_gate_gate_service_proto_rawDescOnce sync.Once
-	file_proto_gate_gate_service_proto_rawDescData []byte
+	file_proto_service_rpc_gate_gate_service_proto_rawDescOnce sync.Once
+	file_proto_service_rpc_gate_gate_service_proto_rawDescData []byte
 )
 
-func file_proto_gate_gate_service_proto_rawDescGZIP() []byte {
-	file_proto_gate_gate_service_proto_rawDescOnce.Do(func() {
-		file_proto_gate_gate_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_gate_gate_service_proto_rawDesc), len(file_proto_gate_gate_service_proto_rawDesc)))
+func file_proto_service_rpc_gate_gate_service_proto_rawDescGZIP() []byte {
+	file_proto_service_rpc_gate_gate_service_proto_rawDescOnce.Do(func() {
+		file_proto_service_rpc_gate_gate_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_rpc_gate_gate_service_proto_rawDesc), len(file_proto_service_rpc_gate_gate_service_proto_rawDesc)))
 	})
-	return file_proto_gate_gate_service_proto_rawDescData
+	return file_proto_service_rpc_gate_gate_service_proto_rawDescData
 }
 
-var file_proto_gate_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_proto_gate_gate_service_proto_goTypes = []any{
+var file_proto_service_rpc_gate_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_service_rpc_gate_gate_service_proto_goTypes = []any{
 	(*KickSessionRequest)(nil),              // 0: KickSessionRequest
 	(*BroadcastToPlayersRequest)(nil),       // 1: BroadcastToPlayersRequest
 	(*MessageContent)(nil),                  // 2: MessageContent
@@ -165,7 +165,7 @@ var file_proto_gate_gate_service_proto_goTypes = []any{
 	(*RoutePlayerMessageResponse)(nil),      // 11: RoutePlayerMessageResponse
 	(*NodeHandshakeResponse)(nil),           // 12: NodeHandshakeResponse
 }
-var file_proto_gate_gate_service_proto_depIdxs = []int32{
+var file_proto_service_rpc_gate_gate_service_proto_depIdxs = []int32{
 	2,  // 0: BroadcastToPlayersRequest.message_content:type_name -> MessageContent
 	3,  // 1: Gate.PlayerEnterGameNode:input_type -> RegisterGameNodeSessionRequest
 	4,  // 2: Gate.SendMessageToPlayer:input_type -> NodeRouteMessageRequest
@@ -188,9 +188,9 @@ var file_proto_gate_gate_service_proto_depIdxs = []int32{
 	0,  // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_proto_gate_gate_service_proto_init() }
-func file_proto_gate_gate_service_proto_init() {
-	if File_proto_gate_gate_service_proto != nil {
+func init() { file_proto_service_rpc_gate_gate_service_proto_init() }
+func file_proto_service_rpc_gate_gate_service_proto_init() {
+	if File_proto_service_rpc_gate_gate_service_proto != nil {
 		return
 	}
 	file_proto_common_empty_proto_init()
@@ -200,17 +200,17 @@ func file_proto_gate_gate_service_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_gate_gate_service_proto_rawDesc), len(file_proto_gate_gate_service_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_rpc_gate_gate_service_proto_rawDesc), len(file_proto_service_rpc_gate_gate_service_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_gate_gate_service_proto_goTypes,
-		DependencyIndexes: file_proto_gate_gate_service_proto_depIdxs,
-		MessageInfos:      file_proto_gate_gate_service_proto_msgTypes,
+		GoTypes:           file_proto_service_rpc_gate_gate_service_proto_goTypes,
+		DependencyIndexes: file_proto_service_rpc_gate_gate_service_proto_depIdxs,
+		MessageInfos:      file_proto_service_rpc_gate_gate_service_proto_msgTypes,
 	}.Build()
-	File_proto_gate_gate_service_proto = out.File
-	file_proto_gate_gate_service_proto_goTypes = nil
-	file_proto_gate_gate_service_proto_depIdxs = nil
+	File_proto_service_rpc_gate_gate_service_proto = out.File
+	file_proto_service_rpc_gate_gate_service_proto_goTypes = nil
+	file_proto_service_rpc_gate_gate_service_proto_depIdxs = nil
 }

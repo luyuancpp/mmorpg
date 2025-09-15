@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/centre/centre_service.proto
+// source: proto/service/rpc/centre/centre_service.proto
 
 package game
 
@@ -30,7 +30,7 @@ type GateClientMessageRequest struct {
 
 func (x *GateClientMessageRequest) Reset() {
 	*x = GateClientMessageRequest{}
-	mi := &file_proto_centre_centre_service_proto_msgTypes[0]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *GateClientMessageRequest) String() string {
 func (*GateClientMessageRequest) ProtoMessage() {}
 
 func (x *GateClientMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_centre_centre_service_proto_msgTypes[0]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *GateClientMessageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GateClientMessageRequest.ProtoReflect.Descriptor instead.
 func (*GateClientMessageRequest) Descriptor() ([]byte, []int) {
-	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{0}
+	return file_proto_service_rpc_centre_centre_service_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GateClientMessageRequest) GetRpcClient() *NetworkAddress {
@@ -74,7 +74,7 @@ type LoginNodeLeaveGameRequest struct {
 
 func (x *LoginNodeLeaveGameRequest) Reset() {
 	*x = LoginNodeLeaveGameRequest{}
-	mi := &file_proto_centre_centre_service_proto_msgTypes[1]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -86,7 +86,7 @@ func (x *LoginNodeLeaveGameRequest) String() string {
 func (*LoginNodeLeaveGameRequest) ProtoMessage() {}
 
 func (x *LoginNodeLeaveGameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_centre_centre_service_proto_msgTypes[1]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,7 +99,7 @@ func (x *LoginNodeLeaveGameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginNodeLeaveGameRequest.ProtoReflect.Descriptor instead.
 func (*LoginNodeLeaveGameRequest) Descriptor() ([]byte, []int) {
-	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{1}
+	return file_proto_service_rpc_centre_centre_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *LoginNodeLeaveGameRequest) GetSessionInfo() *SessionDetails {
@@ -119,7 +119,7 @@ type EnterGameNodeSuccessRequest struct {
 
 func (x *EnterGameNodeSuccessRequest) Reset() {
 	*x = EnterGameNodeSuccessRequest{}
-	mi := &file_proto_centre_centre_service_proto_msgTypes[2]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -131,7 +131,7 @@ func (x *EnterGameNodeSuccessRequest) String() string {
 func (*EnterGameNodeSuccessRequest) ProtoMessage() {}
 
 func (x *EnterGameNodeSuccessRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_centre_centre_service_proto_msgTypes[2]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -144,7 +144,7 @@ func (x *EnterGameNodeSuccessRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterGameNodeSuccessRequest.ProtoReflect.Descriptor instead.
 func (*EnterGameNodeSuccessRequest) Descriptor() ([]byte, []int) {
-	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{2}
+	return file_proto_service_rpc_centre_centre_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *EnterGameNodeSuccessRequest) GetPlayerId() uint64 {
@@ -171,7 +171,7 @@ type CentreEnterGameRequest struct {
 
 func (x *CentreEnterGameRequest) Reset() {
 	*x = CentreEnterGameRequest{}
-	mi := &file_proto_centre_centre_service_proto_msgTypes[3]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -183,7 +183,7 @@ func (x *CentreEnterGameRequest) String() string {
 func (*CentreEnterGameRequest) ProtoMessage() {}
 
 func (x *CentreEnterGameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_centre_centre_service_proto_msgTypes[3]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -196,7 +196,7 @@ func (x *CentreEnterGameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CentreEnterGameRequest.ProtoReflect.Descriptor instead.
 func (*CentreEnterGameRequest) Descriptor() ([]byte, []int) {
-	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{3}
+	return file_proto_service_rpc_centre_centre_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CentreEnterGameRequest) GetPlayerId() uint64 {
@@ -223,7 +223,7 @@ type CentrePlayerGameNodeEntryRequest struct {
 
 func (x *CentrePlayerGameNodeEntryRequest) Reset() {
 	*x = CentrePlayerGameNodeEntryRequest{}
-	mi := &file_proto_centre_centre_service_proto_msgTypes[4]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -235,7 +235,7 @@ func (x *CentrePlayerGameNodeEntryRequest) String() string {
 func (*CentrePlayerGameNodeEntryRequest) ProtoMessage() {}
 
 func (x *CentrePlayerGameNodeEntryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_centre_centre_service_proto_msgTypes[4]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -248,7 +248,7 @@ func (x *CentrePlayerGameNodeEntryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CentrePlayerGameNodeEntryRequest.ProtoReflect.Descriptor instead.
 func (*CentrePlayerGameNodeEntryRequest) Descriptor() ([]byte, []int) {
-	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{4}
+	return file_proto_service_rpc_centre_centre_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CentrePlayerGameNodeEntryRequest) GetClientMsgBody() *CentreEnterGameRequest {
@@ -276,7 +276,7 @@ type InitSceneNodeRequest struct {
 
 func (x *InitSceneNodeRequest) Reset() {
 	*x = InitSceneNodeRequest{}
-	mi := &file_proto_centre_centre_service_proto_msgTypes[5]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -288,7 +288,7 @@ func (x *InitSceneNodeRequest) String() string {
 func (*InitSceneNodeRequest) ProtoMessage() {}
 
 func (x *InitSceneNodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_centre_centre_service_proto_msgTypes[5]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -301,7 +301,7 @@ func (x *InitSceneNodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InitSceneNodeRequest.ProtoReflect.Descriptor instead.
 func (*InitSceneNodeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{5}
+	return file_proto_service_rpc_centre_centre_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *InitSceneNodeRequest) GetNodeId() uint32 {
@@ -328,7 +328,7 @@ type CentreLoginRequest struct {
 
 func (x *CentreLoginRequest) Reset() {
 	*x = CentreLoginRequest{}
-	mi := &file_proto_centre_centre_service_proto_msgTypes[6]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -340,7 +340,7 @@ func (x *CentreLoginRequest) String() string {
 func (*CentreLoginRequest) ProtoMessage() {}
 
 func (x *CentreLoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_centre_centre_service_proto_msgTypes[6]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -353,7 +353,7 @@ func (x *CentreLoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CentreLoginRequest.ProtoReflect.Descriptor instead.
 func (*CentreLoginRequest) Descriptor() ([]byte, []int) {
-	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{6}
+	return file_proto_service_rpc_centre_centre_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CentreLoginRequest) GetAccount() string {
@@ -379,7 +379,7 @@ type CentreLoginResponse struct {
 
 func (x *CentreLoginResponse) Reset() {
 	*x = CentreLoginResponse{}
-	mi := &file_proto_centre_centre_service_proto_msgTypes[7]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -391,7 +391,7 @@ func (x *CentreLoginResponse) String() string {
 func (*CentreLoginResponse) ProtoMessage() {}
 
 func (x *CentreLoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_centre_centre_service_proto_msgTypes[7]
+	mi := &file_proto_service_rpc_centre_centre_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -404,7 +404,7 @@ func (x *CentreLoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CentreLoginResponse.ProtoReflect.Descriptor instead.
 func (*CentreLoginResponse) Descriptor() ([]byte, []int) {
-	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{7}
+	return file_proto_service_rpc_centre_centre_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CentreLoginResponse) GetErrorMessage() *TipInfoMessage {
@@ -414,11 +414,11 @@ func (x *CentreLoginResponse) GetErrorMessage() *TipInfoMessage {
 	return nil
 }
 
-var File_proto_centre_centre_service_proto protoreflect.FileDescriptor
+var File_proto_service_rpc_centre_centre_service_proto protoreflect.FileDescriptor
 
-const file_proto_centre_centre_service_proto_rawDesc = "" +
+const file_proto_service_rpc_centre_centre_service_proto_rawDesc = "" +
 	"\n" +
-	"!proto/centre/centre_service.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a\x1aproto/common/session.proto\x1a\x1aproto/common/message.proto\x1a\x16proto/common/tip.proto\"J\n" +
+	"-proto/service/rpc/centre/centre_service.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a\x1aproto/common/session.proto\x1a\x1aproto/common/message.proto\x1a\x16proto/common/tip.proto\"J\n" +
 	"\x18GateClientMessageRequest\x12.\n" +
 	"\n" +
 	"rpc_client\x18\x01 \x01(\v2\x0f.NetworkAddressR\trpcClient\"O\n" +
@@ -457,19 +457,19 @@ const file_proto_centre_centre_service_proto_rawDesc = "" +
 	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB\x16Z\x11generated/pb/game\x80\x01\x01b\x06proto3"
 
 var (
-	file_proto_centre_centre_service_proto_rawDescOnce sync.Once
-	file_proto_centre_centre_service_proto_rawDescData []byte
+	file_proto_service_rpc_centre_centre_service_proto_rawDescOnce sync.Once
+	file_proto_service_rpc_centre_centre_service_proto_rawDescData []byte
 )
 
-func file_proto_centre_centre_service_proto_rawDescGZIP() []byte {
-	file_proto_centre_centre_service_proto_rawDescOnce.Do(func() {
-		file_proto_centre_centre_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_centre_centre_service_proto_rawDesc), len(file_proto_centre_centre_service_proto_rawDesc)))
+func file_proto_service_rpc_centre_centre_service_proto_rawDescGZIP() []byte {
+	file_proto_service_rpc_centre_centre_service_proto_rawDescOnce.Do(func() {
+		file_proto_service_rpc_centre_centre_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_rpc_centre_centre_service_proto_rawDesc), len(file_proto_service_rpc_centre_centre_service_proto_rawDesc)))
 	})
-	return file_proto_centre_centre_service_proto_rawDescData
+	return file_proto_service_rpc_centre_centre_service_proto_rawDescData
 }
 
-var file_proto_centre_centre_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
-var file_proto_centre_centre_service_proto_goTypes = []any{
+var file_proto_service_rpc_centre_centre_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_proto_service_rpc_centre_centre_service_proto_goTypes = []any{
 	(*GateClientMessageRequest)(nil),         // 0: GateClientMessageRequest
 	(*LoginNodeLeaveGameRequest)(nil),        // 1: LoginNodeLeaveGameRequest
 	(*EnterGameNodeSuccessRequest)(nil),      // 2: EnterGameNodeSuccessRequest
@@ -492,7 +492,7 @@ var file_proto_centre_centre_service_proto_goTypes = []any{
 	(*RoutePlayerMessageResponse)(nil),       // 19: RoutePlayerMessageResponse
 	(*NodeHandshakeResponse)(nil),            // 20: NodeHandshakeResponse
 }
-var file_proto_centre_centre_service_proto_depIdxs = []int32{
+var file_proto_service_rpc_centre_centre_service_proto_depIdxs = []int32{
 	8,  // 0: GateClientMessageRequest.rpc_client:type_name -> NetworkAddress
 	9,  // 1: LoginNodeLeaveGameRequest.session_info:type_name -> SessionDetails
 	3,  // 2: CentrePlayerGameNodeEntryRequest.client_msg_body:type_name -> CentreEnterGameRequest
@@ -529,9 +529,9 @@ var file_proto_centre_centre_service_proto_depIdxs = []int32{
 	0,  // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_proto_centre_centre_service_proto_init() }
-func file_proto_centre_centre_service_proto_init() {
-	if File_proto_centre_centre_service_proto != nil {
+func init() { file_proto_service_rpc_centre_centre_service_proto_init() }
+func file_proto_service_rpc_centre_centre_service_proto_init() {
+	if File_proto_service_rpc_centre_centre_service_proto != nil {
 		return
 	}
 	file_proto_common_common_proto_init()
@@ -543,17 +543,17 @@ func file_proto_centre_centre_service_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_centre_centre_service_proto_rawDesc), len(file_proto_centre_centre_service_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_rpc_centre_centre_service_proto_rawDesc), len(file_proto_service_rpc_centre_centre_service_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_centre_centre_service_proto_goTypes,
-		DependencyIndexes: file_proto_centre_centre_service_proto_depIdxs,
-		MessageInfos:      file_proto_centre_centre_service_proto_msgTypes,
+		GoTypes:           file_proto_service_rpc_centre_centre_service_proto_goTypes,
+		DependencyIndexes: file_proto_service_rpc_centre_centre_service_proto_depIdxs,
+		MessageInfos:      file_proto_service_rpc_centre_centre_service_proto_msgTypes,
 	}.Build()
-	File_proto_centre_centre_service_proto = out.File
-	file_proto_centre_centre_service_proto_goTypes = nil
-	file_proto_centre_centre_service_proto_depIdxs = nil
+	File_proto_service_rpc_centre_centre_service_proto = out.File
+	file_proto_service_rpc_centre_centre_service_proto_goTypes = nil
+	file_proto_service_rpc_centre_centre_service_proto_depIdxs = nil
 }

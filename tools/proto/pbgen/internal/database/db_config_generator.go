@@ -69,7 +69,7 @@ func generateJSONConfig(protoFile string, messages []string) error {
 		return err
 	}
 
-	fmt.Printf("配置文件已生成: %s\n", config.GeneratedOutputDirectory+config.DBTableMessageListJson)
+	log.Println("配置文件已生成: %s\n", config.TableGeneratorPath+config.DBTableMessageListJson)
 	return nil
 }
 

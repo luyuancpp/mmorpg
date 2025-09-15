@@ -2,24 +2,24 @@
 #include "service_metadata.h"
 #include "proto/common/node.pb.h"
 
-#include "proto/player_locator/player_locator.grpc.pb.h"
-#include "proto/etcd/etcd.grpc.pb.h"
-#include "proto/etcd/etcd.grpc.pb.h"
-#include "proto/etcd/etcd.grpc.pb.h"
-#include "proto/login/login.grpc.pb.h"
-#include "proto/centre/centre_player.pb.h"
-#include "proto/centre/centre_player_scene.pb.h"
-#include "proto/centre/centre_scene.pb.h"
-#include "proto/centre/centre_service.pb.h"
-#include "proto/scene/game_client_player.pb.h"
-#include "proto/scene/game_player.pb.h"
-#include "proto/scene/game_player_scene.pb.h"
-#include "proto/scene/game_scene.pb.h"
-#include "proto/scene/player_scene.pb.h"
-#include "proto/scene/player_skill.pb.h"
-#include "proto/scene/player_state_attribute_sync.pb.h"
-#include "proto/scene/scene.pb.h"
-#include "proto/gate/gate_service.pb.h"
+#include "proto/service/grpc/player_locator/player_locator.grpc.pb.h"
+#include "proto/middleware/etcd/etcd.grpc.pb.h"
+#include "proto/middleware/etcd/etcd.grpc.pb.h"
+#include "proto/middleware/etcd/etcd.grpc.pb.h"
+#include "proto/service/grpc/login/login.grpc.pb.h"
+#include "proto/service/rpc/centre/centre_player.pb.h"
+#include "proto/service/rpc/centre/centre_player_scene.pb.h"
+#include "proto/service/rpc/centre/centre_scene.pb.h"
+#include "proto/service/rpc/centre/centre_service.pb.h"
+#include "proto/service/rpc/scene/game_client_player.pb.h"
+#include "proto/service/rpc/scene/game_player.pb.h"
+#include "proto/service/rpc/scene/game_player_scene.pb.h"
+#include "proto/service/rpc/scene/game_scene.pb.h"
+#include "proto/service/rpc/scene/player_scene.pb.h"
+#include "proto/service/rpc/scene/player_skill.pb.h"
+#include "proto/service/rpc/scene/player_state_attribute_sync.pb.h"
+#include "proto/service/rpc/scene/scene.pb.h"
+#include "proto/service/rpc/gate/gate_service.pb.h"
 
 #include "rpc/service_metadata/player_locator_service_metadata.h"
 #include "rpc/service_metadata/etcd_service_metadata.h"
@@ -80,25 +80,25 @@ std::array<RpcService, 87> gRpcServiceRegistry;
 
 void InitMessageInfo()
 {
-    gRpcServiceRegistry[PlayerLocatorSetLocationMessageId] = RpcService{"PlayerLocator", "SetLocation", std::make_unique_for_overwrite<::playerlocator::PlayerLocation>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorSetLocation};
-    gRpcServiceRegistry[PlayerLocatorGetLocationMessageId] = RpcService{"PlayerLocator", "GetLocation", std::make_unique_for_overwrite<::playerlocator::PlayerId>(), std::make_unique_for_overwrite<::playerlocator::PlayerLocation>(), nullptr, 1, eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorGetLocation};
-    gRpcServiceRegistry[PlayerLocatorMarkOfflineMessageId] = RpcService{"PlayerLocator", "MarkOffline", std::make_unique_for_overwrite<::playerlocator::PlayerId>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorMarkOffline};
-    gRpcServiceRegistry[KVRangeMessageId] = RpcService{"KV", "Range", std::make_unique_for_overwrite<::etcdserverpb::RangeRequest>(), std::make_unique_for_overwrite<::etcdserverpb::RangeResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendKVRange};
-    gRpcServiceRegistry[KVPutMessageId] = RpcService{"KV", "Put", std::make_unique_for_overwrite<::etcdserverpb::PutRequest>(), std::make_unique_for_overwrite<::etcdserverpb::PutResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendKVPut};
-    gRpcServiceRegistry[KVDeleteRangeMessageId] = RpcService{"KV", "DeleteRange", std::make_unique_for_overwrite<::etcdserverpb::DeleteRangeRequest>(), std::make_unique_for_overwrite<::etcdserverpb::DeleteRangeResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendKVDeleteRange};
-    gRpcServiceRegistry[KVTxnMessageId] = RpcService{"KV", "Txn", std::make_unique_for_overwrite<::etcdserverpb::TxnRequest>(), std::make_unique_for_overwrite<::etcdserverpb::TxnResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendKVTxn};
-    gRpcServiceRegistry[KVCompactMessageId] = RpcService{"KV", "Compact", std::make_unique_for_overwrite<::etcdserverpb::CompactionRequest>(), std::make_unique_for_overwrite<::etcdserverpb::CompactionResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendKVCompact};
-    gRpcServiceRegistry[WatchWatchMessageId] = RpcService{"Watch", "Watch", std::make_unique_for_overwrite<::etcdserverpb::WatchRequest>(), std::make_unique_for_overwrite<::etcdserverpb::WatchResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendWatchWatch};
-    gRpcServiceRegistry[LeaseLeaseGrantMessageId] = RpcService{"Lease", "LeaseGrant", std::make_unique_for_overwrite<::etcdserverpb::LeaseGrantRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseGrantResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseGrant};
-    gRpcServiceRegistry[LeaseLeaseRevokeMessageId] = RpcService{"Lease", "LeaseRevoke", std::make_unique_for_overwrite<::etcdserverpb::LeaseRevokeRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseRevokeResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseRevoke};
-    gRpcServiceRegistry[LeaseLeaseKeepAliveMessageId] = RpcService{"Lease", "LeaseKeepAlive", std::make_unique_for_overwrite<::etcdserverpb::LeaseKeepAliveRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseKeepAliveResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseKeepAlive};
-    gRpcServiceRegistry[LeaseLeaseTimeToLiveMessageId] = RpcService{"Lease", "LeaseTimeToLive", std::make_unique_for_overwrite<::etcdserverpb::LeaseTimeToLiveRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseTimeToLiveResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseTimeToLive};
-    gRpcServiceRegistry[LeaseLeaseLeasesMessageId] = RpcService{"Lease", "LeaseLeases", std::make_unique_for_overwrite<::etcdserverpb::LeaseLeasesRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseLeasesResponse>(), nullptr, 1, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseLeases};
-    gRpcServiceRegistry[ClientPlayerLoginLoginMessageId] = RpcService{"ClientPlayerLogin", "Login", std::make_unique_for_overwrite<::loginpb::LoginRequest>(), std::make_unique_for_overwrite<::loginpb::LoginResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLogin};
-    gRpcServiceRegistry[ClientPlayerLoginCreatePlayerMessageId] = RpcService{"ClientPlayerLogin", "CreatePlayer", std::make_unique_for_overwrite<::loginpb::CreatePlayerRequest>(), std::make_unique_for_overwrite<::loginpb::CreatePlayerResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginCreatePlayer};
-    gRpcServiceRegistry[ClientPlayerLoginEnterGameMessageId] = RpcService{"ClientPlayerLogin", "EnterGame", std::make_unique_for_overwrite<::loginpb::EnterGameRequest>(), std::make_unique_for_overwrite<::loginpb::EnterGameResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginEnterGame};
-    gRpcServiceRegistry[ClientPlayerLoginLeaveGameMessageId] = RpcService{"ClientPlayerLogin", "LeaveGame", std::make_unique_for_overwrite<::loginpb::LeaveGameRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLeaveGame};
-    gRpcServiceRegistry[ClientPlayerLoginDisconnectMessageId] = RpcService{"ClientPlayerLogin", "Disconnect", std::make_unique_for_overwrite<::loginpb::LoginNodeDisconnectRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
+    gRpcServiceRegistry[PlayerLocatorSetLocationMessageId] = RpcService{"PlayerLocator", "SetLocation", std::make_unique_for_overwrite<::playerlocator::PlayerLocation>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 0, eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorSetLocation};
+    gRpcServiceRegistry[PlayerLocatorGetLocationMessageId] = RpcService{"PlayerLocator", "GetLocation", std::make_unique_for_overwrite<::playerlocator::PlayerId>(), std::make_unique_for_overwrite<::playerlocator::PlayerLocation>(), nullptr, 0, eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorGetLocation};
+    gRpcServiceRegistry[PlayerLocatorMarkOfflineMessageId] = RpcService{"PlayerLocator", "MarkOffline", std::make_unique_for_overwrite<::playerlocator::PlayerId>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 0, eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorMarkOffline};
+    gRpcServiceRegistry[KVRangeMessageId] = RpcService{"KV", "Range", std::make_unique_for_overwrite<::etcdserverpb::RangeRequest>(), std::make_unique_for_overwrite<::etcdserverpb::RangeResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendKVRange};
+    gRpcServiceRegistry[KVPutMessageId] = RpcService{"KV", "Put", std::make_unique_for_overwrite<::etcdserverpb::PutRequest>(), std::make_unique_for_overwrite<::etcdserverpb::PutResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendKVPut};
+    gRpcServiceRegistry[KVDeleteRangeMessageId] = RpcService{"KV", "DeleteRange", std::make_unique_for_overwrite<::etcdserverpb::DeleteRangeRequest>(), std::make_unique_for_overwrite<::etcdserverpb::DeleteRangeResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendKVDeleteRange};
+    gRpcServiceRegistry[KVTxnMessageId] = RpcService{"KV", "Txn", std::make_unique_for_overwrite<::etcdserverpb::TxnRequest>(), std::make_unique_for_overwrite<::etcdserverpb::TxnResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendKVTxn};
+    gRpcServiceRegistry[KVCompactMessageId] = RpcService{"KV", "Compact", std::make_unique_for_overwrite<::etcdserverpb::CompactionRequest>(), std::make_unique_for_overwrite<::etcdserverpb::CompactionResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendKVCompact};
+    gRpcServiceRegistry[WatchWatchMessageId] = RpcService{"Watch", "Watch", std::make_unique_for_overwrite<::etcdserverpb::WatchRequest>(), std::make_unique_for_overwrite<::etcdserverpb::WatchResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendWatchWatch};
+    gRpcServiceRegistry[LeaseLeaseGrantMessageId] = RpcService{"Lease", "LeaseGrant", std::make_unique_for_overwrite<::etcdserverpb::LeaseGrantRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseGrantResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseGrant};
+    gRpcServiceRegistry[LeaseLeaseRevokeMessageId] = RpcService{"Lease", "LeaseRevoke", std::make_unique_for_overwrite<::etcdserverpb::LeaseRevokeRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseRevokeResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseRevoke};
+    gRpcServiceRegistry[LeaseLeaseKeepAliveMessageId] = RpcService{"Lease", "LeaseKeepAlive", std::make_unique_for_overwrite<::etcdserverpb::LeaseKeepAliveRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseKeepAliveResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseKeepAlive};
+    gRpcServiceRegistry[LeaseLeaseTimeToLiveMessageId] = RpcService{"Lease", "LeaseTimeToLive", std::make_unique_for_overwrite<::etcdserverpb::LeaseTimeToLiveRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseTimeToLiveResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseTimeToLive};
+    gRpcServiceRegistry[LeaseLeaseLeasesMessageId] = RpcService{"Lease", "LeaseLeases", std::make_unique_for_overwrite<::etcdserverpb::LeaseLeasesRequest>(), std::make_unique_for_overwrite<::etcdserverpb::LeaseLeasesResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseLeases};
+    gRpcServiceRegistry[ClientPlayerLoginLoginMessageId] = RpcService{"ClientPlayerLogin", "Login", std::make_unique_for_overwrite<::loginpb::LoginRequest>(), std::make_unique_for_overwrite<::loginpb::LoginResponse>(), nullptr, 0, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLogin};
+    gRpcServiceRegistry[ClientPlayerLoginCreatePlayerMessageId] = RpcService{"ClientPlayerLogin", "CreatePlayer", std::make_unique_for_overwrite<::loginpb::CreatePlayerRequest>(), std::make_unique_for_overwrite<::loginpb::CreatePlayerResponse>(), nullptr, 0, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginCreatePlayer};
+    gRpcServiceRegistry[ClientPlayerLoginEnterGameMessageId] = RpcService{"ClientPlayerLogin", "EnterGame", std::make_unique_for_overwrite<::loginpb::EnterGameRequest>(), std::make_unique_for_overwrite<::loginpb::EnterGameResponse>(), nullptr, 0, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginEnterGame};
+    gRpcServiceRegistry[ClientPlayerLoginLeaveGameMessageId] = RpcService{"ClientPlayerLogin", "LeaveGame", std::make_unique_for_overwrite<::loginpb::LeaveGameRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 0, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLeaveGame};
+    gRpcServiceRegistry[ClientPlayerLoginDisconnectMessageId] = RpcService{"ClientPlayerLogin", "Disconnect", std::make_unique_for_overwrite<::loginpb::LoginNodeDisconnectRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 0, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
     gRpcServiceRegistry[CentrePlayerUtilitySendTipToClientMessageId] = RpcService{"CentrePlayerUtility", "SendTipToClient", std::make_unique_for_overwrite<::TipInfoMessage>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentrePlayerUtilityImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentrePlayerUtilityKickPlayerMessageId] = RpcService{"CentrePlayerUtility", "KickPlayer", std::make_unique_for_overwrite<::CentreKickPlayerRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentrePlayerUtilityImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentrePlayerSceneEnterSceneMessageId] = RpcService{"CentrePlayerScene", "EnterScene", std::make_unique_for_overwrite<::CentreEnterSceneRequest>(), std::make_unique_for_overwrite<::google::protobuf::Empty>(), std::make_unique_for_overwrite<CentrePlayerSceneImpl>(), 0, eNodeType::CentreNodeService};

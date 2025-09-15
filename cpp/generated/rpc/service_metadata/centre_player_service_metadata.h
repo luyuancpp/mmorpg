@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/centre/centre_player.pb.h"
+#include "proto/service/rpc/centre/centre_player.pb.h"
 
 
 constexpr uint32_t CentrePlayerUtilitySendTipToClientMessageId = 48;

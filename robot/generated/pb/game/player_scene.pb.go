@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/scene/player_scene.proto
+// source: proto/service/rpc/scene/player_scene.proto
 
 package game
 
@@ -30,7 +30,7 @@ type EnterSceneC2SRequest struct {
 
 func (x *EnterSceneC2SRequest) Reset() {
 	*x = EnterSceneC2SRequest{}
-	mi := &file_proto_scene_player_scene_proto_msgTypes[0]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *EnterSceneC2SRequest) String() string {
 func (*EnterSceneC2SRequest) ProtoMessage() {}
 
 func (x *EnterSceneC2SRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_scene_proto_msgTypes[0]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *EnterSceneC2SRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterSceneC2SRequest.ProtoReflect.Descriptor instead.
 func (*EnterSceneC2SRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{0}
+	return file_proto_service_rpc_scene_player_scene_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *EnterSceneC2SRequest) GetSceneInfo() *RoomInfoPBComponent {
@@ -74,7 +74,7 @@ type EnterSceneC2SResponse struct {
 
 func (x *EnterSceneC2SResponse) Reset() {
 	*x = EnterSceneC2SResponse{}
-	mi := &file_proto_scene_player_scene_proto_msgTypes[1]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -86,7 +86,7 @@ func (x *EnterSceneC2SResponse) String() string {
 func (*EnterSceneC2SResponse) ProtoMessage() {}
 
 func (x *EnterSceneC2SResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_scene_proto_msgTypes[1]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,7 +99,7 @@ func (x *EnterSceneC2SResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterSceneC2SResponse.ProtoReflect.Descriptor instead.
 func (*EnterSceneC2SResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{1}
+	return file_proto_service_rpc_scene_player_scene_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *EnterSceneC2SResponse) GetErrorMessage() *TipInfoMessage {
@@ -118,7 +118,7 @@ type EnterSceneS2C struct {
 
 func (x *EnterSceneS2C) Reset() {
 	*x = EnterSceneS2C{}
-	mi := &file_proto_scene_player_scene_proto_msgTypes[2]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -130,7 +130,7 @@ func (x *EnterSceneS2C) String() string {
 func (*EnterSceneS2C) ProtoMessage() {}
 
 func (x *EnterSceneS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_scene_proto_msgTypes[2]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -143,7 +143,7 @@ func (x *EnterSceneS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterSceneS2C.ProtoReflect.Descriptor instead.
 func (*EnterSceneS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{2}
+	return file_proto_service_rpc_scene_player_scene_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *EnterSceneS2C) GetSceneInfo() *RoomInfoPBComponent {
@@ -162,7 +162,7 @@ type SceneInfoS2C struct {
 
 func (x *SceneInfoS2C) Reset() {
 	*x = SceneInfoS2C{}
-	mi := &file_proto_scene_player_scene_proto_msgTypes[3]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -174,7 +174,7 @@ func (x *SceneInfoS2C) String() string {
 func (*SceneInfoS2C) ProtoMessage() {}
 
 func (x *SceneInfoS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_scene_proto_msgTypes[3]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -187,7 +187,7 @@ func (x *SceneInfoS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SceneInfoS2C.ProtoReflect.Descriptor instead.
 func (*SceneInfoS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{3}
+	return file_proto_service_rpc_scene_player_scene_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SceneInfoS2C) GetSceneInfo() []*RoomInfoPBComponent {
@@ -205,7 +205,7 @@ type SceneInfoRequest struct {
 
 func (x *SceneInfoRequest) Reset() {
 	*x = SceneInfoRequest{}
-	mi := &file_proto_scene_player_scene_proto_msgTypes[4]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -217,7 +217,7 @@ func (x *SceneInfoRequest) String() string {
 func (*SceneInfoRequest) ProtoMessage() {}
 
 func (x *SceneInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_scene_proto_msgTypes[4]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -230,7 +230,7 @@ func (x *SceneInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SceneInfoRequest.ProtoReflect.Descriptor instead.
 func (*SceneInfoRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{4}
+	return file_proto_service_rpc_scene_player_scene_proto_rawDescGZIP(), []int{4}
 }
 
 type SceneInfoResponse struct {
@@ -242,7 +242,7 @@ type SceneInfoResponse struct {
 
 func (x *SceneInfoResponse) Reset() {
 	*x = SceneInfoResponse{}
-	mi := &file_proto_scene_player_scene_proto_msgTypes[5]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -254,7 +254,7 @@ func (x *SceneInfoResponse) String() string {
 func (*SceneInfoResponse) ProtoMessage() {}
 
 func (x *SceneInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_scene_proto_msgTypes[5]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -267,7 +267,7 @@ func (x *SceneInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SceneInfoResponse.ProtoReflect.Descriptor instead.
 func (*SceneInfoResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{5}
+	return file_proto_service_rpc_scene_player_scene_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SceneInfoResponse) GetSceneInfo() []*RoomInfoPBComponent {
@@ -290,7 +290,7 @@ type ActorCreateS2C struct {
 
 func (x *ActorCreateS2C) Reset() {
 	*x = ActorCreateS2C{}
-	mi := &file_proto_scene_player_scene_proto_msgTypes[6]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -302,7 +302,7 @@ func (x *ActorCreateS2C) String() string {
 func (*ActorCreateS2C) ProtoMessage() {}
 
 func (x *ActorCreateS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_scene_proto_msgTypes[6]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -315,7 +315,7 @@ func (x *ActorCreateS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActorCreateS2C.ProtoReflect.Descriptor instead.
 func (*ActorCreateS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{6}
+	return file_proto_service_rpc_scene_player_scene_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ActorCreateS2C) GetEntity() uint64 {
@@ -362,7 +362,7 @@ type ActorDestroyS2C struct {
 
 func (x *ActorDestroyS2C) Reset() {
 	*x = ActorDestroyS2C{}
-	mi := &file_proto_scene_player_scene_proto_msgTypes[7]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -374,7 +374,7 @@ func (x *ActorDestroyS2C) String() string {
 func (*ActorDestroyS2C) ProtoMessage() {}
 
 func (x *ActorDestroyS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_scene_proto_msgTypes[7]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -387,7 +387,7 @@ func (x *ActorDestroyS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActorDestroyS2C.ProtoReflect.Descriptor instead.
 func (*ActorDestroyS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{7}
+	return file_proto_service_rpc_scene_player_scene_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ActorDestroyS2C) GetEntity() uint64 {
@@ -406,7 +406,7 @@ type ActorListCreateS2C struct {
 
 func (x *ActorListCreateS2C) Reset() {
 	*x = ActorListCreateS2C{}
-	mi := &file_proto_scene_player_scene_proto_msgTypes[8]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -418,7 +418,7 @@ func (x *ActorListCreateS2C) String() string {
 func (*ActorListCreateS2C) ProtoMessage() {}
 
 func (x *ActorListCreateS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_scene_proto_msgTypes[8]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -431,7 +431,7 @@ func (x *ActorListCreateS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActorListCreateS2C.ProtoReflect.Descriptor instead.
 func (*ActorListCreateS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{8}
+	return file_proto_service_rpc_scene_player_scene_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ActorListCreateS2C) GetActorList() []*ActorCreateS2C {
@@ -450,7 +450,7 @@ type ActorListDestroyS2C struct {
 
 func (x *ActorListDestroyS2C) Reset() {
 	*x = ActorListDestroyS2C{}
-	mi := &file_proto_scene_player_scene_proto_msgTypes[9]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -462,7 +462,7 @@ func (x *ActorListDestroyS2C) String() string {
 func (*ActorListDestroyS2C) ProtoMessage() {}
 
 func (x *ActorListDestroyS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_scene_proto_msgTypes[9]
+	mi := &file_proto_service_rpc_scene_player_scene_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -475,7 +475,7 @@ func (x *ActorListDestroyS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActorListDestroyS2C.ProtoReflect.Descriptor instead.
 func (*ActorListDestroyS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{9}
+	return file_proto_service_rpc_scene_player_scene_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ActorListDestroyS2C) GetEntity() []uint64 {
@@ -485,11 +485,11 @@ func (x *ActorListDestroyS2C) GetEntity() []uint64 {
 	return nil
 }
 
-var File_proto_scene_player_scene_proto protoreflect.FileDescriptor
+var File_proto_service_rpc_scene_player_scene_proto protoreflect.FileDescriptor
 
-const file_proto_scene_player_scene_proto_rawDesc = "" +
+const file_proto_service_rpc_scene_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x1eproto/scene/player_scene.proto\x1a\x16proto/common/tip.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a&proto/logic/component/scene_comp.proto\x1a&proto/logic/component/actor_comp.proto\"K\n" +
+	"*proto/service/rpc/scene/player_scene.proto\x1a\x16proto/common/tip.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a&proto/logic/component/scene_comp.proto\x1a&proto/logic/component/actor_comp.proto\"K\n" +
 	"\x14EnterSceneC2SRequest\x123\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"M\n" +
@@ -532,19 +532,19 @@ const file_proto_scene_player_scene_proto_rawDesc = "" +
 	"\x16NotifyActorListDestroy\x12\x14.ActorListDestroyS2C\x1a\x06.EmptyB\x16Z\x11generated/pb/game\x80\x01\x01b\x06proto3"
 
 var (
-	file_proto_scene_player_scene_proto_rawDescOnce sync.Once
-	file_proto_scene_player_scene_proto_rawDescData []byte
+	file_proto_service_rpc_scene_player_scene_proto_rawDescOnce sync.Once
+	file_proto_service_rpc_scene_player_scene_proto_rawDescData []byte
 )
 
-func file_proto_scene_player_scene_proto_rawDescGZIP() []byte {
-	file_proto_scene_player_scene_proto_rawDescOnce.Do(func() {
-		file_proto_scene_player_scene_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_scene_player_scene_proto_rawDesc), len(file_proto_scene_player_scene_proto_rawDesc)))
+func file_proto_service_rpc_scene_player_scene_proto_rawDescGZIP() []byte {
+	file_proto_service_rpc_scene_player_scene_proto_rawDescOnce.Do(func() {
+		file_proto_service_rpc_scene_player_scene_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_rpc_scene_player_scene_proto_rawDesc), len(file_proto_service_rpc_scene_player_scene_proto_rawDesc)))
 	})
-	return file_proto_scene_player_scene_proto_rawDescData
+	return file_proto_service_rpc_scene_player_scene_proto_rawDescData
 }
 
-var file_proto_scene_player_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
-var file_proto_scene_player_scene_proto_goTypes = []any{
+var file_proto_service_rpc_scene_player_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_proto_service_rpc_scene_player_scene_proto_goTypes = []any{
 	(*EnterSceneC2SRequest)(nil),  // 0: EnterSceneC2SRequest
 	(*EnterSceneC2SResponse)(nil), // 1: EnterSceneC2SResponse
 	(*EnterSceneS2C)(nil),         // 2: EnterSceneS2C
@@ -560,7 +560,7 @@ var file_proto_scene_player_scene_proto_goTypes = []any{
 	(*Transform)(nil),             // 12: Transform
 	(*Empty)(nil),                 // 13: Empty
 }
-var file_proto_scene_player_scene_proto_depIdxs = []int32{
+var file_proto_service_rpc_scene_player_scene_proto_depIdxs = []int32{
 	10, // 0: EnterSceneC2SRequest.scene_info:type_name -> RoomInfoPBComponent
 	11, // 1: EnterSceneC2SResponse.error_message:type_name -> TipInfoMessage
 	10, // 2: EnterSceneS2C.scene_info:type_name -> RoomInfoPBComponent
@@ -591,9 +591,9 @@ var file_proto_scene_player_scene_proto_depIdxs = []int32{
 	0,  // [0:7] is the sub-list for field type_name
 }
 
-func init() { file_proto_scene_player_scene_proto_init() }
-func file_proto_scene_player_scene_proto_init() {
-	if File_proto_scene_player_scene_proto != nil {
+func init() { file_proto_service_rpc_scene_player_scene_proto_init() }
+func file_proto_service_rpc_scene_player_scene_proto_init() {
+	if File_proto_service_rpc_scene_player_scene_proto != nil {
 		return
 	}
 	file_proto_common_tip_proto_init()
@@ -605,17 +605,17 @@ func file_proto_scene_player_scene_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_player_scene_proto_rawDesc), len(file_proto_scene_player_scene_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_rpc_scene_player_scene_proto_rawDesc), len(file_proto_service_rpc_scene_player_scene_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_scene_player_scene_proto_goTypes,
-		DependencyIndexes: file_proto_scene_player_scene_proto_depIdxs,
-		MessageInfos:      file_proto_scene_player_scene_proto_msgTypes,
+		GoTypes:           file_proto_service_rpc_scene_player_scene_proto_goTypes,
+		DependencyIndexes: file_proto_service_rpc_scene_player_scene_proto_depIdxs,
+		MessageInfos:      file_proto_service_rpc_scene_player_scene_proto_msgTypes,
 	}.Build()
-	File_proto_scene_player_scene_proto = out.File
-	file_proto_scene_player_scene_proto_goTypes = nil
-	file_proto_scene_player_scene_proto_depIdxs = nil
+	File_proto_service_rpc_scene_player_scene_proto = out.File
+	file_proto_service_rpc_scene_player_scene_proto_goTypes = nil
+	file_proto_service_rpc_scene_player_scene_proto_depIdxs = nil
 }

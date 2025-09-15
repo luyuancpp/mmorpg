@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/scene/player_state_attribute_sync.proto
+// source: proto/service/rpc/scene/player_state_attribute_sync.proto
 
 package game
 
@@ -34,7 +34,7 @@ type BaseAttributeSyncDataS2C struct {
 
 func (x *BaseAttributeSyncDataS2C) Reset() {
 	*x = BaseAttributeSyncDataS2C{}
-	mi := &file_proto_scene_player_state_attribute_sync_proto_msgTypes[0]
+	mi := &file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *BaseAttributeSyncDataS2C) String() string {
 func (*BaseAttributeSyncDataS2C) ProtoMessage() {}
 
 func (x *BaseAttributeSyncDataS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_state_attribute_sync_proto_msgTypes[0]
+	mi := &file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *BaseAttributeSyncDataS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BaseAttributeSyncDataS2C.ProtoReflect.Descriptor instead.
 func (*BaseAttributeSyncDataS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{0}
+	return file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *BaseAttributeSyncDataS2C) GetEntityId() uint64 {
@@ -100,7 +100,7 @@ type AttributeDelta2FramesS2C struct {
 
 func (x *AttributeDelta2FramesS2C) Reset() {
 	*x = AttributeDelta2FramesS2C{}
-	mi := &file_proto_scene_player_state_attribute_sync_proto_msgTypes[1]
+	mi := &file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -112,7 +112,7 @@ func (x *AttributeDelta2FramesS2C) String() string {
 func (*AttributeDelta2FramesS2C) ProtoMessage() {}
 
 func (x *AttributeDelta2FramesS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_state_attribute_sync_proto_msgTypes[1]
+	mi := &file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -125,7 +125,7 @@ func (x *AttributeDelta2FramesS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttributeDelta2FramesS2C.ProtoReflect.Descriptor instead.
 func (*AttributeDelta2FramesS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{1}
+	return file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AttributeDelta2FramesS2C) GetEntityId() uint64 {
@@ -144,7 +144,7 @@ type AttributeDelta5FramesS2C struct {
 
 func (x *AttributeDelta5FramesS2C) Reset() {
 	*x = AttributeDelta5FramesS2C{}
-	mi := &file_proto_scene_player_state_attribute_sync_proto_msgTypes[2]
+	mi := &file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -156,7 +156,7 @@ func (x *AttributeDelta5FramesS2C) String() string {
 func (*AttributeDelta5FramesS2C) ProtoMessage() {}
 
 func (x *AttributeDelta5FramesS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_state_attribute_sync_proto_msgTypes[2]
+	mi := &file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -169,7 +169,7 @@ func (x *AttributeDelta5FramesS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttributeDelta5FramesS2C.ProtoReflect.Descriptor instead.
 func (*AttributeDelta5FramesS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{2}
+	return file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AttributeDelta5FramesS2C) GetEntityId() uint64 {
@@ -188,7 +188,7 @@ type AttributeDelta10FramesS2C struct {
 
 func (x *AttributeDelta10FramesS2C) Reset() {
 	*x = AttributeDelta10FramesS2C{}
-	mi := &file_proto_scene_player_state_attribute_sync_proto_msgTypes[3]
+	mi := &file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -200,7 +200,7 @@ func (x *AttributeDelta10FramesS2C) String() string {
 func (*AttributeDelta10FramesS2C) ProtoMessage() {}
 
 func (x *AttributeDelta10FramesS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_state_attribute_sync_proto_msgTypes[3]
+	mi := &file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -213,7 +213,7 @@ func (x *AttributeDelta10FramesS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttributeDelta10FramesS2C.ProtoReflect.Descriptor instead.
 func (*AttributeDelta10FramesS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{3}
+	return file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *AttributeDelta10FramesS2C) GetEntityId() uint64 {
@@ -232,7 +232,7 @@ type AttributeDelta30FramesS2C struct {
 
 func (x *AttributeDelta30FramesS2C) Reset() {
 	*x = AttributeDelta30FramesS2C{}
-	mi := &file_proto_scene_player_state_attribute_sync_proto_msgTypes[4]
+	mi := &file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -244,7 +244,7 @@ func (x *AttributeDelta30FramesS2C) String() string {
 func (*AttributeDelta30FramesS2C) ProtoMessage() {}
 
 func (x *AttributeDelta30FramesS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_state_attribute_sync_proto_msgTypes[4]
+	mi := &file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -257,7 +257,7 @@ func (x *AttributeDelta30FramesS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttributeDelta30FramesS2C.ProtoReflect.Descriptor instead.
 func (*AttributeDelta30FramesS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{4}
+	return file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *AttributeDelta30FramesS2C) GetEntityId() uint64 {
@@ -276,7 +276,7 @@ type AttributeDelta60FramesS2C struct {
 
 func (x *AttributeDelta60FramesS2C) Reset() {
 	*x = AttributeDelta60FramesS2C{}
-	mi := &file_proto_scene_player_state_attribute_sync_proto_msgTypes[5]
+	mi := &file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -288,7 +288,7 @@ func (x *AttributeDelta60FramesS2C) String() string {
 func (*AttributeDelta60FramesS2C) ProtoMessage() {}
 
 func (x *AttributeDelta60FramesS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_state_attribute_sync_proto_msgTypes[5]
+	mi := &file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -301,7 +301,7 @@ func (x *AttributeDelta60FramesS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttributeDelta60FramesS2C.ProtoReflect.Descriptor instead.
 func (*AttributeDelta60FramesS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{5}
+	return file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *AttributeDelta60FramesS2C) GetEntityId() uint64 {
@@ -311,11 +311,11 @@ func (x *AttributeDelta60FramesS2C) GetEntityId() uint64 {
 	return 0
 }
 
-var File_proto_scene_player_state_attribute_sync_proto protoreflect.FileDescriptor
+var File_proto_service_rpc_scene_player_state_attribute_sync_proto protoreflect.FileDescriptor
 
-const file_proto_scene_player_state_attribute_sync_proto_rawDesc = "" +
+const file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDesc = "" +
 	"\n" +
-	"-proto/scene/player_state_attribute_sync.proto\x1a proto/logic/component/comp.proto\x1a\x18proto/common/empty.proto\x1a&proto/logic/component/skill_comp.proto\x1a&proto/logic/component/actor_comp.proto\x1a6proto/logic/component/actor_attribute_state_comp.proto\"\xd4\x01\n" +
+	"9proto/service/rpc/scene/player_state_attribute_sync.proto\x1a proto/logic/component/comp.proto\x1a\x18proto/common/empty.proto\x1a&proto/logic/component/skill_comp.proto\x1a&proto/logic/component/actor_comp.proto\x1a6proto/logic/component/actor_attribute_state_comp.proto\"\xd4\x01\n" +
 	"\x18BaseAttributeSyncDataS2C\x12\x1b\n" +
 	"\tentity_id\x18\x01 \x01(\x04R\bentityId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
@@ -341,19 +341,19 @@ const file_proto_scene_player_state_attribute_sync_proto_rawDesc = "" +
 	"\x15SyncAttribute60Frames\x12\x1a.AttributeDelta60FramesS2C\x1a\x06.EmptyB\x16Z\x11generated/pb/game\x80\x01\x01b\x06proto3"
 
 var (
-	file_proto_scene_player_state_attribute_sync_proto_rawDescOnce sync.Once
-	file_proto_scene_player_state_attribute_sync_proto_rawDescData []byte
+	file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDescOnce sync.Once
+	file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDescData []byte
 )
 
-func file_proto_scene_player_state_attribute_sync_proto_rawDescGZIP() []byte {
-	file_proto_scene_player_state_attribute_sync_proto_rawDescOnce.Do(func() {
-		file_proto_scene_player_state_attribute_sync_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_scene_player_state_attribute_sync_proto_rawDesc), len(file_proto_scene_player_state_attribute_sync_proto_rawDesc)))
+func file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDescGZIP() []byte {
+	file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDescOnce.Do(func() {
+		file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDesc), len(file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDesc)))
 	})
-	return file_proto_scene_player_state_attribute_sync_proto_rawDescData
+	return file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDescData
 }
 
-var file_proto_scene_player_state_attribute_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_proto_scene_player_state_attribute_sync_proto_goTypes = []any{
+var file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_service_rpc_scene_player_state_attribute_sync_proto_goTypes = []any{
 	(*BaseAttributeSyncDataS2C)(nil),    // 0: BaseAttributeSyncDataS2C
 	(*AttributeDelta2FramesS2C)(nil),    // 1: AttributeDelta2FramesS2C
 	(*AttributeDelta5FramesS2C)(nil),    // 2: AttributeDelta5FramesS2C
@@ -365,7 +365,7 @@ var file_proto_scene_player_state_attribute_sync_proto_goTypes = []any{
 	(*CombatStateFlagsPbComponent)(nil), // 8: CombatStateFlagsPbComponent
 	(*Empty)(nil),                       // 9: Empty
 }
-var file_proto_scene_player_state_attribute_sync_proto_depIdxs = []int32{
+var file_proto_service_rpc_scene_player_state_attribute_sync_proto_depIdxs = []int32{
 	6, // 0: BaseAttributeSyncDataS2C.transform:type_name -> Transform
 	7, // 1: BaseAttributeSyncDataS2C.velocity:type_name -> Velocity
 	8, // 2: BaseAttributeSyncDataS2C.combat_state_flags:type_name -> CombatStateFlagsPbComponent
@@ -388,9 +388,9 @@ var file_proto_scene_player_state_attribute_sync_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_proto_scene_player_state_attribute_sync_proto_init() }
-func file_proto_scene_player_state_attribute_sync_proto_init() {
-	if File_proto_scene_player_state_attribute_sync_proto != nil {
+func init() { file_proto_service_rpc_scene_player_state_attribute_sync_proto_init() }
+func file_proto_service_rpc_scene_player_state_attribute_sync_proto_init() {
+	if File_proto_service_rpc_scene_player_state_attribute_sync_proto != nil {
 		return
 	}
 	file_proto_logic_component_comp_proto_init()
@@ -402,17 +402,17 @@ func file_proto_scene_player_state_attribute_sync_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_player_state_attribute_sync_proto_rawDesc), len(file_proto_scene_player_state_attribute_sync_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDesc), len(file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_scene_player_state_attribute_sync_proto_goTypes,
-		DependencyIndexes: file_proto_scene_player_state_attribute_sync_proto_depIdxs,
-		MessageInfos:      file_proto_scene_player_state_attribute_sync_proto_msgTypes,
+		GoTypes:           file_proto_service_rpc_scene_player_state_attribute_sync_proto_goTypes,
+		DependencyIndexes: file_proto_service_rpc_scene_player_state_attribute_sync_proto_depIdxs,
+		MessageInfos:      file_proto_service_rpc_scene_player_state_attribute_sync_proto_msgTypes,
 	}.Build()
-	File_proto_scene_player_state_attribute_sync_proto = out.File
-	file_proto_scene_player_state_attribute_sync_proto_goTypes = nil
-	file_proto_scene_player_state_attribute_sync_proto_depIdxs = nil
+	File_proto_service_rpc_scene_player_state_attribute_sync_proto = out.File
+	file_proto_service_rpc_scene_player_state_attribute_sync_proto_goTypes = nil
+	file_proto_service_rpc_scene_player_state_attribute_sync_proto_depIdxs = nil
 }
