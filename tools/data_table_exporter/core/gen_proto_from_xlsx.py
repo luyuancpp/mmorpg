@@ -130,7 +130,7 @@ def format_group_array_field(sheet_name: str, data: Dict, key: str, column_names
 def generate_table_message(sheet_name: str) -> str:
     """Generate the table message for the .proto file."""
     return (
-        f'message {sheet_name}TabledData {{\n'
+        f'message {sheet_name}TableData {{\n'
         f'\trepeated {sheet_name}Table data = 1;\n'
         '}\n'
     )

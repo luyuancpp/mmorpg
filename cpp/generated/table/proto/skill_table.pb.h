@@ -56,10 +56,10 @@ class SkillTable;
 struct SkillTableDefaultTypeInternal;
 extern SkillTableDefaultTypeInternal _SkillTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull SkillTable_class_data_;
-class SkillTabledData;
-struct SkillTabledDataDefaultTypeInternal;
-extern SkillTabledDataDefaultTypeInternal _SkillTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull SkillTabledData_class_data_;
+class SkillTableData;
+struct SkillTableDataDefaultTypeInternal;
+extern SkillTableDataDefaultTypeInternal _SkillTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SkillTableData_class_data_;
 class Skillrequestresource;
 struct SkillrequestresourceDefaultTypeInternal;
 extern SkillrequestresourceDefaultTypeInternal _Skillrequestresource_default_instance_;
@@ -1200,30 +1200,30 @@ class SkillTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull SkillTable_class_data_;
 // -------------------------------------------------------------------
 
-class SkillTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:SkillTabledData) */ {
+class SkillTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:SkillTableData) */ {
  public:
-  inline SkillTabledData() : SkillTabledData(nullptr) {}
-  ~SkillTabledData() PROTOBUF_FINAL;
+  inline SkillTableData() : SkillTableData(nullptr) {}
+  ~SkillTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(SkillTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(SkillTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(SkillTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SkillTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR SkillTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR SkillTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline SkillTabledData(const SkillTabledData& from) : SkillTabledData(nullptr, from) {}
-  inline SkillTabledData(SkillTabledData&& from) noexcept
-      : SkillTabledData(nullptr, ::std::move(from)) {}
-  inline SkillTabledData& operator=(const SkillTabledData& from) {
+  inline SkillTableData(const SkillTableData& from) : SkillTableData(nullptr, from) {}
+  inline SkillTableData(SkillTableData&& from) noexcept
+      : SkillTableData(nullptr, ::std::move(from)) {}
+  inline SkillTableData& operator=(const SkillTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline SkillTabledData& operator=(SkillTabledData&& from) noexcept {
+  inline SkillTableData& operator=(SkillTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -1251,13 +1251,13 @@ class SkillTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const SkillTabledData& default_instance() {
-    return *reinterpret_cast<const SkillTabledData*>(
-        &_SkillTabledData_default_instance_);
+  static const SkillTableData& default_instance() {
+    return *reinterpret_cast<const SkillTableData*>(
+        &_SkillTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 4;
-  friend void swap(SkillTabledData& a, SkillTabledData& b) { a.Swap(&b); }
-  inline void Swap(SkillTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(SkillTableData& a, SkillTableData& b) { a.Swap(&b); }
+  inline void Swap(SkillTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -1265,7 +1265,7 @@ class SkillTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(SkillTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(SkillTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -1273,13 +1273,13 @@ class SkillTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  SkillTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<SkillTabledData>(arena);
+  SkillTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SkillTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const SkillTabledData& from);
+  void CopyFrom(const SkillTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const SkillTabledData& from) { SkillTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const SkillTableData& from) { SkillTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -1315,18 +1315,18 @@ class SkillTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(SkillTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(SkillTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "SkillTabledData"; }
+  static ::absl::string_view FullMessageName() { return "SkillTableData"; }
 
  protected:
-  explicit SkillTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  SkillTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SkillTabledData& from);
-  SkillTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SkillTabledData&& from) noexcept
-      : SkillTabledData(arena) {
+  explicit SkillTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SkillTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SkillTableData& from);
+  SkillTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SkillTableData&& from) noexcept
+      : SkillTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -1362,7 +1362,7 @@ class SkillTabledData final : public ::google::protobuf::Message
   const ::SkillTable& data(int index) const;
   ::SkillTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::SkillTable>& data() const;
-  // @@protoc_insertion_point(class_scope:SkillTabledData)
+  // @@protoc_insertion_point(class_scope:SkillTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1385,7 +1385,7 @@ class SkillTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const SkillTabledData& from_msg);
+        const SkillTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::SkillTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -1394,7 +1394,7 @@ class SkillTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_skill_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull SkillTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull SkillTableData_class_data_;
 
 // ===================================================================
 
@@ -2307,54 +2307,54 @@ inline void SkillTable::set_allocated_damage(::std::string* PROTOBUF_NULLABLE va
 
 // -------------------------------------------------------------------
 
-// SkillTabledData
+// SkillTableData
 
 // repeated .SkillTable data = 1;
-inline int SkillTabledData::_internal_data_size() const {
+inline int SkillTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int SkillTabledData::data_size() const {
+inline int SkillTableData::data_size() const {
   return _internal_data_size();
 }
-inline void SkillTabledData::clear_data() {
+inline void SkillTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::SkillTable* PROTOBUF_NONNULL SkillTabledData::mutable_data(int index)
+inline ::SkillTable* PROTOBUF_NONNULL SkillTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:SkillTabledData.data)
+  // @@protoc_insertion_point(field_mutable:SkillTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::SkillTable>* PROTOBUF_NONNULL SkillTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::SkillTable>* PROTOBUF_NONNULL SkillTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:SkillTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:SkillTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::SkillTable& SkillTabledData::data(int index) const
+inline const ::SkillTable& SkillTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:SkillTabledData.data)
+  // @@protoc_insertion_point(field_get:SkillTableData.data)
   return _internal_data().Get(index);
 }
-inline ::SkillTable* PROTOBUF_NONNULL SkillTabledData::add_data()
+inline ::SkillTable* PROTOBUF_NONNULL SkillTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::SkillTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:SkillTabledData.data)
+  // @@protoc_insertion_point(field_add:SkillTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::SkillTable>& SkillTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::SkillTable>& SkillTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:SkillTabledData.data)
+  // @@protoc_insertion_point(field_list:SkillTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::SkillTable>&
-SkillTabledData::_internal_data() const {
+SkillTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::SkillTable>* PROTOBUF_NONNULL
-SkillTabledData::_internal_mutable_data() {
+SkillTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

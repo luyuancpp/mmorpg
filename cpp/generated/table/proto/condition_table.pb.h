@@ -56,10 +56,10 @@ class ConditionTable;
 struct ConditionTableDefaultTypeInternal;
 extern ConditionTableDefaultTypeInternal _ConditionTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull ConditionTable_class_data_;
-class ConditionTabledData;
-struct ConditionTabledDataDefaultTypeInternal;
-extern ConditionTabledDataDefaultTypeInternal _ConditionTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull ConditionTabledData_class_data_;
+class ConditionTableData;
+struct ConditionTableDataDefaultTypeInternal;
+extern ConditionTableDataDefaultTypeInternal _ConditionTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull ConditionTableData_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -394,30 +394,30 @@ class ConditionTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull ConditionTable_class_data_;
 // -------------------------------------------------------------------
 
-class ConditionTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:ConditionTabledData) */ {
+class ConditionTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ConditionTableData) */ {
  public:
-  inline ConditionTabledData() : ConditionTabledData(nullptr) {}
-  ~ConditionTabledData() PROTOBUF_FINAL;
+  inline ConditionTableData() : ConditionTableData(nullptr) {}
+  ~ConditionTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(ConditionTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(ConditionTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(ConditionTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ConditionTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ConditionTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR ConditionTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline ConditionTabledData(const ConditionTabledData& from) : ConditionTabledData(nullptr, from) {}
-  inline ConditionTabledData(ConditionTabledData&& from) noexcept
-      : ConditionTabledData(nullptr, ::std::move(from)) {}
-  inline ConditionTabledData& operator=(const ConditionTabledData& from) {
+  inline ConditionTableData(const ConditionTableData& from) : ConditionTableData(nullptr, from) {}
+  inline ConditionTableData(ConditionTableData&& from) noexcept
+      : ConditionTableData(nullptr, ::std::move(from)) {}
+  inline ConditionTableData& operator=(const ConditionTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline ConditionTabledData& operator=(ConditionTabledData&& from) noexcept {
+  inline ConditionTableData& operator=(ConditionTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -445,13 +445,13 @@ class ConditionTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const ConditionTabledData& default_instance() {
-    return *reinterpret_cast<const ConditionTabledData*>(
-        &_ConditionTabledData_default_instance_);
+  static const ConditionTableData& default_instance() {
+    return *reinterpret_cast<const ConditionTableData*>(
+        &_ConditionTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(ConditionTabledData& a, ConditionTabledData& b) { a.Swap(&b); }
-  inline void Swap(ConditionTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(ConditionTableData& a, ConditionTableData& b) { a.Swap(&b); }
+  inline void Swap(ConditionTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -459,7 +459,7 @@ class ConditionTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(ConditionTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(ConditionTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -467,13 +467,13 @@ class ConditionTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  ConditionTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<ConditionTabledData>(arena);
+  ConditionTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<ConditionTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ConditionTabledData& from);
+  void CopyFrom(const ConditionTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ConditionTabledData& from) { ConditionTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const ConditionTableData& from) { ConditionTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -509,18 +509,18 @@ class ConditionTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(ConditionTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(ConditionTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "ConditionTabledData"; }
+  static ::absl::string_view FullMessageName() { return "ConditionTableData"; }
 
  protected:
-  explicit ConditionTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  ConditionTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ConditionTabledData& from);
-  ConditionTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ConditionTabledData&& from) noexcept
-      : ConditionTabledData(arena) {
+  explicit ConditionTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ConditionTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ConditionTableData& from);
+  ConditionTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ConditionTableData&& from) noexcept
+      : ConditionTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -556,7 +556,7 @@ class ConditionTabledData final : public ::google::protobuf::Message
   const ::ConditionTable& data(int index) const;
   ::ConditionTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::ConditionTable>& data() const;
-  // @@protoc_insertion_point(class_scope:ConditionTabledData)
+  // @@protoc_insertion_point(class_scope:ConditionTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -579,7 +579,7 @@ class ConditionTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const ConditionTabledData& from_msg);
+        const ConditionTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::ConditionTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -588,7 +588,7 @@ class ConditionTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_condition_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull ConditionTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull ConditionTableData_class_data_;
 
 // ===================================================================
 
@@ -912,54 +912,54 @@ inline void ConditionTable::_internal_set_comparison(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
-// ConditionTabledData
+// ConditionTableData
 
 // repeated .ConditionTable data = 1;
-inline int ConditionTabledData::_internal_data_size() const {
+inline int ConditionTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int ConditionTabledData::data_size() const {
+inline int ConditionTableData::data_size() const {
   return _internal_data_size();
 }
-inline void ConditionTabledData::clear_data() {
+inline void ConditionTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::ConditionTable* PROTOBUF_NONNULL ConditionTabledData::mutable_data(int index)
+inline ::ConditionTable* PROTOBUF_NONNULL ConditionTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:ConditionTabledData.data)
+  // @@protoc_insertion_point(field_mutable:ConditionTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::ConditionTable>* PROTOBUF_NONNULL ConditionTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::ConditionTable>* PROTOBUF_NONNULL ConditionTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:ConditionTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:ConditionTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::ConditionTable& ConditionTabledData::data(int index) const
+inline const ::ConditionTable& ConditionTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:ConditionTabledData.data)
+  // @@protoc_insertion_point(field_get:ConditionTableData.data)
   return _internal_data().Get(index);
 }
-inline ::ConditionTable* PROTOBUF_NONNULL ConditionTabledData::add_data()
+inline ::ConditionTable* PROTOBUF_NONNULL ConditionTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::ConditionTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:ConditionTabledData.data)
+  // @@protoc_insertion_point(field_add:ConditionTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::ConditionTable>& ConditionTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::ConditionTable>& ConditionTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:ConditionTabledData.data)
+  // @@protoc_insertion_point(field_list:ConditionTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::ConditionTable>&
-ConditionTabledData::_internal_data() const {
+ConditionTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::ConditionTable>* PROTOBUF_NONNULL
-ConditionTabledData::_internal_mutable_data() {
+ConditionTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

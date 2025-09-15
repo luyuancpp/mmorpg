@@ -56,10 +56,10 @@ class MissionTable;
 struct MissionTableDefaultTypeInternal;
 extern MissionTableDefaultTypeInternal _MissionTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull MissionTable_class_data_;
-class MissionTabledData;
-struct MissionTabledDataDefaultTypeInternal;
-extern MissionTabledDataDefaultTypeInternal _MissionTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull MissionTabledData_class_data_;
+class MissionTableData;
+struct MissionTableDataDefaultTypeInternal;
+extern MissionTableDataDefaultTypeInternal _MissionTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull MissionTableData_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -364,30 +364,30 @@ class MissionTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull MissionTable_class_data_;
 // -------------------------------------------------------------------
 
-class MissionTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:MissionTabledData) */ {
+class MissionTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:MissionTableData) */ {
  public:
-  inline MissionTabledData() : MissionTabledData(nullptr) {}
-  ~MissionTabledData() PROTOBUF_FINAL;
+  inline MissionTableData() : MissionTableData(nullptr) {}
+  ~MissionTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(MissionTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(MissionTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(MissionTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MissionTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR MissionTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR MissionTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline MissionTabledData(const MissionTabledData& from) : MissionTabledData(nullptr, from) {}
-  inline MissionTabledData(MissionTabledData&& from) noexcept
-      : MissionTabledData(nullptr, ::std::move(from)) {}
-  inline MissionTabledData& operator=(const MissionTabledData& from) {
+  inline MissionTableData(const MissionTableData& from) : MissionTableData(nullptr, from) {}
+  inline MissionTableData(MissionTableData&& from) noexcept
+      : MissionTableData(nullptr, ::std::move(from)) {}
+  inline MissionTableData& operator=(const MissionTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline MissionTabledData& operator=(MissionTabledData&& from) noexcept {
+  inline MissionTableData& operator=(MissionTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -415,13 +415,13 @@ class MissionTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const MissionTabledData& default_instance() {
-    return *reinterpret_cast<const MissionTabledData*>(
-        &_MissionTabledData_default_instance_);
+  static const MissionTableData& default_instance() {
+    return *reinterpret_cast<const MissionTableData*>(
+        &_MissionTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(MissionTabledData& a, MissionTabledData& b) { a.Swap(&b); }
-  inline void Swap(MissionTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(MissionTableData& a, MissionTableData& b) { a.Swap(&b); }
+  inline void Swap(MissionTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -429,7 +429,7 @@ class MissionTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(MissionTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(MissionTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -437,13 +437,13 @@ class MissionTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  MissionTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<MissionTabledData>(arena);
+  MissionTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MissionTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const MissionTabledData& from);
+  void CopyFrom(const MissionTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const MissionTabledData& from) { MissionTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const MissionTableData& from) { MissionTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -479,18 +479,18 @@ class MissionTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(MissionTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(MissionTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "MissionTabledData"; }
+  static ::absl::string_view FullMessageName() { return "MissionTableData"; }
 
  protected:
-  explicit MissionTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  MissionTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MissionTabledData& from);
-  MissionTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MissionTabledData&& from) noexcept
-      : MissionTabledData(arena) {
+  explicit MissionTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MissionTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MissionTableData& from);
+  MissionTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MissionTableData&& from) noexcept
+      : MissionTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -526,7 +526,7 @@ class MissionTabledData final : public ::google::protobuf::Message
   const ::MissionTable& data(int index) const;
   ::MissionTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::MissionTable>& data() const;
-  // @@protoc_insertion_point(class_scope:MissionTabledData)
+  // @@protoc_insertion_point(class_scope:MissionTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -549,7 +549,7 @@ class MissionTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const MissionTabledData& from_msg);
+        const MissionTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::MissionTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -558,7 +558,7 @@ class MissionTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_mission_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull MissionTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull MissionTableData_class_data_;
 
 // ===================================================================
 
@@ -814,54 +814,54 @@ MissionTable::_internal_mutable_next_mission_id() {
 
 // -------------------------------------------------------------------
 
-// MissionTabledData
+// MissionTableData
 
 // repeated .MissionTable data = 1;
-inline int MissionTabledData::_internal_data_size() const {
+inline int MissionTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int MissionTabledData::data_size() const {
+inline int MissionTableData::data_size() const {
   return _internal_data_size();
 }
-inline void MissionTabledData::clear_data() {
+inline void MissionTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::MissionTable* PROTOBUF_NONNULL MissionTabledData::mutable_data(int index)
+inline ::MissionTable* PROTOBUF_NONNULL MissionTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:MissionTabledData.data)
+  // @@protoc_insertion_point(field_mutable:MissionTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::MissionTable>* PROTOBUF_NONNULL MissionTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::MissionTable>* PROTOBUF_NONNULL MissionTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:MissionTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:MissionTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::MissionTable& MissionTabledData::data(int index) const
+inline const ::MissionTable& MissionTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:MissionTabledData.data)
+  // @@protoc_insertion_point(field_get:MissionTableData.data)
   return _internal_data().Get(index);
 }
-inline ::MissionTable* PROTOBUF_NONNULL MissionTabledData::add_data()
+inline ::MissionTable* PROTOBUF_NONNULL MissionTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::MissionTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:MissionTabledData.data)
+  // @@protoc_insertion_point(field_add:MissionTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::MissionTable>& MissionTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::MissionTable>& MissionTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:MissionTabledData.data)
+  // @@protoc_insertion_point(field_list:MissionTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::MissionTable>&
-MissionTabledData::_internal_data() const {
+MissionTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::MissionTable>* PROTOBUF_NONNULL
-MissionTabledData::_internal_mutable_data() {
+MissionTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

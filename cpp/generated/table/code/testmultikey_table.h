@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const TestMultiKeyTabledData& All() const { return data_; }
+    const TestMultiKeyTableData& All() const { return data_; }
 
     std::pair<const TestMultiKeyTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const TestMultiKeyTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -54,7 +54,7 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    TestMultiKeyTabledData data_;
+    TestMultiKeyTableData data_;
     KeyValueDataType kv_data_;
     
     std::unordered_map<std::string, const TestMultiKeyTable *> kv_stringkeydata_;
@@ -65,7 +65,7 @@ private:
     std::unordered_multimap<int32_t, const TestMultiKeyTable *> kv_min32keydata_;
 };
 
-inline const TestMultiKeyTabledData& GetTestMultiKeyAllTable() {
+inline const TestMultiKeyTableData& GetTestMultiKeyAllTable() {
     return TestMultiKeyTableManager::Instance().All();
 }
 

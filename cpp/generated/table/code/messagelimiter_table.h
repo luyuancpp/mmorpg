@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const MessageLimiterTabledData& All() const { return data_; }
+    const MessageLimiterTableData& All() const { return data_; }
 
     std::pair<const MessageLimiterTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const MessageLimiterTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -36,12 +36,12 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    MessageLimiterTabledData data_;
+    MessageLimiterTableData data_;
     KeyValueDataType kv_data_;
     
 };
 
-inline const MessageLimiterTabledData& GetMessageLimiterAllTable() {
+inline const MessageLimiterTableData& GetMessageLimiterAllTable() {
     return MessageLimiterTableManager::Instance().All();
 }
 

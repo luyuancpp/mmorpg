@@ -56,10 +56,10 @@ class ActorActionStateTable;
 struct ActorActionStateTableDefaultTypeInternal;
 extern ActorActionStateTableDefaultTypeInternal _ActorActionStateTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull ActorActionStateTable_class_data_;
-class ActorActionStateTabledData;
-struct ActorActionStateTabledDataDefaultTypeInternal;
-extern ActorActionStateTabledDataDefaultTypeInternal _ActorActionStateTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull ActorActionStateTabledData_class_data_;
+class ActorActionStateTableData;
+struct ActorActionStateTableDataDefaultTypeInternal;
+extern ActorActionStateTableDataDefaultTypeInternal _ActorActionStateTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull ActorActionStateTableData_class_data_;
 class ActorActionStatestate;
 struct ActorActionStatestateDefaultTypeInternal;
 extern ActorActionStatestateDefaultTypeInternal _ActorActionStatestate_default_instance_;
@@ -488,30 +488,30 @@ class ActorActionStateTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull ActorActionStateTable_class_data_;
 // -------------------------------------------------------------------
 
-class ActorActionStateTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:ActorActionStateTabledData) */ {
+class ActorActionStateTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ActorActionStateTableData) */ {
  public:
-  inline ActorActionStateTabledData() : ActorActionStateTabledData(nullptr) {}
-  ~ActorActionStateTabledData() PROTOBUF_FINAL;
+  inline ActorActionStateTableData() : ActorActionStateTableData(nullptr) {}
+  ~ActorActionStateTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(ActorActionStateTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(ActorActionStateTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(ActorActionStateTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ActorActionStateTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ActorActionStateTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR ActorActionStateTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline ActorActionStateTabledData(const ActorActionStateTabledData& from) : ActorActionStateTabledData(nullptr, from) {}
-  inline ActorActionStateTabledData(ActorActionStateTabledData&& from) noexcept
-      : ActorActionStateTabledData(nullptr, ::std::move(from)) {}
-  inline ActorActionStateTabledData& operator=(const ActorActionStateTabledData& from) {
+  inline ActorActionStateTableData(const ActorActionStateTableData& from) : ActorActionStateTableData(nullptr, from) {}
+  inline ActorActionStateTableData(ActorActionStateTableData&& from) noexcept
+      : ActorActionStateTableData(nullptr, ::std::move(from)) {}
+  inline ActorActionStateTableData& operator=(const ActorActionStateTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline ActorActionStateTabledData& operator=(ActorActionStateTabledData&& from) noexcept {
+  inline ActorActionStateTableData& operator=(ActorActionStateTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -539,13 +539,13 @@ class ActorActionStateTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const ActorActionStateTabledData& default_instance() {
-    return *reinterpret_cast<const ActorActionStateTabledData*>(
-        &_ActorActionStateTabledData_default_instance_);
+  static const ActorActionStateTableData& default_instance() {
+    return *reinterpret_cast<const ActorActionStateTableData*>(
+        &_ActorActionStateTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 2;
-  friend void swap(ActorActionStateTabledData& a, ActorActionStateTabledData& b) { a.Swap(&b); }
-  inline void Swap(ActorActionStateTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(ActorActionStateTableData& a, ActorActionStateTableData& b) { a.Swap(&b); }
+  inline void Swap(ActorActionStateTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -553,7 +553,7 @@ class ActorActionStateTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(ActorActionStateTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(ActorActionStateTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -561,13 +561,13 @@ class ActorActionStateTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  ActorActionStateTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<ActorActionStateTabledData>(arena);
+  ActorActionStateTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<ActorActionStateTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ActorActionStateTabledData& from);
+  void CopyFrom(const ActorActionStateTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ActorActionStateTabledData& from) { ActorActionStateTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const ActorActionStateTableData& from) { ActorActionStateTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -603,18 +603,18 @@ class ActorActionStateTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(ActorActionStateTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(ActorActionStateTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "ActorActionStateTabledData"; }
+  static ::absl::string_view FullMessageName() { return "ActorActionStateTableData"; }
 
  protected:
-  explicit ActorActionStateTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  ActorActionStateTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ActorActionStateTabledData& from);
-  ActorActionStateTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ActorActionStateTabledData&& from) noexcept
-      : ActorActionStateTabledData(arena) {
+  explicit ActorActionStateTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ActorActionStateTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ActorActionStateTableData& from);
+  ActorActionStateTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ActorActionStateTableData&& from) noexcept
+      : ActorActionStateTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -650,7 +650,7 @@ class ActorActionStateTabledData final : public ::google::protobuf::Message
   const ::ActorActionStateTable& data(int index) const;
   ::ActorActionStateTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::ActorActionStateTable>& data() const;
-  // @@protoc_insertion_point(class_scope:ActorActionStateTabledData)
+  // @@protoc_insertion_point(class_scope:ActorActionStateTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -673,7 +673,7 @@ class ActorActionStateTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const ActorActionStateTabledData& from_msg);
+        const ActorActionStateTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::ActorActionStateTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -682,7 +682,7 @@ class ActorActionStateTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_actoractionstate_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull ActorActionStateTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull ActorActionStateTableData_class_data_;
 
 // ===================================================================
 
@@ -828,54 +828,54 @@ ActorActionStateTable::_internal_mutable_state() {
 
 // -------------------------------------------------------------------
 
-// ActorActionStateTabledData
+// ActorActionStateTableData
 
 // repeated .ActorActionStateTable data = 1;
-inline int ActorActionStateTabledData::_internal_data_size() const {
+inline int ActorActionStateTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int ActorActionStateTabledData::data_size() const {
+inline int ActorActionStateTableData::data_size() const {
   return _internal_data_size();
 }
-inline void ActorActionStateTabledData::clear_data() {
+inline void ActorActionStateTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::ActorActionStateTable* PROTOBUF_NONNULL ActorActionStateTabledData::mutable_data(int index)
+inline ::ActorActionStateTable* PROTOBUF_NONNULL ActorActionStateTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:ActorActionStateTabledData.data)
+  // @@protoc_insertion_point(field_mutable:ActorActionStateTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::ActorActionStateTable>* PROTOBUF_NONNULL ActorActionStateTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::ActorActionStateTable>* PROTOBUF_NONNULL ActorActionStateTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:ActorActionStateTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:ActorActionStateTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::ActorActionStateTable& ActorActionStateTabledData::data(int index) const
+inline const ::ActorActionStateTable& ActorActionStateTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:ActorActionStateTabledData.data)
+  // @@protoc_insertion_point(field_get:ActorActionStateTableData.data)
   return _internal_data().Get(index);
 }
-inline ::ActorActionStateTable* PROTOBUF_NONNULL ActorActionStateTabledData::add_data()
+inline ::ActorActionStateTable* PROTOBUF_NONNULL ActorActionStateTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::ActorActionStateTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:ActorActionStateTabledData.data)
+  // @@protoc_insertion_point(field_add:ActorActionStateTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::ActorActionStateTable>& ActorActionStateTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::ActorActionStateTable>& ActorActionStateTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:ActorActionStateTabledData.data)
+  // @@protoc_insertion_point(field_list:ActorActionStateTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::ActorActionStateTable>&
-ActorActionStateTabledData::_internal_data() const {
+ActorActionStateTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::ActorActionStateTable>* PROTOBUF_NONNULL
-ActorActionStateTabledData::_internal_mutable_data() {
+ActorActionStateTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

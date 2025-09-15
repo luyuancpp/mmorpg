@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const SkillTabledData& All() const { return data_; }
+    const SkillTableData& All() const { return data_; }
 
     std::pair<const SkillTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const SkillTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -48,12 +48,12 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    SkillTabledData data_;
+    SkillTableData data_;
     KeyValueDataType kv_data_;
     ExcelExpression<double> expression_damage_;
 };
 
-inline const SkillTabledData& GetSkillAllTable() {
+inline const SkillTableData& GetSkillAllTable() {
     return SkillTableManager::Instance().All();
 }
 

@@ -57,13 +57,14 @@ const char descriptor_table_protodef_login_5ferror_5ftip_2eproto[] ABSL_ATTRIBUT
     "SMEventFailed\020.\022\036\n\032kLoginAccountDataLoad"
     "Faile\020/\022\031\n\025kLoginSessionNotFound\0200\022\037\n\033kL"
     "oginAccountDataLoadFailed\0201\022\031\n\025kLoginFsm"
-    "InvalidEvent\0202B\tZ\007pb/gameb\006proto3"
+    "InvalidEvent\0202B\024Z\022generated/pb/tableb\006pr"
+    "oto3"
 };
 static ::absl::once_flag descriptor_table_login_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_login_5ferror_5ftip_2eproto = {
     false,
     false,
-    953,
+    964,
     descriptor_table_protodef_login_5ferror_5ftip_2eproto,
     "login_error_tip.proto",
     &descriptor_table_login_5ferror_5ftip_2eproto_once,

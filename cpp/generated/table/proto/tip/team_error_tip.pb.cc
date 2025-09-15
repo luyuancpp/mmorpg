@@ -46,13 +46,14 @@ const char descriptor_table_protodef_team_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE
     "\020W\022\025\n\021kTeamHasNotTeamId\020X\022\031\n\025kTeamDismis"
     "sNotLeader\020Y\022\027\n\023kTeamMemberListFull\020Z\022 \n"
     "\034kTeamCreateTeamMaxMemberSize\020[\022\027\n\023kTeam"
-    "PlayerNotFound\020\\B\tZ\007pb/gameb\006proto3"
+    "PlayerNotFound\020\\B\024Z\022generated/pb/tableb\006"
+    "proto3"
 };
 static ::absl::once_flag descriptor_table_team_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_team_5ferror_5ftip_2eproto = {
     false,
     false,
-    515,
+    526,
     descriptor_table_protodef_team_5ferror_5ftip_2eproto,
     "team_error_tip.proto",
     &descriptor_table_team_5ferror_5ftip_2eproto_once,

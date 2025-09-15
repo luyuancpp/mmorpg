@@ -56,10 +56,10 @@ class ClassTable;
 struct ClassTableDefaultTypeInternal;
 extern ClassTableDefaultTypeInternal _ClassTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull ClassTable_class_data_;
-class ClassTabledData;
-struct ClassTabledDataDefaultTypeInternal;
-extern ClassTabledDataDefaultTypeInternal _ClassTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull ClassTabledData_class_data_;
+class ClassTableData;
+struct ClassTableDataDefaultTypeInternal;
+extern ClassTableDataDefaultTypeInternal _ClassTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull ClassTableData_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -283,30 +283,30 @@ class ClassTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull ClassTable_class_data_;
 // -------------------------------------------------------------------
 
-class ClassTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:ClassTabledData) */ {
+class ClassTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ClassTableData) */ {
  public:
-  inline ClassTabledData() : ClassTabledData(nullptr) {}
-  ~ClassTabledData() PROTOBUF_FINAL;
+  inline ClassTableData() : ClassTableData(nullptr) {}
+  ~ClassTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(ClassTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(ClassTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(ClassTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ClassTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ClassTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR ClassTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline ClassTabledData(const ClassTabledData& from) : ClassTabledData(nullptr, from) {}
-  inline ClassTabledData(ClassTabledData&& from) noexcept
-      : ClassTabledData(nullptr, ::std::move(from)) {}
-  inline ClassTabledData& operator=(const ClassTabledData& from) {
+  inline ClassTableData(const ClassTableData& from) : ClassTableData(nullptr, from) {}
+  inline ClassTableData(ClassTableData&& from) noexcept
+      : ClassTableData(nullptr, ::std::move(from)) {}
+  inline ClassTableData& operator=(const ClassTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline ClassTabledData& operator=(ClassTabledData&& from) noexcept {
+  inline ClassTableData& operator=(ClassTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -334,13 +334,13 @@ class ClassTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const ClassTabledData& default_instance() {
-    return *reinterpret_cast<const ClassTabledData*>(
-        &_ClassTabledData_default_instance_);
+  static const ClassTableData& default_instance() {
+    return *reinterpret_cast<const ClassTableData*>(
+        &_ClassTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(ClassTabledData& a, ClassTabledData& b) { a.Swap(&b); }
-  inline void Swap(ClassTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(ClassTableData& a, ClassTableData& b) { a.Swap(&b); }
+  inline void Swap(ClassTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -348,7 +348,7 @@ class ClassTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(ClassTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(ClassTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -356,13 +356,13 @@ class ClassTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  ClassTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<ClassTabledData>(arena);
+  ClassTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<ClassTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ClassTabledData& from);
+  void CopyFrom(const ClassTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ClassTabledData& from) { ClassTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const ClassTableData& from) { ClassTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -398,18 +398,18 @@ class ClassTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(ClassTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(ClassTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "ClassTabledData"; }
+  static ::absl::string_view FullMessageName() { return "ClassTableData"; }
 
  protected:
-  explicit ClassTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  ClassTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ClassTabledData& from);
-  ClassTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ClassTabledData&& from) noexcept
-      : ClassTabledData(arena) {
+  explicit ClassTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ClassTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ClassTableData& from);
+  ClassTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ClassTableData&& from) noexcept
+      : ClassTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -445,7 +445,7 @@ class ClassTabledData final : public ::google::protobuf::Message
   const ::ClassTable& data(int index) const;
   ::ClassTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::ClassTable>& data() const;
-  // @@protoc_insertion_point(class_scope:ClassTabledData)
+  // @@protoc_insertion_point(class_scope:ClassTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -468,7 +468,7 @@ class ClassTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const ClassTabledData& from_msg);
+        const ClassTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::ClassTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -477,7 +477,7 @@ class ClassTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_class_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull ClassTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull ClassTableData_class_data_;
 
 // ===================================================================
 
@@ -567,54 +567,54 @@ ClassTable::_internal_mutable_skill() {
 
 // -------------------------------------------------------------------
 
-// ClassTabledData
+// ClassTableData
 
 // repeated .ClassTable data = 1;
-inline int ClassTabledData::_internal_data_size() const {
+inline int ClassTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int ClassTabledData::data_size() const {
+inline int ClassTableData::data_size() const {
   return _internal_data_size();
 }
-inline void ClassTabledData::clear_data() {
+inline void ClassTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::ClassTable* PROTOBUF_NONNULL ClassTabledData::mutable_data(int index)
+inline ::ClassTable* PROTOBUF_NONNULL ClassTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:ClassTabledData.data)
+  // @@protoc_insertion_point(field_mutable:ClassTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::ClassTable>* PROTOBUF_NONNULL ClassTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::ClassTable>* PROTOBUF_NONNULL ClassTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:ClassTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:ClassTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::ClassTable& ClassTabledData::data(int index) const
+inline const ::ClassTable& ClassTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:ClassTabledData.data)
+  // @@protoc_insertion_point(field_get:ClassTableData.data)
   return _internal_data().Get(index);
 }
-inline ::ClassTable* PROTOBUF_NONNULL ClassTabledData::add_data()
+inline ::ClassTable* PROTOBUF_NONNULL ClassTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::ClassTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:ClassTabledData.data)
+  // @@protoc_insertion_point(field_add:ClassTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::ClassTable>& ClassTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::ClassTable>& ClassTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:ClassTabledData.data)
+  // @@protoc_insertion_point(field_list:ClassTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::ClassTable>&
-ClassTabledData::_internal_data() const {
+ClassTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::ClassTable>* PROTOBUF_NONNULL
-ClassTabledData::_internal_mutable_data() {
+ClassTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

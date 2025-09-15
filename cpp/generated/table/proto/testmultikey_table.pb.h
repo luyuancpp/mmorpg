@@ -60,6 +60,10 @@ class TestMultiKeyTable;
 struct TestMultiKeyTableDefaultTypeInternal;
 extern TestMultiKeyTableDefaultTypeInternal _TestMultiKeyTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTable_class_data_;
+class TestMultiKeyTableData;
+struct TestMultiKeyTableDataDefaultTypeInternal;
+extern TestMultiKeyTableDataDefaultTypeInternal _TestMultiKeyTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTableData_class_data_;
 class TestMultiKeyTable_Immunetag1Entry_DoNotUse;
 struct TestMultiKeyTable_Immunetag1Entry_DoNotUseDefaultTypeInternal;
 extern TestMultiKeyTable_Immunetag1Entry_DoNotUseDefaultTypeInternal _TestMultiKeyTable_Immunetag1Entry_DoNotUse_default_instance_;
@@ -68,10 +72,6 @@ class TestMultiKeyTable_Tag1Entry_DoNotUse;
 struct TestMultiKeyTable_Tag1Entry_DoNotUseDefaultTypeInternal;
 extern TestMultiKeyTable_Tag1Entry_DoNotUseDefaultTypeInternal _TestMultiKeyTable_Tag1Entry_DoNotUse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTable_Tag1Entry_DoNotUse_class_data_;
-class TestMultiKeyTabledData;
-struct TestMultiKeyTabledDataDefaultTypeInternal;
-extern TestMultiKeyTabledDataDefaultTypeInternal _TestMultiKeyTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTabledData_class_data_;
 class TestMultiKeyimmunetag1;
 struct TestMultiKeyimmunetag1DefaultTypeInternal;
 extern TestMultiKeyimmunetag1DefaultTypeInternal _TestMultiKeyimmunetag1_default_instance_;
@@ -1167,30 +1167,30 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTable_class_data_;
 // -------------------------------------------------------------------
 
-class TestMultiKeyTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:TestMultiKeyTabledData) */ {
+class TestMultiKeyTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:TestMultiKeyTableData) */ {
  public:
-  inline TestMultiKeyTabledData() : TestMultiKeyTabledData(nullptr) {}
-  ~TestMultiKeyTabledData() PROTOBUF_FINAL;
+  inline TestMultiKeyTableData() : TestMultiKeyTableData(nullptr) {}
+  ~TestMultiKeyTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(TestMultiKeyTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(TestMultiKeyTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(TestMultiKeyTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(TestMultiKeyTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR TestMultiKeyTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR TestMultiKeyTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline TestMultiKeyTabledData(const TestMultiKeyTabledData& from) : TestMultiKeyTabledData(nullptr, from) {}
-  inline TestMultiKeyTabledData(TestMultiKeyTabledData&& from) noexcept
-      : TestMultiKeyTabledData(nullptr, ::std::move(from)) {}
-  inline TestMultiKeyTabledData& operator=(const TestMultiKeyTabledData& from) {
+  inline TestMultiKeyTableData(const TestMultiKeyTableData& from) : TestMultiKeyTableData(nullptr, from) {}
+  inline TestMultiKeyTableData(TestMultiKeyTableData&& from) noexcept
+      : TestMultiKeyTableData(nullptr, ::std::move(from)) {}
+  inline TestMultiKeyTableData& operator=(const TestMultiKeyTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline TestMultiKeyTabledData& operator=(TestMultiKeyTabledData&& from) noexcept {
+  inline TestMultiKeyTableData& operator=(TestMultiKeyTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -1218,13 +1218,13 @@ class TestMultiKeyTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const TestMultiKeyTabledData& default_instance() {
-    return *reinterpret_cast<const TestMultiKeyTabledData*>(
-        &_TestMultiKeyTabledData_default_instance_);
+  static const TestMultiKeyTableData& default_instance() {
+    return *reinterpret_cast<const TestMultiKeyTableData*>(
+        &_TestMultiKeyTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 6;
-  friend void swap(TestMultiKeyTabledData& a, TestMultiKeyTabledData& b) { a.Swap(&b); }
-  inline void Swap(TestMultiKeyTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(TestMultiKeyTableData& a, TestMultiKeyTableData& b) { a.Swap(&b); }
+  inline void Swap(TestMultiKeyTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -1232,7 +1232,7 @@ class TestMultiKeyTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(TestMultiKeyTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(TestMultiKeyTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -1240,13 +1240,13 @@ class TestMultiKeyTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  TestMultiKeyTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<TestMultiKeyTabledData>(arena);
+  TestMultiKeyTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<TestMultiKeyTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const TestMultiKeyTabledData& from);
+  void CopyFrom(const TestMultiKeyTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const TestMultiKeyTabledData& from) { TestMultiKeyTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const TestMultiKeyTableData& from) { TestMultiKeyTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -1282,18 +1282,18 @@ class TestMultiKeyTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(TestMultiKeyTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(TestMultiKeyTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "TestMultiKeyTabledData"; }
+  static ::absl::string_view FullMessageName() { return "TestMultiKeyTableData"; }
 
  protected:
-  explicit TestMultiKeyTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  TestMultiKeyTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const TestMultiKeyTabledData& from);
-  TestMultiKeyTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, TestMultiKeyTabledData&& from) noexcept
-      : TestMultiKeyTabledData(arena) {
+  explicit TestMultiKeyTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  TestMultiKeyTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const TestMultiKeyTableData& from);
+  TestMultiKeyTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, TestMultiKeyTableData&& from) noexcept
+      : TestMultiKeyTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -1329,7 +1329,7 @@ class TestMultiKeyTabledData final : public ::google::protobuf::Message
   const ::TestMultiKeyTable& data(int index) const;
   ::TestMultiKeyTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::TestMultiKeyTable>& data() const;
-  // @@protoc_insertion_point(class_scope:TestMultiKeyTabledData)
+  // @@protoc_insertion_point(class_scope:TestMultiKeyTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1352,7 +1352,7 @@ class TestMultiKeyTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const TestMultiKeyTabledData& from_msg);
+        const TestMultiKeyTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::TestMultiKeyTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -1361,7 +1361,7 @@ class TestMultiKeyTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_testmultikey_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTableData_class_data_;
 
 // ===================================================================
 
@@ -2133,54 +2133,54 @@ inline void TestMultiKeyTable::_internal_set_min32key(::int32_t value) {
 
 // -------------------------------------------------------------------
 
-// TestMultiKeyTabledData
+// TestMultiKeyTableData
 
 // repeated .TestMultiKeyTable data = 1;
-inline int TestMultiKeyTabledData::_internal_data_size() const {
+inline int TestMultiKeyTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int TestMultiKeyTabledData::data_size() const {
+inline int TestMultiKeyTableData::data_size() const {
   return _internal_data_size();
 }
-inline void TestMultiKeyTabledData::clear_data() {
+inline void TestMultiKeyTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::TestMultiKeyTable* PROTOBUF_NONNULL TestMultiKeyTabledData::mutable_data(int index)
+inline ::TestMultiKeyTable* PROTOBUF_NONNULL TestMultiKeyTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:TestMultiKeyTabledData.data)
+  // @@protoc_insertion_point(field_mutable:TestMultiKeyTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::TestMultiKeyTable>* PROTOBUF_NONNULL TestMultiKeyTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::TestMultiKeyTable>* PROTOBUF_NONNULL TestMultiKeyTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:TestMultiKeyTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:TestMultiKeyTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::TestMultiKeyTable& TestMultiKeyTabledData::data(int index) const
+inline const ::TestMultiKeyTable& TestMultiKeyTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:TestMultiKeyTabledData.data)
+  // @@protoc_insertion_point(field_get:TestMultiKeyTableData.data)
   return _internal_data().Get(index);
 }
-inline ::TestMultiKeyTable* PROTOBUF_NONNULL TestMultiKeyTabledData::add_data()
+inline ::TestMultiKeyTable* PROTOBUF_NONNULL TestMultiKeyTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::TestMultiKeyTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:TestMultiKeyTabledData.data)
+  // @@protoc_insertion_point(field_add:TestMultiKeyTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::TestMultiKeyTable>& TestMultiKeyTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::TestMultiKeyTable>& TestMultiKeyTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:TestMultiKeyTabledData.data)
+  // @@protoc_insertion_point(field_list:TestMultiKeyTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::TestMultiKeyTable>&
-TestMultiKeyTabledData::_internal_data() const {
+TestMultiKeyTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::TestMultiKeyTable>* PROTOBUF_NONNULL
-TestMultiKeyTabledData::_internal_mutable_data() {
+TestMultiKeyTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

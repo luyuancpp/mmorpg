@@ -56,10 +56,10 @@ class ItemTable;
 struct ItemTableDefaultTypeInternal;
 extern ItemTableDefaultTypeInternal _ItemTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull ItemTable_class_data_;
-class ItemTabledData;
-struct ItemTabledDataDefaultTypeInternal;
-extern ItemTabledDataDefaultTypeInternal _ItemTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull ItemTabledData_class_data_;
+class ItemTableData;
+struct ItemTableDataDefaultTypeInternal;
+extern ItemTableDataDefaultTypeInternal _ItemTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull ItemTableData_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -274,30 +274,30 @@ class ItemTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull ItemTable_class_data_;
 // -------------------------------------------------------------------
 
-class ItemTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:ItemTabledData) */ {
+class ItemTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ItemTableData) */ {
  public:
-  inline ItemTabledData() : ItemTabledData(nullptr) {}
-  ~ItemTabledData() PROTOBUF_FINAL;
+  inline ItemTableData() : ItemTableData(nullptr) {}
+  ~ItemTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(ItemTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(ItemTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(ItemTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ItemTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ItemTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR ItemTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline ItemTabledData(const ItemTabledData& from) : ItemTabledData(nullptr, from) {}
-  inline ItemTabledData(ItemTabledData&& from) noexcept
-      : ItemTabledData(nullptr, ::std::move(from)) {}
-  inline ItemTabledData& operator=(const ItemTabledData& from) {
+  inline ItemTableData(const ItemTableData& from) : ItemTableData(nullptr, from) {}
+  inline ItemTableData(ItemTableData&& from) noexcept
+      : ItemTableData(nullptr, ::std::move(from)) {}
+  inline ItemTableData& operator=(const ItemTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline ItemTabledData& operator=(ItemTabledData&& from) noexcept {
+  inline ItemTableData& operator=(ItemTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -325,13 +325,13 @@ class ItemTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const ItemTabledData& default_instance() {
-    return *reinterpret_cast<const ItemTabledData*>(
-        &_ItemTabledData_default_instance_);
+  static const ItemTableData& default_instance() {
+    return *reinterpret_cast<const ItemTableData*>(
+        &_ItemTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(ItemTabledData& a, ItemTabledData& b) { a.Swap(&b); }
-  inline void Swap(ItemTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(ItemTableData& a, ItemTableData& b) { a.Swap(&b); }
+  inline void Swap(ItemTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -339,7 +339,7 @@ class ItemTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(ItemTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(ItemTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -347,13 +347,13 @@ class ItemTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  ItemTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<ItemTabledData>(arena);
+  ItemTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<ItemTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ItemTabledData& from);
+  void CopyFrom(const ItemTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ItemTabledData& from) { ItemTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const ItemTableData& from) { ItemTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -389,18 +389,18 @@ class ItemTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(ItemTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(ItemTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "ItemTabledData"; }
+  static ::absl::string_view FullMessageName() { return "ItemTableData"; }
 
  protected:
-  explicit ItemTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  ItemTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ItemTabledData& from);
-  ItemTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ItemTabledData&& from) noexcept
-      : ItemTabledData(arena) {
+  explicit ItemTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ItemTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ItemTableData& from);
+  ItemTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ItemTableData&& from) noexcept
+      : ItemTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -436,7 +436,7 @@ class ItemTabledData final : public ::google::protobuf::Message
   const ::ItemTable& data(int index) const;
   ::ItemTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::ItemTable>& data() const;
-  // @@protoc_insertion_point(class_scope:ItemTabledData)
+  // @@protoc_insertion_point(class_scope:ItemTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -459,7 +459,7 @@ class ItemTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const ItemTabledData& from_msg);
+        const ItemTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::ItemTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -468,7 +468,7 @@ class ItemTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_item_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull ItemTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull ItemTableData_class_data_;
 
 // ===================================================================
 
@@ -536,54 +536,54 @@ inline void ItemTable::_internal_set_max_statck_size(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
-// ItemTabledData
+// ItemTableData
 
 // repeated .ItemTable data = 1;
-inline int ItemTabledData::_internal_data_size() const {
+inline int ItemTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int ItemTabledData::data_size() const {
+inline int ItemTableData::data_size() const {
   return _internal_data_size();
 }
-inline void ItemTabledData::clear_data() {
+inline void ItemTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::ItemTable* PROTOBUF_NONNULL ItemTabledData::mutable_data(int index)
+inline ::ItemTable* PROTOBUF_NONNULL ItemTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:ItemTabledData.data)
+  // @@protoc_insertion_point(field_mutable:ItemTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::ItemTable>* PROTOBUF_NONNULL ItemTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::ItemTable>* PROTOBUF_NONNULL ItemTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:ItemTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:ItemTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::ItemTable& ItemTabledData::data(int index) const
+inline const ::ItemTable& ItemTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:ItemTabledData.data)
+  // @@protoc_insertion_point(field_get:ItemTableData.data)
   return _internal_data().Get(index);
 }
-inline ::ItemTable* PROTOBUF_NONNULL ItemTabledData::add_data()
+inline ::ItemTable* PROTOBUF_NONNULL ItemTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::ItemTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:ItemTabledData.data)
+  // @@protoc_insertion_point(field_add:ItemTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::ItemTable>& ItemTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::ItemTable>& ItemTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:ItemTabledData.data)
+  // @@protoc_insertion_point(field_list:ItemTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::ItemTable>&
-ItemTabledData::_internal_data() const {
+ItemTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::ItemTable>* PROTOBUF_NONNULL
-ItemTabledData::_internal_mutable_data() {
+ItemTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

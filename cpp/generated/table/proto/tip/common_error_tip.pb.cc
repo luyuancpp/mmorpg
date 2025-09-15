@@ -47,13 +47,14 @@ const char descriptor_table_protodef_common_5ferror_5ftip_2eproto[] ABSL_ATTRIBU
     "ParseError\020\017\022\037\n\033kArraySizeTooLargeInMess"
     "age\020\020\022\036\n\032kResponseMessageParseError\020\021\022\033\n"
     "\027kNegativeValueInMessage\020\022\022\034\n\030kFailedToR"
-    "egisterTheNode\020\023B\tZ\007pb/gameb\006proto3"
+    "egisterTheNode\020\023B\024Z\022generated/pb/tableb\006"
+    "proto3"
 };
 static ::absl::once_flag descriptor_table_common_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_common_5ferror_5ftip_2eproto = {
     false,
     false,
-    555,
+    566,
     descriptor_table_protodef_common_5ferror_5ftip_2eproto,
     "common_error_tip.proto",
     &descriptor_table_common_5ferror_5ftip_2eproto_once,

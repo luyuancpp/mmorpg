@@ -56,10 +56,10 @@ class SceneTable;
 struct SceneTableDefaultTypeInternal;
 extern SceneTableDefaultTypeInternal _SceneTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull SceneTable_class_data_;
-class SceneTabledData;
-struct SceneTabledDataDefaultTypeInternal;
-extern SceneTabledDataDefaultTypeInternal _SceneTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull SceneTabledData_class_data_;
+class SceneTableData;
+struct SceneTableDataDefaultTypeInternal;
+extern SceneTableDataDefaultTypeInternal _SceneTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SceneTableData_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -274,30 +274,30 @@ class SceneTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull SceneTable_class_data_;
 // -------------------------------------------------------------------
 
-class SceneTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:SceneTabledData) */ {
+class SceneTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:SceneTableData) */ {
  public:
-  inline SceneTabledData() : SceneTabledData(nullptr) {}
-  ~SceneTabledData() PROTOBUF_FINAL;
+  inline SceneTableData() : SceneTableData(nullptr) {}
+  ~SceneTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(SceneTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(SceneTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(SceneTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SceneTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR SceneTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR SceneTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline SceneTabledData(const SceneTabledData& from) : SceneTabledData(nullptr, from) {}
-  inline SceneTabledData(SceneTabledData&& from) noexcept
-      : SceneTabledData(nullptr, ::std::move(from)) {}
-  inline SceneTabledData& operator=(const SceneTabledData& from) {
+  inline SceneTableData(const SceneTableData& from) : SceneTableData(nullptr, from) {}
+  inline SceneTableData(SceneTableData&& from) noexcept
+      : SceneTableData(nullptr, ::std::move(from)) {}
+  inline SceneTableData& operator=(const SceneTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline SceneTabledData& operator=(SceneTabledData&& from) noexcept {
+  inline SceneTableData& operator=(SceneTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -325,13 +325,13 @@ class SceneTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const SceneTabledData& default_instance() {
-    return *reinterpret_cast<const SceneTabledData*>(
-        &_SceneTabledData_default_instance_);
+  static const SceneTableData& default_instance() {
+    return *reinterpret_cast<const SceneTableData*>(
+        &_SceneTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(SceneTabledData& a, SceneTabledData& b) { a.Swap(&b); }
-  inline void Swap(SceneTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(SceneTableData& a, SceneTableData& b) { a.Swap(&b); }
+  inline void Swap(SceneTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -339,7 +339,7 @@ class SceneTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(SceneTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(SceneTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -347,13 +347,13 @@ class SceneTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  SceneTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<SceneTabledData>(arena);
+  SceneTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SceneTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const SceneTabledData& from);
+  void CopyFrom(const SceneTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const SceneTabledData& from) { SceneTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const SceneTableData& from) { SceneTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -389,18 +389,18 @@ class SceneTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(SceneTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(SceneTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "SceneTabledData"; }
+  static ::absl::string_view FullMessageName() { return "SceneTableData"; }
 
  protected:
-  explicit SceneTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  SceneTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SceneTabledData& from);
-  SceneTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SceneTabledData&& from) noexcept
-      : SceneTabledData(arena) {
+  explicit SceneTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SceneTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SceneTableData& from);
+  SceneTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SceneTableData&& from) noexcept
+      : SceneTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -436,7 +436,7 @@ class SceneTabledData final : public ::google::protobuf::Message
   const ::SceneTable& data(int index) const;
   ::SceneTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::SceneTable>& data() const;
-  // @@protoc_insertion_point(class_scope:SceneTabledData)
+  // @@protoc_insertion_point(class_scope:SceneTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -459,7 +459,7 @@ class SceneTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const SceneTabledData& from_msg);
+        const SceneTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::SceneTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -468,7 +468,7 @@ class SceneTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_scene_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull SceneTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull SceneTableData_class_data_;
 
 // ===================================================================
 
@@ -536,54 +536,54 @@ inline void SceneTable::_internal_set_dungeon_id(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
-// SceneTabledData
+// SceneTableData
 
 // repeated .SceneTable data = 1;
-inline int SceneTabledData::_internal_data_size() const {
+inline int SceneTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int SceneTabledData::data_size() const {
+inline int SceneTableData::data_size() const {
   return _internal_data_size();
 }
-inline void SceneTabledData::clear_data() {
+inline void SceneTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::SceneTable* PROTOBUF_NONNULL SceneTabledData::mutable_data(int index)
+inline ::SceneTable* PROTOBUF_NONNULL SceneTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:SceneTabledData.data)
+  // @@protoc_insertion_point(field_mutable:SceneTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::SceneTable>* PROTOBUF_NONNULL SceneTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::SceneTable>* PROTOBUF_NONNULL SceneTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:SceneTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:SceneTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::SceneTable& SceneTabledData::data(int index) const
+inline const ::SceneTable& SceneTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:SceneTabledData.data)
+  // @@protoc_insertion_point(field_get:SceneTableData.data)
   return _internal_data().Get(index);
 }
-inline ::SceneTable* PROTOBUF_NONNULL SceneTabledData::add_data()
+inline ::SceneTable* PROTOBUF_NONNULL SceneTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::SceneTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:SceneTabledData.data)
+  // @@protoc_insertion_point(field_add:SceneTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::SceneTable>& SceneTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::SceneTable>& SceneTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:SceneTabledData.data)
+  // @@protoc_insertion_point(field_list:SceneTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::SceneTable>&
-SceneTabledData::_internal_data() const {
+SceneTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::SceneTable>* PROTOBUF_NONNULL
-SceneTabledData::_internal_mutable_data() {
+SceneTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

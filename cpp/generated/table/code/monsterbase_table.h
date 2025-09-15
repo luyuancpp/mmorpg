@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const MonsterBaseTabledData& All() const { return data_; }
+    const MonsterBaseTableData& All() const { return data_; }
 
     std::pair<const MonsterBaseTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const MonsterBaseTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -36,12 +36,12 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    MonsterBaseTabledData data_;
+    MonsterBaseTableData data_;
     KeyValueDataType kv_data_;
     
 };
 
-inline const MonsterBaseTabledData& GetMonsterBaseAllTable() {
+inline const MonsterBaseTableData& GetMonsterBaseAllTable() {
     return MonsterBaseTableManager::Instance().All();
 }
 

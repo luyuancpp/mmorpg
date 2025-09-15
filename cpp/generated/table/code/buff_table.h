@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const BuffTabledData& All() const { return data_; }
+    const BuffTableData& All() const { return data_; }
 
     std::pair<const BuffTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const BuffTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -60,12 +60,12 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    BuffTabledData data_;
+    BuffTableData data_;
     KeyValueDataType kv_data_;
     ExcelExpression<double> expression_healthregeneration_;ExcelExpression<double> expression_bonusdamage_;
 };
 
-inline const BuffTabledData& GetBuffAllTable() {
+inline const BuffTableData& GetBuffAllTable() {
     return BuffTableManager::Instance().All();
 }
 

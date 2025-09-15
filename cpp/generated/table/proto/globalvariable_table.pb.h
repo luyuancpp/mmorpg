@@ -56,10 +56,10 @@ class GlobalVariableTable;
 struct GlobalVariableTableDefaultTypeInternal;
 extern GlobalVariableTableDefaultTypeInternal _GlobalVariableTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull GlobalVariableTable_class_data_;
-class GlobalVariableTabledData;
-struct GlobalVariableTabledDataDefaultTypeInternal;
-extern GlobalVariableTabledDataDefaultTypeInternal _GlobalVariableTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull GlobalVariableTabledData_class_data_;
+class GlobalVariableTableData;
+struct GlobalVariableTableDataDefaultTypeInternal;
+extern GlobalVariableTableDataDefaultTypeInternal _GlobalVariableTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GlobalVariableTableData_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -327,30 +327,30 @@ class GlobalVariableTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull GlobalVariableTable_class_data_;
 // -------------------------------------------------------------------
 
-class GlobalVariableTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:GlobalVariableTabledData) */ {
+class GlobalVariableTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:GlobalVariableTableData) */ {
  public:
-  inline GlobalVariableTabledData() : GlobalVariableTabledData(nullptr) {}
-  ~GlobalVariableTabledData() PROTOBUF_FINAL;
+  inline GlobalVariableTableData() : GlobalVariableTableData(nullptr) {}
+  ~GlobalVariableTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(GlobalVariableTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(GlobalVariableTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(GlobalVariableTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GlobalVariableTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR GlobalVariableTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR GlobalVariableTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline GlobalVariableTabledData(const GlobalVariableTabledData& from) : GlobalVariableTabledData(nullptr, from) {}
-  inline GlobalVariableTabledData(GlobalVariableTabledData&& from) noexcept
-      : GlobalVariableTabledData(nullptr, ::std::move(from)) {}
-  inline GlobalVariableTabledData& operator=(const GlobalVariableTabledData& from) {
+  inline GlobalVariableTableData(const GlobalVariableTableData& from) : GlobalVariableTableData(nullptr, from) {}
+  inline GlobalVariableTableData(GlobalVariableTableData&& from) noexcept
+      : GlobalVariableTableData(nullptr, ::std::move(from)) {}
+  inline GlobalVariableTableData& operator=(const GlobalVariableTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline GlobalVariableTabledData& operator=(GlobalVariableTabledData&& from) noexcept {
+  inline GlobalVariableTableData& operator=(GlobalVariableTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -378,13 +378,13 @@ class GlobalVariableTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const GlobalVariableTabledData& default_instance() {
-    return *reinterpret_cast<const GlobalVariableTabledData*>(
-        &_GlobalVariableTabledData_default_instance_);
+  static const GlobalVariableTableData& default_instance() {
+    return *reinterpret_cast<const GlobalVariableTableData*>(
+        &_GlobalVariableTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(GlobalVariableTabledData& a, GlobalVariableTabledData& b) { a.Swap(&b); }
-  inline void Swap(GlobalVariableTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(GlobalVariableTableData& a, GlobalVariableTableData& b) { a.Swap(&b); }
+  inline void Swap(GlobalVariableTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -392,7 +392,7 @@ class GlobalVariableTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(GlobalVariableTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(GlobalVariableTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -400,13 +400,13 @@ class GlobalVariableTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  GlobalVariableTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<GlobalVariableTabledData>(arena);
+  GlobalVariableTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GlobalVariableTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const GlobalVariableTabledData& from);
+  void CopyFrom(const GlobalVariableTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const GlobalVariableTabledData& from) { GlobalVariableTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const GlobalVariableTableData& from) { GlobalVariableTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -442,18 +442,18 @@ class GlobalVariableTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(GlobalVariableTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(GlobalVariableTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "GlobalVariableTabledData"; }
+  static ::absl::string_view FullMessageName() { return "GlobalVariableTableData"; }
 
  protected:
-  explicit GlobalVariableTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  GlobalVariableTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GlobalVariableTabledData& from);
-  GlobalVariableTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GlobalVariableTabledData&& from) noexcept
-      : GlobalVariableTabledData(arena) {
+  explicit GlobalVariableTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GlobalVariableTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GlobalVariableTableData& from);
+  GlobalVariableTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GlobalVariableTableData&& from) noexcept
+      : GlobalVariableTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -489,7 +489,7 @@ class GlobalVariableTabledData final : public ::google::protobuf::Message
   const ::GlobalVariableTable& data(int index) const;
   ::GlobalVariableTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::GlobalVariableTable>& data() const;
-  // @@protoc_insertion_point(class_scope:GlobalVariableTabledData)
+  // @@protoc_insertion_point(class_scope:GlobalVariableTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -512,7 +512,7 @@ class GlobalVariableTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const GlobalVariableTabledData& from_msg);
+        const GlobalVariableTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::GlobalVariableTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -521,7 +521,7 @@ class GlobalVariableTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_globalvariable_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull GlobalVariableTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull GlobalVariableTableData_class_data_;
 
 // ===================================================================
 
@@ -726,54 +726,54 @@ inline void GlobalVariableTable::_internal_set_todouble(double value) {
 
 // -------------------------------------------------------------------
 
-// GlobalVariableTabledData
+// GlobalVariableTableData
 
 // repeated .GlobalVariableTable data = 1;
-inline int GlobalVariableTabledData::_internal_data_size() const {
+inline int GlobalVariableTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int GlobalVariableTabledData::data_size() const {
+inline int GlobalVariableTableData::data_size() const {
   return _internal_data_size();
 }
-inline void GlobalVariableTabledData::clear_data() {
+inline void GlobalVariableTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::GlobalVariableTable* PROTOBUF_NONNULL GlobalVariableTabledData::mutable_data(int index)
+inline ::GlobalVariableTable* PROTOBUF_NONNULL GlobalVariableTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:GlobalVariableTabledData.data)
+  // @@protoc_insertion_point(field_mutable:GlobalVariableTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::GlobalVariableTable>* PROTOBUF_NONNULL GlobalVariableTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::GlobalVariableTable>* PROTOBUF_NONNULL GlobalVariableTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:GlobalVariableTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:GlobalVariableTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::GlobalVariableTable& GlobalVariableTabledData::data(int index) const
+inline const ::GlobalVariableTable& GlobalVariableTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:GlobalVariableTabledData.data)
+  // @@protoc_insertion_point(field_get:GlobalVariableTableData.data)
   return _internal_data().Get(index);
 }
-inline ::GlobalVariableTable* PROTOBUF_NONNULL GlobalVariableTabledData::add_data()
+inline ::GlobalVariableTable* PROTOBUF_NONNULL GlobalVariableTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::GlobalVariableTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:GlobalVariableTabledData.data)
+  // @@protoc_insertion_point(field_add:GlobalVariableTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::GlobalVariableTable>& GlobalVariableTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::GlobalVariableTable>& GlobalVariableTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:GlobalVariableTabledData.data)
+  // @@protoc_insertion_point(field_list:GlobalVariableTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::GlobalVariableTable>&
-GlobalVariableTabledData::_internal_data() const {
+GlobalVariableTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::GlobalVariableTable>* PROTOBUF_NONNULL
-GlobalVariableTabledData::_internal_mutable_data() {
+GlobalVariableTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

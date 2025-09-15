@@ -53,14 +53,14 @@ const char descriptor_table_protodef_scene_5ferror_5ftip_2eproto[] ABSL_ATTRIBUT
     "nePlayerQueueComponentEmpty\020F\022 \n\034kChange"
     "SceneEnQueueNotSameGs\020G\022 \n\034kInvalidEnter"
     "SceneParameters\020H\022\033\n\027kCheckEnterSceneCre"
-    "ator\020I\022\025\n\021kEnterSceneFailed\020JB\tZ\007pb/game"
-    "b\006proto3"
+    "ator\020I\022\025\n\021kEnterSceneFailed\020JB\024Z\022generat"
+    "ed/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_scene_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_scene_5ferror_5ftip_2eproto = {
     false,
     false,
-    808,
+    819,
     descriptor_table_protodef_scene_5ferror_5ftip_2eproto,
     "scene_error_tip.proto",
     &descriptor_table_scene_5ferror_5ftip_2eproto_once,

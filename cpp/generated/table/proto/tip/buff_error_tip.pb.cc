@@ -36,14 +36,14 @@ const char descriptor_table_protodef_buff_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE
     protodesc_cold) = {
     "\n\024buff_error_tip.proto*S\n\nbuff_error\022\021\n\r"
     "kBuff_errorOK\020\000\022\025\n\021kBuffMaxBuffStack\020z\022\033"
-    "\n\027kBuffTargetImmuneToBuff\020{B\tZ\007pb/gameb\006"
-    "proto3"
+    "\n\027kBuffTargetImmuneToBuff\020{B\024Z\022generated"
+    "/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_buff_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_buff_5ferror_5ftip_2eproto = {
     false,
     false,
-    126,
+    137,
     descriptor_table_protodef_buff_5ferror_5ftip_2eproto,
     "buff_error_tip.proto",
     &descriptor_table_buff_5ferror_5ftip_2eproto_once,

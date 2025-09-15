@@ -52,30 +52,30 @@ struct ClassTableDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ClassTableDefaultTypeInternal _ClassTable_default_instance_;
 
-inline constexpr ClassTabledData::Impl_::Impl_(
+inline constexpr ClassTableData::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : data_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR ClassTabledData::ClassTabledData(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ClassTableData::ClassTableData(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(ClassTabledData_class_data_.base()),
+    : ::google::protobuf::Message(ClassTableData_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct ClassTabledDataDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ClassTabledDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ClassTabledDataDefaultTypeInternal() {}
+struct ClassTableDataDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ClassTableDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ClassTableDataDefaultTypeInternal() {}
   union {
-    ClassTabledData _instance;
+    ClassTableData _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ClassTabledDataDefaultTypeInternal _ClassTabledData_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ClassTableDataDefaultTypeInternal _ClassTableData_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_class_5ftable_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -91,30 +91,30 @@ const ::uint32_t
         0,
         ~0u,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::ClassTabledData, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::ClassTableData, _impl_.data_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::ClassTable)},
-        {7, sizeof(::ClassTabledData)},
+        {7, sizeof(::ClassTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_ClassTable_default_instance_._instance,
-    &::_ClassTabledData_default_instance_._instance,
+    &::_ClassTableData_default_instance_._instance,
 };
 const char descriptor_table_protodef_class_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\021class_table.proto\"\'\n\nClassTable\022\n\n\002id\030"
-    "\001 \001(\r\022\r\n\005skill\030\002 \003(\r\",\n\017ClassTabledData\022"
-    "\031\n\004data\030\001 \003(\0132\013.ClassTableB\tZ\007pb/gameb\006p"
-    "roto3"
+    "\001 \001(\r\022\r\n\005skill\030\002 \003(\r\"+\n\016ClassTableData\022\031"
+    "\n\004data\030\001 \003(\0132\013.ClassTableB\024Z\022generated/p"
+    "b/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_class_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_class_5ftable_2eproto = {
     false,
     false,
-    125,
+    135,
     descriptor_table_protodef_class_5ftable_2eproto,
     "class_table.proto",
     &descriptor_table_class_5ftable_2eproto_once,
@@ -421,119 +421,119 @@ void ClassTable::InternalSwap(ClassTable* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
 }
 // ===================================================================
 
-class ClassTabledData::_Internal {
+class ClassTableData::_Internal {
  public:
 };
 
-ClassTabledData::ClassTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+ClassTableData::ClassTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ClassTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ClassTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:ClassTabledData)
+  // @@protoc_insertion_point(arena_constructor:ClassTableData)
 }
-PROTOBUF_NDEBUG_INLINE ClassTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ClassTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::ClassTabledData& from_msg)
+    const ::ClassTableData& from_msg)
       : data_{visibility, arena, from.data_},
         _cached_size_{0} {}
 
-ClassTabledData::ClassTabledData(
+ClassTableData::ClassTableData(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const ClassTabledData& from)
+    const ClassTableData& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ClassTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ClassTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  ClassTabledData* const _this = this;
+  ClassTableData* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:ClassTabledData)
+  // @@protoc_insertion_point(copy_constructor:ClassTableData)
 }
-PROTOBUF_NDEBUG_INLINE ClassTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ClassTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : data_{visibility, arena},
         _cached_size_{0} {}
 
-inline void ClassTabledData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void ClassTableData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-ClassTabledData::~ClassTabledData() {
-  // @@protoc_insertion_point(destructor:ClassTabledData)
+ClassTableData::~ClassTableData() {
+  // @@protoc_insertion_point(destructor:ClassTableData)
   SharedDtor(*this);
 }
-inline void ClassTabledData::SharedDtor(MessageLite& self) {
-  ClassTabledData& this_ = static_cast<ClassTabledData&>(self);
+inline void ClassTableData::SharedDtor(MessageLite& self) {
+  ClassTableData& this_ = static_cast<ClassTableData&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL ClassTabledData::PlacementNew_(
+inline void* PROTOBUF_NONNULL ClassTableData::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) ClassTabledData(arena);
+  return ::new (mem) ClassTableData(arena);
 }
-constexpr auto ClassTabledData::InternalNewImpl_() {
+constexpr auto ClassTableData::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(ClassTabledData, _impl_.data_) +
-          decltype(ClassTabledData::_impl_.data_)::
+      PROTOBUF_FIELD_OFFSET(ClassTableData, _impl_.data_) +
+          decltype(ClassTableData::_impl_.data_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::ZeroInit(
-        sizeof(ClassTabledData), alignof(ClassTabledData), *arena_bits);
+        sizeof(ClassTableData), alignof(ClassTableData), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&ClassTabledData::PlacementNew_,
-                                 sizeof(ClassTabledData),
-                                 alignof(ClassTabledData));
+    return ::google::protobuf::internal::MessageCreator(&ClassTableData::PlacementNew_,
+                                 sizeof(ClassTableData),
+                                 alignof(ClassTableData));
   }
 }
-constexpr auto ClassTabledData::InternalGenerateClassData_() {
+constexpr auto ClassTableData::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_ClassTabledData_default_instance_._instance,
+          &_ClassTableData_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &ClassTabledData::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<ClassTabledData>(),
+          &ClassTableData::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ClassTableData>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &ClassTabledData::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<ClassTabledData>(), &ClassTabledData::ByteSizeLong,
-              &ClassTabledData::_InternalSerialize,
+          &ClassTableData::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ClassTableData>(), &ClassTableData::ByteSizeLong,
+              &ClassTableData::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(ClassTabledData, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(ClassTableData, _impl_._cached_size_),
           false,
       },
-      &ClassTabledData::kDescriptorMethods,
+      &ClassTableData::kDescriptorMethods,
       &descriptor_table_class_5ftable_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull ClassTabledData_class_data_ =
-        ClassTabledData::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull ClassTableData_class_data_ =
+        ClassTableData::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ClassTabledData::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ClassTabledData_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(ClassTabledData_class_data_.tc_table);
-  return ClassTabledData_class_data_.base();
+ClassTableData::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ClassTableData_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ClassTableData_class_data_.tc_table);
+  return ClassTableData_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-ClassTabledData::_table_ = {
+ClassTableData::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -544,21 +544,21 @@ ClassTabledData::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    ClassTabledData_class_data_.base(),
+    ClassTableData_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::ClassTabledData>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ClassTableData>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .ClassTable data = 1;
     {::_pbi::TcParser::FastMtR1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(ClassTabledData, _impl_.data_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(ClassTableData, _impl_.data_)}},
   }}, {{
     65535, 65535
   }}, {{
     // repeated .ClassTable data = 1;
-    {PROTOBUF_FIELD_OFFSET(ClassTabledData, _impl_.data_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ClassTableData, _impl_.data_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
@@ -567,8 +567,8 @@ ClassTabledData::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void ClassTabledData::Clear() {
-// @@protoc_insertion_point(message_clear_start:ClassTabledData)
+PROTOBUF_NOINLINE void ClassTableData::Clear() {
+// @@protoc_insertion_point(message_clear_start:ClassTableData)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -579,17 +579,17 @@ PROTOBUF_NOINLINE void ClassTabledData::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL ClassTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ClassTableData::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const ClassTabledData& this_ = static_cast<const ClassTabledData&>(base);
+  const ClassTableData& this_ = static_cast<const ClassTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL ClassTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ClassTableData::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const ClassTabledData& this_ = *this;
+  const ClassTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:ClassTabledData)
+  // @@protoc_insertion_point(serialize_to_array_start:ClassTableData)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -609,18 +609,18 @@ PROTOBUF_NOINLINE void ClassTabledData::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:ClassTabledData)
+  // @@protoc_insertion_point(serialize_to_array_end:ClassTableData)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t ClassTabledData::ByteSizeLong(const MessageLite& base) {
-  const ClassTabledData& this_ = static_cast<const ClassTabledData&>(base);
+::size_t ClassTableData::ByteSizeLong(const MessageLite& base) {
+  const ClassTableData& this_ = static_cast<const ClassTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t ClassTabledData::ByteSizeLong() const {
-  const ClassTabledData& this_ = *this;
+::size_t ClassTableData::ByteSizeLong() const {
+  const ClassTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:ClassTabledData)
+  // @@protoc_insertion_point(message_byte_size_start:ClassTableData)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -641,10 +641,10 @@ PROTOBUF_NOINLINE void ClassTabledData::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void ClassTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<ClassTabledData*>(&to_msg);
-  auto& from = static_cast<const ClassTabledData&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:ClassTabledData)
+void ClassTableData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ClassTableData*>(&to_msg);
+  auto& from = static_cast<const ClassTableData&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ClassTableData)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -654,21 +654,21 @@ void ClassTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void ClassTabledData::CopyFrom(const ClassTabledData& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:ClassTabledData)
+void ClassTableData::CopyFrom(const ClassTableData& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ClassTableData)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void ClassTabledData::InternalSwap(ClassTabledData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void ClassTableData::InternalSwap(ClassTableData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.data_.InternalSwap(&other->_impl_.data_);
 }
 
-::google::protobuf::Metadata ClassTabledData::GetMetadata() const {
+::google::protobuf::Metadata ClassTableData::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

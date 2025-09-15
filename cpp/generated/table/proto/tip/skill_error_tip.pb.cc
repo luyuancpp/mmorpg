@@ -41,13 +41,13 @@ const char descriptor_table_protodef_skill_5ferror_5ftip_2eproto[] ABSL_ATTRIBUT
     "eady\020v\022$\n kSkillCannotBeCastInCurrentSta"
     "te\020w\022(\n$kSkillCannotBeCastSilenceRestric"
     "tion\020x\022%\n!kSkillCannotBeCastStunRestrict"
-    "ion\020yB\tZ\007pb/gameb\006proto3"
+    "ion\020yB\024Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_skill_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_skill_5ferror_5ftip_2eproto = {
     false,
     false,
-    304,
+    315,
     descriptor_table_protodef_skill_5ferror_5ftip_2eproto,
     "skill_error_tip.proto",
     &descriptor_table_skill_5ferror_5ftip_2eproto_once,

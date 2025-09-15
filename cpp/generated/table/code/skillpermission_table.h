@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    const SkillPermissionTabledData& All() const { return data_; }
+    const SkillPermissionTableData& All() const { return data_; }
 
     std::pair<const SkillPermissionTable*, uint32_t> GetTable(uint32_t tableId);
     std::pair<const SkillPermissionTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
@@ -36,12 +36,12 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
-    SkillPermissionTabledData data_;
+    SkillPermissionTableData data_;
     KeyValueDataType kv_data_;
     
 };
 
-inline const SkillPermissionTabledData& GetSkillPermissionAllTable() {
+inline const SkillPermissionTableData& GetSkillPermissionAllTable() {
     return SkillPermissionTableManager::Instance().All();
 }
 

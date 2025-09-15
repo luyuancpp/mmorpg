@@ -36,13 +36,13 @@ const char descriptor_table_protodef_reward_5ferror_5ftip_2eproto[] ABSL_ATTRIBU
     protodesc_cold) = {
     "\n\026reward_error_tip.proto*>\n\014reward_error"
     "\022\023\n\017kReward_errorOK\020\000\022\031\n\025kRewardAlreadyC"
-    "laimed\020\177B\tZ\007pb/gameb\006proto3"
+    "laimed\020\177B\024Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_reward_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_reward_5ferror_5ftip_2eproto = {
     false,
     false,
-    107,
+    118,
     descriptor_table_protodef_reward_5ferror_5ftip_2eproto,
     "reward_error_tip.proto",
     &descriptor_table_reward_5ferror_5ftip_2eproto_once,

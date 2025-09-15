@@ -56,10 +56,10 @@ class MessageLimiterTable;
 struct MessageLimiterTableDefaultTypeInternal;
 extern MessageLimiterTableDefaultTypeInternal _MessageLimiterTable_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull MessageLimiterTable_class_data_;
-class MessageLimiterTabledData;
-struct MessageLimiterTabledDataDefaultTypeInternal;
-extern MessageLimiterTabledDataDefaultTypeInternal _MessageLimiterTabledData_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull MessageLimiterTabledData_class_data_;
+class MessageLimiterTableData;
+struct MessageLimiterTableDataDefaultTypeInternal;
+extern MessageLimiterTableDataDefaultTypeInternal _MessageLimiterTableData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull MessageLimiterTableData_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -298,30 +298,30 @@ class MessageLimiterTable final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull MessageLimiterTable_class_data_;
 // -------------------------------------------------------------------
 
-class MessageLimiterTabledData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:MessageLimiterTabledData) */ {
+class MessageLimiterTableData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:MessageLimiterTableData) */ {
  public:
-  inline MessageLimiterTabledData() : MessageLimiterTabledData(nullptr) {}
-  ~MessageLimiterTabledData() PROTOBUF_FINAL;
+  inline MessageLimiterTableData() : MessageLimiterTableData(nullptr) {}
+  ~MessageLimiterTableData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(MessageLimiterTabledData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(MessageLimiterTableData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(MessageLimiterTabledData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MessageLimiterTableData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR MessageLimiterTabledData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR MessageLimiterTableData(::google::protobuf::internal::ConstantInitialized);
 
-  inline MessageLimiterTabledData(const MessageLimiterTabledData& from) : MessageLimiterTabledData(nullptr, from) {}
-  inline MessageLimiterTabledData(MessageLimiterTabledData&& from) noexcept
-      : MessageLimiterTabledData(nullptr, ::std::move(from)) {}
-  inline MessageLimiterTabledData& operator=(const MessageLimiterTabledData& from) {
+  inline MessageLimiterTableData(const MessageLimiterTableData& from) : MessageLimiterTableData(nullptr, from) {}
+  inline MessageLimiterTableData(MessageLimiterTableData&& from) noexcept
+      : MessageLimiterTableData(nullptr, ::std::move(from)) {}
+  inline MessageLimiterTableData& operator=(const MessageLimiterTableData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline MessageLimiterTabledData& operator=(MessageLimiterTabledData&& from) noexcept {
+  inline MessageLimiterTableData& operator=(MessageLimiterTableData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -349,13 +349,13 @@ class MessageLimiterTabledData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const MessageLimiterTabledData& default_instance() {
-    return *reinterpret_cast<const MessageLimiterTabledData*>(
-        &_MessageLimiterTabledData_default_instance_);
+  static const MessageLimiterTableData& default_instance() {
+    return *reinterpret_cast<const MessageLimiterTableData*>(
+        &_MessageLimiterTableData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(MessageLimiterTabledData& a, MessageLimiterTabledData& b) { a.Swap(&b); }
-  inline void Swap(MessageLimiterTabledData* PROTOBUF_NONNULL other) {
+  friend void swap(MessageLimiterTableData& a, MessageLimiterTableData& b) { a.Swap(&b); }
+  inline void Swap(MessageLimiterTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -363,7 +363,7 @@ class MessageLimiterTabledData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(MessageLimiterTabledData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(MessageLimiterTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -371,13 +371,13 @@ class MessageLimiterTabledData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  MessageLimiterTabledData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<MessageLimiterTabledData>(arena);
+  MessageLimiterTableData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MessageLimiterTableData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const MessageLimiterTabledData& from);
+  void CopyFrom(const MessageLimiterTableData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const MessageLimiterTabledData& from) { MessageLimiterTabledData::MergeImpl(*this, from); }
+  void MergeFrom(const MessageLimiterTableData& from) { MessageLimiterTableData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -413,18 +413,18 @@ class MessageLimiterTabledData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(MessageLimiterTabledData* PROTOBUF_NONNULL other);
+  void InternalSwap(MessageLimiterTableData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "MessageLimiterTabledData"; }
+  static ::absl::string_view FullMessageName() { return "MessageLimiterTableData"; }
 
  protected:
-  explicit MessageLimiterTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  MessageLimiterTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MessageLimiterTabledData& from);
-  MessageLimiterTabledData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MessageLimiterTabledData&& from) noexcept
-      : MessageLimiterTabledData(arena) {
+  explicit MessageLimiterTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MessageLimiterTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MessageLimiterTableData& from);
+  MessageLimiterTableData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MessageLimiterTableData&& from) noexcept
+      : MessageLimiterTableData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -460,7 +460,7 @@ class MessageLimiterTabledData final : public ::google::protobuf::Message
   const ::MessageLimiterTable& data(int index) const;
   ::MessageLimiterTable* PROTOBUF_NONNULL add_data();
   const ::google::protobuf::RepeatedPtrField<::MessageLimiterTable>& data() const;
-  // @@protoc_insertion_point(class_scope:MessageLimiterTabledData)
+  // @@protoc_insertion_point(class_scope:MessageLimiterTableData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -483,7 +483,7 @@ class MessageLimiterTabledData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const MessageLimiterTabledData& from_msg);
+        const MessageLimiterTableData& from_msg);
     ::google::protobuf::RepeatedPtrField< ::MessageLimiterTable > data_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -492,7 +492,7 @@ class MessageLimiterTabledData final : public ::google::protobuf::Message
   friend struct ::TableStruct_messagelimiter_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull MessageLimiterTabledData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull MessageLimiterTableData_class_data_;
 
 // ===================================================================
 
@@ -608,54 +608,54 @@ inline void MessageLimiterTable::_internal_set_tipmessage(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
-// MessageLimiterTabledData
+// MessageLimiterTableData
 
 // repeated .MessageLimiterTable data = 1;
-inline int MessageLimiterTabledData::_internal_data_size() const {
+inline int MessageLimiterTableData::_internal_data_size() const {
   return _internal_data().size();
 }
-inline int MessageLimiterTabledData::data_size() const {
+inline int MessageLimiterTableData::data_size() const {
   return _internal_data_size();
 }
-inline void MessageLimiterTabledData::clear_data() {
+inline void MessageLimiterTableData::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.data_.Clear();
 }
-inline ::MessageLimiterTable* PROTOBUF_NONNULL MessageLimiterTabledData::mutable_data(int index)
+inline ::MessageLimiterTable* PROTOBUF_NONNULL MessageLimiterTableData::mutable_data(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:MessageLimiterTabledData.data)
+  // @@protoc_insertion_point(field_mutable:MessageLimiterTableData.data)
   return _internal_mutable_data()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::MessageLimiterTable>* PROTOBUF_NONNULL MessageLimiterTabledData::mutable_data()
+inline ::google::protobuf::RepeatedPtrField<::MessageLimiterTable>* PROTOBUF_NONNULL MessageLimiterTableData::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:MessageLimiterTabledData.data)
+  // @@protoc_insertion_point(field_mutable_list:MessageLimiterTableData.data)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_data();
 }
-inline const ::MessageLimiterTable& MessageLimiterTabledData::data(int index) const
+inline const ::MessageLimiterTable& MessageLimiterTableData::data(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:MessageLimiterTabledData.data)
+  // @@protoc_insertion_point(field_get:MessageLimiterTableData.data)
   return _internal_data().Get(index);
 }
-inline ::MessageLimiterTable* PROTOBUF_NONNULL MessageLimiterTabledData::add_data()
+inline ::MessageLimiterTable* PROTOBUF_NONNULL MessageLimiterTableData::add_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::MessageLimiterTable* _add = _internal_mutable_data()->Add();
-  // @@protoc_insertion_point(field_add:MessageLimiterTabledData.data)
+  // @@protoc_insertion_point(field_add:MessageLimiterTableData.data)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::MessageLimiterTable>& MessageLimiterTabledData::data() const
+inline const ::google::protobuf::RepeatedPtrField<::MessageLimiterTable>& MessageLimiterTableData::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:MessageLimiterTabledData.data)
+  // @@protoc_insertion_point(field_list:MessageLimiterTableData.data)
   return _internal_data();
 }
 inline const ::google::protobuf::RepeatedPtrField<::MessageLimiterTable>&
-MessageLimiterTabledData::_internal_data() const {
+MessageLimiterTableData::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.data_;
 }
 inline ::google::protobuf::RepeatedPtrField<::MessageLimiterTable>* PROTOBUF_NONNULL
-MessageLimiterTabledData::_internal_mutable_data() {
+MessageLimiterTableData::_internal_mutable_data() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.data_;
 }

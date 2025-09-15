@@ -131,30 +131,30 @@ struct BuffTableDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffTableDefaultTypeInternal _BuffTable_default_instance_;
 
-inline constexpr BuffTabledData::Impl_::Impl_(
+inline constexpr BuffTableData::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : data_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR BuffTabledData::BuffTabledData(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR BuffTableData::BuffTableData(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(BuffTabledData_class_data_.base()),
+    : ::google::protobuf::Message(BuffTableData_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct BuffTabledDataDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR BuffTabledDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~BuffTabledDataDefaultTypeInternal() {}
+struct BuffTableDataDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BuffTableDataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BuffTableDataDefaultTypeInternal() {}
   union {
-    BuffTabledData _instance;
+    BuffTableData _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffTabledDataDefaultTypeInternal _BuffTabledData_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffTableDataDefaultTypeInternal _BuffTableData_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_buff_5ftable_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -231,7 +231,7 @@ const ::uint32_t
         15,
         1,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::BuffTabledData, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::BuffTableData, _impl_.data_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -240,14 +240,14 @@ static const ::_pbi::MigrationSchema
         {7, sizeof(::BuffTable_ImmunetagEntry_DoNotUse)},
         {14, sizeof(::BuffTable_DispeltagEntry_DoNotUse)},
         {21, sizeof(::BuffTable)},
-        {68, sizeof(::BuffTabledData)},
+        {68, sizeof(::BuffTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_BuffTable_TagEntry_DoNotUse_default_instance_._instance,
     &::_BuffTable_ImmunetagEntry_DoNotUse_default_instance_._instance,
     &::_BuffTable_DispeltagEntry_DoNotUse_default_instance_._instance,
     &::_BuffTable_default_instance_._instance,
-    &::_BuffTabledData_default_instance_._instance,
+    &::_BuffTableData_default_instance_._instance,
 };
 const char descriptor_table_protodef_buff_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -269,14 +269,14 @@ const char descriptor_table_protodef_buff_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTI
     "\001 \001(\t\022\r\n\005value\030\002 \001(\010:\0028\001\0320\n\016ImmunetagEnt"
     "ry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\010:\0028\001\0320\n\016Di"
     "speltagEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\010"
-    ":\0028\001\"*\n\016BuffTabledData\022\030\n\004data\030\001 \003(\0132\n.B"
-    "uffTableB\tZ\007pb/gameb\006proto3"
+    ":\0028\001\")\n\rBuffTableData\022\030\n\004data\030\001 \003(\0132\n.Bu"
+    "ffTableB\024Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_buff_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_buff_5ftable_2eproto = {
     false,
     false,
-    787,
+    797,
     descriptor_table_protodef_buff_5ftable_2eproto,
     "buff_table.proto",
     &descriptor_table_buff_5ftable_2eproto_once,
@@ -1586,119 +1586,119 @@ void BuffTable::InternalSwap(BuffTable* PROTOBUF_RESTRICT PROTOBUF_NONNULL other
 }
 // ===================================================================
 
-class BuffTabledData::_Internal {
+class BuffTableData::_Internal {
  public:
 };
 
-BuffTabledData::BuffTabledData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+BuffTableData::BuffTableData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, BuffTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, BuffTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:BuffTabledData)
+  // @@protoc_insertion_point(arena_constructor:BuffTableData)
 }
-PROTOBUF_NDEBUG_INLINE BuffTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE BuffTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::BuffTabledData& from_msg)
+    const ::BuffTableData& from_msg)
       : data_{visibility, arena, from.data_},
         _cached_size_{0} {}
 
-BuffTabledData::BuffTabledData(
+BuffTableData::BuffTableData(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const BuffTabledData& from)
+    const BuffTableData& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, BuffTabledData_class_data_.base()) {
+    : ::google::protobuf::Message(arena, BuffTableData_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  BuffTabledData* const _this = this;
+  BuffTableData* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:BuffTabledData)
+  // @@protoc_insertion_point(copy_constructor:BuffTableData)
 }
-PROTOBUF_NDEBUG_INLINE BuffTabledData::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE BuffTableData::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : data_{visibility, arena},
         _cached_size_{0} {}
 
-inline void BuffTabledData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void BuffTableData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-BuffTabledData::~BuffTabledData() {
-  // @@protoc_insertion_point(destructor:BuffTabledData)
+BuffTableData::~BuffTableData() {
+  // @@protoc_insertion_point(destructor:BuffTableData)
   SharedDtor(*this);
 }
-inline void BuffTabledData::SharedDtor(MessageLite& self) {
-  BuffTabledData& this_ = static_cast<BuffTabledData&>(self);
+inline void BuffTableData::SharedDtor(MessageLite& self) {
+  BuffTableData& this_ = static_cast<BuffTableData&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL BuffTabledData::PlacementNew_(
+inline void* PROTOBUF_NONNULL BuffTableData::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) BuffTabledData(arena);
+  return ::new (mem) BuffTableData(arena);
 }
-constexpr auto BuffTabledData::InternalNewImpl_() {
+constexpr auto BuffTableData::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(BuffTabledData, _impl_.data_) +
-          decltype(BuffTabledData::_impl_.data_)::
+      PROTOBUF_FIELD_OFFSET(BuffTableData, _impl_.data_) +
+          decltype(BuffTableData::_impl_.data_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::ZeroInit(
-        sizeof(BuffTabledData), alignof(BuffTabledData), *arena_bits);
+        sizeof(BuffTableData), alignof(BuffTableData), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&BuffTabledData::PlacementNew_,
-                                 sizeof(BuffTabledData),
-                                 alignof(BuffTabledData));
+    return ::google::protobuf::internal::MessageCreator(&BuffTableData::PlacementNew_,
+                                 sizeof(BuffTableData),
+                                 alignof(BuffTableData));
   }
 }
-constexpr auto BuffTabledData::InternalGenerateClassData_() {
+constexpr auto BuffTableData::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_BuffTabledData_default_instance_._instance,
+          &_BuffTableData_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &BuffTabledData::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<BuffTabledData>(),
+          &BuffTableData::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<BuffTableData>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &BuffTabledData::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<BuffTabledData>(), &BuffTabledData::ByteSizeLong,
-              &BuffTabledData::_InternalSerialize,
+          &BuffTableData::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<BuffTableData>(), &BuffTableData::ByteSizeLong,
+              &BuffTableData::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(BuffTabledData, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(BuffTableData, _impl_._cached_size_),
           false,
       },
-      &BuffTabledData::kDescriptorMethods,
+      &BuffTableData::kDescriptorMethods,
       &descriptor_table_buff_5ftable_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull BuffTabledData_class_data_ =
-        BuffTabledData::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull BuffTableData_class_data_ =
+        BuffTableData::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-BuffTabledData::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&BuffTabledData_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(BuffTabledData_class_data_.tc_table);
-  return BuffTabledData_class_data_.base();
+BuffTableData::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&BuffTableData_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(BuffTableData_class_data_.tc_table);
+  return BuffTableData_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-BuffTabledData::_table_ = {
+BuffTableData::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -1709,21 +1709,21 @@ BuffTabledData::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    BuffTabledData_class_data_.base(),
+    BuffTableData_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::BuffTabledData>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::BuffTableData>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .BuffTable data = 1;
     {::_pbi::TcParser::FastMtR1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTabledData, _impl_.data_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTableData, _impl_.data_)}},
   }}, {{
     65535, 65535
   }}, {{
     // repeated .BuffTable data = 1;
-    {PROTOBUF_FIELD_OFFSET(BuffTabledData, _impl_.data_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffTableData, _impl_.data_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
@@ -1732,8 +1732,8 @@ BuffTabledData::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void BuffTabledData::Clear() {
-// @@protoc_insertion_point(message_clear_start:BuffTabledData)
+PROTOBUF_NOINLINE void BuffTableData::Clear() {
+// @@protoc_insertion_point(message_clear_start:BuffTableData)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1744,17 +1744,17 @@ PROTOBUF_NOINLINE void BuffTabledData::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL BuffTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL BuffTableData::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const BuffTabledData& this_ = static_cast<const BuffTabledData&>(base);
+  const BuffTableData& this_ = static_cast<const BuffTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL BuffTabledData::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL BuffTableData::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const BuffTabledData& this_ = *this;
+  const BuffTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:BuffTabledData)
+  // @@protoc_insertion_point(serialize_to_array_start:BuffTableData)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -1774,18 +1774,18 @@ PROTOBUF_NOINLINE void BuffTabledData::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:BuffTabledData)
+  // @@protoc_insertion_point(serialize_to_array_end:BuffTableData)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t BuffTabledData::ByteSizeLong(const MessageLite& base) {
-  const BuffTabledData& this_ = static_cast<const BuffTabledData&>(base);
+::size_t BuffTableData::ByteSizeLong(const MessageLite& base) {
+  const BuffTableData& this_ = static_cast<const BuffTableData&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t BuffTabledData::ByteSizeLong() const {
-  const BuffTabledData& this_ = *this;
+::size_t BuffTableData::ByteSizeLong() const {
+  const BuffTableData& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:BuffTabledData)
+  // @@protoc_insertion_point(message_byte_size_start:BuffTableData)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -1806,10 +1806,10 @@ PROTOBUF_NOINLINE void BuffTabledData::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void BuffTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<BuffTabledData*>(&to_msg);
-  auto& from = static_cast<const BuffTabledData&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:BuffTabledData)
+void BuffTableData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<BuffTableData*>(&to_msg);
+  auto& from = static_cast<const BuffTableData&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:BuffTableData)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1819,21 +1819,21 @@ void BuffTabledData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void BuffTabledData::CopyFrom(const BuffTabledData& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:BuffTabledData)
+void BuffTableData::CopyFrom(const BuffTableData& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:BuffTableData)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void BuffTabledData::InternalSwap(BuffTabledData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void BuffTableData::InternalSwap(BuffTableData* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.data_.InternalSwap(&other->_impl_.data_);
 }
 
-::google::protobuf::Metadata BuffTabledData::GetMetadata() const {
+::google::protobuf::Metadata BuffTableData::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)
