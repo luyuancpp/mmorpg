@@ -138,14 +138,14 @@ const char descriptor_table_protodef_proto_2fetcd_2fkv_2eproto[] ABSL_ATTRIBUTE_
     "\n\004type\030\001 \001(\0162\027.mvccpb.Event.EventType\022\034\n"
     "\002kv\030\002 \001(\0132\020.mvccpb.KeyValue\022!\n\007prev_kv\030\003"
     " \001(\0132\020.mvccpb.KeyValue\" \n\tEventType\022\007\n\003P"
-    "UT\020\000\022\n\n\006DELETE\020\001B\023Z\021game/etcdserverpbb\006p"
-    "roto3"
+    "UT\020\000\022\n\n\006DELETE\020\001B\035Z\033generated/game/etcds"
+    "erverpbb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fetcd_2fkv_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fetcd_2fkv_2eproto = {
     false,
     false,
-    325,
+    335,
     descriptor_table_protodef_proto_2fetcd_2fkv_2eproto,
     "proto/etcd/kv.proto",
     &descriptor_table_proto_2fetcd_2fkv_2eproto_once,

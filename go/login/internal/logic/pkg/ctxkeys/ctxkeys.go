@@ -2,7 +2,7 @@ package ctxkeys
 
 import (
 	"context"
-	"login/pb/game"
+	"game/generated/pb/game"
 )
 
 // 自定义类型，避免 key 冲突

@@ -26,7 +26,6 @@ PROJECT_GENERATED_CODE_PROTO_OPERATOR_DIR.mkdir(parents=True, exist_ok=True)
 # Use a lock for thread-safe file access
 file_lock = threading.Lock()
 
-
 def read_temp_id_mapping():
     """Reads existing ID mappings from temp file."""
     try:
@@ -94,7 +93,7 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
     """Generates Proto file for a given group."""
     try:
         proto_content = 'syntax = "proto3";\n\n'
-        proto_content += 'option go_package = "pb/game";\n\n'
+        proto_content += 'option go_package = "generated/pb/table";\n\n'
         proto_content += f"enum {group_name} {{\n"
         proto_content += f"  k{group_name.capitalize()}OK = 0;\n"
 
