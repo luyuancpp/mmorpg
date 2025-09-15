@@ -110,7 +110,7 @@ func generateCppFiles(protoFiles []string, outputDir string) error {
 	return nil
 }
 
-func BuildProtoGrpc(protoPath string) error {
+func BuildProtoGrpcCpp(protoPath string) error {
 	// 读取 proto 目录文件
 	fds, err := os.ReadDir(protoPath)
 	if err != nil {
@@ -422,6 +422,9 @@ func BuildProtocDescAllInOne() {
 func BuildAllProtoc() {
 	// Iterate over configured proto directories
 	for i := 0; i < len(config.ProtoDirs); i++ {
+		if util.CheckGrpcServiceExistence(config.ProtoDirs[i]) {
+			continue
+		}
 
 		util.Wg.Add(1)
 		go func(i int) {
@@ -436,7 +439,7 @@ func BuildAllProtoc() {
 		util.Wg.Add(1)
 		go func(i int) {
 			defer util.Wg.Done()
-			err := BuildProtoGrpc(config.ProtoDirs[i])
+			err := BuildProtoGrpcCpp(config.ProtoDirs[i])
 			if err != nil {
 				log.Println(err)
 			}
@@ -446,15 +449,6 @@ func BuildAllProtoc() {
 		go func(i int) {
 			defer util.Wg.Done()
 			err := BuildProtoRobotGo(config.ProtoDirs[i])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
-
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			err := GenerateGoGRPCFromProto(config.ProtoDirs[i])
 			if err != nil {
 				log.Println(err)
 			}
@@ -474,33 +468,9 @@ func BuildAllProtoc() {
 func BuildGrpcProtoc() {
 	// Iterate over configured proto directories
 	for i := 0; i < len(config.ProtoDirs); i++ {
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			// Execute functions concurrently for each directory
-			err := BuildProto(config.ProtoDirs[i])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
-
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			err := BuildProtoGrpc(config.ProtoDirs[i])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
-
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			err := BuildProtoRobotGo(config.ProtoDirs[i])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
+		if !util.CheckGrpcServiceExistence(config.ProtoDirs[i]) {
+			continue
+		}
 
 		util.Wg.Add(1)
 		go func(i int) {
