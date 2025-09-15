@@ -1,4 +1,3 @@
-# paths.py
 from pathlib import Path
 
 # 常量定义
@@ -11,12 +10,13 @@ SERVER_GEN_TYPE = [SERVER_TYPE, COMMON_TYPE]
 # 项目根目录（建议使用绝对路径；可根据实际调整）
 PROJECT_DIR = Path("../../../")
 
+# 生成相关目录
 GENERATOR_DIR = PROJECT_DIR / "generated"
 
 # 项目结构路径
-PROJECT_GENERATED_JSON_DIR = GENERATOR_DIR / "generated_tables"
-PROJECT_GENERATED_CODE_DIR = GENERATOR_DIR / "generated_code"
-DATA_TABLES_DIR = PROJECT_DIR / "data_tables"
+PROJECT_GENERATED_JSON_DIR = GENERATOR_DIR / "generated_tables"   # 生成的表格数据
+PROJECT_GENERATED_CODE_DIR = GENERATOR_DIR / "generated_code"     # 生成的代码
+DATA_TABLES_DIR = PROJECT_DIR / "data_tables"                     # 数据表目录
 
 # Go 代码生成相关
 PROJECT_GENERATED_CODE_TABLE_PB_GO_DIR = PROJECT_DIR / "go" / "generated" / "table"
@@ -37,26 +37,26 @@ GENERATOR_STORAGE_OPERATOR_FILE_DIR = GENERATOR_STORAGE_OPERATOR_DIR / "id_pool.
 GENERATOR_TABLE_INDEX_MAPPING_DIR = GENERATOR_STORAGE_DIR / "mapping" / "table_index_mapping"
 GENERATOR_TIP_MAPPING_DIR = GENERATOR_STORAGE_DIR / "mapping" / "tip_enum_ids"
 
-# 假设 PROJECT_DIR 已经是 Path 类型
+# 生成代码目标路径
 GENERATED_CODE_DIR = GENERATOR_DIR /  "generated_code"
 CPP_GEN_DIR = PROJECT_DIR / "cpp" / "generated" / "table"
 GO_GEN_DIR = PROJECT_DIR / "go"
 
-# 源目录路径
+# 生成代码的源路径
 SRC_CPP = GENERATED_CODE_DIR / "cpp"
 SRC_GO = GENERATED_CODE_DIR / "go"
 SRC_CPP_ID_BIT = SRC_CPP / "bit_index"
 SRC_CPP_CONSTANTS = SRC_CPP / "constants"
 SRC_CPP_TABLE_ID = SRC_CPP / "table_id"
-SRC_GO_TABLE_ID = SRC_GO / "table"/ "table_id"
+SRC_GO_TABLE_ID = SRC_GO / "table" / "table_id"
 SRC_PROTO_CPP = GENERATED_CODE_DIR / "proto" / "cpp"
 SRC_PROTO_CPP_OPERATOR = SRC_PROTO_CPP / "operator"
 SRC_PROTO_CPP_TIP = SRC_PROTO_CPP / "tip"
 SRC_PROTO_GO = GENERATED_CODE_DIR / "proto" / "go" / "pb" / "game"
 SRC_GO_ID_BIT = SRC_GO / "go" / "bit_index"
-SRC_GO_CONSTANTS = SRC_GO /  "constants"
+SRC_GO_CONSTANTS = SRC_GO / "constants"
 
-# 目标目录路径
+# 生成代码的目标路径
 DST_CPP_CODE = CPP_GEN_DIR / "code"
 DST_GO_CODE = GO_GEN_DIR / "generated"
 DST_CPP_BIT = DST_CPP_CODE / "bit_index"
