@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"game/generated/pb/game"
 	"game/login/internal/config"
 	"game/login/internal/logic/pkg/cache"
 	"game/login/internal/logic/pkg/task"
@@ -233,7 +234,7 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 		}
 
 		// 解析任务结果
-		var result taskpb.TaskResult
+		var result game.TaskResult
 		if err := proto.Unmarshal(resBytes, &result); err != nil {
 			task.Status = TaskStatusFailed
 			task.Error = err
@@ -383,7 +384,7 @@ func InitAndAddMessageTasks(
 		msgType := string(msg.ProtoReflect().Descriptor().FullName())
 
 		// 构建任务 payload
-		taskPayload := &taskpb.DBTask{
+		taskPayload := &game.DBTask{
 			Key:       playerId,
 			WhereCase: "where player_id='" + playerIdStr + "'",
 			Op:        "read",

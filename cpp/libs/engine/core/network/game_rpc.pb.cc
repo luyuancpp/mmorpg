@@ -97,14 +97,14 @@ const char descriptor_table_protodef_game_5frpc_2eproto[] ABSL_ATTRIBUTE_SECTION
     "\r\n\tRPC_ERROR\020\004*\211\001\n\rGameErrorCode\022\020\n\014RPC_"
     "NO_ERROR\020\000\022\017\n\013WRONG_PROTO\020\001\022\016\n\nNO_SERVIC"
     "E\020\002\022\r\n\tNO_METHOD\020\003\022\023\n\017INVALID_REQUEST\020\004\022"
-    "\024\n\020INVALID_RESPONSE\020\005\022\013\n\007TIMEOUT\020\006B\tZ\007pb"
-    "/gameb\006proto3"
+    "\024\n\020INVALID_RESPONSE\020\005\022\013\n\007TIMEOUT\020\006B\023Z\021ge"
+    "nerated/pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_game_5frpc_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_game_5frpc_2eproto = {
     false,
     false,
-    413,
+    423,
     descriptor_table_protodef_game_5frpc_2eproto,
     "game_rpc.proto",
     &descriptor_table_game_5frpc_2eproto_once,
