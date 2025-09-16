@@ -2,7 +2,7 @@ package centre
 
 import (
 	"fmt"
-	"game/generated/pb/game"
+	"generated/pb/game/"
 	"github.com/google/uuid"
 	"github.com/luyuancpp/muduoclient/muduo"
 	"github.com/zeromicro/go-zero/core/logx"

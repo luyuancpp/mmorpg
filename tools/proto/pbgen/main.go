@@ -23,7 +23,7 @@ func MakeProjectDir() {
 	os.MkdirAll(config.PbcTempDirectory, os.FileMode(0777))
 	os.MkdirAll(config.GrpcTempDirectory, os.FileMode(0777))
 	os.MkdirAll(config.GoGeneratorDirectory, os.FileMode(0777))
-	os.MkdirAll(config.GeneratedPath, os.FileMode(0777))
+	os.MkdirAll(config.ProjectGeneratedPath, os.FileMode(0777))
 	os.MkdirAll(config.TableGeneratorPath, os.FileMode(0777))
 
 	for i := 0; i < len(config.ProtoDirectoryNames); i++ {

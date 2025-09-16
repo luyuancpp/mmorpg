@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"pbgen/internal/config"
+	"pbgen/util"
 	"strings"
 	"sync"
 )
@@ -135,9 +137,16 @@ func WriteGoMessageId() {
 	// Define file paths where constants will be written
 	filePaths := []string{
 		config.RobotMessageIdFilePath,
-		config.LoginMessageIdGoFile,
 	}
 
+	for i := 0; i < len(config.ProtoDirs); i++ {
+		if !util.CheckGrpcServiceExistence(config.ProtoDirs[i]) {
+			continue
+		}
+		basePath := strings.ToLower(path.Base(config.ProtoDirs[i]))
+		outputDir := config.NodeGoDirectory + basePath + "/" + config.GeneratedPath
+		filePaths = append(filePaths, outputDir+config.MessageIdGoFile)
+	}
 	// Write constants to files concurrently
 	WriteToFiles(consts, filePaths)
 }

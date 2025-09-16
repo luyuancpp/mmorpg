@@ -3,7 +3,7 @@ package dblogic
 import (
 	"context"
 
-	"game/generated/pb/game"
+	"generated/pb/game/"
 	"game/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"

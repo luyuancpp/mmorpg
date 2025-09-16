@@ -3,7 +3,7 @@ package fsmstore
 import (
 	"context"
 	"fmt"
-	"game/login/internal/config"
+	"game/internal/config"
 	"time"
 
 	"github.com/looplab/fsm"

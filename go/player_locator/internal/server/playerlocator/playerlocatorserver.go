@@ -7,7 +7,7 @@ package server
 import (
 	"context"
 
-	"player_locator/game/generated/pb/game"
+	"player_locator/generated/pb/game/"
 	"player_locator/internal/logic/playerlocator"
 	"player_locator/internal/svc"
 )

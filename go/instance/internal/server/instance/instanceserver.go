@@ -7,7 +7,7 @@ package server
 import (
 	"context"
 
-	"instance/game/generated/pb/game"
+	"instance/generated/pb/game/"
 	"instance/internal/logic/instance"
 	"instance/internal/svc"
 )
