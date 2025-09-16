@@ -26,3 +26,8 @@ func CheckGrpcServiceExistence(protoPath string) bool {
 	basePath := strings.ToLower(protoPath)
 	return strings.Contains(basePath, "service/grpc")
 }
+
+func CheckEtcdServiceExistence(protoPath string) bool {
+	basePath := strings.ToLower(protoPath)
+	return strings.Contains(basePath, "middleware/etcd/")
+}
