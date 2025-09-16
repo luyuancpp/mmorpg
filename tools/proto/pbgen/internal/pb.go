@@ -281,6 +281,10 @@ func BuildProtoGo(protoPath string) error {
 	if util.CheckGrpcServiceExistence(protoPath) {
 		return nil
 	}
+	if util.CheckEtcdServiceExistence(protoPath) {
+		return nil
+	}
+
 	// 读取 proto 目录
 	fds, err := os.ReadDir(protoPath)
 	if err != nil {
