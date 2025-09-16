@@ -2,14 +2,14 @@ package main
 
 import (
 	"db/generated/pb/game"
+	"db/internal/config"
+	"db/internal/logic/pkg/db"
+	task2 "db/internal/logic/pkg/task"
+	server "db/internal/server/db"
+	"db/internal/svc"
 	"flag"
 	"fmt"
 	"github.com/hibiken/asynq"
-	"internal/config"
-	"internal/logic/pkg/db"
-	task2 "internal/logic/pkg/task"
-	server "internal/server/db"
-	"internal/svc"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"

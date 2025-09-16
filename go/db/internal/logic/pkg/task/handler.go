@@ -2,9 +2,9 @@ package task
 
 import (
 	"context"
+	game "db/generated/pb/game"
+	"db/internal/logic/pkg/db"
 	"fmt"
-	"game/internal/logic/pkg/db"
-	game "generated/pb/game/"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
