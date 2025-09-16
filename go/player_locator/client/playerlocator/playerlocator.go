@@ -7,7 +7,7 @@ package playerlocator
 import (
 	"context"
 
-	"player_locator/game/generated/pb/game"
+	"player_locator/generated/pb/game/"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"

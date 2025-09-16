@@ -102,7 +102,6 @@ const (
 	RobotMessageIdFilePath = RobotGoGamePbDirectory + GeneratorDirectory + MessageIdGoFile
 
 	GoGeneratorDirectory = GoNodeDirectory
-	LoginMessageIdGoFile = GoGeneratorDirectory + MessageIdGoFile
 
 	GeneratedRpcName      = "rpc/"
 	GeneratedRpcDirectory = GeneratedOutputDirectory + GeneratedRpcName
@@ -129,8 +128,9 @@ const (
 	UtilGeneratorDirectory = OutputRoot + GeneratedDirectory + "proto_helpers/"
 	GenUtilFileCppPath     = UtilGeneratorDirectory + "proto_util.cpp"
 	GenUtilFileHeadPath    = UtilGeneratorDirectory + "proto_util.h"
-	GeneratedPath          = OutputRoot + "generated/"
-	TableGeneratorPath     = GeneratedPath + "generated_data/"
+	GeneratedPath          = "generated/"
+	ProjectGeneratedPath   = OutputRoot + GeneratedPath
+	TableGeneratorPath     = ProjectGeneratedPath + "generated_data/"
 )
 
 // ----------- 文件名 -----------

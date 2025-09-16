@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-func BuildProto(protoPath string) error {
+func BuildProtoCpp(protoPath string) error {
 	// 读取 proto 文件夹内容
 	fds, err := os.ReadDir(protoPath)
 	if err != nil {
@@ -237,8 +237,11 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 }
 
 // GenerateGoGRPCFromProto processes .proto files in the given directory
-// and generates Go gRPC code for allowed services.
 func GenerateGoGRPCFromProto(protoPath string) error {
+	if !util.CheckGrpcServiceExistence(protoPath) {
+		return nil
+	}
+
 	// 1. 读取 protoPath 目录下的所有文件
 	files, err := os.ReadDir(protoPath)
 	if err != nil {
@@ -275,6 +278,9 @@ func GenerateGoGRPCFromProto(protoPath string) error {
 }
 
 func BuildProtoGo(protoPath string) error {
+	if util.CheckGrpcServiceExistence(protoPath) {
+		return nil
+	}
 	// 读取 proto 目录
 	fds, err := os.ReadDir(protoPath)
 	if err != nil {
@@ -439,7 +445,7 @@ func BuildAllProtoc() {
 		go func(i int) {
 			defer util.Wg.Done()
 			// Execute functions concurrently for each directory
-			err := BuildProto(config.ProtoDirs[i])
+			err := BuildProtoCpp(config.ProtoDirs[i])
 			if err != nil {
 				log.Println(err)
 			}
@@ -469,18 +475,14 @@ func BuildAllProtoc() {
 func BuildGrpcServiceProto() {
 	// Iterate over configured proto directories
 	for i := 0; i < len(config.ProtoDirs); i++ {
-		if !util.CheckGrpcServiceExistence(config.ProtoDirs[i]) {
-			util.Wg.Add(1)
-			go func(i int) {
-				defer util.Wg.Done()
-				err := BuildProtoGo(config.ProtoDirs[i])
-				if err != nil {
-					log.Println(err)
-				}
-			}(i)
-
-			continue
-		}
+		util.Wg.Add(1)
+		go func(i int) {
+			defer util.Wg.Done()
+			err := BuildProtoGo(config.ProtoDirs[i])
+			if err != nil {
+				log.Println(err)
+			}
+		}(i)
 
 		util.Wg.Add(1)
 		go func(i int) {

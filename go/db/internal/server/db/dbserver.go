@@ -7,9 +7,9 @@ package server
 import (
 	"context"
 
-	"game/db/internal/logic/db"
-	"game/db/internal/svc"
-	"game/generated/pb/game"
+	"game/internal/logic/db"
+	"game/internal/svc"
+	"generated/pb/game/"
 )
 
 type DbServer struct {

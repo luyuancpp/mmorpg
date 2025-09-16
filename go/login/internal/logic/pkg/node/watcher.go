@@ -3,8 +3,8 @@ package node
 import (
 	"context"
 	"fmt"
-	"game/generated/pb/game"
-	"game/login/internal/config"
+	"generated/pb/game/"
+	"game/internal/config"
 	"github.com/zeromicro/go-zero/core/logx"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/client/v3"

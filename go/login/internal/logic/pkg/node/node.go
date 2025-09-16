@@ -4,9 +4,9 @@ package node
 import (
 	"context"
 	"fmt"
-	"game/generated/pb/game"
-	"game/login/internal/config"
-	etcd "game/login/internal/logic/pkg/etcd"
+	"generated/pb/game/"
+	"game/internal/config"
+	etcd "game/internal/logic/pkg/etcd"
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
 	clientv3 "go.etcd.io/etcd/client/v3"

@@ -2,7 +2,7 @@
 package etcd
 
 import (
-	"game/login/internal/config"
+	"game/internal/config"
 	"go.etcd.io/etcd/client/v3"
 	"log"
 	"time"

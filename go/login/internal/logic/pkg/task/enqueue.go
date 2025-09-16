@@ -3,7 +3,7 @@ package task
 import (
 	"context"
 	"fmt"
-	"game/login/internal/config"
+	"game/internal/config"
 	"github.com/hibiken/asynq"
 	"github.com/zeromicro/go-zero/core/logx"
 )

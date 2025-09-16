@@ -1,7 +1,7 @@
 package svc
 
 import (
-	"game/db/internal/config"
+	"game/internal/config"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 )
