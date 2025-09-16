@@ -78,18 +78,17 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fservice_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n0proto/service/rpc/scene/game_client_pl"
-    "ayer.proto\032\026proto/common/tip.proto\032\031prot"
-    "o/common/common.proto\032\030proto/common/empt"
-    "y.proto\"J\n\025GameKickPlayerRequest\022\037\n\006reas"
-    "on\030\001 \001(\0132\017.TipInfoMessage\022\020\n\010operator\030\002 "
-    "\001(\t2s\n\027SceneClientPlayerCommon\022*\n\017SendTi"
-    "pToClient\022\017.TipInfoMessage\032\006.Empty\022,\n\nKi"
-    "ckPlayer\022\026.GameKickPlayerRequest\032\006.Empty"
-    "B\026Z\021generated/pb/game\200\001\001b\006proto3"
+    "ayer.proto\032\026proto/common/tip.proto\032\030prot"
+    "o/common/empty.proto\"J\n\025GameKickPlayerRe"
+    "quest\022\037\n\006reason\030\001 \001(\0132\017.TipInfoMessage\022\020"
+    "\n\010operator\030\002 \001(\t2s\n\027SceneClientPlayerCom"
+    "mon\022*\n\017SendTipToClient\022\017.TipInfoMessage\032"
+    "\006.Empty\022,\n\nKickPlayer\022\026.GameKickPlayerRe"
+    "quest\032\006.EmptyB\026Z\021generated/pb/game\200\001\001b\006p"
+    "roto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fservice_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto_deps[3] = {
-        &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
+    descriptor_table_proto_2fservice_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto_deps[2] = {
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2ftip_2eproto,
 };
@@ -97,12 +96,12 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2frpc_2fscene_2fgame_5
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto = {
     false,
     false,
-    352,
+    325,
     descriptor_table_protodef_proto_2fservice_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto,
     "proto/service/rpc/scene/game_client_player.proto",
     &descriptor_table_proto_2fservice_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto_once,
     descriptor_table_proto_2fservice_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto_deps,
-    3,
+    2,
     1,
     schemas,
     file_default_instances,

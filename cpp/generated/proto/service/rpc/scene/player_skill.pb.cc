@@ -262,7 +262,6 @@ const char descriptor_table_protodef_proto_2fservice_2frpc_2fscene_2fplayer_5fsk
     "roto\032\026proto/common/tip.proto\032 proto/logi"
     "c/component/comp.proto\032\030proto/common/emp"
     "ty.proto\032-proto/logic/component/player_s"
-    "kill_comp.proto\032&proto/logic/component/s"
     "kill_comp.proto\032&proto/logic/component/a"
     "ctor_comp.proto\"~\n\030ReleaseSkillSkillRequ"
     "est\022\026\n\016skill_table_id\030\001 \001(\r\022\021\n\ttarget_id"
@@ -289,24 +288,23 @@ const char descriptor_table_protodef_proto_2fservice_2frpc_2fscene_2fplayer_5fsk
     "\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fservice_2frpc_2fscene_2fplayer_5fskill_2eproto_deps[6] = {
+    descriptor_table_proto_2fservice_2frpc_2fscene_2fplayer_5fskill_2eproto_deps[5] = {
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2ftip_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2fcomp_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto,
-        &::descriptor_table_proto_2flogic_2fcomponent_2fskill_5fcomp_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2frpc_2fscene_2fplayer_5fskill_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2frpc_2fscene_2fplayer_5fskill_2eproto = {
     false,
     false,
-    1129,
+    1089,
     descriptor_table_protodef_proto_2fservice_2frpc_2fscene_2fplayer_5fskill_2eproto,
     "proto/service/rpc/scene/player_skill.proto",
     &descriptor_table_proto_2fservice_2frpc_2fscene_2fplayer_5fskill_2eproto_once,
     descriptor_table_proto_2fservice_2frpc_2fscene_2fplayer_5fskill_2eproto_deps,
-    6,
+    5,
     6,
     schemas,
     file_default_instances,

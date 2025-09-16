@@ -315,7 +315,7 @@ var File_proto_service_rpc_scene_player_state_attribute_sync_proto protoreflect.
 
 const file_proto_service_rpc_scene_player_state_attribute_sync_proto_rawDesc = "" +
 	"\n" +
-	"9proto/service/rpc/scene/player_state_attribute_sync.proto\x1a proto/logic/component/comp.proto\x1a\x18proto/common/empty.proto\x1a&proto/logic/component/skill_comp.proto\x1a&proto/logic/component/actor_comp.proto\x1a6proto/logic/component/actor_attribute_state_comp.proto\"\xd4\x01\n" +
+	"9proto/service/rpc/scene/player_state_attribute_sync.proto\x1a&proto/logic/component/actor_comp.proto\x1a\x18proto/common/empty.proto\x1a6proto/logic/component/actor_attribute_state_comp.proto\"\xd4\x01\n" +
 	"\x18BaseAttributeSyncDataS2C\x12\x1b\n" +
 	"\tentity_id\x18\x01 \x01(\x04R\bentityId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
@@ -393,10 +393,8 @@ func file_proto_service_rpc_scene_player_state_attribute_sync_proto_init() {
 	if File_proto_service_rpc_scene_player_state_attribute_sync_proto != nil {
 		return
 	}
-	file_proto_logic_component_comp_proto_init()
-	file_proto_common_empty_proto_init()
-	file_proto_logic_component_skill_comp_proto_init()
 	file_proto_logic_component_actor_comp_proto_init()
+	file_proto_common_empty_proto_init()
 	file_proto_logic_component_actor_attribute_state_comp_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -2,10 +2,8 @@ syntax = "proto3";
 
 option go_package = "generated/pb/game";
 
-import "proto/logic/component/comp.proto";
-import "proto/common/empty.proto";
-import "proto/logic/component/skill_comp.proto";
 import "proto/logic/component/actor_comp.proto";
+import "proto/common/empty.proto";
 import "proto/logic/component/actor_attribute_state_comp.proto";
 
 option cc_generic_services = true;

@@ -121,7 +121,7 @@ var File_proto_service_rpc_gate_gate_service_proto protoreflect.FileDescriptor
 
 const file_proto_service_rpc_gate_gate_service_proto_rawDesc = "" +
 	"\n" +
-	")proto/service/rpc/gate/gate_service.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\x1a\x1aproto/common/message.proto\"3\n" +
+	")proto/service/rpc/gate/gate_service.proto\x1a\x18proto/common/empty.proto\x1a\x1aproto/common/message.proto\"3\n" +
 	"\x12KickSessionRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\"x\n" +
@@ -194,7 +194,6 @@ func file_proto_service_rpc_gate_gate_service_proto_init() {
 		return
 	}
 	file_proto_common_empty_proto_init()
-	file_proto_common_common_proto_init()
 	file_proto_common_message_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{

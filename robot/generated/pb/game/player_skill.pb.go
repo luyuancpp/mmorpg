@@ -379,7 +379,7 @@ var File_proto_service_rpc_scene_player_skill_proto protoreflect.FileDescriptor
 
 const file_proto_service_rpc_scene_player_skill_proto_rawDesc = "" +
 	"\n" +
-	"*proto/service/rpc/scene/player_skill.proto\x1a\x16proto/common/tip.proto\x1a proto/logic/component/comp.proto\x1a\x18proto/common/empty.proto\x1a-proto/logic/component/player_skill_comp.proto\x1a&proto/logic/component/skill_comp.proto\x1a&proto/logic/component/actor_comp.proto\"\xaa\x01\n" +
+	"*proto/service/rpc/scene/player_skill.proto\x1a\x16proto/common/tip.proto\x1a proto/logic/component/comp.proto\x1a\x18proto/common/empty.proto\x1a-proto/logic/component/player_skill_comp.proto\x1a&proto/logic/component/actor_comp.proto\"\xaa\x01\n" +
 	"\x18ReleaseSkillSkillRequest\x12$\n" +
 	"\x0eskill_table_id\x18\x01 \x01(\rR\fskillTableId\x12\x1b\n" +
 	"\ttarget_id\x18\x02 \x01(\x04R\btargetId\x12$\n" +
@@ -469,7 +469,6 @@ func file_proto_service_rpc_scene_player_skill_proto_init() {
 	file_proto_logic_component_comp_proto_init()
 	file_proto_common_empty_proto_init()
 	file_proto_logic_component_player_skill_comp_proto_init()
-	file_proto_logic_component_skill_comp_proto_init()
 	file_proto_logic_component_actor_comp_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
