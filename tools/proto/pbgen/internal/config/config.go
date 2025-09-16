@@ -82,6 +82,7 @@ const (
 // ----------- 输出目录 -----------
 // 更新后的路径
 const (
+	GoPbPath              = "pb/game/"
 	ToolDir               = "tools/"
 	TempFileGenerationDir = OutputRoot + ToolDir + "generated/temp/files/"
 	PbDescDirectory       = TempFileGenerationDir + "proto_desc/"
@@ -97,7 +98,7 @@ const (
 	GrpcProtoOutputDirectory = OutputRoot + GeneratedDirectory + ProtoDirName
 
 	RobotGoOutputDirectory = OutputRoot + RobotDirectory
-	RobotGoGamePbDirectory = RobotGoOutputDirectory + "pb/game/"
+	RobotGoGamePbDirectory = RobotGoOutputDirectory + GoPbPath
 	MessageIdGoFile        = "message_id.go"
 	RobotMessageIdFilePath = RobotGoGamePbDirectory + GeneratorDirectory + MessageIdGoFile
 

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "generated/pb/game";
 
-import "proto/db/mysql_database_table.proto";
+import "proto/service/grpc/db/mysql_database_table.proto";
 
 message PlayerAllData {
   player_database player_database_data = 2;
