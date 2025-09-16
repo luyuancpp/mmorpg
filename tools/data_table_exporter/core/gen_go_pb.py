@@ -83,15 +83,15 @@ if __name__ == "__main__":
     proto_jobs = [
         {
             "source_dir": Path(paths.PROJECT_GENERATED_CODE_DIR) / "proto",
-            "output_dir": Path(paths.GO_GENERATED_DIR) ,
+            "output_dir": Path(paths.SRC_GO) ,
         },
         {
             "source_dir": Path(paths.PROJECT_GENERATED_CODE_DIR) / "proto/tip",
-            "output_dir": Path(paths.GO_GENERATED_DIR) ,
+            "output_dir": Path(paths.SRC_GO) ,
         },
         {
             "source_dir": Path(paths.PROJECT_GENERATED_CODE_DIR) / "proto/operator",
-            "output_dir": Path(paths.GO_GENERATED_DIR) ,
+            "output_dir": Path(paths.SRC_GO) ,
         },
     ]
 

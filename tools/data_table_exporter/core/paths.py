@@ -52,13 +52,12 @@ GENERATOR_STORAGE_TIP_DIR = GENERATOR_STORAGE_DIR / "mapping" / "tip_enum_ids"
 # -----------------------------
 GENERATED_CODE_DIR = GENERATOR_DIR / "generated_code"
 CPP_GENERATED_DIR = PROJECT_DIR / "cpp" / "generated" / "table"
-GO_GENERATED_DIR = PROJECT_DIR / "go"
 
 # -----------------------------
 # 生成代码的源路径
 # -----------------------------
 SRC_CPP = GENERATED_CODE_DIR / "cpp"
-SRC_GO = GENERATED_CODE_DIR / "go"
+SRC_GO = PROJECT_GENERATED_CODE_DIR / "go"
 SRC_CPP_ID_BIT_INDEX = SRC_CPP / "bit_index"
 SRC_CPP_CONSTANTS = SRC_CPP / "constants"
 SRC_CPP_TABLE_ID = SRC_CPP / "table_id"
@@ -66,20 +65,19 @@ SRC_GO_TABLE_ID = SRC_GO / "table" / "table_id"
 SRC_PROTO_CPP = GENERATED_CODE_DIR / "proto" / "cpp"
 SRC_PROTO_CPP_OPERATOR = SRC_PROTO_CPP / "operator"
 SRC_PROTO_CPP_TIP = SRC_PROTO_CPP / "tip"
-SRC_PROTO_GO = GENERATED_CODE_DIR / "proto" / "go" / "pb" / "game"
-SRC_GO_ID_BIT = SRC_GO / "go" / "bit_index"
+SRC_GO_ID_BIT = SRC_GO / "bit_index"
 SRC_GO_CONSTANTS = SRC_GO / "constants"
 
 # -----------------------------
 # 生成代码的目标路径
 # -----------------------------
 DST_CPP_CODE = CPP_GENERATED_DIR / "code"
-DST_GO_CODE = GO_GENERATED_DIR / "generated"
+DST_GO_CODE = SRC_GO / "generated"
 DST_CPP_ID_BIT_INDEX = DST_CPP_CODE / "bit_index"
 DST_CPP_CONSTANTS = DST_CPP_CODE / "constants"
 DST_PROTO_CPP = CPP_GENERATED_DIR / "proto"
 DST_PROTO_CPP_OPERATOR = DST_PROTO_CPP / "operator"
 DST_PROTO_CPP_TIP = DST_PROTO_CPP / "tip"
-DST_PROTO_GO = DST_GO_CODE / "pb" / "table"
+DST_PROTO_GO = DST_GO_CODE
 DST_CPP_TABLE_ID = DST_CPP_CODE / "table_id"
-DST_GO_TABLE_ID = GO_GENERATED_DIR / "table_id"
+DST_GO_TABLE_ID = SRC_GO / "table_id"
