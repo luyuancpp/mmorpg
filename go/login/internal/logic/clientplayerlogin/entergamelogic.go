@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"login/data"
 	"login/generated/pb/game"
+	"login/generated/pb/table"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
@@ -44,7 +45,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or empty in context during login")
-		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginSessionIdNotFound)}
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
 	}
 
@@ -52,7 +53,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	session, err := loginsessionstore.GetLoginSession(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId)
 	if err != nil {
 		logx.Errorf("GetLoginSession failed: %v", err)
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginSessionNotFound)
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginSessionNotFound)
 		return resp, nil
 	}
 
@@ -62,13 +63,13 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	tryLocker, err := playerLocker.TryLock(l.ctx, key, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
 	if err != nil {
 		logx.Errorf("EnterGame lock acquire failed for playerId=%d: %v", in.PlayerId, err)
-		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginInProgress)}
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
 
 	if !tryLocker.IsLocked() {
 		logx.Errorf("EnterGame lock acquire failed for playerId=%d: %v", in.PlayerId, err)
-		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginInProgress)}
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
 
@@ -86,14 +87,14 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	dataBytes, err := l.svcCtx.RedisClient.Get(l.ctx, accountKey).Bytes()
 	if err != nil {
 		logx.Errorf("RedisClient Get user account failed: %v", err)
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginAccountNotFound)
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginAccountNotFound)
 		return resp, nil
 	}
 
 	userAccount := &game.UserAccounts{}
 	if err := proto.Unmarshal(dataBytes, userAccount); err != nil {
 		logx.Errorf("Unmarshal user account failed: %v", err)
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginDataParseFailed)
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginDataParseFailed)
 		return resp, nil
 	}
 
@@ -105,7 +106,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 		}
 	}
 	if !found {
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginEnterGameGuid)
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginEnterGameGuid)
 		return resp, nil
 	}
 
@@ -114,19 +115,19 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameRequest) (*game.EnterGameRe
 	f := data.InitPlayerFSM()
 	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionIdStr, ""); err != nil {
 		logx.Errorf("FSM Load failed: %v", err)
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginFsmFailed)
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginFsmFailed)
 		return resp, nil
 	}
 
 	if err := f.Event(context.Background(), data.EventEnterGame); err != nil {
 		logx.Errorf("FSM Event failed: %v", err)
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginInProgress)
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginInProgress)
 		return resp, nil
 	}
 
 	// 6. 加载 Player 数据（若不在 RedisClient）
 	if err := l.ensurePlayerDataInRedis(in.PlayerId); err != nil {
-		resp.ErrorMessage.Id = uint32(game.LoginError_kLoginPlayerGuidError)
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginPlayerGuidError)
 		logx.Errorf("Load player data failed: %v", err)
 		return resp, err
 	}

@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"login/data"
 	"login/generated/pb/game"
+	"login/generated/pb/table"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
@@ -46,7 +47,7 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	ok, err := accountLocker.AcquireLogin(l.ctx, in.Account)
 	if err != nil || !ok {
 		logx.Errorf("Login lock acquire failed for account=%s, err=%v", in.Account, err)
-		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginInProgress)}
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
 	defer accountLocker.ReleaseLogin(l.ctx, in.Account)
@@ -55,7 +56,7 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or empty in context during login")
-		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginSessionIdNotFound)}
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
 	}
 
@@ -67,14 +68,14 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 
 	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionId, ""); err != nil {
 		logx.Errorf("FSM state load failed for sessionId=%s, account=%s, error: %v", sessionId, in.Account, err)
-		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginFSMLoadFailed)}
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMLoadFailed)}
 		return resp, nil
 	}
 
 	// 执行 FSM 事件
 	if err := f.Event(l.ctx, data.EventProcessLogin); err != nil {
 		logx.Errorf("FSM transition error for sessionId=%s, account=%s, event=process_login, error: %v", sessionId, in.Account, err)
-		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginFSMEventFailed)}
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMEventFailed)}
 		return resp, nil
 	}
 
@@ -99,7 +100,7 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	})
 	if err != nil {
 		logx.Errorf("Failed to SAdd + Expire in pipeline for sessionKey=%s: %v", sessionKey, err)
-		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginRedisSetFailed)}
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
 		return resp, nil
 	}
 
@@ -107,7 +108,7 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 	count, err := l.svcCtx.RedisClient.SCard(l.ctx, sessionKey).Result()
 	if err != nil {
 		logx.Errorf("RedisClient SCard error: %v", err)
-		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginRedisSetFailed)}
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
 		return resp, nil
 	}
 
@@ -117,7 +118,7 @@ func (l *LoginLogic) Login(in *game.LoginRequest) (*game.LoginResponse, error) {
 		// 可选：删除旧的 session（基于 TTL 或先入先出策略）
 		// 或通知客户端“已有设备登录，是否强制顶号”——这需要客户端支持。
 
-		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kTooManyDevices)}
+		resp.ErrorMessage = &game.TipInfoMessage{Id: uint32(table.LoginError_kTooManyDevices)}
 		return resp, nil
 	}
 
