@@ -3,13 +3,13 @@ package svc
 import (
 	"context"
 	"fmt"
-	"generated/pb/game/"
-	"game/internal/config"
-	"game/internal/logic/pkg/centre"
-	"game/internal/logic/pkg/taskmanager"
 	"github.com/bwmarrin/snowflake"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
+	"login/generated/pb/game"
+	"login/internal/config"
+	"login/internal/logic/pkg/centre"
+	"login/internal/logic/pkg/taskmanager"
 	"sync/atomic"
 )
 

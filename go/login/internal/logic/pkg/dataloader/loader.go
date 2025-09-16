@@ -3,7 +3,7 @@ package dataloader
 import (
 	"context"
 	"errors"
-	"game/internal/logic/pkg/taskmanager"
+	"login/internal/logic/pkg/taskmanager"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"

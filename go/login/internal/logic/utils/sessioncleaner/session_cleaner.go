@@ -2,9 +2,9 @@ package sessioncleaner
 
 import (
 	"context"
-	"game/internal/constants"
-	"game/internal/logic/pkg/fsmstore"
-	"game/internal/logic/pkg/loginsessionstore"
+	"login/internal/constants"
+	"login/internal/logic/pkg/fsmstore"
+	"login/internal/logic/pkg/loginsessionstore"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 )
