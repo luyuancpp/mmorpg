@@ -242,6 +242,10 @@ func GenerateGoGRPCFromProto(protoPath string) error {
 		return nil
 	}
 
+	if util.CheckEtcdServiceExistence(protoPath) {
+		return nil
+	}
+
 	// 1. 读取 protoPath 目录下的所有文件
 	files, err := os.ReadDir(protoPath)
 	if err != nil {
@@ -267,11 +271,16 @@ func GenerateGoGRPCFromProto(protoPath string) error {
 	}
 
 	// 4. 为所有注册的 grpc 节点目录生成 Go gRPC 代码
-	basePath := strings.ToLower(path.Base(protoPath))
-	outputDir := config.NodeGoDirectory + basePath
-	err = generateGoProto(protoFiles, outputDir)
-	if err != nil {
-		return err
+	for i := 0; i < len(config.ProtoDirs); i++ {
+		if !util.CheckGrpcServiceExistence(config.ProtoDirs[i]) {
+			continue
+		}
+		basePath := strings.ToLower(path.Base(config.ProtoDirs[i]))
+		outputDir := config.NodeGoDirectory + basePath
+		err := generateGoProto(protoFiles, outputDir)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -235,16 +235,6 @@ const (
 	PlayerDatabaseName1 = "player_database_1"
 )
 
-var GrpcServices = map[string]bool{
-	"login":          true,
-	"team":           true,
-	"mail":           true,
-	"chat":           true,
-	"etcd":           true,
-	"player_locator": true,
-	"db":             true,
-}
-
 const (
 	TcpNode  = 0
 	GrpcNode = 1
