@@ -30,7 +30,6 @@ directories = [
     paths.SRC_PROTO_CPP,
     paths.SRC_PROTO_CPP_OPERATOR,
     paths.SRC_PROTO_CPP_TIP,
-    paths.SRC_PROTO_GO,
     paths.SRC_GO_ID_BIT,
     paths.SRC_GO_CONSTANTS,
     paths.DST_CPP_CODE,
@@ -43,7 +42,7 @@ directories = [
     paths.SRC_CPP_TABLE_ID,
     paths.DST_CPP_TABLE_ID,
     paths.SRC_GO_TABLE_ID,
-    paths.GO_GENERATED_DIR,
+    paths.SRC_GO,
 ]
 
 # Create directories if they don't exist
@@ -93,9 +92,7 @@ copy_tasks = [
     (paths.SRC_PROTO_CPP, paths.DST_PROTO_CPP),
     (paths.SRC_PROTO_CPP_OPERATOR, paths.DST_PROTO_CPP_OPERATOR),
     (paths.SRC_PROTO_CPP_TIP, paths.DST_PROTO_CPP_TIP),
-    (paths.SRC_PROTO_GO, paths.DST_PROTO_GO),
     (paths.SRC_CPP_TABLE_ID, paths.DST_CPP_TABLE_ID),
-    (paths.SRC_GO_TABLE_ID, paths.GO_GENERATED_DIR),
 ]
 
 for src, dst in copy_tasks:
