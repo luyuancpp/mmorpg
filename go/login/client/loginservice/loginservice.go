@@ -18,12 +18,12 @@ type (
 	EnterGameC2LRequest        = game.EnterGameC2LRequest
 	EnterGameC2LResponse       = game.EnterGameC2LResponse
 	LeaveGameC2LRequest        = game.LeaveGameC2LRequest
-	LoginC2LRequest            = game.LoginC2LRequest
-	LoginC2LResponse           = game.LoginC2LResponse
+	login/2LRequest            = game.login/2LRequest
+	login/2LResponse           = game.login/2LResponse
 	LoginNodeDisconnectRequest = game.LoginNodeDisconnectRequest
 
 	LoginService interface {
-		Login(ctx context.Context, in *LoginC2LRequest, opts ...grpc.CallOption) (*LoginC2LResponse, error)
+		Login(ctx context.Context, in *login/2LRequest, opts ...grpc.CallOption) (*login/2LResponse, error)
 		CreatePlayer(ctx context.Context, in *CreatePlayerC2LRequest, opts ...grpc.CallOption) (*CreatePlayerC2LResponse, error)
 		EnterGame(ctx context.Context, in *EnterGameC2LRequest, opts ...grpc.CallOption) (*EnterGameC2LResponse, error)
 		LeaveGame(ctx context.Context, in *LeaveGameC2LRequest, opts ...grpc.CallOption) (*Empty, error)
@@ -41,7 +41,7 @@ func NewLoginService(cli zrpc.Client) LoginService {
 	}
 }
 
-func (m *defaultLoginService) Login(ctx context.Context, in *LoginC2LRequest, opts ...grpc.CallOption) (*LoginC2LResponse, error) {
+func (m *defaultLoginService) Login(ctx context.Context, in *login/2LRequest, opts ...grpc.CallOption) (*login/2LResponse, error) {
 	client := game.NewLoginServiceClient(m.cli.Conn())
 	return client.Login(ctx, in, opts...)
 }

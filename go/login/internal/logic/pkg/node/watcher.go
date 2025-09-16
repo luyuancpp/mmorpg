@@ -3,14 +3,14 @@ package node
 import (
 	"context"
 	"fmt"
-	"generated/pb/game/"
-	"game/internal/config"
 	"github.com/zeromicro/go-zero/core/logx"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/namespace"
 	"google.golang.org/protobuf/encoding/protojson"
 	"log"
+	"login/generated/pb/game"
+	"login/internal/config"
 	"sync"
 	"time"
 )

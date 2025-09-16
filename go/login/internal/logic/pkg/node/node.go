@@ -4,12 +4,12 @@ package node
 import (
 	"context"
 	"fmt"
-	"generated/pb/game/"
-	"game/internal/config"
-	etcd "game/internal/logic/pkg/etcd"
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"login/generated/pb/game"
+	"login/internal/config"
+	etcd "login/internal/logic/pkg/etcd"
 	"time"
 )
 

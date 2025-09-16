@@ -2,10 +2,10 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"generated/pb/game/"
-	"game/internal/logic/pkg/ctxkeys"
-	"game/internal/logic/utils/sessioncleaner"
-	"game/internal/svc"
+	"login/generated/pb/game"
+	"login/internal/logic/pkg/ctxkeys"
+	"login/internal/logic/utils/sessioncleaner"
+	"login/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

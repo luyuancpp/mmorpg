@@ -170,7 +170,7 @@ const file_proto_instance_instance_proto_rawDesc = "" +
 	"expireTime\x124\n" +
 	"\rerror_message\x18\x04 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage2_\n" +
 	"\bInstance\x12S\n" +
-	"\x0eCreateInstance\x12\x1f.instance.CreateInstanceRequest\x1a .instance.CreateInstanceResponseB\x18Z\x16generated/pb/game/b\x06proto3"
+	"\x0eCreateInstance\x12\x1f.instance.CreateInstanceRequest\x1a .instance.CreateInstanceResponseB\x18Z\x16generated/pb/gameb\x06proto3"
 
 var (
 	file_proto_instance_instance_proto_rawDescOnce sync.Once

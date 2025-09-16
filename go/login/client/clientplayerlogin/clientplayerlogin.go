@@ -46,26 +46,26 @@ func NewClientPlayerLogin(cli zrpc.Client) ClientPlayerLogin {
 }
 
 func (m *defaultClientPlayerLogin) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
-	client := game.NewClientPlayerLoginClient(m.cli.Conn())
+	client := game.NewClientPlayerlogin/lient(m.cli.Conn())
 	return client.Login(ctx, in, opts...)
 }
 
 func (m *defaultClientPlayerLogin) CreatePlayer(ctx context.Context, in *CreatePlayerRequest, opts ...grpc.CallOption) (*CreatePlayerResponse, error) {
-	client := game.NewClientPlayerLoginClient(m.cli.Conn())
+	client := game.NewClientPlayerlogin/lient(m.cli.Conn())
 	return client.CreatePlayer(ctx, in, opts...)
 }
 
 func (m *defaultClientPlayerLogin) EnterGame(ctx context.Context, in *EnterGameRequest, opts ...grpc.CallOption) (*EnterGameResponse, error) {
-	client := game.NewClientPlayerLoginClient(m.cli.Conn())
+	client := game.NewClientPlayerlogin/lient(m.cli.Conn())
 	return client.EnterGame(ctx, in, opts...)
 }
 
 func (m *defaultClientPlayerLogin) LeaveGame(ctx context.Context, in *LeaveGameRequest, opts ...grpc.CallOption) (*Empty, error) {
-	client := game.NewClientPlayerLoginClient(m.cli.Conn())
+	client := game.NewClientPlayerlogin/lient(m.cli.Conn())
 	return client.LeaveGame(ctx, in, opts...)
 }
 
 func (m *defaultClientPlayerLogin) Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*Empty, error) {
-	client := game.NewClientPlayerLoginClient(m.cli.Conn())
+	client := game.NewClientPlayerlogin/lient(m.cli.Conn())
 	return client.Disconnect(ctx, in, opts...)
 }
