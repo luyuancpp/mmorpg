@@ -7,7 +7,7 @@ package db
 import (
 	"context"
 
-	"generated/pb/game/"
+	"db/generated/pb/game"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"

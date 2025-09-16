@@ -7,7 +7,7 @@ package instance
 import (
 	"context"
 
-	"instance/generated/pb/game/"
+	"instance/game/generated/pb/game"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
