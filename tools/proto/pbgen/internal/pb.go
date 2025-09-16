@@ -209,6 +209,7 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 
 	args := []string{
 		"--go_out=" + outputDir,
+		"--go-grpc_out=" + outputDir,
 	}
 	args = append(args, protoFiles...)
 	args = append(args,
@@ -297,10 +298,19 @@ func BuildProtoGo(protoPath string) error {
 		return nil
 	}
 
-	basePath := strings.ToLower(path.Base(protoPath))
-	outputDir := config.NodeGoDirectory + basePath
+	for i := 0; i < len(config.ProtoDirs); i++ {
+		if !util.CheckGrpcServiceExistence(config.ProtoDirs[i]) {
+			continue
+		}
+		basePath := strings.ToLower(path.Base(config.ProtoDirs[i]))
+		outputDir := config.NodeGoDirectory + basePath
+		err := generateGoProto(protoFiles, outputDir)
+		if err != nil {
+			return err
+		}
+	}
 
-	return generateGoProto(protoFiles, outputDir)
+	return nil
 }
 
 func generateRobotGoProto(protoFiles []string, outputDir string) error {
@@ -456,10 +466,19 @@ func BuildAllProtoc() {
 	}
 }
 
-func BuildGrpcProtoc() {
+func BuildGrpcServiceProto() {
 	// Iterate over configured proto directories
 	for i := 0; i < len(config.ProtoDirs); i++ {
 		if !util.CheckGrpcServiceExistence(config.ProtoDirs[i]) {
+			util.Wg.Add(1)
+			go func(i int) {
+				defer util.Wg.Done()
+				err := BuildProtoGo(config.ProtoDirs[i])
+				if err != nil {
+					log.Println(err)
+				}
+			}(i)
+
 			continue
 		}
 
@@ -467,15 +486,6 @@ func BuildGrpcProtoc() {
 		go func(i int) {
 			defer util.Wg.Done()
 			err := GenerateGoGRPCFromProto(config.ProtoDirs[i])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
-
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			err := BuildProtoGo(config.ProtoDirs[i])
 			if err != nil {
 				log.Println(err)
 			}

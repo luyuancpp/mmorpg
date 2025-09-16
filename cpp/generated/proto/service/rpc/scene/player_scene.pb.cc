@@ -353,7 +353,6 @@ const char descriptor_table_protodef_proto_2fservice_2frpc_2fscene_2fplayer_5fsc
     "\n*proto/service/rpc/scene/player_scene.p"
     "roto\032\026proto/common/tip.proto\032\031proto/comm"
     "on/common.proto\032\030proto/common/empty.prot"
-    "o\032&proto/logic/component/scene_comp.prot"
     "o\032&proto/logic/component/actor_comp.prot"
     "o\"@\n\024EnterSceneC2SRequest\022(\n\nscene_info\030"
     "\001 \001(\0132\024.RoomInfoPBComponent\"\?\n\025EnterScen"
@@ -383,23 +382,22 @@ const char descriptor_table_protodef_proto_2fservice_2frpc_2fscene_2fplayer_5fsc
     "EmptyB\026Z\021generated/pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fservice_2frpc_2fscene_2fplayer_5fscene_2eproto_deps[5] = {
+    descriptor_table_proto_2fservice_2frpc_2fscene_2fplayer_5fscene_2eproto_deps[4] = {
         &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2ftip_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto,
-        &::descriptor_table_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2frpc_2fscene_2fplayer_5fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2frpc_2fscene_2fplayer_5fscene_2eproto = {
     false,
     false,
-    1237,
+    1197,
     descriptor_table_protodef_proto_2fservice_2frpc_2fscene_2fplayer_5fscene_2eproto,
     "proto/service/rpc/scene/player_scene.proto",
     &descriptor_table_proto_2fservice_2frpc_2fscene_2fplayer_5fscene_2eproto_once,
     descriptor_table_proto_2fservice_2frpc_2fscene_2fplayer_5fscene_2eproto_deps,
-    5,
+    4,
     10,
     schemas,
     file_default_instances,

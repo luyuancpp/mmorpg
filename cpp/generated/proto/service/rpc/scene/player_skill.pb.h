@@ -35,7 +35,6 @@
 #include "proto/logic/component/comp.pb.h"
 #include "proto/common/empty.pb.h"
 #include "proto/logic/component/player_skill_comp.pb.h"
-#include "proto/logic/component/skill_comp.pb.h"
 #include "proto/logic/component/actor_comp.pb.h"
 // @@protoc_insertion_point(includes)
 

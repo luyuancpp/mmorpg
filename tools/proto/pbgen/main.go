@@ -55,7 +55,7 @@ func main() {
 	internal.ReadAllProtoFileServices()
 	util.Wg.Wait()
 	internal.BuildAllProtoc()
-	internal.BuildGrpcProtoc()
+	internal.BuildGrpcServiceProto()
 	util.Wg.Wait()
 
 	internal.GenNodeUtil()

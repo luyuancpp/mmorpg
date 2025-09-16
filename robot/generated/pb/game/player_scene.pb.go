@@ -489,7 +489,7 @@ var File_proto_service_rpc_scene_player_scene_proto protoreflect.FileDescriptor
 
 const file_proto_service_rpc_scene_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"*proto/service/rpc/scene/player_scene.proto\x1a\x16proto/common/tip.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a&proto/logic/component/scene_comp.proto\x1a&proto/logic/component/actor_comp.proto\"K\n" +
+	"*proto/service/rpc/scene/player_scene.proto\x1a\x16proto/common/tip.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a&proto/logic/component/actor_comp.proto\"K\n" +
 	"\x14EnterSceneC2SRequest\x123\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"M\n" +
@@ -599,7 +599,6 @@ func file_proto_service_rpc_scene_player_scene_proto_init() {
 	file_proto_common_tip_proto_init()
 	file_proto_common_common_proto_init()
 	file_proto_common_empty_proto_init()
-	file_proto_logic_component_scene_comp_proto_init()
 	file_proto_logic_component_actor_comp_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
