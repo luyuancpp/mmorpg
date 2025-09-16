@@ -52,6 +52,7 @@ GENERATOR_STORAGE_TIP_DIR = GENERATOR_STORAGE_DIR / "mapping" / "tip_enum_ids"
 # -----------------------------
 GENERATED_CODE_DIR = GENERATOR_DIR / "generated_code"
 CPP_GENERATED_DIR = PROJECT_DIR / "cpp" / "generated" / "table"
+GRPC_SERVICE_DIR = PROJECT_DIR / "proto" / "service" / "grpc"
 
 # -----------------------------
 # 生成代码的源路径
@@ -81,3 +82,4 @@ DST_PROTO_CPP_TIP = DST_PROTO_CPP / "tip"
 DST_PROTO_GO = DST_GO_CODE
 DST_CPP_TABLE_ID = DST_CPP_CODE / "table_id"
 DST_GO_TABLE_ID = SRC_GO / "table_id"
+DST_GO_GRPC = PROJECT_DIR / "go"

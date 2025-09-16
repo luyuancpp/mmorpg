@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-
+import os
 import subprocess
 import logging
 from pathlib import Path
@@ -94,6 +94,23 @@ copy_tasks = [
     (paths.SRC_PROTO_CPP_TIP, paths.DST_PROTO_CPP_TIP),
     (paths.SRC_CPP_TABLE_ID, paths.DST_CPP_TABLE_ID),
 ]
+
+# 转换为Path对象
+grpc_service_dir = Path(paths.GRPC_SERVICE_DIR)
+dst_go_grpc = Path(paths.DST_GO_GRPC)
+
+# 获取第一层子目录（不递归）
+for item in grpc_service_dir.iterdir():
+    # 只处理目录，且是直接子目录（第一层）
+    if item.is_dir():
+        # 源路径：第一层子目录
+        src_dir = paths.SRC_GO
+        # 目标路径：DST_GO_GRPC + 子目录名称
+        dst_dir = dst_go_grpc / item.name
+
+        # 添加到复制任务
+        copy_tasks.append((src_dir, dst_dir))
+        logger.info(f"Added copy task: {src_dir} -> {dst_dir}")
 
 for src, dst in copy_tasks:
     logger.info(f"Copying from {src} to {dst} with MD5 check...")
