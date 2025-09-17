@@ -7,8 +7,7 @@
 package game
 
 import (
-	common1 "generated/pb/common"
-	common "generated/pb/common/common"
+	common "generated/pb/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -232,9 +231,9 @@ func (x *SessionDisconnectRequest) GetPlayerId() uint64 {
 }
 
 type GameNodeConnectRequest struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
-	RpcClient     *common1.NetworkAddress `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`
-	GateNodeId    uint32                  `protobuf:"varint,2,opt,name=gate_node_id,json=gateNodeId,proto3" json:"gate_node_id,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RpcClient     *common.NetworkAddress `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`
+	GateNodeId    uint32                 `protobuf:"varint,2,opt,name=gate_node_id,json=gateNodeId,proto3" json:"gate_node_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -269,7 +268,7 @@ func (*GameNodeConnectRequest) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_scene_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GameNodeConnectRequest) GetRpcClient() *common1.NetworkAddress {
+func (x *GameNodeConnectRequest) GetRpcClient() *common.NetworkAddress {
 	if x != nil {
 		return x.RpcClient
 	}
@@ -432,8 +431,8 @@ func (x *CreateSceneRequest) GetConfigId() uint32 {
 }
 
 type CreateSceneResponse struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	SceneInfo     *common1.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	SceneInfo     *common.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -468,7 +467,7 @@ func (*CreateSceneResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_scene_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *CreateSceneResponse) GetSceneInfo() *common1.RoomInfoPBComponent {
+func (x *CreateSceneResponse) GetSceneInfo() *common.RoomInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -550,8 +549,8 @@ var file_proto_service_cpp_rpc_scene_scene_proto_goTypes = []any{
 	(*CreateSceneRequest)(nil),                // 7: CreateSceneRequest
 	(*CreateSceneResponse)(nil),               // 8: CreateSceneResponse
 	(*common.MessageContent)(nil),             // 9: MessageContent
-	(*common1.NetworkAddress)(nil),            // 10: NetworkAddress
-	(*common1.RoomInfoPBComponent)(nil),       // 11: RoomInfoPBComponent
+	(*common.NetworkAddress)(nil),             // 10: NetworkAddress
+	(*common.RoomInfoPBComponent)(nil),        // 11: RoomInfoPBComponent
 	(*common.NodeRouteMessageRequest)(nil),    // 12: NodeRouteMessageRequest
 	(*common.RouteMessageRequest)(nil),        // 13: RouteMessageRequest
 	(*common.RoutePlayerMessageRequest)(nil),  // 14: RoutePlayerMessageRequest

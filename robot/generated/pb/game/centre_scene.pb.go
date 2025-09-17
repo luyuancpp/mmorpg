@@ -8,7 +8,6 @@ package game
 
 import (
 	common "generated/pb/common"
-	common1 "generated/pb/common/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -207,7 +206,7 @@ var file_proto_service_cpp_rpc_centre_centre_scene_proto_goTypes = []any{
 	(*RegisterSceneResponse)(nil),      // 1: RegisterSceneResponse
 	(*UnRegisterSceneRequest)(nil),     // 2: UnRegisterSceneRequest
 	(*common.RoomInfoPBComponent)(nil), // 3: RoomInfoPBComponent
-	(*common1.Empty)(nil),              // 4: Empty
+	(*common.Empty)(nil),               // 4: Empty
 }
 var file_proto_service_cpp_rpc_centre_centre_scene_proto_depIdxs = []int32{
 	3, // 0: RegisterSceneRequest.scenes_info:type_name -> RoomInfoPBComponent
