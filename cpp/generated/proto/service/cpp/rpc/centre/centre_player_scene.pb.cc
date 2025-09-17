@@ -150,8 +150,7 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcent
     "LeaveSceneAsyncSavePlayerCompleteRequest"
     "\032\026.google.protobuf.Empty\022\?\n\014SceneInfoC2S"
     "\022\027.CentreSceneInfoRequest\032\026.google.proto"
-    "buf.EmptyB\026Z\021generated/pb/game\200\001\001b\006proto"
-    "3"
+    "buf.EmptyB\003\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_5fscene_2eproto_deps[2] = {
@@ -162,7 +161,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_5fscene_2eproto = {
     false,
     false,
-    641,
+    622,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_5fscene_2eproto,
     "proto/service/cpp/rpc/centre/centre_player_scene.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_5fscene_2eproto_once,

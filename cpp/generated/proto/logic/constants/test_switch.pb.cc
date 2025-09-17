@@ -36,14 +36,13 @@ const char descriptor_table_protodef_proto_2flogic_2fconstants_2ftest_5fswitch_2
     protodesc_cold) = {
     "\n\'proto/logic/constants/test_switch.prot"
     "o*E\n\reTestFlagType\022\032\n\026kTestMessageStatis"
-    "tics\020\000\022\030\n\024kTestClearEmptyTiles\020\001B\035Z\033gene"
-    "rated/pb/game/constantsb\006proto3"
+    "tics\020\000\022\030\n\024kTestClearEmptyTiles\020\001b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fconstants_2ftest_5fswitch_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fconstants_2ftest_5fswitch_2eproto = {
     false,
     false,
-    151,
+    120,
     descriptor_table_protodef_proto_2flogic_2fconstants_2ftest_5fswitch_2eproto,
     "proto/logic/constants/test_switch.proto",
     &descriptor_table_proto_2flogic_2fconstants_2ftest_5fswitch_2eproto_once,

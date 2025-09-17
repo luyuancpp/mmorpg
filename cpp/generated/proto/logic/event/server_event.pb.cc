@@ -128,14 +128,13 @@ const char descriptor_table_protodef_proto_2flogic_2fevent_2fserver_5fevent_2epr
     "\n$proto/logic/event/server_event.proto\")"
     "\n\027OnConnect2CentrePbEvent\022\016\n\006entity\030\001 \001("
     "\004\"!\n\017OnConnect2Login\022\016\n\006entity\030\001 \001(\004\"\017\n\r"
-    "OnServerStartB\031Z\027generated/pb/game/event"
-    "b\006proto3"
+    "OnServerStartb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fevent_2fserver_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fevent_2fserver_5fevent_2eproto = {
     false,
     false,
-    168,
+    141,
     descriptor_table_protodef_proto_2flogic_2fevent_2fserver_5fevent_2eproto,
     "proto/logic/event/server_event.proto",
     &descriptor_table_proto_2flogic_2fevent_2fserver_5fevent_2eproto_once,

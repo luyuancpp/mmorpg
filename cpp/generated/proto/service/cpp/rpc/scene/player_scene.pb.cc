@@ -379,8 +379,7 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fplaye
     "rDestroyS2C\032\006.Empty\0224\n\025NotifyActorListCr"
     "eate\022\023.ActorListCreateS2C\032\006.Empty\0226\n\026Not"
     "ifyActorListDestroy\022\024.ActorListDestroyS2"
-    "C\032\006.EmptyB\026Z\021generated/pb/game\200\001\001b\006proto"
-    "3"
+    "C\032\006.EmptyB\003\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fscene_2eproto_deps[4] = {
@@ -393,7 +392,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2f
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fscene_2eproto = {
     false,
     false,
-    1201,
+    1182,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fscene_2eproto,
     "proto/service/cpp/rpc/scene/player_scene.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fscene_2eproto_once,

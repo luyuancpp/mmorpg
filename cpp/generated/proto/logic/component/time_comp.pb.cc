@@ -173,14 +173,13 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2ftime_5fcomp_2ep
     "downTimeListComp\022>\n\rcooldown_list\030\001 \003(\0132"
     "\'.CooldownTimeListComp.CooldownListEntry"
     "\032F\n\021CooldownListEntry\022\013\n\003key\030\001 \001(\r\022 \n\005va"
-    "lue\030\002 \001(\0132\021.CooldownTimeComp:\0028\001B\035Z\033gene"
-    "rated/pb/game/componentb\006proto3"
+    "lue\030\002 \001(\0132\021.CooldownTimeComp:\0028\001b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2ftime_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2ftime_5fcomp_2eproto = {
     false,
     false,
-    351,
+    320,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2ftime_5fcomp_2eproto,
     "proto/logic/component/time_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2ftime_5fcomp_2eproto_once,

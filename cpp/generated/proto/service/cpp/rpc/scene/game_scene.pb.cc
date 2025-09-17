@@ -64,8 +64,7 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_
     "\n,proto/service/cpp/rpc/scene/game_scene"
     ".proto\032\030proto/common/empty.proto\"\017\n\rGame"
     "SceneTest2,\n\nSceneScene\022\036\n\004Test\022\016.GameSc"
-    "eneTest\032\006.EmptyB\026Z\021generated/pb/game\200\001\001b"
-    "\006proto3"
+    "eneTest\032\006.EmptyB\003\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fscene_2eproto_deps[1] = {
@@ -75,7 +74,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2f
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fscene_2eproto = {
     false,
     false,
-    167,
+    148,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fscene_2eproto,
     "proto/service/cpp/rpc/scene/game_scene.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fscene_2eproto_once,

@@ -100,8 +100,7 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_
     "ePlayer\022@\n\016Centre2GsLogin\022\026.Centre2GsLog"
     "inRequest\032\026.google.protobuf.Empty\022<\n\010Exi"
     "tGame\022\030.GameNodeExitGameRequest\032\026.google"
-    ".protobuf.EmptyB\026Z\021generated/pb/game\200\001\001b"
-    "\006proto3"
+    ".protobuf.EmptyB\003\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto_deps[1] = {
@@ -111,7 +110,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2f
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto = {
     false,
     false,
-    327,
+    308,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto,
     "proto/service/cpp/rpc/scene/game_player.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto_once,

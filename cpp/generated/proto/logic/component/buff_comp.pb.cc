@@ -295,14 +295,13 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fbuff_5fcomp_2ep
     "attacker_id\030\002 \001(\004\022\016\n\006target\030\003 \001(\004\022\016\n\006dam"
     "age\030\004 \001(\001\022\023\n\013damage_type\030\005 \001(\r\">\n)BuffNo"
     "DamageOrSkillHitInLastSecondsPbComp\022\021\n\tl"
-    "ast_time\030\001 \001(\004B\035Z\033generated/pb/game/comp"
-    "onentb\006proto3"
+    "ast_time\030\001 \001(\004b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fbuff_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fbuff_5fcomp_2eproto = {
     false,
     false,
-    773,
+    742,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fbuff_5fcomp_2eproto,
     "proto/logic/component/buff_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fbuff_5fcomp_2eproto_once,
