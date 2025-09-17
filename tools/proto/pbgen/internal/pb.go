@@ -80,7 +80,6 @@ func BuildProtoCpp(protoPath string) error {
 
 // Function to generate C++ files using protoc
 func generateCppFiles(protoFiles []string, outputDir string) error {
-	sysType := runtime.GOOS
 	var cmd *exec.Cmd
 
 	args := []string{
@@ -92,11 +91,7 @@ func generateCppFiles(protoFiles []string, outputDir string) error {
 		"--proto_path="+config.ProtoBufferDirectory,
 	)
 
-	if sysType == "linux" {
-		cmd = exec.Command("protoc", args...)
-	} else {
-		cmd = exec.Command("./protoc.exe", args...)
-	}
+	cmd = exec.Command("protoc", args...)
 
 	var out bytes.Buffer
 	var stderr bytes.Buffer
@@ -156,11 +151,7 @@ func BuildProtoGrpcCpp(protoPath string) error {
 
 	// 构造最终命令
 	var cmd *exec.Cmd
-	if runtime.GOOS == "linux" {
-		cmd = exec.Command("protoc", args...)
-	} else {
-		cmd = exec.Command("./protoc.exe", args...)
-	}
+	cmd = exec.Command("protoc", args...)
 
 	// 执行命令
 	var out, stderr bytes.Buffer
@@ -205,6 +196,41 @@ func BuildProtoGrpcCpp(protoPath string) error {
 	return nil
 }
 
+func CollectProtoFiles() []string {
+	// 遍历 config.ProtoDirs 中的每个目录
+	for _, protoPath := range config.ProtoDirs {
+		// 1. 读取 protoPath 目录下的所有文件
+		files, err := os.ReadDir(protoPath)
+		if err != nil {
+			return nil
+		}
+
+		// 2. 筛选有效的 .proto 文件并排除 config.DbProtoFileName
+		for _, file := range files {
+			// 跳过非 .proto 文件和 config.DbProtoFileName
+			if !util.IsProtoFile(file) || file.Name() == config.DbProtoFileName {
+				continue
+			}
+
+			// 将符合条件的文件添加到 protoFiles 中
+			fullPath := filepath.ToSlash(filepath.Join(protoPath, file.Name()))
+			ProtoFiles = append(ProtoFiles, fullPath)
+		}
+
+		// 如果该目录没有符合条件的 .proto 文件，记录日志但不返回错误
+		if len(ProtoFiles) == 0 {
+			log.Printf("No valid proto files found in path: %s", protoPath)
+		}
+	}
+
+	// 如果 protoFiles 为空，表示没有任何有效的 .proto 文件
+	if len(ProtoFiles) == 0 {
+		return nil
+	}
+
+	return ProtoFiles
+}
+
 func generateGoProto(protoFiles []string, outputDir string) error {
 	// 1. 强制转换所有路径为绝对路径（核心：摆脱当前工作目录影响）
 	outputAbsDir, err := filepath.Abs(outputDir)
@@ -236,7 +262,7 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 	}
 
 	// 4. 为每个proto文件生成正确的M映射（关键：路径必须从--proto_path根目录出发）
-	for _, protoFile := range protoFiles {
+	for _, protoFile := range ProtoFiles {
 		// 转换proto文件为绝对路径
 		protoAbsFile, err := filepath.Abs(protoFile)
 		if err != nil {
@@ -394,7 +420,6 @@ func BuildProtoGo(protoPath string) error {
 }
 
 func generateRobotGoProto(protoFiles []string, outputDir string) error {
-	sysType := runtime.GOOS
 	var cmd *exec.Cmd
 
 	moduleName := strings.ToLower(path.Base(outputDir))
@@ -407,11 +432,7 @@ func generateRobotGoProto(protoFiles []string, outputDir string) error {
 	}
 	args = append(args, protoFiles...) // proto文件放在最后
 
-	if sysType == "linux" {
-		cmd = exec.Command("protoc", args...)
-	} else {
-		cmd = exec.Command("./protoc.exe", args...)
-	}
+	cmd = exec.Command("protoc", args...)
 
 	var out, stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -521,14 +542,7 @@ func BuildProtocDescAllInOne() {
 		// 步骤3：执行 protoc 命令（适配系统）
 		var cmd *exec.Cmd
 		protocPath := "protoc" // 默认 Linux 路径
-		if runtime.GOOS != "linux" {
-			// Windows：确保 protoc.exe 路径正确（建议使用绝对路径）
-			protocPath = "./protoc.exe"
-			// 可选：检查 protoc.exe 是否存在
-			if _, err := os.Stat(protocPath); err != nil {
-				log.Fatalf("protoc.exe 不存在于路径 %s: %v", protocPath, err)
-			}
-		}
+
 		cmd = exec.Command(protocPath, args...)
 
 		// 捕获输出，便于调试

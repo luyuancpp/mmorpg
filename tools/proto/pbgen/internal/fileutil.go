@@ -77,7 +77,7 @@ func CopyFileIfChanged(inputPath, outputPath string) error {
 
 	// 如果文件存在且内容相同，跳过写入
 	if err == nil && bytes.Equal(srcContent, dstContent) {
-		log.Println("文件内容未变化，跳过写入:", outputPath)
+		//log.Println("文件内容未变化，跳过写入:", outputPath)
 		return nil
 	}
 
