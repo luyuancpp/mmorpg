@@ -8,6 +8,7 @@ package game
 
 import (
 	context "context"
+	common "generated/pb/common/common"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -33,12 +34,12 @@ const (
 //
 // 服务定义，用于处理实体属性的同步
 type ScenePlayerSyncClient interface {
-	SyncBaseAttribute(ctx context.Context, in *BaseAttributeSyncDataS2C, opts ...grpc.CallOption) (*Empty, error)
-	SyncAttribute2Frames(ctx context.Context, in *AttributeDelta2FramesS2C, opts ...grpc.CallOption) (*Empty, error)
-	SyncAttribute5Frames(ctx context.Context, in *AttributeDelta5FramesS2C, opts ...grpc.CallOption) (*Empty, error)
-	SyncAttribute10Frames(ctx context.Context, in *AttributeDelta10FramesS2C, opts ...grpc.CallOption) (*Empty, error)
-	SyncAttribute30Frames(ctx context.Context, in *AttributeDelta30FramesS2C, opts ...grpc.CallOption) (*Empty, error)
-	SyncAttribute60Frames(ctx context.Context, in *AttributeDelta60FramesS2C, opts ...grpc.CallOption) (*Empty, error)
+	SyncBaseAttribute(ctx context.Context, in *BaseAttributeSyncDataS2C, opts ...grpc.CallOption) (*common.Empty, error)
+	SyncAttribute2Frames(ctx context.Context, in *AttributeDelta2FramesS2C, opts ...grpc.CallOption) (*common.Empty, error)
+	SyncAttribute5Frames(ctx context.Context, in *AttributeDelta5FramesS2C, opts ...grpc.CallOption) (*common.Empty, error)
+	SyncAttribute10Frames(ctx context.Context, in *AttributeDelta10FramesS2C, opts ...grpc.CallOption) (*common.Empty, error)
+	SyncAttribute30Frames(ctx context.Context, in *AttributeDelta30FramesS2C, opts ...grpc.CallOption) (*common.Empty, error)
+	SyncAttribute60Frames(ctx context.Context, in *AttributeDelta60FramesS2C, opts ...grpc.CallOption) (*common.Empty, error)
 }
 
 type scenePlayerSyncClient struct {
@@ -49,9 +50,9 @@ func NewScenePlayerSyncClient(cc grpc.ClientConnInterface) ScenePlayerSyncClient
 	return &scenePlayerSyncClient{cc}
 }
 
-func (c *scenePlayerSyncClient) SyncBaseAttribute(ctx context.Context, in *BaseAttributeSyncDataS2C, opts ...grpc.CallOption) (*Empty, error) {
+func (c *scenePlayerSyncClient) SyncBaseAttribute(ctx context.Context, in *BaseAttributeSyncDataS2C, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, ScenePlayerSync_SyncBaseAttribute_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -59,9 +60,9 @@ func (c *scenePlayerSyncClient) SyncBaseAttribute(ctx context.Context, in *BaseA
 	return out, nil
 }
 
-func (c *scenePlayerSyncClient) SyncAttribute2Frames(ctx context.Context, in *AttributeDelta2FramesS2C, opts ...grpc.CallOption) (*Empty, error) {
+func (c *scenePlayerSyncClient) SyncAttribute2Frames(ctx context.Context, in *AttributeDelta2FramesS2C, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, ScenePlayerSync_SyncAttribute2Frames_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -69,9 +70,9 @@ func (c *scenePlayerSyncClient) SyncAttribute2Frames(ctx context.Context, in *At
 	return out, nil
 }
 
-func (c *scenePlayerSyncClient) SyncAttribute5Frames(ctx context.Context, in *AttributeDelta5FramesS2C, opts ...grpc.CallOption) (*Empty, error) {
+func (c *scenePlayerSyncClient) SyncAttribute5Frames(ctx context.Context, in *AttributeDelta5FramesS2C, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, ScenePlayerSync_SyncAttribute5Frames_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -79,9 +80,9 @@ func (c *scenePlayerSyncClient) SyncAttribute5Frames(ctx context.Context, in *At
 	return out, nil
 }
 
-func (c *scenePlayerSyncClient) SyncAttribute10Frames(ctx context.Context, in *AttributeDelta10FramesS2C, opts ...grpc.CallOption) (*Empty, error) {
+func (c *scenePlayerSyncClient) SyncAttribute10Frames(ctx context.Context, in *AttributeDelta10FramesS2C, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, ScenePlayerSync_SyncAttribute10Frames_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -89,9 +90,9 @@ func (c *scenePlayerSyncClient) SyncAttribute10Frames(ctx context.Context, in *A
 	return out, nil
 }
 
-func (c *scenePlayerSyncClient) SyncAttribute30Frames(ctx context.Context, in *AttributeDelta30FramesS2C, opts ...grpc.CallOption) (*Empty, error) {
+func (c *scenePlayerSyncClient) SyncAttribute30Frames(ctx context.Context, in *AttributeDelta30FramesS2C, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, ScenePlayerSync_SyncAttribute30Frames_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -99,9 +100,9 @@ func (c *scenePlayerSyncClient) SyncAttribute30Frames(ctx context.Context, in *A
 	return out, nil
 }
 
-func (c *scenePlayerSyncClient) SyncAttribute60Frames(ctx context.Context, in *AttributeDelta60FramesS2C, opts ...grpc.CallOption) (*Empty, error) {
+func (c *scenePlayerSyncClient) SyncAttribute60Frames(ctx context.Context, in *AttributeDelta60FramesS2C, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, ScenePlayerSync_SyncAttribute60Frames_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -115,12 +116,12 @@ func (c *scenePlayerSyncClient) SyncAttribute60Frames(ctx context.Context, in *A
 //
 // 服务定义，用于处理实体属性的同步
 type ScenePlayerSyncServer interface {
-	SyncBaseAttribute(context.Context, *BaseAttributeSyncDataS2C) (*Empty, error)
-	SyncAttribute2Frames(context.Context, *AttributeDelta2FramesS2C) (*Empty, error)
-	SyncAttribute5Frames(context.Context, *AttributeDelta5FramesS2C) (*Empty, error)
-	SyncAttribute10Frames(context.Context, *AttributeDelta10FramesS2C) (*Empty, error)
-	SyncAttribute30Frames(context.Context, *AttributeDelta30FramesS2C) (*Empty, error)
-	SyncAttribute60Frames(context.Context, *AttributeDelta60FramesS2C) (*Empty, error)
+	SyncBaseAttribute(context.Context, *BaseAttributeSyncDataS2C) (*common.Empty, error)
+	SyncAttribute2Frames(context.Context, *AttributeDelta2FramesS2C) (*common.Empty, error)
+	SyncAttribute5Frames(context.Context, *AttributeDelta5FramesS2C) (*common.Empty, error)
+	SyncAttribute10Frames(context.Context, *AttributeDelta10FramesS2C) (*common.Empty, error)
+	SyncAttribute30Frames(context.Context, *AttributeDelta30FramesS2C) (*common.Empty, error)
+	SyncAttribute60Frames(context.Context, *AttributeDelta60FramesS2C) (*common.Empty, error)
 	mustEmbedUnimplementedScenePlayerSyncServer()
 }
 
@@ -131,22 +132,22 @@ type ScenePlayerSyncServer interface {
 // pointer dereference when methods are called.
 type UnimplementedScenePlayerSyncServer struct{}
 
-func (UnimplementedScenePlayerSyncServer) SyncBaseAttribute(context.Context, *BaseAttributeSyncDataS2C) (*Empty, error) {
+func (UnimplementedScenePlayerSyncServer) SyncBaseAttribute(context.Context, *BaseAttributeSyncDataS2C) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SyncBaseAttribute not implemented")
 }
-func (UnimplementedScenePlayerSyncServer) SyncAttribute2Frames(context.Context, *AttributeDelta2FramesS2C) (*Empty, error) {
+func (UnimplementedScenePlayerSyncServer) SyncAttribute2Frames(context.Context, *AttributeDelta2FramesS2C) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SyncAttribute2Frames not implemented")
 }
-func (UnimplementedScenePlayerSyncServer) SyncAttribute5Frames(context.Context, *AttributeDelta5FramesS2C) (*Empty, error) {
+func (UnimplementedScenePlayerSyncServer) SyncAttribute5Frames(context.Context, *AttributeDelta5FramesS2C) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SyncAttribute5Frames not implemented")
 }
-func (UnimplementedScenePlayerSyncServer) SyncAttribute10Frames(context.Context, *AttributeDelta10FramesS2C) (*Empty, error) {
+func (UnimplementedScenePlayerSyncServer) SyncAttribute10Frames(context.Context, *AttributeDelta10FramesS2C) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SyncAttribute10Frames not implemented")
 }
-func (UnimplementedScenePlayerSyncServer) SyncAttribute30Frames(context.Context, *AttributeDelta30FramesS2C) (*Empty, error) {
+func (UnimplementedScenePlayerSyncServer) SyncAttribute30Frames(context.Context, *AttributeDelta30FramesS2C) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SyncAttribute30Frames not implemented")
 }
-func (UnimplementedScenePlayerSyncServer) SyncAttribute60Frames(context.Context, *AttributeDelta60FramesS2C) (*Empty, error) {
+func (UnimplementedScenePlayerSyncServer) SyncAttribute60Frames(context.Context, *AttributeDelta60FramesS2C) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SyncAttribute60Frames not implemented")
 }
 func (UnimplementedScenePlayerSyncServer) mustEmbedUnimplementedScenePlayerSyncServer() {}

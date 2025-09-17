@@ -7,6 +7,7 @@
 package game
 
 import (
+	common "generated/pb/common/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -23,7 +24,7 @@ const (
 
 type GameKickPlayerRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Reason        *TipInfoMessage        `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
+	Reason        *common.TipInfoMessage `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
 	Operator      string                 `protobuf:"bytes,2,opt,name=operator,proto3" json:"operator,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -59,7 +60,7 @@ func (*GameKickPlayerRequest) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GameKickPlayerRequest) GetReason() *TipInfoMessage {
+func (x *GameKickPlayerRequest) GetReason() *common.TipInfoMessage {
 	if x != nil {
 		return x.Reason
 	}
@@ -101,8 +102,8 @@ func file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDescGZIP() []b
 var file_proto_service_cpp_rpc_scene_game_client_player_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_service_cpp_rpc_scene_game_client_player_proto_goTypes = []any{
 	(*GameKickPlayerRequest)(nil), // 0: GameKickPlayerRequest
-	(*TipInfoMessage)(nil),        // 1: TipInfoMessage
-	(*Empty)(nil),                 // 2: Empty
+	(*common.TipInfoMessage)(nil), // 1: TipInfoMessage
+	(*common.Empty)(nil),          // 2: Empty
 }
 var file_proto_service_cpp_rpc_scene_game_client_player_proto_depIdxs = []int32{
 	1, // 0: GameKickPlayerRequest.reason:type_name -> TipInfoMessage
@@ -122,8 +123,6 @@ func file_proto_service_cpp_rpc_scene_game_client_player_proto_init() {
 	if File_proto_service_cpp_rpc_scene_game_client_player_proto != nil {
 		return
 	}
-	file_proto_common_tip_proto_init()
-	file_proto_common_empty_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

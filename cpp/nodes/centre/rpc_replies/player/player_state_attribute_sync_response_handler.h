@@ -1,6 +1,6 @@
 
 #pragma once
-#include "proto/service/rpc/scene/player_state_attribute_sync.pb.h"
+#include "proto/service/cpp/rpc/scene/player_state_attribute_sync.pb.h"
 
 #include "rpc/player_rpc_response_handler.h"
 

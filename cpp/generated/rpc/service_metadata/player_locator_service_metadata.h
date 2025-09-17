@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/service/grpc/player_locator/player_locator.pb.h"
+#include "proto/service/go/grpc/player_locator/player_locator.pb.h"
 
 
 constexpr uint32_t PlayerLocatorSetLocationMessageId = 84;

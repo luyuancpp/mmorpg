@@ -383,7 +383,7 @@ func writeServiceInfoHeadFile() {
 		MaxMessageLen: MessageIdLen(),
 	}
 
-	err := RenderTemplateToFile("internal/gen/template/service_header.tmpl", config.ServiceHeaderFilePath, data)
+	err := RenderTemplateToFile("internal/template/service_header.tmpl", config.ServiceHeaderFilePath, data)
 	if err != nil {
 		panic(err)
 		return

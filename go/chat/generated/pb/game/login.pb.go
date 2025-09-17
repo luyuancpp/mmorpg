@@ -7,6 +7,7 @@
 package game
 
 import (
+	common "generated/pb/common/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -114,8 +115,8 @@ func (x *LoginSessionInfo) GetFsm() string {
 }
 
 type AccountSimplePlayerWrapper struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Player        *AccountSimplePlayer   `protobuf:"bytes,1,opt,name=player,proto3" json:"player,omitempty"`
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	Player        *common.AccountSimplePlayer `protobuf:"bytes,1,opt,name=player,proto3" json:"player,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -150,7 +151,7 @@ func (*AccountSimplePlayerWrapper) Descriptor() ([]byte, []int) {
 	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *AccountSimplePlayerWrapper) GetPlayer() *AccountSimplePlayer {
+func (x *AccountSimplePlayerWrapper) GetPlayer() *common.AccountSimplePlayer {
 	if x != nil {
 		return x.Player
 	}
@@ -211,7 +212,7 @@ func (x *LoginRequest) GetPassword() string {
 
 type LoginResponse struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
-	ErrorMessage  *TipInfoMessage               `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *common.TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	Players       []*AccountSimplePlayerWrapper `protobuf:"bytes,2,rep,name=players,proto3" json:"players,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -247,7 +248,7 @@ func (*LoginResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *LoginResponse) GetErrorMessage() *TipInfoMessage {
+func (x *LoginResponse) GetErrorMessage() *common.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -263,7 +264,7 @@ func (x *LoginResponse) GetPlayers() []*AccountSimplePlayerWrapper {
 
 type TestResponse struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
-	ErrorMessage  *TipInfoMessage               `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *common.TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	Players       []*AccountSimplePlayerWrapper `protobuf:"bytes,2,rep,name=players,proto3" json:"players,omitempty"`
 	Teststring    []string                      `protobuf:"bytes,3,rep,name=teststring,proto3" json:"teststring,omitempty"`
 	Testint       []int32                       `protobuf:"varint,4,rep,packed,name=testint,proto3" json:"testint,omitempty"`
@@ -301,7 +302,7 @@ func (*TestResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *TestResponse) GetErrorMessage() *TipInfoMessage {
+func (x *TestResponse) GetErrorMessage() *common.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -367,7 +368,7 @@ func (*CreatePlayerRequest) Descriptor() ([]byte, []int) {
 
 type CreatePlayerResponse struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
-	ErrorMessage  *TipInfoMessage               `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *common.TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	Players       []*AccountSimplePlayerWrapper `protobuf:"bytes,2,rep,name=players,proto3" json:"players,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -403,7 +404,7 @@ func (*CreatePlayerResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *CreatePlayerResponse) GetErrorMessage() *TipInfoMessage {
+func (x *CreatePlayerResponse) GetErrorMessage() *common.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -463,7 +464,7 @@ func (x *EnterGameRequest) GetPlayerId() uint64 {
 
 type EnterGameResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *common.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	PlayerId      uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -499,7 +500,7 @@ func (*EnterGameResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *EnterGameResponse) GetErrorMessage() *TipInfoMessage {
+func (x *EnterGameResponse) GetErrorMessage() *common.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -669,9 +670,9 @@ var file_proto_service_go_grpc_login_login_proto_goTypes = []any{
 	(*EnterGameResponse)(nil),          // 8: loginpb.EnterGameResponse
 	(*LeaveGameRequest)(nil),           // 9: loginpb.LeaveGameRequest
 	(*LoginNodeDisconnectRequest)(nil), // 10: loginpb.LoginNodeDisconnectRequest
-	(*AccountSimplePlayer)(nil),        // 11: AccountSimplePlayer
-	(*TipInfoMessage)(nil),             // 12: TipInfoMessage
-	(*Empty)(nil),                      // 13: Empty
+	(*common.AccountSimplePlayer)(nil), // 11: AccountSimplePlayer
+	(*common.TipInfoMessage)(nil),      // 12: TipInfoMessage
+	(*common.Empty)(nil),               // 13: Empty
 }
 var file_proto_service_go_grpc_login_login_proto_depIdxs = []int32{
 	11, // 0: loginpb.AccountSimplePlayerWrapper.player:type_name -> AccountSimplePlayer
@@ -704,9 +705,6 @@ func file_proto_service_go_grpc_login_login_proto_init() {
 	if File_proto_service_go_grpc_login_login_proto != nil {
 		return
 	}
-	file_proto_common_empty_proto_init()
-	file_proto_common_tip_proto_init()
-	file_proto_common_user_accounts_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

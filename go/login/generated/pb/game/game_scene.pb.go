@@ -7,6 +7,7 @@
 package game
 
 import (
+	common "generated/pb/common/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -82,7 +83,7 @@ func file_proto_service_cpp_rpc_scene_game_scene_proto_rawDescGZIP() []byte {
 var file_proto_service_cpp_rpc_scene_game_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_service_cpp_rpc_scene_game_scene_proto_goTypes = []any{
 	(*GameSceneTest)(nil), // 0: GameSceneTest
-	(*Empty)(nil),         // 1: Empty
+	(*common.Empty)(nil),  // 1: Empty
 }
 var file_proto_service_cpp_rpc_scene_game_scene_proto_depIdxs = []int32{
 	0, // 0: SceneScene.Test:input_type -> GameSceneTest
@@ -99,7 +100,6 @@ func file_proto_service_cpp_rpc_scene_game_scene_proto_init() {
 	if File_proto_service_cpp_rpc_scene_game_scene_proto != nil {
 		return
 	}
-	file_proto_common_empty_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

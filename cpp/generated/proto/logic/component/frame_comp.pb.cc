@@ -88,13 +88,14 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fframe_5fcomp_2e
     "\"{\n\tFrameTime\022\025\n\rprevious_time\030\001 \001(\004\022\022\n\n"
     "delta_time\030\002 \001(\001\022\022\n\ntarget_fps\030\003 \001(\r\022\030\n\020"
     "time_accumulator\030\004 \001(\001\022\025\n\rcurrent_frame\030"
-    "\005 \001(\004B\023Z\021generated/pb/gameb\006proto3"
+    "\005 \001(\004B\035Z\033generated/pb/game/componentb\006pr"
+    "oto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fframe_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fframe_5fcomp_2eproto = {
     false,
     false,
-    194,
+    204,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fframe_5fcomp_2eproto,
     "proto/logic/component/frame_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fframe_5fcomp_2eproto_once,

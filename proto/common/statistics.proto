@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "generated/pb/game";
+option go_package = "generated/pb/common/common";
 
 message MessageStatistics
 {

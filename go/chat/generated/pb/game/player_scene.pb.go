@@ -7,6 +7,8 @@
 package game
 
 import (
+	common "generated/pb/common/common"
+	component "generated/pb/game/component"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -22,8 +24,8 @@ const (
 )
 
 type EnterSceneC2SRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneInfo     *RoomInfoPBComponent   `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	SceneInfo     *common.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -58,7 +60,7 @@ func (*EnterSceneC2SRequest) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *EnterSceneC2SRequest) GetSceneInfo() *RoomInfoPBComponent {
+func (x *EnterSceneC2SRequest) GetSceneInfo() *common.RoomInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -67,7 +69,7 @@ func (x *EnterSceneC2SRequest) GetSceneInfo() *RoomInfoPBComponent {
 
 type EnterSceneC2SResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *common.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -102,7 +104,7 @@ func (*EnterSceneC2SResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *EnterSceneC2SResponse) GetErrorMessage() *TipInfoMessage {
+func (x *EnterSceneC2SResponse) GetErrorMessage() *common.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -110,8 +112,8 @@ func (x *EnterSceneC2SResponse) GetErrorMessage() *TipInfoMessage {
 }
 
 type EnterSceneS2C struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneInfo     *RoomInfoPBComponent   `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	SceneInfo     *common.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -146,7 +148,7 @@ func (*EnterSceneS2C) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *EnterSceneS2C) GetSceneInfo() *RoomInfoPBComponent {
+func (x *EnterSceneS2C) GetSceneInfo() *common.RoomInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -154,8 +156,8 @@ func (x *EnterSceneS2C) GetSceneInfo() *RoomInfoPBComponent {
 }
 
 type SceneInfoS2C struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneInfo     []*RoomInfoPBComponent `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	SceneInfo     []*common.RoomInfoPBComponent `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -190,7 +192,7 @@ func (*SceneInfoS2C) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *SceneInfoS2C) GetSceneInfo() []*RoomInfoPBComponent {
+func (x *SceneInfoS2C) GetSceneInfo() []*common.RoomInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -234,8 +236,8 @@ func (*SceneInfoRequest) Descriptor() ([]byte, []int) {
 }
 
 type SceneInfoResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneInfo     []*RoomInfoPBComponent `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	SceneInfo     []*common.RoomInfoPBComponent `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -270,7 +272,7 @@ func (*SceneInfoResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *SceneInfoResponse) GetSceneInfo() []*RoomInfoPBComponent {
+func (x *SceneInfoResponse) GetSceneInfo() []*common.RoomInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -280,7 +282,7 @@ func (x *SceneInfoResponse) GetSceneInfo() []*RoomInfoPBComponent {
 type ActorCreateS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	Transform     *Transform             `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`
+	Transform     *component.Transform   `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`
 	EntityType    uint32                 `protobuf:"varint,3,opt,name=entity_type,json=entityType,proto3" json:"entity_type,omitempty"`
 	Guid          uint64                 `protobuf:"varint,4,opt,name=guid,proto3" json:"guid,omitempty"`
 	ConfigId      uint64                 `protobuf:"varint,5,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
@@ -325,7 +327,7 @@ func (x *ActorCreateS2C) GetEntity() uint64 {
 	return 0
 }
 
-func (x *ActorCreateS2C) GetTransform() *Transform {
+func (x *ActorCreateS2C) GetTransform() *component.Transform {
 	if x != nil {
 		return x.Transform
 	}
@@ -545,20 +547,20 @@ func file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescGZIP() []byte {
 
 var file_proto_service_cpp_rpc_scene_player_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_proto_service_cpp_rpc_scene_player_scene_proto_goTypes = []any{
-	(*EnterSceneC2SRequest)(nil),  // 0: EnterSceneC2SRequest
-	(*EnterSceneC2SResponse)(nil), // 1: EnterSceneC2SResponse
-	(*EnterSceneS2C)(nil),         // 2: EnterSceneS2C
-	(*SceneInfoS2C)(nil),          // 3: SceneInfoS2C
-	(*SceneInfoRequest)(nil),      // 4: SceneInfoRequest
-	(*SceneInfoResponse)(nil),     // 5: SceneInfoResponse
-	(*ActorCreateS2C)(nil),        // 6: ActorCreateS2C
-	(*ActorDestroyS2C)(nil),       // 7: ActorDestroyS2C
-	(*ActorListCreateS2C)(nil),    // 8: ActorListCreateS2C
-	(*ActorListDestroyS2C)(nil),   // 9: ActorListDestroyS2C
-	(*RoomInfoPBComponent)(nil),   // 10: RoomInfoPBComponent
-	(*TipInfoMessage)(nil),        // 11: TipInfoMessage
-	(*Transform)(nil),             // 12: Transform
-	(*Empty)(nil),                 // 13: Empty
+	(*EnterSceneC2SRequest)(nil),       // 0: EnterSceneC2SRequest
+	(*EnterSceneC2SResponse)(nil),      // 1: EnterSceneC2SResponse
+	(*EnterSceneS2C)(nil),              // 2: EnterSceneS2C
+	(*SceneInfoS2C)(nil),               // 3: SceneInfoS2C
+	(*SceneInfoRequest)(nil),           // 4: SceneInfoRequest
+	(*SceneInfoResponse)(nil),          // 5: SceneInfoResponse
+	(*ActorCreateS2C)(nil),             // 6: ActorCreateS2C
+	(*ActorDestroyS2C)(nil),            // 7: ActorDestroyS2C
+	(*ActorListCreateS2C)(nil),         // 8: ActorListCreateS2C
+	(*ActorListDestroyS2C)(nil),        // 9: ActorListDestroyS2C
+	(*common.RoomInfoPBComponent)(nil), // 10: RoomInfoPBComponent
+	(*common.TipInfoMessage)(nil),      // 11: TipInfoMessage
+	(*component.Transform)(nil),        // 12: Transform
+	(*common.Empty)(nil),               // 13: Empty
 }
 var file_proto_service_cpp_rpc_scene_player_scene_proto_depIdxs = []int32{
 	10, // 0: EnterSceneC2SRequest.scene_info:type_name -> RoomInfoPBComponent
@@ -596,10 +598,6 @@ func file_proto_service_cpp_rpc_scene_player_scene_proto_init() {
 	if File_proto_service_cpp_rpc_scene_player_scene_proto != nil {
 		return
 	}
-	file_proto_common_tip_proto_init()
-	file_proto_common_common_proto_init()
-	file_proto_common_empty_proto_init()
-	file_proto_logic_component_actor_comp_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

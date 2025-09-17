@@ -7,6 +7,7 @@
 package game
 
 import (
+	common "generated/pb/common/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -194,7 +195,7 @@ var file_proto_service_go_grpc_player_locator_player_locator_proto_msgTypes = ma
 var file_proto_service_go_grpc_player_locator_player_locator_proto_goTypes = []any{
 	(*PlayerLocation)(nil), // 0: playerlocator.PlayerLocation
 	(*PlayerId)(nil),       // 1: playerlocator.PlayerId
-	(*Empty)(nil),          // 2: Empty
+	(*common.Empty)(nil),   // 2: Empty
 }
 var file_proto_service_go_grpc_player_locator_player_locator_proto_depIdxs = []int32{
 	0, // 0: playerlocator.PlayerLocator.SetLocation:input_type -> playerlocator.PlayerLocation
@@ -215,7 +216,6 @@ func file_proto_service_go_grpc_player_locator_player_locator_proto_init() {
 	if File_proto_service_go_grpc_player_locator_player_locator_proto != nil {
 		return
 	}
-	file_proto_common_empty_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

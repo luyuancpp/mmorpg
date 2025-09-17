@@ -8,6 +8,7 @@ package game
 
 import (
 	context "context"
+	common "generated/pb/common/common"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -32,13 +33,13 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GateClient interface {
-	PlayerEnterGameNode(ctx context.Context, in *RegisterGameNodeSessionRequest, opts ...grpc.CallOption) (*RegisterGameNodeSessionResponse, error)
-	SendMessageToPlayer(ctx context.Context, in *NodeRouteMessageRequest, opts ...grpc.CallOption) (*Empty, error)
-	KickSessionByCentre(ctx context.Context, in *KickSessionRequest, opts ...grpc.CallOption) (*Empty, error)
-	RouteNodeMessage(ctx context.Context, in *RouteMessageRequest, opts ...grpc.CallOption) (*RouteMessageResponse, error)
-	RoutePlayerMessage(ctx context.Context, in *RoutePlayerMessageRequest, opts ...grpc.CallOption) (*RoutePlayerMessageResponse, error)
-	BroadcastToPlayers(ctx context.Context, in *BroadcastToPlayersRequest, opts ...grpc.CallOption) (*Empty, error)
-	NodeHandshake(ctx context.Context, in *NodeHandshakeRequest, opts ...grpc.CallOption) (*NodeHandshakeResponse, error)
+	PlayerEnterGameNode(ctx context.Context, in *common.RegisterGameNodeSessionRequest, opts ...grpc.CallOption) (*common.RegisterGameNodeSessionResponse, error)
+	SendMessageToPlayer(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.Empty, error)
+	KickSessionByCentre(ctx context.Context, in *KickSessionRequest, opts ...grpc.CallOption) (*common.Empty, error)
+	RouteNodeMessage(ctx context.Context, in *common.RouteMessageRequest, opts ...grpc.CallOption) (*common.RouteMessageResponse, error)
+	RoutePlayerMessage(ctx context.Context, in *common.RoutePlayerMessageRequest, opts ...grpc.CallOption) (*common.RoutePlayerMessageResponse, error)
+	BroadcastToPlayers(ctx context.Context, in *BroadcastToPlayersRequest, opts ...grpc.CallOption) (*common.Empty, error)
+	NodeHandshake(ctx context.Context, in *common.NodeHandshakeRequest, opts ...grpc.CallOption) (*common.NodeHandshakeResponse, error)
 }
 
 type gateClient struct {
@@ -49,9 +50,9 @@ func NewGateClient(cc grpc.ClientConnInterface) GateClient {
 	return &gateClient{cc}
 }
 
-func (c *gateClient) PlayerEnterGameNode(ctx context.Context, in *RegisterGameNodeSessionRequest, opts ...grpc.CallOption) (*RegisterGameNodeSessionResponse, error) {
+func (c *gateClient) PlayerEnterGameNode(ctx context.Context, in *common.RegisterGameNodeSessionRequest, opts ...grpc.CallOption) (*common.RegisterGameNodeSessionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RegisterGameNodeSessionResponse)
+	out := new(common.RegisterGameNodeSessionResponse)
 	err := c.cc.Invoke(ctx, Gate_PlayerEnterGameNode_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -59,9 +60,9 @@ func (c *gateClient) PlayerEnterGameNode(ctx context.Context, in *RegisterGameNo
 	return out, nil
 }
 
-func (c *gateClient) SendMessageToPlayer(ctx context.Context, in *NodeRouteMessageRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *gateClient) SendMessageToPlayer(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, Gate_SendMessageToPlayer_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -69,9 +70,9 @@ func (c *gateClient) SendMessageToPlayer(ctx context.Context, in *NodeRouteMessa
 	return out, nil
 }
 
-func (c *gateClient) KickSessionByCentre(ctx context.Context, in *KickSessionRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *gateClient) KickSessionByCentre(ctx context.Context, in *KickSessionRequest, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, Gate_KickSessionByCentre_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -79,9 +80,9 @@ func (c *gateClient) KickSessionByCentre(ctx context.Context, in *KickSessionReq
 	return out, nil
 }
 
-func (c *gateClient) RouteNodeMessage(ctx context.Context, in *RouteMessageRequest, opts ...grpc.CallOption) (*RouteMessageResponse, error) {
+func (c *gateClient) RouteNodeMessage(ctx context.Context, in *common.RouteMessageRequest, opts ...grpc.CallOption) (*common.RouteMessageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RouteMessageResponse)
+	out := new(common.RouteMessageResponse)
 	err := c.cc.Invoke(ctx, Gate_RouteNodeMessage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -89,9 +90,9 @@ func (c *gateClient) RouteNodeMessage(ctx context.Context, in *RouteMessageReque
 	return out, nil
 }
 
-func (c *gateClient) RoutePlayerMessage(ctx context.Context, in *RoutePlayerMessageRequest, opts ...grpc.CallOption) (*RoutePlayerMessageResponse, error) {
+func (c *gateClient) RoutePlayerMessage(ctx context.Context, in *common.RoutePlayerMessageRequest, opts ...grpc.CallOption) (*common.RoutePlayerMessageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RoutePlayerMessageResponse)
+	out := new(common.RoutePlayerMessageResponse)
 	err := c.cc.Invoke(ctx, Gate_RoutePlayerMessage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -99,9 +100,9 @@ func (c *gateClient) RoutePlayerMessage(ctx context.Context, in *RoutePlayerMess
 	return out, nil
 }
 
-func (c *gateClient) BroadcastToPlayers(ctx context.Context, in *BroadcastToPlayersRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *gateClient) BroadcastToPlayers(ctx context.Context, in *BroadcastToPlayersRequest, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, Gate_BroadcastToPlayers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -109,9 +110,9 @@ func (c *gateClient) BroadcastToPlayers(ctx context.Context, in *BroadcastToPlay
 	return out, nil
 }
 
-func (c *gateClient) NodeHandshake(ctx context.Context, in *NodeHandshakeRequest, opts ...grpc.CallOption) (*NodeHandshakeResponse, error) {
+func (c *gateClient) NodeHandshake(ctx context.Context, in *common.NodeHandshakeRequest, opts ...grpc.CallOption) (*common.NodeHandshakeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(NodeHandshakeResponse)
+	out := new(common.NodeHandshakeResponse)
 	err := c.cc.Invoke(ctx, Gate_NodeHandshake_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -123,13 +124,13 @@ func (c *gateClient) NodeHandshake(ctx context.Context, in *NodeHandshakeRequest
 // All implementations must embed UnimplementedGateServer
 // for forward compatibility.
 type GateServer interface {
-	PlayerEnterGameNode(context.Context, *RegisterGameNodeSessionRequest) (*RegisterGameNodeSessionResponse, error)
-	SendMessageToPlayer(context.Context, *NodeRouteMessageRequest) (*Empty, error)
-	KickSessionByCentre(context.Context, *KickSessionRequest) (*Empty, error)
-	RouteNodeMessage(context.Context, *RouteMessageRequest) (*RouteMessageResponse, error)
-	RoutePlayerMessage(context.Context, *RoutePlayerMessageRequest) (*RoutePlayerMessageResponse, error)
-	BroadcastToPlayers(context.Context, *BroadcastToPlayersRequest) (*Empty, error)
-	NodeHandshake(context.Context, *NodeHandshakeRequest) (*NodeHandshakeResponse, error)
+	PlayerEnterGameNode(context.Context, *common.RegisterGameNodeSessionRequest) (*common.RegisterGameNodeSessionResponse, error)
+	SendMessageToPlayer(context.Context, *common.NodeRouteMessageRequest) (*common.Empty, error)
+	KickSessionByCentre(context.Context, *KickSessionRequest) (*common.Empty, error)
+	RouteNodeMessage(context.Context, *common.RouteMessageRequest) (*common.RouteMessageResponse, error)
+	RoutePlayerMessage(context.Context, *common.RoutePlayerMessageRequest) (*common.RoutePlayerMessageResponse, error)
+	BroadcastToPlayers(context.Context, *BroadcastToPlayersRequest) (*common.Empty, error)
+	NodeHandshake(context.Context, *common.NodeHandshakeRequest) (*common.NodeHandshakeResponse, error)
 	mustEmbedUnimplementedGateServer()
 }
 
@@ -140,25 +141,25 @@ type GateServer interface {
 // pointer dereference when methods are called.
 type UnimplementedGateServer struct{}
 
-func (UnimplementedGateServer) PlayerEnterGameNode(context.Context, *RegisterGameNodeSessionRequest) (*RegisterGameNodeSessionResponse, error) {
+func (UnimplementedGateServer) PlayerEnterGameNode(context.Context, *common.RegisterGameNodeSessionRequest) (*common.RegisterGameNodeSessionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PlayerEnterGameNode not implemented")
 }
-func (UnimplementedGateServer) SendMessageToPlayer(context.Context, *NodeRouteMessageRequest) (*Empty, error) {
+func (UnimplementedGateServer) SendMessageToPlayer(context.Context, *common.NodeRouteMessageRequest) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendMessageToPlayer not implemented")
 }
-func (UnimplementedGateServer) KickSessionByCentre(context.Context, *KickSessionRequest) (*Empty, error) {
+func (UnimplementedGateServer) KickSessionByCentre(context.Context, *KickSessionRequest) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method KickSessionByCentre not implemented")
 }
-func (UnimplementedGateServer) RouteNodeMessage(context.Context, *RouteMessageRequest) (*RouteMessageResponse, error) {
+func (UnimplementedGateServer) RouteNodeMessage(context.Context, *common.RouteMessageRequest) (*common.RouteMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RouteNodeMessage not implemented")
 }
-func (UnimplementedGateServer) RoutePlayerMessage(context.Context, *RoutePlayerMessageRequest) (*RoutePlayerMessageResponse, error) {
+func (UnimplementedGateServer) RoutePlayerMessage(context.Context, *common.RoutePlayerMessageRequest) (*common.RoutePlayerMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RoutePlayerMessage not implemented")
 }
-func (UnimplementedGateServer) BroadcastToPlayers(context.Context, *BroadcastToPlayersRequest) (*Empty, error) {
+func (UnimplementedGateServer) BroadcastToPlayers(context.Context, *BroadcastToPlayersRequest) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BroadcastToPlayers not implemented")
 }
-func (UnimplementedGateServer) NodeHandshake(context.Context, *NodeHandshakeRequest) (*NodeHandshakeResponse, error) {
+func (UnimplementedGateServer) NodeHandshake(context.Context, *common.NodeHandshakeRequest) (*common.NodeHandshakeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NodeHandshake not implemented")
 }
 func (UnimplementedGateServer) mustEmbedUnimplementedGateServer() {}
@@ -183,7 +184,7 @@ func RegisterGateServer(s grpc.ServiceRegistrar, srv GateServer) {
 }
 
 func _Gate_PlayerEnterGameNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterGameNodeSessionRequest)
+	in := new(common.RegisterGameNodeSessionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -195,13 +196,13 @@ func _Gate_PlayerEnterGameNode_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: Gate_PlayerEnterGameNode_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GateServer).PlayerEnterGameNode(ctx, req.(*RegisterGameNodeSessionRequest))
+		return srv.(GateServer).PlayerEnterGameNode(ctx, req.(*common.RegisterGameNodeSessionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Gate_SendMessageToPlayer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NodeRouteMessageRequest)
+	in := new(common.NodeRouteMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -213,7 +214,7 @@ func _Gate_SendMessageToPlayer_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: Gate_SendMessageToPlayer_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GateServer).SendMessageToPlayer(ctx, req.(*NodeRouteMessageRequest))
+		return srv.(GateServer).SendMessageToPlayer(ctx, req.(*common.NodeRouteMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -237,7 +238,7 @@ func _Gate_KickSessionByCentre_Handler(srv interface{}, ctx context.Context, dec
 }
 
 func _Gate_RouteNodeMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RouteMessageRequest)
+	in := new(common.RouteMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -249,13 +250,13 @@ func _Gate_RouteNodeMessage_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: Gate_RouteNodeMessage_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GateServer).RouteNodeMessage(ctx, req.(*RouteMessageRequest))
+		return srv.(GateServer).RouteNodeMessage(ctx, req.(*common.RouteMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Gate_RoutePlayerMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RoutePlayerMessageRequest)
+	in := new(common.RoutePlayerMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -267,7 +268,7 @@ func _Gate_RoutePlayerMessage_Handler(srv interface{}, ctx context.Context, dec 
 		FullMethod: Gate_RoutePlayerMessage_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GateServer).RoutePlayerMessage(ctx, req.(*RoutePlayerMessageRequest))
+		return srv.(GateServer).RoutePlayerMessage(ctx, req.(*common.RoutePlayerMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -291,7 +292,7 @@ func _Gate_BroadcastToPlayers_Handler(srv interface{}, ctx context.Context, dec 
 }
 
 func _Gate_NodeHandshake_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NodeHandshakeRequest)
+	in := new(common.NodeHandshakeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -303,7 +304,7 @@ func _Gate_NodeHandshake_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: Gate_NodeHandshake_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GateServer).NodeHandshake(ctx, req.(*NodeHandshakeRequest))
+		return srv.(GateServer).NodeHandshake(ctx, req.(*common.NodeHandshakeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

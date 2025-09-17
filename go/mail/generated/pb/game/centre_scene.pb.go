@@ -7,6 +7,7 @@
 package game
 
 import (
+	common "generated/pb/common/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -22,9 +23,9 @@ const (
 )
 
 type RegisterSceneRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneNodeId   uint32                 `protobuf:"varint,1,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`
-	ScenesInfo    []*RoomInfoPBComponent `protobuf:"bytes,2,rep,name=scenes_info,json=scenesInfo,proto3" json:"scenes_info,omitempty"`
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	SceneNodeId   uint32                        `protobuf:"varint,1,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`
+	ScenesInfo    []*common.RoomInfoPBComponent `protobuf:"bytes,2,rep,name=scenes_info,json=scenesInfo,proto3" json:"scenes_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -66,7 +67,7 @@ func (x *RegisterSceneRequest) GetSceneNodeId() uint32 {
 	return 0
 }
 
-func (x *RegisterSceneRequest) GetScenesInfo() []*RoomInfoPBComponent {
+func (x *RegisterSceneRequest) GetScenesInfo() []*common.RoomInfoPBComponent {
 	if x != nil {
 		return x.ScenesInfo
 	}
@@ -201,11 +202,11 @@ func file_proto_service_cpp_rpc_centre_centre_scene_proto_rawDescGZIP() []byte {
 
 var file_proto_service_cpp_rpc_centre_centre_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_service_cpp_rpc_centre_centre_scene_proto_goTypes = []any{
-	(*RegisterSceneRequest)(nil),   // 0: RegisterSceneRequest
-	(*RegisterSceneResponse)(nil),  // 1: RegisterSceneResponse
-	(*UnRegisterSceneRequest)(nil), // 2: UnRegisterSceneRequest
-	(*RoomInfoPBComponent)(nil),    // 3: RoomInfoPBComponent
-	(*Empty)(nil),                  // 4: Empty
+	(*RegisterSceneRequest)(nil),       // 0: RegisterSceneRequest
+	(*RegisterSceneResponse)(nil),      // 1: RegisterSceneResponse
+	(*UnRegisterSceneRequest)(nil),     // 2: UnRegisterSceneRequest
+	(*common.RoomInfoPBComponent)(nil), // 3: RoomInfoPBComponent
+	(*common.Empty)(nil),               // 4: Empty
 }
 var file_proto_service_cpp_rpc_centre_centre_scene_proto_depIdxs = []int32{
 	3, // 0: RegisterSceneRequest.scenes_info:type_name -> RoomInfoPBComponent
@@ -225,8 +226,6 @@ func file_proto_service_cpp_rpc_centre_centre_scene_proto_init() {
 	if File_proto_service_cpp_rpc_centre_centre_scene_proto != nil {
 		return
 	}
-	file_proto_common_empty_proto_init()
-	file_proto_common_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

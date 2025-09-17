@@ -7,6 +7,8 @@
 package game
 
 import (
+	common "generated/pb/common/common"
+	component "generated/pb/game/component"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -75,8 +77,8 @@ func (x *GsEnterSceneRequest) GetSceneId() uint64 {
 }
 
 type GsLeaveSceneRequest struct {
-	state           protoimpl.MessageState     `protogen:"open.v1"`
-	ChangeSceneInfo *ChangeRoomInfoPBComponent `protobuf:"bytes,2,opt,name=change_scene_info,json=changeSceneInfo,proto3" json:"change_scene_info,omitempty"`
+	state           protoimpl.MessageState               `protogen:"open.v1"`
+	ChangeSceneInfo *component.ChangeRoomInfoPBComponent `protobuf:"bytes,2,opt,name=change_scene_info,json=changeSceneInfo,proto3" json:"change_scene_info,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -111,7 +113,7 @@ func (*GsLeaveSceneRequest) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_game_player_scene_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GsLeaveSceneRequest) GetChangeSceneInfo() *ChangeRoomInfoPBComponent {
+func (x *GsLeaveSceneRequest) GetChangeSceneInfo() *component.ChangeRoomInfoPBComponent {
 	if x != nil {
 		return x.ChangeSceneInfo
 	}
@@ -156,7 +158,7 @@ func (*EnterSceneS2CRequest) Descriptor() ([]byte, []int) {
 
 type EnterScenerS2CResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *common.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -191,7 +193,7 @@ func (*EnterScenerS2CResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_game_player_scene_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *EnterScenerS2CResponse) GetErrorMessage() *TipInfoMessage {
+func (x *EnterScenerS2CResponse) GetErrorMessage() *common.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -233,13 +235,13 @@ func file_proto_service_cpp_rpc_scene_game_player_scene_proto_rawDescGZIP() []by
 
 var file_proto_service_cpp_rpc_scene_game_player_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_service_cpp_rpc_scene_game_player_scene_proto_goTypes = []any{
-	(*GsEnterSceneRequest)(nil),       // 0: GsEnterSceneRequest
-	(*GsLeaveSceneRequest)(nil),       // 1: GsLeaveSceneRequest
-	(*EnterSceneS2CRequest)(nil),      // 2: EnterSceneS2CRequest
-	(*EnterScenerS2CResponse)(nil),    // 3: EnterScenerS2CResponse
-	(*ChangeRoomInfoPBComponent)(nil), // 4: ChangeRoomInfoPBComponent
-	(*TipInfoMessage)(nil),            // 5: TipInfoMessage
-	(*emptypb.Empty)(nil),             // 6: google.protobuf.Empty
+	(*GsEnterSceneRequest)(nil),                 // 0: GsEnterSceneRequest
+	(*GsLeaveSceneRequest)(nil),                 // 1: GsLeaveSceneRequest
+	(*EnterSceneS2CRequest)(nil),                // 2: EnterSceneS2CRequest
+	(*EnterScenerS2CResponse)(nil),              // 3: EnterScenerS2CResponse
+	(*component.ChangeRoomInfoPBComponent)(nil), // 4: ChangeRoomInfoPBComponent
+	(*common.TipInfoMessage)(nil),               // 5: TipInfoMessage
+	(*emptypb.Empty)(nil),                       // 6: google.protobuf.Empty
 }
 var file_proto_service_cpp_rpc_scene_game_player_scene_proto_depIdxs = []int32{
 	4, // 0: GsLeaveSceneRequest.change_scene_info:type_name -> ChangeRoomInfoPBComponent
@@ -262,8 +264,6 @@ func file_proto_service_cpp_rpc_scene_game_player_scene_proto_init() {
 	if File_proto_service_cpp_rpc_scene_game_player_scene_proto != nil {
 		return
 	}
-	file_proto_common_tip_proto_init()
-	file_proto_logic_component_scene_comp_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -7,6 +7,8 @@
 package game
 
 import (
+	common "generated/pb/common/common"
+	component "generated/pb/game/component"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -23,11 +25,11 @@ const (
 
 // 消息定义，用于同步实体的基础属性增量
 type BaseAttributeSyncDataS2C struct {
-	state            protoimpl.MessageState       `protogen:"open.v1"`
-	EntityId         uint64                       `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
-	Transform        *Transform                   `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`                // 速度信息
-	Velocity         *Velocity                    `protobuf:"bytes,3,opt,name=velocity,proto3" json:"velocity,omitempty"`
-	CombatStateFlags *CombatStateFlagsPbComponent `protobuf:"bytes,4,opt,name=combat_state_flags,json=combatStateFlags,proto3" json:"combat_state_flags,omitempty"` //战斗状态
+	state            protoimpl.MessageState                 `protogen:"open.v1"`
+	EntityId         uint64                                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
+	Transform        *component.Transform                   `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`                // 速度信息
+	Velocity         *component.Velocity                    `protobuf:"bytes,3,opt,name=velocity,proto3" json:"velocity,omitempty"`
+	CombatStateFlags *component.CombatStateFlagsPbComponent `protobuf:"bytes,4,opt,name=combat_state_flags,json=combatStateFlags,proto3" json:"combat_state_flags,omitempty"` //战斗状态
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -69,21 +71,21 @@ func (x *BaseAttributeSyncDataS2C) GetEntityId() uint64 {
 	return 0
 }
 
-func (x *BaseAttributeSyncDataS2C) GetTransform() *Transform {
+func (x *BaseAttributeSyncDataS2C) GetTransform() *component.Transform {
 	if x != nil {
 		return x.Transform
 	}
 	return nil
 }
 
-func (x *BaseAttributeSyncDataS2C) GetVelocity() *Velocity {
+func (x *BaseAttributeSyncDataS2C) GetVelocity() *component.Velocity {
 	if x != nil {
 		return x.Velocity
 	}
 	return nil
 }
 
-func (x *BaseAttributeSyncDataS2C) GetCombatStateFlags() *CombatStateFlagsPbComponent {
+func (x *BaseAttributeSyncDataS2C) GetCombatStateFlags() *component.CombatStateFlagsPbComponent {
 	if x != nil {
 		return x.CombatStateFlags
 	}
@@ -354,16 +356,16 @@ func file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDescG
 
 var file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_goTypes = []any{
-	(*BaseAttributeSyncDataS2C)(nil),    // 0: BaseAttributeSyncDataS2C
-	(*AttributeDelta2FramesS2C)(nil),    // 1: AttributeDelta2FramesS2C
-	(*AttributeDelta5FramesS2C)(nil),    // 2: AttributeDelta5FramesS2C
-	(*AttributeDelta10FramesS2C)(nil),   // 3: AttributeDelta10FramesS2C
-	(*AttributeDelta30FramesS2C)(nil),   // 4: AttributeDelta30FramesS2C
-	(*AttributeDelta60FramesS2C)(nil),   // 5: AttributeDelta60FramesS2C
-	(*Transform)(nil),                   // 6: Transform
-	(*Velocity)(nil),                    // 7: Velocity
-	(*CombatStateFlagsPbComponent)(nil), // 8: CombatStateFlagsPbComponent
-	(*Empty)(nil),                       // 9: Empty
+	(*BaseAttributeSyncDataS2C)(nil),              // 0: BaseAttributeSyncDataS2C
+	(*AttributeDelta2FramesS2C)(nil),              // 1: AttributeDelta2FramesS2C
+	(*AttributeDelta5FramesS2C)(nil),              // 2: AttributeDelta5FramesS2C
+	(*AttributeDelta10FramesS2C)(nil),             // 3: AttributeDelta10FramesS2C
+	(*AttributeDelta30FramesS2C)(nil),             // 4: AttributeDelta30FramesS2C
+	(*AttributeDelta60FramesS2C)(nil),             // 5: AttributeDelta60FramesS2C
+	(*component.Transform)(nil),                   // 6: Transform
+	(*component.Velocity)(nil),                    // 7: Velocity
+	(*component.CombatStateFlagsPbComponent)(nil), // 8: CombatStateFlagsPbComponent
+	(*common.Empty)(nil),                          // 9: Empty
 }
 var file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_depIdxs = []int32{
 	6, // 0: BaseAttributeSyncDataS2C.transform:type_name -> Transform
@@ -393,9 +395,6 @@ func file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_init() {
 	if File_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto != nil {
 		return
 	}
-	file_proto_logic_component_actor_comp_proto_init()
-	file_proto_common_empty_proto_init()
-	file_proto_logic_component_actor_attribute_state_comp_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

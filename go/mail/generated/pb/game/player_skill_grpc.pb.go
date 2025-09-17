@@ -8,6 +8,7 @@ package game
 
 import (
 	context "context"
+	common "generated/pb/common/common"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -30,8 +31,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SceneSkillClientPlayerClient interface {
 	ReleaseSkill(ctx context.Context, in *ReleaseSkillSkillRequest, opts ...grpc.CallOption) (*ReleaseSkillSkillResponse, error)
-	NotifySkillUsed(ctx context.Context, in *SkillUsedS2C, opts ...grpc.CallOption) (*Empty, error)
-	NotifySkillInterrupted(ctx context.Context, in *SkillInterruptedS2C, opts ...grpc.CallOption) (*Empty, error)
+	NotifySkillUsed(ctx context.Context, in *SkillUsedS2C, opts ...grpc.CallOption) (*common.Empty, error)
+	NotifySkillInterrupted(ctx context.Context, in *SkillInterruptedS2C, opts ...grpc.CallOption) (*common.Empty, error)
 	GetSkillList(ctx context.Context, in *GetSkillListRequest, opts ...grpc.CallOption) (*GetSkillListResponse, error)
 }
 
@@ -53,9 +54,9 @@ func (c *sceneSkillClientPlayerClient) ReleaseSkill(ctx context.Context, in *Rel
 	return out, nil
 }
 
-func (c *sceneSkillClientPlayerClient) NotifySkillUsed(ctx context.Context, in *SkillUsedS2C, opts ...grpc.CallOption) (*Empty, error) {
+func (c *sceneSkillClientPlayerClient) NotifySkillUsed(ctx context.Context, in *SkillUsedS2C, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, SceneSkillClientPlayer_NotifySkillUsed_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -63,9 +64,9 @@ func (c *sceneSkillClientPlayerClient) NotifySkillUsed(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *sceneSkillClientPlayerClient) NotifySkillInterrupted(ctx context.Context, in *SkillInterruptedS2C, opts ...grpc.CallOption) (*Empty, error) {
+func (c *sceneSkillClientPlayerClient) NotifySkillInterrupted(ctx context.Context, in *SkillInterruptedS2C, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, SceneSkillClientPlayer_NotifySkillInterrupted_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -88,8 +89,8 @@ func (c *sceneSkillClientPlayerClient) GetSkillList(ctx context.Context, in *Get
 // for forward compatibility.
 type SceneSkillClientPlayerServer interface {
 	ReleaseSkill(context.Context, *ReleaseSkillSkillRequest) (*ReleaseSkillSkillResponse, error)
-	NotifySkillUsed(context.Context, *SkillUsedS2C) (*Empty, error)
-	NotifySkillInterrupted(context.Context, *SkillInterruptedS2C) (*Empty, error)
+	NotifySkillUsed(context.Context, *SkillUsedS2C) (*common.Empty, error)
+	NotifySkillInterrupted(context.Context, *SkillInterruptedS2C) (*common.Empty, error)
 	GetSkillList(context.Context, *GetSkillListRequest) (*GetSkillListResponse, error)
 	mustEmbedUnimplementedSceneSkillClientPlayerServer()
 }
@@ -104,10 +105,10 @@ type UnimplementedSceneSkillClientPlayerServer struct{}
 func (UnimplementedSceneSkillClientPlayerServer) ReleaseSkill(context.Context, *ReleaseSkillSkillRequest) (*ReleaseSkillSkillResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReleaseSkill not implemented")
 }
-func (UnimplementedSceneSkillClientPlayerServer) NotifySkillUsed(context.Context, *SkillUsedS2C) (*Empty, error) {
+func (UnimplementedSceneSkillClientPlayerServer) NotifySkillUsed(context.Context, *SkillUsedS2C) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifySkillUsed not implemented")
 }
-func (UnimplementedSceneSkillClientPlayerServer) NotifySkillInterrupted(context.Context, *SkillInterruptedS2C) (*Empty, error) {
+func (UnimplementedSceneSkillClientPlayerServer) NotifySkillInterrupted(context.Context, *SkillInterruptedS2C) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifySkillInterrupted not implemented")
 }
 func (UnimplementedSceneSkillClientPlayerServer) GetSkillList(context.Context, *GetSkillListRequest) (*GetSkillListResponse, error) {

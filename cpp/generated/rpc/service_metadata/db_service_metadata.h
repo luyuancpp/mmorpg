@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/service/grpc/db/db.pb.h"
+#include "proto/service/go/grpc/db/db.pb.h"
 
 
 constexpr uint32_t dbTestMessageId = 33;

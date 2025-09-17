@@ -1,5 +1,5 @@
 #pragma once
-#include "proto/service/rpc/gate/gate_service.pb.h"
+#include "proto/service/cpp/rpc/gate/gate_service.pb.h"
 
 
 class GateHandler : public ::Gate
