@@ -34,7 +34,7 @@ const (
 	GrpcClientExtension           = "_grpc_client"
 	GrpcClientHeaderExtension     = GrpcClientExtension + HeaderExtension
 	GrpcClientCppExtension        = GrpcClientExtension + CppExtension
-	SqlExtension                  = ".sql"
+	ModelSqlExtension             = "mysql_database_table.sql"
 )
 
 // ----------- 消息与方法相关名字 -----------

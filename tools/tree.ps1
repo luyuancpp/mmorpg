@@ -1,18 +1,18 @@
 ﻿# ==== 配置部分 ====
-$RootPath = "D:\\game\\luyuan\\mmorpg\\"               # 根目录
+$RootPath = "D:\game\luyuan\mmorpg1\proto"               # 根目录
 $ExcludePaths = @(
 
 )
 
-$OutputFile = "D:\game\luyuan\\mmorpg\tools\tree.txt"  # 输出文件路径
-$MaxDepth = 3  # 最大递归深度（含根目录）
+$OutputFile = "D:\game\luyuan\\mmorpg1\tools\tree.txt"  # 输出文件路径
+$MaxDepth = 100  # 最大递归深度（含根目录）
 
 # ==== 主函数 ====
 function Show-Tree {
     param (
         [string]$Path,
         [int]$Indent = 0,
-        [int]$Depth = 1
+        [int]$Depth = 20
     )
 
     # 检查是否在排除路径中
