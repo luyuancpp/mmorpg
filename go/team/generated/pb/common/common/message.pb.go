@@ -7,6 +7,7 @@
 package common
 
 import (
+	common "generated/pb/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -24,7 +25,7 @@ const (
 // 路由节点信息
 type RoutingNodeInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeInfo      *NodeInfo              `protobuf:"bytes,1,opt,name=node_info,json=nodeInfo,proto3" json:"node_info,omitempty"`     // 节点信息
+	NodeInfo      *common.NodeInfo       `protobuf:"bytes,1,opt,name=node_info,json=nodeInfo,proto3" json:"node_info,omitempty"`     // 节点信息
 	MessageId     uint32                 `protobuf:"varint,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"` // 消息 ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -60,7 +61,7 @@ func (*RoutingNodeInfo) Descriptor() ([]byte, []int) {
 	return file_proto_common_message_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *RoutingNodeInfo) GetNodeInfo() *NodeInfo {
+func (x *RoutingNodeInfo) GetNodeInfo() *common.NodeInfo {
 	if x != nil {
 		return x.NodeInfo
 	}
@@ -456,7 +457,7 @@ func (x *PlayerMessageResponse) GetHeader() *PlayerInfoExternal {
 // 节点路由消息体
 type NodeRoutingMessageBody struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeInfo      *NodeInfo              `protobuf:"bytes,2,opt,name=node_info,json=nodeInfo,proto3" json:"node_info,omitempty"` // 节点信息
+	NodeInfo      *common.NodeInfo       `protobuf:"bytes,2,opt,name=node_info,json=nodeInfo,proto3" json:"node_info,omitempty"` // 节点信息
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -491,7 +492,7 @@ func (*NodeRoutingMessageBody) Descriptor() ([]byte, []int) {
 	return file_proto_common_message_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *NodeRoutingMessageBody) GetNodeInfo() *NodeInfo {
+func (x *NodeRoutingMessageBody) GetNodeInfo() *common.NodeInfo {
 	if x != nil {
 		return x.NodeInfo
 	}
@@ -942,7 +943,7 @@ func (x *RouteMessageResponse) GetIsClient() bool {
 type RoutePlayerMessageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // 消息内容（字符串）
-	NodeList      []*NodeInfo            `protobuf:"bytes,2,rep,name=node_list,json=nodeList,proto3" json:"node_list,omitempty"`       // 节点列表
+	NodeList      []*common.NodeInfo     `protobuf:"bytes,2,rep,name=node_list,json=nodeList,proto3" json:"node_list,omitempty"`       // 节点列表
 	PlayerInfo    *PlayerInfoExternal    `protobuf:"bytes,3,opt,name=player_info,json=playerInfo,proto3" json:"player_info,omitempty"` // 玩家信息
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -985,7 +986,7 @@ func (x *RoutePlayerMessageRequest) GetBody() []byte {
 	return nil
 }
 
-func (x *RoutePlayerMessageRequest) GetNodeList() []*NodeInfo {
+func (x *RoutePlayerMessageRequest) GetNodeList() []*common.NodeInfo {
 	if x != nil {
 		return x.NodeList
 	}
@@ -1003,7 +1004,7 @@ func (x *RoutePlayerMessageRequest) GetPlayerInfo() *PlayerInfoExternal {
 type RoutePlayerMessageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // 消息内容（字符串）
-	NodeList      []*NodeInfo            `protobuf:"bytes,2,rep,name=node_list,json=nodeList,proto3" json:"node_list,omitempty"`       // 节点列表
+	NodeList      []*common.NodeInfo     `protobuf:"bytes,2,rep,name=node_list,json=nodeList,proto3" json:"node_list,omitempty"`       // 节点列表
 	PlayerInfo    *PlayerInfoExternal    `protobuf:"bytes,3,opt,name=player_info,json=playerInfo,proto3" json:"player_info,omitempty"` // 玩家信息
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1046,7 +1047,7 @@ func (x *RoutePlayerMessageResponse) GetBody() []byte {
 	return nil
 }
 
-func (x *RoutePlayerMessageResponse) GetNodeList() []*NodeInfo {
+func (x *RoutePlayerMessageResponse) GetNodeList() []*common.NodeInfo {
 	if x != nil {
 		return x.NodeList
 	}
@@ -1063,8 +1064,8 @@ func (x *RoutePlayerMessageResponse) GetPlayerInfo() *PlayerInfoExternal {
 // 注册游戏节点请求
 type RegisterGameNodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RpcClient     *NetworkAddress        `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`                // 客户端 RPC 地址
-	RpcServer     *NetworkAddress        `protobuf:"bytes,2,opt,name=rpc_server,json=rpcServer,proto3" json:"rpc_server,omitempty"`                // 服务器 RPC 地址
+	RpcClient     *common.NetworkAddress `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`                // 客户端 RPC 地址
+	RpcServer     *common.NetworkAddress `protobuf:"bytes,2,opt,name=rpc_server,json=rpcServer,proto3" json:"rpc_server,omitempty"`                // 服务器 RPC 地址
 	SceneNodeId   uint32                 `protobuf:"varint,3,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`       // 游戏节点 ID
 	ServerType    uint32                 `protobuf:"varint,4,opt,name=server_type,json=serverType,proto3" json:"server_type,omitempty"`            // 服务器类型
 	SceneNodeType uint32                 `protobuf:"varint,5,opt,name=scene_node_type,json=sceneNodeType,proto3" json:"scene_node_type,omitempty"` // 服务器类型
@@ -1102,14 +1103,14 @@ func (*RegisterGameNodeRequest) Descriptor() ([]byte, []int) {
 	return file_proto_common_message_proto_rawDescGZIP(), []int{19}
 }
 
-func (x *RegisterGameNodeRequest) GetRpcClient() *NetworkAddress {
+func (x *RegisterGameNodeRequest) GetRpcClient() *common.NetworkAddress {
 	if x != nil {
 		return x.RpcClient
 	}
 	return nil
 }
 
-func (x *RegisterGameNodeRequest) GetRpcServer() *NetworkAddress {
+func (x *RegisterGameNodeRequest) GetRpcServer() *common.NetworkAddress {
 	if x != nil {
 		return x.RpcServer
 	}
@@ -1140,7 +1141,7 @@ func (x *RegisterGameNodeRequest) GetSceneNodeType() uint32 {
 // 注册网关节点请求
 type RegisterGateNodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RpcClient     *NetworkAddress        `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`       // 客户端 RPC 地址
+	RpcClient     *common.NetworkAddress `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`       // 客户端 RPC 地址
 	GateNodeId    uint32                 `protobuf:"varint,2,opt,name=gate_node_id,json=gateNodeId,proto3" json:"gate_node_id,omitempty"` // 网关节点 ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1176,7 +1177,7 @@ func (*RegisterGateNodeRequest) Descriptor() ([]byte, []int) {
 	return file_proto_common_message_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *RegisterGateNodeRequest) GetRpcClient() *NetworkAddress {
+func (x *RegisterGateNodeRequest) GetRpcClient() *common.NetworkAddress {
 	if x != nil {
 		return x.RpcClient
 	}
@@ -1533,7 +1534,7 @@ type NodeHandshakeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Version       string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
-	SelfNode      *NodeInfo              `protobuf:"bytes,3,opt,name=self_node,json=selfNode,proto3" json:"self_node,omitempty"`
+	SelfNode      *common.NodeInfo       `protobuf:"bytes,3,opt,name=self_node,json=selfNode,proto3" json:"self_node,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1582,7 +1583,7 @@ func (x *NodeHandshakeRequest) GetToken() string {
 	return ""
 }
 
-func (x *NodeHandshakeRequest) GetSelfNode() *NodeInfo {
+func (x *NodeHandshakeRequest) GetSelfNode() *common.NodeInfo {
 	if x != nil {
 		return x.SelfNode
 	}
@@ -1592,7 +1593,7 @@ func (x *NodeHandshakeRequest) GetSelfNode() *NodeInfo {
 type NodeHandshakeResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorMessage  *TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // 错误消息（可选）
-	PeerNode      *NodeInfo              `protobuf:"bytes,2,opt,name=peer_node,json=peerNode,proto3" json:"peer_node,omitempty"`             // 对方的节点信息（返回的是对方）
+	PeerNode      *common.NodeInfo       `protobuf:"bytes,2,opt,name=peer_node,json=peerNode,proto3" json:"peer_node,omitempty"`             // 对方的节点信息（返回的是对方）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1634,7 +1635,7 @@ func (x *NodeHandshakeResponse) GetErrorMessage() *TipInfoMessage {
 	return nil
 }
 
-func (x *NodeHandshakeResponse) GetPeerNode() *NodeInfo {
+func (x *NodeHandshakeResponse) GetPeerNode() *common.NodeInfo {
 	if x != nil {
 		return x.PeerNode
 	}
@@ -1804,10 +1805,10 @@ var file_proto_common_message_proto_goTypes = []any{
 	(*ClientRequest)(nil),                     // 26: ClientRequest
 	(*NodeHandshakeRequest)(nil),              // 27: NodeHandshakeRequest
 	(*NodeHandshakeResponse)(nil),             // 28: NodeHandshakeResponse
-	(*NodeInfo)(nil),                          // 29: NodeInfo
+	(*common.NodeInfo)(nil),                   // 29: NodeInfo
 	(*TipInfoMessage)(nil),                    // 30: TipInfoMessage
 	(*SessionDetails)(nil),                    // 31: SessionDetails
-	(*NetworkAddress)(nil),                    // 32: NetworkAddress
+	(*common.NetworkAddress)(nil),             // 32: NetworkAddress
 }
 var file_proto_common_message_proto_depIdxs = []int32{
 	29, // 0: RoutingNodeInfo.node_info:type_name -> NodeInfo
@@ -1853,7 +1854,6 @@ func file_proto_common_message_proto_init() {
 	if File_proto_common_message_proto != nil {
 		return
 	}
-	file_proto_common_common_proto_init()
 	file_proto_common_session_proto_init()
 	file_proto_common_tip_proto_init()
 	type x struct{}

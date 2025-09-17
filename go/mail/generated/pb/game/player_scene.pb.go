@@ -7,7 +7,8 @@
 package game
 
 import (
-	common "generated/pb/common/common"
+	common "generated/pb/common"
+	common1 "generated/pb/common/common"
 	component "generated/pb/game/component"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -68,8 +69,8 @@ func (x *EnterSceneC2SRequest) GetSceneInfo() *common.RoomInfoPBComponent {
 }
 
 type EnterSceneC2SResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *common.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	ErrorMessage  *common1.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -104,7 +105,7 @@ func (*EnterSceneC2SResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *EnterSceneC2SResponse) GetErrorMessage() *common.TipInfoMessage {
+func (x *EnterSceneC2SResponse) GetErrorMessage() *common1.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -558,9 +559,9 @@ var file_proto_service_cpp_rpc_scene_player_scene_proto_goTypes = []any{
 	(*ActorListCreateS2C)(nil),         // 8: ActorListCreateS2C
 	(*ActorListDestroyS2C)(nil),        // 9: ActorListDestroyS2C
 	(*common.RoomInfoPBComponent)(nil), // 10: RoomInfoPBComponent
-	(*common.TipInfoMessage)(nil),      // 11: TipInfoMessage
+	(*common1.TipInfoMessage)(nil),     // 11: TipInfoMessage
 	(*component.Transform)(nil),        // 12: Transform
-	(*common.Empty)(nil),               // 13: Empty
+	(*common1.Empty)(nil),              // 13: Empty
 }
 var file_proto_service_cpp_rpc_scene_player_scene_proto_depIdxs = []int32{
 	10, // 0: EnterSceneC2SRequest.scene_info:type_name -> RoomInfoPBComponent
