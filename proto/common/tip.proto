@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-option go_package = "generated/pb/common";
-
 message TipInfoMessage
 {
   uint32 id = 1;

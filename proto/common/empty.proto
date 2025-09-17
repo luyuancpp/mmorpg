@@ -27,6 +27,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 syntax = "proto3";
 
-option go_package = "generated/pb/common";
+
 
 message Empty {}

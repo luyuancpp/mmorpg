@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "generated/pb/common";
+
 
 enum eNodeType {
     DeployNodeService      = 0;  // 部署节点服务

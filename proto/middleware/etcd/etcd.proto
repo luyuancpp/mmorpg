@@ -4,7 +4,6 @@ import "proto/middleware/etcd/kv.proto";
 
 import "proto/middleware/etcd/version.proto";
 
-option go_package = "generated/game/etcdserverpb";
 
 package etcdserverpb;
 

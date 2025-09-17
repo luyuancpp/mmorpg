@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package taskpb;
 
-option go_package = "generated/pb/game";
 
 message DBTask {
   uint64 key = 1;
