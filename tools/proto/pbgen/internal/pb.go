@@ -209,34 +209,92 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 	sysType := runtime.GOOS
 	var cmd *exec.Cmd
 
-	moduleName := strings.ToLower(path.Base(outputDir))
+	// 提取模块名称（即目标 Go 项目的名称）
+	moduleName := strings.ToLower(path.Base(outputDir)) + "/pb/game"
 
+	// 生成 protoc 命令的参数
 	args := []string{
-		"--go_out=" + outputDir,
-		"--go_opt=module=" + moduleName, // 使用正确的模块名
-		"--go_opt=paths=import",         // 核心：用 import 替代 source_relative
+		"--go_out=" + outputDir,         // 生成的 Go 文件输出目录
+		"--go_opt=module=" + moduleName, // 模块路径
+		"--go_opt=paths=import",         // 使用 import 路径而非 source_relative
 		"--proto_path=" + config.ProtoParentIncludePathDir,
 		"--proto_path=" + config.ProtoBufferDirectory,
 	}
-	args = append(args, protoFiles...) // proto文件放在最后
 
+	// 为每个 proto 文件生成正确的 M 选项映射
+	for _, protoFile := range protoFiles {
+		// 关键修复：计算 proto 文件相对于 proto_path 的相对路径
+		// 优先尝试与第一个 proto_path 匹配
+		relPath, err := getRelativeToProtoPath(protoFile, config.ProtoParentIncludePathDir)
+		if err != nil {
+			// 若不匹配第一个，则尝试与第二个 proto_path 匹配
+			relPath, err = getRelativeToProtoPath(protoFile, config.ProtoBufferDirectory)
+			if err != nil {
+				return fmt.Errorf("proto file %s not in any proto_path", protoFile)
+			}
+		}
+
+		// M选项格式：M{proto_path相对路径}={目标包路径}
+		args = append(args, "--go_opt=M"+relPath+"="+moduleName)
+	}
+
+	// 添加 proto 文件列表（使用绝对路径或正确的相对路径）
+	args = append(args, protoFiles...)
+
+	// 根据操作系统选择正确的 protoc 命令
 	if sysType == "linux" {
 		cmd = exec.Command("protoc", args...)
 	} else {
 		cmd = exec.Command("./protoc.exe", args...)
 	}
 
+	// 捕获标准输出和错误输出
 	var out, stderr bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
 
-	log.Println("Running:", cmd.String())
+	// 打印命令日志（替换空格为换行，便于调试长命令）
+	log.Println("Running command:")
+	log.Println(strings.ReplaceAll(cmd.String(), " ", "\n"))
+
+	// 执行 protoc 命令
 	if err := cmd.Run(); err != nil {
-		fmt.Println("protoc error:", stderr.String())
-		return err
+		// 打印 stderr 输出，帮助调试
+		log.Println("protoc stderr:", stderr.String())
+		return fmt.Errorf("protoc error: %v", err)
 	}
 
+	// 打印标准输出，帮助调试
+	log.Println("protoc stdout:", out.String())
+
 	return nil
+}
+
+// 辅助函数：计算 proto 文件相对于 proto_path 的相对路径
+func getRelativeToProtoPath(protoFile, protoPath string) (string, error) {
+	// 将 proto_path 和 protoFile 转换为绝对路径，消除相对路径歧义
+	absProtoPath, err := filepath.Abs(protoPath)
+	if err != nil {
+		return "", err
+	}
+	absProtoFile, err := filepath.Abs(protoFile)
+	if err != nil {
+		return "", err
+	}
+
+	// 检查 protoFile 是否在 protoPath 目录下
+	if !strings.HasPrefix(absProtoFile, absProtoPath) {
+		return "", fmt.Errorf("file not in proto_path")
+	}
+
+	// 计算相对路径（从 proto_path 到 protoFile）
+	relPath, err := filepath.Rel(absProtoPath, absProtoFile)
+	if err != nil {
+		return "", err
+	}
+
+	// 将路径分隔符统一转换为 '/'（protoc 要求）
+	return strings.ReplaceAll(relPath, "\\", "/"), nil
 }
 
 // GenerateGoGRPCFromProto processes .proto files in the given directory
@@ -343,8 +401,7 @@ func generateRobotGoProto(protoFiles []string, outputDir string) error {
 
 	args := []string{
 		"--go_out=" + outputDir,
-		"--go_opt=module=" + moduleName,  // 使用正确的模块名
-		"--go_opt=paths=source_relative", // 与其他go_opt参数放在一起
+		"--go_opt=module=" + moduleName, // 使用正确的模块名
 		"--proto_path=" + config.ProtoParentIncludePathDir,
 		"--proto_path=" + config.ProtoBufferDirectory,
 	}
