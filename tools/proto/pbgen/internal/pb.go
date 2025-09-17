@@ -3,6 +3,8 @@ package internal
 import (
 	"bytes"
 	"fmt"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 	"log"
 	"os"
 	"os/exec"
@@ -398,16 +400,28 @@ func BuildProtocDescAllInOne() {
 	go func() {
 		defer util.Wg.Done()
 
+		// 步骤1：收集目标 proto 文件（去重，确保只包含需要的文件）
 		var allProtoFiles []string
+		protoFileSet := make(map[string]struct{}) // 用于去重
 		for _, dir := range config.ProtoDirs {
 			fds, err := os.ReadDir(dir)
 			if err != nil {
-				log.Fatal(err)
+				log.Printf("警告：读取目录 %s 失败，跳过: %v", dir, err)
+				continue
 			}
 			for _, fd := range fds {
 				if util.IsProtoFile(fd) {
-					protoFile := filepath.ToSlash(filepath.Join(dir, fd.Name()))
-					allProtoFiles = append(allProtoFiles, protoFile)
+					// 转换为绝对路径，避免同名文件重复
+					absPath, err := filepath.Abs(filepath.Join(dir, fd.Name()))
+					if err != nil {
+						log.Printf("警告：获取绝对路径失败 %s，跳过: %v", fd.Name(), err)
+						continue
+					}
+					absPath = filepath.ToSlash(absPath)
+					if _, exists := protoFileSet[absPath]; !exists {
+						protoFileSet[absPath] = struct{}{}
+						allProtoFiles = append(allProtoFiles, absPath)
+					}
 				}
 			}
 		}
@@ -416,37 +430,86 @@ func BuildProtocDescAllInOne() {
 			log.Println("No proto files found in any directory")
 			return
 		}
+		log.Printf("共收集到 %d 个唯一 proto 文件", len(allProtoFiles))
 
+		// 步骤2：构建 protoc 命令参数（核心：先加选项和导入路径，后加 proto 文件）
 		descOut := filepath.ToSlash(config.AllInOneProtoDescFile)
-		args := append([]string{
+		// 1. 基础选项（输出路径、包含依赖、包含源码信息）
+		args := []string{
 			"--descriptor_set_out=" + descOut,
-			"--include_imports",
-		}, allProtoFiles...)
-		args = append(args,
-			"--proto_path="+config.ProtoParentIncludePathDir,
-			"--proto_path="+config.ProtoBufferDirectory,
-		)
-
-		var cmd *exec.Cmd
-		if runtime.GOOS == "linux" {
-			cmd = exec.Command("protoc", args...)
-		} else {
-			cmd = exec.Command("./protoc.exe", args...)
+			"--include_imports",     // 必须：包含所有依赖的描述符
+			"--include_source_info", // 建议：包含源码信息，便于调试
 		}
+		// 2. 导入路径（必须在 proto 文件之前）
+		importPaths := []string{
+			config.ProtoParentIncludePathDir,
+			config.ProtoBufferDirectory,
+		}
+		for _, ip := range importPaths {
+			if ip != "" { // 跳过空路径
+				absIP, err := filepath.Abs(ip)
+				if err != nil {
+					log.Printf("警告：导入路径 %s 无效，跳过: %v", ip, err)
+					continue
+				}
+				args = append(args, "--proto_path="+filepath.ToSlash(absIP))
+			}
+		}
+		// 3. 目标 proto 文件（最后加）
+		args = append(args, allProtoFiles...)
 
+		// 步骤3：执行 protoc 命令（适配系统）
+		var cmd *exec.Cmd
+		protocPath := "protoc" // 默认 Linux 路径
+		if runtime.GOOS != "linux" {
+			// Windows：确保 protoc.exe 路径正确（建议使用绝对路径）
+			protocPath = "./protoc.exe"
+			// 可选：检查 protoc.exe 是否存在
+			if _, err := os.Stat(protocPath); err != nil {
+				log.Fatalf("protoc.exe 不存在于路径 %s: %v", protocPath, err)
+			}
+		}
+		cmd = exec.Command(protocPath, args...)
+
+		// 捕获输出，便于调试
 		var out, stderr bytes.Buffer
 		cmd.Stdout = &out
 		cmd.Stderr = &stderr
 
-		log.Println("Running:", cmd.String())
+		log.Printf("执行 protoc 命令: %s %s", cmd.Path, strings.Join(cmd.Args[1:], " "))
 		if err := cmd.Run(); err != nil {
-			log.Fatal("protoc error:", stderr.String())
+			log.Fatalf("protoc 执行失败: 错误=%v,  stderr=%s", err, stderr.String())
+		}
+		log.Printf("protoc 执行成功: stdout=%s", out.String())
+
+		// 步骤4：读取并解析描述符文件
+		data, err := os.ReadFile(config.AllInOneProtoDescFile)
+		if err != nil {
+			log.Fatalf("读取描述符文件失败: %v", err)
+		}
+		log.Printf("描述符文件大小: %d 字节（非空，说明生成成功）", len(data))
+
+		// 解析为 FdSet（确保 FdSet 已初始化）
+		if FdSet == nil {
+			FdSet = &descriptorpb.FileDescriptorSet{}
+		}
+		if err := proto.Unmarshal(data, FdSet); err != nil {
+			log.Fatalf("解析描述符文件失败: %v，可能是文件损坏或版本不兼容", err)
 		}
 
-		log.Println("Descriptor file generated at:", descOut)
+		// 验证：打印加载的文件数和消息数（确保包含目标文件）
+		log.Printf("成功解析描述符：包含 %d 个文件", len(FdSet.GetFile()))
+		for _, fileDesc := range FdSet.GetFile() {
+			// 只打印目标文件的消息数（替换为你的目标文件前缀）
+			if strings.Contains(fileDesc.GetName(), "proto/service/go/grpc") ||
+				strings.Contains(fileDesc.GetName(), "proto/common") {
+				log.Printf("  文件 %s: 包含 %d 个消息", fileDesc.GetName(), len(fileDesc.GetMessageType()))
+			}
+		}
+
+		log.Printf("描述符文件生成路径: %s", descOut)
 	}()
 }
-
 func BuildAllProtoc() {
 	// Iterate over configured proto directories
 	for i := 0; i < len(config.ProtoDirs); i++ {

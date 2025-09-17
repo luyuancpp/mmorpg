@@ -5,8 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iancoleman/strcase"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"log"
 	"math"
 	"os"
@@ -24,18 +22,6 @@ import (
 // ReadProtoFileService reads service information from a protobuf descriptor file.
 func ReadProtoFileService() error {
 	serviceIndex := uint32(0)
-
-	// Read the descriptor file
-	data, err := os.ReadFile(config.AllInOneProtoDescFile)
-	if err != nil {
-		return fmt.Errorf("failed to read descriptor set file: %v", err)
-	}
-
-	// Unmarshal the descriptor set
-	FdSet = &descriptorpb.FileDescriptorSet{}
-	if err := proto.Unmarshal(data, FdSet); err != nil {
-		return fmt.Errorf("failed to unmarshal descriptor set: %v", err)
-	}
 
 	// Iterate through each file in the descriptor set
 	for _, file := range FdSet.File {
