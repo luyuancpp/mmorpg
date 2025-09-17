@@ -250,7 +250,7 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 
 	// 2. 计算模块名（与输出目录的绝对路径强关联）
 	// 例如：outputAbsDir = "D:/game/mmorpg1/go/db" → 模块名 = "db/pb/game"
-	moduleName := filepath.Base(outputAbsDir) + "/pb/game"
+	moduleName := filepath.Base(outputAbsDir) + "/pb"
 
 	// 3. 构建protoc命令参数（全部使用绝对路径）
 	args := []string{
@@ -370,6 +370,11 @@ func GenerateGoGRPCFromProto(protoPath string) error {
 		}
 	}
 
+	err = generateGoProto(protoFiles, config.RobotGoOutputDirectory)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -417,63 +422,6 @@ func BuildProtoGo(protoPath string) error {
 	}
 
 	return nil
-}
-
-func generateRobotGoProto(protoFiles []string, outputDir string) error {
-	var cmd *exec.Cmd
-
-	moduleName := strings.ToLower(path.Base(outputDir))
-
-	args := []string{
-		"--go_out=" + outputDir,
-		"--go_opt=module=" + moduleName, // 使用正确的模块名
-		"--proto_path=" + config.ProtoParentIncludePathDir,
-		"--proto_path=" + config.ProtoBufferDirectory,
-	}
-	args = append(args, protoFiles...) // proto文件放在最后
-
-	cmd = exec.Command("protoc", args...)
-
-	var out, stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	log.Println("Running:", cmd.String())
-	if err := cmd.Run(); err != nil {
-		fmt.Println("protoc error:", stderr.String())
-		return err
-	}
-
-	return nil
-}
-
-func BuildProtoRobotGo(protoPath string) error {
-	return nil
-	// 读取目录下所有文件
-	fds, err := os.ReadDir(protoPath)
-	if err != nil {
-		return err
-	}
-
-	var protoFiles []string
-	for _, fd := range fds {
-		if !util.IsProtoFile(fd) {
-			continue
-		}
-		if fd.Name() == config.DbProtoFileName {
-			continue
-		}
-
-		fullPath := filepath.ToSlash(filepath.Join(protoPath, fd.Name()))
-		protoFiles = append(protoFiles, fullPath)
-	}
-
-	if len(protoFiles) == 0 {
-		log.Println("No proto files found for robot go generation in:", protoPath)
-		return nil
-	}
-
-	return generateRobotGoProto(protoFiles, config.RobotGoOutputDirectory)
 }
 
 func BuildProtocDescAllInOne() {
@@ -611,16 +559,6 @@ func BuildAllProtoc() {
 				log.Println(err)
 			}
 		}(i)
-
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			err := BuildProtoRobotGo(config.ProtoDirs[i])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
-
 	}
 }
 
