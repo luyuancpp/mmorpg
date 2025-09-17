@@ -24,7 +24,17 @@ func IsPathInProtoDirs(path string, selfIndex int) bool {
 
 func CheckGrpcServiceExistence(protoPath string) bool {
 	basePath := strings.ToLower(protoPath)
-	return strings.Contains(basePath, "service/grpc")
+
+	// gRPC 支持的语言列表
+	grpcLanguages := []string{"go", "python", "java", "csharp", "ruby", "node", "php", "objc", "swift"}
+
+	// 检查是否包含任何支持的语言标识符
+	for _, language := range grpcLanguages {
+		if strings.Contains(basePath, "service/"+language+"/grpc") {
+			return true
+		}
+	}
+	return false
 }
 
 func CheckEtcdServiceExistence(protoPath string) bool {
