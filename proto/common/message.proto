@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "generated/pb/common/common";
+option go_package = "generated/pb/common";
 
 import "proto/common/common.proto";
 import "proto/common/session.proto";

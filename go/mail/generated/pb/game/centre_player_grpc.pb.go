@@ -8,7 +8,7 @@ package game
 
 import (
 	context "context"
-	common "generated/pb/common/common"
+	common "generated/pb/common"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"

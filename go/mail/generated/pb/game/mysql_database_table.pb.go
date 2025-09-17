@@ -7,7 +7,7 @@
 package game
 
 import (
-	common "generated/pb/common/common"
+	common "generated/pb/common"
 	component "generated/pb/game/component"
 	_ "github.com/luyuancpp/dbprotooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"

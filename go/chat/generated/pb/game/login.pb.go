@@ -7,7 +7,7 @@
 package game
 
 import (
-	common "generated/pb/common/common"
+	common "generated/pb/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
