@@ -209,15 +209,16 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 	sysType := runtime.GOOS
 	var cmd *exec.Cmd
 
+	moduleName := strings.ToLower(path.Base(outputDir))
+
 	args := []string{
 		"--go_out=" + outputDir,
-		"--go-grpc_out=" + outputDir,
+		"--go_opt=module=" + moduleName, // 使用正确的模块名
+		"--go_opt=paths=import",         // 核心：用 import 替代 source_relative
+		"--proto_path=" + config.ProtoParentIncludePathDir,
+		"--proto_path=" + config.ProtoBufferDirectory,
 	}
-	args = append(args, protoFiles...)
-	args = append(args,
-		"--proto_path="+config.ProtoParentIncludePathDir,
-		"--proto_path="+config.ProtoBufferDirectory,
-	)
+	args = append(args, protoFiles...) // proto文件放在最后
 
 	if sysType == "linux" {
 		cmd = exec.Command("protoc", args...)
@@ -338,14 +339,16 @@ func generateRobotGoProto(protoFiles []string, outputDir string) error {
 	sysType := runtime.GOOS
 	var cmd *exec.Cmd
 
+	moduleName := strings.ToLower(path.Base(outputDir))
+
 	args := []string{
 		"--go_out=" + outputDir,
+		"--go_opt=module=" + moduleName,  // 使用正确的模块名
+		"--go_opt=paths=source_relative", // 与其他go_opt参数放在一起
+		"--proto_path=" + config.ProtoParentIncludePathDir,
+		"--proto_path=" + config.ProtoBufferDirectory,
 	}
-	args = append(args, protoFiles...)
-	args = append(args,
-		"--proto_path="+config.ProtoParentIncludePathDir,
-		"--proto_path="+config.ProtoBufferDirectory,
-	)
+	args = append(args, protoFiles...) // proto文件放在最后
 
 	if sysType == "linux" {
 		cmd = exec.Command("protoc", args...)
