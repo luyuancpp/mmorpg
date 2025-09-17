@@ -510,6 +510,7 @@ func BuildProtocDescAllInOne() {
 		log.Printf("描述符文件生成路径: %s", descOut)
 	}()
 }
+
 func BuildAllProtoc() {
 	// Iterate over configured proto directories
 	for i := 0; i < len(config.ProtoDirs); i++ {

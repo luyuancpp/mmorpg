@@ -44,23 +44,29 @@ func extractMessageNamesFromProto(protoFile string) ([]string, error) {
 	var messageNames []string
 
 	for _, fileDesc := range internal.FdSet.GetFile() {
-		if !strings.HasSuffix(fileDesc.GetName(), protoFile) {
+		// 修复：用 strings.HasSuffix 可能匹配到同名文件，建议用绝对路径或精确匹配
+		// 例如：若 protoFile 是 "mysql_database_table.proto"，精确匹配文件名
+		fileName := filepath.Base(fileDesc.GetName())
+		if fileName != protoFile {
 			continue
 		}
+
 		pkgName := fileDesc.GetPackage()
 		for _, msgDesc := range fileDesc.GetMessageType() {
-			// 拼接全限定名（包名.消息名，避免类型转换错误）
 			var fullName string
 			if pkgName == "" {
-				fullName = msgDesc.GetName()
+				fullName = msgDesc.GetName() // 无包名，直接用消息名
 			} else {
 				fullName = pkgName + "." + msgDesc.GetName()
 			}
 			messageNames = append(messageNames, fullName)
-			log.Printf("已提取消息全限定名: %s", fullName)
+			log.Printf("从 %s 提取消息全限定名: %s", fileDesc.GetName(), fullName)
 		}
 	}
 
+	if len(messageNames) == 0 {
+		log.Printf("警告：未从文件 %s 中提取到任何消息（检查文件名是否匹配）", protoFile)
+	}
 	return messageNames, nil
 }
 
@@ -82,56 +88,50 @@ func loadAllDescriptors() error {
 
 	log.Printf("=== 开始激活描述符（共 %d 个文件）===", len(internal.FdSet.GetFile()))
 
-	// 1. 初始化 protoregistry.Files（你的版本有这个结构体，无 NewFiles() 则手动初始化）
-	fileReg := &protoregistry.Files{} // 直接实例化，替代 NewFiles()
+	// 1. 初始化 protoregistry.Files（作为 FileResolver，用于解析跨文件依赖）
+	fileReg := &protoregistry.Files{}
 
-	// 2. 第一步：用 protodesc 激活所有原始文件描述符，并注册到 fileReg
+	// 2. 关键修复：传入 fileReg 作为 FileResolver，支持依赖解析
 	for _, rawFile := range internal.FdSet.GetFile() {
-		// 2.1 激活单个原始文件描述符（你的版本有 protodesc.NewFile）
-		// 注意：若有跨文件依赖，需先激活依赖文件（这里简化为按顺序激活，实际可按依赖排序）
-		activeFileDesc, err := protodesc.NewFile(rawFile, nil)
+		// 第二个参数传入 fileReg，而非 nil！让 protodesc 能从已注册的文件中找依赖
+		activeFileDesc, err := protodesc.NewFile(rawFile, fileReg)
 		if err != nil {
-			log.Printf("激活文件 %s 失败: %v，跳过", rawFile.GetName(), err)
+			// 打印详细依赖错误，便于定位缺失的依赖
+			log.Printf("激活文件 %s 失败: 依赖解析错误=%v，跳过", rawFile.GetName(), err)
 			continue
 		}
 
-		// 2.2 将激活后的文件描述符注册到 protoregistry.Files 中
+		// 3. 注册到 fileReg（此时依赖已激活，注册会成功）
 		if err := fileReg.RegisterFile(activeFileDesc); err != nil {
 			log.Printf("注册文件 %s 到 registry 失败: %v，跳过", activeFileDesc.Path(), err)
 			continue
 		}
 
-		// 2.3 缓存激活后的文件描述符
+		// 4. 缓存文件描述符
 		fileDescCache[rawFile.GetName()] = activeFileDesc
-		log.Printf("已激活并注册文件: %s（包名: %s）", activeFileDesc.Path(), activeFileDesc.Package())
+		log.Printf("已激活并注册文件: %s（包名: %s，消息数: %d）",
+			activeFileDesc.Path(), activeFileDesc.Package(), activeFileDesc.Messages().Len())
 	}
 
-	// 3. 第二步：从 fileReg 中提取所有激活的消息描述符，缓存到 activeMsgDescCache
-	// 遍历已注册的所有文件
+	// 5. 重新缓存消息描述符（此时依赖已解决，消息能正常提取）
+	activeMsgDescCache = make(map[protoreflect.FullName]protoreflect.MessageDescriptor) // 清空旧缓存
 	fileReg.RangeFiles(func(activeFileDesc protoreflect.FileDescriptor) bool {
-		// 遍历文件中的所有顶层消息（你的版本用 Len() + Get() 遍历）
 		messages := activeFileDesc.Messages()
 		for i := 0; i < messages.Len(); i++ {
 			activeMsgDesc := messages.Get(i)
-			// 拼接消息全限定名（包名.消息名）
-			fullNameStr := string(activeFileDesc.Package()) + "." + string(activeMsgDesc.Name())
+			// 生成全限定名（无包名则直接用消息名）
+			var fullNameStr string
+			if pkg := string(activeFileDesc.Package()); pkg != "" {
+				fullNameStr = pkg + "." + string(activeMsgDesc.Name())
+			} else {
+				fullNameStr = string(activeMsgDesc.Name())
+			}
 			fullName := protoreflect.FullName(fullNameStr)
 
-			// 缓存消息描述符
 			activeMsgDescCache[fullName] = activeMsgDesc
-
-			// 验证：打印消息字段（确认激活成功）
-			fieldCount := 0
-			fields := activeMsgDesc.Fields()
-			for j := 0; j < fields.Len(); j++ {
-				field := fields.Get(j)
-				fieldCount++
-				log.Printf("  消息 %s → 字段: %s（类型: %s, 编号: %d）",
-					fullNameStr, field.Name(), field.Kind(), field.Number())
-			}
-			log.Printf("  已缓存消息: %s（字段数: %d）", fullNameStr, fieldCount)
+			log.Printf("  缓存消息: %s（字段数: %d）", fullNameStr, activeMsgDesc.Fields().Len())
 		}
-		return true // 继续遍历下一个文件
+		return true
 	})
 
 	descriptorsLoaded = true
@@ -170,6 +170,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 		verifyMessageValidity(msgFullNameStr, msgInstance)
 
 		// 生成 SQL
+		sqlGenerator.RegisterTable(msgInstance)
 		tableSQL := sqlGenerator.GetCreateTableSql(msgInstance)
 		mergedSQL.WriteString(tableSQL)
 		mergedSQL.WriteString("\n\n")
@@ -192,10 +193,8 @@ func GenerateMergedTableSQL(messageNames []string) error {
 			return err
 		}
 
-		sqlFileName := config.SqlExtension
-		if sqlFileName == "" {
-			sqlFileName = "merged_table.sql"
-		}
+		sqlFileName := config.ModelSqlExtension
+
 		sqlPath := filepath.Join(sqlDir, sqlFileName)
 
 		if err := os.WriteFile(sqlPath, []byte(mergedSQL.String()), 0644); err != nil {
