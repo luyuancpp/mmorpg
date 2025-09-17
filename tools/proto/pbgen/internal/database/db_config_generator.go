@@ -53,7 +53,7 @@ func parseProtoFile(protoFile string) ([]string, error) {
 }
 
 // generateJSONConfig 生成 JSON 配置文件
-func generateJSONConfig(protoFile string, messages []string) error {
+func generateJSONConfig(messages []string) error {
 	// 创建配置结构体
 	configMessageJson := &MessageListConfig{Messages: messages}
 
@@ -91,7 +91,7 @@ func GenerateDbProtoConfigFile() {
 		}
 
 		// 生成 JSON 配置文件
-		if err := generateJSONConfig(protoFile, messageNames); err != nil {
+		if err := generateJSONConfig(messageNames); err != nil {
 			log.Fatalf("生成 JSON 配置时出错: %v", err)
 		}
 	}()
