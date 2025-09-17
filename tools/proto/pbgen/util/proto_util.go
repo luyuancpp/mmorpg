@@ -55,5 +55,5 @@ func CheckEtcdServiceExistence(protoPath string) bool {
 func BuildModelPath(protoPath string) string {
 	basePath := strings.ToLower(path.Base(protoPath))
 	language := GetGrpcLanguageFromPath(protoPath)
-	return config.OutputRoot + language + basePath + config.ModelPath
+	return config.OutputRoot + "/" + language + "/" + basePath + "/" + config.ModelPath
 }
