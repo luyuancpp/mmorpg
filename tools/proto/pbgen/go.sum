@@ -8,6 +8,8 @@ github.com/luyuancpp/dbprotooption v0.0.8 h1:JJuO91gyldnewQA5iEG0xoi9CjBXB4XsUfN
 github.com/luyuancpp/dbprotooption v0.0.8/go.mod h1:jHa9XWA9OsUULiYFAtN+N0iQMiiq8pRjMxFhrWxrCqs=
 github.com/luyuancpp/pbmysql-go v0.0.13 h1:oMEwyFOLy78p7Y9yKZzwVV50rdeY4VIdBA9jb0SnAcg=
 github.com/luyuancpp/pbmysql-go v0.0.13/go.mod h1:V8zUD98OXX+re+pJySp5qsTx0FYuB/gHcLaohJ+rtFM=
+github.com/luyuancpp/pbmysql-go v0.0.14 h1:st9uB4lR8yDtSkGOUFzhGE0hIbjUE8l+bAWVMz+AOQ0=
+github.com/luyuancpp/pbmysql-go v0.0.14/go.mod h1:V8zUD98OXX+re+pJySp5qsTx0FYuB/gHcLaohJ+rtFM=
 golang.org/x/exp v0.0.0-20250531010427-b6e5de432a8b h1:QoALfVG9rhQ/M7vYDScfPdWjGL9dlsVVM5VGh7aKoAA=
 golang.org/x/exp v0.0.0-20250531010427-b6e5de432a8b/go.mod h1:U6Lno4MTRCDY+Ba7aCcauB9T60gsv5s4ralQzP72ZoQ=
 golang.org/x/text v0.24.0 h1:dd5Bzh4yt5KYA8f9CJHCP4FB4D51c2c6JvN37xJJkJ0=
