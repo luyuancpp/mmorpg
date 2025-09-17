@@ -187,8 +187,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 			continue
 		}
 
-		outputDir := util.BuildModelPath(protoDir)
-		sqlDir := filepath.Join(outputDir, config.ModelPath)
+		sqlDir := util.BuildModelPath(protoDir)
 		if err := os.MkdirAll(sqlDir, 0755); err != nil {
 			return err
 		}
