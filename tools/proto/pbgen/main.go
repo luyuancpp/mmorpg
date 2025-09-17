@@ -80,7 +80,7 @@ func main() {
 	util.Wg.Wait()
 
 	internal.WriteServiceRegisterInfoFile()
-	database.GenerateDbProtoConfigFile()
+	database.GenerateDBMessageListConfig()
 	util.Wg.Wait()
 
 	internal.GoRobotHandlerGenerator()

@@ -140,7 +140,7 @@ func WriteGoMessageId() {
 	}
 
 	for i := 0; i < len(config.ProtoDirs); i++ {
-		if !util.CheckGrpcServiceExistence(config.ProtoDirs[i]) {
+		if !util.HasGrpcService(config.ProtoDirs[i]) {
 			continue
 		}
 		basePath := strings.ToLower(path.Base(config.ProtoDirs[i]))

@@ -34,6 +34,7 @@ const (
 	GrpcClientExtension           = "_grpc_client"
 	GrpcClientHeaderExtension     = GrpcClientExtension + HeaderExtension
 	GrpcClientCppExtension        = GrpcClientExtension + CppExtension
+	SqlExtension                  = ".sql"
 )
 
 // ----------- 消息与方法相关名字 -----------
@@ -44,6 +45,7 @@ const (
 
 // ----------- 项目目录路径 -----------
 const (
+	ModelPath                      = "model/"
 	NodeGoDirectory                = OutputRoot + "go/"
 	NodeCppDirectory               = OutputRoot + "cpp/"
 	NodePkgDirectory               = "cpp/libs/"
@@ -206,6 +208,9 @@ var (
 	ChatProtoDirIndex           = 13
 	TeamProtoDirIndex           = 14
 	MailProtoDirIndex           = 15
+
+	// gRPC 支持的语言列表
+	GrpcLanguages = [...]string{"go", "python", "java", "csharp", "ruby", "node", "php", "objc", "swift"}
 )
 
 // ----------- 其他业务相关常量 -----------
