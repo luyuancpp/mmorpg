@@ -190,10 +190,10 @@ func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 	}
 
 	// 渲染模板并写入文件
-	if err := RenderTemplateToFile("internal/gen/template/event_handler.h.tmpl", headerFilePath, tmplData); err != nil {
+	if err := RenderTemplateToFile("internal/template/event_handler.h.tmpl", headerFilePath, tmplData); err != nil {
 		log.Printf("failed to generate header file: %v\n", err)
 	}
-	if err := RenderTemplateToFile("internal/gen/template/event_handler.cpp.tmpl", cppFilePath, tmplData); err != nil {
+	if err := RenderTemplateToFile("internal/template/event_handler.cpp.tmpl", cppFilePath, tmplData); err != nil {
 		log.Printf("failed to generate cpp file: %v\n", err)
 	}
 }
@@ -290,19 +290,19 @@ public:
 
 	headerFilePath := config.GameNodeEventHandlerDirectory + config.EventHandlerHeaderFileName
 	cppFilePath := config.GameNodeEventHandlerDirectory + config.EventHandlerCppFileName
-	if err := RenderTemplateToFile("internal/gen/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
+	if err := RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
 		log.Printf("failed to generate header file: %v\n", err)
 	}
-	if err := RenderTemplateToFile("internal/gen/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
+	if err := RenderTemplateToFile("internal/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
 		log.Printf("failed to generate cpp file: %v\n", err)
 	}
 
 	headerFilePath = config.CentreNodeEventHandlerDirectory + config.EventHandlerHeaderFileName
 	cppFilePath = config.CentreNodeEventHandlerDirectory + config.EventHandlerCppFileName
-	if err := RenderTemplateToFile("internal/gen/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
+	if err := RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
 		log.Printf("failed to generate header file: %v\n", err)
 	}
-	if err := RenderTemplateToFile("internal/gen/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
+	if err := RenderTemplateToFile("internal/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
 		log.Printf("failed to generate cpp file: %v\n", err)
 	}
 	return nil

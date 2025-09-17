@@ -8,6 +8,7 @@ package game
 
 import (
 	context "context"
+	common "generated/pb/common/common"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -27,8 +28,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CentrePlayerUtilityClient interface {
-	SendTipToClient(ctx context.Context, in *TipInfoMessage, opts ...grpc.CallOption) (*Empty, error)
-	KickPlayer(ctx context.Context, in *CentreKickPlayerRequest, opts ...grpc.CallOption) (*Empty, error)
+	SendTipToClient(ctx context.Context, in *common.TipInfoMessage, opts ...grpc.CallOption) (*common.Empty, error)
+	KickPlayer(ctx context.Context, in *CentreKickPlayerRequest, opts ...grpc.CallOption) (*common.Empty, error)
 }
 
 type centrePlayerUtilityClient struct {
@@ -39,9 +40,9 @@ func NewCentrePlayerUtilityClient(cc grpc.ClientConnInterface) CentrePlayerUtili
 	return &centrePlayerUtilityClient{cc}
 }
 
-func (c *centrePlayerUtilityClient) SendTipToClient(ctx context.Context, in *TipInfoMessage, opts ...grpc.CallOption) (*Empty, error) {
+func (c *centrePlayerUtilityClient) SendTipToClient(ctx context.Context, in *common.TipInfoMessage, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, CentrePlayerUtility_SendTipToClient_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -49,9 +50,9 @@ func (c *centrePlayerUtilityClient) SendTipToClient(ctx context.Context, in *Tip
 	return out, nil
 }
 
-func (c *centrePlayerUtilityClient) KickPlayer(ctx context.Context, in *CentreKickPlayerRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *centrePlayerUtilityClient) KickPlayer(ctx context.Context, in *CentreKickPlayerRequest, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, CentrePlayerUtility_KickPlayer_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -63,8 +64,8 @@ func (c *centrePlayerUtilityClient) KickPlayer(ctx context.Context, in *CentreKi
 // All implementations must embed UnimplementedCentrePlayerUtilityServer
 // for forward compatibility.
 type CentrePlayerUtilityServer interface {
-	SendTipToClient(context.Context, *TipInfoMessage) (*Empty, error)
-	KickPlayer(context.Context, *CentreKickPlayerRequest) (*Empty, error)
+	SendTipToClient(context.Context, *common.TipInfoMessage) (*common.Empty, error)
+	KickPlayer(context.Context, *CentreKickPlayerRequest) (*common.Empty, error)
 	mustEmbedUnimplementedCentrePlayerUtilityServer()
 }
 
@@ -75,10 +76,10 @@ type CentrePlayerUtilityServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCentrePlayerUtilityServer struct{}
 
-func (UnimplementedCentrePlayerUtilityServer) SendTipToClient(context.Context, *TipInfoMessage) (*Empty, error) {
+func (UnimplementedCentrePlayerUtilityServer) SendTipToClient(context.Context, *common.TipInfoMessage) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendTipToClient not implemented")
 }
-func (UnimplementedCentrePlayerUtilityServer) KickPlayer(context.Context, *CentreKickPlayerRequest) (*Empty, error) {
+func (UnimplementedCentrePlayerUtilityServer) KickPlayer(context.Context, *CentreKickPlayerRequest) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method KickPlayer not implemented")
 }
 func (UnimplementedCentrePlayerUtilityServer) mustEmbedUnimplementedCentrePlayerUtilityServer() {}
@@ -103,7 +104,7 @@ func RegisterCentrePlayerUtilityServer(s grpc.ServiceRegistrar, srv CentrePlayer
 }
 
 func _CentrePlayerUtility_SendTipToClient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TipInfoMessage)
+	in := new(common.TipInfoMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -115,7 +116,7 @@ func _CentrePlayerUtility_SendTipToClient_Handler(srv interface{}, ctx context.C
 		FullMethod: CentrePlayerUtility_SendTipToClient_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentrePlayerUtilityServer).SendTipToClient(ctx, req.(*TipInfoMessage))
+		return srv.(CentrePlayerUtilityServer).SendTipToClient(ctx, req.(*common.TipInfoMessage))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -7,6 +7,7 @@
 package game
 
 import (
+	common "generated/pb/common/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -23,7 +24,7 @@ const (
 
 type GateClientMessageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RpcClient     *NetworkAddress        `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`
+	RpcClient     *common.NetworkAddress `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -58,7 +59,7 @@ func (*GateClientMessageRequest) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_centre_centre_service_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GateClientMessageRequest) GetRpcClient() *NetworkAddress {
+func (x *GateClientMessageRequest) GetRpcClient() *common.NetworkAddress {
 	if x != nil {
 		return x.RpcClient
 	}
@@ -67,7 +68,7 @@ func (x *GateClientMessageRequest) GetRpcClient() *NetworkAddress {
 
 type LoginNodeLeaveGameRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`
+	SessionInfo   *common.SessionDetails `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -102,7 +103,7 @@ func (*LoginNodeLeaveGameRequest) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_centre_centre_service_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *LoginNodeLeaveGameRequest) GetSessionInfo() *SessionDetails {
+func (x *LoginNodeLeaveGameRequest) GetSessionInfo() *common.SessionDetails {
 	if x != nil {
 		return x.SessionInfo
 	}
@@ -216,7 +217,7 @@ func (x *CentreEnterGameRequest) GetLoginToken() string {
 type CentrePlayerGameNodeEntryRequest struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	ClientMsgBody *CentreEnterGameRequest `protobuf:"bytes,1,opt,name=client_msg_body,json=clientMsgBody,proto3" json:"client_msg_body,omitempty"`
-	SessionInfo   *SessionDetails         `protobuf:"bytes,2,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`
+	SessionInfo   *common.SessionDetails  `protobuf:"bytes,2,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -258,7 +259,7 @@ func (x *CentrePlayerGameNodeEntryRequest) GetClientMsgBody() *CentreEnterGameRe
 	return nil
 }
 
-func (x *CentrePlayerGameNodeEntryRequest) GetSessionInfo() *SessionDetails {
+func (x *CentrePlayerGameNodeEntryRequest) GetSessionInfo() *common.SessionDetails {
 	if x != nil {
 		return x.SessionInfo
 	}
@@ -372,7 +373,7 @@ func (x *CentreLoginRequest) GetPassword() string {
 
 type CentreLoginResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *common.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -407,7 +408,7 @@ func (*CentreLoginResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_centre_centre_service_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *CentreLoginResponse) GetErrorMessage() *TipInfoMessage {
+func (x *CentreLoginResponse) GetErrorMessage() *common.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -470,27 +471,27 @@ func file_proto_service_cpp_rpc_centre_centre_service_proto_rawDescGZIP() []byte
 
 var file_proto_service_cpp_rpc_centre_centre_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_proto_service_cpp_rpc_centre_centre_service_proto_goTypes = []any{
-	(*GateClientMessageRequest)(nil),         // 0: GateClientMessageRequest
-	(*LoginNodeLeaveGameRequest)(nil),        // 1: LoginNodeLeaveGameRequest
-	(*EnterGameNodeSuccessRequest)(nil),      // 2: EnterGameNodeSuccessRequest
-	(*CentreEnterGameRequest)(nil),           // 3: CentreEnterGameRequest
-	(*CentrePlayerGameNodeEntryRequest)(nil), // 4: CentrePlayerGameNodeEntryRequest
-	(*InitSceneNodeRequest)(nil),             // 5: InitSceneNodeRequest
-	(*CentreLoginRequest)(nil),               // 6: CentreLoginRequest
-	(*CentreLoginResponse)(nil),              // 7: CentreLoginResponse
-	(*NetworkAddress)(nil),                   // 8: NetworkAddress
-	(*SessionDetails)(nil),                   // 9: SessionDetails
-	(*TipInfoMessage)(nil),                   // 10: TipInfoMessage
-	(*GateSessionDisconnectRequest)(nil),     // 11: GateSessionDisconnectRequest
-	(*NodeRouteMessageRequest)(nil),          // 12: NodeRouteMessageRequest
-	(*RouteMessageRequest)(nil),              // 13: RouteMessageRequest
-	(*RoutePlayerMessageRequest)(nil),        // 14: RoutePlayerMessageRequest
-	(*NodeHandshakeRequest)(nil),             // 15: NodeHandshakeRequest
-	(*Empty)(nil),                            // 16: Empty
-	(*NodeRouteMessageResponse)(nil),         // 17: NodeRouteMessageResponse
-	(*RouteMessageResponse)(nil),             // 18: RouteMessageResponse
-	(*RoutePlayerMessageResponse)(nil),       // 19: RoutePlayerMessageResponse
-	(*NodeHandshakeResponse)(nil),            // 20: NodeHandshakeResponse
+	(*GateClientMessageRequest)(nil),            // 0: GateClientMessageRequest
+	(*LoginNodeLeaveGameRequest)(nil),           // 1: LoginNodeLeaveGameRequest
+	(*EnterGameNodeSuccessRequest)(nil),         // 2: EnterGameNodeSuccessRequest
+	(*CentreEnterGameRequest)(nil),              // 3: CentreEnterGameRequest
+	(*CentrePlayerGameNodeEntryRequest)(nil),    // 4: CentrePlayerGameNodeEntryRequest
+	(*InitSceneNodeRequest)(nil),                // 5: InitSceneNodeRequest
+	(*CentreLoginRequest)(nil),                  // 6: CentreLoginRequest
+	(*CentreLoginResponse)(nil),                 // 7: CentreLoginResponse
+	(*common.NetworkAddress)(nil),               // 8: NetworkAddress
+	(*common.SessionDetails)(nil),               // 9: SessionDetails
+	(*common.TipInfoMessage)(nil),               // 10: TipInfoMessage
+	(*common.GateSessionDisconnectRequest)(nil), // 11: GateSessionDisconnectRequest
+	(*common.NodeRouteMessageRequest)(nil),      // 12: NodeRouteMessageRequest
+	(*common.RouteMessageRequest)(nil),          // 13: RouteMessageRequest
+	(*common.RoutePlayerMessageRequest)(nil),    // 14: RoutePlayerMessageRequest
+	(*common.NodeHandshakeRequest)(nil),         // 15: NodeHandshakeRequest
+	(*common.Empty)(nil),                        // 16: Empty
+	(*common.NodeRouteMessageResponse)(nil),     // 17: NodeRouteMessageResponse
+	(*common.RouteMessageResponse)(nil),         // 18: RouteMessageResponse
+	(*common.RoutePlayerMessageResponse)(nil),   // 19: RoutePlayerMessageResponse
+	(*common.NodeHandshakeResponse)(nil),        // 20: NodeHandshakeResponse
 }
 var file_proto_service_cpp_rpc_centre_centre_service_proto_depIdxs = []int32{
 	8,  // 0: GateClientMessageRequest.rpc_client:type_name -> NetworkAddress
@@ -534,11 +535,6 @@ func file_proto_service_cpp_rpc_centre_centre_service_proto_init() {
 	if File_proto_service_cpp_rpc_centre_centre_service_proto != nil {
 		return
 	}
-	file_proto_common_common_proto_init()
-	file_proto_common_empty_proto_init()
-	file_proto_common_session_proto_init()
-	file_proto_common_message_proto_init()
-	file_proto_common_tip_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

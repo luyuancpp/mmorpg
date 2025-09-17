@@ -37,11 +37,11 @@ func GenNodeUtil() {
 			NodeList: nodeList,
 		}
 
-		if err := RenderTemplateToFile("internal/gen/template/node_util.h.tmpl", config.GenUtilFileHeadPath, cppData); err != nil {
+		if err := RenderTemplateToFile("internal/template/node_util.h.tmpl", config.GenUtilFileHeadPath, cppData); err != nil {
 			log.Fatal(err)
 		}
 
-		if err := RenderTemplateToFile("internal/gen/template/node_util.cpp.tmpl", config.GenUtilFileCppPath, cppData); err != nil {
+		if err := RenderTemplateToFile("internal/template/node_util.cpp.tmpl", config.GenUtilFileCppPath, cppData); err != nil {
 			log.Fatal(err)
 		}
 	}()

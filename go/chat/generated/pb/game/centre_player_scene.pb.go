@@ -7,6 +7,7 @@
 package game
 
 import (
+	common "generated/pb/common/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -23,8 +24,8 @@ const (
 )
 
 type CentreEnterSceneRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneInfo     *RoomInfoPBComponent   `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	SceneInfo     *common.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -59,7 +60,7 @@ func (*CentreEnterSceneRequest) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CentreEnterSceneRequest) GetSceneInfo() *RoomInfoPBComponent {
+func (x *CentreEnterSceneRequest) GetSceneInfo() *common.RoomInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -211,7 +212,7 @@ var file_proto_service_cpp_rpc_centre_centre_player_scene_proto_goTypes = []any{
 	(*CentreLeaveSceneRequest)(nil),                        // 1: CentreLeaveSceneRequest
 	(*CentreLeaveSceneAsyncSavePlayerCompleteRequest)(nil), // 2: CentreLeaveSceneAsyncSavePlayerCompleteRequest
 	(*CentreSceneInfoRequest)(nil),                         // 3: CentreSceneInfoRequest
-	(*RoomInfoPBComponent)(nil),                            // 4: RoomInfoPBComponent
+	(*common.RoomInfoPBComponent)(nil),                     // 4: RoomInfoPBComponent
 	(*emptypb.Empty)(nil),                                  // 5: google.protobuf.Empty
 }
 var file_proto_service_cpp_rpc_centre_centre_player_scene_proto_depIdxs = []int32{
@@ -236,7 +237,6 @@ func file_proto_service_cpp_rpc_centre_centre_player_scene_proto_init() {
 	if File_proto_service_cpp_rpc_centre_centre_player_scene_proto != nil {
 		return
 	}
-	file_proto_common_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

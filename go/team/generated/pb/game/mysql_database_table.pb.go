@@ -7,6 +7,8 @@
 package game
 
 import (
+	common "generated/pb/common/common"
+	component "generated/pb/game/component"
 	_ "github.com/luyuancpp/dbprotooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -24,10 +26,10 @@ const (
 
 // ///////////         game
 type UserAccounts struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
-	Account       string                   `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
-	Password      string                   `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
-	SimplePlayers *AccountSimplePlayerList `protobuf:"bytes,3,opt,name=simple_players,json=simplePlayers,proto3" json:"simple_players,omitempty"`
+	state         protoimpl.MessageState          `protogen:"open.v1"`
+	Account       string                          `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	Password      string                          `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	SimplePlayers *common.AccountSimplePlayerList `protobuf:"bytes,3,opt,name=simple_players,json=simplePlayers,proto3" json:"simple_players,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -76,7 +78,7 @@ func (x *UserAccounts) GetPassword() string {
 	return ""
 }
 
-func (x *UserAccounts) GetSimplePlayers() *AccountSimplePlayerList {
+func (x *UserAccounts) GetSimplePlayers() *common.AccountSimplePlayerList {
 	if x != nil {
 		return x.SimplePlayers
 	}
@@ -129,9 +131,9 @@ func (x *AccountShareDatabase) GetAccount() string {
 
 // 中心服玩家专用数据
 type PlayerCentreDatabase struct {
-	state         protoimpl.MessageState         `protogen:"open.v1"`
-	PlayerId      uint64                         `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SceneInfo     *PlayerSceneContextPBComponent `protobuf:"bytes,2,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState                   `protogen:"open.v1"`
+	PlayerId      uint64                                   `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	SceneInfo     *component.PlayerSceneContextPBComponent `protobuf:"bytes,2,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -173,7 +175,7 @@ func (x *PlayerCentreDatabase) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *PlayerCentreDatabase) GetSceneInfo() *PlayerSceneContextPBComponent {
+func (x *PlayerCentreDatabase) GetSceneInfo() *component.PlayerSceneContextPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -182,14 +184,14 @@ func (x *PlayerCentreDatabase) GetSceneInfo() *PlayerSceneContextPBComponent {
 
 // 玩家数据库表1,重要数据放这里，不重要数据放另外一个表，(重要:比如金钱，跟收入有关)，登录马上加载
 type PlayerDatabase struct {
-	state                      protoimpl.MessageState      `protogen:"open.v1"`
-	PlayerId                   uint64                      `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	Transform                  *Transform                  `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`
-	Uint64PbComponent          *PlayerUint64PBComponent    `protobuf:"bytes,3,opt,name=uint64_pb_component,json=uint64PbComponent,proto3" json:"uint64_pb_component,omitempty"`
-	SkillList                  *PlayerSkillListPBComponent `protobuf:"bytes,4,opt,name=skill_list,json=skillList,proto3" json:"skill_list,omitempty"`
-	Uint32PbComponent          *PlayerUint32PbComponent    `protobuf:"bytes,5,opt,name=uint32_pb_component,json=uint32PbComponent,proto3" json:"uint32_pb_component,omitempty"`
-	DerivedAttributesComponent *BaseAttributesPbComponent  `protobuf:"bytes,6,opt,name=derived_attributes_component,json=derivedAttributesComponent,proto3" json:"derived_attributes_component,omitempty"`
-	LevelComponent             *LevelPbComponent           `protobuf:"bytes,7,opt,name=level_component,json=levelComponent,proto3" json:"level_component,omitempty"`
+	state                      protoimpl.MessageState                `protogen:"open.v1"`
+	PlayerId                   uint64                                `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Transform                  *component.Transform                  `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`
+	Uint64PbComponent          *component.PlayerUint64PBComponent    `protobuf:"bytes,3,opt,name=uint64_pb_component,json=uint64PbComponent,proto3" json:"uint64_pb_component,omitempty"`
+	SkillList                  *component.PlayerSkillListPBComponent `protobuf:"bytes,4,opt,name=skill_list,json=skillList,proto3" json:"skill_list,omitempty"`
+	Uint32PbComponent          *component.PlayerUint32PbComponent    `protobuf:"bytes,5,opt,name=uint32_pb_component,json=uint32PbComponent,proto3" json:"uint32_pb_component,omitempty"`
+	DerivedAttributesComponent *component.BaseAttributesPbComponent  `protobuf:"bytes,6,opt,name=derived_attributes_component,json=derivedAttributesComponent,proto3" json:"derived_attributes_component,omitempty"`
+	LevelComponent             *component.LevelPbComponent           `protobuf:"bytes,7,opt,name=level_component,json=levelComponent,proto3" json:"level_component,omitempty"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -231,42 +233,42 @@ func (x *PlayerDatabase) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *PlayerDatabase) GetTransform() *Transform {
+func (x *PlayerDatabase) GetTransform() *component.Transform {
 	if x != nil {
 		return x.Transform
 	}
 	return nil
 }
 
-func (x *PlayerDatabase) GetUint64PbComponent() *PlayerUint64PBComponent {
+func (x *PlayerDatabase) GetUint64PbComponent() *component.PlayerUint64PBComponent {
 	if x != nil {
 		return x.Uint64PbComponent
 	}
 	return nil
 }
 
-func (x *PlayerDatabase) GetSkillList() *PlayerSkillListPBComponent {
+func (x *PlayerDatabase) GetSkillList() *component.PlayerSkillListPBComponent {
 	if x != nil {
 		return x.SkillList
 	}
 	return nil
 }
 
-func (x *PlayerDatabase) GetUint32PbComponent() *PlayerUint32PbComponent {
+func (x *PlayerDatabase) GetUint32PbComponent() *component.PlayerUint32PbComponent {
 	if x != nil {
 		return x.Uint32PbComponent
 	}
 	return nil
 }
 
-func (x *PlayerDatabase) GetDerivedAttributesComponent() *BaseAttributesPbComponent {
+func (x *PlayerDatabase) GetDerivedAttributesComponent() *component.BaseAttributesPbComponent {
 	if x != nil {
 		return x.DerivedAttributesComponent
 	}
 	return nil
 }
 
-func (x *PlayerDatabase) GetLevelComponent() *LevelPbComponent {
+func (x *PlayerDatabase) GetLevelComponent() *component.LevelPbComponent {
 	if x != nil {
 		return x.LevelComponent
 	}
@@ -359,19 +361,19 @@ func file_proto_service_go_grpc_db_mysql_database_table_proto_rawDescGZIP() []by
 
 var file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_proto_service_go_grpc_db_mysql_database_table_proto_goTypes = []any{
-	(*UserAccounts)(nil),                  // 0: user_accounts
-	(*AccountShareDatabase)(nil),          // 1: account_share_database
-	(*PlayerCentreDatabase)(nil),          // 2: player_centre_database
-	(*PlayerDatabase)(nil),                // 3: player_database
-	(*PlayerDatabase_1)(nil),              // 4: player_database_1
-	(*AccountSimplePlayerList)(nil),       // 5: AccountSimplePlayerList
-	(*PlayerSceneContextPBComponent)(nil), // 6: PlayerSceneContextPBComponent
-	(*Transform)(nil),                     // 7: Transform
-	(*PlayerUint64PBComponent)(nil),       // 8: PlayerUint64PBComponent
-	(*PlayerSkillListPBComponent)(nil),    // 9: PlayerSkillListPBComponent
-	(*PlayerUint32PbComponent)(nil),       // 10: PlayerUint32PbComponent
-	(*BaseAttributesPbComponent)(nil),     // 11: BaseAttributesPbComponent
-	(*LevelPbComponent)(nil),              // 12: LevelPbComponent
+	(*UserAccounts)(nil),                            // 0: user_accounts
+	(*AccountShareDatabase)(nil),                    // 1: account_share_database
+	(*PlayerCentreDatabase)(nil),                    // 2: player_centre_database
+	(*PlayerDatabase)(nil),                          // 3: player_database
+	(*PlayerDatabase_1)(nil),                        // 4: player_database_1
+	(*common.AccountSimplePlayerList)(nil),          // 5: AccountSimplePlayerList
+	(*component.PlayerSceneContextPBComponent)(nil), // 6: PlayerSceneContextPBComponent
+	(*component.Transform)(nil),                     // 7: Transform
+	(*component.PlayerUint64PBComponent)(nil),       // 8: PlayerUint64PBComponent
+	(*component.PlayerSkillListPBComponent)(nil),    // 9: PlayerSkillListPBComponent
+	(*component.PlayerUint32PbComponent)(nil),       // 10: PlayerUint32PbComponent
+	(*component.BaseAttributesPbComponent)(nil),     // 11: BaseAttributesPbComponent
+	(*component.LevelPbComponent)(nil),              // 12: LevelPbComponent
 }
 var file_proto_service_go_grpc_db_mysql_database_table_proto_depIdxs = []int32{
 	5,  // 0: user_accounts.simple_players:type_name -> AccountSimplePlayerList
@@ -394,11 +396,6 @@ func file_proto_service_go_grpc_db_mysql_database_table_proto_init() {
 	if File_proto_service_go_grpc_db_mysql_database_table_proto != nil {
 		return
 	}
-	file_proto_common_user_accounts_proto_init()
-	file_proto_logic_component_player_scene_comp_proto_init()
-	file_proto_logic_component_actor_comp_proto_init()
-	file_proto_logic_component_player_comp_proto_init()
-	file_proto_logic_component_player_skill_comp_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -116,14 +116,14 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5fnetwor
     "\002 \001(\004\0229\n\007node_id\030\003 \003(\0132(.PlayerSessionSn"
     "apshotPBComp.NodeIdEntry\022\023\n\013login_token\030"
     "\004 \001(\t\032-\n\013NodeIdEntry\022\013\n\003key\030\001 \001(\r\022\r\n\005val"
-    "ue\030\002 \001(\r:\0028\001B\023Z\021generated/pb/gameb\006proto"
-    "3"
+    "ue\030\002 \001(\r:\0028\001B\035Z\033generated/pb/game/compon"
+    "entb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto = {
     false,
     false,
-    281,
+    291,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto,
     "proto/logic/component/player_network_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto_once,

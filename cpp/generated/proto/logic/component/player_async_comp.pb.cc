@@ -74,14 +74,14 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5fasync_
     protodesc_cold) = {
     "\n-proto/logic/component/player_async_com"
     "p.proto\"=\n#PlayerGameNodeEnteryInfoPBCom"
-    "ponent\022\026\n\016centre_node_id\030\001 \001(\rB\023Z\021genera"
-    "ted/pb/gameb\006proto3"
+    "ponent\022\026\n\016centre_node_id\030\001 \001(\rB\035Z\033genera"
+    "ted/pb/game/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fasync_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fasync_5fcomp_2eproto = {
     false,
     false,
-    139,
+    149,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5fasync_5fcomp_2eproto,
     "proto/logic/component/player_async_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fasync_5fcomp_2eproto_once,

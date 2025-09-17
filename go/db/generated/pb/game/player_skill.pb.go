@@ -7,6 +7,8 @@
 package game
 
 import (
+	common "generated/pb/common/common"
+	component "generated/pb/game/component"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -25,8 +27,8 @@ type ReleaseSkillSkillRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SkillTableId  uint32                 `protobuf:"varint,1,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
 	TargetId      uint64                 `protobuf:"varint,2,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
-	Position      *Vector3               `protobuf:"bytes,3,opt,name=position,proto3" json:"position,omitempty"`
-	Rotation      *Rotation              `protobuf:"bytes,4,opt,name=rotation,proto3" json:"rotation,omitempty"`
+	Position      *component.Vector3     `protobuf:"bytes,3,opt,name=position,proto3" json:"position,omitempty"`
+	Rotation      *component.Rotation    `protobuf:"bytes,4,opt,name=rotation,proto3" json:"rotation,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -75,14 +77,14 @@ func (x *ReleaseSkillSkillRequest) GetTargetId() uint64 {
 	return 0
 }
 
-func (x *ReleaseSkillSkillRequest) GetPosition() *Vector3 {
+func (x *ReleaseSkillSkillRequest) GetPosition() *component.Vector3 {
 	if x != nil {
 		return x.Position
 	}
 	return nil
 }
 
-func (x *ReleaseSkillSkillRequest) GetRotation() *Rotation {
+func (x *ReleaseSkillSkillRequest) GetRotation() *component.Rotation {
 	if x != nil {
 		return x.Rotation
 	}
@@ -91,7 +93,7 @@ func (x *ReleaseSkillSkillRequest) GetRotation() *Rotation {
 
 type ReleaseSkillSkillResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *common.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -126,7 +128,7 @@ func (*ReleaseSkillSkillResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_skill_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ReleaseSkillSkillResponse) GetErrorMessage() *TipInfoMessage {
+func (x *ReleaseSkillSkillResponse) GetErrorMessage() *common.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -214,7 +216,7 @@ type SkillUsedS2C struct {
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	TargetEntity  []uint64               `protobuf:"varint,2,rep,packed,name=target_entity,json=targetEntity,proto3" json:"target_entity,omitempty"`
 	SkillTableId  uint32                 `protobuf:"varint,3,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
-	Position      *Vector3               `protobuf:"bytes,4,opt,name=position,proto3" json:"position,omitempty"`
+	Position      *component.Vector3     `protobuf:"bytes,4,opt,name=position,proto3" json:"position,omitempty"`
 	TimeStamp     uint64                 `protobuf:"varint,5,opt,name=time_stamp,json=timeStamp,proto3" json:"time_stamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -271,7 +273,7 @@ func (x *SkillUsedS2C) GetSkillTableId() uint32 {
 	return 0
 }
 
-func (x *SkillUsedS2C) GetPosition() *Vector3 {
+func (x *SkillUsedS2C) GetPosition() *component.Vector3 {
 	if x != nil {
 		return x.Position
 	}
@@ -324,9 +326,9 @@ func (*GetSkillListRequest) Descriptor() ([]byte, []int) {
 
 // 获取技能列表响应
 type GetSkillListResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	ErrorMessage  *TipInfoMessage             `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	SkillList     *PlayerSkillListPBComponent `protobuf:"bytes,2,opt,name=skill_list,json=skillList,proto3" json:"skill_list,omitempty"`
+	state         protoimpl.MessageState                `protogen:"open.v1"`
+	ErrorMessage  *common.TipInfoMessage                `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	SkillList     *component.PlayerSkillListPBComponent `protobuf:"bytes,2,opt,name=skill_list,json=skillList,proto3" json:"skill_list,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -361,14 +363,14 @@ func (*GetSkillListResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_skill_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetSkillListResponse) GetErrorMessage() *TipInfoMessage {
+func (x *GetSkillListResponse) GetErrorMessage() *common.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
 	return nil
 }
 
-func (x *GetSkillListResponse) GetSkillList() *PlayerSkillListPBComponent {
+func (x *GetSkillListResponse) GetSkillList() *component.PlayerSkillListPBComponent {
 	if x != nil {
 		return x.SkillList
 	}
@@ -426,17 +428,17 @@ func file_proto_service_cpp_rpc_scene_player_skill_proto_rawDescGZIP() []byte {
 
 var file_proto_service_cpp_rpc_scene_player_skill_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_service_cpp_rpc_scene_player_skill_proto_goTypes = []any{
-	(*ReleaseSkillSkillRequest)(nil),   // 0: ReleaseSkillSkillRequest
-	(*ReleaseSkillSkillResponse)(nil),  // 1: ReleaseSkillSkillResponse
-	(*SkillInterruptedS2C)(nil),        // 2: SkillInterruptedS2C
-	(*SkillUsedS2C)(nil),               // 3: SkillUsedS2C
-	(*GetSkillListRequest)(nil),        // 4: GetSkillListRequest
-	(*GetSkillListResponse)(nil),       // 5: GetSkillListResponse
-	(*Vector3)(nil),                    // 6: Vector3
-	(*Rotation)(nil),                   // 7: Rotation
-	(*TipInfoMessage)(nil),             // 8: TipInfoMessage
-	(*PlayerSkillListPBComponent)(nil), // 9: PlayerSkillListPBComponent
-	(*Empty)(nil),                      // 10: Empty
+	(*ReleaseSkillSkillRequest)(nil),             // 0: ReleaseSkillSkillRequest
+	(*ReleaseSkillSkillResponse)(nil),            // 1: ReleaseSkillSkillResponse
+	(*SkillInterruptedS2C)(nil),                  // 2: SkillInterruptedS2C
+	(*SkillUsedS2C)(nil),                         // 3: SkillUsedS2C
+	(*GetSkillListRequest)(nil),                  // 4: GetSkillListRequest
+	(*GetSkillListResponse)(nil),                 // 5: GetSkillListResponse
+	(*component.Vector3)(nil),                    // 6: Vector3
+	(*component.Rotation)(nil),                   // 7: Rotation
+	(*common.TipInfoMessage)(nil),                // 8: TipInfoMessage
+	(*component.PlayerSkillListPBComponent)(nil), // 9: PlayerSkillListPBComponent
+	(*common.Empty)(nil),                         // 10: Empty
 }
 var file_proto_service_cpp_rpc_scene_player_skill_proto_depIdxs = []int32{
 	6,  // 0: ReleaseSkillSkillRequest.position:type_name -> Vector3
@@ -465,11 +467,6 @@ func file_proto_service_cpp_rpc_scene_player_skill_proto_init() {
 	if File_proto_service_cpp_rpc_scene_player_skill_proto != nil {
 		return
 	}
-	file_proto_common_tip_proto_init()
-	file_proto_logic_component_comp_proto_init()
-	file_proto_common_empty_proto_init()
-	file_proto_logic_component_player_skill_comp_proto_init()
-	file_proto_logic_component_actor_comp_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

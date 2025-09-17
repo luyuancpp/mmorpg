@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "generated/pb/game";
+option go_package = "generated/pb/game/event";
 
 import "proto/logic/component/scene_comp.proto";
 

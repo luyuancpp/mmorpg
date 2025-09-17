@@ -7,6 +7,7 @@
 package game
 
 import (
+	common "generated/pb/common/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -68,7 +69,7 @@ func (x *KickSessionRequest) GetSessionId() uint64 {
 type BroadcastToPlayersRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	SessionList    []uint64               `protobuf:"varint,1,rep,packed,name=session_list,json=sessionList,proto3" json:"session_list,omitempty"`
-	MessageContent *MessageContent        `protobuf:"bytes,2,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
+	MessageContent *common.MessageContent `protobuf:"bytes,2,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -110,7 +111,7 @@ func (x *BroadcastToPlayersRequest) GetSessionList() []uint64 {
 	return nil
 }
 
-func (x *BroadcastToPlayersRequest) GetMessageContent() *MessageContent {
+func (x *BroadcastToPlayersRequest) GetMessageContent() *common.MessageContent {
 	if x != nil {
 		return x.MessageContent
 	}
@@ -151,19 +152,19 @@ func file_proto_service_cpp_rpc_gate_gate_service_proto_rawDescGZIP() []byte {
 
 var file_proto_service_cpp_rpc_gate_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_service_cpp_rpc_gate_gate_service_proto_goTypes = []any{
-	(*KickSessionRequest)(nil),              // 0: KickSessionRequest
-	(*BroadcastToPlayersRequest)(nil),       // 1: BroadcastToPlayersRequest
-	(*MessageContent)(nil),                  // 2: MessageContent
-	(*RegisterGameNodeSessionRequest)(nil),  // 3: RegisterGameNodeSessionRequest
-	(*NodeRouteMessageRequest)(nil),         // 4: NodeRouteMessageRequest
-	(*RouteMessageRequest)(nil),             // 5: RouteMessageRequest
-	(*RoutePlayerMessageRequest)(nil),       // 6: RoutePlayerMessageRequest
-	(*NodeHandshakeRequest)(nil),            // 7: NodeHandshakeRequest
-	(*RegisterGameNodeSessionResponse)(nil), // 8: RegisterGameNodeSessionResponse
-	(*Empty)(nil),                           // 9: Empty
-	(*RouteMessageResponse)(nil),            // 10: RouteMessageResponse
-	(*RoutePlayerMessageResponse)(nil),      // 11: RoutePlayerMessageResponse
-	(*NodeHandshakeResponse)(nil),           // 12: NodeHandshakeResponse
+	(*KickSessionRequest)(nil),                     // 0: KickSessionRequest
+	(*BroadcastToPlayersRequest)(nil),              // 1: BroadcastToPlayersRequest
+	(*common.MessageContent)(nil),                  // 2: MessageContent
+	(*common.RegisterGameNodeSessionRequest)(nil),  // 3: RegisterGameNodeSessionRequest
+	(*common.NodeRouteMessageRequest)(nil),         // 4: NodeRouteMessageRequest
+	(*common.RouteMessageRequest)(nil),             // 5: RouteMessageRequest
+	(*common.RoutePlayerMessageRequest)(nil),       // 6: RoutePlayerMessageRequest
+	(*common.NodeHandshakeRequest)(nil),            // 7: NodeHandshakeRequest
+	(*common.RegisterGameNodeSessionResponse)(nil), // 8: RegisterGameNodeSessionResponse
+	(*common.Empty)(nil),                           // 9: Empty
+	(*common.RouteMessageResponse)(nil),            // 10: RouteMessageResponse
+	(*common.RoutePlayerMessageResponse)(nil),      // 11: RoutePlayerMessageResponse
+	(*common.NodeHandshakeResponse)(nil),           // 12: NodeHandshakeResponse
 }
 var file_proto_service_cpp_rpc_gate_gate_service_proto_depIdxs = []int32{
 	2,  // 0: BroadcastToPlayersRequest.message_content:type_name -> MessageContent
@@ -193,8 +194,6 @@ func file_proto_service_cpp_rpc_gate_gate_service_proto_init() {
 	if File_proto_service_cpp_rpc_gate_gate_service_proto != nil {
 		return
 	}
-	file_proto_common_empty_proto_init()
-	file_proto_common_message_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

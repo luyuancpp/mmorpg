@@ -116,14 +116,14 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5fscene_
     "yerSceneContextPBComponent\022.\n\nscene_info"
     "\030\001 \001(\0132\032.PlayerRoomInfoPBComponent\0228\n\024sc"
     "ene_info_last_time\030\002 \001(\0132\032.PlayerRoomInf"
-    "oPBComponentB\023Z\021generated/pb/gameb\006proto"
-    "3"
+    "oPBComponentB\035Z\033generated/pb/game/compon"
+    "entb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto = {
     false,
     false,
-    281,
+    291,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto,
     "proto/logic/component/player_scene_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto_once,

@@ -7,6 +7,7 @@
 package game
 
 import (
+	common "generated/pb/common/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -29,7 +30,7 @@ const file_proto_service_go_grpc_db_db_proto_rawDesc = "" +
 	"\x04Test\x12\x06.Empty\x1a\x06.EmptyB\x13Z\x11generated/pb/gameb\x06proto3"
 
 var file_proto_service_go_grpc_db_db_proto_goTypes = []any{
-	(*Empty)(nil), // 0: Empty
+	(*common.Empty)(nil), // 0: Empty
 }
 var file_proto_service_go_grpc_db_db_proto_depIdxs = []int32{
 	0, // 0: db.Test:input_type -> Empty
@@ -46,7 +47,6 @@ func file_proto_service_go_grpc_db_db_proto_init() {
 	if File_proto_service_go_grpc_db_db_proto != nil {
 		return
 	}
-	file_proto_common_empty_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
