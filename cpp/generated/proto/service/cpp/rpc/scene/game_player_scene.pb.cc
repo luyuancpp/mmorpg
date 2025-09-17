@@ -174,8 +174,7 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_
     "e.protobuf.Empty\022:\n\nLeaveScene\022\024.GsLeave"
     "SceneRequest\032\026.google.protobuf.Empty\022\?\n\r"
     "EnterSceneS2C\022\025.EnterSceneS2CRequest\032\027.E"
-    "nterScenerS2CResponseB\026Z\021generated/pb/ga"
-    "me\200\001\001b\006proto3"
+    "nterScenerS2CResponseB\003\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto_deps[3] = {
@@ -187,7 +186,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2f
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto = {
     false,
     false,
-    613,
+    594,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto,
     "proto/service/cpp/rpc/scene/game_player_scene.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto_once,

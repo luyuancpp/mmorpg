@@ -1445,8 +1445,7 @@ const char descriptor_table_protodef_proto_2fmiddleware_2fetcd_2fetcd_2eproto[] 
     "LeaseTimeToLiveRequest\032%.etcdserverpb.Le"
     "aseTimeToLiveResponse\022R\n\013LeaseLeases\022 .e"
     "tcdserverpb.LeaseLeasesRequest\032!.etcdser"
-    "verpb.LeaseLeasesResponseB\035Z\033generated/g"
-    "ame/etcdserverpbb\006proto3"
+    "verpb.LeaseLeasesResponseb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fmiddleware_2fetcd_2fetcd_2eproto_deps[2] = {
@@ -1457,7 +1456,7 @@ static ::absl::once_flag descriptor_table_proto_2fmiddleware_2fetcd_2fetcd_2epro
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fmiddleware_2fetcd_2fetcd_2eproto = {
     false,
     false,
-    5704,
+    5673,
     descriptor_table_protodef_proto_2fmiddleware_2fetcd_2fetcd_2eproto,
     "proto/middleware/etcd/etcd.proto",
     &descriptor_table_proto_2fmiddleware_2fetcd_2fetcd_2eproto_once,

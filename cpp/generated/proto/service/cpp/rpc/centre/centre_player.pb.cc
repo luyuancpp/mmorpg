@@ -84,8 +84,7 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcent
     "\022\020\n\010operator\030\002 \001(\t2q\n\023CentrePlayerUtilit"
     "y\022*\n\017SendTipToClient\022\017.TipInfoMessage\032\006."
     "Empty\022.\n\nKickPlayer\022\030.CentreKickPlayerRe"
-    "quest\032\006.EmptyB\026Z\021generated/pb/game\200\001\001b\006p"
-    "roto3"
+    "quest\032\006.EmptyB\003\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_2eproto_deps[2] = {
@@ -96,7 +95,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_2eproto = {
     false,
     false,
-    325,
+    306,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_2eproto,
     "proto/service/cpp/rpc/centre/centre_player.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_2eproto_once,

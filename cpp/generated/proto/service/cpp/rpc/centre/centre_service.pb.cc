@@ -355,8 +355,7 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcent
     "est\032\033.RoutePlayerMessageResponse\022.\n\rInit"
     "SceneNode\022\025.InitSceneNodeRequest\032\006.Empty"
     "\022>\n\rNodeHandshake\022\025.NodeHandshakeRequest"
-    "\032\026.NodeHandshakeResponseB\026Z\021generated/pb"
-    "/game\200\001\001b\006proto3"
+    "\032\026.NodeHandshakeResponseB\003\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto_deps[5] = {
@@ -370,7 +369,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto = {
     false,
     false,
-    1576,
+    1557,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto,
     "proto/service/cpp/rpc/centre/centre_service.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto_once,

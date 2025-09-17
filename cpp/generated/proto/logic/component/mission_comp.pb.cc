@@ -258,14 +258,13 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fmission_5fcomp_
     "nent\022M\n\025can_reward_mission_id\030\001 \003(\0132..Re"
     "wardListPBComponent.CanRewardMissionIdEn"
     "try\0329\n\027CanRewardMissionIdEntry\022\013\n\003key\030\001 "
-    "\001(\r\022\r\n\005value\030\002 \001(\010:\0028\001B\035Z\033generated/pb/g"
-    "ame/componentb\006proto3"
+    "\001(\r\022\r\n\005value\030\002 \001(\010:\0028\001b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto = {
     false,
     false,
-    901,
+    870,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto,
     "proto/logic/component/mission_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto_once,

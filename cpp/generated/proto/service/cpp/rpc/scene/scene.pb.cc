@@ -388,7 +388,7 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fscene
     "\n\013CreateScene\022\023.CreateSceneRequest\032\024.Cre"
     "ateSceneResponse\022>\n\rNodeHandshake\022\025.Node"
     "HandshakeRequest\032\026.NodeHandshakeResponse"
-    "B\026Z\021generated/pb/game\200\001\001b\006proto3"
+    "B\003\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto_deps[3] = {
@@ -400,7 +400,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2f
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto = {
     false,
     false,
-    1592,
+    1573,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto,
     "proto/service/cpp/rpc/scene/scene.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto_once,

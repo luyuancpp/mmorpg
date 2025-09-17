@@ -121,14 +121,14 @@ const char descriptor_table_protodef_proto_2flogic_2fevent_2factor_5fcombat_5fst
     "\014actor_entity\030\001 \001(\004\022\026\n\016source_buff_id\030\002 "
     "\001(\004\022\022\n\nstate_type\030\003 \001(\r\"]\n\031CombatStateRe"
     "movedPbEvent\022\024\n\014actor_entity\030\001 \001(\004\022\026\n\016so"
-    "urce_buff_id\030\002 \001(\004\022\022\n\nstate_type\030\003 \001(\rB\031"
-    "Z\027generated/pb/game/eventb\006proto3"
+    "urce_buff_id\030\002 \001(\004\022\022\n\nstate_type\030\003 \001(\rb\006"
+    "proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto = {
     false,
     false,
-    273,
+    246,
     descriptor_table_protodef_proto_2flogic_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto,
     "proto/logic/event/actor_combat_state_event.proto",
     &descriptor_table_proto_2flogic_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto_once,

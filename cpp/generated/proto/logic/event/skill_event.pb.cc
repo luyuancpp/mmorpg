@@ -84,14 +84,13 @@ const char descriptor_table_protodef_proto_2flogic_2fevent_2fskill_5fevent_2epro
     "\n#proto/logic/event/skill_event.proto\"^\n"
     "\022SkillExecutedEvent\022\020\n\010skill_id\030\001 \001(\004\022\026\n"
     "\016skill_table_id\030\002 \001(\r\022\016\n\006caster\030\003 \001(\004\022\016\n"
-    "\006target\030\004 \001(\004B\031Z\027generated/pb/game/event"
-    "b\006proto3"
+    "\006target\030\004 \001(\004b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fevent_2fskill_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fevent_2fskill_5fevent_2eproto = {
     false,
     false,
-    168,
+    141,
     descriptor_table_protodef_proto_2flogic_2fevent_2fskill_5fevent_2eproto,
     "proto/logic/event/skill_event.proto",
     &descriptor_table_proto_2flogic_2fevent_2fskill_5fevent_2eproto_once,

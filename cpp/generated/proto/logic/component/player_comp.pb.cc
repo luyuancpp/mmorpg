@@ -227,14 +227,13 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5fcomp_2
     "\"\032\n\007Account\022\017\n\007account\030\001 \001(\t\"\022\n\020Unregist"
     "erPlayer\"9\n\027PlayerUint64PBComponent\022\036\n\026r"
     "egistration_timestamp\030\001 \001(\004\"(\n\027PlayerUin"
-    "t32PbComponent\022\r\n\005class\030\001 \001(\rB\035Z\033generat"
-    "ed/pb/game/componentb\006proto3"
+    "t32PbComponent\022\r\n\005class\030\001 \001(\rb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fcomp_2eproto = {
     false,
     false,
-    268,
+    237,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5fcomp_2eproto,
     "proto/logic/component/player_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fcomp_2eproto_once,

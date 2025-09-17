@@ -138,14 +138,13 @@ const char descriptor_table_protodef_proto_2fmiddleware_2fetcd_2fkv_2eproto[] AB
     "\221\001\n\005Event\022%\n\004type\030\001 \001(\0162\027.mvccpb.Event.E"
     "ventType\022\034\n\002kv\030\002 \001(\0132\020.mvccpb.KeyValue\022!"
     "\n\007prev_kv\030\003 \001(\0132\020.mvccpb.KeyValue\" \n\tEve"
-    "ntType\022\007\n\003PUT\020\000\022\n\n\006DELETE\020\001B\035Z\033generated"
-    "/game/etcdserverpbb\006proto3"
+    "ntType\022\007\n\003PUT\020\000\022\n\n\006DELETE\020\001b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fmiddleware_2fetcd_2fkv_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fmiddleware_2fetcd_2fkv_2eproto = {
     false,
     false,
-    346,
+    315,
     descriptor_table_protodef_proto_2fmiddleware_2fetcd_2fkv_2eproto,
     "proto/middleware/etcd/kv.proto",
     &descriptor_table_proto_2fmiddleware_2fetcd_2fkv_2eproto_once,
