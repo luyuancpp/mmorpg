@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/service/grpc/db/mysql_database_table.proto
+// source: proto/service/go/grpc/db/mysql_database_table.proto
 
 package game
 
@@ -34,7 +34,7 @@ type UserAccounts struct {
 
 func (x *UserAccounts) Reset() {
 	*x = UserAccounts{}
-	mi := &file_proto_service_grpc_db_mysql_database_table_proto_msgTypes[0]
+	mi := &file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *UserAccounts) String() string {
 func (*UserAccounts) ProtoMessage() {}
 
 func (x *UserAccounts) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_db_mysql_database_table_proto_msgTypes[0]
+	mi := &file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *UserAccounts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserAccounts.ProtoReflect.Descriptor instead.
 func (*UserAccounts) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_db_mysql_database_table_proto_rawDescGZIP(), []int{0}
+	return file_proto_service_go_grpc_db_mysql_database_table_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *UserAccounts) GetAccount() string {
@@ -92,7 +92,7 @@ type AccountShareDatabase struct {
 
 func (x *AccountShareDatabase) Reset() {
 	*x = AccountShareDatabase{}
-	mi := &file_proto_service_grpc_db_mysql_database_table_proto_msgTypes[1]
+	mi := &file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -104,7 +104,7 @@ func (x *AccountShareDatabase) String() string {
 func (*AccountShareDatabase) ProtoMessage() {}
 
 func (x *AccountShareDatabase) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_db_mysql_database_table_proto_msgTypes[1]
+	mi := &file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -117,7 +117,7 @@ func (x *AccountShareDatabase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountShareDatabase.ProtoReflect.Descriptor instead.
 func (*AccountShareDatabase) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_db_mysql_database_table_proto_rawDescGZIP(), []int{1}
+	return file_proto_service_go_grpc_db_mysql_database_table_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AccountShareDatabase) GetAccount() string {
@@ -138,7 +138,7 @@ type PlayerCentreDatabase struct {
 
 func (x *PlayerCentreDatabase) Reset() {
 	*x = PlayerCentreDatabase{}
-	mi := &file_proto_service_grpc_db_mysql_database_table_proto_msgTypes[2]
+	mi := &file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -150,7 +150,7 @@ func (x *PlayerCentreDatabase) String() string {
 func (*PlayerCentreDatabase) ProtoMessage() {}
 
 func (x *PlayerCentreDatabase) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_db_mysql_database_table_proto_msgTypes[2]
+	mi := &file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -163,7 +163,7 @@ func (x *PlayerCentreDatabase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerCentreDatabase.ProtoReflect.Descriptor instead.
 func (*PlayerCentreDatabase) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_db_mysql_database_table_proto_rawDescGZIP(), []int{2}
+	return file_proto_service_go_grpc_db_mysql_database_table_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *PlayerCentreDatabase) GetPlayerId() uint64 {
@@ -196,7 +196,7 @@ type PlayerDatabase struct {
 
 func (x *PlayerDatabase) Reset() {
 	*x = PlayerDatabase{}
-	mi := &file_proto_service_grpc_db_mysql_database_table_proto_msgTypes[3]
+	mi := &file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -208,7 +208,7 @@ func (x *PlayerDatabase) String() string {
 func (*PlayerDatabase) ProtoMessage() {}
 
 func (x *PlayerDatabase) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_db_mysql_database_table_proto_msgTypes[3]
+	mi := &file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -221,7 +221,7 @@ func (x *PlayerDatabase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerDatabase.ProtoReflect.Descriptor instead.
 func (*PlayerDatabase) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_db_mysql_database_table_proto_rawDescGZIP(), []int{3}
+	return file_proto_service_go_grpc_db_mysql_database_table_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PlayerDatabase) GetPlayerId() uint64 {
@@ -282,7 +282,7 @@ type PlayerDatabase_1 struct {
 
 func (x *PlayerDatabase_1) Reset() {
 	*x = PlayerDatabase_1{}
-	mi := &file_proto_service_grpc_db_mysql_database_table_proto_msgTypes[4]
+	mi := &file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -294,7 +294,7 @@ func (x *PlayerDatabase_1) String() string {
 func (*PlayerDatabase_1) ProtoMessage() {}
 
 func (x *PlayerDatabase_1) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_db_mysql_database_table_proto_msgTypes[4]
+	mi := &file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -307,7 +307,7 @@ func (x *PlayerDatabase_1) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerDatabase_1.ProtoReflect.Descriptor instead.
 func (*PlayerDatabase_1) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_db_mysql_database_table_proto_rawDescGZIP(), []int{4}
+	return file_proto_service_go_grpc_db_mysql_database_table_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *PlayerDatabase_1) GetPlayerId() uint64 {
@@ -317,11 +317,11 @@ func (x *PlayerDatabase_1) GetPlayerId() uint64 {
 	return 0
 }
 
-var File_proto_service_grpc_db_mysql_database_table_proto protoreflect.FileDescriptor
+var File_proto_service_go_grpc_db_mysql_database_table_proto protoreflect.FileDescriptor
 
-const file_proto_service_grpc_db_mysql_database_table_proto_rawDesc = "" +
+const file_proto_service_go_grpc_db_mysql_database_table_proto_rawDesc = "" +
 	"\n" +
-	"0proto/service/grpc/db/mysql_database_table.proto\x1a#proto/service/grpc/db/db_base.proto\x1a proto/common/user_accounts.proto\x1a-proto/logic/component/player_scene_comp.proto\x1a&proto/logic/component/actor_comp.proto\x1a'proto/logic/component/player_comp.proto\x1a-proto/logic/component/player_skill_comp.proto\"\x94\x01\n" +
+	"3proto/service/go/grpc/db/mysql_database_table.proto\x1a&proto/service/go/grpc/db/db_base.proto\x1a proto/common/user_accounts.proto\x1a-proto/logic/component/player_scene_comp.proto\x1a&proto/logic/component/actor_comp.proto\x1a'proto/logic/component/player_comp.proto\x1a-proto/logic/component/player_skill_comp.proto\"\x94\x01\n" +
 	"\ruser_accounts\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12?\n" +
@@ -346,19 +346,19 @@ const file_proto_service_grpc_db_mysql_database_table_proto_rawDesc = "" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId:\x1c\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_idB\x13Z\x11generated/pb/gameb\x06proto3"
 
 var (
-	file_proto_service_grpc_db_mysql_database_table_proto_rawDescOnce sync.Once
-	file_proto_service_grpc_db_mysql_database_table_proto_rawDescData []byte
+	file_proto_service_go_grpc_db_mysql_database_table_proto_rawDescOnce sync.Once
+	file_proto_service_go_grpc_db_mysql_database_table_proto_rawDescData []byte
 )
 
-func file_proto_service_grpc_db_mysql_database_table_proto_rawDescGZIP() []byte {
-	file_proto_service_grpc_db_mysql_database_table_proto_rawDescOnce.Do(func() {
-		file_proto_service_grpc_db_mysql_database_table_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_grpc_db_mysql_database_table_proto_rawDesc), len(file_proto_service_grpc_db_mysql_database_table_proto_rawDesc)))
+func file_proto_service_go_grpc_db_mysql_database_table_proto_rawDescGZIP() []byte {
+	file_proto_service_go_grpc_db_mysql_database_table_proto_rawDescOnce.Do(func() {
+		file_proto_service_go_grpc_db_mysql_database_table_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_go_grpc_db_mysql_database_table_proto_rawDesc), len(file_proto_service_go_grpc_db_mysql_database_table_proto_rawDesc)))
 	})
-	return file_proto_service_grpc_db_mysql_database_table_proto_rawDescData
+	return file_proto_service_go_grpc_db_mysql_database_table_proto_rawDescData
 }
 
-var file_proto_service_grpc_db_mysql_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_proto_service_grpc_db_mysql_database_table_proto_goTypes = []any{
+var file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_proto_service_go_grpc_db_mysql_database_table_proto_goTypes = []any{
 	(*UserAccounts)(nil),                  // 0: user_accounts
 	(*AccountShareDatabase)(nil),          // 1: account_share_database
 	(*PlayerCentreDatabase)(nil),          // 2: player_centre_database
@@ -373,7 +373,7 @@ var file_proto_service_grpc_db_mysql_database_table_proto_goTypes = []any{
 	(*BaseAttributesPbComponent)(nil),     // 11: BaseAttributesPbComponent
 	(*LevelPbComponent)(nil),              // 12: LevelPbComponent
 }
-var file_proto_service_grpc_db_mysql_database_table_proto_depIdxs = []int32{
+var file_proto_service_go_grpc_db_mysql_database_table_proto_depIdxs = []int32{
 	5,  // 0: user_accounts.simple_players:type_name -> AccountSimplePlayerList
 	6,  // 1: player_centre_database.scene_info:type_name -> PlayerSceneContextPBComponent
 	7,  // 2: player_database.transform:type_name -> Transform
@@ -389,9 +389,9 @@ var file_proto_service_grpc_db_mysql_database_table_proto_depIdxs = []int32{
 	0,  // [0:8] is the sub-list for field type_name
 }
 
-func init() { file_proto_service_grpc_db_mysql_database_table_proto_init() }
-func file_proto_service_grpc_db_mysql_database_table_proto_init() {
-	if File_proto_service_grpc_db_mysql_database_table_proto != nil {
+func init() { file_proto_service_go_grpc_db_mysql_database_table_proto_init() }
+func file_proto_service_go_grpc_db_mysql_database_table_proto_init() {
+	if File_proto_service_go_grpc_db_mysql_database_table_proto != nil {
 		return
 	}
 	file_proto_common_user_accounts_proto_init()
@@ -403,17 +403,17 @@ func file_proto_service_grpc_db_mysql_database_table_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_grpc_db_mysql_database_table_proto_rawDesc), len(file_proto_service_grpc_db_mysql_database_table_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_go_grpc_db_mysql_database_table_proto_rawDesc), len(file_proto_service_go_grpc_db_mysql_database_table_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_proto_service_grpc_db_mysql_database_table_proto_goTypes,
-		DependencyIndexes: file_proto_service_grpc_db_mysql_database_table_proto_depIdxs,
-		MessageInfos:      file_proto_service_grpc_db_mysql_database_table_proto_msgTypes,
+		GoTypes:           file_proto_service_go_grpc_db_mysql_database_table_proto_goTypes,
+		DependencyIndexes: file_proto_service_go_grpc_db_mysql_database_table_proto_depIdxs,
+		MessageInfos:      file_proto_service_go_grpc_db_mysql_database_table_proto_msgTypes,
 	}.Build()
-	File_proto_service_grpc_db_mysql_database_table_proto = out.File
-	file_proto_service_grpc_db_mysql_database_table_proto_goTypes = nil
-	file_proto_service_grpc_db_mysql_database_table_proto_depIdxs = nil
+	File_proto_service_go_grpc_db_mysql_database_table_proto = out.File
+	file_proto_service_go_grpc_db_mysql_database_table_proto_goTypes = nil
+	file_proto_service_go_grpc_db_mysql_database_table_proto_depIdxs = nil
 }

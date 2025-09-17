@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/service/rpc/scene/game_client_player.proto
+// source: proto/service/cpp/rpc/scene/game_client_player.proto
 
 package game
 
@@ -31,7 +31,7 @@ type GameKickPlayerRequest struct {
 
 func (x *GameKickPlayerRequest) Reset() {
 	*x = GameKickPlayerRequest{}
-	mi := &file_proto_service_rpc_scene_game_client_player_proto_msgTypes[0]
+	mi := &file_proto_service_cpp_rpc_scene_game_client_player_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *GameKickPlayerRequest) String() string {
 func (*GameKickPlayerRequest) ProtoMessage() {}
 
 func (x *GameKickPlayerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_rpc_scene_game_client_player_proto_msgTypes[0]
+	mi := &file_proto_service_cpp_rpc_scene_game_client_player_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *GameKickPlayerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameKickPlayerRequest.ProtoReflect.Descriptor instead.
 func (*GameKickPlayerRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_rpc_scene_game_client_player_proto_rawDescGZIP(), []int{0}
+	return file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GameKickPlayerRequest) GetReason() *TipInfoMessage {
@@ -73,11 +73,11 @@ func (x *GameKickPlayerRequest) GetOperator() string {
 	return ""
 }
 
-var File_proto_service_rpc_scene_game_client_player_proto protoreflect.FileDescriptor
+var File_proto_service_cpp_rpc_scene_game_client_player_proto protoreflect.FileDescriptor
 
-const file_proto_service_rpc_scene_game_client_player_proto_rawDesc = "" +
+const file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDesc = "" +
 	"\n" +
-	"0proto/service/rpc/scene/game_client_player.proto\x1a\x16proto/common/tip.proto\x1a\x18proto/common/empty.proto\"\\\n" +
+	"4proto/service/cpp/rpc/scene/game_client_player.proto\x1a\x16proto/common/tip.proto\x1a\x18proto/common/empty.proto\"\\\n" +
 	"\x15GameKickPlayerRequest\x12'\n" +
 	"\x06reason\x18\x01 \x01(\v2\x0f.TipInfoMessageR\x06reason\x12\x1a\n" +
 	"\boperator\x18\x02 \x01(\tR\boperator2s\n" +
@@ -87,24 +87,24 @@ const file_proto_service_rpc_scene_game_client_player_proto_rawDesc = "" +
 	"KickPlayer\x12\x16.GameKickPlayerRequest\x1a\x06.EmptyB\x16Z\x11generated/pb/game\x80\x01\x01b\x06proto3"
 
 var (
-	file_proto_service_rpc_scene_game_client_player_proto_rawDescOnce sync.Once
-	file_proto_service_rpc_scene_game_client_player_proto_rawDescData []byte
+	file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDescOnce sync.Once
+	file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDescData []byte
 )
 
-func file_proto_service_rpc_scene_game_client_player_proto_rawDescGZIP() []byte {
-	file_proto_service_rpc_scene_game_client_player_proto_rawDescOnce.Do(func() {
-		file_proto_service_rpc_scene_game_client_player_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_rpc_scene_game_client_player_proto_rawDesc), len(file_proto_service_rpc_scene_game_client_player_proto_rawDesc)))
+func file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDescGZIP() []byte {
+	file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDescOnce.Do(func() {
+		file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDesc), len(file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDesc)))
 	})
-	return file_proto_service_rpc_scene_game_client_player_proto_rawDescData
+	return file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDescData
 }
 
-var file_proto_service_rpc_scene_game_client_player_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_proto_service_rpc_scene_game_client_player_proto_goTypes = []any{
+var file_proto_service_cpp_rpc_scene_game_client_player_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_service_cpp_rpc_scene_game_client_player_proto_goTypes = []any{
 	(*GameKickPlayerRequest)(nil), // 0: GameKickPlayerRequest
 	(*TipInfoMessage)(nil),        // 1: TipInfoMessage
 	(*Empty)(nil),                 // 2: Empty
 }
-var file_proto_service_rpc_scene_game_client_player_proto_depIdxs = []int32{
+var file_proto_service_cpp_rpc_scene_game_client_player_proto_depIdxs = []int32{
 	1, // 0: GameKickPlayerRequest.reason:type_name -> TipInfoMessage
 	1, // 1: SceneClientPlayerCommon.SendTipToClient:input_type -> TipInfoMessage
 	0, // 2: SceneClientPlayerCommon.KickPlayer:input_type -> GameKickPlayerRequest
@@ -117,9 +117,9 @@ var file_proto_service_rpc_scene_game_client_player_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_proto_service_rpc_scene_game_client_player_proto_init() }
-func file_proto_service_rpc_scene_game_client_player_proto_init() {
-	if File_proto_service_rpc_scene_game_client_player_proto != nil {
+func init() { file_proto_service_cpp_rpc_scene_game_client_player_proto_init() }
+func file_proto_service_cpp_rpc_scene_game_client_player_proto_init() {
+	if File_proto_service_cpp_rpc_scene_game_client_player_proto != nil {
 		return
 	}
 	file_proto_common_tip_proto_init()
@@ -128,17 +128,17 @@ func file_proto_service_rpc_scene_game_client_player_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_rpc_scene_game_client_player_proto_rawDesc), len(file_proto_service_rpc_scene_game_client_player_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDesc), len(file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_service_rpc_scene_game_client_player_proto_goTypes,
-		DependencyIndexes: file_proto_service_rpc_scene_game_client_player_proto_depIdxs,
-		MessageInfos:      file_proto_service_rpc_scene_game_client_player_proto_msgTypes,
+		GoTypes:           file_proto_service_cpp_rpc_scene_game_client_player_proto_goTypes,
+		DependencyIndexes: file_proto_service_cpp_rpc_scene_game_client_player_proto_depIdxs,
+		MessageInfos:      file_proto_service_cpp_rpc_scene_game_client_player_proto_msgTypes,
 	}.Build()
-	File_proto_service_rpc_scene_game_client_player_proto = out.File
-	file_proto_service_rpc_scene_game_client_player_proto_goTypes = nil
-	file_proto_service_rpc_scene_game_client_player_proto_depIdxs = nil
+	File_proto_service_cpp_rpc_scene_game_client_player_proto = out.File
+	file_proto_service_cpp_rpc_scene_game_client_player_proto_goTypes = nil
+	file_proto_service_cpp_rpc_scene_game_client_player_proto_depIdxs = nil
 }

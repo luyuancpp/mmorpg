@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.31.1
-// source: proto/service/rpc/gate/gate_service.proto
+// source: proto/service/cpp/rpc/gate/gate_service.proto
 
 package game
 
@@ -345,5 +345,5 @@ var Gate_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/service/rpc/gate/gate_service.proto",
+	Metadata: "proto/service/cpp/rpc/gate/gate_service.proto",
 }
