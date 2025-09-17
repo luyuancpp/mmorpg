@@ -14,6 +14,8 @@ import (
 
 type EmptyStruct struct{}
 
+var ProtoFiles []string
+
 // MethodInfo 定义RPC方法信息
 type MethodInfo struct {
 	Id                     uint64
@@ -134,6 +136,9 @@ func (info *RPCServiceInfo) FileBaseNameCamel() string {
 }
 
 func (info *RPCServiceInfo) CcGenericServices() bool {
+	if info.Fd.Options == nil {
+		return false
+	}
 	if info.Fd.Options.CcGenericServices == nil {
 		return false
 	}
@@ -276,6 +281,9 @@ func (info *MethodInfo) CppRepliedHandlerClassName() string {
 }
 
 func (info *MethodInfo) CcGenericServices() bool {
+	if info.Fd.Options == nil {
+		return false
+	}
 	if info.Fd.Options.CcGenericServices == nil {
 		return false
 	}
