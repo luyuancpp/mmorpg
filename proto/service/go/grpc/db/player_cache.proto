@@ -1,6 +1,5 @@
 syntax = "proto3";
 
-option go_package = "generated/pb/game";
 
 import "proto/service/go/grpc/db/mysql_database_table.proto";
 
