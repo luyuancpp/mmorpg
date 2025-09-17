@@ -16,8 +16,8 @@ import (
 )
 
 type GameDB struct {
-	PbToDb *pbmysql.PbMysqlDB
-	DB     *sql.DB
+	SqlGenerator *pbmysql.PbMysqlDB
+	DB           *sql.DB
 }
 
 var DB *GameDB
@@ -75,14 +75,14 @@ func openDB() error {
 	}
 
 	DB = &GameDB{
-		DB:     sql.OpenDB(conn),
-		PbToDb: pbmysql.NewPbMysqlDB(),
+		DB:           sql.OpenDB(conn),
+		SqlGenerator: pbmysql.NewPbMysqlDB(),
 	}
 
 	DB.DB.SetMaxOpenConns(config.AppConfig.ServerConfig.Database.MaxOpenConn)
 	DB.DB.SetMaxIdleConns(config.AppConfig.ServerConfig.Database.MaxIdleConn)
 
-	err = DB.PbToDb.OpenDB(DB.DB, mysqlConfig.DBName)
+	err = DB.SqlGenerator.OpenDB(DB.DB, mysqlConfig.DBName)
 	if err != nil {
 		return err
 	}
@@ -155,8 +155,8 @@ func createDBTable() {
 	}
 
 	for _, table := range tables {
-		DB.PbToDb.RegisterTable(table)
-		sql := DB.PbToDb.GetCreateTableSql(table)
+		DB.SqlGenerator.RegisterTable(table)
+		sql := DB.SqlGenerator.GetCreateTableSql(table)
 		_, err := DB.DB.Exec(sql)
 		if err != nil {
 			log.Fatal(err)
@@ -175,6 +175,6 @@ func alterDBTable() {
 	tables := getTables()
 
 	for _, table := range tables {
-		DB.PbToDb.UpdateTableField(table)
+		DB.SqlGenerator.UpdateTableField(table)
 	}
 }

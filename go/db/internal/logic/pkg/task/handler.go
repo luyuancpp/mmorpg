@@ -43,7 +43,7 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 		switch task.Op {
 		case "read":
 			logx.Infof("Executing DB read for TaskID=%s", task.TaskId)
-			if err := db.DB.PbToDb.LoadOneByWhereCase(msg, task.WhereCase); err != nil {
+			if err := db.DB.SqlGenerator.LoadOneByWhereCase(msg, task.WhereCase); err != nil {
 				resultErr = fmt.Sprintf("DB read failed: %v", err)
 				logx.Errorf("DB read error for TaskID=%s: %v", task.TaskId, err)
 			} else {
@@ -56,7 +56,7 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 
 		case "write":
 			logx.Infof("Executing DB write for TaskID=%s", task.TaskId)
-			if err := db.DB.PbToDb.Save(msg); err != nil {
+			if err := db.DB.SqlGenerator.Save(msg); err != nil {
 				resultErr = fmt.Sprintf("DB write failed: %v", err)
 				logx.Errorf("DB write error for TaskID=%s: %v", task.TaskId, err)
 			}

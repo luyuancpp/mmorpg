@@ -9,7 +9,6 @@ import (
 	"strings"
 	"text/template"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -103,21 +102,9 @@ func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error
 func CppPlayerDataLoadGenerator() {
 	os.MkdirAll(config.PlayerStorageTempDirectory, os.FileMode(0777))
 
-	// 读取 Descriptor Set 文件
-	data, err := os.ReadFile(config.AllInOneProtoDescFile)
-	if err != nil {
-		log.Fatalf("Failed to read descriptor set file: %v", err)
-	}
-
-	// 解析 Descriptor Set 文件内容
-	fdSet := &descriptorpb.FileDescriptorSet{}
-	if err := proto.Unmarshal(data, fdSet); err != nil {
-		log.Fatalf("Failed to unmarshal descriptor set: %v", err)
-	}
-
 	var headerEntries []HeaderEntry
 
-	for _, fileDesc := range fdSet.GetFile() {
+	for _, fileDesc := range FdSet.GetFile() {
 		for _, messageDesc := range fileDesc.GetMessageType() {
 			messageDescName := strings.ToLower(*messageDesc.Name)
 			if !(strings.Contains(messageDescName, config.PlayerDatabaseName) || strings.Contains(messageDescName, config.PlayerDatabaseName1)) {
@@ -134,7 +121,7 @@ func CppPlayerDataLoadGenerator() {
 	}
 
 	// 遍历文件描述符集合并打印消息字段
-	for _, fileDesc := range fdSet.GetFile() {
+	for _, fileDesc := range FdSet.GetFile() {
 		for _, messageDesc := range fileDesc.GetMessageType() {
 			messageDescName := strings.ToLower(*messageDesc.Name)
 			if !(strings.Contains(messageDescName, config.PlayerDatabaseName) || strings.Contains(messageDescName, config.PlayerDatabaseName1)) {
@@ -171,7 +158,7 @@ func CppPlayerDataLoadGenerator() {
 		}
 	}
 
-	err = GenerateCppPlayerHeaderFile(config.PlayerStorageSystemDirectory+config.PlayerDataLoaderName, headerEntries)
+	err := GenerateCppPlayerHeaderFile(config.PlayerStorageSystemDirectory+config.PlayerDataLoaderName, headerEntries)
 	if err != nil {
 		log.Fatalf("failed to generate header file: %v", err)
 	}
