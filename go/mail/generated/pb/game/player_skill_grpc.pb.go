@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.31.1
-// source: proto/service/rpc/scene/player_skill.proto
+// source: proto/service/cpp/rpc/scene/player_skill.proto
 
 package game
 
@@ -232,5 +232,5 @@ var SceneSkillClientPlayer_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/service/rpc/scene/player_skill.proto",
+	Metadata: "proto/service/cpp/rpc/scene/player_skill.proto",
 }

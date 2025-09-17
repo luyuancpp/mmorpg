@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/service/grpc/login/login.proto
+// source: proto/service/go/grpc/login/login.proto
 
 package game
 
@@ -36,7 +36,7 @@ type LoginSessionInfo struct {
 
 func (x *LoginSessionInfo) Reset() {
 	*x = LoginSessionInfo{}
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[0]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +48,7 @@ func (x *LoginSessionInfo) String() string {
 func (*LoginSessionInfo) ProtoMessage() {}
 
 func (x *LoginSessionInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[0]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +61,7 @@ func (x *LoginSessionInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginSessionInfo.ProtoReflect.Descriptor instead.
 func (*LoginSessionInfo) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_login_login_proto_rawDescGZIP(), []int{0}
+	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *LoginSessionInfo) GetAccount() string {
@@ -122,7 +122,7 @@ type AccountSimplePlayerWrapper struct {
 
 func (x *AccountSimplePlayerWrapper) Reset() {
 	*x = AccountSimplePlayerWrapper{}
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[1]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -134,7 +134,7 @@ func (x *AccountSimplePlayerWrapper) String() string {
 func (*AccountSimplePlayerWrapper) ProtoMessage() {}
 
 func (x *AccountSimplePlayerWrapper) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[1]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -147,7 +147,7 @@ func (x *AccountSimplePlayerWrapper) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountSimplePlayerWrapper.ProtoReflect.Descriptor instead.
 func (*AccountSimplePlayerWrapper) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_login_login_proto_rawDescGZIP(), []int{1}
+	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AccountSimplePlayerWrapper) GetPlayer() *AccountSimplePlayer {
@@ -167,7 +167,7 @@ type LoginRequest struct {
 
 func (x *LoginRequest) Reset() {
 	*x = LoginRequest{}
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[2]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -179,7 +179,7 @@ func (x *LoginRequest) String() string {
 func (*LoginRequest) ProtoMessage() {}
 
 func (x *LoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[2]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -192,7 +192,7 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
 func (*LoginRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_login_login_proto_rawDescGZIP(), []int{2}
+	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *LoginRequest) GetAccount() string {
@@ -219,7 +219,7 @@ type LoginResponse struct {
 
 func (x *LoginResponse) Reset() {
 	*x = LoginResponse{}
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[3]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -231,7 +231,7 @@ func (x *LoginResponse) String() string {
 func (*LoginResponse) ProtoMessage() {}
 
 func (x *LoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[3]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -244,7 +244,7 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
 func (*LoginResponse) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_login_login_proto_rawDescGZIP(), []int{3}
+	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *LoginResponse) GetErrorMessage() *TipInfoMessage {
@@ -273,7 +273,7 @@ type TestResponse struct {
 
 func (x *TestResponse) Reset() {
 	*x = TestResponse{}
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[4]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -285,7 +285,7 @@ func (x *TestResponse) String() string {
 func (*TestResponse) ProtoMessage() {}
 
 func (x *TestResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[4]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -298,7 +298,7 @@ func (x *TestResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestResponse.ProtoReflect.Descriptor instead.
 func (*TestResponse) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_login_login_proto_rawDescGZIP(), []int{4}
+	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *TestResponse) GetErrorMessage() *TipInfoMessage {
@@ -337,7 +337,7 @@ type CreatePlayerRequest struct {
 
 func (x *CreatePlayerRequest) Reset() {
 	*x = CreatePlayerRequest{}
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[5]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -349,7 +349,7 @@ func (x *CreatePlayerRequest) String() string {
 func (*CreatePlayerRequest) ProtoMessage() {}
 
 func (x *CreatePlayerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[5]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -362,7 +362,7 @@ func (x *CreatePlayerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePlayerRequest.ProtoReflect.Descriptor instead.
 func (*CreatePlayerRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_login_login_proto_rawDescGZIP(), []int{5}
+	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{5}
 }
 
 type CreatePlayerResponse struct {
@@ -375,7 +375,7 @@ type CreatePlayerResponse struct {
 
 func (x *CreatePlayerResponse) Reset() {
 	*x = CreatePlayerResponse{}
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[6]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -387,7 +387,7 @@ func (x *CreatePlayerResponse) String() string {
 func (*CreatePlayerResponse) ProtoMessage() {}
 
 func (x *CreatePlayerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[6]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -400,7 +400,7 @@ func (x *CreatePlayerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePlayerResponse.ProtoReflect.Descriptor instead.
 func (*CreatePlayerResponse) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_login_login_proto_rawDescGZIP(), []int{6}
+	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CreatePlayerResponse) GetErrorMessage() *TipInfoMessage {
@@ -426,7 +426,7 @@ type EnterGameRequest struct {
 
 func (x *EnterGameRequest) Reset() {
 	*x = EnterGameRequest{}
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[7]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -438,7 +438,7 @@ func (x *EnterGameRequest) String() string {
 func (*EnterGameRequest) ProtoMessage() {}
 
 func (x *EnterGameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[7]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -451,7 +451,7 @@ func (x *EnterGameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterGameRequest.ProtoReflect.Descriptor instead.
 func (*EnterGameRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_login_login_proto_rawDescGZIP(), []int{7}
+	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *EnterGameRequest) GetPlayerId() uint64 {
@@ -471,7 +471,7 @@ type EnterGameResponse struct {
 
 func (x *EnterGameResponse) Reset() {
 	*x = EnterGameResponse{}
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[8]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -483,7 +483,7 @@ func (x *EnterGameResponse) String() string {
 func (*EnterGameResponse) ProtoMessage() {}
 
 func (x *EnterGameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[8]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -496,7 +496,7 @@ func (x *EnterGameResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterGameResponse.ProtoReflect.Descriptor instead.
 func (*EnterGameResponse) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_login_login_proto_rawDescGZIP(), []int{8}
+	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *EnterGameResponse) GetErrorMessage() *TipInfoMessage {
@@ -521,7 +521,7 @@ type LeaveGameRequest struct {
 
 func (x *LeaveGameRequest) Reset() {
 	*x = LeaveGameRequest{}
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[9]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -533,7 +533,7 @@ func (x *LeaveGameRequest) String() string {
 func (*LeaveGameRequest) ProtoMessage() {}
 
 func (x *LeaveGameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[9]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -546,7 +546,7 @@ func (x *LeaveGameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveGameRequest.ProtoReflect.Descriptor instead.
 func (*LeaveGameRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_login_login_proto_rawDescGZIP(), []int{9}
+	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{9}
 }
 
 type LoginNodeDisconnectRequest struct {
@@ -558,7 +558,7 @@ type LoginNodeDisconnectRequest struct {
 
 func (x *LoginNodeDisconnectRequest) Reset() {
 	*x = LoginNodeDisconnectRequest{}
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[10]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -570,7 +570,7 @@ func (x *LoginNodeDisconnectRequest) String() string {
 func (*LoginNodeDisconnectRequest) ProtoMessage() {}
 
 func (x *LoginNodeDisconnectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_login_login_proto_msgTypes[10]
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -583,7 +583,7 @@ func (x *LoginNodeDisconnectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginNodeDisconnectRequest.ProtoReflect.Descriptor instead.
 func (*LoginNodeDisconnectRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_login_login_proto_rawDescGZIP(), []int{10}
+	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *LoginNodeDisconnectRequest) GetSessionId() uint64 {
@@ -593,11 +593,11 @@ func (x *LoginNodeDisconnectRequest) GetSessionId() uint64 {
 	return 0
 }
 
-var File_proto_service_grpc_login_login_proto protoreflect.FileDescriptor
+var File_proto_service_go_grpc_login_login_proto protoreflect.FileDescriptor
 
-const file_proto_service_grpc_login_login_proto_rawDesc = "" +
+const file_proto_service_go_grpc_login_login_proto_rawDesc = "" +
 	"\n" +
-	"$proto/service/grpc/login/login.proto\x12\aloginpb\x1a\x18proto/common/empty.proto\x1a\x16proto/common/tip.proto\x1a proto/common/user_accounts.proto\"\xcb\x01\n" +
+	"'proto/service/go/grpc/login/login.proto\x12\aloginpb\x1a\x18proto/common/empty.proto\x1a\x16proto/common/tip.proto\x1a proto/common/user_accounts.proto\"\xcb\x01\n" +
 	"\x10LoginSessionInfo\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x17\n" +
 	"\arole_id\x18\x02 \x01(\x04R\x06roleId\x12\x1d\n" +
@@ -645,19 +645,19 @@ const file_proto_service_grpc_login_login_proto_rawDesc = "" +
 	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x06.EmptyB\x13Z\x11generated/pb/gameb\x06proto3"
 
 var (
-	file_proto_service_grpc_login_login_proto_rawDescOnce sync.Once
-	file_proto_service_grpc_login_login_proto_rawDescData []byte
+	file_proto_service_go_grpc_login_login_proto_rawDescOnce sync.Once
+	file_proto_service_go_grpc_login_login_proto_rawDescData []byte
 )
 
-func file_proto_service_grpc_login_login_proto_rawDescGZIP() []byte {
-	file_proto_service_grpc_login_login_proto_rawDescOnce.Do(func() {
-		file_proto_service_grpc_login_login_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_grpc_login_login_proto_rawDesc), len(file_proto_service_grpc_login_login_proto_rawDesc)))
+func file_proto_service_go_grpc_login_login_proto_rawDescGZIP() []byte {
+	file_proto_service_go_grpc_login_login_proto_rawDescOnce.Do(func() {
+		file_proto_service_go_grpc_login_login_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_go_grpc_login_login_proto_rawDesc), len(file_proto_service_go_grpc_login_login_proto_rawDesc)))
 	})
-	return file_proto_service_grpc_login_login_proto_rawDescData
+	return file_proto_service_go_grpc_login_login_proto_rawDescData
 }
 
-var file_proto_service_grpc_login_login_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
-var file_proto_service_grpc_login_login_proto_goTypes = []any{
+var file_proto_service_go_grpc_login_login_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_proto_service_go_grpc_login_login_proto_goTypes = []any{
 	(*LoginSessionInfo)(nil),           // 0: loginpb.LoginSessionInfo
 	(*AccountSimplePlayerWrapper)(nil), // 1: loginpb.AccountSimplePlayerWrapper
 	(*LoginRequest)(nil),               // 2: loginpb.LoginRequest
@@ -673,7 +673,7 @@ var file_proto_service_grpc_login_login_proto_goTypes = []any{
 	(*TipInfoMessage)(nil),             // 12: TipInfoMessage
 	(*Empty)(nil),                      // 13: Empty
 }
-var file_proto_service_grpc_login_login_proto_depIdxs = []int32{
+var file_proto_service_go_grpc_login_login_proto_depIdxs = []int32{
 	11, // 0: loginpb.AccountSimplePlayerWrapper.player:type_name -> AccountSimplePlayer
 	12, // 1: loginpb.LoginResponse.error_message:type_name -> TipInfoMessage
 	1,  // 2: loginpb.LoginResponse.players:type_name -> loginpb.AccountSimplePlayerWrapper
@@ -699,9 +699,9 @@ var file_proto_service_grpc_login_login_proto_depIdxs = []int32{
 	0,  // [0:8] is the sub-list for field type_name
 }
 
-func init() { file_proto_service_grpc_login_login_proto_init() }
-func file_proto_service_grpc_login_login_proto_init() {
-	if File_proto_service_grpc_login_login_proto != nil {
+func init() { file_proto_service_go_grpc_login_login_proto_init() }
+func file_proto_service_go_grpc_login_login_proto_init() {
+	if File_proto_service_go_grpc_login_login_proto != nil {
 		return
 	}
 	file_proto_common_empty_proto_init()
@@ -711,17 +711,17 @@ func file_proto_service_grpc_login_login_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_grpc_login_login_proto_rawDesc), len(file_proto_service_grpc_login_login_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_go_grpc_login_login_proto_rawDesc), len(file_proto_service_go_grpc_login_login_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_service_grpc_login_login_proto_goTypes,
-		DependencyIndexes: file_proto_service_grpc_login_login_proto_depIdxs,
-		MessageInfos:      file_proto_service_grpc_login_login_proto_msgTypes,
+		GoTypes:           file_proto_service_go_grpc_login_login_proto_goTypes,
+		DependencyIndexes: file_proto_service_go_grpc_login_login_proto_depIdxs,
+		MessageInfos:      file_proto_service_go_grpc_login_login_proto_msgTypes,
 	}.Build()
-	File_proto_service_grpc_login_login_proto = out.File
-	file_proto_service_grpc_login_login_proto_goTypes = nil
-	file_proto_service_grpc_login_login_proto_depIdxs = nil
+	File_proto_service_go_grpc_login_login_proto = out.File
+	file_proto_service_go_grpc_login_login_proto_goTypes = nil
+	file_proto_service_go_grpc_login_login_proto_depIdxs = nil
 }

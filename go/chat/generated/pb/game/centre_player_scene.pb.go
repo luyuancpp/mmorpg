@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/service/rpc/centre/centre_player_scene.proto
+// source: proto/service/cpp/rpc/centre/centre_player_scene.proto
 
 package game
 
@@ -31,7 +31,7 @@ type CentreEnterSceneRequest struct {
 
 func (x *CentreEnterSceneRequest) Reset() {
 	*x = CentreEnterSceneRequest{}
-	mi := &file_proto_service_rpc_centre_centre_player_scene_proto_msgTypes[0]
+	mi := &file_proto_service_cpp_rpc_centre_centre_player_scene_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *CentreEnterSceneRequest) String() string {
 func (*CentreEnterSceneRequest) ProtoMessage() {}
 
 func (x *CentreEnterSceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_rpc_centre_centre_player_scene_proto_msgTypes[0]
+	mi := &file_proto_service_cpp_rpc_centre_centre_player_scene_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *CentreEnterSceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CentreEnterSceneRequest.ProtoReflect.Descriptor instead.
 func (*CentreEnterSceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_rpc_centre_centre_player_scene_proto_rawDescGZIP(), []int{0}
+	return file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CentreEnterSceneRequest) GetSceneInfo() *RoomInfoPBComponent {
@@ -74,7 +74,7 @@ type CentreLeaveSceneRequest struct {
 
 func (x *CentreLeaveSceneRequest) Reset() {
 	*x = CentreLeaveSceneRequest{}
-	mi := &file_proto_service_rpc_centre_centre_player_scene_proto_msgTypes[1]
+	mi := &file_proto_service_cpp_rpc_centre_centre_player_scene_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -86,7 +86,7 @@ func (x *CentreLeaveSceneRequest) String() string {
 func (*CentreLeaveSceneRequest) ProtoMessage() {}
 
 func (x *CentreLeaveSceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_rpc_centre_centre_player_scene_proto_msgTypes[1]
+	mi := &file_proto_service_cpp_rpc_centre_centre_player_scene_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,7 +99,7 @@ func (x *CentreLeaveSceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CentreLeaveSceneRequest.ProtoReflect.Descriptor instead.
 func (*CentreLeaveSceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_rpc_centre_centre_player_scene_proto_rawDescGZIP(), []int{1}
+	return file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescGZIP(), []int{1}
 }
 
 type CentreLeaveSceneAsyncSavePlayerCompleteRequest struct {
@@ -110,7 +110,7 @@ type CentreLeaveSceneAsyncSavePlayerCompleteRequest struct {
 
 func (x *CentreLeaveSceneAsyncSavePlayerCompleteRequest) Reset() {
 	*x = CentreLeaveSceneAsyncSavePlayerCompleteRequest{}
-	mi := &file_proto_service_rpc_centre_centre_player_scene_proto_msgTypes[2]
+	mi := &file_proto_service_cpp_rpc_centre_centre_player_scene_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -122,7 +122,7 @@ func (x *CentreLeaveSceneAsyncSavePlayerCompleteRequest) String() string {
 func (*CentreLeaveSceneAsyncSavePlayerCompleteRequest) ProtoMessage() {}
 
 func (x *CentreLeaveSceneAsyncSavePlayerCompleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_rpc_centre_centre_player_scene_proto_msgTypes[2]
+	mi := &file_proto_service_cpp_rpc_centre_centre_player_scene_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -135,7 +135,7 @@ func (x *CentreLeaveSceneAsyncSavePlayerCompleteRequest) ProtoReflect() protoref
 
 // Deprecated: Use CentreLeaveSceneAsyncSavePlayerCompleteRequest.ProtoReflect.Descriptor instead.
 func (*CentreLeaveSceneAsyncSavePlayerCompleteRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_rpc_centre_centre_player_scene_proto_rawDescGZIP(), []int{2}
+	return file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescGZIP(), []int{2}
 }
 
 type CentreSceneInfoRequest struct {
@@ -146,7 +146,7 @@ type CentreSceneInfoRequest struct {
 
 func (x *CentreSceneInfoRequest) Reset() {
 	*x = CentreSceneInfoRequest{}
-	mi := &file_proto_service_rpc_centre_centre_player_scene_proto_msgTypes[3]
+	mi := &file_proto_service_cpp_rpc_centre_centre_player_scene_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -158,7 +158,7 @@ func (x *CentreSceneInfoRequest) String() string {
 func (*CentreSceneInfoRequest) ProtoMessage() {}
 
 func (x *CentreSceneInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_rpc_centre_centre_player_scene_proto_msgTypes[3]
+	mi := &file_proto_service_cpp_rpc_centre_centre_player_scene_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -171,14 +171,14 @@ func (x *CentreSceneInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CentreSceneInfoRequest.ProtoReflect.Descriptor instead.
 func (*CentreSceneInfoRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_rpc_centre_centre_player_scene_proto_rawDescGZIP(), []int{3}
+	return file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescGZIP(), []int{3}
 }
 
-var File_proto_service_rpc_centre_centre_player_scene_proto protoreflect.FileDescriptor
+var File_proto_service_cpp_rpc_centre_centre_player_scene_proto protoreflect.FileDescriptor
 
-const file_proto_service_rpc_centre_centre_player_scene_proto_rawDesc = "" +
+const file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"2proto/service/rpc/centre/centre_player_scene.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19proto/common/common.proto\"N\n" +
+	"6proto/service/cpp/rpc/centre/centre_player_scene.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19proto/common/common.proto\"N\n" +
 	"\x17CentreEnterSceneRequest\x123\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"\x19\n" +
@@ -194,19 +194,19 @@ const file_proto_service_rpc_centre_centre_player_scene_proto_rawDesc = "" +
 	"\fSceneInfoC2S\x12\x17.CentreSceneInfoRequest\x1a\x16.google.protobuf.EmptyB\x16Z\x11generated/pb/game\x80\x01\x01b\x06proto3"
 
 var (
-	file_proto_service_rpc_centre_centre_player_scene_proto_rawDescOnce sync.Once
-	file_proto_service_rpc_centre_centre_player_scene_proto_rawDescData []byte
+	file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescOnce sync.Once
+	file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescData []byte
 )
 
-func file_proto_service_rpc_centre_centre_player_scene_proto_rawDescGZIP() []byte {
-	file_proto_service_rpc_centre_centre_player_scene_proto_rawDescOnce.Do(func() {
-		file_proto_service_rpc_centre_centre_player_scene_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_rpc_centre_centre_player_scene_proto_rawDesc), len(file_proto_service_rpc_centre_centre_player_scene_proto_rawDesc)))
+func file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescGZIP() []byte {
+	file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescOnce.Do(func() {
+		file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDesc), len(file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDesc)))
 	})
-	return file_proto_service_rpc_centre_centre_player_scene_proto_rawDescData
+	return file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescData
 }
 
-var file_proto_service_rpc_centre_centre_player_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_proto_service_rpc_centre_centre_player_scene_proto_goTypes = []any{
+var file_proto_service_cpp_rpc_centre_centre_player_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_service_cpp_rpc_centre_centre_player_scene_proto_goTypes = []any{
 	(*CentreEnterSceneRequest)(nil),                        // 0: CentreEnterSceneRequest
 	(*CentreLeaveSceneRequest)(nil),                        // 1: CentreLeaveSceneRequest
 	(*CentreLeaveSceneAsyncSavePlayerCompleteRequest)(nil), // 2: CentreLeaveSceneAsyncSavePlayerCompleteRequest
@@ -214,7 +214,7 @@ var file_proto_service_rpc_centre_centre_player_scene_proto_goTypes = []any{
 	(*RoomInfoPBComponent)(nil),                            // 4: RoomInfoPBComponent
 	(*emptypb.Empty)(nil),                                  // 5: google.protobuf.Empty
 }
-var file_proto_service_rpc_centre_centre_player_scene_proto_depIdxs = []int32{
+var file_proto_service_cpp_rpc_centre_centre_player_scene_proto_depIdxs = []int32{
 	4, // 0: CentreEnterSceneRequest.scene_info:type_name -> RoomInfoPBComponent
 	0, // 1: CentrePlayerScene.EnterScene:input_type -> CentreEnterSceneRequest
 	1, // 2: CentrePlayerScene.LeaveScene:input_type -> CentreLeaveSceneRequest
@@ -231,9 +231,9 @@ var file_proto_service_rpc_centre_centre_player_scene_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_proto_service_rpc_centre_centre_player_scene_proto_init() }
-func file_proto_service_rpc_centre_centre_player_scene_proto_init() {
-	if File_proto_service_rpc_centre_centre_player_scene_proto != nil {
+func init() { file_proto_service_cpp_rpc_centre_centre_player_scene_proto_init() }
+func file_proto_service_cpp_rpc_centre_centre_player_scene_proto_init() {
+	if File_proto_service_cpp_rpc_centre_centre_player_scene_proto != nil {
 		return
 	}
 	file_proto_common_common_proto_init()
@@ -241,17 +241,17 @@ func file_proto_service_rpc_centre_centre_player_scene_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_rpc_centre_centre_player_scene_proto_rawDesc), len(file_proto_service_rpc_centre_centre_player_scene_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDesc), len(file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_service_rpc_centre_centre_player_scene_proto_goTypes,
-		DependencyIndexes: file_proto_service_rpc_centre_centre_player_scene_proto_depIdxs,
-		MessageInfos:      file_proto_service_rpc_centre_centre_player_scene_proto_msgTypes,
+		GoTypes:           file_proto_service_cpp_rpc_centre_centre_player_scene_proto_goTypes,
+		DependencyIndexes: file_proto_service_cpp_rpc_centre_centre_player_scene_proto_depIdxs,
+		MessageInfos:      file_proto_service_cpp_rpc_centre_centre_player_scene_proto_msgTypes,
 	}.Build()
-	File_proto_service_rpc_centre_centre_player_scene_proto = out.File
-	file_proto_service_rpc_centre_centre_player_scene_proto_goTypes = nil
-	file_proto_service_rpc_centre_centre_player_scene_proto_depIdxs = nil
+	File_proto_service_cpp_rpc_centre_centre_player_scene_proto = out.File
+	file_proto_service_cpp_rpc_centre_centre_player_scene_proto_goTypes = nil
+	file_proto_service_cpp_rpc_centre_centre_player_scene_proto_depIdxs = nil
 }

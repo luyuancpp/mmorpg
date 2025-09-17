@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.31.1
-// source: proto/service/rpc/centre/centre_service.proto
+// source: proto/service/cpp/rpc/centre/centre_service.proto
 
 package game
 
@@ -535,5 +535,5 @@ var Centre_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/service/rpc/centre/centre_service.proto",
+	Metadata: "proto/service/cpp/rpc/centre/centre_service.proto",
 }

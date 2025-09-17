@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/service/rpc/scene/game_player.proto
+// source: proto/service/cpp/rpc/scene/game_player.proto
 
 package game
 
@@ -31,7 +31,7 @@ type Centre2GsLoginRequest struct {
 
 func (x *Centre2GsLoginRequest) Reset() {
 	*x = Centre2GsLoginRequest{}
-	mi := &file_proto_service_rpc_scene_game_player_proto_msgTypes[0]
+	mi := &file_proto_service_cpp_rpc_scene_game_player_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *Centre2GsLoginRequest) String() string {
 func (*Centre2GsLoginRequest) ProtoMessage() {}
 
 func (x *Centre2GsLoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_rpc_scene_game_player_proto_msgTypes[0]
+	mi := &file_proto_service_cpp_rpc_scene_game_player_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *Centre2GsLoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Centre2GsLoginRequest.ProtoReflect.Descriptor instead.
 func (*Centre2GsLoginRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_rpc_scene_game_player_proto_rawDescGZIP(), []int{0}
+	return file_proto_service_cpp_rpc_scene_game_player_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Centre2GsLoginRequest) GetEnterGsType() uint32 {
@@ -74,7 +74,7 @@ type GameNodeExitGameRequest struct {
 
 func (x *GameNodeExitGameRequest) Reset() {
 	*x = GameNodeExitGameRequest{}
-	mi := &file_proto_service_rpc_scene_game_player_proto_msgTypes[1]
+	mi := &file_proto_service_cpp_rpc_scene_game_player_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -86,7 +86,7 @@ func (x *GameNodeExitGameRequest) String() string {
 func (*GameNodeExitGameRequest) ProtoMessage() {}
 
 func (x *GameNodeExitGameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_rpc_scene_game_player_proto_msgTypes[1]
+	mi := &file_proto_service_cpp_rpc_scene_game_player_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,14 +99,14 @@ func (x *GameNodeExitGameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameNodeExitGameRequest.ProtoReflect.Descriptor instead.
 func (*GameNodeExitGameRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_rpc_scene_game_player_proto_rawDescGZIP(), []int{1}
+	return file_proto_service_cpp_rpc_scene_game_player_proto_rawDescGZIP(), []int{1}
 }
 
-var File_proto_service_rpc_scene_game_player_proto protoreflect.FileDescriptor
+var File_proto_service_cpp_rpc_scene_game_player_proto protoreflect.FileDescriptor
 
-const file_proto_service_rpc_scene_game_player_proto_rawDesc = "" +
+const file_proto_service_cpp_rpc_scene_game_player_proto_rawDesc = "" +
 	"\n" +
-	")proto/service/rpc/scene/game_player.proto\x1a\x1bgoogle/protobuf/empty.proto\";\n" +
+	"-proto/service/cpp/rpc/scene/game_player.proto\x1a\x1bgoogle/protobuf/empty.proto\";\n" +
 	"\x15Centre2GsLoginRequest\x12\"\n" +
 	"\renter_gs_type\x18\x01 \x01(\rR\venterGsType\"\x19\n" +
 	"\x17GameNodeExitGameRequest2\x8d\x01\n" +
@@ -115,24 +115,24 @@ const file_proto_service_rpc_scene_game_player_proto_rawDesc = "" +
 	"\bExitGame\x12\x18.GameNodeExitGameRequest\x1a\x16.google.protobuf.EmptyB\x16Z\x11generated/pb/game\x80\x01\x01b\x06proto3"
 
 var (
-	file_proto_service_rpc_scene_game_player_proto_rawDescOnce sync.Once
-	file_proto_service_rpc_scene_game_player_proto_rawDescData []byte
+	file_proto_service_cpp_rpc_scene_game_player_proto_rawDescOnce sync.Once
+	file_proto_service_cpp_rpc_scene_game_player_proto_rawDescData []byte
 )
 
-func file_proto_service_rpc_scene_game_player_proto_rawDescGZIP() []byte {
-	file_proto_service_rpc_scene_game_player_proto_rawDescOnce.Do(func() {
-		file_proto_service_rpc_scene_game_player_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_rpc_scene_game_player_proto_rawDesc), len(file_proto_service_rpc_scene_game_player_proto_rawDesc)))
+func file_proto_service_cpp_rpc_scene_game_player_proto_rawDescGZIP() []byte {
+	file_proto_service_cpp_rpc_scene_game_player_proto_rawDescOnce.Do(func() {
+		file_proto_service_cpp_rpc_scene_game_player_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_cpp_rpc_scene_game_player_proto_rawDesc), len(file_proto_service_cpp_rpc_scene_game_player_proto_rawDesc)))
 	})
-	return file_proto_service_rpc_scene_game_player_proto_rawDescData
+	return file_proto_service_cpp_rpc_scene_game_player_proto_rawDescData
 }
 
-var file_proto_service_rpc_scene_game_player_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_proto_service_rpc_scene_game_player_proto_goTypes = []any{
+var file_proto_service_cpp_rpc_scene_game_player_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_service_cpp_rpc_scene_game_player_proto_goTypes = []any{
 	(*Centre2GsLoginRequest)(nil),   // 0: Centre2GsLoginRequest
 	(*GameNodeExitGameRequest)(nil), // 1: GameNodeExitGameRequest
 	(*emptypb.Empty)(nil),           // 2: google.protobuf.Empty
 }
-var file_proto_service_rpc_scene_game_player_proto_depIdxs = []int32{
+var file_proto_service_cpp_rpc_scene_game_player_proto_depIdxs = []int32{
 	0, // 0: ScenePlayer.Centre2GsLogin:input_type -> Centre2GsLoginRequest
 	1, // 1: ScenePlayer.ExitGame:input_type -> GameNodeExitGameRequest
 	2, // 2: ScenePlayer.Centre2GsLogin:output_type -> google.protobuf.Empty
@@ -144,26 +144,26 @@ var file_proto_service_rpc_scene_game_player_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_proto_service_rpc_scene_game_player_proto_init() }
-func file_proto_service_rpc_scene_game_player_proto_init() {
-	if File_proto_service_rpc_scene_game_player_proto != nil {
+func init() { file_proto_service_cpp_rpc_scene_game_player_proto_init() }
+func file_proto_service_cpp_rpc_scene_game_player_proto_init() {
+	if File_proto_service_cpp_rpc_scene_game_player_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_rpc_scene_game_player_proto_rawDesc), len(file_proto_service_rpc_scene_game_player_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_cpp_rpc_scene_game_player_proto_rawDesc), len(file_proto_service_cpp_rpc_scene_game_player_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_service_rpc_scene_game_player_proto_goTypes,
-		DependencyIndexes: file_proto_service_rpc_scene_game_player_proto_depIdxs,
-		MessageInfos:      file_proto_service_rpc_scene_game_player_proto_msgTypes,
+		GoTypes:           file_proto_service_cpp_rpc_scene_game_player_proto_goTypes,
+		DependencyIndexes: file_proto_service_cpp_rpc_scene_game_player_proto_depIdxs,
+		MessageInfos:      file_proto_service_cpp_rpc_scene_game_player_proto_msgTypes,
 	}.Build()
-	File_proto_service_rpc_scene_game_player_proto = out.File
-	file_proto_service_rpc_scene_game_player_proto_goTypes = nil
-	file_proto_service_rpc_scene_game_player_proto_depIdxs = nil
+	File_proto_service_cpp_rpc_scene_game_player_proto = out.File
+	file_proto_service_cpp_rpc_scene_game_player_proto_goTypes = nil
+	file_proto_service_cpp_rpc_scene_game_player_proto_depIdxs = nil
 }

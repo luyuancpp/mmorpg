@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v6.31.1
-// source: proto/service/grpc/db/player_cache.proto
+// source: proto/service/go/grpc/db/player_cache.proto
 
 package game
 
@@ -31,7 +31,7 @@ type PlayerAllData struct {
 
 func (x *PlayerAllData) Reset() {
 	*x = PlayerAllData{}
-	mi := &file_proto_service_grpc_db_player_cache_proto_msgTypes[0]
+	mi := &file_proto_service_go_grpc_db_player_cache_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *PlayerAllData) String() string {
 func (*PlayerAllData) ProtoMessage() {}
 
 func (x *PlayerAllData) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_db_player_cache_proto_msgTypes[0]
+	mi := &file_proto_service_go_grpc_db_player_cache_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *PlayerAllData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerAllData.ProtoReflect.Descriptor instead.
 func (*PlayerAllData) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_db_player_cache_proto_rawDescGZIP(), []int{0}
+	return file_proto_service_go_grpc_db_player_cache_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *PlayerAllData) GetPlayerDatabaseData() *PlayerDatabase {
@@ -73,34 +73,34 @@ func (x *PlayerAllData) GetPlayerDatabase_1Data() *PlayerDatabase_1 {
 	return nil
 }
 
-var File_proto_service_grpc_db_player_cache_proto protoreflect.FileDescriptor
+var File_proto_service_go_grpc_db_player_cache_proto protoreflect.FileDescriptor
 
-const file_proto_service_grpc_db_player_cache_proto_rawDesc = "" +
+const file_proto_service_go_grpc_db_player_cache_proto_rawDesc = "" +
 	"\n" +
-	"(proto/service/grpc/db/player_cache.proto\x1a0proto/service/grpc/db/mysql_database_table.proto\"\x9c\x01\n" +
+	"+proto/service/go/grpc/db/player_cache.proto\x1a3proto/service/go/grpc/db/mysql_database_table.proto\"\x9c\x01\n" +
 	"\rPlayerAllData\x12B\n" +
 	"\x14player_database_data\x18\x02 \x01(\v2\x10.player_databaseR\x12playerDatabaseData\x12G\n" +
 	"\x16player_database_1_data\x18\x03 \x01(\v2\x12.player_database_1R\x13playerDatabase1DataB\x13Z\x11generated/pb/gameb\x06proto3"
 
 var (
-	file_proto_service_grpc_db_player_cache_proto_rawDescOnce sync.Once
-	file_proto_service_grpc_db_player_cache_proto_rawDescData []byte
+	file_proto_service_go_grpc_db_player_cache_proto_rawDescOnce sync.Once
+	file_proto_service_go_grpc_db_player_cache_proto_rawDescData []byte
 )
 
-func file_proto_service_grpc_db_player_cache_proto_rawDescGZIP() []byte {
-	file_proto_service_grpc_db_player_cache_proto_rawDescOnce.Do(func() {
-		file_proto_service_grpc_db_player_cache_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_grpc_db_player_cache_proto_rawDesc), len(file_proto_service_grpc_db_player_cache_proto_rawDesc)))
+func file_proto_service_go_grpc_db_player_cache_proto_rawDescGZIP() []byte {
+	file_proto_service_go_grpc_db_player_cache_proto_rawDescOnce.Do(func() {
+		file_proto_service_go_grpc_db_player_cache_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_go_grpc_db_player_cache_proto_rawDesc), len(file_proto_service_go_grpc_db_player_cache_proto_rawDesc)))
 	})
-	return file_proto_service_grpc_db_player_cache_proto_rawDescData
+	return file_proto_service_go_grpc_db_player_cache_proto_rawDescData
 }
 
-var file_proto_service_grpc_db_player_cache_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_proto_service_grpc_db_player_cache_proto_goTypes = []any{
+var file_proto_service_go_grpc_db_player_cache_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_service_go_grpc_db_player_cache_proto_goTypes = []any{
 	(*PlayerAllData)(nil),    // 0: PlayerAllData
 	(*PlayerDatabase)(nil),   // 1: player_database
 	(*PlayerDatabase_1)(nil), // 2: player_database_1
 }
-var file_proto_service_grpc_db_player_cache_proto_depIdxs = []int32{
+var file_proto_service_go_grpc_db_player_cache_proto_depIdxs = []int32{
 	1, // 0: PlayerAllData.player_database_data:type_name -> player_database
 	2, // 1: PlayerAllData.player_database_1_data:type_name -> player_database_1
 	2, // [2:2] is the sub-list for method output_type
@@ -110,27 +110,27 @@ var file_proto_service_grpc_db_player_cache_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_proto_service_grpc_db_player_cache_proto_init() }
-func file_proto_service_grpc_db_player_cache_proto_init() {
-	if File_proto_service_grpc_db_player_cache_proto != nil {
+func init() { file_proto_service_go_grpc_db_player_cache_proto_init() }
+func file_proto_service_go_grpc_db_player_cache_proto_init() {
+	if File_proto_service_go_grpc_db_player_cache_proto != nil {
 		return
 	}
-	file_proto_service_grpc_db_mysql_database_table_proto_init()
+	file_proto_service_go_grpc_db_mysql_database_table_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_grpc_db_player_cache_proto_rawDesc), len(file_proto_service_grpc_db_player_cache_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_go_grpc_db_player_cache_proto_rawDesc), len(file_proto_service_go_grpc_db_player_cache_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_proto_service_grpc_db_player_cache_proto_goTypes,
-		DependencyIndexes: file_proto_service_grpc_db_player_cache_proto_depIdxs,
-		MessageInfos:      file_proto_service_grpc_db_player_cache_proto_msgTypes,
+		GoTypes:           file_proto_service_go_grpc_db_player_cache_proto_goTypes,
+		DependencyIndexes: file_proto_service_go_grpc_db_player_cache_proto_depIdxs,
+		MessageInfos:      file_proto_service_go_grpc_db_player_cache_proto_msgTypes,
 	}.Build()
-	File_proto_service_grpc_db_player_cache_proto = out.File
-	file_proto_service_grpc_db_player_cache_proto_goTypes = nil
-	file_proto_service_grpc_db_player_cache_proto_depIdxs = nil
+	File_proto_service_go_grpc_db_player_cache_proto = out.File
+	file_proto_service_go_grpc_db_player_cache_proto_goTypes = nil
+	file_proto_service_go_grpc_db_player_cache_proto_depIdxs = nil
 }
