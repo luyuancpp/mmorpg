@@ -448,6 +448,7 @@ func generateRobotGoProto(protoFiles []string, outputDir string) error {
 }
 
 func BuildProtoRobotGo(protoPath string) error {
+	return nil
 	// 读取目录下所有文件
 	fds, err := os.ReadDir(protoPath)
 	if err != nil {
