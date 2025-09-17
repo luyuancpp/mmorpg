@@ -54,7 +54,7 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	basePath := strings.ToLower(filepath.Base(firstMethodInfo.Path())) // 提取最后一级目录名作为 key
 
-	if util.CheckGrpcServiceExistence(basePath) {
+	if util.HasGrpcService(basePath) {
 		return false
 	}
 	return util.ContainsPlayerKeyword(firstMethodInfo.Service())

@@ -121,7 +121,7 @@ func BuildProtoGrpcCpp(protoPath string) error {
 	os.MkdirAll(config.GrpcOutputDirectory, os.FileMode(0777))
 
 	basePath := strings.ToLower(path.Base(protoPath))
-	if !util.CheckGrpcServiceExistence(basePath) {
+	if !util.HasGrpcService(basePath) {
 		return nil
 	}
 
@@ -238,7 +238,7 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 
 // GenerateGoGRPCFromProto processes .proto files in the given directory
 func GenerateGoGRPCFromProto(protoPath string) error {
-	if !util.CheckGrpcServiceExistence(protoPath) {
+	if !util.HasGrpcService(protoPath) {
 		return nil
 	}
 
@@ -272,7 +272,7 @@ func GenerateGoGRPCFromProto(protoPath string) error {
 
 	// 4. 为所有注册的 grpc 节点目录生成 Go gRPC 代码
 	for i := 0; i < len(config.ProtoDirs); i++ {
-		if !util.CheckGrpcServiceExistence(config.ProtoDirs[i]) {
+		if !util.HasGrpcService(config.ProtoDirs[i]) {
 			continue
 		}
 		basePath := strings.ToLower(path.Base(config.ProtoDirs[i]))
@@ -287,7 +287,7 @@ func GenerateGoGRPCFromProto(protoPath string) error {
 }
 
 func BuildProtoGo(protoPath string) error {
-	if util.CheckGrpcServiceExistence(protoPath) {
+	if util.HasGrpcService(protoPath) {
 		return nil
 	}
 	if util.CheckEtcdServiceExistence(protoPath) {
@@ -318,7 +318,7 @@ func BuildProtoGo(protoPath string) error {
 	}
 
 	for i := 0; i < len(config.ProtoDirs); i++ {
-		if !util.CheckGrpcServiceExistence(config.ProtoDirs[i]) {
+		if !util.HasGrpcService(config.ProtoDirs[i]) {
 			continue
 		}
 		basePath := strings.ToLower(path.Base(config.ProtoDirs[i]))
@@ -450,7 +450,7 @@ func BuildProtocDescAllInOne() {
 func BuildAllProtoc() {
 	// Iterate over configured proto directories
 	for i := 0; i < len(config.ProtoDirs); i++ {
-		if util.CheckGrpcServiceExistence(config.ProtoDirs[i]) {
+		if util.HasGrpcService(config.ProtoDirs[i]) {
 			continue
 		}
 

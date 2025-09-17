@@ -102,7 +102,7 @@ func CppGrpcCallClient() {
 			protoPath := firstService.Path()
 			basePath := strings.ToLower(filepath.Base(protoPath)) // 提取最后一级目录名作为 key
 
-			if !util.CheckGrpcServiceExistence(basePath) {
+			if !util.HasGrpcService(basePath) {
 				return
 			}
 
