@@ -57,3 +57,42 @@ func BuildModelPath(protoPath string) string {
 	language := GetGrpcLanguageFromPath(protoPath)
 	return config.OutputRoot + "/" + language + "/" + basePath + "/" + config.ModelPath
 }
+
+// GetGRPCSubdirectories 从ProtoDirectoryNames中筛选出service/go/grpc下的子目录
+// 返回相对路径列表（如：["service/go/grpc/player_locator/", "service/go/grpc/login/"]）
+func GetGRPCSubdirectories() []string {
+	var grpcDirs []string
+	grpcBase := "service/go/grpc/" // 基础路径前缀
+
+	for _, dir := range config.ProtoDirectoryNames {
+		// 检查目录是否以service/go/grpc/开头，且不是基础路径本身
+		if strings.HasPrefix(dir, grpcBase) && dir != grpcBase {
+			// 确保路径格式统一（以/结尾）
+			if !strings.HasSuffix(dir, "/") {
+				dir += "/"
+			}
+			grpcDirs = append(grpcDirs, dir)
+		}
+	}
+
+	return grpcDirs
+}
+
+// GetGRPCSubdirectoryNames 只返回service/go/grpc下的子目录名称（不含完整路径）
+// 返回示例：["player_locator", "login", "db", "chat", "team", "mail"]
+func GetGRPCSubdirectoryNames() []string {
+	var names []string
+	grpcBase := "service/go/grpc/"
+
+	for _, dir := range GetGRPCSubdirectories() {
+		// 去除基础路径前缀
+		relative := strings.TrimPrefix(dir, grpcBase)
+		// 去除末尾的/
+		name := strings.TrimSuffix(relative, "/")
+		if name != "" {
+			names = append(names, name)
+		}
+	}
+
+	return names
+}

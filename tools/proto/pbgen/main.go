@@ -47,6 +47,7 @@ func main() {
 
 	MakeProjectDir()
 	internal.CollectProtoFiles()
+	internal.CopyProtoDir()
 
 	// 开始读所有的proto文件
 	internal.ReadServiceIdFile()
