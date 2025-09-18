@@ -196,7 +196,7 @@ func BuildProtoGrpcCpp(protoPath string) error {
 	return nil
 }
 
-func CollectProtoFiles1() []string {
+func CollectProtoFiles() []string {
 	// 遍历 config.ProtoDirs 中的每个目录
 	for _, protoPath := range config.ProtoDirs {
 		// 1. 读取 protoPath 目录下的所有文件
@@ -231,68 +231,6 @@ func CollectProtoFiles1() []string {
 	return ProtoFiles
 }
 
-func CollectProtoFiles() []string {
-	var goOpts []string     // 用来存储生成的 --go_opt 参数
-	var ProtoFiles []string // 用来存储符合条件的 proto 文件路径
-
-	// 遍历 config.ProtoDirs 中的每个目录
-	for _, protoPath := range config.ProtoDirs {
-		// 1. 读取 protoPath 目录下的所有文件
-		files, err := os.ReadDir(protoPath)
-		if err != nil {
-			return nil
-		}
-
-		// 2. 筛选有效的 .proto 文件并排除 config.DbProtoFileName
-		for _, file := range files {
-			// 跳过非 .proto 文件和 config.DbProtoFileName
-			if !util.IsProtoFile(file) || file.Name() == config.DbProtoFileName {
-				continue
-			}
-
-			// 获取文件的绝对路径
-			fullPath := filepath.Join(protoPath, file.Name())
-			fullPath = filepath.ToSlash(fullPath) // 使用 / 作为路径分隔符
-
-			// 获取相对路径 (假设你希望从 `config.OutputRoot` 作为根目录进行相对路径计算)
-			relativePath, err := filepath.Rel(config.OutputRoot, fullPath)
-			if err != nil {
-				log.Printf("Error getting relative path for %s: %v", fullPath, err)
-				continue
-			}
-
-			// 确保路径使用斜杠（/）作为分隔符
-			relativePath = filepath.ToSlash(relativePath)
-
-			goPackagePath := filepath.Dir(relativePath)
-
-			goPackagePath = filepath.ToSlash(goPackagePath)
-
-			// 生成对应的 --go_opt 参数
-			goOpt := fmt.Sprintf("--go_opt=M%s=%s", relativePath, goPackagePath)
-
-			// 将 --go_opt 参数添加到 goOpts 列表中
-			goOpts = append(goOpts, goOpt)
-
-			// 将符合条件的文件添加到 protoFiles 中
-			ProtoFiles = append(ProtoFiles, fullPath)
-		}
-
-		// 如果该目录没有符合条件的 .proto 文件，记录日志但不返回错误
-		if len(ProtoFiles) == 0 {
-			log.Printf("No valid proto files found in path: %s", protoPath)
-		}
-	}
-
-	// 如果 protoFiles 为空，表示没有任何有效的 .proto 文件
-	if len(ProtoFiles) == 0 {
-		return nil
-	}
-
-	// 返回生成的 --go_opt 参数列表
-	return goOpts
-}
-
 func generateGoProto(protoFiles []string, outputDir string) error {
 	// 1. 强制转换所有路径为绝对路径（核心：摆脱当前工作目录影响）
 	outputAbsDir, err := filepath.Abs(outputDir)
@@ -314,13 +252,18 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 	// 例如：outputAbsDir = "D:/game/mmorpg1/go/db" → 模块名 = "db/pb/game"
 	moduleName := filepath.Base(outputAbsDir) + "/" + config.GoPbPath
 
+	relativePath, err := filepath.Rel(config.OutputRoot, filepath.Dir(protoFiles[0]))
+	relativePath = filepath.ToSlash(relativePath)
+
+	os.MkdirAll(outputAbsDir+"/"+relativePath, os.FileMode(0777))
+
 	// 3. 构建protoc命令参数（全部使用绝对路径）
 	args := []string{
-		"--go_out=" + outputAbsDir,          // 生成文件的绝对输出目录
-		"--go_opt=module=" + moduleName,     // 模块名与输出目录绑定
-		"--go_opt=paths=import",             // 按模块路径生成导入语句
-		"--proto_path=" + protoParentAbsDir, // proto查找根目录1（绝对路径）
-		"--proto_path=" + protoBufferAbsDir, // proto查找根目录2（绝对路径）
+		"--go_out=" + outputAbsDir + "/" + relativePath, // 生成文件的绝对输出目录
+		"--go_opt=module=" + moduleName,                 // 模块名与输出目录绑定
+		"--go_opt=paths=import",                         // 按模块路径生成导入语句
+		"--proto_path=" + protoParentAbsDir,             // proto查找根目录1（绝对路径）
+		"--proto_path=" + protoBufferAbsDir,             // proto查找根目录2（绝对路径）
 	}
 
 	// 4. 为每个proto文件生成正确的M映射（关键：路径必须从--proto_path根目录出发）
