@@ -2,8 +2,8 @@ package task
 
 import (
 	"context"
-	game "db/generated/pb/game"
 	"db/internal/logic/pkg/db"
+	dbproto "db/proto/service/go/grpc/db"
 	"fmt"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
@@ -16,7 +16,7 @@ import (
 
 func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 	return func(ctx context.Context, t *asynq.Task) error {
-		var task game.DBTask
+		var task dbproto.DBTask
 		if err := proto.Unmarshal(t.Payload(), &task); err != nil {
 			logx.Errorf("Failed to unmarshal DBTask payload: %v", err)
 			return fmt.Errorf("unmarshal DBTask failed: %v", err)
