@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"pbgen/internal/config"
+	"pbgen/internal/protohelper"
 	"pbgen/util"
 	"runtime"
 	"strings"
@@ -229,6 +230,121 @@ func CollectProtoFiles() []string {
 	}
 
 	return ProtoFiles
+}
+
+func CopyProtoDir1() {
+	util.Wg.Add(1)
+	go func() {
+		defer util.Wg.Done()
+		grpcDirs := util.GetGRPCSubdirectoryNames()
+		for _, dir := range grpcDirs {
+			err := os.MkdirAll(config.GeneratorProtoDirectory+dir, os.FileMode(0777))
+			if err != nil {
+				return
+			}
+			err = util.CopyLocalDir(config.ProtoDir, config.GeneratorProtoDirectory+dir)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}()
+}
+
+// CopyProtoDir 拷贝GRPC目录并为每个文件生成对应相对路径的go_package
+func CopyProtoDir() {
+	util.Wg.Add(1)
+	go func() {
+		defer util.Wg.Done()
+		grpcDirs := util.GetGRPCSubdirectoryNames()
+
+		for _, dirName := range grpcDirs {
+			// 1. 构建源目录和目标目录
+			srcDir := filepath.Join(config.ProtoDir, "service/go/grpc", dirName)
+			destDir := filepath.Join(config.GeneratorProtoDirectory, dirName)
+
+			// 2. 创建目标目录
+			if err := os.MkdirAll(destDir, 0755); err != nil {
+				log.Printf("❌ 创建目录 %s 失败: %v", destDir, err)
+				continue
+			}
+
+			// 3. 拷贝目录
+			if err := util.CopyLocalDir(srcDir, destDir); err != nil {
+				log.Printf("❌ 拷贝目录 %s 失败: %v", srcDir, err)
+				continue
+			}
+			log.Printf("✅ 已拷贝目录: %s -> %s", srcDir, destDir)
+
+			// 4. 为目录下所有文件生成对应相对路径的go_package
+			// 基础路径：项目模块路径 + 原始grpc目录相对路径
+			baseGoPackage := dirName
+			baseGoPackage = filepath.ToSlash(baseGoPackage)
+
+			// 处理目录下所有文件，生成动态go_package
+			if err := processFilesWithDynamicGoPackage(destDir, baseGoPackage, destDir); err != nil {
+				log.Printf("❌ 处理目录 %s 的go_package失败: %v", destDir, err)
+			}
+		}
+	}()
+}
+
+// processFilesWithDynamicGoPackage 为目录下所有文件生成基于相对路径的go_package
+// rootDir: 根目录（用于计算相对路径）
+// baseGoPackage: 基础go_package路径
+// currentDir: 当前处理的目录
+func processFilesWithDynamicGoPackage(rootDir, baseGoPackage, currentDir string) error {
+	entries, err := os.ReadDir(currentDir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		fullPath := filepath.Join(currentDir, entry.Name())
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			// 递归处理子目录
+			if err := processFilesWithDynamicGoPackage(rootDir, baseGoPackage, fullPath); err != nil {
+				return err
+			}
+		} else if strings.EqualFold(filepath.Ext(fullPath), ".proto") {
+			// 计算文件相对根目录的路径
+			relativePath, err := filepath.Rel(rootDir, filepath.Dir(fullPath))
+			if err != nil {
+				return err
+			}
+
+			// 生成动态go_package：基础路径 + 相对目录
+			var goPackagePath string
+			if relativePath == "." {
+				// 文件在根目录，直接使用基础路径
+				goPackagePath = baseGoPackage
+			} else {
+				// 拼接基础路径和相对目录
+				goPackagePath = filepath.Join(
+					baseGoPackage,
+					filepath.ToSlash(relativePath),
+				)
+			}
+
+			goPackagePath = filepath.ToSlash(goPackagePath)
+			
+			// 添加go_package到文件
+			added, err := protohelper.AddGoPackage(fullPath, goPackagePath)
+			if err != nil {
+				return err
+			}
+			if added {
+				log.Printf("📝 为 %s 设置go_package: %s", fullPath, goPackagePath)
+			} else {
+				log.Printf("ℹ️ %s 已存在go_package，跳过", fullPath)
+			}
+		}
+	}
+	return nil
 }
 
 func generateGoProto(protoFiles []string, outputDir string) error {
