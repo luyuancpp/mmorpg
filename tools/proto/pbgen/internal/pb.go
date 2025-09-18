@@ -250,20 +250,25 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 
 	// 2. 计算模块名（与输出目录的绝对路径强关联）
 	// 例如：outputAbsDir = "D:/game/mmorpg1/go/db" → 模块名 = "db/pb/game"
-	moduleName := filepath.Base(outputAbsDir) + "/" + config.GoPbPath
+	moduleName := filepath.Base(outputAbsDir) + "/" + config.GoPackage
 
 	relativePath, err := filepath.Rel(config.OutputRoot, filepath.Dir(protoFiles[0]))
+	relativePath = strings.Replace(relativePath, "proto", config.GoPackage, -1)
 	relativePath = filepath.ToSlash(relativePath)
 
-	os.MkdirAll(outputAbsDir+"/"+relativePath, os.FileMode(0777))
+	outputAbsDir = outputAbsDir + "/" + relativePath
+	err = os.MkdirAll(outputAbsDir, os.FileMode(0777))
+	if err != nil {
+		return err
+	}
 
 	// 3. 构建protoc命令参数（全部使用绝对路径）
 	args := []string{
-		"--go_out=" + outputAbsDir + "/" + relativePath, // 生成文件的绝对输出目录
-		"--go_opt=module=" + moduleName,                 // 模块名与输出目录绑定
-		"--go_opt=paths=import",                         // 按模块路径生成导入语句
-		"--proto_path=" + protoParentAbsDir,             // proto查找根目录1（绝对路径）
-		"--proto_path=" + protoBufferAbsDir,             // proto查找根目录2（绝对路径）
+		"--go_out=" + outputAbsDir,          // 生成文件的绝对输出目录
+		"--go_opt=module=" + moduleName,     // 模块名与输出目录绑定
+		"--go_opt=paths=import",             // 按模块路径生成导入语句
+		"--proto_path=" + protoParentAbsDir, // proto查找根目录1（绝对路径）
+		"--proto_path=" + protoBufferAbsDir, // proto查找根目录2（绝对路径）
 	}
 
 	// 4. 为每个proto文件生成正确的M映射（关键：路径必须从--proto_path根目录出发）
@@ -319,7 +324,7 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 	log.Printf("执行protoc命令: %s", cmd.String())
 
 	if err := cmd.Run(); err != nil {
-		log.Printf("protoc错误输出: %s", stderr.String())
+		log.Printf("c: %s", stderr.String())
 		return fmt.Errorf("protoc执行失败: %v", err)
 	}
 
