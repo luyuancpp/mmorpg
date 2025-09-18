@@ -706,8 +706,7 @@ func GenerateGoGRPCFromProto(rootDir string) error {
 	}
 
 	// 为每个注册的grpc节点目录生成代码
-	baseDir := strings.ToLower(filepath.Base(filepath.Dir(rootDir)))
-	outputDir := filepath.Join(config.NodeGoDirectory, baseDir)
+	outputDir := config.NodeGoDirectory
 	// 确保输出目录存在
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("创建输出目录失败 %s: %v", outputDir, err)
