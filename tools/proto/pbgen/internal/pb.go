@@ -232,7 +232,7 @@ func CollectProtoFiles() []string {
 	return ProtoFiles
 }
 
-func CopyProtoDir1() {
+func CopyProtoDir() {
 	util.Wg.Add(1)
 	go func() {
 		defer util.Wg.Done()
@@ -251,30 +251,15 @@ func CopyProtoDir1() {
 }
 
 // CopyProtoDir 拷贝GRPC目录并为每个文件生成对应相对路径的go_package
-func CopyProtoDir() {
+func AddGoPackageToProtoDir() {
 	util.Wg.Add(1)
 	go func() {
 		defer util.Wg.Done()
 		grpcDirs := util.GetGRPCSubdirectoryNames()
 
 		for _, dirName := range grpcDirs {
-			// 1. 构建源目录和目标目录
-			srcDir := filepath.Join(config.ProtoDir, "service/go/grpc", dirName)
-			destDir := filepath.Join(config.GeneratorProtoDirectory, dirName)
 
-			// 2. 创建目标目录
-			if err := os.MkdirAll(destDir, 0755); err != nil {
-				log.Printf("❌ 创建目录 %s 失败: %v", destDir, err)
-				continue
-			}
-
-			// 3. 拷贝目录
-			if err := util.CopyLocalDir(srcDir, destDir); err != nil {
-				log.Printf("❌ 拷贝目录 %s 失败: %v", srcDir, err)
-				continue
-			}
-			log.Printf("✅ 已拷贝目录: %s -> %s", srcDir, destDir)
-
+			destDir := config.GeneratorProtoDirectory + dirName
 			// 4. 为目录下所有文件生成对应相对路径的go_package
 			// 基础路径：项目模块路径 + 原始grpc目录相对路径
 			baseGoPackage := dirName
@@ -331,7 +316,7 @@ func processFilesWithDynamicGoPackage(rootDir, baseGoPackage, currentDir string)
 			}
 
 			goPackagePath = filepath.ToSlash(goPackagePath)
-			
+
 			// 添加go_package到文件
 			added, err := protohelper.AddGoPackage(fullPath, goPackagePath)
 			if err != nil {
