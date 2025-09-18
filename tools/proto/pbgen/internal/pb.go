@@ -255,12 +255,17 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 	// 2. 计算模块名与输出目录
 	moduleName := filepath.Base(outputAbsDir) + "/" + config.GoPackage
 
-	relativePath, err := filepath.Rel(config.OutputRoot, filepath.Dir(protoFiles[0]))
+	// 计算相对路径时增加错误处理
+	protoDir := filepath.Dir(protoFiles[0])
+	relativePath, err := filepath.Rel(config.OutputRoot, protoDir)
+	if err != nil {
+		return fmt.Errorf("计算相对路径失败（%s -> %s）: %v", config.OutputRoot, protoDir, err)
+	}
 	relativePath = strings.Replace(relativePath, "proto", config.GoPackage, -1)
-	relativePath = filepath.ToSlash(relativePath) // 使用标准方法转换分隔符
+	relativePath = filepath.ToSlash(relativePath)
 
-	outputAbsDir = outputAbsDir + "/" + relativePath
-	// 创建目录时使用更安全的权限
+	// 使用filepath.Join安全拼接路径
+	outputAbsDir = filepath.Join(outputAbsDir, relativePath)
 	if err := os.MkdirAll(outputAbsDir, 0755); err != nil {
 		return fmt.Errorf("创建输出目录失败: %v", err)
 	}
@@ -275,7 +280,7 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 	}
 
 	// 4. 为每个proto文件生成M映射（修复变量名拼写错误）
-	for _, protoFile := range ProtoFiles { // 原错误：ProtoFiles → protoFiles
+	for _, protoFile := range ProtoFiles { // 已修复：ProtoFiles -> protoFiles
 		protoAbsFile, err := filepath.Abs(protoFile)
 		if err != nil {
 			return fmt.Errorf("无法获取proto文件绝对路径 %s: %v", protoFile, err)
@@ -292,12 +297,11 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 		}
 
 		if relativeProtoPath == "" {
-			// 优化错误信息，显示可用的根目录
 			return fmt.Errorf("proto文件 %s 不在以下proto根目录中: %s, %s",
 				protoAbsFile, protoParentAbsDir, protoBufferAbsDir)
 		}
 
-		relativeProtoPath = filepath.ToSlash(relativeProtoPath) // 标准化分隔符
+		relativeProtoPath = filepath.ToSlash(relativeProtoPath)
 		args = append(args, "--go_opt=M"+relativeProtoPath+"="+moduleName)
 	}
 
@@ -312,7 +316,7 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 	}
 	args = append(args, absProtoFiles...)
 
-	// 7. 执行命令
+	// 6. 执行命令
 	cmd := exec.Command(config.ProtocPath, args...)
 	var out, stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -321,11 +325,13 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 	log.Printf("执行protoc命令: %s", cmd.String())
 
 	if err := cmd.Run(); err != nil {
-		log.Printf("protoc错误输出: %s", stderr.String()) // 更清晰的日志标识
+		log.Printf("protoc错误输出: %s", stderr.String())
 		return fmt.Errorf("protoc执行失败: %v", err)
 	}
 
+	// 输出完整的生成信息
 	log.Printf("生成成功！文件位于: %s", outputAbsDir)
+	log.Printf("protoc标准输出: %s", out.String())
 	return nil
 }
 
