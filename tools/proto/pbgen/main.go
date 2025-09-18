@@ -53,6 +53,9 @@ func main() {
 	internal.ReadServiceIdFile()
 	util.Wg.Wait()
 
+	internal.AddGoPackageToProtoDir()
+	util.Wg.Wait()
+
 	internal.BuildProtocDescAllInOne()
 	util.Wg.Wait()
 	internal.ReadAllProtoFileServices()

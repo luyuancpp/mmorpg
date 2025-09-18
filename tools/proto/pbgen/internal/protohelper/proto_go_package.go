@@ -4,8 +4,23 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
+
+// 生成正确格式的 option go_package（包含路径和包名）
+// goPackagePath: 完整的Go包路径（如 "db/service/cpp/rpc/centre"）
+// 返回格式: option go_package = "db/service/cpp/rpc/centre;centre";
+func buildGoPackageLine(goPackagePath string) string {
+	// 从路径中提取最后一段作为包名（如从"db/service/cpp/rpc/centre"提取"centre"）
+	pkgName := filepath.Base(goPackagePath)
+	// 确保包名符合Go规范（替换可能的特殊字符）
+	pkgName = strings.ReplaceAll(pkgName, "-", "_")
+	pkgName = strings.ReplaceAll(pkgName, ".", "_")
+
+	// 生成包含路径和包名的完整语句
+	return fmt.Sprintf("option go_package = \"%s;%s\";", goPackagePath, pkgName)
+}
 
 // AddGoPackage 为指定proto文件添加option go_package
 // protoFile: proto文件路径
@@ -69,7 +84,7 @@ func AddGoPackage(protoFile, goPackagePath string) (bool, error) {
 	}
 
 	// 构建要插入的行
-	goPackageLine := fmt.Sprintf("option go_package = \"%s\";", goPackagePath)
+	goPackageLine := buildGoPackageLine(goPackagePath)
 
 	// 插入新行
 	newLines := make([]string, 0, len(lines)+1)
