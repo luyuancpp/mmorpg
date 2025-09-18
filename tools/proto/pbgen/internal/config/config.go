@@ -84,7 +84,7 @@ const (
 // ----------- 输出目录 -----------
 // 更新后的路径
 const (
-	GoPbPath              = "pb/"
+	GoPbPath              = "proto"
 	ToolDir               = "tools/"
 	TempFileGenerationDir = OutputRoot + ToolDir + "generated/temp/files/"
 	PbDescDirectory       = TempFileGenerationDir + "proto_desc/"
