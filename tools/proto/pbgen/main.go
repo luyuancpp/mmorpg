@@ -46,7 +46,6 @@ func main() {
 	fmt.Println("Current working directory:", dir)
 
 	MakeProjectDir()
-	internal.CollectProtoFiles()
 	internal.CopyProtoDir()
 
 	// 开始读所有的proto文件

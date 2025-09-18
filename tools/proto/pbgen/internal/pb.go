@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -15,6 +16,7 @@ import (
 	"pbgen/util"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 func BuildProtoCpp(protoPath string) error {
@@ -197,39 +199,13 @@ func BuildProtoGrpcCpp(protoPath string) error {
 	return nil
 }
 
-func CollectProtoFiles() []string {
-	// 遍历 config.ProtoDirs 中的每个目录
-	for _, protoPath := range config.ProtoDirs {
-		// 1. 读取 protoPath 目录下的所有文件
-		files, err := os.ReadDir(protoPath)
-		if err != nil {
-			return nil
-		}
-
-		// 2. 筛选有效的 .proto 文件并排除 config.DbProtoFileName
-		for _, file := range files {
-			// 跳过非 .proto 文件和 config.DbProtoFileName
-			if !util.IsProtoFile(file) || file.Name() == config.DbProtoFileName {
-				continue
-			}
-
-			// 将符合条件的文件添加到 protoFiles 中
-			fullPath := filepath.ToSlash(filepath.Join(protoPath, file.Name()))
-			ProtoFiles = append(ProtoFiles, fullPath)
-		}
-
-		// 如果该目录没有符合条件的 .proto 文件，记录日志但不返回错误
-		if len(ProtoFiles) == 0 {
-			log.Printf("No valid proto files found in path: %s", protoPath)
-		}
-	}
-
-	// 如果 protoFiles 为空，表示没有任何有效的 .proto 文件
-	if len(ProtoFiles) == 0 {
-		return nil
-	}
-
-	return ProtoFiles
+func BuildGeneratorProtoPath(dir string) string {
+	// 使用filepath.Join自动处理路径分隔符，确保跨平台兼容
+	return filepath.Join(
+		config.GeneratorProtoDirectory,
+		dir+"/",
+		config.ProtoDirName,
+	)
 }
 
 func CopyProtoDir() {
@@ -238,11 +214,12 @@ func CopyProtoDir() {
 		defer util.Wg.Done()
 		grpcDirs := util.GetGRPCSubdirectoryNames()
 		for _, dir := range grpcDirs {
-			err := os.MkdirAll(config.GeneratorProtoDirectory+dir, os.FileMode(0777))
+			destDir := BuildGeneratorProtoPath(dir)
+			err := os.MkdirAll(destDir, os.FileMode(0777))
 			if err != nil {
 				return
 			}
-			err = util.CopyLocalDir(config.ProtoDir, config.GeneratorProtoDirectory+dir)
+			err = util.CopyLocalDir(config.ProtoDir, destDir)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -436,12 +413,40 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 	return nil
 }
 
-// GenerateGoGRPCFromProto processes .proto files in the given directory
-func GenerateGoGRPCFromProto(protoPath string) error {
-	if !util.HasGrpcService(protoPath) {
-		return nil
+func generateGoProto1(protoFiles []string, outputDir string, protoRootPath string) error {
+	// 提前校验空输入
+	if len(protoFiles) == 0 {
+		return fmt.Errorf("protoFiles不能为空")
 	}
 
+	// 3. 构建protoc命令参数
+	args := []string{
+		"--go_out=" + outputDir,
+		"--proto_path=" + protoRootPath,
+		"--proto_path=" + config.ProtoBufferDirectory,
+	}
+
+	args = append(args, protoFiles...)
+
+	// 6. 执行命令
+	cmd := exec.Command(config.ProtocPath, args...)
+	var out, stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	log.Printf("执行protoc命令: %s", cmd.String())
+
+	if err := cmd.Run(); err != nil {
+		log.Printf("protoc错误输出: %s", stderr.String())
+		return fmt.Errorf("protoc执行失败: %v", err)
+	}
+
+	// 输出完整的生成信息
+	return nil
+}
+
+// GenerateGoGRPCFromProto processes .proto files in the given directory
+func GenerateGoGRPCFromProto1(protoPath string) error {
 	if util.CheckEtcdServiceExistence(protoPath) {
 		return nil
 	}
@@ -466,26 +471,18 @@ func GenerateGoGRPCFromProto(protoPath string) error {
 
 	// 3. 如果没有符合条件的 proto 文件，记录日志并退出
 	if len(protoFiles) == 0 {
-		log.Println("No proto files to process for login:", protoPath)
+		log.Println("No proto files to process :", protoPath)
 		return nil
 	}
 
 	// 4. 为所有注册的 grpc 节点目录生成 Go gRPC 代码
 	for i := 0; i < len(config.ProtoDirs); i++ {
-		if !util.HasGrpcService(config.ProtoDirs[i]) {
-			continue
-		}
 		basePath := strings.ToLower(path.Base(config.ProtoDirs[i]))
 		outputDir := config.NodeGoDirectory + basePath
-		err := generateGoProto(protoFiles, outputDir)
+		err := generateGoProto1(protoFiles, outputDir, protoPath)
 		if err != nil {
 			return err
 		}
-	}
-
-	err = generateGoProto(protoFiles, config.RobotGoOutputDirectory)
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -675,25 +672,91 @@ func BuildAllProtoc() {
 	}
 }
 
-func BuildGrpcServiceProto() {
-	// Iterate over configured proto directories
-	for i := 0; i < len(config.ProtoDirs); i++ {
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			err := BuildProtoGo(config.ProtoDirs[i])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
-
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			err := GenerateGoGRPCFromProto(config.ProtoDirs[i])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
+// GenerateGoGRPCFromProto 递归处理指定目录下所有proto文件并生成Go gRPC代码
+func GenerateGoGRPCFromProto(rootDir string) error {
+	if util.CheckEtcdServiceExistence(rootDir) {
+		return nil
 	}
+
+	// 递归收集所有proto文件
+	var protoFiles []string
+	err := filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return fmt.Errorf("访问路径失败 %s: %v", path, err)
+		}
+
+		// 跳过目录和数据库proto文件
+		if d.IsDir() || !util.IsProtoFile(d) || d.Name() == config.DbProtoFileName {
+			return nil
+		}
+
+		// 收集符合条件的proto文件（转换为斜杠路径）
+		protoFiles = append(protoFiles, filepath.ToSlash(path))
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("递归遍历目录失败 %s: %v", rootDir, err)
+	}
+
+	// 无proto文件时直接返回
+	if len(protoFiles) == 0 {
+		log.Printf("目录 %s 下没有需要处理的proto文件", rootDir)
+		return nil
+	}
+
+	// 为每个注册的grpc节点目录生成代码
+	baseDir := strings.ToLower(filepath.Base(filepath.Dir(rootDir)))
+	outputDir := filepath.Join(config.NodeGoDirectory, baseDir)
+	// 确保输出目录存在
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return fmt.Errorf("创建输出目录失败 %s: %v", outputDir, err)
+	}
+
+	rootDir = filepath.Dir(rootDir)
+	rootDir = filepath.ToSlash(rootDir)
+
+	// 生成代码时传入基础go_package路径
+	if err := generateGoProto1(protoFiles, outputDir, rootDir); err != nil {
+		return fmt.Errorf("生成节点代码失败 %s: %v", outputDir, err)
+	}
+
+	// 生成机器人相关代码
+	if err := os.MkdirAll(config.RobotGoOutputDirectory, 0755); err != nil {
+		return fmt.Errorf("创建机器人输出目录失败: %v", err)
+	}
+
+	return nil
+}
+
+// BuildGrpcServiceProto 并发处理所有GRPC目录，递归遍历每个目录下的proto文件
+func BuildGrpcServiceProto() {
+	grpcDirs := util.GetGRPCSubdirectoryNames()
+	var wg sync.WaitGroup
+
+	for _, dirName := range grpcDirs {
+		wg.Add(1)
+
+		// 传递当前目录名副本到goroutine，避免循环变量捕获问题
+		go func(currentDir string) {
+			defer wg.Done()
+
+			// 构建目标目录路径
+			destDir := BuildGeneratorProtoPath(currentDir)
+			if _, err := os.Stat(destDir); errors.Is(err, os.ErrNotExist) {
+				log.Printf("目录 %s 不存在，跳过处理", destDir)
+				return
+			}
+
+			// 递归处理该目录下所有proto文件
+			if err := GenerateGoGRPCFromProto(destDir); err != nil {
+				log.Printf("处理目录 %s 失败: %v", currentDir, err)
+			} else {
+				log.Printf("目录 %s 处理完成", currentDir)
+			}
+		}(dirName)
+	}
+
+	wg.Wait()
+	log.Println("所有GRPC服务proto文件递归处理完成")
 }
