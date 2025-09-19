@@ -68,7 +68,7 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 
 		// 返回结果写入 Redis
 		if task.TaskId != "" {
-			result := &game.TaskResult{
+			result := &dbproto.TaskResult{
 				Success: resultErr == "",
 				Data:    resultData,
 				Error:   resultErr,
