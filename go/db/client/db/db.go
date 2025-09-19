@@ -30,6 +30,6 @@ func NewDb(cli zrpc.Client) Db {
 }
 
 func (m *defaultDb) Test(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
-	client := db.NewDbClient(m.cli.Conn())
+	client := db_db.NewDbClient(m.cli.Conn())
 	return client.Test(ctx, in, opts...)
 }
