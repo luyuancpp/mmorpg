@@ -224,6 +224,8 @@ func CopyProtoDir() {
 				log.Fatal(err)
 			}
 		}
+
+		util.CopyLocalDir(config.ProtoDir, config.ProtoNormalPackageDirectory)
 	}()
 }
 
@@ -243,9 +245,20 @@ func AddGoPackageToProtoDir() {
 			baseGoPackage = filepath.ToSlash(baseGoPackage)
 
 			// 处理目录下所有文件，生成动态go_package
-			if err := processFilesWithDynamicGoPackage(destDir, baseGoPackage, destDir); err != nil {
+			if err := processFilesWithDynamicGoPackage(destDir, baseGoPackage, destDir, true); err != nil {
 				log.Printf("❌ 处理目录 %s 的go_package失败: %v", destDir, err)
 			}
+		}
+
+		destDir := config.ProtoNormalPackageDirectory
+		// 4. 为目录下所有文件生成对应相对路径的go_package
+		// 基础路径：项目模块路径 + 原始grpc目录相对路径
+		baseGoPackage := config.ProtoName
+		baseGoPackage = filepath.ToSlash(baseGoPackage)
+
+		// 处理目录下所有文件，生成动态go_package
+		if err := processFilesWithDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
+			log.Printf("❌ 处理目录 %s 的go_package失败: %v", destDir, err)
 		}
 	}()
 }
@@ -254,7 +267,7 @@ func AddGoPackageToProtoDir() {
 // rootDir: 根目录（用于计算相对路径）
 // baseGoPackage: 基础go_package路径
 // currentDir: 当前处理的目录
-func processFilesWithDynamicGoPackage(rootDir, baseGoPackage, currentDir string) error {
+func processFilesWithDynamicGoPackage(rootDir, baseGoPackage, currentDir string, isMulti bool) error {
 	entries, err := os.ReadDir(currentDir)
 	if err != nil {
 		return err
@@ -269,7 +282,7 @@ func processFilesWithDynamicGoPackage(rootDir, baseGoPackage, currentDir string)
 
 		if info.IsDir() {
 			// 递归处理子目录
-			if err := processFilesWithDynamicGoPackage(rootDir, baseGoPackage, fullPath); err != nil {
+			if err := processFilesWithDynamicGoPackage(rootDir, baseGoPackage, fullPath, isMulti); err != nil {
 				return err
 			}
 		} else if strings.EqualFold(filepath.Ext(fullPath), ".proto") {
@@ -295,7 +308,7 @@ func processFilesWithDynamicGoPackage(rootDir, baseGoPackage, currentDir string)
 			goPackagePath = filepath.ToSlash(goPackagePath)
 
 			// 添加go_package到文件
-			added, err := protohelper.AddGoPackage(fullPath, goPackagePath)
+			added, err := protohelper.AddGoPackage(fullPath, goPackagePath, isMulti)
 			if err != nil {
 				return err
 			}
