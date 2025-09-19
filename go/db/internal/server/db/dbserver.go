@@ -7,7 +7,7 @@ package server
 import (
 	"context"
 
-	"db/db/proto/service/go/grpc/db"
+	"db/D:/game/luyuan/mmorpg1/go/chat/generated/pb/game"
 	"db/internal/logic/db"
 	"db/internal/svc"
 )

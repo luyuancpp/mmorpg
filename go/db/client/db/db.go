@@ -7,7 +7,7 @@ package db
 import (
 	"context"
 
-	"db/db/proto/service/go/grpc/db"
+	"db/D:/game/luyuan/mmorpg1/go/chat/generated/pb/game"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
