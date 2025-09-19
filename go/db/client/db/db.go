@@ -7,7 +7,7 @@ package db
 import (
 	"context"
 
-	"db/generated/pb/game"
+	"db/db/proto/service/go/grpc/db"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
@@ -30,6 +30,6 @@ func NewDb(cli zrpc.Client) Db {
 }
 
 func (m *defaultDb) Test(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
-	client := game.NewDbClient(m.cli.Conn())
+	client := db_db.NewDbClient(m.cli.Conn())
 	return client.Test(ctx, in, opts...)
 }

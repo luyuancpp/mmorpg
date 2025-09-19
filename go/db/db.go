@@ -1,7 +1,6 @@
 package main
 
 import (
-	"db/generated/pb/game"
 	"db/internal/config"
 	"db/internal/logic/pkg/db"
 	task2 "db/internal/logic/pkg/task"
