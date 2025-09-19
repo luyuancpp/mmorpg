@@ -6,15 +6,16 @@ package server
 
 import (
 	"context"
+	"db/proto/common"
 
-	"db/D:/game/luyuan/mmorpg1/go/chat/generated/pb/game"
+	"db/proto/service/go/grpc/db"
 	"db/internal/logic/db"
 	"db/internal/svc"
 )
 
 type DbServer struct {
 	svcCtx *svc.ServiceContext
-	db_db.UnimplementedDbServer
+	db.UnimplementedDbServer
 }
 
 func NewDbServer(svcCtx *svc.ServiceContext) *DbServer {
@@ -23,7 +24,7 @@ func NewDbServer(svcCtx *svc.ServiceContext) *DbServer {
 	}
 }
 
-func (s *DbServer) Test(ctx context.Context, in *db_db.Empty) (*db_db.Empty, error) {
+func (s *DbServer) Test(ctx context.Context, in *common.Empty) (*common.Empty, error) {
 	l := dblogic.NewTestLogic(ctx, s.svcCtx)
 	return l.Test(in)
 }
