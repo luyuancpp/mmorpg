@@ -58,7 +58,7 @@ GRPC_SERVICE_DIR = PROJECT_DIR / "proto" / "service" / "grpc"
 # 生成代码的源路径
 # -----------------------------
 SRC_CPP = GENERATED_CODE_DIR / "cpp"
-SRC_GO = PROJECT_GENERATED_CODE_DIR / "go"
+SRC_GO = PROJECT_GENERATED_CODE_DIR / "go" / "generated"
 SRC_CPP_ID_BIT_INDEX = SRC_CPP / "bit_index"
 SRC_CPP_CONSTANTS = SRC_CPP / "constants"
 SRC_CPP_TABLE_ID = SRC_CPP / "table_id"
@@ -73,13 +73,13 @@ SRC_GO_CONSTANTS = SRC_GO / "constants"
 # 生成代码的目标路径
 # -----------------------------
 DST_CPP_CODE = CPP_GENERATED_DIR / "code"
-DST_GO_CODE = SRC_GO / "generated"
+DST_GO_CODE = SRC_GO
 DST_CPP_ID_BIT_INDEX = DST_CPP_CODE / "bit_index"
 DST_CPP_CONSTANTS = DST_CPP_CODE / "constants"
 DST_PROTO_CPP = CPP_GENERATED_DIR / "proto"
 DST_PROTO_CPP_OPERATOR = DST_PROTO_CPP / "operator"
 DST_PROTO_CPP_TIP = DST_PROTO_CPP / "tip"
-DST_PROTO_GO = DST_GO_CODE
+DST_PROTO_GO = PROJECT_GENERATED_CODE_DIR / "go"
 DST_CPP_TABLE_ID = DST_CPP_CODE / "table_id"
 DST_GO_TABLE_ID = SRC_GO / "table_id"
 DST_GO_GRPC = PROJECT_DIR / "go"
