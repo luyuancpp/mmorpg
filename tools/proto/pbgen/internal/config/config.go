@@ -84,9 +84,7 @@ const (
 // ----------- 输出目录 -----------
 // 更新后的路径
 const (
-	ProtocPath = "protoc"
-	ProtoName  = "proto"
-
+	ProtocPath            = "protoc"
 	GoPackage             = "generated/pb/game"
 	ToolDir               = "tools/"
 	TempFileGenerationDir = OutputRoot + ToolDir + "generated/temp/files/"
