@@ -11,6 +11,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
+	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -21,25 +22,135 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type TestRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 可以嵌套导入的message，但外层必须是当前proto的message
+	Empty         *common.Empty `protobuf:"bytes,1,opt,name=empty,proto3" json:"empty,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestRequest) Reset() {
+	*x = TestRequest{}
+	mi := &file_proto_service_go_grpc_db_db_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestRequest) ProtoMessage() {}
+
+func (x *TestRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_service_go_grpc_db_db_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestRequest.ProtoReflect.Descriptor instead.
+func (*TestRequest) Descriptor() ([]byte, []int) {
+	return file_proto_service_go_grpc_db_db_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *TestRequest) GetEmpty() *common.Empty {
+	if x != nil {
+		return x.Empty
+	}
+	return nil
+}
+
+type TestResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Empty         *common.Empty          `protobuf:"bytes,1,opt,name=empty,proto3" json:"empty,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestResponse) Reset() {
+	*x = TestResponse{}
+	mi := &file_proto_service_go_grpc_db_db_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestResponse) ProtoMessage() {}
+
+func (x *TestResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_service_go_grpc_db_db_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestResponse.ProtoReflect.Descriptor instead.
+func (*TestResponse) Descriptor() ([]byte, []int) {
+	return file_proto_service_go_grpc_db_db_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *TestResponse) GetEmpty() *common.Empty {
+	if x != nil {
+		return x.Empty
+	}
+	return nil
+}
+
 var File_proto_service_go_grpc_db_db_proto protoreflect.FileDescriptor
 
 const file_proto_service_go_grpc_db_db_proto_rawDesc = "" +
 	"\n" +
-	"!proto/service/go/grpc/db/db.proto\x1a\x18proto/common/empty.proto2\x1c\n" +
-	"\x02db\x12\x16\n" +
-	"\x04Test\x12\x06.Empty\x1a\x06.EmptyB&Z$db/proto/service/go/grpc/db;db_protob\x06proto3"
+	"!proto/service/go/grpc/db/db.proto\x1a\x18proto/common/empty.proto\"+\n" +
+	"\vTestRequest\x12\x1c\n" +
+	"\x05empty\x18\x01 \x01(\v2\x06.EmptyR\x05empty\",\n" +
+	"\fTestResponse\x12\x1c\n" +
+	"\x05empty\x18\x01 \x01(\v2\x06.EmptyR\x05empty2)\n" +
+	"\x02db\x12#\n" +
+	"\x04Test\x12\f.TestRequest\x1a\r.TestResponseB&Z$db/proto/service/go/grpc/db;db_protob\x06proto3"
 
+var (
+	file_proto_service_go_grpc_db_db_proto_rawDescOnce sync.Once
+	file_proto_service_go_grpc_db_db_proto_rawDescData []byte
+)
+
+func file_proto_service_go_grpc_db_db_proto_rawDescGZIP() []byte {
+	file_proto_service_go_grpc_db_db_proto_rawDescOnce.Do(func() {
+		file_proto_service_go_grpc_db_db_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_go_grpc_db_db_proto_rawDesc), len(file_proto_service_go_grpc_db_db_proto_rawDesc)))
+	})
+	return file_proto_service_go_grpc_db_db_proto_rawDescData
+}
+
+var file_proto_service_go_grpc_db_db_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_service_go_grpc_db_db_proto_goTypes = []any{
-	(*common.Empty)(nil), // 0: Empty
+	(*TestRequest)(nil),  // 0: TestRequest
+	(*TestResponse)(nil), // 1: TestResponse
+	(*common.Empty)(nil), // 2: Empty
 }
 var file_proto_service_go_grpc_db_db_proto_depIdxs = []int32{
-	0, // 0: db.Test:input_type -> Empty
-	0, // 1: db.Test:output_type -> Empty
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // 0: TestRequest.empty:type_name -> Empty
+	2, // 1: TestResponse.empty:type_name -> Empty
+	0, // 2: db.Test:input_type -> TestRequest
+	1, // 3: db.Test:output_type -> TestResponse
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_service_go_grpc_db_db_proto_init() }
@@ -53,12 +164,13 @@ func file_proto_service_go_grpc_db_db_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_go_grpc_db_db_proto_rawDesc), len(file_proto_service_go_grpc_db_db_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   0,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_proto_service_go_grpc_db_db_proto_goTypes,
 		DependencyIndexes: file_proto_service_go_grpc_db_db_proto_depIdxs,
+		MessageInfos:      file_proto_service_go_grpc_db_db_proto_msgTypes,
 	}.Build()
 	File_proto_service_go_grpc_db_db_proto = out.File
 	file_proto_service_go_grpc_db_db_proto_goTypes = nil

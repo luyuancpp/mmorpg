@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/go/grpc/login/login.proto
 
-package login
+package login_proto
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -594,6 +594,42 @@ func (x *LoginNodeDisconnectRequest) GetSessionId() uint64 {
 	return 0
 }
 
+type LoginEmptyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LoginEmptyResponse) Reset() {
+	*x = LoginEmptyResponse{}
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginEmptyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginEmptyResponse) ProtoMessage() {}
+
+func (x *LoginEmptyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_service_go_grpc_login_login_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LoginEmptyResponse.ProtoReflect.Descriptor instead.
+func (*LoginEmptyResponse) Descriptor() ([]byte, []int) {
+	return file_proto_service_go_grpc_login_login_proto_rawDescGZIP(), []int{11}
+}
+
 var File_proto_service_go_grpc_login_login_proto protoreflect.FileDescriptor
 
 const file_proto_service_go_grpc_login_login_proto_rawDesc = "" +
@@ -636,14 +672,15 @@ const file_proto_service_go_grpc_login_login_proto_rawDesc = "" +
 	"\x10LeaveGameRequest\";\n" +
 	"\x1aLoginNodeDisconnectRequest\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId2\xc7\x02\n" +
+	"session_id\x18\x01 \x01(\x04R\tsessionId\"\x14\n" +
+	"\x12LoginEmptyResponse2\xf1\x02\n" +
 	"\x11ClientPlayerLogin\x126\n" +
 	"\x05Login\x12\x15.loginpb.LoginRequest\x1a\x16.loginpb.LoginResponse\x12K\n" +
 	"\fCreatePlayer\x12\x1c.loginpb.CreatePlayerRequest\x1a\x1d.loginpb.CreatePlayerResponse\x12B\n" +
-	"\tEnterGame\x12\x19.loginpb.EnterGameRequest\x1a\x1a.loginpb.EnterGameResponse\x12.\n" +
-	"\tLeaveGame\x12\x19.loginpb.LeaveGameRequest\x1a\x06.Empty\x129\n" +
+	"\tEnterGame\x12\x19.loginpb.EnterGameRequest\x1a\x1a.loginpb.EnterGameResponse\x12C\n" +
+	"\tLeaveGame\x12\x19.loginpb.LeaveGameRequest\x1a\x1b.loginpb.LoginEmptyResponse\x12N\n" +
 	"\n" +
-	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x06.EmptyB)Z'login/proto/service/go/grpc/login;loginb\x06proto3"
+	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x1b.loginpb.LoginEmptyResponseB/Z-login/proto/service/go/grpc/login;login_protob\x06proto3"
 
 var (
 	file_proto_service_go_grpc_login_login_proto_rawDescOnce sync.Once
@@ -657,7 +694,7 @@ func file_proto_service_go_grpc_login_login_proto_rawDescGZIP() []byte {
 	return file_proto_service_go_grpc_login_login_proto_rawDescData
 }
 
-var file_proto_service_go_grpc_login_login_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_proto_service_go_grpc_login_login_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_proto_service_go_grpc_login_login_proto_goTypes = []any{
 	(*LoginSessionInfo)(nil),           // 0: loginpb.LoginSessionInfo
 	(*AccountSimplePlayerWrapper)(nil), // 1: loginpb.AccountSimplePlayerWrapper
@@ -670,19 +707,19 @@ var file_proto_service_go_grpc_login_login_proto_goTypes = []any{
 	(*EnterGameResponse)(nil),          // 8: loginpb.EnterGameResponse
 	(*LeaveGameRequest)(nil),           // 9: loginpb.LeaveGameRequest
 	(*LoginNodeDisconnectRequest)(nil), // 10: loginpb.LoginNodeDisconnectRequest
-	(*common.AccountSimplePlayer)(nil), // 11: AccountSimplePlayer
-	(*common.TipInfoMessage)(nil),      // 12: TipInfoMessage
-	(*common.Empty)(nil),               // 13: Empty
+	(*LoginEmptyResponse)(nil),         // 11: loginpb.LoginEmptyResponse
+	(*common.AccountSimplePlayer)(nil), // 12: AccountSimplePlayer
+	(*common.TipInfoMessage)(nil),      // 13: TipInfoMessage
 }
 var file_proto_service_go_grpc_login_login_proto_depIdxs = []int32{
-	11, // 0: loginpb.AccountSimplePlayerWrapper.player:type_name -> AccountSimplePlayer
-	12, // 1: loginpb.LoginResponse.error_message:type_name -> TipInfoMessage
+	12, // 0: loginpb.AccountSimplePlayerWrapper.player:type_name -> AccountSimplePlayer
+	13, // 1: loginpb.LoginResponse.error_message:type_name -> TipInfoMessage
 	1,  // 2: loginpb.LoginResponse.players:type_name -> loginpb.AccountSimplePlayerWrapper
-	12, // 3: loginpb.TestResponse.error_message:type_name -> TipInfoMessage
+	13, // 3: loginpb.TestResponse.error_message:type_name -> TipInfoMessage
 	1,  // 4: loginpb.TestResponse.players:type_name -> loginpb.AccountSimplePlayerWrapper
-	12, // 5: loginpb.CreatePlayerResponse.error_message:type_name -> TipInfoMessage
+	13, // 5: loginpb.CreatePlayerResponse.error_message:type_name -> TipInfoMessage
 	1,  // 6: loginpb.CreatePlayerResponse.players:type_name -> loginpb.AccountSimplePlayerWrapper
-	12, // 7: loginpb.EnterGameResponse.error_message:type_name -> TipInfoMessage
+	13, // 7: loginpb.EnterGameResponse.error_message:type_name -> TipInfoMessage
 	2,  // 8: loginpb.ClientPlayerLogin.Login:input_type -> loginpb.LoginRequest
 	5,  // 9: loginpb.ClientPlayerLogin.CreatePlayer:input_type -> loginpb.CreatePlayerRequest
 	7,  // 10: loginpb.ClientPlayerLogin.EnterGame:input_type -> loginpb.EnterGameRequest
@@ -691,8 +728,8 @@ var file_proto_service_go_grpc_login_login_proto_depIdxs = []int32{
 	3,  // 13: loginpb.ClientPlayerLogin.Login:output_type -> loginpb.LoginResponse
 	6,  // 14: loginpb.ClientPlayerLogin.CreatePlayer:output_type -> loginpb.CreatePlayerResponse
 	8,  // 15: loginpb.ClientPlayerLogin.EnterGame:output_type -> loginpb.EnterGameResponse
-	13, // 16: loginpb.ClientPlayerLogin.LeaveGame:output_type -> Empty
-	13, // 17: loginpb.ClientPlayerLogin.Disconnect:output_type -> Empty
+	11, // 16: loginpb.ClientPlayerLogin.LeaveGame:output_type -> loginpb.LoginEmptyResponse
+	11, // 17: loginpb.ClientPlayerLogin.Disconnect:output_type -> loginpb.LoginEmptyResponse
 	13, // [13:18] is the sub-list for method output_type
 	8,  // [8:13] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
@@ -711,7 +748,7 @@ func file_proto_service_go_grpc_login_login_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_go_grpc_login_login_proto_rawDesc), len(file_proto_service_go_grpc_login_login_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

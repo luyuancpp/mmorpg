@@ -14,7 +14,7 @@ import (
 
 type ClientPlayerLoginServer struct {
 	svcCtx *svc.ServiceContext
-	login_login.UnimplementedClientPlayerLoginServer
+	login_login_proto.UnimplementedClientPlayerLoginServer
 }
 
 func NewClientPlayerLoginServer(svcCtx *svc.ServiceContext) *ClientPlayerLoginServer {
@@ -23,27 +23,27 @@ func NewClientPlayerLoginServer(svcCtx *svc.ServiceContext) *ClientPlayerLoginSe
 	}
 }
 
-func (s *ClientPlayerLoginServer) Login(ctx context.Context, in *login_login.LoginRequest) (*login_login.LoginResponse, error) {
+func (s *ClientPlayerLoginServer) Login(ctx context.Context, in *login_login_proto.LoginRequest) (*login_login_proto.LoginResponse, error) {
 	l := clientplayerloginlogic.NewLoginLogic(ctx, s.svcCtx)
 	return l.Login(in)
 }
 
-func (s *ClientPlayerLoginServer) CreatePlayer(ctx context.Context, in *login_login.CreatePlayerRequest) (*login_login.CreatePlayerResponse, error) {
+func (s *ClientPlayerLoginServer) CreatePlayer(ctx context.Context, in *login_login_proto.CreatePlayerRequest) (*login_login_proto.CreatePlayerResponse, error) {
 	l := clientplayerloginlogic.NewCreatePlayerLogic(ctx, s.svcCtx)
 	return l.CreatePlayer(in)
 }
 
-func (s *ClientPlayerLoginServer) EnterGame(ctx context.Context, in *login_login.EnterGameRequest) (*login_login.EnterGameResponse, error) {
+func (s *ClientPlayerLoginServer) EnterGame(ctx context.Context, in *login_login_proto.EnterGameRequest) (*login_login_proto.EnterGameResponse, error) {
 	l := clientplayerloginlogic.NewEnterGameLogic(ctx, s.svcCtx)
 	return l.EnterGame(in)
 }
 
-func (s *ClientPlayerLoginServer) LeaveGame(ctx context.Context, in *login_login.LeaveGameRequest) (*login_login.Empty, error) {
+func (s *ClientPlayerLoginServer) LeaveGame(ctx context.Context, in *login_login_proto.LeaveGameRequest) (*login_login_proto.LoginEmptyResponse, error) {
 	l := clientplayerloginlogic.NewLeaveGameLogic(ctx, s.svcCtx)
 	return l.LeaveGame(in)
 }
 
-func (s *ClientPlayerLoginServer) Disconnect(ctx context.Context, in *login_login.LoginNodeDisconnectRequest) (*login_login.Empty, error) {
+func (s *ClientPlayerLoginServer) Disconnect(ctx context.Context, in *login_login_proto.LoginNodeDisconnectRequest) (*login_login_proto.LoginEmptyResponse, error) {
 	l := clientplayerloginlogic.NewDisconnectLogic(ctx, s.svcCtx)
 	return l.Disconnect(in)
 }
