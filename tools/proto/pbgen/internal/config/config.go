@@ -193,6 +193,7 @@ var (
 		"service/go/grpc/chat/",
 		"service/go/grpc/team/",
 		"service/go/grpc/mail/",
+		"logic/database/",
 	}
 
 	ProtoDirs []string

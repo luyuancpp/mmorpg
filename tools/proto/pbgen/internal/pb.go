@@ -436,6 +436,7 @@ func generateGoProto1(protoFiles []string, outputDir string, protoRootPath strin
 	// 3. 构建protoc命令参数
 	args := []string{
 		"--go_out=" + outputDir,
+		"--go-grpc_out=" + outputDir,
 		"--proto_path=" + protoRootPath,
 		"--proto_path=" + config.ProtoBufferDirectory,
 	}
