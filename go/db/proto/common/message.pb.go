@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/common/message.proto
 
-package common
+package db_proto
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -1759,7 +1759,7 @@ const file_proto_common_message_proto_rawDesc = "" +
 	"\tself_node\x18\x03 \x01(\v2\t.NodeInfoR\bselfNode\"u\n" +
 	"\x15NodeHandshakeResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12&\n" +
-	"\tpeer_node\x18\x02 \x01(\v2\t.NodeInfoR\bpeerNodeB\x18Z\x16db/proto/common;commonb\x06proto3"
+	"\tpeer_node\x18\x02 \x01(\v2\t.NodeInfoR\bpeerNodeB\x1aZ\x18db/proto/common;db_protob\x06proto3"
 
 var (
 	file_proto_common_message_proto_rawDescOnce sync.Once

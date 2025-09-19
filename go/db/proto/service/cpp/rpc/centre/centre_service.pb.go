@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/cpp/rpc/centre/centre_service.proto
 
-package centre
+package db_proto
 
 import (
 	common "db/proto/common"
@@ -455,7 +455,7 @@ const file_proto_service_cpp_rpc_centre_centre_service_proto_rawDesc = "" +
 	"\x12RouteNodeStringMsg\x12\x14.RouteMessageRequest\x1a\x15.RouteMessageResponse\x12O\n" +
 	"\x14RoutePlayerStringMsg\x12\x1a.RoutePlayerMessageRequest\x1a\x1b.RoutePlayerMessageResponse\x12.\n" +
 	"\rInitSceneNode\x12\x15.InitSceneNodeRequest\x1a\x06.Empty\x12>\n" +
-	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB+Z&db/proto/service/cpp/rpc/centre;centre\x80\x01\x01b\x06proto3"
+	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB-Z(db/proto/service/cpp/rpc/centre;db_proto\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_centre_centre_service_proto_rawDescOnce sync.Once

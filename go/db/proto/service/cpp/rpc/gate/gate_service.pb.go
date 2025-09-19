@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/cpp/rpc/gate/gate_service.proto
 
-package gate
+package db_proto
 
 import (
 	common "db/proto/common"
@@ -136,7 +136,7 @@ const file_proto_service_cpp_rpc_gate_gate_service_proto_rawDesc = "" +
 	"\x10RouteNodeMessage\x12\x14.RouteMessageRequest\x1a\x15.RouteMessageResponse\x12M\n" +
 	"\x12RoutePlayerMessage\x12\x1a.RoutePlayerMessageRequest\x1a\x1b.RoutePlayerMessageResponse\x128\n" +
 	"\x12BroadcastToPlayers\x12\x1a.BroadcastToPlayersRequest\x1a\x06.Empty\x12>\n" +
-	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB'Z\"db/proto/service/cpp/rpc/gate;gate\x80\x01\x01b\x06proto3"
+	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB+Z&db/proto/service/cpp/rpc/gate;db_proto\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_gate_gate_service_proto_rawDescOnce sync.Once

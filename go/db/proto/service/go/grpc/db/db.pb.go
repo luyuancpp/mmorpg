@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/go/grpc/db/db.proto
 
-package db
+package db_proto
 
 import (
 	common "db/proto/common"
@@ -27,7 +27,7 @@ const file_proto_service_go_grpc_db_db_proto_rawDesc = "" +
 	"\n" +
 	"!proto/service/go/grpc/db/db.proto\x1a\x18proto/common/empty.proto2\x1c\n" +
 	"\x02db\x12\x16\n" +
-	"\x04Test\x12\x06.Empty\x1a\x06.EmptyB Z\x1edb/proto/service/go/grpc/db;dbb\x06proto3"
+	"\x04Test\x12\x06.Empty\x1a\x06.EmptyB&Z$db/proto/service/go/grpc/db;db_protob\x06proto3"
 
 var file_proto_service_go_grpc_db_db_proto_goTypes = []any{
 	(*common.Empty)(nil), // 0: Empty

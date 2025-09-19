@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/middleware/etcd/version.proto
 
-package etcd
+package db_proto
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -88,7 +88,7 @@ const file_proto_middleware_etcd_version_proto_rawDesc = "" +
 	"\x10etcd_version_msg\x12\x1f.google.protobuf.MessageOptions\x18І\x03 \x01(\tR\x0eetcdVersionMsg\x88\x01\x01:P\n" +
 	"\x12etcd_version_field\x12\x1d.google.protobuf.FieldOptions\x18ц\x03 \x01(\tR\x10etcdVersionField\x88\x01\x01:M\n" +
 	"\x11etcd_version_enum\x12\x1c.google.protobuf.EnumOptions\x18҆\x03 \x01(\tR\x0fetcdVersionEnum\x88\x01\x01:]\n" +
-	"\x17etcd_version_enum_value\x12!.google.protobuf.EnumValueOptions\x18ӆ\x03 \x01(\tR\x14etcdVersionEnumValue\x88\x01\x01B\x1fZ\x1ddb/proto/middleware/etcd;etcdb\x06proto3"
+	"\x17etcd_version_enum_value\x12!.google.protobuf.EnumValueOptions\x18ӆ\x03 \x01(\tR\x14etcdVersionEnumValue\x88\x01\x01B#Z!db/proto/middleware/etcd;db_protob\x06proto3"
 
 var file_proto_middleware_etcd_version_proto_goTypes = []any{
 	(*descriptorpb.MessageOptions)(nil),   // 0: google.protobuf.MessageOptions

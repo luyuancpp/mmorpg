@@ -2,7 +2,7 @@ package main
 
 import (
 	"db/internal/config"
-	"db/internal/logic/pkg/db"
+	"db/internal/logic/pkg/proto_sql"
 	task2 "db/internal/logic/pkg/task"
 	server "db/internal/server/db"
 	"db/internal/svc"
@@ -53,7 +53,7 @@ func main() {
 		panic(err)
 	}
 
-	db.InitDB()
+	proto_sql.InitDB()
 
 	s := zrpc.MustNewServer(config.AppConfig.RpcServerConf, func(grpcServer *grpc.Server) {
 		db_grpc.RegisterDbServer(grpcServer, server.NewDbServer(ctx))

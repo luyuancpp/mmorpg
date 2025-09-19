@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/actor_attribute_state_comp.proto
 
-package component
+package db_proto
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -188,7 +188,7 @@ const file_proto_logic_component_actor_attribute_state_comp_proto_rawDesc = "" +
 	"\x06isDead\x18\x03 \x01(\bR\x06isDead\"=\n" +
 	"\x1cDerivedAttributesPbComponent\x12\x1d\n" +
 	"\n" +
-	"max_health\x18\x01 \x01(\x04R\tmaxHealthB$Z\"db/proto/logic/component;componentb\x06proto3"
+	"max_health\x18\x01 \x01(\x04R\tmaxHealthB#Z!db/proto/logic/component;db_protob\x06proto3"
 
 var (
 	file_proto_logic_component_actor_attribute_state_comp_proto_rawDescOnce sync.Once

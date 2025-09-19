@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/common/common.proto
 
-package common
+package db_proto
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -376,7 +376,7 @@ const file_proto_common_common_proto_rawDesc = "" +
 	"\bcreators\x18\x05 \x03(\v2\".RoomInfoPBComponent.CreatorsEntryR\bcreators\x1a;\n" +
 	"\rCreatorsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01B\x18Z\x16db/proto/common;commonb\x06proto3"
+	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01B\x1aZ\x18db/proto/common;db_protob\x06proto3"
 
 var (
 	file_proto_common_common_proto_rawDescOnce sync.Once
