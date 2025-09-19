@@ -6,16 +6,15 @@ package server
 
 import (
 	"context"
-	"db/proto/common"
 
-	"db/proto/service/go/grpc/db"
+	"db/db/proto/service/go/grpc/db"
 	"db/internal/logic/db"
 	"db/internal/svc"
 )
 
 type DbServer struct {
 	svcCtx *svc.ServiceContext
-	db.UnimplementedDbServer
+	db_db.UnimplementedDbServer
 }
 
 func NewDbServer(svcCtx *svc.ServiceContext) *DbServer {
@@ -24,7 +23,7 @@ func NewDbServer(svcCtx *svc.ServiceContext) *DbServer {
 	}
 }
 
-func (s *DbServer) Test(ctx context.Context, in *common.Empty) (*common.Empty, error) {
+func (s *DbServer) Test(ctx context.Context, in *db_db.Empty) (*db_db.Empty, error) {
 	l := dblogic.NewTestLogic(ctx, s.svcCtx)
 	return l.Test(in)
 }
