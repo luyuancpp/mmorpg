@@ -2,8 +2,8 @@ package task
 
 import (
 	"context"
-	"db/internal/logic/pkg/db"
-	dbproto "db/proto/service/go/grpc/db"
+	"db/internal/logic/pkg/proto_sql"
+	db_proto "db/proto/service/go/grpc/db"
 	"fmt"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
@@ -16,7 +16,7 @@ import (
 
 func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 	return func(ctx context.Context, t *asynq.Task) error {
-		var task dbproto.DBTask
+		var task db_proto.DBTask
 		if err := proto.Unmarshal(t.Payload(), &task); err != nil {
 			logx.Errorf("Failed to unmarshal DBTask payload: %v", err)
 			return fmt.Errorf("unmarshal DBTask failed: %v", err)
@@ -43,7 +43,7 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 		switch task.Op {
 		case "read":
 			logx.Infof("Executing DB read for TaskID=%s", task.TaskId)
-			if err := db.DB.SqlGenerator.LoadOneByWhereCase(msg, task.WhereCase); err != nil {
+			if err := proto_sql.DB.SqlGenerator.LoadOneByWhereCase(msg, task.WhereCase); err != nil {
 				resultErr = fmt.Sprintf("DB read failed: %v", err)
 				logx.Errorf("DB read error for TaskID=%s: %v", task.TaskId, err)
 			} else {
@@ -56,7 +56,7 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 
 		case "write":
 			logx.Infof("Executing DB write for TaskID=%s", task.TaskId)
-			if err := db.DB.SqlGenerator.Save(msg); err != nil {
+			if err := proto_sql.DB.SqlGenerator.Save(msg); err != nil {
 				resultErr = fmt.Sprintf("DB write failed: %v", err)
 				logx.Errorf("DB write error for TaskID=%s: %v", task.TaskId, err)
 			}
@@ -68,7 +68,7 @@ func NewDBTaskHandler(redisClient redis.Cmdable) asynq.HandlerFunc {
 
 		// 返回结果写入 Redis
 		if task.TaskId != "" {
-			result := &dbproto.TaskResult{
+			result := &db_proto.TaskResult{
 				Success: resultErr == "",
 				Data:    resultData,
 				Error:   resultErr,

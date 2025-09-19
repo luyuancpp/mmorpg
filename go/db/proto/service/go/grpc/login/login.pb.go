@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/go/grpc/login/login.proto
 
-package login
+package db_proto
 
 import (
 	common "db/proto/common"
@@ -643,7 +643,7 @@ const file_proto_service_go_grpc_login_login_proto_rawDesc = "" +
 	"\tEnterGame\x12\x19.loginpb.EnterGameRequest\x1a\x1a.loginpb.EnterGameResponse\x12.\n" +
 	"\tLeaveGame\x12\x19.loginpb.LeaveGameRequest\x1a\x06.Empty\x129\n" +
 	"\n" +
-	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x06.EmptyB&Z$db/proto/service/go/grpc/login;loginb\x06proto3"
+	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x06.EmptyB)Z'db/proto/service/go/grpc/login;db_protob\x06proto3"
 
 var (
 	file_proto_service_go_grpc_login_login_proto_rawDescOnce sync.Once

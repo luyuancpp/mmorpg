@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/middleware/etcd/etcd.proto
 
-package etcd
+package db_proto
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -2878,7 +2878,7 @@ const file_proto_middleware_etcd_etcd_proto_rawDesc = "" +
 	"\vLeaseRevoke\x12 .etcdserverpb.LeaseRevokeRequest\x1a!.etcdserverpb.LeaseRevokeResponse\x12_\n" +
 	"\x0eLeaseKeepAlive\x12#.etcdserverpb.LeaseKeepAliveRequest\x1a$.etcdserverpb.LeaseKeepAliveResponse(\x010\x01\x12^\n" +
 	"\x0fLeaseTimeToLive\x12$.etcdserverpb.LeaseTimeToLiveRequest\x1a%.etcdserverpb.LeaseTimeToLiveResponse\x12R\n" +
-	"\vLeaseLeases\x12 .etcdserverpb.LeaseLeasesRequest\x1a!.etcdserverpb.LeaseLeasesResponseB\x1fZ\x1ddb/proto/middleware/etcd;etcdb\x06proto3"
+	"\vLeaseLeases\x12 .etcdserverpb.LeaseLeasesRequest\x1a!.etcdserverpb.LeaseLeasesResponseB#Z!db/proto/middleware/etcd;db_protob\x06proto3"
 
 var (
 	file_proto_middleware_etcd_etcd_proto_rawDescOnce sync.Once

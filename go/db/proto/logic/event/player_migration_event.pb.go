@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/event/player_migration_event.proto
 
-package event
+package db_proto
 
 import (
 	component "db/proto/logic/component"
@@ -145,7 +145,7 @@ const file_proto_logic_event_player_migration_event_proto_rawDesc = "" +
 	"\ttimestamp\x18\a \x01(\x03R\ttimestamp\x12$\n" +
 	"\x0ecentre_node_id\x18\b \x01(\rR\fcentreNodeId\x129\n" +
 	"\n" +
-	"scene_info\x18\t \x01(\v2\x1a.ChangeRoomInfoPBComponentR\tsceneInfoB\x1cZ\x1adb/proto/logic/event;eventb\x06proto3"
+	"scene_info\x18\t \x01(\v2\x1a.ChangeRoomInfoPBComponentR\tsceneInfoB\x1fZ\x1ddb/proto/logic/event;db_protob\x06proto3"
 
 var (
 	file_proto_logic_event_player_migration_event_proto_rawDescOnce sync.Once
