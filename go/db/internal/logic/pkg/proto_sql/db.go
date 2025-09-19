@@ -1,4 +1,4 @@
-package db
+package proto_sql
 
 import (
 	"database/sql"

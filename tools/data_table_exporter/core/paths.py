@@ -50,9 +50,10 @@ GENERATOR_STORAGE_TIP_DIR = GENERATOR_STORAGE_DIR / "mapping" / "tip_enum_ids"
 # -----------------------------
 # 生成代码目标路径
 # -----------------------------
+GENERATED_DIR = "generated"
 GENERATED_CODE_DIR = GENERATOR_DIR / "generated_code"
 CPP_GENERATED_DIR = PROJECT_DIR / "cpp" / "generated" / "table"
-GRPC_SERVICE_DIR = PROJECT_DIR / "proto" / "service" / "grpc"
+GRPC_SERVICE_DIR = PROJECT_DIR / "proto" / "service" / "go" / "grpc"
 
 # -----------------------------
 # 生成代码的源路径

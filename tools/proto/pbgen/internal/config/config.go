@@ -87,6 +87,7 @@ const (
 const (
 	ProtocPath            = "protoc"
 	ProtoName             = "proto"
+	ProtoGoPackageSuffix  = "_proto"
 	GoPackage             = "generated/pb/game"
 	ToolDir               = "tools/"
 	TempFileGenerationDir = OutputRoot + ToolDir + "generated/temp/files/"
