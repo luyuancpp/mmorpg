@@ -6,6 +6,7 @@ import (
 	task2 "db/internal/logic/pkg/task"
 	server "db/internal/server/db"
 	"db/internal/svc"
+	db_grpc "db/proto/service/go/grpc/db"
 	"flag"
 	"fmt"
 	"github.com/hibiken/asynq"
@@ -55,7 +56,7 @@ func main() {
 	db.InitDB()
 
 	s := zrpc.MustNewServer(config.AppConfig.RpcServerConf, func(grpcServer *grpc.Server) {
-		game.RegisterDbServer(grpcServer, server.NewDbServer(ctx))
+		db_grpc.RegisterDbServer(grpcServer, server.NewDbServer(ctx))
 		if config.AppConfig.Mode == service.DevMode || config.AppConfig.Mode == service.TestMode {
 			reflection.Register(grpcServer)
 		}
