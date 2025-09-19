@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"pbgen/internal/config"
 	"strings"
 )
 
@@ -22,15 +23,18 @@ func GenGoPackageOptWithPkg(goPackagePath string) string {
 	return fmt.Sprintf("option go_package = \"%s;%s\";", goPackagePath, pkgName)
 }
 
-func GenGoPackageOptOnlyPath(goPackagePath string) string {
-	// 从路径中提取最后一段作为包名（如从"db/service/cpp/rpc/centre"提取"centre"）
-	pkgName := filepath.Base(goPackagePath)
-	// 确保包名符合Go规范（替换可能的特殊字符）
-	pkgName = strings.ReplaceAll(pkgName, "-", "_")
-	pkgName = strings.ReplaceAll(pkgName, ".", "_")
+// 生成正确格式的 option go_package（包含路径和包名）
+// goPackagePath: 完整的Go包路径（如 "db/service/cpp/rpc/centre"）
+// 返回格式: option go_package = "db/service/cpp/rpc/centre;centre";
+func GenGoPackageOptWithProtoPkg(goPackagePath string) string {
+	parts := strings.Split(strings.Trim(goPackagePath, "/"), "/")
+	if len(parts) > 0 {
+		fmt.Println("方法1第一个目录:", parts[0]) // 输出: go
+	}
+	pkgName := parts[0] + config.ProtoGoPackageSuffix
 
 	// 生成包含路径和包名的完整语句
-	return fmt.Sprintf("option go_package = \"%s\";", goPackagePath)
+	return fmt.Sprintf("option go_package = \"%s;%s\";", goPackagePath, pkgName)
 }
 
 // AddGoPackage 为指定proto文件添加option go_package
@@ -96,11 +100,7 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 
 	// 构建要插入的行
 	var goPackageLine string
-	if isMulti {
-		goPackageLine = GenGoPackageOptWithPkg(goPackagePath)
-	} else {
-		goPackageLine = GenGoPackageOptOnlyPath(goPackagePath)
-	}
+	goPackageLine = GenGoPackageOptWithProtoPkg(goPackagePath)
 
 	// 插入新行
 	newLines := make([]string, 0, len(lines)+1)

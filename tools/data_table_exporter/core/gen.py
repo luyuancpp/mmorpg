@@ -40,7 +40,7 @@ def get_copy_tasks():
             for item in grpc_service_dir.iterdir():
                 if item.is_dir():
                     src_dir = Path(paths.SRC_GO)
-                    dst_dir = dst_go_grpc / item.name
+                    dst_dir = dst_go_grpc / item.name / paths.GENERATED_DIR
                     copy_tasks.append((src_dir, dst_dir))
                     logger.info(f"添加复制任务: {src_dir} -> {dst_dir}")
         else:

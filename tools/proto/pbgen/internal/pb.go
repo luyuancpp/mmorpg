@@ -364,6 +364,7 @@ func generateGoProto(protoFiles []string, outputDir string) error {
 	// 3. 构建protoc命令参数
 	args := []string{
 		"--go_out=" + outputAbsDir,
+		"--go-grpc_out=" + outputAbsDir,
 		"--go_opt=module=" + moduleName,
 		"--go_opt=paths=import",
 		"--proto_path=" + protoParentAbsDir,
