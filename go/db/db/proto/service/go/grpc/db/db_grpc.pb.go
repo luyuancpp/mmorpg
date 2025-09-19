@@ -8,7 +8,6 @@ package db_proto
 
 import (
 	context "context"
-	common "db/proto/common"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -27,7 +26,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DbClient interface {
-	Test(ctx context.Context, in *common.Empty, opts ...grpc.CallOption) (*common.Empty, error)
+	Test(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error)
 }
 
 type dbClient struct {
@@ -38,9 +37,9 @@ func NewDbClient(cc grpc.ClientConnInterface) DbClient {
 	return &dbClient{cc}
 }
 
-func (c *dbClient) Test(ctx context.Context, in *common.Empty, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *dbClient) Test(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(TestResponse)
 	err := c.cc.Invoke(ctx, Db_Test_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -52,7 +51,7 @@ func (c *dbClient) Test(ctx context.Context, in *common.Empty, opts ...grpc.Call
 // All implementations must embed UnimplementedDbServer
 // for forward compatibility.
 type DbServer interface {
-	Test(context.Context, *common.Empty) (*common.Empty, error)
+	Test(context.Context, *TestRequest) (*TestResponse, error)
 	mustEmbedUnimplementedDbServer()
 }
 
@@ -63,7 +62,7 @@ type DbServer interface {
 // pointer dereference when methods are called.
 type UnimplementedDbServer struct{}
 
-func (UnimplementedDbServer) Test(context.Context, *common.Empty) (*common.Empty, error) {
+func (UnimplementedDbServer) Test(context.Context, *TestRequest) (*TestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Test not implemented")
 }
 func (UnimplementedDbServer) mustEmbedUnimplementedDbServer() {}
@@ -88,7 +87,7 @@ func RegisterDbServer(s grpc.ServiceRegistrar, srv DbServer) {
 }
 
 func _Db_Test_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.Empty)
+	in := new(TestRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -100,7 +99,7 @@ func _Db_Test_Handler(srv interface{}, ctx context.Context, dec func(interface{}
 		FullMethod: Db_Test_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DbServer).Test(ctx, req.(*common.Empty))
+		return srv.(DbServer).Test(ctx, req.(*TestRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

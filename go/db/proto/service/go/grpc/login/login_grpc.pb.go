@@ -8,7 +8,6 @@ package db_proto
 
 import (
 	context "context"
-	common "db/proto/common"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -34,8 +33,8 @@ type ClientPlayerLoginClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	CreatePlayer(ctx context.Context, in *CreatePlayerRequest, opts ...grpc.CallOption) (*CreatePlayerResponse, error)
 	EnterGame(ctx context.Context, in *EnterGameRequest, opts ...grpc.CallOption) (*EnterGameResponse, error)
-	LeaveGame(ctx context.Context, in *LeaveGameRequest, opts ...grpc.CallOption) (*common.Empty, error)
-	Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*common.Empty, error)
+	LeaveGame(ctx context.Context, in *LeaveGameRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error)
+	Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error)
 }
 
 type clientPlayerLoginClient struct {
@@ -76,9 +75,9 @@ func (c *clientPlayerLoginClient) EnterGame(ctx context.Context, in *EnterGameRe
 	return out, nil
 }
 
-func (c *clientPlayerLoginClient) LeaveGame(ctx context.Context, in *LeaveGameRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *clientPlayerLoginClient) LeaveGame(ctx context.Context, in *LeaveGameRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(LoginEmptyResponse)
 	err := c.cc.Invoke(ctx, ClientPlayerLogin_LeaveGame_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -86,9 +85,9 @@ func (c *clientPlayerLoginClient) LeaveGame(ctx context.Context, in *LeaveGameRe
 	return out, nil
 }
 
-func (c *clientPlayerLoginClient) Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *clientPlayerLoginClient) Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(LoginEmptyResponse)
 	err := c.cc.Invoke(ctx, ClientPlayerLogin_Disconnect_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -103,8 +102,8 @@ type ClientPlayerLoginServer interface {
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	CreatePlayer(context.Context, *CreatePlayerRequest) (*CreatePlayerResponse, error)
 	EnterGame(context.Context, *EnterGameRequest) (*EnterGameResponse, error)
-	LeaveGame(context.Context, *LeaveGameRequest) (*common.Empty, error)
-	Disconnect(context.Context, *LoginNodeDisconnectRequest) (*common.Empty, error)
+	LeaveGame(context.Context, *LeaveGameRequest) (*LoginEmptyResponse, error)
+	Disconnect(context.Context, *LoginNodeDisconnectRequest) (*LoginEmptyResponse, error)
 	mustEmbedUnimplementedClientPlayerLoginServer()
 }
 
@@ -124,10 +123,10 @@ func (UnimplementedClientPlayerLoginServer) CreatePlayer(context.Context, *Creat
 func (UnimplementedClientPlayerLoginServer) EnterGame(context.Context, *EnterGameRequest) (*EnterGameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnterGame not implemented")
 }
-func (UnimplementedClientPlayerLoginServer) LeaveGame(context.Context, *LeaveGameRequest) (*common.Empty, error) {
+func (UnimplementedClientPlayerLoginServer) LeaveGame(context.Context, *LeaveGameRequest) (*LoginEmptyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LeaveGame not implemented")
 }
-func (UnimplementedClientPlayerLoginServer) Disconnect(context.Context, *LoginNodeDisconnectRequest) (*common.Empty, error) {
+func (UnimplementedClientPlayerLoginServer) Disconnect(context.Context, *LoginNodeDisconnectRequest) (*LoginEmptyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Disconnect not implemented")
 }
 func (UnimplementedClientPlayerLoginServer) mustEmbedUnimplementedClientPlayerLoginServer() {}

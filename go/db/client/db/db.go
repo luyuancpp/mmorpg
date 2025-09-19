@@ -14,8 +14,11 @@ import (
 )
 
 type (
+	TestRequest  = db_db_proto.TestRequest
+	TestResponse = db_db_proto.TestResponse
+
 	Db interface {
-		Test(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+		Test(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error)
 	}
 
 	defaultDb struct {
@@ -29,7 +32,7 @@ func NewDb(cli zrpc.Client) Db {
 	}
 }
 
-func (m *defaultDb) Test(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+func (m *defaultDb) Test(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error) {
 	client := db_db_proto.NewDbClient(m.cli.Conn())
 	return client.Test(ctx, in, opts...)
 }
