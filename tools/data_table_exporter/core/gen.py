@@ -74,7 +74,6 @@ def get_base_directories():
 
         # Go语言相关源目录
         paths.SRC_GO_ID_BIT,
-        paths.SRC_GO_CONSTANTS,
         paths.SRC_GO_TABLE_ID,
     ]
 
