@@ -62,6 +62,7 @@ const (
 	RpcResponseSourceDirectory  = "rpc_replies/"
 	EventHandlerSourceDirectory = "handler/event/"
 	PbcLuaDirectory             = GeneratedOutputDirectory + "lua/"
+	ProtoNormalPackageDirectory = GeneratorProtoDirectory + "normal/proto/"
 )
 
 // ----------- 方法处理目录 -----------
@@ -85,6 +86,7 @@ const (
 // 更新后的路径
 const (
 	ProtocPath            = "protoc"
+	ProtoName             = "proto"
 	GoPackage             = "generated/pb/game"
 	ToolDir               = "tools/"
 	TempFileGenerationDir = OutputRoot + ToolDir + "generated/temp/files/"
