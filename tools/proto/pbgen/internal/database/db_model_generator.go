@@ -260,7 +260,7 @@ func GenerateDBResource() {
 			log.Fatalf("提取消息名失败: %v", err)
 		}
 		if len(messageNames) == 0 {
-			log.Fatalf("未从 %s 中提取到任何消息", protoFile)
+			log.Printf("未从 %s 中提取到任何消息", protoFile)
 		}
 
 		// 并发生成 JSON 配置
