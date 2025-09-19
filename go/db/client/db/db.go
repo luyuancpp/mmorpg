@@ -7,15 +7,15 @@ package db
 import (
 	"context"
 
-	"db/db/proto/service/go/grpc/db"
+	"db/proto/service/go/grpc/db_proto"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
 )
 
 type (
-	TestRequest  = db_db_proto.TestRequest
-	TestResponse = db_db_proto.TestResponse
+	TestRequest  = db_proto.TestRequest
+	TestResponse = db_proto.TestResponse
 
 	Db interface {
 		Test(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error)
@@ -33,6 +33,6 @@ func NewDb(cli zrpc.Client) Db {
 }
 
 func (m *defaultDb) Test(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error) {
-	client := db_db_proto.NewDbClient(m.cli.Conn())
+	client := db_proto.NewDbClient(m.cli.Conn())
 	return client.Test(ctx, in, opts...)
 }
