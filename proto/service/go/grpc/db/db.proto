@@ -1,8 +1,16 @@
 syntax = "proto3";
 
-
 import "proto/common/empty.proto";
 
 service db {
-  rpc Test (Empty) returns (Empty);
+  rpc Test (TestRequest) returns (TestResponse);
+}
+
+message TestRequest {
+  // 可以嵌套导入的message，但外层必须是当前proto的message
+  Empty empty = 1;
+}
+
+message TestResponse {
+  Empty empty = 1;
 }
