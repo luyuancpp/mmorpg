@@ -73,10 +73,14 @@ message LoginNodeDisconnectRequest
   uint64 session_id = 1;
 }
 
+message LoginEmptyResponse
+{
+}
+
 service ClientPlayerLogin  {
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc CreatePlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
-  rpc LeaveGame (LeaveGameRequest) returns (Empty);
-  rpc Disconnect (LoginNodeDisconnectRequest) returns (Empty);
+  rpc LeaveGame (LeaveGameRequest) returns (LoginEmptyResponse);
+  rpc Disconnect (LoginNodeDisconnectRequest) returns (LoginEmptyResponse);
 }
