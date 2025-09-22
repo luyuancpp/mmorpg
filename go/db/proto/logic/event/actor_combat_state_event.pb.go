@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/event/actor_combat_state_event.proto
 
-package db_proto
+package event
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -155,7 +155,7 @@ const file_proto_logic_event_actor_combat_state_event_proto_rawDesc = "" +
 	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\x12$\n" +
 	"\x0esource_buff_id\x18\x02 \x01(\x04R\fsourceBuffId\x12\x1d\n" +
 	"\n" +
-	"state_type\x18\x03 \x01(\rR\tstateTypeB\x1fZ\x1ddb/proto/logic/event;db_protob\x06proto3"
+	"state_type\x18\x03 \x01(\rR\tstateTypeB\x1cZ\x1adb/proto/logic/event;eventb\x06proto3"
 
 var (
 	file_proto_logic_event_actor_combat_state_event_proto_rawDescOnce sync.Once

@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/player_scene_comp.proto
 
-package team_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -136,7 +136,7 @@ const file_proto_logic_component_player_scene_comp_proto_rawDesc = "" +
 	"\x1dPlayerSceneContextPBComponent\x129\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x1a.PlayerRoomInfoPBComponentR\tsceneInfo\x12K\n" +
-	"\x14scene_info_last_time\x18\x02 \x01(\v2\x1a.PlayerRoomInfoPBComponentR\x11sceneInfoLastTimeB'Z%team/proto/logic/component;team_protob\x06proto3"
+	"\x14scene_info_last_time\x18\x02 \x01(\v2\x1a.PlayerRoomInfoPBComponentR\x11sceneInfoLastTimeB&Z$team/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_player_scene_comp_proto_rawDescOnce sync.Once

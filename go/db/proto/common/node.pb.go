@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/common/node.proto
 
-package db_proto
+package common
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -278,7 +278,7 @@ const file_proto_common_node_proto_rawDesc = "" +
 	"\x11eNodeProtocolType\x12\x10\n" +
 	"\fPROTOCOL_TCP\x10\x00\x12\x11\n" +
 	"\rPROTOCOL_GRPC\x10\x01\x12\x11\n" +
-	"\rPROTOCOL_HTTP\x10\x02B\x1aZ\x18db/proto/common;db_protob\x06proto3"
+	"\rPROTOCOL_HTTP\x10\x02B\x18Z\x16db/proto/common;commonb\x06proto3"
 
 var (
 	file_proto_common_node_proto_rawDescOnce sync.Once

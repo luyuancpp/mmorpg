@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/event/npc_event.proto
 
-package player_locator_proto
+package event
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -71,7 +71,7 @@ const file_proto_logic_event_npc_event_proto_rawDesc = "" +
 	"\n" +
 	"!proto/logic/event/npc_event.proto\"A\n" +
 	"\x1cInitializeNpcComponentsEvent\x12!\n" +
-	"\factor_entity\x18\x01 \x01(\x04R\vactorEntityB7Z5player_locator/proto/logic/event;player_locator_protob\x06proto3"
+	"\factor_entity\x18\x01 \x01(\x04R\vactorEntityB(Z&player_locator/proto/logic/event;eventb\x06proto3"
 
 var (
 	file_proto_logic_event_npc_event_proto_rawDescOnce sync.Once

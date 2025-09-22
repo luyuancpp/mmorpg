@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/go/grpc/login/login.proto
 
-package mail_proto
+package login
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -680,7 +680,7 @@ const file_proto_service_go_grpc_login_login_proto_rawDesc = "" +
 	"\tEnterGame\x12\x19.loginpb.EnterGameRequest\x1a\x1a.loginpb.EnterGameResponse\x12C\n" +
 	"\tLeaveGame\x12\x19.loginpb.LeaveGameRequest\x1a\x1b.loginpb.LoginEmptyResponse\x12N\n" +
 	"\n" +
-	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x1b.loginpb.LoginEmptyResponseB-Z+mail/proto/service/go/grpc/login;mail_protob\x06proto3"
+	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x1b.loginpb.LoginEmptyResponseB(Z&mail/proto/service/go/grpc/login;loginb\x06proto3"
 
 var (
 	file_proto_service_go_grpc_login_login_proto_rawDescOnce sync.Once

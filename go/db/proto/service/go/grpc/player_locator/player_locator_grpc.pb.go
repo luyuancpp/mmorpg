@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/go/grpc/player_locator/player_locator.proto
 
-package db_proto
+package player_locator
 
 import (
 	context "context"

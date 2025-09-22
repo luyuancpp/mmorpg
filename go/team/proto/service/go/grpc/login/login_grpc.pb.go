@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/go/grpc/login/login.proto
 
-package team_proto
+package login
 
 import (
 	context "context"

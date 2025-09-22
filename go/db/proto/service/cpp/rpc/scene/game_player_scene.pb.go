@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/cpp/rpc/scene/game_player_scene.proto
 
-package db_proto
+package scene
 
 import (
 	common "db/proto/common"
@@ -219,7 +219,7 @@ const file_proto_service_cpp_rpc_scene_game_player_scene_proto_rawDesc = "" +
 	"EnterScene\x12\x14.GsEnterSceneRequest\x1a\x16.google.protobuf.Empty\x12:\n" +
 	"\n" +
 	"LeaveScene\x12\x14.GsLeaveSceneRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
-	"\rEnterSceneS2C\x12\x15.EnterSceneS2CRequest\x1a\x17.EnterScenerS2CResponseB,Z'db/proto/service/cpp/rpc/scene;db_proto\x80\x01\x01b\x06proto3"
+	"\rEnterSceneS2C\x12\x15.EnterSceneS2CRequest\x1a\x17.EnterScenerS2CResponseB)Z$db/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_game_player_scene_proto_rawDescOnce sync.Once

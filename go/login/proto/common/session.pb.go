@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/common/session.proto
 
-package login_proto
+package common
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -81,7 +81,7 @@ const file_proto_common_session_proto_rawDesc = "" +
 	"\x0eSessionDetails\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
-	"\tplayer_id\x18\x02 \x01(\x04R\bplayerIdB Z\x1elogin/proto/common;login_protob\x06proto3"
+	"\tplayer_id\x18\x02 \x01(\x04R\bplayerIdB\x1bZ\x19login/proto/common;commonb\x06proto3"
 
 var (
 	file_proto_common_session_proto_rawDescOnce sync.Once

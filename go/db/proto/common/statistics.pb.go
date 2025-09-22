@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/common/statistics.proto
 
-package db_proto
+package common
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -98,7 +98,7 @@ const file_proto_common_statistics_proto_rawDesc = "" +
 	"\x05count\x18\x01 \x01(\rR\x05count\x12(\n" +
 	"\x10flow_rate_second\x18\x02 \x01(\rR\x0eflowRateSecond\x12&\n" +
 	"\x0fflow_rate_total\x18\x03 \x01(\x04R\rflowRateTotal\x12\x16\n" +
-	"\x06second\x18\x04 \x01(\rR\x06secondB\x1aZ\x18db/proto/common;db_protob\x06proto3"
+	"\x06second\x18\x04 \x01(\rR\x06secondB\x18Z\x16db/proto/common;commonb\x06proto3"
 
 var (
 	file_proto_common_statistics_proto_rawDescOnce sync.Once

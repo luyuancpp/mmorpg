@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/cpp/rpc/scene/game_scene.proto
 
-package player_locator_proto
+package scene
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -66,7 +66,7 @@ const file_proto_service_cpp_rpc_scene_game_scene_proto_rawDesc = "" +
 	"\rGameSceneTest2,\n" +
 	"\n" +
 	"SceneScene\x12\x1e\n" +
-	"\x04Test\x12\x0e.GameSceneTest\x1a\x06.EmptyBDZ?player_locator/proto/service/cpp/rpc/scene;player_locator_proto\x80\x01\x01b\x06proto3"
+	"\x04Test\x12\x0e.GameSceneTest\x1a\x06.EmptyB5Z0player_locator/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_game_scene_proto_rawDescOnce sync.Once

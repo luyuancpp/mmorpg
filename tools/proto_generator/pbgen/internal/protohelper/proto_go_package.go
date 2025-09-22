@@ -47,8 +47,7 @@ func GenGoPackageOptWithAdjustedPath(goPackagePath string) string {
 		return fmt.Sprintf("option go_package = \"%s\";", goPackagePath)
 	}
 
-	// 处理最后一段：使用parts[0] + "_proto"
-	newLastPart := parts[0] + "_proto"
+	newLastPart := parts[0]
 	// 规范化新的最后一段
 	newLastPart = strings.ReplaceAll(newLastPart, "-", "_")
 	newLastPart = strings.ReplaceAll(newLastPart, ".", "_")
@@ -140,7 +139,7 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 	if isMulti {
 		goPackageLine = GenGoPackageOptWithAdjustedPath(goPackagePath)
 	} else {
-		goPackageLine = GenGoPackageOptWithProtoPkg(goPackagePath)
+		goPackageLine = GenGoPackageOptWithPkg(goPackagePath)
 	}
 
 	// 插入新行

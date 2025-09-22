@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/middleware/etcd/kv.proto
 
-package login_proto
+package etcd
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -249,7 +249,7 @@ const file_proto_middleware_etcd_kv_proto_rawDesc = "" +
 	"\tEventType\x12\a\n" +
 	"\x03PUT\x10\x00\x12\n" +
 	"\n" +
-	"\x06DELETE\x10\x01B)Z'login/proto/middleware/etcd;login_protob\x06proto3"
+	"\x06DELETE\x10\x01B\"Z login/proto/middleware/etcd;etcdb\x06proto3"
 
 var (
 	file_proto_middleware_etcd_kv_proto_rawDescOnce sync.Once

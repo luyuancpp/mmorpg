@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/go/grpc/db/db.proto
 
-package db_proto
+package db
 
 import (
 	common "db/proto/common"
@@ -121,7 +121,7 @@ const file_proto_service_go_grpc_db_db_proto_rawDesc = "" +
 	"\fTestResponse\x12\x1c\n" +
 	"\x05empty\x18\x01 \x01(\v2\x06.EmptyR\x05empty2)\n" +
 	"\x02db\x12#\n" +
-	"\x04Test\x12\f.TestRequest\x1a\r.TestResponseB&Z$db/proto/service/go/grpc/db;db_protob\x06proto3"
+	"\x04Test\x12\f.TestRequest\x1a\r.TestResponseB Z\x1edb/proto/service/go/grpc/db;dbb\x06proto3"
 
 var (
 	file_proto_service_go_grpc_db_db_proto_rawDescOnce sync.Once

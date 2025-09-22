@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/cpp/rpc/centre/centre_player.proto
 
-package chat_proto
+package centre
 
 import (
 	common "chat/proto/common"

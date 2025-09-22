@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/cpp/rpc/centre/centre_scene.proto
 
-package player_locator_proto
+package centre
 
 import (
 	context "context"

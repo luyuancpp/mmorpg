@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/database/mysql_database_table.proto
 
-package db_proto
+package database
 
 import (
 	common "db/proto/common"
@@ -345,7 +345,7 @@ const file_proto_logic_database_mysql_database_table_proto_rawDesc = "" +
 	"\x1cderived_attributes_component\x18\x06 \x01(\v2\x1a.BaseAttributesPbComponentR\x1aderivedAttributesComponent\x12:\n" +
 	"\x0flevel_component\x18\a \x01(\v2\x11.LevelPbComponentR\x0elevelComponent:\x1c\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\"N\n" +
 	"\x11player_database_1\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId:\x1c\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_idB\"Z db/proto/logic/database;db_protob\x06proto3"
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId:\x1c\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_idB\"Z db/proto/logic/database;databaseb\x06proto3"
 
 var (
 	file_proto_logic_database_mysql_database_table_proto_rawDescOnce sync.Once

@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/cpp/rpc/centre/centre_service.proto
 
-package team_proto
+package centre
 
 import (
 	context "context"

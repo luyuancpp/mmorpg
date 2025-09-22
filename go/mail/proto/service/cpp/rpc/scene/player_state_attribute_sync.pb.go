@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/cpp/rpc/scene/player_state_attribute_sync.proto
 
-package mail_proto
+package scene
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -340,7 +340,7 @@ const file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDesc
 	"\x14SyncAttribute5Frames\x12\x19.AttributeDelta5FramesS2C\x1a\x06.Empty\x12;\n" +
 	"\x15SyncAttribute10Frames\x12\x1a.AttributeDelta10FramesS2C\x1a\x06.Empty\x12;\n" +
 	"\x15SyncAttribute30Frames\x12\x1a.AttributeDelta30FramesS2C\x1a\x06.Empty\x12;\n" +
-	"\x15SyncAttribute60Frames\x12\x1a.AttributeDelta60FramesS2C\x1a\x06.EmptyB0Z+mail/proto/service/cpp/rpc/scene;mail_proto\x80\x01\x01b\x06proto3"
+	"\x15SyncAttribute60Frames\x12\x1a.AttributeDelta60FramesS2C\x1a\x06.EmptyB+Z&mail/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDescOnce sync.Once

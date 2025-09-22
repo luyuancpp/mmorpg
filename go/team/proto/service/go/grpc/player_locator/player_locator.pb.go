@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/go/grpc/player_locator/player_locator.proto
 
-package team_proto
+package player_locator
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -177,7 +177,7 @@ const file_proto_service_go_grpc_player_locator_player_locator_proto_rawDesc = "
 	"\rPlayerLocator\x124\n" +
 	"\vSetLocation\x12\x1d.playerlocator.PlayerLocation\x1a\x06.Empty\x12E\n" +
 	"\vGetLocation\x12\x17.playerlocator.PlayerId\x1a\x1d.playerlocator.PlayerLocation\x12.\n" +
-	"\vMarkOffline\x12\x17.playerlocator.PlayerId\x1a\x06.EmptyB6Z4team/proto/service/go/grpc/player_locator;team_protob\x06proto3"
+	"\vMarkOffline\x12\x17.playerlocator.PlayerId\x1a\x06.EmptyB:Z8team/proto/service/go/grpc/player_locator;player_locatorb\x06proto3"
 
 var (
 	file_proto_service_go_grpc_player_locator_player_locator_proto_rawDescOnce sync.Once

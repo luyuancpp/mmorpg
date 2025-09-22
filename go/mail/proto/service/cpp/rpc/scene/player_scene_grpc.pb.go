@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/cpp/rpc/scene/player_scene.proto
 
-package mail_proto
+package scene
 
 import (
 	context "context"

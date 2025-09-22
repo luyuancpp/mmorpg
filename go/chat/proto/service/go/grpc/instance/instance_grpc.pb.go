@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/go/grpc/instance/instance.proto
 
-package chat_proto
+package instance
 
 import (
 	context "context"

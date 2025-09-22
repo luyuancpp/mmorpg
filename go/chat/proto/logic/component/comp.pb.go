@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/comp.proto
 
-package chat_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -89,7 +89,7 @@ const file_proto_logic_component_comp_proto_rawDesc = "" +
 	"\aVector3\x12\f\n" +
 	"\x01x\x18\x01 \x01(\x01R\x01x\x12\f\n" +
 	"\x01y\x18\x02 \x01(\x01R\x01y\x12\f\n" +
-	"\x01z\x18\x03 \x01(\x01R\x01zB'Z%chat/proto/logic/component;chat_protob\x06proto3"
+	"\x01z\x18\x03 \x01(\x01R\x01zB&Z$chat/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_comp_proto_rawDescOnce sync.Once

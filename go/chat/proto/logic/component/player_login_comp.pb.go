@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/player_login_comp.proto
 
-package chat_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -129,7 +129,7 @@ const file_proto_logic_component_player_login_comp_proto_rawDesc = "" +
 	"LOGIN_NONE\x10\x00\x12\x0f\n" +
 	"\vLOGIN_FIRST\x10\x01\x12\x11\n" +
 	"\rLOGIN_REPLACE\x10\x02\x12\x13\n" +
-	"\x0fLOGIN_RECONNECT\x10\x03B'Z%chat/proto/logic/component;chat_protob\x06proto3"
+	"\x0fLOGIN_RECONNECT\x10\x03B&Z$chat/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_player_login_comp_proto_rawDescOnce sync.Once

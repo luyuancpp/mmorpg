@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/cpp/rpc/scene/scene.proto
 
-package player_locator_proto
+package scene
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -523,7 +523,7 @@ const file_proto_service_cpp_rpc_scene_scene_proto_rawDesc = "" +
 	"\n" +
 	"EnterScene\x12\x1b.Centre2GsEnterSceneRequest\x1a\x06.Empty\x128\n" +
 	"\vCreateScene\x12\x13.CreateSceneRequest\x1a\x14.CreateSceneResponse\x12>\n" +
-	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseBDZ?player_locator/proto/service/cpp/rpc/scene;player_locator_proto\x80\x01\x01b\x06proto3"
+	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB5Z0player_locator/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_scene_proto_rawDescOnce sync.Once

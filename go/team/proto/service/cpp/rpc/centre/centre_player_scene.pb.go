@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/cpp/rpc/centre/centre_player_scene.proto
 
-package team_proto
+package centre
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -192,7 +192,7 @@ const file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDesc = "" +
 	"\n" +
 	"LeaveScene\x12\x18.CentreLeaveSceneRequest\x1a\x16.google.protobuf.Empty\x12l\n" +
 	"!LeaveSceneAsyncSavePlayerComplete\x12/.CentreLeaveSceneAsyncSavePlayerCompleteRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
-	"\fSceneInfoC2S\x12\x17.CentreSceneInfoRequest\x1a\x16.google.protobuf.EmptyB1Z,team/proto/service/cpp/rpc/centre;team_proto\x80\x01\x01b\x06proto3"
+	"\fSceneInfoC2S\x12\x17.CentreSceneInfoRequest\x1a\x16.google.protobuf.EmptyB-Z(team/proto/service/cpp/rpc/centre;centre\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescOnce sync.Once

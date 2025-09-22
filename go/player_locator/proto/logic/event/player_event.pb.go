@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/event/player_event.proto
 
-package player_locator_proto
+package event
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -172,7 +172,7 @@ const file_proto_logic_event_player_event_proto_rawDesc = "" +
 	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\x12\x1b\n" +
 	"\tnew_level\x18\x02 \x01(\rR\bnewLevel\"D\n" +
 	"\x1fInitializePlayerComponentsEvent\x12!\n" +
-	"\factor_entity\x18\x01 \x01(\x04R\vactorEntityB7Z5player_locator/proto/logic/event;player_locator_protob\x06proto3"
+	"\factor_entity\x18\x01 \x01(\x04R\vactorEntityB(Z&player_locator/proto/logic/event;eventb\x06proto3"
 
 var (
 	file_proto_logic_event_player_event_proto_rawDescOnce sync.Once

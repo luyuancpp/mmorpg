@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/constants/test_switch.proto
 
-package chat_proto
+package constants
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -75,7 +75,7 @@ const file_proto_logic_constants_test_switch_proto_rawDesc = "" +
 	"'proto/logic/constants/test_switch.proto*E\n" +
 	"\reTestFlagType\x12\x1a\n" +
 	"\x16kTestMessageStatistics\x10\x00\x12\x18\n" +
-	"\x14kTestClearEmptyTiles\x10\x01B'Z%chat/proto/logic/constants;chat_protob\x06proto3"
+	"\x14kTestClearEmptyTiles\x10\x01B&Z$chat/proto/logic/constants;constantsb\x06proto3"
 
 var (
 	file_proto_logic_constants_test_switch_proto_rawDescOnce sync.Once

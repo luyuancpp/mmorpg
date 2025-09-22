@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/scene_comp.proto
 
-package mail_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -300,7 +300,7 @@ const file_proto_logic_component_scene_comp_proto_rawDesc = "" +
 	"\reWaitingEnter\x10\x02\x12\x11\n" +
 	"\reEnterSucceed\x10\x03\x12\x15\n" +
 	"\x11eGateEnterSucceed\x10\x04\x12\t\n" +
-	"\x05eDone\x10\x05B'Z%mail/proto/logic/component;mail_protob\x06proto3"
+	"\x05eDone\x10\x05B&Z$mail/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_scene_comp_proto_rawDescOnce sync.Once

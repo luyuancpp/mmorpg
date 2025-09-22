@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/cpp/rpc/scene/game_client_player.proto
 
-package db_proto
+package scene
 
 import (
 	context "context"

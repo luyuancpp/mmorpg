@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/buff_comp.proto
 
-package db_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -407,7 +407,7 @@ const file_proto_logic_component_buff_comp_proto_rawDesc = "" +
 	"\vdamage_type\x18\x05 \x01(\rR\n" +
 	"damageType\"H\n" +
 	")BuffNoDamageOrSkillHitInLastSecondsPbComp\x12\x1b\n" +
-	"\tlast_time\x18\x01 \x01(\x04R\blastTimeB#Z!db/proto/logic/component;db_protob\x06proto3"
+	"\tlast_time\x18\x01 \x01(\x04R\blastTimeB$Z\"db/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_buff_comp_proto_rawDescOnce sync.Once

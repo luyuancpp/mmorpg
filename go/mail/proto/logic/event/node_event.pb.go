@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/event/node_event.proto
 
-package mail_proto
+package event
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -245,7 +245,7 @@ const file_proto_logic_event_node_event_proto_rawDesc = "" +
 	"\x14ConnectToNodePbEvent\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\rR\x06entity\x12\x1b\n" +
 	"\tnode_type\x18\x02 \x01(\rR\bnodeType\"\x18\n" +
-	"\x16OnNodeConnectedPbEventB#Z!mail/proto/logic/event;mail_protob\x06proto3"
+	"\x16OnNodeConnectedPbEventB\x1eZ\x1cmail/proto/logic/event;eventb\x06proto3"
 
 var (
 	file_proto_logic_event_node_event_proto_rawDescOnce sync.Once

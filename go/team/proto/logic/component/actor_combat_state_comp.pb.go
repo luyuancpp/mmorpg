@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/actor_combat_state_comp.proto
 
-package team_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -168,7 +168,7 @@ const file_proto_logic_component_actor_combat_state_comp_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x124\n" +
 	"\x05value\x18\x02 \x01(\v2\x1e.CombatStateDetailsPbComponentR\x05value:\x028\x01*\x1c\n" +
 	"\feCombatState\x12\f\n" +
-	"\bkSilence\x10\x00B'Z%team/proto/logic/component;team_protob\x06proto3"
+	"\bkSilence\x10\x00B&Z$team/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_actor_combat_state_comp_proto_rawDescOnce sync.Once

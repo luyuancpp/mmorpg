@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/common/user_accounts.proto
 
-package mail_proto
+package common
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -117,7 +117,7 @@ const file_proto_common_user_accounts_proto_rawDesc = "" +
 	"\x13AccountSimplePlayer\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"I\n" +
 	"\x17AccountSimplePlayerList\x12.\n" +
-	"\aplayers\x18\x01 \x03(\v2\x14.AccountSimplePlayerR\aplayersB\x1eZ\x1cmail/proto/common;mail_protob\x06proto3"
+	"\aplayers\x18\x01 \x03(\v2\x14.AccountSimplePlayerR\aplayersB\x1aZ\x18mail/proto/common;commonb\x06proto3"
 
 var (
 	file_proto_common_user_accounts_proto_rawDescOnce sync.Once

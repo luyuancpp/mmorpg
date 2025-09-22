@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/cpp/rpc/scene/player_skill.proto
 
-package login_proto
+package scene
 
 import (
 	context "context"

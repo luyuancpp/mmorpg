@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/event/server_event.proto
 
-package db_proto
+package event
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -154,7 +154,7 @@ const file_proto_logic_event_server_event_proto_rawDesc = "" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\")\n" +
 	"\x0fOnConnect2Login\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\"\x0f\n" +
-	"\rOnServerStartB\x1fZ\x1ddb/proto/logic/event;db_protob\x06proto3"
+	"\rOnServerStartB\x1cZ\x1adb/proto/logic/event;eventb\x06proto3"
 
 var (
 	file_proto_logic_event_server_event_proto_rawDescOnce sync.Once

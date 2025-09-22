@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/cpp/rpc/scene/game_player.proto
 
-package chat_proto
+package scene
 
 import (
 	context "context"

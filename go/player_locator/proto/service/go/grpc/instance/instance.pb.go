@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/go/grpc/instance/instance.proto
 
-package player_locator_proto
+package instance
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -171,7 +171,7 @@ const file_proto_service_go_grpc_instance_instance_proto_rawDesc = "" +
 	"expireTime\x124\n" +
 	"\rerror_message\x18\x04 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage2_\n" +
 	"\bInstance\x12S\n" +
-	"\x0eCreateInstance\x12\x1f.instance.CreateInstanceRequest\x1a .instance.CreateInstanceResponseBDZBplayer_locator/proto/service/go/grpc/instance;player_locator_protob\x06proto3"
+	"\x0eCreateInstance\x12\x1f.instance.CreateInstanceRequest\x1a .instance.CreateInstanceResponseB8Z6player_locator/proto/service/go/grpc/instance;instanceb\x06proto3"
 
 var (
 	file_proto_service_go_grpc_instance_instance_proto_rawDescOnce sync.Once

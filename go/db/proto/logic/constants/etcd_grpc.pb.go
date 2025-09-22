@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/constants/etcd_grpc.proto
 
-package db_proto
+package constants
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -88,7 +88,7 @@ const file_proto_logic_constants_etcd_grpc_proto_rawDesc = "" +
 	"\x05WRITE\x10\x02\x12\x0f\n" +
 	"\vWRITES_DONE\x10\x03\x12\n" +
 	"\n" +
-	"\x06FINISH\x10\x04B#Z!db/proto/logic/constants;db_protob\x06proto3"
+	"\x06FINISH\x10\x04B$Z\"db/proto/logic/constants;constantsb\x06proto3"
 
 var (
 	file_proto_logic_constants_etcd_grpc_proto_rawDescOnce sync.Once
