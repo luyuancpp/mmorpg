@@ -50,6 +50,7 @@ const (
 	NodeGoDirectory                = OutputRoot + "go/"
 	NodeCppDirectory               = OutputRoot + "cpp/"
 	NodePkgDirectory               = "cpp/libs/"
+	NodeLibsEngineDirectory        = NodePkgDirectory + "engine/"
 	NodeLibGameDirectory           = NodePkgDirectory + "services/"
 	NodePkgLogicSceneNodeDirectory = NodeLibGameDirectory + "scene/"
 	GameNodeDirectory              = NodeCppDirectory + "nodes/scene/"
@@ -140,10 +141,11 @@ const (
 	GeneratedPath           = "generated/"
 	ProjectGeneratedPath    = OutputRoot + GeneratedPath
 	TableGeneratorPath      = ProjectGeneratedPath + "generated_data/"
+
+	GameRpcProtoPath = OutputRoot + NodeLibsEngineDirectory + "core/network/"
 )
 
 // ----------- 文件名 -----------
-// 这些文件名保持不变
 const (
 	HandlerFileName                    = "Handler"
 	RepliedHandlerFileName             = "Reply"
@@ -156,6 +158,7 @@ const (
 	PlayerDataLoaderName               = "player_data_loader.h"
 	DbTableName                        = "mysql_database_table.proto"
 	DBTableMessageListJson             = "mysql_database_table_list.json"
+	GameRpcProtoName                   = "game_rpc.proto"
 )
 
 // ----------- 代码相关字符串常量 -----------

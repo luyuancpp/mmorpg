@@ -36,6 +36,8 @@ func BuildProtoCpp(protoPath string) error {
 		}
 	}
 
+	protoFiles = append(protoFiles, config.GameRpcProtoPath+config.GameRpcProtoName)
+
 	if len(protoFiles) == 0 {
 		log.Println("No .proto files found in:", protoPath)
 		return nil
