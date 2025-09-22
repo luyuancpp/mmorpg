@@ -2,11 +2,11 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"db/generated/pb/table"
 	"errors"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
 	"login/data"
+	"login/generated/pb/table"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
@@ -15,6 +15,7 @@ import (
 	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/svc"
 	login_proto_common "login/proto/common"
+	login_data_base "login/proto/logic/database"
 	login_proto "login/proto/service/go/grpc/login"
 	"strconv"
 	"time"
@@ -97,35 +98,35 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	}
 
 	// 6. 解码账户数据
-	userAccount := &login_proto.UserAccounts{}
+	userAccount := &login_data_base.UserAccounts{}
 	if err := proto.Unmarshal([]byte(cmd.Val()), userAccount); err != nil {
 		logx.Errorf("Failed to unmarshal user account, err: %v", err)
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginDataParseFailed)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginDataParseFailed)}
 		return resp, nil
 	}
 	if userAccount.SimplePlayers == nil {
-		userAccount.SimplePlayers = &login_proto.AccountSimplePlayerList{Players: make([]*login_proto.AccountSimplePlayer, 0)}
+		userAccount.SimplePlayers = &login_proto_common.AccountSimplePlayerList{Players: make([]*login_proto_common.AccountSimplePlayer, 0)}
 	}
 
 	// 7. 创建角色
 	if len(userAccount.SimplePlayers.Players) >= 5 {
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountPlayerFull)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountPlayerFull)}
 		logx.Infof("Account player limit reached: %s", account)
 		return resp, nil
 	}
 	newPlayerId := uint64(l.svcCtx.SnowFlake.Generate())
-	newPlayer := &login_proto.AccountSimplePlayer{PlayerId: newPlayerId}
+	newPlayer := &login_proto_common.AccountSimplePlayer{PlayerId: newPlayerId}
 	userAccount.SimplePlayers.Players = append(userAccount.SimplePlayers.Players, newPlayer)
 
 	// 8. 回写 RedisClient
 	dataBytes, err := proto.Marshal(userAccount)
 	if err != nil {
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginDataSerializeFailed)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginDataSerializeFailed)}
 		logx.Errorf("Failed to marshal user account, err: %v", err)
 		return resp, nil
 	}
 	if err := l.svcCtx.RedisClient.Set(l.ctx, accountDataKey, dataBytes, time.Hour*time.Duration(config.AppConfig.Account.CacheExpireHours)).Err(); err != nil {
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
 		logx.Errorf("Failed to set user account in RedisClient, account: %s, err: %v", account, err)
 		return resp, nil
 	}
