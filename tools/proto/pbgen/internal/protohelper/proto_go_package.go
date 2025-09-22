@@ -26,30 +26,41 @@ func GenGoPackageOptWithPkg(goPackagePath string) string {
 func GenGoPackageOptWithAdjustedPath(goPackagePath string) string {
 	// 分割路径为多个段
 	parts := strings.Split(goPackagePath, "/")
-	if len(parts) < 2 {
-		// 路径太短时直接在原路径后加_proto（避免索引越界）
-		pkgName := filepath.Base(goPackagePath) + "_proto"
+	if len(parts) < 1 {
+		// 空路径特殊处理
+		return `option go_package = "unknown;unknown_proto";`
+	}
+
+	// 根据段数决定处理方式
+	var remainingParts []string
+	if len(parts) >= 3 {
+		// 段数足够时，取parts[2:]
+		remainingParts = parts[2:]
+	} else if len(parts) == 2 {
+		// 只有两段时，取空切片（避免parts[2:]越界）
+		remainingParts = []string{}
+	} else {
+		// 只有一段时，直接在原路径处理
+		pkgName := parts[0] + "_proto"
+		pkgName = strings.ReplaceAll(pkgName, "-", "_")
+		pkgName = strings.ReplaceAll(pkgName, ".", "_")
 		return fmt.Sprintf("option go_package = \"%s;%s\";", goPackagePath, pkgName)
 	}
 
-	// 移除第一个路径段，保留剩余部分
-	remainingParts := parts[2:]
+	// 处理最后一段：使用parts[0] + "_proto"
+	newLastPart := parts[0] + "_proto"
+	// 规范化新的最后一段
+	newLastPart = strings.ReplaceAll(newLastPart, "-", "_")
+	newLastPart = strings.ReplaceAll(newLastPart, ".", "_")
 
-	// 处理最后一个段，添加_proto后缀
-	lastIdx := len(remainingParts) - 1
-	remainingParts[lastIdx] = parts[0] + "_proto"
+	// 拼接新路径（remainingParts + 新的最后一段）
+	fullParts := append(remainingParts, newLastPart)
+	newPath := strings.Join(fullParts, "/")
 
-	// 拼接成新路径
-	newPath := strings.Join(remainingParts, "/")
+	// 包名使用新的最后一段
+	pkgName := newLastPart
 
-	// 包名使用最后一段（已加_proto）
-	pkgName := remainingParts[lastIdx]
-
-	// 规范化包名（替换特殊字符）
-	pkgName = strings.ReplaceAll(pkgName, "-", "_")
-	pkgName = strings.ReplaceAll(pkgName, ".", "_")
-
-	return fmt.Sprintf("option go_package = \"%s/%s\";", newPath, pkgName)
+	return fmt.Sprintf("option go_package = \"%s;%s\";", newPath, pkgName)
 }
 
 // 生成正确格式的 option go_package（包含路径和包名）
