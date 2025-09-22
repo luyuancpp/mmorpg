@@ -238,8 +238,8 @@ const (
 
 // ----------- 事件处理目录 -----------
 const (
-	GameNodeEventHandlerDirectory   = OutputRoot + GameNodeDirectory + EventHandlerSourceDirectory
-	CentreNodeEventHandlerDirectory = OutputRoot + CentreNodeDirectory + EventHandlerSourceDirectory
+	GameNodeEventHandlerDirectory   = GameNodeDirectory + EventHandlerSourceDirectory
+	CentreNodeEventHandlerDirectory = CentreNodeDirectory + EventHandlerSourceDirectory
 )
 
 // ----------- 玩家数据库名称 -----------
