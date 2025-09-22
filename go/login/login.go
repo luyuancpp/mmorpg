@@ -16,20 +16,20 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
-	"login/generated/pb/game"
 	"login/internal/config"
 	"login/internal/logic/pkg/centre"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/node"
 	loginserver "login/internal/server/clientplayerlogin"
 	"login/internal/svc"
+	login_proto "login/proto/common"
 	"net"
 	"strconv"
 )
 
 var configFile = flag.String("loginService", "etc/loginservice.yaml", "the config file path")
 
-const nodeType = game.ENodeType_LoginNodeService
+const nodeType = login_proto.ENodeType_LoginNodeService
 
 func main() {
 	flag.Parse()
