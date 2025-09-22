@@ -48,7 +48,7 @@ func main() {
 	fmt.Println("Current working directory:", dir)
 
 	MakeProjectDir()
-	internal.BuildProtoGameGrpcCpp()
+	internal.BuildProtoGameGrpc()
 	internal.CopyProtoDir()
 
 	// 开始读所有的proto文件
