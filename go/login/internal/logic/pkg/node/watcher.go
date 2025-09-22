@@ -9,8 +9,8 @@ import (
 	"go.etcd.io/etcd/client/v3/namespace"
 	"google.golang.org/protobuf/encoding/protojson"
 	"log"
-	"login/generated/pb/game"
 	"login/internal/config"
+	login_proto "login/proto/common"
 	"sync"
 	"time"
 )
@@ -26,7 +26,7 @@ const (
 // NodeEvent 是节点事件的结构体
 type NodeEvent struct {
 	Type NodeEventType
-	Info *game.NodeInfo
+	Info *login_proto.NodeInfo
 }
 
 // NodeWatcher 是节点监视器
@@ -53,7 +53,7 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 		for wresp := range rch {
 			for _, ev := range wresp.Events {
 				key := string(ev.Kv.Key)
-				var info game.NodeInfo
+				var info login_proto.NodeInfo
 				var data []byte
 
 				// 根据事件类型，选择正确的 data（Value 或 PrevKv.Value）
@@ -93,7 +93,7 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 }
 
 // Range 获取指定前缀下所有的节点数据
-func (nw *NodeWatcher) Range() ([]game.NodeInfo, error) {
+func (nw *NodeWatcher) Range() ([]login_proto.NodeInfo, error) {
 	// 使用命名空间客户端限定在前缀范围内
 	kv := namespace.NewKV(nw.client, nw.prefix)
 
@@ -108,18 +108,18 @@ func (nw *NodeWatcher) Range() ([]game.NodeInfo, error) {
 		return nil, err
 	}
 
-	var nodes []game.NodeInfo
+	var nodes []login_proto.NodeInfo
 	var wg sync.WaitGroup
 
 	// 使用 channel 和 goroutine 并发解析每个节点
-	nodeChan := make(chan game.NodeInfo, len(resp.Kvs))
+	nodeChan := make(chan login_proto.NodeInfo, len(resp.Kvs))
 
 	for _, kv := range resp.Kvs {
 		wg.Add(1)
 		go func(kv *mvccpb.KeyValue) {
 			defer wg.Done()
 
-			var nodeInfo game.NodeInfo
+			var nodeInfo login_proto.NodeInfo
 			logx.Debugf("Parsing node data: %s", string(kv.Value)) // 简单输出，以避免过多日志
 
 			// 解析 JSON 数据
@@ -148,7 +148,7 @@ func (nw *NodeWatcher) Range() ([]game.NodeInfo, error) {
 }
 
 // fetchAllNodes 获取所有节点的信息
-func (nw *NodeWatcher) FetchAllNodes() ([]game.NodeInfo, error) {
+func (nw *NodeWatcher) FetchAllNodes() ([]login_proto.NodeInfo, error) {
 	// 调用 Range 方法获取所有节点信息
 	nodes, err := nw.Range()
 	if err != nil {

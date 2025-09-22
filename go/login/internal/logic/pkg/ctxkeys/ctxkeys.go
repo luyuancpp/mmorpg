@@ -2,7 +2,7 @@ package ctxkeys
 
 import (
 	"context"
-	"login/generated/pb/game"
+	login_proto "login/proto/common"
 )
 
 // 自定义类型，避免 key 冲突
@@ -14,13 +14,13 @@ const (
 )
 
 // 取 SessionDetails 的辅助函数
-func GetSessionDetails(ctx context.Context) (*game.SessionDetails, bool) {
+func GetSessionDetails(ctx context.Context) (*login_proto.SessionDetails, bool) {
 	v := ctx.Value(SessionDetailsKey)
-	detail, ok := v.(*game.SessionDetails)
+	detail, ok := v.(*login_proto.SessionDetails)
 	return detail, ok
 }
 
 // 放 SessionDetails 的辅助函数
-func WithSessionDetails(ctx context.Context, detail *game.SessionDetails) context.Context {
+func WithSessionDetails(ctx context.Context, detail *login_proto.SessionDetails) context.Context {
 	return context.WithValue(ctx, SessionDetailsKey, detail)
 }

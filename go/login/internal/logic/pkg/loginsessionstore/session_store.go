@@ -3,12 +3,11 @@ package loginsessionstore
 import (
 	"context"
 	"fmt"
+	login_proto "login/proto/service/go/grpc/login"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
-
-	"login/generated/pb/game"
 )
 
 func sessionKey(sessionId uint64) string {
@@ -17,7 +16,7 @@ func sessionKey(sessionId uint64) string {
 
 // SaveLoginSession 存储登录会话信息到 RedisClient
 // 修改后的函数签名：
-func SaveLoginSession(ctx context.Context, redisClient *redis.Client, info *game.LoginSessionInfo, ttl time.Duration) error {
+func SaveLoginSession(ctx context.Context, redisClient *redis.Client, info *login_proto.LoginSessionInfo, ttl time.Duration) error {
 	key := sessionKey(info.SessionId)
 	data, err := proto.Marshal(info)
 	if err != nil {
@@ -27,13 +26,13 @@ func SaveLoginSession(ctx context.Context, redisClient *redis.Client, info *game
 }
 
 // LoadLoginSession 通过 sessionId 获取会话信息
-func GetLoginSession(ctx context.Context, redisClient *redis.Client, sessionId uint64) (*game.LoginSessionInfo, error) {
+func GetLoginSession(ctx context.Context, redisClient *redis.Client, sessionId uint64) (*login_proto.LoginSessionInfo, error) {
 	key := sessionKey(sessionId)
 	val, err := redisClient.Get(ctx, key).Bytes()
 	if err != nil {
 		return nil, err
 	}
-	info := &game.LoginSessionInfo{}
+	info := &login_proto.LoginSessionInfo{}
 	if err := proto.Unmarshal(val, info); err != nil {
 		return nil, err
 	}

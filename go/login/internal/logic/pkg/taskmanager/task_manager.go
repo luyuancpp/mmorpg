@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"login/generated/pb/game"
 	"login/internal/config"
 	"login/internal/logic/pkg/cache"
 	"login/internal/logic/pkg/task"
+	login_proto "login/proto/service/go/grpc/db"
 	"strconv"
 	"sync"
 	"time"
@@ -234,7 +234,7 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 		}
 
 		// 解析任务结果
-		var result game.TaskResult
+		var result login_proto.TaskResult
 		if err := proto.Unmarshal(resBytes, &result); err != nil {
 			task.Status = TaskStatusFailed
 			task.Error = err
@@ -384,7 +384,7 @@ func InitAndAddMessageTasks(
 		msgType := string(msg.ProtoReflect().Descriptor().FullName())
 
 		// 构建任务 payload
-		taskPayload := &game.DBTask{
+		taskPayload := &login_proto.DBTask{
 			Key:       playerId,
 			WhereCase: "where player_id='" + playerIdStr + "'",
 			Op:        "read",

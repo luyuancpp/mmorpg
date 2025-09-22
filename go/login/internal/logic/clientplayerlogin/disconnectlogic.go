@@ -6,6 +6,7 @@ import (
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/utils/sessioncleaner"
 	"login/internal/svc"
+	login_proto "login/proto/service/go/grpc/login"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -24,11 +25,11 @@ func NewDisconnectLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Discon
 	}
 }
 
-func (l *DisconnectLogic) Disconnect(in *game.LoginNodeDisconnectRequest) (*game.Empty, error) {
+func (l *DisconnectLogic) Disconnect(in *login_proto.LoginNodeDisconnectRequest) (*login_proto.LoginEmptyResponse, error) {
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok {
 		logx.Error("Session not found in context during leave game")
-		return &game.Empty{}, nil
+		return &login_proto.Empty{}, nil
 	}
 
 	_ = sessioncleaner.CleanupSession(
@@ -38,13 +39,13 @@ func (l *DisconnectLogic) Disconnect(in *game.LoginNodeDisconnectRequest) (*game
 		"disconnect",
 	)
 
-	centreRequest := &game.GateSessionDisconnectRequest{
-		SessionInfo: &game.SessionDetails{SessionId: in.SessionId},
+	centreRequest := &login_proto.GateSessionDisconnectRequest{
+		SessionInfo: &login_proto.SessionDetails{SessionId: in.SessionId},
 	}
 	node := l.svcCtx.GetCentreClient()
 	if nil == node {
-		return &game.Empty{}, nil
+		return &login_proto.Empty{}, nil
 	}
-	node.Send(centreRequest, game.CentreLoginNodeSessionDisconnectMessageId)
-	return &game.Empty{}, nil
+	node.Send(centreRequest, login_proto.CentreLoginNodeSessionDisconnectMessageId)
+	return &login_proto.Empty{}, nil
 }

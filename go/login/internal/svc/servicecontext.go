@@ -6,17 +6,17 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
-	"login/generated/pb/game"
 	"login/internal/config"
 	"login/internal/logic/pkg/centre"
 	"login/internal/logic/pkg/taskmanager"
+	login_proto "login/proto/common"
 	"sync/atomic"
 )
 
 type ServiceContext struct {
 	RedisClient *redis.Client
 	SnowFlake   *snowflake.Node
-	NodeInfo    game.NodeInfo
+	NodeInfo    login_proto.NodeInfo
 	// 使用 atomic.Value 安全存储 CentreClient
 	centreClient atomic.Value // 类型为 *centre.CentreClient
 	AsynqClient  *asynq.Client

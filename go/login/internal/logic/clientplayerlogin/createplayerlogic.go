@@ -2,6 +2,7 @@ package clientplayerloginlogic
 
 import (
 	"context"
+	"db/generated/pb/table"
 	"errors"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
@@ -13,6 +14,7 @@ import (
 	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/svc"
+	login_proto_common "login/proto/common"
 	login_proto "login/proto/service/go/grpc/login"
 	"strconv"
 	"time"
@@ -43,7 +45,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or invalid during player creation")
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
 	}
 
@@ -51,7 +53,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	session, err := loginsessionstore.GetLoginSession(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId)
 	if err != nil {
 		logx.Errorf("GetLoginSession failed: %v", err)
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionNotFound)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionNotFound)}
 		return resp, nil
 	}
 	account := session.Account
@@ -61,7 +63,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	ok, err = locker.AcquireCreate(l.ctx, account)
 	if err != nil || !ok {
 		logx.Errorf("CreatePlayer lock acquire failed for account=%s: %v", account, err)
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
 	defer locker.ReleaseCreate(l.ctx, account)
@@ -72,10 +74,10 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	if err := cmd.Err(); err != nil {
 		if errors.Is(err, redis.Nil) {
 			logx.Infof("Account not found in redis: %s", account)
-			resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountNotFound)}
+			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountNotFound)}
 			return resp, nil
 		}
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisError)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisError)}
 		logx.Errorf("RedisClient get failed, account: %s, err: %v", account, err)
 		return resp, err
 	}
@@ -85,11 +87,11 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	f := data.InitPlayerFSM()
 	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionIdStr, ""); err != nil {
 		logx.Errorf("Failed to load FSM state for session %s: %v", sessionIdStr, err)
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMLoadFailed)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMLoadFailed)}
 		return resp, nil
 	}
 	if err := f.Event(l.ctx, data.EventCreateChar); err != nil {
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginFsmFailed)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFsmFailed)}
 		logx.Errorf("FSM create_char failed, account: %s, err: %v", account, err)
 		return resp, nil
 	}
