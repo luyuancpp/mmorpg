@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/cpp/rpc/scene/player_state_attribute_sync.proto
 
-package player_locator_proto
+package scene
 
 import (
 	context "context"

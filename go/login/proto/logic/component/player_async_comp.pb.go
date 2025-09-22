@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/player_async_comp.proto
 
-package login_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -71,7 +71,7 @@ const file_proto_logic_component_player_async_comp_proto_rawDesc = "" +
 	"\n" +
 	"-proto/logic/component/player_async_comp.proto\"K\n" +
 	"#PlayerGameNodeEnteryInfoPBComponent\x12$\n" +
-	"\x0ecentre_node_id\x18\x01 \x01(\rR\fcentreNodeIdB)Z'login/proto/logic/component;login_protob\x06proto3"
+	"\x0ecentre_node_id\x18\x01 \x01(\rR\fcentreNodeIdB'Z%login/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_player_async_comp_proto_rawDescOnce sync.Once

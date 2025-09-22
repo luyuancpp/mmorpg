@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/item_comp.proto
 
-package player_locator_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -24,7 +24,7 @@ var File_proto_logic_component_item_comp_proto protoreflect.FileDescriptor
 
 const file_proto_logic_component_item_comp_proto_rawDesc = "" +
 	"\n" +
-	"%proto/logic/component/item_comp.protoB;Z9player_locator/proto/logic/component;player_locator_protob\x06proto3"
+	"%proto/logic/component/item_comp.protoB0Z.player_locator/proto/logic/component;componentb\x06proto3"
 
 var file_proto_logic_component_item_comp_proto_goTypes = []any{}
 var file_proto_logic_component_item_comp_proto_depIdxs = []int32{

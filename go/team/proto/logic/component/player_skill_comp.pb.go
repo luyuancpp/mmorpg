@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/player_skill_comp.proto
 
-package team_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -127,7 +127,7 @@ const file_proto_logic_component_player_skill_comp_proto_rawDesc = "" +
 	"\x0eskill_table_id\x18\x02 \x01(\rR\fskillTableId\"T\n" +
 	"\x1aPlayerSkillListPBComponent\x126\n" +
 	"\n" +
-	"skill_list\x18\x01 \x03(\v2\x17.PlayerSkillPBComponentR\tskillListB'Z%team/proto/logic/component;team_protob\x06proto3"
+	"skill_list\x18\x01 \x03(\v2\x17.PlayerSkillPBComponentR\tskillListB&Z$team/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_player_skill_comp_proto_rawDescOnce sync.Once

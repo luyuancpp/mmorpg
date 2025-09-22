@@ -32,7 +32,7 @@
 // 	protoc        v6.31.1
 // source: proto/common/empty.proto
 
-package login_proto
+package common
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -90,7 +90,7 @@ var File_proto_common_empty_proto protoreflect.FileDescriptor
 const file_proto_common_empty_proto_rawDesc = "" +
 	"\n" +
 	"\x18proto/common/empty.proto\"\a\n" +
-	"\x05EmptyB Z\x1elogin/proto/common;login_protob\x06proto3"
+	"\x05EmptyB\x1bZ\x19login/proto/common;commonb\x06proto3"
 
 var (
 	file_proto_common_empty_proto_rawDescOnce sync.Once

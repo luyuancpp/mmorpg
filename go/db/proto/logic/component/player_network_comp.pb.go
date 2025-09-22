@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/player_network_comp.proto
 
-package db_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -102,7 +102,7 @@ const file_proto_logic_component_player_network_comp_proto_rawDesc = "" +
 	"loginToken\x1a9\n" +
 	"\vNodeIdEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01B#Z!db/proto/logic/component;db_protob\x06proto3"
+	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01B$Z\"db/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_player_network_comp_proto_rawDescOnce sync.Once

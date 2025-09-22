@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/constants/scene.proto
 
-package db_proto
+package constants
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -24,7 +24,7 @@ var File_proto_logic_constants_scene_proto protoreflect.FileDescriptor
 
 const file_proto_logic_constants_scene_proto_rawDesc = "" +
 	"\n" +
-	"!proto/logic/constants/scene.protoB#Z!db/proto/logic/constants;db_protob\x06proto3"
+	"!proto/logic/constants/scene.protoB$Z\"db/proto/logic/constants;constantsb\x06proto3"
 
 var file_proto_logic_constants_scene_proto_goTypes = []any{}
 var file_proto_logic_constants_scene_proto_depIdxs = []int32{

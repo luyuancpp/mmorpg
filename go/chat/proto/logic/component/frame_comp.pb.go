@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/frame_comp.proto
 
-package chat_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -111,7 +111,7 @@ const file_proto_logic_component_frame_comp_proto_rawDesc = "" +
 	"\n" +
 	"target_fps\x18\x03 \x01(\rR\ttargetFps\x12)\n" +
 	"\x10time_accumulator\x18\x04 \x01(\x01R\x0ftimeAccumulator\x12#\n" +
-	"\rcurrent_frame\x18\x05 \x01(\x04R\fcurrentFrameB'Z%chat/proto/logic/component;chat_protob\x06proto3"
+	"\rcurrent_frame\x18\x05 \x01(\x04R\fcurrentFrameB&Z$chat/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_frame_comp_proto_rawDescOnce sync.Once

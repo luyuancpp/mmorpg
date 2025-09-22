@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/middleware/etcd/etcd.proto
 
-package player_locator_proto
+package etcd
 
 import (
 	context "context"

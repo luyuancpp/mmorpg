@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/common/config.proto
 
-package player_locator_proto
+package common
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -424,7 +424,7 @@ const file_proto_common_config_proto_rawDesc = "" +
 	"\x04host\x18\x03 \x01(\tR\x04host\x12\x12\n" +
 	"\x04port\x18\x04 \x01(\rR\x04port\x12\x1a\n" +
 	"\bpassword\x18\x05 \x01(\tR\bpassword\x12\x0e\n" +
-	"\x02db\x18\x06 \x01(\rR\x02dbB2Z0player_locator/proto/common;player_locator_protob\x06proto3"
+	"\x02db\x18\x06 \x01(\rR\x02dbB$Z\"player_locator/proto/common;commonb\x06proto3"
 
 var (
 	file_proto_common_config_proto_rawDescOnce sync.Once

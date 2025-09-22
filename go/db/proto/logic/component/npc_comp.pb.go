@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/npc_comp.proto
 
-package db_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -62,7 +62,7 @@ var File_proto_logic_component_npc_comp_proto protoreflect.FileDescriptor
 const file_proto_logic_component_npc_comp_proto_rawDesc = "" +
 	"\n" +
 	"$proto/logic/component/npc_comp.proto\"\x05\n" +
-	"\x03NpcB#Z!db/proto/logic/component;db_protob\x06proto3"
+	"\x03NpcB$Z\"db/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_npc_comp_proto_rawDescOnce sync.Once

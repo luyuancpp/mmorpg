@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/cpp/rpc/gate/gate_service.proto
 
-package chat_proto
+package gate
 
 import (
 	common "chat/proto/common"

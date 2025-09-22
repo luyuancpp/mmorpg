@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/cpp/rpc/gate/gate_service.proto
 
-package mail_proto
+package gate
 
 import (
 	context "context"

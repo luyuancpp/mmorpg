@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/cpp/rpc/scene/player_skill.proto
 
-package team_proto
+package scene
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -412,7 +412,7 @@ const file_proto_service_cpp_rpc_scene_player_skill_proto_rawDesc = "" +
 	"\fReleaseSkill\x12\x19.ReleaseSkillSkillRequest\x1a\x1a.ReleaseSkillSkillResponse\x12(\n" +
 	"\x0fNotifySkillUsed\x12\r.SkillUsedS2C\x1a\x06.Empty\x126\n" +
 	"\x16NotifySkillInterrupted\x12\x14.SkillInterruptedS2C\x1a\x06.Empty\x12;\n" +
-	"\fGetSkillList\x12\x14.GetSkillListRequest\x1a\x15.GetSkillListResponseB0Z+team/proto/service/cpp/rpc/scene;team_proto\x80\x01\x01b\x06proto3"
+	"\fGetSkillList\x12\x14.GetSkillListRequest\x1a\x15.GetSkillListResponseB+Z&team/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_player_skill_proto_rawDescOnce sync.Once

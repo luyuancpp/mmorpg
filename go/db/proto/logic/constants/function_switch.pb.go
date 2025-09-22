@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/constants/function_switch.proto
 
-package db_proto
+package constants
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -74,7 +74,7 @@ const file_proto_logic_constants_function_switch_proto_rawDesc = "" +
 	"+proto/logic/constants/function_switch.proto*M\n" +
 	"\x16eFunctionSwitchBitType\x12\x17\n" +
 	"\x13kFunctionSwitchTeam\x10\x00\x12\x1a\n" +
-	"\x16kFunctionSwitchFriends\x10\x01B#Z!db/proto/logic/constants;db_protob\x06proto3"
+	"\x16kFunctionSwitchFriends\x10\x01B$Z\"db/proto/logic/constants;constantsb\x06proto3"
 
 var (
 	file_proto_logic_constants_function_switch_proto_rawDescOnce sync.Once

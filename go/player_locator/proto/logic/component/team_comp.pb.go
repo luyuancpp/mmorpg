@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/team_comp.proto
 
-package player_locator_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -71,7 +71,7 @@ const file_proto_logic_component_team_comp_proto_rawDesc = "" +
 	"\n" +
 	"%proto/logic/component/team_comp.proto\"!\n" +
 	"\x06TeamId\x12\x17\n" +
-	"\ateam_id\x18\x01 \x01(\x04R\x06teamIdB;Z9player_locator/proto/logic/component;player_locator_protob\x06proto3"
+	"\ateam_id\x18\x01 \x01(\x04R\x06teamIdB0Z.player_locator/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_team_comp_proto_rawDescOnce sync.Once

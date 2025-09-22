@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/cpp/rpc/scene/game_client_player.proto
 
-package chat_proto
+package scene
 
 import (
 	common "chat/proto/common"
@@ -85,7 +85,7 @@ const file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDesc = "" +
 	"\x17SceneClientPlayerCommon\x12*\n" +
 	"\x0fSendTipToClient\x12\x0f.TipInfoMessage\x1a\x06.Empty\x12,\n" +
 	"\n" +
-	"KickPlayer\x12\x16.GameKickPlayerRequest\x1a\x06.EmptyB0Z+chat/proto/service/cpp/rpc/scene;chat_proto\x80\x01\x01b\x06proto3"
+	"KickPlayer\x12\x16.GameKickPlayerRequest\x1a\x06.EmptyB+Z&chat/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDescOnce sync.Once

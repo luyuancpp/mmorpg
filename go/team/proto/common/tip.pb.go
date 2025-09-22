@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/common/tip.proto
 
-package team_proto
+package common
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -82,7 +82,7 @@ const file_proto_common_tip_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1e\n" +
 	"\n" +
 	"parameters\x18\x02 \x03(\tR\n" +
-	"parametersB\x1eZ\x1cteam/proto/common;team_protob\x06proto3"
+	"parametersB\x1aZ\x18team/proto/common;commonb\x06proto3"
 
 var (
 	file_proto_common_tip_proto_rawDescOnce sync.Once

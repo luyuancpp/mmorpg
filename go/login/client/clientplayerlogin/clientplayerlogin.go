@@ -14,18 +14,18 @@ import (
 )
 
 type (
-	AccountSimplePlayerWrapper = login_proto.AccountSimplePlayerWrapper
-	CreatePlayerRequest        = login_proto.CreatePlayerRequest
-	CreatePlayerResponse       = login_proto.CreatePlayerResponse
-	EnterGameRequest           = login_proto.EnterGameRequest
-	EnterGameResponse          = login_proto.EnterGameResponse
-	LeaveGameRequest           = login_proto.LeaveGameRequest
-	LoginEmptyResponse         = login_proto.LoginEmptyResponse
-	LoginNodeDisconnectRequest = login_proto.LoginNodeDisconnectRequest
-	LoginRequest               = login_proto.LoginRequest
-	LoginResponse              = login_proto.LoginResponse
-	LoginSessionInfo           = login_proto.LoginSessionInfo
-	TestResponse               = login_proto.TestResponse
+	AccountSimplePlayerWrapper = login.AccountSimplePlayerWrapper
+	CreatePlayerRequest        = login.CreatePlayerRequest
+	CreatePlayerResponse       = login.CreatePlayerResponse
+	EnterGameRequest           = login.EnterGameRequest
+	EnterGameResponse          = login.EnterGameResponse
+	LeaveGameRequest           = login.LeaveGameRequest
+	LoginEmptyResponse         = login.LoginEmptyResponse
+	LoginNodeDisconnectRequest = login.LoginNodeDisconnectRequest
+	LoginRequest               = login.LoginRequest
+	LoginResponse              = login.LoginResponse
+	LoginSessionInfo           = login.LoginSessionInfo
+	TestResponse               = login.TestResponse
 
 	ClientPlayerLogin interface {
 		Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
@@ -47,26 +47,26 @@ func NewClientPlayerLogin(cli zrpc.Client) ClientPlayerLogin {
 }
 
 func (m *defaultClientPlayerLogin) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
-	client := login_proto.NewClientPlayerLoginClient(m.cli.Conn())
+	client := login.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.Login(ctx, in, opts...)
 }
 
 func (m *defaultClientPlayerLogin) CreatePlayer(ctx context.Context, in *CreatePlayerRequest, opts ...grpc.CallOption) (*CreatePlayerResponse, error) {
-	client := login_proto.NewClientPlayerLoginClient(m.cli.Conn())
+	client := login.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.CreatePlayer(ctx, in, opts...)
 }
 
 func (m *defaultClientPlayerLogin) EnterGame(ctx context.Context, in *EnterGameRequest, opts ...grpc.CallOption) (*EnterGameResponse, error) {
-	client := login_proto.NewClientPlayerLoginClient(m.cli.Conn())
+	client := login.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.EnterGame(ctx, in, opts...)
 }
 
 func (m *defaultClientPlayerLogin) LeaveGame(ctx context.Context, in *LeaveGameRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error) {
-	client := login_proto.NewClientPlayerLoginClient(m.cli.Conn())
+	client := login.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.LeaveGame(ctx, in, opts...)
 }
 
 func (m *defaultClientPlayerLogin) Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error) {
-	client := login_proto.NewClientPlayerLoginClient(m.cli.Conn())
+	client := login.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.Disconnect(ctx, in, opts...)
 }

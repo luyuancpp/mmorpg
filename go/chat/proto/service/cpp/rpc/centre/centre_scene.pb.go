@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/cpp/rpc/centre/centre_scene.proto
 
-package chat_proto
+package centre
 
 import (
 	common "chat/proto/common"
@@ -186,7 +186,7 @@ const file_proto_service_cpp_rpc_centre_centre_scene_proto_rawDesc = "" +
 	"\x06reason\x18\x03 \x01(\rR\x06reason2\x81\x01\n" +
 	"\vCentreScene\x12>\n" +
 	"\rRegisterScene\x12\x15.RegisterSceneRequest\x1a\x16.RegisterSceneResponse\x122\n" +
-	"\x0fUnRegisterScene\x12\x17.UnRegisterSceneRequest\x1a\x06.EmptyB1Z,chat/proto/service/cpp/rpc/centre;chat_proto\x80\x01\x01b\x06proto3"
+	"\x0fUnRegisterScene\x12\x17.UnRegisterSceneRequest\x1a\x06.EmptyB-Z(chat/proto/service/cpp/rpc/centre;centre\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_centre_centre_scene_proto_rawDescOnce sync.Once

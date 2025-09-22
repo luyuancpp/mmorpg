@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/middleware/etcd/etcd.proto
 
-package chat_proto
+package etcd
 
 import (
 	context "context"

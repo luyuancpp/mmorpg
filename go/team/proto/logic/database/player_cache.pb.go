@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/database/player_cache.proto
 
-package team_proto
+package database
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -80,7 +80,7 @@ const file_proto_logic_database_player_cache_proto_rawDesc = "" +
 	"'proto/logic/database/player_cache.proto\x1a/proto/logic/database/mysql_database_table.proto\"\x9c\x01\n" +
 	"\rPlayerAllData\x12B\n" +
 	"\x14player_database_data\x18\x02 \x01(\v2\x10.player_databaseR\x12playerDatabaseData\x12G\n" +
-	"\x16player_database_1_data\x18\x03 \x01(\v2\x12.player_database_1R\x13playerDatabase1DataB&Z$team/proto/logic/database;team_protob\x06proto3"
+	"\x16player_database_1_data\x18\x03 \x01(\v2\x12.player_database_1R\x13playerDatabase1DataB$Z\"team/proto/logic/database;databaseb\x06proto3"
 
 var (
 	file_proto_logic_database_player_cache_proto_rawDescOnce sync.Once

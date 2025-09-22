@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/event/buff_event.proto
 
-package player_locator_proto
+package event
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -90,7 +90,7 @@ const file_proto_logic_event_buff_event_proto_rawDesc = "" +
 	"\x06period\x18\x01 \x01(\x04R\x06period\x12%\n" +
 	"\x0eperiodic_timer\x18\x02 \x01(\x04R\rperiodicTimer\x12\x1f\n" +
 	"\vperiod_done\x18\x03 \x01(\rR\n" +
-	"periodDoneB7Z5player_locator/proto/logic/event;player_locator_protob\x06proto3"
+	"periodDoneB(Z&player_locator/proto/logic/event;eventb\x06proto3"
 
 var (
 	file_proto_logic_event_buff_event_proto_rawDescOnce sync.Once

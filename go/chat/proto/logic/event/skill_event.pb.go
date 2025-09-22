@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/event/skill_event.proto
 
-package chat_proto
+package event
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -98,7 +98,7 @@ const file_proto_logic_event_skill_event_proto_rawDesc = "" +
 	"\bskill_id\x18\x01 \x01(\x04R\askillId\x12$\n" +
 	"\x0eskill_table_id\x18\x02 \x01(\rR\fskillTableId\x12\x16\n" +
 	"\x06caster\x18\x03 \x01(\x04R\x06caster\x12\x16\n" +
-	"\x06target\x18\x04 \x01(\x04R\x06targetB#Z!chat/proto/logic/event;chat_protob\x06proto3"
+	"\x06target\x18\x04 \x01(\x04R\x06targetB\x1eZ\x1cchat/proto/logic/event;eventb\x06proto3"
 
 var (
 	file_proto_logic_event_skill_event_proto_rawDescOnce sync.Once

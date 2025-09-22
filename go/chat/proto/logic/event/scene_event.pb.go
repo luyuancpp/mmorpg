@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/event/scene_event.proto
 
-package chat_proto
+package event
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -347,7 +347,7 @@ const file_proto_logic_event_scene_event_proto_rawDesc = "" +
 	"\x0eAfterLeaveRoom\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\"&\n" +
 	"\fS2CEnterRoom\x12\x16\n" +
-	"\x06entity\x18\x01 \x01(\x04R\x06entityB#Z!chat/proto/logic/event;chat_protob\x06proto3"
+	"\x06entity\x18\x01 \x01(\x04R\x06entityB\x1eZ\x1cchat/proto/logic/event;eventb\x06proto3"
 
 var (
 	file_proto_logic_event_scene_event_proto_rawDescOnce sync.Once

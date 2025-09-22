@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/player_comp.proto
 
-package team_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -314,7 +314,7 @@ const file_proto_logic_component_player_comp_proto_rawDesc = "" +
 	"\x17PlayerUint64PBComponent\x125\n" +
 	"\x16registration_timestamp\x18\x01 \x01(\x04R\x15registrationTimestamp\"/\n" +
 	"\x17PlayerUint32PbComponent\x12\x14\n" +
-	"\x05class\x18\x01 \x01(\rR\x05classB'Z%team/proto/logic/component;team_protob\x06proto3"
+	"\x05class\x18\x01 \x01(\rR\x05classB&Z$team/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_player_comp_proto_rawDescOnce sync.Once

@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: proto/service/go/grpc/db/db.proto
 
-package team_proto
+package db
 
 import (
 	context "context"

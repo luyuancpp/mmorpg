@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/component/actor_comp.proto
 
-package chat_proto
+package component
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -660,7 +660,7 @@ const file_proto_logic_component_actor_comp_proto_rawDesc = "" +
 	"state_list\x18\x01 \x03(\v2%.ActorStatePbComponent.StateListEntryR\tstateList\x1a<\n" +
 	"\x0eStateListEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01B'Z%chat/proto/logic/component;chat_protob\x06proto3"
+	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01B&Z$chat/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_actor_comp_proto_rawDescOnce sync.Once

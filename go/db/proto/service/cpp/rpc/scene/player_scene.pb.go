@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/service/cpp/rpc/scene/player_scene.proto
 
-package db_proto
+package scene
 
 import (
 	common "db/proto/common"
@@ -531,7 +531,7 @@ const file_proto_service_cpp_rpc_scene_player_scene_proto_rawDesc = "" +
 	"\x11NotifyActorCreate\x12\x0f.ActorCreateS2C\x1a\x06.Empty\x12.\n" +
 	"\x12NotifyActorDestroy\x12\x10.ActorDestroyS2C\x1a\x06.Empty\x124\n" +
 	"\x15NotifyActorListCreate\x12\x13.ActorListCreateS2C\x1a\x06.Empty\x126\n" +
-	"\x16NotifyActorListDestroy\x12\x14.ActorListDestroyS2C\x1a\x06.EmptyB,Z'db/proto/service/cpp/rpc/scene;db_proto\x80\x01\x01b\x06proto3"
+	"\x16NotifyActorListDestroy\x12\x14.ActorListDestroyS2C\x1a\x06.EmptyB)Z$db/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescOnce sync.Once

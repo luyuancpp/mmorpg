@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: proto/logic/event/combat_event.proto
 
-package mail_proto
+package event
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -80,7 +80,7 @@ const file_proto_logic_event_combat_event_proto_rawDesc = "" +
 	"$proto/logic/event/combat_event.proto\"=\n" +
 	"\vBeKillEvent\x12\x16\n" +
 	"\x06caster\x18\x01 \x01(\x04R\x06caster\x12\x16\n" +
-	"\x06target\x18\x02 \x01(\x04R\x06targetB#Z!mail/proto/logic/event;mail_protob\x06proto3"
+	"\x06target\x18\x02 \x01(\x04R\x06targetB\x1eZ\x1cmail/proto/logic/event;eventb\x06proto3"
 
 var (
 	file_proto_logic_event_combat_event_proto_rawDescOnce sync.Once
