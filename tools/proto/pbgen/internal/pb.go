@@ -256,8 +256,7 @@ func AddGoPackageToProtoDir() {
 		grpcDirs := util.GetGRPCSubdirectoryNames()
 
 		for _, dirName := range grpcDirs {
-
-			destDir := config.GeneratorProtoDirectory + dirName
+			destDir := BuildGeneratorProtoPath(dirName)
 			// 4. 为目录下所有文件生成对应相对路径的go_package
 			// 基础路径：项目模块路径 + 原始grpc目录相对路径
 			baseGoPackage := dirName
@@ -267,8 +266,22 @@ func AddGoPackageToProtoDir() {
 			if err := processFilesWithDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
 				log.Printf("❌ 处理目录 %s 的go_package失败: %v", destDir, err)
 			}
+
 		}
 
+		for _, dirName := range grpcDirs {
+			destDir := BuildGeneratorGoZeroProtoPath(dirName)
+			// 4. 为目录下所有文件生成对应相对路径的go_package
+			// 基础路径：项目模块路径 + 原始grpc目录相对路径
+			baseGoPackage := dirName
+			baseGoPackage = filepath.ToSlash(baseGoPackage)
+
+			// 处理目录下所有文件，生成动态go_package
+			if err := processFilesWithDynamicGoPackage(destDir, baseGoPackage, destDir, true); err != nil {
+				log.Printf("❌ 处理目录 %s 的go_package失败: %v", destDir, err)
+			}
+
+		}
 	}()
 }
 
