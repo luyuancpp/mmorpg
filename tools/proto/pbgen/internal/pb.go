@@ -277,7 +277,7 @@ func AddGoPackageToProtoDir() {
 			baseGoPackage = filepath.ToSlash(baseGoPackage)
 
 			// 处理目录下所有文件，生成动态go_package
-			if err := processFilesWithDynamicGoPackage(destDir, baseGoPackage, destDir, true); err != nil {
+			if err := processFilesWithDynamicGoZeroPackage(destDir, baseGoPackage, destDir, true); err != nil {
 				log.Printf("❌ 处理目录 %s 的go_package失败: %v", destDir, err)
 			}
 
@@ -324,6 +324,61 @@ func processFilesWithDynamicGoPackage(rootDir, baseGoPackage, currentDir string,
 				goPackagePath = filepath.Join(
 					baseGoPackage,
 					config.ProtoDirName,
+					filepath.ToSlash(relativePath),
+				)
+			}
+
+			goPackagePath = filepath.ToSlash(goPackagePath)
+
+			// 添加go_package到文件
+			added, err := protohelper.AddGoPackage(fullPath, goPackagePath, isMulti)
+			if err != nil {
+				return err
+			}
+			if added {
+				log.Printf("📝 为 %s 设置go_package: %s", fullPath, goPackagePath)
+			} else {
+				log.Printf("ℹ️ %s 已存在go_package，跳过", fullPath)
+			}
+		}
+	}
+	return nil
+}
+
+func processFilesWithDynamicGoZeroPackage(rootDir, baseGoPackage, currentDir string, isMulti bool) error {
+	entries, err := os.ReadDir(currentDir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		fullPath := filepath.Join(currentDir, entry.Name())
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			// 递归处理子目录
+			if err := processFilesWithDynamicGoZeroPackage(rootDir, baseGoPackage, fullPath, isMulti); err != nil {
+				return err
+			}
+		} else if strings.EqualFold(filepath.Ext(fullPath), ".proto") {
+			// 计算文件相对根目录的路径
+			relativePath, err := filepath.Rel(rootDir, filepath.Dir(fullPath))
+			if err != nil {
+				return err
+			}
+
+			// 生成动态go_package：基础路径 + 相对目录
+			var goPackagePath string
+			if relativePath == "." {
+				// 文件在根目录，直接使用基础路径
+				goPackagePath = baseGoPackage
+			} else {
+				// 拼接基础路径和相对目录
+				goPackagePath = filepath.Join(
+					baseGoPackage,
 					filepath.ToSlash(relativePath),
 				)
 			}
