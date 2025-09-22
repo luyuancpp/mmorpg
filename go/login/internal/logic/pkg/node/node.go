@@ -7,14 +7,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
 	clientv3 "go.etcd.io/etcd/client/v3"
-	"login/generated/pb/game"
 	"login/internal/config"
 	etcd "login/internal/logic/pkg/etcd"
+	login_proto "login/proto/common"
 	"time"
 )
 
 type Node struct {
-	Info         *game.NodeInfo
+	Info         *login_proto.NodeInfo
 	reg          *etcd.NodeRegistry
 	Client       *clientv3.Client
 	cancelFunc   context.CancelFunc // 用于取消 KeepAlive goroutine
@@ -24,7 +24,7 @@ type Node struct {
 // GetRpcPrefix 根据 NodeType 返回对应的 RPC 路径
 func GetRpcPrefix(nodeType uint32) string {
 	// 获取对应的 NodeType 名称并拼接 ".rpc"
-	return fmt.Sprintf("%s.rpc", game.ENodeType_name[int32(nodeType)])
+	return fmt.Sprintf("%s.rpc", login_proto.ENodeType_name[int32(nodeType)])
 }
 
 // BuildRpcPrefix 生成不包含 node_id 的路径
@@ -51,16 +51,16 @@ func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
 	}
 
 	// 创建节点信息
-	info := &game.NodeInfo{
+	info := &login_proto.NodeInfo{
 		NodeId:   uint32(time.Now().UnixNano()),
 		NodeType: nodeType,
-		Endpoint: &game.EndpointPBComponent{
+		Endpoint: &login_proto.EndpointPBComponent{
 			Ip:   ip,
 			Port: port,
 		},
 		ZoneId:       config.AppConfig.Node.ZoneId,
 		LaunchTime:   uint64(time.Now().Unix()),
-		ProtocolType: uint32(game.ENodeProtocolType_PROTOCOL_GRPC),
+		ProtocolType: uint32(login_proto.ENodeProtocolType_PROTOCOL_GRPC),
 		NodeUuid:     uuid.New().String(),
 	}
 

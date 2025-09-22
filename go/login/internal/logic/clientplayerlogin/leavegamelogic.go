@@ -6,6 +6,7 @@ import (
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/utils/sessioncleaner"
 	"login/internal/svc"
+	login_proto "login/proto/service/go/grpc/login"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -24,8 +25,8 @@ func NewLeaveGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LeaveGa
 	}
 }
 
-func (l *LeaveGameLogic) LeaveGame(in *game.LeaveGameRequest) (*game.Empty, error) {
-	resp := &game.Empty{}
+func (l *LeaveGameLogic) LeaveGame(in *login_proto.LeaveGameRequest) (*login_proto.LoginEmptyResponse, error) {
+	resp := &login_proto.LoginEmptyResponse{}
 
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok {
@@ -47,10 +48,10 @@ func (l *LeaveGameLogic) LeaveGame(in *game.LeaveGameRequest) (*game.Empty, erro
 	// 6. 通知中心服务
 	node := l.svcCtx.GetCentreClient()
 	if node != nil {
-		centreRequest := &game.LoginNodeLeaveGameRequest{
+		centreRequest := &login_proto.LoginNodeLeaveGameRequest{
 			SessionInfo: sessionDetails,
 		}
-		node.Send(centreRequest, game.CentreLoginNodeLeaveGameMessageId)
+		node.Send(centreRequest, login_proto.CentreLoginNodeLeaveGameMessageId)
 	} else {
 		logx.Error("Centre client is nil during leave")
 	}

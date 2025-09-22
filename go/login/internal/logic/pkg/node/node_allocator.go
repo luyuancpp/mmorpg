@@ -7,7 +7,7 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"google.golang.org/protobuf/encoding/protojson"
-	"login/generated/pb/game"
+	login_proto "login/proto/common"
 )
 
 type NodeAllocator struct {
@@ -20,7 +20,7 @@ func NewNodeAllocator(client *clientv3.Client, prefix string) *NodeAllocator {
 }
 
 // TryAllocateNodeID 尝试分配一个 node_id（复用已有空位），最大向上找空位
-func (na *NodeAllocator) TryAllocateNodeID(ctx context.Context, info *game.NodeInfo, leaseID clientv3.LeaseID) (uint32, error) {
+func (na *NodeAllocator) TryAllocateNodeID(ctx context.Context, info *login_proto.NodeInfo, leaseID clientv3.LeaseID) (uint32, error) {
 	// 获取现有节点
 	resp, err := na.Client.Get(ctx, na.Prefix, clientv3.WithPrefix())
 	if err != nil {
@@ -31,7 +31,7 @@ func (na *NodeAllocator) TryAllocateNodeID(ctx context.Context, info *game.NodeI
 	maxID := uint32(0)
 
 	for _, kv := range resp.Kvs {
-		data := &game.NodeInfo{}
+		data := &login_proto.NodeInfo{}
 		err := json.Unmarshal(kv.Value, &data)
 		if err != nil {
 			continue
@@ -62,7 +62,7 @@ func (na *NodeAllocator) TryAllocateNodeID(ctx context.Context, info *game.NodeI
 	return 0, fmt.Errorf("failed to allocate node ID")
 }
 
-func (na *NodeAllocator) putIfAbsent(ctx context.Context, nodeID uint32, info *game.NodeInfo, leaseID clientv3.LeaseID) (bool, error) {
+func (na *NodeAllocator) putIfAbsent(ctx context.Context, nodeID uint32, info *login_proto.NodeInfo, leaseID clientv3.LeaseID) (bool, error) {
 	key := BuildRpcPath(na.Prefix, info.ZoneId, info.NodeType, nodeID)
 
 	info.NodeId = nodeID
