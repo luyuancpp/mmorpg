@@ -318,11 +318,12 @@ func processFilesWithDynamicGoPackage(rootDir, baseGoPackage, currentDir string,
 			var goPackagePath string
 			if relativePath == "." {
 				// 文件在根目录，直接使用基础路径
-				goPackagePath = baseGoPackage
+				goPackagePath = baseGoPackage + config.ProtoDirName
 			} else {
 				// 拼接基础路径和相对目录
 				goPackagePath = filepath.Join(
 					baseGoPackage,
+					config.ProtoDirName,
 					filepath.ToSlash(relativePath),
 				)
 			}
