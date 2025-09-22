@@ -33,10 +33,10 @@ func GenGoPackageOptWithAdjustedPath(goPackagePath string) string {
 
 	// 根据段数决定处理方式
 	var remainingParts []string
-	if len(parts) >= 3 {
+	if len(parts) >= 2 {
 		// 段数足够时，取parts[2:]
-		remainingParts = parts[2:]
-	} else if len(parts) == 2 {
+		remainingParts = parts[1:]
+	} else if len(parts) == 1 {
 		// 只有两段时，取空切片（避免parts[2:]越界）
 		remainingParts = []string{}
 	} else {
@@ -44,7 +44,7 @@ func GenGoPackageOptWithAdjustedPath(goPackagePath string) string {
 		pkgName := parts[0] + "_proto"
 		pkgName = strings.ReplaceAll(pkgName, "-", "_")
 		pkgName = strings.ReplaceAll(pkgName, ".", "_")
-		return fmt.Sprintf("option go_package = \"%s;%s\";", goPackagePath, pkgName)
+		return fmt.Sprintf("option go_package = \"%s\";", goPackagePath)
 	}
 
 	// 处理最后一段：使用parts[0] + "_proto"
@@ -57,10 +57,7 @@ func GenGoPackageOptWithAdjustedPath(goPackagePath string) string {
 	fullParts := append(remainingParts, newLastPart)
 	newPath := strings.Join(fullParts, "/")
 
-	// 包名使用新的最后一段
-	pkgName := newLastPart
-
-	return fmt.Sprintf("option go_package = \"%s;%s\";", newPath, pkgName)
+	return fmt.Sprintf("option go_package = \"%s\";", newPath)
 }
 
 // 生成正确格式的 option go_package（包含路径和包名）
