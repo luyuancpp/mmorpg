@@ -19,6 +19,59 @@ import (
 	"sync"
 )
 
+func BuildProtoGameGrpcCpp() error {
+	util.Wg.Add(1)
+	go func() {
+		defer util.Wg.Done()
+
+		err := os.MkdirAll(config.PbcProtoOutputDirectory, os.FileMode(0777))
+		if err != nil {
+			return
+		}
+
+		protoFile := config.GameRpcProtoPath + config.GameRpcProtoName
+		protoFiles := []string{protoFile}
+
+		// 调用 protoc 执行批量生成
+		if err := generateCppFiles(protoFiles, config.PbcTempDirectory); err != nil {
+			return
+		}
+
+		// 复制生成的 .pb.h 和 .pb.cc 文件到目标目录（若有变化）
+		for _, protoFile := range protoFiles {
+			dstFileName := strings.Replace(protoFile, config.ProtoDir, config.PbcProtoOutputDirectory, 1)
+			dstFileHeadName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbhEx, 1)
+			dstFileCppName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
+
+			protoRelativePath := strings.Replace(protoFile, config.OutputRoot, "", 1)
+
+			tempBaseDir := filepath.ToSlash(path.Dir(config.PbcTempDirectory + protoRelativePath))
+			newBaseDir := filepath.ToSlash(path.Dir(dstFileCppName))
+
+			tempHeadFileName := filepath.Join(tempBaseDir, filepath.Base(dstFileHeadName))
+			tempCppFileName := filepath.Join(tempBaseDir, filepath.Base(dstFileCppName))
+
+			if err := os.MkdirAll(tempBaseDir, os.FileMode(0777)); err != nil {
+				log.Println("mkdir failed:", err)
+				continue
+			}
+			if err := os.MkdirAll(newBaseDir, os.FileMode(0777)); err != nil {
+				log.Println("mkdir failed:", err)
+				continue
+			}
+			if err := CopyFileIfChanged(tempCppFileName, dstFileCppName); err != nil {
+				log.Println("copy .cc failed:", err)
+				continue
+			}
+			if err := CopyFileIfChanged(tempHeadFileName, dstFileHeadName); err != nil {
+				log.Println("copy .h failed:", err)
+				continue
+			}
+		}
+	}()
+	return nil
+}
+
 func BuildProtoCpp(protoPath string) error {
 	// 读取 proto 文件夹内容
 	fds, err := os.ReadDir(protoPath)
@@ -35,8 +88,6 @@ func BuildProtoCpp(protoPath string) error {
 			protoFiles = append(protoFiles, fullPath)
 		}
 	}
-
-	protoFiles = append(protoFiles, config.GameRpcProtoPath+config.GameRpcProtoName)
 
 	if len(protoFiles) == 0 {
 		log.Println("No .proto files found in:", protoPath)
