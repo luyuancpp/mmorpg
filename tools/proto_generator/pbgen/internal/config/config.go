@@ -108,7 +108,7 @@ const (
 	RobotGoOutputDirectory = OutputRoot + RobotDirectory
 	RobotGoGamePbDirectory = RobotGoOutputDirectory + GoPackage
 	MessageIdGoFile        = "message_id.go"
-	RobotMessageIdFilePath = RobotGoGamePbDirectory + GeneratorDirectory + MessageIdGoFile
+	RobotMessageIdFilePath = RobotGoGamePbDirectory + "/" + MessageIdGoFile
 
 	GoGeneratorDirectory = GoNodeDirectory
 
