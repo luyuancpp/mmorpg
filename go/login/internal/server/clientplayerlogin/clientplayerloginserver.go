@@ -6,6 +6,7 @@ package server
 
 import (
 	"context"
+	login_proto "login/proto/service/go/grpc/login"
 
 	"login/generated/pb/game"
 	"login/internal/logic/clientplayerlogin"
@@ -14,7 +15,7 @@ import (
 
 type ClientPlayerLoginServer struct {
 	svcCtx *svc.ServiceContext
-	login_login_proto.UnimplementedClientPlayerLoginServer
+	login_proto.UnimplementedClientPlayerLoginServer
 }
 
 func NewClientPlayerLoginServer(svcCtx *svc.ServiceContext) *ClientPlayerLoginServer {
