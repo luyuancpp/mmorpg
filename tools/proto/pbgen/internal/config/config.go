@@ -13,12 +13,13 @@ const (
 
 // ----------- Proto 文件扩展名 -----------
 const (
-	ProtoEx      = ".proto"
-	ProtoPbcEx   = ".pb.cc"
-	ProtoPbhEx   = ".pb.h"
-	GrpcPbcEx    = ".grpc.pb.cc"
-	GrpcPbhEx    = ".grpc.pb.h"
-	ProtoDirName = "proto/"
+	ProtoEx            = ".proto"
+	ProtoPbcEx         = ".pb.cc"
+	ProtoPbhEx         = ".pb.h"
+	GrpcPbcEx          = ".grpc.pb.cc"
+	GrpcPbhEx          = ".grpc.pb.h"
+	ProtoDirName       = "proto/"
+	GoZeroProtoDirName = "go-zero_proto/"
 )
 
 // ----------- 通用文件扩展名 -----------

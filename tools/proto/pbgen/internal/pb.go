@@ -208,6 +208,15 @@ func BuildGeneratorProtoPath(dir string) string {
 	)
 }
 
+func BuildGeneratorGoZeroProtoPath(dir string) string {
+	// 使用filepath.Join自动处理路径分隔符，确保跨平台兼容
+	return filepath.Join(
+		config.GeneratorProtoDirectory,
+		dir+"/",
+		config.GoZeroProtoDirName,
+	)
+}
+
 func CopyProtoDir() {
 	util.Wg.Add(1)
 	go func() {
@@ -225,7 +234,17 @@ func CopyProtoDir() {
 			}
 		}
 
-		util.CopyLocalDir(config.ProtoDir, config.ProtoNormalPackageDirectory)
+		for _, dir := range grpcDirs {
+			destDir := BuildGeneratorGoZeroProtoPath(dir)
+			err := os.MkdirAll(destDir, os.FileMode(0777))
+			if err != nil {
+				return
+			}
+			err = util.CopyLocalDir(config.ProtoDir, destDir)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 	}()
 }
 

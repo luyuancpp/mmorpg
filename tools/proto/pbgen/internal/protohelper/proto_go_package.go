@@ -23,6 +23,35 @@ func GenGoPackageOptWithPkg(goPackagePath string) string {
 	return fmt.Sprintf("option go_package = \"%s;%s\";", goPackagePath, pkgName)
 }
 
+func GenGoPackageOptWithAdjustedPath(goPackagePath string) string {
+	// 分割路径为多个段
+	parts := strings.Split(goPackagePath, "/")
+	if len(parts) < 2 {
+		// 路径太短时直接在原路径后加_proto（避免索引越界）
+		pkgName := filepath.Base(goPackagePath) + "_proto"
+		return fmt.Sprintf("option go_package = \"%s;%s\";", goPackagePath, pkgName)
+	}
+
+	// 移除第一个路径段，保留剩余部分
+	remainingParts := parts[2:]
+
+	// 处理最后一个段，添加_proto后缀
+	lastIdx := len(remainingParts) - 1
+	remainingParts[lastIdx] = parts[0] + "_proto"
+
+	// 拼接成新路径
+	newPath := strings.Join(remainingParts, "/")
+
+	// 包名使用最后一段（已加_proto）
+	pkgName := remainingParts[lastIdx]
+
+	// 规范化包名（替换特殊字符）
+	pkgName = strings.ReplaceAll(pkgName, "-", "_")
+	pkgName = strings.ReplaceAll(pkgName, ".", "_")
+
+	return fmt.Sprintf("option go_package = \"%s/%s\";", newPath, pkgName)
+}
+
 // 生成正确格式的 option go_package（包含路径和包名）
 // goPackagePath: 完整的Go包路径（如 "db/service/cpp/rpc/centre"）
 // 返回格式: option go_package = "db/service/cpp/rpc/centre;centre";
@@ -100,7 +129,11 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 
 	// 构建要插入的行
 	var goPackageLine string
-	goPackageLine = GenGoPackageOptWithProtoPkg(goPackagePath)
+	if isMulti {
+		goPackageLine = GenGoPackageOptWithAdjustedPath(goPackagePath)
+	} else {
+		goPackageLine = GenGoPackageOptWithProtoPkg(goPackagePath)
+	}
 
 	// 插入新行
 	newLines := make([]string, 0, len(lines)+1)
