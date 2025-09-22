@@ -7,7 +7,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"login/data"
 	"login/generated/pb/game"
-	"login/generated/pb/table"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"

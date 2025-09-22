@@ -19,7 +19,7 @@ import (
 	"sync"
 )
 
-func BuildProtoGameGrpcCpp() error {
+func BuildProtoGameGrpc() error {
 	util.Wg.Add(1)
 	go func() {
 		defer util.Wg.Done()
@@ -68,7 +68,33 @@ func BuildProtoGameGrpcCpp() error {
 				continue
 			}
 		}
+
+		grpcDirs := util.GetGRPCSubdirectoryNames()
+		for _, dirName := range grpcDirs {
+
+			// 为每个注册的grpc节点目录生成代码
+			outputDir := config.NodeGoDirectory + dirName
+			// 确保输出目录存在
+			if err := os.MkdirAll(outputDir, 0755); err != nil {
+				log.Println("创建输出目录失败 %s: %v", outputDir, err)
+				continue
+			}
+
+			// 生成代码时传入基础go_package路径
+			if err := generateGoProto1(protoFiles, outputDir, config.GameRpcProtoPath); err != nil {
+				log.Println("生成节点代码失败 %s: %v", outputDir, err)
+				continue
+			}
+
+			// 生成机器人相关代码
+			if err := os.MkdirAll(config.RobotGoOutputDirectory, 0755); err != nil {
+				log.Println("创建机器人输出目录失败: %v", err)
+				continue
+			}
+		}
+
 	}()
+
 	return nil
 }
 
