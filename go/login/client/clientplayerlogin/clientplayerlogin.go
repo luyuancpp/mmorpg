@@ -7,25 +7,25 @@ package clientplayerlogin
 import (
 	"context"
 
-	"login/generated/pb/game"
+	"login/proto/service/go/grpc/login"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
 )
 
 type (
-	AccountSimplePlayerWrapper = login_login_proto.AccountSimplePlayerWrapper
-	CreatePlayerRequest        = login_login_proto.CreatePlayerRequest
-	CreatePlayerResponse       = login_login_proto.CreatePlayerResponse
-	EnterGameRequest           = login_login_proto.EnterGameRequest
-	EnterGameResponse          = login_login_proto.EnterGameResponse
-	LeaveGameRequest           = login_login_proto.LeaveGameRequest
-	LoginEmptyResponse         = login_login_proto.LoginEmptyResponse
-	LoginNodeDisconnectRequest = login_login_proto.LoginNodeDisconnectRequest
-	LoginRequest               = login_login_proto.LoginRequest
-	LoginResponse              = login_login_proto.LoginResponse
-	LoginSessionInfo           = login_login_proto.LoginSessionInfo
-	TestResponse               = login_login_proto.TestResponse
+	AccountSimplePlayerWrapper = login_proto.AccountSimplePlayerWrapper
+	CreatePlayerRequest        = login_proto.CreatePlayerRequest
+	CreatePlayerResponse       = login_proto.CreatePlayerResponse
+	EnterGameRequest           = login_proto.EnterGameRequest
+	EnterGameResponse          = login_proto.EnterGameResponse
+	LeaveGameRequest           = login_proto.LeaveGameRequest
+	LoginEmptyResponse         = login_proto.LoginEmptyResponse
+	LoginNodeDisconnectRequest = login_proto.LoginNodeDisconnectRequest
+	LoginRequest               = login_proto.LoginRequest
+	LoginResponse              = login_proto.LoginResponse
+	LoginSessionInfo           = login_proto.LoginSessionInfo
+	TestResponse               = login_proto.TestResponse
 
 	ClientPlayerLogin interface {
 		Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
@@ -47,26 +47,26 @@ func NewClientPlayerLogin(cli zrpc.Client) ClientPlayerLogin {
 }
 
 func (m *defaultClientPlayerLogin) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
-	client := login_login_proto.NewClientPlayerLoginClient(m.cli.Conn())
+	client := login_proto.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.Login(ctx, in, opts...)
 }
 
 func (m *defaultClientPlayerLogin) CreatePlayer(ctx context.Context, in *CreatePlayerRequest, opts ...grpc.CallOption) (*CreatePlayerResponse, error) {
-	client := login_login_proto.NewClientPlayerLoginClient(m.cli.Conn())
+	client := login_proto.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.CreatePlayer(ctx, in, opts...)
 }
 
 func (m *defaultClientPlayerLogin) EnterGame(ctx context.Context, in *EnterGameRequest, opts ...grpc.CallOption) (*EnterGameResponse, error) {
-	client := login_login_proto.NewClientPlayerLoginClient(m.cli.Conn())
+	client := login_proto.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.EnterGame(ctx, in, opts...)
 }
 
 func (m *defaultClientPlayerLogin) LeaveGame(ctx context.Context, in *LeaveGameRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error) {
-	client := login_login_proto.NewClientPlayerLoginClient(m.cli.Conn())
+	client := login_proto.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.LeaveGame(ctx, in, opts...)
 }
 
 func (m *defaultClientPlayerLogin) Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error) {
-	client := login_login_proto.NewClientPlayerLoginClient(m.cli.Conn())
+	client := login_proto.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.Disconnect(ctx, in, opts...)
 }

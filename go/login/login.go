@@ -23,6 +23,7 @@ import (
 	loginserver "login/internal/server/clientplayerlogin"
 	"login/internal/svc"
 	login_proto "login/proto/common"
+	login_proto_login "login/proto/service/go/grpc/login"
 	"net"
 	"strconv"
 )
@@ -107,7 +108,7 @@ func SessionInterceptor(
 			if err != nil {
 				logx.Error("Base64 decode error:", err)
 			} else {
-				var detail game.SessionDetails
+				var detail login_proto.SessionDetails
 				if err := proto.Unmarshal(bin, &detail); err != nil {
 					logx.Error("Protobuf unmarshal error:", err)
 				} else {
@@ -139,7 +140,7 @@ func SessionInterceptor(
 func startServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	server := zrpc.MustNewServer(cfg.RpcServerConf, func(grpcServer *grpc.Server) {
 		// 注册服务
-		game.RegisterClientPlayerLoginServer(grpcServer, loginserver.NewClientPlayerLoginServer(ctx))
+		login_proto_login.RegisterClientPlayerLoginServer(grpcServer, loginserver.NewClientPlayerLoginServer(ctx))
 
 		// 在开发或测试模式下，启用反射
 		if cfg.Mode == service.DevMode || cfg.Mode == service.TestMode {
@@ -173,10 +174,10 @@ func splitHostPort(address string) (string, uint32, error) {
 
 func connectToCentreNodes(ctx *svc.ServiceContext, loginNode *node.Node) error {
 	zoneId := config.AppConfig.Node.ZoneId
-	nodeType := uint32(game.ENodeType_CentreNodeService)
+	nodeType := uint32(login_proto.ENodeType_CentreNodeService)
 
 	prefix := node.BuildRpcPrefix(
-		game.ENodeType_name[int32(game.ENodeType_CentreNodeService)],
+		login_proto.ENodeType_name[int32(login_proto.ENodeType_CentreNodeService)],
 		zoneId,
 		nodeType,
 	)
