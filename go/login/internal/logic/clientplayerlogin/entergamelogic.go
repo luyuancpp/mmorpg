@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"google.golang.org/protobuf/proto"
 	"login/data"
+	"login/generated/pb/game"
+	"login/generated/pb/table"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
@@ -15,6 +17,9 @@ import (
 	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/logic/utils/sessioncleaner"
 	"login/internal/svc"
+	login_proto_common "login/proto/common"
+	login_proto_database "login/proto/logic/database"
+	login_proto_centre "login/proto/service/cpp/rpc/centre"
 	login_proto "login/proto/service/go/grpc/login"
 	"strconv"
 	"sync"
@@ -38,13 +43,13 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 }
 
 func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_proto.EnterGameResponse, error) {
-	resp := &login_proto.EnterGameResponse{ErrorMessage: &login_proto.TipInfoMessage{}}
+	resp := &login_proto.EnterGameResponse{ErrorMessage: &login_proto_common.TipInfoMessage{}}
 
 	// 1. 获取 Session
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or empty in context during login")
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
 	}
 
@@ -62,13 +67,13 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	tryLocker, err := playerLocker.TryLock(l.ctx, key, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
 	if err != nil {
 		logx.Errorf("EnterGame lock acquire failed for playerId=%d: %v", in.PlayerId, err)
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
 
 	if !tryLocker.IsLocked() {
 		logx.Errorf("EnterGame lock acquire failed for playerId=%d: %v", in.PlayerId, err)
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
 
@@ -90,7 +95,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	userAccount := &login_proto.UserAccounts{}
+	userAccount := &login_proto_database.UserAccounts{}
 	if err := proto.Unmarshal(dataBytes, userAccount); err != nil {
 		logx.Errorf("Unmarshal user account failed: %v", err)
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginDataParseFailed)
@@ -175,8 +180,8 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		if completedTasks >= totalTasksToLoad {
 			notifyOnce.Do(func() {
 				// 所有任务成功，通知中心
-				req := &login_proto.CentrePlayerGameNodeEntryRequest{
-					ClientMsgBody: &login_proto.CentreEnterGameRequest{
+				req := &login_proto_centre.CentrePlayerGameNodeEntryRequest{
+					ClientMsgBody: &login_proto_centre.CentreEnterGameRequest{
 						PlayerId: playerId,
 					},
 					SessionInfo: sessionDetails,
@@ -184,7 +189,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 
 				node := l.svcCtx.GetCentreClient()
 				if node != nil {
-					node.Send(req, login_proto.CentreLoginNodeEnterGameMessageId)
+					node.Send(req, game.CentreLoginNodeEnterGameMessageId)
 				}
 				logx.Infof("All %d tasks completed successfully, notified centre", totalTasksToLoad)
 			})
@@ -192,7 +197,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 	}
 
 	// 第一个任务：加载中心数据库数据
-	msgCentre := &login_proto.PlayerCentreDatabase{PlayerId: playerId}
+	msgCentre := &login_proto_database.PlayerCentreDatabase{PlayerId: playerId}
 	if err := dataloader.BatchLoadAndCache(
 		l.ctx,
 		l.svcCtx.RedisClient,
@@ -207,7 +212,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 	}
 
 	// 第二个任务：加载聚合数据
-	playerAll := &login_proto.PlayerAllData{}
+	playerAll := &login_proto_database.PlayerAllData{}
 	if err := dataloader.LoadAggregateData(
 		l.ctx,
 		l.svcCtx.RedisClient,
@@ -216,8 +221,8 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		playerAll,
 		func(id uint64) []proto.Message {
 			return []proto.Message{
-				&login_proto.PlayerDatabase{PlayerId: id},
-				&login_proto.PlayerDatabase_1{PlayerId: id},
+				&login_proto_database.PlayerDatabase{PlayerId: id},
+				&login_proto_database.PlayerDatabase_1{PlayerId: id},
 			}
 		},
 		func(id uint64) string {

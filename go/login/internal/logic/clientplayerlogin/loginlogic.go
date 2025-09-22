@@ -6,6 +6,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
 	"login/data"
+	"login/generated/pb/table"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
@@ -13,6 +14,7 @@ import (
 	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/svc"
+	login_proto_common "login/proto/common"
 	login_proto_data_base "login/proto/logic/database"
 	login_proto "login/proto/service/go/grpc/login"
 	"strconv"
@@ -47,7 +49,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	ok, err := accountLocker.AcquireLogin(l.ctx, in.Account)
 	if err != nil || !ok {
 		logx.Errorf("Login lock acquire failed for account=%s, err=%v", in.Account, err)
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
 	defer accountLocker.ReleaseLogin(l.ctx, in.Account)
@@ -56,7 +58,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or empty in context during login")
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
 	}
 
@@ -68,14 +70,14 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 
 	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionId, ""); err != nil {
 		logx.Errorf("FSM state load failed for sessionId=%s, account=%s, error: %v", sessionId, in.Account, err)
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMLoadFailed)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMLoadFailed)}
 		return resp, nil
 	}
 
 	// 执行 FSM 事件
 	if err := f.Event(l.ctx, data.EventProcessLogin); err != nil {
 		logx.Errorf("FSM transition error for sessionId=%s, account=%s, event=process_login, error: %v", sessionId, in.Account, err)
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMEventFailed)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMEventFailed)}
 		return resp, nil
 	}
 
@@ -100,7 +102,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	})
 	if err != nil {
 		logx.Errorf("Failed to SAdd + Expire in pipeline for sessionKey=%s: %v", sessionKey, err)
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
 		return resp, nil
 	}
 
@@ -108,7 +110,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	count, err := l.svcCtx.RedisClient.SCard(l.ctx, sessionKey).Result()
 	if err != nil {
 		logx.Errorf("RedisClient SCard error: %v", err)
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
 		return resp, nil
 	}
 
@@ -118,7 +120,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		// 可选：删除旧的 session（基于 TTL 或先入先出策略）
 		// 或通知客户端“已有设备登录，是否强制顶号”——这需要客户端支持。
 
-		resp.ErrorMessage = &login_proto.TipInfoMessage{Id: uint32(table.LoginError_kTooManyDevices)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kTooManyDevices)}
 		return resp, nil
 	}
 
