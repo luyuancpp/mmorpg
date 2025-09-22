@@ -1,5 +1,5 @@
 ﻿# ==== 配置部分 ====
-$RootPath = "D:\game\luyuan\mmorpg1\proto"               # 根目录
+$RootPath = "D:\game\luyuan\mmorpg1\tools"               # 根目录
 $ExcludePaths = @(
 
 )
