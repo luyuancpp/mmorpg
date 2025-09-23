@@ -11,7 +11,7 @@ import (
 	"pbgen/internal/config"
 	"strings"
 
-	"pbgen/util"
+	"pbgen/utils"
 )
 
 // generateClassNameFromFile 从 proto 文件名生成 C++ 类名（下划线转为大写驼峰），加后缀
@@ -149,7 +149,7 @@ type EventTemplateData struct {
 
 // generateEventHandlerFiles 使用模板生成每个 proto 对应的 .h 和 .cpp 文件
 func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
-	defer util.Wg.Done()
+	defer utils.Wg.Done()
 
 	protoFilePath := config.ProtoDirs[config.LogicEventProtoDirIndex] + file.Name()
 	eventMessages, err := parseProtoMessages(protoFilePath)
@@ -206,10 +206,10 @@ func GenerateAllEventHandlers() {
 	}
 
 	for _, file := range files {
-		if !util.IsProtoFile(file) {
+		if !utils.IsProtoFile(file) {
 			continue
 		}
-		util.Wg.Add(2)
+		utils.Wg.Add(2)
 		go generateEventHandlerFiles(file, config.RoomNodeEventHandlerDirectory)
 		go generateEventHandlerFiles(file, config.CentreNodeEventHandlerDirectory)
 	}

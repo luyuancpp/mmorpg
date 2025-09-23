@@ -5,14 +5,14 @@ import (
 	"os"
 	"path"
 	"pbgen/internal/config"
-	"pbgen/util"
+	"pbgen/utils"
 	"strings"
 )
 
 func GenNodeUtil() {
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go func() {
-		defer util.Wg.Done()
+		defer utils.Wg.Done()
 
 		os.MkdirAll(path.Dir(config.GenUtilFileHeadPath), os.FileMode(0777))
 

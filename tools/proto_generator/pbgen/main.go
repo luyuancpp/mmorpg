@@ -9,7 +9,7 @@ import (
 	"pbgen/internal"
 	"pbgen/internal/config"
 	"pbgen/internal/database"
-	"pbgen/util"
+	"pbgen/utils"
 	"time"
 )
 
@@ -53,52 +53,52 @@ func main() {
 
 	// 开始读所有的proto文件
 	internal.ReadServiceIdFile()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 
 	internal.AddGoPackageToProtoDir()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 
 	internal.BuildProtocDescAllInOne()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 	internal.ReadAllProtoFileServices()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 	internal.BuildProtocCpp()
 	internal.BuildGrpcServiceProto()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 
 	internal.GenNodeUtil()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 
 	internal.GenerateAllEventHandlers()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 	// 所有文件的proto读完以后
 	internal.InitServiceId()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 
 	internal.WriteServiceIdFile()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 
 	internal.WriteMethodFile()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 
 	internal.GenerateServiceConstants()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 	// 所有service初始化完以后
 	internal.WriteGoMessageId()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 
 	internal.WriteServiceRegisterInfoFile()
 	database.GenerateDBResource()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 
 	internal.GoRobotHandlerGenerator()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 	internal.GoRobotTotalHandlerGenerator()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 	internal.CppPlayerDataLoadGenerator()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 	internal.CppGrpcCallClient()
-	util.Wg.Wait()
+	utils.Wg.Wait()
 
 	// 打印总耗时
 	log.Printf("Total execution time: %s\n", time.Since(start))

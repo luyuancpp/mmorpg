@@ -2,7 +2,7 @@ package internal
 
 import (
 	"pbgen/internal/config"
-	"pbgen/util"
+	"pbgen/utils"
 	"strings"
 )
 
@@ -44,10 +44,10 @@ func isGateMethodRepliedHandler(methodList *RPCMethods) bool {
 			return m.CcGenericServices()
 		},
 		func(info *MethodInfo) bool {
-			return !(util.ContainsPlayerKeyword(info.Service()))
+			return !(utils.ContainsPlayerKeyword(info.Service()))
 		},
 		func(m *MethodInfo) bool {
-			return !util.IsPathInProtoDirs(m.Path(), config.GateProtoDirIndex)
+			return !utils.IsPathInProtoDirs(m.Path(), config.GateProtoDirIndex)
 		},
 	)
 }
