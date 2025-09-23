@@ -2,7 +2,7 @@ package internal
 
 import (
 	"log"
-	"pbgen/util"
+	"pbgen/utils"
 	"strings"
 )
 
@@ -18,7 +18,7 @@ type HandlerConfig struct {
 }
 
 func writeHandlerHeadFile(methodList RPCMethods, cfg HandlerConfig) {
-	defer util.Wg.Done()
+	defer utils.Wg.Done()
 
 	if !cfg.IsValidFunc(&methodList) {
 		return
@@ -40,7 +40,7 @@ func writeHandlerHeadFile(methodList RPCMethods, cfg HandlerConfig) {
 }
 
 func writeHandlerCppFile(methodList RPCMethods, cfg HandlerConfig) {
-	defer util.Wg.Done()
+	defer utils.Wg.Done()
 
 	if !cfg.IsValidFunc(&methodList) {
 		return

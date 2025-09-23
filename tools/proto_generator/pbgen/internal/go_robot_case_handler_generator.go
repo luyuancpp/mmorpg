@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"pbgen/internal/config"
-	"pbgen/util"
+	"pbgen/utils"
 	"strings"
 	"text/template"
 )
@@ -75,7 +75,7 @@ func isClientMethodRepliedHandler(methodList *RPCMethods) bool {
 	if !strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
 		return false
 	}
-	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
+	return utils.ContainsPlayerKeyword(firstMethodInfo.Service())
 }
 
 func GoRobotTotalHandlerGenerator() {
@@ -85,7 +85,7 @@ func GoRobotTotalHandlerGenerator() {
 			continue
 		}
 
-		if util.IsPathInProtoDirs(service.Path(), config.LoginProtoDirIndex) {
+		if utils.IsPathInProtoDirs(service.Path(), config.LoginProtoDirIndex) {
 			continue
 		}
 

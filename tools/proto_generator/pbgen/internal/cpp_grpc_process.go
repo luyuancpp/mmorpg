@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 	"pbgen/internal/config"
-	"pbgen/util"
+	"pbgen/utils"
 	"sort"
 	"strings"
 	"text/template"
@@ -89,9 +89,9 @@ func CppGrpcCallClient() {
 	FileServiceMap.Range(func(k, v interface{}) bool {
 		protoFile := k.(string)
 		serviceList := v.([]*RPCServiceInfo)
-		util.Wg.Add(1)
+		utils.Wg.Add(1)
 		go func(protoFile string, serviceInfo []*RPCServiceInfo) {
-			defer util.Wg.Done()
+			defer utils.Wg.Done()
 
 			if len(serviceInfo) <= 0 {
 				return
@@ -101,7 +101,7 @@ func CppGrpcCallClient() {
 			protoPath := firstService.Path()
 
 			// 如果既不是gRPC服务也不是etcd服务，则返回（不继续处理）
-			if !util.HasGrpcService(strings.ToLower(protoPath)) && !util.HasEtcdService(strings.ToLower(protoPath)) {
+			if !utils.HasGrpcService(strings.ToLower(protoPath)) && !utils.HasEtcdService(strings.ToLower(protoPath)) {
 				return
 			}
 
@@ -137,17 +137,17 @@ func CppGrpcCallClient() {
 	})
 
 	{
-		util.Wg.Add(1)
+		utils.Wg.Add(1)
 
 		go func() {
-			defer util.Wg.Done()
+			defer utils.Wg.Done()
 			m := map[string]*RPCServiceInfo{}
 			serviceInfoList := make([]*RPCServiceInfo, 0)
 			for _, service := range GlobalRPCServiceList {
 				if service.CcGenericServices() {
 					continue
 				}
-				if util.IsPathInProtoDirs(service.Path(), config.DbProtoDirIndex) {
+				if utils.IsPathInProtoDirs(service.Path(), config.DbProtoDirIndex) {
 					continue
 				}
 				if _, ok := m[service.FileBaseNameCamel()]; ok {

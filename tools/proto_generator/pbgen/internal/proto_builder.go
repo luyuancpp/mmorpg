@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"pbgen/internal/config"
 	"pbgen/internal/protohelper"
-	"pbgen/util"
+	"pbgen/utils"
 	"runtime"
 	"strings"
 	"sync"
@@ -39,7 +39,7 @@ func collectProtoFiles(dirPath string) ([]string, error) {
 
 	var protoFiles []string
 	for _, fd := range fds {
-		if util.IsProtoFile(fd) {
+		if utils.IsProtoFile(fd) {
 			absPath, err := filepath.Abs(filepath.Join(dirPath, fd.Name()))
 			if err != nil {
 				log.Printf("获取文件 %s 绝对路径失败: %v，跳过该文件", fd.Name(), err)
@@ -85,7 +85,7 @@ func copyProtoDirToDest(srcDir, destDir string) error {
 	if err := ensureDirExist(destDir); err != nil {
 		return err
 	}
-	if err := util.CopyLocalDir(srcDir, destDir); err != nil {
+	if err := utils.CopyLocalDir(srcDir, destDir); err != nil {
 		return fmt.Errorf("拷贝目录 %s -> %s 失败: %w", srcDir, destDir, err)
 	}
 	log.Printf("目录 %s 拷贝到 %s 成功", srcDir, destDir)
@@ -98,7 +98,7 @@ func copyProtoDirToDest(srcDir, destDir string) error {
 
 func generateGameGrpcGoCode(sourceProtoFiles []string) error {
 	// 1. 获取所有GRPC节点目录
-	grpcDirs := util.GetGRPCSubdirectoryNames()
+	grpcDirs := utils.GetGRPCSubdirectoryNames()
 	if len(grpcDirs) == 0 {
 		log.Println("未找到任何GRPC节点目录，跳过Go代码生成")
 		return nil
@@ -135,9 +135,9 @@ func generateGameGrpcGoCode(sourceProtoFiles []string) error {
 }
 
 func GenerateGameGrpcCode() error {
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go func() {
-		defer util.Wg.Done()
+		defer utils.Wg.Done()
 
 		// 1. 准备游戏Proto文件路径（转换为绝对路径）
 		absGameRpcProtoPath, err := filepath.Abs(config.GameRpcProtoPath)
@@ -355,7 +355,7 @@ func copyCppGeneratedFiles(sourceProtoFiles []string, tempDir, destDir string) e
 // BuildProtoGrpcCpp 生成指定目录下Proto文件的C++ GRPC服务代码
 func BuildProtoGrpcCpp(protoDir string) error {
 	// 1. 检查是否包含GRPC服务定义
-	if !util.HasGrpcService(strings.ToLower(protoDir)) {
+	if !utils.HasGrpcService(strings.ToLower(protoDir)) {
 		log.Printf("目录 %s 无GRPC服务定义，跳过处理", protoDir)
 		return nil
 	}
@@ -531,7 +531,7 @@ func collectGoGrpcProtoFiles(rootDir string) ([]string, error) {
 		}
 
 		// 跳过目录、非Proto文件和数据库专用Proto文件
-		if d.IsDir() || !util.IsProtoFile(d) || d.Name() == config.DbProtoFileName {
+		if d.IsDir() || !utils.IsProtoFile(d) || d.Name() == config.DbProtoFileName {
 			return nil
 		}
 
@@ -550,7 +550,7 @@ func collectGoGrpcProtoFiles(rootDir string) ([]string, error) {
 
 func GenerateGoGRPCFromProto(rootDir string) error {
 	// 跳过Etcd服务相关目录
-	if util.CheckEtcdServiceExistence(rootDir) {
+	if utils.CheckEtcdServiceExistence(rootDir) {
 		return nil
 	}
 
@@ -611,17 +611,17 @@ func BuildGeneratorGoZeroProtoPath(dir string) string {
 }
 
 func CopyProtoToGenDir() {
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go func() {
-		defer util.Wg.Done()
-		grpcDirs := util.GetGRPCSubdirectoryNames()
+		defer utils.Wg.Done()
+		grpcDirs := utils.GetGRPCSubdirectoryNames()
 		for _, dir := range grpcDirs {
 			destDir := BuildGeneratorProtoPath(dir)
 			if err := os.MkdirAll(destDir, os.FileMode(0777)); err != nil {
 				log.Printf("创建目录 %s 失败: %v，跳过该目录", destDir, err)
 				continue // 跳过当前目录，继续处理下一个
 			}
-			if err := util.CopyLocalDir(config.ProtoDir, destDir); err != nil {
+			if err := utils.CopyLocalDir(config.ProtoDir, destDir); err != nil {
 				log.Printf("拷贝目录 %s -> %s 失败: %v，跳过该目录", config.ProtoDir, destDir, err)
 				continue
 			}
@@ -633,7 +633,7 @@ func CopyProtoToGenDir() {
 				log.Printf("创建目录 %s 失败: %v，跳过该目录", destDir, err)
 				continue
 			}
-			if err := util.CopyLocalDir(config.ProtoDir, destDir); err != nil {
+			if err := utils.CopyLocalDir(config.ProtoDir, destDir); err != nil {
 				log.Printf("拷贝目录 %s -> %s 失败: %v，跳过该目录", config.ProtoDir, destDir, err)
 				continue
 			}
@@ -642,10 +642,10 @@ func CopyProtoToGenDir() {
 }
 
 func AddGoPackageToProtoDir() {
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go func() {
-		defer util.Wg.Done()
-		grpcDirs := util.GetGRPCSubdirectoryNames()
+		defer utils.Wg.Done()
+		grpcDirs := utils.GetGRPCSubdirectoryNames()
 
 		for _, dirName := range grpcDirs {
 			destDir := BuildGeneratorProtoPath(dirName)
@@ -869,10 +869,10 @@ func generateGoGrpcCode(sourceProtoFiles []string, outputDir string, protoRootPa
 }
 
 func BuildProtocDescAllInOne() {
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 
 	go func() {
-		defer util.Wg.Done()
+		defer utils.Wg.Done()
 
 		// 步骤1：收集目标 proto 文件（去重，确保只包含需要的文件）
 		var allProtoFiles []string
@@ -884,7 +884,7 @@ func BuildProtocDescAllInOne() {
 				continue
 			}
 			for _, fd := range fds {
-				if util.IsProtoFile(fd) {
+				if utils.IsProtoFile(fd) {
 					// 转换为绝对路径，避免同名文件重复
 					absPath, err := filepath.Abs(filepath.Join(dir, fd.Name()))
 					if err != nil {
@@ -981,9 +981,9 @@ func BuildProtocDescAllInOne() {
 func BuildProtocCpp() {
 	// Iterate over configured proto directories
 	for i := 0; i < len(config.ProtoDirs); i++ {
-		util.Wg.Add(1)
+		utils.Wg.Add(1)
 		go func(i int) {
-			defer util.Wg.Done()
+			defer utils.Wg.Done()
 			// Execute functions concurrently for each directory
 			err := BuildProtoCpp(config.ProtoDirs[i])
 			if err != nil {
@@ -991,9 +991,9 @@ func BuildProtocCpp() {
 			}
 		}(i)
 
-		util.Wg.Add(1)
+		utils.Wg.Add(1)
 		go func(i int) {
-			defer util.Wg.Done()
+			defer utils.Wg.Done()
 			err := BuildProtoGrpcCpp(config.ProtoDirs[i])
 			if err != nil {
 				log.Println(err)
@@ -1004,7 +1004,7 @@ func BuildProtocCpp() {
 
 // BuildGrpcServiceProto 并发处理所有GRPC目录，递归遍历每个目录下的proto文件
 func BuildGrpcServiceProto() {
-	grpcDirs := util.GetGRPCSubdirectoryNames()
+	grpcDirs := utils.GetGRPCSubdirectoryNames()
 	var wg sync.WaitGroup
 
 	for _, dirName := range grpcDirs {

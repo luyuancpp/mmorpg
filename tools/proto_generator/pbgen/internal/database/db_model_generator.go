@@ -17,7 +17,7 @@ import (
 
 	"pbgen/internal"
 	"pbgen/internal/config"
-	"pbgen/util"
+	"pbgen/utils"
 )
 
 // MessageListConfig 定义消息名列表结构
@@ -183,11 +183,11 @@ func GenerateMergedTableSQL(messageNames []string) error {
 	}
 
 	for _, protoDir := range config.ProtoDirs {
-		if !util.HasGrpcService(protoDir) {
+		if !utils.HasGrpcService(protoDir) {
 			continue
 		}
 
-		sqlDir := util.BuildModelPath(protoDir)
+		sqlDir := utils.BuildModelPath(protoDir)
 		if err := os.MkdirAll(sqlDir, 0755); err != nil {
 			return err
 		}
@@ -248,9 +248,9 @@ func getFullMessageName(pkgName, msgName string) string {
 }
 
 func GenerateDBResource() {
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go func() {
-		defer util.Wg.Done()
+		defer utils.Wg.Done()
 
 		protoFile := config.DbTableName
 		log.Printf("开始处理目标文件: %s", protoFile)
@@ -264,18 +264,18 @@ func GenerateDBResource() {
 		}
 
 		// 并发生成 JSON 配置
-		util.Wg.Add(1)
+		utils.Wg.Add(1)
 		go func() {
-			defer util.Wg.Done()
+			defer utils.Wg.Done()
 			if err := writeMessageNamesToJSON(messageNames); err != nil {
 				log.Fatalf("生成JSON配置失败: %v", err)
 			}
 		}()
 
 		// 并发生成 SQL
-		util.Wg.Add(1)
+		utils.Wg.Add(1)
 		go func() {
-			defer util.Wg.Done()
+			defer utils.Wg.Done()
 			if err := GenerateMergedTableSQL(messageNames); err != nil {
 				log.Fatalf("生成SQL失败: %v", err)
 			}

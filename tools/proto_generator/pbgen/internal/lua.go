@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/internal/config"
-	"pbgen/util"
+	"pbgen/utils"
 	"reflect"
 	"strconv"
 	"strings"
@@ -53,7 +53,7 @@ func isCppType(typeString string) bool {
 }
 
 func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
-	defer util.Wg.Done()
+	defer utils.Wg.Done()
 	isMsgCode := 0
 	isEnumCode := 0
 	fileBaseName := filepath.Base(strings.ToLower(strings.ReplaceAll(fd.Name(), config.ProtoExt, "")))
@@ -62,7 +62,7 @@ func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 	if err != nil {
 		return
 	}
-	data := util.IncludeName(filePath, fd.Name()) +
+	data := utils.IncludeName(filePath, fd.Name()) +
 		"#include <sol/sol.hpp>\n" +
 		"#include \"threading/storage_lua.h\"\n" +
 		"void Pb2sol2" + fileBaseName + "()" + "\n{\n"
@@ -204,9 +204,9 @@ func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 }
 
 func WriteSol2LuaFile() {
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go func() {
-		defer util.Wg.Done()
+		defer utils.Wg.Done()
 		data := "#include <google/protobuf/message.h>\n" +
 			"#include <sol/sol.hpp>\n" +
 			"#include \"thread_local/storage_lua.h\"\n\n"
@@ -219,7 +219,7 @@ func WriteSol2LuaFile() {
 				continue
 			}
 			for _, fd := range fds {
-				if !util.IsProtoFile(fd) {
+				if !utils.IsProtoFile(fd) {
 					continue
 				}
 				if strings.Contains(fd.Name(), config.MysqlName) {
@@ -228,7 +228,7 @@ func WriteSol2LuaFile() {
 				if strings.Contains(fd.Name(), config.DatabasePrefixName) {
 					continue
 				}
-				util.Wg.Add(1)
+				utils.Wg.Add(1)
 				writeSol2LuaFileByProtoFile(fd, config.ProtoDirs[i])
 
 				fileBaseName := filepath.Base(strings.ToLower(strings.ReplaceAll(fd.Name(), config.ProtoExt, "")))
@@ -247,7 +247,7 @@ func WriteSol2LuaFile() {
 }
 
 func writeLuaServiceMethodCppFile(methodList RPCMethods) {
-	defer util.Wg.Done()
+	defer utils.Wg.Done()
 
 	if len(methodList) <= 0 {
 		return
@@ -272,7 +272,7 @@ func writeLuaServiceMethodCppFile(methodList RPCMethods) {
 }
 
 func writeInitLuaServiceFile() {
-	defer util.Wg.Done()
+	defer utils.Wg.Done()
 	data := "void InitServiceLua()\n{\n"
 	for _, service := range GlobalRPCServiceList {
 		if len(service.MethodInfo) <= 0 {
@@ -287,9 +287,9 @@ func writeInitLuaServiceFile() {
 
 func WriteLuaServiceHeadHandlerFile() {
 	for _, service := range GlobalRPCServiceList {
-		util.Wg.Add(1)
+		utils.Wg.Add(1)
 		go writeLuaServiceMethodCppFile(service.MethodInfo)
 	}
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go writeInitLuaServiceFile()
 }

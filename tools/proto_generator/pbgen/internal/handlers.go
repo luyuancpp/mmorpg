@@ -2,7 +2,7 @@ package internal
 
 import (
 	"pbgen/internal/config"
-	"pbgen/util"
+	"pbgen/utils"
 )
 
 // ---------------- Game Node ----------------
@@ -137,9 +137,9 @@ func ProcessAllHandlers(methodList RPCMethods) {
 	}
 
 	for _, cfg := range handlerConfigs {
-		util.Wg.Add(1)
+		utils.Wg.Add(1)
 		writeHandlerHeadFile(methodList, cfg)
-		util.Wg.Add(1)
+		utils.Wg.Add(1)
 		writeHandlerCppFile(methodList, cfg)
 	}
 

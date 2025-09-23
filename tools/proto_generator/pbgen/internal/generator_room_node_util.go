@@ -2,7 +2,7 @@ package internal
 
 import (
 	"pbgen/internal/config"
-	"pbgen/util"
+	"pbgen/utils"
 	"strings"
 )
 
@@ -15,7 +15,7 @@ func IsRoomNodeMethodHandler(methods *RPCMethods) bool {
 	if !strings.Contains(first.Path(), config.ProtoDirectoryNames[config.RoomProtoDirIndex]) {
 		return false
 	}
-	return !util.ContainsPlayerKeyword(first.Service())
+	return !utils.ContainsPlayerKeyword(first.Service())
 }
 
 func IsRoomNodePlayerHandler(methods *RPCMethods) bool {
@@ -29,11 +29,11 @@ func IsRoomNodePlayerHandler(methods *RPCMethods) bool {
 		return false
 	}
 
-	if util.HasGrpcService(firstMethodInfo.Path()) {
+	if utils.HasGrpcService(firstMethodInfo.Path()) {
 		return false
 	}
 
-	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
+	return utils.ContainsPlayerKeyword(firstMethodInfo.Service())
 }
 
 func ReturnNoHandler(methods *RPCMethods) bool {
@@ -47,7 +47,7 @@ func isRoomNodePlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.RoomProtoDirIndex) {
+	if utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.RoomProtoDirIndex) {
 		return false
 	}
 
@@ -55,10 +55,10 @@ func isRoomNodePlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if util.HasGrpcService(strings.ToLower(firstMethodInfo.Path())) {
+	if utils.HasGrpcService(strings.ToLower(firstMethodInfo.Path())) {
 		return false
 	}
-	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
+	return utils.ContainsPlayerKeyword(firstMethodInfo.Service())
 }
 
 func isRoomNodeMethodRepliedHandler(methodList *RPCMethods) bool {
@@ -72,7 +72,7 @@ func isRoomNodeMethodRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.RoomProtoDirIndex) {
+	if utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.RoomProtoDirIndex) {
 		return false
 	}
 
@@ -80,7 +80,7 @@ func isRoomNodeMethodRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
+	if utils.ContainsPlayerKeyword(firstMethodInfo.Service()) {
 		return false
 	}
 

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 	"pbgen/internal/config"
-	"pbgen/util"
+	"pbgen/utils"
 	"sort"
 	"strings"
 	"text/template"
@@ -841,7 +841,7 @@ void InitServiceHandler()
 		InitLines []string
 	}
 
-	defer util.Wg.Done()
+	defer utils.Wg.Done()
 
 	var includes []string
 	var initLines []string
@@ -889,7 +889,7 @@ void InitReply()
 		InitFuncs []string
 	}
 
-	defer util.Wg.Done()
+	defer utils.Wg.Done()
 
 	var initFuncList []string
 
@@ -922,9 +922,9 @@ func GenerateServiceConstants() {
 	FileServiceMap.Range(func(k, v interface{}) bool {
 		protoFile := k.(string)
 		serviceList := v.([]*RPCServiceInfo)
-		util.Wg.Add(1)
+		utils.Wg.Add(1)
 		go func(protoFile string, serviceInfo []*RPCServiceInfo) {
-			defer util.Wg.Done()
+			defer utils.Wg.Done()
 
 			if len(serviceInfo) <= 0 {
 				return
@@ -948,18 +948,18 @@ func WriteMethodFile() {
 	}
 
 	// Concurrent operations for game, centre, and gate registers
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go GenRegisterFile(config.RoomNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsRoomNodeMethodHandler)
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go writeRepliedRegisterFile(config.RoomNodeMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, isRoomNodeMethodRepliedHandler)
 
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go GenRegisterFile(config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, isCentreMethodHandler)
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, isCentreMethodRepliedHandler)
 
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go GenRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterHandlerCppExtension, ReturnNoHandler)
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go writeRepliedRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, isGateMethodRepliedHandler)
 }

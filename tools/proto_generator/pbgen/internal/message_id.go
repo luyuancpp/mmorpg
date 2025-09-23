@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 	"pbgen/internal/config"
-	"pbgen/util"
+	"pbgen/utils"
 	"strings"
 	"sync"
 )
@@ -140,7 +140,7 @@ func WriteGoMessageId() {
 	}
 
 	for i := 0; i < len(config.ProtoDirs); i++ {
-		if !util.HasGrpcService(config.ProtoDirs[i]) {
+		if !utils.HasGrpcService(config.ProtoDirs[i]) {
 			continue
 		}
 		basePath := strings.ToLower(path.Base(config.ProtoDirs[i]))

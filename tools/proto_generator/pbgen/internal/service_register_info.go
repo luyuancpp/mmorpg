@@ -11,7 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"pbgen/internal/config"
-	"pbgen/util"
+	"pbgen/utils"
 	"sort"
 	"strconv"
 	"strings"
@@ -73,18 +73,18 @@ func ReadProtoFileService() error {
 
 // ReadAllProtoFileServices reads all service information from protobuf files in configured directories.
 func ReadAllProtoFileServices() {
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go func() {
-		defer util.Wg.Done()
+		defer utils.Wg.Done()
 		_ = ReadProtoFileService()
 	}()
 }
 
 // ReadServiceIdFile reads service IDs from a file asynchronously.
 func ReadServiceIdFile() {
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go func() {
-		defer util.Wg.Done()
+		defer utils.Wg.Done()
 
 		f, err := os.Open(config.ServiceIdFilePath)
 		if err != nil {
@@ -114,9 +114,9 @@ func ReadServiceIdFile() {
 }
 
 func WriteServiceIdFile() {
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go func() {
-		defer util.Wg.Done()
+		defer utils.Wg.Done()
 
 		var data string
 		var idList []uint64
@@ -186,7 +186,7 @@ func InitServiceId() {
 }
 
 func GetProtocol(dirName string) uint32 {
-	if util.HasGrpcService(dirName) {
+	if utils.HasGrpcService(dirName) {
 		return config.GrpcNode
 	}
 	return config.TcpNode
@@ -198,7 +198,7 @@ func IsTcpNode(dirName string) bool {
 
 // writeServiceInfoCppFile generates C++ code that initializes gRPC service metadata.
 func writeServiceInfoCppFile() {
-	defer util.Wg.Done()
+	defer utils.Wg.Done()
 
 	type ServiceInfoCppData struct {
 		Includes             []string
@@ -259,7 +259,7 @@ void InitMessageInfo()
 
 		firstMethod := service.MethodInfo[0]
 
-		if util.IsPathInProtoDirs(firstMethod.Path(), config.DbProtoDirIndex) {
+		if utils.IsPathInProtoDirs(firstMethod.Path(), config.DbProtoDirIndex) {
 			continue
 		}
 
@@ -283,7 +283,7 @@ void InitMessageInfo()
 		}
 
 		firstMethod := service.MethodInfo[0]
-		if util.IsPathInProtoDirs(firstMethod.Path(), config.DbProtoDirIndex) {
+		if utils.IsPathInProtoDirs(firstMethod.Path(), config.DbProtoDirIndex) {
 			continue
 		}
 
@@ -360,7 +360,7 @@ void InitMessageInfo()
 
 // writeServiceInfoHeadFile writes service information to a header file.
 func writeServiceInfoHeadFile() {
-	defer util.Wg.Done()
+	defer utils.Wg.Done()
 	type HeaderTemplateData struct {
 		MaxMessageLen uint64
 	}
@@ -513,7 +513,7 @@ void InitPlayerServiceReplied()
 }
 
 func writePlayerServiceInstanceFiles(serviceType string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir, serviceName string) {
-	defer util.Wg.Done()
+	defer utils.Wg.Done()
 	ServiceList := make([]string, 0, len(GlobalRPCServiceList))
 
 	for _, service := range GlobalRPCServiceList {
@@ -534,21 +534,21 @@ func writePlayerServiceInstanceFiles(serviceType string, isPlayerHandlerFunc fun
 }
 
 func WriteServiceRegisterInfoFile() {
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go writeServiceInfoCppFile()
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go writeServiceInfoHeadFile()
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("instance", IsRoomNodePlayerHandler, config.RoomNodePlayerMethodHandlerDirectory, config.PlayerServiceName)
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("instance", isCentrePlayerHandler, config.CentreNodePlayerMethodHandlerDirectory, config.PlayerServiceName)
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("repliedInstance", isRoomNodePlayerRepliedHandler, config.RoomNodePlayerMethodRepliedHandlerDirectory, config.PlayerRepliedServiceName)
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("repliedInstance", isCentrePlayerRepliedHandler, config.CentrePlayerMethodRepliedHandlerDirectory, config.PlayerRepliedServiceName)
 
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("instance", ReturnNoHandler, config.GateNodePlayerMethodHandlerDirectory, config.PlayerServiceName)
-	util.Wg.Add(1)
+	utils.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("repliedInstance", ReturnNoHandler, config.GateNodePlayerMethodRepliedHandlerDirectory, config.PlayerRepliedServiceName)
 }

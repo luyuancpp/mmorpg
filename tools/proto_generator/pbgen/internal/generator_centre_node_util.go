@@ -2,7 +2,7 @@ package internal
 
 import (
 	"pbgen/internal/config"
-	"pbgen/util"
+	"pbgen/utils"
 	"strings"
 )
 
@@ -17,7 +17,7 @@ func isCentreMethodHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
+	if utils.ContainsPlayerKeyword(firstMethodInfo.Service()) {
 		return false
 	}
 
@@ -31,16 +31,16 @@ func isCentrePlayerHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.DbProtoDirIndex) ||
-		util.IsPathInProtoDirs(firstMethodInfo.Path(), config.LoginProtoDirIndex) {
+	if utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.DbProtoDirIndex) ||
+		utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.LoginProtoDirIndex) {
 		return false
 	}
 
-	if !util.IsPathInProtoDirs(firstMethodInfo.Path(), config.CenterProtoDirIndex) {
+	if !utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.CenterProtoDirIndex) {
 		return false
 	}
 
-	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
+	return utils.ContainsPlayerKeyword(firstMethodInfo.Service())
 }
 
 func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
@@ -54,11 +54,11 @@ func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.CenterProtoDirIndex) {
+	if utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.CenterProtoDirIndex) {
 		return false
 	}
 
-	if util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
+	if utils.ContainsPlayerKeyword(firstMethodInfo.Service()) {
 		return false
 	}
 
@@ -76,11 +76,11 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.CenterProtoDirIndex) {
+	if utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.CenterProtoDirIndex) {
 		return false
 	}
 
-	if !util.ContainsPlayerKeyword(firstMethodInfo.Service()) {
+	if !utils.ContainsPlayerKeyword(firstMethodInfo.Service()) {
 		return false
 	}
 
