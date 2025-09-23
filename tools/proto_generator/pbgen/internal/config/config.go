@@ -142,7 +142,7 @@ const (
 	ProjectGeneratedPath    = OutputRoot + GeneratedPath
 	TableGeneratorPath      = ProjectGeneratedPath + "generated_data/"
 
-	GameRpcProtoPath = OutputRoot + NodeLibsEngineDirectory + "core/network/"
+	GameRpcProtoPath = ProtoDir + "common/"
 )
 
 // ----------- 文件名 -----------

@@ -234,6 +234,9 @@
     <ClCompile Include="logic\database\player_cache.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="common\game_rpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\common.pb.h">
@@ -453,6 +456,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="logic\database\player_cache.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\game_rpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
