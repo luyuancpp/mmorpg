@@ -61,6 +61,7 @@
     <ClCompile Include="logic\constants\function_switch.pb.cc" />
     <ClCompile Include="logic\constants\scene.pb.cc" />
     <ClCompile Include="logic\constants\test_switch.pb.cc" />
+    <ClCompile Include="logic\database\player_cache.pb.cc" />
     <ClCompile Include="logic\event\actor_combat_state_event.pb.cc" />
     <ClCompile Include="logic\event\actor_event.pb.cc" />
     <ClCompile Include="logic\event\buff_event.pb.cc" />
@@ -135,6 +136,7 @@
     <ClInclude Include="logic\constants\function_switch.pb.h" />
     <ClInclude Include="logic\constants\scene.pb.h" />
     <ClInclude Include="logic\constants\test_switch.pb.h" />
+    <ClInclude Include="logic\database\player_cache.pb.h" />
     <ClInclude Include="logic\event\actor_combat_state_event.pb.h" />
     <ClInclude Include="logic\event\actor_event.pb.h" />
     <ClInclude Include="logic\event\buff_event.pb.h" />

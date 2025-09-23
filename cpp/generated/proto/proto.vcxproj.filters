@@ -231,6 +231,9 @@
     <ClCompile Include="scene\scene.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="logic\database\player_cache.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\common.pb.h">
@@ -447,6 +450,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="scene\scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="logic\database\player_cache.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
