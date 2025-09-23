@@ -79,7 +79,7 @@ type HeaderTemplateInput struct {
 }
 
 func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error {
-	tmpl, err := template.New("player_header").Parse(playerHeaderTemplate)
+	tmpl, err := template.New("loader").Parse(playerHeaderTemplate)
 	if err != nil {
 		return fmt.Errorf("template parse failed: %w", err)
 	}
@@ -131,7 +131,7 @@ func CppPlayerDataLoadGenerator() {
 			//printMessageFields(messageDesc)
 
 			handleName := strcase.ToCamel(*messageDesc.Name)
-			md5FilePath := config.PlayerStorageTempDirectory + "player_" + messageDescName
+			md5FilePath := config.PlayerStorageTempDirectory + messageDescName + config.LoaderCppExtension
 			filedList := generateDatabaseFiles(messageDesc)
 			messageType := *messageDesc.Name
 
@@ -147,22 +147,27 @@ func CppPlayerDataLoadGenerator() {
 				return
 			}
 
-			destFilePath := config.PlayerStorageSystemDirectory + "player_" + messageDescName
+			destFilePath := config.PlayerStorageSystemDirectory + messageDescName + config.LoaderCppExtension
 
 			err = CopyFileIfChanged(md5FilePath, destFilePath)
 			if err != nil {
 				log.Fatal(err)
 				return
 			}
-
 		}
 	}
 
-	err := GenerateCppPlayerHeaderFile(config.PlayerStorageSystemDirectory+config.PlayerDataLoaderName, headerEntries)
+	md5FilePath := config.PlayerStorageTempDirectory + config.PlayerDataLoaderName
+	err := GenerateCppPlayerHeaderFile(md5FilePath, headerEntries)
 	if err != nil {
 		log.Fatalf("failed to generate header file: %v", err)
 	}
 
+	destFilePath := config.PlayerStorageSystemDirectory + config.PlayerDataLoaderName
+	err = CopyFileIfChanged(md5FilePath, destFilePath)
+	if err != nil {
+		log.Fatalf("failed to generate header file: %v", err)
+	}
 }
 
 // 打印消息字段信息
