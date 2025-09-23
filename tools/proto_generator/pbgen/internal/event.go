@@ -159,7 +159,7 @@ func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 	}
 
 	className := generateClassNameFromFile(file, config.ClassNameSuffix)
-	baseName := strings.ToLower(strings.TrimSuffix(file.Name(), config.ProtoEx))
+	baseName := strings.ToLower(strings.TrimSuffix(file.Name(), config.ProtoExt))
 	filePrefix := outputDir + baseName
 
 	headerFilePath := filePrefix + config.HandlerHeaderExtension
@@ -182,7 +182,7 @@ func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 	tmplData := EventTemplateData{
 		ClassName:           className,
 		HeaderFile:          headerFileBase,
-		ProtoInclude:        config.ProtoDirName + config.ProtoDirectoryNames[config.LogicEventProtoDirIndex] + strings.Replace(file.Name(), config.ProtoEx, config.ProtoPbhEx, 1),
+		ProtoInclude:        config.ProtoDirName + config.ProtoDirectoryNames[config.LogicEventProtoDirIndex] + strings.Replace(file.Name(), config.ProtoExt, config.ProtoPbhEx, 1),
 		EventMessages:       eventMessages,
 		ForwardDeclarations: eventMessages,
 		GlobalUserCode:      globalCode,
@@ -251,12 +251,12 @@ public:
 	var cppIncludeData, registerData, unRegisterData string
 	for _, protoFile := range protoFiles {
 		// Only process valid proto files
-		if !strings.HasSuffix(protoFile.Name(), config.ProtoEx) {
+		if !strings.HasSuffix(protoFile.Name(), config.ProtoExt) {
 			continue
 		}
 
 		// Include header file name with the right extension
-		cppIncludeData += config.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), config.ProtoEx, config.HandlerHeaderExtension, 1) + config.IncludeEndLine
+		cppIncludeData += config.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), config.ProtoExt, config.HandlerHeaderExtension, 1) + config.IncludeEndLine
 
 		// Register and UnRegister data
 		className := generateClassNameFromFile(protoFile, config.ClassNameSuffix)

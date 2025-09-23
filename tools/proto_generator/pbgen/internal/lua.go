@@ -56,7 +56,7 @@ func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 	defer util.Wg.Done()
 	isMsgCode := 0
 	isEnumCode := 0
-	fileBaseName := filepath.Base(strings.ToLower(strings.ReplaceAll(fd.Name(), config.ProtoEx, "")))
+	fileBaseName := filepath.Base(strings.ToLower(strings.ReplaceAll(fd.Name(), config.ProtoExt, "")))
 
 	f, err := os.Open(filePath + fd.Name())
 	if err != nil {
@@ -231,7 +231,7 @@ func WriteSol2LuaFile() {
 				util.Wg.Add(1)
 				writeSol2LuaFileByProtoFile(fd, config.ProtoDirs[i])
 
-				fileBaseName := filepath.Base(strings.ToLower(strings.ReplaceAll(fd.Name(), config.ProtoEx, "")))
+				fileBaseName := filepath.Base(strings.ToLower(strings.ReplaceAll(fd.Name(), config.ProtoExt, "")))
 				declarationData += "void Pb2sol2" + fileBaseName + "();\n"
 				callData += "Pb2sol2" + fileBaseName + "();\n"
 			}

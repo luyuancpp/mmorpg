@@ -15,6 +15,6 @@ func IsProtoFile(fd os.DirEntry) bool {
 }
 
 func IncludeName(path string, protoName string) string {
-	pbcHeadName := strings.Replace(protoName, config.ProtoEx, config.ProtoPbhEx, 1)
+	pbcHeadName := strings.Replace(protoName, config.ProtoExt, config.ProtoPbhEx, 1)
 	return config.IncludeBegin + strings.Replace(path, config.ProtoDir, "", 1) + pbcHeadName + "\"\n"
 }
