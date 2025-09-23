@@ -2,17 +2,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="grpc_init_client.cpp" />
-    <ClCompile Include="db\db_grpc_client.cpp" />
-    <ClCompile Include="etcd\etcd_grpc_client.cpp" />
-    <ClCompile Include="login\login_grpc_client.cpp" />
-    <ClCompile Include="player_locator\player_locator_grpc_client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="grpc_init_client.h" />
     <ClInclude Include="grpc_call_tag.h" />
-    <ClInclude Include="db\db_grpc_client.h" />
-    <ClInclude Include="etcd\etcd_grpc_client.h" />
-    <ClInclude Include="login\login_grpc_client.h" />
-    <ClInclude Include="player_locator\player_locator_grpc_client.h" />
   </ItemGroup>
 </Project>

@@ -16,7 +16,7 @@ boost::object_pool<GrpcTag> tagPool;
 #pragma region dbTest
 boost::object_pool<AsyncdbTestGrpcClient> dbTestPool;
 using AsyncdbTestHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const ClientContext&, const ::TestResponse&)>;
 AsyncdbTestHandlerFunctionType AsyncdbTestHandler;
 
 void AsyncCompleteGrpcdbTest(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
@@ -35,7 +35,7 @@ void AsyncCompleteGrpcdbTest(entt::registry& registry, entt::entity nodeEntity, 
 
 
 
-void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const ::Empty& request) {
+void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const ::TestRequest& request) {
 
     auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
     auto call(dbTestPool.construct());
@@ -50,7 +50,7 @@ void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const ::Empty
 }
 
 
-void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const ::Empty& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const ::TestRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
     auto call(dbTestPool.construct());
     auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
@@ -71,7 +71,7 @@ void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const ::Empty
 }
 
 void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-    const ::Empty& derived = static_cast<const ::Empty&>(message);
+    const ::TestRequest& derived = static_cast<const ::TestRequest&>(message);
     SenddbTest(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion

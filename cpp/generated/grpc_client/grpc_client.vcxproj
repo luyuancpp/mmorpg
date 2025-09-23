@@ -19,19 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="db\db_grpc_client.cpp" />
-    <ClCompile Include="etcd\etcd_grpc_client.cpp" />
     <ClCompile Include="grpc_init_client.cpp" />
-    <ClCompile Include="login\login_grpc_client.cpp" />
-    <ClCompile Include="player_locator\player_locator_grpc_client.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="db\db_grpc_client.h" />
-    <ClInclude Include="etcd\etcd_grpc_client.h" />
     <ClInclude Include="grpc_init_client.h" />
     <ClInclude Include="grpc_call_tag.h" />
-    <ClInclude Include="login\login_grpc_client.h" />
-    <ClInclude Include="player_locator\player_locator_grpc_client.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

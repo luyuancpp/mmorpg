@@ -3,7 +3,7 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
 #include "grpc_client/grpc_call_tag.h"
-#include "proto/login/login.grpc.pb.h"
+#include "proto/service/go/grpc/login/login.grpc.pb.h"
 
 
 #include "rpc/service_metadata/login_service_metadata.h"
@@ -88,15 +88,15 @@ struct AsyncClientPlayerLoginLeaveGameGrpcClient {
     uint32_t messageId{ ClientPlayerLoginLeaveGameMessageId };
     ClientContext context;
     Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
+    ::loginpb::LoginEmptyResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::loginpb::LoginEmptyResponse>> response_reader;
 };
 
 
 
 class ::loginpb::LeaveGameRequest;
 using AsyncClientPlayerLoginLeaveGameHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const ClientContext&, const ::loginpb::LoginEmptyResponse&)>;
 extern AsyncClientPlayerLoginLeaveGameHandlerFunctionType AsyncClientPlayerLoginLeaveGameHandler;
 
 void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameRequest& request);
@@ -110,15 +110,15 @@ struct AsyncClientPlayerLoginDisconnectGrpcClient {
     uint32_t messageId{ ClientPlayerLoginDisconnectMessageId };
     ClientContext context;
     Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
+    ::loginpb::LoginEmptyResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::loginpb::LoginEmptyResponse>> response_reader;
 };
 
 
 
 class ::loginpb::LoginNodeDisconnectRequest;
 using AsyncClientPlayerLoginDisconnectHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const ClientContext&, const ::loginpb::LoginEmptyResponse&)>;
 extern AsyncClientPlayerLoginDisconnectHandlerFunctionType AsyncClientPlayerLoginDisconnectHandler;
 
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request);

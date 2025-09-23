@@ -3,7 +3,7 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
 #include "grpc_client/grpc_call_tag.h"
-#include "proto/player_locator/player_locator.grpc.pb.h"
+#include "proto/service/go/grpc/player_locator/player_locator.grpc.pb.h"
 
 
 #include "rpc/service_metadata/player_locator_service_metadata.h"
