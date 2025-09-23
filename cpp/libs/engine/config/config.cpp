@@ -49,6 +49,11 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 		baseConfig.set_deployservice_prefix(root["deployservice_prefix"].as<std::string>());
 	}
 
+	// 读取配置表目录字段
+	if (root["TableDataDirectory"]) {
+		baseConfig.set_table_data_directory(root["TableDataDirectory"].as<std::string>());
+	}
+
 	// ✅ Kafka 配置读取
 	if (root["Kafka"]) {
 		const YAML::Node& kafkaNode = root["Kafka"];
@@ -77,8 +82,6 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 
 	return true;
 }
-
-
 
 // 读取游戏配置
 bool readGameConfig(const std::string& filename, GameConfig& gameConfig) {

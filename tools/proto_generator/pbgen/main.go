@@ -62,7 +62,7 @@ func main() {
 	util.Wg.Wait()
 	internal.ReadAllProtoFileServices()
 	util.Wg.Wait()
-	internal.BuildAllProtoc()
+	internal.BuildProtocCpp()
 	internal.BuildGrpcServiceProto()
 	util.Wg.Wait()
 
