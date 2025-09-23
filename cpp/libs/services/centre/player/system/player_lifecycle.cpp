@@ -19,7 +19,7 @@
 #include "table/code/constants/global_abnormal_logout_table_id_constants.h"
 #include "table/code/globalvariable_table.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
-#include "proto/db/mysql_database_table.pb.h"
+#include "proto/logic/database/mysql_database_table.pb.h"
 #include "engine/core/network/network_utils.h"
 #include "engine/core/network/node_message_utils.h"
 #include "engine/core/network/rpc_session.h"
