@@ -16,7 +16,7 @@
 #include "core/utils/defer/defer.h"
 #include "network/node_utils.h"
 #include "network/node_message_utils.h"
-#include "player/system/player_data_loader_system.h"
+#include "player/system/player_data_loader.h"
 #include "engine/core/type_define/type_define.h"
 #include "proto/logic/database/mysql_database_table.pb.h"
 #include "proto/logic/event/player_migration_event.pb.h"
