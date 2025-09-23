@@ -19,7 +19,7 @@ import (
 	"sync"
 )
 
-func BuildProtoGameGrpc() error {
+func GenerateGameGrpcCode() error {
 	util.Wg.Add(1)
 	go func() {
 		defer util.Wg.Done()
@@ -30,25 +30,25 @@ func BuildProtoGameGrpc() error {
 		}
 
 		protoFile := config.GameRpcProtoPath + config.GameRpcProtoName
-		protoFiles := []string{protoFile}
+		sourceProtoFiles := []string{protoFile}
 
 		// 调用 protoc 执行批量生成
-		if err := generateCppFiles(protoFiles, config.PbcTempDirectory); err != nil {
+		if err := generateCppFiles(sourceProtoFiles, config.PbcTempDirectory); err != nil {
 			return
 		}
 
 		// 复制生成的 .pb.h 和 .pb.cc 文件到目标目录（若有变化）
-		for _, protoFile := range protoFiles {
+		for _, protoFile := range sourceProtoFiles {
 			dstFileName := strings.Replace(protoFile, config.ProtoDir, config.PbcProtoOutputDirectory, 1)
-			dstFileHeadName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbhEx, 1)
-			dstFileCppName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
+			dstFileHeadName := strings.Replace(dstFileName, config.ProtoExt, config.ProtoPbhEx, 1)
+			dstFileCppName := strings.Replace(dstFileName, config.ProtoExt, config.ProtoPbcEx, 1)
 
 			protoRelativePath := strings.Replace(protoFile, config.OutputRoot, "", 1)
 
 			tempBaseDir := filepath.ToSlash(path.Dir(config.PbcTempDirectory + protoRelativePath))
 			newBaseDir := filepath.ToSlash(path.Dir(dstFileCppName))
 
-			tempHeadFileName := filepath.Join(tempBaseDir, filepath.Base(dstFileHeadName))
+			tempHeaderPath := filepath.Join(tempBaseDir, filepath.Base(dstFileHeadName))
 			tempCppFileName := filepath.Join(tempBaseDir, filepath.Base(dstFileCppName))
 
 			if err := os.MkdirAll(tempBaseDir, os.FileMode(0777)); err != nil {
@@ -63,7 +63,7 @@ func BuildProtoGameGrpc() error {
 				log.Println("copy .cc failed:", err)
 				continue
 			}
-			if err := CopyFileIfChanged(tempHeadFileName, dstFileHeadName); err != nil {
+			if err := CopyFileIfChanged(tempHeaderPath, dstFileHeadName); err != nil {
 				log.Println("copy .h failed:", err)
 				continue
 			}
@@ -81,7 +81,7 @@ func BuildProtoGameGrpc() error {
 			}
 
 			// 生成代码时传入基础go_package路径
-			if err := generateGoProto1(protoFiles, outputDir, config.GameRpcProtoPath); err != nil {
+			if err := generateGoGrpcCode(sourceProtoFiles, outputDir, config.GameRpcProtoPath); err != nil {
 				log.Println("生成节点代码失败 %s: %v", outputDir, err)
 				continue
 			}
@@ -107,37 +107,37 @@ func BuildProtoCpp(protoPath string) error {
 
 	os.MkdirAll(config.PbcProtoOutputDirectory, os.FileMode(0777))
 
-	var protoFiles []string
+	var sourceProtoFiles []string
 	for _, fd := range fds {
 		if util.IsProtoFile(fd) {
 			fullPath := filepath.ToSlash(filepath.Join(protoPath, fd.Name()))
-			protoFiles = append(protoFiles, fullPath)
+			sourceProtoFiles = append(sourceProtoFiles, fullPath)
 		}
 	}
 
-	if len(protoFiles) == 0 {
+	if len(sourceProtoFiles) == 0 {
 		log.Println("No .proto files found in:", protoPath)
 		return nil
 	}
 
 	// 调用 protoc 执行批量生成
-	if err := generateCppFiles(protoFiles, config.PbcTempDirectory); err != nil {
+	if err := generateCppFiles(sourceProtoFiles, config.PbcTempDirectory); err != nil {
 		return err
 	}
 
 	// 复制生成的 .pb.h 和 .pb.cc 文件到目标目录（若有变化）
-	for _, protoFile := range protoFiles {
+	for _, protoFile := range sourceProtoFiles {
 		dstFileName := strings.Replace(protoFile, config.ProtoDir, config.PbcProtoOutputDirectory, 1)
-		dstFileHeadName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbhEx, 1)
-		dstFileCppName := strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
+		dstFileHeadName := strings.Replace(dstFileName, config.ProtoExt, config.ProtoPbhEx, 1)
+		dstFileCppName := strings.Replace(dstFileName, config.ProtoExt, config.ProtoPbcEx, 1)
 
 		protoRelativePath := strings.Replace(protoPath, config.OutputRoot, "", 1)
 
 		tempBaseDir := filepath.ToSlash(path.Dir(config.PbcTempDirectory + protoRelativePath))
 		newBaseDir := filepath.ToSlash(path.Dir(dstFileCppName))
 
-		tempHeadFileName := filepath.Join(tempBaseDir, filepath.Base(dstFileHeadName))
-		tempCppFileName := filepath.Join(tempBaseDir, filepath.Base(dstFileCppName))
+		tempHeaderPath := filepath.Join(tempBaseDir, filepath.Base(dstFileHeadName))
+		tempCppPath := filepath.Join(tempBaseDir, filepath.Base(dstFileCppName))
 
 		if err := os.MkdirAll(tempBaseDir, os.FileMode(0777)); err != nil {
 			log.Println("mkdir failed:", err)
@@ -147,11 +147,11 @@ func BuildProtoCpp(protoPath string) error {
 			log.Println("mkdir failed:", err)
 			continue
 		}
-		if err := CopyFileIfChanged(tempCppFileName, dstFileCppName); err != nil {
+		if err := CopyFileIfChanged(tempCppPath, dstFileCppName); err != nil {
 			log.Println("copy .cc failed:", err)
 			continue
 		}
-		if err := CopyFileIfChanged(tempHeadFileName, dstFileHeadName); err != nil {
+		if err := CopyFileIfChanged(tempHeaderPath, dstFileHeadName); err != nil {
 			log.Println("copy .h failed:", err)
 			continue
 		}
@@ -161,13 +161,13 @@ func BuildProtoCpp(protoPath string) error {
 }
 
 // Function to generate C++ files using protoc
-func generateCppFiles(protoFiles []string, outputDir string) error {
+func generateCppFiles(sourceProtoFiles []string, outputDir string) error {
 	var cmd *exec.Cmd
 
 	args := []string{
 		"--cpp_out=" + outputDir,
 	}
-	args = append(args, protoFiles...) // 多个 .proto 文件一起处理
+	args = append(args, sourceProtoFiles...) // 多个 .proto 文件一起处理
 	args = append(args,
 		"-I="+config.ProtoParentIncludePathDir,
 		"--proto_path="+config.ProtoBufferDirectory,
@@ -203,14 +203,14 @@ func BuildProtoGrpcCpp(protoPath string) error {
 		return nil
 	}
 
-	var protoFiles []string
+	var sourceProtoFiles []string
 	for _, fd := range fds {
 		if util.IsProtoFile(fd) {
-			protoFiles = append(protoFiles, filepath.Join(protoPath, fd.Name()))
+			sourceProtoFiles = append(sourceProtoFiles, filepath.Join(protoPath, fd.Name()))
 		}
 	}
 
-	if len(protoFiles) == 0 {
+	if len(sourceProtoFiles) == 0 {
 		log.Println("No .proto files found in", protoPath)
 		return nil
 	}
@@ -224,7 +224,7 @@ func BuildProtoGrpcCpp(protoPath string) error {
 	} else {
 		args = append(args, "--plugin=protoc-gen-grpc=grpc_cpp_plugin.exe")
 	}
-	args = append(args, protoFiles...)
+	args = append(args, sourceProtoFiles...)
 	args = append(args,
 		"--proto_path="+config.ProtoParentIncludePathDir,
 		"--proto_path="+config.ProtoBufferDirectory,
@@ -245,16 +245,16 @@ func BuildProtoGrpcCpp(protoPath string) error {
 	}
 
 	// 拷贝生成文件（按文件列表）
-	for _, protoFile := range protoFiles {
+	for _, protoFile := range sourceProtoFiles {
 		protoFile = filepath.ToSlash(protoFile)
 
 		// 源 .proto 替换为 .pb.cc/.pb.h（你的扩展名设定）
 		tempCpp := strings.Replace(protoFile, config.ProtoDir, config.GrpcTempDirectory+config.ProtoDirName, 1)
-		tempCpp = strings.Replace(tempCpp, config.ProtoEx, config.GrpcPbcEx, 1)
+		tempCpp = strings.Replace(tempCpp, config.ProtoExt, config.GrpcPbcEx, 1)
 		tempHead := strings.Replace(tempCpp, config.GrpcPbcEx, config.GrpcPbhEx, 1)
 
 		dstCpp := strings.Replace(protoFile, config.ProtoDir, config.GrpcProtoOutputDirectory, 1)
-		dstCpp = strings.Replace(dstCpp, config.ProtoEx, config.GrpcPbcEx, 1)
+		dstCpp = strings.Replace(dstCpp, config.ProtoExt, config.GrpcPbcEx, 1)
 		dstHead := strings.Replace(dstCpp, config.GrpcPbcEx, config.GrpcPbhEx, 1)
 
 		// 创建目录
@@ -295,7 +295,7 @@ func BuildGeneratorGoZeroProtoPath(dir string) string {
 	)
 }
 
-func CopyProtoDir() {
+func CopyProtoToGenDir() {
 	util.Wg.Add(1)
 	go func() {
 		defer util.Wg.Done()
@@ -326,7 +326,7 @@ func CopyProtoDir() {
 	}()
 }
 
-// CopyProtoDir 拷贝GRPC目录并为每个文件生成对应相对路径的go_package
+// CopyProtoToGenDir 拷贝GRPC目录并为每个文件生成对应相对路径的go_package
 func AddGoPackageToProtoDir() {
 	util.Wg.Add(1)
 	go func() {
@@ -341,7 +341,7 @@ func AddGoPackageToProtoDir() {
 			baseGoPackage = filepath.ToSlash(baseGoPackage)
 
 			// 处理目录下所有文件，生成动态go_package
-			if err := processFilesWithDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
+			if err := addDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
 				log.Printf("❌ 处理目录 %s 的go_package失败: %v", destDir, err)
 			}
 		}
@@ -362,11 +362,11 @@ func AddGoPackageToProtoDir() {
 	}()
 }
 
-// processFilesWithDynamicGoPackage 为目录下所有文件生成基于相对路径的go_package
+// addDynamicGoPackage 为目录下所有文件生成基于相对路径的go_package
 // rootDir: 根目录（用于计算相对路径）
 // baseGoPackage: 基础go_package路径
 // currentDir: 当前处理的目录
-func processFilesWithDynamicGoPackage(rootDir, baseGoPackage, currentDir string, isMulti bool) error {
+func addDynamicGoPackage(rootDir, baseGoPackage, currentDir string, isMulti bool) error {
 	entries, err := os.ReadDir(currentDir)
 	if err != nil {
 		return err
@@ -381,7 +381,7 @@ func processFilesWithDynamicGoPackage(rootDir, baseGoPackage, currentDir string,
 
 		if info.IsDir() {
 			// 递归处理子目录
-			if err := processFilesWithDynamicGoPackage(rootDir, baseGoPackage, fullPath, isMulti); err != nil {
+			if err := addDynamicGoPackage(rootDir, baseGoPackage, fullPath, isMulti); err != nil {
 				return err
 			}
 		} else if strings.EqualFold(filepath.Ext(fullPath), ".proto") {
@@ -477,9 +477,9 @@ func processFilesWithDynamicGoZeroPackage(rootDir, baseGoPackage, currentDir str
 	return nil
 }
 
-func generateGoProto1(protoFiles []string, outputDir string, protoRootPath string) error {
+func generateGoGrpcCode(sourceProtoFiles []string, outputDir string, protoRootPath string) error {
 	// 提前校验空输入
-	if len(protoFiles) == 0 {
+	if len(sourceProtoFiles) == 0 {
 		return fmt.Errorf("protoFiles不能为空")
 	}
 
@@ -491,7 +491,7 @@ func generateGoProto1(protoFiles []string, outputDir string, protoRootPath strin
 		"--proto_path=" + config.ProtoBufferDirectory,
 	}
 
-	args = append(args, protoFiles...)
+	args = append(args, sourceProtoFiles...)
 
 	// 6. 执行命令
 	cmd := exec.Command(config.ProtocPath, args...)
@@ -651,7 +651,7 @@ func GenerateGoGRPCFromProto(rootDir string) error {
 	}
 
 	// 递归收集所有proto文件
-	var protoFiles []string
+	var sourceProtoFiles []string
 	err := filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("访问路径失败 %s: %v", path, err)
@@ -663,7 +663,7 @@ func GenerateGoGRPCFromProto(rootDir string) error {
 		}
 
 		// 收集符合条件的proto文件（转换为斜杠路径）
-		protoFiles = append(protoFiles, filepath.ToSlash(path))
+		sourceProtoFiles = append(sourceProtoFiles, filepath.ToSlash(path))
 		return nil
 	})
 
@@ -672,7 +672,7 @@ func GenerateGoGRPCFromProto(rootDir string) error {
 	}
 
 	// 无proto文件时直接返回
-	if len(protoFiles) == 0 {
+	if len(sourceProtoFiles) == 0 {
 		log.Printf("目录 %s 下没有需要处理的proto文件", rootDir)
 		return nil
 	}
@@ -688,7 +688,7 @@ func GenerateGoGRPCFromProto(rootDir string) error {
 	rootDir = filepath.ToSlash(rootDir)
 
 	// 生成代码时传入基础go_package路径
-	if err := generateGoProto1(protoFiles, outputDir, rootDir); err != nil {
+	if err := generateGoGrpcCode(sourceProtoFiles, outputDir, rootDir); err != nil {
 		return fmt.Errorf("生成节点代码失败 %s: %v", outputDir, err)
 	}
 

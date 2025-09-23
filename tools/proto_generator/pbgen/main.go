@@ -48,8 +48,8 @@ func main() {
 	fmt.Println("Current working directory:", dir)
 
 	MakeProjectDir()
-	internal.BuildProtoGameGrpc()
-	internal.CopyProtoDir()
+	internal.GenerateGameGrpcCode()
+	internal.CopyProtoToGenDir()
 
 	// 开始读所有的proto文件
 	internal.ReadServiceIdFile()

@@ -13,7 +13,7 @@ const (
 
 // ----------- Proto 文件扩展名 -----------
 const (
-	ProtoEx            = ".proto"
+	ProtoExt           = ".proto"
 	ProtoPbcEx         = ".pb.cc"
 	ProtoPbhEx         = ".pb.h"
 	GrpcPbcEx          = ".grpc.pb.cc"
