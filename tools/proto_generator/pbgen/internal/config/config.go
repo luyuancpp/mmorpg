@@ -54,7 +54,7 @@ const (
 	NodeLibsEngineDirectory        = NodePkgDirectory + "engine/"
 	NodeLibGameDirectory           = NodePkgDirectory + "services/"
 	NodePkgLogicSceneNodeDirectory = NodeLibGameDirectory + "scene/"
-	GameNodeDirectory              = NodeCppDirectory + "nodes/scene/"
+	RoomNodeDirectory              = NodeCppDirectory + "nodes/scene/"
 	CentreNodeDirectory            = NodeCppDirectory + "nodes/centre/"
 	GateNodeDirectory              = NodeCppDirectory + "nodes/gate/"
 	RobotDirectory                 = "robot/"
@@ -71,10 +71,10 @@ const (
 // ----------- 方法处理目录 -----------
 const (
 	RobotMethodHandlerDirectory                 = OutputRoot + RobotDirectory + "logic/handler/"
-	GameNodeMethodHandlerDirectory              = GameNodeDirectory + RpcHandlerSourceDirectory
-	RoomNodePlayerMethodHandlerDirectory        = GameNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
-	GameNodeMethodRepliedHandlerDirectory       = GameNodeDirectory + RpcResponseSourceDirectory
-	GameNodePlayerMethodRepliedHandlerDirectory = GameNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
+	RoomNodeMethodHandlerDirectory              = RoomNodeDirectory + RpcHandlerSourceDirectory
+	RoomNodePlayerMethodHandlerDirectory        = RoomNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
+	RoomNodeMethodRepliedHandlerDirectory       = RoomNodeDirectory + RpcResponseSourceDirectory
+	RoomNodePlayerMethodRepliedHandlerDirectory = RoomNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
 	CentreNodeMethodHandlerDirectory            = CentreNodeDirectory + RpcHandlerSourceDirectory
 	CentreNodePlayerMethodHandlerDirectory      = CentreNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
 	CentreMethodRepliedHandleDir                = CentreNodeDirectory + RpcResponseSourceDirectory
@@ -214,7 +214,7 @@ var (
 	LoginProtoDirIndex          = 8
 	DbProtoDirIndex             = 9
 	CenterProtoDirIndex         = 10
-	SceneProtoDirIndex          = 11
+	RoomProtoDirIndex           = 11
 	GateProtoDirIndex           = 12
 	ChatProtoDirIndex           = 13
 	TeamProtoDirIndex           = 14
@@ -242,7 +242,7 @@ const (
 
 // ----------- 事件处理目录 -----------
 const (
-	GameNodeEventHandlerDirectory   = GameNodeDirectory + EventHandlerSourceDirectory
+	RoomNodeEventHandlerDirectory   = RoomNodeDirectory + EventHandlerSourceDirectory
 	CentreNodeEventHandlerDirectory = CentreNodeDirectory + EventHandlerSourceDirectory
 )
 

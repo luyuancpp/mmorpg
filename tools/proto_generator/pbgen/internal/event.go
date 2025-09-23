@@ -210,7 +210,7 @@ func GenerateAllEventHandlers() {
 			continue
 		}
 		util.Wg.Add(2)
-		go generateEventHandlerFiles(file, config.GameNodeEventHandlerDirectory)
+		go generateEventHandlerFiles(file, config.RoomNodeEventHandlerDirectory)
 		go generateEventHandlerFiles(file, config.CentreNodeEventHandlerDirectory)
 	}
 
@@ -228,15 +228,11 @@ type Config struct {
 	HandlerHeaderExtension          string
 	EventHandlerHeaderFileName      string
 	EventHandlerCppFileName         string
-	GameNodeEventHandlerDirectory   string
+	RoomNodeEventHandlerDirectory   string
 	CentreNodeEventHandlerDirectory string
 	IncludeBegin                    string
 	IncludeEndLine                  string
 	ClassNameSuffix                 string
-}
-
-type ProtoFile struct {
-	Name string
 }
 
 func GenerateAllEventHandlersTemplate(protoFiles []os.DirEntry) error {
@@ -288,8 +284,8 @@ public:
 		UnRegisterData:             unRegisterData,
 	}
 
-	headerFilePath := config.GameNodeEventHandlerDirectory + config.EventHandlerHeaderFileName
-	cppFilePath := config.GameNodeEventHandlerDirectory + config.EventHandlerCppFileName
+	headerFilePath := config.RoomNodeEventHandlerDirectory + config.EventHandlerHeaderFileName
+	cppFilePath := config.RoomNodeEventHandlerDirectory + config.EventHandlerCppFileName
 	if err := RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
 		log.Printf("failed to generate header file: %v\n", err)
 	}
