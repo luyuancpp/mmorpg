@@ -72,7 +72,7 @@ const (
 const (
 	RobotMethodHandlerDirectory                 = OutputRoot + RobotDirectory + "logic/handler/"
 	GameNodeMethodHandlerDirectory              = GameNodeDirectory + RpcHandlerSourceDirectory
-	GameNodePlayerMethodHandlerDirectory        = GameNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
+	RoomNodePlayerMethodHandlerDirectory        = GameNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
 	GameNodeMethodRepliedHandlerDirectory       = GameNodeDirectory + RpcResponseSourceDirectory
 	GameNodePlayerMethodRepliedHandlerDirectory = GameNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
 	CentreNodeMethodHandlerDirectory            = CentreNodeDirectory + RpcHandlerSourceDirectory
