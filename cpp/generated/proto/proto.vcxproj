@@ -26,6 +26,7 @@
     <ClCompile Include="common\common.pb.cc" />
     <ClCompile Include="common\config.pb.cc" />
     <ClCompile Include="common\empty.pb.cc" />
+    <ClCompile Include="common\game_rpc.pb.cc" />
     <ClCompile Include="common\message.pb.cc" />
     <ClCompile Include="common\node.pb.cc" />
     <ClCompile Include="common\session.pb.cc" />
@@ -101,6 +102,7 @@
     <ClInclude Include="common\common.pb.h" />
     <ClInclude Include="common\config.pb.h" />
     <ClInclude Include="common\empty.pb.h" />
+    <ClInclude Include="common\game_rpc.pb.h" />
     <ClInclude Include="common\message.pb.h" />
     <ClInclude Include="common\node.pb.h" />
     <ClInclude Include="common\session.pb.h" />

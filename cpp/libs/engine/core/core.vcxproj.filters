@@ -20,8 +20,7 @@
     <ClCompile Include="time\comp\timer_task_comp.cpp" />
     <ClCompile Include="time\system\time.cpp" />
     <ClCompile Include="network\codec\codec.cpp" />
-    <ClCompile Include="network\game_channel.cc" />
-    <ClCompile Include="network\game_rpc.pb.cc" />
+    <ClCompile Include="network\game_channel.cpp" />
     <ClCompile Include="network\message_statistics.cpp" />
     <ClCompile Include="network\network_utils.cpp" />
     <ClCompile Include="network\node_message_utils.cpp" />
@@ -72,7 +71,6 @@
     <ClInclude Include="network\codec\dispatcher_lite.h" />
     <ClInclude Include="network\codec\message_response_dispatcher.h" />
     <ClInclude Include="network\game_channel.h" />
-    <ClInclude Include="network\game_rpc.pb.h" />
     <ClInclude Include="network\message_statistics.h" />
     <ClInclude Include="network\network_constants.h" />
     <ClInclude Include="network\network_utils.h" />
