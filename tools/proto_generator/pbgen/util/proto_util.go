@@ -47,6 +47,11 @@ func HasGrpcService(protoPath string) bool {
 	return GetGrpcLanguageFromPath(protoPath) != ""
 }
 
+func HasEtcdService(protoPath string) bool {
+	// 利用提取语言的函数来判断是否存在gRPC服务
+	return strings.Contains(protoPath, config.ProtoDirectoryNames[config.EtcdProtoDirIndex])
+}
+
 func CheckEtcdServiceExistence(protoPath string) bool {
 	basePath := strings.ToLower(protoPath)
 	return strings.Contains(basePath, "middleware/etcd/")

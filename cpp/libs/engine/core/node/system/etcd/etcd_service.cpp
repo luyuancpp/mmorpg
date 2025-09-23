@@ -6,7 +6,7 @@
 #include "node/system/node/node.h"
 #include "node/system/node/node_allocator.h"
 #include "grpc_client/grpc_init_client.h"
-#include "grpc_client/etcd/etcd_grpc_client.h"
+#include "grpc_client/middleware/etcd/etcd_grpc_client.h"
 #include "threading/redis_manager.h"
 #include "threading/node_context_manager.h"
 #include <node_config_manager.h>

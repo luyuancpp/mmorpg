@@ -100,10 +100,13 @@ func CppGrpcCallClient() {
 			firstService := serviceInfo[0]
 			protoPath := firstService.Path()
 
-			if !util.HasGrpcService(strings.ToLower(protoPath)) {
+			// 如果既不是gRPC服务也不是etcd服务，则返回（不继续处理）
+			if !util.HasGrpcService(strings.ToLower(protoPath)) && !util.HasEtcdService(strings.ToLower(protoPath)) {
 				return
 			}
 
+			// 以下为继续处理的逻辑
+			// ...
 			sort.Slice(serviceInfo, func(i, j int) bool {
 				return serviceInfo[i].ServiceIndex < serviceInfo[j].ServiceIndex
 			})

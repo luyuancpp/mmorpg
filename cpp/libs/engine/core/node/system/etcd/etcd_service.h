@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "proto/etcd/etcd.pb.h"
+#include "proto/middleware/etcd/etcd.pb.h"
 #include "proto/logic/event/node_event.pb.h"
 #include "time/comp/timer_task_comp.h"
 
