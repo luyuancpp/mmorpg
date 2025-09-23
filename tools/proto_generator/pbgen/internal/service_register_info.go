@@ -417,7 +417,7 @@ void InitPlayerService()
 		method := service.MethodInfo[0]
 		className := method.Service() + "Impl"
 
-		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileNameNoEx(), config.HandlerHeaderExtension))
+		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileBaseNameNoEx(), config.HandlerHeaderExtension))
 		handlerClasses = append(handlerClasses, fmt.Sprintf("class %s : public %s {};", className, method.Service()))
 		initLines = append(initLines, fmt.Sprintf(`gPlayerService.emplace("%s", std::make_unique<%s%s>(std::make_unique<%s>()));`,
 			method.Service(), method.Service(), config.HandlerFileName, className))
@@ -485,7 +485,7 @@ void InitPlayerServiceReplied()
 		method := service.MethodInfo[0]
 		className := method.Service() + "Impl"
 
-		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileNameNoEx(), config.RepliedHandlerHeaderExtension))
+		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileBaseNameNoEx(), config.RepliedHandlerHeaderExtension))
 		handlerClasses = append(handlerClasses, fmt.Sprintf("class %s : public %s {};", className, method.Service()))
 		initLines = append(initLines, fmt.Sprintf(`gPlayerServiceReplied.emplace("%s", std::make_unique<%s%s>(std::make_unique<%s>()));`,
 			method.Service(), method.Service(), config.RepliedHandlerFileName, className))
