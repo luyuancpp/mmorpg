@@ -28,7 +28,7 @@ func writeHandlerHeadFile(methodList RPCMethods, cfg HandlerConfig) {
 	if !first.CcGenericServices() {
 		return
 	}
-	fileName := first.FileNameNoEx() + cfg.HeaderExt
+	fileName := first.FileBaseNameNoEx() + cfg.HeaderExt
 	fullPath := cfg.Dir + fileName
 
 	data, err := cfg.GenerateDataFunc(methodList)
@@ -50,7 +50,7 @@ func writeHandlerCppFile(methodList RPCMethods, cfg HandlerConfig) {
 	if !first.CcGenericServices() {
 		return
 	}
-	fileName := strings.ToLower(first.FileNameNoEx()) + cfg.CppExt
+	fileName := strings.ToLower(first.FileBaseNameNoEx()) + cfg.CppExt
 	fullPath := cfg.CppDir + fileName
 
 	data := cfg.GenerateCppDataFunc(fullPath, methodList,

@@ -84,7 +84,7 @@ func (info *RPCServiceInfo) IncludeName() string {
 }
 
 func (info *RPCServiceInfo) FileName() string {
-	return filepath.Base(*info.Fd.Name)
+	return *info.Fd.Name
 }
 
 func (info *RPCServiceInfo) Path() string {
@@ -101,31 +101,31 @@ func (info *RPCServiceInfo) BasePathForCpp() string {
 
 // PbcHeadName 返回Proto文件头文件名
 func (info *RPCServiceInfo) PbcHeadName() string {
-	return strings.Replace(info.FileName(), config.ProtoEx, config.ProtoPbhEx, 1)
+	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.ProtoPbhEx, 1)
 }
 
 // HeadName 返回头文件名
 func (info *RPCServiceInfo) HeadName() string {
-	return strings.Replace(info.FileName(), config.ProtoEx, config.HeaderExtension, 1)
+	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.HeaderExtension, 1)
 }
 
 func (info *RPCServiceInfo) ServiceInfoIncludeName() string {
-	return config.IncludeBegin + config.GeneratedRpcName + config.ServiceInfoName + info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
+	return config.IncludeBegin + config.GeneratedRpcName + config.ServiceInfoName + info.FileBaseNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
 }
 
-// FileNameNoEx 返回文件基本名
-func (info *RPCServiceInfo) FileNameNoEx() string {
+// FileBaseNameNoEx 返回文件基本名
+func (info *RPCServiceInfo) FileBaseNameNoEx() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, "", 1)
 }
 
-// FileBaseName 返回文件基本名
+// FileBaseNameNoEx 返回文件基本名
 func (info *RPCServiceInfo) FileBaseName() string {
-	return strings.Replace(info.FileName(), config.ProtoEx, "", 1)
+	return filepath.Base(*info.Fd.Name)
 }
 
 func (info *RPCServiceInfo) FileBaseNameCamel() string {
 	// 1. 去掉扩展名
-	base := strings.Replace(info.FileName(), config.ProtoEx, "", 1)
+	base := strings.Replace(info.FileBaseName(), config.ProtoEx, "", 1)
 	// 2. 把下划线替换成空格，方便 Title() 把每个单词首字母大写
 	base = strings.ReplaceAll(base, "_", " ")
 	// 3. 首字母大写处理
@@ -146,7 +146,7 @@ func (info *RPCServiceInfo) CcGenericServices() bool {
 }
 
 func (info *RPCServiceInfo) ProtoPathWithFileBaseName() string {
-	return (info.Path()) + info.FileBaseName()
+	return (info.Path()) + info.FileBaseNameNoEx()
 }
 
 func (info *RPCServiceInfo) LogicalPath() string {
@@ -159,7 +159,7 @@ func (info *RPCServiceInfo) GrpcIncludeHeadName() string {
 }
 
 func (info *RPCServiceInfo) GrpcHeadName() string {
-	return strings.Replace(info.FileBaseName(), config.ProtoEx, config.GrpcPbhEx, 1)
+	return strings.Replace(info.FileBaseNameNoEx(), config.ProtoEx, config.GrpcPbhEx, 1)
 }
 
 func (info *RPCServiceInfo) GetServiceFullNameWithNoColon() string {
@@ -170,7 +170,7 @@ func (info *RPCServiceInfo) GetServiceFullNameWithNoColon() string {
 }
 
 func (info *RPCServiceInfo) GeneratorGrpcFileName() string {
-	return info.FileBaseName() + config.GrpcClientExtension
+	return info.FileBaseNameNoEx() + config.GrpcClientExtension
 }
 
 func (info *RPCServiceInfo) Service() string {
@@ -185,20 +185,20 @@ func (info *RPCServiceInfo) Package() string {
 }
 
 func (info *RPCServiceInfo) ServiceInfoHeadInclude() string {
-	return info.FileBaseName() + config.ServiceInfoExtension + config.HeaderExtension
+	return info.FileBaseNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension
 }
 
-// FileNameNoEx 返回文件基本名
-func (info *MethodInfo) FileNameNoEx() string {
+// FileBaseNameNoEx 返回文件基本名
+func (info *MethodInfo) FileBaseNameNoEx() string {
 	return strings.Replace(info.FileBaseName(), config.ProtoEx, "", 1)
 }
 
 func (info *MethodInfo) ServiceInfoHeadInclude() string {
-	return info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension
+	return info.FileBaseNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension
 }
 
 func (info *MethodInfo) GeneratorGrpcFileName() string {
-	return info.FileNameNoEx() + config.GrpcClientExtension
+	return info.FileBaseNameNoEx() + config.GrpcClientExtension
 }
 
 func (info *MethodInfo) PbcHeadName() string {
@@ -214,12 +214,16 @@ func (info *MethodInfo) FileBaseName() string {
 }
 
 func (info *MethodInfo) FileName() string {
-	return filepath.Base(*info.Fd.Name)
+	return *info.Fd.Name
+}
+
+func (info *MethodInfo) FileNameNoEx() string {
+	return strings.Replace(info.FileName(), config.ProtoEx, "", 1)
 }
 
 func (info *MethodInfo) FileBaseNameCamel() string {
 	// 1. 去掉扩展名
-	base := strings.Replace(info.FileName(), config.ProtoEx, "", 1)
+	base := strings.Replace(info.FileBaseName(), config.ProtoEx, "", 1)
 	// 2. 把下划线替换成空格，方便 Title() 把每个单词首字母大写
 	base = strings.ReplaceAll(base, "_", " ")
 	// 3. 首字母大写处理
@@ -257,17 +261,17 @@ func (info *MethodInfo) Path() string {
 }
 
 func (info *MethodInfo) ServiceInfoIncludeName() string {
-	return config.IncludeBegin + config.GeneratedRpcName + config.ServiceInfoName + info.FileNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
+	return config.IncludeBegin + config.GeneratedRpcName + config.ServiceInfoName + info.FileBaseNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
 }
 
 // CppHandlerIncludeName 返回Cpp处理器包含文件名
 func (info *MethodInfo) CppHandlerIncludeName() string {
-	return config.IncludeBegin + info.FileNameNoEx() + config.HandlerHeaderExtension + config.IncludeEndLine
+	return config.IncludeBegin + info.FileBaseNameNoEx() + config.HandlerHeaderExtension + config.IncludeEndLine
 }
 
 // CppRepliedHandlerIncludeName 返回Cpp已响应处理器包含文件名
 func (info *MethodInfo) CppRepliedHandlerIncludeName() string {
-	return config.IncludeBegin + info.FileNameNoEx() + config.RepliedHandlerHeaderExtension + config.IncludeEndLine
+	return config.IncludeBegin + info.FileBaseNameNoEx() + config.RepliedHandlerHeaderExtension + config.IncludeEndLine
 }
 
 // CppHandlerClassName 返回Cpp处理器类名

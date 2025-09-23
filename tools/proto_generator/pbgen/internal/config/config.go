@@ -184,7 +184,7 @@ var (
 		"common/",
 		"logic/component/",
 		"logic/event/",
-		"logic/shared/",
+		"logic/",
 		"logic/",
 		"service/go/grpc/player_locator/",
 		"logic/constants/",

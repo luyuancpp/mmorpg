@@ -199,6 +199,10 @@ func BuildProtoGrpcCpp(protoPath string) error {
 	os.MkdirAll(config.GrpcTempDirectory, os.FileMode(0777))
 	os.MkdirAll(config.GrpcOutputDirectory, os.FileMode(0777))
 
+	if !util.HasGrpcService(strings.ToLower(protoPath)) {
+		return nil
+	}
+
 	var protoFiles []string
 	for _, fd := range fds {
 		if util.IsProtoFile(fd) {
