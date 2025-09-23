@@ -99,7 +99,7 @@ const (
 
 	GoNodeDirectory = OutputRoot + "go/"
 
-	PbcProtoOutputDirectory         = OutputRoot + GeneratedDirectory + ProtoDirName
+	PbcProtoOutputDirectory         = OutputRoot + GeneratedDirectory
 	PbcProtoOutputNoProtoSuffixPath = OutputRoot + GeneratedDirectory
 
 	GeneratedOutputDirectory = OutputRoot + GeneratedDirectory
