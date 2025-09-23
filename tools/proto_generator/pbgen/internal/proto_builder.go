@@ -96,8 +96,6 @@ func copyProtoDirToDest(srcDir, destDir string) error {
 // C++ 代码生成相关
 // ------------------------------
 
-// GenerateGameGrpcCode 生成游戏相关的GRPC代码（含C++序列化代码和Go节点代码）
-// generateGameGrpcGoCode 生成游戏GRPC的Go节点代码（多节点适配）
 func generateGameGrpcGoCode(sourceProtoFiles []string) error {
 	// 1. 获取所有GRPC节点目录
 	grpcDirs := util.GetGRPCSubdirectoryNames()
@@ -166,12 +164,12 @@ func GenerateGameGrpcCode() error {
 			return
 		}
 
-		absPbcTempDir, err := filepath.Abs(config.PbcTempDirectory)
+		tempDir, err := filepath.Abs(config.PbcTempDirectory)
 		if err != nil {
 			log.Printf("获取PbcTempDirectory绝对路径失败: %v", err)
 			return
 		}
-		if err := generateCppCode(sourceProtoFiles, absPbcTempDir); err != nil {
+		if err := generateCppCode(sourceProtoFiles, tempDir); err != nil {
 			log.Printf("生成游戏C++代码失败: %v", err)
 			return
 		}
@@ -181,7 +179,7 @@ func GenerateGameGrpcCode() error {
 			log.Printf("获取PbcProtoOutputNoProtoSuffixPath绝对路径失败: %v", err)
 			return
 		}
-		if err := copyCppGeneratedFiles(sourceProtoFiles, absPbcTempDir, absPbcOutputNoSuffixPath); err != nil {
+		if err := copyCppGeneratedFiles(sourceProtoFiles, tempDir, absPbcOutputNoSuffixPath); err != nil {
 			log.Printf("拷贝游戏C++代码失败: %v", err)
 			return
 		}
@@ -217,16 +215,16 @@ func BuildProtoCpp(protoDir string) error {
 		return fmt.Errorf("创建C++输出目录失败: %w", err)
 	}
 
-	absPbcTempDir, err := filepath.Abs(config.PbcTempDirectory)
+	tempDir, err := filepath.Abs(config.PbcTempDirectory)
 	if err != nil {
 		return fmt.Errorf("获取PbcTempDirectory绝对路径失败: %w", err)
 	}
 
 	// 3. 生成并拷贝C++代码（传递绝对路径）
-	if err := generateCppCode(sourceProtoFiles, absPbcTempDir); err != nil {
+	if err := generateCppCode(sourceProtoFiles, tempDir); err != nil {
 		return fmt.Errorf("生成C++代码失败: %w", err)
 	}
-	if err := copyCppGeneratedFiles(sourceProtoFiles, absPbcTempDir, absPbcOutputDir); err != nil {
+	if err := copyCppGeneratedFiles(sourceProtoFiles, tempDir, absPbcOutputDir); err != nil {
 		return fmt.Errorf("拷贝C++代码失败: %w", err)
 	}
 
@@ -592,48 +590,6 @@ func GenerateGoGRPCFromProto(rootDir string) error {
 		return fmt.Errorf("获取RobotGoOutputDirectory绝对路径失败: %w", err)
 	}
 	return ensureDirExist(absRobotGoDir)
-}
-
-// Function to generate C++ files using protoc
-func generateCppFiles(sourceProtoFiles []string, outputDir string) error {
-	// 1. 转换所有路径为绝对路径
-	absOutputDir, err := filepath.Abs(outputDir)
-	if err != nil {
-		return fmt.Errorf("获取C++输出目录绝对路径失败: %w", err)
-	}
-	absProtoParentDir, err := filepath.Abs(config.ProtoParentIncludePathDir)
-	if err != nil {
-		return fmt.Errorf("获取ProtoParentIncludePathDir绝对路径失败: %w", err)
-	}
-	absProtoBufferDir, err := filepath.Abs(config.ProtoBufferDirectory)
-	if err != nil {
-		return fmt.Errorf("获取ProtoBufferDirectory绝对路径失败: %w", err)
-	}
-
-	// 2. 构建protoc参数（全绝对路径）
-	args := []string{
-		fmt.Sprintf("--cpp_out=%s", absOutputDir),
-		fmt.Sprintf("--proto_path=%s", absProtoParentDir),
-		fmt.Sprintf("--proto_path=%s", absProtoBufferDir),
-	}
-
-	// 3. 确保源文件路径为绝对路径
-	for _, file := range sourceProtoFiles {
-		if !filepath.IsAbs(file) {
-			absFile, err := filepath.Abs(file)
-			if err != nil {
-				log.Printf("文件 %s 不是绝对路径且转换失败，跳过: %v", file, err)
-				continue
-			}
-			args = append(args, absFile)
-		} else {
-			args = append(args, file)
-		}
-	}
-
-	// 4. 执行命令（复用runProtocCmd的错误处理逻辑，保持一致性）
-	cmd := exec.Command("protoc", args...)
-	return runProtocCmd(cmd, "生成C++文件（generateCppFiles）")
 }
 
 func BuildGeneratorProtoPath(dir string) string {
