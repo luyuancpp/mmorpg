@@ -1,6 +1,6 @@
 #pragma once
 #include "entt/src/entt/entity/registry.hpp"
-#include "proto/db/mysql_database_table.pb.h"
+#include "proto/logic/database/mysql_database_table.pb.h"
 void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_database& message);
 void PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& message);
 

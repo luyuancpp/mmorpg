@@ -2,7 +2,7 @@
 
 #include "infra/storage/redis_client/redis_client.h"
 
-#include "proto/db/mysql_database_table.pb.h"
+#include "proto/logic/database/mysql_database_table.pb.h"
 #include "core/utils/registry/game_registry.h"
 #include <engine/threading/registry_manager.h>
 #include <engine/threading/entity_manager.h>

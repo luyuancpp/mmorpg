@@ -13,7 +13,7 @@
 #include "threading/redis_manager.h"
 #include "frame/manager/frame_time.h"
 #include "world/world.h"
-#include "proto/centre/centre_service.pb.h"
+#include "proto/service/cpp/rpc/centre/centre_service.pb.h"
 #include "core/network/message_system.h"
 #include "kafka/system/kafka.h"
 #include "core/system/redis.h"
