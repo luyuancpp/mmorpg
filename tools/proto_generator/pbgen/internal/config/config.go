@@ -36,6 +36,7 @@ const (
 	GrpcClientHeaderExtension     = GrpcClientExtension + HeaderExtension
 	GrpcClientCppExtension        = GrpcClientExtension + CppExtension
 	ModelSqlExtension             = "mysql_database_table.sql"
+	LoaderCppExtension            = "_loader.cpp"
 )
 
 // ----------- 消息与方法相关名字 -----------
@@ -129,7 +130,7 @@ const (
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
 	PlayerStorageSystemDirectory     = OutputRoot + NodePkgLogicSceneNodeDirectory + "player/system/"
 	CppGenGrpcDirectory              = OutputRoot + GeneratedDirectory + GrpcGeneratorDirectory
-	PlayerStorageTempDirectory       = TempFileGenerationDir + "/node/game/game_logic/"
+	PlayerStorageTempDirectory       = TempFileGenerationDir + "/node/game/storage/"
 	GrpcInitFileCppPath              = OutputRoot + GeneratedDirectory + GrpcGeneratorDirectory + "grpc_init_client.cpp"
 	GrpcInitFileHeadPath             = OutputRoot + GeneratedDirectory + GrpcGeneratorDirectory + "grpc_init_client.h"
 
