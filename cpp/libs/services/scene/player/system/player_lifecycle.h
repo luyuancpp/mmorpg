@@ -1,7 +1,7 @@
 #pragma once
 #include <any>
 #include "engine/core/type_define/type_define.h"
-#include "proto/db/mysql_database_table.pb.h"
+#include "proto/logic/database/player_cache.pb.h"
 
 class PlayerGameNodeEnteryInfoPBComponent;
 class ChangeRoomInfoPBComponent;
