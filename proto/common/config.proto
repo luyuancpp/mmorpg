@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-
-
 // 服务配置，避免与 protobuf 的 Service 冲突
 message ServiceConfig {
     string name = 1;  // 服务名称
@@ -28,13 +26,16 @@ message BaseDeployConfig {
     uint32 health_check_interval = 8;
 
     KafkaConfig kafka = 9;  // ✅ 新增 Kafka 配置
+
+    // 新增配置表目录字段
+    string table_data_directory = 10; // 配置表的目录路径
 }
 
 // 游戏配置
 message GameConfig {
     uint32 scene_node_type = 1;  // 场景节点类型，使用 uint32
     uint32 zone_id = 2;          // 区域ID，使用 uint32
-	 // Zoneredis 配置
+    // Zoneredis 配置
     message ZoneRedisConfig {
         string host = 3;           // Redis 服务器地址
         uint32 port = 4;           // Redis 服务器端口

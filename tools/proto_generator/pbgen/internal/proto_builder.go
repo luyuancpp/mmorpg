@@ -141,25 +141,52 @@ func GenerateGameGrpcCode() error {
 	go func() {
 		defer util.Wg.Done()
 
-		// 1. 准备游戏Proto文件路径
-		gameProtoPath := filepath.Join(config.GameRpcProtoPath, config.GameRpcProtoName)
+		// 1. 准备游戏Proto文件路径（转换为绝对路径）
+		absGameRpcProtoPath, err := filepath.Abs(config.GameRpcProtoPath)
+		if err != nil {
+			log.Printf("获取GameRpcProtoPath绝对路径失败: %v", err)
+			return
+		}
+		gameProtoPath := filepath.Join(absGameRpcProtoPath, config.GameRpcProtoName)
+		// 验证文件是否存在
+		if _, err := os.Stat(gameProtoPath); err != nil {
+			log.Printf("游戏Proto文件不存在: %s, 错误: %v", gameProtoPath, err)
+			return
+		}
 		sourceProtoFiles := []string{gameProtoPath}
 
-		// 2. 生成C++序列化代码并拷贝到目标目录
-		if err := ensureDirExist(config.PbcProtoOutputDirectory); err != nil {
+		// 2. 生成C++序列化代码并拷贝到目标目录（全部使用绝对路径）
+		absPbcProtoOutputDir, err := filepath.Abs(config.PbcProtoOutputDirectory)
+		if err != nil {
+			log.Printf("获取PbcProtoOutputDirectory绝对路径失败: %v", err)
+			return
+		}
+		if err := ensureDirExist(absPbcProtoOutputDir); err != nil {
 			log.Printf("创建游戏C++输出目录失败: %v", err)
 			return
 		}
-		if err := generateCppCode(sourceProtoFiles, config.PbcTempDirectory); err != nil {
+
+		absPbcTempDir, err := filepath.Abs(config.PbcTempDirectory)
+		if err != nil {
+			log.Printf("获取PbcTempDirectory绝对路径失败: %v", err)
+			return
+		}
+		if err := generateCppCode(sourceProtoFiles, absPbcTempDir); err != nil {
 			log.Printf("生成游戏C++代码失败: %v", err)
 			return
 		}
-		if err := copyCppGeneratedFiles(sourceProtoFiles, config.PbcTempDirectory, config.PbcProtoOutputNoProtoSuffixPath); err != nil {
+
+		absPbcOutputNoSuffixPath, err := filepath.Abs(config.PbcProtoOutputNoProtoSuffixPath)
+		if err != nil {
+			log.Printf("获取PbcProtoOutputNoProtoSuffixPath绝对路径失败: %v", err)
+			return
+		}
+		if err := copyCppGeneratedFiles(sourceProtoFiles, absPbcTempDir, absPbcOutputNoSuffixPath); err != nil {
 			log.Printf("拷贝游戏C++代码失败: %v", err)
 			return
 		}
 
-		// 3. 生成Go语言GRPC节点代码
+		// 3. 生成Go语言GRPC节点代码（确保依赖路径为绝对路径）
 		if err := generateGameGrpcGoCode(sourceProtoFiles); err != nil {
 			log.Printf("生成游戏GRPC Go代码失败: %v", err)
 			return
@@ -245,24 +272,59 @@ func generateCppCode(sourceProtoFiles []string, outputDir string) error {
 
 // copyCppGeneratedFiles 将临时目录的C++生成文件（.pb.h/.pb.cc）拷贝到目标目录
 func copyCppGeneratedFiles(sourceProtoFiles []string, tempDir, destDir string) error {
+	// 1. 先将临时目录和目标目录转换为绝对路径（确保路径类型统一）
+	absTempDir, err := filepath.Abs(tempDir)
+	if err != nil {
+		return fmt.Errorf("获取临时目录绝对路径失败: %w", err)
+	}
+	absDestDir, err := filepath.Abs(destDir)
+	if err != nil {
+		return fmt.Errorf("获取目标目录绝对路径失败: %w", err)
+	}
+
+	// 2. 将配置的根目录转换为绝对路径（用于计算相对路径）
+	absOutputRoot, err := filepath.Abs(config.OutputRoot)
+	if err != nil {
+		return fmt.Errorf("获取OutputRoot绝对路径失败: %w", err)
+	}
+
 	for _, protoFile := range sourceProtoFiles {
-		// 计算Proto文件相对根目录的路径（保持目录结构一致）
-		protoRelPath, err := filepath.Rel(config.OutputRoot, protoFile)
+		// 确保源文件路径是绝对路径
+		if !filepath.IsAbs(protoFile) {
+			absProtoFile, err := filepath.Abs(protoFile)
+			if err != nil {
+				log.Printf("文件 %s 不是绝对路径且转换失败，跳过: %v", protoFile, err)
+				continue
+			}
+			protoFile = absProtoFile
+		}
+
+		// 计算Proto文件相对根目录的路径（用于保持目录结构）
+		protoRelPath, err := filepath.Rel(absOutputRoot, protoFile)
 		if err != nil {
 			log.Printf("计算Proto相对路径失败 %s: %v，跳过该文件", protoFile, err)
 			continue
 		}
+		protoRelDir := filepath.Dir(protoRelPath)
 
-		// 构建文件路径（.proto -> .pb.h/.pb.cc）
+		// 构建文件名（.proto -> .pb.h/.pb.cc）
 		protoFileName := filepath.Base(protoFile)
 		headerFileName := strings.Replace(protoFileName, config.ProtoExt, config.ProtoPbhEx, 1)
 		cppFileName := strings.Replace(protoFileName, config.ProtoExt, config.ProtoPbcEx, 1)
 
-		// 临时文件路径和目标文件路径
-		tempHeaderPath := filepath.Join(tempDir, filepath.Dir(protoRelPath), headerFileName)
-		tempCppPath := filepath.Join(tempDir, filepath.Dir(protoRelPath), cppFileName)
-		destHeaderPath := filepath.Join(destDir, filepath.Dir(protoRelPath), headerFileName)
-		destCppPath := filepath.Join(destDir, filepath.Dir(protoRelPath), cppFileName)
+		// 构建临时文件路径（基于绝对临时目录 + 相对路径）
+		tempHeaderPath := filepath.Join(absTempDir, protoRelDir, headerFileName)
+		tempCppPath := filepath.Join(absTempDir, protoRelDir, cppFileName)
+
+		// 构建目标文件路径（基于绝对目标目录 + 相对路径）
+		destHeaderPath := filepath.Join(absDestDir, protoRelDir, headerFileName)
+		destCppPath := filepath.Join(absDestDir, protoRelDir, cppFileName)
+
+		// 确保目标目录存在
+		if err := ensureDirExist(filepath.Dir(destHeaderPath)); err != nil {
+			log.Printf("创建目标目录失败 %s: %v，跳过该文件", filepath.Dir(destHeaderPath), err)
+			continue
+		}
 
 		// 拷贝文件
 		if err := CopyFileIfChanged(tempHeaderPath, destHeaderPath); err != nil {
@@ -741,18 +803,62 @@ func generateGoGrpcCode(sourceProtoFiles []string, outputDir string, protoRootPa
 		return fmt.Errorf("protoFiles不能为空")
 	}
 
-	// 3. 构建protoc命令参数
-	args := []string{
-		"--go_out=" + outputDir,
-		"--go-grpc_out=" + outputDir,
-		"--proto_path=" + protoRootPath,
-		"--proto_path=" + config.ProtoBufferDirectory,
+	// 1. 将所有路径转换为绝对路径
+	absOutputDir, err := filepath.Abs(outputDir)
+	if err != nil {
+		return fmt.Errorf("获取Go输出目录绝对路径失败: %w", err)
 	}
 
-	args = append(args, sourceProtoFiles...)
+	absProtoRootPath, err := filepath.Abs(protoRootPath)
+	if err != nil {
+		return fmt.Errorf("获取Proto根目录绝对路径失败: %w", err)
+	}
 
-	// 6. 执行命令
-	cmd := exec.Command(config.ProtocPath, args...)
+	absProtoBufferDir, err := filepath.Abs(config.ProtoBufferDirectory)
+	if err != nil {
+		return fmt.Errorf("获取ProtoBufferDirectory绝对路径失败: %w", err)
+	}
+
+	// 验证protoc路径有效性并转换为绝对路径
+	var absProtocPath string
+	if config.ProtocPath == "" {
+		// 如果未指定protoc路径，使用系统默认的protoc
+		absProtocPath = "protoc"
+	} else {
+		absProtocPath, err = filepath.Abs(config.ProtocPath)
+		if err != nil {
+			return fmt.Errorf("获取protoc路径绝对路径失败: %w", err)
+		}
+		// 检查protoc可执行文件是否存在
+		if _, err := os.Stat(absProtocPath); os.IsNotExist(err) {
+			return fmt.Errorf("protoc路径不存在: %s", absProtocPath)
+		}
+	}
+
+	// 2. 构建protoc命令参数（全部使用绝对路径）
+	args := []string{
+		fmt.Sprintf("--go_out=%s", absOutputDir),
+		fmt.Sprintf("--go-grpc_out=%s", absOutputDir),
+		fmt.Sprintf("--proto_path=%s", absProtoRootPath),
+		fmt.Sprintf("--proto_path=%s", absProtoBufferDir),
+	}
+
+	// 3. 确保源文件路径都是绝对路径
+	for _, file := range sourceProtoFiles {
+		if !filepath.IsAbs(file) {
+			absFile, err := filepath.Abs(file)
+			if err != nil {
+				log.Printf("文件 %s 不是绝对路径且转换失败，跳过: %v", file, err)
+				continue
+			}
+			args = append(args, absFile)
+		} else {
+			args = append(args, file)
+		}
+	}
+
+	// 4. 执行命令
+	cmd := exec.Command(absProtocPath, args...)
 	var out, stderr bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
@@ -878,7 +984,7 @@ func BuildProtocDescAllInOne() {
 	}()
 }
 
-func BuildAllProtoc() {
+func BuildProtocCpp() {
 	// Iterate over configured proto directories
 	for i := 0; i < len(config.ProtoDirs); i++ {
 		util.Wg.Add(1)
@@ -900,62 +1006,6 @@ func BuildAllProtoc() {
 			}
 		}(i)
 	}
-}
-
-// GenerateGoGRPCFromProto 递归处理指定目录下所有proto文件并生成Go gRPC代码
-func GenerateGoGRPCFromProto1(rootDir string) error {
-	if util.CheckEtcdServiceExistence(rootDir) {
-		return nil
-	}
-
-	// 递归收集所有proto文件
-	var sourceProtoFiles []string
-	err := filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return fmt.Errorf("访问路径失败 %s: %v", path, err)
-		}
-
-		// 跳过目录和数据库proto文件
-		if d.IsDir() || !util.IsProtoFile(d) || d.Name() == config.DbProtoFileName {
-			return nil
-		}
-
-		// 收集符合条件的proto文件（转换为斜杠路径）
-		sourceProtoFiles = append(sourceProtoFiles, filepath.ToSlash(path))
-		return nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("递归遍历目录失败 %s: %v", rootDir, err)
-	}
-
-	// 无proto文件时直接返回
-	if len(sourceProtoFiles) == 0 {
-		log.Printf("目录 %s 下没有需要处理的proto文件", rootDir)
-		return nil
-	}
-
-	// 为每个注册的grpc节点目录生成代码
-	outputDir := config.NodeGoDirectory
-	// 确保输出目录存在
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		return fmt.Errorf("创建输出目录失败 %s: %v", outputDir, err)
-	}
-
-	rootDir = filepath.Dir(rootDir)
-	rootDir = filepath.ToSlash(rootDir)
-
-	// 生成代码时传入基础go_package路径
-	if err := generateGoGrpcCode(sourceProtoFiles, outputDir, rootDir); err != nil {
-		return fmt.Errorf("生成节点代码失败 %s: %v", outputDir, err)
-	}
-
-	// 生成机器人相关代码
-	if err := os.MkdirAll(config.RobotGoOutputDirectory, 0755); err != nil {
-		return fmt.Errorf("创建机器人输出目录失败: %v", err)
-	}
-
-	return nil
 }
 
 // BuildGrpcServiceProto 并发处理所有GRPC目录，递归遍历每个目录下的proto文件
