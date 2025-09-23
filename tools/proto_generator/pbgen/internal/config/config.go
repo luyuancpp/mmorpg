@@ -99,7 +99,9 @@ const (
 
 	GoNodeDirectory = OutputRoot + "go/"
 
-	PbcProtoOutputDirectory  = OutputRoot + GeneratedDirectory + ProtoDirName
+	PbcProtoOutputDirectory         = OutputRoot + GeneratedDirectory + ProtoDirName
+	PbcProtoOutputNoProtoSuffixPath = OutputRoot + GeneratedDirectory
+
 	GeneratedOutputDirectory = OutputRoot + GeneratedDirectory
 	GrpcOutputDirectory      = OutputRoot + GeneratedDirectory
 	GrpcTempDirectory        = TempFileGenerationDir + "grpc/"
