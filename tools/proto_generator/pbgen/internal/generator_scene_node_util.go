@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"path/filepath"
 	"pbgen/internal/config"
 	"pbgen/util"
 	"strings"
@@ -30,6 +29,10 @@ func IsGsPlayerHandler(methods *RPCMethods) bool {
 		return false
 	}
 
+	if util.HasGrpcService(firstMethodInfo.Path()) {
+		return false
+	}
+
 	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
 }
 
@@ -52,9 +55,7 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	basePath := strings.ToLower(filepath.Base(firstMethodInfo.Path())) // 提取最后一级目录名作为 key
-
-	if util.HasGrpcService(basePath) {
+	if util.HasGrpcService(strings.ToLower(firstMethodInfo.Path())) {
 		return false
 	}
 	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
