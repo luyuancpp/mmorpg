@@ -202,7 +202,7 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
 #pragma region ClientPlayerLoginLeaveGame
 boost::object_pool<AsyncClientPlayerLoginLeaveGameGrpcClient> ClientPlayerLoginLeaveGamePool;
 using AsyncClientPlayerLoginLeaveGameHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const ClientContext&, const ::loginpb::LoginEmptyResponse&)>;
 AsyncClientPlayerLoginLeaveGameHandlerFunctionType AsyncClientPlayerLoginLeaveGameHandler;
 
 void AsyncCompleteGrpcClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
@@ -264,7 +264,7 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
 #pragma region ClientPlayerLoginDisconnect
 boost::object_pool<AsyncClientPlayerLoginDisconnectGrpcClient> ClientPlayerLoginDisconnectPool;
 using AsyncClientPlayerLoginDisconnectHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const ClientContext&, const ::loginpb::LoginEmptyResponse&)>;
 AsyncClientPlayerLoginDisconnectHandlerFunctionType AsyncClientPlayerLoginDisconnectHandler;
 
 void AsyncCompleteGrpcClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
