@@ -7,25 +7,25 @@ import (
 )
 
 // / game server
-func IsSceneMethodHandler(methods *RPCMethods) bool {
+func IsRoomNodeMethodHandler(methods *RPCMethods) bool {
 	if len(*methods) == 0 {
 		return false
 	}
 	first := (*methods)[0]
-	if !strings.Contains(first.Path(), config.ProtoDirectoryNames[config.SceneProtoDirIndex]) {
+	if !strings.Contains(first.Path(), config.ProtoDirectoryNames[config.RoomProtoDirIndex]) {
 		return false
 	}
 	return !util.ContainsPlayerKeyword(first.Service())
 }
 
-func IsGsPlayerHandler(methods *RPCMethods) bool {
+func IsRoomNodePlayerHandler(methods *RPCMethods) bool {
 	if len(*methods) <= 0 {
 		return false
 	}
 
 	firstMethodInfo := (*methods)[0]
 
-	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.SceneProtoDirIndex]) {
+	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.RoomProtoDirIndex]) {
 		return false
 	}
 
@@ -40,14 +40,14 @@ func ReturnNoHandler(methods *RPCMethods) bool {
 	return false
 }
 
-func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
+func isRoomNodePlayerRepliedHandler(methodList *RPCMethods) bool {
 	if len(*methodList) <= 0 {
 		return false
 	}
 
 	firstMethodInfo := (*methodList)[0]
 
-	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.SceneProtoDirIndex) {
+	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.RoomProtoDirIndex) {
 		return false
 	}
 
@@ -61,7 +61,7 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 	return util.ContainsPlayerKeyword(firstMethodInfo.Service())
 }
 
-func isGsMethodRepliedHandler(methodList *RPCMethods) bool {
+func isRoomNodeMethodRepliedHandler(methodList *RPCMethods) bool {
 	if len(*methodList) == 0 {
 		return false
 	}
@@ -72,7 +72,7 @@ func isGsMethodRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.SceneProtoDirIndex) {
+	if util.IsPathInProtoDirs(firstMethodInfo.Path(), config.RoomProtoDirIndex) {
 		return false
 	}
 

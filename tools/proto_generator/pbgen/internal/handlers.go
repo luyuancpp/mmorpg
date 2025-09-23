@@ -8,18 +8,18 @@ import (
 // ---------------- Game Node ----------------
 
 var GsHandler = HandlerConfig{
-	IsValidFunc:         IsSceneMethodHandler,
+	IsValidFunc:         IsRoomNodeMethodHandler,
 	GenerateDataFunc:    getServiceHandlerHeadStr,
 	GenerateCppDataFunc: getServiceHandlerCppStr,
-	Dir:                 config.GameNodeMethodHandlerDirectory,
-	CppDir:              config.GameNodeMethodHandlerDirectory,
+	Dir:                 config.RoomNodeMethodHandlerDirectory,
+	CppDir:              config.RoomNodeMethodHandlerDirectory,
 	HeaderExt:           config.HandlerHeaderExtension,
 	CppExt:              config.HandlerCppExtension,
 	IsRepliedHandler:    false,
 }
 
 var GsPlayerHandler = HandlerConfig{
-	IsValidFunc:         IsGsPlayerHandler,
+	IsValidFunc:         IsRoomNodePlayerHandler,
 	GenerateDataFunc:    getPlayerServiceHeadStr,
 	GenerateCppDataFunc: getPlayerServiceHandlerCppStr,
 	Dir:                 config.RoomNodePlayerMethodHandlerDirectory,
@@ -30,22 +30,22 @@ var GsPlayerHandler = HandlerConfig{
 }
 
 var GsRepliedHandler = HandlerConfig{
-	IsValidFunc:         isGsMethodRepliedHandler,
+	IsValidFunc:         isRoomNodeMethodRepliedHandler,
 	GenerateDataFunc:    getServiceRepliedHandlerHeadStr,
 	GenerateCppDataFunc: getServiceRepliedHandlerCppStr,
-	Dir:                 config.GameNodeMethodRepliedHandlerDirectory,
-	CppDir:              config.GameNodeMethodRepliedHandlerDirectory,
+	Dir:                 config.RoomNodeMethodRepliedHandlerDirectory,
+	CppDir:              config.RoomNodeMethodRepliedHandlerDirectory,
 	HeaderExt:           config.RepliedHandlerHeaderExtension,
 	CppExt:              config.CppRepliedHandlerEx,
 	IsRepliedHandler:    true,
 }
 
 var GsPlayerRepliedHandler = HandlerConfig{
-	IsValidFunc:         isGsPlayerRepliedHandler,
+	IsValidFunc:         isRoomNodePlayerRepliedHandler,
 	GenerateDataFunc:    getPlayerMethodRepliedHeadStr,
 	GenerateCppDataFunc: getPlayerServiceHandlerCppStr,
-	Dir:                 config.GameNodePlayerMethodRepliedHandlerDirectory,
-	CppDir:              config.GameNodePlayerMethodRepliedHandlerDirectory,
+	Dir:                 config.RoomNodePlayerMethodRepliedHandlerDirectory,
+	CppDir:              config.RoomNodePlayerMethodRepliedHandlerDirectory,
 	HeaderExt:           config.RepliedHandlerHeaderExtension,
 	CppExt:              config.CppRepliedHandlerEx,
 	IsRepliedHandler:    true,
