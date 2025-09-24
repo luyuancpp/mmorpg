@@ -25,6 +25,8 @@ void LoadTablesAsync() {
     static muduo::CountDownLatch latch({{ sheetnames|length }});
 {% for item in sheetnames %}
     std::thread {{ item }}LoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         {{ item }}TableManager::Instance().Load();
             latch.countDown();});
             {{ item }}LoadThread.detach();

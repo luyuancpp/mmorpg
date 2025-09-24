@@ -1,6 +1,7 @@
 ﻿#include "config.h"
 #include <yaml-cpp/yaml.h>
 #include <muduo/base/Logging.h>
+#include <node_config_manager.h>
 
 bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseConfig) {
 	YAML::Node root = YAML::LoadFile(filename);
@@ -124,7 +125,10 @@ bool readGameConfig(const std::string& filename, GameConfig& gameConfig) {
 	return true;
 }
 
+void InitThreadLocalConfig() {
+	tlsNodeConfigManager = gNodeConfigManager;
+}
 
 std::string GetConfigDir() {
-	return "config/generated/json/";
+	return tlsNodeConfigManager.GetBaseDeployConfig().table_data_directory();
 }

@@ -173,8 +173,10 @@ void Node::RegisterEventHandlers() {
 }
 
 void Node::LoadConfigs() {
+	tlsNodeConfigManager = NodeConfigManager();
 	readBaseDeployConfig("etc/base_deploy_config.yaml", tlsNodeConfigManager.GetBaseDeployConfig());
 	readGameConfig("etc/game_config.yaml", tlsNodeConfigManager.GetGameConfig());
+	gNodeConfigManager = tlsNodeConfigManager;
 }
 
 void Node::LoadAllConfigData() {

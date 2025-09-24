@@ -1,36 +1,41 @@
-# Etcd 配置，存储服务发现相关信息
+# Etcd 配置，存储服务发现相关信息（分布式键值存储，用于服务注册/发现、配置共享）
 Etcd:
   Hosts:
-    - "127.0.0.1:2379"
-  KeepaliveInterval: 1
-  NodeTTLSeconds: 600
+    - "127.0.0.1:2379"  # Etcd 集群节点地址（单机部署填1个，集群需填所有节点IP:端口）
+  KeepaliveInterval: 1  # 服务心跳间隔（单位：秒）：当前服务向Etcd发送“存活信号”的频率
+  NodeTTLSeconds: 600   # 服务存活超时（单位：秒）：超过该时间无心跳，Etcd标记服务“下线”
 
-# 日志配置
-LogLevel: 2
+# 表格数据目录配置（存储静态配置表、业务数据表等文件的根路径）
+TableDataDirectory: "../generated/generated_tables/"  # 路径可自定义（相对路径/绝对路径均可）
+# 示例说明：若配置为 "./data/table"，则角色配置表可能存于 "./data/table/role_config.xlsx"，道具表存于 "./data/table/item_config.json"
 
-# 健康检查相关配置
-HealthCheckInterval: 1
+# 日志配置（控制日志输出级别）
+LogLevel: 2  # 日志级别编码（通常约定：0=DEBUG，1=INFO，2=WARN，3=ERROR，4=FATAL，具体需结合业务代码定义）
 
-# 服务列表
+# 健康检查相关配置（定期检测服务存活状态）
+HealthCheckInterval: 1  # 健康检查间隔（单位：秒）：定期请求下方services列表中的健康检查接口
+
+# 服务列表（需进行健康检查的目标服务，通常是当前系统依赖的其他微服务）
 services:
-  - name: "service1"
-    url: "http://localhost:8081/v1/health/service/service1"
+  - name: "service1"  # 服务名称（自定义标识，用于日志和监控区分）
+    url: "http://localhost:8081/v1/health/service/service1"  # service1的健康检查接口地址
   - name: "service2"
-    url: "http://localhost:8082/v1/catalog/service/service2"
+    url: "http://localhost:8082/v1/catalog/service/service2"  # service2的健康检查/服务目录接口地址
 
-# 服务发现前缀
+# 服务发现前缀（Etcd中存储特定类型服务的“目录前缀”，用于快速筛选服务）
+# 示例：所有网关服务（GateNodeService.rpc）的注册信息会存在 Etcd 的 "/GateNodeService.rpc/" 路径下
 service_discovery_prefixes:
-  - "SceneNodeService.rpc"
-  - "GateNodeService.rpc"
-  - "CentreNodeService.rpc"
-  - "LoginNodeService.rpc"
+  - "SceneNodeService.rpc"  # 场景节点服务（RPC类型）的Etcd存储前缀
+  - "GateNodeService.rpc"   # 网关节点服务（RPC类型）的Etcd存储前缀
+  - "CentreNodeService.rpc" # 中心节点服务（RPC类型）的Etcd存储前缀
+  - "LoginNodeService.rpc"  # 登录节点服务（RPC类型）的Etcd存储前缀
 
-# Kafka 配置
+# Kafka 配置（分布式消息队列，用于异步通信、日志收集、事件分发等）
 Kafka:
   Brokers:
-    - "localhost:9092"
+    - "localhost:9092"  # Kafka 集群 Broker 地址（单机填1个，集群需填所有Broker IP:端口）
   Topics: 
-    - "game-events"               # 默认 topic
-  GroupID: "game-consumer-group"     # 默认 consumer group ID
-  EnableAutoCommit: true
-  AutoOffsetReset: "earliest"        # earliest 或 latest
+    - "game-events"               # 默认消息主题（如游戏内事件：角色升级、道具交易等）
+  GroupID: "game-consumer-group"  # Kafka 消费者组ID（同组消费者共同消费主题消息，避免重复消费）
+  EnableAutoCommit: true          # 是否自动提交消费偏移量（true=消费后自动记录位置，false=需手动提交）
+  AutoOffsetReset: "earliest"     # 无消费记录时的偏移量重置策略（earliest=从最早消息开始消费，latest=从最新消息开始消费）
