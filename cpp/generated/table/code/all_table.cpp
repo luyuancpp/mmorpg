@@ -90,91 +90,127 @@ void LoadTablesAsync() {
     static muduo::CountDownLatch latch(18);
 
     std::thread ActorActionCombatStateLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         ActorActionCombatStateTableManager::Instance().Load();
             latch.countDown();});
             ActorActionCombatStateLoadThread.detach();
 
     std::thread ActorActionStateLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         ActorActionStateTableManager::Instance().Load();
             latch.countDown();});
             ActorActionStateLoadThread.detach();
 
     std::thread BuffLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         BuffTableManager::Instance().Load();
             latch.countDown();});
             BuffLoadThread.detach();
 
     std::thread ClassLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         ClassTableManager::Instance().Load();
             latch.countDown();});
             ClassLoadThread.detach();
 
     std::thread ConditionLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         ConditionTableManager::Instance().Load();
             latch.countDown();});
             ConditionLoadThread.detach();
 
     std::thread CooldownLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         CooldownTableManager::Instance().Load();
             latch.countDown();});
             CooldownLoadThread.detach();
 
     std::thread GlobalVariableLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         GlobalVariableTableManager::Instance().Load();
             latch.countDown();});
             GlobalVariableLoadThread.detach();
 
     std::thread ItemLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         ItemTableManager::Instance().Load();
             latch.countDown();});
             ItemLoadThread.detach();
 
     std::thread MainSceneLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         MainSceneTableManager::Instance().Load();
             latch.countDown();});
             MainSceneLoadThread.detach();
 
     std::thread MessageLimiterLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         MessageLimiterTableManager::Instance().Load();
             latch.countDown();});
             MessageLimiterLoadThread.detach();
 
     std::thread MissionLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         MissionTableManager::Instance().Load();
             latch.countDown();});
             MissionLoadThread.detach();
 
     std::thread MonsterBaseLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         MonsterBaseTableManager::Instance().Load();
             latch.countDown();});
             MonsterBaseLoadThread.detach();
 
     std::thread RewardLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         RewardTableManager::Instance().Load();
             latch.countDown();});
             RewardLoadThread.detach();
 
     std::thread SceneLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         SceneTableManager::Instance().Load();
             latch.countDown();});
             SceneLoadThread.detach();
 
     std::thread SkillLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         SkillTableManager::Instance().Load();
             latch.countDown();});
             SkillLoadThread.detach();
 
     std::thread SkillPermissionLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         SkillPermissionTableManager::Instance().Load();
             latch.countDown();});
             SkillPermissionLoadThread.detach();
 
     std::thread TestLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         TestTableManager::Instance().Load();
             latch.countDown();});
             TestLoadThread.detach();
 
     std::thread TestMultiKeyLoadThread([](){
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
         TestMultiKeyTableManager::Instance().Load();
             latch.countDown();});
             TestMultiKeyLoadThread.detach();

@@ -7,8 +7,6 @@ class NodeConfigManager {
 
 public:
 	NodeConfigManager() = default;
-	NodeConfigManager(const NodeConfigManager&) = delete;
-	NodeConfigManager& operator=(const NodeConfigManager&) = delete;
 
 	[[nodiscard]] ::BaseDeployConfig& GetBaseDeployConfig()
 	{
@@ -26,3 +24,5 @@ private:
 };
 
 extern thread_local NodeConfigManager tlsNodeConfigManager;
+extern NodeConfigManager gNodeConfigManager;
+
