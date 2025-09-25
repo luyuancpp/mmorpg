@@ -103,6 +103,10 @@ func generateGameGrpcGo(protoFiles []string) error {
 	// 2. 为每个节点生成专属代码
 	for _, nodeName := range grpcNodes {
 		nodeOutputDir := filepath.Join(config.NodeGoDirectory, nodeName)
+		nodeOutputDir, err := resolveAbsPath(nodeOutputDir, "节点game_rpc代码目录")
+		if err != nil {
+			return fmt.Errorf("解析节点game_rpc代码目录: %w", err)
+		}
 		if err := ensureDir(nodeOutputDir); err != nil {
 			log.Printf("Go生成: 创建节点[%s]目录失败: %v，跳过", nodeName, err)
 			continue
@@ -117,12 +121,17 @@ func generateGameGrpcGo(protoFiles []string) error {
 	}
 
 	// 3. 确保机器人代码目录存在
-	robotDir, err := resolveAbsPath(config.RobotGoOutputDirectory, "机器人代码目录")
+	robotDir, err := resolveAbsPath(config.RobotGoGamePbDirectory, "机器人代码目录")
 	if err != nil {
 		return fmt.Errorf("解析机器人目录失败: %w", err)
 	}
 	if err := ensureDir(robotDir); err != nil {
 		return fmt.Errorf("创建机器人目录失败: %w", err)
+	}
+
+	if err := generateGoGrpc(protoFiles, robotDir, config.GameRpcProtoPath); err != nil {
+		log.Printf("Go生成: 节点[%s]代码生成失败: %v，跳过", robotDir, err)
+		return err
 	}
 
 	log.Println("Go生成: 所有游戏GRPC节点代码生成完成")

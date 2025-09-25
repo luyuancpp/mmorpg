@@ -133,20 +133,7 @@ func generateGoGrpc(protoFiles []string, outputDir string, protoRootPath string)
 
 // resolveProtocPath 解析protoc可执行文件路径
 func resolveProtocPath() (string, error) {
-	if config.ProtocPath == "" {
-		return "protoc", nil // 使用系统默认protoc
-	}
-
-	protocPath, err := resolveAbsPath(config.ProtocPath, "protoc可执行文件")
-	if err != nil {
-		return "", err
-	}
-
-	// 检查文件是否存在
-	if _, err := os.Stat(protocPath); os.IsNotExist(err) {
-		return "", fmt.Errorf("protoc路径不存在: %s", protocPath)
-	}
-	return protocPath, nil
+	return "protoc", nil
 }
 
 // generateCppFiles 生成C++文件（Go模块中依赖的C++生成逻辑）
