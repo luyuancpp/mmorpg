@@ -108,10 +108,11 @@ const (
 	PbcTempDirectory         = TempFileGenerationDir
 	GrpcProtoOutputDirectory = OutputRoot + GeneratedDirectory + ProtoDirName
 
-	RobotGoOutputDirectory = OutputRoot + RobotDirectory
-	RobotGoGamePbDirectory = RobotGoOutputDirectory + GoPackage
-	MessageIdGoFile        = "message_id.go"
-	RobotMessageIdFilePath = RobotGoGamePbDirectory + "/" + MessageIdGoFile
+	RobotGoOutputDirectory          = OutputRoot + RobotDirectory
+	RobotGoGamePbDirectory          = RobotGoOutputDirectory + GoPackage
+	RobotGoOutputGeneratedDirectory = OutputRoot + GeneratorDirectory
+	MessageIdGoFile                 = "message_id.go"
+	RobotMessageIdFilePath          = RobotGoGamePbDirectory + "/" + MessageIdGoFile
 
 	GoGeneratorDirectory = GoNodeDirectory
 
