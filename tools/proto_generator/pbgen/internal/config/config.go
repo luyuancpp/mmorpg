@@ -57,7 +57,7 @@ const (
 	RoomNodeDirectory              = NodeCppDirectory + "nodes/scene/"
 	CentreNodeDirectory            = NodeCppDirectory + "nodes/centre/"
 	GateNodeDirectory              = NodeCppDirectory + "nodes/gate/"
-	RobotDirectory                 = "robot/"
+	RobotDirectory                 = "tools/robot/"
 	GeneratedDirectory             = "cpp/generated/"
 
 	ServiceIdFilePath           = ProtoDir + "serviceid.txt"

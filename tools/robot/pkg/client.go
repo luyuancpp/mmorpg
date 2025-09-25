@@ -2,7 +2,7 @@ package pkg
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/luyuancpp/muduoclient/muduo"
+	"github.com/luyuancpp/muduoclient-new/muduo"
 	b3 "github.com/magicsea/behavior3go"
 	. "github.com/magicsea/behavior3go/config"
 	. "github.com/magicsea/behavior3go/core"
