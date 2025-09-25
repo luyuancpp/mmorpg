@@ -121,7 +121,7 @@ func generateGameGrpcGo(protoFiles []string) error {
 	}
 
 	// 3. 确保机器人代码目录存在
-	robotDir, err := resolveAbsPath(config.RobotGoGamePbDirectory, "机器人代码目录")
+	robotDir, err := resolveAbsPath(config.RobotGoOutputGeneratedDirectory, "机器人代码目录")
 	if err != nil {
 		return fmt.Errorf("解析机器人目录失败: %w", err)
 	}
