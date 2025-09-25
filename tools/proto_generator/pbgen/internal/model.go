@@ -346,7 +346,7 @@ func (info *MethodInfo) CppResponse() string {
 
 func (info *MethodInfo) GoRequest() string {
 	// 获取 OutputType
-	inputType := info.MethodDescriptorProto.GetOutputType()
+	inputType := info.MethodDescriptorProto.GetInputType()
 
 	// .package.TypeName => 提取 TypeName
 	lastDot := strings.LastIndex(inputType, ".")

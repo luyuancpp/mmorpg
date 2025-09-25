@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/golang/protobuf/proto"
+	"github.com/luyuancpp/muduoclient-new/muduo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/protobuf/proto"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -44,7 +45,7 @@ func runClientLoop(gameClient *pkg.GameClient) {
 				zap.L().Info("Message channel closed, exiting runClientLoop")
 				return
 			}
-			d := muduo.GetDescriptor(&msg)
+			d := msg.ProtoReflect().Descriptor()
 			switch d.Name() {
 			case "LoginResponse":
 				resp := msg.(*login.LoginResponse)
@@ -109,11 +110,7 @@ func main() {
 			serverIndex := i % len(config.AppConfig.Servers)
 			server := config.AppConfig.Servers[serverIndex]
 
-			client, err := muduo.NewClient(server.IP, server.Port, &muduo.TcpCodec{})
-			if err != nil {
-				zap.L().Error("Failed to create client", zap.String("ip", server.IP), zap.Int("port", server.Port), zap.Error(err))
-				return
-			}
+			client := muduo.NewTcpClient(server.Address, &muduo.TcpCodec{})
 			gameClient := pkg.NewGameClient(client)
 			defer gameClient.Close()
 
