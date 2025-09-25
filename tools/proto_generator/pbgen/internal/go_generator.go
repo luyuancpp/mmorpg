@@ -9,8 +9,8 @@ import (
 	"pbgen/utils"
 )
 
-// GenerateGoGRPCFromProto 递归处理目录下Proto文件，生成Go GRPC代码
-func GenerateGoGRPCFromProto(rootDir string) error {
+// GenerateGoProto 递归处理目录下Proto文件，生成Go GRPC代码
+func GenerateGoProto(rootDir string) error {
 	// 跳过Etcd服务相关目录
 	if utils.CheckEtcdServiceExistence(rootDir) {
 		return nil
@@ -46,12 +46,42 @@ func GenerateGoGRPCFromProto(rootDir string) error {
 		return fmt.Errorf("Go GRPC生成: 代码生成失败: %w", err)
 	}
 
-	// 5. 确保机器人代码目录存在
-	robotGoDir, err := resolveAbsPath(config.RobotGoOutputDirectory, "机器人Go目录")
+	return nil
+}
+
+// GenerateRobotGoProto 递归处理目录下Proto文件，生成Go GRPC代码
+func GenerateRobotGoProto(rootDir string) error {
+	// 1. 收集非数据库Proto文件
+	protoFiles, err := collectGoGrpcProtoFiles(rootDir)
+	if err != nil {
+		return fmt.Errorf("Go GRPC生成: 收集Proto失败: %w", err)
+	}
+	if len(protoFiles) == 0 {
+		log.Printf("Go GRPC生成: 目录[%s]无需要处理的Proto文件，跳过", rootDir)
+		return nil
+	}
+
+	// 2. 解析输出目录
+	nodeGoDir, err := resolveAbsPath(config.ToolsDir, "Go节点输出目录")
 	if err != nil {
 		return err
 	}
-	return ensureDir(robotGoDir)
+	if err := ensureDir(nodeGoDir); err != nil {
+		return fmt.Errorf("Go GRPC生成: 创建输出目录失败: %w", err)
+	}
+
+	// 3. 解析Proto根路径
+	protoRootPath, err := resolveAbsPath(filepath.Dir(rootDir), "Proto根目录")
+	if err != nil {
+		return err
+	}
+
+	// 4. 生成Go GRPC代码
+	if err := generateGoGrpc(protoFiles, nodeGoDir, protoRootPath); err != nil {
+		return fmt.Errorf("Go GRPC生成: 代码生成失败: %w", err)
+	}
+
+	return nil
 }
 
 // collectGoGrpcProtoFiles 递归收集目录下所有非数据库Proto文件
@@ -134,43 +164,4 @@ func generateGoGrpc(protoFiles []string, outputDir string, protoRootPath string)
 // resolveProtocPath 解析protoc可执行文件路径
 func resolveProtocPath() (string, error) {
 	return "protoc", nil
-}
-
-// generateCppFiles 生成C++文件（Go模块中依赖的C++生成逻辑）
-func generateCppFiles(protoFiles []string, outputDir string) error {
-	// 1. 解析路径
-	cppOutputDir, err := resolveAbsPath(outputDir, "C++文件输出目录")
-	if err != nil {
-		return err
-	}
-
-	protoParentDir, err := resolveAbsPath(config.ProtoParentIncludePathDir, "Proto父目录")
-	if err != nil {
-		return err
-	}
-
-	protoBufferDir, err := resolveAbsPath(config.ProtoBufferDirectory, "ProtoBuffer目录")
-	if err != nil {
-		return err
-	}
-
-	// 2. 构建protoc参数
-	args := []string{
-		fmt.Sprintf("--cpp_out=%s", cppOutputDir),
-		fmt.Sprintf("--proto_path=%s", protoParentDir),
-		fmt.Sprintf("--proto_path=%s", protoBufferDir),
-	}
-
-	// 3. 补充Proto文件路径
-	for _, file := range protoFiles {
-		absFile, err := resolveAbsPath(file, "C++生成Proto源文件")
-		if err != nil {
-			log.Printf("C++文件生成: 跳过无效文件[%s]: %v", file, err)
-			continue
-		}
-		args = append(args, absFile)
-	}
-
-	// 4. 执行命令
-	return runProtoc(args, "生成C++文件")
 }
