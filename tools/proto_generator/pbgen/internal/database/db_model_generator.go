@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	pbmysql "github.com/luyuancpp/pbmysql-go"
 	"google.golang.org/protobuf/proto"
@@ -23,20 +22,6 @@ import (
 // MessageListConfig 定义消息名列表结构
 type MessageListConfig struct {
 	Messages []string `json:"messages"`
-}
-
-var (
-	activeMsgDescCache map[protoreflect.FullName]protoreflect.MessageDescriptor
-	fileDescCache      map[string]protoreflect.FileDescriptor
-
-	descriptorsLoaded bool
-	loadMutex         sync.Mutex
-)
-
-// 初始化缓存
-func init() {
-	activeMsgDescCache = make(map[protoreflect.FullName]protoreflect.MessageDescriptor)
-	fileDescCache = make(map[string]protoreflect.FileDescriptor)
 }
 
 // extractMessageNamesFromProto 提取消息全限定名（适配 v1.36.6）
@@ -72,17 +57,12 @@ func extractMessageNamesFromProto(protoFile string) ([]string, error) {
 
 // loadAllDescriptors 激活描述符（v1.36.6 专用，无需 protoregistry.NewFiles()）
 
-func init() {
-	activeMsgDescCache = make(map[protoreflect.FullName]protoreflect.MessageDescriptor)
-	fileDescCache = make(map[string]protoreflect.FileDescriptor)
-}
-
 // loadAllDescriptors 适配你的 protoregistry 版本：用 Files 管理 + protodesc 激活
 func loadAllDescriptors() error {
-	loadMutex.Lock()
-	defer loadMutex.Unlock()
+	internal.LoadMutex.Lock()
+	defer internal.LoadMutex.Unlock()
 
-	if descriptorsLoaded {
+	if internal.DescriptorsLoaded {
 		return nil
 	}
 
@@ -108,13 +88,13 @@ func loadAllDescriptors() error {
 		}
 
 		// 4. 缓存文件描述符
-		fileDescCache[rawFile.GetName()] = activeFileDesc
+		internal.FileDescCache[rawFile.GetName()] = activeFileDesc
 		log.Printf("已激活并注册文件: %s（包名: %s，消息数: %d）",
 			activeFileDesc.Path(), activeFileDesc.Package(), activeFileDesc.Messages().Len())
 	}
 
 	// 5. 重新缓存消息描述符（此时依赖已解决，消息能正常提取）
-	activeMsgDescCache = make(map[protoreflect.FullName]protoreflect.MessageDescriptor) // 清空旧缓存
+	internal.ActiveMsgDescCache = make(map[protoreflect.FullName]protoreflect.MessageDescriptor) // 清空旧缓存
 	fileReg.RangeFiles(func(activeFileDesc protoreflect.FileDescriptor) bool {
 		messages := activeFileDesc.Messages()
 		for i := 0; i < messages.Len(); i++ {
@@ -128,14 +108,14 @@ func loadAllDescriptors() error {
 			}
 			fullName := protoreflect.FullName(fullNameStr)
 
-			activeMsgDescCache[fullName] = activeMsgDesc
+			internal.ActiveMsgDescCache[fullName] = activeMsgDesc
 			log.Printf("  缓存消息: %s（字段数: %d）", fullNameStr, activeMsgDesc.Fields().Len())
 		}
 		return true
 	})
 
-	descriptorsLoaded = true
-	log.Printf("=== 描述符激活完成（共缓存 %d 个消息）===", len(activeMsgDescCache))
+	internal.DescriptorsLoaded = true
+	log.Printf("=== 描述符激活完成（共缓存 %d 个消息）===", len(internal.ActiveMsgDescCache))
 	return nil
 }
 
@@ -152,7 +132,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 		msgFullName := protoreflect.FullName(msgFullNameStr)
 
 		// 从缓存获取激活后的消息描述符
-		activeMsgDesc, exists := activeMsgDescCache[msgFullName]
+		activeMsgDesc, exists := internal.ActiveMsgDescCache[msgFullName]
 		if !exists {
 			log.Printf("警告: 未找到激活的消息描述符 %s，跳过", msgFullNameStr)
 			continue

@@ -12,14 +12,16 @@ import (
 const handlerTotalTemplate = `package handler
 
 import (
-	"google.golang.org/protobuf/proto"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
+	"robot/generated/pb/game"
+	"robot/proto/common"
+
 	"robot/logic/gameobject"
-	"robot/pb/game"
 	"robot/pkg"
 )
 
-func MessageBodyHandler(client *pkg.GameClient, response *game.MessageContent) {
+func MessageBodyHandler(client *pkg.GameClient, response *common.MessageContent) {
 	// Log the incoming message body for debugging
 	zap.L().Debug("Received message body", zap.String("response", response.String()))
 
@@ -44,7 +46,7 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageContent) {
 
 {{- range .Cases }}
 func {{.HandlerFunction}}(player *gameobject.Player, body []byte) {
-	message := &game.{{.MessageType}}{}
+	message := &{{.MessageType}}{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal {{.MessageType}}", zap.Error(err))
 		return

@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 	"robot/logic/behaviortree"
 	"robot/logic/gameobject"
-	"robot/pb/game"
+	"robot/proto/logic/component"
 )
 
 // RegisterLoginNodes registers custom behavior tree nodes.
@@ -88,6 +88,6 @@ func initializePlayerBehaviorTrees(config *config.RawProjectCfg, maps *b3.Regist
 func InitializePlayerBehaviorTreeBlackboard(blackboard *Blackboard) {
 	blackboard = NewBlackboard()
 	blackboard.SetMem(behaviortree.ActorListBoardKey, gameobject.NewActorList())
-	blackboard.SetMem(behaviortree.SkillListBoardKey, &game.PlayerSkillListPBComponent{})
+	blackboard.SetMem(behaviortree.SkillListBoardKey, &component.PlayerSkillListPBComponent{})
 	zap.L().Info("Behavior tree blackboard initialized")
 }

@@ -6,8 +6,10 @@ import (
 	. "github.com/magicsea/behavior3go/core"
 	"go.uber.org/zap"
 	"math/rand"
+	"robot/generated/pb/game"
 	"robot/logic/gameobject"
-	"robot/pb/game"
+	"robot/proto/common"
+	"robot/proto/service/cpp/rpc/scene"
 )
 
 type RandomEnterScene struct {
@@ -19,7 +21,7 @@ func (res *RandomEnterScene) Initialize(setting *BTNodeCfg) {
 }
 
 func (res *RandomEnterScene) OnTick(tick *Tick) b3.Status {
-	sceneInfo, ok := tick.Blackboard.GetMem(SceneInformationBoardKey).([]*game.SceneInfoPBComponent)
+	sceneInfo, ok := tick.Blackboard.GetMem(SceneInformationBoardKey).([]*common.RoomInfoPBComponent)
 	if !ok {
 		zap.L().Debug("Failed to cast scene info  from blackboard", zap.Any(PlayerListBoardKey, tick.Blackboard.GetMem(PlayerListBoardKey)))
 		return b3.FAILURE
@@ -31,7 +33,7 @@ func (res *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 		return b3.FAILURE
 	}
 
-	rq := &game.EnterSceneC2SRequest{}
+	rq := &scene.EnterSceneC2SRequest{}
 	randomIndex := rand.Intn(len(sceneInfo))
 	rq.SceneInfo = sceneInfo[randomIndex]
 	for player.SceneID == rq.SceneInfo.Guid {

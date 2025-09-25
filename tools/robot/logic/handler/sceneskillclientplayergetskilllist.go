@@ -4,16 +4,17 @@ import (
 	"go.uber.org/zap"
 	"robot/logic/behaviortree"
 	"robot/logic/gameobject"
-	"robot/pb/game"
 	"robot/pkg"
+	"robot/proto/logic/component"
+	"robot/proto/service/cpp/rpc/scene"
 )
 
-func SceneSkillClientPlayerGetSkillListHandler(player *gameobject.Player, response *game.GetSkillListResponse) {
+func SceneSkillClientPlayerGetSkillListHandler(player *gameobject.Player, response *scene.GetSkillListResponse) {
 	client := player.Client.(*pkg.GameClient)
 
 	actorListFromBlackboard := client.Blackboard.GetMem(behaviortree.SkillListBoardKey)
 
-	playerSkillListPBComp, ok := actorListFromBlackboard.(*game.PlayerSkillListPBComponent)
+	playerSkillListPBComp, ok := actorListFromBlackboard.(*component.PlayerSkillListPBComponent)
 	if !ok {
 		zap.L().Error("Failed to cast skill list from blackboard",
 			zap.String("Key", behaviortree.SkillListBoardKey),

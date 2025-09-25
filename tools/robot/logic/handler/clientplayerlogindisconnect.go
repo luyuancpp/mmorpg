@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"robot/pb/game"
 	"robot/logic/gameobject"
+	"robot/proto/service/go/grpc/login"
 )
 
-func ClientPlayerLoginDisconnectHandler(player *gameobject.Player, response *game.LoginNodeDisconnectRequest) {
+func ClientPlayerLoginDisconnectHandler(player *gameobject.Player, response *login.LoginNodeDisconnectRequest) {
 }

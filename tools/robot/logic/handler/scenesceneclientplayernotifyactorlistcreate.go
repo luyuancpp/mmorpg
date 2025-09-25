@@ -4,11 +4,11 @@ import (
 	"go.uber.org/zap"
 	"robot/logic/behaviortree"
 	"robot/logic/gameobject"
-	"robot/pb/game"
 	"robot/pkg"
+	"robot/proto/service/cpp/rpc/scene"
 )
 
-func SceneSceneClientPlayerNotifyActorListCreateHandler(player *gameobject.Player, response *game.ActorListCreateS2C) {
+func SceneSceneClientPlayerNotifyActorListCreateHandler(player *gameobject.Player, response *scene.ActorListCreateS2C) {
 	client := player.GetClient().(*pkg.GameClient)
 
 	actorListFromBlackboard := client.Blackboard.GetMem(behaviortree.ActorListBoardKey)

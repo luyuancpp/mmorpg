@@ -3,7 +3,10 @@ package behaviortree
 import (
 	b3 "github.com/magicsea/behavior3go"
 	"go.uber.org/zap"
+	"robot/generated/pb/game"
 	"robot/interfaces"
+	"robot/proto/service/go/grpc/login"
+
 	//. "github.com/magicsea/behavior3go/actions"
 	//. "github.com/magicsea/behavior3go/composites"
 	. "github.com/magicsea/behavior3go/config"
@@ -28,7 +31,7 @@ func (c *Login) OnTick(tick *Tick) b3.Status {
 		return b3.FAILURE
 	}
 
-	rq := &game.LoginRequest{
+	rq := &login.LoginRequest{
 		Account:  client.GetAccount(),
 		Password: client.GetAccount(),
 	}
@@ -65,7 +68,7 @@ func (c *CreatePlayer) OnTick(tick *Tick) b3.Status {
 		zap.String("account_name", account),
 	)
 
-	rq := &game.CreatePlayerRequest{}
+	rq := &login.CreatePlayerRequest{}
 	client.Send(rq, game.ClientPlayerLoginCreatePlayerMessageId)
 
 	tick.Blackboard.SetMem(CreateCharacterSentBoardKey, true)
@@ -86,7 +89,7 @@ func (i *IsRoleListEmpty) OnTick(tick *Tick) b3.Status {
 		return b3.FAILURE
 	}
 
-	playerList, ok := playerListI.([]*game.AccountSimplePlayerWrapper)
+	playerList, ok := playerListI.([]*login.AccountSimplePlayerWrapper)
 	if !ok {
 		return b3.FAILURE
 	}
@@ -126,7 +129,7 @@ func (p *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 		return b3.FAILURE
 	}
 
-	playerList, ok := playerListI.([]*game.AccountSimplePlayerWrapper)
+	playerList, ok := playerListI.([]*login.AccountSimplePlayerWrapper)
 	if !ok {
 		return b3.FAILURE
 	}
@@ -139,7 +142,7 @@ func (p *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 		zap.Uint64("player id", playerId), zap.String("account_name", account))
 
 	// 发送请求
-	rq := &game.EnterGameRequest{PlayerId: playerId}
+	rq := &login.EnterGameRequest{PlayerId: playerId}
 	client.Send(rq, game.ClientPlayerLoginEnterGameMessageId)
 
 	tick.Blackboard.SetMem(EnterGameSentBoardKey, true)

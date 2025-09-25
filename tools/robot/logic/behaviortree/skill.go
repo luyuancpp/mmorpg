@@ -3,8 +3,10 @@ package behaviortree
 import (
 	b3 "github.com/magicsea/behavior3go"
 	"go.uber.org/zap"
+	"robot/generated/pb/game"
 	"robot/logic/gameobject"
-	"robot/pb/game"
+	"robot/proto/logic/component"
+	"robot/proto/service/cpp/rpc/scene"
 
 	//. "github.com/magicsea/behavior3go/actions"
 	//. "github.com/magicsea/behavior3go/composites"
@@ -63,7 +65,7 @@ func (s *GetSkillID) Initialize(setting *BTNodeCfg) {
 }
 
 func (s *GetSkillID) OnTick(tick *Tick) b3.Status {
-	playerSkillListPBComp, ok := tick.Blackboard.GetMem(s.SkillListBoard).(*game.PlayerSkillListPBComponent)
+	playerSkillListPBComp, ok := tick.Blackboard.GetMem(s.SkillListBoard).(*component.PlayerSkillListPBComponent)
 	if !ok {
 		zap.L().Debug("Failed to retrieve skill list from blackboard",
 			zap.String("Key", s.SkillListBoard),
@@ -100,7 +102,7 @@ func (s *ReleaseSkill) OnTick(tick *Tick) b3.Status {
 		return b3.FAILURE
 	}
 
-	rq := &game.ReleaseSkillSkillRequest{}
+	rq := &scene.ReleaseSkillSkillRequest{}
 
 	rq.SkillTableId, ok = tick.Blackboard.Get(s.SkillIDBoard, "", "").(uint32)
 	if !ok {
