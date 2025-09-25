@@ -4,7 +4,6 @@ import (
 	b3 "github.com/magicsea/behavior3go"
 	"go.uber.org/zap"
 	"robot/interfaces"
-	"robot/pb/game"
 	//. "github.com/magicsea/behavior3go/actions"
 	//. "github.com/magicsea/behavior3go/composites"
 	. "github.com/magicsea/behavior3go/config"

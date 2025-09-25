@@ -10,14 +10,7 @@ github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/luyuancpp/dbprotooption v0.0.8 h1:JJuO91gyldnewQA5iEG0xoi9CjBXB4XsUfNvi5JbUE8=
 github.com/luyuancpp/dbprotooption v0.0.8/go.mod h1:jHa9XWA9OsUULiYFAtN+N0iQMiiq8pRjMxFhrWxrCqs=
-github.com/luyuancpp/muduoclient v0.0.10 h1:vawVcvf10WjST1r3i6q/exB2bmAe4z0ZTL0mL4L79YM=
-github.com/luyuancpp/muduoclient v0.0.10/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
-github.com/luyuancpp/muduoclient v0.0.12 h1:cDRVWj4CbDsk6XKscW4I8U2hQQ7EtrRpwIBkBr1O9LA=
-github.com/luyuancpp/muduoclient v0.0.12/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
-github.com/luyuancpp/muduoclient v0.0.13 h1:uUsCa9VYcVpJhLbSr/a2oCo3TPSLC2GPL+D/uqVCK+o=
-github.com/luyuancpp/muduoclient v0.0.13/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
-github.com/luyuancpp/muduoclient v0.0.14 h1:nz/+eui8BAnpBRighcKNYlSJ5inDs40cpmf4vreatKU=
-github.com/luyuancpp/muduoclient v0.0.14/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
+github.com/luyuancpp/muduoclient-new v0.0.2/go.mod h1:20PthNJi3zgGbusLZufPgqL4DwQtR0zI6sUbkt+IhVo=
 github.com/magicsea/behavior3go v0.0.4 h1:QevJQq57g5DBn3nGEfnYcIXqZmaasw4YPkwiO2ekPwM=
 github.com/magicsea/behavior3go v0.0.4/go.mod h1:jDMiRk3AHXArNjiIvfAjh6er8GY77zQpy6t7DuNQ/3Q=
 github.com/orcaman/concurrent-map/v2 v2.0.1 h1:jOJ5Pg2w1oeB6PeDurIYf6k9PQ+aTITr/6lP/L/zp6c=

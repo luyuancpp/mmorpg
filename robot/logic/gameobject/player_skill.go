@@ -1,6 +1,8 @@
 package gameobject
 
-import "robot/pb/game"
+import (
+	"robot/generated/pb/game"
+)
 
 func (player *Player) SetupPlayerSkillsOnLogin() {
 	rq := &game.GetSkillListRequest{}
