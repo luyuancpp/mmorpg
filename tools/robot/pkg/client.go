@@ -1,13 +1,13 @@
 package pkg
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/luyuancpp/muduoclient-new/muduo"
 	b3 "github.com/magicsea/behavior3go"
 	. "github.com/magicsea/behavior3go/config"
 	. "github.com/magicsea/behavior3go/core"
 	. "github.com/magicsea/behavior3go/loader"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 	"robot/logic/behaviortree"
 	"robot/logic/gameobject"
 	"robot/proto/common"

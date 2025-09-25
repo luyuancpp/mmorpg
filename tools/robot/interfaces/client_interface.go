@@ -1,7 +1,7 @@
 // interfaces/client.go
 package interfaces
 
-import "github.com/golang/protobuf/proto"
+import "google.golang.org/protobuf/proto"
 
 type GameClientInterface interface {
 	Send(message proto.Message, messageId uint32)

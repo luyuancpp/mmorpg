@@ -1,10 +1,10 @@
 package gameobject
 
 import (
-	"github.com/golang/protobuf/proto"
 	. "github.com/magicsea/behavior3go/core"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 	"hash/fnv"
 	"robot/interfaces"
 	"strconv"

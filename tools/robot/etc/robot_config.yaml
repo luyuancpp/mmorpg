@@ -1,5 +1,5 @@
 servers:
-  - address: "localhost"
+  - address: "172.23.208.1:10012"
     ip: "172.23.208.1"
     port: 10012
 robots:
