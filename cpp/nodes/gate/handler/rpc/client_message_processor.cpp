@@ -356,7 +356,6 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
     }
 }
 
-
 void RpcClientSessionHandler::OnNodeRemovePbEventHandler(const OnNodeRemovePbEvent& pb)
 {
 	auto& registry = tlsNodeContextManager.GetRegistry(pb.node_type());
