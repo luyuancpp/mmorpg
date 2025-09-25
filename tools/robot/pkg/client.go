@@ -10,6 +10,8 @@ import (
 	"go.uber.org/zap"
 	"robot/logic/behaviortree"
 	"robot/logic/gameobject"
+	"robot/proto/common"
+	"robot/proto/logic/component"
 )
 
 // GameClient represents a client for interacting with the game server.
@@ -24,7 +26,7 @@ type GameClient struct {
 }
 
 // NewGameClient creates and initializes a new GameClient instance.
-func NewGameClient(client *muduo.Client) *GameClient {
+func NewGameClient(client *muduo.TcpClient) *GameClient {
 	// Load behavior tree configuration file
 	projectConfig, result := LoadRawProjectCfg("etc/robot.b3")
 	if !result {
@@ -119,13 +121,13 @@ func (client *GameClient) InitializeBehaviorTreeBlackboard() {
 	client.Blackboard = NewBlackboard()
 	client.Blackboard.SetMem(behaviortree.ClientBoardKey, client)
 	client.Blackboard.SetMem(behaviortree.ActorListBoardKey, gameobject.NewActorList())
-	client.Blackboard.SetMem(behaviortree.SkillListBoardKey, &game.PlayerSkillListPBComponent{})
+	client.Blackboard.SetMem(behaviortree.SkillListBoardKey, &component.PlayerSkillListPBComponent{})
 	zap.L().Info("Behavior tree blackboard initialized")
 }
 
 // Send sends a message to the server.
 func (client *GameClient) Send(message proto.Message, messageId uint32) {
-	rq := &game.ClientRequest{
+	rq := &common.ClientRequest{
 		Id:        client.MessageSequenceID,
 		MessageId: messageId,
 	}

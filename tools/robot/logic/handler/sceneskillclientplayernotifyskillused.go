@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"robot/pb/game"
 	"robot/logic/gameobject"
+	"robot/proto/service/cpp/rpc/scene"
 )
 
-func SceneSkillClientPlayerNotifySkillUsedHandler(player *gameobject.Player, response *game.SkillUsedS2C) {
+func SceneSkillClientPlayerNotifySkillUsedHandler(player *gameobject.Player, response *scene.SkillUsedS2C) {
 }

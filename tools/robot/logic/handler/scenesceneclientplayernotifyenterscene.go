@@ -1,16 +1,17 @@
 package handler
 
 import (
+	"robot/generated/pb/game"
 	"robot/logic/gameobject"
-	"robot/pb/game"
+	"robot/proto/service/cpp/rpc/scene"
 )
 
-func SceneSceneClientPlayerNotifyEnterSceneHandler(player *gameobject.Player, response *game.EnterSceneS2C) {
+func SceneSceneClientPlayerNotifyEnterSceneHandler(player *gameobject.Player, response *scene.EnterSceneS2C) {
 
 	oldSceneID := player.SceneID
 
 	player.SceneID = response.SceneInfo.Guid
-	player.Client.Send(&game.SceneInfoRequest{}, game.SceneSceneClientPlayerSceneInfoC2SMessageId)
+	player.Client.Send(&scene.SceneInfoRequest{}, game.SceneSceneClientPlayerSceneInfoC2SMessageId)
 
 	player.HandleServerSceneTransitionSuccess()
 

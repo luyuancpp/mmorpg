@@ -4,6 +4,7 @@ import (
 	"github.com/iancoleman/strcase"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"path"
 	"path/filepath"
@@ -72,6 +73,20 @@ var MessageIdFileMaxId = uint64(0)
 
 // FileMaxMessageId 存储文件最大消息ID
 var FileMaxMessageId = uint64(0)
+
+var (
+	ActiveMsgDescCache map[protoreflect.FullName]protoreflect.MessageDescriptor
+	FileDescCache      map[string]protoreflect.FileDescriptor
+
+	DescriptorsLoaded bool
+	LoadMutex         sync.Mutex
+)
+
+// 初始化缓存
+func init() {
+	ActiveMsgDescCache = make(map[protoreflect.FullName]protoreflect.MessageDescriptor)
+	FileDescCache = make(map[string]protoreflect.FileDescriptor)
+}
 
 // KeyName 返回RPC方法的键名
 func (info *MethodInfo) KeyName() string {
@@ -260,6 +275,10 @@ func (info *MethodInfo) Path() string {
 	return strings.Replace(filepath.Dir(*info.Fd.Name), "\\", "/", -1) + "/"
 }
 
+func (info *MethodInfo) GoPackagePrefix() string {
+	return path.Base(info.Path()) + "."
+}
+
 func (info *MethodInfo) ServiceInfoIncludeName() string {
 	return config.IncludeBegin + config.GeneratedRpcName + config.ServiceInfoName + info.FileBaseNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
 }
@@ -326,15 +345,26 @@ func (info *MethodInfo) CppResponse() string {
 }
 
 func (info *MethodInfo) GoRequest() string {
-	// 获取 inputType
-	inputType := info.MethodDescriptorProto.GetInputType()
+	// 获取 OutputType
+	inputType := info.MethodDescriptorProto.GetOutputType()
 
 	// .package.TypeName => 提取 TypeName
 	lastDot := strings.LastIndex(inputType, ".")
 	if lastDot >= 0 && lastDot < len(inputType)-1 {
-		return inputType[lastDot+1:]
+		inputType = inputType[lastDot+1:]
 	}
-	return inputType
+
+	var fileDir string
+	activeMsgDesc, ok := ActiveMsgDescCache[protoreflect.FullName(inputType)]
+	if ok {
+		// 获取消息所在文件的完整路径
+		filePath := activeMsgDesc.ParentFile().Path()
+		// 提取文件所在目录
+		fileDir = filepath.Base(filepath.Dir(filePath)) + "."
+	}
+
+	// 返回目录和类型名（根据需要调整返回内容）
+	return fileDir + inputType
 }
 
 func (info *MethodInfo) GoResponse() string {
@@ -344,9 +374,20 @@ func (info *MethodInfo) GoResponse() string {
 	// .package.TypeName => 提取 TypeName
 	lastDot := strings.LastIndex(outputType, ".")
 	if lastDot >= 0 && lastDot < len(outputType)-1 {
-		return outputType[lastDot+1:]
+		outputType = outputType[lastDot+1:]
 	}
-	return outputType
+
+	var fileDir string
+	activeMsgDesc, ok := ActiveMsgDescCache[protoreflect.FullName(outputType)]
+	if ok {
+		// 获取消息所在文件的完整路径
+		filePath := activeMsgDesc.ParentFile().Path()
+		// 提取文件所在目录
+		fileDir = filepath.Base(filepath.Dir(filePath)) + "."
+	}
+
+	// 返回目录和类型名（根据需要调整返回内容）
+	return fileDir + outputType
 }
 
 func GetTypeName(fullTypeName string) string {

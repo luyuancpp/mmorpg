@@ -10,8 +10,9 @@ import (
 	"robot/config"
 	"robot/logic/gameobject"
 	"robot/logic/handler"
-	"robot/pb/game"
 	"robot/pkg"
+	"robot/proto/common"
+	"robot/proto/service/go/grpc/login"
 	"strconv"
 	"sync"
 	"time"
@@ -46,18 +47,18 @@ func runClientLoop(gameClient *pkg.GameClient) {
 			d := muduo.GetDescriptor(&msg)
 			switch d.Name() {
 			case "LoginResponse":
-				resp := msg.(*game.LoginResponse)
+				resp := msg.(*login.LoginResponse)
 				handler.ClientPlayerLoginLoginHandler(gameClient, resp)
 				gameClient.TickBehaviorTree()
 			case "CreatePlayerResponse":
-				resp := msg.(*game.CreatePlayerResponse)
+				resp := msg.(*login.CreatePlayerResponse)
 				handler.ClientPlayerLoginCreatePlayerHandler(gameClient, resp)
 				gameClient.TickBehaviorTree()
 			case "EnterGameResponse":
-				resp := msg.(*game.EnterGameResponse)
+				resp := msg.(*login.EnterGameResponse)
 				handler.ClientPlayerLoginEnterGameHandler(gameClient, resp)
 			case "MessageContent":
-				resp := msg.(*game.MessageContent)
+				resp := msg.(*common.MessageContent)
 				handler.MessageBodyHandler(gameClient, resp)
 				player, ok := gameobject.PlayerList.Get(gameClient.PlayerId)
 				if ok {

@@ -5,11 +5,11 @@ import (
 	"robot/logic/behaviortree"
 	"robot/logic/btree"
 	"robot/logic/gameobject"
-	"robot/pb/game"
 	"robot/pkg"
+	"robot/proto/service/go/grpc/login"
 )
 
-func ClientPlayerLoginEnterGameHandler(client *pkg.GameClient, response *game.EnterGameResponse) {
+func ClientPlayerLoginEnterGameHandler(client *pkg.GameClient, response *login.EnterGameResponse) {
 	if response.ErrorMessage.Id != 0 {
 		zap.L().Error("received error response",
 			zap.Uint32("error_id", response.ErrorMessage.Id),

@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"robot/pb/game"
 	"robot/logic/gameobject"
+	"robot/proto/service/cpp/rpc/scene"
 )
 
-func SceneSceneClientPlayerSceneInfoC2SHandler(player *gameobject.Player, response *game.SceneInfoRequest) {
+func SceneSceneClientPlayerSceneInfoC2SHandler(player *gameobject.Player, response *scene.SceneInfoRequest) {
 }

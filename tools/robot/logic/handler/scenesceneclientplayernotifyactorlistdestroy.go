@@ -3,11 +3,11 @@ package handler
 import (
 	"robot/logic/behaviortree"
 	"robot/logic/gameobject"
-	"robot/pb/game"
 	"robot/pkg"
+	"robot/proto/service/cpp/rpc/scene"
 )
 
-func SceneSceneClientPlayerNotifyActorListDestroyHandler(player *gameobject.Player, response *game.ActorListDestroyS2C) {
+func SceneSceneClientPlayerNotifyActorListDestroyHandler(player *gameobject.Player, response *scene.ActorListDestroyS2C) {
 	client := player.GetClient().(*pkg.GameClient)
 	actorListFromBlackboard := client.Blackboard.GetMem(behaviortree.ActorListBoardKey)
 

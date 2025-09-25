@@ -1,14 +1,17 @@
 package handler
 
 import (
-	"google.golang.org/protobuf/proto"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
+	"robot/generated/pb/game"
+	"robot/proto/common"
+	"robot/proto/service/cpp/rpc/scene"
+
 	"robot/logic/gameobject"
-	"robot/pb/game"
 	"robot/pkg"
 )
 
-func MessageBodyHandler(client *pkg.GameClient, response *game.MessageContent) {
+func MessageBodyHandler(client *pkg.GameClient, response *common.MessageContent) {
 	// Log the incoming message body for debugging
 	zap.L().Debug("Received message body", zap.String("response", response.String()))
 
@@ -55,113 +58,113 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageContent) {
 	}
 }
 func handleSceneClientPlayerCommonSendTipToClient(player *gameobject.Player, body []byte) {
-	message := &game.TipInfoMessage{}
+	message := &common.Empty{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal TipInfoMessage", zap.Error(err))
+		zap.L().Error("Failed to unmarshal common.Empty", zap.Error(err))
 		return
 	}
 	SceneClientPlayerCommonSendTipToClientHandler(player, message)
 }
 func handleSceneClientPlayerCommonKickPlayer(player *gameobject.Player, body []byte) {
-	message := &game.GameKickPlayerRequest{}
+	message := &common.Empty{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal GameKickPlayerRequest", zap.Error(err))
+		zap.L().Error("Failed to unmarshal common.Empty", zap.Error(err))
 		return
 	}
 	SceneClientPlayerCommonKickPlayerHandler(player, message)
 }
 func handleSceneSceneClientPlayerEnterScene(player *gameobject.Player, body []byte) {
-	message := &game.EnterSceneC2SResponse{}
+	message := &scene.EnterSceneC2SResponse{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal EnterSceneC2SResponse", zap.Error(err))
+		zap.L().Error("Failed to unmarshal scene.EnterSceneC2SResponse", zap.Error(err))
 		return
 	}
 	SceneSceneClientPlayerEnterSceneHandler(player, message)
 }
 func handleSceneSceneClientPlayerNotifyEnterScene(player *gameobject.Player, body []byte) {
-	message := &game.EnterSceneS2C{}
+	message := &common.Empty{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal EnterSceneS2C", zap.Error(err))
+		zap.L().Error("Failed to unmarshal common.Empty", zap.Error(err))
 		return
 	}
 	SceneSceneClientPlayerNotifyEnterSceneHandler(player, message)
 }
 func handleSceneSceneClientPlayerSceneInfoC2S(player *gameobject.Player, body []byte) {
-	message := &game.SceneInfoRequest{}
+	message := &common.Empty{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal SceneInfoRequest", zap.Error(err))
+		zap.L().Error("Failed to unmarshal common.Empty", zap.Error(err))
 		return
 	}
 	SceneSceneClientPlayerSceneInfoC2SHandler(player, message)
 }
 func handleSceneSceneClientPlayerNotifySceneInfo(player *gameobject.Player, body []byte) {
-	message := &game.SceneInfoS2C{}
+	message := &common.Empty{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal SceneInfoS2C", zap.Error(err))
+		zap.L().Error("Failed to unmarshal common.Empty", zap.Error(err))
 		return
 	}
 	SceneSceneClientPlayerNotifySceneInfoHandler(player, message)
 }
 func handleSceneSceneClientPlayerNotifyActorCreate(player *gameobject.Player, body []byte) {
-	message := &game.ActorCreateS2C{}
+	message := &common.Empty{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal ActorCreateS2C", zap.Error(err))
+		zap.L().Error("Failed to unmarshal common.Empty", zap.Error(err))
 		return
 	}
 	SceneSceneClientPlayerNotifyActorCreateHandler(player, message)
 }
 func handleSceneSceneClientPlayerNotifyActorDestroy(player *gameobject.Player, body []byte) {
-	message := &game.ActorDestroyS2C{}
+	message := &common.Empty{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal ActorDestroyS2C", zap.Error(err))
+		zap.L().Error("Failed to unmarshal common.Empty", zap.Error(err))
 		return
 	}
 	SceneSceneClientPlayerNotifyActorDestroyHandler(player, message)
 }
 func handleSceneSceneClientPlayerNotifyActorListCreate(player *gameobject.Player, body []byte) {
-	message := &game.ActorListCreateS2C{}
+	message := &common.Empty{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal ActorListCreateS2C", zap.Error(err))
+		zap.L().Error("Failed to unmarshal common.Empty", zap.Error(err))
 		return
 	}
 	SceneSceneClientPlayerNotifyActorListCreateHandler(player, message)
 }
 func handleSceneSceneClientPlayerNotifyActorListDestroy(player *gameobject.Player, body []byte) {
-	message := &game.ActorListDestroyS2C{}
+	message := &common.Empty{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal ActorListDestroyS2C", zap.Error(err))
+		zap.L().Error("Failed to unmarshal common.Empty", zap.Error(err))
 		return
 	}
 	SceneSceneClientPlayerNotifyActorListDestroyHandler(player, message)
 }
 func handleSceneSkillClientPlayerReleaseSkill(player *gameobject.Player, body []byte) {
-	message := &game.ReleaseSkillSkillResponse{}
+	message := &scene.ReleaseSkillSkillResponse{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal ReleaseSkillSkillResponse", zap.Error(err))
+		zap.L().Error("Failed to unmarshal scene.ReleaseSkillSkillResponse", zap.Error(err))
 		return
 	}
 	SceneSkillClientPlayerReleaseSkillHandler(player, message)
 }
 func handleSceneSkillClientPlayerNotifySkillUsed(player *gameobject.Player, body []byte) {
-	message := &game.SkillUsedS2C{}
+	message := &common.Empty{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal SkillUsedS2C", zap.Error(err))
+		zap.L().Error("Failed to unmarshal common.Empty", zap.Error(err))
 		return
 	}
 	SceneSkillClientPlayerNotifySkillUsedHandler(player, message)
 }
 func handleSceneSkillClientPlayerNotifySkillInterrupted(player *gameobject.Player, body []byte) {
-	message := &game.SkillInterruptedS2C{}
+	message := &common.Empty{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal SkillInterruptedS2C", zap.Error(err))
+		zap.L().Error("Failed to unmarshal common.Empty", zap.Error(err))
 		return
 	}
 	SceneSkillClientPlayerNotifySkillInterruptedHandler(player, message)
 }
 func handleSceneSkillClientPlayerGetSkillList(player *gameobject.Player, body []byte) {
-	message := &game.GetSkillListResponse{}
+	message := &scene.GetSkillListResponse{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal GetSkillListResponse", zap.Error(err))
+		zap.L().Error("Failed to unmarshal scene.GetSkillListResponse", zap.Error(err))
 		return
 	}
 	SceneSkillClientPlayerGetSkillListHandler(player, message)

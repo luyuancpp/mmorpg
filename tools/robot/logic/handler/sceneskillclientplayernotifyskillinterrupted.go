@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"robot/pb/game"
 	"robot/logic/gameobject"
+	"robot/proto/service/cpp/rpc/scene"
 )
 
-func SceneSkillClientPlayerNotifySkillInterruptedHandler(player *gameobject.Player, response *game.SkillInterruptedS2C) {
+func SceneSkillClientPlayerNotifySkillInterruptedHandler(player *gameobject.Player, response *scene.SkillInterruptedS2C) {
 }
