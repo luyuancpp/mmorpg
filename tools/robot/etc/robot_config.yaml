@@ -1,7 +1,5 @@
 servers:
-  - address: "172.23.208.1:10014"
-    ip: "172.23.208.1"
-    port: 10014
+  - address: "172.23.208.1:10016"
 robots:
   count: 1
   tick: 1000 #毫秒
