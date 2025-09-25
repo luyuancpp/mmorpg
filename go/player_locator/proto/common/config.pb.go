@@ -162,8 +162,10 @@ type BaseDeployConfig struct {
 	NodeTtlSeconds           uint32                 `protobuf:"varint,7,opt,name=node_ttl_seconds,json=nodeTtlSeconds,proto3" json:"node_ttl_seconds,omitempty"`
 	HealthCheckInterval      uint32                 `protobuf:"varint,8,opt,name=health_check_interval,json=healthCheckInterval,proto3" json:"health_check_interval,omitempty"`
 	Kafka                    *KafkaConfig           `protobuf:"bytes,9,opt,name=kafka,proto3" json:"kafka,omitempty"` // ✅ 新增 Kafka 配置
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// 新增配置表目录字段
+	TableDataDirectory string `protobuf:"bytes,10,opt,name=table_data_directory,json=tableDataDirectory,proto3" json:"table_data_directory,omitempty"` // 配置表的目录路径
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *BaseDeployConfig) Reset() {
@@ -257,6 +259,13 @@ func (x *BaseDeployConfig) GetKafka() *KafkaConfig {
 		return x.Kafka
 	}
 	return nil
+}
+
+func (x *BaseDeployConfig) GetTableDataDirectory() string {
+	if x != nil {
+		return x.TableDataDirectory
+	}
+	return ""
 }
 
 // 游戏配置
@@ -402,7 +411,7 @@ const file_proto_common_config_proto_rawDesc = "" +
 	"\x06topics\x18\x02 \x03(\tR\x06topics\x12\x19\n" +
 	"\bgroup_id\x18\x03 \x01(\tR\agroupId\x12,\n" +
 	"\x12enable_auto_commit\x18\x04 \x01(\bR\x10enableAutoCommit\x12*\n" +
-	"\x11auto_offset_reset\x18\x05 \x01(\tR\x0fautoOffsetReset\"\x9d\x03\n" +
+	"\x11auto_offset_reset\x18\x05 \x01(\tR\x0fautoOffsetReset\"\xcf\x03\n" +
 	"\x10BaseDeployConfig\x12\x1d\n" +
 	"\n" +
 	"etcd_hosts\x18\x01 \x03(\tR\tetcdHosts\x12\x1b\n" +
@@ -413,7 +422,9 @@ const file_proto_common_config_proto_rawDesc = "" +
 	"\x14deployservice_prefix\x18\x06 \x01(\tR\x13deployservicePrefix\x12(\n" +
 	"\x10node_ttl_seconds\x18\a \x01(\rR\x0enodeTtlSeconds\x122\n" +
 	"\x15health_check_interval\x18\b \x01(\rR\x13healthCheckInterval\x12\"\n" +
-	"\x05kafka\x18\t \x01(\v2\f.KafkaConfigR\x05kafka\"\xf0\x01\n" +
+	"\x05kafka\x18\t \x01(\v2\f.KafkaConfigR\x05kafka\x120\n" +
+	"\x14table_data_directory\x18\n" +
+	" \x01(\tR\x12tableDataDirectory\"\xf0\x01\n" +
 	"\n" +
 	"GameConfig\x12&\n" +
 	"\x0fscene_node_type\x18\x01 \x01(\rR\rsceneNodeType\x12\x17\n" +
