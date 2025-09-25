@@ -9,8 +9,6 @@ import (
 // ServerConfig defines the structure for server configuration
 type ServerConfig struct {
 	Address string `yaml:"address"`
-	IP      string `yaml:"ip"`
-	Port    int    `yaml:"port"`
 }
 
 // RobotsConfig defines the structure for robots configuration
