@@ -54,6 +54,18 @@ func BuildGrpcServiceProto() {
 		}(dirName)
 	}
 
+	wg.Add(1)
+
+	// 传递当前目录名副本到goroutine，避免循环变量捕获问题
+	go func(currentDir string) {
+		defer wg.Done()
+		if err := GenerateRobotGoProto(currentDir); err != nil {
+			log.Printf("GRPC服务构建: 目录[%s]处理失败: %v", currentDir, err)
+		} else {
+			log.Printf("GRPC服务构建: 目录[%s]处理完成", currentDir)
+		}
+	}(buildGeneratorProtoPath(config.RobotDirectory))
+
 	wg.Wait()
 	log.Println("GRPC服务构建: 所有目录处理完成")
 }
@@ -65,7 +77,7 @@ func processGrpcDir(dirName string) error {
 		return fmt.Errorf("目录[%s]不存在", destDir)
 	}
 
-	return GenerateGoGRPCFromProto(destDir)
+	return GenerateGoProto(destDir)
 }
 
 // CopyProtoToGenDir 拷贝Proto文件到生成目录
@@ -89,6 +101,11 @@ func CopyProtoToGenDir() {
 			if err := copyProtoToDir(dir, destDir); err != nil {
 				log.Printf("GoZero Proto拷贝: 目录[%s]拷贝失败: %v", dir, err)
 			}
+		}
+
+		destDir := buildGeneratorProtoPath(config.RobotDirectory)
+		if err := copyProtoToDir(config.RobotDirectory, destDir); err != nil {
+			log.Printf("GoZero Proto拷贝: 目录[%s]拷贝失败: %v", config.RobotDirectory, err)
 		}
 	}()
 }
@@ -130,6 +147,13 @@ func AddGoPackageToProtoDir() {
 			if err := processFilesWithDynamicGoZeroPackage(destDir, baseGoPackage, destDir, true); err != nil {
 				log.Printf("GoZero GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
 			}
+		}
+
+		destDir := buildGeneratorProtoPath(config.RobotDirectory)
+		baseGoPackage := filepath.ToSlash(config.GoRobotPackage)
+
+		if err := addDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
+			log.Printf("GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
 		}
 	}()
 }

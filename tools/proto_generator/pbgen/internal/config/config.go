@@ -92,6 +92,7 @@ const (
 	ProtoName             = "proto"
 	ProtoGoPackageSuffix  = "_proto"
 	GoPackage             = "generated/pb/game"
+	GoRobotPackage        = "robot"
 	ToolDir               = "tools/"
 	TempFileGenerationDir = OutputRoot + ToolDir + "generated/temp/files/"
 	PbDescDirectory       = TempFileGenerationDir + "proto_desc/"
@@ -147,6 +148,8 @@ const (
 	TableGeneratorPath      = ProjectGeneratedPath + "generated_data/"
 
 	GameRpcProtoPath = ProtoDir + "common/"
+
+	ToolsDir = OutputRoot + ToolDir
 )
 
 // ----------- 文件名 -----------
