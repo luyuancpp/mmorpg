@@ -76,7 +76,7 @@ namespace loginpb{void SendClientPlayerLoginLeaveGame(entt::registry& , entt::en
 namespace loginpb{void SendClientPlayerLoginDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
 std::unordered_set<uint32_t> gClientMessageIdWhitelist;
-std::array<RpcService, 87> gRpcServiceRegistry;
+std::array<RpcService, 84> gRpcServiceRegistry;
 
 void InitMessageInfo()
 {
