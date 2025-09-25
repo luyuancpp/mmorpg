@@ -3,6 +3,7 @@ package proto_sql
 import (
 	"database/sql"
 	"db/internal/config"
+	_ "db/proto/logic/database"
 	"encoding/json"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
