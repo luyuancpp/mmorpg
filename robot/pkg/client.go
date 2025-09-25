@@ -10,12 +10,11 @@ import (
 	"go.uber.org/zap"
 	"robot/logic/behaviortree"
 	"robot/logic/gameobject"
-	"robot/pb/game"
 )
 
 // GameClient represents a client for interacting with the game server.
 type GameClient struct {
-	Client            *muduo.Client
+	Client            *muduo.TcpClient
 	PlayerId          uint64
 	BehaviorTree      map[string]*BehaviorTree
 	CurrentTree       *BehaviorTree

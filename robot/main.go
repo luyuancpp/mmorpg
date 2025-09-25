@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/luyuancpp/muduoclient/muduo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log"
