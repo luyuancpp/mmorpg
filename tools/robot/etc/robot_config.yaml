@@ -1,5 +1,5 @@
 servers:
-  - address: "172.23.208.1:10016"
+  - address: "172.23.208.1:10018"
 robots:
   count: 1
   tick: 1000 #毫秒
