@@ -3,7 +3,7 @@ Etcd:
   Hosts:
     - "127.0.0.1:2379"  # Etcd 集群节点地址（单机部署填1个，集群需填所有节点IP:端口）
   KeepaliveInterval: 1  # 服务心跳间隔（单位：秒）：当前服务向Etcd发送“存活信号”的频率
-  NodeTTLSeconds: 600   # 服务存活超时（单位：秒）：超过该时间无心跳，Etcd标记服务“下线”
+  NodeTTLSeconds: 60   # 服务存活超时（单位：秒）：超过该时间无心跳，Etcd标记服务“下线”
 
 # 表格数据目录配置（存储静态配置表、业务数据表等文件的根路径）
 TableDataDirectory: "../generated/generated_tables/"  # 路径可自定义（相对路径/绝对路径均可）
