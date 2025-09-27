@@ -150,6 +150,8 @@ const (
 	GameRpcProtoPath = ProtoDir + "common/"
 
 	ToolsDir = OutputRoot + ToolDir
+
+	GrpcName = "grpc"
 )
 
 // ----------- 文件名 -----------
