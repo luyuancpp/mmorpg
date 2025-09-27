@@ -192,8 +192,19 @@ func GetProtocol(dirName string) uint32 {
 	return config.TcpNode
 }
 
-func IsTcpNode(dirName string) bool {
-	return GetProtocol(dirName) == config.TcpNode
+func GetProtocolByEnum(enumName string) uint32 {
+	nodeName := strings.ReplaceAll(strings.ToLower(enumName), config.NodeServiceSuffix, "")
+	for _, v := range config.ProtoDirectoryNames {
+		if !strings.Contains(v, nodeName) || !strings.Contains(v, config.GrpcName) {
+			continue
+		}
+		return config.GrpcNode
+	}
+	return config.TcpNode
+}
+
+func IsTcpNodeByEnum(dirName string) bool {
+	return GetProtocolByEnum(dirName) == config.TcpNode
 }
 
 // writeServiceInfoCppFile generates C++ code that initializes gRPC service metadata.
@@ -305,7 +316,7 @@ void InitMessageInfo()
 					method.CppRequest(),
 					method.CppResponse(),
 					handler,
-					GetProtocol(basePath),
+					GetProtocol(method.Path()),
 					nodeType,
 				)
 			} else {
@@ -320,7 +331,7 @@ void InitMessageInfo()
 					method.Method(),
 					method.CppRequest(),
 					method.CppResponse(),
-					GetProtocol(basePath),
+					GetProtocol(method.Path()),
 					nodeType,
 					sendName,
 				)
