@@ -28,7 +28,7 @@ import (
 	"strconv"
 )
 
-var configFile = flag.String("loginService", "etc/loginservice.yaml", "the config file path")
+var configFile = flag.String("loginService", "etc/login.yaml", "the config file path")
 
 const nodeType = login_proto.ENodeType_LoginNodeService
 

@@ -32,12 +32,12 @@ public:
     virtual ~Node();
 
     // 基本信息获取
+    int64_t GetLeaseId() const;
     muduo::net::EventLoop* GetLoop() { return eventLoop; }
     NodeId GetNodeId() const { return GetNodeInfo().node_id(); }
     uint32_t GetNodeType() const { return GetNodeInfo().node_type(); }
     NodeInfo& GetNodeInfo() const;
 	KafkaManager& GetKafkaManager() { return kafkaManager; }
-	int64_t GetLeaseId() const { return leaseId; }
     virtual ::google::protobuf::Service* GetNodeReplyService() { return {}; }
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return logSystem; }
     [[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
@@ -100,7 +100,6 @@ protected:
     std::unordered_map<std::string,int64_t> revision;
     bool hasSentRange{ false };
     bool hasSentWatch{ false };
-	int64_t leaseId{ 0 };
 	boost::uuids::random_generator gen;
 	KafkaManager kafkaManager;
     EtcdManager etcdManager;

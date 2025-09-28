@@ -69,6 +69,11 @@ Node::~Node() {
 	Shutdown();
 }
 
+int64_t Node::GetLeaseId() const
+{
+	return serviceDiscoveryManager.etcdService.GetLeaseId();
+}
+
 NodeInfo& Node::GetNodeInfo() const {
 	return tlsRegistryManager.globalRegistry.get_or_emplace<NodeInfo>(GlobalEntity());
 }
@@ -193,7 +198,7 @@ void Node::StopWatchingServiceNodes() {
 }
 
 void Node::ReleaseNodeId() {
-	EtcdHelper::RevokeLeaseAndCleanup(leaseId);
+	EtcdHelper::RevokeLeaseAndCleanup(serviceDiscoveryManager.etcdService.GetLeaseId());
 }
 
 void InitReply();

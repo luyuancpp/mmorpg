@@ -1,6 +1,53 @@
-Name: login.rpc
-ListenOn: 0.0.0.0:8080
+Name: loginservice.rpc
+ListenOn: 127.0.0.1:50000
+
 Etcd:
   Hosts:
-  - 127.0.0.1:2379
-  Key: login.rpc
+    - 127.0.0.1:2379
+  Key: loginservice.rpc
+
+Node:
+  zoneid: 0
+  session_expire_minutes: 1
+  max_login_devices: 3
+  LeaseTTL: 500
+  QueueShardCount: 50
+  RedisClient:
+    Host: 127.0.0.1:6379
+    Password: ""
+    DB: 0
+    PoolSize: 10
+    DefaultTTLSeconds : 86400
+Snowflake:
+  Epoch: 1721473263000
+  NodeBits: 13
+  StepBits: 9
+
+DbClient:
+  Etcd:
+    Hosts:
+      - "127.0.0.1:2379"
+    Key: "dbservice.rpc"
+  Timeout: 3000
+
+Locker:
+  AccountLockTTL: 10   # 10秒
+  PlayerLockTTL: 5     # 5秒
+
+Account:
+  MaxDevicesPerAccount: 3
+  CacheExpireHours: 12
+
+Registry:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: loginservice.rpc
+    DialTimeoutMS: 5000
+
+Timeouts:
+  EtcdDialTimeoutMS: 5000         # etcd连接超时（已加过）
+  ServiceDiscoveryTimeoutMS: 10000 # 服务注册/发现使用的 context 超时（如 WithTimeout）
+  TaskWaitTimeoutSec: 5       # 等待任务结果最大超时（秒）
+  AccountCacheExpireHours: 12     # 账号数据 Redis 缓存过期时间（小时）
+  RoleCacheExpireHours: 24         # 角色数据 Redis 缓存过期时间（小时）
