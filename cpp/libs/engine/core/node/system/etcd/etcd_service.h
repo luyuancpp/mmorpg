@@ -19,6 +19,8 @@ public:
     void RegisterService();
     void KeepAlive();
 
+	int64_t GetLeaseId() const { return leaseId; }
+
 private:
     void HandlePutEvent(const std::string& key, const std::string& value);
     void HandleDeleteEvent(const std::string& key, const std::string& value);
