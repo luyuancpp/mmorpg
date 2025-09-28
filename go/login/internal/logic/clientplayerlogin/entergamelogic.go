@@ -47,7 +47,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	customCtx, _ := context.WithCancel(context.Background())
 
 	// 1. 获取 Session
-	sessionDetails, ok := ctxkeys.GetSessionDetails(customCtx)
+	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or empty in context during login")
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
@@ -150,15 +150,14 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 }
 
 func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
-
-	customCtx, _ := context.WithCancel(context.Background())
-
 	// 获取会话信息
-	sessionDetails, ok := ctxkeys.GetSessionDetails(customCtx)
+	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok {
 		logx.Error("Session not found in context during notify centre")
 		return errors.New("session not found")
 	}
+
+	customCtx, _ := context.WithCancel(context.Background())
 
 	// 配置：需要加载的任务总数
 	const totalTasksToLoad = 2
@@ -175,15 +174,18 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		defer mu.Unlock()
 
 		// 累加已完成任务数（无论成功失败都计数）
+		completedTasks++
+
+		hasFailedTask := false
+
 		// 只要有一个任务失败，整体标记为失败
 		if !taskSuccess {
-			completedTasks++
+			hasFailedTask = true
 		}
 
 		// 所有任务都完成后，触发通知（只执行一次）
 		if completedTasks >= totalTasksToLoad {
 			notifyOnce.Do(func() {
-				// 所有任务成功，通知中心
 				req := &login_proto_centre.CentrePlayerGameNodeEntryRequest{
 					ClientMsgBody: &login_proto_centre.CentreEnterGameRequest{
 						PlayerId: playerId,
@@ -195,7 +197,13 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 				if node != nil {
 					node.Send(req, game.CentreLoginNodeEnterGameMessageId)
 				}
-				logx.Infof("All %d tasks completed successfully, notified centre", totalTasksToLoad)
+
+				// 根据实际情况输出日志
+				if hasFailedTask {
+					logx.Errorf("All %d tasks completed with some failures, notified centre", totalTasksToLoad)
+				} else {
+					logx.Infof("All %d tasks completed successfully, notified centre", totalTasksToLoad)
+				}
 			})
 		}
 	}

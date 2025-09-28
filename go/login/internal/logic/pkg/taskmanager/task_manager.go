@@ -316,6 +316,17 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 
 	logx.Infof("Batch %s processed", taskKey)
 
+	// 清理Redis中的任务相关key（在触发回调前添加）
+	for _, task := range batch.Tasks {
+		// 假设任务结果的key格式是 "task:result:" + task.TaskID
+		resultKey := fmt.Sprintf("task:result:%s", task.TaskID)
+		if _, err := redisClient.Del(ctx, resultKey).Result(); err != nil {
+			logx.Errorf("Failed to delete task result key %s: %v", resultKey, err)
+		} else {
+			logx.Infof("Cleaned up task result key: %s", resultKey)
+		}
+	}
+
 	// 触发回调
 	if batch.Callback != nil {
 		go func() {
