@@ -30,7 +30,6 @@ bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTablePara
 {
     for (const auto& buff : buffList | std::views::values) {
         FetchAndValidateBuffTable(buff.buffPb.buff_table_id());
-
         for (const auto& tag : buffTableParam->tag() | std::views::keys) {
             if (buffTable->immunetag().contains(tag)) {
                 return true;
@@ -226,7 +225,6 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
     UInt64Vector dispelBuffIdList;
     for (auto& buffList = tlsRegistryManager.actorRegistry.get<BuffListComp>(parent); auto & [buffId, buffPbComp] : buffList) {
         FetchBuffTableOrContinue(buffTableId);
-
         for (const auto& removeTag : addBuffTable->dispeltag() | std::views::keys) {
             if (buffTable->tag().contains(removeTag)) {
                 dispelBuffIdList.emplace_back(buffId);
@@ -250,9 +248,7 @@ void BuffSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTabl
 {
     if (BuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
         return;
-    }
-
-    if (ModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
+    }else if (ModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
         return;
     }
     else if (MotionModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable)) {

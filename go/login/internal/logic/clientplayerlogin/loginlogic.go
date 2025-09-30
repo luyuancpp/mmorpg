@@ -52,7 +52,12 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
-	defer accountLocker.ReleaseLogin(l.ctx, in.Account)
+	defer func(accountLocker *locker.AccountLocker, ctx context.Context, account string) {
+		err := accountLocker.ReleaseLogin(ctx, account)
+		if err != nil {
+			logx.Errorf("Login lock release failed for account=%s, err=%v", in.Account, err)
+		}
+	}(accountLocker, l.ctx, in.Account)
 
 	// 2. 获取 Session
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
