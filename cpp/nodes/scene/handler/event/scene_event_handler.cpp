@@ -34,6 +34,7 @@ void SceneEventHandler::UnRegister()
 void SceneEventHandler::OnRoomCreatedHandler(const OnRoomCreated& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
+   	GameNodeSceneSystem::HandleSceneCreation(event);
 ///<<< END WRITING YOUR CODE
 }
 void SceneEventHandler::OnRoomDestroyedHandler(const OnRoomDestroyed& event)

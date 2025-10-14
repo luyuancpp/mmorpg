@@ -59,7 +59,6 @@ void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 
 void GameNodeSceneSystem::HandleSceneCreation(const OnRoomCreated& message) {
 	entt::entity scene = entt::to_entity(message.entity());
-	tlsRegistryManager.roomRegistry.emplace<SceneGridListComp>(scene);
 
 	auto& sceneInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(scene);
 	if (SceneNavManager::Instance().Contains(sceneInfo.scene_confid())) {
