@@ -26,7 +26,7 @@ void AoiSystem::Update(double delta) {
             continue;
         }
 
-        auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(sceneComp.roomEntity);
+        auto& gridList = tlsRegistryManager.roomRegistry.get_or_emplace<SceneGridListComp>(sceneComp.roomEntity);
 
         // 获取当前实体所在网格
         const auto currentHex = GridSystem::CalculateHexPosition(transform);
