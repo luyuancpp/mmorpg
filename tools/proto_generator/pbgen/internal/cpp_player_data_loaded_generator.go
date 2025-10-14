@@ -57,7 +57,7 @@ void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}&
 void PlayerAllDataMessageFieldsMarshal(entt::entity player, PlayerAllData& message)
 {
 {{- range .Entries }}
-{{.HandlerName}}MessageFieldsUnmarshal(player, message.{{.MessageType}}_data());
+{{.HandlerName}}MessageFieldsMarshal(player, *message.mutable_{{.MessageType}}_data());
 {{- end }}
 }
 
