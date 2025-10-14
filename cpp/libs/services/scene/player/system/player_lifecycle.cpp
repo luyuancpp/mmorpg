@@ -313,7 +313,7 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 	using SaveMessage = PlayerDataRedis::element_type::MessageValuePtr;
 	SaveMessage message = std::make_shared<SaveMessage::element_type>();
 
-	PlayerAllDataMessageFieldsUnMarshal(player, *message);
+	PlayerAllDataMessageFieldsMarshal(player, *message);
 
 	tlsRedisSystem.GetPlayerDataRedis()->Save(message, playerId);
 

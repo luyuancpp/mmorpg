@@ -10,8 +10,8 @@ void PlayerDatabase1MessageFieldsMarshal(entt::entity player, player_database_1&
 
 void PlayerAllDataMessageFieldsMarshal(entt::entity player, PlayerAllData& message)
 {
-PlayerDatabaseMessageFieldsUnmarshal(player, message.player_database_data());
-PlayerDatabase1MessageFieldsUnmarshal(player, message.player_database_1_data());
+PlayerDatabaseMessageFieldsMarshal(player, *message.mutable_player_database_data());
+PlayerDatabase1MessageFieldsMarshal(player, *message.mutable_player_database_1_data());
 }
 
 void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, const PlayerAllData& message)
