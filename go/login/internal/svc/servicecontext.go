@@ -19,7 +19,7 @@ type ServiceContext struct {
 	NodeInfo    login_proto.NodeInfo
 	// 使用 atomic.Value 安全存储 CentreClient
 	centreClient atomic.Value // 类型为 *centre.CentreClient
-	KafkaClient  *kafka.KeyOrderedKafkaConsumer
+	KafkaClient  *kafka.KeyOrderedKafkaProducer
 	TaskExecutor *taskmanager.TaskExecutor
 }
 
@@ -37,12 +37,10 @@ func NewServiceContext() *ServiceContext {
 		DB:       redisDB,
 	})
 
-	kafkaClient, err := kafka.NewKeyOrderedKafkaConsumer(
+	kafkaClient, err := kafka.NewKeyOrderedKafkaProducer(
 		"",                                         // Kafka broker地址，配置文件中新增
 		"",                                         // 消费者组ID，配置文件中新增
-		"db-tasks",                                 // 主题名
 		int(config.AppConfig.Node.QueueShardCount), // 分区数，与原分片数保持一致
-		redisClient,                                // Redis客户端
 	)
 
 	if err := redisClient.Ping(ctx).Err(); err != nil {

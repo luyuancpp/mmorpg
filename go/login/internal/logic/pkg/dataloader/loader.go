@@ -36,7 +36,7 @@ func LoadProtoFromRedis(ctx context.Context, redisClient redis.Cmdable, key stri
 func BatchLoadAndCache(
 	ctx context.Context,
 	redisClient redis.Cmdable,
-	consumer *kafka.KeyOrderedKafkaConsumer,
+	producer *kafka.KeyOrderedKafkaProducer,
 	playerId uint64,
 	messages []proto.Message,
 	executor *taskmanager.TaskExecutor,
@@ -50,7 +50,7 @@ func BatchLoadAndCache(
 		executor,
 		taskKey,
 		redisClient,
-		consumer,
+		producer,
 		playerId,
 		messages,
 		taskmanager.InitTaskOptions{
@@ -73,7 +73,7 @@ func BatchLoadAndCache(
 func LoadAggregateData(
 	ctx context.Context,
 	redisClient redis.Cmdable,
-	consumer *kafka.KeyOrderedKafkaConsumer,
+	producer *kafka.KeyOrderedKafkaProducer,
 	playerId uint64,
 	result proto.Message,
 	build func(uint64) []proto.Message,
@@ -112,7 +112,7 @@ func LoadAggregateData(
 		executor,
 		taskKey,
 		redisClient,
-		consumer,
+		producer,
 		playerId,
 		subMsgs,
 		taskmanager.InitTaskOptions{
