@@ -6,13 +6,13 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
-	Node      NodeConfig         `json:"Node"`
-	Snowflake SnowflakeConf      `json:"Snowflake"`
-	DbClient  zrpc.RpcClientConf `json:"DbClient"`
-	Locker    LockerConf         `json:"Locker"`
-	Account   AccountConf        `json:"Account"`
-	Registry  RegistryConf       `json:"Registry"`
-	Timeouts  TimeoutConf        `json:"Timeouts"`
+	Node      NodeConfig    `json:"Node"`
+	Snowflake SnowflakeConf `json:"Snowflake"`
+	Locker    LockerConf    `json:"Locker"`
+	Account   AccountConf   `json:"Account"`
+	Registry  RegistryConf  `json:"Registry"`
+	Timeouts  TimeoutConf   `json:"Timeouts"`
+	Kafka     KafkaConfig   `json:"Kafka"` // Kafka配置
 }
 
 type RedisConf struct {
@@ -29,12 +29,20 @@ type AccountConf struct {
 }
 
 type NodeConfig struct {
-	ZoneId           uint32    `json:"zoneid"`
-	SessionExpireMin uint32    `json:"session_expire_minutes"`
-	MaxLoginDevices  uint32    `json:"max_login_devices"`
+	ZoneId           uint32    `json:"ZoneId"`
+	SessionExpireMin uint32    `json:"SessionExpireMin"`
+	MaxLoginDevices  uint32    `json:"MaxLoginDevices"`
 	RedisClient      RedisConf `json:"RedisClient"`
 	LeaseTTL         int64     `json:"LeaseTTL"`
 	QueueShardCount  uint64    `json:"QueueShardCount"`
+}
+
+// KafkaConfig Kafka配置结构体（包含分区数）
+type KafkaConfig struct {
+	Brokers      string `json:"Brokers"`      // Kafka集群地址（逗号分隔）
+	GroupID      string `json:"GroupID"`      // 消费者组ID
+	Topic        string `json:"Topic"`        // 消费主题名
+	PartitionCnt int32  `json:"PartitionCnt"` // 主题分区数量（新增）
 }
 
 type SnowflakeConf struct {

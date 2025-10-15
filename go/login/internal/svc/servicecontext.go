@@ -38,8 +38,8 @@ func NewServiceContext() *ServiceContext {
 	})
 
 	kafkaClient, err := kafka.NewKeyOrderedKafkaProducer(
-		"",                                         // Kafka broker地址，配置文件中新增
-		"",                                         // 消费者组ID，配置文件中新增
+		config.AppConfig.Kafka.Brokers,             // Kafka broker地址，配置文件中新增
+		config.AppConfig.Kafka.Topic,               // 消费者组ID，配置文件中新增
 		int(config.AppConfig.Node.QueueShardCount), // 分区数，与原分片数保持一致
 	)
 

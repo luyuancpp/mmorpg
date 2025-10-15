@@ -1,15 +1,15 @@
-Name: loginservice.rpc
+Name: login.rpc
 ListenOn: 127.0.0.1:50000
 
 Etcd:
   Hosts:
     - 127.0.0.1:2379
-  Key: loginservice.rpc
+  Key: login.rpc
 
 Node:
-  zoneid: 0
-  session_expire_minutes: 1
-  max_login_devices: 3
+  ZoneId: 0
+  SessionExpireMin: 1
+  MaxLoginDevices: 3
   LeaseTTL: 500
   QueueShardCount: 50
   RedisClient:
@@ -18,17 +18,17 @@ Node:
     DB: 0
     PoolSize: 10
     DefaultTTLSeconds : 86400
+
+Kafka:
+  Brokers: "127.0.0.1:9092"  # Kafka 集群地址（多个用逗号分隔，如 "ip1:9092,ip2:9092"）
+  GroupID: "db_rpc_consumer_group"     # Kafka 消费组 ID（自定义，确保唯一）
+  Topic: "db_task_topic"               # 要消费的 Kafka 主题名（需与生产者发送的主题一致）
+  PartitionCnt: 5                     # 主题分区数（需与实际 Kafka 主题的分区数匹配）
+
 Snowflake:
   Epoch: 1721473263000
   NodeBits: 13
   StepBits: 9
-
-DbClient:
-  Etcd:
-    Hosts:
-      - "127.0.0.1:2379"
-    Key: "dbservice.rpc"
-  Timeout: 3000
 
 Locker:
   AccountLockTTL: 10   # 10秒
