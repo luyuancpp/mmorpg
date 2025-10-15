@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/snowflake"
 	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/logx"
 	"login/internal/config"
 	"login/internal/kafka"
 	"login/internal/logic/pkg/centre"
@@ -42,6 +43,12 @@ func NewServiceContext() *ServiceContext {
 		config.AppConfig.Kafka.Topic,               // 消费者组ID，配置文件中新增
 		int(config.AppConfig.Node.QueueShardCount), // 分区数，与原分片数保持一致
 	)
+
+	if err != nil {
+		logx.Error(err)
+		panic(err)
+		return nil
+	}
 
 	if err := redisClient.Ping(ctx).Err(); err != nil {
 		panic(fmt.Errorf("failed to connect Redis: %w", err))

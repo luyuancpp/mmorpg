@@ -33,6 +33,7 @@ func NewKeyOrderedKafkaProducer(
 	config.Producer.Retry.Max = 3                          // 失败重试次数
 	config.Producer.Retry.Backoff = 100 * time.Millisecond // 重试间隔
 	config.Producer.Idempotent = true                      // 开启幂等性，避免重复发送
+	config.Net.MaxOpenRequests = 1                         // 必须设置为1，与幂等性配合使用
 
 	// 创建同步生产者
 	producer, err := sarama.NewSyncProducer([]string{bootstrapServers}, config)

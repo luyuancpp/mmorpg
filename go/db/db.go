@@ -33,7 +33,7 @@ func main() {
 	kafkaConsumer, err := kafka.NewKeyOrderedKafkaConsumer(
 		config.AppConfig.ServerConfig.Kafka.Brokers,           // Kafka broker地址，配置文件中新增
 		config.AppConfig.ServerConfig.Kafka.GroupID,           // 消费者组ID，配置文件中新增
-		"db-tasks",                                            // 主题名
+		config.AppConfig.ServerConfig.Kafka.Topic,             // 主题名
 		int(config.AppConfig.ServerConfig.Kafka.PartitionCnt), // 分区数，与原分片数保持一致
 		ctx.RedisClient,                                       // Redis客户端
 	)
