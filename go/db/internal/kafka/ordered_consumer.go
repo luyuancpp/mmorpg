@@ -134,7 +134,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 }
 
 // SendTask 发送任务到指定分区
-func (c *KeyOrderedKafkaConsumer) SendTask(ctx context.Context, task *db_proto.DBTask, key string) error {
+func (c *KeyOrderedKafkaConsumer) SendTask(task *db_proto.DBTask, key string) error {
 	payload, err := proto.Marshal(task)
 	if err != nil {
 		return fmt.Errorf("任务序列化失败: %v", err)

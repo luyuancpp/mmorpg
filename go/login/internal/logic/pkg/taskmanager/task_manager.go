@@ -352,7 +352,7 @@ func InitAndAddMessageTasks(
 	executor *TaskExecutor, // 假设TaskExecutor已实现GetTaskManagerByKey方法
 	taskKey string,
 	redisClient redis.Cmdable,
-	consumer *kafka.KeyOrderedKafkaConsumer,
+	producer *kafka.KeyOrderedKafkaProducer,
 	playerId uint64,
 	messages []proto.Message,
 	options InitTaskOptions,
@@ -410,7 +410,7 @@ func InitAndAddMessageTasks(
 		}
 
 		// 入队任务
-		taskID, err = task.EnqueueTaskWithIDKafka(ctx, consumer, playerId, taskID, payloadBytes)
+		taskID, err = task.EnqueueTaskWithIDKafka(producer, playerId, taskID, payloadBytes)
 		if err != nil {
 			return err
 		}
