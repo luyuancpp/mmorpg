@@ -46,7 +46,7 @@ func NewKeyOrderedKafkaConsumer(
 	config.Consumer.Return.Errors = true
 	config.Consumer.Offsets.Initial = sarama.OffsetOldest
 
-	// 创建 ConsumerGroup
+	// 创建 GroupID
 	consumerGroup, err := sarama.NewConsumerGroup([]string{bootstrapServers}, groupID, config)
 	if err != nil {
 		return nil, fmt.Errorf("创建消费者失败: %v", err)
@@ -92,7 +92,7 @@ func (c *KeyOrderedKafkaConsumer) Start() error {
 	go func() {
 		for {
 			if err := c.consumer.Consume(c.ctx, []string{c.topic}, handler); err != nil {
-				logx.Errorf("ConsumerGroup consume error: %v", err)
+				logx.Errorf("GroupID consume error: %v", err)
 			}
 			if c.ctx.Err() != nil {
 				return

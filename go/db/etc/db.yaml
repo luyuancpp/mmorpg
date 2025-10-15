@@ -1,12 +1,17 @@
-Name: dbservice.rpc
+Name: db.rpc
 ListenOn: 0.0.0.0:6000
 Etcd:
   Hosts:
     - 127.0.0.1:2379
-  Key: dbservice.rpc
+  Key: db.rpc
 ServerConfig:
-  QueueShardCount: 50
-  JsonPath: "../../generated/generated_data/mysql_database_table_list.json"  # 添加 JSON 文件路径
+  JsonPath: "../../generated/generated_data/mysql_database_table_list.json"
+  # 新增 Kafka 配置，适配之前的 Kafka 消费者
+  Kafka:
+    Brokers: "127.0.0.1:9092"  # Kafka 集群地址（多个用逗号分隔，如 "ip1:9092,ip2:9092"）
+    GroupID: "db_rpc_consumer_group"     # Kafka 消费组 ID（自定义，确保唯一）
+    Topic: "db_task_topic"               # 要消费的 Kafka 主题名（需与生产者发送的主题一致）
+    PartitionCnt: 5                     # 主题分区数（需与实际 Kafka 主题的分区数匹配）
   Database:
     Hosts: "127.0.0.1:3306"
     User: "root"
@@ -17,6 +22,6 @@ ServerConfig:
     Net: ""
   RedisClient:
     Hosts: "127.0.0.1:6379"
-    DefaultTTLSeconds: 3600  # 💡 默认缓存时间，1 小时
-    Password : ""
-    DB : 0
+    DefaultTTLSeconds: 3600
+    Password: ""
+    DB: 0
