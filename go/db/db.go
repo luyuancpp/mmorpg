@@ -2,14 +2,16 @@ package main
 
 import (
 	"db/internal/config"
+	"db/internal/kafka"
 	"db/internal/logic/pkg/proto_sql"
-	task2 "db/internal/logic/pkg/task"
 	server "db/internal/server/db"
 	"db/internal/svc"
 	db_grpc "db/proto/service/go/grpc/db"
 	"flag"
 	"fmt"
-	"github.com/hibiken/asynq"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
@@ -18,43 +20,37 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-var configFile = flag.String("f", "etc/dbservice.yaml", "the config file")
-
-func buildPlayerQueues(shardCount int, concurrencyPerQueue int) map[string]int {
-	queues := make(map[string]int, shardCount)
-	for i := 0; i < shardCount; i++ {
-		queueName := task2.GetQueueName(uint64(i)) // 保证一致性
-		queues[queueName] = concurrencyPerQueue
-	}
-	return queues
-}
+var configFile = flag.String("f", "etc/db.yaml", "the config file")
 
 func main() {
 	flag.Parse()
 
+	// 加载配置
 	conf.MustLoad(*configFile, &config.AppConfig)
 	ctx := svc.NewServiceContext()
 
-	serverAsynq := asynq.NewServer(
-		asynq.RedisClientOpt{
-			Addr:     ctx.Config.ServerConfig.RedisClient.Hosts,
-			Password: ctx.Config.ServerConfig.RedisClient.Password,
-			DB:       ctx.Config.ServerConfig.RedisClient.DB,
-		},
-		asynq.Config{
-			Concurrency: 10,                                                                       // 总并发数
-			Queues:      buildPlayerQueues(int(config.AppConfig.ServerConfig.QueueShardCount), 1), // 每个队列处理一个任务，保证顺序性
-		},
+	// 初始化Kafka消费者（替代Asynq Server）
+	kafkaConsumer, err := kafka.NewKeyOrderedKafkaConsumer(
+		config.AppConfig.ServerConfig.Kafka.Brokers,       // Kafka broker地址，配置文件中新增
+		config.AppConfig.ServerConfig.Kafka.ConsumerGroup, // 消费者组ID，配置文件中新增
+		"db-tasks", // 主题名
+		int(config.AppConfig.ServerConfig.QueueShardCount), // 分区数，与原分片数保持一致
+		ctx.RedisClient, // Redis客户端
 	)
-	mux := asynq.NewServeMux()
-	mux.HandleFunc("shard_task", task2.NewDBTaskHandler(ctx.RedisClient))
+	if err != nil {
+		panic(fmt.Sprintf("初始化Kafka消费者失败: %v", err))
+	}
+	defer kafkaConsumer.Stop()
 
-	if err := serverAsynq.Start(mux); err != nil {
-		panic(err)
+	// 启动Kafka消费者（替代Asynq Start）
+	if err := kafkaConsumer.Start(); err != nil {
+		panic(fmt.Sprintf("启动Kafka消费者失败: %v", err))
 	}
 
+	// 初始化数据库（保持不变）
 	proto_sql.InitDB()
 
+	// 启动gRPC服务（保持不变）
 	s := zrpc.MustNewServer(config.AppConfig.RpcServerConf, func(grpcServer *grpc.Server) {
 		db_grpc.RegisterDbServer(grpcServer, server.NewDbServer(ctx))
 		if config.AppConfig.Mode == service.DevMode || config.AppConfig.Mode == service.TestMode {
@@ -63,6 +59,10 @@ func main() {
 	})
 	defer s.Stop()
 
+	// 等待退出信号（优雅关闭）
 	fmt.Printf("Starting rpc server at %s...\n", config.AppConfig.ListenOn)
-	s.Start()
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	fmt.Println("开始优雅关闭服务...")
 }

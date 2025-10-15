@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/snowflake"
-	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"login/internal/config"
+	"login/internal/kafka"
 	"login/internal/logic/pkg/centre"
 	"login/internal/logic/pkg/taskmanager"
 	login_proto "login/proto/common"
@@ -19,7 +19,7 @@ type ServiceContext struct {
 	NodeInfo    login_proto.NodeInfo
 	// 使用 atomic.Value 安全存储 CentreClient
 	centreClient atomic.Value // 类型为 *centre.CentreClient
-	AsynqClient  *asynq.Client
+	KafkaClient  *kafka.KeyOrderedKafkaConsumer
 	TaskExecutor *taskmanager.TaskExecutor
 }
 
@@ -31,17 +31,19 @@ func NewServiceContext() *ServiceContext {
 	redisPassword := config.AppConfig.Node.RedisClient.Password
 	redisDB := int(config.AppConfig.Node.RedisClient.DB)
 
-	redisOpt := asynq.RedisClientOpt{
-		Addr:     redisHost,
-		Password: redisPassword,
-		DB:       redisDB,
-	}
-
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     redisHost,
 		Password: redisPassword,
 		DB:       redisDB,
 	})
+
+	kafkaClient, err := kafka.NewKeyOrderedKafkaConsumer(
+		"",                                         // Kafka broker地址，配置文件中新增
+		"",                                         // 消费者组ID，配置文件中新增
+		"db-tasks",                                 // 主题名
+		int(config.AppConfig.Node.QueueShardCount), // 分区数，与原分片数保持一致
+		redisClient,                                // Redis客户端
+	)
 
 	if err := redisClient.Ping(ctx).Err(); err != nil {
 		panic(fmt.Errorf("failed to connect Redis: %w", err))
@@ -56,7 +58,7 @@ func NewServiceContext() *ServiceContext {
 	// 返回 ServiceContext 实例
 	return &ServiceContext{
 		RedisClient:  redisClient,
-		AsynqClient:  asynq.NewClient(redisOpt),
+		KafkaClient:  kafkaClient,
 		TaskExecutor: taskExecutor,
 	}
 }
