@@ -4,16 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"login/internal/config"
 	"login/internal/kafka"
 	"login/internal/logic/pkg/cache"
-	"login/internal/logic/pkg/task"
 	login_proto "login/proto/service/go/grpc/db"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
@@ -404,14 +403,9 @@ func InitAndAddMessageTasks(
 			TaskId:    taskID,
 		}
 
-		payloadBytes, err := proto.Marshal(taskPayload)
-		if err != nil {
-			return err
-		}
-
 		// 入队任务
-		taskID, err = task.EnqueueTaskWithIDKafka(producer, playerId, taskID, payloadBytes)
-		if err != nil {
+		if err := producer.SendTask(taskPayload, playerIdStr); err != nil {
+			logx.Infof("Kafka enqueue task failed: %v", err)
 			return err
 		}
 
