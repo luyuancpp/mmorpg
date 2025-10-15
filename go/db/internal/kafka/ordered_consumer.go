@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"context"
-	"crypto/sha1"
 	"db/internal/logic/pkg/proto_sql"
 	db_proto "db/proto/service/go/grpc/db"
 	"fmt"
@@ -19,7 +18,6 @@ import (
 // KeyOrderedKafkaConsumer 保证相同key的任务由固定goroutine按顺序处理
 type KeyOrderedKafkaConsumer struct {
 	consumer     sarama.ConsumerGroup
-	producer     sarama.SyncProducer
 	redisClient  redis.Cmdable
 	topic        string
 	partitionCnt int
@@ -35,6 +33,7 @@ type worker struct {
 	msgCh       chan *sarama.ConsumerMessage
 	ctx         context.Context
 	redisClient redis.Cmdable
+	wg          *sync.WaitGroup // 新增wg指针，指向消费者的WaitGroup
 }
 
 // NewKeyOrderedKafkaConsumer 创建有序消费者实例
@@ -46,18 +45,11 @@ func NewKeyOrderedKafkaConsumer(
 	config.Version = sarama.V3_5_0_0
 	config.Consumer.Return.Errors = true
 	config.Consumer.Offsets.Initial = sarama.OffsetOldest
-	config.Producer.Return.Successes = true
 
 	// 创建 ConsumerGroup
 	consumerGroup, err := sarama.NewConsumerGroup([]string{bootstrapServers}, groupID, config)
 	if err != nil {
 		return nil, fmt.Errorf("创建消费者失败: %v", err)
-	}
-
-	// 创建同步生产者
-	producer, err := sarama.NewSyncProducer([]string{bootstrapServers}, config)
-	if err != nil {
-		return nil, fmt.Errorf("创建生产者失败: %v", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -75,7 +67,6 @@ func NewKeyOrderedKafkaConsumer(
 
 	return &KeyOrderedKafkaConsumer{
 		consumer:     consumerGroup,
-		producer:     producer,
 		redisClient:  redisClient,
 		topic:        topic,
 		partitionCnt: partitionCnt,
@@ -87,9 +78,10 @@ func NewKeyOrderedKafkaConsumer(
 
 // Start 启动消费者
 func (c *KeyOrderedKafkaConsumer) Start() error {
-	// 启动所有worker
+	// 启动所有worker，并传递WaitGroup指针
 	for _, w := range c.workers {
 		c.wg.Add(1)
+		w.wg = &c.wg // 将消费者的wg指针赋值给worker
 		go w.start(processDBTaskMessage)
 	}
 
@@ -133,46 +125,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 	return nil
 }
 
-// SendTask 发送任务到指定分区
-func (c *KeyOrderedKafkaConsumer) SendTask(task *db_proto.DBTask, key string) error {
-	payload, err := proto.Marshal(task)
-	if err != nil {
-		return fmt.Errorf("任务序列化失败: %v", err)
-	}
-
-	partition := c.getPartitionByKey(key)
-
-	msg := &sarama.ProducerMessage{
-		Topic:     c.topic,
-		Key:       sarama.StringEncoder(key),
-		Value:     sarama.ByteEncoder(payload),
-		Partition: partition,
-	}
-
-	partitionOut, offset, err := c.producer.SendMessage(msg)
-	if err != nil {
-		return fmt.Errorf("发送任务失败: %v", err)
-	}
-
-	logx.Infof("任务发送成功，TaskID: %s，分区: %d，Offset: %d", task.TaskId, partitionOut, offset)
-	return nil
-}
-
-// getPartitionByKey 计算key对应的分区
-func (c *KeyOrderedKafkaConsumer) getPartitionByKey(key string) int32 {
-	h := sha1.New()
-	h.Write([]byte(key))
-	hashBytes := h.Sum(nil)
-
-	uintHash := uint32(hashBytes[0])<<24 |
-		uint32(hashBytes[1])<<16 |
-		uint32(hashBytes[2])<<8 |
-		uint32(hashBytes[3])
-
-	return int32(uintHash % uint32(c.partitionCnt))
-}
-
-// processDBTaskMessage 是迁移后的 Asynq Handler 逻辑
+// processDBTaskMessage 处理DB任务消息
 func processDBTaskMessage(redisClient redis.Cmdable, msgBytes []byte) error {
 	var task db_proto.DBTask
 	if err := proto.Unmarshal(msgBytes, &task); err != nil {
@@ -240,6 +193,7 @@ func (w *worker) start(processFunc func(redisClient redis.Cmdable, msgBytes []by
 	defer func() {
 		close(w.msgCh)
 		logx.Infof("Worker停止，分区: %d", w.partition)
+		w.wg.Done() // 使用worker的wg指针
 	}()
 
 	logx.Infof("Worker启动，分区: %d", w.partition)
@@ -265,7 +219,6 @@ func (w *worker) start(processFunc func(redisClient redis.Cmdable, msgBytes []by
 func (c *KeyOrderedKafkaConsumer) Stop() {
 	c.cancel()
 	c.wg.Wait()
-	c.producer.Close()
 	if err := c.consumer.Close(); err != nil {
 		logx.Errorf("关闭ConsumerGroup失败: %v", err)
 	}
