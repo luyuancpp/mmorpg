@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"login/internal/config"
+	"login/internal/kafka"
 	"login/internal/logic/pkg/cache"
 	"login/internal/logic/pkg/task"
 	login_proto "login/proto/service/go/grpc/db"
@@ -13,7 +14,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
@@ -352,7 +352,7 @@ func InitAndAddMessageTasks(
 	executor *TaskExecutor, // 假设TaskExecutor已实现GetTaskManagerByKey方法
 	taskKey string,
 	redisClient redis.Cmdable,
-	asyncClient *asynq.Client,
+	consumer *kafka.KeyOrderedKafkaConsumer,
 	playerId uint64,
 	messages []proto.Message,
 	options InitTaskOptions,
@@ -410,7 +410,7 @@ func InitAndAddMessageTasks(
 		}
 
 		// 入队任务
-		taskID, err = task.EnqueueTaskWithID(ctx, asyncClient, playerId, taskID, payloadBytes)
+		taskID, err = task.EnqueueTaskWithIDKafka(ctx, consumer, playerId, taskID, payloadBytes)
 		if err != nil {
 			return err
 		}

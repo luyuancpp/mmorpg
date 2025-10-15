@@ -1,6 +1,22 @@
-Name: db.rpc
-ListenOn: 0.0.0.0:8080
+Name: dbservice.rpc
+ListenOn: 0.0.0.0:6000
 Etcd:
   Hosts:
-  - 127.0.0.1:2379
-  Key: db.rpc
+    - 127.0.0.1:2379
+  Key: dbservice.rpc
+ServerConfig:
+  QueueShardCount: 50
+  JsonPath: "../../generated/generated_data/mysql_database_table_list.json"  # 添加 JSON 文件路径
+  Database:
+    Hosts: "127.0.0.1:3306"
+    User: "root"
+    Passwd: "root"
+    DBName: "game"
+    MaxOpenConn: 10
+    MaxIdleConn: 3
+    Net: ""
+  RedisClient:
+    Hosts: "127.0.0.1:6379"
+    DefaultTTLSeconds: 3600  # 💡 默认缓存时间，1 小时
+    Password : ""
+    DB : 0

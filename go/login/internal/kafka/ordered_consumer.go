@@ -1,0 +1,210 @@
+package kafka
+
+import (
+	"context"
+	"crypto/sha1"
+	"fmt"
+	"github.com/IBM/sarama"
+	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/protobuf/proto"
+	db_proto "login/proto/service/go/grpc/db"
+	"sync"
+)
+
+// KeyOrderedKafkaConsumer 保证相同key的任务由固定goroutine按顺序处理
+type KeyOrderedKafkaConsumer struct {
+	consumer     sarama.ConsumerGroup
+	producer     sarama.SyncProducer
+	redisClient  redis.Cmdable
+	topic        string
+	partitionCnt int
+	workers      map[int32]*worker
+	wg           sync.WaitGroup
+	ctx          context.Context
+	cancel       context.CancelFunc
+}
+
+// worker 单个分区的处理goroutine
+type worker struct {
+	partition   int32
+	msgCh       chan *sarama.ConsumerMessage
+	ctx         context.Context
+	redisClient redis.Cmdable
+}
+
+// NewKeyOrderedKafkaConsumer 创建有序消费者实例
+func NewKeyOrderedKafkaConsumer(
+	bootstrapServers, groupID, topic string,
+	partitionCnt int, redisClient redis.Cmdable,
+) (*KeyOrderedKafkaConsumer, error) {
+	config := sarama.NewConfig()
+	config.Version = sarama.V3_5_0_0
+	config.Consumer.Return.Errors = true
+	config.Consumer.Offsets.Initial = sarama.OffsetOldest
+	config.Producer.Return.Successes = true
+
+	// 创建 ConsumerGroup
+	consumerGroup, err := sarama.NewConsumerGroup([]string{bootstrapServers}, groupID, config)
+	if err != nil {
+		return nil, fmt.Errorf("创建消费者失败: %v", err)
+	}
+
+	// 创建同步生产者
+	producer, err := sarama.NewSyncProducer([]string{bootstrapServers}, config)
+	if err != nil {
+		return nil, fmt.Errorf("创建生产者失败: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// 初始化worker
+	workers := make(map[int32]*worker)
+	for i := int32(0); i < int32(partitionCnt); i++ {
+		workers[i] = &worker{
+			partition:   i,
+			msgCh:       make(chan *sarama.ConsumerMessage, 1000),
+			ctx:         ctx,
+			redisClient: redisClient,
+		}
+	}
+
+	return &KeyOrderedKafkaConsumer{
+		consumer:     consumerGroup,
+		producer:     producer,
+		redisClient:  redisClient,
+		topic:        topic,
+		partitionCnt: partitionCnt,
+		workers:      workers,
+		ctx:          ctx,
+		cancel:       cancel,
+	}, nil
+}
+
+// Start 启动消费者
+func (c *KeyOrderedKafkaConsumer) Start() error {
+	// 启动所有worker
+	for _, w := range c.workers {
+		c.wg.Add(1)
+		go w.start(processDBTaskMessage)
+	}
+
+	handler := &consumerGroupHandler{
+		c: c,
+	}
+
+	go func() {
+		for {
+			if err := c.consumer.Consume(c.ctx, []string{c.topic}, handler); err != nil {
+				logx.Errorf("ConsumerGroup consume error: %v", err)
+			}
+			if c.ctx.Err() != nil {
+				return
+			}
+		}
+	}()
+
+	logx.Infof("Kafka消费者启动成功，主题: %s，分区数: %d", c.topic, c.partitionCnt)
+	return nil
+}
+
+// consumerGroupHandler 实现 sarama.ConsumerGroupHandler
+type consumerGroupHandler struct {
+	c *KeyOrderedKafkaConsumer
+}
+
+func (h *consumerGroupHandler) Setup(sarama.ConsumerGroupSession) error   { return nil }
+func (h *consumerGroupHandler) Cleanup(sarama.ConsumerGroupSession) error { return nil }
+func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+	for msg := range claim.Messages() {
+		partition := msg.Partition
+		if worker, ok := h.c.workers[partition]; ok {
+			select {
+			case worker.msgCh <- msg:
+			case <-worker.ctx.Done():
+			}
+		}
+		session.MarkMessage(msg, "")
+	}
+	return nil
+}
+
+// SendTask 发送任务到指定分区
+func (c *KeyOrderedKafkaConsumer) SendTask(ctx context.Context, task *db_proto.DBTask, key string) error {
+	payload, err := proto.Marshal(task)
+	if err != nil {
+		return fmt.Errorf("任务序列化失败: %v", err)
+	}
+
+	partition := c.getPartitionByKey(key)
+
+	msg := &sarama.ProducerMessage{
+		Topic:     c.topic,
+		Key:       sarama.StringEncoder(key),
+		Value:     sarama.ByteEncoder(payload),
+		Partition: partition,
+	}
+
+	partitionOut, offset, err := c.producer.SendMessage(msg)
+	if err != nil {
+		return fmt.Errorf("发送任务失败: %v", err)
+	}
+
+	logx.Infof("任务发送成功，TaskID: %s，分区: %d，Offset: %d", task.TaskId, partitionOut, offset)
+	return nil
+}
+
+// getPartitionByKey 计算key对应的分区
+func (c *KeyOrderedKafkaConsumer) getPartitionByKey(key string) int32 {
+	h := sha1.New()
+	h.Write([]byte(key))
+	hashBytes := h.Sum(nil)
+
+	uintHash := uint32(hashBytes[0])<<24 |
+		uint32(hashBytes[1])<<16 |
+		uint32(hashBytes[2])<<8 |
+		uint32(hashBytes[3])
+
+	return int32(uintHash % uint32(c.partitionCnt))
+}
+
+// processDBTaskMessage 是迁移后的 Asynq Handler 逻辑
+func processDBTaskMessage(redisClient redis.Cmdable, msgBytes []byte) error {
+	return nil
+}
+
+func (w *worker) start(processFunc func(redisClient redis.Cmdable, msgBytes []byte) error) {
+	defer func() {
+		close(w.msgCh)
+		logx.Infof("Worker停止，分区: %d", w.partition)
+	}()
+
+	logx.Infof("Worker启动，分区: %d", w.partition)
+
+	for {
+		select {
+		case <-w.ctx.Done():
+			logx.Infof("Worker收到关闭信号，分区: %d", w.partition)
+			return
+		case msg, ok := <-w.msgCh:
+			if !ok {
+				return
+			}
+
+			if err := processFunc(w.redisClient, msg.Value); err != nil {
+				logx.Errorf("Task processing failed: %v", err)
+			}
+		}
+	}
+}
+
+// Stop 停止消费者
+func (c *KeyOrderedKafkaConsumer) Stop() {
+	c.cancel()
+	c.wg.Wait()
+	c.producer.Close()
+	if err := c.consumer.Close(); err != nil {
+		logx.Errorf("关闭ConsumerGroup失败: %v", err)
+	}
+	logx.Infof("Kafka消费者已完全停止")
+}

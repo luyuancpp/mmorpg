@@ -3,10 +3,10 @@ package dataloader
 import (
 	"context"
 	"errors"
-	"login/internal/logic/pkg/taskmanager"
-	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
+	"login/internal/kafka"
+	"login/internal/logic/pkg/taskmanager"
 )
 
 // 定义数据加载完成后的回调函数类型
@@ -36,7 +36,7 @@ func LoadProtoFromRedis(ctx context.Context, redisClient redis.Cmdable, key stri
 func BatchLoadAndCache(
 	ctx context.Context,
 	redisClient redis.Cmdable,
-	asyncClient *asynq.Client,
+	consumer *kafka.KeyOrderedKafkaConsumer,
 	playerId uint64,
 	messages []proto.Message,
 	executor *taskmanager.TaskExecutor,
@@ -50,7 +50,7 @@ func BatchLoadAndCache(
 		executor,
 		taskKey,
 		redisClient,
-		asyncClient,
+		consumer,
 		playerId,
 		messages,
 		taskmanager.InitTaskOptions{
@@ -73,7 +73,7 @@ func BatchLoadAndCache(
 func LoadAggregateData(
 	ctx context.Context,
 	redisClient redis.Cmdable,
-	asyncClient *asynq.Client,
+	consumer *kafka.KeyOrderedKafkaConsumer,
 	playerId uint64,
 	result proto.Message,
 	build func(uint64) []proto.Message,
@@ -112,7 +112,7 @@ func LoadAggregateData(
 		executor,
 		taskKey,
 		redisClient,
-		asyncClient,
+		consumer,
 		playerId,
 		subMsgs,
 		taskmanager.InitTaskOptions{

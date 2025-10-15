@@ -213,7 +213,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 	if err := dataloader.BatchLoadAndCache(
 		customCtx,
 		l.svcCtx.RedisClient,
-		l.svcCtx.AsynqClient,
+		l.svcCtx.KafkaClient,
 		playerId,
 		[]proto.Message{msgCentre},
 		l.svcCtx.TaskExecutor,
@@ -228,7 +228,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 	if err := dataloader.LoadAggregateData(
 		customCtx,
 		l.svcCtx.RedisClient,
-		l.svcCtx.AsynqClient,
+		l.svcCtx.KafkaClient,
 		playerId,
 		playerAll,
 		func(id uint64) []proto.Message {
