@@ -2,18 +2,26 @@ syntax = "proto3";
 
 package taskpb;
 
+// 选项：生成Go代码时的包路径（根据你的项目实际路径调整）
+option go_package = "db/proto/service/go/grpc/db;db_proto";
 
+// DBTask：Kafka传输的DB操作任务结构体
+// 用途：生产者发送DB操作请求，消费者接收并执行
 message DBTask {
-  uint64 key = 1;
-  string where_case = 2;
-  string op = 3;          // "read" / "write"
-  string msg_type = 4;    // 用于标识 Protobuf 类型
-  bytes body = 5;         // 原始序列化数据
-  string task_id = 6; // 👈 用于写回 Redis 的唯一 key
+  uint64 key = 1;                // 业务唯一键（如用户ID、订单ID），用于加锁和分区路由
+  string where_case = 2;         // 查询条件（仅read操作使用，如"id=123 AND status=0"）
+  string op = 3;                 // 操作类型："read"（查询）、"write"（新增/修改）
+  string msg_type = 4;           // 目标Proto结构体类型（如"userpb.UserInfo"），用于反序列化body
+  bytes body = 5;                // 序列化后的业务数据（如UserInfo的bytes）
+  string task_id = 6;            // 任务唯一ID，用于Redis存储结果（生产者通过该ID查询结果）
+  int32 retry_count = 7;         // 新增：重试次数（默认0，每次重试+1，用于控制最大重试次数）
 }
 
+// TaskResult：DB任务执行结果结构体
+// 用途：消费者执行完任务后，将结果存入Redis，供生产者查询
 message TaskResult {
-  bool success = 1;       // 是否成功
-  bytes data = 2;         // 返回的 proto message bytes（如果 success = true）
-  string error = 3;       // 错误信息（如果 success = false）
+  bool success = 1;              // 执行结果：true=成功，false=失败
+  bytes data = 2;                // 成功时返回的业务数据（如read操作查询到的UserInfo bytes）
+  string error = 3;              // 失败时返回的错误信息（如DB连接超时、SQL语法错误）
+  int64 timestamp = 4;           // 新增：结果生成时间戳（毫秒），用于生产者判断结果时效性
 }
