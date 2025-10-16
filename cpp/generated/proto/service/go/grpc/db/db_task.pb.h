@@ -219,6 +219,7 @@ class TaskResult final : public ::google::protobuf::Message
   enum : int {
     kDataFieldNumber = 2,
     kErrorFieldNumber = 3,
+    kTimestampFieldNumber = 4,
     kSuccessFieldNumber = 1,
   };
   // bytes data = 2;
@@ -251,6 +252,16 @@ class TaskResult final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_error();
 
   public:
+  // int64 timestamp = 4;
+  void clear_timestamp() ;
+  ::int64_t timestamp() const;
+  void set_timestamp(::int64_t value);
+
+  private:
+  ::int64_t _internal_timestamp() const;
+  void _internal_set_timestamp(::int64_t value);
+
+  public:
   // bool success = 1;
   void clear_success() ;
   bool success() const;
@@ -265,7 +276,7 @@ class TaskResult final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 3,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
                                    0, 31,
                                    2>
       _table_;
@@ -289,6 +300,7 @@ class TaskResult final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr data_;
     ::google::protobuf::internal::ArenaStringPtr error_;
+    ::int64_t timestamp_;
     bool success_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -448,6 +460,7 @@ class DBTask final : public ::google::protobuf::Message
     kBodyFieldNumber = 5,
     kTaskIdFieldNumber = 6,
     kKeyFieldNumber = 1,
+    kRetryCountFieldNumber = 7,
   };
   // string where_case = 2;
   void clear_where_case() ;
@@ -534,11 +547,21 @@ class DBTask final : public ::google::protobuf::Message
   void _internal_set_key(::uint64_t value);
 
   public:
+  // int32 retry_count = 7;
+  void clear_retry_count() ;
+  ::int32_t retry_count() const;
+  void set_retry_count(::int32_t value);
+
+  private:
+  ::int32_t _internal_retry_count() const;
+  void _internal_set_retry_count(::int32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:taskpb.DBTask)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 6,
+  static const ::google::protobuf::internal::TcParseTable<3, 7,
                                    0, 49,
                                    2>
       _table_;
@@ -566,6 +589,7 @@ class DBTask final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr body_;
     ::google::protobuf::internal::ArenaStringPtr task_id_;
     ::uint64_t key_;
+    ::int32_t retry_count_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -939,6 +963,30 @@ inline void DBTask::set_allocated_task_id(::std::string* PROTOBUF_NULLABLE value
   // @@protoc_insertion_point(field_set_allocated:taskpb.DBTask.task_id)
 }
 
+// int32 retry_count = 7;
+inline void DBTask::clear_retry_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.retry_count_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000040u;
+}
+inline ::int32_t DBTask::retry_count() const {
+  // @@protoc_insertion_point(field_get:taskpb.DBTask.retry_count)
+  return _internal_retry_count();
+}
+inline void DBTask::set_retry_count(::int32_t value) {
+  _internal_set_retry_count(value);
+  _impl_._has_bits_[0] |= 0x00000040u;
+  // @@protoc_insertion_point(field_set:taskpb.DBTask.retry_count)
+}
+inline ::int32_t DBTask::_internal_retry_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.retry_count_;
+}
+inline void DBTask::_internal_set_retry_count(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.retry_count_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // TaskResult
@@ -947,7 +995,7 @@ inline void DBTask::set_allocated_task_id(::std::string* PROTOBUF_NULLABLE value
 inline void TaskResult::clear_success() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.success_ = false;
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
 inline bool TaskResult::success() const {
   // @@protoc_insertion_point(field_get:taskpb.TaskResult.success)
@@ -955,7 +1003,7 @@ inline bool TaskResult::success() const {
 }
 inline void TaskResult::set_success(bool value) {
   _internal_set_success(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:taskpb.TaskResult.success)
 }
 inline bool TaskResult::_internal_success() const {
@@ -1095,6 +1143,30 @@ inline void TaskResult::set_allocated_error(::std::string* PROTOBUF_NULLABLE val
     _impl_.error_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:taskpb.TaskResult.error)
+}
+
+// int64 timestamp = 4;
+inline void TaskResult::clear_timestamp() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.timestamp_ = ::int64_t{0};
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::int64_t TaskResult::timestamp() const {
+  // @@protoc_insertion_point(field_get:taskpb.TaskResult.timestamp)
+  return _internal_timestamp();
+}
+inline void TaskResult::set_timestamp(::int64_t value) {
+  _internal_set_timestamp(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:taskpb.TaskResult.timestamp)
+}
+inline ::int64_t TaskResult::_internal_timestamp() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.timestamp_;
+}
+inline void TaskResult::_internal_set_timestamp(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.timestamp_ = value;
 }
 
 #ifdef __GNUC__

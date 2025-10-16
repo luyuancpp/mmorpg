@@ -286,7 +286,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 		// 找到对应分区的worker
 		worker, ok := h.consumer.workers[partition]
 		if !ok {
-			logx.Warnf("no worker found for partition: topic=%s, partition=%d, offset=%d",
+			logx.Errorf("no worker found for partition: topic=%s, partition=%d, offset=%d",
 				h.consumer.topic, partition, msg.Offset)
 			session.MarkMessage(msg, "") // 标记已消费，避免重复拉取
 			continue
@@ -300,7 +300,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 				h.consumer.topic, partition)
 			return nil
 		case <-time.After(100 * time.Millisecond): // 100ms超时保护
-			logx.Warnf("worker msg channel is full, retry later: topic=%s, partition=%d, offset=%d",
+			logx.Errorf("worker msg channel is full, retry later: topic=%s, partition=%d, offset=%d",
 				h.consumer.topic, partition, msg.Offset)
 			time.Sleep(50 * time.Millisecond)
 			// 重试一次，仍失败则标记已消费（避免死循环）
@@ -392,7 +392,7 @@ func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db
 	}()
 
 	// 加锁成功，处理任务
-	return processTaskWithoutLock(ctx, worker.redisClient, &task)
+	return processTaskWithoutLock(ctx, worker.redisClient, task)
 }
 
 // --------------- 辅助方法：无锁处理消息 ---------------

@@ -35,6 +35,7 @@ inline constexpr TaskResult::Impl_::Impl_(
         error_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        timestamp_{::int64_t{0}},
         success_{false} {}
 
 template <typename>
@@ -75,7 +76,8 @@ inline constexpr DBTask::Impl_::Impl_(
         task_id_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        key_{::uint64_t{0u}} {}
+        key_{::uint64_t{0u}},
+        retry_count_{0} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR DBTask::DBTask(::_pbi::ConstantInitialized)
@@ -106,34 +108,38 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::taskpb::DBTask, _impl_._has_bits_),
-        9, // hasbit index offset
+        10, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::taskpb::DBTask, _impl_.key_),
         PROTOBUF_FIELD_OFFSET(::taskpb::DBTask, _impl_.where_case_),
         PROTOBUF_FIELD_OFFSET(::taskpb::DBTask, _impl_.op_),
         PROTOBUF_FIELD_OFFSET(::taskpb::DBTask, _impl_.msg_type_),
         PROTOBUF_FIELD_OFFSET(::taskpb::DBTask, _impl_.body_),
         PROTOBUF_FIELD_OFFSET(::taskpb::DBTask, _impl_.task_id_),
+        PROTOBUF_FIELD_OFFSET(::taskpb::DBTask, _impl_.retry_count_),
         5,
         0,
         1,
         2,
         3,
         4,
+        6,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::taskpb::TaskResult, _impl_._has_bits_),
-        6, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::taskpb::TaskResult, _impl_.success_),
         PROTOBUF_FIELD_OFFSET(::taskpb::TaskResult, _impl_.data_),
         PROTOBUF_FIELD_OFFSET(::taskpb::TaskResult, _impl_.error_),
-        2,
+        PROTOBUF_FIELD_OFFSET(::taskpb::TaskResult, _impl_.timestamp_),
+        3,
         0,
         1,
+        2,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::taskpb::DBTask)},
-        {15, sizeof(::taskpb::TaskResult)},
+        {17, sizeof(::taskpb::TaskResult)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::taskpb::_DBTask_default_instance_._instance,
@@ -142,17 +148,18 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_5ftask_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n&proto/service/go/grpc/db/db_task.proto"
-    "\022\006taskpb\"f\n\006DBTask\022\013\n\003key\030\001 \001(\004\022\022\n\nwhere"
+    "\022\006taskpb\"{\n\006DBTask\022\013\n\003key\030\001 \001(\004\022\022\n\nwhere"
     "_case\030\002 \001(\t\022\n\n\002op\030\003 \001(\t\022\020\n\010msg_type\030\004 \001("
-    "\t\022\014\n\004body\030\005 \001(\014\022\017\n\007task_id\030\006 \001(\t\":\n\nTask"
-    "Result\022\017\n\007success\030\001 \001(\010\022\014\n\004data\030\002 \001(\014\022\r\n"
-    "\005error\030\003 \001(\tb\006proto3"
+    "\t\022\014\n\004body\030\005 \001(\014\022\017\n\007task_id\030\006 \001(\t\022\023\n\013retr"
+    "y_count\030\007 \001(\005\"M\n\nTaskResult\022\017\n\007success\030\001"
+    " \001(\010\022\014\n\004data\030\002 \001(\014\022\r\n\005error\030\003 \001(\t\022\021\n\ttim"
+    "estamp\030\004 \001(\003b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_5ftask_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_5ftask_2eproto = {
     false,
     false,
-    220,
+    260,
     descriptor_table_protodef_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_5ftask_2eproto,
     "proto/service/go/grpc/db/db_task.proto",
     &descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_5ftask_2eproto_once,
@@ -210,7 +217,13 @@ DBTask::DBTask(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  _impl_.key_ = from._impl_.key_;
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, key_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, key_),
+           offsetof(Impl_, retry_count_) -
+               offsetof(Impl_, key_) +
+               sizeof(Impl_::retry_count_));
 
   // @@protoc_insertion_point(copy_constructor:taskpb.DBTask)
 }
@@ -226,7 +239,12 @@ PROTOBUF_NDEBUG_INLINE DBTask::Impl_::Impl_(
 
 inline void DBTask::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.key_ = {};
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, key_),
+           0,
+           offsetof(Impl_, retry_count_) -
+               offsetof(Impl_, key_) +
+               sizeof(Impl_::retry_count_));
 }
 DBTask::~DBTask() {
   // @@protoc_insertion_point(destructor:taskpb.DBTask)
@@ -287,16 +305,16 @@ DBTask::GetClassData() const {
   return DBTask_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 6, 0, 49, 2>
+const ::_pbi::TcParseTable<3, 7, 0, 49, 2>
 DBTask::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(DBTask, _impl_._has_bits_),
     0, // no _extensions_
-    6, 56,  // max_field_number, fast_idx_mask
+    7, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967232,  // skipmap
+    4294967168,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    6,  // num_field_entries
+    7,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     DBTask_class_data_.base(),
@@ -325,7 +343,9 @@ DBTask::_table_ = {
     // string task_id = 6;
     {::_pbi::TcParser::FastUS1,
      {50, 4, 0, PROTOBUF_FIELD_OFFSET(DBTask, _impl_.task_id_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // int32 retry_count = 7;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(DBTask, _impl_.retry_count_), 6>(),
+     {56, 6, 0, PROTOBUF_FIELD_OFFSET(DBTask, _impl_.retry_count_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -347,6 +367,9 @@ DBTask::_table_ = {
     // string task_id = 6;
     {PROTOBUF_FIELD_OFFSET(DBTask, _impl_.task_id_), _Internal::kHasBitsOffset + 4, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int32 retry_count = 7;
+    {PROTOBUF_FIELD_OFFSET(DBTask, _impl_.retry_count_), _Internal::kHasBitsOffset + 6, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
   }},
   // no aux_entries
   {{
@@ -383,7 +406,11 @@ PROTOBUF_NOINLINE void DBTask::Clear() {
       _impl_.task_id_.ClearNonDefaultToEmpty();
     }
   }
-  _impl_.key_ = ::uint64_t{0u};
+  if ((cached_has_bits & 0x00000060u) != 0) {
+    ::memset(&_impl_.key_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.retry_count_) -
+        reinterpret_cast<char*>(&_impl_.key_)) + sizeof(_impl_.retry_count_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -460,6 +487,15 @@ PROTOBUF_NOINLINE void DBTask::Clear() {
     }
   }
 
+  // int32 retry_count = 7;
+  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
+    if (this_._internal_retry_count() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<7>(
+              stream, this_._internal_retry_count(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -485,7 +521,7 @@ PROTOBUF_NOINLINE void DBTask::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000003fu) != 0) {
+  if ((cached_has_bits & 0x0000007fu) != 0) {
     // string where_case = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_where_case().empty()) {
@@ -528,6 +564,13 @@ PROTOBUF_NOINLINE void DBTask::Clear() {
             this_._internal_key());
       }
     }
+    // int32 retry_count = 7;
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (this_._internal_retry_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_retry_count());
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -542,7 +585,7 @@ void DBTask::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000003fu) != 0) {
+  if ((cached_has_bits & 0x0000007fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_where_case().empty()) {
         _this->_internal_set_where_case(from._internal_where_case());
@@ -593,6 +636,11 @@ void DBTask::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::
         _this->_impl_.key_ = from._impl_.key_;
       }
     }
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (from._internal_retry_count() != 0) {
+        _this->_impl_.retry_count_ = from._impl_.retry_count_;
+      }
+    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
@@ -617,7 +665,12 @@ void DBTask::InternalSwap(DBTask* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.msg_type_, &other->_impl_.msg_type_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.body_, &other->_impl_.body_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.task_id_, &other->_impl_.task_id_, arena);
-  swap(_impl_.key_, other->_impl_.key_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(DBTask, _impl_.retry_count_)
+      + sizeof(DBTask::_impl_.retry_count_)
+      - PROTOBUF_FIELD_OFFSET(DBTask, _impl_.key_)>(
+          reinterpret_cast<char*>(&_impl_.key_),
+          reinterpret_cast<char*>(&other->_impl_.key_));
 }
 
 ::google::protobuf::Metadata DBTask::GetMetadata() const {
@@ -664,7 +717,13 @@ TaskResult::TaskResult(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  _impl_.success_ = from._impl_.success_;
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, timestamp_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, timestamp_),
+           offsetof(Impl_, success_) -
+               offsetof(Impl_, timestamp_) +
+               sizeof(Impl_::success_));
 
   // @@protoc_insertion_point(copy_constructor:taskpb.TaskResult)
 }
@@ -677,7 +736,12 @@ PROTOBUF_NDEBUG_INLINE TaskResult::Impl_::Impl_(
 
 inline void TaskResult::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.success_ = {};
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, timestamp_),
+           0,
+           offsetof(Impl_, success_) -
+               offsetof(Impl_, timestamp_) +
+               sizeof(Impl_::success_));
 }
 TaskResult::~TaskResult() {
   // @@protoc_insertion_point(destructor:taskpb.TaskResult)
@@ -735,16 +799,16 @@ TaskResult::GetClassData() const {
   return TaskResult_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 0, 31, 2>
+const ::_pbi::TcParseTable<2, 4, 0, 31, 2>
 TaskResult::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(TaskResult, _impl_._has_bits_),
     0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
+    4,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     TaskResult_class_data_.base(),
@@ -754,10 +818,12 @@ TaskResult::_table_ = {
     ::_pbi::TcParser::GetTable<::taskpb::TaskResult>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // int64 timestamp = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(TaskResult, _impl_.timestamp_), 2>(),
+     {32, 2, 0, PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.timestamp_)}},
     // bool success = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(TaskResult, _impl_.success_), 2>(),
-     {8, 2, 0, PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.success_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(TaskResult, _impl_.success_), 3>(),
+     {8, 3, 0, PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.success_)}},
     // bytes data = 2;
     {::_pbi::TcParser::FastBS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.data_)}},
@@ -768,7 +834,7 @@ TaskResult::_table_ = {
     65535, 65535
   }}, {{
     // bool success = 1;
-    {PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.success_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.success_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     // bytes data = 2;
     {PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.data_), _Internal::kHasBitsOffset + 0, 0,
@@ -776,6 +842,9 @@ TaskResult::_table_ = {
     // string error = 3;
     {PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.error_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int64 timestamp = 4;
+    {PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.timestamp_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
   }},
   // no aux_entries
   {{
@@ -800,7 +869,11 @@ PROTOBUF_NOINLINE void TaskResult::Clear() {
       _impl_.error_.ClearNonDefaultToEmpty();
     }
   }
-  _impl_.success_ = false;
+  if ((cached_has_bits & 0x0000000cu) != 0) {
+    ::memset(&_impl_.timestamp_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.success_) -
+        reinterpret_cast<char*>(&_impl_.timestamp_)) + sizeof(_impl_.success_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -821,7 +894,7 @@ PROTOBUF_NOINLINE void TaskResult::Clear() {
   (void)cached_has_bits;
 
   // bool success = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
     if (this_._internal_success() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteBoolToArray(
@@ -844,6 +917,15 @@ PROTOBUF_NOINLINE void TaskResult::Clear() {
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
           _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "taskpb.TaskResult.error");
       target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // int64 timestamp = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (this_._internal_timestamp() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<4>(
+              stream, this_._internal_timestamp(), target);
     }
   }
 
@@ -872,7 +954,7 @@ PROTOBUF_NOINLINE void TaskResult::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     // bytes data = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_data().empty()) {
@@ -887,8 +969,15 @@ PROTOBUF_NOINLINE void TaskResult::Clear() {
                                         this_._internal_error());
       }
     }
-    // bool success = 1;
+    // int64 timestamp = 4;
     if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_timestamp() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_timestamp());
+      }
+    }
+    // bool success = 1;
+    if ((cached_has_bits & 0x00000008u) != 0) {
       if (this_._internal_success() != 0) {
         total_size += 2;
       }
@@ -907,7 +996,7 @@ void TaskResult::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_data().empty()) {
         _this->_internal_set_data(from._internal_data());
@@ -927,6 +1016,11 @@ void TaskResult::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_timestamp() != 0) {
+        _this->_impl_.timestamp_ = from._impl_.timestamp_;
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
       if (from._internal_success() != 0) {
         _this->_impl_.success_ = from._impl_.success_;
       }
@@ -952,7 +1046,12 @@ void TaskResult::InternalSwap(TaskResult* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.data_, &other->_impl_.data_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.error_, &other->_impl_.error_, arena);
-  swap(_impl_.success_, other->_impl_.success_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.success_)
+      + sizeof(TaskResult::_impl_.success_)
+      - PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.timestamp_)>(
+          reinterpret_cast<char*>(&_impl_.timestamp_),
+          reinterpret_cast<char*>(&other->_impl_.timestamp_));
 }
 
 ::google::protobuf::Metadata TaskResult::GetMetadata() const {

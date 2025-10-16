@@ -31,10 +31,7 @@ func main() {
 
 	// 初始化Kafka消费者（替代Asynq Server）
 	kafkaConsumer, err := kafka.NewKeyOrderedKafkaConsumer(
-		config.AppConfig.ServerConfig.Kafka.Brokers,      // Kafka broker地址，配置文件中新增
-		config.AppConfig.ServerConfig.Kafka.GroupID,      // 消费者组ID，配置文件中新增
-		config.AppConfig.ServerConfig.Kafka.Topic,        // 主题名
-		config.AppConfig.ServerConfig.Kafka.PartitionCnt, // 分区数，与原分片数保持一致
+		config.AppConfig,
 		ctx.RedisClient, // Redis客户端
 	)
 	if err != nil {

@@ -78,7 +78,7 @@ type KafkaConfig struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Brokers          []string               `protobuf:"bytes,1,rep,name=brokers,proto3" json:"brokers,omitempty"`                                              // Kafka broker 列表
 	Topics           []string               `protobuf:"bytes,2,rep,name=topics,proto3" json:"topics,omitempty"`                                                // 可配置多个 topic
-	GroupId          string                 `protobuf:"bytes,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`                               // kafka group ID
+	GroupId          string                 `protobuf:"bytes,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`                               // consumer group ID
 	EnableAutoCommit bool                   `protobuf:"varint,4,opt,name=enable_auto_commit,json=enableAutoCommit,proto3" json:"enable_auto_commit,omitempty"` // 是否开启自动提交
 	AutoOffsetReset  string                 `protobuf:"bytes,5,opt,name=auto_offset_reset,json=autoOffsetReset,proto3" json:"auto_offset_reset,omitempty"`     // earliest / latest
 	unknownFields    protoimpl.UnknownFields
