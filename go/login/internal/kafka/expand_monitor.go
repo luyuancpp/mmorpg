@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"context"
-	kafka2 "db/internal/kafka"
 	"fmt"
 	"time"
 
@@ -39,7 +38,7 @@ func NewExpandMonitor(
 	}
 
 	// 2. 获取初始分区数量
-	oldPartitionCount, err := kafka2.GetCurrentPartitionCount(client, topic)
+	oldPartitionCount, err := GetCurrentPartitionCount(client, topic)
 	if err != nil {
 		return nil, fmt.Errorf("get initial partition count failed: %w", err)
 	}
@@ -87,7 +86,7 @@ func (m *ExpandMonitor) Start() {
 // checkAndHandleExpand 检查分区变化并处理扩容
 func (m *ExpandMonitor) checkAndHandleExpand() {
 	// 1. 获取当前分区数量
-	currentPartitionCount, err := kafka2.GetCurrentPartitionCount(m.client, m.topic)
+	currentPartitionCount, err := GetCurrentPartitionCount(m.client, m.topic)
 	if err != nil {
 		logx.Errorf("check partition count failed: topic=%s, err=%v", m.topic, err)
 		return
@@ -100,7 +99,7 @@ func (m *ExpandMonitor) checkAndHandleExpand() {
 
 	// 3. 分区数量减少 → 告警（Kafka不支持减少分区，可能是异常）
 	if currentPartitionCount < m.oldPartitionCount {
-		logx.Warnf("partition count decreased: topic=%s, old=%d, current=%d",
+		logx.Errorf("partition count decreased: topic=%s, old=%d, current=%d",
 			m.topic, m.oldPartitionCount, currentPartitionCount)
 		return
 	}
@@ -110,23 +109,23 @@ func (m *ExpandMonitor) checkAndHandleExpand() {
 		m.topic, m.oldPartitionCount, currentPartitionCount)
 
 	// 4.1 设置“扩容中”状态
-	if err := kafka2.SetExpandStatus(m.ctx, m.redisClient, m.topic, kafka2.ExpandStatusExpanding, currentPartitionCount); err != nil {
+	if err := SetExpandStatus(m.ctx, m.redisClient, m.topic, ExpandStatusExpanding, currentPartitionCount); err != nil {
 		logx.Errorf("set expanding status failed: topic=%s, err=%v", m.topic, err)
 		return
 	}
 
 	// 4.2 通知生产者新增分区
-	newPartitions := kafka2.GetNewPartitionIDs(m.oldPartitionCount, currentPartitionCount)
+	newPartitions := GetNewPartitionIDs(m.oldPartitionCount, currentPartitionCount)
 	m.producer.AddPartitions(newPartitions)
 
 	// 4.3 等待旧分区消息消费完毕
-	if err := kafka2.WaitOldPartitionsConsumed(m.ctx, m.client, m.topic, m.oldPartitionCount); err != nil {
+	if err := WaitOldPartitionsConsumed(m.ctx, m.client, m.topic, m.oldPartitionCount); err != nil {
 		logx.Errorf("wait old partitions consumed failed: topic=%s, err=%v", m.topic, err)
 		return
 	}
 
 	// 4.4 设置“扩容完成”状态
-	if err := kafka2.SetExpandStatus(m.ctx, m.redisClient, m.topic, kafka2.ExpandStatusCompleted, currentPartitionCount); err != nil {
+	if err := SetExpandStatus(m.ctx, m.redisClient, m.topic, ExpandStatusCompleted, currentPartitionCount); err != nil {
 		logx.Errorf("set completed status failed: topic=%s, err=%v", m.topic, err)
 		return
 	}

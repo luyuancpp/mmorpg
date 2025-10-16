@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"context"
-	kafka2 "db/internal/kafka"
 	"fmt"
 
 	"github.com/IBM/sarama"
@@ -53,7 +52,7 @@ func NewKafkaAdmin(
 // ExpandPartitions 主动扩容分区（指定目标总分区数）
 func (a *KafkaAdmin) ExpandPartitions(ctx context.Context, targetTotalPartitions int32) error {
 	// 1. 检查目标分区数合法性
-	currentPartitionCount, err := kafka2.GetCurrentPartitionCount(a.saramaClient, a.topic)
+	currentPartitionCount, err := GetCurrentPartitionCount(a.saramaClient, a.topic)
 	if err != nil {
 		return fmt.Errorf("get current partition count failed: %w", err)
 	}
@@ -76,21 +75,21 @@ func (a *KafkaAdmin) ExpandPartitions(ctx context.Context, targetTotalPartitions
 	logx.Infof("create partitions success: topic=%s, addCount=%d", a.topic, partitionCountToAdd)
 
 	// 3. 设置“扩容中”状态
-	if err := kafka2.SetExpandStatus(ctx, a.redisClient, a.topic, kafka2.ExpandStatusExpanding, targetTotalPartitions); err != nil {
+	if err := SetExpandStatus(ctx, a.redisClient, a.topic, ExpandStatusExpanding, targetTotalPartitions); err != nil {
 		return fmt.Errorf("set expanding status failed: err=%w", err)
 	}
 
 	// 4. 通知生产者新增分区
-	newPartitions := kafka2.GetNewPartitionIDs(currentPartitionCount, targetTotalPartitions)
+	newPartitions := GetNewPartitionIDs(currentPartitionCount, targetTotalPartitions)
 	a.producer.AddPartitions(newPartitions)
 
 	// 5. 等待旧分区消息消费完毕
-	if err := kafka2.WaitOldPartitionsConsumed(ctx, a.saramaClient, a.topic, currentPartitionCount); err != nil {
+	if err := WaitOldPartitionsConsumed(ctx, a.saramaClient, a.topic, currentPartitionCount); err != nil {
 		return fmt.Errorf("wait old partitions consumed failed: err=%w", err)
 	}
 
 	// 6. 设置“扩容完成”状态
-	if err := kafka2.SetExpandStatus(ctx, a.redisClient, a.topic, kafka2.ExpandStatusCompleted, targetTotalPartitions); err != nil {
+	if err := SetExpandStatus(ctx, a.redisClient, a.topic, ExpandStatusCompleted, targetTotalPartitions); err != nil {
 		return fmt.Errorf("set completed status failed: err=%w", err)
 	}
 
