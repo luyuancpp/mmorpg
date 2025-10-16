@@ -23,6 +23,7 @@ type KeyOrderedKafkaProducer struct {
 	ctx          context.Context
 	cancel       context.CancelFunc
 	consistent   *consistent.Consistent // 优化后的一致性哈希实例
+	closed       bool                   // 新增：标记是否已关闭，避免重复调用Close
 }
 
 // NewKeyOrderedKafkaProducer 初始化（核心链路专用）
@@ -30,16 +31,17 @@ func NewKeyOrderedKafkaProducer(
 	bootstrapServers, topic string,
 	initialPartitionCnt int,
 ) (*KeyOrderedKafkaProducer, error) {
-	// 1. Kafka配置优化：核心链路建议调大通道缓冲，减少阻塞
+	// 1. Kafka配置优化：修复幂等性冲突+调整重试次数
 	config := sarama.NewConfig()
 	config.Version = sarama.V3_5_0_0
 	config.Producer.Return.Successes = true
 	config.Producer.Return.Errors = true
-	config.Producer.RequiredAcks = sarama.WaitForLocal // 核心优化：仅等待本地副本确认（比WaitForAll快）
-	config.Producer.Retry.Max = 2                      // 减少重试次数，降低延迟
-	config.ChannelBufferSize = 4096                    // 调大Input通道缓冲，避免核心链路阻塞
-	config.Producer.Idempotent = true
-	config.Net.MaxOpenRequests = 1
+	config.Producer.RequiredAcks = sarama.WaitForAll // 幂等生产者强制要求
+	config.Producer.Retry.Max = 3                    // 微调：幂等场景建议3次重试
+	config.ChannelBufferSize = 4096                  // 大缓冲减少核心链路阻塞
+	config.Producer.Idempotent = true                // 开启幂等性，避免消息重复
+	config.Net.MaxOpenRequests = 1                   // 控制并发，减少 broker 压力
+	// 新增：幂等生产者依赖唯一ID，Sarama会自动生成，无需手动配置
 
 	// 2. 创建异步生产者
 	producer, err := sarama.NewAsyncProducer([]string{bootstrapServers}, config)
@@ -47,18 +49,18 @@ func NewKeyOrderedKafkaProducer(
 		return nil, fmt.Errorf("create producer failed: %w", err)
 	}
 
-	// 3. 初始化一致性哈希（核心链路用20个虚拟节点，平衡均匀性和性能）
+	// 3. 初始化一致性哈希（20个虚拟节点，平衡均匀性和性能）
 	consistentHash := consistent.NewConsistent(20)
 	for i := int32(0); i < int32(initialPartitionCnt); i++ {
 		consistentHash.AddPartition(i)
 	}
 
-	// 4. 初始化结果通道（核心链路建议调大缓冲，避免阻塞监听协程）
+	// 4. 初始化生命周期与结果通道
 	ctx, cancel := context.WithCancel(context.Background())
 	successCh := make(chan *sarama.ProducerMessage, 2048)
 	errorCh := make(chan *sarama.ProducerError, 2048)
 
-	// 5. 启动结果监听协程（核心链路建议用独立协程，避免阻塞）
+	// 5. 启动结果监听协程（独立协程，不阻塞核心链路）
 	go listenSuccess(successCh, ctx)
 	go listenError(errorCh, ctx)
 
@@ -71,32 +73,37 @@ func NewKeyOrderedKafkaProducer(
 		ctx:          ctx,
 		cancel:       cancel,
 		consistent:   consistentHash,
+		closed:       false, // 初始标记为未关闭
 	}, nil
 }
 
 // SendTask 核心链路发送方法（无锁，单次调用耗时≈200ns）
 func (p *KeyOrderedKafkaProducer) SendTask(task *db_proto.DBTask, key string) error {
-	// 1. 轻量校验（核心链路避免 heavy 校验，仅必要检查）
+	// 1. 先检查是否已关闭，避免无效发送
+	if p.closed {
+		return fmt.Errorf("producer already closed: taskID=%s", task.TaskId)
+	}
+	// 2. 轻量校验（核心链路避免 heavy 逻辑）
 	if p.ctx.Err() != nil {
-		return fmt.Errorf("producer closed: taskID=%s", task.TaskId)
+		return fmt.Errorf("producer closing: taskID=%s", task.TaskId)
 	}
 	if task.TaskId == "" || key == "" {
 		return fmt.Errorf("invalid param: taskID=%s, key=%s", task.TaskId, key)
 	}
 
-	// 2. 序列化（核心链路建议预序列化，或用池化的byte切片减少分配）
+	// 3. 序列化（核心链路可后续优化：用 sync.Pool 池化 byte 切片减少GC）
 	payload, err := proto.Marshal(task)
 	if err != nil {
 		return fmt.Errorf("marshal task failed: taskID=%s, err=%w", task.TaskId, err)
 	}
 
-	// 3. 一致性哈希路由（核心步骤，无锁，耗时≈100ns）
+	// 4. 一致性哈希路由（无锁，读锁保护，耗时≈100ns）
 	partition, ok := p.consistent.GetPartition(key)
 	if !ok {
 		return fmt.Errorf("get partition failed: key=%s, taskID=%s", key, task.TaskId)
 	}
 
-	// 4. 构造消息（核心链路避免额外内存分配，直接用字面量）
+	// 5. 构造消息（字面量初始化，避免额外内存分配）
 	msg := &sarama.ProducerMessage{
 		Topic:     p.topic,
 		Key:       sarama.StringEncoder(key),
@@ -105,78 +112,136 @@ func (p *KeyOrderedKafkaProducer) SendTask(task *db_proto.DBTask, key string) er
 		Timestamp: time.Now(),
 	}
 
-	// 5. 异步投递（非阻塞，核心链路避免等待）
+	// 6. 异步投递（非阻塞，通道满时快速失败，保证核心链路不阻塞）
 	select {
 	case p.producer.Input() <- msg:
 		return nil
 	case <-p.ctx.Done():
-		return fmt.Errorf("producer closing: taskID=%s", task.TaskId)
+		return fmt.Errorf("producer closed during send: taskID=%s", task.TaskId)
 	default:
-		// 核心优化：Input通道满时直接返回错误，避免阻塞（核心链路优先保证响应速度）
-		return fmt.Errorf("producer input busy: taskID=%s", task.TaskId)
+		return fmt.Errorf("producer input busy (channel full): taskID=%s", task.TaskId)
 	}
 }
 
-// AddPartitions 扩容时调用（仅在非峰值期执行，不影响核心链路）
+// AddPartitions 扩容时调用（仅非峰值期执行，不影响核心链路）
 func (p *KeyOrderedKafkaProducer) AddPartitions(newPartitions []int32) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	// 检查是否已关闭
+	if p.closed {
+		return fmt.Errorf("producer already closed: cannot add partitions")
+	}
+	// 检查新分区列表有效性
 	if len(newPartitions) == 0 {
-		return fmt.Errorf("new partitions empty")
+		return fmt.Errorf("new partitions list is empty")
 	}
 
-	// 新增分区到一致性哈希（写锁，仅扩容时执行）
+	// 新增分区到一致性哈希（写锁仅在此刻持有，扩容完成后释放）
 	for _, part := range newPartitions {
+		// 避免重复添加同一分区（依赖 consistent 内部的 partitionSet 检查）
 		p.consistent.AddPartition(part)
 	}
+	// 更新分区总数
+	oldCnt := p.partitionCnt
 	p.partitionCnt += len(newPartitions)
 
-	logx.Infof("add partitions success: old=%d, new=%d", p.partitionCnt-len(newPartitions), p.partitionCnt)
+	logx.Infof("add partitions success: topic=%s, old_cnt=%d, new_cnt=%d, new_partitions=%v",
+		p.topic, oldCnt, p.partitionCnt, newPartitions)
 	return nil
 }
 
-// 辅助函数：监听发送成功结果（核心链路建议简化日志，减少IO）
+// Close 新增：优雅关闭生产者，释放所有资源（必须调用，避免泄漏）
+func (p *KeyOrderedKafkaProducer) Close() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	// 避免重复关闭
+	if p.closed {
+		logx.Errorf("producer already closed: topic=%s", p.topic)
+		return nil
+	}
+
+	// 1. 标记为已关闭，拒绝新的发送请求
+	p.closed = true
+	// 2. 取消上下文，通知监听协程退出
+	p.cancel()
+
+	// 3. 关闭 Sarama 异步生产者（会自动关闭 Input/Successes/Errors 通道）
+	closeErr := p.producer.Close()
+
+	// 4. 关闭自定义的结果通道（避免监听协程阻塞）
+	close(p.successCh)
+	close(p.errorCh)
+
+	// 5. 打印关闭日志
+	if closeErr != nil {
+		logx.Errorf("close producer failed: topic=%s, err=%v", p.topic, closeErr)
+		return fmt.Errorf("close producer failed: %w", closeErr)
+	}
+	logx.Infof("close producer success: topic=%s", p.topic)
+	return nil
+}
+
+// 辅助函数：监听发送成功结果（核心链路简化日志，减少IO开销）
 func listenSuccess(ch chan *sarama.ProducerMessage, ctx context.Context) {
 	for {
 		select {
-		case _, ok := <-ch:
+		case msg, ok := <-ch:
 			if !ok {
+				logx.Debug("success channel closed: exit listen")
 				return
 			}
-			// 核心链路建议关闭详细日志，仅在监控平台统计成功数
-			// logx.Debugf("send success: taskID=%s", task.TaskId)
+			// 核心链路建议：仅在监控平台统计成功数（如 Prometheus），不打印详细日志
+			// 如需调试，可临时开启：
+			taskID := getTaskID(msg.Value)
+			logx.Debugf("send success: taskID=%s, partition=%d, offset=%d", taskID, msg.Partition, msg.Offset)
 		case <-ctx.Done():
+			logx.Debug("context canceled: exit success listen")
 			return
 		}
 	}
 }
 
-// 辅助函数：监听发送失败结果（核心链路建议仅记录错误，快速返回）
+// 辅助函数：监听发送失败结果（仅打印错误，快速返回）
 func listenError(ch chan *sarama.ProducerError, ctx context.Context) {
 	for {
 		select {
 		case errMsg, ok := <-ch:
 			if !ok {
+				logx.Debug("error channel closed: exit listen")
 				return
 			}
-			// 核心链路建议用异步日志，避免阻塞
-			logx.Errorf("send failed: taskID=%s, err=%v", getTaskID(errMsg.Msg.Value), errMsg.Err)
+			// 提取 TaskID 便于定位问题（失败日志需保留）
+			taskID := getTaskID(errMsg.Msg.Value)
+			logx.Errorf("send failed: taskID=%s, partition=%d, err=%v",
+				taskID, errMsg.Msg.Partition, errMsg.Err)
 		case <-ctx.Done():
+			logx.Debug("context canceled: exit error listen")
 			return
 		}
 	}
 }
 
-// 辅助函数：从消息体中快速提取TaskID（核心链路避免重复反序列化）
+// 辅助函数：从消息体快速提取 TaskID（避免重复反序列化）
 func getTaskID(value sarama.Encoder) string {
+	// 优化：sarama.ByteEncoder 可直接断言，减少一次 Encode 调用
+	if byteVal, ok := value.(sarama.ByteEncoder); ok {
+		var task db_proto.DBTask
+		err := proto.Unmarshal(byteVal, &task)
+		if err == nil {
+			return task.TaskId
+		}
+		return fmt.Sprintf("unmarshal_failed: err=%v", err)
+	}
+	// 其他类型的 Encoder（如 StringEncoder），降级处理
 	b, err := value.Encode()
 	if err != nil {
-		return ""
+		return fmt.Sprintf("encode_failed: err=%v", err)
 	}
 	var task db_proto.DBTask
 	if err := proto.Unmarshal(b, &task); err != nil {
-		return ""
+		return fmt.Sprintf("unmarshal_failed: err=%v", err)
 	}
 	return task.TaskId
 }
