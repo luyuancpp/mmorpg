@@ -35,7 +35,7 @@ func main() {
 		config.AppConfig.ServerConfig.Kafka.GroupID,      // 消费者组ID，配置文件中新增
 		config.AppConfig.ServerConfig.Kafka.Topic,        // 主题名
 		config.AppConfig.ServerConfig.Kafka.PartitionCnt, // 分区数，与原分片数保持一致
-		ctx.RedisClient,                                  // Redis客户端
+		ctx.RedisClient, // Redis客户端
 	)
 	if err != nil {
 		panic(fmt.Sprintf("初始化Kafka消费者失败: %v", err))

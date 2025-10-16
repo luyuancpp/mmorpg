@@ -2,14 +2,11 @@ package kafka
 
 import (
 	"context"
+	db_config "db/internal/config"
+	"db/internal/locker"
 	"db/internal/logic/pkg/proto_sql"
 	db_proto "db/proto/service/go/grpc/db"
 	"fmt"
-	"strconv"
-	"sync"
-	"time"
-
-	"db/internal/locker"
 	"github.com/IBM/sarama"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -17,21 +14,29 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
+	"runtime/debug"
+	"strconv"
+	"sync"
+	"time"
 )
 
 // KeyOrderedKafkaConsumer 支持动态锁的有序消费者
 type KeyOrderedKafkaConsumer struct {
-	consumer       sarama.ConsumerGroup
-	redisClient    redis.Cmdable
-	topic          string
-	groupID        string // 新增：保存消费组ID
-	partitionCount int32
-	workers        map[int32]*worker
-	wg             *sync.WaitGroup
-	ctx            context.Context
-	cancel         context.CancelFunc
-	locker         *locker.RedisLocker
-	retryQueueKey  string
+	consumer        sarama.ConsumerGroup
+	redisClient     redis.Cmdable
+	topic           string
+	groupID         string
+	partitionCount  int32
+	isOfflineExpand bool // 新增：停服扩容开关（true=不走锁和状态检测）
+	workers         map[int32]*worker
+	wg              *sync.WaitGroup
+	ctx             context.Context
+	cancel          context.CancelFunc
+	locker          *locker.RedisLocker
+	retryQueueKey   string
+	// 重试相关配置（原有字段不变）
+	retryConsumeInterval time.Duration
+	retryMaxTimes        int
 }
 
 // worker 单个分区的处理协程
@@ -86,51 +91,48 @@ func NewKeyOrderedKafkaConsumer(
 	}
 
 	return &KeyOrderedKafkaConsumer{
-		consumer:       consumerGroup,
-		redisClient:    redisClient,
-		topic:          topic,
-		groupID:        groupID, // 新增：保存传入的groupID
-		partitionCount: partitionCount,
-		workers:        workers,
-		wg:             wg,
-		ctx:            ctx,
-		cancel:         cancel,
-		locker:         locker,
-		retryQueueKey:  retryQueueKey,
+		consumer:        consumerGroup,
+		redisClient:     redisClient,
+		topic:           topic,
+		groupID:         groupID, // 新增：保存传入的groupID
+		partitionCount:  partitionCount,
+		workers:         workers,
+		wg:              wg,
+		ctx:             ctx,
+		cancel:          cancel,
+		locker:          locker,
+		retryQueueKey:   retryQueueKey,
+		isOfflineExpand: db_config.AppConfig.ServerConfig.Kafka.IsOfflineExpand, // 注入停服扩容开关
 	}, nil
 }
 
 // Start 启动消费者
 func (c *KeyOrderedKafkaConsumer) Start() error {
-	// 1. 启动所有worker
+	// 1. 启动所有worker：传递isOfflineExpand开关
 	for _, w := range c.workers {
 		c.wg.Add(1)
-		go w.start(processDBTaskMessage)
+		// 传递c.isOfflineExpand给worker.start
+		go w.start(processDBTaskMessage, c.isOfflineExpand)
 	}
 
-	// 2. 创建消费组处理器
-	handler := &consumerGroupHandler{
-		consumer: c,
-	}
+	// 2. 启动重试队列消费（原有逻辑不变）
+	c.StartRetryConsumer()
 
-	// 3. 启动消费组监听
+	// 3. 启动消费组监听（原有逻辑不变）
 	go func() {
 		for {
-			// 修复：使用c.groupID替代c.consumer.GroupID()
-			if err := c.consumer.Consume(c.ctx, []string{c.topic}, handler); err != nil {
+			if err := c.consumer.Consume(c.ctx, []string{c.topic}, &consumerGroupHandler{consumer: c}); err != nil {
 				logx.Errorf("consumer group consume failed: groupID=%s, err=%v", c.groupID, err)
 			}
 			if c.ctx.Err() != nil {
-				// 修复：使用c.groupID替代c.consumer.GroupID()
 				logx.Info("consumer group stopped: groupID=%s", c.groupID)
 				return
 			}
 		}
 	}()
 
-	// 修复：使用c.groupID替代c.consumer.GroupID()
-	logx.Infof("consumer started: topic=%s, groupID=%s, partitionCount=%d",
-		c.topic, c.groupID, c.partitionCount)
+	logx.Infof("consumer started: topic=%s, groupID=%s, partitionCount=%d, isOfflineExpand=%v",
+		c.topic, c.groupID, c.partitionCount, c.isOfflineExpand)
 	return nil
 }
 
@@ -168,14 +170,25 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 	return nil
 }
 
-func (w *worker) start(processFunc func(ctx context.Context, worker *worker, msg *sarama.ConsumerMessage) error) {
+func (w *worker) start(
+	processFunc func(ctx context.Context, worker *worker, msg *sarama.ConsumerMessage, isOfflineExpand bool) error,
+	isOfflineExpand bool, // 新增：接收停服扩容开关
+) {
 	defer func() {
 		close(w.msgCh)
 		w.wg.Done()
 		logx.Infof("worker stopped: partition=%d", w.partition)
 	}()
 
-	logx.Infof("worker started: partition=%d", w.partition)
+	// 捕获panic（原有优化逻辑不变）
+	defer func() {
+		if r := recover(); r != nil {
+			logx.Errorf("worker panic recovered: partition=%d, panic=%v, stack=%s",
+				w.partition, r, string(debug.Stack()))
+		}
+	}()
+
+	logx.Infof("worker started: partition=%d, isOfflineExpand=%v", w.partition, isOfflineExpand)
 
 	for {
 		select {
@@ -187,26 +200,50 @@ func (w *worker) start(processFunc func(ctx context.Context, worker *worker, msg
 				logx.Infof("worker msg channel closed: partition=%d", w.partition)
 				return
 			}
-			if err := processFunc(w.ctx, w, msg); err != nil {
-				logx.Errorf("worker process msg failed: partition=%d, offset=%d, err=%v",
-					w.partition, msg.Offset, err)
+			// 传递isOfflineExpand开关给processFunc
+			startTime := time.Now()
+			if err := processFunc(w.ctx, w, msg, isOfflineExpand); err != nil {
+				logx.Errorf("worker process msg failed: partition=%d, offset=%d, cost=%v, err=%v",
+					w.partition, msg.Offset, time.Since(startTime), err)
+			} else {
+				logx.Debugf("worker process msg success: partition=%d, offset=%d, cost=%v",
+					w.partition, msg.Offset, time.Since(startTime))
 			}
 		}
 	}
 }
 
-func processDBTaskMessage(ctx context.Context, worker *worker, msg *sarama.ConsumerMessage) error {
+// 修改processDBTaskMessage：添加开关判断，停服模式下跳过锁和状态检测
+func processDBTaskMessage(ctx context.Context, worker *worker, msg *sarama.ConsumerMessage, isOfflineExpand bool) error {
 	var task db_proto.DBTask
 	if err := proto.Unmarshal(msg.Value, &task); err != nil {
 		return fmt.Errorf("unmarshal task failed: offset=%d, err=%w", msg.Offset, err)
 	}
 	key := strconv.FormatUint(task.Key, 10)
-	logx.Debugf("received db task: taskID=%s, key=%s, partition=%d", task.TaskId, key, msg.Partition)
+	logx.Debugf("received db task: taskID=%s, key=%s, partition=%d, isOfflineExpand=%v",
+		task.TaskId, key, msg.Partition, isOfflineExpand)
 
+	// 关键逻辑：如果是停服扩容模式（isOfflineExpand=true），直接跳过锁和状态检测，处理消息
+	if isOfflineExpand {
+		logx.Debugf("offline expand mode: skip lock and status check, process task directly: taskID=%s", task.TaskId)
+		return processTaskWithoutLock(ctx, worker.redisClient, &task)
+	}
+
+	// 非停服模式（动态扩容）：走原有逻辑（检测扩容状态+加锁）
 	expandStatus, err := GetExpandStatus(ctx, worker.redisClient, worker.topic)
 	if err != nil {
 		logx.Errorf("get expand status failed: key=%s, err=%v", key, err)
 		return tryLockAndProcess(ctx, worker, key, &task, msg.Offset)
+	}
+
+	// 检查扩容状态是否过期（原有优化逻辑不变）
+	currentTime := time.Now().UnixMilli()
+	if expandStatus.Status == ExpandStatusExpanding &&
+		(expandStatus.UpdateTime == 0 || currentTime-expandStatus.UpdateTime > expandStatusExpireDuration.Milliseconds()) {
+		logx.Errorf("expand status expired, switch to normal: topic=%s, key=%s, lastUpdateTime=%d",
+			worker.topic, key, expandStatus.UpdateTime)
+		expandStatus.Status = ExpandStatusNormal
+		_ = SetExpandStatus(ctx, worker.redisClient, worker.topic, ExpandStatusNormal, expandStatus.PartitionCount)
 	}
 
 	if expandStatus.Status == ExpandStatusExpanding {
