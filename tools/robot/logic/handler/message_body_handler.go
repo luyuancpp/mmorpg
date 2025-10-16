@@ -5,6 +5,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"robot/generated/pb/game"
 	"robot/proto/common"
+	"robot/proto/service/cpp/rpc/scene"
 
 	"robot/logic/gameobject"
 	"robot/pkg"
