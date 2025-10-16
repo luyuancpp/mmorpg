@@ -12,6 +12,7 @@ import (
 	"login/internal/logic/pkg/taskmanager"
 	login_proto "login/proto/common"
 	"sync/atomic"
+	"time"
 )
 
 type ServiceContext struct {
@@ -19,9 +20,10 @@ type ServiceContext struct {
 	SnowFlake   *snowflake.Node
 	NodeInfo    login_proto.NodeInfo
 	// 使用 atomic.Value 安全存储 CentreClient
-	centreClient atomic.Value // 类型为 *centre.CentreClient
-	KafkaClient  *kafka.KeyOrderedKafkaProducer
-	TaskExecutor *taskmanager.TaskExecutor
+	centreClient  atomic.Value // 类型为 *centre.CentreClient
+	KafkaClient   *kafka.KeyOrderedKafkaProducer
+	TaskExecutor  *taskmanager.TaskExecutor
+	ExpandMonitor *kafka.ExpandMonitor
 }
 
 func NewServiceContext() *ServiceContext {
@@ -38,6 +40,10 @@ func NewServiceContext() *ServiceContext {
 		DB:       redisDB,
 	})
 
+	if err := redisClient.Ping(ctx).Err(); err != nil {
+		panic(fmt.Errorf("failed to connect Redis: %w", err))
+	}
+
 	kafkaClient, err := kafka.NewKeyOrderedKafkaProducer(
 		config.AppConfig.Kafka.Brokers,           // Kafka broker地址，配置文件中新增
 		config.AppConfig.Kafka.Topic,             // 消费者组ID，配置文件中新增
@@ -50,8 +56,18 @@ func NewServiceContext() *ServiceContext {
 		return nil
 	}
 
-	if err := redisClient.Ping(ctx).Err(); err != nil {
-		panic(fmt.Errorf("failed to connect Redis: %w", err))
+	monitor, err := kafka.NewExpandMonitor(
+		config.AppConfig.Kafka.Brokers, // Kafka broker地址，配置文件中新增
+		config.AppConfig.Kafka.Topic,   // 消费者组ID，配置文件中新增
+		redisClient,
+		kafkaClient,
+		1*time.Second,
+	)
+
+	if err != nil {
+		logx.Error(err)
+		panic(err)
+		return nil
 	}
 
 	// 初始化 TaskExecutor
@@ -62,9 +78,10 @@ func NewServiceContext() *ServiceContext {
 
 	// 返回 ServiceContext 实例
 	return &ServiceContext{
-		RedisClient:  redisClient,
-		KafkaClient:  kafkaClient,
-		TaskExecutor: taskExecutor,
+		RedisClient:   redisClient,
+		KafkaClient:   kafkaClient,
+		TaskExecutor:  taskExecutor,
+		ExpandMonitor: monitor,
 	}
 }
 
@@ -93,4 +110,8 @@ func (s *ServiceContext) GetCentreClient() *centre.Client {
 		return nil
 	}
 	return value.(*centre.Client)
+}
+
+func (s *ServiceContext) Stop() {
+	s.ExpandMonitor.Stop()
 }

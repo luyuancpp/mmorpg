@@ -40,6 +40,8 @@ func main() {
 
 	ctx := svc.NewServiceContext()
 
+	defer ctx.Stop()
+
 	// 启动 gRPC 服务
 	if err := startGRPCServer(config.AppConfig, ctx); err != nil {
 		logx.Errorf("Failed to start GRPC server: %v", err)
