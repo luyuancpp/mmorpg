@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -81,7 +82,7 @@ func WaitOldPartitionsConsumed(ctx context.Context, client sarama.Client, topic 
 					break
 				}
 				// 获取当前消费偏移量（假设消费组为固定值，可根据实际修改）
-				consumerGroup := "db_task_consumer_group" // 替换为你的消费组ID
+				//consumerGroup := config.AppConfig.ServerConfig.Kafka.GroupID // 替换为你的消费组ID
 				currentOffset, err := client.GetOffset(topic, i, sarama.OffsetOldest)
 				// 实际应从消费组偏移量存储获取，这里简化用Sarama接口（生产环境建议用Redis/etcd存储消费偏移量）
 				if err != nil {
