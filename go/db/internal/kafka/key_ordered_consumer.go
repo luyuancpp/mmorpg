@@ -431,7 +431,8 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 	}
 
 	// 4. 保存任务结果（若有TaskId）
-	if task.TaskId != "" {
+	// 4. 仅read操作存Redis结果（write操作无需存）
+	if task.Op == "read" && task.TaskId != "" {
 		result := &db_proto.TaskResult{
 			Success: resultErr == "",
 			Data:    resultData,
@@ -439,11 +440,11 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 		}
 		resBytes, err := proto.Marshal(result)
 		if err != nil {
-			return fmt.Errorf("marshal task result failed: taskID=%s, err=%w", task.TaskId, err)
+			return fmt.Errorf("marshal result failed: taskID=%s, err=%w", task.TaskId, err)
 		}
-		// 结果存入Redis（供生产者查询）
+		// 存入Redis供生产者查询
 		if err := redisClient.LPush(ctx, task.TaskId, resBytes).Err(); err != nil {
-			return fmt.Errorf("save task result to redis failed: taskID=%s, err=%w", task.TaskId, err)
+			return fmt.Errorf("save read result to redis failed: taskID=%s, err=%w", task.TaskId, err)
 		}
 	}
 
