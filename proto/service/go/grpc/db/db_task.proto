@@ -2,8 +2,7 @@ syntax = "proto3";
 
 package taskpb;
 
-// 选项：生成Go代码时的包路径（根据你的项目实际路径调整）
-option go_package = "db/proto/service/go/grpc/db;db_proto";
+
 
 // DBTask：Kafka传输的DB操作任务结构体
 // 用途：生产者发送DB操作请求，消费者接收并执行
