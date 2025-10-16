@@ -37,10 +37,11 @@ type RedisConfig struct {
 
 // KafkaConfig Kafka配置结构体（包含分区数）
 type KafkaConfig struct {
-	Brokers      string `json:"Brokers"`      // Kafka集群地址（逗号分隔）
-	GroupID      string `json:"GroupID"`      // 消费者组ID
-	Topic        string `json:"Topic"`        // 消费主题名
-	PartitionCnt int32  `json:"PartitionCnt"` // 主题分区数量（新增）
+	Brokers         string `json:"Brokers"`         // Kafka集群地址（逗号分隔）
+	GroupID         string `json:"GroupID"`         // 消费者组ID
+	Topic           string `json:"Topic"`           // 消费主题名
+	PartitionCnt    int32  `json:"PartitionCnt"`    // 主题分区数量（新增）
+	IsOfflineExpand bool   `json:"IsOfflineExpand"` // 停服扩容开关：true=停服模式
 }
 
 var AppConfig Config // 全局配置实例
