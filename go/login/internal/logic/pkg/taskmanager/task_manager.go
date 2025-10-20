@@ -146,12 +146,30 @@ func (tm *TaskManager) cleanExpiredBatches(interval, expireTime time.Duration) {
 }
 
 // 添加聚合批次
+// AddAggregateBatch 聚合批次：相同taskKey则追加任务，不覆盖
 func (tm *TaskManager) AddAggregateBatch(taskKey string, tasks []*MessageTask, aggregator Aggregator, callback BatchCallback) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
+
+	// 1. 标记新任务的SkipSubCache为true
 	for _, t := range tasks {
 		t.SkipSubCache = true
 	}
+
+	// 2. 检查taskKey是否已存在旧批次
+	existingBatch, exists := tm.batches[taskKey]
+	if exists {
+		// 存在则追加任务（保留原有任务，新增任务接在末尾）
+		existingBatch.Tasks = append(existingBatch.Tasks, tasks...)
+		// 若原有批次无回调，用新回调覆盖；若已有则保留（避免覆盖业务逻辑）
+		if existingBatch.Callback == nil && callback != nil {
+			existingBatch.Callback = callback
+		}
+		// 聚合器以首次传入的为准（确保聚合逻辑统一）
+		return
+	}
+
+	// 3. 不存在则创建新批次
 	tm.batches[taskKey] = &TaskBatch{
 		Tasks:        tasks,
 		Aggregator:   aggregator,
@@ -161,13 +179,29 @@ func (tm *TaskManager) AddAggregateBatch(taskKey string, tasks []*MessageTask, a
 	}
 }
 
-// 添加普通批次
+// AddBatch 普通批次：相同taskKey则追加任务，不覆盖
 func (tm *TaskManager) AddBatch(taskKey string, tasks []*MessageTask, callback BatchCallback) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
+
+	// 1. 标记新任务的SkipSubCache为false
 	for _, t := range tasks {
 		t.SkipSubCache = false
 	}
+
+	// 2. 检查taskKey是否已存在旧批次
+	existingBatch, exists := tm.batches[taskKey]
+	if exists {
+		// 存在则追加任务（原有任务保留，新任务接在末尾）
+		existingBatch.Tasks = append(existingBatch.Tasks, tasks...)
+		// 回调逻辑：无则覆盖，有则保留
+		if existingBatch.Callback == nil && callback != nil {
+			existingBatch.Callback = callback
+		}
+		return
+	}
+
+	// 3. 不存在则创建新批次
 	tm.batches[taskKey] = &TaskBatch{
 		Tasks:        tasks,
 		Aggregator:   nil,
