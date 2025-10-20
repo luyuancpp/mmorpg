@@ -7,6 +7,7 @@ import (
 	db_proto "db/proto/service/go/grpc/db"
 	"errors"
 	"fmt"
+	"github.com/luyuancpp/proto2mysql-go"
 	"runtime/debug"
 	"strconv"
 	"sync"
@@ -407,7 +408,7 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 	var resultData []byte
 	switch task.Op {
 	case "read":
-		if err := proto_sql.DB.SqlModel.FindAllByWhereClause(msg, task.WhereCase); err != nil {
+		if err := proto_sql.DB.SqlModel.FindOneByWhereClause(msg, task.WhereCase); err != nil && !errors.Is(err, proto2mysql.ErrNoRowsFound) {
 			resultErr = fmt.Sprintf("db read failed: %v", err)
 		} else {
 			if resultData, err = proto.Marshal(msg); err != nil {

@@ -1,6 +1,7 @@
 package taskmanager
 
 import (
+	"context"
 	"hash/fnv"
 
 	"github.com/panjf2000/ants/v2"
@@ -22,6 +23,8 @@ func NewTaskExecutor(workerCount int, redis redis.Cmdable) (*TaskExecutor, error
 		workerCount = 16
 	}
 
+	customCtx, _ := context.WithCancel(context.Background())
+
 	pools := make([]*ants.Pool, 0, workerCount)
 	taskManagers := make([]*TaskManager, 0, workerCount)
 
@@ -34,7 +37,7 @@ func NewTaskExecutor(workerCount int, redis redis.Cmdable) (*TaskExecutor, error
 			return nil, err
 		}
 		pools = append(pools, pool)
-		taskManagers = append(taskManagers, NewTaskManager())
+		taskManagers = append(taskManagers, NewTaskManager(customCtx))
 	}
 
 	return &TaskExecutor{

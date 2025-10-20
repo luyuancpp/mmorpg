@@ -5,6 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"login/internal/config"
 	"login/internal/kafka"
 	"login/internal/logic/pkg/cache"
@@ -12,11 +16,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/redis/go-redis/v9"
-	"github.com/zeromicro/go-zero/core/logx"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // 任务状态常量
@@ -104,28 +103,61 @@ type MessageTask struct {
 // BatchCallback 批次处理完成回调
 type BatchCallback func(taskKey string, allSuccess bool, err error)
 
-// TaskBatch 任务批次
+// 新增：帧级结果Key前缀（区分单任务Key）
+const frameResultKeyPrefix = "frame:result:"
+
+// 1. 新增：TaskBatch增加创建时间（用于定时清理）
 type TaskBatch struct {
-	Tasks        []*MessageTask
-	Aggregator   Aggregator
-	skipSubCache bool
-	Callback     BatchCallback
+	Tasks          []*MessageTask
+	Aggregator     Aggregator
+	skipSubCache   bool
+	Callback       BatchCallback
+	CreateTime     time.Time // 新增：批次创建时间
+	FrameResultKey string    // 新增：帧级结果Key
 }
 
-// TaskManager 任务管理器
+// 2. TaskManager增加定时清理协程
 type TaskManager struct {
 	mu      sync.RWMutex
 	batches map[string]*TaskBatch
+	ctx     context.Context // 新增：用于控制清理协程
 }
 
-// NewTaskManager 创建任务管理器
-func NewTaskManager() *TaskManager {
-	return &TaskManager{
+// NewTaskManager 初始化（启动定时清理）
+func NewTaskManager(ctx context.Context) *TaskManager {
+	tm := &TaskManager{
 		batches: make(map[string]*TaskBatch),
+		ctx:     ctx,
+	}
+	// 启动定时清理：每5秒清理一次超时（10秒）批次
+	go tm.startBatchCleaner(5*time.Second, 10*time.Second)
+	return tm
+}
+
+// 新增：批次定时清理
+func (tm *TaskManager) startBatchCleaner(interval, expireTime time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			tm.mu.Lock()
+			// 遍历所有批次，删除超时批次
+			for taskKey, batch := range tm.batches {
+				if time.Since(batch.CreateTime) > expireTime {
+					delete(tm.batches, taskKey)
+					logx.Infof("clean expired batch: taskKey=%s, createTime=%v", taskKey, batch.CreateTime)
+				}
+			}
+			tm.mu.Unlock()
+		case <-tm.ctx.Done():
+			logx.Debug("task manager closed: stop batch cleaner")
+			return
+		}
 	}
 }
 
-// AddAggregateBatch 添加聚合任务批次（带回调）
+// 3. 修改AddAggregateBatch：添加帧级结果Key和创建时间
 func (tm *TaskManager) AddAggregateBatch(taskKey string, tasks []*MessageTask, aggregator Aggregator, callback BatchCallback) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
@@ -134,15 +166,20 @@ func (tm *TaskManager) AddAggregateBatch(taskKey string, tasks []*MessageTask, a
 		task.SkipSubCache = true
 	}
 
+	// 生成帧级结果Key（taskKey唯一，确保帧级Key不重复）
+	frameResultKey := frameResultKeyPrefix + taskKey
+
 	tm.batches[taskKey] = &TaskBatch{
-		Tasks:        tasks,
-		Aggregator:   aggregator,
-		skipSubCache: true,
-		Callback:     callback,
+		Tasks:          tasks,
+		Aggregator:     aggregator,
+		skipSubCache:   true,
+		Callback:       callback,
+		CreateTime:     time.Now(),
+		FrameResultKey: frameResultKey,
 	}
 }
 
-// AddBatch 添加普通任务批次（带回调）
+// 4. 修改AddBatch：同理添加帧级结果Key和创建时间
 func (tm *TaskManager) AddBatch(taskKey string, tasks []*MessageTask, callback BatchCallback) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
@@ -151,11 +188,15 @@ func (tm *TaskManager) AddBatch(taskKey string, tasks []*MessageTask, callback B
 		task.SkipSubCache = false
 	}
 
+	frameResultKey := frameResultKeyPrefix + taskKey
+
 	tm.batches[taskKey] = &TaskBatch{
-		Tasks:        tasks,
-		Aggregator:   nil,
-		skipSubCache: false,
-		Callback:     callback,
+		Tasks:          tasks,
+		Aggregator:     nil,
+		skipSubCache:   false,
+		Callback:       callback,
+		CreateTime:     time.Now(),
+		FrameResultKey: frameResultKey,
 	}
 }
 
@@ -194,9 +235,9 @@ func WaitForTaskResult(ctx context.Context, redisClient redis.Cmdable, key strin
 	return []byte(result[1]), nil
 }
 
-// ProcessBatch 处理任务批次（触发回调）
+// 5. 重写ProcessBatch：帧级结果监听（替代单任务BLPop）
 func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second) // 延长超时适配批量
 	defer cancel()
 
 	logx.Infof("Processing task batch: %s", taskKey)
@@ -207,56 +248,97 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 		return
 	}
 
+	// 关键修改：监听帧级结果Key（1次监听替代N次单任务监听）
+	logx.Debugf("waiting frame result: key=%s", batch.FrameResultKey)
+	_, err := redisClient.BLPop(ctx, time.Duration(config.AppConfig.Timeouts.TaskWaitTimeoutSec)*time.Second, batch.FrameResultKey).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			err = fmt.Errorf("frame result timeout: taskKey=%s", taskKey)
+		}
+		logx.Errorf("frame result listen failed: %v", err)
+		// 标记所有任务失败
+		for _, task := range batch.Tasks {
+			task.Status = TaskStatusFailed
+			task.Error = err
+		}
+		allSuccess := false
+		batchErr := err
+		// 清理批次并触发回调
+		tm.cleanBatchAndCallback(taskKey, batch, allSuccess, batchErr, redisClient, ctx)
+		return
+	}
+
+	// 帧级结果已到，批量查询所有任务结果
 	allSuccess := true
 	var batchErr error
-
-	// 处理子任务
+	taskResultKeys := make([]string, 0, len(batch.Tasks))
+	taskMap := make(map[string]*MessageTask, len(batch.Tasks))
 	for _, task := range batch.Tasks {
-		if task.Status != TaskStatusPending {
-			logx.Infof("Skip task %s (status: %s)", task.TaskID, task.Status)
+		resultKey := fmt.Sprintf("task:%s", task.TaskID)
+		taskResultKeys = append(taskResultKeys, resultKey)
+		taskMap[resultKey] = task
+	}
+
+	// 批量获取任务结果（MGet替代循环Get，减少Redis请求）
+	results, err := redisClient.MGet(ctx, taskResultKeys...).Result()
+	if err != nil {
+		batchErr = fmt.Errorf("batch get task results failed: %w", err)
+		allSuccess = false
+		logx.Errorf(batchErr.Error())
+		tm.cleanBatchAndCallback(taskKey, batch, allSuccess, batchErr, redisClient, ctx)
+		return
+	}
+
+	// 解析批量结果
+	for i, res := range results {
+		resultKey := taskResultKeys[i]
+		task := taskMap[resultKey]
+		if res == nil {
+			err = fmt.Errorf("task result not found: %s", resultKey)
+			task.Status = TaskStatusFailed
+			task.Error = err
+			allSuccess = false
+			logx.Error(err.Error())
 			continue
 		}
 
-		logx.Infof("Waiting for task %s", task.TaskID)
-		resBytes, err := WaitForTaskResult(
-			ctx,
-			redisClient,
-			task.TaskID,
-			time.Duration(config.AppConfig.Timeouts.TaskWaitTimeoutSec)*time.Second,
-		)
-		if err != nil {
+		resBytes, ok := res.(string)
+		if !ok {
+			err = fmt.Errorf("invalid task result type: %s", resultKey)
 			task.Status = TaskStatusFailed
 			task.Error = err
-			logx.Errorf("Task %s wait failed: %v", task.TaskID, err)
 			allSuccess = false
+			logx.Error(err.Error())
 			continue
 		}
 
-		// 解析任务结果
-		var result login_proto.TaskResult
-		if err := proto.Unmarshal(resBytes, &result); err != nil {
+		// 解析TaskResult
+		var taskResult login_proto.TaskResult
+		if err := proto.Unmarshal([]byte(resBytes), &taskResult); err != nil {
+			err = fmt.Errorf("unmarshal task result failed: %w", err)
 			task.Status = TaskStatusFailed
 			task.Error = err
-			logx.Errorf("Unmarshal TaskResult failed: %v", err)
 			allSuccess = false
+			logx.Error(err.Error())
 			continue
 		}
 
-		if !result.Success {
-			err := fmt.Errorf("task failed: %s", result.Error)
+		if !taskResult.Success {
+			err = fmt.Errorf("task failed: %s, err=%s", task.TaskID, taskResult.Error)
 			task.Status = TaskStatusFailed
 			task.Error = err
-			logx.Errorf("Task %s failed: %s", task.TaskID, result.Error)
 			allSuccess = false
+			logx.Error(err.Error())
 			continue
 		}
 
 		// 解析子PB
-		if err := proto.Unmarshal(result.Data, task.Message); err != nil {
+		if err := proto.Unmarshal(taskResult.Data, task.Message); err != nil {
+			err = fmt.Errorf("unmarshal task message failed: %w", err)
 			task.Status = TaskStatusFailed
 			task.Error = err
-			logx.Errorf("Unmarshal message failed: %v", err)
 			allSuccess = false
+			logx.Error(err.Error())
 			continue
 		}
 
@@ -269,10 +351,11 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 				task.Message,
 				time.Duration(config.AppConfig.Timeouts.RoleCacheExpireHours)*time.Hour,
 			); err != nil {
+				err = fmt.Errorf("save task to redis failed: %w", err)
 				task.Status = TaskStatusFailed
 				task.Error = err
-				logx.Errorf("Save to Redis failed: %v", err)
 				allSuccess = false
+				logx.Error(err.Error())
 				continue
 			}
 			logx.Infof("Task %s saved to Redis: %s", task.TaskID, task.RedisKey)
@@ -287,9 +370,9 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 		logx.Infof("Aggregating sub-PBs for %s", taskKey)
 		parentPB, err := batch.Aggregator.Aggregate(batch.Tasks)
 		if err != nil {
-			logx.Errorf("Aggregation failed: %v", err)
-			batchErr = err
+			batchErr = fmt.Errorf("aggregation failed: %w", err)
 			allSuccess = false
+			logx.Error(batchErr.Error())
 		} else {
 			parentKey := batch.Aggregator.ParentKey()
 			if err := SaveProtoToRedis(
@@ -299,13 +382,38 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 				parentPB,
 				time.Duration(config.AppConfig.Timeouts.RoleCacheExpireHours)*time.Hour,
 			); err != nil {
-				logx.Errorf("Save aggregated PB failed: %v", err)
-				batchErr = err
+				batchErr = fmt.Errorf("save aggregated PB failed: %w", err)
 				allSuccess = false
+				logx.Error(batchErr.Error())
 			} else {
 				logx.Infof("Aggregated PB saved: %s", parentKey)
 			}
 		}
+	}
+
+	// 清理批次并触发回调
+	tm.cleanBatchAndCallback(taskKey, batch, allSuccess, batchErr, redisClient, ctx)
+}
+
+// 新增：统一清理批次和触发回调的工具函数
+func (tm *TaskManager) cleanBatchAndCallback(
+	taskKey string,
+	batch *TaskBatch,
+	allSuccess bool,
+	batchErr error,
+	redisClient redis.Cmdable,
+	ctx context.Context,
+) {
+	// 清理Redis键（批量删除，减少请求）
+	keysToDelete := make([]string, 0, len(batch.Tasks)+1)
+	keysToDelete = append(keysToDelete, batch.FrameResultKey) // 删除帧级结果Key
+	for _, task := range batch.Tasks {
+		keysToDelete = append(keysToDelete, fmt.Sprintf("task:%s", task.TaskID)) // 删除单任务Key
+	}
+	if _, err := redisClient.Del(ctx, keysToDelete...).Result(); err != nil {
+		logx.Errorf("batch delete redis keys failed: %v", err)
+	} else {
+		logx.Infof("cleaned up batch keys: taskKey=%s, keys=%v", taskKey, keysToDelete)
 	}
 
 	// 清理批次
@@ -314,17 +422,6 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 	tm.mu.Unlock()
 
 	logx.Infof("Batch %s processed", taskKey)
-
-	// 清理Redis中的任务相关key（在触发回调前添加）
-	for _, task := range batch.Tasks {
-		// 假设任务结果的key格式是 "task:result:" + task.TaskID
-		resultKey := fmt.Sprintf("task:%s", task.TaskID)
-		if _, err := redisClient.Del(ctx, resultKey).Result(); err != nil {
-			logx.Errorf("Failed to delete task result key %s: %v", resultKey, err)
-		} else {
-			logx.Infof("Cleaned up task result key: %s", resultKey)
-		}
-	}
 
 	// 触发回调
 	if batch.Callback != nil {
@@ -339,7 +436,7 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 	}
 }
 
-// InitTaskOptions 初始化任务选项（带回调）
+// 6. 修改InitAndAddMessageTasks：支持批量投递Kafka
 type InitTaskOptions struct {
 	Aggregator Aggregator    // 聚合器（可选）
 	Callback   BatchCallback // 回调函数（可选）
@@ -348,7 +445,7 @@ type InitTaskOptions struct {
 // InitAndAddMessageTasks 初始化并添加消息任务（支持回调传递）
 func InitAndAddMessageTasks(
 	ctx context.Context,
-	executor *TaskExecutor, // 假设TaskExecutor已实现GetTaskManagerByKey方法
+	executor *TaskExecutor,
 	taskKey string,
 	redisClient redis.Cmdable,
 	producer *kafka.KeyOrderedKafkaProducer,
@@ -358,6 +455,7 @@ func InitAndAddMessageTasks(
 ) error {
 	playerIdStr := strconv.FormatUint(playerId, 10)
 	var tasks []*MessageTask
+	var dbTasks []*login_proto.DBTask // 新增：批量DBTask
 
 	// 构建缓存键和映射
 	keys := make([]string, 0, len(messages))
@@ -374,10 +472,10 @@ func InitAndAddMessageTasks(
 		return err
 	}
 
-	// 处理未命中缓存的消息
+	// 处理未命中缓存的消息：收集批量DBTask
 	for i, val := range values {
 		if val != nil {
-			continue // 缓存命中，跳过
+			continue
 		}
 
 		key := keys[i]
@@ -393,8 +491,8 @@ func InitAndAddMessageTasks(
 		taskID := uuid.NewString()
 		msgType := string(msg.ProtoReflect().Descriptor().FullName())
 
-		// 构建任务 payload
-		taskPayload := &login_proto.DBTask{
+		// 构建DBTask（加入批量列表）
+		dbTask := &login_proto.DBTask{
 			Key:       playerId,
 			WhereCase: "where player_id='" + playerIdStr + "'",
 			Op:        "read",
@@ -402,14 +500,9 @@ func InitAndAddMessageTasks(
 			Body:      data,
 			TaskId:    taskID,
 		}
+		dbTasks = append(dbTasks, dbTask)
 
-		// 入队任务
-		if err := producer.SendTask(taskPayload, playerIdStr); err != nil {
-			logx.Infof("Kafka enqueue task failed: %v", err)
-			return err
-		}
-
-		// 添加到任务列表
+		// 添加到消息任务列表
 		tasks = append(tasks, &MessageTask{
 			TaskID:   taskID,
 			Message:  msg,
@@ -419,14 +512,27 @@ func InitAndAddMessageTasks(
 		})
 	}
 
-	// 添加任务到批次（传递回调）
+	// 关键修改：批量投递Kafka（大于1条时走批量，否则单条）
+	if len(dbTasks) > 0 {
+		if len(dbTasks) == 1 {
+			if err := producer.SendTask(dbTasks[0], playerIdStr); err != nil {
+				logx.Infof("Kafka enqueue single task failed: %v", err)
+				return err
+			}
+		} else {
+			if err := producer.SendTasks(dbTasks, playerIdStr); err != nil {
+				logx.Infof("Kafka enqueue batch tasks failed: %v", err)
+				return err
+			}
+		}
+	}
+
+	// 添加任务到批次
 	if len(tasks) > 0 {
 		manager := executor.GetTaskManagerByKey(taskKey)
 		if options.Aggregator != nil {
-			// 聚合任务：传入回调
 			manager.AddAggregateBatch(taskKey, tasks, options.Aggregator, options.Callback)
 		} else {
-			// 普通任务：传入回调
 			manager.AddBatch(taskKey, tasks, options.Callback)
 		}
 	} else if options.Callback != nil {
@@ -436,3 +542,5 @@ func InitAndAddMessageTasks(
 
 	return nil
 }
+
+// 其他原有结构（Aggregator、GenericAggregator、MessageTask、BatchCallback、TaskExecutor等）保持不变
