@@ -156,33 +156,35 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		return errors.New("session not found")
 	}
 
-	ctx, _ := context.WithCancel(context.Background())
+	// 基于外部上下文创建子上下文，确保资源可控
+	ctx, cancel := context.WithCancel(l.ctx)
+	defer cancel()
 
-	// 配置：需要加载的任务总数
-	const totalTasksToLoad = 2
-	// 状态跟踪：已完成的任务数、是否全部成功、并发安全控制
+	// 仅处理指定的消息列表
+	messagesToLoad := []proto.Message{
+		&login_proto_database.PlayerAllData{
+			PlayerDatabaseData:   &login_proto_database.PlayerDatabase{PlayerId: playerId},
+			PlayerDatabase_1Data: &login_proto_database.PlayerDatabase_1{PlayerId: playerId},
+		},
+		&login_proto_database.PlayerCentreDatabase{PlayerId: playerId},
+	}
+	
+	// 任务总数固定为 messagesToLoad 的长度（当前为2）
+	totalTasksToLoad := len(messagesToLoad)
 	var (
-		completedTasks int        // 已完成的任务数量（替代 automatic）
-		mu             sync.Mutex // 保护计数器的互斥锁
-		notifyOnce     sync.Once  // 确保通知只执行一次
+		completedTasks int
+		mu             sync.Mutex
+		notifyOnce     sync.Once
 	)
 
-	// 任务完成回调：累加计数并检查是否所有任务都完成
+	// 任务完成回调
 	taskGroupCallback := func(taskKey string, taskSuccess bool, err error) {
 		mu.Lock()
 		defer mu.Unlock()
 
-		// 累加已完成任务数（无论成功失败都计数）
 		completedTasks++
+		hasFailedTask := !taskSuccess
 
-		hasFailedTask := false
-
-		// 只要有一个任务失败，整体标记为失败
-		if !taskSuccess {
-			hasFailedTask = true
-		}
-
-		// 所有任务都完成后，触发通知（只执行一次）
 		if completedTasks >= totalTasksToLoad {
 			notifyOnce.Do(func() {
 				req := &login_proto_centre.CentrePlayerGameNodeEntryRequest{
@@ -197,34 +199,22 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 					node.Send(req, game.CentreLoginNodeEnterGameMessageId)
 				}
 
-				// 根据实际情况输出日志
 				if hasFailedTask {
-					logx.Errorf("All %messagesToLoad tasks completed with some failures, notified centre", totalTasksToLoad)
+					logx.Errorf("All %d tasks completed with some failures, notified centre", totalTasksToLoad)
 				} else {
-					logx.Infof("All %messagesToLoad tasks completed successfully, notified centre", totalTasksToLoad)
+					logx.Infof("All %d tasks completed successfully, notified centre", totalTasksToLoad)
 				}
 			})
 		}
 	}
 
-	// 定义要加载的PB列表
-	messagesToLoad := []proto.Message{
-		&login_proto_database.PlayerAllData{
-			PlayerDatabaseData:   &login_proto_database.PlayerDatabase{PlayerId: playerId},
-			PlayerDatabase_1Data: &login_proto_database.PlayerDatabase_1{PlayerId: playerId},
-		},
-		&login_proto_database.PlayerCentreDatabase{PlayerId: playerId},
-	}
-
-	// 用简化版接口（默认提取PlayerId）
+	// 调用加载接口，仅处理上述消息
 	return dataloader.LoadWithPlayerId(
 		ctx,
 		l.svcCtx.RedisClient,
 		l.svcCtx.KafkaClient,
 		l.svcCtx.TaskExecutor,
 		messagesToLoad,
-		taskGroupCallback, // 任务组回调（复用之前的）
+		taskGroupCallback,
 	)
-
-	return nil
 }
