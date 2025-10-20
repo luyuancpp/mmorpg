@@ -436,10 +436,6 @@ func InitAndAddMessageTasks(
 		} else {
 			manager.AddBatch(taskKey, tasks, options.Callback)
 		}
-	} else if options.Callback != nil {
-		// 全缓存命中，直接回调
-		go options.Callback(taskKey, true, nil)
 	}
-
-	return executor.SubmitTask(taskKey)
+	return nil
 }
