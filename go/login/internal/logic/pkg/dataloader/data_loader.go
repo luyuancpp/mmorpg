@@ -108,8 +108,7 @@ func loadSingle(
 	}
 
 	// 收集子消息（最多两层嵌套）
-	maxLevel := 1
-	allSubMsgs := collectSubMessages(msg, 0, maxLevel)
+	allSubMsgs := collectSubMessages(msg)
 
 	// 构建父消息缓存键（用于聚合结果存储）
 	parentKey := buildParentKey(msg, key)
@@ -157,51 +156,40 @@ func loadSingle(
 	)
 }
 
-// 收集子消息（最多两层，一级有子则不收集自身）
-// 收集子消息（最多两层，一级有子则不收集自身）
-func collectSubMessages(msg proto.Message, currentLevel int, maxLevel int) []proto.Message {
-	if currentLevel > maxLevel {
-		return nil
-	}
-
+// 收集子消息：只收集顶层消息中显式声明且已初始化的一级子消息
+func collectSubMessages(msg proto.Message) []proto.Message {
 	msgReflect := msg.ProtoReflect()
 	fields := msgReflect.Descriptor().Fields()
 	var subMsgs []proto.Message
 
-	// 遍历子消息字段
 	for i := 0; i < fields.Len(); i++ {
 		field := fields.Get(i)
 
-		// 跳过repeated列表类型的字段（避免类型转换错误）
+		// 跳过列表类型
 		if field.IsList() {
-			continue // 列表类型不处理，只处理单个消息类型
+			continue
 		}
 
-		// 只处理消息类型的字段
+		// 只处理单个消息类型字段
 		if field.Kind() != protoreflect.MessageKind {
 			continue
 		}
 
-		// 获取子消息实例（此时field一定是单个消息类型）
+		// 关键：判断子消息是否已初始化（非nil）
 		subMsgReflect := msgReflect.Get(field).Message()
-		if subMsgReflect == nil {
-			continue // 子消息未初始化，跳过
+		if subMsgReflect == nil || subMsgReflect.IsValid() == false {
+			continue // 未初始化的子消息字段，不收集
 		}
-		subMsg := subMsgReflect.Interface()
 
-		// 递归收集（层级+1）
-		collected := collectSubMessages(subMsg, currentLevel+1, maxLevel)
-		subMsgs = append(subMsgs, collected...)
+		subMsg := subMsgReflect.Interface()
+		subMsgs = append(subMsgs, subMsg)
 	}
 
-	// 有子消息则返回子消息，否则返回自身
+	// 有已初始化的子消息则返回，否则返回自身
 	if len(subMsgs) > 0 {
 		return subMsgs
 	}
-	if currentLevel <= maxLevel {
-		return []proto.Message{msg}
-	}
-	return nil
+	return []proto.Message{msg}
 }
 
 // 为消息设置key（仅支持player_id字段）
