@@ -246,62 +246,105 @@ func WaitForTaskResult(ctx context.Context, redisClient redis.Cmdable, key strin
 }
 
 func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
+	timeout := 10 * time.Second
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
 	batch, exists := tm.GetBatch(taskKey)
 	if !exists {
 		logx.Infof("批次不存在: %s", taskKey)
 		return
 	}
 
-	// 批量查询任务结果
-	allSuccess := true
-	var batchErr error
-	taskIDs := make([]string, len(batch.Tasks))
+	// 准备所有任务的Redis结果键（建议统一前缀，避免冲突）
+	taskResultKeys := make([]string, len(batch.Tasks))
 	taskMap := make(map[string]*MessageTask, len(batch.Tasks))
 	for i, t := range batch.Tasks {
-		taskIDs[i] = t.TaskID
-		taskMap[t.TaskID] = t
+		resultKey := fmt.Sprintf("task:result:%s", t.TaskID) // 带前缀的结果键
+		taskResultKeys[i] = resultKey
+		taskMap[resultKey] = t // 映射：结果键 -> 任务
 	}
 
-	// 从Redis获取所有任务结果
-	results, err := redisClient.MGet(ctx, taskIDs...).Result()
-	if err != nil {
-		batchErr = fmt.Errorf("批量获取结果失败: %w", err)
-		allSuccess = false
-	} else {
-		// 解析每个任务结果
-		for i, res := range results {
-			taskID := taskIDs[i]
-			task := taskMap[taskID]
-			if res == nil {
-				task.Status = TaskStatusFailed
-				task.Error = errors.New("结果不存在")
+	// 用于标记每个任务是否已完成
+	completed := make(map[string]bool, len(taskResultKeys))
+	allSuccess := true
+	var batchErr error
+
+	// 循环阻塞等待所有任务结果（直到全部完成或超时）
+	for len(completed) < len(taskResultKeys) {
+		select {
+		case <-ctx.Done():
+			// 超时：标记未完成的任务为失败
+			batchErr = fmt.Errorf("等待任务结果超时（%v）", timeout)
+			allSuccess = false
+			for _, key := range taskResultKeys {
+				if !completed[key] {
+					task := taskMap[key]
+					task.Status = TaskStatusFailed
+					task.Error = batchErr
+				}
+			}
+			tm.cleanupAndCallback(taskKey, batch, allSuccess, batchErr, redisClient)
+			return
+
+		default:
+			// 阻塞等待任意一个任务结果（超时1秒，避免无限阻塞）
+			result, err := redisClient.BLPop(ctx, 1*time.Second, taskResultKeys...).Result()
+			if err != nil {
+				if errors.Is(err, redis.Nil) {
+					continue // 1秒内无结果，继续等待
+				}
+				// Redis操作错误：标记所有未完成任务为失败
+				batchErr = fmt.Errorf("Redis BLPop失败: %w", err)
 				allSuccess = false
+				for _, key := range taskResultKeys {
+					if !completed[key] {
+						task := taskMap[key]
+						task.Status = TaskStatusFailed
+						task.Error = batchErr
+					}
+				}
+				tm.cleanupAndCallback(taskKey, batch, allSuccess, batchErr, redisClient)
+				return
+			}
+
+			// 解析返回结果（BLPop返回 [key, value]）
+			if len(result) != 2 {
+				logx.Errorf("BLPop返回格式错误: %v", result)
+				continue
+			}
+			resultKey := result[0]
+			resultValue := result[1]
+			task, ok := taskMap[resultKey]
+			if !ok {
+				logx.Errorf("未知的任务结果键: %s", resultKey)
 				continue
 			}
 
+			// 标记任务已完成
+			completed[resultKey] = true
+
 			// 反序列化任务结果
 			var taskResult login_proto.TaskResult
-			if err := proto.Unmarshal([]byte(res.(string)), &taskResult); err != nil {
+			if err := proto.Unmarshal([]byte(resultValue), &taskResult); err != nil {
+				err = fmt.Errorf("反序列化任务结果失败: %w", err)
 				task.Status = TaskStatusFailed
-				task.Error = fmt.Errorf("反序列化失败: %w", err)
+				task.Error = err
 				allSuccess = false
 				continue
 			}
 
 			if !taskResult.Success {
+				err = errors.New(taskResult.Error)
 				task.Status = TaskStatusFailed
-				task.Error = errors.New(taskResult.Error)
+				task.Error = err
 				allSuccess = false
 				continue
 			}
 
 			// 反序列化子消息
 			if err := proto.Unmarshal(taskResult.Data, task.Message); err != nil {
+				err = fmt.Errorf("反序列化消息失败: %w", err)
 				task.Status = TaskStatusFailed
-				task.Error = fmt.Errorf("反序列化消息失败: %w", err)
+				task.Error = err
 				allSuccess = false
 				continue
 			}
@@ -315,19 +358,22 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 					task.Message,
 					time.Duration(config.AppConfig.Timeouts.RoleCacheExpireHours)*time.Hour,
 				); err != nil {
+					err = fmt.Errorf("缓存失败: %w", err)
 					task.Status = TaskStatusFailed
-					task.Error = fmt.Errorf("缓存失败: %w", err)
+					task.Error = err
 					allSuccess = false
 					continue
 				}
 			}
 
 			task.Status = TaskStatusDone
+			logx.Infof("任务 %s 处理完成", task.TaskID)
 		}
 	}
 
 	// 聚合结果（若需要）
 	if batch.Aggregator != nil && allSuccess {
+		logx.Infof("聚合批次 %s 的子任务结果", taskKey)
 		parentPB, err := batch.Aggregator.Aggregate(batch.Tasks)
 		if err != nil {
 			batchErr = fmt.Errorf("聚合失败: %w", err)
@@ -346,8 +392,7 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 		}
 	}
 
-	// 清理资源并触发回调
-	tm.cleanupAndCallback(taskKey, batch, allSuccess, batchErr, redisClient, ctx)
+	tm.cleanupAndCallback(taskKey, batch, allSuccess, batchErr, redisClient)
 }
 
 // 清理资源并触发回调
@@ -357,8 +402,9 @@ func (tm *TaskManager) cleanupAndCallback(
 	allSuccess bool,
 	err error,
 	redisClient redis.Cmdable,
-	ctx context.Context,
 ) {
+	timeout := 10 * time.Second
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
 	// 批量删除Redis任务键
 	keys := make([]string, len(batch.Tasks))
 	for i, t := range batch.Tasks {
