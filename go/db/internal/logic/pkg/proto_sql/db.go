@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
-	pbmysql "github.com/luyuancpp/pbmysql-go"
+	"github.com/luyuancpp/proto2mysql-go"
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -17,8 +17,8 @@ import (
 )
 
 type GameDB struct {
-	SqlGenerator *pbmysql.PbMysqlDB
-	DB           *sql.DB
+	SqlModel *proto2mysql.PbMysqlDB
+	DB       *sql.DB
 }
 
 var DB *GameDB
@@ -76,14 +76,14 @@ func openDB() error {
 	}
 
 	DB = &GameDB{
-		DB:           sql.OpenDB(conn),
-		SqlGenerator: pbmysql.NewPbMysqlDB(),
+		DB:       sql.OpenDB(conn),
+		SqlModel: proto2mysql.NewPbMysqlDB(),
 	}
 
 	DB.DB.SetMaxOpenConns(config.AppConfig.ServerConfig.Database.MaxOpenConn)
 	DB.DB.SetMaxIdleConns(config.AppConfig.ServerConfig.Database.MaxIdleConn)
 
-	err = DB.SqlGenerator.OpenDB(DB.DB, mysqlConfig.DBName)
+	err = DB.SqlModel.OpenDB(DB.DB, mysqlConfig.DBName)
 	if err != nil {
 		return err
 	}
@@ -94,8 +94,7 @@ func InitDB() {
 	if err := openDB(); err != nil {
 		log.Fatalf("error opening database: %v", err)
 	}
-	createDBTable()
-	alterDBTable()
+	CreateOrUpdateTable()
 }
 
 // 读取 JSON 文件并返回包含消息类型名称的切片
@@ -148,7 +147,7 @@ func getTablesFromJSON() ([]proto.Message, error) {
 	return messages, nil
 }
 
-func createDBTable() {
+func CreateOrUpdateTable() {
 	tables, err := getTablesFromJSON() // 处理返回的错误
 	if err != nil {
 		log.Fatalf("error getting tables: %v", err)
@@ -156,9 +155,8 @@ func createDBTable() {
 	}
 
 	for _, table := range tables {
-		DB.SqlGenerator.RegisterTable(table)
-		sql := DB.SqlGenerator.GetCreateTableSql(table)
-		_, err := DB.DB.Exec(sql)
+		DB.SqlModel.RegisterTable(table)
+		err := DB.SqlModel.CreateOrUpdateTable(table)
 		if err != nil {
 			log.Fatal(err)
 			return
@@ -170,12 +168,4 @@ func createDBTable() {
 func getTables() []proto.Message {
 	// 示例：返回一个空的切片，具体内容你可以根据需要调整
 	return []proto.Message{}
-}
-
-func alterDBTable() {
-	tables := getTables()
-
-	for _, table := range tables {
-		DB.SqlGenerator.UpdateTableField(table)
-	}
 }

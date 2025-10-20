@@ -407,7 +407,7 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 	var resultData []byte
 	switch task.Op {
 	case "read":
-		if err := proto_sql.DB.SqlGenerator.LoadOneByWhereCase(msg, task.WhereCase); err != nil {
+		if err := proto_sql.DB.SqlModel.FindAllByWhereClause(msg, task.WhereCase); err != nil {
 			resultErr = fmt.Sprintf("db read failed: %v", err)
 		} else {
 			if resultData, err = proto.Marshal(msg); err != nil {
@@ -415,7 +415,7 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 			}
 		}
 	case "write":
-		if err := proto_sql.DB.SqlGenerator.Save(msg); err != nil {
+		if err := proto_sql.DB.SqlModel.Save(msg); err != nil {
 			resultErr = fmt.Sprintf("db write failed: %v", err)
 		}
 	default:
