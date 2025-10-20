@@ -69,7 +69,6 @@ func (g *GenericAggregator) Aggregate(subTasks []*MessageTask) (proto.Message, e
 			field := fields.Get(i)
 			if field.Kind() == protoreflect.MessageKind &&
 				string(field.Message().Name()) == subTypeName {
-
 				parentReflect.Set(field, protoreflect.ValueOf(subPB.ProtoReflect()))
 				found = true
 				break
@@ -108,12 +107,11 @@ const frameResultKeyPrefix = "frame:result:"
 
 // 1. 新增：TaskBatch增加创建时间（用于定时清理）
 type TaskBatch struct {
-	Tasks          []*MessageTask
-	Aggregator     Aggregator
-	skipSubCache   bool
-	Callback       BatchCallback
-	CreateTime     time.Time // 新增：批次创建时间
-	FrameResultKey string    // 新增：帧级结果Key
+	Tasks        []*MessageTask
+	Aggregator   Aggregator
+	skipSubCache bool
+	Callback     BatchCallback
+	CreateTime   time.Time // 新增：批次创建时间
 }
 
 // 2. TaskManager增加定时清理协程
@@ -166,16 +164,12 @@ func (tm *TaskManager) AddAggregateBatch(taskKey string, tasks []*MessageTask, a
 		task.SkipSubCache = true
 	}
 
-	// 生成帧级结果Key（taskKey唯一，确保帧级Key不重复）
-	frameResultKey := frameResultKeyPrefix + taskKey
-
 	tm.batches[taskKey] = &TaskBatch{
-		Tasks:          tasks,
-		Aggregator:     aggregator,
-		skipSubCache:   true,
-		Callback:       callback,
-		CreateTime:     time.Now(),
-		FrameResultKey: frameResultKey,
+		Tasks:        tasks,
+		Aggregator:   aggregator,
+		skipSubCache: true,
+		Callback:     callback,
+		CreateTime:   time.Now(),
 	}
 }
 
@@ -188,15 +182,12 @@ func (tm *TaskManager) AddBatch(taskKey string, tasks []*MessageTask, callback B
 		task.SkipSubCache = false
 	}
 
-	frameResultKey := frameResultKeyPrefix + taskKey
-
 	tm.batches[taskKey] = &TaskBatch{
-		Tasks:          tasks,
-		Aggregator:     nil,
-		skipSubCache:   false,
-		Callback:       callback,
-		CreateTime:     time.Now(),
-		FrameResultKey: frameResultKey,
+		Tasks:        tasks,
+		Aggregator:   nil,
+		skipSubCache: false,
+		Callback:     callback,
+		CreateTime:   time.Now(),
 	}
 }
 
@@ -248,33 +239,13 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 		return
 	}
 
-	// 关键修改：监听帧级结果Key（1次监听替代N次单任务监听）
-	logx.Debugf("waiting frame result: key=%s", batch.FrameResultKey)
-	_, err := redisClient.BLPop(ctx, time.Duration(config.AppConfig.Timeouts.TaskWaitTimeoutSec)*time.Second, batch.FrameResultKey).Result()
-	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			err = fmt.Errorf("frame result timeout: taskKey=%s", taskKey)
-		}
-		logx.Errorf("frame result listen failed: %v", err)
-		// 标记所有任务失败
-		for _, task := range batch.Tasks {
-			task.Status = TaskStatusFailed
-			task.Error = err
-		}
-		allSuccess := false
-		batchErr := err
-		// 清理批次并触发回调
-		tm.cleanBatchAndCallback(taskKey, batch, allSuccess, batchErr, redisClient, ctx)
-		return
-	}
-
 	// 帧级结果已到，批量查询所有任务结果
 	allSuccess := true
 	var batchErr error
 	taskResultKeys := make([]string, 0, len(batch.Tasks))
 	taskMap := make(map[string]*MessageTask, len(batch.Tasks))
 	for _, task := range batch.Tasks {
-		resultKey := fmt.Sprintf("task:%s", task.TaskID)
+		resultKey := task.TaskID
 		taskResultKeys = append(taskResultKeys, resultKey)
 		taskMap[resultKey] = task
 	}
@@ -406,7 +377,6 @@ func (tm *TaskManager) cleanBatchAndCallback(
 ) {
 	// 清理Redis键（批量删除，减少请求）
 	keysToDelete := make([]string, 0, len(batch.Tasks)+1)
-	keysToDelete = append(keysToDelete, batch.FrameResultKey) // 删除帧级结果Key
 	for _, task := range batch.Tasks {
 		keysToDelete = append(keysToDelete, fmt.Sprintf("task:%s", task.TaskID)) // 删除单任务Key
 	}

@@ -423,6 +423,7 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 		resultErr = fmt.Sprintf("unsupported op: %s", task.Op)
 	}
 
+	// 在 processTaskWithoutLock 函数中，修改 LPush 的 Key
 	if task.Op == "read" && task.TaskId != "" {
 		result := &db_proto.TaskResult{
 			Success: resultErr == "",
@@ -433,7 +434,9 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 		if err != nil {
 			return fmt.Errorf("marshal result failed: taskID=%s, err=%w", task.TaskId, err)
 		}
-		if err := redisClient.LPush(ctx, task.TaskId, resBytes).Err(); err != nil {
+		// 关键修改：使用 "task:{taskID}" 作为Key，与 taskmanager 保持一致
+		resultKey := fmt.Sprintf("%s", task.TaskId)
+		if err := redisClient.LPush(ctx, resultKey, resBytes).Err(); err != nil {
 			return fmt.Errorf("save read result failed: taskID=%s, err=%w", task.TaskId, err)
 		}
 	}

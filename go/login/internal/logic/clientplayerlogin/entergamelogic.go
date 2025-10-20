@@ -3,7 +3,6 @@ package clientplayerloginlogic
 import (
 	"context"
 	"errors"
-	"fmt"
 	"google.golang.org/protobuf/proto"
 	"login/data"
 	"login/generated/pb/game"
@@ -157,7 +156,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		return errors.New("session not found")
 	}
 
-	customCtx, _ := context.WithCancel(context.Background())
+	ctx, _ := context.WithCancel(context.Background())
 
 	// 配置：需要加载的任务总数
 	const totalTasksToLoad = 2
@@ -169,7 +168,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 	)
 
 	// 任务完成回调：累加计数并检查是否所有任务都完成
-	callback := func(taskKey string, taskSuccess bool, err error) {
+	taskGroupCallback := func(taskKey string, taskSuccess bool, err error) {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -200,52 +199,32 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 
 				// 根据实际情况输出日志
 				if hasFailedTask {
-					logx.Errorf("All %d tasks completed with some failures, notified centre", totalTasksToLoad)
+					logx.Errorf("All %messagesToLoad tasks completed with some failures, notified centre", totalTasksToLoad)
 				} else {
-					logx.Infof("All %d tasks completed successfully, notified centre", totalTasksToLoad)
+					logx.Infof("All %messagesToLoad tasks completed successfully, notified centre", totalTasksToLoad)
 				}
 			})
 		}
 	}
 
-	// 第一个任务：加载中心数据库数据
-	msgCentre := &login_proto_database.PlayerCentreDatabase{PlayerId: playerId}
-	if err := dataloader.BatchLoadAndCache(
-		customCtx,
-		l.svcCtx.RedisClient,
-		l.svcCtx.KafkaClient,
-		playerId,
-		[]proto.Message{msgCentre},
-		l.svcCtx.TaskExecutor,
-		callback,
-	); err != nil {
-		logx.Errorf("Failed to start BatchLoadAndCache: %v", err)
-		return err
+	// 定义要加载的PB列表
+	messagesToLoad := []proto.Message{
+		&login_proto_database.PlayerAllData{
+			PlayerDatabaseData:   &login_proto_database.PlayerDatabase{PlayerId: playerId},
+			PlayerDatabase_1Data: &login_proto_database.PlayerDatabase_1{PlayerId: playerId},
+		},
+		&login_proto_database.PlayerCentreDatabase{PlayerId: playerId},
 	}
 
-	// 第二个任务：加载聚合数据
-	playerAll := &login_proto_database.PlayerAllData{}
-	if err := dataloader.LoadAggregateData(
-		customCtx,
+	// 用简化版接口（默认提取PlayerId）
+	return dataloader.LoadWithPlayerId(
+		ctx,
 		l.svcCtx.RedisClient,
 		l.svcCtx.KafkaClient,
-		playerId,
-		playerAll,
-		func(id uint64) []proto.Message {
-			return []proto.Message{
-				&login_proto_database.PlayerDatabase{PlayerId: id},
-				&login_proto_database.PlayerDatabase_1{PlayerId: id},
-			}
-		},
-		func(id uint64) string {
-			return fmt.Sprintf("%s:%d", playerAll.ProtoReflect().Descriptor().FullName(), id)
-		},
 		l.svcCtx.TaskExecutor,
-		callback,
-	); err != nil {
-		logx.Errorf("Failed to start LoadAggregateData: %v", err)
-		return err
-	}
+		messagesToLoad,
+		taskGroupCallback, // 任务组回调（复用之前的）
+	)
 
 	return nil
 }
