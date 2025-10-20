@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -17,14 +18,46 @@ import (
 // KeyExtractor 从PB中提取key的函数（支持任意key类型）
 type KeyExtractor func(proto.Message) (uint64, error)
 
-// 默认的PlayerId提取函数
+// 默认的PlayerId提取函数（适配proto中的 player_id 字段）
 func DefaultPlayerIdExtractor(msg proto.Message) (uint64, error) {
-	msgReflect := msg.ProtoReflect()
-	field := msgReflect.Descriptor().Fields().ByName(protoreflect.Name("PlayerId"))
-	if field == nil {
-		return 0, fmt.Errorf("PB类型 %s 缺少PlayerId字段", msgReflect.Descriptor().FullName())
+	return extractPlayerIdRecursive(msg.ProtoReflect())
+}
+
+// 递归提取：先检查当前消息，若没有则遍历子消息
+func extractPlayerIdRecursive(msgReflect protoreflect.Message) (uint64, error) {
+	// 1. 先检查当前消息是否有 player_id 字段
+	field := msgReflect.Descriptor().Fields().ByName(protoreflect.Name("player_id"))
+	if field != nil {
+		// 当前消息有 player_id，直接提取
+		val := msgReflect.Get(field)
+		return uint64(val.Uint()), nil
 	}
-	return uint64(msgReflect.Get(field).Uint()), nil
+
+	// 2. 当前消息没有，遍历所有子消息字段递归查找
+	fields := msgReflect.Descriptor().Fields()
+	for i := 0; i < fields.Len(); i++ {
+		field := fields.Get(i)
+		// 只处理子消息类型的字段
+		if field.Kind() != protoreflect.MessageKind {
+			continue
+		}
+
+		// 获取子消息实例
+		subMsgReflect := msgReflect.Get(field).Message()
+		if subMsgReflect == nil {
+			continue // 子消息未初始化，跳过
+		}
+
+		// 递归提取子消息的 player_id
+		id, err := extractPlayerIdRecursive(subMsgReflect)
+		if err == nil {
+			return id, nil // 找到则返回
+		}
+		// 子消息也没有，继续遍历其他子字段
+	}
+
+	// 3. 所有层级都没有找到
+	return 0, fmt.Errorf("PB类型 %s 及其子消息均缺少 player_id 字段", msgReflect.Descriptor().FullName())
 }
 
 // Load 批量加载PB数据：支持动态类型查找和自定义key提取
@@ -169,27 +202,62 @@ func buildSubMessagesByTypeNames(
 
 // 给消息设置key
 func setKeyToMessage(msg proto.Message, key uint64, keyExtractor KeyExtractor) error {
-	// 临时设置key并验证提取函数是否能正确提取
 	tempMsg := proto.Clone(msg).(proto.Message)
 	tempReflect := tempMsg.ProtoReflect()
+	msgName := msg.ProtoReflect().Descriptor().FullName()
 
-	// 尝试常见的key字段
-	for _, fieldName := range []protoreflect.Name{"PlayerId", "RoleId", "UserId", "Id"} {
+	// 优先尝试你的 proto 中实际存在的字段（全小写 player_id）
+	fieldNames := []protoreflect.Name{
+		"player_id", // 核心字段，必须优先尝试
+		"role_id",   // 其他可能的key字段
+		"user_id",
+		"id",
+	}
+
+	for _, fieldName := range fieldNames {
 		field := tempReflect.Descriptor().Fields().ByName(fieldName)
 		if field == nil {
+			logx.Debugf("子消息 %s 不包含字段 %s，跳过", msgName, fieldName)
 			continue
 		}
+
+		// 根据字段类型设置对应的值（避免类型不匹配）
+		var value protoreflect.Value
+		switch field.Kind() {
+		case protoreflect.Uint64Kind:
+			value = protoreflect.ValueOfUint64(key)
+		case protoreflect.Int64Kind:
+			value = protoreflect.ValueOfInt64(int64(key)) // 兼容int64类型
+		case protoreflect.Uint32Kind:
+			value = protoreflect.ValueOfUint32(uint32(key)) // 兼容uint32
+		case protoreflect.Int32Kind:
+			value = protoreflect.ValueOfInt32(int32(key)) // 兼容int32
+		default:
+			logx.Debugf("子消息 %s 的字段 %s 类型不支持（%s），跳过", msgName, fieldName, field.Kind())
+			continue
+		}
+
 		// 设置临时key值
-		tempReflect.Set(field, protoreflect.ValueOfUint64(key))
-		// 验证提取函数是否能正确提取
-		if extractedKey, err := keyExtractor(tempMsg); err == nil && extractedKey == key {
+		tempReflect.Set(field, value)
+
+		// 验证提取函数是否能正确提取（确保设置有效）
+		extractedKey, err := keyExtractor(tempMsg)
+		if err != nil {
+			logx.Debugf("子消息 %s 设置字段 %s 后，提取key失败: %v", msgName, fieldName, err)
+			continue
+		}
+		if extractedKey == key {
 			// 验证通过，正式设置key
-			msg.ProtoReflect().Set(field, protoreflect.ValueOfUint64(key))
+			msg.ProtoReflect().Set(field, value)
+			logx.Infof("子消息 %s 成功设置key（字段 %s）: %d", msgName, fieldName, key)
 			return nil
+		} else {
+			logx.Debugf("子消息 %s 提取的key不匹配（期望 %d，实际 %d）", msgName, key, extractedKey)
 		}
 	}
 
-	return fmt.Errorf("消息 %s 不支持自动设置key（未找到匹配字段）", msg.ProtoReflect().Descriptor().FullName())
+	// 所有字段尝试失败，返回详细错误
+	return fmt.Errorf("消息 %s 不支持自动设置key（已尝试字段: %v）", msgName, fieldNames)
 }
 
 // 生成父消息缓存键
