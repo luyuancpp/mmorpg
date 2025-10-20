@@ -27,13 +27,13 @@ Kafka:
   # 以下为生产者专用配置（补充缺失项）
   InitialPartition: 5               # 初始分区数（建议与实际分区数一致）
   DialTimeout: "10s"                # 拨号超时（10秒）
-  ReadTimeout: "10s"                # 读取超时（10秒）
+  ReadTimeout: "100s"                # 读取超时（10秒）
   WriteTimeout: "10s"               # 写入超时（10秒）
   RetryMax: 3                       # 最大重试次数
   RetryBackoff: "100ms"             # 重试间隔（100毫秒）
   ChannelBuffer: 1024               # 通道缓冲大小
   SyncInterval: "30s"               # 分区同步间隔（30秒）
-  StatsInterval: "5s"               # 统计打印间隔（5秒）
+  StatsInterval: "300s"               # 统计打印间隔（5秒）
   CompressionType: 2                # 压缩类型（2=snappy，0=none，1=gzip）
   Idempotent: true                  # 启用幂等性
   MaxOpenRequests: 1                # 必须设置为1，配合幂等性使用

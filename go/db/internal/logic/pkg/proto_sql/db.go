@@ -163,9 +163,3 @@ func CreateOrUpdateTable() {
 		}
 	}
 }
-
-// 你需要定义 getTables 函数，假设它返回一个包含表的列表
-func getTables() []proto.Message {
-	// 示例：返回一个空的切片，具体内容你可以根据需要调整
-	return []proto.Message{}
-}
