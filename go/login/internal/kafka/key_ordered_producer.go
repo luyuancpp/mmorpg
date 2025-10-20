@@ -3,6 +3,8 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"login/internal/config"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -21,21 +23,6 @@ type ProducerMeta struct {
 }
 
 // ProducerConfig 可定制化生产者配置，支持外部注入参数
-type ProducerConfig struct {
-	BootstrapServers string                  // Kafka集群地址
-	Topic            string                  // 目标主题
-	InitialPartition int                     // 初始分区数
-	DialTimeout      time.Duration           // 网络拨号超时
-	ReadTimeout      time.Duration           // 读取超时
-	WriteTimeout     time.Duration           // 写入超时
-	RetryMax         int                     // 最大重试次数
-	RetryBackoff     time.Duration           // 重试间隔
-	ChannelBuffer    int                     // 通道缓冲大小
-	SyncInterval     time.Duration           // 分区同步间隔
-	StatsInterval    time.Duration           // 统计打印间隔
-	CompressionType  sarama.CompressionCodec // 压缩类型
-	Idempotent       bool                    // 是否启用幂等性
-}
 
 // KeyOrderedKafkaProducer 基于一致性哈希的有序Kafka生产者
 type KeyOrderedKafkaProducer struct {
@@ -62,21 +49,22 @@ type KeyOrderedKafkaProducer struct {
 }
 
 // NewKeyOrderedKafkaProducer 初始化生产者（支持可定制化配置）
-func NewKeyOrderedKafkaProducer(cfg ProducerConfig) (*KeyOrderedKafkaProducer, error) {
+func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProducer, error) {
 	// 1. 配置Kafka客户端（使用外部注入的配置）
 	config := sarama.NewConfig()
-	config.Version = sarama.V3_6_0_0                   // 匹配Kafka版本
-	config.Net.DialTimeout = cfg.DialTimeout           // 外部配置：拨号超时
-	config.Net.ReadTimeout = cfg.ReadTimeout           // 外部配置：读取超时
-	config.Net.WriteTimeout = cfg.WriteTimeout         // 外部配置：写入超时
-	config.Producer.Return.Successes = true            // 启用成功回调
-	config.Producer.Return.Errors = true               // 启用错误回调
-	config.Producer.RequiredAcks = sarama.WaitForLocal // 本地写成功即返回
-	config.Producer.Retry.Max = cfg.RetryMax           // 外部配置：最大重试次数
-	config.Producer.Retry.Backoff = cfg.RetryBackoff   // 外部配置：重试间隔
-	config.ChannelBufferSize = cfg.ChannelBuffer       // 外部配置：通道缓冲
-	config.Producer.Idempotent = cfg.Idempotent        // 外部配置：幂等性开关
-	config.Producer.Compression = cfg.CompressionType  // 外部配置：压缩类型
+	config.Version = sarama.V3_6_0_0                                           // 匹配Kafka版本
+	config.Net.DialTimeout = cfg.DialTimeout                                   // 外部配置：拨号超时
+	config.Net.ReadTimeout = cfg.ReadTimeout                                   // 外部配置：读取超时
+	config.Net.WriteTimeout = cfg.WriteTimeout                                 // 外部配置：写入超时
+	config.Producer.Return.Successes = true                                    // 启用成功回调
+	config.Producer.Return.Errors = true                                       // 启用错误回调
+	config.Producer.RequiredAcks = sarama.WaitForAll                           // 本地写成功即返回
+	config.Producer.Retry.Max = cfg.RetryMax                                   // 外部配置：最大重试次数
+	config.Producer.Retry.Backoff = cfg.RetryBackoff                           // 外部配置：重试间隔
+	config.ChannelBufferSize = cfg.ChannelBuffer                               // 外部配置：通道缓冲
+	config.Producer.Idempotent = cfg.Idempotent                                // 外部配置：幂等性开关
+	config.Producer.Compression = sarama.CompressionCodec(cfg.CompressionType) // 外部配置：压缩类型
+	config.Net.MaxOpenRequests = cfg.MaxOpenRequests
 
 	// 改进：启用幂等性时必须开启事务ID（避免重复消息）
 	if cfg.Idempotent {
@@ -543,7 +531,7 @@ func (p *KeyOrderedKafkaProducer) markPartitionUnavailable(partition int32) {
 
 	// 记录分区不可用时间（用于后续恢复检查）
 	p.unavailablePartitions[partition] = time.Now()
-	logx.Warnf("分区标记为不可用: 主题=%s, 分区=%d, 恢复检查间隔=%v",
+	logx.Errorf("分区标记为不可用: 主题=%s, 分区=%d, 恢复检查间隔=%v",
 		p.topic, partition, p.retryInterval)
 }
 
@@ -567,7 +555,7 @@ func (p *KeyOrderedKafkaProducer) getAvailablePartition(key string) (int32, bool
 	allPartitions := p.consistent.GetPartitions()
 	for _, part := range allPartitions {
 		if _, isUnavailable := p.unavailablePartitions[part]; !isUnavailable {
-			logx.Warnf("原始分区不可用，重新映射: 键=%s, 原分区=%d, 新分区=%d",
+			logx.Errorf("原始分区不可用，重新映射: 键=%s, 原分区=%d, 新分区=%d",
 				key, partition, part)
 			return part, true
 		}
@@ -604,23 +592,31 @@ func (p *KeyOrderedKafkaProducer) checkUnavailablePartitions() {
 }
 
 // 改进4：判断是否为分区不可用错误
+// 改进：修正分区不可用错误的判断逻辑
 func isPartitionUnavailableErr(err error) bool {
-	// 匹配Sarama中常见的分区不可用错误类型
-	switch err.(type) {
-	case *sarama.PartitionError:
-		partErr := err.(*sarama.PartitionError)
-		// 常见的分区不可用错误码（参考Kafka错误码）
-		unavailableCodes := map[int16]bool{
-			3:  true, // UNKNOWN_TOPIC_OR_PARTITION
-			6:  true, // LEADER_NOT_AVAILABLE
-			19: true, // OFFSET_NOT_AVAILABLE
+	// 1. 先尝试将错误转换为sarama的ProducerError（最外层错误）
+	if prodErr, ok := err.(*sarama.ProducerError); ok {
+		// ProducerError的Err字段可能是PartitionError（结构体）
+		// 通过错误信息字符串匹配判断是否为分区错误
+		errMsg := prodErr.Error()
+		if strings.Contains(errMsg, "partition") {
+			// 2. 提取Kafka错误码（sarama.KError是int16类型）
+			// 从错误信息中解析或直接比较已知错误码
+			switch prodErr.Err {
+			case sarama.ErrUnknownTopicOrPartition: // 3
+			case sarama.ErrLeaderNotAvailable: // 6
+			case sarama.ErrOffsetNotAvailable: // 19
+			case sarama.ErrReplicaNotAvailable: // 9
+				return true
+			}
+			// 3. 字符串匹配兜底（处理未知错误码但明确是分区不可用的情况）
+			return strings.Contains(errMsg, "unavailable")
 		}
-		return unavailableCodes[partErr.Code()]
-	default:
-		// 匹配其他分区相关错误信息
-		errMsg := err.Error()
-		return contains(errMsg, "partition") && contains(errMsg, "unavailable")
 	}
+
+	// 4. 直接通过错误信息判断（非ProducerError但可能是分区问题）
+	errMsg := err.Error()
+	return strings.Contains(errMsg, "partition") && strings.Contains(errMsg, "unavailable")
 }
 
 // 辅助函数：判断字符串是否包含子串

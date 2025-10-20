@@ -17,13 +17,26 @@ Node:
     Password: ""
     DB: 0
     PoolSize: 10
-    DefaultTTLSeconds : 86400
+    DefaultTTLSeconds: 86400  # 注意这里修正了空格（原配置有多余空格）
 
 Kafka:
-  Brokers: "127.0.0.1:9092"  # Kafka 集群地址（多个用逗号分隔，如 "ip1:9092,ip2:9092"）
-  GroupID: "db_rpc_consumer_group"     # Kafka 消费组 ID（自定义，确保唯一）
-  Topic: "db_task_topic"               # 要消费的 Kafka 主题名（需与生产者发送的主题一致）
-  PartitionCnt: 5                     # 主题分区数（需与实际 Kafka 主题的分区数匹配）
+  Brokers: "127.0.0.1:9092"  # Kafka 集群地址
+  GroupID: "db_rpc_consumer_group"  # 消费者组 ID
+  Topic: "db_task_topic"            # 主题名（生产/消费共用）
+  PartitionCnt: 5                   # 实际分区数
+  # 以下为生产者专用配置（补充缺失项）
+  InitialPartition: 5               # 初始分区数（建议与实际分区数一致）
+  DialTimeout: "10s"                # 拨号超时（10秒）
+  ReadTimeout: "10s"                # 读取超时（10秒）
+  WriteTimeout: "10s"               # 写入超时（10秒）
+  RetryMax: 3                       # 最大重试次数
+  RetryBackoff: "100ms"             # 重试间隔（100毫秒）
+  ChannelBuffer: 1024               # 通道缓冲大小
+  SyncInterval: "30s"               # 分区同步间隔（30秒）
+  StatsInterval: "5s"               # 统计打印间隔（5秒）
+  CompressionType: 2                # 压缩类型（2=snappy，0=none，1=gzip）
+  Idempotent: true                  # 启用幂等性
+  MaxOpenRequests: 1                # 必须设置为1，配合幂等性使用
 
 Snowflake:
   Epoch: 1721473263000
@@ -31,23 +44,23 @@ Snowflake:
   StepBits: 9
 
 Locker:
-  AccountLockTTL: 10   # 10秒
-  PlayerLockTTL: 5     # 5秒
+  AccountLockTTL: 10   # 账号锁超时（10秒）
+  PlayerLockTTL: 5     # 角色锁超时（5秒）
 
 Account:
   MaxDevicesPerAccount: 3
-  CacheExpireHours: 12
+  CacheExpireHours: 12  # 账号缓存过期时间（12小时）
 
 Registry:
   Etcd:
     Hosts:
       - 127.0.0.1:2379
     Key: loginservice.rpc
-    DialTimeoutMS: 5000
+    DialTimeoutMS: 5000  # etcd 拨号超时（5秒）
 
 Timeouts:
-  EtcdDialTimeoutMS: 5000         # etcd连接超时（已加过）
-  ServiceDiscoveryTimeoutMS: 10000 # 服务注册/发现使用的 context 超时（如 WithTimeout）
-  TaskWaitTimeoutSec: 5       # 等待任务结果最大超时（秒）
-  AccountCacheExpireHours: 12     # 账号数据 Redis 缓存过期时间（小时）
-  RoleCacheExpireHours: 24         # 角色数据 Redis 缓存过期时间（小时）
+  EtcdDialTimeoutMS: 5000         # etcd 连接超时
+  ServiceDiscoveryTimeoutMS: 10000 # 服务发现超时（10秒）
+  TaskWaitTimeoutSec: 5           # 任务等待超时（5秒）
+  AccountCacheExpireHours: 12     # 账号缓存过期时间（与 Account 配置一致，建议删除重复项）
+  RoleCacheExpireHours: 24         # 角色缓存过期时间（24小时）

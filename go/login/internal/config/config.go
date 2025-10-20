@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/zeromicro/go-zero/zrpc"
+	"time"
 )
 
 type Config struct {
@@ -12,7 +13,7 @@ type Config struct {
 	Account   AccountConf   `json:"Account"`
 	Registry  RegistryConf  `json:"Registry"`
 	Timeouts  TimeoutConf   `json:"Timeouts"`
-	Kafka     KafkaConfig   `json:"Kafka"` // Kafka配置
+	Kafka     KafkaConfig   `json:"Kafka"` // 合并后的Kafka配置（包含生产者参数）
 }
 
 type RedisConf struct {
@@ -37,12 +38,27 @@ type NodeConfig struct {
 	QueueShardCount  uint64    `json:"QueueShardCount"`
 }
 
-// KafkaConfig Kafka配置结构体（包含分区数）
+// KafkaConfig 合并后的Kafka配置（包含原KafkaConfig和ProducerConfig的所有字段）
 type KafkaConfig struct {
-	Brokers      string `json:"Brokers"`      // Kafka集群地址（逗号分隔）
-	GroupID      string `json:"GroupID"`      // 消费者组ID
-	Topic        string `json:"Topic"`        // 消费主题名
-	PartitionCnt int32  `json:"PartitionCnt"` // 主题分区数量（新增）
+	// 基础配置
+	BootstrapServers string `json:"Brokers"`      // Kafka集群地址（逗号分隔）
+	GroupID          string `json:"GroupID"`      // 消费者组ID
+	Topic            string `json:"Topic"`        // 主题名（生产/消费共用）
+	PartitionCnt     int32  `json:"PartitionCnt"` // 主题分区数量
+
+	// 生产者专用配置（时间字段使用time.Duration）
+	InitialPartition int           `json:"InitialPartition"` // 初始分区数
+	DialTimeout      time.Duration `json:"DialTimeout"`      // 网络拨号超时（支持10s、500ms等格式）
+	ReadTimeout      time.Duration `json:"ReadTimeout"`      // 读取超时
+	WriteTimeout     time.Duration `json:"WriteTimeout"`     // 写入超时
+	RetryMax         int           `json:"RetryMax"`         // 最大重试次数
+	RetryBackoff     time.Duration `json:"RetryBackoff"`     // 重试间隔
+	ChannelBuffer    int           `json:"ChannelBuffer"`    // 通道缓冲大小
+	SyncInterval     time.Duration `json:"SyncInterval"`     // 分区同步间隔
+	StatsInterval    time.Duration `json:"StatsInterval"`    // 统计打印间隔
+	CompressionType  int           `json:"CompressionType"`  // 压缩类型（snappy/gzip/none）
+	Idempotent       bool          `json:"Idempotent"`       // 是否启用幂等性
+	MaxOpenRequests  int           `json:"MaxOpenRequests"`
 }
 
 type SnowflakeConf struct {
