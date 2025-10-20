@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -66,12 +67,15 @@ func Load(
 	if keyExtractor == nil {
 		return errors.New("keyExtractor不能为空")
 	}
+
+	taskKey := uuid.NewString()
+
 	for _, msg := range messages {
-		if err := loadSingle(redisClient, kafkaProducer, executor, msg, keyExtractor, callback); err != nil {
+		if err := loadSingle(redisClient, kafkaProducer, executor, taskKey, msg, keyExtractor, callback); err != nil {
 			return err
 		}
 	}
-	return nil
+	return executor.SubmitTask(taskKey)
 }
 
 // LoadWithPlayerId 简化版：默认用player_id作为key
@@ -90,6 +94,7 @@ func loadSingle(
 	redisClient redis.Cmdable,
 	kafkaProducer *kafka.KeyOrderedKafkaProducer,
 	executor *taskmanager.TaskExecutor,
+	taskKey string,
 	msg proto.Message,
 	keyExtractor KeyExtractor,
 	callback taskmanager.BatchCallback,
@@ -137,7 +142,6 @@ func loadSingle(
 	}
 
 	// 提交任务到执行器
-	taskKey := taskmanager.GenerateTaskKey(msg, key)
 	return taskmanager.InitAndAddMessageTasks(
 		ctx,
 		executor,
