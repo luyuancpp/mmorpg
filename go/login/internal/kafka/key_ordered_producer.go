@@ -20,10 +20,27 @@ type ProducerMeta struct {
 	payload  []byte
 }
 
+// ProducerConfig 可定制化生产者配置，支持外部注入参数
+type ProducerConfig struct {
+	BootstrapServers string                  // Kafka集群地址
+	Topic            string                  // 目标主题
+	InitialPartition int                     // 初始分区数
+	DialTimeout      time.Duration           // 网络拨号超时
+	ReadTimeout      time.Duration           // 读取超时
+	WriteTimeout     time.Duration           // 写入超时
+	RetryMax         int                     // 最大重试次数
+	RetryBackoff     time.Duration           // 重试间隔
+	ChannelBuffer    int                     // 通道缓冲大小
+	SyncInterval     time.Duration           // 分区同步间隔
+	StatsInterval    time.Duration           // 统计打印间隔
+	CompressionType  sarama.CompressionCodec // 压缩类型
+	Idempotent       bool                    // 是否启用幂等性
+}
+
 // KeyOrderedKafkaProducer 基于一致性哈希的有序Kafka生产者
 type KeyOrderedKafkaProducer struct {
 	producer     sarama.AsyncProducer
-	client       sarama.Client // 新增：用于元数据查询（获取分区列表）
+	client       sarama.Client // 用于元数据查询（获取分区列表）
 	topic        string
 	partitionCnt int
 	mu           sync.Mutex // 保护producer、client和partitionCnt
@@ -38,27 +55,33 @@ type KeyOrderedKafkaProducer struct {
 	// 消息统计计数器
 	successCount int64
 	errorCount   int64
+
+	// 改进：容错配置
+	unavailablePartitions map[int32]time.Time // 记录不可用分区及恢复时间
+	retryInterval         time.Duration       // 不可用分区重试间隔
 }
 
-// NewKeyOrderedKafkaProducer 初始化生产者（修复分区查询逻辑）
-func NewKeyOrderedKafkaProducer(
-	bootstrapServers, topic string,
-	initialPartitionCnt int,
-) (*KeyOrderedKafkaProducer, error) {
-	// 1. 配置Kafka客户端（匹配Kafka 3.3+版本）
+// NewKeyOrderedKafkaProducer 初始化生产者（支持可定制化配置）
+func NewKeyOrderedKafkaProducer(cfg ProducerConfig) (*KeyOrderedKafkaProducer, error) {
+	// 1. 配置Kafka客户端（使用外部注入的配置）
 	config := sarama.NewConfig()
-	config.Version = sarama.V3_6_0_0          // 匹配Kafka版本
-	config.Net.DialTimeout = 10 * time.Second // 网络超时配置
-	config.Net.ReadTimeout = 10 * time.Second
-	config.Net.WriteTimeout = 10 * time.Second
-	config.Producer.Return.Successes = true                // 启用成功回调
-	config.Producer.Return.Errors = true                   // 启用错误回调
-	config.Producer.RequiredAcks = sarama.WaitForLocal     // 本地写成功即返回
-	config.Producer.Retry.Max = 3                          // 重试次数
-	config.Producer.Retry.Backoff = 100 * time.Millisecond // 重试间隔
-	config.ChannelBufferSize = 1024                        // 子通道缓冲大小
-	config.Producer.Idempotent = false                     // 简化模式：关闭幂等性
-	config.Producer.Compression = sarama.CompressionNone   // 关闭压缩
+	config.Version = sarama.V3_6_0_0                   // 匹配Kafka版本
+	config.Net.DialTimeout = cfg.DialTimeout           // 外部配置：拨号超时
+	config.Net.ReadTimeout = cfg.ReadTimeout           // 外部配置：读取超时
+	config.Net.WriteTimeout = cfg.WriteTimeout         // 外部配置：写入超时
+	config.Producer.Return.Successes = true            // 启用成功回调
+	config.Producer.Return.Errors = true               // 启用错误回调
+	config.Producer.RequiredAcks = sarama.WaitForLocal // 本地写成功即返回
+	config.Producer.Retry.Max = cfg.RetryMax           // 外部配置：最大重试次数
+	config.Producer.Retry.Backoff = cfg.RetryBackoff   // 外部配置：重试间隔
+	config.ChannelBufferSize = cfg.ChannelBuffer       // 外部配置：通道缓冲
+	config.Producer.Idempotent = cfg.Idempotent        // 外部配置：幂等性开关
+	config.Producer.Compression = cfg.CompressionType  // 外部配置：压缩类型
+
+	// 改进：启用幂等性时必须开启事务ID（避免重复消息）
+	if cfg.Idempotent {
+		config.Producer.Transaction.ID = fmt.Sprintf("kafka-producer-%d", time.Now().UnixNano())
+	}
 
 	// 验证配置合法性
 	if err := config.Validate(); err != nil {
@@ -67,7 +90,7 @@ func NewKeyOrderedKafkaProducer(
 	}
 
 	// 2. 先创建Client（用于查询分区等元数据）
-	client, err := sarama.NewClient([]string{bootstrapServers}, config)
+	client, err := sarama.NewClient([]string{cfg.BootstrapServers}, config)
 	if err != nil {
 		logx.Errorf("创建Kafka客户端失败: %v", err)
 		return nil, fmt.Errorf("创建客户端失败: %w", err)
@@ -83,14 +106,14 @@ func NewKeyOrderedKafkaProducer(
 
 	// 4. 初始化一致性哈希（用于分区路由）
 	consistentHash := consistent.NewConsistent(20)
-	for i := int32(0); i < int32(initialPartitionCnt); i++ {
+	for i := int32(0); i < int32(cfg.InitialPartition); i++ {
 		consistentHash.AddPartition(i)
 	}
 
 	// 5. 初始化上下文和结果通道
 	ctx, cancel := context.WithCancel(context.Background())
-	successCh := make(chan *sarama.ProducerMessage, 2048)
-	errorCh := make(chan *sarama.ProducerError, 2048)
+	successCh := make(chan *sarama.ProducerMessage, cfg.ChannelBuffer)
+	errorCh := make(chan *sarama.ProducerError, cfg.ChannelBuffer)
 
 	// 6. 初始化payload池（复用[]byte）
 	payloadPool := sync.Pool{
@@ -99,12 +122,16 @@ func NewKeyOrderedKafkaProducer(
 		},
 	}
 
-	// 7. 构造生产者实例（包含Client）
+	// 7. 改进：初始化容错相关字段
+	unavailableParts := make(map[int32]time.Time)
+	retryInterval := 10 * time.Second // 不可用分区默认重试间隔
+
+	// 8. 构造生产者实例（包含Client）
 	kp := &KeyOrderedKafkaProducer{
 		producer:     producer,
-		client:       client, // 保存Client实例
-		topic:        topic,
-		partitionCnt: initialPartitionCnt,
+		client:       client,
+		topic:        cfg.Topic,
+		partitionCnt: cfg.InitialPartition,
 		successCh:    successCh,
 		errorCh:      errorCh,
 		ctx:          ctx,
@@ -112,28 +139,34 @@ func NewKeyOrderedKafkaProducer(
 		consistent:   consistentHash,
 		closed:       false,
 		payloadPool:  payloadPool,
+		// 改进：容错字段赋值
+		unavailablePartitions: unavailableParts,
+		retryInterval:         retryInterval,
 	}
 
-	// 8. 启动成功/失败监听
+	// 9. 启动成功/失败监听
 	go kp.listenSuccess()
 	go kp.listenError()
 
-	// 9. 启动Kafka内部错误监听
+	// 10. 启动Kafka内部错误监听
 	go kp.listenProducerErrors()
 
-	// 10. 启动分区同步（通过Client获取分区，修复核心错误）
-	go kp.syncPartitions()
+	// 11. 改进：使用外部配置的同步间隔，启动分区同步
+	go kp.syncPartitions(cfg.SyncInterval)
 
-	// 11. 启动消息统计监控
-	go kp.monitorStats()
+	// 12. 改进：使用外部配置的统计间隔，启动消息统计监控
+	go kp.monitorStats(cfg.StatsInterval)
 
-	// 12. 发送测试消息验证流程
+	// 13. 改进：启动不可用分区恢复检查
+	go kp.checkUnavailablePartitions()
+
+	// 14. 发送测试消息验证流程
 	go kp.sendTestMessage()
 
 	return kp, nil
 }
 
-// SendTasks 批量发送任务（逻辑不变）
+// SendTasks 批量发送任务（新增容错逻辑）
 func (p *KeyOrderedKafkaProducer) SendTasks(tasks []*db_proto.DBTask, key string) error {
 	if p.closed {
 		return fmt.Errorf("生产者已关闭: 批量发送失败")
@@ -142,10 +175,10 @@ func (p *KeyOrderedKafkaProducer) SendTasks(tasks []*db_proto.DBTask, key string
 		return fmt.Errorf("无效参数: 任务数=%d, 键=%s", len(tasks), key)
 	}
 
-	// 计算分区（确保与Kafka实际分区匹配）
-	partition, ok := p.consistent.GetPartition(key)
+	// 改进：获取可用分区（跳过不可用分区）
+	partition, ok := p.getAvailablePartition(key)
 	if !ok {
-		return fmt.Errorf("获取分区失败: 键=%s", key)
+		return fmt.Errorf("获取可用分区失败: 键=%s, 无可用分区", key)
 	}
 
 	// 批量序列化并发送
@@ -188,7 +221,9 @@ func (p *KeyOrderedKafkaProducer) SendTasks(tasks []*db_proto.DBTask, key string
 			// 发送成功
 		case <-ctx.Done():
 			p.recycleMessages(msgs)
-			return fmt.Errorf("批量发送超时: %v", ctx.Err())
+			// 改进：标记分区为不可用
+			p.markPartitionUnavailable(partition)
+			return fmt.Errorf("批量发送超时: 分区=%d, %v", partition, ctx.Err())
 		case <-p.ctx.Done():
 			p.recycleMessages(msgs)
 			return fmt.Errorf("生产者已关闭: 批量发送失败")
@@ -198,7 +233,7 @@ func (p *KeyOrderedKafkaProducer) SendTasks(tasks []*db_proto.DBTask, key string
 	return nil
 }
 
-// SendTask 单条发送任务（逻辑不变）
+// SendTask 单条发送任务（新增容错逻辑）
 func (p *KeyOrderedKafkaProducer) SendTask(task *db_proto.DBTask, key string) error {
 	if p.closed {
 		return fmt.Errorf("生产者已关闭: 任务=%s", task.TaskId)
@@ -215,11 +250,11 @@ func (p *KeyOrderedKafkaProducer) SendTask(task *db_proto.DBTask, key string) er
 		return fmt.Errorf("序列化任务失败: %s, %w", task.TaskId, err)
 	}
 
-	// 计算分区
-	partition, ok := p.consistent.GetPartition(key)
+	// 改进：获取可用分区（跳过不可用分区）
+	partition, ok := p.getAvailablePartition(key)
 	if !ok {
 		p.payloadPool.Put(payload)
-		return fmt.Errorf("获取分区失败: 键=%s, 任务=%s", key, task.TaskId)
+		return fmt.Errorf("获取可用分区失败: 键=%s, 任务=%s, 无可用分区", key, task.TaskId)
 	}
 
 	// 构造消息
@@ -243,7 +278,9 @@ func (p *KeyOrderedKafkaProducer) SendTask(task *db_proto.DBTask, key string) er
 		return nil
 	case <-ctx.Done():
 		p.payloadPool.Put(payload)
-		return fmt.Errorf("发送超时: 任务=%s, %v", task.TaskId, ctx.Err())
+		// 改进：标记分区为不可用
+		p.markPartitionUnavailable(partition)
+		return fmt.Errorf("发送超时: 任务=%s, 分区=%d, %v", task.TaskId, partition, ctx.Err())
 	case <-p.ctx.Done():
 		p.payloadPool.Put(payload)
 		return fmt.Errorf("生产者已关闭: 任务=%s", task.TaskId)
@@ -353,7 +390,7 @@ func (p *KeyOrderedKafkaProducer) listenSuccess() {
 	}
 }
 
-// 监听错误回调（逻辑不变）
+// 监听错误回调（新增：标记不可用分区）
 func (p *KeyOrderedKafkaProducer) listenError() {
 	for {
 		select {
@@ -372,6 +409,11 @@ func (p *KeyOrderedKafkaProducer) listenError() {
 			taskID := getTaskID(errMsg.Msg.Value)
 			logx.Errorf("消息发送失败: 任务=%s, 分区=%d, 错误=%v",
 				taskID, errMsg.Msg.Partition, errMsg.Err)
+
+			// 改进：判断是否为分区不可用错误，标记对应分区
+			if isPartitionUnavailableErr(errMsg.Err) {
+				p.markPartitionUnavailable(errMsg.Msg.Partition)
+			}
 		case <-p.ctx.Done():
 			logx.Debug("上下文已关闭: 退出错误监听")
 			return
@@ -397,15 +439,18 @@ func (p *KeyOrderedKafkaProducer) listenProducerErrors() {
 	}
 }
 
-// 定期同步Kafka实际分区（核心修复：通过Client获取分区）
-func (p *KeyOrderedKafkaProducer) syncPartitions() {
-	ticker := time.NewTicker(30 * time.Second) // 每30秒同步一次
+// 定期同步Kafka实际分区（支持外部配置同步间隔）
+func (p *KeyOrderedKafkaProducer) syncPartitions(interval time.Duration) {
+	if interval <= 0 {
+		interval = 30 * time.Second // 默认30秒同步一次
+	}
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			// 修复：通过Client获取分区列表（替代producer.Partitions）
+			// 通过Client获取分区列表（替代producer.Partitions）
 			partitions, err := p.client.Partitions(p.topic)
 			if err != nil {
 				logx.Errorf("获取Kafka分区失败: 主题=%s, 错误=%v", p.topic, err)
@@ -422,9 +467,12 @@ func (p *KeyOrderedKafkaProducer) syncPartitions() {
 	}
 }
 
-// 监控消息统计（逻辑不变）
-func (p *KeyOrderedKafkaProducer) monitorStats() {
-	ticker := time.NewTicker(5 * time.Second)
+// 监控消息统计（支持外部配置统计间隔）
+func (p *KeyOrderedKafkaProducer) monitorStats(interval time.Duration) {
+	if interval <= 0 {
+		interval = 5 * time.Second // 默认5秒打印一次
+	}
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {
@@ -432,8 +480,10 @@ func (p *KeyOrderedKafkaProducer) monitorStats() {
 		case <-ticker.C:
 			success := atomic.SwapInt64(&p.successCount, 0)
 			errs := atomic.SwapInt64(&p.errorCount, 0)
-			logx.Infof("消息统计: 主题=%s, 5秒内成功=%d, 失败=%d",
-				p.topic, success, errs)
+			// 改进：增加不可用分区数量统计
+			unavailableCnt := p.getUnavailablePartitionCount()
+			logx.Infof("消息统计: 主题=%s, 统计间隔=%v, 成功=%d, 失败=%d, 不可用分区数=%d",
+				p.topic, interval, success, errs, unavailableCnt)
 		case <-p.ctx.Done():
 			logx.Debug("上下文已关闭: 退出统计监控")
 			return
@@ -484,4 +534,113 @@ func getTaskID(value sarama.Encoder) string {
 		return fmt.Sprintf("解析失败: %v", err)
 	}
 	return task.TaskId
+}
+
+// 改进1：标记分区为不可用
+func (p *KeyOrderedKafkaProducer) markPartitionUnavailable(partition int32) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	// 记录分区不可用时间（用于后续恢复检查）
+	p.unavailablePartitions[partition] = time.Now()
+	logx.Warnf("分区标记为不可用: 主题=%s, 分区=%d, 恢复检查间隔=%v",
+		p.topic, partition, p.retryInterval)
+}
+
+// 改进2：获取可用分区（跳过不可用分区）
+func (p *KeyOrderedKafkaProducer) getAvailablePartition(key string) (int32, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	// 1. 先通过一致性哈希获取原始分区
+	partition, ok := p.consistent.GetPartition(key)
+	if !ok {
+		return 0, false
+	}
+
+	// 2. 检查分区是否可用
+	if _, isUnavailable := p.unavailablePartitions[partition]; !isUnavailable {
+		return partition, true
+	}
+
+	// 3. 若原始分区不可用，尝试重新映射到其他可用分区
+	allPartitions := p.consistent.GetPartitions()
+	for _, part := range allPartitions {
+		if _, isUnavailable := p.unavailablePartitions[part]; !isUnavailable {
+			logx.Warnf("原始分区不可用，重新映射: 键=%s, 原分区=%d, 新分区=%d",
+				key, partition, part)
+			return part, true
+		}
+	}
+
+	// 4. 无可用分区
+	return 0, false
+}
+
+// 改进3：定期检查不可用分区，恢复可用状态
+func (p *KeyOrderedKafkaProducer) checkUnavailablePartitions() {
+	ticker := time.NewTicker(p.retryInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			p.mu.Lock()
+			// 遍历所有不可用分区，检查是否超过恢复间隔
+			for part, unavailableTime := range p.unavailablePartitions {
+				if time.Since(unavailableTime) >= p.retryInterval {
+					// 恢复分区可用状态
+					delete(p.unavailablePartitions, part)
+					logx.Infof("分区恢复可用: 主题=%s, 分区=%d, 不可用时长=%v",
+						p.topic, part, time.Since(unavailableTime))
+				}
+			}
+			p.mu.Unlock()
+		case <-p.ctx.Done():
+			logx.Debug("上下文已关闭: 退出不可用分区检查")
+			return
+		}
+	}
+}
+
+// 改进4：判断是否为分区不可用错误
+func isPartitionUnavailableErr(err error) bool {
+	// 匹配Sarama中常见的分区不可用错误类型
+	switch err.(type) {
+	case *sarama.PartitionError:
+		partErr := err.(*sarama.PartitionError)
+		// 常见的分区不可用错误码（参考Kafka错误码）
+		unavailableCodes := map[int16]bool{
+			3:  true, // UNKNOWN_TOPIC_OR_PARTITION
+			6:  true, // LEADER_NOT_AVAILABLE
+			19: true, // OFFSET_NOT_AVAILABLE
+		}
+		return unavailableCodes[partErr.Code()]
+	default:
+		// 匹配其他分区相关错误信息
+		errMsg := err.Error()
+		return contains(errMsg, "partition") && contains(errMsg, "unavailable")
+	}
+}
+
+// 辅助函数：判断字符串是否包含子串
+func contains(s, substr string) bool {
+	return len(substr) == 0 || index(s, substr) != -1
+}
+
+// 辅助函数：查找子串在字符串中的索引
+func index(s, substr string) int {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return i
+		}
+	}
+	return -1
+}
+
+// 改进5：获取不可用分区数量（用于统计）
+func (p *KeyOrderedKafkaProducer) getUnavailablePartitionCount() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return len(p.unavailablePartitions)
 }
