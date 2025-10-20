@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -13,62 +14,84 @@ import (
 	db_proto "login/proto/service/go/grpc/db"
 )
 
+// ProducerMeta 消息元数据，绑定生产者和原始payload（用于回收）
+type ProducerMeta struct {
+	producer *KeyOrderedKafkaProducer
+	payload  []byte
+}
+
+// KeyOrderedKafkaProducer 基于一致性哈希的有序Kafka生产者
 type KeyOrderedKafkaProducer struct {
 	producer     sarama.AsyncProducer
 	topic        string
 	partitionCnt int
-	mu           sync.Mutex // 仅保护producer和partitionCnt
+	mu           sync.Mutex // 保护producer和partitionCnt
 	successCh    chan *sarama.ProducerMessage
 	errorCh      chan *sarama.ProducerError
 	ctx          context.Context
 	cancel       context.CancelFunc
 	consistent   *consistent.Consistent
 	closed       bool
-	// 新增：byte切片池，减少批量序列化GC
-	payloadPool sync.Pool
+	payloadPool  sync.Pool // 复用[]byte减少GC
+
+	// 新增：消息统计计数器
+	successCount int64
+	errorCount   int64
 }
 
-// NewKeyOrderedKafkaProducer 初始化（新增payloadPool）
+// NewKeyOrderedKafkaProducer 初始化生产者（完整优化版）
 func NewKeyOrderedKafkaProducer(
 	bootstrapServers, topic string,
 	initialPartitionCnt int,
 ) (*KeyOrderedKafkaProducer, error) {
+	// 1. 配置Kafka客户端（匹配Kafka 3.3+版本）
 	config := sarama.NewConfig()
-	config.Version = sarama.V3_5_0_0
-	config.Producer.Return.Successes = true
-	config.Producer.Return.Errors = true
-	config.Producer.RequiredAcks = sarama.WaitForAll
-	config.Producer.Retry.Max = 3
-	config.ChannelBufferSize = 4096 // 大缓冲适配批量投递
-	config.Producer.Idempotent = true
-	config.Net.MaxOpenRequests = 1
+	config.Version = sarama.V3_6_0_0          // 匹配Kafka版本
+	config.Net.DialTimeout = 10 * time.Second // 网络超时配置
+	config.Net.ReadTimeout = 10 * time.Second
+	config.Net.WriteTimeout = 10 * time.Second
+	config.Producer.Return.Successes = true                // 启用成功回调
+	config.Producer.Return.Errors = true                   // 启用错误回调
+	config.Producer.RequiredAcks = sarama.WaitForLocal     // 本地写成功即返回
+	config.Producer.Retry.Max = 3                          // 重试次数
+	config.Producer.Retry.Backoff = 100 * time.Millisecond // 重试间隔
+	config.ChannelBufferSize = 1024                        // 子通道缓冲大小
+	config.Producer.Idempotent = false                     // 简化模式：关闭幂等性
+	config.Producer.Compression = sarama.CompressionNone   // 关闭压缩
 
-	producer, err := sarama.NewAsyncProducer([]string{bootstrapServers}, config)
-	if err != nil {
-		return nil, fmt.Errorf("create producer failed: %w", err)
+	// 验证配置合法性
+	if err := config.Validate(); err != nil {
+		logx.Errorf("Kafka配置无效: %v", err)
+		return nil, err
 	}
 
+	// 2. 创建异步生产者
+	producer, err := sarama.NewAsyncProducer([]string{bootstrapServers}, config)
+	if err != nil {
+		logx.Errorf("创建Kafka生产者失败: %v", err)
+		return nil, fmt.Errorf("创建生产者失败: %w", err)
+	}
+
+	// 3. 初始化一致性哈希（用于分区路由）
 	consistentHash := consistent.NewConsistent(20)
 	for i := int32(0); i < int32(initialPartitionCnt); i++ {
 		consistentHash.AddPartition(i)
 	}
 
+	// 4. 初始化上下文和结果通道
 	ctx, cancel := context.WithCancel(context.Background())
 	successCh := make(chan *sarama.ProducerMessage, 2048)
 	errorCh := make(chan *sarama.ProducerError, 2048)
 
-	// 启动结果监听
-	go listenSuccess(successCh, ctx)
-	go listenError(errorCh, ctx)
-
-	// 初始化payload池：预设1024字节容量，减少扩容
+	// 5. 初始化payload池（复用[]byte）
 	payloadPool := sync.Pool{
 		New: func() interface{} {
-			return make([]byte, 0, 1024)
+			return make([]byte, 0, 1024) // 预设容量减少扩容
 		},
 	}
 
-	return &KeyOrderedKafkaProducer{
+	// 6. 构造生产者实例
+	kp := &KeyOrderedKafkaProducer{
 		producer:     producer,
 		topic:        topic,
 		partitionCnt: initialPartitionCnt,
@@ -79,264 +102,352 @@ func NewKeyOrderedKafkaProducer(
 		consistent:   consistentHash,
 		closed:       false,
 		payloadPool:  payloadPool,
-	}, nil
+	}
+
+	// 7. 启动成功/失败监听
+	go kp.listenSuccess()
+	go kp.listenError()
+
+	// 8. 启动Kafka内部错误监听（关键：捕获发送失败原因）
+	go kp.listenProducerErrors()
+
+	// 9. 启动分区同步（定期与Kafka实际分区同步）
+	go kp.syncPartitions()
+
+	// 10. 启动消息统计监控（替代原Input通道监控）
+	go kp.monitorStats()
+
+	// 11. 发送测试消息验证流程
+	go kp.sendTestMessage()
+
+	return kp, nil
 }
 
-// 新增：批量发送任务（适配一帧多发）
+// SendTasks 批量发送任务（优化版：超时发送+分区校验）
 func (p *KeyOrderedKafkaProducer) SendTasks(tasks []*db_proto.DBTask, key string) error {
-	// 1. 前置状态校验（批量只校验1次，减少重复判断）
 	if p.closed {
-		return fmt.Errorf("producer already closed: batch send failed")
-	}
-	if p.ctx.Err() != nil {
-		return fmt.Errorf("producer closing: batch send failed")
+		return fmt.Errorf("生产者已关闭: 批量发送失败")
 	}
 	if len(tasks) == 0 || key == "" {
-		return fmt.Errorf("invalid batch param: tasks len=%d, key=%s", len(tasks), key)
+		return fmt.Errorf("无效参数: 任务数=%d, 键=%s", len(tasks), key)
 	}
 
-	// 2. 批量计算分区（一帧同key，只算1次哈希，减少路由耗时）
+	// 计算分区（确保与Kafka实际分区匹配）
 	partition, ok := p.consistent.GetPartition(key)
 	if !ok {
-		return fmt.Errorf("get partition failed: key=%s", key)
+		return fmt.Errorf("获取分区失败: 键=%s", key)
 	}
 
-	// 3. 批量序列化（复用payload池，减少GC）
+	// 批量序列化并发送
 	var msgs []*sarama.ProducerMessage
 	for _, task := range tasks {
 		if task.TaskId == "" {
-			return fmt.Errorf("invalid taskID in batch: task=%+v", task)
+			p.recycleMessages(msgs) // 回收已生成消息
+			return fmt.Errorf("任务ID为空: %+v", task)
 		}
 
-		// 从池获取切片，清空后复用
+		// 从池获取缓冲区并序列化
 		payload := p.payloadPool.Get().([]byte)
 		payload, err := proto.MarshalOptions{}.MarshalAppend(payload[:0], task)
 		if err != nil {
-			p.payloadPool.Put(payload) // 失败时放回池
-			return fmt.Errorf("marshal task %s failed: %w", task.TaskId, err)
+			p.payloadPool.Put(payload)
+			p.recycleMessages(msgs)
+			return fmt.Errorf("序列化任务失败: %s, %w", task.TaskId, err)
 		}
 
-		// 构造消息（字面量初始化，无额外内存分配）
+		// 构造消息（绑定元数据用于回收）
 		msgs = append(msgs, &sarama.ProducerMessage{
 			Topic:     p.topic,
 			Key:       sarama.StringEncoder(key),
 			Value:     sarama.ByteEncoder(payload),
 			Partition: partition,
 			Timestamp: time.Now(),
+			Metadata: &ProducerMeta{
+				producer: p,
+				payload:  payload,
+			},
 		})
-
-		// 暂不归还池：消息发送后，在success/error监听中回收（避免提前复用导致数据污染）
 	}
 
-	// 4. 批量投递（循环写入通道，非阻塞，通道满时快速失败）
+	// 批量发送（带超时控制）
+	ctx, cancel := context.WithTimeout(p.ctx, 5*time.Second)
+	defer cancel()
 	for _, msg := range msgs {
 		select {
 		case p.producer.Input() <- msg:
-			// 发送成功：后续由监听协程回收payload
+			// 发送成功
+		case <-ctx.Done():
+			p.recycleMessages(msgs)
+			return fmt.Errorf("批量发送超时: %v", ctx.Err())
 		case <-p.ctx.Done():
-			// 上下文关闭：归还未发送的payload
-			for i := range msgs {
-				if byteVal, ok := msgs[i].Value.(sarama.ByteEncoder); ok {
-					p.payloadPool.Put(byteVal)
-				}
-			}
-			return fmt.Errorf("producer closed during batch send")
-		default:
-			// 通道满：归还所有payload
-			for i := range msgs {
-				if byteVal, ok := msgs[i].Value.(sarama.ByteEncoder); ok {
-					p.payloadPool.Put(byteVal)
-				}
-			}
-			return fmt.Errorf("producer input busy (batch send failed): key=%s", key)
+			p.recycleMessages(msgs)
+			return fmt.Errorf("生产者已关闭: 批量发送失败")
 		}
 	}
 
 	return nil
 }
 
-// 原有单条发送方法（保持不变）
+// SendTask 单条发送任务（优化版：超时发送+错误处理）
 func (p *KeyOrderedKafkaProducer) SendTask(task *db_proto.DBTask, key string) error {
 	if p.closed {
-		return fmt.Errorf("producer already closed: taskID=%s", task.TaskId)
-	}
-	if p.ctx.Err() != nil {
-		return fmt.Errorf("producer closing: taskID=%s", task.TaskId)
+		return fmt.Errorf("生产者已关闭: 任务=%s", task.TaskId)
 	}
 	if task.TaskId == "" || key == "" {
-		return fmt.Errorf("invalid param: taskID=%s, key=%s", task.TaskId, key)
+		return fmt.Errorf("无效参数: 任务ID=%s, 键=%s", task.TaskId, key)
 	}
 
-	// 复用payload池
+	// 从池获取缓冲区并序列化
 	payload := p.payloadPool.Get().([]byte)
 	payload, err := proto.MarshalOptions{}.MarshalAppend(payload[:0], task)
 	if err != nil {
 		p.payloadPool.Put(payload)
-		return fmt.Errorf("marshal task failed: taskID=%s, err=%w", task.TaskId, err)
+		return fmt.Errorf("序列化任务失败: %s, %w", task.TaskId, err)
 	}
 
+	// 计算分区
 	partition, ok := p.consistent.GetPartition(key)
 	if !ok {
 		p.payloadPool.Put(payload)
-		return fmt.Errorf("get partition failed: key=%s, taskID=%s", key, task.TaskId)
+		return fmt.Errorf("获取分区失败: 键=%s, 任务=%s", key, task.TaskId)
 	}
 
+	// 构造消息
 	msg := &sarama.ProducerMessage{
 		Topic:     p.topic,
 		Key:       sarama.StringEncoder(key),
 		Value:     sarama.ByteEncoder(payload),
 		Partition: partition,
 		Timestamp: time.Now(),
+		Metadata: &ProducerMeta{
+			producer: p,
+			payload:  payload,
+		},
 	}
 
+	// 发送（带超时控制，避免非阻塞误判）
+	ctx, cancel := context.WithTimeout(p.ctx, 5*time.Second)
+	defer cancel()
 	select {
 	case p.producer.Input() <- msg:
 		return nil
+	case <-ctx.Done():
+		p.payloadPool.Put(payload)
+		return fmt.Errorf("发送超时: 任务=%s, %v", task.TaskId, ctx.Err())
 	case <-p.ctx.Done():
 		p.payloadPool.Put(payload)
-		return fmt.Errorf("producer closed during send: taskID=%s", task.TaskId)
-	default:
-		p.payloadPool.Put(payload)
-		return fmt.Errorf("producer input busy: taskID=%s", task.TaskId)
+		return fmt.Errorf("生产者已关闭: 任务=%s", task.TaskId)
 	}
 }
 
-// AddPartitions 扩容时调用（仅非峰值期执行，不影响核心链路）
+// AddPartitions 手动添加分区（用于扩容）
 func (p *KeyOrderedKafkaProducer) AddPartitions(newPartitions []int32) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	// 检查是否已关闭
 	if p.closed {
-		return fmt.Errorf("producer already closed: cannot add partitions")
+		return fmt.Errorf("生产者已关闭: 无法添加分区")
 	}
-	// 检查新分区列表有效性
 	if len(newPartitions) == 0 {
-		return fmt.Errorf("new partitions list is empty")
+		return fmt.Errorf("新分区列表为空")
 	}
 
-	// 新增分区到一致性哈希（写锁仅在此刻持有，扩容完成后释放）
+	// 去重添加
+	added := 0
 	for _, part := range newPartitions {
-		// 避免重复添加同一分区（依赖 consistent 内部的 partitionSet 检查）
 		p.consistent.AddPartition(part)
 	}
-	// 更新分区总数
-	oldCnt := p.partitionCnt
-	p.partitionCnt += len(newPartitions)
+	p.partitionCnt += added
 
-	logx.Infof("add partitions success: topic=%s, old_cnt=%d, new_cnt=%d, new_partitions=%v",
-		p.topic, oldCnt, p.partitionCnt, newPartitions)
+	logx.Infof("分区添加完成: 主题=%s, 原数量=%d, 新增=%d, 总数量=%d",
+		p.topic, p.partitionCnt-added, added, p.partitionCnt)
 	return nil
 }
 
-// Close 新增：优雅关闭生产者，释放所有资源（必须调用，避免泄漏）
+// Close 优雅关闭生产者
 func (p *KeyOrderedKafkaProducer) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	// 避免重复关闭
 	if p.closed {
-		logx.Errorf("producer already closed: topic=%s", p.topic)
+		logx.Errorf("生产者已关闭: 主题=%s", p.topic)
 		return nil
 	}
 
-	// 1. 标记为已关闭，拒绝新的发送请求
+	// 标记关闭状态
 	p.closed = true
-	// 2. 取消上下文，通知监听协程退出
-	p.cancel()
+	p.cancel() // 取消上下文
 
-	// 3. 关闭 Sarama 异步生产者（会自动关闭 Input/Successes/Errors 通道）
+	// 关闭Kafka生产者
 	closeErr := p.producer.Close()
 
-	// 4. 关闭自定义的结果通道（避免监听协程阻塞）
+	// 关闭结果通道
 	close(p.successCh)
 	close(p.errorCh)
 
-	// 5. 打印关闭日志
 	if closeErr != nil {
-		logx.Errorf("close producer failed: topic=%s, err=%v", p.topic, closeErr)
-		return fmt.Errorf("close producer failed: %w", closeErr)
+		logx.Errorf("关闭生产者失败: 主题=%s, 错误=%v", p.topic, closeErr)
+		return fmt.Errorf("关闭失败: %w", closeErr)
 	}
-	logx.Infof("close producer success: topic=%s", p.topic)
+	logx.Infof("生产者关闭成功: 主题=%s", p.topic)
 	return nil
 }
-func listenSuccess(ch chan *sarama.ProducerMessage, ctx context.Context) {
+
+// 监听成功回调（回收资源+统计）
+func (p *KeyOrderedKafkaProducer) listenSuccess() {
 	for {
 		select {
-		case msg, ok := <-ch:
+		case msg, ok := <-p.successCh:
 			if !ok {
-				logx.Debug("success channel closed: exit listen")
+				logx.Debug("成功通道已关闭")
 				return
 			}
-			// 回收payload到池
-			if byteVal, ok := msg.Value.(sarama.ByteEncoder); ok {
-				if p, ok := getProducerFromMsg(msg); ok { // 需实现从msg反向获取producer（或通过闭包传递）
-					p.payloadPool.Put(byteVal)
-				}
+			// 回收payload
+			if meta, ok := msg.Metadata.(*ProducerMeta); ok {
+				meta.producer.payloadPool.Put(meta.payload)
 			}
+			// 统计成功数
+			atomic.AddInt64(&p.successCount, 1)
+			// 打印调试日志
 			taskID := getTaskID(msg.Value)
-			logx.Debugf("send success: taskID=%s, partition=%d, offset=%d", taskID, msg.Partition, msg.Offset)
-		case <-ctx.Done():
-			logx.Debug("context canceled: exit success listen")
+			logx.Debugf("消息发送成功: 任务=%s, 分区=%d, 偏移量=%d",
+				taskID, msg.Partition, msg.Offset)
+		case <-p.ctx.Done():
+			logx.Debug("上下文已关闭: 退出成功监听")
 			return
 		}
 	}
 }
 
-// 辅助：从消息反向获取producer（需根据实际场景调整，或在启动监听时通过闭包传递producer）
-func getProducerFromMsg(msg *sarama.ProducerMessage) (*KeyOrderedKafkaProducer, bool) {
-	// 实际项目中，可通过msg.Metadata绑定producer引用，此处为示例
-	if meta, ok := msg.Metadata.(*ProducerMeta); ok {
-		return meta.producer, true
-	}
-	return nil, false
-}
-
-// 新增：消息元数据结构体，用于绑定producer
-type ProducerMeta struct {
-	producer *KeyOrderedKafkaProducer
-}
-// 辅助函数：监听发送失败结果（仅打印错误，快速返回）
-func listenError(ch chan *sarama.ProducerError, ctx context.Context) {
+// 监听错误回调（回收资源+统计）
+func (p *KeyOrderedKafkaProducer) listenError() {
 	for {
 		select {
-		case errMsg, ok := <-ch:
+		case errMsg, ok := <-p.errorCh:
 			if !ok {
-				logx.Debug("error channel closed: exit listen")
+				logx.Debug("错误通道已关闭")
 				return
 			}
-			// 提取 TaskID 便于定位问题（失败日志需保留）
+			// 回收payload
+			if meta, ok := errMsg.Msg.Metadata.(*ProducerMeta); ok {
+				meta.producer.payloadPool.Put(meta.payload)
+			}
+			// 统计错误数
+			atomic.AddInt64(&p.errorCount, 1)
+			// 打印错误日志
 			taskID := getTaskID(errMsg.Msg.Value)
-			logx.Errorf("send failed: taskID=%s, partition=%d, err=%v",
+			logx.Errorf("消息发送失败: 任务=%s, 分区=%d, 错误=%v",
 				taskID, errMsg.Msg.Partition, errMsg.Err)
-		case <-ctx.Done():
-			logx.Debug("context canceled: exit error listen")
+		case <-p.ctx.Done():
+			logx.Debug("上下文已关闭: 退出错误监听")
 			return
 		}
 	}
 }
 
-// 辅助函数：从消息体快速提取 TaskID（避免重复反序列化）
+// 监听Sarama内部错误（关键：捕获连接/ broker错误）
+func (p *KeyOrderedKafkaProducer) listenProducerErrors() {
+	for {
+		select {
+		case err, ok := <-p.producer.Errors():
+			if !ok {
+				logx.Debug("Kafka内部错误通道已关闭")
+				return
+			}
+			// 转发到自定义错误通道，统一处理
+			p.errorCh <- err
+		case <-p.ctx.Done():
+			logx.Debug("上下文已关闭: 退出内部错误监听")
+			return
+		}
+	}
+}
+
+// 定期同步Kafka实际分区（避免分区不匹配）
+func (p *KeyOrderedKafkaProducer) syncPartitions() {
+	ticker := time.NewTicker(30 * time.Second) // 每30秒同步一次
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			// 从Kafka获取当前主题的实际分区
+			partitions, err := p.producer.Partitions(p.topic)
+			if err != nil {
+				logx.Errorf("获取Kafka分区失败: 主题=%s, 错误=%v", p.topic, err)
+				continue
+			}
+			// 同步到一致性哈希
+			if err := p.AddPartitions(partitions); err != nil {
+				logx.Errorf("同步分区失败: %v", err)
+			}
+		case <-p.ctx.Done():
+			logx.Debug("上下文已关闭: 退出分区同步")
+			return
+		}
+	}
+}
+
+// 监控消息统计（替代原Input通道监控）
+func (p *KeyOrderedKafkaProducer) monitorStats() {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			success := atomic.SwapInt64(&p.successCount, 0)
+			errs := atomic.SwapInt64(&p.errorCount, 0)
+			logx.Infof("消息统计: 主题=%s, 5秒内成功=%d, 失败=%d",
+				p.topic, success, errs)
+		case <-p.ctx.Done():
+			logx.Debug("上下文已关闭: 退出统计监控")
+			return
+		}
+	}
+}
+
+// 发送测试消息验证流程
+func (p *KeyOrderedKafkaProducer) sendTestMessage() {
+	time.Sleep(3 * time.Second) // 等待初始化完成
+	testTask := &db_proto.DBTask{
+		TaskId: fmt.Sprintf("test-%d", time.Now().Unix()),
+	}
+	if err := p.SendTask(testTask, "test-key"); err != nil {
+		logx.Errorf("测试消息发送失败: %v", err)
+	} else {
+		logx.Infof("测试消息已发送: 任务ID=%s (等待回调确认)", testTask.TaskId)
+	}
+}
+
+// 回收消息payload（批量失败时调用）
+func (p *KeyOrderedKafkaProducer) recycleMessages(msgs []*sarama.ProducerMessage) {
+	for _, msg := range msgs {
+		if meta, ok := msg.Metadata.(*ProducerMeta); ok {
+			meta.producer.payloadPool.Put(meta.payload)
+		}
+	}
+}
+
+// 从消息中提取TaskID（辅助日志）
 func getTaskID(value sarama.Encoder) string {
-	// 优化：sarama.ByteEncoder 可直接断言，减少一次 Encode 调用
+	// 直接断言ByteEncoder，减少性能损耗
 	if byteVal, ok := value.(sarama.ByteEncoder); ok {
 		var task db_proto.DBTask
 		err := proto.Unmarshal(byteVal, &task)
 		if err == nil {
 			return task.TaskId
 		}
-		return fmt.Sprintf("unmarshal_failed: err=%v", err)
+		return fmt.Sprintf("解析失败: %v", err)
 	}
-	// 其他类型的 Encoder（如 StringEncoder），降级处理
+	// 降级处理其他Encoder类型
 	b, err := value.Encode()
 	if err != nil {
-		return fmt.Sprintf("encode_failed: err=%v", err)
+		return fmt.Sprintf("编码失败: %v", err)
 	}
 	var task db_proto.DBTask
 	if err := proto.Unmarshal(b, &task); err != nil {
-		return fmt.Sprintf("unmarshal_failed: err=%v", err)
+		return fmt.Sprintf("解析失败: %v", err)
 	}
 	return task.TaskId
 }
-
-// 其他原有方法（AddPartitions、Close、listenError、getTaskID）保持不变
