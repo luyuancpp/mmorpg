@@ -44,11 +44,7 @@ func NewServiceContext() *ServiceContext {
 		panic(fmt.Errorf("failed to connect Redis: %w", err))
 	}
 
-	kafkaClient, err := kafka.NewKeyOrderedKafkaProducer(
-		config.AppConfig.Kafka.Brokers,           // Kafka broker地址，配置文件中新增
-		config.AppConfig.Kafka.Topic,             // 消费者组ID，配置文件中新增
-		int(config.AppConfig.Kafka.PartitionCnt), // 分区数，与原分片数保持一致
-	)
+	kafkaClient, err := kafka.NewKeyOrderedKafkaProducer(config.AppConfig.Kafka)
 
 	if err != nil {
 		logx.Error(err)
@@ -57,8 +53,8 @@ func NewServiceContext() *ServiceContext {
 	}
 
 	monitor, err := kafka.NewExpandMonitor(
-		config.AppConfig.Kafka.Brokers, // Kafka broker地址，配置文件中新增
-		config.AppConfig.Kafka.Topic,   // 消费者组ID，配置文件中新增
+		config.AppConfig.Kafka.BootstrapServers, // Kafka broker地址，配置文件中新增
+		config.AppConfig.Kafka.Topic,            // 消费者组ID，配置文件中新增
 		redisClient,
 		kafkaClient,
 		1*time.Second,
