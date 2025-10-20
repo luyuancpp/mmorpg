@@ -201,63 +201,44 @@ func buildSubMessagesByTypeNames(
 }
 
 // 给消息设置key
+// 给消息设置key（仅尝试 player_id 字段）
 func setKeyToMessage(msg proto.Message, key uint64, keyExtractor KeyExtractor) error {
 	tempMsg := proto.Clone(msg).(proto.Message)
 	tempReflect := tempMsg.ProtoReflect()
 	msgName := msg.ProtoReflect().Descriptor().FullName()
 
-	// 优先尝试你的 proto 中实际存在的字段（全小写 player_id）
-	fieldNames := []protoreflect.Name{
-		"player_id", // 核心字段，必须优先尝试
-		"role_id",   // 其他可能的key字段
-		"user_id",
-		"id",
+	// 只尝试 player_id 字段，不处理其他字段
+	fieldName := protoreflect.Name("player_id")
+	field := tempReflect.Descriptor().Fields().ByName(fieldName)
+	if field == nil {
+		return fmt.Errorf("消息 %s 不包含 player_id 字段（不支持其他字段）", msgName)
 	}
 
-	for _, fieldName := range fieldNames {
-		field := tempReflect.Descriptor().Fields().ByName(fieldName)
-		if field == nil {
-			logx.Debugf("子消息 %s 不包含字段 %s，跳过", msgName, fieldName)
-			continue
-		}
-
-		// 根据字段类型设置对应的值（避免类型不匹配）
-		var value protoreflect.Value
-		switch field.Kind() {
-		case protoreflect.Uint64Kind:
-			value = protoreflect.ValueOfUint64(key)
-		case protoreflect.Int64Kind:
-			value = protoreflect.ValueOfInt64(int64(key)) // 兼容int64类型
-		case protoreflect.Uint32Kind:
-			value = protoreflect.ValueOfUint32(uint32(key)) // 兼容uint32
-		case protoreflect.Int32Kind:
-			value = protoreflect.ValueOfInt32(int32(key)) // 兼容int32
-		default:
-			logx.Debugf("子消息 %s 的字段 %s 类型不支持（%s），跳过", msgName, fieldName, field.Kind())
-			continue
-		}
-
-		// 设置临时key值
-		tempReflect.Set(field, value)
-
-		// 验证提取函数是否能正确提取（确保设置有效）
-		extractedKey, err := keyExtractor(tempMsg)
-		if err != nil {
-			logx.Debugf("子消息 %s 设置字段 %s 后，提取key失败: %v", msgName, fieldName, err)
-			continue
-		}
-		if extractedKey == key {
-			// 验证通过，正式设置key
-			msg.ProtoReflect().Set(field, value)
-			logx.Infof("子消息 %s 成功设置key（字段 %s）: %d", msgName, fieldName, key)
-			return nil
-		} else {
-			logx.Debugf("子消息 %s 提取的key不匹配（期望 %d，实际 %d）", msgName, key, extractedKey)
-		}
+	// 仅支持 uint64/int64 类型（与你的 proto 定义一致）
+	var value protoreflect.Value
+	switch field.Kind() {
+	case protoreflect.Uint64Kind:
+		value = protoreflect.ValueOfUint64(key)
+	case protoreflect.Int64Kind:
+		value = protoreflect.ValueOfInt64(int64(key))
+	default:
+		return fmt.Errorf("消息 %s 的 player_id 字段类型不支持（仅支持 uint64/int64）", msgName)
 	}
 
-	// 所有字段尝试失败，返回详细错误
-	return fmt.Errorf("消息 %s 不支持自动设置key（已尝试字段: %v）", msgName, fieldNames)
+	// 设置临时key并验证
+	tempReflect.Set(field, value)
+	extractedKey, err := keyExtractor(tempMsg)
+	if err != nil {
+		return fmt.Errorf("消息 %s 设置 player_id 后提取失败: %w", msgName, err)
+	}
+	if extractedKey != key {
+		return fmt.Errorf("消息 %s 提取的 player_id 不匹配（期望 %d，实际 %d）", msgName, key, extractedKey)
+	}
+
+	// 正式设置key
+	msg.ProtoReflect().Set(field, value)
+	logx.Infof("消息 %s 成功设置 player_id: %d", msgName, key)
+	return nil
 }
 
 // 生成父消息缓存键
