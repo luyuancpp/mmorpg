@@ -157,8 +157,6 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 	}
 
 	// 基于外部上下文创建子上下文，确保资源可控
-	ctx, cancel := context.WithCancel(l.ctx)
-	defer cancel()
 
 	// 仅处理指定的消息列表
 	messagesToLoad := []proto.Message{
@@ -168,7 +166,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		},
 		&login_proto_database.PlayerCentreDatabase{PlayerId: playerId},
 	}
-	
+
 	// 任务总数固定为 messagesToLoad 的长度（当前为2）
 	totalTasksToLoad := len(messagesToLoad)
 	var (
@@ -210,7 +208,6 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 
 	// 调用加载接口，仅处理上述消息
 	return dataloader.LoadWithPlayerId(
-		ctx,
 		l.svcCtx.RedisClient,
 		l.svcCtx.KafkaClient,
 		l.svcCtx.TaskExecutor,
