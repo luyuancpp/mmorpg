@@ -163,6 +163,26 @@ func (c *Consistent) HasPartition(partition int32) bool {
 	return exists
 }
 
+// GetPartitions 获取当前所有已添加的分区列表
+// 功能：返回哈希环中所有分区的副本（避免外部修改内部数据），用于分区同步或监控
+// 返回：分区ID列表（按升序排列，方便使用）
+func (c *Consistent) GetPartitions() []int32 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	// 初始化结果切片（容量=分区数量）
+	partitions := make([]int32, 0, len(c.partitionSet))
+	// 遍历分区集合，收集所有分区ID
+	for p := range c.partitionSet {
+		partitions = append(partitions, p)
+	}
+	// 排序分区ID（便于后续处理，如对比或展示）
+	sort.Slice(partitions, func(i, j int) bool {
+		return partitions[i] < partitions[j]
+	})
+	return partitions
+}
+
 // 内部工具函数：生成虚拟节点的唯一key（避免不同分区的虚拟节点冲突）
 // 实现：用分区ID（4字节）+ 虚拟节点索引（4字节）拼接，共8字节，无内存分配
 func genReplicaKey(partition int32, replicaIdx int) []byte {
