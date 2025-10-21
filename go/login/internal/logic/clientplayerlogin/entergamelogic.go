@@ -42,10 +42,11 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 
 func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_proto.EnterGameResponse, error) {
 	resp := &login_proto.EnterGameResponse{ErrorMessage: &login_proto_common.TipInfoMessage{}}
-	customCtx, _ := context.WithTimeout(context.Background(), config.AppConfig.Timeouts.LoginTotalTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), config.AppConfig.Timeouts.LoginTotalTimeout)
+	defer cancel()
 
 	// 1. 获取 Session
-	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
+	sessionDetails, ok := ctxkeys.GetSessionDetails(ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or empty in context during login")
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
@@ -53,7 +54,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	}
 
 	// 2. 获取 LoginSessionInfo
-	session, err := loginsessionstore.GetLoginSession(customCtx, l.svcCtx.RedisClient, sessionDetails.SessionId)
+	session, err := loginsessionstore.GetLoginSession(ctx, l.svcCtx.RedisClient, sessionDetails.SessionId)
 	if err != nil {
 		logx.Errorf("GetLoginSession failed: %v", err)
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginSessionNotFound)
@@ -63,7 +64,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	// 3. 加锁防止同角色并发登录
 	playerLocker := locker.NewRedisLocker(l.svcCtx.RedisClient)
 	key := "player_locker:" + strconv.FormatUint(in.PlayerId, 10)
-	tryLocker, err := playerLocker.TryLock(customCtx, key, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
+	tryLocker, err := playerLocker.TryLock(ctx, key, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
 	if err != nil {
 		logx.Errorf("EnterGame lock acquire failed for playerId=%d: %v", in.PlayerId, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
@@ -77,7 +78,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	}
 
 	defer func() {
-		ok, err := tryLocker.Release(customCtx)
+		ok, err := tryLocker.Release(ctx)
 		if err != nil {
 			logx.Errorf("Failed to release lock: %v", err)
 		} else if !ok {
@@ -87,7 +88,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 
 	// 4. 加载账号信息并验证角色归属
 	accountKey := constants.GetAccountDataKey(session.Account)
-	dataBytes, err := l.svcCtx.RedisClient.Get(customCtx, accountKey).Bytes()
+	dataBytes, err := l.svcCtx.RedisClient.Get(ctx, accountKey).Bytes()
 	if err != nil {
 		logx.Errorf("RedisClient Get user account failed: %v", err)
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginAccountNotFound)
@@ -116,7 +117,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	// 5. FSM 状态管理（按 sessionId）
 	sessionIdStr := strconv.FormatUint(sessionDetails.SessionId, 10)
 	f := data.InitPlayerFSM()
-	if err := fsmstore.LoadFSMState(customCtx, l.svcCtx.RedisClient, f, sessionIdStr, ""); err != nil {
+	if err := fsmstore.LoadFSMState(ctx, l.svcCtx.RedisClient, f, sessionIdStr, ""); err != nil {
 		logx.Errorf("FSM Load failed: %v", err)
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginFsmFailed)
 		return resp, nil
@@ -129,7 +130,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	}
 
 	// 6. 加载 Player 数据（若不在 RedisClient）
-	if err := l.ensurePlayerDataInRedis(in.PlayerId); err != nil {
+	if err := l.ensurePlayerDataInRedis(ctx, in.PlayerId); err != nil {
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginPlayerGuidError)
 		logx.Errorf("Load player data failed: %v", err)
 		return resp, err
@@ -137,7 +138,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 
 	// 7. 清理 Session 和 FSM
 	_ = sessioncleaner.CleanupSession(
-		customCtx,
+		ctx,
 		l.svcCtx.RedisClient,
 		sessionDetails.SessionId,
 		"enterGame",
@@ -147,9 +148,9 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	return resp, nil
 }
 
-func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
+func (l *EnterGameLogic) ensurePlayerDataInRedis(ctx context.Context, playerId uint64) error {
 	// 获取会话信息
-	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
+	sessionDetails, ok := ctxkeys.GetSessionDetails(ctx)
 	if !ok {
 		logx.Error("Session not found in context during notify centre")
 		return errors.New("session not found")
@@ -183,6 +184,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 
 	// 调用加载接口，仅处理上述消息
 	return dataloader.LoadWithPlayerId(
+		ctx,
 		l.svcCtx.RedisClient,
 		l.svcCtx.KafkaClient,
 		l.svcCtx.TaskExecutor,

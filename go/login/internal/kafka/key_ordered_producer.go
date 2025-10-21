@@ -148,7 +148,7 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 }
 
 // SendTasks 批量发送任务（使用SyncProducer的SendMessages接口）
-func (p *KeyOrderedKafkaProducer) SendTasks(tasks []*db_proto.DBTask, key string) error {
+func (p *KeyOrderedKafkaProducer) SendTasks(ctx context.Context, tasks []*db_proto.DBTask, key string) error {
 	if p.closed {
 		return fmt.Errorf("生产者已关闭: 批量发送失败")
 	}
@@ -192,10 +192,6 @@ func (p *KeyOrderedKafkaProducer) SendTasks(tasks []*db_proto.DBTask, key string
 			},
 		})
 	}
-
-	// 使用SyncProducer的批量发送接口
-	ctx, cancel := context.WithTimeout(p.ctx, 5*time.Second)
-	defer cancel()
 
 	// 同步发送（带超时控制）
 	select {
@@ -246,7 +242,7 @@ func (p *KeyOrderedKafkaProducer) SendTasks(tasks []*db_proto.DBTask, key string
 }
 
 // SendTask 单条发送任务（使用SyncProducer的SendMessage接口）
-func (p *KeyOrderedKafkaProducer) SendTask(task *db_proto.DBTask, key string) error {
+func (p *KeyOrderedKafkaProducer) SendTask(ctx context.Context, task *db_proto.DBTask, key string) error {
 	if p.closed {
 		return fmt.Errorf("生产者已关闭: 任务=%s", task.TaskId)
 	}
@@ -281,10 +277,6 @@ func (p *KeyOrderedKafkaProducer) SendTask(task *db_proto.DBTask, key string) er
 			payload:  payload,
 		},
 	}
-
-	// 同步发送（带超时控制）
-	ctx, cancel := context.WithTimeout(p.ctx, 5*time.Second)
-	defer cancel()
 
 	select {
 	case <-ctx.Done():
@@ -474,7 +466,8 @@ func (p *KeyOrderedKafkaProducer) sendTestMessage() {
 	testTask := &db_proto.DBTask{
 		TaskId: fmt.Sprintf("test-%d", time.Now().Unix()),
 	}
-	if err := p.SendTask(testTask, "test-key"); err != nil {
+
+	if err := p.SendTask(context.Background(), testTask, "test-key"); err != nil {
 		logx.Errorf("测试消息发送失败: %v", err)
 	} else {
 		logx.Infof("测试消息已发送: 任务ID=%s", testTask.TaskId)
