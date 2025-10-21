@@ -228,23 +228,6 @@ func SaveProtoToRedis(ctx context.Context, redisClient redis.Cmdable, key string
 	return redisClient.Set(ctx, key, data, ttl).Err()
 }
 
-// WaitForTaskResult 等待任务结果
-func WaitForTaskResult(ctx context.Context, redisClient redis.Cmdable, key string, timeout time.Duration) ([]byte, error) {
-	result, err := redisClient.BLPop(ctx, timeout, key).Result()
-	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			return nil, fmt.Errorf("timeout waiting for task: %s", key)
-		}
-		return nil, err
-	}
-
-	if len(result) != 2 {
-		return nil, fmt.Errorf("unexpected BLPOP result: %v", result)
-	}
-
-	return []byte(result[1]), nil
-}
-
 func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 	timeout := 10 * time.Second
 	ctx, _ := context.WithTimeout(context.Background(), timeout)
@@ -404,22 +387,31 @@ func (tm *TaskManager) cleanupAndCallback(
 	redisClient redis.Cmdable,
 ) {
 	timeout := 10 * time.Second
-	ctx, _ := context.WithTimeout(context.Background(), timeout)
-	// 批量删除Redis任务键
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel() // 补充：释放上下文资源
+
+	// 关键修复：生成带前缀的键（与存储时一致）
 	keys := make([]string, len(batch.Tasks))
 	for i, t := range batch.Tasks {
-		keys[i] = t.TaskID
-	}
-	if _, delErr := redisClient.Del(ctx, keys...).Result(); delErr != nil {
-		logx.Errorf("删除任务键失败: %v", delErr)
+		// 与 ProcessBatch 中生成结果键的逻辑保持一致
+		keys[i] = fmt.Sprintf("task:result:%s", t.TaskID)
 	}
 
-	// 移除批次
+	// 执行删除
+	if len(keys) > 0 {
+		if _, delErr := redisClient.Del(ctx, keys...).Result(); delErr != nil {
+			logx.Errorf("删除任务结果键失败: %v, 键列表: %v", delErr, keys)
+		} else {
+			logx.Debugf("成功删除任务结果键: %v", keys) // 新增日志，验证删除效果
+		}
+	}
+
+	// 移除批次（原有逻辑不变）
 	tm.mu.Lock()
 	delete(tm.batches, taskKey)
 	tm.mu.Unlock()
 
-	// 触发回调
+	// 触发回调（原有逻辑不变）
 	if batch.Callback != nil {
 		go func() {
 			defer recover()
