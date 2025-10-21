@@ -435,7 +435,7 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 			return fmt.Errorf("marshal result failed: taskID=%s, err=%w", task.TaskId, err)
 		}
 		// 关键修改：使用 "task:{taskID}" 作为Key，与 taskmanager 保持一致
-		resultKey := fmt.Sprintf("%s", task.TaskId)
+		resultKey := fmt.Sprintf("task:result:%s", task.TaskId)
 		if err := redisClient.LPush(ctx, resultKey, resBytes).Err(); err != nil {
 			return fmt.Errorf("save read result failed: taskID=%s, err=%w", task.TaskId, err)
 		}
