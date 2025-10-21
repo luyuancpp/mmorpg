@@ -386,9 +386,9 @@ func (tm *TaskManager) cleanupAndCallback(
 	err error,
 	redisClient redis.Cmdable,
 ) {
-	timeout := 10 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel() // 补充：释放上下文资源
+	ctx, cancel := context.WithCancel(context.Background())
+	// 注意：使用完后需要调用 cancel() 释放资源，避免内存泄漏
+	defer cancel()
 
 	// 关键修复：生成带前缀的键（与存储时一致）
 	keys := make([]string, len(batch.Tasks))

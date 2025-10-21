@@ -15,6 +15,7 @@ type TaskExecutor struct {
 	taskManagers []*TaskManager
 	redis        redis.Cmdable
 	workerCount  int
+	cancel       context.CancelFunc
 }
 
 // NewTaskExecutor 创建任务执行器
@@ -23,7 +24,7 @@ func NewTaskExecutor(workerCount int, redis redis.Cmdable) (*TaskExecutor, error
 		workerCount = 16
 	}
 
-	customCtx, _ := context.WithCancel(context.Background())
+	customCtx, cancel := context.WithCancel(context.Background())
 
 	pools := make([]*ants.Pool, 0, workerCount)
 	taskManagers := make([]*TaskManager, 0, workerCount)
@@ -34,6 +35,7 @@ func NewTaskExecutor(workerCount int, redis redis.Cmdable) (*TaskExecutor, error
 			for _, p := range pools {
 				p.Release()
 			}
+			cancel()
 			return nil, err
 		}
 		pools = append(pools, pool)
@@ -45,6 +47,7 @@ func NewTaskExecutor(workerCount int, redis redis.Cmdable) (*TaskExecutor, error
 		taskManagers: taskManagers,
 		redis:        redis,
 		workerCount:  workerCount,
+		cancel:       cancel,
 	}, nil
 }
 
@@ -69,11 +72,16 @@ func (te *TaskExecutor) Release() {
 	for _, p := range te.pools {
 		p.Release()
 	}
+	te.cancel()
 }
 
 // hashKey 计算key的哈希值，映射到worker索引
 func (te *TaskExecutor) hashKey(key string) int {
 	h := fnv.New32a()
-	h.Write([]byte(key))
+	_, err := h.Write([]byte(key))
+	if err != nil {
+		logx.Errorf("hashKey error: %v", err)
+		return 0
+	}
 	return int(h.Sum32() % uint32(te.workerCount))
 }
