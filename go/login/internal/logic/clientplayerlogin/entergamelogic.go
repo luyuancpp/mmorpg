@@ -42,7 +42,7 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 
 func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_proto.EnterGameResponse, error) {
 	resp := &login_proto.EnterGameResponse{ErrorMessage: &login_proto_common.TipInfoMessage{}}
-	customCtx, _ := context.WithCancel(context.Background())
+	customCtx, _ := context.WithTimeout(context.Background(), config.AppConfig.Timeouts.LoginTotalTimeout)
 
 	// 1. 获取 Session
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)

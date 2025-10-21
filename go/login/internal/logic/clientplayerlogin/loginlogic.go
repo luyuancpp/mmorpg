@@ -145,7 +145,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	}
 
 	// 6. 加载账户数据（改进 RedisClient 获取判断方式）
-	userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, in.Account, time.Duration(config.AppConfig.Timeouts.AccountCacheExpireHours)*time.Second)
+	userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, in.Account, config.AppConfig.Account.CacheExpire)
 	if err != nil {
 		return nil, err
 	}
@@ -202,3 +202,25 @@ func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string
 
 	return userAccount, nil
 }
+
+// 玩家登录成功后，启动登录时长定时器
+/*func startLoginDurationTimer(playerID string, loginTime time.Time, cfg NodeConfig) {
+	// 计算超时时间点
+	expireTime := loginTime.Add(cfg.MaxLoginDuration)
+	// 计算提醒时间点（超时前 LogoutGraceTime）
+	remindTime := expireTime.Add(-cfg.LogoutGraceTime)
+
+	// 启动定时器
+	go func() {
+		now := time.Now()
+		// 先等待到提醒时间
+		time.Sleep(remindTime.Sub(now))
+		// 推送超时提醒
+		pushLogoutRemind(playerID, cfg.LogoutGraceTime)
+
+		// 继续等待到超时时间
+		time.Sleep(cfg.LogoutGraceTime)
+		// 执行强制下线
+		forceLogout(playerID, "登录时长超过最大限制")
+	}()
+}*/

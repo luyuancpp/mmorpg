@@ -339,7 +339,7 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 					redisClient,
 					task.RedisKey,
 					task.Message,
-					time.Duration(config.AppConfig.Timeouts.RoleCacheExpireHours)*time.Hour,
+					config.AppConfig.Timeouts.RoleCacheExpire,
 				); err != nil {
 					err = fmt.Errorf("缓存失败: %w", err)
 					task.Status = TaskStatusFailed
@@ -367,7 +367,7 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 				redisClient,
 				batch.Aggregator.ParentKey(),
 				parentPB,
-				time.Duration(config.AppConfig.Timeouts.RoleCacheExpireHours)*time.Hour,
+				config.AppConfig.Timeouts.RoleCacheExpire,
 			); err != nil {
 				batchErr = fmt.Errorf("缓存聚合结果失败: %w", err)
 				allSuccess = false

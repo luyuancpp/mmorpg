@@ -12,7 +12,6 @@ import (
 	"login/internal/config"
 	login_proto "login/proto/common"
 	"sync"
-	"time"
 )
 
 // NodeEventType 表示节点事件类型
@@ -98,7 +97,7 @@ func (nw *NodeWatcher) Range() ([]login_proto.NodeInfo, error) {
 	kv := namespace.NewKV(nw.client, nw.prefix)
 
 	// 设置带有超时的 context，避免长时间阻塞
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(config.AppConfig.Timeouts.ServiceDiscoveryTimeoutMS)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), config.AppConfig.Timeouts.ServiceDiscoveryTimeout)
 	defer cancel()
 
 	// 获取所有 key

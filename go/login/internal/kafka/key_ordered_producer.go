@@ -48,19 +48,19 @@ type KeyOrderedKafkaProducer struct {
 func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProducer, error) {
 	// 1. 配置Kafka客户端（幂等性必需参数）
 	config := sarama.NewConfig()
-	config.Version = sarama.V3_6_0_0                                           // 匹配Kafka版本（需≥0.11.0.0）
-	config.Net.DialTimeout = cfg.DialTimeout                                   // 拨号超时
-	config.Net.ReadTimeout = cfg.ReadTimeout                                   // 读取超时
-	config.Net.WriteTimeout = cfg.WriteTimeout                                 // 写入超时
-	config.Producer.Return.Successes = true                                    // 启用成功回调
-	config.Producer.Return.Errors = true                                       // 启用错误回调
-	config.Producer.Retry.Max = cfg.RetryMax                                   // 最大重试次数
-	config.Producer.Retry.Backoff = cfg.RetryBackoff                           // 重试间隔
-	config.Producer.RequiredAcks = sarama.WaitForAll                           // 本地写成功即返回
-	config.ChannelBufferSize = cfg.ChannelBuffer                               // 通道缓冲
-	config.Producer.Compression = sarama.CompressionCodec(cfg.CompressionType) // 压缩类型
-	config.Producer.Idempotent = cfg.Idempotent                                // 启用幂等性
-	config.Net.MaxOpenRequests = 1                                             // 幂等性强制要求为1
+	config.Version = sarama.V3_6_0_0                  // 匹配Kafka版本（需≥0.11.0.0）
+	config.Net.DialTimeout = cfg.DialTimeout          // 拨号超时
+	config.Net.ReadTimeout = cfg.ReadTimeout          // 读取超时
+	config.Net.WriteTimeout = cfg.WriteTimeout        // 写入超时
+	config.Producer.Return.Successes = true           // 启用成功回调
+	config.Producer.Return.Errors = true              // 启用错误回调
+	config.Producer.Retry.Max = cfg.RetryMax          // 最大重试次数
+	config.Producer.Retry.Backoff = cfg.RetryBackoff  // 重试间隔
+	config.Producer.RequiredAcks = sarama.WaitForAll  // 本地写成功即返回
+	config.ChannelBufferSize = cfg.ChannelBuffer      // 通道缓冲
+	config.Producer.Compression = cfg.CompressionType // 压缩类型
+	config.Producer.Idempotent = cfg.Idempotent       // 启用幂等性
+	config.Net.MaxOpenRequests = 1                    // 幂等性强制要求为1
 
 	// 幂等性必需：设置唯一事务ID
 	if cfg.Idempotent {
