@@ -1,66 +1,78 @@
+# 基础RPC服务配置
 Name: login.rpc
 ListenOn: 127.0.0.1:50000
-
 Etcd:
   Hosts:
     - 127.0.0.1:2379
   Key: login.rpc
 
+# 节点配置（新增登录时长限制）
 Node:
   ZoneId: 0
-  SessionExpireMin: 1
-  MaxLoginDevices: 3
-  LeaseTTL: 500
-  QueueShardCount: 50
+  SessionExpireMin: 1                  # 会话闲置超时（1分钟未操作则过期）
+  MaxLoginDevices: 3                   # 单账号最大登录设备数
+  LeaseTTL: 500                        # 租约超时（秒）
+  QueueShardCount: 50                  # 队列分片数
+  # 新增：登录时长限制（单次登录的最大在线时长）
+  MaxLoginDuration: 5m                # 最大登录时长（24小时，超时强制下线）
+  LogoutGraceTime: 5s                  # 超时前5分钟提醒玩家
   RedisClient:
     Host: 127.0.0.1:6379
     Password: ""
     DB: 0
     PoolSize: 10
-    DefaultTTLSeconds: 86400  # 注意这里修正了空格（原配置有多余空格）
+    DefaultTTL: 24h
+    DialTimeout: 3s
+    ReadTimeout: 3s
+    WriteTimeout: 3s
 
-Kafka:
-  Brokers: "127.0.0.1:9092"  # Kafka 集群地址
-  GroupID: "db_rpc_consumer_group"  # 消费者组 ID
-  Topic: "db_task_topic"            # 主题名（生产/消费共用）
-  PartitionCnt: 5                   # 实际分区数
-  # 以下为生产者专用配置（补充缺失项）
-  InitialPartition: 5               # 初始分区数（建议与实际分区数一致）
-  DialTimeout: "10s"                # 拨号超时（10秒）
-  ReadTimeout: "100s"                # 读取超时（10秒）
-  WriteTimeout: "10s"               # 写入超时（10秒）
-  RetryMax: 3                       # 最大重试次数
-  RetryBackoff: "100ms"             # 重试间隔（100毫秒）
-  ChannelBuffer: 1024               # 通道缓冲大小
-  SyncInterval: "30s"               # 分区同步间隔（30秒）
-  StatsInterval: "300s"               # 统计打印间隔（5秒）
-  CompressionType: 2                # 压缩类型（2=snappy，0=none，1=gzip）
-  Idempotent: true                  # 启用幂等性
-  MaxOpenRequests: 1                # 必须设置为1，配合幂等性使用
-
+# 雪花ID配置
 Snowflake:
-  Epoch: 1721473263000
+  Epoch: 1721473263000  # 2024-07-20 15:01:03 的毫秒时间戳
   NodeBits: 13
   StepBits: 9
 
+# 分布式锁配置
 Locker:
-  AccountLockTTL: 10   # 账号锁超时（10秒）
-  PlayerLockTTL: 5     # 角色锁超时（5秒）
+  AccountLockTTL: 10  # 10秒
+  PlayerLockTTL: 5    # 5秒
 
+# 账号配置
 Account:
   MaxDevicesPerAccount: 3
-  CacheExpireHours: 12  # 账号缓存过期时间（12小时）
+  CacheExpire: 12h    # 12小时
 
+# 服务注册发现配置
 Registry:
   Etcd:
     Hosts:
       - 127.0.0.1:2379
     Key: loginservice.rpc
-    DialTimeoutMS: 5000  # etcd 拨号超时（5秒）
+    DialTimeout: 5s
 
+# 超时配置
 Timeouts:
-  EtcdDialTimeoutMS: 5000         # etcd 连接超时
-  ServiceDiscoveryTimeoutMS: 10000 # 服务发现超时（10秒）
-  TaskWaitTimeoutSec: 5           # 任务等待超时（5秒）
-  AccountCacheExpireHours: 12     # 账号缓存过期时间（与 Account 配置一致，建议删除重复项）
-  RoleCacheExpireHours: 24         # 角色缓存过期时间（24小时）
+  EtcdDialTimeout: 5s
+  ServiceDiscoveryTimeout: 10s
+  TaskWaitTimeout: 5s
+  LoginTotalTimeout: 10s  # 登录过程总超时（包含Redis加载、数据库操作等）
+  RoleCacheExpire: 24h
+
+# Kafka配置
+Kafka:
+  Brokers: "127.0.0.1:9092"
+  GroupID: "db_rpc_consumer_group"
+  Topic: "db_task_topic"
+  PartitionCnt: 5
+  InitialPartition: 5
+  DialTimeout: 10s
+  ReadTimeout: 30s
+  WriteTimeout: 10s
+  RetryMax: 3
+  RetryBackoff: 100ms
+  ChannelBuffer: 1024
+  SyncInterval: 30s
+  StatsInterval: 5m
+  CompressionType: 0
+  Idempotent: true
+  MaxOpenRequests: 1

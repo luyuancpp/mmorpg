@@ -125,7 +125,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		logx.Errorf("Failed to marshal user account, err: %v", err)
 		return resp, nil
 	}
-	if err := l.svcCtx.RedisClient.Set(l.ctx, accountDataKey, dataBytes, time.Hour*time.Duration(config.AppConfig.Account.CacheExpireHours)).Err(); err != nil {
+	if err := l.svcCtx.RedisClient.Set(l.ctx, accountDataKey, dataBytes, config.AppConfig.Account.CacheExpire).Err(); err != nil {
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
 		logx.Errorf("Failed to set user account in RedisClient, account: %s, err: %v", account, err)
 		return resp, nil
