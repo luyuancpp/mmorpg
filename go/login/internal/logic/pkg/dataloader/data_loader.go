@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"login/internal/kafka"
@@ -99,7 +100,8 @@ func loadSingle(
 	keyExtractor KeyExtractor,
 	callback taskmanager.BatchCallback,
 ) error {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel() // 补充：确保上下文资源释放，避免泄漏
 
 	// 提取key
 	key, err := keyExtractor(msg)
@@ -109,6 +111,8 @@ func loadSingle(
 
 	// 收集子消息（最多两层嵌套）
 	allSubMsgs := collectSubMessages(msg)
+	// 关键：记录子消息数量，用于判断是否需要聚合
+	subMsgCount := len(allSubMsgs)
 
 	// 构建父消息缓存键（用于聚合结果存储）
 	parentKey := buildParentKey(msg, key)
@@ -125,10 +129,17 @@ func loadSingle(
 		return nil
 	}
 
-	// 创建聚合器（无论是否有子消息，统一支持聚合）
-	aggregator, err := taskmanager.NewGenericAggregator(proto.Clone(msg), parentKey)
-	if err != nil {
-		return fmt.Errorf("创建聚合器失败: %w", err)
+	// 仅当子消息数量 > 1 时，才创建聚合器；否则聚合器为nil
+	var aggregator taskmanager.Aggregator
+	if subMsgCount > 1 {
+		var aggErr error
+		aggregator, aggErr = taskmanager.NewGenericAggregator(proto.Clone(msg), parentKey)
+		if aggErr != nil {
+			return fmt.Errorf("创建聚合器失败: %w", aggErr)
+		}
+		logx.Debugf("子消息数量=%d，创建聚合器（parentKey=%s）", subMsgCount, parentKey)
+	} else {
+		logx.Debugf("子消息数量=%d，无需聚合（不创建聚合器）", subMsgCount)
 	}
 
 	// 为所有子消息设置key
@@ -140,7 +151,7 @@ func loadSingle(
 		processedSubMsgs = append(processedSubMsgs, subMsg)
 	}
 
-	// 提交任务到执行器
+	// 提交任务到执行器：根据子消息数量决定是否传aggregator
 	return taskmanager.InitAndAddMessageTasks(
 		ctx,
 		executor,
@@ -150,7 +161,7 @@ func loadSingle(
 		key,
 		processedSubMsgs,
 		taskmanager.InitTaskOptions{
-			Aggregator: aggregator,
+			Aggregator: aggregator, // 子消息>1时非nil，否则nil
 			Callback:   callback,
 		},
 	)

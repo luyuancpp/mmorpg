@@ -130,7 +130,7 @@ func (p *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 	}
 
 	playerList, ok := playerListI.([]*login.AccountSimplePlayerWrapper)
-	if !ok {
+	if playerList == nil || !ok {
 		return b3.FAILURE
 	}
 
