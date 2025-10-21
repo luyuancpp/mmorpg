@@ -21,7 +21,6 @@ import (
 	login_proto_centre "login/proto/service/cpp/rpc/centre"
 	login_proto "login/proto/service/go/grpc/login"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -167,42 +166,18 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 		&login_proto_database.PlayerCentreDatabase{PlayerId: playerId},
 	}
 
-	// 任务总数固定为 messagesToLoad 的长度（当前为2）
-	totalTasksToLoad := len(messagesToLoad)
-	var (
-		completedTasks int
-		mu             sync.Mutex
-		notifyOnce     sync.Once
-	)
-
 	// 任务完成回调
 	taskGroupCallback := func(taskKey string, taskSuccess bool, err error) {
-		mu.Lock()
-		defer mu.Unlock()
+		req := &login_proto_centre.CentrePlayerGameNodeEntryRequest{
+			ClientMsgBody: &login_proto_centre.CentreEnterGameRequest{
+				PlayerId: playerId,
+			},
+			SessionInfo: sessionDetails,
+		}
 
-		completedTasks++
-		hasFailedTask := !taskSuccess
-
-		if completedTasks >= totalTasksToLoad {
-			notifyOnce.Do(func() {
-				req := &login_proto_centre.CentrePlayerGameNodeEntryRequest{
-					ClientMsgBody: &login_proto_centre.CentreEnterGameRequest{
-						PlayerId: playerId,
-					},
-					SessionInfo: sessionDetails,
-				}
-
-				node := l.svcCtx.GetCentreClient()
-				if node != nil {
-					node.Send(req, game.CentreLoginNodeEnterGameMessageId)
-				}
-
-				if hasFailedTask {
-					logx.Errorf("All %d tasks completed with some failures, notified centre", totalTasksToLoad)
-				} else {
-					logx.Infof("All %d tasks completed successfully, notified centre", totalTasksToLoad)
-				}
-			})
+		node := l.svcCtx.GetCentreClient()
+		if node != nil {
+			node.Send(req, game.CentreLoginNodeEnterGameMessageId)
 		}
 	}
 
