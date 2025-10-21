@@ -52,11 +52,11 @@ func NewTaskExecutor(workerCount int, redis redis.Cmdable) (*TaskExecutor, error
 }
 
 // SubmitTask 提交任务到对应worker的TaskManager
-func (te *TaskExecutor) SubmitTask(taskKey string) error {
+func (te *TaskExecutor) SubmitTask(ctx context.Context, taskKey string) error {
 	idx := te.hashKey(taskKey)
 	return te.pools[idx].Submit(func() {
 		logx.Infof("Worker %d processing task: %s", idx, taskKey)
-		te.taskManagers[idx].ProcessBatch(taskKey, te.redis)
+		te.taskManagers[idx].ProcessBatch(ctx, taskKey, te.redis)
 		logx.Infof("Worker %d finished task: %s", idx, taskKey)
 	})
 }

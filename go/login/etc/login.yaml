@@ -1,6 +1,8 @@
 # 基础RPC服务配置
 Name: login.rpc
 ListenOn: 127.0.0.1:50000
+Timeout: 100000  # 服务器端处理单个请求的最大超时（10秒）
+
 Etcd:
   Hosts:
     - 127.0.0.1:2379

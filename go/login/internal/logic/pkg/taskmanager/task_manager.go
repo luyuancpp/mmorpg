@@ -228,9 +228,7 @@ func SaveProtoToRedis(ctx context.Context, redisClient redis.Cmdable, key string
 	return redisClient.Set(ctx, key, data, ttl).Err()
 }
 
-func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
-	timeout := 10 * time.Second
-	ctx, _ := context.WithTimeout(context.Background(), timeout)
+func (tm *TaskManager) ProcessBatch(ctx context.Context, taskKey string, redisClient redis.Cmdable) {
 	batch, exists := tm.GetBatch(taskKey)
 	if !exists {
 		logx.Infof("批次不存在: %s", taskKey)
@@ -256,7 +254,7 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 		select {
 		case <-ctx.Done():
 			// 超时：标记未完成的任务为失败
-			batchErr = fmt.Errorf("等待任务结果超时（%v）", timeout)
+			batchErr = fmt.Errorf("等待任务结果超时")
 			allSuccess = false
 			for _, key := range taskResultKeys {
 				if !completed[key] {
@@ -490,11 +488,11 @@ func InitAndAddMessageTasks(
 	// 批量投递Kafka
 	if len(dbTasks) > 0 {
 		if len(dbTasks) == 1 {
-			if err := producer.SendTask(dbTasks[0], playerIdStr); err != nil {
+			if err := producer.SendTask(ctx, dbTasks[0], playerIdStr); err != nil {
 				return fmt.Errorf("Kafka投递单任务失败: %w", err)
 			}
 		} else {
-			if err := producer.SendTasks(dbTasks, playerIdStr); err != nil {
+			if err := producer.SendTasks(ctx, dbTasks, playerIdStr); err != nil {
 				return fmt.Errorf("Kafka投递批量任务失败: %w", err)
 			}
 		}

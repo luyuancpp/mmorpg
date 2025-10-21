@@ -58,6 +58,7 @@ func extractPlayerIdRecursive(msgReflect protoreflect.Message) (uint64, error) {
 
 // Load 批量加载PB数据（支持自定义key提取）
 func Load(
+	ctx context.Context,
 	redisClient redis.Cmdable,
 	kafkaProducer *kafka.KeyOrderedKafkaProducer,
 	executor *taskmanager.TaskExecutor,
@@ -72,26 +73,28 @@ func Load(
 	taskKey := uuid.NewString()
 
 	for _, msg := range messages {
-		if err := loadSingle(redisClient, kafkaProducer, executor, taskKey, msg, keyExtractor, callback); err != nil {
+		if err := loadSingle(ctx, redisClient, kafkaProducer, executor, taskKey, msg, keyExtractor, callback); err != nil {
 			return err
 		}
 	}
-	return executor.SubmitTask(taskKey)
+	return executor.SubmitTask(ctx, taskKey)
 }
 
 // LoadWithPlayerId 简化版：默认用player_id作为key
 func LoadWithPlayerId(
+	ctx context.Context,
 	redisClient redis.Cmdable,
 	kafkaProducer *kafka.KeyOrderedKafkaProducer,
 	executor *taskmanager.TaskExecutor,
 	messages []proto.Message,
 	callback taskmanager.BatchCallback,
 ) error {
-	return Load(redisClient, kafkaProducer, executor, messages, DefaultPlayerIdExtractor, callback)
+	return Load(ctx, redisClient, kafkaProducer, executor, messages, DefaultPlayerIdExtractor, callback)
 }
 
 // 处理单个消息加载
 func loadSingle(
+	ctx context.Context,
 	redisClient redis.Cmdable,
 	kafkaProducer *kafka.KeyOrderedKafkaProducer,
 	executor *taskmanager.TaskExecutor,
@@ -100,9 +103,6 @@ func loadSingle(
 	keyExtractor KeyExtractor,
 	callback taskmanager.BatchCallback,
 ) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel() // 补充：确保上下文资源释放，避免泄漏
-
 	// 提取key
 	key, err := keyExtractor(msg)
 	if err != nil {
