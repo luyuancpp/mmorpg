@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
-	"github.com/luyuancpp/proto2mysql-go"
+	"github.com/luyuancpp/proto2mysql"
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"

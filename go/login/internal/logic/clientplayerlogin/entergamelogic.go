@@ -122,7 +122,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	if err := f.Event(context.Background(), data.EventEnterGame); err != nil {
+	if err := f.Event(ctx, data.EventEnterGame); err != nil {
 		logx.Errorf("FSM Event failed: %v", err)
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginInProgress)
 		return resp, nil
