@@ -7,7 +7,7 @@ import (
 	db_proto "db/proto/service/go/grpc/db"
 	"errors"
 	"fmt"
-	"github.com/luyuancpp/proto2mysql-go"
+	"github.com/luyuancpp/proto2mysql"
 	"runtime/debug"
 	"strconv"
 	"sync"
@@ -71,12 +71,78 @@ type worker struct {
 	wg            *sync.WaitGroup
 }
 
+// 核心改造1：定义操作处理函数签名
+type dbOpHandler func(
+	ctx context.Context,
+	redisClient redis.Cmdable,
+	task *db_proto.DBTask,
+	msg proto.Message,
+) string
+
+// 核心改造2：初始化操作-函数映射表
+var dbOpHandlers = map[string]dbOpHandler{
+	"read":  handleDBReadOp,
+	"write": handleDBWriteOp,
+}
+
+// 核心改造3：read操作处理函数
+func handleDBReadOp(
+	ctx context.Context,
+	redisClient redis.Cmdable,
+	task *db_proto.DBTask,
+	msg proto.Message,
+) string {
+	// 执行数据库查询
+	if err := proto_sql.DB.SqlModel.FindOneByWhereClause(msg, task.WhereCase); err != nil && !errors.Is(err, proto2mysql.ErrNoRowsFound) {
+		return fmt.Sprintf("db read failed: %v", err)
+	}
+
+	// 序列化查询结果
+	resultData, err := proto.Marshal(msg)
+	if err != nil {
+		return fmt.Sprintf("marshal read result failed: %v", err)
+	}
+
+	// 写入Redis结果（仅read操作需要）
+	if task.TaskId != "" {
+		result := &db_proto.TaskResult{
+			Success: true,
+			Data:    resultData,
+			Error:   "",
+		}
+		resBytes, err := proto.Marshal(result)
+		if err != nil {
+			return fmt.Sprintf("marshal result failed: %v", err)
+		}
+		resultKey := fmt.Sprintf("task:result:%s", task.TaskId)
+		if err := redisClient.LPush(ctx, resultKey, resBytes).Err(); err != nil {
+			return fmt.Sprintf("save read result failed: %v", err)
+		}
+	}
+
+	return ""
+}
+
+// 核心改造4：write操作处理函数
+func handleDBWriteOp(
+	ctx context.Context,
+	redisClient redis.Cmdable,
+	task *db_proto.DBTask,
+	msg proto.Message,
+) string {
+	if err := proto_sql.DB.SqlModel.Save(msg); err != nil {
+		return fmt.Sprintf("db write failed: %v", err)
+	}
+	return ""
+}
+
+// NewKeyOrderedKafkaConsumer 初始化消费者（原逻辑不变）
 func NewKeyOrderedKafkaConsumer(
 	cfg db_config.Config,
 	redisClient redis.Cmdable,
 ) (*KeyOrderedKafkaConsumer, error) {
 	config := sarama.NewConfig()
-	config.Version = sarama.V3_5_0_0 // 与 v1.43.1 兼容的 Kafka 版本
+	config.Version = sarama.V3_5_0_0
 	config.Consumer.Return.Errors = true
 	config.Consumer.Offsets.Initial = sarama.OffsetOldest
 
@@ -127,6 +193,7 @@ func NewKeyOrderedKafkaConsumer(
 	}, nil
 }
 
+// Start 启动消费者（原逻辑不变）
 func (c *KeyOrderedKafkaConsumer) Start() error {
 	for _, w := range c.workers {
 		c.wg.Add(1)
@@ -153,6 +220,7 @@ func (c *KeyOrderedKafkaConsumer) Start() error {
 	return nil
 }
 
+// StartRetryConsumer 启动重试消费者（原逻辑不变）
 func (c *KeyOrderedKafkaConsumer) StartRetryConsumer() {
 	go func() {
 		ticker := time.NewTicker(c.retryConsumeInterval)
@@ -172,6 +240,7 @@ func (c *KeyOrderedKafkaConsumer) StartRetryConsumer() {
 		c.topic, c.retryConsumeInterval, c.retryMaxTimes)
 }
 
+// consumeRetryQueue 消费重试队列（原逻辑不变）
 func (c *KeyOrderedKafkaConsumer) consumeRetryQueue() {
 	msgBytes, err := c.redisClient.RPop(c.ctx, c.retryQueueKey).Bytes()
 	if err != nil {
@@ -207,6 +276,7 @@ func (c *KeyOrderedKafkaConsumer) consumeRetryQueue() {
 	logx.Infof("retry process task success: taskID=%s, retryCount=%d", task.TaskId, task.RetryCount)
 }
 
+// worker.start 启动工作协程（原逻辑不变）
 func (w *worker) start(
 	processFunc func(ctx context.Context, worker *worker, msg *sarama.ConsumerMessage, isOfflineExpand bool) error,
 	isOfflineExpand bool,
@@ -248,17 +318,14 @@ func (w *worker) start(
 	}
 }
 
+// consumerGroupHandler 实现消费者组接口（原逻辑不变）
 type consumerGroupHandler struct {
 	consumer *KeyOrderedKafkaConsumer
 }
 
-// Setup 实现 sarama.ConsumerGroupHandler 接口
-// 在 v1.43.1 中通过 Claims() 获取分配的分区
 func (h *consumerGroupHandler) Setup(session sarama.ConsumerGroupSession) error {
-	// Claims() 返回 map[topic]map[int32]sarama.OffsetMetadata
 	claims := session.Claims()
 	if partitions, ok := claims[h.consumer.topic]; ok {
-		// 提取分区 ID 列表
 		partitionIDs := make([]int32, 0, len(partitions))
 		for p := range partitions {
 			partitionIDs = append(partitionIDs, int32(p))
@@ -271,7 +338,6 @@ func (h *consumerGroupHandler) Setup(session sarama.ConsumerGroupSession) error 
 	return nil
 }
 
-// Cleanup 实现 sarama.ConsumerGroupHandler 接口
 func (h *consumerGroupHandler) Cleanup(session sarama.ConsumerGroupSession) error {
 	claims := session.Claims()
 	if partitions, ok := claims[h.consumer.topic]; ok {
@@ -285,12 +351,10 @@ func (h *consumerGroupHandler) Cleanup(session sarama.ConsumerGroupSession) erro
 	return nil
 }
 
-// ConsumeClaim 实现 sarama.ConsumerGroupHandler 接口
 func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	logx.Infof("ConsumeClaim invoked: partition=%d, initialOffset=%d",
 		claim.Partition(), claim.InitialOffset())
 
-	// 从 claim 通道读取消息
 	for msg := range claim.Messages() {
 		logx.Debugf("fetched message: topic=%s, partition=%d, offset=%d, key=%s",
 			msg.Topic, msg.Partition, msg.Offset, string(msg.Key))
@@ -304,7 +368,6 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 			continue
 		}
 
-		// 发送消息到 worker 通道
 		select {
 		case worker.msgCh <- msg:
 			session.MarkMessage(msg, "")
@@ -331,6 +394,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 	return nil
 }
 
+// processDBTaskMessage 处理DB任务消息（原逻辑不变）
 func processDBTaskMessage(ctx context.Context, worker *worker, msg *sarama.ConsumerMessage, isOfflineExpand bool) error {
 	var task db_proto.DBTask
 	if err := proto.Unmarshal(msg.Value, &task); err != nil {
@@ -368,6 +432,7 @@ func processDBTaskMessage(ctx context.Context, worker *worker, msg *sarama.Consu
 	return processTaskWithoutLock(ctx, worker.redisClient, &task)
 }
 
+// tryLockAndProcess 尝试加锁并处理任务（原逻辑不变）
 func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db_proto.DBTask, offset int64) error {
 	lockKey := fmt.Sprintf("kafka:consumer:lock:%s", key)
 	lockTTL := 5 * time.Second
@@ -393,59 +458,41 @@ func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db
 	return processTaskWithoutLock(ctx, worker.redisClient, task)
 }
 
+// 核心改造5：重构processTaskWithoutLock，使用函数映射替代switch
 func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask) error {
+	// 1. 解析消息类型
 	mt, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(task.MsgType))
 	if err != nil {
 		return fmt.Errorf("find message type failed: type=%s, taskID=%s, err=%w", task.MsgType, task.TaskId, err)
 	}
 
+	// 2. 反序列化任务体
 	msg := dynamicpb.NewMessage(mt.Descriptor())
 	if err := proto.Unmarshal(task.Body, msg); err != nil {
 		return fmt.Errorf("unmarshal task body failed: taskID=%s, err=%w", task.TaskId, err)
 	}
 
+	// 3. 通过映射表获取处理函数并执行
+	handler, ok := dbOpHandlers[task.Op]
 	var resultErr string
-	var resultData []byte
-	switch task.Op {
-	case "read":
-		if err := proto_sql.DB.SqlModel.FindOneByWhereClause(msg, task.WhereCase); err != nil && !errors.Is(err, proto2mysql.ErrNoRowsFound) {
-			resultErr = fmt.Sprintf("db read failed: %v", err)
-		} else {
-			if resultData, err = proto.Marshal(msg); err != nil {
-				resultErr = fmt.Sprintf("marshal read result failed: %v", err)
-			}
-		}
-	case "write":
-		if err := proto_sql.DB.SqlModel.Save(msg); err != nil {
-			resultErr = fmt.Sprintf("db write failed: %v", err)
-		}
-	default:
+	if !ok {
 		resultErr = fmt.Sprintf("unsupported op: %s", task.Op)
+	} else {
+		resultErr = handler(ctx, redisClient, task, msg)
 	}
 
-	// 在 processTaskWithoutLock 函数中，修改 LPush 的 Key
-	if task.Op == "read" && task.TaskId != "" {
-		result := &db_proto.TaskResult{
-			Success: resultErr == "",
-			Data:    resultData,
-			Error:   resultErr,
-		}
-		resBytes, err := proto.Marshal(result)
-		if err != nil {
-			return fmt.Errorf("marshal result failed: taskID=%s, err=%w", task.TaskId, err)
-		}
-		// 关键修改：使用 "task:{taskID}" 作为Key，与 taskmanager 保持一致
-		resultKey := fmt.Sprintf("task:result:%s", task.TaskId)
-		if err := redisClient.LPush(ctx, resultKey, resBytes).Err(); err != nil {
-			return fmt.Errorf("save read result failed: taskID=%s, err=%w", task.TaskId, err)
-		}
-	}
-
+	// 4. 输出处理日志
 	logx.Infof("task processed: taskID=%s, op=%s, success=%v, err=%s",
 		task.TaskId, task.Op, resultErr == "", resultErr)
+
+	// 5. 若有错误，返回错误信息（供重试逻辑使用）
+	if resultErr != "" {
+		return fmt.Errorf(resultErr)
+	}
 	return nil
 }
 
+// saveToRetryQueue 保存任务到重试队列（原逻辑不变）
 func saveToRetryQueue(ctx context.Context, redisClient redis.Cmdable, retryQueueKey string, task *db_proto.DBTask) error {
 	taskBytes, err := proto.Marshal(task)
 	if err != nil {
@@ -454,6 +501,7 @@ func saveToRetryQueue(ctx context.Context, redisClient redis.Cmdable, retryQueue
 	return redisClient.LPush(ctx, retryQueueKey, taskBytes).Err()
 }
 
+// Stop 停止消费者（原逻辑不变）
 func (c *KeyOrderedKafkaConsumer) Stop() {
 	c.cancel()
 	c.wg.Wait()

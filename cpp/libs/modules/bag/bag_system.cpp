@@ -542,7 +542,7 @@ void Bag::ToString()
 	std::string contex;
 	for (auto& pos : pos_)
 	{
-		contex +=  GetItemBaseByGuid(pos.second)->DebugString() + "\n";
+		contex +=  GetItemBaseByGuid(pos.second)->ShortDebugString() + "\n";
 	}
 	LOG_INFO << contex << "\n\n--------------";
 }
