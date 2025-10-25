@@ -118,6 +118,9 @@ func handleDBReadOp(
 		if err := redisClient.LPush(ctx, resultKey, resBytes).Err(); err != nil {
 			return fmt.Sprintf("save read result failed: %v", err)
 		}
+		if err := redisClient.Expire(ctx, resultKey, 5*time.Minute).Err(); err != nil {
+			return fmt.Sprintf("set expire for result key failed: %v", err)
+		}
 	}
 
 	return ""

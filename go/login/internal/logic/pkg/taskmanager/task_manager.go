@@ -54,6 +54,9 @@ func (g *GenericAggregator) Aggregate(subTasks []*MessageTask) (proto.Message, e
 	parentFields := parentReflect.Descriptor().Fields()
 
 	for _, task := range subTasks {
+		if task.SkipSubCache {
+			continue
+		}
 		subPB := task.Message
 		if subPB == nil {
 			continue
@@ -470,7 +473,7 @@ func InitAndAddMessageTasks(
 		taskID := uuid.NewString()
 		dbTasks = append(dbTasks, &login_proto.DBTask{
 			Key:       playerId,
-			WhereCase: "where player_id='" + playerIdStr + "'",
+			WhereCase: "player_id='" + playerIdStr + "'",
 			Op:        "read",
 			MsgType:   string(msg.ProtoReflect().Descriptor().FullName()),
 			Body:      data,
