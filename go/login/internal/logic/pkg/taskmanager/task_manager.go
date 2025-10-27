@@ -159,7 +159,7 @@ func NewTaskManager(ctx context.Context) *TaskManager {
 		batches: make(map[string]*TaskBatch),
 		ctx:     ctx,
 	}
-	go tm.cleanExpiredBatches(5*time.Second, 10*time.Second)
+	go tm.cleanExpiredBatches(config.AppConfig.Timeouts.TaskManagerCleanInterval, config.AppConfig.Timeouts.TaskBatchExpireTime)
 	return tm
 }
 
