@@ -59,7 +59,9 @@ Timeouts:
   TaskWaitTimeout: 5s
   LoginTotalTimeout: 10s  # 登录过程总超时（包含Redis加载、数据库操作等）
   RoleCacheExpire: 24h
-
+  TaskManagerCleanInterval: 5s   # 任务管理器清理间隔
+  TaskBatchExpireTime: 10s       # 任务批次过期时间
+  
 # Kafka配置
 Kafka:
   Brokers: "127.0.0.1:9092"

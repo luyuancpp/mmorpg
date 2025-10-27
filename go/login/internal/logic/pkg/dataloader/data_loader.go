@@ -56,7 +56,7 @@ func extractPlayerIdRecursive(msgReflect protoreflect.Message) (uint64, error) {
 	return 0, fmt.Errorf("PB类型 %s 及其子消息均缺少player_id字段", msgReflect.Descriptor().FullName())
 }
 
-// Load 批量加载PB数据（支持自定义key提取）
+// Load 批量加载PB数据（所有消息及子消息都命中缓存时才执行回调）
 func Load(
 	ctx context.Context,
 	redisClient redis.Cmdable,
@@ -71,12 +71,75 @@ func Load(
 	}
 
 	taskKey := uuid.NewString()
+	allCached := true // 标记是否所有消息及子消息都命中缓存
 
 	for _, msg := range messages {
-		if err := loadSingle(ctx, redisClient, kafkaProducer, executor, taskKey, msg, keyExtractor, callback); err != nil {
+		// 提取当前消息的key
+		key, err := keyExtractor(msg)
+		if err != nil {
+			return fmt.Errorf("提取key失败: %w", err)
+		}
+
+		// 构建父消息缓存键
+		parentKey := buildParentKey(msg, key)
+
+		// 1. 检查父消息缓存
+		parentFound, err := LoadProtoFromRedis(ctx, redisClient, parentKey, proto.Clone(msg))
+		if err != nil {
+			return fmt.Errorf("查询父消息Redis缓存失败: %w", err)
+		}
+		if !parentFound {
+			allCached = false // 父消息未命中，标记非全缓存
+		} else {
+			continue
+		}
+
+		// 3. 未全命中缓存，执行实际加载逻辑（与原逻辑一致）
+		allSubMsgs := collectSubMessages(msg)
+		subMsgCount := len(allSubMsgs)
+
+		var aggregator taskmanager.Aggregator
+		if subMsgCount > 1 {
+			var aggErr error
+			aggregator, aggErr = taskmanager.NewGenericAggregator(proto.Clone(msg), parentKey)
+			if aggErr != nil {
+				return fmt.Errorf("创建聚合器失败: %w", aggErr)
+			}
+			logx.Debugf("子消息数量=%d，创建聚合器（parentKey=%s）", subMsgCount, parentKey)
+		}
+
+		var processedSubMsgs []proto.Message
+		for _, subMsg := range allSubMsgs {
+			if err := setKeyToMessage(subMsg, key, keyExtractor); err != nil {
+				return fmt.Errorf("设置子消息key失败 (type=%s): %w", subMsg.ProtoReflect().Descriptor().FullName(), err)
+			}
+			processedSubMsgs = append(processedSubMsgs, subMsg)
+		}
+
+		if err := taskmanager.InitAndAddMessageTasks(
+			ctx,
+			executor,
+			taskKey,
+			redisClient,
+			kafkaProducer,
+			key,
+			processedSubMsgs,
+			taskmanager.InitTaskOptions{
+				Aggregator: aggregator,
+				Callback:   callback,
+			},
+		); err != nil {
 			return err
 		}
 	}
+
+	// 4. 所有消息处理完成后，若全命中缓存则执行回调
+	if allCached && callback != nil {
+		callback(taskKey, true, nil)
+		return nil
+	}
+
+	// 非全缓存时，提交任务执行加载
 	return executor.SubmitTask(ctx, taskKey)
 }
 
@@ -90,81 +153,6 @@ func LoadWithPlayerId(
 	callback taskmanager.BatchCallback,
 ) error {
 	return Load(ctx, redisClient, kafkaProducer, executor, messages, DefaultPlayerIdExtractor, callback)
-}
-
-// 处理单个消息加载
-func loadSingle(
-	ctx context.Context,
-	redisClient redis.Cmdable,
-	kafkaProducer *kafka.KeyOrderedKafkaProducer,
-	executor *taskmanager.TaskExecutor,
-	taskKey string,
-	msg proto.Message,
-	keyExtractor KeyExtractor,
-	callback taskmanager.BatchCallback,
-) error {
-	// 提取key
-	key, err := keyExtractor(msg)
-	if err != nil {
-		return fmt.Errorf("提取key失败: %w", err)
-	}
-
-	// 收集子消息（最多两层嵌套）
-	allSubMsgs := collectSubMessages(msg)
-	// 关键：记录子消息数量，用于判断是否需要聚合
-	subMsgCount := len(allSubMsgs)
-
-	// 构建父消息缓存键（用于聚合结果存储）
-	parentKey := buildParentKey(msg, key)
-
-	// 检查父消息缓存（若存在直接返回）
-	found, err := LoadProtoFromRedis(ctx, redisClient, parentKey, msg)
-	if err != nil {
-		return fmt.Errorf("查询Redis缓存失败: %w", err)
-	}
-	if found {
-		if callback != nil {
-			callback(parentKey, true, nil)
-		}
-		return nil
-	}
-
-	// 仅当子消息数量 > 1 时，才创建聚合器；否则聚合器为nil
-	var aggregator taskmanager.Aggregator
-	if subMsgCount > 1 {
-		var aggErr error
-		aggregator, aggErr = taskmanager.NewGenericAggregator(proto.Clone(msg), parentKey)
-		if aggErr != nil {
-			return fmt.Errorf("创建聚合器失败: %w", aggErr)
-		}
-		logx.Debugf("子消息数量=%d，创建聚合器（parentKey=%s）", subMsgCount, parentKey)
-	} else {
-		logx.Debugf("子消息数量=%d，无需聚合（不创建聚合器）", subMsgCount)
-	}
-
-	// 为所有子消息设置key
-	var processedSubMsgs []proto.Message
-	for _, subMsg := range allSubMsgs {
-		if err := setKeyToMessage(subMsg, key, keyExtractor); err != nil {
-			return fmt.Errorf("设置子消息key失败 (type=%s): %w", subMsg.ProtoReflect().Descriptor().FullName(), err)
-		}
-		processedSubMsgs = append(processedSubMsgs, subMsg)
-	}
-
-	// 提交任务到执行器：根据子消息数量决定是否传aggregator
-	return taskmanager.InitAndAddMessageTasks(
-		ctx,
-		executor,
-		taskKey,
-		redisClient,
-		kafkaProducer,
-		key,
-		processedSubMsgs,
-		taskmanager.InitTaskOptions{
-			Aggregator: aggregator, // 子消息>1时非nil，否则nil
-			Callback:   callback,
-		},
-	)
 }
 
 // 收集子消息：只收集顶层消息中显式声明且已初始化的一级子消息

@@ -96,11 +96,13 @@ type EtcdRegistryConf struct {
 
 // TimeoutConf 各类超时配置
 type TimeoutConf struct {
-	EtcdDialTimeout         time.Duration `json:"EtcdDialTimeout"`         // Etcd连接超时（如5s）
-	ServiceDiscoveryTimeout time.Duration `json:"ServiceDiscoveryTimeout"` // 服务发现超时（如10s）
-	TaskWaitTimeout         time.Duration `json:"TaskWaitTimeout"`         // 任务等待超时（如5s）
-	LoginTotalTimeout       time.Duration `json:"LoginTotalTimeout"`       // 登录过程总超时（含Redis/DB，如10s）
-	RoleCacheExpire         time.Duration `json:"RoleCacheExpire"`         // 角色缓存过期时间（如24h）
+	EtcdDialTimeout          time.Duration `json:"EtcdDialTimeout"`          // Etcd连接超时（如5s）
+	ServiceDiscoveryTimeout  time.Duration `json:"ServiceDiscoveryTimeout"`  // 服务发现超时（如10s）
+	TaskWaitTimeout          time.Duration `json:"TaskWaitTimeout"`          // 任务等待超时（如5s）
+	LoginTotalTimeout        time.Duration `json:"LoginTotalTimeout"`        // 登录过程总超时（含Redis/DB，如10s）
+	RoleCacheExpire          time.Duration `json:"RoleCacheExpire"`          // 角色缓存过期时间（如24h）
+	TaskManagerCleanInterval time.Duration `json:"TaskManagerCleanInterval"` // 任务批次清理间隔
+	TaskBatchExpireTime      time.Duration `json:"TaskBatchExpireTime"`      // 任务批次过期时间
 }
 
 // 全局配置实例
