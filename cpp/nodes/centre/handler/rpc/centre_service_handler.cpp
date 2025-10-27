@@ -74,74 +74,88 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 
 
 // ---------- refactor helpers (匿名 namespace) ----------
+// helpers for login / reconnect / kick decision (single-threaded simplified)
 namespace {
 
-	enum class EnterGameType {
+	enum class EnterGameDecision {
 		FirstLogin,
 		Reconnect,
 		ReplaceLogin
 	};
 
-	// 计算登录类型：传入是否已有 player、旧 token、旧 session
-	EnterGameType DetermineEnterGameType(bool hasOldSession, const std::string& oldLoginToken,
-		const std::string& newLoginToken, uint64_t oldSessionId, uint64_t newSessionId) {
-		if (!hasOldSession) return EnterGameType::FirstLogin;
-		if (oldSessionId == newSessionId) return EnterGameType::Reconnect; // same session id => reconnect
-		if (oldLoginToken == newLoginToken) return EnterGameType::Reconnect; // same token => likely reconnect
-		return EnterGameType::ReplaceLogin; // different token and different session => replace (kick)
+	// 纯函数：根据当前是否已有 session/ token 判断行为（不做副作用）
+	EnterGameDecision DecideEnterGame(bool hasOldSession,
+		uint64_t oldSessionId,
+		const std::string& oldLoginToken,
+		uint64_t newSessionId,
+		const std::string& newLoginToken)
+	{
+		if (!hasOldSession) return EnterGameDecision::FirstLogin;
+		if (oldSessionId == newSessionId) return EnterGameDecision::Reconnect;
+		if (oldLoginToken == newLoginToken) return EnterGameDecision::Reconnect;
+		return EnterGameDecision::ReplaceLogin;
 	}
 
-	// 将踢人行为封装：返回 true 表示成功发送踢人消息（或已无效）
-	bool KickOldSessionIfNeeded(uint64_t oldSessionId) {
+	// 发送踢人消息（幂等）；返回是否实际尝试发送
+	bool SendKickForOldSession(uint64_t oldSessionId)
+	{
 		if (oldSessionId == kInvalidSessionId) return false;
-		KickSessionRequest msg;
-		msg.set_session_id(oldSessionId);
-		// SendMessageToGateById 内部应是幂等的/容错的
-		SendMessageToGateById(GateKickSessionByCentreMessageId, msg, GetGateNodeId(oldSessionId));
-		LOG_INFO << "Kick request sent for old session: " << oldSessionId;
+		KickSessionRequest kickMsg;
+		kickMsg.set_session_id(oldSessionId);
+		SendMessageToGateById(GateKickSessionByCentreMessageId, kickMsg, GetGateNodeId(oldSessionId));
+		LOG_INFO << "Requested kick for old session: " << oldSessionId;
 		return true;
 	}
 
-	// 注册或更新 center 内的 session snapshot（不做登出），返回引用/指针用于后续更新
-	PlayerSessionSnapshotPBComp& EnsureSessionPBForPlayer(entt::entity player, uint64_t newSessionId, const std::string& newLoginToken) {
+	// 更新/创建 player 的 session snapshot（写入新的 sessionId + token）
+	// 返回旧的 sessionId 与旧 token（用于判定与后续清理）
+	std::pair<uint64_t, std::string> UpdatePlayerSessionSnapshot(entt::entity playerEntity,
+		uint64_t newSessionId,
+		const std::string& newLoginToken)
+	{
 		auto& registry = tlsRegistryManager.actorRegistry;
-		auto& sessionPB = registry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
+		auto& sessionPB = registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity);
+		uint64_t oldSessionId = sessionPB.gate_session_id();
+		std::string oldToken = sessionPB.login_token();
 		sessionPB.set_gate_session_id(newSessionId);
 		sessionPB.set_login_token(newLoginToken);
-		return sessionPB;
+		// 持久化 extra fields（如果需要）
+		GetPlayerCentreDataRedis()->UpdateExtraData(tlsRegistryManager.actorRegistry.get<Guid>(playerEntity), sessionPB);
+		return { oldSessionId, oldToken };
 	}
 
-	// 处理首次登录路径（加载数据/异步），返回 void
-	void ProcessFirstLoginPath(Guid playerId, uint64_t sessionId, const std::string& loginToken) {
+	// 首次登录处理（异步加载/创建玩家数据）
+	void HandleFirstLogin(Guid playerGuid, uint64_t sessionId, const std::string& loginToken)
+	{
 		PlayerSessionSnapshotPBComp sessionPB;
 		sessionPB.set_gate_session_id(sessionId);
 		sessionPB.set_login_token(loginToken);
-		GetPlayerCentreDataRedis()->AsyncLoad(playerId, sessionPB);
-		GetPlayerCentreDataRedis()->UpdateExtraData(playerId, sessionPB);
-		LOG_INFO << "First login: PlayerID=" << playerId;
+		GetPlayerCentreDataRedis()->AsyncLoad(playerGuid, sessionPB);
+		GetPlayerCentreDataRedis()->UpdateExtraData(playerGuid, sessionPB);
+		LOG_INFO << "HandleFirstLogin for player " << playerGuid;
 	}
 
-	// 处理已有 player 的后续逻辑（设置 enter state，进入场景）
-	void ProcessExistingPlayerPath(entt::entity player, EnterGameType type) {
+	// 已有 player 的后续执行（设置进入类型并触发进入场景流程）
+	void ApplyEnterGameDecision(entt::entity playerEntity, EnterGameDecision decision)
+	{
 		auto& registry = tlsRegistryManager.actorRegistry;
-		auto& enterComp = registry.get_or_emplace<PlayerEnterGameStatePbComp>(player);
-		switch (type) {
-		case EnterGameType::FirstLogin:
+		auto& enterComp = registry.get_or_emplace<PlayerEnterGameStatePbComp>(playerEntity);
+		switch (decision) {
+		case EnterGameDecision::FirstLogin:
 			enterComp.set_enter_gs_type(LOGIN_FIRST);
 			break;
-		case EnterGameType::Reconnect:
+		case EnterGameDecision::Reconnect:
 			enterComp.set_enter_gs_type(LOGIN_RECONNECT);
 			break;
-		case EnterGameType::ReplaceLogin:
+		case EnterGameDecision::ReplaceLogin:
 			enterComp.set_enter_gs_type(LOGIN_REPLACE);
 			break;
 		}
-		PlayerLifecycleSystem::AddGameNodePlayerToGateNode(player);
-		PlayerLifecycleSystem::ProcessPlayerSessionState(player);
+		PlayerLifecycleSystem::AddGameNodePlayerToGateNode(playerEntity);
+		PlayerLifecycleSystem::ProcessPlayerSessionState(playerEntity);
 	}
 
 } // namespace
-
 
 ///<<< END WRITING YOUR CODE
 
@@ -263,47 +277,47 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
-    const auto& clientMsg = request->client_msg_body();
-    const auto& sessionInfo = request->session_info();
-    Guid playerId = clientMsg.player_id();
-    uint64_t sessionId = sessionInfo.session_id();
-    const std::string& loginToken = clientMsg.login_token();
+	///<<< BEGIN WRITING YOUR CODE
+	const auto& clientMsg = request->client_msg_body();
+	const auto& sessionInfo = request->session_info();
+	Guid playerGuid = clientMsg.player_id();
+	uint64_t sessionId = sessionInfo.session_id();
+	const std::string loginToken = clientMsg.login_token();
 
-    LOG_INFO << "Login request: PlayerID=" << playerId << ", SessionID=" << sessionId;
+	LOG_INFO << "LoginNodeEnterGame request: player=" << playerGuid << " session=" << sessionId;
 
-    // 注册当前 session 到全局表（可用 SessionScope 替换）
-    GlobalSessionList()[sessionId] = playerId;
+	// 在单线程模型下，直接插入全局 session map
+	GlobalSessionList()[sessionId] = playerGuid;
 
-    auto& playerList = tlsPlayerList;
-    auto it = playerList.find(playerId);
+	// 是否在内存中已有 player 对象
+	auto it = tlsPlayerList.find(playerGuid);
+	if (it == tlsPlayerList.end()) {
+		// 首次登录：load data 并返回（后续流程由异步回调继续）
+		HandleFirstLogin(playerGuid, sessionId, loginToken);
+		return;
+	}
 
-    if (it == playerList.end()) {
-        // 首次登录
-        ProcessFirstLoginPath(playerId, sessionId, loginToken);
-        return;
-    }
+	entt::entity playerEntity = it->second;
+	bool hasOldSession = tlsRegistryManager.actorRegistry.any_of<PlayerSessionSnapshotPBComp>(playerEntity);
 
-    // 已存在 player 对象（可能是重连或顶号）
-    entt::entity playerEntity = it->second;
-    bool hasOldSession = tlsRegistryManager.actorRegistry.any_of<PlayerSessionSnapshotPBComp>(playerEntity);
+	// 更新 snapshot，获取旧 session/token 以便决定是否踢人
+	auto old = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken);
+	uint64_t oldSessionId = old.first;
+	std::string oldToken = std::move(old.second);
 
-    PlayerSessionSnapshotPBComp& sessionPB = EnsureSessionPBForPlayer(playerEntity, sessionId, loginToken);
-    uint64_t oldSessionId = sessionPB.gate_session_id();
-    const std::string oldLoginToken = sessionPB.login_token();
+	// 决策（pure）
+	EnterGameDecision decision = DecideEnterGame(hasOldSession, oldSessionId, oldToken, sessionId, loginToken);
 
-    // 清理旧会话映射（如果需要）
-    if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
-        // 准备踢旧会话（幂等）
-        if (DetermineEnterGameType(hasOldSession, oldLoginToken, loginToken, oldSessionId, sessionId) == EnterGameType::ReplaceLogin) {
-            KickOldSessionIfNeeded(oldSessionId);
-        }
-        // 无论是否踢，移除老 session 的全局映射（防止残留）
-        GlobalSessionList().erase(oldSessionId);
-    }
+	// 如果是 ReplaceLogin，则发送踢人请求（Gate 层需以 sessionId 校验幂等）
+	if (decision == EnterGameDecision::ReplaceLogin && oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
+		SendKickForOldSession(oldSessionId);
+		// 清理老映射，防止残留（单线程，安全）
+		GlobalSessionList().erase(oldSessionId);
+	}
 
-    // 设置进入场景的类型并执行进入流程
-    EnterGameType enterType = DetermineEnterGameType(hasOldSession, oldLoginToken, loginToken, oldSessionId, sessionId);
-    ProcessExistingPlayerPath(playerEntity, enterType);
+	// 执行进入场景相关副作用
+	ApplyEnterGameDecision(playerEntity, decision);
+	///<<< END WRITING YOUR CODE
 }
 
 
