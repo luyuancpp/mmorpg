@@ -155,8 +155,6 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(ctx context.Context, playerId u
 		return errors.New("session not found")
 	}
 
-	// 基于外部上下文创建子上下文，确保资源可控
-
 	// 仅处理指定的消息列表
 	messagesToLoad := []proto.Message{
 		&login_proto_database.PlayerAllData{
