@@ -69,7 +69,10 @@ public:
 
 private:
     // 注册变量到符号表
-    bool RegisterVariables(const StringVector& paramNames){
+    bool RegisterVariables(const StringVector& paramNames) {
+        if (paramNames.size() != paramList.size()) {
+            return false;
+        }
         for (std::size_t i = 0; i < paramNames.size(); ++i) {
             symbolTable.add_variable(paramNames[i], paramList[i]);
         }

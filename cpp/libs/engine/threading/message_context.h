@@ -17,7 +17,7 @@ public:
 	std::string& RouteMsgBody() { return route_msg_body_; }
 	void SetNextRouteNodeType(const uint32_t node_type) { next_route_node_type_ = node_type; }
 	uint32_t GetNextRouteNodeType() const { return next_route_node_type_; }
-	void SeNextRouteNodeId(const uint32_t next_node_id) { next_route_node_id_ = next_node_id; }
+	void SetNextRouteNodeId(const uint32_t next_node_id) { next_route_node_id_ = next_node_id; }
 	uint32_t GetNextRouteNodeId() const { return next_route_node_id_; }
 	void SetCurrentSessionId(const uint64_t current_session_id) { current_session_id_ = current_session_id; }
 	uint64_t GetSessionId() const { return current_session_id_; }

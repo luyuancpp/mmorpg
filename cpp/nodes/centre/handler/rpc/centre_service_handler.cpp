@@ -1,4 +1,3 @@
-
 #include "centre_service_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -72,6 +71,77 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 
 	return player_it->second;
 }
+
+
+// ---------- refactor helpers (匿名 namespace) ----------
+namespace {
+
+	enum class EnterGameType {
+		FirstLogin,
+		Reconnect,
+		ReplaceLogin
+	};
+
+	// 计算登录类型：传入是否已有 player、旧 token、旧 session
+	EnterGameType DetermineEnterGameType(bool hasOldSession, const std::string& oldLoginToken,
+		const std::string& newLoginToken, uint64_t oldSessionId, uint64_t newSessionId) {
+		if (!hasOldSession) return EnterGameType::FirstLogin;
+		if (oldSessionId == newSessionId) return EnterGameType::Reconnect; // same session id => reconnect
+		if (oldLoginToken == newLoginToken) return EnterGameType::Reconnect; // same token => likely reconnect
+		return EnterGameType::ReplaceLogin; // different token and different session => replace (kick)
+	}
+
+	// 将踢人行为封装：返回 true 表示成功发送踢人消息（或已无效）
+	bool KickOldSessionIfNeeded(uint64_t oldSessionId) {
+		if (oldSessionId == kInvalidSessionId) return false;
+		KickSessionRequest msg;
+		msg.set_session_id(oldSessionId);
+		// SendMessageToGateById 内部应是幂等的/容错的
+		SendMessageToGateById(GateKickSessionByCentreMessageId, msg, GetGateNodeId(oldSessionId));
+		LOG_INFO << "Kick request sent for old session: " << oldSessionId;
+		return true;
+	}
+
+	// 注册或更新 center 内的 session snapshot（不做登出），返回引用/指针用于后续更新
+	PlayerSessionSnapshotPBComp& EnsureSessionPBForPlayer(entt::entity player, uint64_t newSessionId, const std::string& newLoginToken) {
+		auto& registry = tlsRegistryManager.actorRegistry;
+		auto& sessionPB = registry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
+		sessionPB.set_gate_session_id(newSessionId);
+		sessionPB.set_login_token(newLoginToken);
+		return sessionPB;
+	}
+
+	// 处理首次登录路径（加载数据/异步），返回 void
+	void ProcessFirstLoginPath(Guid playerId, uint64_t sessionId, const std::string& loginToken) {
+		PlayerSessionSnapshotPBComp sessionPB;
+		sessionPB.set_gate_session_id(sessionId);
+		sessionPB.set_login_token(loginToken);
+		GetPlayerCentreDataRedis()->AsyncLoad(playerId, sessionPB);
+		GetPlayerCentreDataRedis()->UpdateExtraData(playerId, sessionPB);
+		LOG_INFO << "First login: PlayerID=" << playerId;
+	}
+
+	// 处理已有 player 的后续逻辑（设置 enter state，进入场景）
+	void ProcessExistingPlayerPath(entt::entity player, EnterGameType type) {
+		auto& registry = tlsRegistryManager.actorRegistry;
+		auto& enterComp = registry.get_or_emplace<PlayerEnterGameStatePbComp>(player);
+		switch (type) {
+		case EnterGameType::FirstLogin:
+			enterComp.set_enter_gs_type(LOGIN_FIRST);
+			break;
+		case EnterGameType::Reconnect:
+			enterComp.set_enter_gs_type(LOGIN_RECONNECT);
+			break;
+		case EnterGameType::ReplaceLogin:
+			enterComp.set_enter_gs_type(LOGIN_REPLACE);
+			break;
+		}
+		PlayerLifecycleSystem::AddGameNodePlayerToGateNode(player);
+		PlayerLifecycleSystem::ProcessPlayerSessionState(player);
+	}
+
+} // namespace
+
 
 ///<<< END WRITING YOUR CODE
 
@@ -193,85 +263,47 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
-	///<<< BEGIN WRITING YOUR CODE
-	//顶号
-	//todo正常或者顶号进入场景
-	//todo 断线重连进入场景，断线重连分时间
-	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
+    const auto& clientMsg = request->client_msg_body();
+    const auto& sessionInfo = request->session_info();
+    Guid playerId = clientMsg.player_id();
+    uint64_t sessionId = sessionInfo.session_id();
+    const std::string& loginToken = clientMsg.login_token();
 
-	const auto& clientMsg = request->client_msg_body();
-	const auto& sessionInfo = request->session_info();
-	auto playerId = clientMsg.player_id();
-	auto sessionId = sessionInfo.session_id();
-	const std::string& loginToken = clientMsg.login_token();
+    LOG_INFO << "Login request: PlayerID=" << playerId << ", SessionID=" << sessionId;
 
-	LOG_INFO << "Login request: PlayerID=" << playerId << ", SessionID=" << sessionId << ", Token=" << loginToken;
+    // 注册当前 session 到全局表（可用 SessionScope 替换）
+    GlobalSessionList()[sessionId] = playerId;
 
-	// 注册当前 session
-	GlobalSessionList()[sessionId] = playerId;
+    auto& playerList = tlsPlayerList;
+    auto it = playerList.find(playerId);
 
-	auto& playerList = tlsPlayerList;
-	auto it = playerList.find(playerId);
+    if (it == playerList.end()) {
+        // 首次登录
+        ProcessFirstLoginPath(playerId, sessionId, loginToken);
+        return;
+    }
 
-	if (it == playerList.end()) {
-		// 首次登录，异步加载 player 并设置 session
-		PlayerSessionSnapshotPBComp sessionPB;
-		sessionPB.set_gate_session_id(sessionId);
-		sessionPB.set_login_token(loginToken);
-		GetPlayerCentreDataRedis()->AsyncLoad(playerId, sessionPB);
-		GetPlayerCentreDataRedis()->UpdateExtraData(playerId, sessionPB);
+    // 已存在 player 对象（可能是重连或顶号）
+    entt::entity playerEntity = it->second;
+    bool hasOldSession = tlsRegistryManager.actorRegistry.any_of<PlayerSessionSnapshotPBComp>(playerEntity);
 
-		LOG_INFO << "First login: PlayerID=" << playerId;
-	}
-	else {
-		//顶号的时候已经在场景里面了,不用再进入场景了
-		//todo换场景的过程中被顶了
-		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
-		//区分顶号和断线重连
-		// 已经有 player 对象在中心服内存中
-		auto player = it->second;
-		bool hasOldSession = tlsRegistryManager.actorRegistry.any_of<PlayerSessionSnapshotPBComp>(player);
+    PlayerSessionSnapshotPBComp& sessionPB = EnsureSessionPBForPlayer(playerEntity, sessionId, loginToken);
+    uint64_t oldSessionId = sessionPB.gate_session_id();
+    const std::string oldLoginToken = sessionPB.login_token();
 
-		auto& sessionPB = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
-		auto oldSessionId = sessionPB.gate_session_id();
-		const std::string& oldLoginToken = sessionPB.login_token();
+    // 清理旧会话映射（如果需要）
+    if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
+        // 准备踢旧会话（幂等）
+        if (DetermineEnterGameType(hasOldSession, oldLoginToken, loginToken, oldSessionId, sessionId) == EnterGameType::ReplaceLogin) {
+            KickOldSessionIfNeeded(oldSessionId);
+        }
+        // 无论是否踢，移除老 session 的全局映射（防止残留）
+        GlobalSessionList().erase(oldSessionId);
+    }
 
-		defer(GlobalSessionList().erase(oldSessionId));
-
-		// 更新 session 信息
-		sessionPB.set_gate_session_id(sessionId);
-		sessionPB.set_login_token(loginToken);
-		GetPlayerCentreDataRedis()->UpdateExtraData(playerId, sessionPB);
-
-		bool isSameLogin = (loginToken == oldLoginToken);
-		bool isSameSession = (sessionId == oldSessionId);
-
-		if (hasOldSession && !isSameSession) {
-			// ✅ 踢掉旧 session，不管是重连还是顶号
-			KickSessionRequest msg;
-			msg.set_session_id(oldSessionId);
-			SendMessageToGateById(GateKickSessionByCentreMessageId, msg, GetGateNodeId(oldSessionId));
-			LOG_INFO << "Kicked old session: " << oldSessionId << " (Reason: " << (isSameLogin ? "reconnect" : "kickoff") << ")";
-		}
-
-		// ✅ 设置登录类型（进入场景时使用）
-		auto& enterComp = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player);
-		if (!hasOldSession) {
-			enterComp.set_enter_gs_type(LOGIN_FIRST);
-		}
-		else if (isSameLogin) {
-			enterComp.set_enter_gs_type(LOGIN_RECONNECT);
-		}
-		else {
-			enterComp.set_enter_gs_type(LOGIN_REPLACE);
-		}
-
-		// ✅ 进入场景
-		PlayerLifecycleSystem::AddGameNodePlayerToGateNode(player);
-		PlayerLifecycleSystem::ProcessPlayerSessionState(player);
-	}
-
-	///<<< END WRITING YOUR CODE
+    // 设置进入场景的类型并执行进入流程
+    EnterGameType enterType = DetermineEnterGameType(hasOldSession, oldLoginToken, loginToken, oldSessionId, sessionId);
+    ProcessExistingPlayerPath(playerEntity, enterType);
 }
 
 
@@ -493,7 +525,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 
 	// Clean up previous routing information
 	defer(tlsMessageContext.SetNextRouteNodeType(UINT32_MAX));
-	defer(tlsMessageContext.SeNextRouteNodeId(UINT32_MAX));
+	defer(tlsMessageContext.SetNextRouteNodeId(UINT32_MAX));
 	defer(tlsMessageContext.SetCurrentSessionId(kInvalidSessionId));
 
 	// Set current session ID
@@ -690,5 +722,6 @@ void CentreHandler::NodeHandshake(::google::protobuf::RpcController* controller,
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 ///<<< END WRITING YOUR CODE
 }
+
 
 

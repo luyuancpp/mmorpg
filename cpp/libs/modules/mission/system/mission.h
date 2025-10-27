@@ -11,25 +11,25 @@
 #include "table/code/condition_table.h"
 
 struct GetRewardParam {
-	entt::entity playerId{ entt::null };
+	entt::entity playerEntity{ entt::null };
 	uint32_t missionId{ 0 };
 	uint32_t op{ 0 };
 };
 
 struct AbandonParam {
-	entt::entity playerId{ entt::null };
+	entt::entity playerEntity{ entt::null };
 	uint32_t missionId{ 0 };
 	uint32_t op{ 0 };
 };
 
 struct CompleteMissionParam {
-	entt::entity playerId{ entt::null };
+	entt::entity playerEntity{ entt::null };
 	uint32_t missionId{ 0 };
 	uint32_t op{ 0 };
 };
 
 struct UpdateProgressParam {
-	entt::entity playerId;   // 玩家实体的标识符
+	entt::entity playerEntity;   // 玩家实体的标识符
 	uint32_t missionId{ 0 };      // 任务的标识符
 	uint32_t conditionId{ 0 };    // 条件的标识符（用于指定要更新的条件）
 	uint32_t progressValue{ 0 };  // 更新后的进度值
