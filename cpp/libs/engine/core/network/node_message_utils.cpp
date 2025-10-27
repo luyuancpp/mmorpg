@@ -116,7 +116,7 @@ void BroadcastToNodes(uint32_t messageId, const google::protobuf::Message& messa
 
 	NodeRouteMessageRequest request;
 	request.mutable_message_content()->set_message_id(messageId);
-	request.mutable_message_content()->set_serialized_message(serialized);
+	request.mutable_message_content()->mutable_serialized_message()->swap(serialized);
 
 	for (auto&& [_, node] : registry.view<RpcClientPtr>().each())
 	{
@@ -170,11 +170,21 @@ void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId,
 		return;
 	}
 
+	const auto byte_size = static_cast<size_t>(message.ByteSizeLong());
+	std::string serialized;
+	serialized.reserve(byte_size);
+	if (!message.SerializeToString(&serialized)) {
+		LOG_ERROR << "Failed to serialize message";
+		return;
+	}
+
 	NodeRouteMessageRequest request;
 	request.mutable_message_content()->set_message_id(messageId);
-	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
+	request.mutable_message_content()->mutable_serialized_message()->swap(serialized); // 直接赋值（一次拷贝到目标 protobuf 字符串里）
+
 	request.mutable_header()->set_session_id(sessionPB->gate_session_id());
 
+	// 发送（rpcClient 内部可能会再次复制/包装，但我们避免了临时分配）
 	(*rpcClient)->SendRequest(wrappedMessageId, request);
 }
 
@@ -231,11 +241,13 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 	NodeRouteMessageRequest request;
 	request.mutable_message_content()->set_message_id(messageId);
 	auto* serialized = request.mutable_message_content()->mutable_serialized_message();
-	serialized->resize(message.ByteSizeLong());
-	if (!message.SerializePartialToArray(serialized->data(), serialized->size())) {
+	const auto size = static_cast<int32_t>(message.ByteSizeLong());
+	serialized->resize(size);
+	if (!message.SerializeToArray(&(*serialized)[0], size)) {
 		LOG_ERROR << "Failed to serialize message";
 		return;
 	}
+
 	request.mutable_header()->set_session_id(sessionPB->gate_session_id());
 
 	session->SendRequest(wrappedMessageId, request);
