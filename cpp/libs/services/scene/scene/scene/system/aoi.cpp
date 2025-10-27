@@ -150,7 +150,14 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveRoom& message) {
     const auto hex = tlsRegistryManager.actorRegistry.try_get<Hex>(entity);
     if (!hex) return;
 
-    auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(tlsRegistryManager.actorRegistry.get<RoomEntityComp>(entity).roomEntity);
+	auto roomEntity = tlsRegistryManager.actorRegistry.get<RoomEntityComp>(entity).roomEntity;
+    if (!tlsRegistryManager.roomRegistry.valid(roomEntity))
+    {
+        LOG_ERROR << "Room entity not found for entity " << entt::to_integral(entity);
+		return;
+    }
+
+    auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(roomEntity);
     GridSet gridsToLeave;
     GridSystem::GetCurrentAndNeighborGridIds(*hex, gridsToLeave);
 
