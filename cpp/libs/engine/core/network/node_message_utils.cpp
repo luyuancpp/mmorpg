@@ -105,9 +105,23 @@ void BroadcastToNodes(uint32_t messageId, const google::protobuf::Message& messa
 	uint32_t nodeType)
 {
 	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
+
+	const auto byte_size = static_cast<size_t>(message.ByteSizeLong());
+	std::string serialized;
+	serialized.reserve(byte_size);
+	if (!message.SerializeToString(&serialized)) {
+		LOG_ERROR << "Failed to serialize broadcast message";
+		return;
+	}
+
+	NodeRouteMessageRequest request;
+	request.mutable_message_content()->set_message_id(messageId);
+	request.mutable_message_content()->set_serialized_message(serialized);
+
 	for (auto&& [_, node] : registry.view<RpcClientPtr>().each())
 	{
-		node->CallRemoteMethod(messageId, message);
+		// 尽可能将 request reuse（如果 rpc 客户端的 SendRequest 对 request 做了拷贝/异步处理，则可能需要复制）
+		node->SendRequest(messageId, request);
 	}
 }
 
