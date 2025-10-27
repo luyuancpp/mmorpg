@@ -533,7 +533,7 @@ TEST(MissionsComponent, MissionRewardList)
 	// Set reward parameters
 	GetRewardParam param;
 	param.missionId = missionId;
-	param.playerId = playerEntity;
+	param.playerEntity = playerEntity;
 
 	// Verify mission is not in reward list
 	EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param));
@@ -587,7 +587,7 @@ TEST(MissionsComponent, AbandonMission)
 	// Prepare abandon mission parameters
 	AbandonParam abandonParam;
 	abandonParam.missionId = missionId;
-	abandonParam.playerId = playerEntity;
+	abandonParam.playerEntity = playerEntity;
 
 	// Perform abandon mission operation
 	MissionSystem::AbandonMission(abandonParam);

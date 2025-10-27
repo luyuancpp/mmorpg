@@ -59,7 +59,7 @@ GameChannel::~GameChannel() {
 bool GameChannel::IsValidMessageId(uint32_t messageId) const {
     if (messageId >= gRpcServiceRegistry.size()) {
         LOG_ERROR << "Invalid message ID: " << messageId
-            << " (valid range: 0 to " << gRpcServiceRegistry.size() - 1 << ")";
+            << " (valid range: 0 to " << gRpcServiceRegistry.size() << ")";
         return false;
     }
     return true;

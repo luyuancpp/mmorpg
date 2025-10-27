@@ -15,7 +15,7 @@ void OnServiceRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::s
 {
 	///<<< BEGIN WRITING YOUR CODE
 	defer(tlsMessageContext.SetNextRouteNodeType(UINT32_MAX));
-	defer(tlsMessageContext.SeNextRouteNodeId(UINT32_MAX));
+	defer(tlsMessageContext.SetNextRouteNodeId(UINT32_MAX));
 	defer(tlsMessageContext.SetCurrentSessionId(kInvalidSessionId));
 
 	tlsMessageContext.SetCurrentSessionId(replied->session_id());

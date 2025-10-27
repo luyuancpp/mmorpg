@@ -34,28 +34,28 @@ namespace {
 // Function to retrieve reward for completing a mission
 uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 	// Check if player exists in the registry
-	if (!tlsRegistryManager.actorRegistry.valid(param.playerId)) {
-		LOG_ERROR << "Player not found: playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId);
+	if (!tlsRegistryManager.actorRegistry.valid(param.playerEntity)) {
+		LOG_ERROR << "Player not found: playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerEntity);
 		return PrintStackAndReturnError(kInvalidParameter);
 	}
 
 	// Retrieve mission reward component for the player
-	auto* const missionRewardComp = tlsRegistryManager.actorRegistry.try_get<RewardListPBComponent>(param.playerId);
+	auto* const missionRewardComp = tlsRegistryManager.actorRegistry.try_get<RewardListPBComponent>(param.playerEntity);
 	if (nullptr == missionRewardComp) {
-		LOG_ERROR << "Mission reward component not found: playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId);
+		LOG_ERROR << "Mission reward component not found: playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerEntity);
 		return PrintStackAndReturnError(kPlayerMissionComponentNotFound);
 	}
 
 	// Check if the mission ID is valid for reward
 	auto rewardMissionIdMap = missionRewardComp->mutable_can_reward_mission_id();
 	if (rewardMissionIdMap->find(param.missionId) == rewardMissionIdMap->end()) {
-		LOG_ERROR << "Mission ID not found in reward list: missionId = " << param.missionId << ", playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId);
+		LOG_ERROR << "Mission ID not found in reward list: missionId = " << param.missionId << ", playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerEntity);
 		return PrintStackAndReturnError(kMissionIdNotInRewardList);
 	}
 
 	// Remove mission ID from reward list
 	rewardMissionIdMap->erase(param.missionId);
-	LOG_INFO << "Removed mission ID from reward list: missionId = " << param.missionId << ", playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId);
+	LOG_INFO << "Removed mission ID from reward list: missionId = " << param.missionId << ", playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerEntity);
 	return kSuccess;
 }
 
@@ -141,20 +141,20 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 // Function to abandon a mission
 uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
 	// Retrieve mission component for the player
-	auto* const missionComp = tlsRegistryManager.actorRegistry.try_get<MissionsComponent>(param.playerId);
+	auto* const missionComp = tlsRegistryManager.actorRegistry.try_get<MissionsComponent>(param.playerEntity);
 	if (nullptr == missionComp) {
-		LOG_ERROR << "Missions component not found for playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId);
+		LOG_ERROR << "Missions component not found for playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerEntity);
 		return kPlayerMissionComponentNotFound;
 	}
 
 	// Check if mission is uncompleted
 	if (kMissionAlreadyCompleted == missionComp->IsMissionUncompleted(param.missionId)) {
-		LOG_ERROR << "Mission is already completed for playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId) << ", missionId = " << param.missionId;
+		LOG_ERROR << "Mission is already completed for playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerEntity) << ", missionId = " << param.missionId;
 		return kMissionAlreadyCompleted;
 	}
 
 	// Remove mission ID from reward list if applicable
-	auto* const missionReward = tlsRegistryManager.actorRegistry.try_get<RewardListPBComponent>(param.playerId);
+	auto* const missionReward = tlsRegistryManager.actorRegistry.try_get<RewardListPBComponent>(param.playerEntity);
 	if (nullptr != missionReward) {
 		missionReward->mutable_can_reward_mission_id()->erase(param.missionId);
 	}
@@ -165,8 +165,8 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
 	missionComp->GetMissionsComp().mutable_mission_begin_time()->erase(param.missionId);
 
 	// Delete mission classification
-	DeleteMissionClassification(param.playerId, param.missionId);
-	LOG_INFO << "Mission abandoned for playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerId) << ", missionId = " << param.missionId;
+	DeleteMissionClassification(param.playerEntity, param.missionId);
+	LOG_INFO << "Mission abandoned for playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerEntity) << ", missionId = " << param.missionId;
 	return kSuccess;
 }
 
