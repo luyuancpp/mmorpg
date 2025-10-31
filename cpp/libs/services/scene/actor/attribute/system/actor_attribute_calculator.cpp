@@ -17,7 +17,7 @@ void ActorAttributeCalculatorSystem::Initialize() {}
 
 // 初始化给定实体的属性组件
 void ActorAttributeCalculatorSystem::InitializeActorComponents(entt::entity entity) {
-    tlsRegistryManager.actorRegistry.emplace<ActorAttributeBitSetComp>(entity);
+    tlsRegistryManager.actorRegistry.emplace<AttributeDirtyFlagsComp>(entity);
 }
 
 // 更新速度属性
@@ -61,7 +61,7 @@ void ResetCombatStateFlags(entt::entity actorEntity) {
     const auto& combatStates = tlsRegistryManager.actorRegistry.get<CombatStateCollectionPbComponent>(actorEntity);
 
     // 获取基础属性的同步数据
-    auto& syncData = tlsRegistryManager.actorRegistry.get<BaseAttributeSyncDataS2C>(actorEntity);
+    auto& syncData = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributeSyncDataS2C>(actorEntity);
 
     // 获取指向状态标志的指针
     auto* stateFlags = syncData.mutable_combat_state_flags()->mutable_state_flags();
@@ -87,7 +87,7 @@ std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttributeConfigs
 
 // 标记属性需要更新的位
 void ActorAttributeCalculatorSystem::MarkAttributeForUpdate(const entt::entity actorEntity, const uint32_t attributeBit) {
-    auto& attributeBits = tlsRegistryManager.actorRegistry.get<ActorAttributeBitSetComp>(actorEntity).attributeBits;
+    auto& attributeBits = tlsRegistryManager.actorRegistry.get<AttributeDirtyFlagsComp>(actorEntity).attributeBits;
     attributeBits.set(attributeBit);  // 设置指定位，表示该属性需要更新
 }
 
@@ -97,7 +97,7 @@ void ActorAttributeCalculatorSystem::ImmediateCalculateAttributes(const entt::en
         return;
     }
 
-    if (const auto& attributeBits = tlsRegistryManager.actorRegistry.get<ActorAttributeBitSetComp>(actorEntity).attributeBits;
+    if (const auto& attributeBits = tlsRegistryManager.actorRegistry.get<AttributeDirtyFlagsComp>(actorEntity).attributeBits;
         !attributeBits.test(attributeBit)) {
         return;
     }
@@ -115,7 +115,7 @@ extern  std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttribut
 
 void ActorAttributeCalculatorSystem::Update(double delta)
 {
-    for (auto&& [entity, actorAttributeBitSetComp] : tlsRegistryManager.actorRegistry.view<ActorAttributeBitSetComp>().each())
+    for (auto&& [entity, actorAttributeBitSetComp] : tlsRegistryManager.actorRegistry.view<AttributeDirtyFlagsComp>().each())
     {
         auto& attributeBits = actorAttributeBitSetComp.attributeBits;
         for (const auto& [attributeIndex, updateFunction] : kAttributeConfigs) {

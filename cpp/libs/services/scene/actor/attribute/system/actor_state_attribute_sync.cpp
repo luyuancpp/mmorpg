@@ -97,7 +97,6 @@ void ActorStateAttributeSyncSystem::InitializeActorComponents(const entt::entity
     tlsRegistryManager.actorRegistry.emplace<Velocity>(entity);
     tlsRegistryManager.actorRegistry.emplace<CalculatedAttributesPbComponent>(entity);
     tlsRegistryManager.actorRegistry.emplace<DerivedAttributesPbComponent>(entity);
-    tlsRegistryManager.actorRegistry.emplace<BaseAttributeSyncDataS2C>(entity);
     tlsRegistryManager.actorRegistry.emplace<AttributeDelta2FramesS2C>(entity);
     tlsRegistryManager.actorRegistry.emplace<AttributeDelta5FramesS2C>(entity);
     tlsRegistryManager.actorRegistry.emplace<AttributeDelta10FramesS2C>(entity);
