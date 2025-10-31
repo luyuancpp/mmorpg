@@ -4,7 +4,7 @@
 
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 
-struct ActorAttributeBitSetComp
+struct AttributeDirtyFlagsComp
 {
     std::bitset<kAttributeCalculatorMax> attributeBits;
 };
