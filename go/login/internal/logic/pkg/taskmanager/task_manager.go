@@ -292,7 +292,9 @@ func SaveProtoToRedis(ctx context.Context, redisClient redis.Cmdable, key string
 }
 
 // ProcessBatch Core logic: Wait for all tasks under a taskKey to complete, then process aggregation and callback
-func (tm *TaskManager) ProcessBatch(ctx context.Context, taskKey string, redisClient redis.Cmdable) {
+func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
+	ctx, cancel := context.WithTimeout(context.Background(), config.AppConfig.Timeouts.LoginTotalTimeout)
+	defer cancel()
 	// 1. Verify if batch exists
 	batch, exists := tm.GetBatch(taskKey)
 	if !exists {

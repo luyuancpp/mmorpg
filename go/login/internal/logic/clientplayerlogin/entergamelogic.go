@@ -43,11 +43,10 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_proto.EnterGameResponse, error) {
 	resp := &login_proto.EnterGameResponse{ErrorMessage: &login_proto_common.TipInfoMessage{}}
 	// 1. 创建带超时的上下文（支持主动取消，保留原有超时配置）
-	ctx, cancel := context.WithTimeout(context.Background(), config.AppConfig.Timeouts.LoginTotalTimeout)
-	defer cancel()
+	ctx := l.ctx
 
 	// 1. 获取 Session（原始步骤1，不改动）
-	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
+	sessionDetails, ok := ctxkeys.GetSessionDetails(ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or empty in context during login")
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
@@ -93,7 +92,6 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 
 		// 所有任务完成，主动取消ctx（避免超时等待）
 		logx.Infof("All tasks completed, cancel ctx actively. playerId=%d", in.PlayerId)
-		cancel()
 	}
 
 	defer func() {

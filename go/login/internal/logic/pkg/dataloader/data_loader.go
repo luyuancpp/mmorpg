@@ -140,7 +140,7 @@ func Load(
 	}
 
 	// 非全缓存时，提交任务执行加载
-	return executor.SubmitTask(ctx, taskKey)
+	return executor.SubmitTask(taskKey)
 }
 
 // LoadWithPlayerId 简化版：默认用player_id作为key
