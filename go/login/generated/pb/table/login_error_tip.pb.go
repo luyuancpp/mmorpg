@@ -56,43 +56,45 @@ const (
 	LoginError_kLoginSessionNotFound                     LoginError = 48
 	LoginError_kLoginAccountDataLoadFailed               LoginError = 49
 	LoginError_kLoginFsmInvalidEvent                     LoginError = 50
+	LoginError_kLoginTimeout                             LoginError = 129
 )
 
 // Enum value maps for LoginError.
 var (
 	LoginError_name = map[int32]string{
-		0:  "kLogin_errorOK",
-		20: "kLoginAccountNotFound",
-		21: "kLoginAccountPlayerFull",
-		22: "kLoginCreatePlayerUnLoadAccount",
-		23: "kLoginCreatePlayerConnectionHasNotAccount",
-		24: "kLoginUnLogin",
-		25: "kLoginInProgress",
-		26: "kLoginPlayerGuidError",
-		27: "kLoginEnteringGame",
-		28: "kLoginPlaying",
-		29: "kLoginCreatingPlayer",
-		30: "kLoginWaitingEnterGame",
-		31: "kLoginEnterGameGuid",
-		32: "kLoginAccountNameEmpty",
-		33: "kLoginCreateConnectionAccountEmpty",
-		34: "kLoginEnterGameConnectionAccountEmpty",
-		35: "kLoginUnknownError",
-		36: "kLoginSessionDisconnect",
-		37: "kLoginBeKickByAnOtherAccount",
-		38: "kLoginSessionIdNotFound",
-		39: "kLoginFsmFailed",
-		40: "kLoginDataSerializeFailed",
-		41: "kLoginRedisError",
-		42: "kLoginDataParseFailed",
-		43: "kLoginRedisSetFailed",
-		44: "kTooManyDevices",
-		45: "kLoginFSMLoadFailed",
-		46: "kLoginFSMEventFailed",
-		47: "kLoginAccountDataLoadFaile",
-		48: "kLoginSessionNotFound",
-		49: "kLoginAccountDataLoadFailed",
-		50: "kLoginFsmInvalidEvent",
+		0:   "kLogin_errorOK",
+		20:  "kLoginAccountNotFound",
+		21:  "kLoginAccountPlayerFull",
+		22:  "kLoginCreatePlayerUnLoadAccount",
+		23:  "kLoginCreatePlayerConnectionHasNotAccount",
+		24:  "kLoginUnLogin",
+		25:  "kLoginInProgress",
+		26:  "kLoginPlayerGuidError",
+		27:  "kLoginEnteringGame",
+		28:  "kLoginPlaying",
+		29:  "kLoginCreatingPlayer",
+		30:  "kLoginWaitingEnterGame",
+		31:  "kLoginEnterGameGuid",
+		32:  "kLoginAccountNameEmpty",
+		33:  "kLoginCreateConnectionAccountEmpty",
+		34:  "kLoginEnterGameConnectionAccountEmpty",
+		35:  "kLoginUnknownError",
+		36:  "kLoginSessionDisconnect",
+		37:  "kLoginBeKickByAnOtherAccount",
+		38:  "kLoginSessionIdNotFound",
+		39:  "kLoginFsmFailed",
+		40:  "kLoginDataSerializeFailed",
+		41:  "kLoginRedisError",
+		42:  "kLoginDataParseFailed",
+		43:  "kLoginRedisSetFailed",
+		44:  "kTooManyDevices",
+		45:  "kLoginFSMLoadFailed",
+		46:  "kLoginFSMEventFailed",
+		47:  "kLoginAccountDataLoadFaile",
+		48:  "kLoginSessionNotFound",
+		49:  "kLoginAccountDataLoadFailed",
+		50:  "kLoginFsmInvalidEvent",
+		129: "kLoginTimeout",
 	}
 	LoginError_value = map[string]int32{
 		"kLogin_errorOK":                            0,
@@ -127,6 +129,7 @@ var (
 		"kLoginSessionNotFound":                     48,
 		"kLoginAccountDataLoadFailed":               49,
 		"kLoginFsmInvalidEvent":                     50,
+		"kLoginTimeout":                             129,
 	}
 )
 
@@ -161,7 +164,7 @@ var File_login_error_tip_proto protoreflect.FileDescriptor
 
 const file_login_error_tip_proto_rawDesc = "" +
 	"\n" +
-	"\x15login_error_tip.proto*\x8c\a\n" +
+	"\x15login_error_tip.proto*\xa0\a\n" +
 	"\vlogin_error\x12\x12\n" +
 	"\x0ekLogin_errorOK\x10\x00\x12\x19\n" +
 	"\x15kLoginAccountNotFound\x10\x14\x12\x1b\n" +
@@ -194,7 +197,8 @@ const file_login_error_tip_proto_rawDesc = "" +
 	"\x1akLoginAccountDataLoadFaile\x10/\x12\x19\n" +
 	"\x15kLoginSessionNotFound\x100\x12\x1f\n" +
 	"\x1bkLoginAccountDataLoadFailed\x101\x12\x19\n" +
-	"\x15kLoginFsmInvalidEvent\x102B\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x15kLoginFsmInvalidEvent\x102\x12\x12\n" +
+	"\rkLoginTimeout\x10\x81\x01B\x14Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_login_error_tip_proto_rawDescOnce sync.Once
