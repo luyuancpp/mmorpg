@@ -51,7 +51,8 @@
         "LoginAccountDataLoadFaile": 47,
         "LoginSessionNotFound": 48,
         "LoginAccountDataLoadFailed": 49,
-        "LoginFsmInvalidEvent": 50
+        "LoginFsmInvalidEvent": 50,
+        "LoginTimeout": 129
     },
     "scene_error": {
         "EnterSceneNotFound": 51,
