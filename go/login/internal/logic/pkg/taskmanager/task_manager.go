@@ -530,15 +530,13 @@ func (tm *TaskManager) cleanupAndCallback(
 
 	// 7.3 Trigger batch callback (run in separate goroutine to avoid blocking; recover from panics)
 	if batch.Callback != nil {
-		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					logx.Errorf("Batch callback panicked: taskKey=%s, panic=%v", taskKey, r)
-				}
-			}()
-			batch.Callback(taskKey, allSuccess, err)
-			logx.Infof("Batch callback executed: taskKey=%s, allSuccess=%v", taskKey, allSuccess)
+		defer func() {
+			if r := recover(); r != nil {
+				logx.Errorf("Batch callback panicked: taskKey=%s, panic=%v", taskKey, r)
+			}
 		}()
+		batch.Callback(taskKey, allSuccess, err)
+		logx.Infof("Batch callback executed: taskKey=%s, allSuccess=%v", taskKey, allSuccess)
 	} else {
 		logx.Debugf("No callback defined for batch: taskKey=%s, allSuccess=%v", taskKey, allSuccess)
 	}
