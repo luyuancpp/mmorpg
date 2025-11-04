@@ -58,7 +58,7 @@ func runClientLoop(gameClient *pkg.GameClient, pool *ants.Pool, globalWg *sync.W
 				}
 			default:
 				zap.L().Warn("Unhandled message type",
-					zap.String("message_type", d.Name()),
+					zap.String("message_type", string(d.Name())),
 					zap.String("account", gameClient.Account),
 					zap.String("connID", connCtx.ConnID))
 			}
