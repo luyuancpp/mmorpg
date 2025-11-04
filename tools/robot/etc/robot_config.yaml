@@ -1,7 +1,13 @@
+# 后端服务器列表（机器人将轮询分配连接）
 servers:
-  - address: "172.23.208.1:10000"
+  - address: "172.23.208.1:10000" # 目标服务器 IP:端口
+
+# 机器人集群配置
 robots:
-  count: 100
-  tick: 1000 #毫秒
-  login_interval : 200 #毫秒
-loglevel: 1
+  count: 100                     # 机器人总数量：100个
+  tick: 1000                     # 行为树 Tick 间隔：1000毫秒（1秒）
+  login_interval: 200            # 机器人登录间隔：200毫秒（避免服务器瞬时压力）
+  max_concurrent: 200            # 最大并发数：200（建议 = count × 2，适配 ants 池）
+
+# 日志级别（对应 zap 库级别：-1=Debug, 0=Info, 1=Warn, 2=Error）
+loglevel: 1                      # 日志级别：Warn（仅输出警告和错误日志，减少冗余）
