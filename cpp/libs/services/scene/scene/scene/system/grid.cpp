@@ -58,7 +58,7 @@ void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorde
     }
 
     // 获取场景中的网格列表
-    auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(sceneComponent->roomEntity);
+    auto& gridList = tlsRegistryManager.roomRegistry.get_or_emplace<SceneGridListComp>(sceneComponent->roomEntity);
     
     // 存储要扫描的网格 ID
     GridSet grids;
@@ -108,7 +108,7 @@ void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnordered
     }
 
     // 获取场景中的网格列表
-    auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(sceneComponent->roomEntity);
+    auto& gridList = tlsRegistryManager.roomRegistry.get_or_emplace<SceneGridListComp>(sceneComponent->roomEntity);
     
     // 存储要扫描的网格 ID
     GridSet inViewGrids;

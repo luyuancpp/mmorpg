@@ -157,7 +157,7 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveRoom& message) {
 		return;
     }
 
-    auto& gridList = tlsRegistryManager.roomRegistry.get<SceneGridListComp>(roomEntity);
+    auto& gridList = tlsRegistryManager.roomRegistry.get_or_emplace<SceneGridListComp>(roomEntity);
     GridSet gridsToLeave;
     GridSystem::GetCurrentAndNeighborGridIds(*hex, gridsToLeave);
 
