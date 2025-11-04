@@ -2,7 +2,6 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"errors"
 	"google.golang.org/protobuf/proto"
 	"login/data"
 	"login/generated/pb/game"
@@ -147,30 +146,15 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	}
 
 	// 6. 加载 Player 数据（改造核心：同步等待任务完成，保留原有逻辑）
-	loadErrChan := make(chan error, 1)
-	go func() {
-		// 调用数据加载接口，传入带计数的回调
-		err := l.ensurePlayerDataInRedis(ctx, in.PlayerId, taskCallback)
-		loadErrChan <- err
-		close(loadErrChan)
-	}()
 
-	// 等待：要么任务全部完成，要么超时
-	select {
-	case err := <-loadErrChan:
-		if err != nil {
-			resp.ErrorMessage.Id = uint32(table.LoginError_kLoginPlayerGuidError)
-			logx.Errorf("Load player data failed: %v", err)
-			return resp, err
-		}
-		// 加载接口启动成功，等待所有任务完成
-	case <-ctx.Done():
-		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-			resp.ErrorMessage.Id = uint32(table.LoginError_kLoginTimeout)
-			//todo
-			return resp, nil
-		}
-		// 主动取消（任务完成），正常继续
+	// 调用数据加载接口，传入带计数的回调
+	err = l.ensurePlayerDataInRedis(ctx, in.PlayerId, taskCallback)
+	if err != nil {
+		// 错误日志：包含操作描述、玩家ID和错误详情
+		logx.Errorf("failed to ensure player data in redis [PlayerId=%s, error=%v]", in.PlayerId, err)
+	} else {
+		// 成功日志（可选，根据需要开启，建议用Debug级别减少冗余）
+		logx.Debugf("succeeded in ensuring player data in redis [PlayerId=%s]", in.PlayerId)
 	}
 
 	// 7. 清理 Session 和 FSM（原始步骤7，不改动）

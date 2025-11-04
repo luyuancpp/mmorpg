@@ -1,7 +1,7 @@
 servers:
   - address: "172.23.208.1:10000"
 robots:
-  count: 1
+  count: 100
   tick: 1000 #毫秒
   login_interval : 200 #毫秒
 loglevel: 1
