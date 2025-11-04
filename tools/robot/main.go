@@ -209,6 +209,10 @@ func main() {
 
 			// 执行客户端循环：传入池和Wg，统一管理任务
 			runClientLoop(gameClient, pool, &globalWg)
+
+			// 核心修复：阻塞主任务，等待客户端关闭信号（避免defer提前触发）
+			<-gameClient.Client.Ctx().Done()
+			zap.L().Info("Robot main task exited: client context done", zap.String("account", gameClient.Account))
 		})
 		if err != nil {
 			zap.L().Error("Submit robot main task failed", zap.Int("index", idx), zap.Error(err))
