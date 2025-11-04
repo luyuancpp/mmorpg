@@ -22,7 +22,6 @@ Node:
     Host: 127.0.0.1:6379
     Password: ""
     DB: 0
-    PoolSize: 10
     DefaultTTL: 24h
     DialTimeout: 3s
     ReadTimeout: 3s
