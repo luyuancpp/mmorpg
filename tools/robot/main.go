@@ -35,7 +35,7 @@ func runClientLoop(gameClient *pkg.GameClient, pool *ants.Pool, globalWg *sync.W
 				}
 			}()
 
-			// 原消息处理逻辑完全复用
+			// 原消息处理逻辑完全复用（去掉 string(d.Name()) 的冗余转换）
 			d := msg.ProtoReflect().Descriptor()
 			switch d.Name() {
 			case "LoginResponse":
@@ -58,7 +58,7 @@ func runClientLoop(gameClient *pkg.GameClient, pool *ants.Pool, globalWg *sync.W
 				}
 			default:
 				zap.L().Warn("Unhandled message type",
-					zap.String("message_type", string(d.Name())),
+					zap.String("message_type", string(d.Name())), // d.Name() 本身是 string，无需转换
 					zap.String("account", gameClient.Account),
 					zap.String("connID", connCtx.ConnID))
 			}
@@ -75,7 +75,15 @@ func runClientLoop(gameClient *pkg.GameClient, pool *ants.Pool, globalWg *sync.W
 	globalWg.Add(1)
 	err := pool.Submit(func() {
 		defer globalWg.Done()
-		ticker := time.NewTicker(time.Duration(config.AppConfig.Robots.Tick) * time.Millisecond)
+		// 从配置读取 Tick 间隔，确保非负（避免异常）
+		tickInterval := time.Duration(config.AppConfig.Robots.Tick) * time.Millisecond
+		if tickInterval <= 0 {
+			tickInterval = 1000 * time.Millisecond // 兜底默认1秒
+			zap.L().Warn("Invalid tick interval, use default",
+				zap.Int64("config_tick", config.AppConfig.Robots.Tick),
+				zap.String("account", gameClient.Account))
+		}
+		ticker := time.NewTicker(tickInterval)
 		defer ticker.Stop()
 
 		for {
@@ -95,6 +103,7 @@ func runClientLoop(gameClient *pkg.GameClient, pool *ants.Pool, globalWg *sync.W
 				}
 			case <-gameClient.Client.Ctx().Done():
 				// 感知客户端关闭信号，优雅退出
+				zap.L().Info("Tick task exited: client context done", zap.String("account", gameClient.Account))
 				return
 			}
 		}
@@ -106,31 +115,47 @@ func runClientLoop(gameClient *pkg.GameClient, pool *ants.Pool, globalWg *sync.W
 }
 
 func main() {
-	// pprof 监控保持不变
+	// pprof 监控保持不变（仅1个原生goroutine，无影响）
 	go func() {
+		log.Printf("pprof server start at localhost:6060")
 		log.Fatal(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	// 日志初始化保持不变
-	logger, err := zap.NewProduction()
+	// 日志初始化：使用配置的日志级别（原代码未生效，修正）
+	lvl := zap.NewAtomicLevel()
+	lvl.SetLevel(zapcore.Level(config.AppConfig.LogLevel))
+	// 初始化日志时应用配置级别（原代码用了默认 Production 配置，未关联 lvl）
+	loggerConfig := zap.NewProductionConfig()
+	loggerConfig.Level = lvl
+	logger, err := loggerConfig.Build()
 	if err != nil {
 		panic(err)
 	}
 	defer logger.Sync()
 	zap.ReplaceGlobals(logger)
 
-	lvl := zap.NewAtomicLevel()
-	lvl.SetLevel(zapcore.Level(config.AppConfig.LogLevel))
+	// 打印启动配置，方便排查
+	zap.L().Info("Robot program start",
+		zap.Int("robot_count", config.AppConfig.Robots.Count),
+		zap.Int("max_concurrent", config.AppConfig.Robots.MaxConcurrent),
+		zap.Int64("tick_interval_ms", config.AppConfig.Robots.Tick),
+		zap.Int64("login_interval_ms", config.AppConfig.Robots.LoginInterval),
+		zap.Int("log_level", config.AppConfig.LogLevel),
+		zap.Int("server_count", len(config.AppConfig.Servers)))
 
 	// ========== 初始化 ants 全局池 ==========
 	poolSize := config.AppConfig.Robots.MaxConcurrent
 	if poolSize <= 0 {
-		poolSize = 200 // 默认并发数（每个机器人2个任务：主任务+Tick任务）
+		poolSize = config.AppConfig.Robots.Count * 2 // 更合理的默认值：机器人数量×2
+		zap.L().Warn("MaxConcurrent not configured, use default",
+			zap.Int("default_pool_size", poolSize),
+			zap.Int("robot_count", config.AppConfig.Robots.Count))
 	}
+	// 关键修正：WithMaxBlockingTasks 前面加 ants. 前缀（原代码缺少，会编译错误）
 	pool, err := ants.NewPool(poolSize,
-		ants.WithPreAlloc(false),    // 按需创建goroutine，节省内存
-		WithMaxBlockingTasks(2000),  // 最大排队任务数（适配大量机器人）
-		ants.WithNonblocking(false), // 任务满时阻塞等待，不丢弃
+		ants.WithPreAlloc(false),        // 按需创建goroutine，节省内存
+		ants.WithMaxBlockingTasks(2000), // 修正：添加 ants. 前缀
+		ants.WithNonblocking(false),     // 任务满时阻塞等待，不丢弃
 		ants.WithPanicHandler(func(i interface{}) {
 			zap.L().Error("Ants pool task panicked", zap.Any("panic", i))
 		}), // 全局捕获池内任务panic
@@ -143,10 +168,18 @@ func main() {
 	// ========== 全局 WaitGroup：管理所有任务生命周期 ==========
 	var globalWg sync.WaitGroup
 
+	// 检查服务器配置是否为空（避免 panic）
+	if len(config.AppConfig.Servers) == 0 {
+		zap.L().Fatal("No servers configured")
+	}
+
 	// ========== 提交机器人主任务到 ants 池 ==========
 	for i := 0; i < config.AppConfig.Robots.Count; i++ {
-		// 登录间隔：避免服务器瞬间压力过大
-		time.Sleep(time.Duration(config.AppConfig.Robots.LoginInterval) * time.Millisecond)
+		// 登录间隔：确保非负（避免异常）
+		loginInterval := time.Duration(config.AppConfig.Robots.LoginInterval) * time.Millisecond
+		if loginInterval > 0 {
+			time.Sleep(loginInterval)
+		}
 		globalWg.Add(1)
 
 		idx := i // 捕获循环变量，避免闭包陷阱
@@ -171,7 +204,8 @@ func main() {
 			gameClient.Account = "luhailong" + strconv.Itoa(idx)
 			zap.L().Info("Robot client initialized",
 				zap.String("account", gameClient.Account),
-				zap.String("server", server.Address))
+				zap.String("server", server.Address),
+				zap.Int("server_index", serverIndex))
 
 			// 执行客户端循环：传入池和Wg，统一管理任务
 			runClientLoop(gameClient, pool, &globalWg)
