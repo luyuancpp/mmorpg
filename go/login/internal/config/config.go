@@ -9,13 +9,13 @@ import (
 // Config 总配置结构体
 type Config struct {
 	zrpc.RpcServerConf               // 继承zrpc的基础配置（ListenOn、Etcd等）
-	Node               NodeConfig    `json:"Node"`      // 节点配置（新增登录时长限制）
+	Node               NodeConfig    `json:"Node"` // 节点配置（新增登录时长限制）
 	Snowflake          SnowflakeConf `json:"Snowflake"` // 雪花ID配置
-	Locker             LockerConf    `json:"Locker"`    // 锁配置
-	Account            AccountConf   `json:"Account"`   // 账号配置
-	Registry           RegistryConf  `json:"Registry"`  // 服务注册发现配置
-	Timeouts           TimeoutConf   `json:"Timeouts"`  // 各类超时配置
-	Kafka              KafkaConfig   `json:"Kafka"`     // Kafka配置
+	Locker             LockerConf    `json:"Locker"` // 锁配置
+	Account            AccountConf   `json:"Account"` // 账号配置
+	Registry           RegistryConf  `json:"Registry"` // 服务注册发现配置
+	Timeouts           TimeoutConf   `json:"Timeouts"` // 各类超时配置
+	Kafka              KafkaConfig   `json:"Kafka"` // Kafka配置
 }
 
 // NodeConfig 节点相关配置（新增登录时长限制）
@@ -36,7 +36,6 @@ type RedisConf struct {
 	Host         string        `json:"Host"`         // 地址（如127.0.0.1:6379）
 	Password     string        `json:"Password"`     // 密码
 	DB           uint32        `json:"DB"`           // 数据库编号
-	PoolSize     uint32        `json:"PoolSize"`     // 连接池大小
 	DefaultTTL   time.Duration `json:"DefaultTTL"`   // 默认过期时间（如24h）
 	DialTimeout  time.Duration `json:"DialTimeout"`  // 连接超时（如3s）
 	ReadTimeout  time.Duration `json:"ReadTimeout"`  // 读取超时（如3s）
