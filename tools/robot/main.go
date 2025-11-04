@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/luyuancpp/muduoclient-new/muduo"
-	"github.com/panjf2000/ants/v2"
+	"github.com/panjf2000/ants/v2" // 保留ants依赖（可用于非客户端核心逻辑的并发控制）
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/proto"
@@ -20,111 +20,122 @@ import (
 	"time"
 )
 
-// runClientLoop：适配回调模式，无chan、无原生go func
-func runClientLoop(gameClient *pkg.GameClient, pool *ants.Pool, globalWg *sync.WaitGroup) {
-	// 1. 注册消息回调（替代原 msgCh 接收逻辑）
-	gameClient.Client.SetMessageCallback(func(msg proto.Message, connCtx *muduo.ConnContext) {
-		// 提交消息处理任务到 ants 池，避免阻塞 gnet IO 线程
-		err := pool.Submit(func() {
-			defer func() {
-				if r := recover(); r != nil {
-					zap.L().Error("Message callback task panicked",
-						zap.String("account", gameClient.Account),
-						zap.String("connID", connCtx.ConnID),
-						zap.Any("panic", r))
-				}
-			}()
+// 配置：每个goroutine承载的客户端数量（固定为1，强制一个客户端绑定一个goroutine）
+var clientsPerGoroutine = 1 // 核心约束：1个goroutine仅承载1个客户端
 
-			// 原消息处理逻辑完全复用（去掉 string(d.Name()) 的冗余转换）
-			d := msg.ProtoReflect().Descriptor()
-			switch d.Name() {
-			case "LoginResponse":
-				resp := msg.(*login.LoginResponse)
-				handler.ClientPlayerLoginLoginHandler(gameClient, resp)
-				gameClient.TickBehaviorTree()
-			case "CreatePlayerResponse":
-				resp := msg.(*login.CreatePlayerResponse)
-				handler.ClientPlayerLoginCreatePlayerHandler(gameClient, resp)
-				gameClient.TickBehaviorTree()
-			case "EnterGameResponse":
-				resp := msg.(*login.EnterGameResponse)
-				handler.ClientPlayerLoginEnterGameHandler(gameClient, resp)
-			case "MessageContent":
-				resp := msg.(*common.MessageContent)
-				handler.MessageBodyHandler(gameClient, resp)
-				player, ok := gameobject.PlayerList.Get(gameClient.PlayerId)
-				if ok {
-					player.TickBehaviorTree()
-				}
-			default:
-				zap.L().Warn("Unhandled message type",
-					zap.String("message_type", string(d.Name())), // d.Name() 本身是 string，无需转换
-					zap.String("account", gameClient.Account),
-					zap.String("connID", connCtx.ConnID))
+// runClientLogic：单个客户端核心逻辑（全程在同一个goroutine执行，强绑定）
+func runClientLogic(account string, serverAddr string, globalWg *sync.WaitGroup) {
+	defer globalWg.Done() // 客户端生命周期结束，释放全局Wg
+	defer func() {
+		if r := recover(); r != nil {
+			zap.L().Error("Client logic panicked (same goroutine)",
+				zap.String("account", account),
+				zap.Any("panic", r),
+				zap.String("goroutine_bind", "fixed"))
+		}
+	}()
+
+	// 1. 初始化客户端连接（在当前goroutine创建，后续操作不换协程）
+	client := muduo.NewTcpClient(serverAddr, &muduo.TcpCodec{})
+	gameClient := pkg.NewGameClient(client)
+	defer gameClient.Close() // 仅当前goroutine能触发关闭，避免跨协程操作
+	gameClient.Account = account
+
+	zap.L().Info("Robot client initialized (fixed goroutine)",
+		zap.String("account", account),
+		zap.String("server", serverAddr),
+		zap.String("goroutine_bind", "one-client-one-goroutine"))
+
+	// 2. 注册消息回调（直接在当前goroutine处理，不提交到任何池，强绑定）
+	gameClient.Client.SetMessageCallback(func(msg proto.Message, connCtx *muduo.ConnContext) {
+		// 回调逻辑与客户端在同一个goroutine，无协程切换
+		defer func() {
+			if r := recover(); r != nil {
+				zap.L().Error("Message callback panicked (same goroutine)",
+					zap.String("account", account),
+					zap.String("connID", connCtx.ConnID),
+					zap.Any("panic", r),
+					zap.String("goroutine_bind", "fixed"))
 			}
-		})
-		if err != nil {
-			zap.L().Error("Submit message callback task failed",
-				zap.String("account", gameClient.Account),
+		}()
+
+		d := msg.ProtoReflect().Descriptor()
+		switch d.Name() {
+		case "LoginResponse":
+			resp := msg.(*login.LoginResponse)
+			handler.ClientPlayerLoginLoginHandler(gameClient, resp)
+			gameClient.TickBehaviorTree()
+		case "CreatePlayerResponse":
+			resp := msg.(*login.CreatePlayerResponse)
+			handler.ClientPlayerLoginCreatePlayerHandler(gameClient, resp)
+			gameClient.TickBehaviorTree()
+		case "EnterGameResponse":
+			resp := msg.(*login.EnterGameResponse)
+			handler.ClientPlayerLoginEnterGameHandler(gameClient, resp)
+		case "MessageContent":
+			resp := msg.(*common.MessageContent)
+			handler.MessageBodyHandler(gameClient, resp)
+			player, ok := gameobject.PlayerList.Get(gameClient.PlayerId)
+			if ok {
+				player.TickBehaviorTree()
+			}
+		default:
+			zap.L().Warn("Unhandled message type (same goroutine)",
+				zap.String("message_type", string(d.Name())),
+				zap.String("account", account),
 				zap.String("connID", connCtx.ConnID),
-				zap.Error(err))
+				zap.String("goroutine_bind", "fixed"))
 		}
 	})
 
-	// 2. 定时 Tick 任务（提交到 ants 池，替代原 time.After 循环）
-	globalWg.Add(1)
-	err := pool.Submit(func() {
-		defer globalWg.Done()
-		// 从配置读取 Tick 间隔，确保非负（避免异常）
-		tickInterval := time.Duration(config.AppConfig.Robots.Tick) * time.Millisecond
-		if tickInterval <= 0 {
-			tickInterval = 1000 * time.Millisecond // 兜底默认1秒
-			zap.L().Warn("Invalid tick interval, use default",
-				zap.Int64("config_tick", config.AppConfig.Robots.Tick),
-				zap.String("account", gameClient.Account))
-		}
-		ticker := time.NewTicker(tickInterval)
-		defer ticker.Stop()
+	// 3. 定时Tick任务（在当前goroutine内执行，无协程切换）
+	tickInterval := time.Duration(config.AppConfig.Robots.Tick) * time.Millisecond
+	if tickInterval <= 0 {
+		tickInterval = 1000 * time.Millisecond
+		zap.L().Warn("Invalid tick interval, use default (same goroutine)",
+			zap.Int64("config_tick", config.AppConfig.Robots.Tick),
+			zap.String("account", account),
+			zap.String("goroutine_bind", "fixed"))
+	}
+	ticker := time.NewTicker(tickInterval)
+	defer ticker.Stop()
 
-		for {
-			select {
-			case <-ticker.C:
-				// 客户端已关闭，退出 Tick 任务
-				if gameClient.Client.IsClosed() {
-					zap.L().Info("Tick task exited: client closed", zap.String("account", gameClient.Account))
-					return
-				}
-				// 原 Tick 逻辑复用
-				player, ok := gameobject.PlayerList.Get(gameClient.PlayerId)
-				if ok {
-					player.TickBehaviorTree()
-				} else {
-					gameClient.TickBehaviorTree()
-				}
-			case <-gameClient.Client.Ctx().Done():
-				// 感知客户端关闭信号，优雅退出
-				zap.L().Info("Tick task exited: client context done", zap.String("account", gameClient.Account))
+	// 4. 阻塞主循环（客户端所有逻辑在当前goroutine完成，全程不换协程）
+	for {
+		select {
+		case <-ticker.C:
+			if gameClient.Client.IsClosed() {
+				zap.L().Info("Tick task exited: client closed (same goroutine)",
+					zap.String("account", account),
+					zap.String("goroutine_bind", "fixed"))
 				return
 			}
+			// Tick逻辑与客户端在同一个goroutine，状态一致
+			player, ok := gameobject.PlayerList.Get(gameClient.PlayerId)
+			if ok {
+				player.TickBehaviorTree()
+			} else {
+				gameClient.TickBehaviorTree()
+			}
+		case <-gameClient.Client.Ctx().Done():
+			zap.L().Info("Client exited: context done (same goroutine)",
+				zap.String("account", account),
+				zap.String("goroutine_bind", "fixed"))
+			return
 		}
-	})
-	if err != nil {
-		zap.L().Error("Submit tick task failed", zap.String("account", gameClient.Account), zap.Error(err))
-		globalWg.Done()
 	}
 }
 
 func main() {
-	// pprof 监控保持不变（仅1个原生goroutine，无影响）
+	// pprof监控保持不变
 	go func() {
 		log.Printf("pprof server start at localhost:6060")
 		log.Fatal(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	// 日志初始化：使用配置的日志级别（原代码未生效，修正）
+	// 日志初始化（修正后）
 	lvl := zap.NewAtomicLevel()
 	lvl.SetLevel(zapcore.Level(config.AppConfig.LogLevel))
-	// 初始化日志时应用配置级别（原代码用了默认 Production 配置，未关联 lvl）
 	loggerConfig := zap.NewProductionConfig()
 	loggerConfig.Level = lvl
 	logger, err := loggerConfig.Build()
@@ -134,48 +145,49 @@ func main() {
 	defer logger.Sync()
 	zap.ReplaceGlobals(logger)
 
-	// 打印启动配置，方便排查
-	zap.L().Info("Robot program start",
+	// 强制clientsPerGoroutine=1（确保一个客户端一个goroutine，不受配置影响）
+	clientsPerGoroutine = 1
+	// 读取配置仅作日志打印，不覆盖核心约束
+	if config.AppConfig.Robots.ClientsPerGoroutine > 0 {
+		zap.L().Warn("ClientsPerGoroutine config ignored (enforce one-client-one-goroutine)",
+			zap.Int("config_clients_per_goroutine", config.AppConfig.Robots.ClientsPerGoroutine),
+			zap.Int("actual_clients_per_goroutine", clientsPerGoroutine))
+	}
+
+	// 打印启动配置（明确标注goroutine绑定规则）
+	zap.L().Info("Robot program start (one-client-one-goroutine enforced)",
 		zap.Int("robot_count", config.AppConfig.Robots.Count),
-		zap.Int("max_concurrent", config.AppConfig.Robots.MaxConcurrent),
+		zap.Int("clients_per_goroutine", clientsPerGoroutine),
 		zap.Int64("tick_interval_ms", config.AppConfig.Robots.Tick),
 		zap.Int64("login_interval_ms", config.AppConfig.Robots.LoginInterval),
-		zap.Int("log_level", config.AppConfig.LogLevel),
-		zap.Int("server_count", len(config.AppConfig.Servers)))
+		zap.Int("server_count", len(config.AppConfig.Servers)),
+		zap.String("goroutine_rule", "one client binds to exactly one goroutine"))
 
-	// ========== 初始化 ants 全局池 ==========
-	poolSize := config.AppConfig.Robots.MaxConcurrent
-	if poolSize <= 0 {
-		poolSize = config.AppConfig.Robots.Count * 2 // 更合理的默认值：机器人数量×2
-		zap.L().Warn("MaxConcurrent not configured, use default",
-			zap.Int("default_pool_size", poolSize),
-			zap.Int("robot_count", config.AppConfig.Robots.Count))
-	}
-	// 关键修正：WithMaxBlockingTasks 前面加 ants. 前缀（原代码缺少，会编译错误）
-	pool, err := ants.NewPool(poolSize,
-		ants.WithPreAlloc(false),        // 按需创建goroutine，节省内存
-		ants.WithMaxBlockingTasks(2000), // 修正：添加 ants. 前缀
-		ants.WithNonblocking(false),     // 任务满时阻塞等待，不丢弃
+	// 初始化ants池（保留依赖，可用于后续扩展其他并发任务）
+	globalPool, err := ants.NewPool(config.AppConfig.Robots.MaxConcurrent,
+		ants.WithPreAlloc(false),
+		ants.WithMaxBlockingTasks(500),
+		ants.WithNonblocking(false),
 		ants.WithPanicHandler(func(i interface{}) {
 			zap.L().Error("Ants pool task panicked", zap.Any("panic", i))
-		}), // 全局捕获池内任务panic
+		}),
 	)
 	if err != nil {
-		zap.L().Fatal("Create ants pool failed", zap.Error(err))
+		zap.L().Fatal("Create global ants pool failed", zap.Error(err))
 	}
-	defer pool.Release() // 程序退出释放池资源
+	defer globalPool.Release()
 
-	// ========== 全局 WaitGroup：管理所有任务生命周期 ==========
-	var globalWg sync.WaitGroup
-
-	// 检查服务器配置是否为空（避免 panic）
+	// 检查服务器配置
 	if len(config.AppConfig.Servers) == 0 {
 		zap.L().Fatal("No servers configured")
 	}
 
-	// ========== 提交机器人主任务到 ants 池 ==========
+	// 全局WaitGroup：管理所有客户端goroutine
+	var globalWg sync.WaitGroup
+
+	// 启动机器人：1个客户端对应1个goroutine（强绑定）
 	for i := 0; i < config.AppConfig.Robots.Count; i++ {
-		// 登录间隔：确保非负（避免异常）
+		// 登录间隔控制（避免服务器瞬时压力）
 		loginInterval := time.Duration(config.AppConfig.Robots.LoginInterval) * time.Millisecond
 		if loginInterval > 0 {
 			time.Sleep(loginInterval)
@@ -183,44 +195,18 @@ func main() {
 		globalWg.Add(1)
 
 		idx := i // 捕获循环变量，避免闭包陷阱
-		err := pool.Submit(func() {
-			defer func() {
-				globalWg.Done() // 机器人主任务结束，释放Wg
-				if r := recover(); r != nil {
-					zap.L().Error("Robot main task panicked", zap.Int("index", idx), zap.Any("panic", r))
-				}
-			}()
-
-			// 机器人服务器分配（原逻辑不变）
+		// 为每个客户端启动独立goroutine（核心绑定逻辑）
+		go func() {
+			account := "luhailong" + strconv.Itoa(idx)
 			serverIndex := idx % len(config.AppConfig.Servers)
-			server := config.AppConfig.Servers[serverIndex]
+			serverAddr := config.AppConfig.Servers[serverIndex].Address
 
-			// 创建改造后的 muduo TcpClient（回调模式）
-			client := muduo.NewTcpClient(server.Address, &muduo.TcpCodec{})
-			gameClient := pkg.NewGameClient(client)
-			defer gameClient.Close() // 任务结束优雅关闭客户端
-
-			// 分配机器人账号
-			gameClient.Account = "luhailong" + strconv.Itoa(idx)
-			zap.L().Info("Robot client initialized",
-				zap.String("account", gameClient.Account),
-				zap.String("server", server.Address),
-				zap.Int("server_index", serverIndex))
-
-			// 执行客户端循环：传入池和Wg，统一管理任务
-			runClientLoop(gameClient, pool, &globalWg)
-
-			// 核心修复：阻塞主任务，等待客户端关闭信号（避免defer提前触发）
-			<-gameClient.Client.Ctx().Done()
-			zap.L().Info("Robot main task exited: client context done", zap.String("account", gameClient.Account))
-		})
-		if err != nil {
-			zap.L().Error("Submit robot main task failed", zap.Int("index", idx), zap.Error(err))
-			globalWg.Done() // 提交失败释放Wg，避免死锁
-		}
+			// 客户端逻辑全程在当前goroutine执行，不切换、不共享
+			runClientLogic(account, serverAddr, &globalWg)
+		}()
 	}
 
-	// 等待所有任务完成（机器人主任务+消息处理任务+Tick任务）
+	// 等待所有客户端goroutine完成
 	globalWg.Wait()
-	zap.L().Info("All robot tasks completed, program exiting")
+	zap.L().Info("All robot goroutines finished (one-client-one-goroutine enforced), program exiting")
 }
