@@ -13,10 +13,11 @@ type ServerConfig struct {
 
 // Robots 机器人集群配置（新增 MaxConcurrent 控制并发）
 type Robots struct {
-	Count         int   `yaml:"count"`          // 机器人总数量
-	Tick          int64 `yaml:"tick"`           // 行为树 Tick 间隔（毫秒）
-	LoginInterval int64 `yaml:"login_interval"` // 机器人登录间隔（毫秒，避免服务器瞬时压力）
-	MaxConcurrent int   `yaml:"max_concurrent"` // 最大并发数（适配 ants 池，建议 = 总数量 × 2）
+	Count               int   `yaml:"count"`                 // 机器人总数量
+	Tick                int64 `yaml:"tick"`                  // 行为树 Tick 间隔（毫秒）
+	LoginInterval       int64 `yaml:"login_interval"`        // 机器人登录间隔（毫秒，避免服务器瞬时压力）
+	MaxConcurrent       int   `yaml:"max_concurrent"`        // 最大并发数（适配 ants 池，建议 = 总数量 × 2）
+	ClientsPerGoroutine int   `yaml:"clients_per_goroutine"` // 新增：每个goroutine承载的客户端数
 }
 
 // Config 全局配置根结构
