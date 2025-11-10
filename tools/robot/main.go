@@ -89,34 +89,27 @@ func runClientLogic(account string, serverAddr string, globalWg *sync.WaitGroup)
 	})
 
 	// 3. 定时Tick任务（在当前goroutine内执行，无协程切换）
+
 	tickInterval := time.Duration(config.AppConfig.Robots.Tick) * time.Millisecond
-	if tickInterval <= 0 {
-		tickInterval = 1000 * time.Millisecond
-		zap.L().Warn("Invalid tick interval, use default (same goroutine)",
-			zap.Int64("config_tick", config.AppConfig.Robots.Tick),
-			zap.String("account", account),
-			zap.String("goroutine_bind", "fixed"))
-	}
-	ticker := time.NewTicker(tickInterval)
-	defer ticker.Stop()
+	gameClient.Client.SetHeartbeatCallback(tickInterval, func(connCtx *muduo.ConnContext) {
+		if gameClient.Client.IsClosed() {
+			zap.L().Info("Tick task exited: client closed (same goroutine)",
+				zap.String("account", account),
+				zap.String("goroutine_bind", "fixed"))
+			return
+		}
+		// Tick逻辑与客户端在同一个goroutine，状态一致
+		player, ok := gameobject.PlayerList.Get(gameClient.PlayerId)
+		if ok {
+			player.TickBehaviorTree()
+		} else {
+			gameClient.TickBehaviorTree()
+		}
+	})
 
 	// 4. 阻塞主循环（客户端所有逻辑在当前goroutine完成，全程不换协程）
 	for {
 		select {
-		case <-ticker.C:
-			if gameClient.Client.IsClosed() {
-				zap.L().Info("Tick task exited: client closed (same goroutine)",
-					zap.String("account", account),
-					zap.String("goroutine_bind", "fixed"))
-				return
-			}
-			// Tick逻辑与客户端在同一个goroutine，状态一致
-			player, ok := gameobject.PlayerList.Get(gameClient.PlayerId)
-			if ok {
-				player.TickBehaviorTree()
-			} else {
-				gameClient.TickBehaviorTree()
-			}
 		case <-gameClient.Client.Ctx().Done():
 			zap.L().Info("Client exited: context done (same goroutine)",
 				zap.String("account", account),
