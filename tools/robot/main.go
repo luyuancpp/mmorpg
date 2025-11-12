@@ -75,10 +75,6 @@ func runClientLogic(account string, serverAddr string, globalWg *sync.WaitGroup)
 		case "MessageContent":
 			resp := msg.(*common.MessageContent)
 			handler.MessageBodyHandler(gameClient, resp)
-			player, ok := gameobject.PlayerList.Get(gameClient.PlayerId)
-			if ok {
-				player.TickBehaviorTree()
-			}
 		default:
 			zap.L().Warn("Unhandled message type (same goroutine)",
 				zap.String("message_type", string(d.Name())),
