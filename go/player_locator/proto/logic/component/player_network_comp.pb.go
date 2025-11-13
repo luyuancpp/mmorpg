@@ -27,8 +27,10 @@ type PlayerSessionSnapshotPBComp struct {
 	GateSessionId uint64                 `protobuf:"varint,2,opt,name=gate_session_id,json=gateSessionId,proto3" json:"gate_session_id,omitempty"`
 	NodeId        map[uint32]uint32      `protobuf:"bytes,3,rep,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	LoginToken    string                 `protobuf:"bytes,4,opt,name=login_token,json=loginToken,proto3" json:"login_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// 新增：用于并发和幂等判断
+	SessionVersion uint64 `protobuf:"varint,5,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *PlayerSessionSnapshotPBComp) Reset() {
@@ -89,17 +91,25 @@ func (x *PlayerSessionSnapshotPBComp) GetLoginToken() string {
 	return ""
 }
 
+func (x *PlayerSessionSnapshotPBComp) GetSessionVersion() uint64 {
+	if x != nil {
+		return x.SessionVersion
+	}
+	return 0
+}
+
 var File_proto_logic_component_player_network_comp_proto protoreflect.FileDescriptor
 
 const file_proto_logic_component_player_network_comp_proto_rawDesc = "" +
 	"\n" +
-	"/proto/logic/component/player_network_comp.proto\"\x81\x02\n" +
+	"/proto/logic/component/player_network_comp.proto\"\xaa\x02\n" +
 	"\x1bPlayerSessionSnapshotPBComp\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12&\n" +
 	"\x0fgate_session_id\x18\x02 \x01(\x04R\rgateSessionId\x12A\n" +
 	"\anode_id\x18\x03 \x03(\v2(.PlayerSessionSnapshotPBComp.NodeIdEntryR\x06nodeId\x12\x1f\n" +
 	"\vlogin_token\x18\x04 \x01(\tR\n" +
-	"loginToken\x1a9\n" +
+	"loginToken\x12'\n" +
+	"\x0fsession_version\x18\x05 \x01(\x04R\x0esessionVersion\x1a9\n" +
 	"\vNodeIdEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01B0Z.player_locator/proto/logic/component;componentb\x06proto3"

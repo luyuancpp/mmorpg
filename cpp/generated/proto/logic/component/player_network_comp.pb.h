@@ -261,6 +261,7 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
     kLoginTokenFieldNumber = 4,
     kPlayerIdFieldNumber = 1,
     kGateSessionIdFieldNumber = 2,
+    kSessionVersionFieldNumber = 5,
   };
   // map<uint32, uint32> node_id = 3;
   int node_id_size() const;
@@ -312,11 +313,21 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
   void _internal_set_gate_session_id(::uint64_t value);
 
   public:
+  // uint64 session_version = 5;
+  void clear_session_version() ;
+  ::uint64_t session_version() const;
+  void set_session_version(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_session_version() const;
+  void _internal_set_session_version(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:PlayerSessionSnapshotPBComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 4,
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
                                    1, 47,
                                    2>
       _table_;
@@ -345,6 +356,7 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr login_token_;
     ::uint64_t player_id_;
     ::uint64_t gate_session_id_;
+    ::uint64_t session_version_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -511,6 +523,30 @@ inline void PlayerSessionSnapshotPBComp::set_allocated_login_token(::std::string
     _impl_.login_token_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:PlayerSessionSnapshotPBComp.login_token)
+}
+
+// uint64 session_version = 5;
+inline void PlayerSessionSnapshotPBComp::clear_session_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_version_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint64_t PlayerSessionSnapshotPBComp::session_version() const {
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.session_version)
+  return _internal_session_version();
+}
+inline void PlayerSessionSnapshotPBComp::set_session_version(::uint64_t value) {
+  _internal_set_session_version(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.session_version)
+}
+inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_session_version() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.session_version_;
+}
+inline void PlayerSessionSnapshotPBComp::_internal_set_session_version(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_version_ = value;
 }
 
 #ifdef __GNUC__
