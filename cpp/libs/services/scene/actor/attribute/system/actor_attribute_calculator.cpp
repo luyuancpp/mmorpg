@@ -42,17 +42,17 @@ void UpdateVelocity(entt::entity entity) {
 }
 
 // 更新生命值属性
-void UpdateHealth(entt::entity actorEntityId) {
+void UpdateHealth(entt::entity actorEntity) {
     // 计算生命值属性的逻辑
 }
 
 // 更新能量值属性
-void UpdateEnergy(entt::entity actorEntityId) {
+void UpdateEnergy(entt::entity actorEntity) {
     // 计算能量值属性的逻辑
 }
 
 // 更新状态效果属性
-void UpdateStatusEffects(entt::entity actorEntityId) {
+void UpdateStatusEffects(entt::entity actorEntity) {
     // 更新实体的状态效果，例如中毒、减速等
 }
 
@@ -115,9 +115,9 @@ extern  std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttribut
 
 void ActorAttributeCalculatorSystem::Update(double delta)
 {
-    for (auto&& [entity, actorAttributeBitSetComp] : tlsRegistryManager.actorRegistry.view<AttributeDirtyFlagsComp>().each())
+    for (auto&& [entity, AttributeDirtyFlagsComponent] : tlsRegistryManager.actorRegistry.view<AttributeDirtyFlagsComp>().each())
     {
-        auto& attributeBits = actorAttributeBitSetComp.attributeBits;
+        auto& attributeBits = AttributeDirtyFlagsComponent.attributeBits;
         for (const auto& [attributeIndex, updateFunction] : kAttributeConfigs) {
             if (updateFunction && attributeBits.test(attributeIndex)) {
                 updateFunction(entity);
