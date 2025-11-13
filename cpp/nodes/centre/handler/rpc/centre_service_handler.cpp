@@ -60,17 +60,6 @@ void StartDelayedCleanupTimer(entt::entity playerEntity, uint32_t timeout_ms) {
 		};
 }
 
-// 当把新 session 绑定到 player 时调用（原子语义）
-uint64_t BindSessionToPlayer(entt::entity playerEntity, uint64_t newSessionId, const std::string& newToken) {
-	auto& sessionPB = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity);
-	uint64_t newVersion = sessionPB.session_version() + 1;
-	sessionPB.set_gate_session_id(newSessionId);
-	sessionPB.set_login_token(newToken);
-	sessionPB.set_session_version(newVersion);
-	// 持久化并通知 Gate（BindSession RPC）将 newVersion 下发给 Gate
-	return newVersion;
-}
-
 Guid GetPlayerIDBySessionId(const uint64_t session_id)
 {
 	const auto session_it = GlobalSessionList().find(session_id);
@@ -320,46 +309,69 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	const auto& clientMsg = request->client_msg_body();
-	const auto& sessionInfo = request->session_info();
-	Guid playerGuid = clientMsg.player_id();
-	uint64_t sessionId = sessionInfo.session_id();
-	const std::string loginToken = clientMsg.login_token();
+// 替换 LoginNodeEnterGame 内处理登录进入的核心逻辑为：
+// 1. 先读取旧 snapshot（如果有），并基于旧值做 DecideEnterGame
+// 2. 根据决策有选择地更新 snapshot（递增 version）并在必要时发送 kick
+// 3. 执行进入场景副作用
+	{
+		const auto& clientMsg = request->client_msg_body();
+		const auto& sessionInfo = request->session_info();
+		Guid playerGuid = clientMsg.player_id();
+		uint64_t sessionId = sessionInfo.session_id();
+		const std::string loginToken = clientMsg.login_token();
 
-	LOG_INFO << "LoginNodeEnterGame request: player=" << playerGuid << " session=" << sessionId;
+		LOG_INFO << "LoginNodeEnterGame request: player=" << playerGuid << " session=" << sessionId;
 
-	// 在单线程模型下，直接插入全局 session map
-	GlobalSessionList()[sessionId] = playerGuid;
+		// 在单线程模型下，先插入全局 session map（快速路由）
+		GlobalSessionList()[sessionId] = playerGuid;
 
-	// 是否在内存中已有 player 对象
-	auto it = tlsPlayerList.find(playerGuid);
-	if (it == tlsPlayerList.end()) {
-		// 首次登录：load data 并返回（后续流程由异步回调继续）
-		HandleFirstLogin(playerGuid, sessionId, loginToken);
-		return;
+		// 是否在内存中已有 player 对象
+		auto it = tlsPlayerList.find(playerGuid);
+		if (it == tlsPlayerList.end()) {
+			// 首次登录：load data 并返回（后续流程由异步回调继续）
+			HandleFirstLogin(playerGuid, sessionId, loginToken);
+			return;
+		}
+
+		entt::entity playerEntity = it->second;
+
+		// 读取旧 snapshot（不修改）
+		auto* oldSessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+		const bool hasOldSession = (oldSessionPB != nullptr);
+		uint64_t oldSessionId = hasOldSession ? oldSessionPB->gate_session_id() : kInvalidSessionId;
+		std::string oldToken = hasOldSession ? oldSessionPB->login_token() : std::string{};
+		uint64_t oldVersion = hasOldSession ? oldSessionPB->session_version() : 0;
+
+		// 决策（基于旧 snapshot）
+		EnterGameDecision decision = DecideEnterGame(hasOldSession, oldSessionId, oldToken, sessionId, loginToken);
+
+		// 根据决策决定是否更新 snapshot 并是否踢人
+		if (decision == EnterGameDecision::ReplaceLogin) {
+			// 替换登录：更新 snapshot（递增 version）并发送 kick 给旧 session（带旧版本做幂等）
+			auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken);
+			// UpdatePlayerSessionSnapshot 返回旧SessionId/oldToken/oldVersion，已用于决策，
+			// 但为了保险可以用 oldVersion 变量上面读取的值
+			if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
+				SendKickForOldSession(oldSessionId, oldVersion);
+				GlobalSessionList().erase(oldSessionId);
+			}
+		}
+		else if (decision == EnterGameDecision::Reconnect) {
+			// 重连：如果 sessionId 不同但 token 相同，则需要把 snapshot 绑定到新的 session id（不一定踢旧）
+			if (oldSessionId != sessionId) {
+				UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken);
+				// 不发送 kick（token 相同表示同一客户端），只更新绑定
+				GlobalSessionList().erase(oldSessionId);
+			}
+			// 如果 oldSessionId == sessionId：同一连接重复请求，视为幂等处理（无需变更 snapshot）
+		}
+		else {
+			// FirstLogin：首次登录流程（上面已经处理）
+		}
+
+		// 执行进入场景相关副作用
+		ApplyEnterGameDecision(playerEntity, decision);
 	}
-
-	entt::entity playerEntity = it->second;
-	bool hasOldSession = tlsRegistryManager.actorRegistry.any_of<PlayerSessionSnapshotPBComp>(playerEntity);
-
-	// 更新 snapshot，获取旧 session/token 以便决定是否踢人
-	auto old = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken);
-	uint64_t oldSessionId = std::get<0>(old);
-	std::string oldToken = std::get<1>(old);
-	uint64_t oldVersion = std::get<2>(old);
-
-	// 决策（pure）
-	EnterGameDecision decision = DecideEnterGame(hasOldSession, oldSessionId, oldToken, sessionId, loginToken);
-
-	// 如果是 ReplaceLogin，则发送踢人请求（Gate 层需以 sessionId 校验幂等）
-	if (decision == EnterGameDecision::ReplaceLogin && oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
-		SendKickForOldSession(oldSessionId, oldVersion);
-		// 清理老映射，防止残留（单线程，安全）
-		GlobalSessionList().erase(oldSessionId);
-	}
-
-	// 执行进入场景相关副作用
-	ApplyEnterGameDecision(playerEntity, decision);
 	///<<< END WRITING YOUR CODE
 }
 
