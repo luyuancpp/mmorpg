@@ -1,4 +1,3 @@
-
 #include "centre_service_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -102,13 +101,13 @@ namespace {
 
 	// 纯函数：根据当前是否已有 session/ token 判断行为（不做副作用）
 	EnterGameDecision DecideEnterGame(bool hasOldSession,
-		uint64_t oldSessionId,
+		uint64_t /*oldSessionId*/,
 		const std::string& oldLoginToken,
-		uint64_t newSessionId,
+		uint64_t /*newSessionId*/,
 		const std::string& newLoginToken)
 	{
 		if (!hasOldSession) return EnterGameDecision::FirstLogin;
-		if (oldSessionId == newSessionId) return EnterGameDecision::Reconnect;
+		// 仅用 token 判断是否为重连（同一客户端/凭证）
 		if (oldLoginToken == newLoginToken) return EnterGameDecision::Reconnect;
 		return EnterGameDecision::ReplaceLogin;
 	}
