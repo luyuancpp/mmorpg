@@ -7,9 +7,10 @@ import "proto/common/message.proto";
 
 option cc_generic_services = true;
 
-message KickSessionRequest
-{
+// Centre -> Gate: 请求踢掉某个 session（带期望版本）
+message KickSessionRequest {
   uint64 session_id = 1;
+  uint64 expected_session_version = 2; // Gate 只有在版本匹配时才断开
 }
 
 message BroadcastToPlayersRequest

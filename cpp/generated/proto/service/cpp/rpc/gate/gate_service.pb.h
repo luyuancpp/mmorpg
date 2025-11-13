@@ -218,6 +218,7 @@ class KickSessionRequest final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kSessionIdFieldNumber = 1,
+    kExpectedSessionVersionFieldNumber = 2,
   };
   // uint64 session_id = 1;
   void clear_session_id() ;
@@ -229,11 +230,21 @@ class KickSessionRequest final : public ::google::protobuf::Message
   void _internal_set_session_id(::uint64_t value);
 
   public:
+  // uint64 expected_session_version = 2;
+  void clear_expected_session_version() ;
+  ::uint64_t expected_session_version() const;
+  void set_expected_session_version(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_expected_session_version() const;
+  void _internal_set_expected_session_version(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:KickSessionRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<0, 1,
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
                                    0, 0,
                                    2>
       _table_;
@@ -256,6 +267,7 @@ class KickSessionRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t session_id_;
+    ::uint64_t expected_session_version_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -630,6 +642,30 @@ inline ::uint64_t KickSessionRequest::_internal_session_id() const {
 inline void KickSessionRequest::_internal_set_session_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
+}
+
+// uint64 expected_session_version = 2;
+inline void KickSessionRequest::clear_expected_session_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expected_session_version_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint64_t KickSessionRequest::expected_session_version() const {
+  // @@protoc_insertion_point(field_get:KickSessionRequest.expected_session_version)
+  return _internal_expected_session_version();
+}
+inline void KickSessionRequest::set_expected_session_version(::uint64_t value) {
+  _internal_set_expected_session_version(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:KickSessionRequest.expected_session_version)
+}
+inline ::uint64_t KickSessionRequest::_internal_expected_session_version() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.expected_session_version_;
+}
+inline void KickSessionRequest::_internal_set_expected_session_version(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expected_session_version_ = value;
 }
 
 // -------------------------------------------------------------------

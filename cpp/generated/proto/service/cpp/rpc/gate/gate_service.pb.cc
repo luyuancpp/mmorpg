@@ -28,7 +28,8 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 inline constexpr KickSessionRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        session_id_{::uint64_t{0u}} {}
+        session_id_{::uint64_t{0u}},
+        expected_session_version_{::uint64_t{0u}} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR KickSessionRequest::KickSessionRequest(::_pbi::ConstantInitialized)
@@ -85,9 +86,11 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::KickSessionRequest, _impl_._has_bits_),
-        4, // hasbit index offset
+        5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::KickSessionRequest, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::KickSessionRequest, _impl_.expected_session_version_),
         0,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::BroadcastToPlayersRequest, _impl_._has_bits_),
         5, // hasbit index offset
@@ -100,7 +103,7 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::KickSessionRequest)},
-        {5, sizeof(::BroadcastToPlayersRequest)},
+        {7, sizeof(::BroadcastToPlayersRequest)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_KickSessionRequest_default_instance_._instance,
@@ -110,23 +113,23 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5
     protodesc_cold) = {
     "\n-proto/service/cpp/rpc/gate/gate_servic"
     "e.proto\032\030proto/common/empty.proto\032\032proto"
-    "/common/message.proto\"(\n\022KickSessionRequ"
-    "est\022\022\n\nsession_id\030\001 \001(\004\"[\n\031BroadcastToPl"
-    "ayersRequest\022\024\n\014session_list\030\001 \003(\004\022(\n\017me"
-    "ssage_content\030\002 \001(\0132\017.MessageContent2\327\003\n"
-    "\004Gate\022X\n\023PlayerEnterGameNode\022\037.RegisterG"
-    "ameNodeSessionRequest\032 .RegisterGameNode"
-    "SessionResponse\0227\n\023SendMessageToPlayer\022\030"
-    ".NodeRouteMessageRequest\032\006.Empty\0222\n\023Kick"
-    "SessionByCentre\022\023.KickSessionRequest\032\006.E"
-    "mpty\022\?\n\020RouteNodeMessage\022\024.RouteMessageR"
-    "equest\032\025.RouteMessageResponse\022M\n\022RoutePl"
-    "ayerMessage\022\032.RoutePlayerMessageRequest\032"
-    "\033.RoutePlayerMessageResponse\0228\n\022Broadcas"
-    "tToPlayers\022\032.BroadcastToPlayersRequest\032\006"
-    ".Empty\022>\n\rNodeHandshake\022\025.NodeHandshakeR"
-    "equest\032\026.NodeHandshakeResponseB\003\200\001\001b\006pro"
-    "to3"
+    "/common/message.proto\"J\n\022KickSessionRequ"
+    "est\022\022\n\nsession_id\030\001 \001(\004\022 \n\030expected_sess"
+    "ion_version\030\002 \001(\004\"[\n\031BroadcastToPlayersR"
+    "equest\022\024\n\014session_list\030\001 \003(\004\022(\n\017message_"
+    "content\030\002 \001(\0132\017.MessageContent2\327\003\n\004Gate\022"
+    "X\n\023PlayerEnterGameNode\022\037.RegisterGameNod"
+    "eSessionRequest\032 .RegisterGameNodeSessio"
+    "nResponse\0227\n\023SendMessageToPlayer\022\030.NodeR"
+    "outeMessageRequest\032\006.Empty\0222\n\023KickSessio"
+    "nByCentre\022\023.KickSessionRequest\032\006.Empty\022\?"
+    "\n\020RouteNodeMessage\022\024.RouteMessageRequest"
+    "\032\025.RouteMessageResponse\022M\n\022RoutePlayerMe"
+    "ssage\022\032.RoutePlayerMessageRequest\032\033.Rout"
+    "ePlayerMessageResponse\0228\n\022BroadcastToPla"
+    "yers\022\032.BroadcastToPlayersRequest\032\006.Empty"
+    "\022>\n\rNodeHandshake\022\025.NodeHandshakeRequest"
+    "\032\026.NodeHandshakeResponseB\003\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5fservice_2eproto_deps[2] = {
@@ -137,7 +140,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fgate_2fg
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5fservice_2eproto = {
     false,
     false,
-    723,
+    757,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5fservice_2eproto,
     "proto/service/cpp/rpc/gate/gate_service.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5fservice_2eproto_once,
@@ -187,7 +190,12 @@ PROTOBUF_NDEBUG_INLINE KickSessionRequest::Impl_::Impl_(
 
 inline void KickSessionRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.session_id_ = {};
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, session_id_),
+           0,
+           offsetof(Impl_, expected_session_version_) -
+               offsetof(Impl_, session_id_) +
+               sizeof(Impl_::expected_session_version_));
 }
 KickSessionRequest::~KickSessionRequest() {
   // @@protoc_insertion_point(destructor:KickSessionRequest)
@@ -243,16 +251,16 @@ KickSessionRequest::GetClassData() const {
   return KickSessionRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
 KickSessionRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_._has_bits_),
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967292,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
+    2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     KickSessionRequest_class_data_.base(),
@@ -262,6 +270,9 @@ KickSessionRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::KickSessionRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
+    // uint64 expected_session_version = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(KickSessionRequest, _impl_.expected_session_version_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_.expected_session_version_)}},
     // uint64 session_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(KickSessionRequest, _impl_.session_id_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_.session_id_)}},
@@ -270,6 +281,9 @@ KickSessionRequest::_table_ = {
   }}, {{
     // uint64 session_id = 1;
     {PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint64 expected_session_version = 2;
+    {PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_.expected_session_version_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -283,7 +297,12 @@ PROTOBUF_NOINLINE void KickSessionRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.session_id_ = ::uint64_t{0u};
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.expected_session_version_) -
+        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.expected_session_version_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -312,6 +331,15 @@ PROTOBUF_NOINLINE void KickSessionRequest::Clear() {
     }
   }
 
+  // uint64 expected_session_version = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_expected_session_version() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_expected_session_version(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -335,13 +363,21 @@ PROTOBUF_NOINLINE void KickSessionRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void)cached_has_bits;
 
-   {
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
     // uint64 session_id = 1;
-    cached_has_bits = this_._impl_._has_bits_[0];
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_session_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_session_id());
+      }
+    }
+    // uint64 expected_session_version = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_expected_session_version() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_expected_session_version());
       }
     }
   }
@@ -358,9 +394,16 @@ void KickSessionRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, cons
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000001u) != 0) {
-    if (from._internal_session_id() != 0) {
-      _this->_impl_.session_id_ = from._impl_.session_id_;
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_expected_session_version() != 0) {
+        _this->_impl_.expected_session_version_ = from._impl_.expected_session_version_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -379,7 +422,12 @@ void KickSessionRequest::InternalSwap(KickSessionRequest* PROTOBUF_RESTRICT PROT
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  swap(_impl_.session_id_, other->_impl_.session_id_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_.expected_session_version_)
+      + sizeof(KickSessionRequest::_impl_.expected_session_version_)
+      - PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_.session_id_)>(
+          reinterpret_cast<char*>(&_impl_.session_id_),
+          reinterpret_cast<char*>(&other->_impl_.session_id_));
 }
 
 ::google::protobuf::Metadata KickSessionRequest::GetMetadata() const {

@@ -4,8 +4,8 @@ servers:
 
 # 机器人集群配置
 robots:
-  count: 100                     # 机器人总数量：100个
-  tick: 1000                     # 行为树 Tick 间隔：1000毫秒（1秒）
+  count: 1000                     # 机器人总数量：100个
+  tick: 5000                     # 行为树 Tick 间隔：1000毫秒（1秒）
   login_interval: 200            # 机器人登录间隔：200毫秒（避免服务器瞬时压力）
   max_concurrent: 200            # 最大并发数：200（建议 = count × 2，适配 ants 池）
   clients_per_goroutine: 2       # 新增：每个goroutine承载的客户端数（默认2个，可调整）

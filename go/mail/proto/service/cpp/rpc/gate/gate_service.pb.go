@@ -22,11 +22,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Centre -> Gate: 请求踢掉某个 session（带期望版本）
 type KickSessionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionId     uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	SessionId              uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	ExpectedSessionVersion uint64                 `protobuf:"varint,2,opt,name=expected_session_version,json=expectedSessionVersion,proto3" json:"expected_session_version,omitempty"` // Gate 只有在版本匹配时才断开
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *KickSessionRequest) Reset() {
@@ -62,6 +64,13 @@ func (*KickSessionRequest) Descriptor() ([]byte, []int) {
 func (x *KickSessionRequest) GetSessionId() uint64 {
 	if x != nil {
 		return x.SessionId
+	}
+	return 0
+}
+
+func (x *KickSessionRequest) GetExpectedSessionVersion() uint64 {
+	if x != nil {
+		return x.ExpectedSessionVersion
 	}
 	return 0
 }
@@ -122,10 +131,11 @@ var File_proto_service_cpp_rpc_gate_gate_service_proto protoreflect.FileDescript
 
 const file_proto_service_cpp_rpc_gate_gate_service_proto_rawDesc = "" +
 	"\n" +
-	"-proto/service/cpp/rpc/gate/gate_service.proto\x1a\x18proto/common/empty.proto\x1a\x1aproto/common/message.proto\"3\n" +
+	"-proto/service/cpp/rpc/gate/gate_service.proto\x1a\x18proto/common/empty.proto\x1a\x1aproto/common/message.proto\"m\n" +
 	"\x12KickSessionRequest\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId\"x\n" +
+	"session_id\x18\x01 \x01(\x04R\tsessionId\x128\n" +
+	"\x18expected_session_version\x18\x02 \x01(\x04R\x16expectedSessionVersion\"x\n" +
 	"\x19BroadcastToPlayersRequest\x12!\n" +
 	"\fsession_list\x18\x01 \x03(\x04R\vsessionList\x128\n" +
 	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent2\xd7\x03\n" +

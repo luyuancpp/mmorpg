@@ -1,3 +1,4 @@
+
 #include "centre_service_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -736,6 +737,5 @@ void CentreHandler::NodeHandshake(::google::protobuf::RpcController* controller,
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 ///<<< END WRITING YOUR CODE
 }
-
 
 
