@@ -82,3 +82,4 @@
 81=PlayerLocatorSetLocation
 82=CentrePlayerService
 83=dbTest
+84=GateBindSessionToGate

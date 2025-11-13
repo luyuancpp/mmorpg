@@ -67,7 +67,26 @@ void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* control
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	tlsSessionManager.sessions().erase(request->session_id());
+	const uint64_t sessionId = request->session_id();
+	const uint64_t expectedVersion = request->expected_session_version();
+
+	auto it = tlsSessionManager.sessions().find(sessionId);
+	if (it == tlsSessionManager.sessions().end()) {
+		LOG_DEBUG << "Kick: session not found " << sessionId;
+		return; // 幂等
+	}
+	const SessionInfo& info = it->second;
+
+	// 只有版本相等时才断开，避免旧请求断开新连接
+	if (info.sessionVersion != expectedVersion) {
+		LOG_INFO << "Kick: version mismatch, ignore. session=" << sessionId << " current=" << info.sessionVersion
+			<< " expected=" << expectedVersion;
+		return;
+	}
+
+	// 执行断开（发送断开通知给 Centre，断开 socket）
+	//CloseSession(sessionId);
+	// Gate 会发送 GateSessionDisconnect 到 Centre (或 Centre 会收到)
 	LOG_INFO << "Session ID kicked by Centre: " << request->session_id();
 	///<<< END WRITING YOUR CODE
 }
@@ -125,6 +144,20 @@ void GateHandler::NodeHandshake(::google::protobuf::RpcController* controller, c
 {
 ///<<< BEGIN WRITING YOUR CODE
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
+///<<< END WRITING YOUR CODE
+}
+
+
+
+void GateHandler::BindSessionToGate(::google::protobuf::RpcController* controller, const ::BindSessionToGateRequest* request,
+	::Empty* response,
+	::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+	SessionInfo info;
+	info.playerId = request->player_id();
+	info.sessionVersion = request->session_version();
+	tlsSessionManager.sessions()[request->session_id()] = info;
 ///<<< END WRITING YOUR CODE
 }
 

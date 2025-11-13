@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="session\comp\gate_session.h" />
+    <ClInclude Include="session\comp\session_info.h" />
     <ClInclude Include="session\manager\session_manager.h" />
   </ItemGroup>
   <ItemGroup>

@@ -32,4 +32,8 @@ constexpr uint32_t GateNodeHandshakeMessageId = 72;
 constexpr uint32_t GateNodeHandshakeIndex = 6;
 #define GateNodeHandshakeMethod  ::Gate_Stub::descriptor()->method(6)
 
+constexpr uint32_t GateBindSessionToGateMessageId = 84;
+constexpr uint32_t GateBindSessionToGateIndex = 7;
+#define GateBindSessionToGateMethod  ::Gate_Stub::descriptor()->method(7)
+
 

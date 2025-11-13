@@ -9,7 +9,7 @@
 
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 
-struct Session;
+struct SessionInfo;
 class OnNodeRemovePbEvent;
 
 class RpcClientSessionHandler : muduo::noncopyable
@@ -40,9 +40,9 @@ public:
 
     bool CheckMessageSize(const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const;
 
-    bool CheckMessageLimit(Session& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn)const;
+    bool CheckMessageLimit(SessionInfo& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn)const;
 
-    bool ValidateClientMessage(Session& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const;
+    bool ValidateClientMessage(SessionInfo& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const;
 
 
 	void OnNodeRemovePbEventHandler(const OnNodeRemovePbEvent& pb);

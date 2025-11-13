@@ -8,10 +8,10 @@
 
 #include <unordered_map>
 
-struct Session {
+struct SessionInfo {
 	using NodeMap = std::unordered_map<uint32_t, NodeId>;
 
-	Session() = default;
+	SessionInfo() = default;
 
 	void SetNodeId(uint32_t nodeType, NodeId nodeId) {
 		nodeIds[nodeType] = nodeId;
@@ -34,10 +34,10 @@ struct Session {
 		return it->second != kInvalidNodeId;
 	}
 
-	Guid playerGuild{ kInvalidGuid };
+	Guid playerId{ kInvalidGuid };
 	muduo::net::TcpConnectionPtr conn;
 	MessageLimiter messageLimiter;
-
+	uint64_t sessionVersion{ kInvalidGuid };
 private:
 	NodeMap nodeIds; // 稀疏结构，只保存设置过的 node
 };
