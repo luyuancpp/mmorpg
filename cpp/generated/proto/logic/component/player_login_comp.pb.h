@@ -55,6 +55,10 @@ extern const ::google::protobuf::internal::DescriptorTable descriptor_table_prot
 }  // extern "C"
 enum EnterGsType : int;
 extern const uint32_t EnterGsType_internal_data_[];
+class PlayerDisconnectInfoComp;
+struct PlayerDisconnectInfoCompDefaultTypeInternal;
+extern PlayerDisconnectInfoCompDefaultTypeInternal _PlayerDisconnectInfoComp_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerDisconnectInfoComp_class_data_;
 class PlayerEnterGameStatePbComp;
 struct PlayerEnterGameStatePbCompDefaultTypeInternal;
 extern PlayerEnterGameStatePbCompDefaultTypeInternal _PlayerEnterGameStatePbComp_default_instance_;
@@ -72,6 +76,7 @@ enum EnterGsType : int {
   LOGIN_FIRST = 1,
   LOGIN_REPLACE = 2,
   LOGIN_RECONNECT = 3,
+  LOGIN_DISCONNECTED = 4,
   EnterGsType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   EnterGsType_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -82,11 +87,11 @@ extern const uint32_t EnterGsType_internal_data_[];
 inline constexpr EnterGsType EnterGsType_MIN =
     static_cast<EnterGsType>(0);
 inline constexpr EnterGsType EnterGsType_MAX =
-    static_cast<EnterGsType>(3);
+    static_cast<EnterGsType>(4);
 inline bool EnterGsType_IsValid(int value) {
-  return 0 <= value && value <= 3;
+  return 0 <= value && value <= 4;
 }
-inline constexpr int EnterGsType_ARRAYSIZE = 3 + 1;
+inline constexpr int EnterGsType_ARRAYSIZE = 4 + 1;
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL EnterGsType_descriptor();
 template <typename T>
 const ::std::string& EnterGsType_Name(T value) {
@@ -97,7 +102,7 @@ const ::std::string& EnterGsType_Name(T value) {
 }
 template <>
 inline const ::std::string& EnterGsType_Name(EnterGsType value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<EnterGsType_descriptor, 0, 3>(
+  return ::google::protobuf::internal::NameOfDenseEnum<EnterGsType_descriptor, 0, 4>(
       static_cast<int>(value));
 }
 inline bool EnterGsType_Parse(
@@ -300,6 +305,209 @@ class PlayerEnterGameStatePbComp final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull PlayerEnterGameStatePbComp_class_data_;
+// -------------------------------------------------------------------
+
+class PlayerDisconnectInfoComp final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:PlayerDisconnectInfoComp) */ {
+ public:
+  inline PlayerDisconnectInfoComp() : PlayerDisconnectInfoComp(nullptr) {}
+  ~PlayerDisconnectInfoComp() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(PlayerDisconnectInfoComp* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerDisconnectInfoComp));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR PlayerDisconnectInfoComp(::google::protobuf::internal::ConstantInitialized);
+
+  inline PlayerDisconnectInfoComp(const PlayerDisconnectInfoComp& from) : PlayerDisconnectInfoComp(nullptr, from) {}
+  inline PlayerDisconnectInfoComp(PlayerDisconnectInfoComp&& from) noexcept
+      : PlayerDisconnectInfoComp(nullptr, ::std::move(from)) {}
+  inline PlayerDisconnectInfoComp& operator=(const PlayerDisconnectInfoComp& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PlayerDisconnectInfoComp& operator=(PlayerDisconnectInfoComp&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const PlayerDisconnectInfoComp& default_instance() {
+    return *reinterpret_cast<const PlayerDisconnectInfoComp*>(
+        &_PlayerDisconnectInfoComp_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 1;
+  friend void swap(PlayerDisconnectInfoComp& a, PlayerDisconnectInfoComp& b) { a.Swap(&b); }
+  inline void Swap(PlayerDisconnectInfoComp* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(PlayerDisconnectInfoComp* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  PlayerDisconnectInfoComp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerDisconnectInfoComp>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const PlayerDisconnectInfoComp& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const PlayerDisconnectInfoComp& from) { PlayerDisconnectInfoComp::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(PlayerDisconnectInfoComp* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "PlayerDisconnectInfoComp"; }
+
+ protected:
+  explicit PlayerDisconnectInfoComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PlayerDisconnectInfoComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerDisconnectInfoComp& from);
+  PlayerDisconnectInfoComp(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerDisconnectInfoComp&& from) noexcept
+      : PlayerDisconnectInfoComp(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kDisconnectedAtFieldNumber = 1,
+    kSnapshotVersionFieldNumber = 2,
+  };
+  // uint64 disconnected_at = 1;
+  void clear_disconnected_at() ;
+  ::uint64_t disconnected_at() const;
+  void set_disconnected_at(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_disconnected_at() const;
+  void _internal_set_disconnected_at(::uint64_t value);
+
+  public:
+  // uint64 snapshot_version = 2;
+  void clear_snapshot_version() ;
+  ::uint64_t snapshot_version() const;
+  void set_snapshot_version(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_snapshot_version() const;
+  void _internal_set_snapshot_version(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:PlayerDisconnectInfoComp)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const PlayerDisconnectInfoComp& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint64_t disconnected_at_;
+    ::uint64_t snapshot_version_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull PlayerDisconnectInfoComp_class_data_;
 
 // ===================================================================
 
@@ -339,6 +547,58 @@ inline ::uint32_t PlayerEnterGameStatePbComp::_internal_enter_gs_type() const {
 inline void PlayerEnterGameStatePbComp::_internal_set_enter_gs_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enter_gs_type_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// PlayerDisconnectInfoComp
+
+// uint64 disconnected_at = 1;
+inline void PlayerDisconnectInfoComp::clear_disconnected_at() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.disconnected_at_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline ::uint64_t PlayerDisconnectInfoComp::disconnected_at() const {
+  // @@protoc_insertion_point(field_get:PlayerDisconnectInfoComp.disconnected_at)
+  return _internal_disconnected_at();
+}
+inline void PlayerDisconnectInfoComp::set_disconnected_at(::uint64_t value) {
+  _internal_set_disconnected_at(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:PlayerDisconnectInfoComp.disconnected_at)
+}
+inline ::uint64_t PlayerDisconnectInfoComp::_internal_disconnected_at() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.disconnected_at_;
+}
+inline void PlayerDisconnectInfoComp::_internal_set_disconnected_at(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.disconnected_at_ = value;
+}
+
+// uint64 snapshot_version = 2;
+inline void PlayerDisconnectInfoComp::clear_snapshot_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.snapshot_version_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint64_t PlayerDisconnectInfoComp::snapshot_version() const {
+  // @@protoc_insertion_point(field_get:PlayerDisconnectInfoComp.snapshot_version)
+  return _internal_snapshot_version();
+}
+inline void PlayerDisconnectInfoComp::set_snapshot_version(::uint64_t value) {
+  _internal_set_snapshot_version(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:PlayerDisconnectInfoComp.snapshot_version)
+}
+inline ::uint64_t PlayerDisconnectInfoComp::_internal_snapshot_version() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.snapshot_version_;
+}
+inline void PlayerDisconnectInfoComp::_internal_set_snapshot_version(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.snapshot_version_ = value;
 }
 
 #ifdef __GNUC__

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "session/comp/gate_session.h"
+#include "session/comp/session_info.h"
 #include "core/utils/hash/consistent_hash_node.h"
 #include "network/network_utils.h"
 
-using SessionList = std::unordered_map<Guid, Session>;
+using SessionList = std::unordered_map<Guid, SessionInfo>;
 
 class SessionManager
 {

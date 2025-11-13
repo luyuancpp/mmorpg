@@ -84,3 +84,4 @@ const ScenePlayerSyncSyncBaseAttributeMessageId = 80
 const PlayerLocatorSetLocationMessageId = 81
 const CentrePlayerServiceMessageId = 82
 const dbTestMessageId = 83
+const GateBindSessionToGateMessageId = 84

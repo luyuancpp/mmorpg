@@ -27,6 +27,7 @@ const (
 	Gate_RoutePlayerMessage_FullMethodName  = "/Gate/RoutePlayerMessage"
 	Gate_BroadcastToPlayers_FullMethodName  = "/Gate/BroadcastToPlayers"
 	Gate_NodeHandshake_FullMethodName       = "/Gate/NodeHandshake"
+	Gate_BindSessionToGate_FullMethodName   = "/Gate/BindSessionToGate"
 )
 
 // GateClient is the client API for Gate service.
@@ -40,6 +41,7 @@ type GateClient interface {
 	RoutePlayerMessage(ctx context.Context, in *common.RoutePlayerMessageRequest, opts ...grpc.CallOption) (*common.RoutePlayerMessageResponse, error)
 	BroadcastToPlayers(ctx context.Context, in *BroadcastToPlayersRequest, opts ...grpc.CallOption) (*common.Empty, error)
 	NodeHandshake(ctx context.Context, in *common.NodeHandshakeRequest, opts ...grpc.CallOption) (*common.NodeHandshakeResponse, error)
+	BindSessionToGate(ctx context.Context, in *BindSessionToGateRequest, opts ...grpc.CallOption) (*common.Empty, error)
 }
 
 type gateClient struct {
@@ -120,6 +122,16 @@ func (c *gateClient) NodeHandshake(ctx context.Context, in *common.NodeHandshake
 	return out, nil
 }
 
+func (c *gateClient) BindSessionToGate(ctx context.Context, in *BindSessionToGateRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(common.Empty)
+	err := c.cc.Invoke(ctx, Gate_BindSessionToGate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GateServer is the server API for Gate service.
 // All implementations must embed UnimplementedGateServer
 // for forward compatibility.
@@ -131,6 +143,7 @@ type GateServer interface {
 	RoutePlayerMessage(context.Context, *common.RoutePlayerMessageRequest) (*common.RoutePlayerMessageResponse, error)
 	BroadcastToPlayers(context.Context, *BroadcastToPlayersRequest) (*common.Empty, error)
 	NodeHandshake(context.Context, *common.NodeHandshakeRequest) (*common.NodeHandshakeResponse, error)
+	BindSessionToGate(context.Context, *BindSessionToGateRequest) (*common.Empty, error)
 	mustEmbedUnimplementedGateServer()
 }
 
@@ -161,6 +174,9 @@ func (UnimplementedGateServer) BroadcastToPlayers(context.Context, *BroadcastToP
 }
 func (UnimplementedGateServer) NodeHandshake(context.Context, *common.NodeHandshakeRequest) (*common.NodeHandshakeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NodeHandshake not implemented")
+}
+func (UnimplementedGateServer) BindSessionToGate(context.Context, *BindSessionToGateRequest) (*common.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BindSessionToGate not implemented")
 }
 func (UnimplementedGateServer) mustEmbedUnimplementedGateServer() {}
 func (UnimplementedGateServer) testEmbeddedByValue()              {}
@@ -309,6 +325,24 @@ func _Gate_NodeHandshake_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Gate_BindSessionToGate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BindSessionToGateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GateServer).BindSessionToGate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Gate_BindSessionToGate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GateServer).BindSessionToGate(ctx, req.(*BindSessionToGateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Gate_ServiceDesc is the grpc.ServiceDesc for Gate service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -343,6 +377,10 @@ var Gate_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NodeHandshake",
 			Handler:    _Gate_NodeHandshake_Handler,
+		},
+		{
+			MethodName: "BindSessionToGate",
+			Handler:    _Gate_BindSessionToGate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

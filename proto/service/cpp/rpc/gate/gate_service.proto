@@ -13,6 +13,12 @@ message KickSessionRequest {
   uint64 expected_session_version = 2; // Gate 只有在版本匹配时才断开
 }
 
+message BindSessionToGateRequest {
+  uint64 session_id = 1;
+  uint64 player_id = 2;
+  uint64 session_version = 3; 
+}
+
 message BroadcastToPlayersRequest
 {
   repeated uint64 session_list = 1;
@@ -27,4 +33,6 @@ service Gate {
   rpc RoutePlayerMessage (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse);
   rpc BroadcastToPlayers (BroadcastToPlayersRequest) returns (Empty);
   rpc NodeHandshake(NodeHandshakeRequest) returns (NodeHandshakeResponse);
+  rpc BindSessionToGate(BindSessionToGateRequest) returns (Empty);
+  
 }

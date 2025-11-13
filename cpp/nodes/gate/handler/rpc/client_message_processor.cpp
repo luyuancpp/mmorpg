@@ -46,7 +46,7 @@ static std::optional<entt::entity> PickRandomNode(uint32_t nodeType, uint32_t ta
 }
 
 static inline NodeId GetEffectiveNodeId(
-	const Session& session,
+	const SessionInfo& session,
 	uint32_t nodeType)
 {
 	if (IsZoneSingletonNodeType(nodeType)) {
@@ -180,7 +180,7 @@ bool RpcClientSessionHandler::CheckMessageSize(const RpcClientMessagePtr& reques
     return true;
 }
 
-bool RpcClientSessionHandler::CheckMessageLimit(Session& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
+bool RpcClientSessionHandler::CheckMessageLimit(SessionInfo& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
     if (const auto err = session.messageLimiter.CanSend(request->message_id()); kSuccess != err) {
         LOG_ERROR << "Failed to send message. Message ID: " << request->message_id() << ", Error: " << err;
         MessageContent errResponse;
@@ -249,7 +249,7 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 	// 用session id 防止改包把消息发给其他玩家
 
 	conn->setContext(sessionId);
-	Session session;
+	SessionInfo session;
 	session.conn = conn;
 	tlsSessionManager.sessions().emplace(sessionId, std::move(session));
 
@@ -257,7 +257,7 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 }
 
 // Handle messages related to the game node
-void HandleTcpNodeMessage(const Session& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
+void HandleTcpNodeMessage(const SessionInfo& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
 {
     auto& handlerMeta = gRpcServiceRegistry[request->message_id()];
 
@@ -298,7 +298,7 @@ void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, c
 		LOG_ERROR << "Session not found for session id: " << sessionId;
 		return ;
 	}
-    sessionDetails.set_player_id(sessionIt->second.playerGuild);
+    sessionDetails.set_player_id(sessionIt->second.playerId);
 
 	if (rpcHandlerMeta .messageSender){
 		auto node = ResolveSessionTargetNode(sessionId, rpcHandlerMeta .targetNodeType);
@@ -318,7 +318,7 @@ void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, c
 	}
 }
 
-bool RpcClientSessionHandler::ValidateClientMessage(Session& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
+bool RpcClientSessionHandler::ValidateClientMessage(SessionInfo& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
 	if (!CheckMessageSize(request, conn)) return false;
 	if (!CheckMessageLimit(session, request, conn)) return false;
 	return true;

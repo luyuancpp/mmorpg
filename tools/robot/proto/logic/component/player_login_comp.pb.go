@@ -24,10 +24,11 @@ const (
 type EnterGsType int32
 
 const (
-	EnterGsType_LOGIN_NONE      EnterGsType = 0 //正常进入，换场景进入
-	EnterGsType_LOGIN_FIRST     EnterGsType = 1 //第一次登录
-	EnterGsType_LOGIN_REPLACE   EnterGsType = 2 //顶号
-	EnterGsType_LOGIN_RECONNECT EnterGsType = 3 //断线重连
+	EnterGsType_LOGIN_NONE         EnterGsType = 0 //正常进入，换场景进入
+	EnterGsType_LOGIN_FIRST        EnterGsType = 1 //第一次登录
+	EnterGsType_LOGIN_REPLACE      EnterGsType = 2 //顶号
+	EnterGsType_LOGIN_RECONNECT    EnterGsType = 3 //断线重连
+	EnterGsType_LOGIN_DISCONNECTED EnterGsType = 4 // 标记离线并记录版本（便于延迟清理时再次校验
 )
 
 // Enum value maps for EnterGsType.
@@ -37,12 +38,14 @@ var (
 		1: "LOGIN_FIRST",
 		2: "LOGIN_REPLACE",
 		3: "LOGIN_RECONNECT",
+		4: "LOGIN_DISCONNECTED",
 	}
 	EnterGsType_value = map[string]int32{
-		"LOGIN_NONE":      0,
-		"LOGIN_FIRST":     1,
-		"LOGIN_REPLACE":   2,
-		"LOGIN_RECONNECT": 3,
+		"LOGIN_NONE":         0,
+		"LOGIN_FIRST":        1,
+		"LOGIN_REPLACE":      2,
+		"LOGIN_RECONNECT":    3,
+		"LOGIN_DISCONNECTED": 4,
 	}
 )
 
@@ -117,19 +120,75 @@ func (x *PlayerEnterGameStatePbComp) GetEnterGsType() uint32 {
 	return 0
 }
 
+type PlayerDisconnectInfoComp struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	DisconnectedAt  uint64                 `protobuf:"varint,1,opt,name=disconnected_at,json=disconnectedAt,proto3" json:"disconnected_at,omitempty"`
+	SnapshotVersion uint64                 `protobuf:"varint,2,opt,name=snapshot_version,json=snapshotVersion,proto3" json:"snapshot_version,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *PlayerDisconnectInfoComp) Reset() {
+	*x = PlayerDisconnectInfoComp{}
+	mi := &file_proto_logic_component_player_login_comp_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerDisconnectInfoComp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerDisconnectInfoComp) ProtoMessage() {}
+
+func (x *PlayerDisconnectInfoComp) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_logic_component_player_login_comp_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerDisconnectInfoComp.ProtoReflect.Descriptor instead.
+func (*PlayerDisconnectInfoComp) Descriptor() ([]byte, []int) {
+	return file_proto_logic_component_player_login_comp_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *PlayerDisconnectInfoComp) GetDisconnectedAt() uint64 {
+	if x != nil {
+		return x.DisconnectedAt
+	}
+	return 0
+}
+
+func (x *PlayerDisconnectInfoComp) GetSnapshotVersion() uint64 {
+	if x != nil {
+		return x.SnapshotVersion
+	}
+	return 0
+}
+
 var File_proto_logic_component_player_login_comp_proto protoreflect.FileDescriptor
 
 const file_proto_logic_component_player_login_comp_proto_rawDesc = "" +
 	"\n" +
 	"-proto/logic/component/player_login_comp.proto\"@\n" +
 	"\x1aPlayerEnterGameStatePbComp\x12\"\n" +
-	"\renter_gs_type\x18\x01 \x01(\rR\venterGsType*V\n" +
+	"\renter_gs_type\x18\x01 \x01(\rR\venterGsType\"n\n" +
+	"\x18PlayerDisconnectInfoComp\x12'\n" +
+	"\x0fdisconnected_at\x18\x01 \x01(\x04R\x0edisconnectedAt\x12)\n" +
+	"\x10snapshot_version\x18\x02 \x01(\x04R\x0fsnapshotVersion*n\n" +
 	"\vEnterGsType\x12\x0e\n" +
 	"\n" +
 	"LOGIN_NONE\x10\x00\x12\x0f\n" +
 	"\vLOGIN_FIRST\x10\x01\x12\x11\n" +
 	"\rLOGIN_REPLACE\x10\x02\x12\x13\n" +
-	"\x0fLOGIN_RECONNECT\x10\x03B'Z%robot/proto/logic/component;componentb\x06proto3"
+	"\x0fLOGIN_RECONNECT\x10\x03\x12\x16\n" +
+	"\x12LOGIN_DISCONNECTED\x10\x04B'Z%robot/proto/logic/component;componentb\x06proto3"
 
 var (
 	file_proto_logic_component_player_login_comp_proto_rawDescOnce sync.Once
@@ -144,10 +203,11 @@ func file_proto_logic_component_player_login_comp_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_logic_component_player_login_comp_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_logic_component_player_login_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_logic_component_player_login_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_logic_component_player_login_comp_proto_goTypes = []any{
 	(EnterGsType)(0),                   // 0: EnterGsType
 	(*PlayerEnterGameStatePbComp)(nil), // 1: PlayerEnterGameStatePbComp
+	(*PlayerDisconnectInfoComp)(nil),   // 2: PlayerDisconnectInfoComp
 }
 var file_proto_logic_component_player_login_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -168,7 +228,7 @@ func file_proto_logic_component_player_login_comp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_logic_component_player_login_comp_proto_rawDesc), len(file_proto_logic_component_player_login_comp_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

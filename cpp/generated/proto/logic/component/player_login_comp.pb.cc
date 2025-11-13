@@ -49,6 +49,32 @@ struct PlayerEnterGameStatePbCompDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerEnterGameStatePbCompDefaultTypeInternal _PlayerEnterGameStatePbComp_default_instance_;
+
+inline constexpr PlayerDisconnectInfoComp::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        disconnected_at_{::uint64_t{0u}},
+        snapshot_version_{::uint64_t{0u}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PlayerDisconnectInfoComp::PlayerDisconnectInfoComp(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(PlayerDisconnectInfoComp_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PlayerDisconnectInfoCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerDisconnectInfoCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerDisconnectInfoCompDefaultTypeInternal() {}
+  union {
+    PlayerDisconnectInfoComp _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerDisconnectInfoCompDefaultTypeInternal _PlayerDisconnectInfoComp_default_instance_;
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
     file_level_enum_descriptors_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto[1];
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -61,34 +87,46 @@ const ::uint32_t
         4, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameStatePbComp, _impl_.enter_gs_type_),
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::PlayerDisconnectInfoComp, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::PlayerDisconnectInfoComp, _impl_.disconnected_at_),
+        PROTOBUF_FIELD_OFFSET(::PlayerDisconnectInfoComp, _impl_.snapshot_version_),
+        0,
+        1,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::PlayerEnterGameStatePbComp)},
+        {5, sizeof(::PlayerDisconnectInfoComp)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_PlayerEnterGameStatePbComp_default_instance_._instance,
+    &::_PlayerDisconnectInfoComp_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n-proto/logic/component/player_login_com"
     "p.proto\"3\n\032PlayerEnterGameStatePbComp\022\025\n"
-    "\renter_gs_type\030\001 \001(\r*V\n\013EnterGsType\022\016\n\nL"
-    "OGIN_NONE\020\000\022\017\n\013LOGIN_FIRST\020\001\022\021\n\rLOGIN_RE"
-    "PLACE\020\002\022\023\n\017LOGIN_RECONNECT\020\003b\006proto3"
+    "\renter_gs_type\030\001 \001(\r\"M\n\030PlayerDisconnect"
+    "InfoComp\022\027\n\017disconnected_at\030\001 \001(\004\022\030\n\020sna"
+    "pshot_version\030\002 \001(\004*n\n\013EnterGsType\022\016\n\nLO"
+    "GIN_NONE\020\000\022\017\n\013LOGIN_FIRST\020\001\022\021\n\rLOGIN_REP"
+    "LACE\020\002\022\023\n\017LOGIN_RECONNECT\020\003\022\026\n\022LOGIN_DIS"
+    "CONNECTED\020\004b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto = {
     false,
     false,
-    196,
+    299,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto,
     "proto/logic/component/player_login_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto_once,
     nullptr,
     0,
-    1,
+    2,
     schemas,
     file_default_instances,
     TableStruct_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto::offsets,
@@ -100,7 +138,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL EnterGsType_descripto
   return file_level_enum_descriptors_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t EnterGsType_internal_data_[] = {
-    262144u, 0u, };
+    327680u, 0u, };
 // ===================================================================
 
 class PlayerEnterGameStatePbComp::_Internal {
@@ -334,6 +372,286 @@ void PlayerEnterGameStatePbComp::InternalSwap(PlayerEnterGameStatePbComp* PROTOB
 }
 
 ::google::protobuf::Metadata PlayerEnterGameStatePbComp::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class PlayerDisconnectInfoComp::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<PlayerDisconnectInfoComp>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(PlayerDisconnectInfoComp, _impl_._has_bits_);
+};
+
+PlayerDisconnectInfoComp::PlayerDisconnectInfoComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerDisconnectInfoComp_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:PlayerDisconnectInfoComp)
+}
+PlayerDisconnectInfoComp::PlayerDisconnectInfoComp(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerDisconnectInfoComp& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerDisconnectInfoComp_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE PlayerDisconnectInfoComp::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void PlayerDisconnectInfoComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, disconnected_at_),
+           0,
+           offsetof(Impl_, snapshot_version_) -
+               offsetof(Impl_, disconnected_at_) +
+               sizeof(Impl_::snapshot_version_));
+}
+PlayerDisconnectInfoComp::~PlayerDisconnectInfoComp() {
+  // @@protoc_insertion_point(destructor:PlayerDisconnectInfoComp)
+  SharedDtor(*this);
+}
+inline void PlayerDisconnectInfoComp::SharedDtor(MessageLite& self) {
+  PlayerDisconnectInfoComp& this_ = static_cast<PlayerDisconnectInfoComp&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL PlayerDisconnectInfoComp::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) PlayerDisconnectInfoComp(arena);
+}
+constexpr auto PlayerDisconnectInfoComp::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(PlayerDisconnectInfoComp),
+                                            alignof(PlayerDisconnectInfoComp));
+}
+constexpr auto PlayerDisconnectInfoComp::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_PlayerDisconnectInfoComp_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &PlayerDisconnectInfoComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<PlayerDisconnectInfoComp>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &PlayerDisconnectInfoComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<PlayerDisconnectInfoComp>(), &PlayerDisconnectInfoComp::ByteSizeLong,
+              &PlayerDisconnectInfoComp::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(PlayerDisconnectInfoComp, _impl_._cached_size_),
+          false,
+      },
+      &PlayerDisconnectInfoComp::kDescriptorMethods,
+      &descriptor_table_proto_2flogic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull PlayerDisconnectInfoComp_class_data_ =
+        PlayerDisconnectInfoComp::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PlayerDisconnectInfoComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PlayerDisconnectInfoComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(PlayerDisconnectInfoComp_class_data_.tc_table);
+  return PlayerDisconnectInfoComp_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
+PlayerDisconnectInfoComp::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(PlayerDisconnectInfoComp, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    PlayerDisconnectInfoComp_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::PlayerDisconnectInfoComp>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint64 snapshot_version = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerDisconnectInfoComp, _impl_.snapshot_version_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(PlayerDisconnectInfoComp, _impl_.snapshot_version_)}},
+    // uint64 disconnected_at = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerDisconnectInfoComp, _impl_.disconnected_at_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerDisconnectInfoComp, _impl_.disconnected_at_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 disconnected_at = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerDisconnectInfoComp, _impl_.disconnected_at_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint64 snapshot_version = 2;
+    {PROTOBUF_FIELD_OFFSET(PlayerDisconnectInfoComp, _impl_.snapshot_version_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void PlayerDisconnectInfoComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:PlayerDisconnectInfoComp)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    ::memset(&_impl_.disconnected_at_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.snapshot_version_) -
+        reinterpret_cast<char*>(&_impl_.disconnected_at_)) + sizeof(_impl_.snapshot_version_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL PlayerDisconnectInfoComp::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const PlayerDisconnectInfoComp& this_ = static_cast<const PlayerDisconnectInfoComp&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL PlayerDisconnectInfoComp::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const PlayerDisconnectInfoComp& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:PlayerDisconnectInfoComp)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 disconnected_at = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_disconnected_at() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_disconnected_at(), target);
+    }
+  }
+
+  // uint64 snapshot_version = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_snapshot_version() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_snapshot_version(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:PlayerDisconnectInfoComp)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t PlayerDisconnectInfoComp::ByteSizeLong(const MessageLite& base) {
+  const PlayerDisconnectInfoComp& this_ = static_cast<const PlayerDisconnectInfoComp&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t PlayerDisconnectInfoComp::ByteSizeLong() const {
+  const PlayerDisconnectInfoComp& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:PlayerDisconnectInfoComp)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    // uint64 disconnected_at = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_disconnected_at() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_disconnected_at());
+      }
+    }
+    // uint64 snapshot_version = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_snapshot_version() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_snapshot_version());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void PlayerDisconnectInfoComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerDisconnectInfoComp*>(&to_msg);
+  auto& from = static_cast<const PlayerDisconnectInfoComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerDisconnectInfoComp)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_disconnected_at() != 0) {
+        _this->_impl_.disconnected_at_ = from._impl_.disconnected_at_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_snapshot_version() != 0) {
+        _this->_impl_.snapshot_version_ = from._impl_.snapshot_version_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void PlayerDisconnectInfoComp::CopyFrom(const PlayerDisconnectInfoComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:PlayerDisconnectInfoComp)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void PlayerDisconnectInfoComp::InternalSwap(PlayerDisconnectInfoComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(PlayerDisconnectInfoComp, _impl_.snapshot_version_)
+      + sizeof(PlayerDisconnectInfoComp::_impl_.snapshot_version_)
+      - PROTOBUF_FIELD_OFFSET(PlayerDisconnectInfoComp, _impl_.disconnected_at_)>(
+          reinterpret_cast<char*>(&_impl_.disconnected_at_),
+          reinterpret_cast<char*>(&other->_impl_.disconnected_at_));
+}
+
+::google::protobuf::Metadata PlayerDisconnectInfoComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)
