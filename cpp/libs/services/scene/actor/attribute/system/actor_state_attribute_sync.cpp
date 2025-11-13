@@ -171,82 +171,55 @@ void ActorStateAttributeSyncSystem::SyncBasicAttributes(entt::entity entity) {
 
 // 同步属性，根据频率决定同步内容
 void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const EntityVector& nearbyEntities, uint32_t syncFrequency) {
-	switch (syncFrequency) {
-	case eAttributeSyncFrequency::kSyncEvery2Frames:
-	{
-		auto& syncMessage = tlsRegistryManager.actorRegistry.get<AttributeDelta2FramesS2C>(entity);
-		if (syncMessage.ByteSizeLong() <= 0)
-		{
-			return;
-		}
+    if (nearbyEntities.empty()) return;
 
-		BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute2FramesMessageId, syncMessage, nearbyEntities);
-		syncMessage.Clear();
-	}
-	break;
-
-	case eAttributeSyncFrequency::kSyncEvery5Frames:
-	{
-		auto& syncMessage = tlsRegistryManager.actorRegistry.get<AttributeDelta5FramesS2C>(entity);
-
-		if (syncMessage.ByteSizeLong() <= 0)
-		{
-			return;
-		}
-
-		BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute5FramesMessageId, syncMessage, nearbyEntities);
-
-		syncMessage.Clear();
-	}
-	break;
-
-	case eAttributeSyncFrequency::kSyncEvery10Frames:
-	{
-		auto& syncMessage = tlsRegistryManager.actorRegistry.get<AttributeDelta10FramesS2C>(entity);
-
-		if (syncMessage.ByteSizeLong() <= 0)
-		{
-			return;
-		}
-
-		BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute10FramesMessageId, syncMessage, nearbyEntities);
-
-		syncMessage.Clear();
-	}
-	break;
-
-	case eAttributeSyncFrequency::kSyncEvery30Frames:
-	{
-		auto& syncMessage = tlsRegistryManager.actorRegistry.get<AttributeDelta30FramesS2C>(entity);
-
-		if (syncMessage.ByteSizeLong() <= 0)
-		{
-			return;
-		}
-
-		BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute30FramesMessageId, syncMessage, nearbyEntities);
-
-		syncMessage.Clear();
-	}
-	break;
-
-	case eAttributeSyncFrequency::kSyncEvery60Frames:
-	{
-		auto& syncMessage = tlsRegistryManager.actorRegistry.get<AttributeDelta60FramesS2C>(entity);
-
-		if (syncMessage.ByteSizeLong() <= 0)
-		{
-			return;
-		}
-
-		BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute60FramesMessageId, syncMessage, nearbyEntities);
-
-		syncMessage.Clear();
-	}
-	break;
-
-	default:
-		// 其他情况处理
-		break;
-	}
+    switch (syncFrequency) {
+    case eAttributeSyncFrequency::kSyncEvery2Frames: {
+        auto* comp = tlsRegistryManager.actorRegistry.try_get<AttributeDelta2FramesS2C>(entity);
+        if (!comp) return;
+        if (comp->ByteSizeLong() > 0) {
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute2FramesMessageId, *comp, nearbyEntities);
+            comp->Clear();
+        }
+        break;
+    }
+    case eAttributeSyncFrequency::kSyncEvery5Frames: {
+        auto* comp = tlsRegistryManager.actorRegistry.try_get<AttributeDelta5FramesS2C>(entity);
+        if (!comp) return;
+        if (comp->ByteSizeLong() > 0) {
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute5FramesMessageId, *comp, nearbyEntities);
+            comp->Clear();
+        }
+        break;
+    }
+    case eAttributeSyncFrequency::kSyncEvery10Frames: {
+        auto* comp = tlsRegistryManager.actorRegistry.try_get<AttributeDelta10FramesS2C>(entity);
+        if (!comp) return;
+        if (comp->ByteSizeLong() > 0) {
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute10FramesMessageId, *comp, nearbyEntities);
+            comp->Clear();
+        }
+        break;
+    }
+    case eAttributeSyncFrequency::kSyncEvery30Frames: {
+        auto* comp = tlsRegistryManager.actorRegistry.try_get<AttributeDelta30FramesS2C>(entity);
+        if (!comp) return;
+        if (comp->ByteSizeLong() > 0) {
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute30FramesMessageId, *comp, nearbyEntities);
+            comp->Clear();
+        }
+        break;
+    }
+    case eAttributeSyncFrequency::kSyncEvery60Frames: {
+        auto* comp = tlsRegistryManager.actorRegistry.try_get<AttributeDelta60FramesS2C>(entity);
+        if (!comp) return;
+        if (comp->ByteSizeLong() > 0) {
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute60FramesMessageId, *comp, nearbyEntities);
+            comp->Clear();
+        }
+        break;
+    }
+    default:
+        break;
+    }
 }
