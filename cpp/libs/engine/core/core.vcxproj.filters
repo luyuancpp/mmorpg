@@ -100,6 +100,7 @@
     <ClInclude Include="utils\registry\game_registry.h" />
     <ClInclude Include="utils\snow_flake\snow_flake.h" />
     <ClInclude Include="utils\stat\stat.h" />
+    <ClInclude Include="utils\hash\sha.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="network\autogen.bat" />

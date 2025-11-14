@@ -36,6 +36,7 @@ message CentrePlayerGameNodeEntryRequest
 {
   CentreEnterGameRequest client_msg_body = 1;
   SessionDetails session_info = 2;
+  uint64 token_expiry_ms = 3;
 }
 
 

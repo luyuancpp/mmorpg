@@ -37,6 +37,7 @@
 #include <modules/scene/comp/room_node_comp.h>
 #include <scene/system/room.h>
 #include <time/system/time.h>
+#include <utils/hash/sha.h>
 
 using namespace muduo;
 using namespace muduo::net;
@@ -164,12 +165,14 @@ namespace {
 		return { oldSessionId, oldToken, oldVersion };
 	}
 
-	// 首次登录处理（异步加载/创建玩家数据）
-	void HandleFirstLogin(Guid playerGuid, uint64_t sessionId, const std::string& loginToken)
+	// 修改：HandleFirstLogin 改为存 token_id 与 expiry（expiry 可为 0）
+	void HandleFirstLogin(Guid playerGuid, uint64_t sessionId, const std::string& loginToken, uint64_t tokenExpiryMs = 0)
 	{
 		PlayerSessionSnapshotPBComp sessionPB;
 		sessionPB.set_gate_session_id(sessionId);
-		sessionPB.set_login_token(loginToken);
+		// 不保存明文 token，保存 token_id（hash）
+		sessionPB.set_token_id(Sha256Hex(loginToken));
+		sessionPB.set_token_expiry_ms(tokenExpiryMs);
 		GetPlayerCentreDataRedis()->AsyncLoad(playerGuid, sessionPB);
 		GetPlayerCentreDataRedis()->UpdateExtraData(playerGuid, sessionPB);
 		LOG_INFO << "HandleFirstLogin for player " << playerGuid;
@@ -278,7 +281,7 @@ void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* con
 		return;
 	}
 	//排队
-	//todo 排队队列里面有同一个人的兩個鏈接
+	//todo 排队队列里面有同一個人的兩個鏈接
 	//如果不是同一個登錄服務器,踢掉已經登錄的賬號
 	//告訴客戶端登錄中
 ///<<< END WRITING YOUR CODE
@@ -320,14 +323,25 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 
 	entt::entity playerEntity = it->second;
 
+	// 修改 LoginNodeEnterGame 中的 token 判定：使用 token_id + expiry
+	// （替换原有读取/比较 token 的片段）
+	const auto& clientMsgBody = request->client_msg_body();
+	const auto& sessionInfoInner = request->session_info();
+	Guid playerGuidInner = clientMsgBody.player_id();
+	uint64_t sessionIdInner = sessionInfoInner.session_id();
+	const std::string loginTokenInner = clientMsgBody.login_token();
+
+	// 若客户端/登陆服务同时提供 token_expiry_ms 在 clientMsg，请读取；否则传 0（表示未知/不过期）
+	uint64_t incomingTokenExpiryMs = request->token_expiry_ms();
+
 	// 读取旧 snapshot（只读，决策基于旧数据）
 	auto* oldSessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	const bool hasOldSession = (oldSessionPB != nullptr);
 	uint64_t oldSessionId = hasOldSession ? oldSessionPB->gate_session_id() : kInvalidSessionId;
-	std::string oldToken = hasOldSession ? oldSessionPB->login_token() : std::string{};
+	std::string oldTokenId = hasOldSession ? oldSessionPB->token_id() : std::string{};
 	uint64_t oldVersion = hasOldSession ? oldSessionPB->session_version() : 0;
 
-	// 计算 oldTokenValid：如果 proto 中 token_expiry_ms == 0 表示不过期
+	// 计算 oldTokenValid：如果 proto 中 token_expiry_ms == 0 表示不过期/未知
 	uint64_t now_ms = TimeSystem::NowMilliseconds();
 	bool oldTokenValid = false;
 	if (oldSessionPB) {
@@ -335,21 +349,23 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	    oldTokenValid = (expiry == 0 || expiry > now_ms);
 	}
 
-	// 决策：只有旧 token 未过期且 token 字面相等才判为重连
-	EnterGameDecision decision = DecideEnterGame(hasOldSession, oldSessionId, oldToken, sessionId, loginToken, oldTokenValid);
+	// 计算 incoming token id
+	std::string incomingTokenId = Sha256Hex(loginToken);
 
+	// 决策：只有旧 token 未过期且 token_id 相等才判为重连
+	EnterGameDecision decision = DecideEnterGame(hasOldSession, oldSessionId, oldTokenId, sessionId, incomingTokenId, oldTokenValid);
+
+	// 根据决策决定是否更新 snapshot 并是否踢人
 	if (decision == EnterGameDecision::ReplaceLogin) {
-		// 替换登录：更新 snapshot（递增 version）并发送 kick（使用 oldVersion 做幂等）
-		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken);
+		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs);
 		if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
 			SendKickForOldSession(oldSessionId, oldVersion);
 			GlobalSessionList().erase(oldSessionId);
 		}
 	}
 	else if (decision == EnterGameDecision::Reconnect) {
-		// 重连但 sessionId 不同（短断重连场景）：把 snapshot 绑定到新 session（不 necessarily 踢旧）
 		if (oldSessionId != sessionId) {
-			UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken);
+			UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs);
 			GlobalSessionList().erase(oldSessionId);
 		}
 		// oldSessionId == sessionId 情形视为幂等，什么都不做

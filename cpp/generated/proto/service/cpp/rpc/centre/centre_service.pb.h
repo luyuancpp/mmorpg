@@ -1465,6 +1465,7 @@ class CentrePlayerGameNodeEntryRequest final : public ::google::protobuf::Messag
   enum : int {
     kClientMsgBodyFieldNumber = 1,
     kSessionInfoFieldNumber = 2,
+    kTokenExpiryMsFieldNumber = 3,
   };
   // .CentreEnterGameRequest client_msg_body = 1;
   bool has_client_msg_body() const;
@@ -1496,11 +1497,21 @@ class CentrePlayerGameNodeEntryRequest final : public ::google::protobuf::Messag
   ::SessionDetails* PROTOBUF_NONNULL _internal_mutable_session_info();
 
   public:
+  // uint64 token_expiry_ms = 3;
+  void clear_token_expiry_ms() ;
+  ::uint64_t token_expiry_ms() const;
+  void set_token_expiry_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_token_expiry_ms() const;
+  void _internal_set_token_expiry_ms(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:CentrePlayerGameNodeEntryRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
                                    2, 0,
                                    2>
       _table_;
@@ -1524,6 +1535,7 @@ class CentrePlayerGameNodeEntryRequest final : public ::google::protobuf::Messag
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::CentreEnterGameRequest* PROTOBUF_NULLABLE client_msg_body_;
     ::SessionDetails* PROTOBUF_NULLABLE session_info_;
+    ::uint64_t token_expiry_ms_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2423,6 +2435,30 @@ inline void CentrePlayerGameNodeEntryRequest::set_allocated_session_info(::Sessi
 
   _impl_.session_info_ = reinterpret_cast<::SessionDetails*>(value);
   // @@protoc_insertion_point(field_set_allocated:CentrePlayerGameNodeEntryRequest.session_info)
+}
+
+// uint64 token_expiry_ms = 3;
+inline void CentrePlayerGameNodeEntryRequest::clear_token_expiry_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_expiry_ms_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::uint64_t CentrePlayerGameNodeEntryRequest::token_expiry_ms() const {
+  // @@protoc_insertion_point(field_get:CentrePlayerGameNodeEntryRequest.token_expiry_ms)
+  return _internal_token_expiry_ms();
+}
+inline void CentrePlayerGameNodeEntryRequest::set_token_expiry_ms(::uint64_t value) {
+  _internal_set_token_expiry_ms(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:CentrePlayerGameNodeEntryRequest.token_expiry_ms)
+}
+inline ::uint64_t CentrePlayerGameNodeEntryRequest::_internal_token_expiry_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.token_expiry_ms_;
+}
+inline void CentrePlayerGameNodeEntryRequest::_internal_set_token_expiry_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_expiry_ms_ = value;
 }
 
 // -------------------------------------------------------------------
