@@ -259,9 +259,11 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
   enum : int {
     kNodeIdFieldNumber = 3,
     kLoginTokenFieldNumber = 4,
+    kTokenIdFieldNumber = 7,
     kPlayerIdFieldNumber = 1,
     kGateSessionIdFieldNumber = 2,
     kSessionVersionFieldNumber = 5,
+    kTokenExpiryMsFieldNumber = 6,
   };
   // map<uint32, uint32> node_id = 3;
   int node_id_size() const;
@@ -291,6 +293,21 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
   const ::std::string& _internal_login_token() const;
   PROTOBUF_ALWAYS_INLINE void _internal_set_login_token(const ::std::string& value);
   ::std::string* PROTOBUF_NONNULL _internal_mutable_login_token();
+
+  public:
+  // string token_id = 7;
+  void clear_token_id() ;
+  const ::std::string& token_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_token_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_token_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_token_id();
+  void set_allocated_token_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_token_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_token_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_token_id();
 
   public:
   // uint64 player_id = 1;
@@ -323,12 +340,22 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
   void _internal_set_session_version(::uint64_t value);
 
   public:
+  // uint64 token_expiry_ms = 6;
+  void clear_token_expiry_ms() ;
+  ::uint64_t token_expiry_ms() const;
+  void set_token_expiry_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_token_expiry_ms() const;
+  void _internal_set_token_expiry_ms(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:PlayerSessionSnapshotPBComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 5,
-                                   1, 47,
+  static const ::google::protobuf::internal::TcParseTable<3, 7,
+                                   1, 55,
                                    2>
       _table_;
 
@@ -354,9 +381,11 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>
         node_id_;
     ::google::protobuf::internal::ArenaStringPtr login_token_;
+    ::google::protobuf::internal::ArenaStringPtr token_id_;
     ::uint64_t player_id_;
     ::uint64_t gate_session_id_;
     ::uint64_t session_version_;
+    ::uint64_t token_expiry_ms_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -387,7 +416,7 @@ extern const ::google::protobuf::internal::ClassDataFull PlayerSessionSnapshotPB
 inline void PlayerSessionSnapshotPBComp::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
 inline ::uint64_t PlayerSessionSnapshotPBComp::player_id() const {
   // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.player_id)
@@ -395,7 +424,7 @@ inline ::uint64_t PlayerSessionSnapshotPBComp::player_id() const {
 }
 inline void PlayerSessionSnapshotPBComp::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.player_id)
 }
 inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_player_id() const {
@@ -411,7 +440,7 @@ inline void PlayerSessionSnapshotPBComp::_internal_set_player_id(::uint64_t valu
 inline void PlayerSessionSnapshotPBComp::clear_gate_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.gate_session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
 inline ::uint64_t PlayerSessionSnapshotPBComp::gate_session_id() const {
   // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.gate_session_id)
@@ -419,7 +448,7 @@ inline ::uint64_t PlayerSessionSnapshotPBComp::gate_session_id() const {
 }
 inline void PlayerSessionSnapshotPBComp::set_gate_session_id(::uint64_t value) {
   _internal_set_gate_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.gate_session_id)
 }
 inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_gate_session_id() const {
@@ -529,7 +558,7 @@ inline void PlayerSessionSnapshotPBComp::set_allocated_login_token(::std::string
 inline void PlayerSessionSnapshotPBComp::clear_session_version() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_version_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000008u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
 }
 inline ::uint64_t PlayerSessionSnapshotPBComp::session_version() const {
   // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.session_version)
@@ -537,7 +566,7 @@ inline ::uint64_t PlayerSessionSnapshotPBComp::session_version() const {
 }
 inline void PlayerSessionSnapshotPBComp::set_session_version(::uint64_t value) {
   _internal_set_session_version(value);
-  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_._has_bits_[0] |= 0x00000010u;
   // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.session_version)
 }
 inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_session_version() const {
@@ -547,6 +576,95 @@ inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_session_version() const
 inline void PlayerSessionSnapshotPBComp::_internal_set_session_version(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_version_ = value;
+}
+
+// uint64 token_expiry_ms = 6;
+inline void PlayerSessionSnapshotPBComp::clear_token_expiry_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_expiry_ms_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000020u;
+}
+inline ::uint64_t PlayerSessionSnapshotPBComp::token_expiry_ms() const {
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.token_expiry_ms)
+  return _internal_token_expiry_ms();
+}
+inline void PlayerSessionSnapshotPBComp::set_token_expiry_ms(::uint64_t value) {
+  _internal_set_token_expiry_ms(value);
+  _impl_._has_bits_[0] |= 0x00000020u;
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.token_expiry_ms)
+}
+inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_token_expiry_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.token_expiry_ms_;
+}
+inline void PlayerSessionSnapshotPBComp::_internal_set_token_expiry_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_expiry_ms_ = value;
+}
+
+// string token_id = 7;
+inline void PlayerSessionSnapshotPBComp::clear_token_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_id_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline const ::std::string& PlayerSessionSnapshotPBComp::token_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.token_id)
+  return _internal_token_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PlayerSessionSnapshotPBComp::set_token_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.token_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.token_id)
+}
+inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotPBComp::mutable_token_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_token_id();
+  // @@protoc_insertion_point(field_mutable:PlayerSessionSnapshotPBComp.token_id)
+  return _s;
+}
+inline const ::std::string& PlayerSessionSnapshotPBComp::_internal_token_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.token_id_.Get();
+}
+inline void PlayerSessionSnapshotPBComp::_internal_set_token_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.token_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotPBComp::_internal_mutable_token_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  return _impl_.token_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PlayerSessionSnapshotPBComp::release_token_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:PlayerSessionSnapshotPBComp.token_id)
+  if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  auto* released = _impl_.token_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.token_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PlayerSessionSnapshotPBComp::set_allocated_token_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  _impl_.token_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.token_id_.IsDefault()) {
+    _impl_.token_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:PlayerSessionSnapshotPBComp.token_id)
 }
 
 #ifdef __GNUC__
