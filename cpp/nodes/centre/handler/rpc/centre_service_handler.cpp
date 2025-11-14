@@ -1,3 +1,4 @@
+
 #include "centre_service_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -295,6 +296,9 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 // 2. 根据决策有选择地更新 snapshot（递增 version）并在必要时发送 kick
 // 3. 执行进入场景副作用
 	//•	当网络 / 消息乱序时（Gate 先发 Disconnect，再 Login 的 EnterGame 到达 Centre），会产生竞态：Centre 可能错误删除映射或 Login 再插入时覆盖不一致 snapshot，导致误判、重复清理或无法正确重连；
+	/*•	Centre 不必保存 refresh token；access token 在 Login 服务签发并短期有效，Centre 只用于判断重连合法性。
+•	为安全起见，记录 token id 或 token 哈希到日志/持久化而不是原文 token。
+•	当 token 有 expiry，DecideEnterGame 里使用 oldTokenValid 防止用已过期 token 判定为 Reconnec*/
 	const auto& clientMsg = request->client_msg_body();
 	const auto& sessionInfo = request->session_info();
 	Guid playerGuid = clientMsg.player_id();
@@ -323,18 +327,15 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	std::string oldToken = hasOldSession ? oldSessionPB->login_token() : std::string{};
 	uint64_t oldVersion = hasOldSession ? oldSessionPB->session_version() : 0;
 
+	// 计算 oldTokenValid：如果 proto 中 token_expiry_ms == 0 表示不过期
 	uint64_t now_ms = TimeSystem::NowMilliseconds();
 	bool oldTokenValid = false;
-	uint64_t oldTokenExpiry = 0;
 	if (oldSessionPB) {
-	    if (oldSessionPB->token_expiry_ms()) {
-	        oldTokenExpiry = oldSessionPB->token_expiry_ms();
-	        oldTokenValid = (oldTokenExpiry == 0 || oldTokenExpiry > now_ms);
-	    } else {
-	        // 若 proto 未扩展 expiry 字段，默认认为有效（兼容旧数据）
-	        oldTokenValid = true;
-	    }
+	    uint64_t expiry = oldSessionPB->token_expiry_ms();
+	    oldTokenValid = (expiry == 0 || expiry > now_ms);
 	}
+
+	// 决策：只有旧 token 未过期且 token 字面相等才判为重连
 	EnterGameDecision decision = DecideEnterGame(hasOldSession, oldSessionId, oldToken, sessionId, loginToken, oldTokenValid);
 
 	if (decision == EnterGameDecision::ReplaceLogin) {
