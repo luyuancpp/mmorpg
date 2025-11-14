@@ -299,7 +299,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	const auto& sessionInfo = request->session_info();
 	Guid playerGuid = clientMsg.player_id();
 	uint64_t sessionId = sessionInfo.session_id();
-	const std::string loginToken = clientMsg.player_id();
+	const std::string loginToken = clientMsg.login_token();
 
 	LOG_INFO << "LoginNodeEnterGame request: player=" << playerGuid << " session=" << sessionId;
 
