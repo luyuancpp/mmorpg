@@ -317,34 +317,26 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	/*•	Centre 不必保存 refresh token；access token 在 Login 服务签发并短期有效，Centre 只用于判断重连合法性。
 •	为安全起见，记录 token id 或 token 哈希到日志/持久化而不是原文 token。
 •	当 token 有 expiry，DecideEnterGame 里使用 oldTokenValid 防止用已过期 token 判定为 Reconnec*/
-	const auto& clientMsg = request->client_msg_body();
+	const auto& clientInfo = request->client_info();
 	const auto& sessionInfo = request->session_info();
-	Guid playerGuid = clientMsg.player_id();
+	Guid playerId = clientInfo.player_id();
 	uint64_t sessionId = sessionInfo.session_id();
 	auto& loginToken = request->login_token();
 
-	LOG_INFO << "LoginNodeEnterGame request: player=" << playerGuid << " session=" << sessionId;
+	LOG_INFO << "LoginNodeEnterGame request: player=" << playerId << " session=" << sessionId;
 
 	// 快速路由表更新（单线程模型下直接写）
-	GlobalSessionList()[sessionId] = playerGuid;
+	GlobalSessionList()[sessionId] = playerId;
 
 	// 是否在内存中已有 player 对象
-	auto it = tlsPlayerList.find(playerGuid);
+	auto it = tlsPlayerList.find(playerId);
 	if (it == tlsPlayerList.end()) {
 		// 首次登录：异步加载/创建玩家数据
-		HandleFirstLogin(playerGuid, sessionId, loginToken);
+		HandleFirstLogin(playerId, sessionId, loginToken);
 		return;
 	}
 
 	entt::entity playerEntity = it->second;
-
-	// 修改 LoginNodeEnterGame 中的 token 判定：使用 token_id + expiry
-	// （替换原有读取/比较 token 的片段）
-	const auto& clientMsgBody = request->client_msg_body();
-	const auto& sessionInfoInner = request->session_info();
-	Guid playerGuidInner = clientMsgBody.player_id();
-	uint64_t sessionIdInner = sessionInfoInner.session_id();
-	const std::string loginTokenInner = clientMsgBody.login_token();
 
 	// 若客户端/登陆服务同时提供 token_expiry_ms 在 clientMsg，请读取；否则传 0（表示未知/不过期）
 	uint64_t incomingTokenExpiryMs = request->token_expiry_ms();

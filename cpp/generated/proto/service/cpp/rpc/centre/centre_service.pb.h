@@ -1447,7 +1447,7 @@ class CentrePlayerGameNodeEntryRequest final : public ::google::protobuf::Messag
   // accessors -------------------------------------------------------
   enum : int {
     kLoginTokenFieldNumber = 3,
-    kClientMsgBodyFieldNumber = 1,
+    kClientInfoFieldNumber = 1,
     kSessionInfoFieldNumber = 2,
     kTokenExpiryMsFieldNumber = 4,
   };
@@ -1466,19 +1466,19 @@ class CentrePlayerGameNodeEntryRequest final : public ::google::protobuf::Messag
   ::std::string* PROTOBUF_NONNULL _internal_mutable_login_token();
 
   public:
-  // .CentreEnterGameRequest client_msg_body = 1;
-  bool has_client_msg_body() const;
-  void clear_client_msg_body() ;
-  const ::CentreEnterGameRequest& client_msg_body() const;
-  [[nodiscard]] ::CentreEnterGameRequest* PROTOBUF_NULLABLE release_client_msg_body();
-  ::CentreEnterGameRequest* PROTOBUF_NONNULL mutable_client_msg_body();
-  void set_allocated_client_msg_body(::CentreEnterGameRequest* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_client_msg_body(::CentreEnterGameRequest* PROTOBUF_NULLABLE value);
-  ::CentreEnterGameRequest* PROTOBUF_NULLABLE unsafe_arena_release_client_msg_body();
+  // .CentreEnterGameRequest client_info = 1;
+  bool has_client_info() const;
+  void clear_client_info() ;
+  const ::CentreEnterGameRequest& client_info() const;
+  [[nodiscard]] ::CentreEnterGameRequest* PROTOBUF_NULLABLE release_client_info();
+  ::CentreEnterGameRequest* PROTOBUF_NONNULL mutable_client_info();
+  void set_allocated_client_info(::CentreEnterGameRequest* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_client_info(::CentreEnterGameRequest* PROTOBUF_NULLABLE value);
+  ::CentreEnterGameRequest* PROTOBUF_NULLABLE unsafe_arena_release_client_info();
 
   private:
-  const ::CentreEnterGameRequest& _internal_client_msg_body() const;
-  ::CentreEnterGameRequest* PROTOBUF_NONNULL _internal_mutable_client_msg_body();
+  const ::CentreEnterGameRequest& _internal_client_info() const;
+  ::CentreEnterGameRequest* PROTOBUF_NONNULL _internal_mutable_client_info();
 
   public:
   // .SessionDetails session_info = 2;
@@ -1533,7 +1533,7 @@ class CentrePlayerGameNodeEntryRequest final : public ::google::protobuf::Messag
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr login_token_;
-    ::CentreEnterGameRequest* PROTOBUF_NULLABLE client_msg_body_;
+    ::CentreEnterGameRequest* PROTOBUF_NULLABLE client_info_;
     ::SessionDetails* PROTOBUF_NULLABLE session_info_;
     ::uint64_t token_expiry_ms_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -2181,46 +2181,46 @@ inline void CentreEnterGameRequest::_internal_set_player_id(::uint64_t value) {
 
 // CentrePlayerGameNodeEntryRequest
 
-// .CentreEnterGameRequest client_msg_body = 1;
-inline bool CentrePlayerGameNodeEntryRequest::has_client_msg_body() const {
+// .CentreEnterGameRequest client_info = 1;
+inline bool CentrePlayerGameNodeEntryRequest::has_client_info() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.client_msg_body_ != nullptr);
+  PROTOBUF_ASSUME(!value || _impl_.client_info_ != nullptr);
   return value;
 }
-inline void CentrePlayerGameNodeEntryRequest::clear_client_msg_body() {
+inline void CentrePlayerGameNodeEntryRequest::clear_client_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.client_msg_body_ != nullptr) _impl_.client_msg_body_->Clear();
+  if (_impl_.client_info_ != nullptr) _impl_.client_info_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline const ::CentreEnterGameRequest& CentrePlayerGameNodeEntryRequest::_internal_client_msg_body() const {
+inline const ::CentreEnterGameRequest& CentrePlayerGameNodeEntryRequest::_internal_client_info() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::CentreEnterGameRequest* p = _impl_.client_msg_body_;
+  const ::CentreEnterGameRequest* p = _impl_.client_info_;
   return p != nullptr ? *p : reinterpret_cast<const ::CentreEnterGameRequest&>(::_CentreEnterGameRequest_default_instance_);
 }
-inline const ::CentreEnterGameRequest& CentrePlayerGameNodeEntryRequest::client_msg_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:CentrePlayerGameNodeEntryRequest.client_msg_body)
-  return _internal_client_msg_body();
+inline const ::CentreEnterGameRequest& CentrePlayerGameNodeEntryRequest::client_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:CentrePlayerGameNodeEntryRequest.client_info)
+  return _internal_client_info();
 }
-inline void CentrePlayerGameNodeEntryRequest::unsafe_arena_set_allocated_client_msg_body(
+inline void CentrePlayerGameNodeEntryRequest::unsafe_arena_set_allocated_client_info(
     ::CentreEnterGameRequest* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.client_msg_body_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.client_info_);
   }
-  _impl_.client_msg_body_ = reinterpret_cast<::CentreEnterGameRequest*>(value);
+  _impl_.client_info_ = reinterpret_cast<::CentreEnterGameRequest*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:CentrePlayerGameNodeEntryRequest.client_msg_body)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:CentrePlayerGameNodeEntryRequest.client_info)
 }
-inline ::CentreEnterGameRequest* PROTOBUF_NULLABLE CentrePlayerGameNodeEntryRequest::release_client_msg_body() {
+inline ::CentreEnterGameRequest* PROTOBUF_NULLABLE CentrePlayerGameNodeEntryRequest::release_client_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::CentreEnterGameRequest* released = _impl_.client_msg_body_;
-  _impl_.client_msg_body_ = nullptr;
+  ::CentreEnterGameRequest* released = _impl_.client_info_;
+  _impl_.client_info_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
     released = ::google::protobuf::internal::DuplicateIfNonNull(released);
@@ -2234,35 +2234,35 @@ inline ::CentreEnterGameRequest* PROTOBUF_NULLABLE CentrePlayerGameNodeEntryRequ
   }
   return released;
 }
-inline ::CentreEnterGameRequest* PROTOBUF_NULLABLE CentrePlayerGameNodeEntryRequest::unsafe_arena_release_client_msg_body() {
+inline ::CentreEnterGameRequest* PROTOBUF_NULLABLE CentrePlayerGameNodeEntryRequest::unsafe_arena_release_client_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:CentrePlayerGameNodeEntryRequest.client_msg_body)
+  // @@protoc_insertion_point(field_release:CentrePlayerGameNodeEntryRequest.client_info)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::CentreEnterGameRequest* temp = _impl_.client_msg_body_;
-  _impl_.client_msg_body_ = nullptr;
+  ::CentreEnterGameRequest* temp = _impl_.client_info_;
+  _impl_.client_info_ = nullptr;
   return temp;
 }
-inline ::CentreEnterGameRequest* PROTOBUF_NONNULL CentrePlayerGameNodeEntryRequest::_internal_mutable_client_msg_body() {
+inline ::CentreEnterGameRequest* PROTOBUF_NONNULL CentrePlayerGameNodeEntryRequest::_internal_mutable_client_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.client_msg_body_ == nullptr) {
+  if (_impl_.client_info_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::CentreEnterGameRequest>(GetArena());
-    _impl_.client_msg_body_ = reinterpret_cast<::CentreEnterGameRequest*>(p);
+    _impl_.client_info_ = reinterpret_cast<::CentreEnterGameRequest*>(p);
   }
-  return _impl_.client_msg_body_;
+  return _impl_.client_info_;
 }
-inline ::CentreEnterGameRequest* PROTOBUF_NONNULL CentrePlayerGameNodeEntryRequest::mutable_client_msg_body()
+inline ::CentreEnterGameRequest* PROTOBUF_NONNULL CentrePlayerGameNodeEntryRequest::mutable_client_info()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
-  ::CentreEnterGameRequest* _msg = _internal_mutable_client_msg_body();
-  // @@protoc_insertion_point(field_mutable:CentrePlayerGameNodeEntryRequest.client_msg_body)
+  ::CentreEnterGameRequest* _msg = _internal_mutable_client_info();
+  // @@protoc_insertion_point(field_mutable:CentrePlayerGameNodeEntryRequest.client_info)
   return _msg;
 }
-inline void CentrePlayerGameNodeEntryRequest::set_allocated_client_msg_body(::CentreEnterGameRequest* PROTOBUF_NULLABLE value) {
+inline void CentrePlayerGameNodeEntryRequest::set_allocated_client_info(::CentreEnterGameRequest* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.client_msg_body_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.client_info_);
   }
 
   if (value != nullptr) {
@@ -2275,8 +2275,8 @@ inline void CentrePlayerGameNodeEntryRequest::set_allocated_client_msg_body(::Ce
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
 
-  _impl_.client_msg_body_ = reinterpret_cast<::CentreEnterGameRequest*>(value);
-  // @@protoc_insertion_point(field_set_allocated:CentrePlayerGameNodeEntryRequest.client_msg_body)
+  _impl_.client_info_ = reinterpret_cast<::CentreEnterGameRequest*>(value);
+  // @@protoc_insertion_point(field_set_allocated:CentrePlayerGameNodeEntryRequest.client_info)
 }
 
 // .SessionDetails session_info = 2;
