@@ -165,7 +165,6 @@ func (x *EnterGameNodeSuccessRequest) GetSceneNodeId() uint32 {
 type CentreEnterGameRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	LoginToken    string                 `protobuf:"bytes,2,opt,name=login_token,json=loginToken,proto3" json:"login_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -207,18 +206,12 @@ func (x *CentreEnterGameRequest) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *CentreEnterGameRequest) GetLoginToken() string {
-	if x != nil {
-		return x.LoginToken
-	}
-	return ""
-}
-
 type CentrePlayerGameNodeEntryRequest struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	ClientMsgBody *CentreEnterGameRequest `protobuf:"bytes,1,opt,name=client_msg_body,json=clientMsgBody,proto3" json:"client_msg_body,omitempty"`
 	SessionInfo   *common.SessionDetails  `protobuf:"bytes,2,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`
-	TokenExpiryMs uint64                  `protobuf:"varint,3,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
+	LoginToken    string                  `protobuf:"bytes,3,opt,name=login_token,json=loginToken,proto3" json:"login_token,omitempty"`
+	TokenExpiryMs uint64                  `protobuf:"varint,4,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -265,6 +258,13 @@ func (x *CentrePlayerGameNodeEntryRequest) GetSessionInfo() *common.SessionDetai
 		return x.SessionInfo
 	}
 	return nil
+}
+
+func (x *CentrePlayerGameNodeEntryRequest) GetLoginToken() string {
+	if x != nil {
+		return x.LoginToken
+	}
+	return ""
 }
 
 func (x *CentrePlayerGameNodeEntryRequest) GetTokenExpiryMs() uint64 {
@@ -435,15 +435,15 @@ const file_proto_service_cpp_rpc_centre_centre_service_proto_rawDesc = "" +
 	"\fsession_info\x18\x01 \x01(\v2\x0f.SessionDetailsR\vsessionInfo\"^\n" +
 	"\x1bEnterGameNodeSuccessRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\"\n" +
-	"\rscene_node_id\x18\x02 \x01(\rR\vsceneNodeId\"V\n" +
+	"\rscene_node_id\x18\x02 \x01(\rR\vsceneNodeId\"5\n" +
 	"\x16CentreEnterGameRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1f\n" +
-	"\vlogin_token\x18\x02 \x01(\tR\n" +
-	"loginToken\"\xbf\x01\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"\xe0\x01\n" +
 	" CentrePlayerGameNodeEntryRequest\x12?\n" +
 	"\x0fclient_msg_body\x18\x01 \x01(\v2\x17.CentreEnterGameRequestR\rclientMsgBody\x122\n" +
-	"\fsession_info\x18\x02 \x01(\v2\x0f.SessionDetailsR\vsessionInfo\x12&\n" +
-	"\x0ftoken_expiry_ms\x18\x03 \x01(\x04R\rtokenExpiryMs\"W\n" +
+	"\fsession_info\x18\x02 \x01(\v2\x0f.SessionDetailsR\vsessionInfo\x12\x1f\n" +
+	"\vlogin_token\x18\x03 \x01(\tR\n" +
+	"loginToken\x12&\n" +
+	"\x0ftoken_expiry_ms\x18\x04 \x01(\x04R\rtokenExpiryMs\"W\n" +
 	"\x14InitSceneNodeRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\rR\x06nodeId\x12&\n" +
 	"\x0fscene_node_type\x18\x02 \x01(\rR\rsceneNodeType\"J\n" +

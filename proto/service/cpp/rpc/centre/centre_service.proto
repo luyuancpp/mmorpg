@@ -29,14 +29,14 @@ message EnterGameNodeSuccessRequest
 message CentreEnterGameRequest
 {
 	uint64 player_id  = 1;
-    string login_token = 2;
 }
 
 message CentrePlayerGameNodeEntryRequest
 {
   CentreEnterGameRequest client_msg_body = 1;
   SessionDetails session_info = 2;
-  uint64 token_expiry_ms = 3;
+  string login_token = 3;
+  uint64 token_expiry_ms = 4;
 }
 
 
