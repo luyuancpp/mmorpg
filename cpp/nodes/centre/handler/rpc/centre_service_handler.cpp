@@ -136,33 +136,48 @@ namespace {
 	// 返回旧的 sessionId 与旧 token（用于判定与后续清理）
 // 更新 snapshot，递增 version 并通知 Gate 存储元信息
 	std::tuple<uint64_t, std::string, uint64_t> UpdatePlayerSessionSnapshot(entt::entity playerEntity,
-		uint64_t newSessionId,
-		const std::string& newLoginToken)
+    uint64_t newSessionId,
+    const std::string& newLoginToken,
+    uint64_t tokenExpiryMs /* = 0 */)
 	{
 		auto& registry = tlsRegistryManager.actorRegistry;
 		auto& sessionPB = registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity);
 
 		uint64_t oldSessionId = sessionPB.gate_session_id();
-		std::string oldToken = sessionPB.login_token();
+		// 旧的 token_id（如果之前存的是 login_token，会返回空串或旧字段）
+		std::string oldTokenId;
+		if (sessionPB.token_id().size() > 0) {
+			oldTokenId = sessionPB.token_id();
+		} else {
+			// 兼容旧字段：如果历史上只存了 login_token，hash 一下作为旧 id（可选）
+			if (sessionPB.login_token().size() > 0) {
+				oldTokenId = Sha256Hex(sessionPB.login_token());
+			}
+		}
 		uint64_t oldVersion = sessionPB.session_version();
 
 		// 递增版本（第一次为 1）
 		uint64_t newVersion = oldVersion + 1;
 		sessionPB.set_gate_session_id(newSessionId);
-		sessionPB.set_login_token(newLoginToken);
+
+		// 不再保存明文 token；保存 token_id（hash）与 expiry（0 表示未知/不过期）
+		const std::string newTokenId = Sha256Hex(newLoginToken);
+		sessionPB.set_token_id(newTokenId);
+		sessionPB.set_token_expiry_ms(tokenExpiryMs);
+
 		sessionPB.set_session_version(newVersion);
 
 		// 持久化 snapshot（异步）
 		GetPlayerCentreDataRedis()->UpdateExtraData(tlsRegistryManager.actorRegistry.get<Guid>(playerEntity), sessionPB);
 
-		// 通知 Gate：绑定 session（需实现 Centre->Gate 的 BindSession RPC）
+		// 通知 Gate：绑定 session（Centre->Gate 的 BindSession RPC）
 		BindSessionToGateRequest bindReq;
 		bindReq.set_session_id(newSessionId);
 		bindReq.set_player_id(tlsRegistryManager.actorRegistry.get<Guid>(playerEntity));
 		bindReq.set_session_version(newVersion);
 		SendMessageToGateById(GateBindSessionToGateMessageId, bindReq, GetGateNodeId(newSessionId));
 
-		return { oldSessionId, oldToken, oldVersion };
+		return { oldSessionId, oldTokenId, oldVersion };
 	}
 
 	// 修改：HandleFirstLogin 改为存 token_id 与 expiry（expiry 可为 0）
@@ -306,7 +321,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	const auto& sessionInfo = request->session_info();
 	Guid playerGuid = clientMsg.player_id();
 	uint64_t sessionId = sessionInfo.session_id();
-	const std::string loginToken = clientMsg.login_token();
+	auto& loginToken = request->login_token();
 
 	LOG_INFO << "LoginNodeEnterGame request: player=" << playerGuid << " session=" << sessionId;
 
