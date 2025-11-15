@@ -208,7 +208,7 @@ func (x *CentreEnterGameRequest) GetPlayerId() uint64 {
 
 type CentrePlayerGameNodeEntryRequest struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
-	ClientMsgBody *CentreEnterGameRequest `protobuf:"bytes,1,opt,name=client_msg_body,json=clientMsgBody,proto3" json:"client_msg_body,omitempty"`
+	ClientInfo    *CentreEnterGameRequest `protobuf:"bytes,1,opt,name=client_info,json=clientInfo,proto3" json:"client_info,omitempty"`
 	SessionInfo   *common.SessionDetails  `protobuf:"bytes,2,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`
 	LoginToken    string                  `protobuf:"bytes,3,opt,name=login_token,json=loginToken,proto3" json:"login_token,omitempty"`
 	TokenExpiryMs uint64                  `protobuf:"varint,4,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
@@ -246,9 +246,9 @@ func (*CentrePlayerGameNodeEntryRequest) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_centre_centre_service_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *CentrePlayerGameNodeEntryRequest) GetClientMsgBody() *CentreEnterGameRequest {
+func (x *CentrePlayerGameNodeEntryRequest) GetClientInfo() *CentreEnterGameRequest {
 	if x != nil {
-		return x.ClientMsgBody
+		return x.ClientInfo
 	}
 	return nil
 }
@@ -437,9 +437,10 @@ const file_proto_service_cpp_rpc_centre_centre_service_proto_rawDesc = "" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\"\n" +
 	"\rscene_node_id\x18\x02 \x01(\rR\vsceneNodeId\"5\n" +
 	"\x16CentreEnterGameRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"\xe0\x01\n" +
-	" CentrePlayerGameNodeEntryRequest\x12?\n" +
-	"\x0fclient_msg_body\x18\x01 \x01(\v2\x17.CentreEnterGameRequestR\rclientMsgBody\x122\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"\xd9\x01\n" +
+	" CentrePlayerGameNodeEntryRequest\x128\n" +
+	"\vclient_info\x18\x01 \x01(\v2\x17.CentreEnterGameRequestR\n" +
+	"clientInfo\x122\n" +
 	"\fsession_info\x18\x02 \x01(\v2\x0f.SessionDetailsR\vsessionInfo\x12\x1f\n" +
 	"\vlogin_token\x18\x03 \x01(\tR\n" +
 	"loginToken\x12&\n" +
@@ -505,7 +506,7 @@ var file_proto_service_cpp_rpc_centre_centre_service_proto_goTypes = []any{
 var file_proto_service_cpp_rpc_centre_centre_service_proto_depIdxs = []int32{
 	8,  // 0: GateClientMessageRequest.rpc_client:type_name -> NetworkAddress
 	9,  // 1: LoginNodeLeaveGameRequest.session_info:type_name -> SessionDetails
-	3,  // 2: CentrePlayerGameNodeEntryRequest.client_msg_body:type_name -> CentreEnterGameRequest
+	3,  // 2: CentrePlayerGameNodeEntryRequest.client_info:type_name -> CentreEnterGameRequest
 	9,  // 3: CentrePlayerGameNodeEntryRequest.session_info:type_name -> SessionDetails
 	10, // 4: CentreLoginResponse.error_message:type_name -> TipInfoMessage
 	0,  // 5: Centre.GatePlayerService:input_type -> GateClientMessageRequest
