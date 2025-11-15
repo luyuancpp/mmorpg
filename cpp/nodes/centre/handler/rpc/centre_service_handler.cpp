@@ -1,4 +1,3 @@
-
 #include "centre_service_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -52,18 +51,38 @@ extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Servi
 
 void StartDelayedCleanupTimer(entt::entity playerEntity, uint32_t timeoutMs) {
 	tlsRegistryManager.actorRegistry.get_or_emplace<DelayedCleanupTimer>(playerEntity).timer.RunAfter(static_cast<double>(timeoutMs) / 1000.0,
-	[playerEntity]() {
-		auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
-		auto* disconnectInfo = tlsRegistryManager.actorRegistry.try_get<PlayerDisconnectInfoComp>(playerEntity);
-		if (!sessionPB || !disconnectInfo) return;
-		if (sessionPB->session_version() != disconnectInfo->snapshot_version()) {
-			// 已经重连/被替换，取消清理
-			return;
-		}
-		// 仍为断线状态：执行保存并真正下线
-		Guid playerGuid = tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
-		PlayerLifecycleSystem::HandleNormalExit(playerGuid);
+		[playerEntity]() {
+			auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+			auto* disconnectInfo = tlsRegistryManager.actorRegistry.try_get<PlayerDisconnectInfoComp>(playerEntity);
+			if (!sessionPB || !disconnectInfo) return;
+			if (sessionPB->session_version() != disconnectInfo->snapshot_version()) {
+				// 已经重连/被替换，取消清理
+				return;
+			}
+			// 仍为断线状态：先移除全局 session 映射，再真正下线
+			const uint64_t gateSessionId = sessionPB->gate_session_id();
+			if (gateSessionId != kInvalidSessionId) {
+				GlobalSessionList().erase(gateSessionId);
+				LOG_INFO << "Delayed cleanup: removed GlobalSessionList entry for session " << gateSessionId;
+			}
+			Guid playerGuid = tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
+			PlayerLifecycleSystem::HandleNormalExit(playerGuid);
 		});
+}
+
+// 新增：取消延迟清理计时器的辅助函数（匿名 namespace 内）
+static void CancelDelayedCleanupTimer(entt::entity playerEntity) {
+	auto& registry = tlsRegistryManager.actorRegistry;
+	if (!registry.valid(playerEntity)) return;
+	if (registry.try_get<DelayedCleanupTimer>(playerEntity)) {
+		registry.remove<DelayedCleanupTimer>(playerEntity);
+		// 记录日志：使用 player GUID 更易读
+		if (registry.try_get<Guid>(playerEntity)) {
+			LOG_INFO << "Cancelled delayed cleanup timer for player " << registry.get<Guid>(playerEntity);
+		} else {
+			LOG_INFO << "Cancelled delayed cleanup timer for entity " << static_cast<uint32_t>(playerEntity);
+		}
+	}
 }
 
 Guid GetPlayerIDBySessionId(const uint64_t session_id)
@@ -141,6 +160,11 @@ namespace {
     uint64_t tokenExpiryMs /* = 0 */)
 	{
 		auto& registry = tlsRegistryManager.actorRegistry;
+
+		// 如果存在延迟清理计时器，说明之前断线并计划清理，
+		// 在我们要更新 snapshot（即认为玩家已成功上线）时应取消该计时器。
+		CancelDelayedCleanupTimer(playerEntity);
+
 		auto& sessionPB = registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity);
 
 		uint64_t oldSessionId = sessionPB.gate_session_id();
@@ -245,11 +269,10 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	//•	当网络/消息乱序时（Gate 先发 Disconnect，再 Login 的 EnterGame 到达 Centre），会产生竞态：Centre 可能错误删除映射或 Login 再插入时覆盖不一致 snapshot，导致误判、重复清理或无法正确重连；
 	/*•	不要在收到 GateSessionDisconnect 时立即从 GlobalSessionList 删除映射；改为：
 •	在 GateSessionDisconnect 标记断线（记录 disconnectInfo + snapshot_version）并启动延迟清理；
-•	只在延迟清理确定“超时且未重连”时再删除 GlobalSessionList 映射并执行 PlayerLifecycleSystem::HandleNormalExit（已实现的延时回调应负责）。
+•	只在延迟清理确定“超时且未重连”时再删除 GlobalSessionList 显射并执行 PlayerLifecycleSystem::HandleNormalExit（已实现的延时回调应负责）。
 •	保持 GlobalSessionList 的插入（LoginNodeEnterGame）仍可立即写，用于路由；删除统一由延时清理负责，避免 race。*/
 
 	const uint64_t session_id = request->session_info().session_id();
-	defer(GlobalSessionList().erase(session_id));
 
 	const auto player_id = GetPlayerIDBySessionId(session_id);
 	if (player_id == kInvalidGuid) return;
@@ -371,11 +394,18 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		}
 	}
 	else if (decision == EnterGameDecision::Reconnect) {
-		if (oldSessionId != sessionId) {
-			UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs);
+		// 重连（不再依赖 session_id 相等判幂等）
+		// 1) 取消可能存在的延迟清理定时器（短重连取消清理）
+		CancelDelayedCleanupTimer(playerEntity);
+
+		// 2) 始终将 snapshot 绑定到当前 session（递增版本）
+		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs);
+
+		// 3) 如果存在不同的旧 session id，清理全局映射并请求 Gate 断开旧会话
+		if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
 			GlobalSessionList().erase(oldSessionId);
+			SendKickForOldSession(oldSessionId, oldVersion);
 		}
-		// oldSessionId == sessionId 情形视为幂等，什么都不做
 	}
 	else {
 		// FirstLogin 已在上层处理
