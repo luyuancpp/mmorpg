@@ -50,7 +50,7 @@ void AoiSystem::UpdateGridState(const entt::entity entity, SceneGridListComp& gr
         GridSystem::GetCurrentAndNeighborGridIds(currentHex, gridsToEnter);
     } else {
         // 更新位置
-        const auto previousHex = tlsRegistryManager.actorRegistry.get_or_emplace<Hex>(entity);
+        const auto previousHex = tlsRegistryManager.actorRegistry.get<Hex>(entity);
         if (hex_distance(previousHex, currentHex) == 0) {
             return;
         }

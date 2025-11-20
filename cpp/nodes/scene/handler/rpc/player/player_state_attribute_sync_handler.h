@@ -13,7 +13,7 @@ public:
 
 
     static void SyncBaseAttribute(entt::entity player,
-        const ::BaseAttributeSyncDataS2C* request,
+        const ::ActorBaseAttributesS2C* request,
         ::Empty* response);
     static void SyncAttribute2Frames(entt::entity player,
         const ::AttributeDelta2FramesS2C* request,
@@ -40,7 +40,7 @@ public:
         {
         case 0:
             SyncBaseAttribute(player,
-                static_cast<const ::BaseAttributeSyncDataS2C*>(request),
+                static_cast<const ::ActorBaseAttributesS2C*>(request),
                 static_cast<::Empty*>(response));
             break;
         case 1:

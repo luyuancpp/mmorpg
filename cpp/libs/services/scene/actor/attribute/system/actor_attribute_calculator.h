@@ -12,13 +12,12 @@ struct AttributeCalculatorConfig {
 class ActorAttributeCalculatorSystem {
 public:
     static void Initialize();
-
+    static void InitializeActorComponents(entt::entity entity);
+    static void MarkAttributeForUpdate(entt::entity actorEntity, uint32_t attributeBit);
+    static void ImmediateCalculateAttributes(entt::entity actorEntity, uint32_t attributeBit);
     static void Update(double delta);
 
-    static void InitializeActorComponents(entt::entity entity);
-
-    static void MarkAttributeForUpdate(entt::entity actorEntity, uint32_t attributeBit);
-
-    static void ImmediateCalculateAttributes(entt::entity entity, uint32_t attributeBit);
+    // 新增：设置 BaseAttribute 脏位（运行时脏位，非持久化）
+    static void SetBaseAttributeDirty(entt::entity entity, std::size_t bit);
 };
 

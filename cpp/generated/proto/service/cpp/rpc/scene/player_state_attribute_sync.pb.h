@@ -76,7 +76,7 @@ class AttributeDelta60FramesS2C;
 struct AttributeDelta60FramesS2CDefaultTypeInternal;
 extern AttributeDelta60FramesS2CDefaultTypeInternal _AttributeDelta60FramesS2C_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull AttributeDelta60FramesS2C_class_data_;
-class BaseAttributeSyncDataS2C;
+class ActorBaseAttributesS2C;
 struct BaseAttributeSyncDataS2CDefaultTypeInternal;
 extern BaseAttributeSyncDataS2CDefaultTypeInternal _BaseAttributeSyncDataS2C_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull BaseAttributeSyncDataS2C_class_data_;
@@ -1046,30 +1046,30 @@ class AttributeDelta10FramesS2C final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull AttributeDelta10FramesS2C_class_data_;
 // -------------------------------------------------------------------
 
-class BaseAttributeSyncDataS2C final : public ::google::protobuf::Message
+class ActorBaseAttributesS2C final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:BaseAttributeSyncDataS2C) */ {
  public:
-  inline BaseAttributeSyncDataS2C() : BaseAttributeSyncDataS2C(nullptr) {}
-  ~BaseAttributeSyncDataS2C() PROTOBUF_FINAL;
+  inline ActorBaseAttributesS2C() : ActorBaseAttributesS2C(nullptr) {}
+  ~ActorBaseAttributesS2C() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(BaseAttributeSyncDataS2C* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(ActorBaseAttributesS2C* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(BaseAttributeSyncDataS2C));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ActorBaseAttributesS2C));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR BaseAttributeSyncDataS2C(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR ActorBaseAttributesS2C(::google::protobuf::internal::ConstantInitialized);
 
-  inline BaseAttributeSyncDataS2C(const BaseAttributeSyncDataS2C& from) : BaseAttributeSyncDataS2C(nullptr, from) {}
-  inline BaseAttributeSyncDataS2C(BaseAttributeSyncDataS2C&& from) noexcept
-      : BaseAttributeSyncDataS2C(nullptr, ::std::move(from)) {}
-  inline BaseAttributeSyncDataS2C& operator=(const BaseAttributeSyncDataS2C& from) {
+  inline ActorBaseAttributesS2C(const ActorBaseAttributesS2C& from) : ActorBaseAttributesS2C(nullptr, from) {}
+  inline ActorBaseAttributesS2C(ActorBaseAttributesS2C&& from) noexcept
+      : ActorBaseAttributesS2C(nullptr, ::std::move(from)) {}
+  inline ActorBaseAttributesS2C& operator=(const ActorBaseAttributesS2C& from) {
     CopyFrom(from);
     return *this;
   }
-  inline BaseAttributeSyncDataS2C& operator=(BaseAttributeSyncDataS2C&& from) noexcept {
+  inline ActorBaseAttributesS2C& operator=(ActorBaseAttributesS2C&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -1097,13 +1097,13 @@ class BaseAttributeSyncDataS2C final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const BaseAttributeSyncDataS2C& default_instance() {
-    return *reinterpret_cast<const BaseAttributeSyncDataS2C*>(
+  static const ActorBaseAttributesS2C& default_instance() {
+    return *reinterpret_cast<const ActorBaseAttributesS2C*>(
         &_BaseAttributeSyncDataS2C_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(BaseAttributeSyncDataS2C& a, BaseAttributeSyncDataS2C& b) { a.Swap(&b); }
-  inline void Swap(BaseAttributeSyncDataS2C* PROTOBUF_NONNULL other) {
+  friend void swap(ActorBaseAttributesS2C& a, ActorBaseAttributesS2C& b) { a.Swap(&b); }
+  inline void Swap(ActorBaseAttributesS2C* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -1111,7 +1111,7 @@ class BaseAttributeSyncDataS2C final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(BaseAttributeSyncDataS2C* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(ActorBaseAttributesS2C* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -1119,13 +1119,13 @@ class BaseAttributeSyncDataS2C final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  BaseAttributeSyncDataS2C* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<BaseAttributeSyncDataS2C>(arena);
+  ActorBaseAttributesS2C* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<ActorBaseAttributesS2C>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const BaseAttributeSyncDataS2C& from);
+  void CopyFrom(const ActorBaseAttributesS2C& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const BaseAttributeSyncDataS2C& from) { BaseAttributeSyncDataS2C::MergeImpl(*this, from); }
+  void MergeFrom(const ActorBaseAttributesS2C& from) { ActorBaseAttributesS2C::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -1161,18 +1161,18 @@ class BaseAttributeSyncDataS2C final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(BaseAttributeSyncDataS2C* PROTOBUF_NONNULL other);
+  void InternalSwap(ActorBaseAttributesS2C* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
   static ::absl::string_view FullMessageName() { return "BaseAttributeSyncDataS2C"; }
 
  protected:
-  explicit BaseAttributeSyncDataS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  BaseAttributeSyncDataS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BaseAttributeSyncDataS2C& from);
-  BaseAttributeSyncDataS2C(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BaseAttributeSyncDataS2C&& from) noexcept
-      : BaseAttributeSyncDataS2C(arena) {
+  explicit ActorBaseAttributesS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ActorBaseAttributesS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ActorBaseAttributesS2C& from);
+  ActorBaseAttributesS2C(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ActorBaseAttributesS2C&& from) noexcept
+      : ActorBaseAttributesS2C(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -1272,7 +1272,7 @@ class BaseAttributeSyncDataS2C final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const BaseAttributeSyncDataS2C& from_msg);
+        const ActorBaseAttributesS2C& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::Transform* PROTOBUF_NULLABLE transform_;
@@ -1307,7 +1307,7 @@ class ScenePlayerSync : public ::google::protobuf::Service {
   static const ::google::protobuf::ServiceDescriptor* PROTOBUF_NONNULL descriptor();
 
   virtual void SyncBaseAttribute(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::BaseAttributeSyncDataS2C* PROTOBUF_NONNULL request,
+                        const ::ActorBaseAttributesS2C* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void SyncAttribute2Frames(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
@@ -1363,7 +1363,7 @@ class ScenePlayerSync_Stub final : public ScenePlayerSync {
 
   // implements ScenePlayerSync ------------------------------------------
   void SyncBaseAttribute(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::BaseAttributeSyncDataS2C* PROTOBUF_NONNULL request,
+                        const ::ActorBaseAttributesS2C* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void SyncAttribute2Frames(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
@@ -1407,45 +1407,45 @@ class ScenePlayerSync_Stub final : public ScenePlayerSync {
 // BaseAttributeSyncDataS2C
 
 // uint64 entity_id = 1;
-inline void BaseAttributeSyncDataS2C::clear_entity_id() {
+inline void ActorBaseAttributesS2C::clear_entity_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.entity_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000008u;
 }
-inline ::uint64_t BaseAttributeSyncDataS2C::entity_id() const {
+inline ::uint64_t ActorBaseAttributesS2C::entity_id() const {
   // @@protoc_insertion_point(field_get:BaseAttributeSyncDataS2C.entity_id)
   return _internal_entity_id();
 }
-inline void BaseAttributeSyncDataS2C::set_entity_id(::uint64_t value) {
+inline void ActorBaseAttributesS2C::set_entity_id(::uint64_t value) {
   _internal_set_entity_id(value);
   _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:BaseAttributeSyncDataS2C.entity_id)
 }
-inline ::uint64_t BaseAttributeSyncDataS2C::_internal_entity_id() const {
+inline ::uint64_t ActorBaseAttributesS2C::_internal_entity_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.entity_id_;
 }
-inline void BaseAttributeSyncDataS2C::_internal_set_entity_id(::uint64_t value) {
+inline void ActorBaseAttributesS2C::_internal_set_entity_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.entity_id_ = value;
 }
 
 // .Transform transform = 2;
-inline bool BaseAttributeSyncDataS2C::has_transform() const {
+inline bool ActorBaseAttributesS2C::has_transform() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.transform_ != nullptr);
   return value;
 }
-inline const ::Transform& BaseAttributeSyncDataS2C::_internal_transform() const {
+inline const ::Transform& ActorBaseAttributesS2C::_internal_transform() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   const ::Transform* p = _impl_.transform_;
   return p != nullptr ? *p : reinterpret_cast<const ::Transform&>(::_Transform_default_instance_);
 }
-inline const ::Transform& BaseAttributeSyncDataS2C::transform() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::Transform& ActorBaseAttributesS2C::transform() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:BaseAttributeSyncDataS2C.transform)
   return _internal_transform();
 }
-inline void BaseAttributeSyncDataS2C::unsafe_arena_set_allocated_transform(
+inline void ActorBaseAttributesS2C::unsafe_arena_set_allocated_transform(
     ::Transform* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
@@ -1459,7 +1459,7 @@ inline void BaseAttributeSyncDataS2C::unsafe_arena_set_allocated_transform(
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeSyncDataS2C.transform)
 }
-inline ::Transform* PROTOBUF_NULLABLE BaseAttributeSyncDataS2C::release_transform() {
+inline ::Transform* PROTOBUF_NULLABLE ActorBaseAttributesS2C::release_transform() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
@@ -1478,7 +1478,7 @@ inline ::Transform* PROTOBUF_NULLABLE BaseAttributeSyncDataS2C::release_transfor
   }
   return released;
 }
-inline ::Transform* PROTOBUF_NULLABLE BaseAttributeSyncDataS2C::unsafe_arena_release_transform() {
+inline ::Transform* PROTOBUF_NULLABLE ActorBaseAttributesS2C::unsafe_arena_release_transform() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:BaseAttributeSyncDataS2C.transform)
 
@@ -1487,7 +1487,7 @@ inline ::Transform* PROTOBUF_NULLABLE BaseAttributeSyncDataS2C::unsafe_arena_rel
   _impl_.transform_ = nullptr;
   return temp;
 }
-inline ::Transform* PROTOBUF_NONNULL BaseAttributeSyncDataS2C::_internal_mutable_transform() {
+inline ::Transform* PROTOBUF_NONNULL ActorBaseAttributesS2C::_internal_mutable_transform() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.transform_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::Transform>(GetArena());
@@ -1495,14 +1495,14 @@ inline ::Transform* PROTOBUF_NONNULL BaseAttributeSyncDataS2C::_internal_mutable
   }
   return _impl_.transform_;
 }
-inline ::Transform* PROTOBUF_NONNULL BaseAttributeSyncDataS2C::mutable_transform()
+inline ::Transform* PROTOBUF_NONNULL ActorBaseAttributesS2C::mutable_transform()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::Transform* _msg = _internal_mutable_transform();
   // @@protoc_insertion_point(field_mutable:BaseAttributeSyncDataS2C.transform)
   return _msg;
 }
-inline void BaseAttributeSyncDataS2C::set_allocated_transform(::Transform* PROTOBUF_NULLABLE value) {
+inline void ActorBaseAttributesS2C::set_allocated_transform(::Transform* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -1524,21 +1524,21 @@ inline void BaseAttributeSyncDataS2C::set_allocated_transform(::Transform* PROTO
 }
 
 // .Velocity velocity = 3;
-inline bool BaseAttributeSyncDataS2C::has_velocity() const {
+inline bool ActorBaseAttributesS2C::has_velocity() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.velocity_ != nullptr);
   return value;
 }
-inline const ::Velocity& BaseAttributeSyncDataS2C::_internal_velocity() const {
+inline const ::Velocity& ActorBaseAttributesS2C::_internal_velocity() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   const ::Velocity* p = _impl_.velocity_;
   return p != nullptr ? *p : reinterpret_cast<const ::Velocity&>(::_Velocity_default_instance_);
 }
-inline const ::Velocity& BaseAttributeSyncDataS2C::velocity() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::Velocity& ActorBaseAttributesS2C::velocity() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:BaseAttributeSyncDataS2C.velocity)
   return _internal_velocity();
 }
-inline void BaseAttributeSyncDataS2C::unsafe_arena_set_allocated_velocity(
+inline void ActorBaseAttributesS2C::unsafe_arena_set_allocated_velocity(
     ::Velocity* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
@@ -1552,7 +1552,7 @@ inline void BaseAttributeSyncDataS2C::unsafe_arena_set_allocated_velocity(
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeSyncDataS2C.velocity)
 }
-inline ::Velocity* PROTOBUF_NULLABLE BaseAttributeSyncDataS2C::release_velocity() {
+inline ::Velocity* PROTOBUF_NULLABLE ActorBaseAttributesS2C::release_velocity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000002u;
@@ -1571,7 +1571,7 @@ inline ::Velocity* PROTOBUF_NULLABLE BaseAttributeSyncDataS2C::release_velocity(
   }
   return released;
 }
-inline ::Velocity* PROTOBUF_NULLABLE BaseAttributeSyncDataS2C::unsafe_arena_release_velocity() {
+inline ::Velocity* PROTOBUF_NULLABLE ActorBaseAttributesS2C::unsafe_arena_release_velocity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:BaseAttributeSyncDataS2C.velocity)
 
@@ -1580,7 +1580,7 @@ inline ::Velocity* PROTOBUF_NULLABLE BaseAttributeSyncDataS2C::unsafe_arena_rele
   _impl_.velocity_ = nullptr;
   return temp;
 }
-inline ::Velocity* PROTOBUF_NONNULL BaseAttributeSyncDataS2C::_internal_mutable_velocity() {
+inline ::Velocity* PROTOBUF_NONNULL ActorBaseAttributesS2C::_internal_mutable_velocity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.velocity_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::Velocity>(GetArena());
@@ -1588,14 +1588,14 @@ inline ::Velocity* PROTOBUF_NONNULL BaseAttributeSyncDataS2C::_internal_mutable_
   }
   return _impl_.velocity_;
 }
-inline ::Velocity* PROTOBUF_NONNULL BaseAttributeSyncDataS2C::mutable_velocity()
+inline ::Velocity* PROTOBUF_NONNULL ActorBaseAttributesS2C::mutable_velocity()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::Velocity* _msg = _internal_mutable_velocity();
   // @@protoc_insertion_point(field_mutable:BaseAttributeSyncDataS2C.velocity)
   return _msg;
 }
-inline void BaseAttributeSyncDataS2C::set_allocated_velocity(::Velocity* PROTOBUF_NULLABLE value) {
+inline void ActorBaseAttributesS2C::set_allocated_velocity(::Velocity* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -1617,21 +1617,21 @@ inline void BaseAttributeSyncDataS2C::set_allocated_velocity(::Velocity* PROTOBU
 }
 
 // .CombatStateFlagsPbComponent combat_state_flags = 4;
-inline bool BaseAttributeSyncDataS2C::has_combat_state_flags() const {
+inline bool ActorBaseAttributesS2C::has_combat_state_flags() const {
   bool value = (_impl_._has_bits_[0] & 0x00000004u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.combat_state_flags_ != nullptr);
   return value;
 }
-inline const ::CombatStateFlagsPbComponent& BaseAttributeSyncDataS2C::_internal_combat_state_flags() const {
+inline const ::CombatStateFlagsPbComponent& ActorBaseAttributesS2C::_internal_combat_state_flags() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   const ::CombatStateFlagsPbComponent* p = _impl_.combat_state_flags_;
   return p != nullptr ? *p : reinterpret_cast<const ::CombatStateFlagsPbComponent&>(::_CombatStateFlagsPbComponent_default_instance_);
 }
-inline const ::CombatStateFlagsPbComponent& BaseAttributeSyncDataS2C::combat_state_flags() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::CombatStateFlagsPbComponent& ActorBaseAttributesS2C::combat_state_flags() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:BaseAttributeSyncDataS2C.combat_state_flags)
   return _internal_combat_state_flags();
 }
-inline void BaseAttributeSyncDataS2C::unsafe_arena_set_allocated_combat_state_flags(
+inline void ActorBaseAttributesS2C::unsafe_arena_set_allocated_combat_state_flags(
     ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
@@ -1645,7 +1645,7 @@ inline void BaseAttributeSyncDataS2C::unsafe_arena_set_allocated_combat_state_fl
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeSyncDataS2C.combat_state_flags)
 }
-inline ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE BaseAttributeSyncDataS2C::release_combat_state_flags() {
+inline ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE ActorBaseAttributesS2C::release_combat_state_flags() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000004u;
@@ -1664,7 +1664,7 @@ inline ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE BaseAttributeSyncDataS2C
   }
   return released;
 }
-inline ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE BaseAttributeSyncDataS2C::unsafe_arena_release_combat_state_flags() {
+inline ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE ActorBaseAttributesS2C::unsafe_arena_release_combat_state_flags() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:BaseAttributeSyncDataS2C.combat_state_flags)
 
@@ -1673,7 +1673,7 @@ inline ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE BaseAttributeSyncDataS2C
   _impl_.combat_state_flags_ = nullptr;
   return temp;
 }
-inline ::CombatStateFlagsPbComponent* PROTOBUF_NONNULL BaseAttributeSyncDataS2C::_internal_mutable_combat_state_flags() {
+inline ::CombatStateFlagsPbComponent* PROTOBUF_NONNULL ActorBaseAttributesS2C::_internal_mutable_combat_state_flags() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.combat_state_flags_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::CombatStateFlagsPbComponent>(GetArena());
@@ -1681,14 +1681,14 @@ inline ::CombatStateFlagsPbComponent* PROTOBUF_NONNULL BaseAttributeSyncDataS2C:
   }
   return _impl_.combat_state_flags_;
 }
-inline ::CombatStateFlagsPbComponent* PROTOBUF_NONNULL BaseAttributeSyncDataS2C::mutable_combat_state_flags()
+inline ::CombatStateFlagsPbComponent* PROTOBUF_NONNULL ActorBaseAttributesS2C::mutable_combat_state_flags()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000004u;
   ::CombatStateFlagsPbComponent* _msg = _internal_mutable_combat_state_flags();
   // @@protoc_insertion_point(field_mutable:BaseAttributeSyncDataS2C.combat_state_flags)
   return _msg;
 }
-inline void BaseAttributeSyncDataS2C::set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE value) {
+inline void ActorBaseAttributesS2C::set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {

@@ -352,6 +352,7 @@
       <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
       <LibCompiled>true</LibCompiled>
     </ClCompile>
+    <ClCompile Include="utils\proto\message_uitil.cpp" />
     <ClCompile Include="utils\proto\proto_field_checker.cpp" />
     <ClCompile Include="utils\random\random.cpp" />
     <ClCompile Include="utils\registry\game_registry.cpp" />
@@ -495,6 +496,7 @@
     <ClInclude Include="utils\id\snow_flake.h" />
     <ClInclude Include="utils\log\async_log_file.h" />
     <ClInclude Include="utils\debug\stacktrace_system.h" />
+    <ClInclude Include="utils\proto\message_uitil.h" />
     <ClInclude Include="utils\proto\proto_field_checker.h" />
     <ClInclude Include="utils\random\random.h" />
     <ClInclude Include="utils\registry\game_registry.h" />
