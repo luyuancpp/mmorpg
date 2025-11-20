@@ -159,7 +159,7 @@ void ActorStateAttributeSyncSystem::SyncBasicAttributes(entt::entity entity) {
 	}
 
 	// 获取当前实体的增量同步消息
-	auto& syncMessage = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributeSyncDataS2C>(entity);
+	ActorBaseAttributesS2C syncMessage;
 	if (syncMessage.ByteSizeLong() <= 0) {
 		return;
 	}

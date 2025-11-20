@@ -150,7 +150,7 @@ struct AttributeDelta10FramesS2CDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AttributeDelta10FramesS2CDefaultTypeInternal _AttributeDelta10FramesS2C_default_instance_;
 
-inline constexpr BaseAttributeSyncDataS2C::Impl_::Impl_(
+inline constexpr ActorBaseAttributesS2C::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         transform_{nullptr},
@@ -159,7 +159,7 @@ inline constexpr BaseAttributeSyncDataS2C::Impl_::Impl_(
         entity_id_{::uint64_t{0u}} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR BaseAttributeSyncDataS2C::BaseAttributeSyncDataS2C(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ActorBaseAttributesS2C::ActorBaseAttributesS2C(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(BaseAttributeSyncDataS2C_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
@@ -171,7 +171,7 @@ struct BaseAttributeSyncDataS2CDefaultTypeInternal {
   PROTOBUF_CONSTEXPR BaseAttributeSyncDataS2CDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~BaseAttributeSyncDataS2CDefaultTypeInternal() {}
   union {
-    BaseAttributeSyncDataS2C _instance;
+    ActorBaseAttributesS2C _instance;
   };
 };
 
@@ -185,12 +185,12 @@ const ::uint32_t
     TableStruct_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::BaseAttributeSyncDataS2C, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::ActorBaseAttributesS2C, _impl_._has_bits_),
         7, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::BaseAttributeSyncDataS2C, _impl_.entity_id_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributeSyncDataS2C, _impl_.transform_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributeSyncDataS2C, _impl_.velocity_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributeSyncDataS2C, _impl_.combat_state_flags_),
+        PROTOBUF_FIELD_OFFSET(::ActorBaseAttributesS2C, _impl_.entity_id_),
+        PROTOBUF_FIELD_OFFSET(::ActorBaseAttributesS2C, _impl_.transform_),
+        PROTOBUF_FIELD_OFFSET(::ActorBaseAttributesS2C, _impl_.velocity_),
+        PROTOBUF_FIELD_OFFSET(::ActorBaseAttributesS2C, _impl_.combat_state_flags_),
         3,
         0,
         1,
@@ -224,7 +224,7 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::BaseAttributeSyncDataS2C)},
+        {0, sizeof(::ActorBaseAttributesS2C)},
         {11, sizeof(::AttributeDelta2FramesS2C)},
         {16, sizeof(::AttributeDelta5FramesS2C)},
         {21, sizeof(::AttributeDelta10FramesS2C)},
@@ -292,30 +292,30 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservic
 };
 // ===================================================================
 
-class BaseAttributeSyncDataS2C::_Internal {
+class ActorBaseAttributesS2C::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<BaseAttributeSyncDataS2C>()._impl_._has_bits_);
+      decltype(::std::declval<ActorBaseAttributesS2C>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_._has_bits_);
 };
 
-void BaseAttributeSyncDataS2C::clear_transform() {
+void ActorBaseAttributesS2C::clear_transform() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.transform_ != nullptr) _impl_.transform_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-void BaseAttributeSyncDataS2C::clear_velocity() {
+void ActorBaseAttributesS2C::clear_velocity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.velocity_ != nullptr) _impl_.velocity_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-void BaseAttributeSyncDataS2C::clear_combat_state_flags() {
+void ActorBaseAttributesS2C::clear_combat_state_flags() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.combat_state_flags_ != nullptr) _impl_.combat_state_flags_->Clear();
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-BaseAttributeSyncDataS2C::BaseAttributeSyncDataS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+ActorBaseAttributesS2C::ActorBaseAttributesS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(arena, BaseAttributeSyncDataS2C_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
@@ -324,22 +324,22 @@ BaseAttributeSyncDataS2C::BaseAttributeSyncDataS2C(::google::protobuf::Arena* PR
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:BaseAttributeSyncDataS2C)
 }
-PROTOBUF_NDEBUG_INLINE BaseAttributeSyncDataS2C::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ActorBaseAttributesS2C::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::BaseAttributeSyncDataS2C& from_msg)
+    const ::ActorBaseAttributesS2C& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
-BaseAttributeSyncDataS2C::BaseAttributeSyncDataS2C(
+ActorBaseAttributesS2C::ActorBaseAttributesS2C(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const BaseAttributeSyncDataS2C& from)
+    const ActorBaseAttributesS2C& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(arena, BaseAttributeSyncDataS2C_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  BaseAttributeSyncDataS2C* const _this = this;
+  ActorBaseAttributesS2C* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -358,12 +358,12 @@ BaseAttributeSyncDataS2C::BaseAttributeSyncDataS2C(
 
   // @@protoc_insertion_point(copy_constructor:BaseAttributeSyncDataS2C)
 }
-PROTOBUF_NDEBUG_INLINE BaseAttributeSyncDataS2C::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ActorBaseAttributesS2C::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void BaseAttributeSyncDataS2C::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void ActorBaseAttributesS2C::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, transform_),
@@ -372,12 +372,12 @@ inline void BaseAttributeSyncDataS2C::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE
                offsetof(Impl_, transform_) +
                sizeof(Impl_::entity_id_));
 }
-BaseAttributeSyncDataS2C::~BaseAttributeSyncDataS2C() {
+ActorBaseAttributesS2C::~ActorBaseAttributesS2C() {
   // @@protoc_insertion_point(destructor:BaseAttributeSyncDataS2C)
   SharedDtor(*this);
 }
-inline void BaseAttributeSyncDataS2C::SharedDtor(MessageLite& self) {
-  BaseAttributeSyncDataS2C& this_ = static_cast<BaseAttributeSyncDataS2C&>(self);
+inline void ActorBaseAttributesS2C::SharedDtor(MessageLite& self) {
+  ActorBaseAttributesS2C& this_ = static_cast<ActorBaseAttributesS2C&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   delete this_._impl_.transform_;
@@ -386,33 +386,33 @@ inline void BaseAttributeSyncDataS2C::SharedDtor(MessageLite& self) {
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL BaseAttributeSyncDataS2C::PlacementNew_(
+inline void* PROTOBUF_NONNULL ActorBaseAttributesS2C::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) BaseAttributeSyncDataS2C(arena);
+  return ::new (mem) ActorBaseAttributesS2C(arena);
 }
-constexpr auto BaseAttributeSyncDataS2C::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(BaseAttributeSyncDataS2C),
-                                            alignof(BaseAttributeSyncDataS2C));
+constexpr auto ActorBaseAttributesS2C::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ActorBaseAttributesS2C),
+                                            alignof(ActorBaseAttributesS2C));
 }
-constexpr auto BaseAttributeSyncDataS2C::InternalGenerateClassData_() {
+constexpr auto ActorBaseAttributesS2C::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
           &_BaseAttributeSyncDataS2C_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &BaseAttributeSyncDataS2C::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<BaseAttributeSyncDataS2C>(),
+          &ActorBaseAttributesS2C::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ActorBaseAttributesS2C>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &BaseAttributeSyncDataS2C::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<BaseAttributeSyncDataS2C>(), &BaseAttributeSyncDataS2C::ByteSizeLong,
-              &BaseAttributeSyncDataS2C::_InternalSerialize,
+          &ActorBaseAttributesS2C::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ActorBaseAttributesS2C>(), &ActorBaseAttributesS2C::ByteSizeLong,
+              &ActorBaseAttributesS2C::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_._cached_size_),
           false,
       },
-      &BaseAttributeSyncDataS2C::kDescriptorMethods,
+      &ActorBaseAttributesS2C::kDescriptorMethods,
       &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto,
       nullptr,  // tracker
   };
@@ -420,19 +420,19 @@ constexpr auto BaseAttributeSyncDataS2C::InternalGenerateClassData_() {
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
     ::google::protobuf::internal::ClassDataFull BaseAttributeSyncDataS2C_class_data_ =
-        BaseAttributeSyncDataS2C::InternalGenerateClassData_();
+        ActorBaseAttributesS2C::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-BaseAttributeSyncDataS2C::GetClassData() const {
+ActorBaseAttributesS2C::GetClassData() const {
   ::google::protobuf::internal::PrefetchToLocalCache(&BaseAttributeSyncDataS2C_class_data_);
   ::google::protobuf::internal::PrefetchToLocalCache(BaseAttributeSyncDataS2C_class_data_.tc_table);
   return BaseAttributeSyncDataS2C_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<2, 4, 3, 0, 2>
-BaseAttributeSyncDataS2C::_table_ = {
+ActorBaseAttributesS2C::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_._has_bits_),
     0, // no _extensions_
     4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -445,35 +445,35 @@ BaseAttributeSyncDataS2C::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::BaseAttributeSyncDataS2C>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ActorBaseAttributesS2C>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .CombatStateFlagsPbComponent combat_state_flags = 4;
     {::_pbi::TcParser::FastMtS1,
-     {34, 2, 2, PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.combat_state_flags_)}},
+     {34, 2, 2, PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.combat_state_flags_)}},
     // uint64 entity_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributeSyncDataS2C, _impl_.entity_id_), 3>(),
-     {8, 3, 0, PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.entity_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ActorBaseAttributesS2C, _impl_.entity_id_), 3>(),
+     {8, 3, 0, PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.entity_id_)}},
     // .Transform transform = 2;
     {::_pbi::TcParser::FastMtS1,
-     {18, 0, 0, PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.transform_)}},
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.transform_)}},
     // .Velocity velocity = 3;
     {::_pbi::TcParser::FastMtS1,
-     {26, 1, 1, PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.velocity_)}},
+     {26, 1, 1, PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.velocity_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 entity_id = 1;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.entity_id_), _Internal::kHasBitsOffset + 3, 0,
+    {PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.entity_id_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // .Transform transform = 2;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.transform_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.transform_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .Velocity velocity = 3;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.velocity_), _Internal::kHasBitsOffset + 1, 1,
+    {PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.velocity_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .CombatStateFlagsPbComponent combat_state_flags = 4;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.combat_state_flags_), _Internal::kHasBitsOffset + 2, 2,
+    {PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.combat_state_flags_), _Internal::kHasBitsOffset + 2, 2,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
@@ -484,7 +484,7 @@ BaseAttributeSyncDataS2C::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void BaseAttributeSyncDataS2C::Clear() {
+PROTOBUF_NOINLINE void ActorBaseAttributesS2C::Clear() {
 // @@protoc_insertion_point(message_clear_start:BaseAttributeSyncDataS2C)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
@@ -512,15 +512,15 @@ PROTOBUF_NOINLINE void BaseAttributeSyncDataS2C::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL BaseAttributeSyncDataS2C::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ActorBaseAttributesS2C::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const BaseAttributeSyncDataS2C& this_ = static_cast<const BaseAttributeSyncDataS2C&>(base);
+  const ActorBaseAttributesS2C& this_ = static_cast<const ActorBaseAttributesS2C&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL BaseAttributeSyncDataS2C::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ActorBaseAttributesS2C::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const BaseAttributeSyncDataS2C& this_ = *this;
+  const ActorBaseAttributesS2C& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
   // @@protoc_insertion_point(serialize_to_array_start:BaseAttributeSyncDataS2C)
   ::uint32_t cached_has_bits = 0;
@@ -567,11 +567,11 @@ PROTOBUF_NOINLINE void BaseAttributeSyncDataS2C::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t BaseAttributeSyncDataS2C::ByteSizeLong(const MessageLite& base) {
-  const BaseAttributeSyncDataS2C& this_ = static_cast<const BaseAttributeSyncDataS2C&>(base);
+::size_t ActorBaseAttributesS2C::ByteSizeLong(const MessageLite& base) {
+  const ActorBaseAttributesS2C& this_ = static_cast<const ActorBaseAttributesS2C&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t BaseAttributeSyncDataS2C::ByteSizeLong() const {
-  const BaseAttributeSyncDataS2C& this_ = *this;
+::size_t ActorBaseAttributesS2C::ByteSizeLong() const {
+  const ActorBaseAttributesS2C& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
   // @@protoc_insertion_point(message_byte_size_start:BaseAttributeSyncDataS2C)
   ::size_t total_size = 0;
@@ -610,9 +610,9 @@ PROTOBUF_NOINLINE void BaseAttributeSyncDataS2C::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void BaseAttributeSyncDataS2C::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<BaseAttributeSyncDataS2C*>(&to_msg);
-  auto& from = static_cast<const BaseAttributeSyncDataS2C&>(from_msg);
+void ActorBaseAttributesS2C::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ActorBaseAttributesS2C*>(&to_msg);
+  auto& from = static_cast<const ActorBaseAttributesS2C&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:BaseAttributeSyncDataS2C)
   ABSL_DCHECK_NE(&from, _this);
@@ -655,7 +655,7 @@ void BaseAttributeSyncDataS2C::MergeImpl(::google::protobuf::MessageLite& to_msg
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void BaseAttributeSyncDataS2C::CopyFrom(const BaseAttributeSyncDataS2C& from) {
+void ActorBaseAttributesS2C::CopyFrom(const ActorBaseAttributesS2C& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:BaseAttributeSyncDataS2C)
   if (&from == this) return;
   Clear();
@@ -663,19 +663,19 @@ void BaseAttributeSyncDataS2C::CopyFrom(const BaseAttributeSyncDataS2C& from) {
 }
 
 
-void BaseAttributeSyncDataS2C::InternalSwap(BaseAttributeSyncDataS2C* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void ActorBaseAttributesS2C::InternalSwap(ActorBaseAttributesS2C* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.entity_id_)
-      + sizeof(BaseAttributeSyncDataS2C::_impl_.entity_id_)
-      - PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.transform_)>(
+      PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.entity_id_)
+      + sizeof(ActorBaseAttributesS2C::_impl_.entity_id_)
+      - PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.transform_)>(
           reinterpret_cast<char*>(&_impl_.transform_),
           reinterpret_cast<char*>(&other->_impl_.transform_));
 }
 
-::google::protobuf::Metadata BaseAttributeSyncDataS2C::GetMetadata() const {
+::google::protobuf::Metadata ActorBaseAttributesS2C::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
@@ -1865,7 +1865,7 @@ const ::google::protobuf::ServiceDescriptor* PROTOBUF_NONNULL ScenePlayerSync::G
 }
 
 void ScenePlayerSync::SyncBaseAttribute(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                         const ::BaseAttributeSyncDataS2C* PROTOBUF_NONNULL,
+                         const ::ActorBaseAttributesS2C* PROTOBUF_NONNULL,
                          ::Empty* PROTOBUF_NONNULL,
                          ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
   controller->SetFailed("Method SyncBaseAttribute() not implemented.");
@@ -1915,7 +1915,7 @@ void ScenePlayerSync::CallMethod(
   ABSL_DCHECK_EQ(method->service(), file_level_service_descriptors_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto[0]);
   switch (method->index()) {
     case 0:
-      this->SyncBaseAttribute(controller, ::google::protobuf::DownCastMessage<::BaseAttributeSyncDataS2C>(request),
+      this->SyncBaseAttribute(controller, ::google::protobuf::DownCastMessage<::ActorBaseAttributesS2C>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
       break;
     case 1:
@@ -1950,7 +1950,7 @@ const ::google::protobuf::Message& ScenePlayerSync::GetRequestPrototype(
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
     case 0:
-      return ::BaseAttributeSyncDataS2C::default_instance();
+      return ::ActorBaseAttributesS2C::default_instance();
     case 1:
       return ::AttributeDelta2FramesS2C::default_instance();
     case 2:
@@ -2008,7 +2008,7 @@ ScenePlayerSync_Stub::~ScenePlayerSync_Stub() {
 
 void ScenePlayerSync_Stub::SyncBaseAttribute(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::BaseAttributeSyncDataS2C* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
+    const ::ActorBaseAttributesS2C* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);

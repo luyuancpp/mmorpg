@@ -6,7 +6,7 @@
 
 
 
-void ScenePlayerSyncHandler::SyncBaseAttribute(entt::entity player,const ::BaseAttributeSyncDataS2C* request,
+void ScenePlayerSyncHandler::SyncBaseAttribute(entt::entity player,const ::ActorBaseAttributesS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE

@@ -11,6 +11,7 @@
 #include "proto/service/cpp/rpc/scene/player_state_attribute_sync.pb.h"
 #include "proto/logic/component/actor_combat_state_comp.pb.h"
 #include <threading/registry_manager.h>
+#include <boost/dynamic_bitset.hpp>
 
 // 初始化属性计算工具，不执行任何操作，但为将来可能的初始化逻辑预留
 void ActorAttributeCalculatorSystem::Initialize() {}
@@ -18,6 +19,17 @@ void ActorAttributeCalculatorSystem::Initialize() {}
 // 初始化给定实体的属性组件
 void ActorAttributeCalculatorSystem::InitializeActorComponents(entt::entity entity) {
     tlsRegistryManager.actorRegistry.emplace<AttributeDirtyFlagsComp>(entity);
+}
+
+// 新增：设置 BaseAttribute 的运行时脏位（会自动扩容 bitset）
+void ActorAttributeCalculatorSystem::SetBaseAttributeDirty(entt::entity entity, std::size_t bit) {
+    auto &registry = tlsRegistryManager.actorRegistry;
+    auto &dirtyComp = registry.get_or_emplace<BaseAttributeDirtyMaskComp>(entity);
+    // dynamic_bitset::resize 接受 size_t
+    if (dirtyComp.dirtyMask.size() <= bit) {
+        dirtyComp.dirtyMask.resize(bit + 1);
+    }
+    dirtyComp.dirtyMask.set(bit);
 }
 
 // 更新速度属性
@@ -38,7 +50,8 @@ void UpdateVelocity(entt::entity entity) {
         velocity.set_z(velocity.z() - buffTable->movement_speed_reduction());
     }
 
-    tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributeSyncDataS2C>(entity).mutable_velocity()->CopyFrom(velocity);
+    // 使用封装函数设置运行时脏位（不要把脏位写回会被持久化的 proto）
+    ActorAttributeCalculatorSystem::SetBaseAttributeDirty(entity, static_cast<std::size_t>(ActorBaseAttributesS2C::kVelocityFieldNumber));
 }
 
 // 更新生命值属性
@@ -61,7 +74,7 @@ void ResetCombatStateFlags(entt::entity actorEntity) {
     const auto& combatStates = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionPbComponent>(actorEntity);
 
     // 获取基础属性的同步数据
-    auto& syncData = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributeSyncDataS2C>(actorEntity);
+    auto& syncData = tlsRegistryManager.actorRegistry.get_or_emplace<ActorBaseAttributesS2C>(actorEntity);
 
     // 获取指向状态标志的指针
     auto* stateFlags = syncData.mutable_combat_state_flags()->mutable_state_flags();

@@ -12,7 +12,7 @@ public:
 
 
     static void SyncBaseAttribute(entt::entity player,
-        const ::BaseAttributeSyncDataS2C* request,
+        const ::ActorBaseAttributesS2C* request,
         ::Empty* response);
     static void SyncAttribute2Frames(entt::entity player,
         const ::AttributeDelta2FramesS2C* request,

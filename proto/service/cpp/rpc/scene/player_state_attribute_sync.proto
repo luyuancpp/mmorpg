@@ -11,7 +11,7 @@ option cc_generic_services = true;
 
 
 // 消息定义，用于同步实体的基础属性增量
-message BaseAttributeSyncDataS2C  
+message ActorBaseAttributesS2C   
 {
   uint64 entity_id = 1;  // 实体的唯一ID
   Transform transform = 2;  // 速度信息
