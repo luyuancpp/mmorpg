@@ -14,8 +14,6 @@ public:
 
     static void Initialize();
 
-    static void InitializeActorComponents(entt::entity entity);
-
     static void GetNearbyLevel1Entities(const entt::entity entity, EntityVector& nearbyEntities);
 
     static void GetNearbyLevel2Entities(const entt::entity entity, EntityVector& nearbyEntities);

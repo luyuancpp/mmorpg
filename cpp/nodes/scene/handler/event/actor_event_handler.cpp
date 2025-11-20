@@ -31,7 +31,6 @@ void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeAc
 ///<<< BEGIN WRITING YOUR CODE
 	const entt::entity actorEntity = entt::to_entity(event.actor_entity());
 
-	ActorStateAttributeSyncSystem::InitializeActorComponents(actorEntity);
 	BuffSystem::InitializeActorComponents(actorEntity);
 	InterestSystem::InitializeActorComponents(actorEntity);
 	ActorAttributeCalculatorSystem::InitializeActorComponents(actorEntity);
