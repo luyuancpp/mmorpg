@@ -53,7 +53,7 @@ message AttributeDelta60FramesS2C
 // 服务定义，用于处理实体属性的同步
 service ScenePlayerSync
 {
-  rpc SyncBaseAttribute (BaseAttributeSyncDataS2C) returns (Empty); 
+  rpc SyncBaseAttribute (ActorBaseAttributesS2C) returns (Empty); 
   rpc SyncAttribute2Frames (AttributeDelta2FramesS2C) returns (Empty);  
   rpc SyncAttribute5Frames (AttributeDelta5FramesS2C) returns (Empty);  
   rpc SyncAttribute10Frames (AttributeDelta10FramesS2C) returns (Empty); 

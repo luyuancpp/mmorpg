@@ -34,7 +34,7 @@ const (
 //
 // 服务定义，用于处理实体属性的同步
 type ScenePlayerSyncClient interface {
-	SyncBaseAttribute(ctx context.Context, in *BaseAttributeSyncDataS2C, opts ...grpc.CallOption) (*common.Empty, error)
+	SyncBaseAttribute(ctx context.Context, in *ActorBaseAttributesS2C, opts ...grpc.CallOption) (*common.Empty, error)
 	SyncAttribute2Frames(ctx context.Context, in *AttributeDelta2FramesS2C, opts ...grpc.CallOption) (*common.Empty, error)
 	SyncAttribute5Frames(ctx context.Context, in *AttributeDelta5FramesS2C, opts ...grpc.CallOption) (*common.Empty, error)
 	SyncAttribute10Frames(ctx context.Context, in *AttributeDelta10FramesS2C, opts ...grpc.CallOption) (*common.Empty, error)
@@ -50,7 +50,7 @@ func NewScenePlayerSyncClient(cc grpc.ClientConnInterface) ScenePlayerSyncClient
 	return &scenePlayerSyncClient{cc}
 }
 
-func (c *scenePlayerSyncClient) SyncBaseAttribute(ctx context.Context, in *BaseAttributeSyncDataS2C, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *scenePlayerSyncClient) SyncBaseAttribute(ctx context.Context, in *ActorBaseAttributesS2C, opts ...grpc.CallOption) (*common.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(common.Empty)
 	err := c.cc.Invoke(ctx, ScenePlayerSync_SyncBaseAttribute_FullMethodName, in, out, cOpts...)
@@ -116,7 +116,7 @@ func (c *scenePlayerSyncClient) SyncAttribute60Frames(ctx context.Context, in *A
 //
 // 服务定义，用于处理实体属性的同步
 type ScenePlayerSyncServer interface {
-	SyncBaseAttribute(context.Context, *BaseAttributeSyncDataS2C) (*common.Empty, error)
+	SyncBaseAttribute(context.Context, *ActorBaseAttributesS2C) (*common.Empty, error)
 	SyncAttribute2Frames(context.Context, *AttributeDelta2FramesS2C) (*common.Empty, error)
 	SyncAttribute5Frames(context.Context, *AttributeDelta5FramesS2C) (*common.Empty, error)
 	SyncAttribute10Frames(context.Context, *AttributeDelta10FramesS2C) (*common.Empty, error)
@@ -132,7 +132,7 @@ type ScenePlayerSyncServer interface {
 // pointer dereference when methods are called.
 type UnimplementedScenePlayerSyncServer struct{}
 
-func (UnimplementedScenePlayerSyncServer) SyncBaseAttribute(context.Context, *BaseAttributeSyncDataS2C) (*common.Empty, error) {
+func (UnimplementedScenePlayerSyncServer) SyncBaseAttribute(context.Context, *ActorBaseAttributesS2C) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SyncBaseAttribute not implemented")
 }
 func (UnimplementedScenePlayerSyncServer) SyncAttribute2Frames(context.Context, *AttributeDelta2FramesS2C) (*common.Empty, error) {
@@ -172,7 +172,7 @@ func RegisterScenePlayerSyncServer(s grpc.ServiceRegistrar, srv ScenePlayerSyncS
 }
 
 func _ScenePlayerSync_SyncBaseAttribute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BaseAttributeSyncDataS2C)
+	in := new(ActorBaseAttributesS2C)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func _ScenePlayerSync_SyncBaseAttribute_Handler(srv interface{}, ctx context.Con
 		FullMethod: ScenePlayerSync_SyncBaseAttribute_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ScenePlayerSyncServer).SyncBaseAttribute(ctx, req.(*BaseAttributeSyncDataS2C))
+		return srv.(ScenePlayerSyncServer).SyncBaseAttribute(ctx, req.(*ActorBaseAttributesS2C))
 	}
 	return interceptor(ctx, in, info, handler)
 }
