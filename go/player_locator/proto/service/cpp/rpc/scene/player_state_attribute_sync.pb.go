@@ -24,7 +24,7 @@ const (
 )
 
 // 消息定义，用于同步实体的基础属性增量
-type BaseAttributeSyncDataS2C struct {
+type ActorBaseAttributesS2C struct {
 	state            protoimpl.MessageState                 `protogen:"open.v1"`
 	EntityId         uint64                                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
 	Transform        *component.Transform                   `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`                // 速度信息
@@ -34,20 +34,20 @@ type BaseAttributeSyncDataS2C struct {
 	sizeCache        protoimpl.SizeCache
 }
 
-func (x *BaseAttributeSyncDataS2C) Reset() {
-	*x = BaseAttributeSyncDataS2C{}
+func (x *ActorBaseAttributesS2C) Reset() {
+	*x = ActorBaseAttributesS2C{}
 	mi := &file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BaseAttributeSyncDataS2C) String() string {
+func (x *ActorBaseAttributesS2C) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BaseAttributeSyncDataS2C) ProtoMessage() {}
+func (*ActorBaseAttributesS2C) ProtoMessage() {}
 
-func (x *BaseAttributeSyncDataS2C) ProtoReflect() protoreflect.Message {
+func (x *ActorBaseAttributesS2C) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -59,33 +59,33 @@ func (x *BaseAttributeSyncDataS2C) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BaseAttributeSyncDataS2C.ProtoReflect.Descriptor instead.
-func (*BaseAttributeSyncDataS2C) Descriptor() ([]byte, []int) {
+// Deprecated: Use ActorBaseAttributesS2C.ProtoReflect.Descriptor instead.
+func (*ActorBaseAttributesS2C) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *BaseAttributeSyncDataS2C) GetEntityId() uint64 {
+func (x *ActorBaseAttributesS2C) GetEntityId() uint64 {
 	if x != nil {
 		return x.EntityId
 	}
 	return 0
 }
 
-func (x *BaseAttributeSyncDataS2C) GetTransform() *component.Transform {
+func (x *ActorBaseAttributesS2C) GetTransform() *component.Transform {
 	if x != nil {
 		return x.Transform
 	}
 	return nil
 }
 
-func (x *BaseAttributeSyncDataS2C) GetVelocity() *component.Velocity {
+func (x *ActorBaseAttributesS2C) GetVelocity() *component.Velocity {
 	if x != nil {
 		return x.Velocity
 	}
 	return nil
 }
 
-func (x *BaseAttributeSyncDataS2C) GetCombatStateFlags() *component.CombatStateFlagsPbComponent {
+func (x *ActorBaseAttributesS2C) GetCombatStateFlags() *component.CombatStateFlagsPbComponent {
 	if x != nil {
 		return x.CombatStateFlags
 	}
@@ -317,8 +317,8 @@ var File_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto protorefl
 
 const file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDesc = "" +
 	"\n" +
-	"=proto/service/cpp/rpc/scene/player_state_attribute_sync.proto\x1a&proto/logic/component/actor_comp.proto\x1a\x18proto/common/empty.proto\x1a6proto/logic/component/actor_attribute_state_comp.proto\"\xd4\x01\n" +
-	"\x18BaseAttributeSyncDataS2C\x12\x1b\n" +
+	"=proto/service/cpp/rpc/scene/player_state_attribute_sync.proto\x1a&proto/logic/component/actor_comp.proto\x1a\x18proto/common/empty.proto\x1a6proto/logic/component/actor_attribute_state_comp.proto\"\xd2\x01\n" +
+	"\x16ActorBaseAttributesS2C\x12\x1b\n" +
 	"\tentity_id\x18\x01 \x01(\x04R\bentityId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
 	".TransformR\ttransform\x12%\n" +
@@ -333,9 +333,9 @@ const file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDesc
 	"\x19AttributeDelta30FramesS2C\x12\x1b\n" +
 	"\tentity_id\x18\x01 \x01(\x04R\bentityId\"8\n" +
 	"\x19AttributeDelta60FramesS2C\x12\x1b\n" +
-	"\tentity_id\x18\x01 \x01(\x04R\bentityId2\xf6\x02\n" +
-	"\x0fScenePlayerSync\x126\n" +
-	"\x11SyncBaseAttribute\x12\x19.BaseAttributeSyncDataS2C\x1a\x06.Empty\x129\n" +
+	"\tentity_id\x18\x01 \x01(\x04R\bentityId2\xf4\x02\n" +
+	"\x0fScenePlayerSync\x124\n" +
+	"\x11SyncBaseAttribute\x12\x17.ActorBaseAttributesS2C\x1a\x06.Empty\x129\n" +
 	"\x14SyncAttribute2Frames\x12\x19.AttributeDelta2FramesS2C\x1a\x06.Empty\x129\n" +
 	"\x14SyncAttribute5Frames\x12\x19.AttributeDelta5FramesS2C\x1a\x06.Empty\x12;\n" +
 	"\x15SyncAttribute10Frames\x12\x1a.AttributeDelta10FramesS2C\x1a\x06.Empty\x12;\n" +
@@ -356,7 +356,7 @@ func file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDescG
 
 var file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_goTypes = []any{
-	(*BaseAttributeSyncDataS2C)(nil),              // 0: BaseAttributeSyncDataS2C
+	(*ActorBaseAttributesS2C)(nil),                // 0: ActorBaseAttributesS2C
 	(*AttributeDelta2FramesS2C)(nil),              // 1: AttributeDelta2FramesS2C
 	(*AttributeDelta5FramesS2C)(nil),              // 2: AttributeDelta5FramesS2C
 	(*AttributeDelta10FramesS2C)(nil),             // 3: AttributeDelta10FramesS2C
@@ -368,10 +368,10 @@ var file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_goTypes =
 	(*common.Empty)(nil),                          // 9: Empty
 }
 var file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_depIdxs = []int32{
-	6, // 0: BaseAttributeSyncDataS2C.transform:type_name -> Transform
-	7, // 1: BaseAttributeSyncDataS2C.velocity:type_name -> Velocity
-	8, // 2: BaseAttributeSyncDataS2C.combat_state_flags:type_name -> CombatStateFlagsPbComponent
-	0, // 3: ScenePlayerSync.SyncBaseAttribute:input_type -> BaseAttributeSyncDataS2C
+	6, // 0: ActorBaseAttributesS2C.transform:type_name -> Transform
+	7, // 1: ActorBaseAttributesS2C.velocity:type_name -> Velocity
+	8, // 2: ActorBaseAttributesS2C.combat_state_flags:type_name -> CombatStateFlagsPbComponent
+	0, // 3: ScenePlayerSync.SyncBaseAttribute:input_type -> ActorBaseAttributesS2C
 	1, // 4: ScenePlayerSync.SyncAttribute2Frames:input_type -> AttributeDelta2FramesS2C
 	2, // 5: ScenePlayerSync.SyncAttribute5Frames:input_type -> AttributeDelta5FramesS2C
 	3, // 6: ScenePlayerSync.SyncAttribute10Frames:input_type -> AttributeDelta10FramesS2C

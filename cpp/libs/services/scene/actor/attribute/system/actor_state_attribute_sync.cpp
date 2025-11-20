@@ -94,14 +94,7 @@ void ActorStateAttributeSyncSystem::Initialize() {
 // 初始化实体的组件
 void ActorStateAttributeSyncSystem::InitializeActorComponents(const entt::entity entity) {
 	// 在实体上添加速度、计算属性、派生属性和同步消息组件
-	tlsRegistryManager.actorRegistry.emplace<Velocity>(entity);
-	tlsRegistryManager.actorRegistry.emplace<CalculatedAttributesPbComponent>(entity);
-	tlsRegistryManager.actorRegistry.emplace<DerivedAttributesPbComponent>(entity);
-	tlsRegistryManager.actorRegistry.emplace<AttributeDelta2FramesS2C>(entity);
-	tlsRegistryManager.actorRegistry.emplace<AttributeDelta5FramesS2C>(entity);
-	tlsRegistryManager.actorRegistry.emplace<AttributeDelta10FramesS2C>(entity);
-	tlsRegistryManager.actorRegistry.emplace<AttributeDelta30FramesS2C>(entity);
-	tlsRegistryManager.actorRegistry.emplace<AttributeDelta60FramesS2C>(entity);
+	tlsRegistryManager.actorRegistry.get_or_emplace<Velocity>(entity);
 }
 
 // 获取附近一级实体列表

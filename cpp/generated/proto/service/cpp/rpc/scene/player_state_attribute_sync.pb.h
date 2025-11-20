@@ -56,6 +56,10 @@ struct TableStruct_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fstate_5fattrib
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto;
 }  // extern "C"
+class ActorBaseAttributesS2C;
+struct ActorBaseAttributesS2CDefaultTypeInternal;
+extern ActorBaseAttributesS2CDefaultTypeInternal _ActorBaseAttributesS2C_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull ActorBaseAttributesS2C_class_data_;
 class AttributeDelta10FramesS2C;
 struct AttributeDelta10FramesS2CDefaultTypeInternal;
 extern AttributeDelta10FramesS2CDefaultTypeInternal _AttributeDelta10FramesS2C_default_instance_;
@@ -76,10 +80,6 @@ class AttributeDelta60FramesS2C;
 struct AttributeDelta60FramesS2CDefaultTypeInternal;
 extern AttributeDelta60FramesS2CDefaultTypeInternal _AttributeDelta60FramesS2C_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull AttributeDelta60FramesS2C_class_data_;
-class ActorBaseAttributesS2C;
-struct BaseAttributeSyncDataS2CDefaultTypeInternal;
-extern BaseAttributeSyncDataS2CDefaultTypeInternal _BaseAttributeSyncDataS2C_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull BaseAttributeSyncDataS2C_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -1047,7 +1047,7 @@ extern const ::google::protobuf::internal::ClassDataFull AttributeDelta10FramesS
 // -------------------------------------------------------------------
 
 class ActorBaseAttributesS2C final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:BaseAttributeSyncDataS2C) */ {
+/* @@protoc_insertion_point(class_definition:ActorBaseAttributesS2C) */ {
  public:
   inline ActorBaseAttributesS2C() : ActorBaseAttributesS2C(nullptr) {}
   ~ActorBaseAttributesS2C() PROTOBUF_FINAL;
@@ -1099,7 +1099,7 @@ class ActorBaseAttributesS2C final : public ::google::protobuf::Message
   }
   static const ActorBaseAttributesS2C& default_instance() {
     return *reinterpret_cast<const ActorBaseAttributesS2C*>(
-        &_BaseAttributeSyncDataS2C_default_instance_);
+        &_ActorBaseAttributesS2C_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
   friend void swap(ActorBaseAttributesS2C& a, ActorBaseAttributesS2C& b) { a.Swap(&b); }
@@ -1165,7 +1165,7 @@ class ActorBaseAttributesS2C final : public ::google::protobuf::Message
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "BaseAttributeSyncDataS2C"; }
+  static ::absl::string_view FullMessageName() { return "ActorBaseAttributesS2C"; }
 
  protected:
   explicit ActorBaseAttributesS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
@@ -1249,7 +1249,7 @@ class ActorBaseAttributesS2C final : public ::google::protobuf::Message
   void _internal_set_entity_id(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:BaseAttributeSyncDataS2C)
+  // @@protoc_insertion_point(class_scope:ActorBaseAttributesS2C)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1285,7 +1285,7 @@ class ActorBaseAttributesS2C final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull BaseAttributeSyncDataS2C_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull ActorBaseAttributesS2C_class_data_;
 
 // ===================================================================
 
@@ -1404,7 +1404,7 @@ class ScenePlayerSync_Stub final : public ScenePlayerSync {
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// BaseAttributeSyncDataS2C
+// ActorBaseAttributesS2C
 
 // uint64 entity_id = 1;
 inline void ActorBaseAttributesS2C::clear_entity_id() {
@@ -1413,13 +1413,13 @@ inline void ActorBaseAttributesS2C::clear_entity_id() {
   _impl_._has_bits_[0] &= ~0x00000008u;
 }
 inline ::uint64_t ActorBaseAttributesS2C::entity_id() const {
-  // @@protoc_insertion_point(field_get:BaseAttributeSyncDataS2C.entity_id)
+  // @@protoc_insertion_point(field_get:ActorBaseAttributesS2C.entity_id)
   return _internal_entity_id();
 }
 inline void ActorBaseAttributesS2C::set_entity_id(::uint64_t value) {
   _internal_set_entity_id(value);
   _impl_._has_bits_[0] |= 0x00000008u;
-  // @@protoc_insertion_point(field_set:BaseAttributeSyncDataS2C.entity_id)
+  // @@protoc_insertion_point(field_set:ActorBaseAttributesS2C.entity_id)
 }
 inline ::uint64_t ActorBaseAttributesS2C::_internal_entity_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -1442,7 +1442,7 @@ inline const ::Transform& ActorBaseAttributesS2C::_internal_transform() const {
   return p != nullptr ? *p : reinterpret_cast<const ::Transform&>(::_Transform_default_instance_);
 }
 inline const ::Transform& ActorBaseAttributesS2C::transform() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:BaseAttributeSyncDataS2C.transform)
+  // @@protoc_insertion_point(field_get:ActorBaseAttributesS2C.transform)
   return _internal_transform();
 }
 inline void ActorBaseAttributesS2C::unsafe_arena_set_allocated_transform(
@@ -1457,7 +1457,7 @@ inline void ActorBaseAttributesS2C::unsafe_arena_set_allocated_transform(
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeSyncDataS2C.transform)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ActorBaseAttributesS2C.transform)
 }
 inline ::Transform* PROTOBUF_NULLABLE ActorBaseAttributesS2C::release_transform() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -1480,7 +1480,7 @@ inline ::Transform* PROTOBUF_NULLABLE ActorBaseAttributesS2C::release_transform(
 }
 inline ::Transform* PROTOBUF_NULLABLE ActorBaseAttributesS2C::unsafe_arena_release_transform() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:BaseAttributeSyncDataS2C.transform)
+  // @@protoc_insertion_point(field_release:ActorBaseAttributesS2C.transform)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::Transform* temp = _impl_.transform_;
@@ -1499,7 +1499,7 @@ inline ::Transform* PROTOBUF_NONNULL ActorBaseAttributesS2C::mutable_transform()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::Transform* _msg = _internal_mutable_transform();
-  // @@protoc_insertion_point(field_mutable:BaseAttributeSyncDataS2C.transform)
+  // @@protoc_insertion_point(field_mutable:ActorBaseAttributesS2C.transform)
   return _msg;
 }
 inline void ActorBaseAttributesS2C::set_allocated_transform(::Transform* PROTOBUF_NULLABLE value) {
@@ -1520,7 +1520,7 @@ inline void ActorBaseAttributesS2C::set_allocated_transform(::Transform* PROTOBU
   }
 
   _impl_.transform_ = reinterpret_cast<::Transform*>(value);
-  // @@protoc_insertion_point(field_set_allocated:BaseAttributeSyncDataS2C.transform)
+  // @@protoc_insertion_point(field_set_allocated:ActorBaseAttributesS2C.transform)
 }
 
 // .Velocity velocity = 3;
@@ -1535,7 +1535,7 @@ inline const ::Velocity& ActorBaseAttributesS2C::_internal_velocity() const {
   return p != nullptr ? *p : reinterpret_cast<const ::Velocity&>(::_Velocity_default_instance_);
 }
 inline const ::Velocity& ActorBaseAttributesS2C::velocity() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:BaseAttributeSyncDataS2C.velocity)
+  // @@protoc_insertion_point(field_get:ActorBaseAttributesS2C.velocity)
   return _internal_velocity();
 }
 inline void ActorBaseAttributesS2C::unsafe_arena_set_allocated_velocity(
@@ -1550,7 +1550,7 @@ inline void ActorBaseAttributesS2C::unsafe_arena_set_allocated_velocity(
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeSyncDataS2C.velocity)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ActorBaseAttributesS2C.velocity)
 }
 inline ::Velocity* PROTOBUF_NULLABLE ActorBaseAttributesS2C::release_velocity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -1573,7 +1573,7 @@ inline ::Velocity* PROTOBUF_NULLABLE ActorBaseAttributesS2C::release_velocity() 
 }
 inline ::Velocity* PROTOBUF_NULLABLE ActorBaseAttributesS2C::unsafe_arena_release_velocity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:BaseAttributeSyncDataS2C.velocity)
+  // @@protoc_insertion_point(field_release:ActorBaseAttributesS2C.velocity)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
   ::Velocity* temp = _impl_.velocity_;
@@ -1592,7 +1592,7 @@ inline ::Velocity* PROTOBUF_NONNULL ActorBaseAttributesS2C::mutable_velocity()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::Velocity* _msg = _internal_mutable_velocity();
-  // @@protoc_insertion_point(field_mutable:BaseAttributeSyncDataS2C.velocity)
+  // @@protoc_insertion_point(field_mutable:ActorBaseAttributesS2C.velocity)
   return _msg;
 }
 inline void ActorBaseAttributesS2C::set_allocated_velocity(::Velocity* PROTOBUF_NULLABLE value) {
@@ -1613,7 +1613,7 @@ inline void ActorBaseAttributesS2C::set_allocated_velocity(::Velocity* PROTOBUF_
   }
 
   _impl_.velocity_ = reinterpret_cast<::Velocity*>(value);
-  // @@protoc_insertion_point(field_set_allocated:BaseAttributeSyncDataS2C.velocity)
+  // @@protoc_insertion_point(field_set_allocated:ActorBaseAttributesS2C.velocity)
 }
 
 // .CombatStateFlagsPbComponent combat_state_flags = 4;
@@ -1628,7 +1628,7 @@ inline const ::CombatStateFlagsPbComponent& ActorBaseAttributesS2C::_internal_co
   return p != nullptr ? *p : reinterpret_cast<const ::CombatStateFlagsPbComponent&>(::_CombatStateFlagsPbComponent_default_instance_);
 }
 inline const ::CombatStateFlagsPbComponent& ActorBaseAttributesS2C::combat_state_flags() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:BaseAttributeSyncDataS2C.combat_state_flags)
+  // @@protoc_insertion_point(field_get:ActorBaseAttributesS2C.combat_state_flags)
   return _internal_combat_state_flags();
 }
 inline void ActorBaseAttributesS2C::unsafe_arena_set_allocated_combat_state_flags(
@@ -1643,7 +1643,7 @@ inline void ActorBaseAttributesS2C::unsafe_arena_set_allocated_combat_state_flag
   } else {
     _impl_._has_bits_[0] &= ~0x00000004u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeSyncDataS2C.combat_state_flags)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ActorBaseAttributesS2C.combat_state_flags)
 }
 inline ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE ActorBaseAttributesS2C::release_combat_state_flags() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -1666,7 +1666,7 @@ inline ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE ActorBaseAttributesS2C::
 }
 inline ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE ActorBaseAttributesS2C::unsafe_arena_release_combat_state_flags() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:BaseAttributeSyncDataS2C.combat_state_flags)
+  // @@protoc_insertion_point(field_release:ActorBaseAttributesS2C.combat_state_flags)
 
   _impl_._has_bits_[0] &= ~0x00000004u;
   ::CombatStateFlagsPbComponent* temp = _impl_.combat_state_flags_;
@@ -1685,7 +1685,7 @@ inline ::CombatStateFlagsPbComponent* PROTOBUF_NONNULL ActorBaseAttributesS2C::m
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000004u;
   ::CombatStateFlagsPbComponent* _msg = _internal_mutable_combat_state_flags();
-  // @@protoc_insertion_point(field_mutable:BaseAttributeSyncDataS2C.combat_state_flags)
+  // @@protoc_insertion_point(field_mutable:ActorBaseAttributesS2C.combat_state_flags)
   return _msg;
 }
 inline void ActorBaseAttributesS2C::set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE value) {
@@ -1706,7 +1706,7 @@ inline void ActorBaseAttributesS2C::set_allocated_combat_state_flags(::CombatSta
   }
 
   _impl_.combat_state_flags_ = reinterpret_cast<::CombatStateFlagsPbComponent*>(value);
-  // @@protoc_insertion_point(field_set_allocated:BaseAttributeSyncDataS2C.combat_state_flags)
+  // @@protoc_insertion_point(field_set_allocated:ActorBaseAttributesS2C.combat_state_flags)
 }
 
 // -------------------------------------------------------------------
