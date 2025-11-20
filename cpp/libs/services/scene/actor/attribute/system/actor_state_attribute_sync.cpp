@@ -91,12 +91,6 @@ void ActorStateAttributeSyncSystem::Initialize() {
 	// 可添加全局初始化逻辑
 }
 
-// 初始化实体的组件
-void ActorStateAttributeSyncSystem::InitializeActorComponents(const entt::entity entity) {
-	// 在实体上添加速度、计算属性、派生属性和同步消息组件
-	tlsRegistryManager.actorRegistry.get_or_emplace<Velocity>(entity);
-}
-
 // 获取附近一级实体列表
 void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity entity, EntityVector& nearbyEntities) {
 	const auto& aoiList = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
