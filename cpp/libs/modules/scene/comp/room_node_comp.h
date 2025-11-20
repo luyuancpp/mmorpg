@@ -50,12 +50,12 @@ public:
 	}
 
 	void AddRoom(entt::entity roomEntity) {
-		const auto& roomInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(roomEntity);
+		const auto& roomInfo = tlsRegistryManager.roomRegistry.get_or_emplace<RoomInfoPBComponent>(roomEntity);
 		roomsByConfigId[roomInfo.scene_confid()].emplace(roomEntity);
 	}
 
 	void RemoveRoom(entt::entity roomEntity) {
-		const auto& roomInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(roomEntity);
+		const auto& roomInfo = tlsRegistryManager.roomRegistry.get_or_emplace<RoomInfoPBComponent>(roomEntity);
 		auto it = roomsByConfigId.find(roomInfo.scene_confid());
 		if (it != roomsByConfigId.end()) {
 			it->second.erase(roomEntity);

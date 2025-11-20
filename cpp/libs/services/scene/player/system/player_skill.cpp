@@ -14,7 +14,7 @@ void PlayerSkillSystem::RegisterPlayer(entt::entity player)
 {
 	for (const auto& tableClass : GetClassAllTable().data())
 	{
-		auto pbSkill = tlsRegistryManager.actorRegistry.get<PlayerSkillListPBComponent>(player).add_skill_list();
+		auto pbSkill = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSkillListPBComponent>(player).add_skill_list();
 
 		for (auto& skillId : tableClass.skill())
 		{

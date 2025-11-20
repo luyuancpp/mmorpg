@@ -58,7 +58,7 @@ uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint
     FetchAndValidateActorActionStateTable(actorAction);
 
     // 遍历角色的所有状态，检查是否可以执行该动作
-    const auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get<ActorStatePbComponent>(actorEntity);
+    const auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStatePbComponent>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
         // 检查该状态是否与动作冲突
         RETURN_ON_ERROR(CheckForStateConflict(actorActionStateTable, actorState));
@@ -83,7 +83,7 @@ uint32_t ActorActionStateSystem::CanExecuteActionWithoutStateChange(entt::entity
     FetchAndValidateActorActionStateTable(actorAction);
     
     // 获取角色状态组件并检查是否允许执行动作
-    const auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get<ActorStatePbComponent>(actorEntity);
+    const auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStatePbComponent>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
         // 检查该状态是否与动作冲突
         RETURN_ON_ERROR(CheckForStateConflict(actorActionStateTable, actorState));
@@ -94,7 +94,7 @@ uint32_t ActorActionStateSystem::CanExecuteActionWithoutStateChange(entt::entity
 }
 
 bool ActorActionStateSystem::HasState(const entt::entity actorEntity, const uint32_t state) {
-    const auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get<ActorStatePbComponent>(actorEntity);
+    const auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStatePbComponent>(actorEntity);
     if (state >= kActorStateActorStateMax) {
         return false;  // 无效状态
     }
@@ -114,7 +114,7 @@ uint32_t ActorActionStateSystem::GetStateTip(const uint32_t actorAction, const u
 }
 
 uint32_t ActorActionStateSystem::AddState(const entt::entity actorEntity, uint32_t actorState) {
-    auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get<ActorStatePbComponent>(actorEntity);
+    auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStatePbComponent>(actorEntity);
     if (actorState >= kActorStateActorStateMax){
         return kInvalidParameter; 
     }
@@ -130,7 +130,7 @@ uint32_t ActorActionStateSystem::AddState(const entt::entity actorEntity, uint32
 }
 
 uint32_t ActorActionStateSystem::RemoveState(entt::entity actorEntity, uint32_t actorState) {
-    auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get<ActorStatePbComponent>(actorEntity);
+    auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStatePbComponent>(actorEntity);
     if (actorState >= kActorStateActorStateMax ||
         !actorStatePbComponent.state_list().contains(actorState)) {
         return kInvalidParameter;

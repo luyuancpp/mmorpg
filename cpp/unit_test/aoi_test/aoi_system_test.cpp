@@ -248,7 +248,7 @@ protected:
 // Test case for entering the view
 TEST_F(AoiSystemTest1, TestEntityEnterView) {
     // Move entity2 to be within view range of entity1
-    auto& location = *tlsRegistryManager.actorRegistry.get<Transform>(entity2).mutable_location();
+    auto& location = *tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity2).mutable_location();
     location.set_x(20);
     location.set_y(20);
 
@@ -264,7 +264,7 @@ TEST_F(AoiSystemTest1, TestEntityEnterView) {
 // Test case for leaving the view
 TEST_F(AoiSystemTest1, TestEntityLeaveView) {
     // Move entity2 out of view range of entity1
-    auto& location = *tlsRegistryManager.actorRegistry.get<Transform>(entity2).mutable_location();
+    auto& location = *tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity2).mutable_location();
     location.set_x(0);
     location.set_y(0);
 

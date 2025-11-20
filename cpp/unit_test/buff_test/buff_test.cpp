@@ -51,7 +51,7 @@ TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 	EXPECT_EQ(result, kSuccess);
 
 	// Verify that the Buff was added to the BuffListComp
-	const auto& buffList = tlsRegistryManager.actorRegistry.get<BuffListComp>(parent);
+	const auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
 	EXPECT_FALSE(buffList.empty());
 }
 

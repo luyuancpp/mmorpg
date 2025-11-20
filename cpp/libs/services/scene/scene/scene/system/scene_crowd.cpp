@@ -29,7 +29,7 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterRoom& message)
 	auto transform = tlsRegistryManager.actorRegistry.try_get<Transform>(playerEntity);
 	if (transform == nullptr)
 	{
-		LOG_ERROR << "Transform component not found for player with GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
+		LOG_ERROR << "Transform component not found for player with GUID: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
 		return;
 	}
 

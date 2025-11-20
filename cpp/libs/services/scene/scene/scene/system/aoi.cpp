@@ -22,7 +22,7 @@ void AoiSystem::Update(double delta) {
     for (auto&& [entity, transform, sceneComp] : tlsRegistryManager.actorRegistry.view<Transform, RoomEntityComp>().each()) {
         // 跳过无效场景
         if (!tlsRegistryManager.roomRegistry.valid(sceneComp.roomEntity)) {
-            LOG_ERROR << "Scene not found for entity " << tlsRegistryManager.actorRegistry.get<Guid>(entity);
+            LOG_ERROR << "Scene not found for entity " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entity);
             continue;
         }
 
@@ -50,7 +50,7 @@ void AoiSystem::UpdateGridState(const entt::entity entity, SceneGridListComp& gr
         GridSystem::GetCurrentAndNeighborGridIds(currentHex, gridsToEnter);
     } else {
         // 更新位置
-        const auto previousHex = tlsRegistryManager.actorRegistry.get<Hex>(entity);
+        const auto previousHex = tlsRegistryManager.actorRegistry.get_or_emplace<Hex>(entity);
         if (hex_distance(previousHex, currentHex) == 0) {
             return;
         }
@@ -150,7 +150,7 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveRoom& message) {
     const auto hex = tlsRegistryManager.actorRegistry.try_get<Hex>(entity);
     if (!hex) return;
 
-	auto roomEntity = tlsRegistryManager.actorRegistry.get<RoomEntityComp>(entity).roomEntity;
+	auto roomEntity = tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(entity).roomEntity;
     if (!tlsRegistryManager.roomRegistry.valid(roomEntity))
     {
         LOG_ERROR << "Room entity not found for entity " << entt::to_integral(entity);

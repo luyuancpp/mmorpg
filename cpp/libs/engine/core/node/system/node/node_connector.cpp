@@ -36,7 +36,7 @@ void NodeConnector::ConnectToNode(const NodeInfo& info) {
 }
 
 void NodeConnector::ConnectToGrpcNode(const NodeInfo& info) {
-	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& registry = NodeUtils::GetRegistryForNodeType(info.node_type());
 
 	const entt::entity entityId{ info.node_id() };
@@ -114,7 +114,7 @@ void NodeConnector::ConnectToHttpNode(const NodeInfo&) {
 }
 
 void NodeConnector::ConnectAllNodes() {
-	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 
 	for (uint32_t nodeType = 0; nodeType < eNodeType_ARRAYSIZE; ++nodeType)
 	{

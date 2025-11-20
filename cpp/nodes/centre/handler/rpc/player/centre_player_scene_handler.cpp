@@ -58,7 +58,7 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 
 	auto* const changeSceneQueue = tlsRegistryManager.actorRegistry.try_get<ChangeSceneQueuePBComponent>(player);
 	if (!changeSceneQueue || changeSceneQueue->empty()) {
-		LOG_WARN << " Change scene queue is empty, player: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
+		LOG_WARN << " Change scene queue is empty, player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 		// 可选：通知客户端或重试
 		return;
 	}
@@ -68,21 +68,21 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 	const auto toScene = entt::to_entity(changeSceneInfo.guid());
 	if (entt::null == toScene)
 	{
-		LOG_ERROR << "Destination scene not found or destroyed for player: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
+		LOG_ERROR << "Destination scene not found or destroyed for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 		return;
 	}
 
 	auto* const playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (!playerSessionSnapshotPB)
 	{
-		LOG_ERROR << "PlayerNodeInfo not found for player: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
+		LOG_ERROR << "PlayerNodeInfo not found for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 		PlayerChangeRoomUtil::PopFrontChangeSceneQueue(player);
 		return;
 	}
 
 	playerSessionSnapshotPB->mutable_node_id()->erase(eNodeType::SceneNodeService);
 	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, RoomCommon::GetGameNodeIdFromGuid(toScene));
-	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
+	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 	///<<< END WRITING YOUR CODE
 
 }

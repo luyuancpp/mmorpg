@@ -96,7 +96,7 @@ uint32_t RoomCommon::CheckPlayerEnterRoom(const EnterRoomParam& param) {
 		return kInvalidEnterSceneParameters;
 	}
 
-	auto creatorId = tlsRegistryManager.actorRegistry.get<Guid>(param.enter);
+	auto creatorId = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.enter);
 	if (roomInfo->creators().find(creatorId) == roomInfo->creators().end()) {
 		LOG_WARN << "Player cannot enter room due to creator restriction - Room ID: " << entt::to_integral(param.room);
 		return kCheckEnterSceneCreator;
@@ -107,7 +107,7 @@ uint32_t RoomCommon::CheckPlayerEnterRoom(const EnterRoomParam& param) {
 
 
 uint32_t RoomCommon::HasRoomSlot(entt::entity room) {
-	auto& roomPlayers = tlsRegistryManager.roomRegistry.get<RoomPlayers>(room);
+	auto& roomPlayers = tlsRegistryManager.roomRegistry.get_or_emplace<RoomPlayers>(room);
 
 	if (roomPlayers.size() >= kMaxRoomPlayer1) {
 		LOG_WARN << "Room player size limit exceeded - Room ID: " << entt::to_integral(room);
@@ -147,11 +147,11 @@ void RoomCommon::EnterRoom(const EnterRoomParam& param) {
 		return;
 	}
 
-	auto& roomPlayers = tlsRegistryManager.roomRegistry.get<RoomPlayers>(param.room);
+	auto& roomPlayers = tlsRegistryManager.roomRegistry.get_or_emplace<RoomPlayers>(param.room);
 	roomPlayers.emplace(param.enter);
 	if (tlsRegistryManager.actorRegistry.any_of<RoomEntityComp>(param.enter))
 	{
-		LOG_FATAL << tlsRegistryManager.actorRegistry.get<Guid>(param.enter);
+		LOG_FATAL << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.enter);
 	}
 	tlsRegistryManager.actorRegistry.emplace<RoomEntityComp>(param.enter, param.room);
 
@@ -165,7 +165,7 @@ void RoomCommon::EnterRoom(const EnterRoomParam& param) {
 	dispatcher.trigger(afterEnterRoom);
 
 	if (tlsRegistryManager.actorRegistry.any_of<Guid>(param.enter)) {
-		LOG_INFO << "Player entered room - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.enter) << ", Room ID: " << entt::to_integral(param.room);
+		LOG_INFO << "Player entered room - Player GUID: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.enter) << ", Room ID: " << entt::to_integral(param.room);
 	}
 }
 
@@ -213,7 +213,7 @@ void RoomCommon::LeaveRoom(const LeaveRoomParam& param) {
 	dispatcher.trigger(afterLeaveRoom);*/
 
 	if (tlsRegistryManager.actorRegistry.any_of<Guid>(param.leaver)) {
-		LOG_INFO << "Player left room - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.leaver) << ", Room ID: " << entt::to_integral(roomEntity);
+		LOG_INFO << "Player left room - Player GUID: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.leaver) << ", Room ID: " << entt::to_integral(roomEntity);
 	}
 }
 

@@ -65,7 +65,7 @@ void StartDelayedCleanupTimer(entt::entity playerEntity, uint32_t timeoutMs) {
 				GlobalSessionList().erase(gateSessionId);
 				LOG_INFO << "Delayed cleanup: removed GlobalSessionList entry for session " << gateSessionId;
 			}
-			Guid playerGuid = tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
+			Guid playerGuid = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
 			PlayerLifecycleSystem::HandleNormalExit(playerGuid);
 		});
 }
@@ -192,12 +192,12 @@ namespace {
 		sessionPB.set_session_version(newVersion);
 
 		// 持久化 snapshot（异步）
-		GetPlayerCentreDataRedis()->UpdateExtraData(tlsRegistryManager.actorRegistry.get<Guid>(playerEntity), sessionPB);
+		GetPlayerCentreDataRedis()->UpdateExtraData(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity), sessionPB);
 
 		// 通知 Gate：绑定 session（Centre->Gate 的 BindSession RPC）
 		BindSessionToGateRequest bindReq;
 		bindReq.set_session_id(newSessionId);
-		bindReq.set_player_id(tlsRegistryManager.actorRegistry.get<Guid>(playerEntity));
+		bindReq.set_player_id(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity));
 		bindReq.set_session_version(newVersion);
 		SendMessageToGateById(GateBindSessionToGateMessageId, bindReq, GetGateNodeId(newSessionId));
 

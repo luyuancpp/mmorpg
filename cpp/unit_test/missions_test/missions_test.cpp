@@ -29,7 +29,7 @@ TEST(MissionsComponent, AcceptMission)
 {
 	constexpr uint32_t testMissionId = 1;
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
-	auto& missionsComponent = tlsRegistryManager.actorRegistry.get<MissionsComponent>(playerEntity);
+	auto& missionsComponent = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
 	missionsComponent.SetMissionTypeNotRepeated(false);
 
 	// Simulating accepting missions from a list
@@ -57,7 +57,7 @@ TEST(MissionsComponent, AcceptMission)
 TEST(MissionsComponent, RepeatedMissionId)
 {
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
-	auto& missionsComponent = tlsRegistryManager.actorRegistry.get<MissionsComponent>(playerEntity);
+	auto& missionsComponent = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
 
 	// Test case : Repeating mission_id = 1
 	{
@@ -77,7 +77,7 @@ TEST(MissionsComponent, RepeatedMissionId)
 TEST(MissionsComponent, RepeatedMissionType)
 {
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
-	auto& missionsComponent = tlsRegistryManager.actorRegistry.get<MissionsComponent>(playerEntity);
+	auto& missionsComponent = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
 
 	// Test case : Repeating different mission types
 	{
@@ -104,7 +104,7 @@ TEST(MissionsComponent, TriggerMissionCondition)
 {
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
-	auto& missionsComponent = tlsRegistryManager.actorRegistry.get<MissionsComponent>(playerEntity);
+	auto& missionsComponent = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
 
 	constexpr uint32_t mission_id = 1;
 	AcceptMissionEvent acceptMissionEvent;
@@ -162,7 +162,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 {
 	// Create a player entity with a mission component
 	auto playerEntity = CreatePlayerEntityWithMissionComponent();
-	auto& missionsComponent = tlsRegistryManager.actorRegistry.get<MissionsComponent>(playerEntity);
+	auto& missionsComponent = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
 
 	// Trigger update to handle any pending mission events
 	dispatcher.update<AcceptMissionEvent>();
@@ -266,7 +266,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 
 MissionsComponent& GetMissionsComponent(entt::entity playerEntity)
 {
-	return tlsRegistryManager.actorRegistry.get<MissionsComponent>(playerEntity);
+	return tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
 }
 
 TEST(MissionsComponent, CompleteAcceptMission)
