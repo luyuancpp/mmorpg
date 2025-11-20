@@ -79,7 +79,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	taskCallback := func(taskKey string, taskSuccess bool, err error) {
 		// 原有回调逻辑：通知中心
 		req := &login_proto_centre.CentrePlayerGameNodeEntryRequest{
-			ClientMsgBody: &login_proto_centre.CentreEnterGameRequest{
+			ClientInfo: &login_proto_centre.CentreEnterGameRequest{
 				PlayerId: in.PlayerId,
 			},
 			SessionInfo: sessionDetails,

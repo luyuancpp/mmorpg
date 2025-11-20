@@ -17,7 +17,7 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	const auto sceneInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>(scene);
 	if (sceneInfo == nullptr)
 	{
-		LOG_ERROR << "Failed to get scene info for player: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
+		LOG_ERROR << "Failed to get scene info for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 		return;
 	}
 

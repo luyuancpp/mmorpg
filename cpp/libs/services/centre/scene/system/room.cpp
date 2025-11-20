@@ -113,7 +113,7 @@ void RoomSystem::EnterDefaultRoom(const EnterDefaultRoomParam& param) {
 	// Log the entry into the default room
 	if (tlsRegistryManager.actorRegistry.any_of<Guid>(param.enter))
 	{
-		LOG_INFO << "Player entered default room - Player GUID: " << tlsRegistryManager.actorRegistry.get<Guid>(param.enter) << ", Room ID: " << entt::to_integral(defaultRoom);
+		LOG_INFO << "Player entered default room - Player GUID: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.enter) << ", Room ID: " << entt::to_integral(defaultRoom);
 	}
 }
 

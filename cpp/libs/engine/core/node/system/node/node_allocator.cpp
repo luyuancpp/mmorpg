@@ -29,7 +29,7 @@ void NodeAllocator::AcquireNode() {
 	}
 
 	// ...（以下为非 singleton 的原有分配逻辑）
-	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[gNode->GetNodeType()];
+	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity())[gNode->GetNodeType()];
 	auto& existingNodes = *nodeList.mutable_node_list();
 
 	std::unordered_set<uint32_t> usedIds;
@@ -96,7 +96,7 @@ uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts,
 }
 
 void NodeAllocator::AcquireNodePort() {
-	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity())[gNode->GetNodeType()];
+	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity())[gNode->GetNodeType()];
 	auto& existingNodes = *nodeList.mutable_node_list();
 
 	std::unordered_set<uint32_t> usedPorts;

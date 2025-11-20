@@ -198,7 +198,7 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam& p) {
         return PrintStackAndReturnError(kBagDelItemFindItem);
     }
 
-    auto& item = itemRegistry.get<ItemPBComponent>(item_it->second);
+    auto& item = itemRegistry.get_or_emplace<ItemPBComponent>(item_it->second);
     if (item.config_id() != p.item_config_id_) {
         return PrintStackAndReturnError(kBagDelItemConfig);
     }
@@ -233,7 +233,7 @@ void Bag::Neaten()
 		for (auto& sameVector : sameitemEnttiyMatrix)
 		{
 			//看看是不是和第一个物品一样,一样则放到统计列表
-			auto& itemOther = itemRegistry.get<ItemPBComponent>(*sameVector.begin());
+			auto& itemOther = itemRegistry.get_or_emplace<ItemPBComponent>(*sameVector.begin());
 			if (!CanStack(item, itemOther))
 			{
 				continue;
@@ -259,7 +259,7 @@ void Bag::Neaten()
 			continue;
 		}
 
-		auto& firstItem = itemRegistry.get<ItemPBComponent>(*itemList.begin());
+		auto& firstItem = itemRegistry.get_or_emplace<ItemPBComponent>(*itemList.begin());
 
 		FetchItemTableOrContinue(firstItem.config_id());
 	
@@ -267,7 +267,7 @@ void Bag::Neaten()
 		uint32_t totalStackSize = 0;
 		for (auto& e : itemList)
 		{
-			totalStackSize += itemRegistry.get<ItemPBComponent>(e).size();
+			totalStackSize += itemRegistry.get_or_emplace<ItemPBComponent>(e).size();
 		}
 
 		std::size_t index = 0;//计算过的物品下标
@@ -275,7 +275,7 @@ void Bag::Neaten()
 		for (index = 0; index < itemList.size(); ++index)
 		{
 			auto currentItemEntity = itemList[index];
-			auto currentItem = itemRegistry.get<ItemPBComponent>(currentItemEntity);
+			auto currentItem = itemRegistry.get_or_emplace<ItemPBComponent>(currentItemEntity);
 
 			if (totalStackSize <= itemTable->max_statck_size())
 			{
@@ -293,7 +293,7 @@ void Bag::Neaten()
 		for (; index < itemList.size(); ++index)
 		{
 			auto currentItemEntity = itemList[index];
-			auto currentItem = itemRegistry.get<ItemPBComponent>(currentItemEntity);
+			auto currentItem = itemRegistry.get_or_emplace<ItemPBComponent>(currentItemEntity);
 
 			currentItem.set_size(0);//被清空的物品
 
@@ -312,7 +312,7 @@ void Bag::Neaten()
 	//重新计算物品位置
 	for (auto& [guid, e] : items_)
 	{
-		auto& item = itemRegistry.get<ItemPBComponent>(e);
+		auto& item = itemRegistry.get_or_emplace<ItemPBComponent>(e);
 		OnNewGrid(item.item_id());
 	}
 }
@@ -433,7 +433,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 		auto needStackSize = itemPBCompCopy.size();
 		for (auto& e : doStackItemList)
 		{
-			auto& item = itemRegistry.get<ItemPBComponent>(e);
+			auto& item = itemRegistry.get_or_emplace<ItemPBComponent>(e);
 			auto remain_stack_size = itemTable->max_statck_size() - item.size();
 			if (remain_stack_size >= needStackSize)
 			{

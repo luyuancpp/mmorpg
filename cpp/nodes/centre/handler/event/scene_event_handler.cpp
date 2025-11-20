@@ -82,9 +82,9 @@ void SceneEventHandler::BeforeLeaveRoomHandler(const BeforeLeaveRoom& event)
 	SendMessageToPlayerOnSceneNode(SceneScenePlayerLeaveSceneMessageId, leaveSceneRequest, player);
 
 	LOG_INFO << "Player is leaving scene "
-		<< tlsRegistryManager.actorRegistry.get<Guid>(player)
+		<< tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player)
 		<< ", Scene GUID: "
-		<< tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(tlsRegistryManager.actorRegistry.get<RoomEntityComp>(player).roomEntity).guid();
+		<< tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(player).roomEntity).guid();
 
 	///<<< END WRITING YOUR CODE
 }

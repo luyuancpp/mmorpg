@@ -63,7 +63,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData&
 
 //考虑: 没load 完再次进入别的gs
 void PlayerLifecycleSystem::EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo){
-	LOG_INFO << "EnterGs: Player " << tlsRegistryManager.actorRegistry.get<Guid>(player) << " entering Game Node";
+	LOG_INFO << "EnterGs: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " entering Game Node";
 
 	auto& playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
 	auto& nodeIdMap = *playerSessionSnapshotPB.mutable_node_id();
@@ -81,7 +81,7 @@ void PlayerLifecycleSystem::EnterGs(const entt::entity player, const PlayerGameN
 void PlayerLifecycleSystem::NotifyEnterGsSucceed(entt::entity player, NodeId centreNodeId)
 {
 	EnterGameNodeSuccessRequest request;
-	request.set_player_id(tlsRegistryManager.actorRegistry.get<Guid>(player));
+	request.set_player_id(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player));
 	request.set_scene_node_id(GetNodeInfo().node_id());
 	CallRemoteMethodOnClient(CentreEnterGsSucceedMessageId, request, centreNodeId, eNodeType::CentreNodeService);
 
@@ -165,7 +165,7 @@ void PlayerLifecycleSystem::DestroyPlayer(Guid playerId)
 
 void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 {
-	LOG_INFO << "HandleExitGameNode: Player " << tlsRegistryManager.actorRegistry.get<Guid>(player) << " is exiting the Game Node";
+	LOG_INFO << "HandleExitGameNode: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " is exiting the Game Node";
 
 	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{
@@ -175,7 +175,7 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 
 	if (tlsRegistryManager.actorRegistry.all_of<UnregisterPlayer>(player))
 	{
-		LOG_INFO << "Player " << tlsRegistryManager.actorRegistry.get<Guid>(player) << " is already marked for unregistration";
+		LOG_INFO << "Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " is already marked for unregistration";
 		return;
 	}
 
@@ -200,7 +200,7 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 		return;
 	}
 	
-	auto playerId = tlsRegistryManager.actorRegistry.get<Guid>(playerEntity);
+	auto playerId = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
 
 	auto& sessionSnapshot = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity);
 	auto& nodeIdMap = *sessionSnapshot.mutable_node_id();
@@ -267,8 +267,8 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& p
 	// 5. 初始化必要数据（仅首次注册时）
 	if (playerAllData.player_database_data().uint64_pb_component().registration_timestamp() <= 0)
 	{
-		tlsRegistryManager.actorRegistry.get<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeSystem::NowSecondsUTC());
-		tlsRegistryManager.actorRegistry.get<LevelPbComponent>(player).set_level(1);
+		tlsRegistryManager.actorRegistry.get_or_emplace<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeSystem::NowSecondsUTC());
+		tlsRegistryManager.actorRegistry.get_or_emplace<LevelPbComponent>(player).set_level(1);
 
 		RegisterPlayerEvent registerPlayer;
 		registerPlayer.set_actor_entity(entt::to_integral(player));
@@ -308,7 +308,7 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 		return;
 	}
 
-	auto playerId = tlsRegistryManager.actorRegistry.get<Guid>(player);
+	auto playerId = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 
 	using SaveMessage = PlayerDataRedis::element_type::MessageValuePtr;
 	SaveMessage message = std::make_shared<SaveMessage::element_type>();

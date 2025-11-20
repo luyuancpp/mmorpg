@@ -70,17 +70,17 @@ std::shared_ptr<SkillContextPBComponent> CreateSkillContext(entt::entity caster,
 	context->set_skilltableid(request->skill_table_id());
 	context->set_target(request->target_id());
 	context->set_casttime(TimeSystem::NowMilliseconds());
-	context->set_skillid(GenerateUniqueSkillId(tlsRegistryManager.actorRegistry.get<SkillContextCompMap>(caster), {}));
+	context->set_skillid(GenerateUniqueSkillId(tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(caster), {}));
 	return context;
 }
 
 void AddSkillContext(entt::entity caster, const ReleaseSkillSkillRequest* request, std::shared_ptr<SkillContextPBComponent> context) {
-	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get<SkillContextCompMap>(caster);
+	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(caster);
 	casterSkillContextMap.emplace(context->skillid(), context);
 
 	entt::entity target{ request->target_id() };
 	if (tlsRegistryManager.actorRegistry.valid(target)) {
-		auto& targetSkillContextMap = tlsRegistryManager.actorRegistry.get<SkillContextCompMap>(target);
+		auto& targetSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(target);
 		targetSkillContextMap.emplace(context->skillid(), context);
 	}
 }
@@ -149,7 +149,7 @@ uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
 
 uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable) {
 
-	auto& combatStateCollection = tlsRegistryManager.actorRegistry.get<CombatStateCollectionPbComponent>(casterEntity);
+	auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionPbComponent>(casterEntity);
 
 	for (auto& [currentState, buffList] : combatStateCollection.states())
 	{
@@ -227,7 +227,7 @@ void SkillSystem::HandleGeneralSkillSpell(const entt::entity casterEntity, const
 
 // Set up a timer for skill recovery after casting
 void SkillSystem::HandleSkillRecovery(const entt::entity casterEntity, uint64_t skillId) {
-	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get<SkillContextCompMap>(casterEntity);
+	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(casterEntity);
 	auto skillContentIt = casterSkillContextMap.find(skillId);
 
 	if (skillContentIt == casterSkillContextMap.end()) {
@@ -249,12 +249,12 @@ void SkillSystem::HandleSkillFinish(const entt::entity casterEntity, uint64_t sk
     }
 
 	// todo player off line 
-	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get<SkillContextCompMap>(casterEntity);
+	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(casterEntity);
 	auto skillContentIt = casterSkillContextMap.find(skillId);
 	if (skillContentIt != casterSkillContextMap.end()) {
 		entt::entity target = entt::to_entity(skillContentIt->second->target());
 		if (tlsRegistryManager.actorRegistry.valid(target)) {
-			auto& targetSkillContextMap = tlsRegistryManager.actorRegistry.get<SkillContextCompMap>(target);
+			auto& targetSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(target);
 			targetSkillContextMap.erase(skillId);
 		}
 		casterSkillContextMap.erase(skillContentIt);
@@ -493,7 +493,7 @@ void SkillSystem::SendSkillInterruptedMessage(const entt::entity casterEntity, c
 }
 
 void SkillSystem::TriggerSkillEffect(const entt::entity casterEntity, const uint64_t skillId) {
-	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get<SkillContextCompMap>(casterEntity);
+	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(casterEntity);
 	const auto skillContextIt = casterSkillContextMap.find(skillId);
 
 	if (skillContextIt == casterSkillContextMap.end()) {
@@ -512,7 +512,7 @@ void SkillSystem::TriggerSkillEffect(const entt::entity casterEntity, const uint
 }
 
 void SkillSystem::RemoveEffect(entt::entity casterEntity, const uint64_t skillId) {
-	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get<SkillContextCompMap>(casterEntity);
+	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(casterEntity);
 	auto skillContentIt = casterSkillContextMap.find(skillId);
 
 	if (skillContentIt == casterSkillContextMap.end()) {
@@ -529,19 +529,19 @@ void SkillSystem::RemoveEffect(entt::entity casterEntity, const uint64_t skillId
 
 // 判断目标是否已死亡
 bool IsTargetDead(entt::entity targetEntity) {
-    auto& targetBaseAttributes = tlsRegistryManager.actorRegistry.get<BaseAttributesPbComponent>(targetEntity);
+    auto& targetBaseAttributes = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(targetEntity);
     return targetBaseAttributes.health() <= 0;
 }
 
 
 double CalculateFinalDamage(const entt::entity casterEntity, const entt::entity target, double baseDamage) {
     // 获取施法者的属性，例如力量和暴击率
-    auto& casterAttributes = tlsRegistryManager.actorRegistry.get<BaseAttributesPbComponent>(casterEntity);
+    auto& casterAttributes = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(casterEntity);
     double critChance = casterAttributes.critchance();
     double strength = casterAttributes.strength();
 
     // 获取目标的属性，例如护甲和抗性
-    auto& targetAttributes = tlsRegistryManager.actorRegistry.get<BaseAttributesPbComponent>(target);
+    auto& targetAttributes = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(target);
     double armor = targetAttributes.armor();
     double resistance = targetAttributes.resistance();
 
@@ -561,7 +561,7 @@ double CalculateFinalDamage(const entt::entity casterEntity, const entt::entity 
 
 void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponent& damageEvent) {
     // 获取施法者的技能上下文
-    auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get<SkillContextCompMap>(casterEntity);
+    auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(casterEntity);
     auto skillContentIt = casterSkillContextMap.find(damageEvent.skill_id());
 
     if (skillContentIt == casterSkillContextMap.end()) {
@@ -587,7 +587,7 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
     }
 
     // 获取施法者的等级组件并设置伤害参数
-    auto& levelComponent = tlsRegistryManager.actorRegistry.get<LevelPbComponent>(casterEntity);
+    auto& levelComponent = tlsRegistryManager.actorRegistry.get_or_emplace<LevelPbComponent>(casterEntity);
     SkillTableManager::Instance().SetDamageParam({ static_cast<double>(levelComponent.level()) });
 
     // 设置攻击者 ID
@@ -656,7 +656,7 @@ void HandleTargetDeath(const entt::entity casterEntity, const entt::entity targe
 
 // 处理具体的伤害逻辑
 void DealDamage(DamageEventPbComponent& damageEvent, const entt::entity caster, const entt::entity target) {
-	auto& baseAttributesPBComponent = tlsRegistryManager.actorRegistry.get<BaseAttributesPbComponent>(target);
+	auto& baseAttributesPBComponent = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(target);
 
 	// 如果目标已死亡，直接返回
 	if (IsTargetDead(target)) {
@@ -682,7 +682,7 @@ void DealDamage(DamageEventPbComponent& damageEvent, const entt::entity caster, 
 }
 
 void SkillSystem::HandleSkillSpell(const entt::entity casterEntity, const uint64_t skillId) {
-	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get<SkillContextCompMap>(casterEntity);
+	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(casterEntity);
 	const auto skillContextIt = casterSkillContextMap.find(skillId);
 
 	if (skillContextIt == casterSkillContextMap.end()) {

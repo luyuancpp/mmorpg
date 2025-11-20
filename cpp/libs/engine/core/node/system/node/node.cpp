@@ -256,8 +256,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		return;
 	}
 
-	// 下面是你的节点处理代码
-	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[deleteNode.node_type()].mutable_node_list();
 	if (deleteNode.protocol_type() == PROTOCOL_GRPC)
 	{
@@ -295,7 +294,7 @@ void Node::StartServiceHealthMonitor(){
 		}
 		auto& myNode = GetNodeInfo();
 
-		auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+		auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		auto& nodeList = *nodeRegistry[myNode.node_type()].mutable_node_list();
 		for (auto it = nodeList.begin(); it != nodeList.end(); ++it) {
 			if (IsMyNode(*it)) {

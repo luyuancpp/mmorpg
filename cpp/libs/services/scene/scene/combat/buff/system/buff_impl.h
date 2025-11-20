@@ -71,7 +71,7 @@ public:
 
         defer(BuffSystem::RemoveBuff(targetEntity, buffsToRemoveTarget));
         
-        for (auto& buffList = tlsRegistryManager.actorRegistry.get<BuffListComp>(targetEntity);
+        for (auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(targetEntity);
             auto& buffComp : buffList | std::views::values) {
             FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 
@@ -139,7 +139,7 @@ private:
         
         defer(BuffSystem::RemoveBuff(casterEntity, buffsToRemoveCaster));
 
-        for (auto& buffList = tlsRegistryManager.actorRegistry.get<BuffListComp>(casterEntity);
+        for (auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(casterEntity);
             auto& buffComp : buffList | std::views::values) {
            FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 

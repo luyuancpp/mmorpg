@@ -210,13 +210,13 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 	for (const auto& playerEntity : playerEntitySet1)
 	{
 		EXPECT_TRUE(scenesPlayers1.find(playerEntity) != scenesPlayers1.end());
-		EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<RoomEntityComp>(playerEntity).roomEntity == scene1);
+		EXPECT_TRUE(tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(playerEntity).roomEntity == scene1);
 	}
 
 	for (const auto& playerEntity : playerEntitiesSet2)
 	{
 		EXPECT_TRUE(scenesPlayers2.find(playerEntity) != scenesPlayers2.end());
-		EXPECT_TRUE(tlsRegistryManager.actorRegistry.get<RoomEntityComp>(playerEntity).roomEntity == scene2);
+		EXPECT_TRUE(tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(playerEntity).roomEntity == scene2);
 	}
 
 	EXPECT_EQ(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<RoomNodePlayerStatsPtrPbComponent>(node1)->player_size(), playerSize / 2);
@@ -548,7 +548,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			uint32_t player_scene_guid = 0;
 			for (auto& it : player_scene1)
 			{
-				auto& pse = tlsRegistryManager.actorRegistry.get<RoomEntityComp>(it.first);
+				auto& pse = tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(it.first);
 				EXPECT_TRUE(pse.roomEntity == it.second);
 				EXPECT_EQ(tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(pse.roomEntity).scene_confid(), scene_config_id0);
 			}
@@ -568,7 +568,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			player_scene_guid = 0;
 			for (auto& it : player_scene2)
 			{
-				auto& pse = tlsRegistryManager.actorRegistry.get<RoomEntityComp>(it.first);
+				auto& pse = tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(it.first);
 				EXPECT_TRUE(pse.roomEntity == it.second);
 				EXPECT_EQ(tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(pse.roomEntity).scene_confid(), scene_config_id1);
 			}
@@ -586,13 +586,13 @@ TEST(GS, WeightRoundRobinMainScene)
 			LeaveRoomParam leave_scene;
 			for (auto& it : player_scene1)
 			{
-				auto& pse = tlsRegistryManager.actorRegistry.get<RoomEntityComp>(it.first);
+				auto& pse = tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(it.first);
 				leave_scene.leaver = it.first;
 				RoomCommon::LeaveRoom(leave_scene);
 			}
 			for (auto& it : player_scene2)
 			{
-				auto& pse = tlsRegistryManager.actorRegistry.get<RoomEntityComp>(it.first);
+				auto& pse = tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(it.first);
 				leave_scene.leaver = it.first;
 				RoomCommon::LeaveRoom(leave_scene);
 			}
@@ -707,7 +707,7 @@ TEST(GS, EnterDefaultScene)
 	RoomSystem::EnterDefaultRoom(enterParam);
 
 	// Verify the player is in the default scene
-	const auto [sceneEntity] = tlsRegistryManager.actorRegistry.get<RoomEntityComp>(player);
+	const auto [sceneEntity] = tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(player);
 	const auto& sceneInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(sceneEntity);
 	EXPECT_EQ(sceneInfo.scene_confid(), kDefaultSceneId);
 }
@@ -784,7 +784,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			// Verify players are correctly placed in scenes and sceneConfigId0 is assigned
 			for (auto& it : playerScene1)
 			{
-				auto& pse = tlsRegistryManager.actorRegistry.get<RoomEntityComp>(it.first);
+				auto& pse = tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(it.first);
 				EXPECT_TRUE(pse.roomEntity == it.second);
 				EXPECT_EQ(tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(pse.roomEntity).scene_confid(), sceneConfigId0);
 			}
@@ -810,7 +810,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			// Verify players are correctly placed in scenes and sceneConfigId1 is assigned
 			for (auto& it : playerScene2)
 			{
-				auto& pse = tlsRegistryManager.actorRegistry.get<RoomEntityComp>(it.first);
+				auto& pse = tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(it.first);
 				EXPECT_TRUE(pse.roomEntity == it.second);
 				EXPECT_EQ(tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(pse.roomEntity).scene_confid(), sceneConfigId1);
 			}

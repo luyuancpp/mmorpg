@@ -74,7 +74,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
         return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
     }
 
-    auto& buffList = tlsRegistryManager.actorRegistry.get<BuffListComp>(parent);
+    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
 
     if (HandleExistingBuff(parent, buffTableId, abilityContext)) {
         return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
@@ -150,13 +150,13 @@ void BuffSystem::RemoveSubBuff(BuffComp& buffComp, UInt64Set& buffsToRemove)
 }
 
 void BuffSystem::MarkBuffForRemoval(const entt::entity parent, uint64_t buffId) {
-    auto& pendingRemoveBuffs = tlsRegistryManager.actorRegistry.get<BuffPendingRemoveBuffs>(parent);
+    auto& pendingRemoveBuffs = tlsRegistryManager.actorRegistry.get_or_emplace<BuffPendingRemoveBuffs>(parent);
     pendingRemoveBuffs.emplace(buffId);
 }
 
 // 帧结束时统一移除所有待移除的 Buff
 void BuffSystem::RemovePendingBuffs(const entt::entity parent, BuffListComp& buffListComp) {
-    auto& pendingRemoveBuffs = tlsRegistryManager.actorRegistry.get<BuffPendingRemoveBuffs>(parent);
+    auto& pendingRemoveBuffs = tlsRegistryManager.actorRegistry.get_or_emplace<BuffPendingRemoveBuffs>(parent);
 
     for (const auto& buffId : pendingRemoveBuffs) {
         buffListComp.erase(buffId);  // 删除 Buff
@@ -169,7 +169,7 @@ void BuffSystem::RemovePendingBuffs(const entt::entity parent, BuffListComp& buf
 // Buff 过期处理
 void BuffSystem::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
 {
-    auto& buffList = tlsRegistryManager.actorRegistry.get<BuffListComp>(parent);
+    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
     const auto buffIt = buffList.find(buffId);
 
     if (buffIt == buffList.end()) {
@@ -190,7 +190,7 @@ uint32_t BuffSystem::CanCreateBuff(const entt::entity parentEntity, const uint32
 {
     FetchAndValidateBuffTable(buffTableId);
 
-    const auto& buffList = tlsRegistryManager.actorRegistry.get<BuffListComp>(parentEntity);
+    const auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parentEntity);
     if (const bool isImmune = IsTargetImmune(buffList, buffTable)) {
         return kBuffTargetImmuneToBuff;
     }
@@ -205,7 +205,7 @@ bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
 {
     FetchBuffTableOrReturnFalse(buffTableId);
 
-    for (auto& buffList = tlsRegistryManager.actorRegistry.get<BuffListComp>(parentEntity); auto & buffComp : buffList | std::views::values) {
+    for (auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parentEntity); auto & buffComp : buffList | std::views::values) {
         if (buffComp.buffPb.buff_table_id() == buffTableId && buffComp.buffPb.processed_caster() == abilityContext->caster()) {
             if (buffComp.buffPb.layer() < buffTable->maxlayer()) {
                 buffComp.buffPb.set_layer(buffComp.buffPb.layer() + 1);
@@ -223,7 +223,7 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
     FetchAndValidateCustomBuffTable(add, buffTableId);
 
     UInt64Vector dispelBuffIdList;
-    for (auto& buffList = tlsRegistryManager.actorRegistry.get<BuffListComp>(parent); auto & [buffId, buffPbComp] : buffList) {
+    for (auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent); auto & [buffId, buffPbComp] : buffList) {
         FetchBuffTableOrContinue(buffTableId);
         for (const auto& removeTag : addBuffTable->dispeltag() | std::views::keys) {
             if (buffTable->tag().contains(removeTag)) {
@@ -278,7 +278,7 @@ void BuffSystem::OnBuffDestroy(entt::entity parent, const uint64_t buffId, const
 // Buff 间隔处理
 void BuffSystem::OnIntervalThink(entt::entity parent, uint64_t buffId)
 {
-    auto& buffList = tlsRegistryManager.actorRegistry.get<BuffListComp>(parent);
+    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
     const auto buffIt = buffList.find(buffId);
 
     if (buffIt == buffList.end()) {

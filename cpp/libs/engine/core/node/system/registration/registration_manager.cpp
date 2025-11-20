@@ -58,7 +58,7 @@ void NodeHandshakeManager::OnNodeHandshake(
 
 	auto tryRegister = [&, this](const TcpConnectionPtr& conn, uint32_t nodeType) -> bool {
 		entt::registry& registry = tlsNodeContextManager.GetRegistry(nodeType);
-		const auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+		const auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
 			if (!NodeUtils::IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
 			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };

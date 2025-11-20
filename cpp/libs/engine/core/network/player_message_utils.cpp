@@ -103,7 +103,7 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message& mess
 		const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 		if (!playerSessionSnapshotPB)
 		{
-			LOG_ERROR << "Player node info not found for player entity: " << tlsRegistryManager.actorRegistry.get<Guid>(player);
+			LOG_ERROR << "Player node info not found for player entity: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 			continue;
 		}
 
@@ -188,7 +188,7 @@ void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::M
 
 	SessionDetails sessionDetails;
 	sessionDetails.set_session_id(playerSessionSnapshotPB->gate_session_id());
-	sessionDetails.set_player_id(tlsRegistryManager.actorRegistry.get<Guid>(playerEntity));
+	sessionDetails.set_player_id(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity));
 
 	if (!rpcHandlerMeta.messageSender) {
 		LOG_ERROR << "Message sender not found for message ID: " << messageId;

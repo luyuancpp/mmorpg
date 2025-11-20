@@ -106,7 +106,7 @@ void ActorStateAttributeSyncSystem::InitializeActorComponents(const entt::entity
 
 // 获取附近一级实体列表
 void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-	const auto& aoiList = tlsRegistryManager.actorRegistry.get<AoiListComp>(entity).aoiList;
+	const auto& aoiList = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
 
 	for (const auto& nearbyEntity : aoiList) {
 		constexpr double viewRadiusFactor = 0.333;
@@ -122,7 +122,7 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity e
 
 // 获取附近二级实体列表
 void ActorStateAttributeSyncSystem::GetNearbyLevel2Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-	const auto& aoiList = tlsRegistryManager.actorRegistry.get<AoiListComp>(entity).aoiList;
+	const auto& aoiList = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
 
 	for (const auto& nearbyEntity : aoiList) {
 		constexpr double viewRadiusFactor = 0.666;
@@ -138,7 +138,7 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel2Entities(const entt::entity e
 
 // 获取附近三级实体列表
 void ActorStateAttributeSyncSystem::GetNearbyLevel3Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-	const auto& aoiList = tlsRegistryManager.actorRegistry.get<AoiListComp>(entity).aoiList;
+	const auto& aoiList = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
 
 	for (const auto& nearbyEntity : aoiList) {
 		const double viewRadius = ViewSystem::GetMaxViewRadius(nearbyEntity);
