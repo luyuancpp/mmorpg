@@ -100,32 +100,32 @@ func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error
 	return nil
 }
 
-// 工具函数：判断消息是否设置了有效 OptionTableName，返回 tableName（有效则非空）
-func hasValidOptionTableName(messageDesc *descriptorpb.DescriptorProto) (string, bool) {
+// 工具函数：判断消息是否设置了 OptionIsPlayerDatabase 为 true
+func isPlayerDatabase(messageDesc *descriptorpb.DescriptorProto) bool {
 	opts := messageDesc.GetOptions()
 	if opts == nil {
-		return "", false
+		return false
 	}
 
-	extValue := proto.GetExtension(opts, messageoption.E_OptionTableName)
+	// 读取自定义选项 OptionIsPlayerDatabase（替代原有的 OptionTableName 判断）
+	extValue := proto.GetExtension(opts, messageoption.E_OptionIsPlayerDatabase)
 
-	tableName, ok := extValue.(string)
-	if !ok || strings.TrimSpace(tableName) == "" {
-		return "", false
-	}
-
-	return tableName, true
+	// 转换为 bool 类型并判断是否为 true
+	isPlayerDB, ok := extValue.(bool)
+	return ok && isPlayerDB
 }
 
-// 从 Descriptor Set 文件中读取消息结构
+// 从 Descriptor Set 文件中读取消息结构（核心逻辑修改）
 func CppPlayerDataLoadGenerator() {
 	os.MkdirAll(config.PlayerStorageTempDirectory, os.FileMode(0777))
 
 	var headerEntries []HeaderEntry
 
+	// 收集所有标记为玩家数据库的消息
 	for _, fileDesc := range FdSet.GetFile() {
 		for _, messageDesc := range fileDesc.GetMessageType() {
-			if _, ok := hasValidOptionTableName(messageDesc); !ok {
+			// 替换判断条件：使用 isPlayerDatabase 替代 hasValidOptionTableName
+			if !isPlayerDatabase(messageDesc) {
 				continue
 			}
 
@@ -138,17 +138,15 @@ func CppPlayerDataLoadGenerator() {
 		}
 	}
 
-	// 遍历文件描述符集合并打印消息字段
+	// 为每个玩家数据库消息生成处理代码
 	for _, fileDesc := range FdSet.GetFile() {
 		for _, messageDesc := range fileDesc.GetMessageType() {
-			if _, ok := hasValidOptionTableName(messageDesc); !ok {
+			// 替换判断条件：仅处理标记为玩家数据库的消息
+			if !isPlayerDatabase(messageDesc) {
 				continue
 			}
 
 			messageDescName := strings.ToLower(*messageDesc.Name)
-
-			//printMessageFields(messageDesc)
-
 			handleName := strcase.ToCamel(*messageDesc.Name)
 			md5FilePath := config.PlayerStorageTempDirectory + messageDescName + config.LoaderCppExtension
 			filedList := generateDatabaseFiles(messageDesc)
@@ -167,7 +165,6 @@ func CppPlayerDataLoadGenerator() {
 			}
 
 			destFilePath := config.PlayerStorageSystemDirectory + messageDescName + config.LoaderCppExtension
-
 			err = CopyFileIfChanged(md5FilePath, destFilePath)
 			if err != nil {
 				log.Fatal(err)
@@ -176,6 +173,7 @@ func CppPlayerDataLoadGenerator() {
 		}
 	}
 
+	// 生成头部文件
 	md5FilePath := config.PlayerStorageTempDirectory + config.PlayerDataLoaderName
 	err := GenerateCppPlayerHeaderFile(md5FilePath, headerEntries)
 	if err != nil {
@@ -202,7 +200,7 @@ func printMessageFields(descriptor *descriptorpb.DescriptorProto) {
 	}
 }
 
-// generateHandlerCases creates the cases for the switch statement based on the method.
+// 生成数据库字段列表（保持不变）
 func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBProtoFieldData {
 	result := make([]PlayerDBProtoFieldData, len(descriptor.GetField()))
 
@@ -214,7 +212,7 @@ func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBP
 	return result
 }
 
-// generateHandlerFile creates a new handler file with the specified parameters.
+// 生成 C++ 反序列化代码（保持不变）
 func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData, messageType string, entries []HeaderEntry) error {
 	file, err := os.Create(fileName)
 	if err != nil {
