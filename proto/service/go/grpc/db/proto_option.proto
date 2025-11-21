@@ -1,12 +1,29 @@
 syntax = "proto3";
 option optimize_for = SPEED;
 
-option go_package = "github.com/luyuancpp/dbprotooption;db";
-				
+option go_package = "github.com/luyuancpp/protooption;messageoption";
+
 import "google/protobuf/descriptor.proto";
 
-//option id  要从50000开始 50000以内pb内部使用
+// --------------------------
+// 1. 定义节点类型枚举（统一所有节点标识）
+// --------------------------
+enum NodeType {
+	NODE_UNSPECIFIED = 0;  // 默认值（未指定）
+	NODE_CLIENT = 1;       // 客户端节点
+	NODE_GATE = 2;         // 网关服节点
+	NODE_ROOM = 3;         // 房间服节点
+	NODE_CENTRE = 4;       // 中心服节点
+}
 
+// --------------------------
+// 2. 文件级 Option：标记整个文件的默认节点类型
+// --------------------------
+extend google.protobuf.FileOptions {
+	NodeType OptionFileDefaultNode = 200003;
+}
+
+//option id  要从50000开始 50000以内pb内部使用
 extend google.protobuf.MessageOptions {
 	optional uint32 OptionTableId			= 500000 ;	//表ID
 	optional string OptionTableName			= 500001 ;	//表名
@@ -20,7 +37,13 @@ extend google.protobuf.MessageOptions {
 	optional string	OptionProcedureResult	= 500010	;	//存储过程返回结果的PB结构Name
 	optional string	OptionIndex				= 500011	;	//建立索引
 	optional string OptionUniqueKey			= 500012	;   //
+	optional bool OptionIsPlayerDatabase = 500013;  // 标识是否是玩家数据库
+
+	// ---------- 属性同步相关 ----------
+	optional bool OptionBaseAttributeSync   = 700000;  // 基础属性同步
+	optional bool OptionDeltaAttributeSync  = 700001;  // 增量属性同步
 }
+
 
 // 描述字段的option
 extend google.protobuf.FieldOptions {
