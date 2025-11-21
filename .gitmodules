@@ -9,7 +9,7 @@
 [submodule "third_party/redis"]
 	path = third_party/redis
 	url = https://github.com/redis/redis.git
-	branch = 8.2
+	branch = 8.4
 [submodule "third_party/muduo-linux"]
 	path = third_party/muduo-linux
 	url = https://github.com/chenshuo/muduo.git
@@ -49,7 +49,7 @@
 [submodule "third_party/grpc"]
 	path = third_party/grpc
 	url = https://github.com/grpc/grpc.git
-	branch = v1.75.x
+	branch = v1.76.x
 	ignore = dirty
 [submodule "third_party/curl"]
 	path = third_party/curl
