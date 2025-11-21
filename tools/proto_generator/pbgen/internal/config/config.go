@@ -60,7 +60,7 @@ const (
 	RobotDirectory                 = "tools/robot/"
 	GeneratedDirectory             = "cpp/generated/"
 
-	ServiceIdFilePath           = ProtoDir + "serviceid.txt"
+	ServiceIdFilePath           = ProtoDir + "service_id.txt"
 	RpcHandlerSourceDirectory   = "handler/rpc/"
 	RpcResponseSourceDirectory  = "rpc_replies/"
 	EventHandlerSourceDirectory = "handler/event/"
