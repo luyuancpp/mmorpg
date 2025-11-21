@@ -108,28 +108,9 @@ func CppPlayerDataLoadGenerator() {
 
 	for _, fileDesc := range FdSet.GetFile() {
 		for _, messageDesc := range fileDesc.GetMessageType() {
-
 			opts := messageDesc.GetOptions()
-
-			// 基础属性同步？
-			baseExt := proto.GetExtension(opts, messageoption.E_OptionBaseAttributeSync)
-			if v, ok := baseExt.(bool); ok && v {
-				fmt.Println(messageDesc.GetName(), "is BaseAttributeSync")
-			}
-
-			// 增量属性同步？
-			deltaExt := proto.GetExtension(opts, messageoption.E_OptionDeltaAttributeSync)
-			if v, ok := deltaExt.(bool); ok && v {
-				fmt.Println(messageDesc.GetName(), "is DeltaAttributeSync")
-			}
-
-		}
-	}
-
-	for _, fileDesc := range FdSet.GetFile() {
-		for _, messageDesc := range fileDesc.GetMessageType() {
-			messageDescName := strings.ToLower(*messageDesc.Name)
-			if !(strings.Contains(messageDescName, config.PlayerDatabaseName) || strings.Contains(messageDescName, config.PlayerDatabaseName1)) {
+			baseExt := proto.GetExtension(opts, messageoption.E_OptionTableName)
+			if baseExt == nil {
 				continue
 			}
 
