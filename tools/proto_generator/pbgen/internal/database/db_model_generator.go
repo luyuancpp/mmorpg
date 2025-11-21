@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	pbmysql "github.com/luyuancpp/pbmysql-go"
+	pbmysql "github.com/luyuancpp/proto2mysql"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
@@ -151,7 +151,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 
 		// 生成 SQL
 		sqlGenerator.RegisterTable(msgInstance)
-		tableSQL := sqlGenerator.GetCreateTableSql(msgInstance)
+		tableSQL := sqlGenerator.GetCreateTableSQL(msgInstance)
 		mergedSQL.WriteString(tableSQL)
 		mergedSQL.WriteString("\n\n")
 	}
