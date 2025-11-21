@@ -240,26 +240,29 @@ const char descriptor_table_protodef_proto_2flogic_2fdatabase_2fmysql_5fdatabase
     "comp.proto\032&proto/logic/component/actor_"
     "comp.proto\032\'proto/logic/component/player"
     "_comp.proto\032-proto/logic/component/playe"
-    "r_skill_comp.proto\"r\n\ruser_accounts\022\017\n\007a"
-    "ccount\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\0220\n\016simple"
-    "_players\030\003 \001(\0132\030.AccountSimplePlayerList"
-    ":\014\222\222\364\001\007account\"7\n\026account_share_database"
-    "\022\017\n\007account\030\001 \001(\t:\014\222\222\364\001\007account\"}\n\026playe"
-    "r_centre_database\022\021\n\tplayer_id\030\001 \001(\004\0222\n\n"
-    "scene_info\030\002 \001(\0132\036.PlayerSceneContextPBC"
-    "omponent:\034\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\"\356"
-    "\002\n\017player_database\022\021\n\tplayer_id\030\001 \001(\004\022\035\n"
-    "\ttransform\030\002 \001(\0132\n.Transform\0225\n\023uint64_p"
-    "b_component\030\003 \001(\0132\030.PlayerUint64PBCompon"
-    "ent\022/\n\nskill_list\030\004 \001(\0132\033.PlayerSkillLis"
-    "tPBComponent\0225\n\023uint32_pb_component\030\005 \001("
-    "\0132\030.PlayerUint32PbComponent\022@\n\034derived_a"
-    "ttributes_component\030\006 \001(\0132\032.BaseAttribut"
-    "esPbComponent\022*\n\017level_component\030\007 \001(\0132\021"
-    ".LevelPbComponent:\034\222\222\364\001\tplayer_id\262\222\364\001\tpl"
-    "ayer_id\"D\n\021player_database_1\022\021\n\tplayer_i"
-    "d\030\001 \001(\004:\034\222\222\364\001\tplayer_id\262\222\364\001\tplayer_idb\006p"
-    "roto3"
+    "r_skill_comp.proto\"\204\001\n\ruser_accounts\022\017\n\007"
+    "account\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\0220\n\016simpl"
+    "e_players\030\003 \001(\0132\030.AccountSimplePlayerLis"
+    "t:\036\212\222\364\001\ruser_accounts\222\222\364\001\007account\"R\n\026acc"
+    "ount_share_database\022\017\n\007account\030\001 \001(\t:\'\212\222"
+    "\364\001\026account_share_database\222\222\364\001\007account\"\230\001"
+    "\n\026player_centre_database\022\021\n\tplayer_id\030\001 "
+    "\001(\004\0222\n\nscene_info\030\002 \001(\0132\036.PlayerSceneCon"
+    "textPBComponent:7\212\222\364\001\026player_centre_data"
+    "base\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\"\202\003\n\017pla"
+    "yer_database\022\021\n\tplayer_id\030\001 \001(\004\022\035\n\ttrans"
+    "form\030\002 \001(\0132\n.Transform\0225\n\023uint64_pb_comp"
+    "onent\030\003 \001(\0132\030.PlayerUint64PBComponent\022/\n"
+    "\nskill_list\030\004 \001(\0132\033.PlayerSkillListPBCom"
+    "ponent\0225\n\023uint32_pb_component\030\005 \001(\0132\030.Pl"
+    "ayerUint32PbComponent\022@\n\034derived_attribu"
+    "tes_component\030\006 \001(\0132\032.BaseAttributesPbCo"
+    "mponent\022*\n\017level_component\030\007 \001(\0132\021.Level"
+    "PbComponent:0\212\222\364\001\017player_database\222\222\364\001\tpl"
+    "ayer_id\262\222\364\001\tplayer_id\"Z\n\021player_database"
+    "_1\022\021\n\tplayer_id\030\001 \001(\004:2\212\222\364\001\021player_datab"
+    "ase_1\222\222\364\001\tplayer_id\262\222\364\001\tplayer_idb\006proto"
+    "3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2flogic_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_deps[6] = {
@@ -274,7 +277,7 @@ static ::absl::once_flag descriptor_table_proto_2flogic_2fdatabase_2fmysql_5fdat
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    1045,
+    1161,
     descriptor_table_protodef_proto_2flogic_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto,
     "proto/logic/database/mysql_database_table.proto",
     &descriptor_table_proto_2flogic_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_once,
