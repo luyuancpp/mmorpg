@@ -100,6 +100,23 @@ func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error
 	return nil
 }
 
+// 工具函数：判断消息是否设置了有效 OptionTableName，返回 tableName（有效则非空）
+func hasValidOptionTableName(messageDesc *descriptorpb.DescriptorProto) (string, bool) {
+	opts := messageDesc.GetOptions()
+	if opts == nil {
+		return "", false
+	}
+
+	extValue := proto.GetExtension(opts, messageoption.E_OptionTableName)
+
+	tableName, ok := extValue.(string)
+	if !ok || strings.TrimSpace(tableName) == "" {
+		return "", false
+	}
+
+	return tableName, true
+}
+
 // 从 Descriptor Set 文件中读取消息结构
 func CppPlayerDataLoadGenerator() {
 	os.MkdirAll(config.PlayerStorageTempDirectory, os.FileMode(0777))
@@ -108,9 +125,7 @@ func CppPlayerDataLoadGenerator() {
 
 	for _, fileDesc := range FdSet.GetFile() {
 		for _, messageDesc := range fileDesc.GetMessageType() {
-			opts := messageDesc.GetOptions()
-			baseExt := proto.GetExtension(opts, messageoption.E_OptionTableName)
-			if baseExt == nil {
+			if _, ok := hasValidOptionTableName(messageDesc); !ok {
 				continue
 			}
 
@@ -126,10 +141,11 @@ func CppPlayerDataLoadGenerator() {
 	// 遍历文件描述符集合并打印消息字段
 	for _, fileDesc := range FdSet.GetFile() {
 		for _, messageDesc := range fileDesc.GetMessageType() {
-			messageDescName := strings.ToLower(*messageDesc.Name)
-			if !(strings.Contains(messageDescName, config.PlayerDatabaseName) || strings.Contains(messageDescName, config.PlayerDatabaseName1)) {
+			if _, ok := hasValidOptionTableName(messageDesc); !ok {
 				continue
 			}
+
+			messageDescName := strings.ToLower(*messageDesc.Name)
 
 			//printMessageFields(messageDesc)
 
