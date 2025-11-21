@@ -3,6 +3,8 @@ package internal
 import (
 	"fmt"
 	"github.com/iancoleman/strcase"
+	"github.com/luyuancpp/protooption"
+	"google.golang.org/protobuf/proto"
 	"log"
 	"os"
 	"pbgen/internal/config"
@@ -103,6 +105,26 @@ func CppPlayerDataLoadGenerator() {
 	os.MkdirAll(config.PlayerStorageTempDirectory, os.FileMode(0777))
 
 	var headerEntries []HeaderEntry
+
+	for _, fileDesc := range FdSet.GetFile() {
+		for _, messageDesc := range fileDesc.GetMessageType() {
+
+			opts := messageDesc.GetOptions()
+
+			// 基础属性同步？
+			baseExt := proto.GetExtension(opts, messageoption.E_OptionBaseAttributeSync)
+			if v, ok := baseExt.(bool); ok && v {
+				fmt.Println(messageDesc.GetName(), "is BaseAttributeSync")
+			}
+
+			// 增量属性同步？
+			deltaExt := proto.GetExtension(opts, messageoption.E_OptionDeltaAttributeSync)
+			if v, ok := deltaExt.(bool); ok && v {
+				fmt.Println(messageDesc.GetName(), "is DeltaAttributeSync")
+			}
+
+		}
+	}
 
 	for _, fileDesc := range FdSet.GetFile() {
 		for _, messageDesc := range fileDesc.GetMessageType() {
