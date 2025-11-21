@@ -7,7 +7,7 @@
 package database
 
 import (
-	_ "github.com/luyuancpp/dbprotooption"
+	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	common "mail/proto/common"
@@ -323,7 +323,7 @@ var File_proto_logic_database_mysql_database_table_proto protoreflect.FileDescri
 
 const file_proto_logic_database_mysql_database_table_proto_rawDesc = "" +
 	"\n" +
-	"/proto/logic/database/mysql_database_table.proto\x1a&proto/service/go/grpc/db/db_base.proto\x1a proto/common/user_accounts.proto\x1a-proto/logic/component/player_scene_comp.proto\x1a&proto/logic/component/actor_comp.proto\x1a'proto/logic/component/player_comp.proto\x1a-proto/logic/component/player_skill_comp.proto\"\xa6\x01\n" +
+	"/proto/logic/database/mysql_database_table.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a proto/common/user_accounts.proto\x1a-proto/logic/component/player_scene_comp.proto\x1a&proto/logic/component/actor_comp.proto\x1a'proto/logic/component/player_comp.proto\x1a-proto/logic/component/player_skill_comp.proto\"\xa6\x01\n" +
 	"\ruser_accounts\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12?\n" +
@@ -333,7 +333,7 @@ const file_proto_logic_database_mysql_database_table_proto_rawDesc = "" +
 	"\x16player_centre_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12=\n" +
 	"\n" +
-	"scene_info\x18\x02 \x01(\v2\x1e.PlayerSceneContextPBComponentR\tsceneInfo:7\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\"\xf4\x03\n" +
+	"scene_info\x18\x02 \x01(\v2\x1e.PlayerSceneContextPBComponentR\tsceneInfo:7\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\"\xf9\x03\n" +
 	"\x0fplayer_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
@@ -343,9 +343,9 @@ const file_proto_logic_database_mysql_database_table_proto_rawDesc = "" +
 	"skill_list\x18\x04 \x01(\v2\x1b.PlayerSkillListPBComponentR\tskillList\x12H\n" +
 	"\x13uint32_pb_component\x18\x05 \x01(\v2\x18.PlayerUint32PbComponentR\x11uint32PbComponent\x12\\\n" +
 	"\x1cderived_attributes_component\x18\x06 \x01(\v2\x1a.BaseAttributesPbComponentR\x1aderivedAttributesComponent\x12:\n" +
-	"\x0flevel_component\x18\a \x01(\v2\x11.LevelPbComponentR\x0elevelComponent:0\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\"d\n" +
+	"\x0flevel_component\x18\a \x01(\v2\x11.LevelPbComponentR\x0elevelComponent:5\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\"i\n" +
 	"\x11player_database_1\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId:2\x8a\x92\xf4\x01\x11player_database_1\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_idB$Z\"mail/proto/logic/database;databaseb\x06proto3"
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId:7\x8a\x92\xf4\x01\x11player_database_1\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01B$Z\"mail/proto/logic/database;databaseb\x06proto3"
 
 var (
 	file_proto_logic_database_mysql_database_table_proto_rawDescOnce sync.Once

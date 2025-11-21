@@ -234,35 +234,35 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2flogic_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n/proto/logic/database/mysql_database_ta"
-    "ble.proto\032&proto/service/go/grpc/db/db_b"
-    "ase.proto\032 proto/common/user_accounts.pr"
-    "oto\032-proto/logic/component/player_scene_"
-    "comp.proto\032&proto/logic/component/actor_"
-    "comp.proto\032\'proto/logic/component/player"
-    "_comp.proto\032-proto/logic/component/playe"
-    "r_skill_comp.proto\"\204\001\n\ruser_accounts\022\017\n\007"
-    "account\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\0220\n\016simpl"
-    "e_players\030\003 \001(\0132\030.AccountSimplePlayerLis"
-    "t:\036\212\222\364\001\ruser_accounts\222\222\364\001\007account\"R\n\026acc"
-    "ount_share_database\022\017\n\007account\030\001 \001(\t:\'\212\222"
-    "\364\001\026account_share_database\222\222\364\001\007account\"\230\001"
-    "\n\026player_centre_database\022\021\n\tplayer_id\030\001 "
-    "\001(\004\0222\n\nscene_info\030\002 \001(\0132\036.PlayerSceneCon"
-    "textPBComponent:7\212\222\364\001\026player_centre_data"
-    "base\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\"\202\003\n\017pla"
-    "yer_database\022\021\n\tplayer_id\030\001 \001(\004\022\035\n\ttrans"
-    "form\030\002 \001(\0132\n.Transform\0225\n\023uint64_pb_comp"
-    "onent\030\003 \001(\0132\030.PlayerUint64PBComponent\022/\n"
-    "\nskill_list\030\004 \001(\0132\033.PlayerSkillListPBCom"
-    "ponent\0225\n\023uint32_pb_component\030\005 \001(\0132\030.Pl"
-    "ayerUint32PbComponent\022@\n\034derived_attribu"
-    "tes_component\030\006 \001(\0132\032.BaseAttributesPbCo"
-    "mponent\022*\n\017level_component\030\007 \001(\0132\021.Level"
-    "PbComponent:0\212\222\364\001\017player_database\222\222\364\001\tpl"
-    "ayer_id\262\222\364\001\tplayer_id\"Z\n\021player_database"
-    "_1\022\021\n\tplayer_id\030\001 \001(\004:2\212\222\364\001\021player_datab"
-    "ase_1\222\222\364\001\tplayer_id\262\222\364\001\tplayer_idb\006proto"
-    "3"
+    "ble.proto\032+proto/service/go/grpc/db/prot"
+    "o_option.proto\032 proto/common/user_accoun"
+    "ts.proto\032-proto/logic/component/player_s"
+    "cene_comp.proto\032&proto/logic/component/a"
+    "ctor_comp.proto\032\'proto/logic/component/p"
+    "layer_comp.proto\032-proto/logic/component/"
+    "player_skill_comp.proto\"\204\001\n\ruser_account"
+    "s\022\017\n\007account\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\0220\n\016"
+    "simple_players\030\003 \001(\0132\030.AccountSimplePlay"
+    "erList:\036\212\222\364\001\ruser_accounts\222\222\364\001\007account\"R"
+    "\n\026account_share_database\022\017\n\007account\030\001 \001("
+    "\t:\'\212\222\364\001\026account_share_database\222\222\364\001\007accou"
+    "nt\"\230\001\n\026player_centre_database\022\021\n\tplayer_"
+    "id\030\001 \001(\004\0222\n\nscene_info\030\002 \001(\0132\036.PlayerSce"
+    "neContextPBComponent:7\212\222\364\001\026player_centre"
+    "_database\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\"\207\003"
+    "\n\017player_database\022\021\n\tplayer_id\030\001 \001(\004\022\035\n\t"
+    "transform\030\002 \001(\0132\n.Transform\0225\n\023uint64_pb"
+    "_component\030\003 \001(\0132\030.PlayerUint64PBCompone"
+    "nt\022/\n\nskill_list\030\004 \001(\0132\033.PlayerSkillList"
+    "PBComponent\0225\n\023uint32_pb_component\030\005 \001(\013"
+    "2\030.PlayerUint32PbComponent\022@\n\034derived_at"
+    "tributes_component\030\006 \001(\0132\032.BaseAttribute"
+    "sPbComponent\022*\n\017level_component\030\007 \001(\0132\021."
+    "LevelPbComponent:5\212\222\364\001\017player_database\222\222"
+    "\364\001\tplayer_id\262\222\364\001\tplayer_id\350\222\364\001\001\"_\n\021playe"
+    "r_database_1\022\021\n\tplayer_id\030\001 \001(\004:7\212\222\364\001\021pl"
+    "ayer_database_1\222\222\364\001\tplayer_id\262\222\364\001\tplayer"
+    "_id\350\222\364\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2flogic_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_deps[6] = {
@@ -271,13 +271,13 @@ static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
         &::descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fcomp_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto,
-        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_5fbase_2eproto,
+        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    1161,
+    1176,
     descriptor_table_protodef_proto_2flogic_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto,
     "proto/logic/database/mysql_database_table.proto",
     &descriptor_table_proto_2flogic_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_once,
