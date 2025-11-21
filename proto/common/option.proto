@@ -1,0 +1,32 @@
+// proto/internal/options.proto
+syntax = "proto3";
+
+import "google/protobuf/descriptor.proto";
+
+// --------------------------
+// 1. 定义节点类型枚举（统一所有节点标识）
+// --------------------------
+enum NodeType {
+  NODE_UNSPECIFIED = 0;  // 默认值（未指定）
+  NODE_CLIENT = 1;       // 客户端节点
+  NODE_GATE = 2;         // 网关服节点
+  NODE_ROOM = 3;         // 房间服节点
+  NODE_CENTRE = 4;       // 中心服节点
+}
+
+// --------------------------
+// 2. 文件级 Option：标记整个文件的默认节点类型
+// --------------------------
+extend google.protobuf.FileOptions {
+  NodeType OptionFileDefaultNode = 200003;  
+}
+
+// --------------------------
+// 3. 消息级 Option：标记单个消息的节点类型（优先级高于文件级）
+// --------------------------
+extend google.protobuf.MessageOptions {
+  	// ---------- 属性同步相关 ----------
+	optional bool OptionBaseAttributeSync   = 700000;  // 基础属性同步
+	optional bool OptionDeltaAttributeSync  = 700001;  // 增量属性同步
+}
+
