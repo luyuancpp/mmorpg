@@ -24,7 +24,7 @@
 	path = third_party/ue5navmesh
 	url = https://github.com/luyuancpp/ue5navmesh.git
 [submodule "pkg/muduo_windows/src"]
-	path = pkg/muduo_windows/src
+	path = cpp/libs/engine/muduo_windows/src/muduo/net
 	url = https://github.com/luyuancpp/muduo-cross-platform.git
 	ignore = dirty
 [submodule "third_party/zlib"]
