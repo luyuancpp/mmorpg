@@ -236,7 +236,6 @@ var (
 const (
 	DatabasePrefixName              = "db"
 	TypePlayer                      = "player"
-	DisplayPlayer                   = "Player"
 	ServiceIncludeName              = "rpc/"
 	PlayerServiceIncludeName        = "#include \"rpc/player_service_interface.h\"\n"
 	PlayerServiceRepliedIncludeName = "#include \"rpc/player_rpc_response_handler.h\"\n"
@@ -251,12 +250,6 @@ const (
 const (
 	RoomNodeEventHandlerDirectory   = RoomNodeDirectory + EventHandlerSourceDirectory
 	CentreNodeEventHandlerDirectory = CentreNodeDirectory + EventHandlerSourceDirectory
-)
-
-// ----------- 玩家数据库名称 -----------
-const (
-	PlayerDatabaseName  = "player_database"
-	PlayerDatabaseName1 = "player_database_1"
 )
 
 const (
