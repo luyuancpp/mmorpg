@@ -270,10 +270,6 @@ void InitMessageInfo()
 
 		firstMethod := service.MethodInfo[0]
 
-		if utils.IsPathInProtoDirs(firstMethod.Path(), config.DbProtoDirIndex) {
-			continue
-		}
-
 		includes = append(includes, firstMethod.IncludeName())
 		serviceInfoIncludes = append(serviceInfoIncludes, firstMethod.ServiceInfoIncludeName())
 
@@ -290,11 +286,6 @@ void InitMessageInfo()
 	// Step 2: Generate init lines for RpcService and allowed client message IDs
 	for _, service := range GlobalRPCServiceList {
 		if len(service.MethodInfo) == 0 {
-			continue
-		}
-
-		firstMethod := service.MethodInfo[0]
-		if utils.IsPathInProtoDirs(firstMethod.Path(), config.DbProtoDirIndex) {
 			continue
 		}
 

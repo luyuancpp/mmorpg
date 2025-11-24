@@ -147,9 +147,6 @@ func CppGrpcCallClient() {
 				if service.CcGenericServices() {
 					continue
 				}
-				if utils.IsPathInProtoDirs(service.Path(), config.DbProtoDirIndex) {
-					continue
-				}
 				if _, ok := m[service.FileBaseNameCamel()]; ok {
 					continue
 				}
