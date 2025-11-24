@@ -210,9 +210,6 @@
     <ClCompile Include="middleware\etcd\version.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="service\go\grpc\db\db_base.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="service\go\grpc\login\login.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -240,13 +237,16 @@
     <ClCompile Include="service\go\grpc\db\db.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="service\go\grpc\db\db_base.grpc.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="service\go\grpc\db\db_task.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="service\go\grpc\db\db_task.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\go\grpc\db\proto_option.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\go\grpc\db\proto_option.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -446,9 +446,6 @@
     <ClInclude Include="middleware\etcd\version.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service\go\grpc\db\db_base.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="service\go\grpc\login\login.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -476,13 +473,16 @@
     <ClInclude Include="service\go\grpc\db\db.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service\go\grpc\db\db_base.grpc.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="service\go\grpc\db\db_task.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="service\go\grpc\db\db_task.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\go\grpc\db\proto_option.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\go\grpc\db\proto_option.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

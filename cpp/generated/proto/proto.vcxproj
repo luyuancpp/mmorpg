@@ -89,10 +89,10 @@
     <ClCompile Include="service\cpp\rpc\scene\scene.pb.cc" />
     <ClCompile Include="service\go\grpc\db\db.grpc.pb.cc" />
     <ClCompile Include="service\go\grpc\db\db.pb.cc" />
-    <ClCompile Include="service\go\grpc\db\db_base.grpc.pb.cc" />
-    <ClCompile Include="service\go\grpc\db\db_base.pb.cc" />
     <ClCompile Include="service\go\grpc\db\db_task.grpc.pb.cc" />
     <ClCompile Include="service\go\grpc\db\db_task.pb.cc" />
+    <ClCompile Include="service\go\grpc\db\proto_option.grpc.pb.cc" />
+    <ClCompile Include="service\go\grpc\db\proto_option.pb.cc" />
     <ClCompile Include="service\go\grpc\login\login.grpc.pb.cc" />
     <ClCompile Include="service\go\grpc\login\login.pb.cc" />
     <ClCompile Include="service\go\grpc\player_locator\player_locator.grpc.pb.cc" />
@@ -169,10 +169,10 @@
     <ClInclude Include="service\cpp\rpc\scene\scene.pb.h" />
     <ClInclude Include="service\go\grpc\db\db.grpc.pb.h" />
     <ClInclude Include="service\go\grpc\db\db.pb.h" />
-    <ClInclude Include="service\go\grpc\db\db_base.grpc.pb.h" />
-    <ClInclude Include="service\go\grpc\db\db_base.pb.h" />
     <ClInclude Include="service\go\grpc\db\db_task.grpc.pb.h" />
     <ClInclude Include="service\go\grpc\db\db_task.pb.h" />
+    <ClInclude Include="service\go\grpc\db\proto_option.grpc.pb.h" />
+    <ClInclude Include="service\go\grpc\db\proto_option.pb.h" />
     <ClInclude Include="service\go\grpc\login\login.grpc.pb.h" />
     <ClInclude Include="service\go\grpc\login\login.pb.h" />
     <ClInclude Include="service\go\grpc\player_locator\player_locator.grpc.pb.h" />
