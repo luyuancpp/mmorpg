@@ -64,6 +64,9 @@ message ActorListDestroyS2C
 
 service SceneSceneClientPlayer
 {
+  option (OptionIsPlayerService) = true;
+  option (OptionIsClientProtocolService) = true;
+
   rpc EnterScene (EnterSceneC2SRequest) returns (EnterSceneC2SResponse);
   rpc NotifyEnterScene (EnterSceneS2C) returns (Empty);
   rpc SceneInfoC2S (SceneInfoRequest) returns (Empty);

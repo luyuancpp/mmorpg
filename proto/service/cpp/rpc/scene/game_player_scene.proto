@@ -32,6 +32,8 @@ message EnterScenerS2CResponse
 
 service SceneScenePlayer
 {
+  option (OptionIsPlayerService) = true;
+
   rpc EnterScene (GsEnterSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveScene (GsLeaveSceneRequest) returns (google.protobuf.Empty);
   rpc EnterSceneS2C (EnterSceneS2CRequest) returns (EnterScenerS2CResponse);
