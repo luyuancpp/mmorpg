@@ -23,6 +23,13 @@ extend google.protobuf.FileOptions {
 	NodeType OptionFileDefaultNode = 200003;
 }
 
+extend google.protobuf.ServiceOptions {
+	// 标记该服务是否是玩家相关服务（PlayerService）
+	bool OptionIsPlayerService = 400000;
+	// 标记该服务是否是客户端协议服务（供客户端调用）
+	bool OptionIsClientProtocolService = 400001;
+}
+
 //option id  要从50000开始 50000以内pb内部使用
 extend google.protobuf.MessageOptions {
 	optional uint32 OptionTableId			= 500000 ;	//表ID
@@ -75,5 +82,5 @@ enum OPERATE_TYPE {
 enum BS_RESULT_TYPE{
 	BS_RESULT_NONE		= 0;     //
 	BS_RESULT_SUCCESS	= 1;
-	BS_RESULT_FAILED	= 2;	
+	BS_RESULT_FAILED	= 2;
 };

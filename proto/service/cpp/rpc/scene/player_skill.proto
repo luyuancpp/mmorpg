@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 
-
+import "proto/service/go/grpc/db/proto_option.proto";
 import "proto/common/tip.proto";
 import "proto/logic/component/comp.proto";
 import "proto/common/empty.proto";
@@ -50,6 +50,7 @@ message GetSkillListResponse {
 }
 
 service SceneSkillClientPlayer { 
+  option (messageoption.OptionIsPlayerService) = true;
   rpc ReleaseSkill (ReleaseSkillSkillRequest) returns (ReleaseSkillSkillResponse);
   rpc NotifySkillUsed (SkillUsedS2C) returns (Empty);
   rpc NotifySkillInterrupted (SkillInterruptedS2C) returns (Empty);
