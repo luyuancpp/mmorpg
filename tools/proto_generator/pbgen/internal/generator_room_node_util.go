@@ -24,6 +24,20 @@ func isClientProtocolService(serviceDesc *descriptorpb.ServiceDescriptorProto) b
 	return ok && isClientProtocolSvc
 }
 
+func isPlayerService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
+	opts := serviceDesc.GetOptions()
+	if opts == nil {
+		return false
+	}
+
+	// 读取 OptionIsClientProtocolService 扩展选项
+	extValue := proto.GetExtension(opts, messageoption.E_OptionIsClientProtocolService)
+
+	// 转换为 bool 类型并判断是否为 true
+	isClientProtocolSvc, ok := extValue.(bool)
+	return ok && isClientProtocolSvc
+}
+
 // / game server
 func IsRoomNodeMethodHandler(methods *RPCMethods) bool {
 	if len(*methods) == 0 {
