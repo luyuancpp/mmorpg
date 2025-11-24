@@ -69,14 +69,7 @@ type CasesData struct {
 
 // isClientMethodRepliedHandler 检查是否为客户端方法已响应处理器
 func isClientMethodRepliedHandler(methodList *RPCMethods) bool {
-	if len(*methodList) == 0 {
-		return false
-	}
 	firstMethodInfo := (*methodList)[0]
-	if !strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
-		return false
-	}
-
 	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
