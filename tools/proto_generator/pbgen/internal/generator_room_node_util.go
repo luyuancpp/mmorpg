@@ -6,13 +6,6 @@ import (
 	"strings"
 )
 
-// 判断 methodList 是否为空
-func isEmpty(methodList *RPCMethods) bool {
-	return len(*methodList) == 0
-}
-
-// / game server
-
 // IsRoomNodeHostedProtocolHandler 判断是否是RoomNode节点对外提供的协议服务处理器
 // （RoomNode作为服务端，处理外部调用的客户端协议接口）
 func IsRoomNodeHostedProtocolHandler(methods *RPCMethods) bool {
@@ -21,7 +14,10 @@ func IsRoomNodeHostedProtocolHandler(methods *RPCMethods) bool {
 			return IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_ROOM)
 		},
 		func(m *MethodInfo) bool {
-			return isClientProtocolService(m.ServiceDescriptorProto)
+			return !isPlayerService(m.ServiceDescriptorProto)
+		},
+		func(m *MethodInfo) bool {
+			return !isClientProtocolService(m.ServiceDescriptorProto)
 		},
 	)
 }
@@ -37,7 +33,7 @@ func IsRoomNodeHostedPlayerProtocolHandler(methods *RPCMethods) bool {
 			return !utils.HasGrpcService(m.Path())
 		},
 		func(m *MethodInfo) bool {
-			return isClientProtocolService(m.ServiceDescriptorProto)
+			return isPlayerService(m.ServiceDescriptorProto)
 		},
 	)
 }
@@ -64,7 +60,7 @@ func IsRoomNodeReceivedPlayerResponseHandler(methodList *RPCMethods) bool {
 			return !utils.HasGrpcService(strings.ToLower(m.Path()))
 		},
 		func(m *MethodInfo) bool {
-			return isClientProtocolService(m.ServiceDescriptorProto)
+			return isPlayerService(m.ServiceDescriptorProto)
 		},
 	)
 }
@@ -83,7 +79,7 @@ func IsRoomNodeReceivedProtocolResponseHandler(methodList *RPCMethods) bool {
 			return !isClientProtocolService(m.ServiceDescriptorProto)
 		},
 		func(m *MethodInfo) bool {
-			return !isClientProtocolService(m.ServiceDescriptorProto)
+			return !isPlayerService(m.ServiceDescriptorProto)
 		},
 	)
 }

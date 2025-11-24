@@ -214,13 +214,13 @@ const file_proto_service_cpp_rpc_scene_game_player_scene_proto_rawDesc = "" +
 	"\x11change_scene_info\x18\x02 \x01(\v2\x1a.ChangeRoomInfoPBComponentR\x0fchangeSceneInfo\"\x16\n" +
 	"\x14EnterSceneS2CRequest\"N\n" +
 	"\x16EnterScenerS2CResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage2\xcb\x01\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage2\xd2\x01\n" +
 	"\x10SceneScenePlayer\x12:\n" +
 	"\n" +
 	"EnterScene\x12\x14.GsEnterSceneRequest\x1a\x16.google.protobuf.Empty\x12:\n" +
 	"\n" +
 	"LeaveScene\x12\x14.GsLeaveSceneRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
-	"\rEnterSceneS2C\x12\x15.EnterSceneS2CRequest\x1a\x17.EnterScenerS2CResponseB0\x98\xd4a\x03Z'login/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
+	"\rEnterSceneS2C\x12\x15.EnterSceneS2CRequest\x1a\x17.EnterScenerS2CResponse\x1a\x05\x80\xa8\xc3\x01\x01B0\x98\xd4a\x03Z'login/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_game_player_scene_proto_rawDescOnce sync.Once

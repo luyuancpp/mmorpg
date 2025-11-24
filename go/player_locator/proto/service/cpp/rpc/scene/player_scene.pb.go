@@ -522,7 +522,7 @@ const file_proto_service_cpp_rpc_scene_player_scene_proto_rawDesc = "" +
 	"\n" +
 	"actor_list\x18\x01 \x03(\v2\x0f.ActorCreateS2CR\tactorList\"-\n" +
 	"\x13ActorListDestroyS2C\x12\x16\n" +
-	"\x06entity\x18\x01 \x03(\x04R\x06entity2\xa2\x03\n" +
+	"\x06entity\x18\x01 \x03(\x04R\x06entity2\xae\x03\n" +
 	"\x16SceneSceneClientPlayer\x12;\n" +
 	"\n" +
 	"EnterScene\x12\x15.EnterSceneC2SRequest\x1a\x16.EnterSceneC2SResponse\x12*\n" +
@@ -532,7 +532,8 @@ const file_proto_service_cpp_rpc_scene_player_scene_proto_rawDesc = "" +
 	"\x11NotifyActorCreate\x12\x0f.ActorCreateS2C\x1a\x06.Empty\x12.\n" +
 	"\x12NotifyActorDestroy\x12\x10.ActorDestroyS2C\x1a\x06.Empty\x124\n" +
 	"\x15NotifyActorListCreate\x12\x13.ActorListCreateS2C\x1a\x06.Empty\x126\n" +
-	"\x16NotifyActorListDestroy\x12\x14.ActorListDestroyS2C\x1a\x06.EmptyB9\x98\xd4a\x03Z0player_locator/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
+	"\x16NotifyActorListDestroy\x12\x14.ActorListDestroyS2C\x1a\x06.Empty\x1a\n" +
+	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B9\x98\xd4a\x03Z0player_locator/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescOnce sync.Once

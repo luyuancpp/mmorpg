@@ -334,14 +334,14 @@ const file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDesc
 	"\x19AttributeDelta30FramesS2C\x12\x1b\n" +
 	"\tentity_id\x18\x01 \x01(\x04R\bentityId\"8\n" +
 	"\x19AttributeDelta60FramesS2C\x12\x1b\n" +
-	"\tentity_id\x18\x01 \x01(\x04R\bentityId2\xf4\x02\n" +
+	"\tentity_id\x18\x01 \x01(\x04R\bentityId2\xfb\x02\n" +
 	"\x0fScenePlayerSync\x124\n" +
 	"\x11SyncBaseAttribute\x12\x17.ActorBaseAttributesS2C\x1a\x06.Empty\x129\n" +
 	"\x14SyncAttribute2Frames\x12\x19.AttributeDelta2FramesS2C\x1a\x06.Empty\x129\n" +
 	"\x14SyncAttribute5Frames\x12\x19.AttributeDelta5FramesS2C\x1a\x06.Empty\x12;\n" +
 	"\x15SyncAttribute10Frames\x12\x1a.AttributeDelta10FramesS2C\x1a\x06.Empty\x12;\n" +
 	"\x15SyncAttribute30Frames\x12\x1a.AttributeDelta30FramesS2C\x1a\x06.Empty\x12;\n" +
-	"\x15SyncAttribute60Frames\x12\x1a.AttributeDelta60FramesS2C\x1a\x06.EmptyB0\x98\xd4a\x03Z'login/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
+	"\x15SyncAttribute60Frames\x12\x1a.AttributeDelta60FramesS2C\x1a\x06.Empty\x1a\x05\x80\xa8\xc3\x01\x01B0\x98\xd4a\x03Z'login/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDescOnce sync.Once
