@@ -1,19 +1,13 @@
 package internal
 
 import (
-	"pbgen/internal/config"
-	"pbgen/utils"
-	"strings"
+	messageoption "github.com/luyuancpp/protooption"
 )
 
 func isCentreMethodHandler(methodList *RPCMethods) bool {
-	if len(*methodList) == 0 {
-		return false
-	}
-
 	firstMethodInfo := (*methodList)[0]
 
-	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.CenterProtoDirIndex]) {
+	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
 		return false
 	}
 
@@ -25,28 +19,21 @@ func isCentreMethodHandler(methodList *RPCMethods) bool {
 }
 
 func isCentrePlayerHandler(methodList *RPCMethods) bool {
-	if len(*methodList) == 0 {
-		return false
-	}
-
 	firstMethodInfo := (*methodList)[0]
 
-	if utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.DbProtoDirIndex) ||
-		utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.LoginProtoDirIndex) {
+	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
 		return false
 	}
 
-	if !utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.CenterProtoDirIndex) {
-		return false
-	}
+	return isPlayerService(firstMethodInfo.ServiceDescriptorProto)
 }
 
 func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
-	if len(*methodList) == 0 {
+	firstMethodInfo := (*methodList)[0]
+
+	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
 		return false
 	}
-
-	firstMethodInfo := (*methodList)[0]
 
 	if !firstMethodInfo.CcGenericServices() {
 		return false
@@ -64,25 +51,21 @@ func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
 }
 
 func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
-	if len(*methodList) == 0 {
-		return false
-	}
-
 	firstMethodInfo := (*methodList)[0]
 
 	if !firstMethodInfo.CcGenericServices() {
 		return false
 	}
 
-	if utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.CenterProtoDirIndex) {
+	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
 		return false
 	}
 
-	if !utils.ContainsPlayerKeyword(firstMethodInfo.Service()) {
+	if !isPlayerService(firstMethodInfo.ServiceDescriptorProto) {
 		return false
 	}
 
-	if strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
+	if isClientProtocolService(firstMethodInfo.ServiceDescriptorProto) {
 		return false
 	}
 

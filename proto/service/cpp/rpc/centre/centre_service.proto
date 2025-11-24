@@ -1,7 +1,6 @@
 syntax = "proto3";
 
-
-
+import "proto/service/go/grpc/db/proto_option.proto";
 import "proto/common/common.proto";
 import "proto/common/empty.proto";
 import "proto/common/session.proto";
@@ -9,6 +8,7 @@ import "proto/common/message.proto";
 import "proto/common/tip.proto";
 
 option cc_generic_services = true;
+option (OptionFileDefaultNode) = NODE_ROOM;
 
 message GateClientMessageRequest
 {
