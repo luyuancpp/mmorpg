@@ -8,9 +8,6 @@ import (
 
 // / game server
 func IsRoomNodeMethodHandler(methods *RPCMethods) bool {
-	if len(*methods) == 0 {
-		return false
-	}
 	firstMethodInfo := (*methods)[0]
 	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.RoomProtoDirIndex]) {
 		return false
@@ -19,20 +16,13 @@ func IsRoomNodeMethodHandler(methods *RPCMethods) bool {
 }
 
 func IsRoomNodePlayerHandler(methods *RPCMethods) bool {
-	if len(*methods) <= 0 {
-		return false
-	}
-
 	firstMethodInfo := (*methods)[0]
-
 	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.RoomProtoDirIndex]) {
 		return false
 	}
-
 	if utils.HasGrpcService(firstMethodInfo.Path()) {
 		return false
 	}
-
 	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
