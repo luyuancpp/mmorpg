@@ -9,7 +9,7 @@
 [submodule "third_party/redis"]
 	path = third_party/redis
 	url = https://github.com/redis/redis.git
-	branch = 8.2
+	branch = 8.4
 [submodule "third_party/muduo-linux"]
 	path = third_party/muduo-linux
 	url = https://github.com/chenshuo/muduo.git
@@ -24,7 +24,7 @@
 	path = third_party/ue5navmesh
 	url = https://github.com/luyuancpp/ue5navmesh.git
 [submodule "pkg/muduo_windows/src"]
-	path = pkg/muduo_windows/src
+	path = cpp/libs/engine/muduo_windows/src/muduo/net
 	url = https://github.com/luyuancpp/muduo-cross-platform.git
 	ignore = dirty
 [submodule "third_party/zlib"]
@@ -49,7 +49,7 @@
 [submodule "third_party/grpc"]
 	path = third_party/grpc
 	url = https://github.com/grpc/grpc.git
-	branch = v1.75.x
+	branch = v1.76.x
 	ignore = dirty
 [submodule "third_party/curl"]
 	path = third_party/curl
