@@ -235,7 +235,6 @@ var (
 // ----------- 其他业务相关常量 -----------
 const (
 	DatabasePrefixName              = "db"
-	ClientPrefixName                = "Client" //
 	TypePlayer                      = "player"
 	DisplayPlayer                   = "Player"
 	ServiceIncludeName              = "rpc/"
