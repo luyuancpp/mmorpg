@@ -949,9 +949,9 @@ func WriteMethodFile() {
 
 	// Concurrent operations for game, centre, and gate registers
 	utils.Wg.Add(1)
-	go GenRegisterFile(config.RoomNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsRoomNodeMethodHandler)
+	go GenRegisterFile(config.RoomNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsRoomNodeHostedProtocolHandler)
 	utils.Wg.Add(1)
-	go writeRepliedRegisterFile(config.RoomNodeMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, isRoomNodeMethodRepliedHandler)
+	go writeRepliedRegisterFile(config.RoomNodeMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsRoomNodeReceivedProtocolResponseHandler)
 
 	utils.Wg.Add(1)
 	go GenRegisterFile(config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsCentreHostedServiceHandler)
@@ -959,7 +959,7 @@ func WriteMethodFile() {
 	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, IsCentreReceivedServiceResponseHandler)
 
 	utils.Wg.Add(1)
-	go GenRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterHandlerCppExtension, ReturnNoHandler)
+	go GenRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterHandlerCppExtension, IsNoOpHandler)
 	utils.Wg.Add(1)
 	go writeRepliedRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, isGateMethodRepliedHandler)
 }
