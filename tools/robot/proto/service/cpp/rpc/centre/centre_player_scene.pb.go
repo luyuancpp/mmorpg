@@ -193,7 +193,7 @@ const file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDesc = "" +
 	"\n" +
 	"LeaveScene\x12\x18.CentreLeaveSceneRequest\x1a\x16.google.protobuf.Empty\x12l\n" +
 	"!LeaveSceneAsyncSavePlayerComplete\x12/.CentreLeaveSceneAsyncSavePlayerCompleteRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
-	"\fSceneInfoC2S\x12\x17.CentreSceneInfoRequest\x1a\x16.google.protobuf.Empty\x1a\x05\x80\xa8\xc3\x01\x01B2\x98\xd4a\x03Z)robot/proto/service/cpp/rpc/centre;centre\x80\x01\x01b\x06proto3"
+	"\fSceneInfoC2S\x12\x17.CentreSceneInfoRequest\x1a\x16.google.protobuf.Empty\x1a\x05\x80\xa8\xc3\x01\x01B2\x98\xd4a\x04Z)robot/proto/service/cpp/rpc/centre;centre\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescOnce sync.Once

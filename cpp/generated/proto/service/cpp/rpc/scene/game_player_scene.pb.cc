@@ -161,37 +161,40 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n3proto/service/cpp/rpc/scene/game_playe"
-    "r_scene.proto\032\026proto/common/tip.proto\032\033g"
-    "oogle/protobuf/empty.proto\032&proto/logic/"
-    "component/scene_comp.proto\";\n\023GsEnterSce"
-    "neRequest\022\022\n\nsession_id\030\001 \001(\004\022\020\n\010scene_i"
-    "d\030\002 \001(\004\"L\n\023GsLeaveSceneRequest\0225\n\021change"
-    "_scene_info\030\002 \001(\0132\032.ChangeRoomInfoPBComp"
-    "onent\"\026\n\024EnterSceneS2CRequest\"@\n\026EnterSc"
-    "enerS2CResponse\022&\n\rerror_message\030\001 \001(\0132\017"
-    ".TipInfoMessage2\313\001\n\020SceneScenePlayer\022:\n\n"
-    "EnterScene\022\024.GsEnterSceneRequest\032\026.googl"
-    "e.protobuf.Empty\022:\n\nLeaveScene\022\024.GsLeave"
-    "SceneRequest\032\026.google.protobuf.Empty\022\?\n\r"
-    "EnterSceneS2C\022\025.EnterSceneS2CRequest\032\027.E"
-    "nterScenerS2CResponseB\003\200\001\001b\006proto3"
+    "r_scene.proto\032+proto/service/go/grpc/db/"
+    "proto_option.proto\032\026proto/common/tip.pro"
+    "to\032\033google/protobuf/empty.proto\032&proto/l"
+    "ogic/component/scene_comp.proto\";\n\023GsEnt"
+    "erSceneRequest\022\022\n\nsession_id\030\001 \001(\004\022\020\n\010sc"
+    "ene_id\030\002 \001(\004\"L\n\023GsLeaveSceneRequest\0225\n\021c"
+    "hange_scene_info\030\002 \001(\0132\032.ChangeRoomInfoP"
+    "BComponent\"\026\n\024EnterSceneS2CRequest\"@\n\026En"
+    "terScenerS2CResponse\022&\n\rerror_message\030\001 "
+    "\001(\0132\017.TipInfoMessage2\313\001\n\020SceneScenePlaye"
+    "r\022:\n\nEnterScene\022\024.GsEnterSceneRequest\032\026."
+    "google.protobuf.Empty\022:\n\nLeaveScene\022\024.Gs"
+    "LeaveSceneRequest\032\026.google.protobuf.Empt"
+    "y\022\?\n\rEnterSceneS2C\022\025.EnterSceneS2CReques"
+    "t\032\027.EnterScenerS2CResponseB\007\200\001\001\230\324a\003b\006pro"
+    "to3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto_deps[3] = {
+    descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto_deps[4] = {
         &::descriptor_table_google_2fprotobuf_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2ftip_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2fscene_5fcomp_2eproto,
+        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto = {
     false,
     false,
-    594,
+    643,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto,
     "proto/service/cpp/rpc/scene/game_player_scene.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto_once,
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto_deps,
-    3,
+    4,
     4,
     schemas,
     file_default_instances,

@@ -8,6 +8,7 @@ package centre
 
 import (
 	common "chat/proto/common"
+	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -179,20 +180,20 @@ var File_proto_service_cpp_rpc_centre_centre_player_scene_proto protoreflect.Fil
 
 const file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"6proto/service/cpp/rpc/centre/centre_player_scene.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19proto/common/common.proto\"N\n" +
+	"6proto/service/cpp/rpc/centre/centre_player_scene.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19proto/common/common.proto\"N\n" +
 	"\x17CentreEnterSceneRequest\x123\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"\x19\n" +
 	"\x17CentreLeaveSceneRequest\"0\n" +
 	".CentreLeaveSceneAsyncSavePlayerCompleteRequest\"\x18\n" +
-	"\x16CentreSceneInfoRequest2\xc2\x02\n" +
+	"\x16CentreSceneInfoRequest2\xc9\x02\n" +
 	"\x11CentrePlayerScene\x12>\n" +
 	"\n" +
 	"EnterScene\x12\x18.CentreEnterSceneRequest\x1a\x16.google.protobuf.Empty\x12>\n" +
 	"\n" +
 	"LeaveScene\x12\x18.CentreLeaveSceneRequest\x1a\x16.google.protobuf.Empty\x12l\n" +
 	"!LeaveSceneAsyncSavePlayerComplete\x12/.CentreLeaveSceneAsyncSavePlayerCompleteRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
-	"\fSceneInfoC2S\x12\x17.CentreSceneInfoRequest\x1a\x16.google.protobuf.EmptyB-Z(chat/proto/service/cpp/rpc/centre;centre\x80\x01\x01b\x06proto3"
+	"\fSceneInfoC2S\x12\x17.CentreSceneInfoRequest\x1a\x16.google.protobuf.Empty\x1a\x05\x80\xa8\xc3\x01\x01B1\x98\xd4a\x04Z(chat/proto/service/cpp/rpc/centre;centre\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescOnce sync.Once

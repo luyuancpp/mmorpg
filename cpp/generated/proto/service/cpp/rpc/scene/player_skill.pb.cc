@@ -285,8 +285,8 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fplaye
     "llUsed\022\r.SkillUsedS2C\032\006.Empty\0226\n\026NotifyS"
     "killInterrupted\022\024.SkillInterruptedS2C\032\006."
     "Empty\022;\n\014GetSkillList\022\024.GetSkillListRequ"
-    "est\032\025.GetSkillListResponse\032\n\200\250\303\001\001\210\250\303\001\001B\003"
-    "\200\001\001b\006proto3"
+    "est\032\025.GetSkillListResponse\032\n\200\250\303\001\001\210\250\303\001\001B\007"
+    "\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fskill_2eproto_deps[6] = {
@@ -301,7 +301,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2f
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fskill_2eproto = {
     false,
     false,
-    1131,
+    1135,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fskill_2eproto,
     "proto/service/cpp/rpc/scene/player_skill.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fskill_2eproto_once,

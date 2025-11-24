@@ -8,6 +8,7 @@ package scene
 
 import (
 	common "db/proto/common"
+	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -478,7 +479,7 @@ var File_proto_service_cpp_rpc_scene_scene_proto protoreflect.FileDescriptor
 
 const file_proto_service_cpp_rpc_scene_scene_proto_rawDesc = "" +
 	"\n" +
-	"'proto/service/cpp/rpc/scene/scene.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\x1a\x1aproto/common/message.proto\"~\n" +
+	"'proto/service/cpp/rpc/scene/scene.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\x1a\x1aproto/common/message.proto\"~\n" +
 	"\x1aPlayerEnterGameNodeRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
@@ -523,7 +524,7 @@ const file_proto_service_cpp_rpc_scene_scene_proto_rawDesc = "" +
 	"\n" +
 	"EnterScene\x12\x1b.Centre2GsEnterSceneRequest\x1a\x06.Empty\x128\n" +
 	"\vCreateScene\x12\x13.CreateSceneRequest\x1a\x14.CreateSceneResponse\x12>\n" +
-	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB)Z$db/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
+	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB-\x98\xd4a\x03Z$db/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_scene_proto_rawDescOnce sync.Once

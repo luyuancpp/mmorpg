@@ -414,7 +414,7 @@ const file_proto_service_cpp_rpc_scene_player_skill_proto_rawDesc = "" +
 	"\x0fNotifySkillUsed\x12\r.SkillUsedS2C\x1a\x06.Empty\x126\n" +
 	"\x16NotifySkillInterrupted\x12\x14.SkillInterruptedS2C\x1a\x06.Empty\x12;\n" +
 	"\fGetSkillList\x12\x14.GetSkillListRequest\x1a\x15.GetSkillListResponse\x1a\n" +
-	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B+Z&team/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
+	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B/\x98\xd4a\x03Z&team/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_player_skill_proto_rawDescOnce sync.Once

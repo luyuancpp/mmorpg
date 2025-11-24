@@ -7,6 +7,7 @@
 package scene
 
 import (
+	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -106,13 +107,13 @@ var File_proto_service_cpp_rpc_scene_game_player_proto protoreflect.FileDescript
 
 const file_proto_service_cpp_rpc_scene_game_player_proto_rawDesc = "" +
 	"\n" +
-	"-proto/service/cpp/rpc/scene/game_player.proto\x1a\x1bgoogle/protobuf/empty.proto\";\n" +
+	"-proto/service/cpp/rpc/scene/game_player.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\";\n" +
 	"\x15Centre2GsLoginRequest\x12\"\n" +
 	"\renter_gs_type\x18\x01 \x01(\rR\venterGsType\"\x19\n" +
 	"\x17GameNodeExitGameRequest2\x8d\x01\n" +
 	"\vScenePlayer\x12@\n" +
 	"\x0eCentre2GsLogin\x12\x16.Centre2GsLoginRequest\x1a\x16.google.protobuf.Empty\x12<\n" +
-	"\bExitGame\x12\x18.GameNodeExitGameRequest\x1a\x16.google.protobuf.EmptyB)Z$db/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
+	"\bExitGame\x12\x18.GameNodeExitGameRequest\x1a\x16.google.protobuf.EmptyB-\x98\xd4a\x03Z$db/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_game_player_proto_rawDescOnce sync.Once

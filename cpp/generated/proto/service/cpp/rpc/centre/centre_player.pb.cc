@@ -78,29 +78,32 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n0proto/service/cpp/rpc/centre/centre_pl"
-    "ayer.proto\032\026proto/common/tip.proto\032\030prot"
-    "o/common/empty.proto\"L\n\027CentreKickPlayer"
-    "Request\022\037\n\006reason\030\001 \001(\0132\017.TipInfoMessage"
-    "\022\020\n\010operator\030\002 \001(\t2q\n\023CentrePlayerUtilit"
-    "y\022*\n\017SendTipToClient\022\017.TipInfoMessage\032\006."
-    "Empty\022.\n\nKickPlayer\022\030.CentreKickPlayerRe"
-    "quest\032\006.EmptyB\003\200\001\001b\006proto3"
+    "ayer.proto\032+proto/service/go/grpc/db/pro"
+    "to_option.proto\032\026proto/common/tip.proto\032"
+    "\030proto/common/empty.proto\"L\n\027CentreKickP"
+    "layerRequest\022\037\n\006reason\030\001 \001(\0132\017.TipInfoMe"
+    "ssage\022\020\n\010operator\030\002 \001(\t2x\n\023CentrePlayerU"
+    "tility\022*\n\017SendTipToClient\022\017.TipInfoMessa"
+    "ge\032\006.Empty\022.\n\nKickPlayer\022\030.CentreKickPla"
+    "yerRequest\032\006.Empty\032\005\200\250\303\001\001B\007\200\001\001\230\324a\004b\006prot"
+    "o3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_2eproto_deps[2] = {
+    descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_2eproto_deps[3] = {
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2ftip_2eproto,
+        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_2eproto = {
     false,
     false,
-    306,
+    362,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_2eproto,
     "proto/service/cpp/rpc/centre/centre_player.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_2eproto_once,
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fplayer_2eproto_deps,
-    2,
+    3,
     1,
     schemas,
     file_default_instances,

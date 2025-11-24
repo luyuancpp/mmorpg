@@ -135,33 +135,35 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fscene_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n/proto/service/cpp/rpc/centre/centre_sc"
-    "ene.proto\032\030proto/common/empty.proto\032\031pro"
-    "to/common/common.proto\"X\n\024RegisterSceneR"
-    "equest\022\025\n\rscene_node_id\030\001 \001(\r\022)\n\013scenes_"
-    "info\030\002 \003(\0132\024.RoomInfoPBComponent\"\027\n\025Regi"
-    "sterSceneResponse\"N\n\026UnRegisterSceneRequ"
-    "est\022\025\n\rscene_node_id\030\001 \001(\r\022\r\n\005scene\030\002 \001("
-    "\r\022\016\n\006reason\030\003 \001(\r2\201\001\n\013CentreScene\022>\n\rReg"
-    "isterScene\022\025.RegisterSceneRequest\032\026.Regi"
-    "sterSceneResponse\0222\n\017UnRegisterScene\022\027.U"
-    "nRegisterSceneRequest\032\006.EmptyB\003\200\001\001b\006prot"
-    "o3"
+    "ene.proto\032+proto/service/go/grpc/db/prot"
+    "o_option.proto\032\030proto/common/empty.proto"
+    "\032\031proto/common/common.proto\"X\n\024RegisterS"
+    "ceneRequest\022\025\n\rscene_node_id\030\001 \001(\r\022)\n\013sc"
+    "enes_info\030\002 \003(\0132\024.RoomInfoPBComponent\"\027\n"
+    "\025RegisterSceneResponse\"N\n\026UnRegisterScen"
+    "eRequest\022\025\n\rscene_node_id\030\001 \001(\r\022\r\n\005scene"
+    "\030\002 \001(\r\022\016\n\006reason\030\003 \001(\r2\201\001\n\013CentreScene\022>"
+    "\n\rRegisterScene\022\025.RegisterSceneRequest\032\026"
+    ".RegisterSceneResponse\0222\n\017UnRegisterScen"
+    "e\022\027.UnRegisterSceneRequest\032\006.EmptyB\007\200\001\001\230"
+    "\324a\004b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fscene_2eproto_deps[2] = {
+    descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fscene_2eproto_deps[3] = {
         &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
+        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fscene_2eproto = {
     false,
     false,
-    442,
+    491,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fscene_2eproto,
     "proto/service/cpp/rpc/centre/centre_scene.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fscene_2eproto_once,
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fscene_2eproto_deps,
-    2,
+    3,
     3,
     schemas,
     file_default_instances,

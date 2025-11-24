@@ -7,6 +7,7 @@
 package centre
 
 import (
+	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	common "mail/proto/common"
@@ -78,14 +79,14 @@ var File_proto_service_cpp_rpc_centre_centre_player_proto protoreflect.FileDescr
 
 const file_proto_service_cpp_rpc_centre_centre_player_proto_rawDesc = "" +
 	"\n" +
-	"0proto/service/cpp/rpc/centre/centre_player.proto\x1a\x16proto/common/tip.proto\x1a\x18proto/common/empty.proto\"^\n" +
+	"0proto/service/cpp/rpc/centre/centre_player.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x18proto/common/empty.proto\"^\n" +
 	"\x17CentreKickPlayerRequest\x12'\n" +
 	"\x06reason\x18\x01 \x01(\v2\x0f.TipInfoMessageR\x06reason\x12\x1a\n" +
-	"\boperator\x18\x02 \x01(\tR\boperator2q\n" +
+	"\boperator\x18\x02 \x01(\tR\boperator2x\n" +
 	"\x13CentrePlayerUtility\x12*\n" +
 	"\x0fSendTipToClient\x12\x0f.TipInfoMessage\x1a\x06.Empty\x12.\n" +
 	"\n" +
-	"KickPlayer\x12\x18.CentreKickPlayerRequest\x1a\x06.EmptyB-Z(mail/proto/service/cpp/rpc/centre;centre\x80\x01\x01b\x06proto3"
+	"KickPlayer\x12\x18.CentreKickPlayerRequest\x1a\x06.Empty\x1a\x05\x80\xa8\xc3\x01\x01B1\x98\xd4a\x04Z(mail/proto/service/cpp/rpc/centre;centre\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_centre_centre_player_proto_rawDescOnce sync.Once

@@ -86,7 +86,7 @@ const file_proto_service_cpp_rpc_centre_centre_player_proto_rawDesc = "" +
 	"\x13CentrePlayerUtility\x12*\n" +
 	"\x0fSendTipToClient\x12\x0f.TipInfoMessage\x1a\x06.Empty\x12.\n" +
 	"\n" +
-	"KickPlayer\x12\x18.CentreKickPlayerRequest\x1a\x06.Empty\x1a\x05\x80\xa8\xc3\x01\x01B2\x98\xd4a\x03Z)robot/proto/service/cpp/rpc/centre;centre\x80\x01\x01b\x06proto3"
+	"KickPlayer\x12\x18.CentreKickPlayerRequest\x1a\x06.Empty\x1a\x05\x80\xa8\xc3\x01\x01B2\x98\xd4a\x04Z)robot/proto/service/cpp/rpc/centre;centre\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_centre_centre_player_proto_rawDescOnce sync.Once
