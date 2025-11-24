@@ -44,7 +44,7 @@ func isGateMethodRepliedHandler(methodList *RPCMethods) bool {
 			return m.CcGenericServices()
 		},
 		func(info *MethodInfo) bool {
-			return !(utils.ContainsPlayerKeyword(info.Service()))
+			return !(isClientProtocolService(info.ServiceDescriptorProto))
 		},
 		func(m *MethodInfo) bool {
 			return !utils.IsPathInProtoDirs(m.Path(), config.GateProtoDirIndex)

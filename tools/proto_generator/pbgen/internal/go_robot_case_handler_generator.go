@@ -77,7 +77,8 @@ func isClientMethodRepliedHandler(methodList *RPCMethods) bool {
 	if !strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
 		return false
 	}
-	return utils.ContainsPlayerKeyword(firstMethodInfo.Service())
+	
+	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
 func GoRobotTotalHandlerGenerator() {

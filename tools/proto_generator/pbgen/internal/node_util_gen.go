@@ -45,5 +45,4 @@ func GenNodeUtil() {
 			log.Fatal(err)
 		}
 	}()
-
 }

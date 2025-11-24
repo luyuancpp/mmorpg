@@ -1,21 +1,39 @@
 package internal
 
 import (
+	messageoption "github.com/luyuancpp/protooption"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 	"pbgen/internal/config"
 	"pbgen/utils"
 	"strings"
 )
+
+// 工具函数：判断服务是否设置了 OptionIsClientProtocolService 为 true
+func isClientProtocolService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
+	opts := serviceDesc.GetOptions()
+	if opts == nil {
+		return false
+	}
+
+	// 读取 OptionIsClientProtocolService 扩展选项
+	extValue := proto.GetExtension(opts, messageoption.E_OptionIsClientProtocolService)
+
+	// 转换为 bool 类型并判断是否为 true
+	isClientProtocolSvc, ok := extValue.(bool)
+	return ok && isClientProtocolSvc
+}
 
 // / game server
 func IsRoomNodeMethodHandler(methods *RPCMethods) bool {
 	if len(*methods) == 0 {
 		return false
 	}
-	first := (*methods)[0]
-	if !strings.Contains(first.Path(), config.ProtoDirectoryNames[config.RoomProtoDirIndex]) {
+	firstMethodInfo := (*methods)[0]
+	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.RoomProtoDirIndex]) {
 		return false
 	}
-	return !utils.ContainsPlayerKeyword(first.Service())
+	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
 func IsRoomNodePlayerHandler(methods *RPCMethods) bool {
@@ -33,7 +51,7 @@ func IsRoomNodePlayerHandler(methods *RPCMethods) bool {
 		return false
 	}
 
-	return utils.ContainsPlayerKeyword(firstMethodInfo.Service())
+	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
 func ReturnNoHandler(methods *RPCMethods) bool {
@@ -58,7 +76,8 @@ func isRoomNodePlayerRepliedHandler(methodList *RPCMethods) bool {
 	if utils.HasGrpcService(strings.ToLower(firstMethodInfo.Path())) {
 		return false
 	}
-	return utils.ContainsPlayerKeyword(firstMethodInfo.Service())
+
+	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
 func isRoomNodeMethodRepliedHandler(methodList *RPCMethods) bool {
@@ -80,7 +99,7 @@ func isRoomNodeMethodRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if utils.ContainsPlayerKeyword(firstMethodInfo.Service()) {
+	if isClientProtocolService(firstMethodInfo.ServiceDescriptorProto) {
 		return false
 	}
 
