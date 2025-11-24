@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-
-
+import "proto/service/go/grpc/db/proto_option.proto";
 import "proto/common/tip.proto";
 import "google/protobuf/empty.proto";
 import "proto/logic/component/scene_comp.proto";
-option cc_generic_services = true;
 
+option cc_generic_services = true;
+option (OptionFileDefaultNode) = NODE_ROOM;
 
 message GsEnterSceneRequest
 {
