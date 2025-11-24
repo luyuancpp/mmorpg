@@ -7,6 +7,7 @@
 package login
 
 import (
+	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -634,7 +635,7 @@ var File_proto_service_go_grpc_login_login_proto protoreflect.FileDescriptor
 
 const file_proto_service_go_grpc_login_login_proto_rawDesc = "" +
 	"\n" +
-	"'proto/service/go/grpc/login/login.proto\x12\aloginpb\x1a\x18proto/common/empty.proto\x1a\x16proto/common/tip.proto\x1a proto/common/user_accounts.proto\"\xcb\x01\n" +
+	"'proto/service/go/grpc/login/login.proto\x12\aloginpb\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x18proto/common/empty.proto\x1a\x16proto/common/tip.proto\x1a proto/common/user_accounts.proto\"\xcb\x01\n" +
 	"\x10LoginSessionInfo\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x17\n" +
 	"\arole_id\x18\x02 \x01(\x04R\x06roleId\x12\x1d\n" +
@@ -673,14 +674,14 @@ const file_proto_service_go_grpc_login_login_proto_rawDesc = "" +
 	"\x1aLoginNodeDisconnectRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\"\x14\n" +
-	"\x12LoginEmptyResponse2\xf1\x02\n" +
+	"\x12LoginEmptyResponse2\xf8\x02\n" +
 	"\x11ClientPlayerLogin\x126\n" +
 	"\x05Login\x12\x15.loginpb.LoginRequest\x1a\x16.loginpb.LoginResponse\x12K\n" +
 	"\fCreatePlayer\x12\x1c.loginpb.CreatePlayerRequest\x1a\x1d.loginpb.CreatePlayerResponse\x12B\n" +
 	"\tEnterGame\x12\x19.loginpb.EnterGameRequest\x1a\x1a.loginpb.EnterGameResponse\x12C\n" +
 	"\tLeaveGame\x12\x19.loginpb.LeaveGameRequest\x1a\x1b.loginpb.LoginEmptyResponse\x12N\n" +
 	"\n" +
-	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x1b.loginpb.LoginEmptyResponseB(Z&team/proto/service/go/grpc/login;loginb\x06proto3"
+	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x1b.loginpb.LoginEmptyResponse\x1a\x05\x88\xa8\xc3\x01\x01B(Z&team/proto/service/go/grpc/login;loginb\x06proto3"
 
 var (
 	file_proto_service_go_grpc_login_login_proto_rawDescOnce sync.Once
