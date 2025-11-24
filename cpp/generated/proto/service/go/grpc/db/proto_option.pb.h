@@ -77,6 +77,31 @@ enum NodeType : int {
   NODE_GATE = 2,
   NODE_ROOM = 3,
   NODE_CENTRE = 4,
+  NODE_DB = 5,
+  NODE_DEPLOY = 6,
+  NODE_DB_SERVICE = 7,
+  NODE_CENTRE_SCENE = 8,
+  NODE_SCENE = 9,
+  NODE_LOGIN = 10,
+  NODE_MAIL = 13,
+  NODE_CHAT = 14,
+  NODE_TEAM = 15,
+  NODE_ACTIVITY = 16,
+  NODE_TRADE = 17,
+  NODE_RANK = 18,
+  NODE_TASK = 19,
+  NODE_GUILD = 20,
+  NODE_MATCH = 21,
+  NODE_AI = 22,
+  NODE_REDIS = 11,
+  NODE_ETCD = 12,
+  NODE_LOG = 23,
+  NODE_PAYMENT = 24,
+  NODE_SECURITY = 25,
+  NODE_CROSS_SERVER = 26,
+  NODE_ANALYTICS = 27,
+  NODE_GM = 28,
+  NODE_PLAYER_LOCATOR = 29,
   NodeType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   NodeType_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -87,11 +112,11 @@ extern const uint32_t NodeType_internal_data_[];
 inline constexpr NodeType NodeType_MIN =
     static_cast<NodeType>(0);
 inline constexpr NodeType NodeType_MAX =
-    static_cast<NodeType>(4);
+    static_cast<NodeType>(29);
 inline bool NodeType_IsValid(int value) {
-  return 0 <= value && value <= 4;
+  return 0 <= value && value <= 29;
 }
-inline constexpr int NodeType_ARRAYSIZE = 4 + 1;
+inline constexpr int NodeType_ARRAYSIZE = 29 + 1;
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL NodeType_descriptor();
 template <typename T>
 const ::std::string& NodeType_Name(T value) {
@@ -102,7 +127,7 @@ const ::std::string& NodeType_Name(T value) {
 }
 template <>
 inline const ::std::string& NodeType_Name(NodeType value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<NodeType_descriptor, 0, 4>(
+  return ::google::protobuf::internal::NameOfDenseEnum<NodeType_descriptor, 0, 29>(
       static_cast<int>(value));
 }
 inline bool NodeType_Parse(

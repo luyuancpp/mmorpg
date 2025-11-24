@@ -104,26 +104,28 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 };
 const char descriptor_table_protodef_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n!proto/service/go/grpc/db/db.proto\032\030pro"
-    "to/common/empty.proto\"$\n\013TestRequest\022\025\n\005"
-    "empty\030\001 \001(\0132\006.Empty\"%\n\014TestResponse\022\025\n\005e"
-    "mpty\030\001 \001(\0132\006.Empty2)\n\002db\022#\n\004Test\022\014.TestR"
-    "equest\032\r.TestResponseb\006proto3"
+    "\n!proto/service/go/grpc/db/db.proto\032+pro"
+    "to/service/go/grpc/db/proto_option.proto"
+    "\032\030proto/common/empty.proto\"$\n\013TestReques"
+    "t\022\025\n\005empty\030\001 \001(\0132\006.Empty\"%\n\014TestResponse"
+    "\022\025\n\005empty\030\001 \001(\0132\006.Empty2)\n\002db\022#\n\004Test\022\014."
+    "TestRequest\032\r.TestResponseB\004\230\324a\005b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_2eproto_deps[1] = {
+    descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_2eproto_deps[2] = {
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
+        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_2eproto = {
     false,
     false,
-    189,
+    240,
     descriptor_table_protodef_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_2eproto,
     "proto/service/go/grpc/db/db.proto",
     &descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_2eproto_once,
     descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fdb_2eproto_deps,
-    1,
+    2,
     2,
     schemas,
     file_default_instances,

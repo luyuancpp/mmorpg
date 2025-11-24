@@ -29,6 +29,7 @@
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
+#include "proto/service/go/grpc/db/proto_option.pb.h"
 #include "proto/common/empty.pb.h"
 // @@protoc_insertion_point(includes)
 

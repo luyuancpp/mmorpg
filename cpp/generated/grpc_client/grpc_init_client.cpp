@@ -45,13 +45,6 @@ namespace loginpb {
     void HandleLoginCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 }
 
-namespace  {
-    void SetDbHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    void SetDbIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    void InitDbGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
-    void HandleDbCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
-}
-
 
 void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
 
@@ -60,8 +53,6 @@ void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::go
     etcdserverpb::SetEtcdIfEmptyHandler(handler);
 
     loginpb::SetLoginIfEmptyHandler(handler);
-
-    ::SetDbIfEmptyHandler(handler);
 
 }
 
@@ -72,8 +63,6 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
     etcdserverpb::SetEtcdHandler(handler);
 
     loginpb::SetLoginHandler(handler);
-
-    ::SetDbHandler(handler);
 
 }
 
@@ -99,9 +88,6 @@ void HandleCompletedQueueMessage(entt::registry& registry){
             else if (eNodeType::LoginNodeService == nodeType) {
                 loginpb::HandleLoginCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
-            else if (eNodeType::DbNodeService == nodeType) {
-                ::HandleDbCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
-            }
         }
     }
 }
@@ -118,8 +104,5 @@ void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, ent
     }
     else if (eNodeType::LoginNodeService == nodeType) {
         loginpb::InitLoginGrpcNode(channel, registry, nodeEntity);
-    }
-    else if (eNodeType::DbNodeService == nodeType) {
-        ::InitDbGrpcNode(channel, registry, nodeEntity);
     }
 }
