@@ -97,11 +97,12 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_
     "r.proto\032+proto/service/go/grpc/db/proto_"
     "option.proto\032\033google/protobuf/empty.prot"
     "o\".\n\025Centre2GsLoginRequest\022\025\n\renter_gs_t"
-    "ype\030\001 \001(\r\"\031\n\027GameNodeExitGameRequest2\215\001\n"
+    "ype\030\001 \001(\r\"\031\n\027GameNodeExitGameRequest2\224\001\n"
     "\013ScenePlayer\022@\n\016Centre2GsLogin\022\026.Centre2"
     "GsLoginRequest\032\026.google.protobuf.Empty\022<"
     "\n\010ExitGame\022\030.GameNodeExitGameRequest\032\026.g"
-    "oogle.protobuf.EmptyB\007\200\001\001\230\324a\003b\006proto3"
+    "oogle.protobuf.Empty\032\005\200\250\303\001\001B\007\200\001\001\230\324a\003b\006pr"
+    "oto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto_deps[2] = {
@@ -112,7 +113,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2f
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto = {
     false,
     false,
-    357,
+    364,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto,
     "proto/service/cpp/rpc/scene/game_player.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto_once,

@@ -369,7 +369,7 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fplaye
     "\004\022\021\n\tconfig_id\030\005 \001(\004\"!\n\017ActorDestroyS2C\022"
     "\016\n\006entity\030\001 \001(\004\"9\n\022ActorListCreateS2C\022#\n"
     "\nactor_list\030\001 \003(\0132\017.ActorCreateS2C\"%\n\023Ac"
-    "torListDestroyS2C\022\016\n\006entity\030\001 \003(\0042\242\003\n\026Sc"
+    "torListDestroyS2C\022\016\n\006entity\030\001 \003(\0042\256\003\n\026Sc"
     "eneSceneClientPlayer\022;\n\nEnterScene\022\025.Ent"
     "erSceneC2SRequest\032\026.EnterSceneC2SRespons"
     "e\022*\n\020NotifyEnterScene\022\016.EnterSceneS2C\032\006."
@@ -380,7 +380,8 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fplaye
     ".ActorDestroyS2C\032\006.Empty\0224\n\025NotifyActorL"
     "istCreate\022\023.ActorListCreateS2C\032\006.Empty\0226"
     "\n\026NotifyActorListDestroy\022\024.ActorListDest"
-    "royS2C\032\006.EmptyB\007\200\001\001\230\324a\003b\006proto3"
+    "royS2C\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001\001B\007\200\001\001\230\324a\003b\006pro"
+    "to3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fscene_2eproto_deps[5] = {
@@ -394,7 +395,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2f
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fscene_2eproto = {
     false,
     false,
-    1231,
+    1243,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fscene_2eproto,
     "proto/service/cpp/rpc/scene/player_scene.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fscene_2eproto_once,
