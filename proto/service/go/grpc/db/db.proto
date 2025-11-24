@@ -1,6 +1,10 @@
 syntax = "proto3";
 
+import "proto/service/go/grpc/db/proto_option.proto";
+
 import "proto/common/empty.proto";
+
+option (OptionFileDefaultNode) = NODE_DB;
 
 service db {
   rpc Test (TestRequest) returns (TestResponse);
