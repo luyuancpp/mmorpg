@@ -170,13 +170,13 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_
     "hange_scene_info\030\002 \001(\0132\032.ChangeRoomInfoP"
     "BComponent\"\026\n\024EnterSceneS2CRequest\"@\n\026En"
     "terScenerS2CResponse\022&\n\rerror_message\030\001 "
-    "\001(\0132\017.TipInfoMessage2\313\001\n\020SceneScenePlaye"
+    "\001(\0132\017.TipInfoMessage2\322\001\n\020SceneScenePlaye"
     "r\022:\n\nEnterScene\022\024.GsEnterSceneRequest\032\026."
     "google.protobuf.Empty\022:\n\nLeaveScene\022\024.Gs"
     "LeaveSceneRequest\032\026.google.protobuf.Empt"
     "y\022\?\n\rEnterSceneS2C\022\025.EnterSceneS2CReques"
-    "t\032\027.EnterScenerS2CResponseB\007\200\001\001\230\324a\003b\006pro"
-    "to3"
+    "t\032\027.EnterScenerS2CResponse\032\005\200\250\303\001\001B\007\200\001\001\230\324"
+    "a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto_deps[4] = {
@@ -189,7 +189,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2f
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto = {
     false,
     false,
-    643,
+    650,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto,
     "proto/service/cpp/rpc/scene/game_player_scene.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_5fscene_2eproto_once,
