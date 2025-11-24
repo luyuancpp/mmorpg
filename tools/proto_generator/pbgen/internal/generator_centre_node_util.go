@@ -4,8 +4,8 @@ import (
 	messageoption "github.com/luyuancpp/protooption"
 )
 
-// IsCentreServiceMethodHandler 判断是否是Centre服务的普通方法处理器
-func IsCentreServiceMethodHandler(methodList *RPCMethods) bool {
+// IsCentreHostedServiceHandler 判断是否是Centre服务的普通方法处理器
+func IsCentreHostedServiceHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
@@ -19,8 +19,8 @@ func IsCentreServiceMethodHandler(methodList *RPCMethods) bool {
 	return true
 }
 
-// IsCentrePlayerServiceMethodHandler 判断是否是Centre的Player服务方法处理器
-func IsCentrePlayerServiceMethodHandler(methodList *RPCMethods) bool {
+// IsCentreHostedPlayerServiceHandler 判断是否是Centre的Player服务方法处理器
+func IsCentreHostedPlayerServiceHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
@@ -30,8 +30,8 @@ func IsCentrePlayerServiceMethodHandler(methodList *RPCMethods) bool {
 	return isPlayerService(firstMethodInfo.ServiceDescriptorProto)
 }
 
-// IsCentreServiceResponseHandler 判断是否是外部返回给Centre服务的响应处理器
-func IsCentreServiceResponseHandler(methodList *RPCMethods) bool {
+// IsCentreReceivedServiceResponseHandler 判断是否是外部返回给Centre服务的响应处理器
+func IsCentreReceivedServiceResponseHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	if IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
@@ -53,8 +53,8 @@ func IsCentreServiceResponseHandler(methodList *RPCMethods) bool {
 	return true
 }
 
-// IsCentrePlayerServiceResponseHandler 判断是否是外部返回给Centre Player服务的响应处理器
-func IsCentrePlayerServiceResponseHandler(methodList *RPCMethods) bool {
+// IsCentreReceivedPlayerServiceResponseHandler 判断是否是外部返回给Centre Player服务的响应处理器
+func IsCentreReceivedPlayerServiceResponseHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	if !firstMethodInfo.CcGenericServices() {
