@@ -78,29 +78,32 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n4proto/service/cpp/rpc/scene/game_clien"
-    "t_player.proto\032\026proto/common/tip.proto\032\030"
-    "proto/common/empty.proto\"J\n\025GameKickPlay"
-    "erRequest\022\037\n\006reason\030\001 \001(\0132\017.TipInfoMessa"
-    "ge\022\020\n\010operator\030\002 \001(\t2s\n\027SceneClientPlaye"
-    "rCommon\022*\n\017SendTipToClient\022\017.TipInfoMess"
-    "age\032\006.Empty\022,\n\nKickPlayer\022\026.GameKickPlay"
-    "erRequest\032\006.EmptyB\003\200\001\001b\006proto3"
+    "t_player.proto\032+proto/service/go/grpc/db"
+    "/proto_option.proto\032\026proto/common/tip.pr"
+    "oto\032\030proto/common/empty.proto\"J\n\025GameKic"
+    "kPlayerRequest\022\037\n\006reason\030\001 \001(\0132\017.TipInfo"
+    "Message\022\020\n\010operator\030\002 \001(\t2\177\n\027SceneClient"
+    "PlayerCommon\022*\n\017SendTipToClient\022\017.TipInf"
+    "oMessage\032\006.Empty\022,\n\nKickPlayer\022\026.GameKic"
+    "kPlayerRequest\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001\001B\003\200\001\001b"
+    "\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto_deps[2] = {
+    descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto_deps[3] = {
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2ftip_2eproto,
+        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto = {
     false,
     false,
-    310,
+    367,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto,
     "proto/service/cpp/rpc/scene/game_client_player.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto_once,
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto_deps,
-    2,
+    3,
     1,
     schemas,
     file_default_instances,

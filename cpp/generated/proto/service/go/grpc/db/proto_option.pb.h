@@ -203,6 +203,14 @@ inline constexpr int kOptionFileDefaultNodeFieldNumber = 200003;
 extern ::google::protobuf::internal::ExtensionIdentifier<
     ::google::protobuf::FileOptions, ::google::protobuf::internal::EnumTypeTraits< ::NodeType>, 14, false>
     OptionFileDefaultNode;
+inline constexpr int kOptionIsPlayerServiceFieldNumber = 400000;
+extern ::google::protobuf::internal::ExtensionIdentifier<
+    ::google::protobuf::ServiceOptions, ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false>
+    OptionIsPlayerService;
+inline constexpr int kOptionIsClientProtocolServiceFieldNumber = 400001;
+extern ::google::protobuf::internal::ExtensionIdentifier<
+    ::google::protobuf::ServiceOptions, ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false>
+    OptionIsClientProtocolService;
 inline constexpr int kOptionTableIdFieldNumber = 500000;
 extern ::google::protobuf::internal::ExtensionIdentifier<
     ::google::protobuf::MessageOptions, ::google::protobuf::internal::PrimitiveTypeTraits< ::uint32_t >, 13, false>

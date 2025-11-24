@@ -47,49 +47,52 @@ const char descriptor_table_protodef_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5f
     "_TYPE\022\022\n\016BS_RESULT_NONE\020\000\022\025\n\021BS_RESULT_S"
     "UCCESS\020\001\022\024\n\020BS_RESULT_FAILED\020\002:H\n\025Option"
     "FileDefaultNode\022\034.google.protobuf.FileOp"
-    "tions\030\303\232\014 \001(\0162\t.NodeType:;\n\rOptionTableI"
-    "d\022\037.google.protobuf.MessageOptions\030\240\302\036 \001"
-    "(\r\210\001\001:=\n\017OptionTableName\022\037.google.protob"
-    "uf.MessageOptions\030\241\302\036 \001(\t\210\001\001:>\n\020OptionPr"
-    "imaryKey\022\037.google.protobuf.MessageOption"
-    "s\030\242\302\036 \001(\t\210\001\001:>\n\020OptionForeignKey\022\037.googl"
-    "e.protobuf.MessageOptions\030\243\302\036 \001(\t\210\001\001:E\n\027"
-    "OptionForeignReferences\022\037.google.protobu"
-    "f.MessageOptions\030\245\302\036 \001(\t\210\001\001:D\n\026OptionAut"
-    "oIncrementKey\022\037.google.protobuf.MessageO"
-    "ptions\030\246\302\036 \001(\t\210\001\001:C\n\025OptionBackupTableNa"
-    "me\022\037.google.protobuf.MessageOptions\030\247\302\036 "
-    "\001(\t\210\001\001:<\n\016OptionLoadOnly\022\037.google.protob"
-    "uf.MessageOptions\030\250\302\036 \001(\010\210\001\001:A\n\023OptionPr"
-    "ocedureName\022\037.google.protobuf.MessageOpt"
-    "ions\030\251\302\036 \001(\t\210\001\001:C\n\025OptionProcedureResult"
-    "\022\037.google.protobuf.MessageOptions\030\252\302\036 \001("
-    "\t\210\001\001:9\n\013OptionIndex\022\037.google.protobuf.Me"
-    "ssageOptions\030\253\302\036 \001(\t\210\001\001:=\n\017OptionUniqueK"
-    "ey\022\037.google.protobuf.MessageOptions\030\254\302\036 "
-    "\001(\t\210\001\001:D\n\026OptionIsPlayerDatabase\022\037.googl"
-    "e.protobuf.MessageOptions\030\255\302\036 \001(\010\210\001\001:E\n\027"
-    "OptionBaseAttributeSync\022\037.google.protobu"
-    "f.MessageOptions\030\340\334* \001(\010\210\001\001:F\n\030OptionDel"
-    "taAttributeSync\022\037.google.protobuf.Messag"
-    "eOptions\030\341\334* \001(\010\210\001\001:=\n\021OptionRepeatLimit"
-    "\022\035.google.protobuf.FieldOptions\030\300\317$ \001(\r\210"
-    "\001\001:>\n\022OptionDBFieldExtra\022\035.google.protob"
-    "uf.FieldOptions\030\301\317$ \001(\t\210\001\001:<\n\020OptionDBRe"
-    "adOnly\022\035.google.protobuf.FieldOptions\030\302\317"
-    "$ \001(\010\210\001\001:>\n\022OptionDBNamePrefix\022\035.google."
-    "protobuf.FieldOptions\030\303\317$ \001(\t\210\001\001:;\n\017Opti"
-    "onDBLoadSql\022\035.google.protobuf.FieldOptio"
-    "ns\030\304\317$ \001(\t\210\001\001:>\n\022OptionDBNeedEscape\022\035.go"
-    "ogle.protobuf.FieldOptions\030\305\317$ \001(\010\210\001\001:=\n"
-    "\021OptionDBProcParam\022\035.google.protobuf.Fie"
-    "ldOptions\030\306\317$ \001(\010\210\001\001:9\n\rOptionOldName\022\035."
-    "google.protobuf.FieldOptions\030\307\317$ \001(\t\210\001\001:"
-    "7\n\013OptionTable\022\035.google.protobuf.FieldOp"
-    "tions\030\310\317$ \001(\t\210\001\001:=\n\021OptionBackUpTabel\022\035."
-    "google.protobuf.FieldOptions\030\311\317$ \001(\t\210\001\001B"
-    "2H\001Z.github.com/luyuancpp/protooption;me"
-    "ssageoptionb\006proto3"
+    "tions\030\303\232\014 \001(\0162\t.NodeType:@\n\025OptionIsPlay"
+    "erService\022\037.google.protobuf.ServiceOptio"
+    "ns\030\200\265\030 \001(\010:H\n\035OptionIsClientProtocolServ"
+    "ice\022\037.google.protobuf.ServiceOptions\030\201\265\030"
+    " \001(\010:;\n\rOptionTableId\022\037.google.protobuf."
+    "MessageOptions\030\240\302\036 \001(\r\210\001\001:=\n\017OptionTable"
+    "Name\022\037.google.protobuf.MessageOptions\030\241\302"
+    "\036 \001(\t\210\001\001:>\n\020OptionPrimaryKey\022\037.google.pr"
+    "otobuf.MessageOptions\030\242\302\036 \001(\t\210\001\001:>\n\020Opti"
+    "onForeignKey\022\037.google.protobuf.MessageOp"
+    "tions\030\243\302\036 \001(\t\210\001\001:E\n\027OptionForeignReferen"
+    "ces\022\037.google.protobuf.MessageOptions\030\245\302\036"
+    " \001(\t\210\001\001:D\n\026OptionAutoIncrementKey\022\037.goog"
+    "le.protobuf.MessageOptions\030\246\302\036 \001(\t\210\001\001:C\n"
+    "\025OptionBackupTableName\022\037.google.protobuf"
+    ".MessageOptions\030\247\302\036 \001(\t\210\001\001:<\n\016OptionLoad"
+    "Only\022\037.google.protobuf.MessageOptions\030\250\302"
+    "\036 \001(\010\210\001\001:A\n\023OptionProcedureName\022\037.google"
+    ".protobuf.MessageOptions\030\251\302\036 \001(\t\210\001\001:C\n\025O"
+    "ptionProcedureResult\022\037.google.protobuf.M"
+    "essageOptions\030\252\302\036 \001(\t\210\001\001:9\n\013OptionIndex\022"
+    "\037.google.protobuf.MessageOptions\030\253\302\036 \001(\t"
+    "\210\001\001:=\n\017OptionUniqueKey\022\037.google.protobuf"
+    ".MessageOptions\030\254\302\036 \001(\t\210\001\001:D\n\026OptionIsPl"
+    "ayerDatabase\022\037.google.protobuf.MessageOp"
+    "tions\030\255\302\036 \001(\010\210\001\001:E\n\027OptionBaseAttributeS"
+    "ync\022\037.google.protobuf.MessageOptions\030\340\334*"
+    " \001(\010\210\001\001:F\n\030OptionDeltaAttributeSync\022\037.go"
+    "ogle.protobuf.MessageOptions\030\341\334* \001(\010\210\001\001:"
+    "=\n\021OptionRepeatLimit\022\035.google.protobuf.F"
+    "ieldOptions\030\300\317$ \001(\r\210\001\001:>\n\022OptionDBFieldE"
+    "xtra\022\035.google.protobuf.FieldOptions\030\301\317$ "
+    "\001(\t\210\001\001:<\n\020OptionDBReadOnly\022\035.google.prot"
+    "obuf.FieldOptions\030\302\317$ \001(\010\210\001\001:>\n\022OptionDB"
+    "NamePrefix\022\035.google.protobuf.FieldOption"
+    "s\030\303\317$ \001(\t\210\001\001:;\n\017OptionDBLoadSql\022\035.google"
+    ".protobuf.FieldOptions\030\304\317$ \001(\t\210\001\001:>\n\022Opt"
+    "ionDBNeedEscape\022\035.google.protobuf.FieldO"
+    "ptions\030\305\317$ \001(\010\210\001\001:=\n\021OptionDBProcParam\022\035"
+    ".google.protobuf.FieldOptions\030\306\317$ \001(\010\210\001\001"
+    ":9\n\rOptionOldName\022\035.google.protobuf.Fiel"
+    "dOptions\030\307\317$ \001(\t\210\001\001:7\n\013OptionTable\022\035.goo"
+    "gle.protobuf.FieldOptions\030\310\317$ \001(\t\210\001\001:=\n\021"
+    "OptionBackUpTabel\022\035.google.protobuf.Fiel"
+    "dOptions\030\311\317$ \001(\t\210\001\001B2H\001Z.github.com/luyu"
+    "ancpp/protooption;messageoptionb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto_deps[1] = {
@@ -99,7 +102,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fpro
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto = {
     false,
     false,
-    2219,
+    2359,
     descriptor_table_protodef_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
     "proto/service/go/grpc/db/proto_option.proto",
     &descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto_once,
@@ -134,6 +137,14 @@ PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 ::_pbi::ExtensionIdentifier<
         ::google::protobuf::FileOptions, ::_pbi::EnumTypeTraits< ::NodeType>, 14, false>
         OptionFileDefaultNode(kOptionFileDefaultNodeFieldNumber, static_cast< ::NodeType >(0));
+PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 ::_pbi::ExtensionIdentifier<
+        ::google::protobuf::ServiceOptions, ::_pbi::PrimitiveTypeTraits< bool >, 8, false>
+        OptionIsPlayerService(kOptionIsPlayerServiceFieldNumber, false);
+PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 ::_pbi::ExtensionIdentifier<
+        ::google::protobuf::ServiceOptions, ::_pbi::PrimitiveTypeTraits< bool >, 8, false>
+        OptionIsClientProtocolService(kOptionIsClientProtocolServiceFieldNumber, false);
 PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 ::_pbi::ExtensionIdentifier<
         ::google::protobuf::MessageOptions, ::_pbi::PrimitiveTypeTraits< ::uint32_t >, 13, false>
@@ -262,6 +273,12 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 static ::std::false_type
         ::_pbi::ExtensionSet::RegisterEnumExtension(
             &::google::protobuf::FileOptions::default_instance(), 200003, 14,
             false, false, ::NodeType_internal_data_),
+        ::_pbi::ExtensionSet::RegisterExtension(
+            &::google::protobuf::ServiceOptions::default_instance(), 400000, 8,
+            false, false),
+        ::_pbi::ExtensionSet::RegisterExtension(
+            &::google::protobuf::ServiceOptions::default_instance(), 400001, 8,
+            false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
             &::google::protobuf::MessageOptions::default_instance(), 500000, 13,
             false, false),
