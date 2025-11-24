@@ -5,7 +5,7 @@ import "proto/common/empty.proto";
 import "proto/common/common.proto";
 
 option cc_generic_services = true;
-option (OptionFileDefaultNode) = NODE_ROOM;
+option (OptionFileDefaultNode) = NODE_CENTRE;
 
 
 message RegisterSceneRequest

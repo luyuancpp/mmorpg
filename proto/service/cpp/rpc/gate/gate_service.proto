@@ -1,11 +1,12 @@
 syntax = "proto3";
 
-
-
+import "proto/service/go/grpc/db/proto_option.proto";
 import "proto/common/empty.proto";
 import "proto/common/message.proto";
 
 option cc_generic_services = true;
+option (OptionFileDefaultNode) = NODE_GATE;
+
 
 // Centre -> Gate: 请求踢掉某个 session（带期望版本）
 message KickSessionRequest {

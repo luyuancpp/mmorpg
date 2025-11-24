@@ -1,12 +1,11 @@
 syntax = "proto3";
 
-
 import "proto/service/go/grpc/db/proto_option.proto";
 import "proto/common/tip.proto";
 import "proto/common/empty.proto";
 
 option cc_generic_services = true;
-option (OptionFileDefaultNode) = NODE_ROOM;
+option (OptionFileDefaultNode) = NODE_CENTRE;
 
 message CentreKickPlayerRequest {
   TipInfoMessage reason = 1;
