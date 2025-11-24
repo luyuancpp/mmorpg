@@ -3,6 +3,7 @@ package internal
 import (
 	"bytes"
 	"fmt"
+	messageoption "github.com/luyuancpp/protooption"
 	"log"
 	"os"
 	"path"
@@ -147,6 +148,11 @@ func CppGrpcCallClient() {
 				if service.CcGenericServices() {
 					continue
 				}
+
+				if IsFileBelongToNode(service.Fd, messageoption.NodeType_NODE_DB) {
+					continue
+				}
+
 				if _, ok := m[service.FileBaseNameCamel()]; ok {
 					continue
 				}

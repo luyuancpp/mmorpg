@@ -10,6 +10,8 @@ github.com/luyuancpp/proto2mysql v0.0.18 h1:AuehB3VYG5BaufInXWhOgRdqOIPl9N0lbWaP
 github.com/luyuancpp/proto2mysql v0.0.18/go.mod h1:WjY5F8NBL1KrhVNWjay3aQEhhH4ggSujBwJo+xLPkA4=
 github.com/luyuancpp/protooption v0.0.0-20251124032113-93477014abb4 h1:I+ZOClADwD6m3JoeXeKkmnh5ysJ+8o992KSuK/STdVQ=
 github.com/luyuancpp/protooption v0.0.0-20251124032113-93477014abb4/go.mod h1:uNz9kXwuEqmgeloQ96j+J0RNMLsDIKNN6sVNaxBZuWk=
+github.com/luyuancpp/protooption v0.0.0-20251124112450-56404e82b7ea h1:bJkkgFmk/8dmb29L1OLuIeL/nqB7bRJhlHVXC7OdfaE=
+github.com/luyuancpp/protooption v0.0.0-20251124112450-56404e82b7ea/go.mod h1:uNz9kXwuEqmgeloQ96j+J0RNMLsDIKNN6sVNaxBZuWk=
 golang.org/x/text v0.31.0 h1:aC8ghyu4JhP8VojJ2lEHBnochRno1sgL6nEi9WGFGMM=
 golang.org/x/text v0.31.0/go.mod h1:tKRAlv61yKIjGGHX/4tP1LTbc13YSec1pxVEWXzfoeM=
 google.golang.org/protobuf v1.36.10 h1:AYd7cD/uASjIL6Q9LiTjz8JLcrh/88q5UObnmY3aOOE=
