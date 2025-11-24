@@ -17,20 +17,23 @@ func checkFirstMethod(methodList *RPCMethods, conditions ...func(*MethodInfo) bo
 	first := (*methodList)[0]
 	for _, cond := range conditions {
 		if !cond(first) {
-			return false
+			return cond(first)
 		}
 	}
 	return true
 }
 
-// 特定条件判断
-func isGateServiceHandler(methodList *RPCMethods) bool {
+// IsGateNodeHostedServiceHandler 判断是否是Gate节点对外提供的服务处理器
+// （Gate作为服务端，处理外部调用）
+func IsGateNodeHostedServiceHandler(methodList *RPCMethods) bool {
 	return checkFirstMethod(methodList, func(m *MethodInfo) bool {
 		return IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_GATE)
 	})
 }
 
-func isGateMethodRepliedHandler(methodList *RPCMethods) bool {
+// IsGateNodeReceivedResponseHandler 判断是否是Gate节点接收的服务响应处理器
+// （Gate作为客户端，处理外部服务返回的响应）
+func IsGateNodeReceivedResponseHandler(methodList *RPCMethods) bool {
 	return checkFirstMethod(methodList,
 		func(m *MethodInfo) bool {
 			return m.CcGenericServices()

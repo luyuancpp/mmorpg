@@ -961,5 +961,5 @@ func WriteMethodFile() {
 	utils.Wg.Add(1)
 	go GenRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterHandlerCppExtension, IsNoOpHandler)
 	utils.Wg.Add(1)
-	go writeRepliedRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, isGateMethodRepliedHandler)
+	go writeRepliedRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsGateNodeReceivedResponseHandler)
 }
