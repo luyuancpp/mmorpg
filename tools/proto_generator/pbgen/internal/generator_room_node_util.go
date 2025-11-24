@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"pbgen/internal/config"
+	messageoption "github.com/luyuancpp/protooption"
 	"pbgen/utils"
 	"strings"
 )
@@ -9,7 +9,7 @@ import (
 // / game server
 func IsRoomNodeMethodHandler(methods *RPCMethods) bool {
 	firstMethodInfo := (*methods)[0]
-	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.RoomProtoDirIndex]) {
+	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_ROOM) {
 		return false
 	}
 	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
@@ -17,9 +17,10 @@ func IsRoomNodeMethodHandler(methods *RPCMethods) bool {
 
 func IsRoomNodePlayerHandler(methods *RPCMethods) bool {
 	firstMethodInfo := (*methods)[0]
-	if !strings.Contains(firstMethodInfo.Path(), config.ProtoDirectoryNames[config.RoomProtoDirIndex]) {
+	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_ROOM) {
 		return false
 	}
+
 	if utils.HasGrpcService(firstMethodInfo.Path()) {
 		return false
 	}
@@ -31,17 +32,17 @@ func ReturnNoHandler(methods *RPCMethods) bool {
 }
 
 func isRoomNodePlayerRepliedHandler(methodList *RPCMethods) bool {
-	if len(*methodList) <= 0 {
-		return false
-	}
-
 	firstMethodInfo := (*methodList)[0]
 
-	if utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.RoomProtoDirIndex) {
+	if !firstMethodInfo.CcGenericServices() {
 		return false
 	}
 
-	if strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
+	if IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_ROOM) {
+		return false
+	}
+
+	if isClientProtocolService(firstMethodInfo.ServiceDescriptorProto) {
 		return false
 	}
 
@@ -53,21 +54,17 @@ func isRoomNodePlayerRepliedHandler(methodList *RPCMethods) bool {
 }
 
 func isRoomNodeMethodRepliedHandler(methodList *RPCMethods) bool {
-	if len(*methodList) == 0 {
-		return false
-	}
-
 	firstMethodInfo := (*methodList)[0]
 
 	if !firstMethodInfo.CcGenericServices() {
 		return false
 	}
 
-	if utils.IsPathInProtoDirs(firstMethodInfo.Path(), config.RoomProtoDirIndex) {
+	if IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_ROOM) {
 		return false
 	}
 
-	if strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
+	if isClientProtocolService(firstMethodInfo.ServiceDescriptorProto) {
 		return false
 	}
 
