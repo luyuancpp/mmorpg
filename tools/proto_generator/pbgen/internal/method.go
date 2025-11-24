@@ -954,9 +954,9 @@ func WriteMethodFile() {
 	go writeRepliedRegisterFile(config.RoomNodeMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, isRoomNodeMethodRepliedHandler)
 
 	utils.Wg.Add(1)
-	go GenRegisterFile(config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsCentreServiceMethodHandler)
+	go GenRegisterFile(config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsCentreHostedServiceHandler)
 	utils.Wg.Add(1)
-	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, IsCentreServiceResponseHandler)
+	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, IsCentreReceivedServiceResponseHandler)
 
 	utils.Wg.Add(1)
 	go GenRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterHandlerCppExtension, ReturnNoHandler)

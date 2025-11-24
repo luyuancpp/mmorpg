@@ -54,7 +54,7 @@ var GsPlayerRepliedHandler = HandlerConfig{
 // ---------------- Centre Node ----------------
 
 var CentreHandler = HandlerConfig{
-	IsValidFunc:         IsCentreServiceMethodHandler,
+	IsValidFunc:         IsCentreHostedServiceHandler,
 	GenerateDataFunc:    getServiceHandlerHeadStr,
 	GenerateCppDataFunc: getServiceHandlerCppStr,
 	Dir:                 config.CentreNodeMethodHandlerDirectory,
@@ -65,7 +65,7 @@ var CentreHandler = HandlerConfig{
 }
 
 var CentrePlayerHandler = HandlerConfig{
-	IsValidFunc:         IsCentrePlayerServiceMethodHandler,
+	IsValidFunc:         IsCentreHostedPlayerServiceHandler,
 	GenerateDataFunc:    getPlayerServiceHeadStr,
 	GenerateCppDataFunc: getPlayerServiceHandlerCppStr,
 	Dir:                 config.CentreNodePlayerMethodHandlerDirectory,
@@ -76,7 +76,7 @@ var CentrePlayerHandler = HandlerConfig{
 }
 
 var CentreRepliedHandler = HandlerConfig{
-	IsValidFunc:         IsCentreServiceResponseHandler,
+	IsValidFunc:         IsCentreReceivedServiceResponseHandler,
 	GenerateDataFunc:    getServiceRepliedHandlerHeadStr,
 	GenerateCppDataFunc: getServiceRepliedHandlerCppStr,
 	Dir:                 config.CentreMethodRepliedHandleDir,
@@ -87,7 +87,7 @@ var CentreRepliedHandler = HandlerConfig{
 }
 
 var CentrePlayerRepliedHandler = HandlerConfig{
-	IsValidFunc:         IsCentrePlayerServiceResponseHandler,
+	IsValidFunc:         IsCentreReceivedPlayerServiceResponseHandler,
 	GenerateDataFunc:    getPlayerMethodRepliedHeadStr,
 	GenerateCppDataFunc: getPlayerServiceHandlerCppStr,
 	Dir:                 config.CentrePlayerMethodRepliedHandlerDirectory,
