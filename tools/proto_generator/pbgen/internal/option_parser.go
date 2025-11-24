@@ -28,7 +28,7 @@ func isPlayerService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
 	}
 
 	// 读取 OptionIsClientProtocolService 扩展选项
-	extValue := proto.GetExtension(opts, messageoption.E_OptionIsClientProtocolService)
+	extValue := proto.GetExtension(opts, messageoption.E_OptionIsPlayerService)
 
 	// 转换为 bool 类型并判断是否为 true
 	isClientProtocolSvc, ok := extValue.(bool)
@@ -46,7 +46,7 @@ func GetFileDefaultNode(fileDesc *descriptorpb.FileDescriptorProto) messageoptio
 
 	// 读取文件级 OptionFileDefaultNode
 	extValue := proto.GetExtension(opts, messageoption.E_OptionFileDefaultNode)
-	
+
 	// 转换为 NodeType 枚举类型
 	nodeType, ok := extValue.(messageoption.NodeType)
 	if !ok {

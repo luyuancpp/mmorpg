@@ -34,6 +34,9 @@ func IsGateNodeReceivedResponseHandler(methodList *RPCMethods) bool {
 			return !(isClientProtocolService(info.ServiceDescriptorProto))
 		},
 		func(m *MethodInfo) bool {
+			return !isPlayerService(m.ServiceDescriptorProto)
+		},
+		func(m *MethodInfo) bool {
 			return !IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_GATE)
 		},
 	)
