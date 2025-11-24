@@ -17,6 +17,7 @@ message GameNodeExitGameRequest
 
 service ScenePlayer
 {
+  option (OptionIsPlayerService) = true;
   rpc Centre2GsLogin (Centre2GsLoginRequest) returns (google.protobuf.Empty);
   rpc ExitGame (GameNodeExitGameRequest) returns (google.protobuf.Empty);
 }
