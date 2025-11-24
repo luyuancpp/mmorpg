@@ -22,34 +22,113 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// --------------------------
-// 1. 定义节点类型枚举（统一所有节点标识）
-// --------------------------
+// ==============================================================================
+// 节点类型定义（所有服务节点的类型标识）
+// ==============================================================================
 type NodeType int32
 
 const (
+	// 基础类型
 	NodeType_NODE_UNSPECIFIED NodeType = 0 // 默认值（未指定）
 	NodeType_NODE_CLIENT      NodeType = 1 // 客户端节点
-	NodeType_NODE_GATE        NodeType = 2 // 网关服节点
-	NodeType_NODE_ROOM        NodeType = 3 // 房间服节点
-	NodeType_NODE_CENTRE      NodeType = 4 // 中心服节点
+	// 核心服务节点
+	NodeType_NODE_GATE       NodeType = 2 // 网关服节点
+	NodeType_NODE_ROOM       NodeType = 3 // 房间服节点
+	NodeType_NODE_CENTRE     NodeType = 4 // 中心服节点
+	NodeType_NODE_DB         NodeType = 5 // 数据库节点
+	NodeType_NODE_DEPLOY     NodeType = 6 // 部署节点服务
+	NodeType_NODE_DB_SERVICE NodeType = 7 // 数据库节点服务
+	// 游戏业务节点
+	NodeType_NODE_CENTRE_SCENE NodeType = 8  // 场景切换中心服务器服务
+	NodeType_NODE_SCENE        NodeType = 9  // 场景服务器服务
+	NodeType_NODE_LOGIN        NodeType = 10 // 登录服务器节点服务
+	NodeType_NODE_MAIL         NodeType = 13 // 邮件节点服务
+	NodeType_NODE_CHAT         NodeType = 14 // 聊天节点服务
+	NodeType_NODE_TEAM         NodeType = 15 // 组队节点服务
+	NodeType_NODE_ACTIVITY     NodeType = 16 // 活动节点服务
+	NodeType_NODE_TRADE        NodeType = 17 // 玩家交易或拍卖行服务
+	NodeType_NODE_RANK         NodeType = 18 // 排行榜服务
+	NodeType_NODE_TASK         NodeType = 19 // 任务系统服务
+	NodeType_NODE_GUILD        NodeType = 20 // 公会系统服务
+	NodeType_NODE_MATCH        NodeType = 21 // 匹配系统服务（如组队副本、PVP等）
+	NodeType_NODE_AI           NodeType = 22 // AI/NPC 控制服务
+	// 基础设施节点
+	NodeType_NODE_REDIS          NodeType = 11 // Redis 节点服务
+	NodeType_NODE_ETCD           NodeType = 12 // etcd节点
+	NodeType_NODE_LOG            NodeType = 23 // 日志处理/收集服务
+	NodeType_NODE_PAYMENT        NodeType = 24 // 支付或充值服务
+	NodeType_NODE_SECURITY       NodeType = 25 // 反作弊/安全验证服务
+	NodeType_NODE_CROSS_SERVER   NodeType = 26 // 跨服服务处理（如跨服战场）
+	NodeType_NODE_ANALYTICS      NodeType = 27 // 数据统计与分析服务
+	NodeType_NODE_GM             NodeType = 28 // GM工具服务（客服/管理员指令）
+	NodeType_NODE_PLAYER_LOCATOR NodeType = 29 // 跨服玩家定位服务
 )
 
 // Enum value maps for NodeType.
 var (
 	NodeType_name = map[int32]string{
-		0: "NODE_UNSPECIFIED",
-		1: "NODE_CLIENT",
-		2: "NODE_GATE",
-		3: "NODE_ROOM",
-		4: "NODE_CENTRE",
+		0:  "NODE_UNSPECIFIED",
+		1:  "NODE_CLIENT",
+		2:  "NODE_GATE",
+		3:  "NODE_ROOM",
+		4:  "NODE_CENTRE",
+		5:  "NODE_DB",
+		6:  "NODE_DEPLOY",
+		7:  "NODE_DB_SERVICE",
+		8:  "NODE_CENTRE_SCENE",
+		9:  "NODE_SCENE",
+		10: "NODE_LOGIN",
+		13: "NODE_MAIL",
+		14: "NODE_CHAT",
+		15: "NODE_TEAM",
+		16: "NODE_ACTIVITY",
+		17: "NODE_TRADE",
+		18: "NODE_RANK",
+		19: "NODE_TASK",
+		20: "NODE_GUILD",
+		21: "NODE_MATCH",
+		22: "NODE_AI",
+		11: "NODE_REDIS",
+		12: "NODE_ETCD",
+		23: "NODE_LOG",
+		24: "NODE_PAYMENT",
+		25: "NODE_SECURITY",
+		26: "NODE_CROSS_SERVER",
+		27: "NODE_ANALYTICS",
+		28: "NODE_GM",
+		29: "NODE_PLAYER_LOCATOR",
 	}
 	NodeType_value = map[string]int32{
-		"NODE_UNSPECIFIED": 0,
-		"NODE_CLIENT":      1,
-		"NODE_GATE":        2,
-		"NODE_ROOM":        3,
-		"NODE_CENTRE":      4,
+		"NODE_UNSPECIFIED":    0,
+		"NODE_CLIENT":         1,
+		"NODE_GATE":           2,
+		"NODE_ROOM":           3,
+		"NODE_CENTRE":         4,
+		"NODE_DB":             5,
+		"NODE_DEPLOY":         6,
+		"NODE_DB_SERVICE":     7,
+		"NODE_CENTRE_SCENE":   8,
+		"NODE_SCENE":          9,
+		"NODE_LOGIN":          10,
+		"NODE_MAIL":           13,
+		"NODE_CHAT":           14,
+		"NODE_TEAM":           15,
+		"NODE_ACTIVITY":       16,
+		"NODE_TRADE":          17,
+		"NODE_RANK":           18,
+		"NODE_TASK":           19,
+		"NODE_GUILD":          20,
+		"NODE_MATCH":          21,
+		"NODE_AI":             22,
+		"NODE_REDIS":          11,
+		"NODE_ETCD":           12,
+		"NODE_LOG":            23,
+		"NODE_PAYMENT":        24,
+		"NODE_SECURITY":       25,
+		"NODE_CROSS_SERVER":   26,
+		"NODE_ANALYTICS":      27,
+		"NODE_GM":             28,
+		"NODE_PLAYER_LOCATOR": 29,
 	}
 )
 
@@ -80,19 +159,19 @@ func (NodeType) EnumDescriptor() ([]byte, []int) {
 	return file_proto_service_go_grpc_db_proto_option_proto_rawDescGZIP(), []int{0}
 }
 
-// flag 的值, 表示本条数据的操作状态
+// 数据操作类型
 type OPERATE_TYPE int32
 
 const (
-	OPERATE_TYPE_OPERATE_NONE          OPERATE_TYPE = 0 //sql none
-	OPERATE_TYPE_OPERATE_INSERT        OPERATE_TYPE = 1 //sql insert
-	OPERATE_TYPE_OPERATE_UPDATE        OPERATE_TYPE = 2 //sql update
-	OPERATE_TYPE_OPERATE_DELETE        OPERATE_TYPE = 3 //sql delete
-	OPERATE_TYPE_OPERATE_LOAD          OPERATE_TYPE = 4 //sql load
-	OPERATE_TYPE_OPERATE_DELETE_CACHE  OPERATE_TYPE = 5 //cache need delete
-	OPERATE_TYPE_OPERATE_REPLACE       OPERATE_TYPE = 6
-	OPERATE_TYPE_OPERATE_CALL_PROC     OPERATE_TYPE = 7 // call procedure
-	OPERATE_TYPE_OPERATE_DELETE_BACKUP OPERATE_TYPE = 8 //backup it
+	OPERATE_TYPE_OPERATE_NONE          OPERATE_TYPE = 0 //无操作
+	OPERATE_TYPE_OPERATE_INSERT        OPERATE_TYPE = 1 //插入数据
+	OPERATE_TYPE_OPERATE_UPDATE        OPERATE_TYPE = 2 //更新数据
+	OPERATE_TYPE_OPERATE_DELETE        OPERATE_TYPE = 3 //删除数据
+	OPERATE_TYPE_OPERATE_LOAD          OPERATE_TYPE = 4 //加载数据
+	OPERATE_TYPE_OPERATE_DELETE_CACHE  OPERATE_TYPE = 5 //删除缓存
+	OPERATE_TYPE_OPERATE_REPLACE       OPERATE_TYPE = 6 //替换数据
+	OPERATE_TYPE_OPERATE_CALL_PROC     OPERATE_TYPE = 7 //调用存储过程
+	OPERATE_TYPE_OPERATE_DELETE_BACKUP OPERATE_TYPE = 8 //删除备份
 )
 
 // Enum value maps for OPERATE_TYPE.
@@ -148,12 +227,13 @@ func (OPERATE_TYPE) EnumDescriptor() ([]byte, []int) {
 	return file_proto_service_go_grpc_db_proto_option_proto_rawDescGZIP(), []int{1}
 }
 
+// 业务操作结果类型
 type BS_RESULT_TYPE int32
 
 const (
-	BS_RESULT_TYPE_BS_RESULT_NONE    BS_RESULT_TYPE = 0 //
-	BS_RESULT_TYPE_BS_RESULT_SUCCESS BS_RESULT_TYPE = 1
-	BS_RESULT_TYPE_BS_RESULT_FAILED  BS_RESULT_TYPE = 2
+	BS_RESULT_TYPE_BS_RESULT_NONE    BS_RESULT_TYPE = 0 //无结果
+	BS_RESULT_TYPE_BS_RESULT_SUCCESS BS_RESULT_TYPE = 1 //操作成功
+	BS_RESULT_TYPE_BS_RESULT_FAILED  BS_RESULT_TYPE = 2 //操作失败
 )
 
 // Enum value maps for BS_RESULT_TYPE.
@@ -467,7 +547,7 @@ var (
 	// optional string OptionIndex = 500011;
 	E_OptionIndex = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[13] //建立索引
 	// optional string OptionUniqueKey = 500012;
-	E_OptionUniqueKey = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[14] //
+	E_OptionUniqueKey = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[14] //唯一键
 	// optional bool OptionIsPlayerDatabase = 500013;
 	E_OptionIsPlayerDatabase = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[15] // 标识是否是玩家数据库
 	// ---------- 属性同步相关 ----------
@@ -506,13 +586,45 @@ var File_proto_service_go_grpc_db_proto_option_proto protoreflect.FileDescriptor
 
 const file_proto_service_go_grpc_db_proto_option_proto_rawDesc = "" +
 	"\n" +
-	"+proto/service/go/grpc/db/proto_option.proto\x1a google/protobuf/descriptor.proto*`\n" +
+	"+proto/service/go/grpc/db/proto_option.proto\x1a google/protobuf/descriptor.proto*\x88\x04\n" +
 	"\bNodeType\x12\x14\n" +
 	"\x10NODE_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vNODE_CLIENT\x10\x01\x12\r\n" +
 	"\tNODE_GATE\x10\x02\x12\r\n" +
 	"\tNODE_ROOM\x10\x03\x12\x0f\n" +
-	"\vNODE_CENTRE\x10\x04*\xcf\x01\n" +
+	"\vNODE_CENTRE\x10\x04\x12\v\n" +
+	"\aNODE_DB\x10\x05\x12\x0f\n" +
+	"\vNODE_DEPLOY\x10\x06\x12\x13\n" +
+	"\x0fNODE_DB_SERVICE\x10\a\x12\x15\n" +
+	"\x11NODE_CENTRE_SCENE\x10\b\x12\x0e\n" +
+	"\n" +
+	"NODE_SCENE\x10\t\x12\x0e\n" +
+	"\n" +
+	"NODE_LOGIN\x10\n" +
+	"\x12\r\n" +
+	"\tNODE_MAIL\x10\r\x12\r\n" +
+	"\tNODE_CHAT\x10\x0e\x12\r\n" +
+	"\tNODE_TEAM\x10\x0f\x12\x11\n" +
+	"\rNODE_ACTIVITY\x10\x10\x12\x0e\n" +
+	"\n" +
+	"NODE_TRADE\x10\x11\x12\r\n" +
+	"\tNODE_RANK\x10\x12\x12\r\n" +
+	"\tNODE_TASK\x10\x13\x12\x0e\n" +
+	"\n" +
+	"NODE_GUILD\x10\x14\x12\x0e\n" +
+	"\n" +
+	"NODE_MATCH\x10\x15\x12\v\n" +
+	"\aNODE_AI\x10\x16\x12\x0e\n" +
+	"\n" +
+	"NODE_REDIS\x10\v\x12\r\n" +
+	"\tNODE_ETCD\x10\f\x12\f\n" +
+	"\bNODE_LOG\x10\x17\x12\x10\n" +
+	"\fNODE_PAYMENT\x10\x18\x12\x11\n" +
+	"\rNODE_SECURITY\x10\x19\x12\x15\n" +
+	"\x11NODE_CROSS_SERVER\x10\x1a\x12\x12\n" +
+	"\x0eNODE_ANALYTICS\x10\x1b\x12\v\n" +
+	"\aNODE_GM\x10\x1c\x12\x17\n" +
+	"\x13NODE_PLAYER_LOCATOR\x10\x1d*\xcf\x01\n" +
 	"\fOPERATE_TYPE\x12\x10\n" +
 	"\fOPERATE_NONE\x10\x00\x12\x12\n" +
 	"\x0eOPERATE_INSERT\x10\x01\x12\x12\n" +
