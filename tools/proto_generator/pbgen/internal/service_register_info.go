@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iancoleman/strcase"
+	messageoption "github.com/luyuancpp/protooption"
 	"log"
 	"math"
 	"os"
@@ -268,6 +269,10 @@ void InitMessageInfo()
 			continue
 		}
 
+		if IsFileBelongToNode(service.Fd, messageoption.NodeType_NODE_DB) {
+			continue
+		}
+
 		firstMethod := service.MethodInfo[0]
 
 		includes = append(includes, firstMethod.IncludeName())
@@ -286,6 +291,10 @@ void InitMessageInfo()
 	// Step 2: Generate init lines for RpcService and allowed client message IDs
 	for _, service := range GlobalRPCServiceList {
 		if len(service.MethodInfo) == 0 {
+			continue
+		}
+
+		if IsFileBelongToNode(service.Fd, messageoption.NodeType_NODE_DB) {
 			continue
 		}
 

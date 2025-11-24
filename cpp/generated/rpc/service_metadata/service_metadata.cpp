@@ -7,7 +7,6 @@
 #include "proto/middleware/etcd/etcd.grpc.pb.h"
 #include "proto/middleware/etcd/etcd.grpc.pb.h"
 #include "proto/service/go/grpc/login/login.grpc.pb.h"
-#include "proto/service/go/grpc/db/db.grpc.pb.h"
 #include "proto/service/cpp/rpc/centre/centre_player.pb.h"
 #include "proto/service/cpp/rpc/centre/centre_player_scene.pb.h"
 #include "proto/service/cpp/rpc/centre/centre_scene.pb.h"
@@ -27,7 +26,6 @@
 #include "rpc/service_metadata/etcd_service_metadata.h"
 #include "rpc/service_metadata/etcd_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
-#include "rpc/service_metadata/db_service_metadata.h"
 #include "rpc/service_metadata/centre_player_service_metadata.h"
 #include "rpc/service_metadata/centre_player_scene_service_metadata.h"
 #include "rpc/service_metadata/centre_scene_service_metadata.h"
@@ -76,7 +74,6 @@ namespace loginpb{void SendClientPlayerLoginCreatePlayer(entt::registry& , entt:
 namespace loginpb{void SendClientPlayerLoginEnterGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginLeaveGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace {void SenddbTest(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
 std::unordered_set<uint32_t> gClientMessageIdWhitelist;
 std::array<RpcService, 85> gRpcServiceRegistry;
@@ -102,7 +99,6 @@ void InitMessageInfo()
     gRpcServiceRegistry[ClientPlayerLoginEnterGameMessageId] = RpcService{"ClientPlayerLogin", "EnterGame", std::make_unique_for_overwrite<::loginpb::EnterGameRequest>(), std::make_unique_for_overwrite<::loginpb::EnterGameResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginEnterGame};
     gRpcServiceRegistry[ClientPlayerLoginLeaveGameMessageId] = RpcService{"ClientPlayerLogin", "LeaveGame", std::make_unique_for_overwrite<::loginpb::LeaveGameRequest>(), std::make_unique_for_overwrite<::loginpb::LoginEmptyResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLeaveGame};
     gRpcServiceRegistry[ClientPlayerLoginDisconnectMessageId] = RpcService{"ClientPlayerLogin", "Disconnect", std::make_unique_for_overwrite<::loginpb::LoginNodeDisconnectRequest>(), std::make_unique_for_overwrite<::loginpb::LoginEmptyResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
-    gRpcServiceRegistry[dbTestMessageId] = RpcService{"db", "Test", std::make_unique_for_overwrite<::TestRequest>(), std::make_unique_for_overwrite<::TestResponse>(), nullptr, 1, eNodeType::DbNodeService, ::SenddbTest};
     gRpcServiceRegistry[CentrePlayerUtilitySendTipToClientMessageId] = RpcService{"CentrePlayerUtility", "SendTipToClient", std::make_unique_for_overwrite<::TipInfoMessage>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentrePlayerUtilityImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentrePlayerUtilityKickPlayerMessageId] = RpcService{"CentrePlayerUtility", "KickPlayer", std::make_unique_for_overwrite<::CentreKickPlayerRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentrePlayerUtilityImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentrePlayerSceneEnterSceneMessageId] = RpcService{"CentrePlayerScene", "EnterScene", std::make_unique_for_overwrite<::CentreEnterSceneRequest>(), std::make_unique_for_overwrite<::google::protobuf::Empty>(), std::make_unique_for_overwrite<CentrePlayerSceneImpl>(), 0, eNodeType::CentreNodeService};
