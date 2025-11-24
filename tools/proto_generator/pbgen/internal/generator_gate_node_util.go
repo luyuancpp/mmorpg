@@ -4,16 +4,8 @@ import (
 	messageoption "github.com/luyuancpp/protooption"
 )
 
-// 判断 methodList 是否为空
-func isEmpty(methodList *RPCMethods) bool {
-	return len(*methodList) == 0
-}
-
 // 判断 methodList 第一个 method 是否满足给定条件函数
 func checkFirstMethod(methodList *RPCMethods, conditions ...func(*MethodInfo) bool) bool {
-	if isEmpty(methodList) {
-		return false
-	}
 	first := (*methodList)[0]
 	for _, cond := range conditions {
 		if !cond(first) {
