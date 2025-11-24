@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-
-
 import "proto/logic/component/scene_comp.proto";
 
 message PlayerMigrationPbEvent {
