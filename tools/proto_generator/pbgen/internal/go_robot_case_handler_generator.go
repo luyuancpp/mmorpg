@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"pbgen/internal/config"
-	"pbgen/utils"
 	"strings"
 	"text/template"
 )
@@ -77,7 +76,7 @@ func isClientMethodRepliedHandler(methodList *RPCMethods) bool {
 	if !strings.Contains(firstMethodInfo.Service(), config.ClientPrefixName) {
 		return false
 	}
-	
+
 	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
@@ -85,10 +84,6 @@ func GoRobotTotalHandlerGenerator() {
 	handlerCases := make([]HandlerCase, 0)
 	for _, service := range GlobalRPCServiceList {
 		if !isClientMethodRepliedHandler(&service.MethodInfo) {
-			continue
-		}
-
-		if utils.IsPathInProtoDirs(service.Path(), config.LoginProtoDirIndex) {
 			continue
 		}
 
