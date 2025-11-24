@@ -4,7 +4,7 @@ import (
 	messageoption "github.com/luyuancpp/protooption"
 )
 
-func isCentreMethodHandler(methodList *RPCMethods) bool {
+func IsCentreServiceMethodHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
@@ -18,7 +18,7 @@ func isCentreMethodHandler(methodList *RPCMethods) bool {
 	return true
 }
 
-func isCentrePlayerHandler(methodList *RPCMethods) bool {
+func IsCentrePlayerServiceMethodHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
@@ -28,10 +28,10 @@ func isCentrePlayerHandler(methodList *RPCMethods) bool {
 	return isPlayerService(firstMethodInfo.ServiceDescriptorProto)
 }
 
-func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
+func IsCentreServiceResponseHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
-	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
+	if IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
 		return false
 	}
 
@@ -50,7 +50,7 @@ func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
 	return true
 }
 
-func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
+func IsCentrePlayerServiceResponseHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	if !firstMethodInfo.CcGenericServices() {
