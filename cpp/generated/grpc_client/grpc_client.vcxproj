@@ -21,7 +21,6 @@
   <ItemGroup>
     <ClCompile Include="grpc_init_client.cpp" />
     <ClCompile Include="middleware\etcd\etcd_grpc_client.cpp" />
-    <ClCompile Include="service\go\grpc\db\db_grpc_client.cpp" />
     <ClCompile Include="service\go\grpc\login\login_grpc_client.cpp" />
     <ClCompile Include="service\go\grpc\player_locator\player_locator_grpc_client.cpp" />
   </ItemGroup>
@@ -29,7 +28,6 @@
     <ClInclude Include="grpc_init_client.h" />
     <ClInclude Include="grpc_call_tag.h" />
     <ClInclude Include="middleware\etcd\etcd_grpc_client.h" />
-    <ClInclude Include="service\go\grpc\db\db_grpc_client.h" />
     <ClInclude Include="service\go\grpc\login\login_grpc_client.h" />
     <ClInclude Include="service\go\grpc\player_locator\player_locator_grpc_client.h" />
   </ItemGroup>
