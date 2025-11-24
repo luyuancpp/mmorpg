@@ -87,7 +87,7 @@ const file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDesc = "" +
 	"\x0fSendTipToClient\x12\x0f.TipInfoMessage\x1a\x06.Empty\x12,\n" +
 	"\n" +
 	"KickPlayer\x12\x16.GameKickPlayerRequest\x1a\x06.Empty\x1a\n" +
-	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B5Z0player_locator/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
+	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B9\x98\xd4a\x03Z0player_locator/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDescOnce sync.Once

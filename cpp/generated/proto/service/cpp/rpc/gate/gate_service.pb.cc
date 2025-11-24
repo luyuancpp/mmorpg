@@ -150,44 +150,46 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n-proto/service/cpp/rpc/gate/gate_servic"
-    "e.proto\032\030proto/common/empty.proto\032\032proto"
-    "/common/message.proto\"J\n\022KickSessionRequ"
-    "est\022\022\n\nsession_id\030\001 \001(\004\022 \n\030expected_sess"
-    "ion_version\030\002 \001(\004\"Z\n\030BindSessionToGateRe"
-    "quest\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030\002"
-    " \001(\004\022\027\n\017session_version\030\003 \001(\004\"[\n\031Broadca"
-    "stToPlayersRequest\022\024\n\014session_list\030\001 \003(\004"
-    "\022(\n\017message_content\030\002 \001(\0132\017.MessageConte"
-    "nt2\217\004\n\004Gate\022X\n\023PlayerEnterGameNode\022\037.Reg"
-    "isterGameNodeSessionRequest\032 .RegisterGa"
-    "meNodeSessionResponse\0227\n\023SendMessageToPl"
-    "ayer\022\030.NodeRouteMessageRequest\032\006.Empty\0222"
-    "\n\023KickSessionByCentre\022\023.KickSessionReque"
-    "st\032\006.Empty\022\?\n\020RouteNodeMessage\022\024.RouteMe"
-    "ssageRequest\032\025.RouteMessageResponse\022M\n\022R"
-    "outePlayerMessage\022\032.RoutePlayerMessageRe"
-    "quest\032\033.RoutePlayerMessageResponse\0228\n\022Br"
-    "oadcastToPlayers\022\032.BroadcastToPlayersReq"
-    "uest\032\006.Empty\022>\n\rNodeHandshake\022\025.NodeHand"
-    "shakeRequest\032\026.NodeHandshakeResponse\0226\n\021"
-    "BindSessionToGate\022\031.BindSessionToGateReq"
-    "uest\032\006.EmptyB\003\200\001\001b\006proto3"
+    "e.proto\032+proto/service/go/grpc/db/proto_"
+    "option.proto\032\030proto/common/empty.proto\032\032"
+    "proto/common/message.proto\"J\n\022KickSessio"
+    "nRequest\022\022\n\nsession_id\030\001 \001(\004\022 \n\030expected"
+    "_session_version\030\002 \001(\004\"Z\n\030BindSessionToG"
+    "ateRequest\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer"
+    "_id\030\002 \001(\004\022\027\n\017session_version\030\003 \001(\004\"[\n\031Br"
+    "oadcastToPlayersRequest\022\024\n\014session_list\030"
+    "\001 \003(\004\022(\n\017message_content\030\002 \001(\0132\017.Message"
+    "Content2\217\004\n\004Gate\022X\n\023PlayerEnterGameNode\022"
+    "\037.RegisterGameNodeSessionRequest\032 .Regis"
+    "terGameNodeSessionResponse\0227\n\023SendMessag"
+    "eToPlayer\022\030.NodeRouteMessageRequest\032\006.Em"
+    "pty\0222\n\023KickSessionByCentre\022\023.KickSession"
+    "Request\032\006.Empty\022\?\n\020RouteNodeMessage\022\024.Ro"
+    "uteMessageRequest\032\025.RouteMessageResponse"
+    "\022M\n\022RoutePlayerMessage\022\032.RoutePlayerMess"
+    "ageRequest\032\033.RoutePlayerMessageResponse\022"
+    "8\n\022BroadcastToPlayers\022\032.BroadcastToPlaye"
+    "rsRequest\032\006.Empty\022>\n\rNodeHandshake\022\025.Nod"
+    "eHandshakeRequest\032\026.NodeHandshakeRespons"
+    "e\0226\n\021BindSessionToGate\022\031.BindSessionToGa"
+    "teRequest\032\006.EmptyB\007\200\001\001\230\324a\002b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5fservice_2eproto_deps[2] = {
+    descriptor_table_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5fservice_2eproto_deps[3] = {
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2fmessage_2eproto,
+        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5fservice_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5fservice_2eproto = {
     false,
     false,
-    905,
+    954,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5fservice_2eproto,
     "proto/service/cpp/rpc/gate/gate_service.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5fservice_2eproto_once,
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fgate_2fgate_5fservice_2eproto_deps,
-    2,
+    3,
     3,
     schemas,
     file_default_instances,

@@ -321,64 +321,66 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n1proto/service/cpp/rpc/centre/centre_se"
-    "rvice.proto\032\031proto/common/common.proto\032\030"
-    "proto/common/empty.proto\032\032proto/common/s"
-    "ession.proto\032\032proto/common/message.proto"
-    "\032\026proto/common/tip.proto\"\?\n\030GateClientMe"
-    "ssageRequest\022#\n\nrpc_client\030\001 \001(\0132\017.Netwo"
-    "rkAddress\"B\n\031LoginNodeLeaveGameRequest\022%"
-    "\n\014session_info\030\001 \001(\0132\017.SessionDetails\"G\n"
-    "\033EnterGameNodeSuccessRequest\022\021\n\tplayer_i"
-    "d\030\001 \001(\004\022\025\n\rscene_node_id\030\002 \001(\r\"+\n\026Centre"
-    "EnterGameRequest\022\021\n\tplayer_id\030\001 \001(\004\"\245\001\n "
-    "CentrePlayerGameNodeEntryRequest\022,\n\013clie"
-    "nt_info\030\001 \001(\0132\027.CentreEnterGameRequest\022%"
-    "\n\014session_info\030\002 \001(\0132\017.SessionDetails\022\023\n"
-    "\013login_token\030\003 \001(\t\022\027\n\017token_expiry_ms\030\004 "
-    "\001(\004\"@\n\024InitSceneNodeRequest\022\017\n\007node_id\030\001"
-    " \001(\r\022\027\n\017scene_node_type\030\002 \001(\r\"7\n\022CentreL"
-    "oginRequest\022\017\n\007account\030\001 \001(\t\022\020\n\010password"
-    "\030\002 \001(\t\"=\n\023CentreLoginResponse\022&\n\rerror_m"
-    "essage\030\001 \001(\0132\017.TipInfoMessage2\206\006\n\006Centre"
-    "\0226\n\021GatePlayerService\022\031.GateClientMessag"
-    "eRequest\032\006.Empty\022>\n\025GateSessionDisconnec"
-    "t\022\035.GateSessionDisconnectRequest\032\006.Empty"
-    "\022B\n\025LoginNodeAccountLogin\022\023.CentreLoginR"
-    "equest\032\024.CentreLoginResponse\022\?\n\022LoginNod"
-    "eEnterGame\022!.CentrePlayerGameNodeEntryRe"
-    "quest\032\006.Empty\0228\n\022LoginNodeLeaveGame\022\032.Lo"
-    "ginNodeLeaveGameRequest\032\006.Empty\022C\n\032Login"
-    "NodeSessionDisconnect\022\035.GateSessionDisco"
-    "nnectRequest\032\006.Empty\022D\n\rPlayerService\022\030."
-    "NodeRouteMessageRequest\032\031.NodeRouteMessa"
-    "geResponse\0226\n\016EnterGsSucceed\022\034.EnterGame"
-    "NodeSuccessRequest\032\006.Empty\022A\n\022RouteNodeS"
-    "tringMsg\022\024.RouteMessageRequest\032\025.RouteMe"
-    "ssageResponse\022O\n\024RoutePlayerStringMsg\022\032."
-    "RoutePlayerMessageRequest\032\033.RoutePlayerM"
-    "essageResponse\022.\n\rInitSceneNode\022\025.InitSc"
-    "eneNodeRequest\032\006.Empty\022>\n\rNodeHandshake\022"
-    "\025.NodeHandshakeRequest\032\026.NodeHandshakeRe"
-    "sponseB\003\200\001\001b\006proto3"
+    "rvice.proto\032+proto/service/go/grpc/db/pr"
+    "oto_option.proto\032\031proto/common/common.pr"
+    "oto\032\030proto/common/empty.proto\032\032proto/com"
+    "mon/session.proto\032\032proto/common/message."
+    "proto\032\026proto/common/tip.proto\"\?\n\030GateCli"
+    "entMessageRequest\022#\n\nrpc_client\030\001 \001(\0132\017."
+    "NetworkAddress\"B\n\031LoginNodeLeaveGameRequ"
+    "est\022%\n\014session_info\030\001 \001(\0132\017.SessionDetai"
+    "ls\"G\n\033EnterGameNodeSuccessRequest\022\021\n\tpla"
+    "yer_id\030\001 \001(\004\022\025\n\rscene_node_id\030\002 \001(\r\"+\n\026C"
+    "entreEnterGameRequest\022\021\n\tplayer_id\030\001 \001(\004"
+    "\"\245\001\n CentrePlayerGameNodeEntryRequest\022,\n"
+    "\013client_info\030\001 \001(\0132\027.CentreEnterGameRequ"
+    "est\022%\n\014session_info\030\002 \001(\0132\017.SessionDetai"
+    "ls\022\023\n\013login_token\030\003 \001(\t\022\027\n\017token_expiry_"
+    "ms\030\004 \001(\004\"@\n\024InitSceneNodeRequest\022\017\n\007node"
+    "_id\030\001 \001(\r\022\027\n\017scene_node_type\030\002 \001(\r\"7\n\022Ce"
+    "ntreLoginRequest\022\017\n\007account\030\001 \001(\t\022\020\n\010pas"
+    "sword\030\002 \001(\t\"=\n\023CentreLoginResponse\022&\n\rer"
+    "ror_message\030\001 \001(\0132\017.TipInfoMessage2\206\006\n\006C"
+    "entre\0226\n\021GatePlayerService\022\031.GateClientM"
+    "essageRequest\032\006.Empty\022>\n\025GateSessionDisc"
+    "onnect\022\035.GateSessionDisconnectRequest\032\006."
+    "Empty\022B\n\025LoginNodeAccountLogin\022\023.CentreL"
+    "oginRequest\032\024.CentreLoginResponse\022\?\n\022Log"
+    "inNodeEnterGame\022!.CentrePlayerGameNodeEn"
+    "tryRequest\032\006.Empty\0228\n\022LoginNodeLeaveGame"
+    "\022\032.LoginNodeLeaveGameRequest\032\006.Empty\022C\n\032"
+    "LoginNodeSessionDisconnect\022\035.GateSession"
+    "DisconnectRequest\032\006.Empty\022D\n\rPlayerServi"
+    "ce\022\030.NodeRouteMessageRequest\032\031.NodeRoute"
+    "MessageResponse\0226\n\016EnterGsSucceed\022\034.Ente"
+    "rGameNodeSuccessRequest\032\006.Empty\022A\n\022Route"
+    "NodeStringMsg\022\024.RouteMessageRequest\032\025.Ro"
+    "uteMessageResponse\022O\n\024RoutePlayerStringM"
+    "sg\022\032.RoutePlayerMessageRequest\032\033.RoutePl"
+    "ayerMessageResponse\022.\n\rInitSceneNode\022\025.I"
+    "nitSceneNodeRequest\032\006.Empty\022>\n\rNodeHands"
+    "hake\022\025.NodeHandshakeRequest\032\026.NodeHandsh"
+    "akeResponseB\007\200\001\001\230\324a\004b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto_deps[5] = {
+    descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto_deps[6] = {
         &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2fmessage_2eproto,
         &::descriptor_table_proto_2fcommon_2fsession_2eproto,
         &::descriptor_table_proto_2fcommon_2ftip_2eproto,
+        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto = {
     false,
     false,
-    1579,
+    1628,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto,
     "proto/service/cpp/rpc/centre/centre_service.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto_once,
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto_deps,
-    5,
+    6,
     8,
     schemas,
     file_default_instances,

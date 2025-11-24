@@ -9,6 +9,7 @@ package scene
 import (
 	common "chat/proto/common"
 	component "chat/proto/logic/component"
+	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -491,7 +492,7 @@ var File_proto_service_cpp_rpc_scene_player_scene_proto protoreflect.FileDescrip
 
 const file_proto_service_cpp_rpc_scene_player_scene_proto_rawDesc = "" +
 	"\n" +
-	".proto/service/cpp/rpc/scene/player_scene.proto\x1a\x16proto/common/tip.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a&proto/logic/component/actor_comp.proto\"K\n" +
+	".proto/service/cpp/rpc/scene/player_scene.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a&proto/logic/component/actor_comp.proto\"K\n" +
 	"\x14EnterSceneC2SRequest\x123\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"M\n" +
@@ -531,7 +532,7 @@ const file_proto_service_cpp_rpc_scene_player_scene_proto_rawDesc = "" +
 	"\x11NotifyActorCreate\x12\x0f.ActorCreateS2C\x1a\x06.Empty\x12.\n" +
 	"\x12NotifyActorDestroy\x12\x10.ActorDestroyS2C\x1a\x06.Empty\x124\n" +
 	"\x15NotifyActorListCreate\x12\x13.ActorListCreateS2C\x1a\x06.Empty\x126\n" +
-	"\x16NotifyActorListDestroy\x12\x14.ActorListDestroyS2C\x1a\x06.EmptyB+Z&chat/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
+	"\x16NotifyActorListDestroy\x12\x14.ActorListDestroyS2C\x1a\x06.EmptyB/\x98\xd4a\x03Z&chat/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescOnce sync.Once

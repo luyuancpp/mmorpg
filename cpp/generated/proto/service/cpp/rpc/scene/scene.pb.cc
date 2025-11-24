@@ -350,62 +350,64 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\'proto/service/cpp/rpc/scene/scene.prot"
-    "o\032\030proto/common/empty.proto\032\031proto/commo"
-    "n/common.proto\032\032proto/common/message.pro"
-    "to\"[\n\032PlayerEnterGameNodeRequest\022\021\n\tplay"
-    "er_id\030\001 \001(\004\022\022\n\nsession_id\030\002 \001(\004\022\026\n\016centr"
-    "e_node_id\030\003 \001(\r\"`\n ClientSendMessageToPl"
-    "ayerRequest\022(\n\017message_content\030\001 \001(\0132\017.M"
-    "essageContent\022\022\n\nsession_id\030\002 \001(\004\"a\n!Cli"
-    "entSendMessageToPlayerResponse\022(\n\017messag"
-    "e_content\030\001 \001(\0132\017.MessageContent\022\022\n\nsess"
-    "ion_id\030\002 \001(\004\"-\n\030SessionDisconnectRequest"
-    "\022\021\n\tplayer_id\030\001 \001(\004\"S\n\026GameNodeConnectRe"
-    "quest\022#\n\nrpc_client\030\001 \001(\0132\017.NetworkAddre"
-    "ss\022\024\n\014gate_node_id\030\002 \001(\r\"E\n\034RegisterPlay"
-    "erSessionRequest\022\022\n\nsession_id\030\001 \001(\004\022\021\n\t"
-    "player_id\030\002 \001(\004\"A\n\032Centre2GsEnterSceneRe"
-    "quest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001"
-    "(\004\"\'\n\022CreateSceneRequest\022\021\n\tconfig_id\030\001 "
-    "\001(\r\"\?\n\023CreateSceneResponse\022(\n\nscene_info"
-    "\030\001 \001(\0132\024.RoomInfoPBComponent2\201\006\n\005Scene\022:"
-    "\n\023PlayerEnterGameNode\022\033.PlayerEnterGameN"
-    "odeRequest\032\006.Empty\022J\n\023SendMessageToPlaye"
-    "r\022\030.NodeRouteMessageRequest\032\031.NodeRouteM"
-    "essageResponse\022b\n\031ClientSendMessageToPla"
-    "yer\022!.ClientSendMessageToPlayerRequest\032\""
-    ".ClientSendMessageToPlayerResponse\022A\n\035Ce"
-    "ntreSendToPlayerViaGameNode\022\030.NodeRouteM"
-    "essageRequest\032\006.Empty\022J\n\023InvokePlayerSer"
-    "vice\022\030.NodeRouteMessageRequest\032\031.NodeRou"
-    "teMessageResponse\022A\n\022RouteNodeStringMsg\022"
-    "\024.RouteMessageRequest\032\025.RouteMessageResp"
-    "onse\022O\n\024RoutePlayerStringMsg\022\032.RoutePlay"
-    "erMessageRequest\032\033.RoutePlayerMessageRes"
-    "ponse\022<\n\023UpdateSessionDetail\022\035.RegisterP"
-    "layerSessionRequest\032\006.Empty\0221\n\nEnterScen"
-    "e\022\033.Centre2GsEnterSceneRequest\032\006.Empty\0228"
-    "\n\013CreateScene\022\023.CreateSceneRequest\032\024.Cre"
-    "ateSceneResponse\022>\n\rNodeHandshake\022\025.Node"
-    "HandshakeRequest\032\026.NodeHandshakeResponse"
-    "B\003\200\001\001b\006proto3"
+    "o\032+proto/service/go/grpc/db/proto_option"
+    ".proto\032\030proto/common/empty.proto\032\031proto/"
+    "common/common.proto\032\032proto/common/messag"
+    "e.proto\"[\n\032PlayerEnterGameNodeRequest\022\021\n"
+    "\tplayer_id\030\001 \001(\004\022\022\n\nsession_id\030\002 \001(\004\022\026\n\016"
+    "centre_node_id\030\003 \001(\r\"`\n ClientSendMessag"
+    "eToPlayerRequest\022(\n\017message_content\030\001 \001("
+    "\0132\017.MessageContent\022\022\n\nsession_id\030\002 \001(\004\"a"
+    "\n!ClientSendMessageToPlayerResponse\022(\n\017m"
+    "essage_content\030\001 \001(\0132\017.MessageContent\022\022\n"
+    "\nsession_id\030\002 \001(\004\"-\n\030SessionDisconnectRe"
+    "quest\022\021\n\tplayer_id\030\001 \001(\004\"S\n\026GameNodeConn"
+    "ectRequest\022#\n\nrpc_client\030\001 \001(\0132\017.Network"
+    "Address\022\024\n\014gate_node_id\030\002 \001(\r\"E\n\034Registe"
+    "rPlayerSessionRequest\022\022\n\nsession_id\030\001 \001("
+    "\004\022\021\n\tplayer_id\030\002 \001(\004\"A\n\032Centre2GsEnterSc"
+    "eneRequest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_i"
+    "d\030\002 \001(\004\"\'\n\022CreateSceneRequest\022\021\n\tconfig_"
+    "id\030\001 \001(\r\"\?\n\023CreateSceneResponse\022(\n\nscene"
+    "_info\030\001 \001(\0132\024.RoomInfoPBComponent2\201\006\n\005Sc"
+    "ene\022:\n\023PlayerEnterGameNode\022\033.PlayerEnter"
+    "GameNodeRequest\032\006.Empty\022J\n\023SendMessageTo"
+    "Player\022\030.NodeRouteMessageRequest\032\031.NodeR"
+    "outeMessageResponse\022b\n\031ClientSendMessage"
+    "ToPlayer\022!.ClientSendMessageToPlayerRequ"
+    "est\032\".ClientSendMessageToPlayerResponse\022"
+    "A\n\035CentreSendToPlayerViaGameNode\022\030.NodeR"
+    "outeMessageRequest\032\006.Empty\022J\n\023InvokePlay"
+    "erService\022\030.NodeRouteMessageRequest\032\031.No"
+    "deRouteMessageResponse\022A\n\022RouteNodeStrin"
+    "gMsg\022\024.RouteMessageRequest\032\025.RouteMessag"
+    "eResponse\022O\n\024RoutePlayerStringMsg\022\032.Rout"
+    "ePlayerMessageRequest\032\033.RoutePlayerMessa"
+    "geResponse\022<\n\023UpdateSessionDetail\022\035.Regi"
+    "sterPlayerSessionRequest\032\006.Empty\0221\n\nEnte"
+    "rScene\022\033.Centre2GsEnterSceneRequest\032\006.Em"
+    "pty\0228\n\013CreateScene\022\023.CreateSceneRequest\032"
+    "\024.CreateSceneResponse\022>\n\rNodeHandshake\022\025"
+    ".NodeHandshakeRequest\032\026.NodeHandshakeRes"
+    "ponseB\007\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto_deps[3] = {
+    descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto_deps[4] = {
         &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2fmessage_2eproto,
+        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto = {
     false,
     false,
-    1573,
+    1622,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto,
     "proto/service/cpp/rpc/scene/scene.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto_once,
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto_deps,
-    3,
+    4,
     9,
     schemas,
     file_default_instances,

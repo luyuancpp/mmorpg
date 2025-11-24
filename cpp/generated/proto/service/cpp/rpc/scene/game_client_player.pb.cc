@@ -85,8 +85,8 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_
     "Message\022\020\n\010operator\030\002 \001(\t2\177\n\027SceneClient"
     "PlayerCommon\022*\n\017SendTipToClient\022\017.TipInf"
     "oMessage\032\006.Empty\022,\n\nKickPlayer\022\026.GameKic"
-    "kPlayerRequest\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001\001B\003\200\001\001b"
-    "\006proto3"
+    "kPlayerRequest\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001\001B\007\200\001\001\230"
+    "\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto_deps[3] = {
@@ -98,7 +98,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2f
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto = {
     false,
     false,
-    367,
+    371,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto,
     "proto/service/cpp/rpc/scene/game_client_player.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fclient_5fplayer_2eproto_once,

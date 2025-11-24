@@ -7,6 +7,7 @@
 package scene
 
 import (
+	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -317,7 +318,7 @@ var File_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto protorefl
 
 const file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDesc = "" +
 	"\n" +
-	"=proto/service/cpp/rpc/scene/player_state_attribute_sync.proto\x1a&proto/logic/component/actor_comp.proto\x1a\x18proto/common/empty.proto\x1a6proto/logic/component/actor_attribute_state_comp.proto\"\xd2\x01\n" +
+	"=proto/service/cpp/rpc/scene/player_state_attribute_sync.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a&proto/logic/component/actor_comp.proto\x1a\x18proto/common/empty.proto\x1a6proto/logic/component/actor_attribute_state_comp.proto\"\xd2\x01\n" +
 	"\x16ActorBaseAttributesS2C\x12\x1b\n" +
 	"\tentity_id\x18\x01 \x01(\x04R\bentityId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
@@ -340,7 +341,7 @@ const file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDesc
 	"\x14SyncAttribute5Frames\x12\x19.AttributeDelta5FramesS2C\x1a\x06.Empty\x12;\n" +
 	"\x15SyncAttribute10Frames\x12\x1a.AttributeDelta10FramesS2C\x1a\x06.Empty\x12;\n" +
 	"\x15SyncAttribute30Frames\x12\x1a.AttributeDelta30FramesS2C\x1a\x06.Empty\x12;\n" +
-	"\x15SyncAttribute60Frames\x12\x1a.AttributeDelta60FramesS2C\x1a\x06.EmptyB+Z&team/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
+	"\x15SyncAttribute60Frames\x12\x1a.AttributeDelta60FramesS2C\x1a\x06.EmptyB/\x98\xd4a\x03Z&team/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDescOnce sync.Once

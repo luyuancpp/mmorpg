@@ -94,28 +94,30 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n-proto/service/cpp/rpc/scene/game_playe"
-    "r.proto\032\033google/protobuf/empty.proto\".\n\025"
-    "Centre2GsLoginRequest\022\025\n\renter_gs_type\030\001"
-    " \001(\r\"\031\n\027GameNodeExitGameRequest2\215\001\n\013Scen"
-    "ePlayer\022@\n\016Centre2GsLogin\022\026.Centre2GsLog"
-    "inRequest\032\026.google.protobuf.Empty\022<\n\010Exi"
-    "tGame\022\030.GameNodeExitGameRequest\032\026.google"
-    ".protobuf.EmptyB\003\200\001\001b\006proto3"
+    "r.proto\032+proto/service/go/grpc/db/proto_"
+    "option.proto\032\033google/protobuf/empty.prot"
+    "o\".\n\025Centre2GsLoginRequest\022\025\n\renter_gs_t"
+    "ype\030\001 \001(\r\"\031\n\027GameNodeExitGameRequest2\215\001\n"
+    "\013ScenePlayer\022@\n\016Centre2GsLogin\022\026.Centre2"
+    "GsLoginRequest\032\026.google.protobuf.Empty\022<"
+    "\n\010ExitGame\022\030.GameNodeExitGameRequest\032\026.g"
+    "oogle.protobuf.EmptyB\007\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto_deps[1] = {
+    descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto_deps[2] = {
         &::descriptor_table_google_2fprotobuf_2fempty_2eproto,
+        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto = {
     false,
     false,
-    308,
+    357,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto,
     "proto/service/cpp/rpc/scene/game_player.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto_once,
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fgame_5fplayer_2eproto_deps,
-    1,
+    2,
     2,
     schemas,
     file_default_instances,

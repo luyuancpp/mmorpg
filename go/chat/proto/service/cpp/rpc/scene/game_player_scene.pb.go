@@ -9,6 +9,7 @@ package scene
 import (
 	common "chat/proto/common"
 	component "chat/proto/logic/component"
+	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -204,7 +205,7 @@ var File_proto_service_cpp_rpc_scene_game_player_scene_proto protoreflect.FileDe
 
 const file_proto_service_cpp_rpc_scene_game_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"3proto/service/cpp/rpc/scene/game_player_scene.proto\x1a\x16proto/common/tip.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a&proto/logic/component/scene_comp.proto\"O\n" +
+	"3proto/service/cpp/rpc/scene/game_player_scene.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a&proto/logic/component/scene_comp.proto\"O\n" +
 	"\x13GsEnterSceneRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x19\n" +
@@ -219,7 +220,7 @@ const file_proto_service_cpp_rpc_scene_game_player_scene_proto_rawDesc = "" +
 	"EnterScene\x12\x14.GsEnterSceneRequest\x1a\x16.google.protobuf.Empty\x12:\n" +
 	"\n" +
 	"LeaveScene\x12\x14.GsLeaveSceneRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
-	"\rEnterSceneS2C\x12\x15.EnterSceneS2CRequest\x1a\x17.EnterScenerS2CResponseB+Z&chat/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
+	"\rEnterSceneS2C\x12\x15.EnterSceneS2CRequest\x1a\x17.EnterScenerS2CResponseB/\x98\xd4a\x03Z&chat/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_game_player_scene_proto_rawDescOnce sync.Once
