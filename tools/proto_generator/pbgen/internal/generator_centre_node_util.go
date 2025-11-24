@@ -57,7 +57,7 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
+	if IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_CENTRE) {
 		return false
 	}
 
