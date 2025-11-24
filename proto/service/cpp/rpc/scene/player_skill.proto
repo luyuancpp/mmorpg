@@ -51,6 +51,8 @@ message GetSkillListResponse {
 
 service SceneSkillClientPlayer { 
   option (OptionIsPlayerService) = true;
+  option (OptionIsClientProtocolService) = true;
+  
   rpc ReleaseSkill (ReleaseSkillSkillRequest) returns (ReleaseSkillSkillResponse);
   rpc NotifySkillUsed (SkillUsedS2C) returns (Empty);
   rpc NotifySkillInterrupted (SkillInterruptedS2C) returns (Empty);
