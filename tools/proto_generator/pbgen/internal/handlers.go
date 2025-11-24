@@ -100,7 +100,7 @@ var CentrePlayerRepliedHandler = HandlerConfig{
 // ---------------- Gate	 Node ----------------
 
 var GateHandler = HandlerConfig{
-	IsValidFunc:         isGateServiceHandler,
+	IsValidFunc:         IsGateNodeHostedServiceHandler,
 	GenerateDataFunc:    getServiceHandlerHeadStr,
 	GenerateCppDataFunc: getServiceHandlerCppStr,
 	Dir:                 config.GateMethodHandlerDirectory,
@@ -111,7 +111,7 @@ var GateHandler = HandlerConfig{
 }
 
 var GateRepliedHandler = HandlerConfig{
-	IsValidFunc:         isGateMethodRepliedHandler,
+	IsValidFunc:         IsGateNodeReceivedResponseHandler,
 	GenerateDataFunc:    getServiceRepliedHandlerHeadStr,
 	GenerateCppDataFunc: getServiceRepliedHandlerCppStr,
 	Dir:                 config.GateMethodRepliedHandlerDirectory,
