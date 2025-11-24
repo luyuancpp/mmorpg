@@ -15,8 +15,6 @@ import (
 
 type EmptyStruct struct{}
 
-var ProtoFiles []string
-
 // MethodInfo 定义RPC方法信息
 type MethodInfo struct {
 	Id                     uint64

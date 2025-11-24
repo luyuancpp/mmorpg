@@ -8,8 +8,8 @@ github.com/iancoleman/strcase v0.3.0 h1:nTXanmYxhfFAMjZL34Ov6gkzEsSJZ5DbhxWjvSAS
 github.com/iancoleman/strcase v0.3.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=
 github.com/luyuancpp/proto2mysql v0.0.18 h1:AuehB3VYG5BaufInXWhOgRdqOIPl9N0lbWaPwBtm2NM=
 github.com/luyuancpp/proto2mysql v0.0.18/go.mod h1:WjY5F8NBL1KrhVNWjay3aQEhhH4ggSujBwJo+xLPkA4=
-github.com/luyuancpp/protooption v0.0.0-20251121113321-357db8d924ca h1:4k0yf7CVCJfjvtJz/p45onBIEc7ArQdqIaWUWXbsHyY=
-github.com/luyuancpp/protooption v0.0.0-20251121113321-357db8d924ca/go.mod h1:uNz9kXwuEqmgeloQ96j+J0RNMLsDIKNN6sVNaxBZuWk=
+github.com/luyuancpp/protooption v0.0.0-20251124032113-93477014abb4 h1:I+ZOClADwD6m3JoeXeKkmnh5ysJ+8o992KSuK/STdVQ=
+github.com/luyuancpp/protooption v0.0.0-20251124032113-93477014abb4/go.mod h1:uNz9kXwuEqmgeloQ96j+J0RNMLsDIKNN6sVNaxBZuWk=
 golang.org/x/text v0.31.0 h1:aC8ghyu4JhP8VojJ2lEHBnochRno1sgL6nEi9WGFGMM=
 golang.org/x/text v0.31.0/go.mod h1:tKRAlv61yKIjGGHX/4tP1LTbc13YSec1pxVEWXzfoeM=
 google.golang.org/protobuf v1.36.10 h1:AYd7cD/uASjIL6Q9LiTjz8JLcrh/88q5UObnmY3aOOE=

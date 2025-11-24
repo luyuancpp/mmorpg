@@ -207,6 +207,22 @@ var file_proto_service_go_grpc_db_proto_option_proto_extTypes = []protoimpl.Exte
 		Filename:      "proto/service/go/grpc/db/proto_option.proto",
 	},
 	{
+		ExtendedType:  (*descriptorpb.ServiceOptions)(nil),
+		ExtensionType: (*bool)(nil),
+		Field:         400000,
+		Name:          "OptionIsPlayerService",
+		Tag:           "varint,400000,opt,name=OptionIsPlayerService",
+		Filename:      "proto/service/go/grpc/db/proto_option.proto",
+	},
+	{
+		ExtendedType:  (*descriptorpb.ServiceOptions)(nil),
+		ExtensionType: (*bool)(nil),
+		Field:         400001,
+		Name:          "OptionIsClientProtocolService",
+		Tag:           "varint,400001,opt,name=OptionIsClientProtocolService",
+		Filename:      "proto/service/go/grpc/db/proto_option.proto",
+	},
+	{
 		ExtendedType:  (*descriptorpb.MessageOptions)(nil),
 		ExtensionType: (*uint32)(nil),
 		Field:         500000,
@@ -414,64 +430,76 @@ var (
 	E_OptionFileDefaultNode = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[0]
 )
 
+// Extension fields to descriptorpb.ServiceOptions.
+var (
+	// 标记该服务是否是玩家相关服务（PlayerService）
+	//
+	// optional bool OptionIsPlayerService = 400000;
+	E_OptionIsPlayerService = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[1]
+	// 标记该服务是否是客户端协议服务（供客户端调用）
+	//
+	// optional bool OptionIsClientProtocolService = 400001;
+	E_OptionIsClientProtocolService = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[2]
+)
+
 // Extension fields to descriptorpb.MessageOptions.
 var (
 	// optional uint32 OptionTableId = 500000;
-	E_OptionTableId = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[1] //表ID
+	E_OptionTableId = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[3] //表ID
 	// optional string OptionTableName = 500001;
-	E_OptionTableName = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[2] //表名
+	E_OptionTableName = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[4] //表名
 	// optional string OptionPrimaryKey = 500002;
-	E_OptionPrimaryKey = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[3] //主键
+	E_OptionPrimaryKey = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[5] //主键
 	// optional string OptionForeignKey = 500003;
-	E_OptionForeignKey = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[4] //外键
+	E_OptionForeignKey = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[6] //外键
 	// optional string OptionForeignReferences = 500005;
-	E_OptionForeignReferences = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[5] //外键的关联表
+	E_OptionForeignReferences = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[7] //外键的关联表
 	// optional string OptionAutoIncrementKey = 500006;
-	E_OptionAutoIncrementKey = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[6] //自增长的Key
+	E_OptionAutoIncrementKey = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[8] //自增长的Key
 	// optional string OptionBackupTableName = 500007;
-	E_OptionBackupTableName = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[7] //备份表的名称
+	E_OptionBackupTableName = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[9] //备份表的名称
 	// optional bool OptionLoadOnly = 500008;
-	E_OptionLoadOnly = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[8] //只用于数据加载
+	E_OptionLoadOnly = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[10] //只用于数据加载
 	// optional string OptionProcedureName = 500009;
-	E_OptionProcedureName = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[9] //存储过程名称
+	E_OptionProcedureName = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[11] //存储过程名称
 	// optional string OptionProcedureResult = 500010;
-	E_OptionProcedureResult = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[10] //存储过程返回结果的PB结构Name
+	E_OptionProcedureResult = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[12] //存储过程返回结果的PB结构Name
 	// optional string OptionIndex = 500011;
-	E_OptionIndex = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[11] //建立索引
+	E_OptionIndex = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[13] //建立索引
 	// optional string OptionUniqueKey = 500012;
-	E_OptionUniqueKey = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[12] //
+	E_OptionUniqueKey = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[14] //
 	// optional bool OptionIsPlayerDatabase = 500013;
-	E_OptionIsPlayerDatabase = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[13] // 标识是否是玩家数据库
+	E_OptionIsPlayerDatabase = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[15] // 标识是否是玩家数据库
 	// ---------- 属性同步相关 ----------
 	//
 	// optional bool OptionBaseAttributeSync = 700000;
-	E_OptionBaseAttributeSync = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[14] // 基础属性同步
+	E_OptionBaseAttributeSync = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[16] // 基础属性同步
 	// optional bool OptionDeltaAttributeSync = 700001;
-	E_OptionDeltaAttributeSync = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[15] // 增量属性同步
+	E_OptionDeltaAttributeSync = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[17] // 增量属性同步
 )
 
 // Extension fields to descriptorpb.FieldOptions.
 var (
 	// optional uint32 OptionRepeatLimit = 600000;
-	E_OptionRepeatLimit = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[16] // repeat 字段限制的个数
+	E_OptionRepeatLimit = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[18] // repeat 字段限制的个数
 	// optional string OptionDBFieldExtra = 600001;
-	E_OptionDBFieldExtra = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[17] // 创建数据库要用到得额外信息，如果没有该属性表示非数据库字段
+	E_OptionDBFieldExtra = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[19] // 创建数据库要用到得额外信息，如果没有该属性表示非数据库字段
 	// optional bool OptionDBReadOnly = 600002;
-	E_OptionDBReadOnly = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[18] // 该字段对DB是否只读
+	E_OptionDBReadOnly = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[20] // 该字段对DB是否只读
 	// optional string OptionDBNamePrefix = 600003;
-	E_OptionDBNamePrefix = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[19] // 数据库名称前缀
+	E_OptionDBNamePrefix = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[21] // 数据库名称前缀
 	// optional string OptionDBLoadSql = 600004;
-	E_OptionDBLoadSql = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[20] // 数据加载SQL语句
+	E_OptionDBLoadSql = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[22] // 数据加载SQL语句
 	// optional bool OptionDBNeedEscape = 600005;
-	E_OptionDBNeedEscape = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[21] // 字段是否需要转义存储
+	E_OptionDBNeedEscape = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[23] // 字段是否需要转义存储
 	// optional bool OptionDBProcParam = 600006;
-	E_OptionDBProcParam = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[22] // 是否存储过程参数
+	E_OptionDBProcParam = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[24] // 是否存储过程参数
 	// optional string OptionOldName = 600007;
-	E_OptionOldName = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[23] //用来自动修改字段名
+	E_OptionOldName = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[25] //用来自动修改字段名
 	// optional string OptionTable = 600008;
-	E_OptionTable = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[24] // 建表名称
+	E_OptionTable = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[26] // 建表名称
 	// optional string OptionBackUpTabel = 600009;
-	E_OptionBackUpTabel = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[25] //备份表
+	E_OptionBackUpTabel = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[27] //备份表
 )
 
 var File_proto_service_go_grpc_db_proto_option_proto protoreflect.FileDescriptor
@@ -499,7 +527,9 @@ const file_proto_service_go_grpc_db_proto_option_proto_rawDesc = "" +
 	"\x0eBS_RESULT_NONE\x10\x00\x12\x15\n" +
 	"\x11BS_RESULT_SUCCESS\x10\x01\x12\x14\n" +
 	"\x10BS_RESULT_FAILED\x10\x02:_\n" +
-	"\x15OptionFileDefaultNode\x12\x1c.google.protobuf.FileOptions\x18Ú\f \x01(\x0e2\t.NodeTypeR\x15OptionFileDefaultNode:J\n" +
+	"\x15OptionFileDefaultNode\x12\x1c.google.protobuf.FileOptions\x18Ú\f \x01(\x0e2\t.NodeTypeR\x15OptionFileDefaultNode:W\n" +
+	"\x15OptionIsPlayerService\x12\x1f.google.protobuf.ServiceOptions\x18\x80\xb5\x18 \x01(\bR\x15OptionIsPlayerService:g\n" +
+	"\x1dOptionIsClientProtocolService\x12\x1f.google.protobuf.ServiceOptions\x18\x81\xb5\x18 \x01(\bR\x1dOptionIsClientProtocolService:J\n" +
 	"\rOptionTableId\x12\x1f.google.protobuf.MessageOptions\x18\xa0\xc2\x1e \x01(\rR\rOptionTableId\x88\x01\x01:N\n" +
 	"\x0fOptionTableName\x12\x1f.google.protobuf.MessageOptions\x18\xa1\xc2\x1e \x01(\tR\x0fOptionTableName\x88\x01\x01:P\n" +
 	"\x10OptionPrimaryKey\x12\x1f.google.protobuf.MessageOptions\x18\xa2\xc2\x1e \x01(\tR\x10OptionPrimaryKey\x88\x01\x01:P\n" +
@@ -544,41 +574,44 @@ var file_proto_service_go_grpc_db_proto_option_proto_goTypes = []any{
 	(OPERATE_TYPE)(0),                   // 1: OPERATE_TYPE
 	(BS_RESULT_TYPE)(0),                 // 2: BS_RESULT_TYPE
 	(*descriptorpb.FileOptions)(nil),    // 3: google.protobuf.FileOptions
-	(*descriptorpb.MessageOptions)(nil), // 4: google.protobuf.MessageOptions
-	(*descriptorpb.FieldOptions)(nil),   // 5: google.protobuf.FieldOptions
+	(*descriptorpb.ServiceOptions)(nil), // 4: google.protobuf.ServiceOptions
+	(*descriptorpb.MessageOptions)(nil), // 5: google.protobuf.MessageOptions
+	(*descriptorpb.FieldOptions)(nil),   // 6: google.protobuf.FieldOptions
 }
 var file_proto_service_go_grpc_db_proto_option_proto_depIdxs = []int32{
 	3,  // 0: OptionFileDefaultNode:extendee -> google.protobuf.FileOptions
-	4,  // 1: OptionTableId:extendee -> google.protobuf.MessageOptions
-	4,  // 2: OptionTableName:extendee -> google.protobuf.MessageOptions
-	4,  // 3: OptionPrimaryKey:extendee -> google.protobuf.MessageOptions
-	4,  // 4: OptionForeignKey:extendee -> google.protobuf.MessageOptions
-	4,  // 5: OptionForeignReferences:extendee -> google.protobuf.MessageOptions
-	4,  // 6: OptionAutoIncrementKey:extendee -> google.protobuf.MessageOptions
-	4,  // 7: OptionBackupTableName:extendee -> google.protobuf.MessageOptions
-	4,  // 8: OptionLoadOnly:extendee -> google.protobuf.MessageOptions
-	4,  // 9: OptionProcedureName:extendee -> google.protobuf.MessageOptions
-	4,  // 10: OptionProcedureResult:extendee -> google.protobuf.MessageOptions
-	4,  // 11: OptionIndex:extendee -> google.protobuf.MessageOptions
-	4,  // 12: OptionUniqueKey:extendee -> google.protobuf.MessageOptions
-	4,  // 13: OptionIsPlayerDatabase:extendee -> google.protobuf.MessageOptions
-	4,  // 14: OptionBaseAttributeSync:extendee -> google.protobuf.MessageOptions
-	4,  // 15: OptionDeltaAttributeSync:extendee -> google.protobuf.MessageOptions
-	5,  // 16: OptionRepeatLimit:extendee -> google.protobuf.FieldOptions
-	5,  // 17: OptionDBFieldExtra:extendee -> google.protobuf.FieldOptions
-	5,  // 18: OptionDBReadOnly:extendee -> google.protobuf.FieldOptions
-	5,  // 19: OptionDBNamePrefix:extendee -> google.protobuf.FieldOptions
-	5,  // 20: OptionDBLoadSql:extendee -> google.protobuf.FieldOptions
-	5,  // 21: OptionDBNeedEscape:extendee -> google.protobuf.FieldOptions
-	5,  // 22: OptionDBProcParam:extendee -> google.protobuf.FieldOptions
-	5,  // 23: OptionOldName:extendee -> google.protobuf.FieldOptions
-	5,  // 24: OptionTable:extendee -> google.protobuf.FieldOptions
-	5,  // 25: OptionBackUpTabel:extendee -> google.protobuf.FieldOptions
-	0,  // 26: OptionFileDefaultNode:type_name -> NodeType
-	27, // [27:27] is the sub-list for method output_type
-	27, // [27:27] is the sub-list for method input_type
-	26, // [26:27] is the sub-list for extension type_name
-	0,  // [0:26] is the sub-list for extension extendee
+	4,  // 1: OptionIsPlayerService:extendee -> google.protobuf.ServiceOptions
+	4,  // 2: OptionIsClientProtocolService:extendee -> google.protobuf.ServiceOptions
+	5,  // 3: OptionTableId:extendee -> google.protobuf.MessageOptions
+	5,  // 4: OptionTableName:extendee -> google.protobuf.MessageOptions
+	5,  // 5: OptionPrimaryKey:extendee -> google.protobuf.MessageOptions
+	5,  // 6: OptionForeignKey:extendee -> google.protobuf.MessageOptions
+	5,  // 7: OptionForeignReferences:extendee -> google.protobuf.MessageOptions
+	5,  // 8: OptionAutoIncrementKey:extendee -> google.protobuf.MessageOptions
+	5,  // 9: OptionBackupTableName:extendee -> google.protobuf.MessageOptions
+	5,  // 10: OptionLoadOnly:extendee -> google.protobuf.MessageOptions
+	5,  // 11: OptionProcedureName:extendee -> google.protobuf.MessageOptions
+	5,  // 12: OptionProcedureResult:extendee -> google.protobuf.MessageOptions
+	5,  // 13: OptionIndex:extendee -> google.protobuf.MessageOptions
+	5,  // 14: OptionUniqueKey:extendee -> google.protobuf.MessageOptions
+	5,  // 15: OptionIsPlayerDatabase:extendee -> google.protobuf.MessageOptions
+	5,  // 16: OptionBaseAttributeSync:extendee -> google.protobuf.MessageOptions
+	5,  // 17: OptionDeltaAttributeSync:extendee -> google.protobuf.MessageOptions
+	6,  // 18: OptionRepeatLimit:extendee -> google.protobuf.FieldOptions
+	6,  // 19: OptionDBFieldExtra:extendee -> google.protobuf.FieldOptions
+	6,  // 20: OptionDBReadOnly:extendee -> google.protobuf.FieldOptions
+	6,  // 21: OptionDBNamePrefix:extendee -> google.protobuf.FieldOptions
+	6,  // 22: OptionDBLoadSql:extendee -> google.protobuf.FieldOptions
+	6,  // 23: OptionDBNeedEscape:extendee -> google.protobuf.FieldOptions
+	6,  // 24: OptionDBProcParam:extendee -> google.protobuf.FieldOptions
+	6,  // 25: OptionOldName:extendee -> google.protobuf.FieldOptions
+	6,  // 26: OptionTable:extendee -> google.protobuf.FieldOptions
+	6,  // 27: OptionBackUpTabel:extendee -> google.protobuf.FieldOptions
+	0,  // 28: OptionFileDefaultNode:type_name -> NodeType
+	29, // [29:29] is the sub-list for method output_type
+	29, // [29:29] is the sub-list for method input_type
+	28, // [28:29] is the sub-list for extension type_name
+	0,  // [0:28] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
 }
 
@@ -594,7 +627,7 @@ func file_proto_service_go_grpc_db_proto_option_proto_init() {
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_go_grpc_db_proto_option_proto_rawDesc), len(file_proto_service_go_grpc_db_proto_option_proto_rawDesc)),
 			NumEnums:      3,
 			NumMessages:   0,
-			NumExtensions: 26,
+			NumExtensions: 28,
 			NumServices:   0,
 		},
 		GoTypes:           file_proto_service_go_grpc_db_proto_option_proto_goTypes,

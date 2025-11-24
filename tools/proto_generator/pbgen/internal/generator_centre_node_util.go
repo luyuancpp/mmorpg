@@ -40,7 +40,7 @@ func isCentrePlayerHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	return utils.ContainsPlayerKeyword(firstMethodInfo.Service())
+	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
 func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
@@ -58,7 +58,7 @@ func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if utils.ContainsPlayerKeyword(firstMethodInfo.Service()) {
+	if isClientProtocolService(firstMethodInfo.ServiceDescriptorProto) {
 		return false
 	}
 
