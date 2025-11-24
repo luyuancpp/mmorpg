@@ -8,7 +8,7 @@ import (
 // ---------------- Game Node ----------------
 
 var RoomHandler = HandlerConfig{
-	IsValidFunc:         IsRoomNodeMethodHandler,
+	IsValidFunc:         IsRoomNodeHostedProtocolHandler,
 	GenerateDataFunc:    getServiceHandlerHeadStr,
 	GenerateCppDataFunc: getServiceHandlerCppStr,
 	Dir:                 config.RoomNodeMethodHandlerDirectory,
@@ -19,7 +19,7 @@ var RoomHandler = HandlerConfig{
 }
 
 var RoomPlayerHandler = HandlerConfig{
-	IsValidFunc:         IsRoomNodePlayerHandler,
+	IsValidFunc:         IsRoomNodeHostedPlayerProtocolHandler,
 	GenerateDataFunc:    getPlayerServiceHeadStr,
 	GenerateCppDataFunc: getPlayerServiceHandlerCppStr,
 	Dir:                 config.RoomNodePlayerMethodHandlerDirectory,
@@ -30,7 +30,7 @@ var RoomPlayerHandler = HandlerConfig{
 }
 
 var RoomRepliedHandler = HandlerConfig{
-	IsValidFunc:         isRoomNodeMethodRepliedHandler,
+	IsValidFunc:         IsRoomNodeReceivedProtocolResponseHandler,
 	GenerateDataFunc:    getServiceRepliedHandlerHeadStr,
 	GenerateCppDataFunc: getServiceRepliedHandlerCppStr,
 	Dir:                 config.RoomNodeMethodRepliedHandlerDirectory,
@@ -41,7 +41,7 @@ var RoomRepliedHandler = HandlerConfig{
 }
 
 var GsPlayerRepliedHandler = HandlerConfig{
-	IsValidFunc:         isRoomNodePlayerRepliedHandler,
+	IsValidFunc:         IsRoomNodeReceivedPlayerResponseHandler,
 	GenerateDataFunc:    getPlayerMethodRepliedHeadStr,
 	GenerateCppDataFunc: getPlayerServiceHandlerCppStr,
 	Dir:                 config.RoomNodePlayerMethodRepliedHandlerDirectory,

@@ -7,7 +7,7 @@ import (
 )
 
 // / game server
-func IsRoomNodeMethodHandler(methods *RPCMethods) bool {
+func IsRoomNodeHostedProtocolHandler(methods *RPCMethods) bool {
 	firstMethodInfo := (*methods)[0]
 	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_ROOM) {
 		return false
@@ -15,7 +15,7 @@ func IsRoomNodeMethodHandler(methods *RPCMethods) bool {
 	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
-func IsRoomNodePlayerHandler(methods *RPCMethods) bool {
+func IsRoomNodeHostedPlayerProtocolHandler(methods *RPCMethods) bool {
 	firstMethodInfo := (*methods)[0]
 	if !IsFileBelongToNode(firstMethodInfo.Fd, messageoption.NodeType_NODE_ROOM) {
 		return false
@@ -27,11 +27,11 @@ func IsRoomNodePlayerHandler(methods *RPCMethods) bool {
 	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
-func ReturnNoHandler(methods *RPCMethods) bool {
+func IsNoOpHandler(methods *RPCMethods) bool {
 	return false
 }
 
-func isRoomNodePlayerRepliedHandler(methodList *RPCMethods) bool {
+func IsRoomNodeReceivedPlayerResponseHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	if !firstMethodInfo.CcGenericServices() {
@@ -53,7 +53,7 @@ func isRoomNodePlayerRepliedHandler(methodList *RPCMethods) bool {
 	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
-func isRoomNodeMethodRepliedHandler(methodList *RPCMethods) bool {
+func IsRoomNodeReceivedProtocolResponseHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	if !firstMethodInfo.CcGenericServices() {
