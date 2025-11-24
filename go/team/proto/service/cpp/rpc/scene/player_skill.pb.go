@@ -7,6 +7,7 @@
 package scene
 
 import (
+	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -381,7 +382,7 @@ var File_proto_service_cpp_rpc_scene_player_skill_proto protoreflect.FileDescrip
 
 const file_proto_service_cpp_rpc_scene_player_skill_proto_rawDesc = "" +
 	"\n" +
-	".proto/service/cpp/rpc/scene/player_skill.proto\x1a\x16proto/common/tip.proto\x1a proto/logic/component/comp.proto\x1a\x18proto/common/empty.proto\x1a-proto/logic/component/player_skill_comp.proto\x1a&proto/logic/component/actor_comp.proto\"\xaa\x01\n" +
+	".proto/service/cpp/rpc/scene/player_skill.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a proto/logic/component/comp.proto\x1a\x18proto/common/empty.proto\x1a-proto/logic/component/player_skill_comp.proto\x1a&proto/logic/component/actor_comp.proto\"\xaa\x01\n" +
 	"\x18ReleaseSkillSkillRequest\x12$\n" +
 	"\x0eskill_table_id\x18\x01 \x01(\rR\fskillTableId\x12\x1b\n" +
 	"\ttarget_id\x18\x02 \x01(\x04R\btargetId\x12$\n" +
@@ -407,12 +408,13 @@ const file_proto_service_cpp_rpc_scene_player_skill_proto_rawDesc = "" +
 	"\x14GetSkillListResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12:\n" +
 	"\n" +
-	"skill_list\x18\x02 \x01(\v2\x1b.PlayerSkillListPBComponentR\tskillList2\xfe\x01\n" +
+	"skill_list\x18\x02 \x01(\v2\x1b.PlayerSkillListPBComponentR\tskillList2\x8a\x02\n" +
 	"\x16SceneSkillClientPlayer\x12E\n" +
 	"\fReleaseSkill\x12\x19.ReleaseSkillSkillRequest\x1a\x1a.ReleaseSkillSkillResponse\x12(\n" +
 	"\x0fNotifySkillUsed\x12\r.SkillUsedS2C\x1a\x06.Empty\x126\n" +
 	"\x16NotifySkillInterrupted\x12\x14.SkillInterruptedS2C\x1a\x06.Empty\x12;\n" +
-	"\fGetSkillList\x12\x14.GetSkillListRequest\x1a\x15.GetSkillListResponseB+Z&team/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
+	"\fGetSkillList\x12\x14.GetSkillListRequest\x1a\x15.GetSkillListResponse\x1a\n" +
+	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B+Z&team/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_player_skill_proto_rawDescOnce sync.Once

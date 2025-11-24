@@ -7,7 +7,7 @@ import (
 
 // ---------------- Game Node ----------------
 
-var GsHandler = HandlerConfig{
+var RoomHandler = HandlerConfig{
 	IsValidFunc:         IsRoomNodeMethodHandler,
 	GenerateDataFunc:    getServiceHandlerHeadStr,
 	GenerateCppDataFunc: getServiceHandlerCppStr,
@@ -18,7 +18,7 @@ var GsHandler = HandlerConfig{
 	IsRepliedHandler:    false,
 }
 
-var GsPlayerHandler = HandlerConfig{
+var RoomPlayerHandler = HandlerConfig{
 	IsValidFunc:         IsRoomNodePlayerHandler,
 	GenerateDataFunc:    getPlayerServiceHeadStr,
 	GenerateCppDataFunc: getPlayerServiceHandlerCppStr,
@@ -29,7 +29,7 @@ var GsPlayerHandler = HandlerConfig{
 	IsRepliedHandler:    false,
 }
 
-var GsRepliedHandler = HandlerConfig{
+var RoomRepliedHandler = HandlerConfig{
 	IsValidFunc:         isRoomNodeMethodRepliedHandler,
 	GenerateDataFunc:    getServiceRepliedHandlerHeadStr,
 	GenerateCppDataFunc: getServiceRepliedHandlerCppStr,
@@ -124,9 +124,9 @@ var GateRepliedHandler = HandlerConfig{
 func ProcessAllHandlers(methodList RPCMethods) {
 
 	handlerConfigs := []HandlerConfig{
-		GsHandler,
-		GsPlayerHandler,
-		GsRepliedHandler,
+		RoomHandler,
+		RoomPlayerHandler,
+		RoomRepliedHandler,
 		GsPlayerRepliedHandler,
 		CentreHandler,
 		CentrePlayerHandler,

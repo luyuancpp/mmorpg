@@ -7,6 +7,7 @@
 package scene
 
 import (
+	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -78,14 +79,15 @@ var File_proto_service_cpp_rpc_scene_game_client_player_proto protoreflect.FileD
 
 const file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDesc = "" +
 	"\n" +
-	"4proto/service/cpp/rpc/scene/game_client_player.proto\x1a\x16proto/common/tip.proto\x1a\x18proto/common/empty.proto\"\\\n" +
+	"4proto/service/cpp/rpc/scene/game_client_player.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x18proto/common/empty.proto\"\\\n" +
 	"\x15GameKickPlayerRequest\x12'\n" +
 	"\x06reason\x18\x01 \x01(\v2\x0f.TipInfoMessageR\x06reason\x12\x1a\n" +
-	"\boperator\x18\x02 \x01(\tR\boperator2s\n" +
+	"\boperator\x18\x02 \x01(\tR\boperator2\x7f\n" +
 	"\x17SceneClientPlayerCommon\x12*\n" +
 	"\x0fSendTipToClient\x12\x0f.TipInfoMessage\x1a\x06.Empty\x12,\n" +
 	"\n" +
-	"KickPlayer\x12\x16.GameKickPlayerRequest\x1a\x06.EmptyB+Z&team/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
+	"KickPlayer\x12\x16.GameKickPlayerRequest\x1a\x06.Empty\x1a\n" +
+	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B+Z&team/proto/service/cpp/rpc/scene;scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDescOnce sync.Once
