@@ -1,10 +1,12 @@
 syntax = "proto3";
 
-
-
+import "proto/service/go/grpc/db/proto_option.proto";
 import "google/protobuf/empty.proto";
 import "proto/common/common.proto";
+
 option cc_generic_services = true;
+option (OptionFileDefaultNode) = NODE_ROOM;
+
 
 message CentreEnterSceneRequest
 {
@@ -25,6 +27,8 @@ message CentreSceneInfoRequest {
 
 service CentrePlayerScene
 {
+  option (OptionIsPlayerService) = true;
+
   rpc EnterScene (CentreEnterSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveScene (CentreLeaveSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveSceneAsyncSavePlayerComplete (CentreLeaveSceneAsyncSavePlayerCompleteRequest) returns (google.protobuf.Empty);

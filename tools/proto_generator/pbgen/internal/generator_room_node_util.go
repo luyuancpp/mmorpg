@@ -1,42 +1,10 @@
 package internal
 
 import (
-	messageoption "github.com/luyuancpp/protooption"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"pbgen/internal/config"
 	"pbgen/utils"
 	"strings"
 )
-
-// 工具函数：判断服务是否设置了 OptionIsClientProtocolService 为 true
-func isClientProtocolService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
-	opts := serviceDesc.GetOptions()
-	if opts == nil {
-		return false
-	}
-
-	// 读取 OptionIsClientProtocolService 扩展选项
-	extValue := proto.GetExtension(opts, messageoption.E_OptionIsClientProtocolService)
-
-	// 转换为 bool 类型并判断是否为 true
-	isClientProtocolSvc, ok := extValue.(bool)
-	return ok && isClientProtocolSvc
-}
-
-func isPlayerService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
-	opts := serviceDesc.GetOptions()
-	if opts == nil {
-		return false
-	}
-
-	// 读取 OptionIsClientProtocolService 扩展选项
-	extValue := proto.GetExtension(opts, messageoption.E_OptionIsClientProtocolService)
-
-	// 转换为 bool 类型并判断是否为 true
-	isClientProtocolSvc, ok := extValue.(bool)
-	return ok && isClientProtocolSvc
-}
 
 // / game server
 func IsRoomNodeMethodHandler(methods *RPCMethods) bool {
