@@ -14,7 +14,7 @@ message GameKickPlayerRequest {
 
 service SceneClientPlayerCommon 
 {
-  option (messageoption.OptionIsPlayerService) = true;
+  option (OptionIsPlayerService) = true;
   rpc SendTipToClient (TipInfoMessage) returns (Empty);
   rpc KickPlayer (GameKickPlayerRequest) returns (Empty);
 }
