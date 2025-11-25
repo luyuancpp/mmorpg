@@ -1,15 +1,16 @@
-package internal
+package cpp
 
 import (
 	"log"
+	"pbgen/internal"
 	"pbgen/utils"
 	"strings"
 )
 
 type HandlerConfig struct {
-	IsValidFunc         func(*RPCMethods) bool
-	GenerateDataFunc    func(RPCMethods) (string, error)
-	GenerateCppDataFunc func(string, RPCMethods, string, string) string
+	IsValidFunc         func(*internal.RPCMethods) bool
+	GenerateDataFunc    func(internal.RPCMethods) (string, error)
+	GenerateCppDataFunc func(string, internal.RPCMethods, string, string) string
 	Dir                 string
 	CppDir              string
 	HeaderExt           string
@@ -17,7 +18,7 @@ type HandlerConfig struct {
 	IsRepliedHandler    bool
 }
 
-func writeHandlerHeadFile(methodList RPCMethods, cfg HandlerConfig) {
+func writeHandlerHeadFile(methodList internal.RPCMethods, cfg HandlerConfig) {
 	defer utils.Wg.Done()
 
 	if !cfg.IsValidFunc(&methodList) {
@@ -39,7 +40,7 @@ func writeHandlerHeadFile(methodList RPCMethods, cfg HandlerConfig) {
 	utils.WriteFileIfChanged(fullPath, []byte(data))
 }
 
-func writeHandlerCppFile(methodList RPCMethods, cfg HandlerConfig) {
+func writeHandlerCppFile(methodList internal.RPCMethods, cfg HandlerConfig) {
 	defer utils.Wg.Done()
 
 	if !cfg.IsValidFunc(&methodList) {
@@ -60,14 +61,14 @@ func writeHandlerCppFile(methodList RPCMethods, cfg HandlerConfig) {
 	utils.WriteFileIfChanged(fullPath, []byte(data))
 }
 
-func getCppClassName(info MethodInfo, cfg HandlerConfig) string {
+func getCppClassName(info internal.MethodInfo, cfg HandlerConfig) string {
 	if cfg.IsRepliedHandler {
 		return info.CppRepliedHandlerClassName()
 	}
 	return info.CppHandlerClassName()
 }
 
-func getCppIncludeName(info MethodInfo, cfg HandlerConfig) string {
+func getCppIncludeName(info internal.MethodInfo, cfg HandlerConfig) string {
 	if cfg.IsRepliedHandler {
 		return info.CppRepliedHandlerIncludeName()
 	}

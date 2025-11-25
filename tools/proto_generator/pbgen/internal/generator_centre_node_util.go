@@ -44,7 +44,7 @@ func IsCentreReceivedServiceResponseHandler(methodList *RPCMethods) bool {
 			return !isPlayerService(m.ServiceDescriptorProto)
 		},
 		func(m *MethodInfo) bool {
-			return !isClientProtocolService(m.ServiceDescriptorProto)
+			return !IsClientProtocolService(m.ServiceDescriptorProto)
 		},
 	)
 }
@@ -63,7 +63,7 @@ func IsCentreReceivedPlayerServiceResponseHandler(methodList *RPCMethods) bool {
 			return isPlayerService(m.ServiceDescriptorProto)
 		},
 		func(m *MethodInfo) bool {
-			return !isClientProtocolService(m.ServiceDescriptorProto)
+			return !IsClientProtocolService(m.ServiceDescriptorProto)
 		},
 	)
 }

@@ -17,7 +17,7 @@ func IsRoomNodeHostedProtocolHandler(methods *RPCMethods) bool {
 			return !isPlayerService(m.ServiceDescriptorProto)
 		},
 		func(m *MethodInfo) bool {
-			return !isClientProtocolService(m.ServiceDescriptorProto)
+			return !IsClientProtocolService(m.ServiceDescriptorProto)
 		},
 	)
 }
@@ -54,7 +54,7 @@ func IsRoomNodeReceivedPlayerResponseHandler(methodList *RPCMethods) bool {
 			return !IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_ROOM)
 		},
 		func(m *MethodInfo) bool {
-			return !isClientProtocolService(m.ServiceDescriptorProto)
+			return !IsClientProtocolService(m.ServiceDescriptorProto)
 		},
 		func(m *MethodInfo) bool {
 			return !utils.HasGrpcService(strings.ToLower(m.Path()))
@@ -76,7 +76,7 @@ func IsRoomNodeReceivedProtocolResponseHandler(methodList *RPCMethods) bool {
 			return !IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_ROOM)
 		},
 		func(m *MethodInfo) bool {
-			return !isClientProtocolService(m.ServiceDescriptorProto)
+			return !IsClientProtocolService(m.ServiceDescriptorProto)
 		},
 		func(m *MethodInfo) bool {
 			return !isPlayerService(m.ServiceDescriptorProto)

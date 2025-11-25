@@ -7,7 +7,7 @@ import (
 )
 
 // 工具函数：判断服务是否设置了 OptionIsClientProtocolService 为 true
-func isClientProtocolService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
+func IsClientProtocolService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
 	opts := serviceDesc.GetOptions()
 	if opts == nil {
 		return false

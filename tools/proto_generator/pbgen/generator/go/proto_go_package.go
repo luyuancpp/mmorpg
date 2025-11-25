@@ -1,4 +1,4 @@
-package protohelper
+package _go
 
 import (
 	"bufio"

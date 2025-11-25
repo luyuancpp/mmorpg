@@ -1,4 +1,4 @@
-package internal
+package cpp
 
 import (
 	"bufio"
