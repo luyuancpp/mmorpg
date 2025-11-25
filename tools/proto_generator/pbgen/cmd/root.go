@@ -10,6 +10,7 @@ import (
 	"pbgen/internal"
 	cpp2 "pbgen/internal/generator/cpp"
 	_go2 "pbgen/internal/generator/go"
+	"pbgen/internal/proto"
 	"pbgen/internal/utils"
 	"time"
 )
@@ -59,7 +60,7 @@ func main() {
 		log.Fatal(err)
 		return
 	}
-	internal.CopyProtoToGenDir()
+	proto.CopyProtoToGenDir()
 
 	// 开始读所有的proto文件
 	internal.ReadServiceIdFile()
@@ -68,7 +69,7 @@ func main() {
 	_go2.AddGoPackageToProtoDir()
 	utils.Wg.Wait()
 
-	internal.GenerateAllInOneDescriptor()
+	proto.GenerateAllInOneDescriptor()
 	utils.Wg.Wait()
 	internal.ReadAllProtoFileServices()
 	utils.Wg.Wait()

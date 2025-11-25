@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
-	"pbgen/internal"
+	"pbgen/internal/proto"
 	utils2 "pbgen/internal/utils"
 	"sync"
 )
@@ -178,7 +178,7 @@ func AddGoPackageToProtoDir() {
 
 		// 处理普通生成目录
 		for _, dirName := range grpcDirs {
-			destDir := internal.BuildGeneratorProtoPath(dirName)
+			destDir := proto.BuildGeneratorProtoPath(dirName)
 			baseGoPackage := filepath.ToSlash(dirName)
 
 			if err := addDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
@@ -188,7 +188,7 @@ func AddGoPackageToProtoDir() {
 
 		// 处理GoZero生成目录
 		for _, dirName := range grpcDirs {
-			destDir := internal.BuildGeneratorGoZeroProtoPath(dirName)
+			destDir := proto.BuildGeneratorGoZeroProtoPath(dirName)
 			baseGoPackage := filepath.ToSlash(dirName)
 
 			if err := AddGoZeroPackageToProtos(destDir, baseGoPackage, destDir, true); err != nil {
@@ -196,7 +196,7 @@ func AddGoPackageToProtoDir() {
 			}
 		}
 
-		destDir := internal.BuildGeneratorProtoPath(config.RobotDirectory)
+		destDir := proto.BuildGeneratorProtoPath(config.RobotDirectory)
 		baseGoPackage := filepath.ToSlash(config.GoRobotPackage)
 
 		if err := addDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
@@ -310,7 +310,7 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 
 // processGrpcDir 处理单个GRPC目录
 func processGrpcDir(dirName string) error {
-	destDir := internal.BuildGeneratorProtoPath(dirName)
+	destDir := proto.BuildGeneratorProtoPath(dirName)
 	if _, err := os.Stat(destDir); errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("目录[%s]不存在", destDir)
 	}
@@ -347,7 +347,7 @@ func BuildGrpcServiceProto() {
 		} else {
 			log.Printf("GRPC服务构建: 目录[%s]处理完成", currentDir)
 		}
-	}(internal.BuildGeneratorProtoPath(config.RobotDirectory))
+	}(proto.BuildGeneratorProtoPath(config.RobotDirectory))
 
 	wg.Wait()
 	log.Println("GRPC服务构建: 所有目录处理完成")
@@ -403,7 +403,7 @@ func generateGameGrpcGo(protoFiles []string) error {
 // generateGameGrpcImpl 游戏GRPC生成核心逻辑
 func generateGameGrpcImpl() error {
 	// 1. 解析游戏Proto文件路径
-	gameProtoPath, err := internal.ResolveGameProtoPath()
+	gameProtoPath, err := proto.ResolveGameProtoPath()
 	if err != nil {
 		return fmt.Errorf("解析Proto路径失败: %w", err)
 	}
