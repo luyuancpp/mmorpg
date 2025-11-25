@@ -1,10 +1,11 @@
-package internal
+package cpp
 
 import (
 	"log"
 	"os"
 	"path"
 	"pbgen/config"
+	"pbgen/internal"
 	"pbgen/utils"
 	"strings"
 )
@@ -17,12 +18,12 @@ func GenNodeUtil() {
 		os.MkdirAll(path.Dir(config.GenUtilFileHeadPath), os.FileMode(0777))
 
 		nodeList := make([]string, 0, len(config.ProtoDirectoryNames))
-		for _, file := range FdSet.File {
+		for _, file := range internal.FdSet.File {
 			for _, enumDesc := range file.EnumType {
 				if enumDesc.GetName() == config.NodeEnumName {
 					for _, val := range enumDesc.Value {
 						nodeName := strings.ReplaceAll(strings.ToLower(val.GetName()), config.NodeServiceSuffix, "")
-						if !IsTcpNodeByEnum(nodeName) {
+						if !internal.IsTcpNodeByEnum(nodeName) {
 							continue
 						}
 						nodeList = append(nodeList, val.GetName())

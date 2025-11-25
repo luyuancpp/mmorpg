@@ -1,4 +1,4 @@
-package internal
+package cpp
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"pbgen/config"
+	"pbgen/internal"
 	"pbgen/utils"
 	"strings"
 	"text/template"
@@ -123,7 +124,7 @@ func CppPlayerDataLoadGenerator() {
 	var headerEntries []HeaderEntry
 
 	// 收集所有标记为玩家数据库的消息
-	for _, fileDesc := range FdSet.GetFile() {
+	for _, fileDesc := range internal.FdSet.GetFile() {
 		for _, messageDesc := range fileDesc.GetMessageType() {
 			// 替换判断条件：使用 isPlayerDatabase 替代 hasValidOptionTableName
 			if !isPlayerDatabase(messageDesc) {
@@ -140,7 +141,7 @@ func CppPlayerDataLoadGenerator() {
 	}
 
 	// 为每个玩家数据库消息生成处理代码
-	for _, fileDesc := range FdSet.GetFile() {
+	for _, fileDesc := range internal.FdSet.GetFile() {
 		for _, messageDesc := range fileDesc.GetMessageType() {
 			// 替换判断条件：仅处理标记为玩家数据库的消息
 			if !isPlayerDatabase(messageDesc) {

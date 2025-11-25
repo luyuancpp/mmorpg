@@ -1,4 +1,4 @@
-package internal
+package cpp
 
 import (
 	"bytes"
@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"pbgen/config"
+	"pbgen/internal"
 	"pbgen/utils"
 	"sort"
 	"strings"
@@ -16,7 +17,7 @@ import (
 
 // GrpcServiceTemplateData 用于传递给模板的数据结构
 type GrpcServiceTemplateData struct {
-	ServiceInfo           []*RPCServiceInfo
+	ServiceInfo           []*internal.RPCServiceInfo
 	GrpcIncludeHeadName   string
 	GeneratorGrpcFileName string
 	Package               string
@@ -25,7 +26,7 @@ type GrpcServiceTemplateData struct {
 }
 
 // generateGrpcFile 根据模板生成 gRPC 文件，并避免重复写入
-func generateGrpcFile(fileName string, grpcServices []*RPCServiceInfo, text string) error {
+func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, text string) error {
 	// 检查输入数据是否为空
 	if len(grpcServices) == 0 {
 		return fmt.Errorf("grpcServices cannot be empty")
@@ -87,11 +88,11 @@ func generateGrpcFile(fileName string, grpcServices []*RPCServiceInfo, text stri
 }
 
 func CppGrpcCallClient() {
-	FileServiceMap.Range(func(k, v interface{}) bool {
+	internal.FileServiceMap.Range(func(k, v interface{}) bool {
 		protoFile := k.(string)
-		serviceList := v.([]*RPCServiceInfo)
+		serviceList := v.([]*internal.RPCServiceInfo)
 		utils.Wg.Add(1)
-		go func(protoFile string, serviceInfo []*RPCServiceInfo) {
+		go func(protoFile string, serviceInfo []*internal.RPCServiceInfo) {
 			defer utils.Wg.Done()
 
 			if len(serviceInfo) <= 0 {
@@ -142,14 +143,14 @@ func CppGrpcCallClient() {
 
 		go func() {
 			defer utils.Wg.Done()
-			m := map[string]*RPCServiceInfo{}
-			serviceInfoList := make([]*RPCServiceInfo, 0)
-			for _, service := range GlobalRPCServiceList {
+			m := map[string]*internal.RPCServiceInfo{}
+			serviceInfoList := make([]*internal.RPCServiceInfo, 0)
+			for _, service := range internal.GlobalRPCServiceList {
 				if service.CcGenericServices() {
 					continue
 				}
 
-				if IsFileBelongToNode(service.Fd, messageoption.NodeType_NODE_DB) {
+				if internal.IsFileBelongToNode(service.Fd, messageoption.NodeType_NODE_DB) {
 					continue
 				}
 
@@ -163,7 +164,7 @@ func CppGrpcCallClient() {
 			os.MkdirAll(path.Dir(config.GrpcInitFileCppPath), os.FileMode(0777))
 
 			cppData := struct {
-				ServiceInfo []*RPCServiceInfo
+				ServiceInfo []*internal.RPCServiceInfo
 			}{
 				ServiceInfo: serviceInfoList,
 			}
