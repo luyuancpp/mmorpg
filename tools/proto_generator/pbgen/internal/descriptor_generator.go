@@ -14,8 +14,8 @@ import (
 	"strings"
 )
 
-// BuildProtocDescAllInOne 生成合并的Protobuf描述符文件
-func BuildProtocDescAllInOne() {
+// GenerateAllInOneDescriptor 生成合并的Protobuf描述符文件
+func GenerateAllInOneDescriptor() {
 	utils.Wg.Add(1)
 
 	go func() {

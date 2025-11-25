@@ -58,7 +58,7 @@ func main() {
 	internal.AddGoPackageToProtoDir()
 	utils.Wg.Wait()
 
-	internal.BuildProtocDescAllInOne()
+	internal.GenerateAllInOneDescriptor()
 	utils.Wg.Wait()
 	internal.ReadAllProtoFileServices()
 	utils.Wg.Wait()
