@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 	"pbgen/config"
-	"pbgen/utils"
+	utils2 "pbgen/internal/utils"
 	"sort"
 	"strings"
 	"text/template"
@@ -23,7 +23,7 @@ func writeServiceIdHeadFile(serviceInfo []*RPCServiceInfo) {
 	}
 
 	fileName := serviceInfo[0].ServiceInfoHeadInclude()
-	utils.WriteFileIfChanged(config.ServiceInfoDirectory+fileName, []byte(GenServiceIdHeader(serviceInfo)))
+	utils2.WriteFileIfChanged(config.ServiceInfoDirectory+fileName, []byte(GenServiceIdHeader(serviceInfo)))
 }
 
 // GenServiceIdHeader 使用模板生成服务 ID 头文件内容
@@ -841,7 +841,7 @@ void InitServiceHandler()
 		InitLines []string
 	}
 
-	defer utils.Wg.Done()
+	defer utils2.Wg.Done()
 
 	var includes []string
 	var initLines []string
@@ -871,7 +871,7 @@ void InitServiceHandler()
 		panic(err)
 	}
 
-	utils.WriteFileIfChanged(dst, output.Bytes())
+	utils2.WriteFileIfChanged(dst, output.Bytes())
 }
 
 func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
@@ -889,7 +889,7 @@ void InitReply()
 		InitFuncs []string
 	}
 
-	defer utils.Wg.Done()
+	defer utils2.Wg.Done()
 
 	var initFuncList []string
 
@@ -915,16 +915,16 @@ void InitReply()
 		panic(err)
 	}
 
-	utils.WriteFileIfChanged(dst, output.Bytes())
+	utils2.WriteFileIfChanged(dst, output.Bytes())
 }
 
 func GenerateServiceConstants() {
 	FileServiceMap.Range(func(k, v interface{}) bool {
 		protoFile := k.(string)
 		serviceList := v.([]*RPCServiceInfo)
-		utils.Wg.Add(1)
+		utils2.Wg.Add(1)
 		go func(protoFile string, serviceInfo []*RPCServiceInfo) {
-			defer utils.Wg.Done()
+			defer utils2.Wg.Done()
 
 			if len(serviceInfo) <= 0 {
 				return
@@ -944,18 +944,18 @@ func GenerateServiceConstants() {
 
 func WriteMethodFile() {
 	// Concurrent operations for game, centre, and gate registers
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go GenRegisterFile(config.RoomNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsRoomNodeHostedProtocolHandler)
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go writeRepliedRegisterFile(config.RoomNodeMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsRoomNodeReceivedProtocolResponseHandler)
 
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go GenRegisterFile(config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsCentreHostedServiceHandler)
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, IsCentreReceivedServiceResponseHandler)
 
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go GenRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterHandlerCppExtension, IsNoOpHandler)
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go writeRepliedRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsGateNodeReceivedResponseHandler)
 }

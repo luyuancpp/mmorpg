@@ -8,14 +8,14 @@ import (
 	"path/filepath"
 	"pbgen/config"
 	"pbgen/internal"
-	"pbgen/utils"
+	utils2 "pbgen/internal/utils"
 	"sync"
 )
 
 // GenerateGoProto 递归处理目录下Proto文件，生成Go GRPC代码
 func GenerateGoProto(rootDir string) error {
 	// 跳过Etcd服务相关目录
-	if utils.CheckEtcdServiceExistence(rootDir) {
+	if utils2.CheckEtcdServiceExistence(rootDir) {
 		return nil
 	}
 
@@ -30,16 +30,16 @@ func GenerateGoProto(rootDir string) error {
 	}
 
 	// 2. 解析输出目录
-	nodeGoDir, err := utils.ResolveAbsPath(config.NodeGoDirectory, "Go节点输出目录")
+	nodeGoDir, err := utils2.ResolveAbsPath(config.NodeGoDirectory, "Go节点输出目录")
 	if err != nil {
 		return err
 	}
-	if err := utils.EnsureDir(nodeGoDir); err != nil {
+	if err := utils2.EnsureDir(nodeGoDir); err != nil {
 		return fmt.Errorf("Go GRPC生成: 创建输出目录失败: %w", err)
 	}
 
 	// 3. 解析Proto根路径
-	protoRootPath, err := utils.ResolveAbsPath(filepath.Dir(rootDir), "Proto根目录")
+	protoRootPath, err := utils2.ResolveAbsPath(filepath.Dir(rootDir), "Proto根目录")
 	if err != nil {
 		return err
 	}
@@ -65,16 +65,16 @@ func GenerateRobotGoProto(rootDir string) error {
 	}
 
 	// 2. 解析输出目录
-	nodeGoDir, err := utils.ResolveAbsPath(config.ToolsDir, "Go节点输出目录")
+	nodeGoDir, err := utils2.ResolveAbsPath(config.ToolsDir, "Go节点输出目录")
 	if err != nil {
 		return err
 	}
-	if err := utils.EnsureDir(nodeGoDir); err != nil {
+	if err := utils2.EnsureDir(nodeGoDir); err != nil {
 		return fmt.Errorf("Go GRPC生成: 创建输出目录失败: %w", err)
 	}
 
 	// 3. 解析Proto根路径
-	protoRootPath, err := utils.ResolveAbsPath(filepath.Dir(rootDir), "Proto根目录")
+	protoRootPath, err := utils2.ResolveAbsPath(filepath.Dir(rootDir), "Proto根目录")
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func collectGoGrpcProtoFiles(rootDir string) ([]string, error) {
 		}
 
 		// 跳过目录、非Proto文件和数据库专用Proto文件
-		if d.IsDir() || !utils.IsProtoFile(d) || d.Name() == config.DbProtoFileName {
+		if d.IsDir() || !utils2.IsProtoFile(d) || d.Name() == config.DbProtoFileName {
 			return nil
 		}
 
@@ -121,17 +121,17 @@ func GenerateGoGrpc(protoFiles []string, outputDir string, protoRootPath string)
 	}
 
 	// 1. 解析路径
-	goOutputDir, err := utils.ResolveAbsPath(outputDir, "Go GRPC输出目录")
+	goOutputDir, err := utils2.ResolveAbsPath(outputDir, "Go GRPC输出目录")
 	if err != nil {
 		return err
 	}
 
-	protoRootDir, err := utils.ResolveAbsPath(protoRootPath, "Proto根目录")
+	protoRootDir, err := utils2.ResolveAbsPath(protoRootPath, "Proto根目录")
 	if err != nil {
 		return err
 	}
 
-	protoBufferDir, err := utils.ResolveAbsPath(config.ProtoBufferDirectory, "ProtoBuffer目录")
+	protoBufferDir, err := utils2.ResolveAbsPath(config.ProtoBufferDirectory, "ProtoBuffer目录")
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func GenerateGoGrpc(protoFiles []string, outputDir string, protoRootPath string)
 
 	// 4. 补充Proto文件路径
 	for _, file := range protoFiles {
-		absFile, err := utils.ResolveAbsPath(file, "Go GRPC Proto源文件")
+		absFile, err := utils2.ResolveAbsPath(file, "Go GRPC Proto源文件")
 		if err != nil {
 			log.Printf("Go GRPC生成: 跳过无效文件[%s]: %v", file, err)
 			continue
@@ -161,7 +161,7 @@ func GenerateGoGrpc(protoFiles []string, outputDir string, protoRootPath string)
 	}
 
 	// 5. 执行命令
-	return utils.RunProtocWithPath(protocPath, args, "生成Go GRPC代码")
+	return utils2.RunProtocWithPath(protocPath, args, "生成Go GRPC代码")
 }
 
 // resolveProtocPath 解析protoc可执行文件路径
@@ -171,10 +171,10 @@ func resolveProtocPath() (string, error) {
 
 // AddGoPackageToProtoDir 为Proto文件添加go_package声明
 func AddGoPackageToProtoDir() {
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go func() {
-		defer utils.Wg.Done()
-		grpcDirs := utils.GetGRPCSubdirectoryNames()
+		defer utils2.Wg.Done()
+		grpcDirs := utils2.GetGRPCSubdirectoryNames()
 
 		// 处理普通生成目录
 		for _, dirName := range grpcDirs {
@@ -320,7 +320,7 @@ func processGrpcDir(dirName string) error {
 
 // BuildGrpcServiceProto 并发处理所有GRPC目录
 func BuildGrpcServiceProto() {
-	grpcDirs := utils.GetGRPCSubdirectoryNames()
+	grpcDirs := utils2.GetGRPCSubdirectoryNames()
 	var wg sync.WaitGroup
 
 	for _, dirName := range grpcDirs {
@@ -356,7 +356,7 @@ func BuildGrpcServiceProto() {
 // generateGameGrpcGo 为游戏GRPC生成多节点Go代码
 func generateGameGrpcGo(protoFiles []string) error {
 	// 1. 获取所有GRPC节点目录
-	grpcNodes := utils.GetGRPCSubdirectoryNames()
+	grpcNodes := utils2.GetGRPCSubdirectoryNames()
 	if len(grpcNodes) == 0 {
 		log.Println("Go生成: 未找到GRPC节点目录，跳过")
 		return nil
@@ -365,11 +365,11 @@ func generateGameGrpcGo(protoFiles []string) error {
 	// 2. 为每个节点生成专属代码
 	for _, nodeName := range grpcNodes {
 		nodeOutputDir := filepath.Join(config.NodeGoDirectory, nodeName)
-		nodeOutputDir, err := utils.ResolveAbsPath(nodeOutputDir, "节点game_rpc代码目录")
+		nodeOutputDir, err := utils2.ResolveAbsPath(nodeOutputDir, "节点game_rpc代码目录")
 		if err != nil {
 			return fmt.Errorf("解析节点game_rpc代码目录: %w", err)
 		}
-		if err := utils.EnsureDir(nodeOutputDir); err != nil {
+		if err := utils2.EnsureDir(nodeOutputDir); err != nil {
 			log.Printf("Go生成: 创建节点[%s]目录失败: %v，跳过", nodeName, err)
 			continue
 		}
@@ -383,11 +383,11 @@ func generateGameGrpcGo(protoFiles []string) error {
 	}
 
 	// 3. 确保机器人代码目录存在
-	robotDir, err := utils.ResolveAbsPath(config.RobotGoOutputGeneratedDirectory, "机器人代码目录")
+	robotDir, err := utils2.ResolveAbsPath(config.RobotGoOutputGeneratedDirectory, "机器人代码目录")
 	if err != nil {
 		return fmt.Errorf("解析机器人目录失败: %w", err)
 	}
-	if err := utils.EnsureDir(robotDir); err != nil {
+	if err := utils2.EnsureDir(robotDir); err != nil {
 		return fmt.Errorf("创建机器人目录失败: %w", err)
 	}
 
@@ -419,9 +419,9 @@ func generateGameGrpcImpl() error {
 
 // GenerateGameGrpc 生成游戏GRPC代码（C++序列化+Go节点代码）
 func GenerateGameGrpc() error {
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go func() {
-		defer utils.Wg.Done()
+		defer utils2.Wg.Done()
 		if err := generateGameGrpcImpl(); err != nil {
 			log.Printf("游戏GRPC生成: 整体失败: %v", err)
 		}

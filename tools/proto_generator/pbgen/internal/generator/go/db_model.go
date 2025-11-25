@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
+	utils2 "pbgen/internal/utils"
 	"strings"
 
 	pbmysql "github.com/luyuancpp/proto2mysql"
@@ -16,7 +17,6 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 
 	"pbgen/internal"
-	"pbgen/utils"
 )
 
 // MessageListConfig 定义消息名列表结构
@@ -163,11 +163,11 @@ func GenerateMergedTableSQL(messageNames []string) error {
 	}
 
 	for _, protoDir := range config.ProtoDirs {
-		if !utils.HasGrpcService(protoDir) {
+		if !utils2.HasGrpcService(protoDir) {
 			continue
 		}
 
-		sqlDir := utils.BuildModelPath(protoDir)
+		sqlDir := utils2.BuildModelPath(protoDir)
 		if err := os.MkdirAll(sqlDir, 0755); err != nil {
 			return err
 		}
@@ -228,9 +228,9 @@ func getFullMessageName(pkgName, msgName string) string {
 }
 
 func GenerateDBResource() {
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go func() {
-		defer utils.Wg.Done()
+		defer utils2.Wg.Done()
 
 		protoFile := config.DbTableName
 		log.Printf("开始处理目标文件: %s", protoFile)
@@ -244,18 +244,18 @@ func GenerateDBResource() {
 		}
 
 		// 并发生成 JSON 配置
-		utils.Wg.Add(1)
+		utils2.Wg.Add(1)
 		go func() {
-			defer utils.Wg.Done()
+			defer utils2.Wg.Done()
 			if err := writeMessageNamesToJSON(messageNames); err != nil {
 				log.Fatalf("生成JSON配置失败: %v", err)
 			}
 		}()
 
 		// 并发生成 SQL
-		utils.Wg.Add(1)
+		utils2.Wg.Add(1)
 		go func() {
-			defer utils.Wg.Done()
+			defer utils2.Wg.Done()
 			if err := GenerateMergedTableSQL(messageNames); err != nil {
 				log.Fatalf("生成SQL失败: %v", err)
 			}

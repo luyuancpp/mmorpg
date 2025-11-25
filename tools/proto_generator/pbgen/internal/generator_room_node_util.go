@@ -2,7 +2,7 @@ package internal
 
 import (
 	messageoption "github.com/luyuancpp/protooption"
-	"pbgen/utils"
+	"pbgen/internal/utils"
 	"strings"
 )
 

@@ -9,9 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
+	utils2 "pbgen/internal/utils"
 	"strings"
-
-	"pbgen/utils"
 )
 
 // generateClassNameFromFile 从 proto 文件名生成 C++ 类名（下划线转为大写驼峰），加后缀
@@ -149,7 +148,7 @@ type EventTemplateData struct {
 
 // generateEventHandlerFiles 使用模板生成每个 proto 对应的 .h 和 .cpp 文件
 func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
-	defer utils.Wg.Done()
+	defer utils2.Wg.Done()
 
 	protoFilePath := config.ProtoDirs[config.LogicEventProtoDirIndex] + file.Name()
 	eventMessages, err := parseProtoMessages(protoFilePath)
@@ -190,10 +189,10 @@ func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 	}
 
 	// 渲染模板并写入文件
-	if err := utils.RenderTemplateToFile("internal/template/event_handler.h.tmpl", headerFilePath, tmplData); err != nil {
+	if err := utils2.RenderTemplateToFile("internal/template/event_handler.h.tmpl", headerFilePath, tmplData); err != nil {
 		log.Printf("failed to generate header file: %v\n", err)
 	}
-	if err := utils.RenderTemplateToFile("internal/template/event_handler.cpp.tmpl", cppFilePath, tmplData); err != nil {
+	if err := utils2.RenderTemplateToFile("internal/template/event_handler.cpp.tmpl", cppFilePath, tmplData); err != nil {
 		log.Printf("failed to generate cpp file: %v\n", err)
 	}
 }
@@ -206,10 +205,10 @@ func GenerateAllEventHandlers() {
 	}
 
 	for _, file := range files {
-		if !utils.IsProtoFile(file) {
+		if !utils2.IsProtoFile(file) {
 			continue
 		}
-		utils.Wg.Add(2)
+		utils2.Wg.Add(2)
 		go generateEventHandlerFiles(file, config.RoomNodeEventHandlerDirectory)
 		go generateEventHandlerFiles(file, config.CentreNodeEventHandlerDirectory)
 	}
@@ -286,19 +285,19 @@ public:
 
 	headerFilePath := config.RoomNodeEventHandlerDirectory + config.EventHandlerHeaderFileName
 	cppFilePath := config.RoomNodeEventHandlerDirectory + config.EventHandlerCppFileName
-	if err := utils.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
+	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
 		log.Printf("failed to generate header file: %v\n", err)
 	}
-	if err := utils.RenderTemplateToFile("internal/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
+	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
 		log.Printf("failed to generate cpp file: %v\n", err)
 	}
 
 	headerFilePath = config.CentreNodeEventHandlerDirectory + config.EventHandlerHeaderFileName
 	cppFilePath = config.CentreNodeEventHandlerDirectory + config.EventHandlerCppFileName
-	if err := utils.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
+	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
 		log.Printf("failed to generate header file: %v\n", err)
 	}
-	if err := utils.RenderTemplateToFile("internal/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
+	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
 		log.Printf("failed to generate cpp file: %v\n", err)
 	}
 	return nil
