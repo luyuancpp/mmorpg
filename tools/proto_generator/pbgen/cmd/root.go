@@ -7,10 +7,9 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"pbgen/config"
-	"pbgen/generator/cpp"
-	"pbgen/generator/go"
 	"pbgen/internal"
-	"pbgen/internal/database"
+	cpp2 "pbgen/internal/generator/cpp"
+	_go2 "pbgen/internal/generator/go"
 	"pbgen/utils"
 	"time"
 )
@@ -50,12 +49,12 @@ func main() {
 	fmt.Println("Current working directory:", dir)
 
 	MakeProjectDir()
-	err = cpp.GenerateGameGrpc()
+	err = cpp2.GenerateGameGrpc()
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	err = _go.GenerateGameGrpc()
+	err = _go2.GenerateGameGrpc()
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -66,21 +65,21 @@ func main() {
 	internal.ReadServiceIdFile()
 	utils.Wg.Wait()
 
-	_go.AddGoPackageToProtoDir()
+	_go2.AddGoPackageToProtoDir()
 	utils.Wg.Wait()
 
 	internal.GenerateAllInOneDescriptor()
 	utils.Wg.Wait()
 	internal.ReadAllProtoFileServices()
 	utils.Wg.Wait()
-	cpp.BuildProtocCpp()
-	_go.BuildGrpcServiceProto()
+	cpp2.BuildProtocCpp()
+	_go2.BuildGrpcServiceProto()
 	utils.Wg.Wait()
 
-	cpp.GenNodeUtil()
+	cpp2.GenNodeUtil()
 	utils.Wg.Wait()
 
-	cpp.GenerateAllEventHandlers()
+	cpp2.GenerateAllEventHandlers()
 	utils.Wg.Wait()
 	// 所有文件的proto读完以后
 	internal.InitServiceId()
@@ -90,7 +89,7 @@ func main() {
 	utils.Wg.Wait()
 
 	internal.WriteMethodFile()
-	cpp.GeneratorHandler()
+	cpp2.GeneratorHandler()
 	utils.Wg.Wait()
 
 	internal.GenerateServiceConstants()
@@ -100,16 +99,16 @@ func main() {
 	utils.Wg.Wait()
 
 	internal.WriteServiceRegisterInfoFile()
-	database.GenerateDBResource()
+	_go2.GenerateDBResource()
 	utils.Wg.Wait()
 
-	_go.GoRobotHandlerGenerator()
+	_go2.GoRobotHandlerGenerator()
 	utils.Wg.Wait()
-	_go.GoRobotTotalHandlerGenerator()
+	_go2.GoRobotTotalHandlerGenerator()
 	utils.Wg.Wait()
-	cpp.CppPlayerDataLoadGenerator()
+	cpp2.CppPlayerDataLoadGenerator()
 	utils.Wg.Wait()
-	cpp.CppGrpcCallClient()
+	cpp2.CppGrpcCallClient()
 	utils.Wg.Wait()
 
 	// 打印总耗时
