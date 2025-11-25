@@ -1,4 +1,4 @@
-package database
+package _go
 
 import (
 	"encoding/json"
