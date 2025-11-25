@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
+	"pbgen/generator"
 	"pbgen/utils"
 )
 
@@ -75,7 +76,7 @@ func generateGameGrpcCpp(protoFiles []string) error {
 	}
 
 	// 生成C++代码
-	if err := generateCpp(protoFiles, cppTempDir); err != nil {
+	if err := generator.generateCpp(protoFiles, cppTempDir); err != nil {
 		return fmt.Errorf("生成C++代码失败: %w", err)
 	}
 
@@ -84,7 +85,7 @@ func generateGameGrpcCpp(protoFiles []string) error {
 	if err != nil {
 		return err
 	}
-	if err := copyCppOutputs(protoFiles, cppTempDir, cppDestDir); err != nil {
+	if err := generator.copyCppOutputs(protoFiles, cppTempDir, cppDestDir); err != nil {
 		return fmt.Errorf("拷贝C++代码失败: %w", err)
 	}
 
@@ -113,7 +114,7 @@ func generateGameGrpcGo(protoFiles []string) error {
 		}
 
 		// 生成节点Go GRPC代码
-		if err := generateGoGrpc(protoFiles, nodeOutputDir, config.GameRpcProtoPath); err != nil {
+		if err := generator.generateGoGrpc(protoFiles, nodeOutputDir, config.GameRpcProtoPath); err != nil {
 			log.Printf("Go生成: 节点[%s]代码生成失败: %v，跳过", nodeName, err)
 			continue
 		}
@@ -129,7 +130,7 @@ func generateGameGrpcGo(protoFiles []string) error {
 		return fmt.Errorf("创建机器人目录失败: %w", err)
 	}
 
-	if err := generateGoGrpc(protoFiles, robotDir, config.GameRpcProtoPath); err != nil {
+	if err := generator.generateGoGrpc(protoFiles, robotDir, config.GameRpcProtoPath); err != nil {
 		log.Printf("Go生成: 节点[%s]代码生成失败: %v，跳过", robotDir, err)
 		return err
 	}
