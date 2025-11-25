@@ -5,10 +5,34 @@ import (
 	"log"
 	"path/filepath"
 	"pbgen/config"
+	"pbgen/internal"
 	"pbgen/utils"
 	"runtime"
 	"strings"
 )
+
+// BuildProtocCpp 并发处理所有目录的C++代码生成
+func BuildProtocCpp() {
+	for i := 0; i < len(config.ProtoDirs); i++ {
+		utils.Wg.Add(1)
+		go func(dirIndex int) {
+			defer utils.Wg.Done()
+			dir := config.ProtoDirs[dirIndex]
+			if err := BuildProtoCpp(dir); err != nil {
+				log.Printf("C++批量构建: 目录[%s]处理失败: %v", dir, err)
+			}
+		}(i)
+
+		utils.Wg.Add(1)
+		go func(dirIndex int) {
+			defer utils.Wg.Done()
+			dir := config.ProtoDirs[dirIndex]
+			if err := BuildProtoGrpcCpp(dir); err != nil {
+				log.Printf("GRPC C++批量构建: 目录[%s]处理失败: %v", dir, err)
+			}
+		}(i)
+	}
+}
 
 // BuildProtoCpp 批量生成指定目录下Proto文件的C++序列化代码
 func BuildProtoCpp(protoDir string) error {
@@ -309,4 +333,73 @@ func copyCppGrpcOutputs(protoFiles []string) error {
 		}
 	}
 	return nil
+}
+
+// generateGameGrpcCpp 生成游戏GRPC C++代码
+func generateGameGrpcCpp(protoFiles []string) error {
+	// 解析输出目录
+	cppOutputDir, err := utils.ResolveAbsPath(config.PbcProtoOutputDirectory, "游戏C++输出目录")
+	if err != nil {
+		return err
+	}
+	if err := utils.EnsureDir(cppOutputDir); err != nil {
+		return fmt.Errorf("创建C++输出目录失败: %w", err)
+	}
+
+	// 解析临时目录
+	cppTempDir, err := utils.ResolveAbsPath(config.PbcTempDirectory, "游戏C++临时目录")
+	if err != nil {
+		return err
+	}
+
+	// 生成C++代码
+	if err := GenerateCpp(protoFiles, cppTempDir); err != nil {
+		return fmt.Errorf("生成C++代码失败: %w", err)
+	}
+
+	// 拷贝C++代码到目标目录
+	cppDestDir, err := utils.ResolveAbsPath(config.PbcProtoOutputNoProtoSuffixPath, "游戏C++最终目录")
+	if err != nil {
+		return err
+	}
+	if err := CopyCppOutputs(protoFiles, cppTempDir, cppDestDir); err != nil {
+		return fmt.Errorf("拷贝C++代码失败: %w", err)
+	}
+
+	return nil
+}
+
+// generateGameGrpcImpl 游戏GRPC生成核心逻辑
+func generateGameGrpcImpl() error {
+	// 1. 解析游戏Proto文件路径
+	gameProtoPath, err := internal.ResolveGameProtoPath()
+	if err != nil {
+		return fmt.Errorf("解析Proto路径失败: %w", err)
+	}
+	protoFiles := []string{gameProtoPath}
+
+	// 2. 生成C++序列化代码
+	if err := generateGameGrpcCpp(protoFiles); err != nil {
+		return fmt.Errorf("C++代码生成失败: %w", err)
+	}
+
+	return nil
+}
+
+// GenerateGameGrpc 生成游戏GRPC代码（C++序列化+Go节点代码）
+func GenerateGameGrpc() error {
+	utils.Wg.Add(1)
+	go func() {
+		defer utils.Wg.Done()
+		if err := generateGameGrpcImpl(); err != nil {
+			log.Printf("游戏GRPC生成: 整体失败: %v", err)
+		}
+	}()
+	return nil
+}
+
+func GeneratorHandler() {
+	for _, service := range internal.GlobalRPCServiceList {
+		ProcessAllHandlers(service.MethodInfo)
+	}
 }

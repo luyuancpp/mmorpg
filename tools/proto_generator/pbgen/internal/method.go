@@ -73,7 +73,7 @@ constexpr uint32_t {{.KeyName}}Index = {{.Index}};
 }
 
 // 获取 C++ 头文件字符串，使用 text/template
-func getServiceHandlerHeadStr(methods RPCMethods) (string, error) {
+func GetServiceHandlerHeadStr(methods RPCMethods) (string, error) {
 	// 定义 C++ 类头文件的模板
 	const tmplStr = `#pragma once
 {{.Include}}
@@ -154,7 +154,7 @@ func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
 }
 
 // Function to get the header string for player method handlers
-func getPlayerServiceHeadStr(methods RPCMethods) (string, error) {
+func GetPlayerServiceHeadStr(methods RPCMethods) (string, error) {
 
 	const playerMethodHeadTemplate = `#pragma once
 
@@ -299,7 +299,7 @@ type PlayerMethodRepliedData struct {
 	MethodHandlerFunctions          string
 }
 
-func getPlayerMethodRepliedHeadStr(methods RPCMethods) (string, error) {
+func GetPlayerMethodRepliedHeadStr(methods RPCMethods) (string, error) {
 	// 填充模板所需的数据
 	data := PlayerMethodRepliedData{
 		IncludeName:                     methods[0].IncludeName(),
@@ -392,7 +392,7 @@ func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
 	return output.String()
 }
 
-func getServiceRepliedHandlerHeadStr(methods RPCMethods) (string, error) {
+func GetServiceRepliedHandlerHeadStr(methods RPCMethods) (string, error) {
 	const methodRepliedHandlerHeadTemplate = `#pragma once
 #include "muduo/net/TcpConnection.h"
 {{.FirstMethodInfo.IncludeName }}
@@ -558,7 +558,7 @@ func GenerateMethodHandlerKeyNameWrapper(info *MethodInfo, _ string) string {
 	return "On" + info.KeyName() + config.RepliedHandlerFileName
 }
 
-func getServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
+func GetServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
 
 	const methodHandlerCppTemplate = `
 {{ .CppHandlerInclude }}
@@ -644,7 +644,7 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 	return output.String()
 }
 
-func getServiceRepliedHandlerCppStr(dst string, methods RPCMethods, _ string, _ string) string {
+func GetServiceRepliedHandlerCppStr(dst string, methods RPCMethods, _ string, _ string) string {
 	const methodRepliedHandlerCppTemplate = `
 {{ .CppRepliedHandlerInclude }}
 #include "rpc/{{ .ServiceInfoName }}{{ .ServiceInfoHeadInclude }}"
@@ -741,7 +741,7 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 	return output.String()
 }
 
-func getPlayerServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
+func GetPlayerServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
 	const playerHandlerCppTemplate = `
 {{ .IncludeName }}
 {{- if .FirstCode }}
@@ -943,10 +943,6 @@ func GenerateServiceConstants() {
 }
 
 func WriteMethodFile() {
-	for _, service := range GlobalRPCServiceList {
-		ProcessAllHandlers(service.MethodInfo)
-	}
-
 	// Concurrent operations for game, centre, and gate registers
 	utils.Wg.Add(1)
 	go GenRegisterFile(config.RoomNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsRoomNodeHostedProtocolHandler)

@@ -71,7 +71,7 @@ type CasesData struct {
 // isClientMethodRepliedHandler 检查是否为客户端方法已响应处理器
 func isClientMethodRepliedHandler(methodList *internal.RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
-	return internal.isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
+	return internal.IsClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
 func GoRobotTotalHandlerGenerator() {

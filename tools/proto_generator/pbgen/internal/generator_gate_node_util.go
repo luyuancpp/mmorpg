@@ -31,7 +31,7 @@ func IsGateNodeReceivedResponseHandler(methodList *RPCMethods) bool {
 			return m.CcGenericServices()
 		},
 		func(info *MethodInfo) bool {
-			return !(isClientProtocolService(info.ServiceDescriptorProto))
+			return !(IsClientProtocolService(info.ServiceDescriptorProto))
 		},
 		func(m *MethodInfo) bool {
 			return !isPlayerService(m.ServiceDescriptorProto)

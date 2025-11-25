@@ -50,28 +50,37 @@ func main() {
 	fmt.Println("Current working directory:", dir)
 
 	MakeProjectDir()
-	internal.GenerateGameGrpc()
+	err = cpp.GenerateGameGrpc()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	err = _go.GenerateGameGrpc()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 	internal.CopyProtoToGenDir()
 
 	// 开始读所有的proto文件
 	internal.ReadServiceIdFile()
 	utils.Wg.Wait()
 
-	internal.AddGoPackageToProtoDir()
+	_go.AddGoPackageToProtoDir()
 	utils.Wg.Wait()
 
 	internal.GenerateAllInOneDescriptor()
 	utils.Wg.Wait()
 	internal.ReadAllProtoFileServices()
 	utils.Wg.Wait()
-	internal.BuildProtocCpp()
-	internal.BuildGrpcServiceProto()
+	cpp.BuildProtocCpp()
+	_go.BuildGrpcServiceProto()
 	utils.Wg.Wait()
 
 	cpp.GenNodeUtil()
 	utils.Wg.Wait()
 
-	internal.GenerateAllEventHandlers()
+	cpp.GenerateAllEventHandlers()
 	utils.Wg.Wait()
 	// 所有文件的proto读完以后
 	internal.InitServiceId()
@@ -81,6 +90,7 @@ func main() {
 	utils.Wg.Wait()
 
 	internal.WriteMethodFile()
+	cpp.GeneratorHandler()
 	utils.Wg.Wait()
 
 	internal.GenerateServiceConstants()
