@@ -144,7 +144,7 @@ func AddGoPackageToProtoDir() {
 			destDir := buildGeneratorGoZeroProtoPath(dirName)
 			baseGoPackage := filepath.ToSlash(dirName)
 
-			if err := processFilesWithDynamicGoZeroPackage(destDir, baseGoPackage, destDir, true); err != nil {
+			if err := AddGoZeroPackageToProtos(destDir, baseGoPackage, destDir, true); err != nil {
 				log.Printf("GoZero GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
 			}
 		}
@@ -205,8 +205,8 @@ func addDynamicGoPackage(rootDir, baseGoPackage, currentDir string, isMulti bool
 	return nil
 }
 
-// processFilesWithDynamicGoZeroPackage 为GoZero生成目录处理go_package
-func processFilesWithDynamicGoZeroPackage(rootDir, baseGoPackage, currentDir string, isMulti bool) error {
+// AddGoZeroPackageToProtos 为GoZero生成目录处理go_package
+func AddGoZeroPackageToProtos(rootDir, baseGoPackage, currentDir string, isMulti bool) error {
 	entries, err := os.ReadDir(currentDir)
 	if err != nil {
 		return fmt.Errorf("读取目录[%s]失败: %w", currentDir, err)
@@ -221,7 +221,7 @@ func processFilesWithDynamicGoZeroPackage(rootDir, baseGoPackage, currentDir str
 
 		if info.IsDir() {
 			// 递归处理子目录
-			if err := processFilesWithDynamicGoZeroPackage(rootDir, baseGoPackage, fullPath, isMulti); err != nil {
+			if err := AddGoZeroPackageToProtos(rootDir, baseGoPackage, fullPath, isMulti); err != nil {
 				return err
 			}
 		} else if filepath.Ext(fullPath) == ".proto" {
