@@ -55,10 +55,10 @@ func extractMessageNamesFromProto(protoFile string) ([]string, error) {
 	return messageNames, nil
 }
 
-// loadAllDescriptors 激活描述符（v1.36.6 专用，无需 protoregistry.NewFiles()）
+// LoadAllDescriptors 激活描述符（v1.36.6 专用，无需 protoregistry.NewFiles()）
 
-// loadAllDescriptors 适配你的 protoregistry 版本：用 Files 管理 + protodesc 激活
-func loadAllDescriptors() error {
+// LoadAllDescriptors 适配你的 protoregistry 版本：用 Files 管理 + protodesc 激活
+func LoadAllDescriptors() error {
 	internal.LoadMutex.Lock()
 	defer internal.LoadMutex.Unlock()
 
@@ -121,7 +121,7 @@ func loadAllDescriptors() error {
 
 // 以下函数保持不变（GenerateMergedTableSQL、verifyMessageValidity 等）
 func GenerateMergedTableSQL(messageNames []string) error {
-	if err := loadAllDescriptors(); err != nil {
+	if err := LoadAllDescriptors(); err != nil {
 		return err
 	}
 
