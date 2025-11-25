@@ -7,7 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
-	"pbgen/generator"
+	"pbgen/generator/cpp"
+	"pbgen/generator/go"
 	"pbgen/internal/protohelper"
 	"pbgen/utils"
 	"sync"
@@ -20,7 +21,7 @@ func BuildProtocCpp() {
 		go func(dirIndex int) {
 			defer utils.Wg.Done()
 			dir := config.ProtoDirs[dirIndex]
-			if err := generator.BuildProtoCpp(dir); err != nil {
+			if err := cpp.BuildProtoCpp(dir); err != nil {
 				log.Printf("C++批量构建: 目录[%s]处理失败: %v", dir, err)
 			}
 		}(i)
@@ -29,7 +30,7 @@ func BuildProtocCpp() {
 		go func(dirIndex int) {
 			defer utils.Wg.Done()
 			dir := config.ProtoDirs[dirIndex]
-			if err := generator.BuildProtoGrpcCpp(dir); err != nil {
+			if err := cpp.BuildProtoGrpcCpp(dir); err != nil {
 				log.Printf("GRPC C++批量构建: 目录[%s]处理失败: %v", dir, err)
 			}
 		}(i)
@@ -60,7 +61,7 @@ func BuildGrpcServiceProto() {
 	// 传递当前目录名副本到goroutine，避免循环变量捕获问题
 	go func(currentDir string) {
 		defer wg.Done()
-		if err := generator.GenerateRobotGoProto(currentDir); err != nil {
+		if err := _go.GenerateRobotGoProto(currentDir); err != nil {
 			log.Printf("GRPC服务构建: 目录[%s]处理失败: %v", currentDir, err)
 		} else {
 			log.Printf("GRPC服务构建: 目录[%s]处理完成", currentDir)
@@ -78,7 +79,7 @@ func processGrpcDir(dirName string) error {
 		return fmt.Errorf("目录[%s]不存在", destDir)
 	}
 
-	return generator.GenerateGoProto(destDir)
+	return _go.GenerateGoProto(destDir)
 }
 
 // CopyProtoToGenDir 拷贝Proto文件到生成目录

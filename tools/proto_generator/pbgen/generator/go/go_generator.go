@@ -1,4 +1,4 @@
-package generator
+package _go
 
 import (
 	"fmt"

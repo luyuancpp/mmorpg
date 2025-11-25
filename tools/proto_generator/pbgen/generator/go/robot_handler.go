@@ -1,10 +1,11 @@
-package internal
+package _go
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 	"pbgen/config"
+	"pbgen/internal"
 	"pbgen/utils"
 	"strings"
 	"text/template"
@@ -30,9 +31,9 @@ type ServiceData struct {
 func GoRobotHandlerGenerator() {
 	// Track the handlers that should exist based on the current service mappings
 
-	for _, service := range GlobalRPCServiceList {
+	for _, service := range internal.GlobalRPCServiceList {
 		utils.Wg.Add(1)
-		go func(methods RPCMethods) {
+		go func(methods internal.RPCMethods) {
 			defer utils.Wg.Done()
 			if !isClientMethodRepliedHandler(&methods) {
 				return

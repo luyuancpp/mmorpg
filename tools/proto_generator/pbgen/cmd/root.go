@@ -8,6 +8,7 @@ import (
 	"os"
 	"pbgen/config"
 	"pbgen/generator/cpp"
+	"pbgen/generator/go"
 	"pbgen/internal"
 	"pbgen/internal/database"
 	"pbgen/utils"
@@ -92,9 +93,9 @@ func main() {
 	database.GenerateDBResource()
 	utils.Wg.Wait()
 
-	internal.GoRobotHandlerGenerator()
+	_go.GoRobotHandlerGenerator()
 	utils.Wg.Wait()
-	internal.GoRobotTotalHandlerGenerator()
+	_go.GoRobotTotalHandlerGenerator()
 	utils.Wg.Wait()
 	cpp.CppPlayerDataLoadGenerator()
 	utils.Wg.Wait()
