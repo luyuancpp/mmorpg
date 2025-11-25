@@ -133,7 +133,7 @@ func WriteServiceIdFile() {
 			}
 			data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
 		}
-		WriteFileIfChanged(config.ServiceIdFilePath, []byte(data))
+		utils.WriteFileIfChanged(config.ServiceIdFilePath, []byte(data))
 	}()
 }
 
@@ -365,7 +365,7 @@ void InitMessageInfo()
 		panic(err)
 	}
 
-	WriteFileIfChanged(config.ServiceCppFilePath, output.Bytes())
+	utils.WriteFileIfChanged(config.ServiceCppFilePath, output.Bytes())
 }
 
 // writeServiceInfoHeadFile writes service information to a header file.
@@ -379,7 +379,7 @@ func writeServiceInfoHeadFile() {
 		MaxMessageLen: MessageIdLen(),
 	}
 
-	err := RenderTemplateToFile("internal/template/service_header.tmpl", config.ServiceHeaderFilePath, data)
+	err := utils.RenderTemplateToFile("internal/template/service_header.tmpl", config.ServiceHeaderFilePath, data)
 	if err != nil {
 		panic(err)
 		return
@@ -450,7 +450,7 @@ void InitPlayerService()
 		panic(err)
 	}
 
-	WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
+	utils.WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
 	return output.String()
 }
 
@@ -518,7 +518,7 @@ void InitPlayerServiceReplied()
 		panic(err)
 	}
 
-	WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
+	utils.WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
 	return output.String()
 }
 

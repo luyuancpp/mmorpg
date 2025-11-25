@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"pbgen/config"
+	"pbgen/utils"
 	"strings"
 	"text/template"
 
@@ -165,7 +166,7 @@ func CppPlayerDataLoadGenerator() {
 			}
 
 			destFilePath := config.PlayerStorageSystemDirectory + messageDescName + config.LoaderCppExtension
-			err = CopyFileIfChanged(md5FilePath, destFilePath)
+			err = utils.CopyFileIfChanged(md5FilePath, destFilePath)
 			if err != nil {
 				log.Fatal(err)
 				return
@@ -181,7 +182,7 @@ func CppPlayerDataLoadGenerator() {
 	}
 
 	destFilePath := config.PlayerStorageSystemDirectory + config.PlayerDataLoaderName
-	err = CopyFileIfChanged(md5FilePath, destFilePath)
+	err = utils.CopyFileIfChanged(md5FilePath, destFilePath)
 	if err != nil {
 		log.Fatalf("failed to generate header file: %v", err)
 	}

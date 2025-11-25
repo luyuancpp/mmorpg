@@ -168,11 +168,11 @@ func CppGrpcCallClient() {
 				ServiceInfo: serviceInfoList,
 			}
 
-			if err := RenderTemplateToFile("internal/template/grpc_init_total.cpp.tmpl", config.GrpcInitFileCppPath, cppData); err != nil {
+			if err := utils.RenderTemplateToFile("internal/template/grpc_init_total.cpp.tmpl", config.GrpcInitFileCppPath, cppData); err != nil {
 				log.Fatal(err)
 			}
 
-			if err := RenderTemplateToFile("internal/template/grpc_init_total.h.tmpl", config.GrpcInitFileHeadPath, cppData); err != nil {
+			if err := utils.RenderTemplateToFile("internal/template/grpc_init_total.h.tmpl", config.GrpcInitFileHeadPath, cppData); err != nil {
 				log.Fatal(err)
 			}
 		}()

@@ -36,7 +36,7 @@ func writeHandlerHeadFile(methodList RPCMethods, cfg HandlerConfig) {
 		log.Fatal(err)
 	}
 
-	WriteFileIfChanged(fullPath, []byte(data))
+	utils.WriteFileIfChanged(fullPath, []byte(data))
 }
 
 func writeHandlerCppFile(methodList RPCMethods, cfg HandlerConfig) {
@@ -57,7 +57,7 @@ func writeHandlerCppFile(methodList RPCMethods, cfg HandlerConfig) {
 		getCppClassName(*first, cfg),
 		getCppIncludeName(*first, cfg))
 
-	WriteFileIfChanged(fullPath, []byte(data))
+	utils.WriteFileIfChanged(fullPath, []byte(data))
 }
 
 func getCppClassName(info MethodInfo, cfg HandlerConfig) string {
