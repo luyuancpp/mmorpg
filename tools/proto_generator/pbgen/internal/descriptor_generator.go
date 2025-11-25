@@ -9,7 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"pbgen/internal/config"
+	"pbgen/config"
 	"pbgen/utils"
 	"strings"
 )

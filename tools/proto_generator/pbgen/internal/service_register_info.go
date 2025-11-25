@@ -11,7 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"pbgen/internal/config"
+	"pbgen/config"
 	"pbgen/utils"
 	"sort"
 	"strconv"

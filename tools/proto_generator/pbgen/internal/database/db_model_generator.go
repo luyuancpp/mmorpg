@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"pbgen/config"
 	"strings"
 
 	pbmysql "github.com/luyuancpp/proto2mysql"
@@ -15,7 +16,6 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 
 	"pbgen/internal"
-	"pbgen/internal/config"
 	"pbgen/utils"
 )
 

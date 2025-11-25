@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"pbgen/internal/config"
+	"pbgen/config"
 	"strings"
 )
 

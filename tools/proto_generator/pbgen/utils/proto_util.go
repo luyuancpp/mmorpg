@@ -2,7 +2,7 @@ package utils
 
 import (
 	"path"
-	"pbgen/internal/config"
+	"pbgen/config"
 	"strings"
 )
 
