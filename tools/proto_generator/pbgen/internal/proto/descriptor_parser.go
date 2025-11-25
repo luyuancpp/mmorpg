@@ -1,4 +1,4 @@
-package internal
+package proto
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"pbgen/config"
+	"pbgen/internal"
 	"strings"
 )
 
@@ -20,16 +21,16 @@ func parseDescriptorFile() error {
 	log.Printf("描述符生成: 读取文件成功，大小=%d字节", len(data))
 
 	// 解析为FileDescriptorSet
-	if FdSet == nil {
-		FdSet = &descriptorpb.FileDescriptorSet{}
+	if internal.FdSet == nil {
+		internal.FdSet = &descriptorpb.FileDescriptorSet{}
 	}
-	if err := proto.Unmarshal(data, FdSet); err != nil {
+	if err := proto.Unmarshal(data, internal.FdSet); err != nil {
 		return fmt.Errorf("反序列化失败: %w，可能是文件损坏或版本不兼容", err)
 	}
 
 	// 验证解析结果
-	log.Printf("描述符生成: 成功解析，包含%d个文件描述符", len(FdSet.GetFile()))
-	for _, fileDesc := range FdSet.GetFile() {
+	log.Printf("描述符生成: 成功解析，包含%d个文件描述符", len(internal.FdSet.GetFile()))
+	for _, fileDesc := range internal.FdSet.GetFile() {
 		// 打印关键文件信息
 		if strings.Contains(fileDesc.GetName(), "proto/service/go/grpc") ||
 			strings.Contains(fileDesc.GetName(), "proto/common") {

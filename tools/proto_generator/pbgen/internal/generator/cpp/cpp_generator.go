@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"pbgen/config"
 	"pbgen/internal"
+	"pbgen/internal/proto"
 	utils2 "pbgen/internal/utils"
 	"runtime"
 	"strings"
@@ -372,7 +373,7 @@ func generateGameGrpcCpp(protoFiles []string) error {
 // generateGameGrpcImpl 游戏GRPC生成核心逻辑
 func generateGameGrpcImpl() error {
 	// 1. 解析游戏Proto文件路径
-	gameProtoPath, err := internal.ResolveGameProtoPath()
+	gameProtoPath, err := proto.ResolveGameProtoPath()
 	if err != nil {
 		return fmt.Errorf("解析Proto路径失败: %w", err)
 	}
