@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"pbgen/internal/config"
+	"pbgen/config"
 	"pbgen/internal/protohelper"
 	"pbgen/utils"
 	"sync"

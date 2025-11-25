@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"path"
 	"path/filepath"
-	"pbgen/internal/config"
+	"pbgen/config"
 	"strings"
 	"sync"
 )

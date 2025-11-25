@@ -7,7 +7,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"log"
 	"os"
-	"pbgen/internal/config"
+	"pbgen/config"
 	"strings"
 	"text/template"
 

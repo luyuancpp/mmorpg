@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
-	"pbgen/internal/config"
+	"pbgen/config"
 	"pbgen/utils"
 	"reflect"
 	"strconv"

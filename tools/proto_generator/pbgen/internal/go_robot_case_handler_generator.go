@@ -3,7 +3,7 @@ package internal
 import (
 	"fmt"
 	"os"
-	"pbgen/internal/config"
+	"pbgen/config"
 	"strings"
 	"text/template"
 )

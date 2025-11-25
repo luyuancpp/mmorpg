@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"pbgen/internal/config"
+	"pbgen/config"
 	"pbgen/utils"
 )
 
