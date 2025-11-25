@@ -1,9 +1,10 @@
-package internal
+package _go
 
 import (
 	"fmt"
 	"os"
 	"pbgen/config"
+	"pbgen/internal"
 	"strings"
 	"text/template"
 )
@@ -68,14 +69,14 @@ type CasesData struct {
 }
 
 // isClientMethodRepliedHandler 检查是否为客户端方法已响应处理器
-func isClientMethodRepliedHandler(methodList *RPCMethods) bool {
+func isClientMethodRepliedHandler(methodList *internal.RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
-	return isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
+	return internal.isClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
 func GoRobotTotalHandlerGenerator() {
 	handlerCases := make([]HandlerCase, 0)
-	for _, service := range GlobalRPCServiceList {
+	for _, service := range internal.GlobalRPCServiceList {
 		if !isClientMethodRepliedHandler(&service.MethodInfo) {
 			continue
 		}
@@ -95,7 +96,7 @@ func GoRobotTotalHandlerGenerator() {
 }
 
 // generateHandlerCases creates the cases for the switch statement based on the method.
-func generateHandlerCases(method *MethodInfo, cases []HandlerCase) []HandlerCase {
+func generateHandlerCases(method *internal.MethodInfo, cases []HandlerCase) []HandlerCase {
 	handlerCases := HandlerCase{
 		MessageID:       method.Service() + method.Method() + config.MessageIdName,
 		HandlerFunction: "handle" + method.Service() + method.Method(),
@@ -131,12 +132,12 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 }
 
 // isRelevantService checks if the service name is relevant.
-func isRelevantService(method *MethodInfo) bool {
+func isRelevantService(method *internal.MethodInfo) bool {
 	return strings.Contains(method.Service(), "GamePlayer") || strings.Contains(method.Service(), "ClientPlayer")
 }
 
 // determineResponseType returns the response type or request type based on configuration.
-func determineResponseType(method *MethodInfo) string {
+func determineResponseType(method *internal.MethodInfo) string {
 	if strings.Contains(method.GoResponse(), config.EmptyResponseName) {
 		return method.GoRequest()
 	}
