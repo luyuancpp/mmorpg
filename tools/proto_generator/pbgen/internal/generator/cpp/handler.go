@@ -3,7 +3,7 @@ package cpp
 import (
 	"log"
 	"pbgen/internal"
-	"pbgen/utils"
+	utils2 "pbgen/internal/utils"
 	"strings"
 )
 
@@ -19,7 +19,7 @@ type HandlerConfig struct {
 }
 
 func writeHandlerHeadFile(methodList internal.RPCMethods, cfg HandlerConfig) {
-	defer utils.Wg.Done()
+	defer utils2.Wg.Done()
 
 	if !cfg.IsValidFunc(&methodList) {
 		return
@@ -37,11 +37,11 @@ func writeHandlerHeadFile(methodList internal.RPCMethods, cfg HandlerConfig) {
 		log.Fatal(err)
 	}
 
-	utils.WriteFileIfChanged(fullPath, []byte(data))
+	utils2.WriteFileIfChanged(fullPath, []byte(data))
 }
 
 func writeHandlerCppFile(methodList internal.RPCMethods, cfg HandlerConfig) {
-	defer utils.Wg.Done()
+	defer utils2.Wg.Done()
 
 	if !cfg.IsValidFunc(&methodList) {
 		return
@@ -58,7 +58,7 @@ func writeHandlerCppFile(methodList internal.RPCMethods, cfg HandlerConfig) {
 		getCppClassName(*first, cfg),
 		getCppIncludeName(*first, cfg))
 
-	utils.WriteFileIfChanged(fullPath, []byte(data))
+	utils2.WriteFileIfChanged(fullPath, []byte(data))
 }
 
 func getCppClassName(info internal.MethodInfo, cfg HandlerConfig) string {

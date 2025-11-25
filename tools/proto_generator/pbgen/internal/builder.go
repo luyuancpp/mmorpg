@@ -6,12 +6,12 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
-	"pbgen/utils"
+	utils2 "pbgen/internal/utils"
 )
 
 // resolveGameProtoPath 解析游戏核心Proto文件路径
 func ResolveGameProtoPath() (string, error) {
-	gameProtoRoot, err := utils.ResolveAbsPath(config.GameRpcProtoPath, "游戏Proto根目录")
+	gameProtoRoot, err := utils2.ResolveAbsPath(config.GameRpcProtoPath, "游戏Proto根目录")
 	if err != nil {
 		return "", err
 	}
@@ -43,10 +43,10 @@ func BuildGeneratorProtoPath(dir string) string {
 
 // CopyProtoToGenDir 拷贝Proto文件到生成目录
 func CopyProtoToGenDir() {
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go func() {
-		defer utils.Wg.Done()
-		grpcDirs := utils.GetGRPCSubdirectoryNames()
+		defer utils2.Wg.Done()
+		grpcDirs := utils2.GetGRPCSubdirectoryNames()
 
 		// 拷贝到普通生成目录
 		for _, dir := range grpcDirs {
@@ -77,7 +77,7 @@ func copyProtoToDir(srcDir, destDir string) error {
 		return fmt.Errorf("创建目录[%s]失败: %w", destDir, err)
 	}
 
-	if err := utils.CopyLocalDir(config.ProtoDir, destDir); err != nil {
+	if err := utils2.CopyLocalDir(config.ProtoDir, destDir); err != nil {
 		return fmt.Errorf("拷贝失败: %s -> %s: %w", config.ProtoDir, destDir, err)
 	}
 	return nil

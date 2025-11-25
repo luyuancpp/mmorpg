@@ -6,14 +6,14 @@ import (
 	"path"
 	"pbgen/config"
 	"pbgen/internal"
-	"pbgen/utils"
+	utils2 "pbgen/internal/utils"
 	"strings"
 )
 
 func GenNodeUtil() {
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go func() {
-		defer utils.Wg.Done()
+		defer utils2.Wg.Done()
 
 		os.MkdirAll(path.Dir(config.GenUtilFileHeadPath), os.FileMode(0777))
 
@@ -38,11 +38,11 @@ func GenNodeUtil() {
 			NodeList: nodeList,
 		}
 
-		if err := utils.RenderTemplateToFile("internal/template/node_util.h.tmpl", config.GenUtilFileHeadPath, cppData); err != nil {
+		if err := utils2.RenderTemplateToFile("internal/template/node_util.h.tmpl", config.GenUtilFileHeadPath, cppData); err != nil {
 			log.Fatal(err)
 		}
 
-		if err := utils.RenderTemplateToFile("internal/template/node_util.cpp.tmpl", config.GenUtilFileCppPath, cppData); err != nil {
+		if err := utils2.RenderTemplateToFile("internal/template/node_util.cpp.tmpl", config.GenUtilFileCppPath, cppData); err != nil {
 			log.Fatal(err)
 		}
 	}()

@@ -10,7 +10,7 @@ import (
 	"pbgen/internal"
 	cpp2 "pbgen/internal/generator/cpp"
 	_go2 "pbgen/internal/generator/go"
-	"pbgen/utils"
+	"pbgen/internal/utils"
 	"time"
 )
 

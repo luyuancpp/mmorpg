@@ -12,7 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"pbgen/config"
-	"pbgen/utils"
+	utils2 "pbgen/internal/utils"
 	"sort"
 	"strconv"
 	"strings"
@@ -74,18 +74,18 @@ func ReadProtoFileService() error {
 
 // ReadAllProtoFileServices reads all service information from protobuf files in configured directories.
 func ReadAllProtoFileServices() {
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go func() {
-		defer utils.Wg.Done()
+		defer utils2.Wg.Done()
 		_ = ReadProtoFileService()
 	}()
 }
 
 // ReadServiceIdFile reads service IDs from a file asynchronously.
 func ReadServiceIdFile() {
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go func() {
-		defer utils.Wg.Done()
+		defer utils2.Wg.Done()
 
 		f, err := os.Open(config.ServiceIdFilePath)
 		if err != nil {
@@ -115,9 +115,9 @@ func ReadServiceIdFile() {
 }
 
 func WriteServiceIdFile() {
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go func() {
-		defer utils.Wg.Done()
+		defer utils2.Wg.Done()
 
 		var data string
 		var idList []uint64
@@ -133,7 +133,7 @@ func WriteServiceIdFile() {
 			}
 			data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
 		}
-		utils.WriteFileIfChanged(config.ServiceIdFilePath, []byte(data))
+		utils2.WriteFileIfChanged(config.ServiceIdFilePath, []byte(data))
 	}()
 }
 
@@ -187,7 +187,7 @@ func InitServiceId() {
 }
 
 func GetProtocol(dirName string) uint32 {
-	if utils.HasGrpcService(dirName) {
+	if utils2.HasGrpcService(dirName) {
 		return config.GrpcNode
 	}
 	return config.TcpNode
@@ -210,7 +210,7 @@ func IsTcpNodeByEnum(dirName string) bool {
 
 // writeServiceInfoCppFile generates C++ code that initializes gRPC service metadata.
 func writeServiceInfoCppFile() {
-	defer utils.Wg.Done()
+	defer utils2.Wg.Done()
 
 	type ServiceInfoCppData struct {
 		Includes             []string
@@ -365,12 +365,12 @@ void InitMessageInfo()
 		panic(err)
 	}
 
-	utils.WriteFileIfChanged(config.ServiceCppFilePath, output.Bytes())
+	utils2.WriteFileIfChanged(config.ServiceCppFilePath, output.Bytes())
 }
 
 // writeServiceInfoHeadFile writes service information to a header file.
 func writeServiceInfoHeadFile() {
-	defer utils.Wg.Done()
+	defer utils2.Wg.Done()
 	type HeaderTemplateData struct {
 		MaxMessageLen uint64
 	}
@@ -379,7 +379,7 @@ func writeServiceInfoHeadFile() {
 		MaxMessageLen: MessageIdLen(),
 	}
 
-	err := utils.RenderTemplateToFile("internal/template/service_header.tmpl", config.ServiceHeaderFilePath, data)
+	err := utils2.RenderTemplateToFile("internal/template/service_header.tmpl", config.ServiceHeaderFilePath, data)
 	if err != nil {
 		panic(err)
 		return
@@ -450,7 +450,7 @@ void InitPlayerService()
 		panic(err)
 	}
 
-	utils.WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
+	utils2.WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
 	return output.String()
 }
 
@@ -518,12 +518,12 @@ void InitPlayerServiceReplied()
 		panic(err)
 	}
 
-	utils.WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
+	utils2.WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
 	return output.String()
 }
 
 func writePlayerServiceInstanceFiles(serviceType string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir, serviceName string) {
-	defer utils.Wg.Done()
+	defer utils2.Wg.Done()
 	ServiceList := make([]string, 0, len(GlobalRPCServiceList))
 
 	for _, service := range GlobalRPCServiceList {
@@ -544,21 +544,21 @@ func writePlayerServiceInstanceFiles(serviceType string, isPlayerHandlerFunc fun
 }
 
 func WriteServiceRegisterInfoFile() {
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go writeServiceInfoCppFile()
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go writeServiceInfoHeadFile()
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("instance", IsRoomNodeHostedPlayerProtocolHandler, config.RoomNodePlayerMethodHandlerDirectory, config.PlayerServiceName)
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("instance", IsCentreHostedPlayerServiceHandler, config.CentreNodePlayerMethodHandlerDirectory, config.PlayerServiceName)
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("repliedInstance", IsRoomNodeReceivedPlayerResponseHandler, config.RoomNodePlayerMethodRepliedHandlerDirectory, config.PlayerRepliedServiceName)
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("repliedInstance", IsCentreReceivedPlayerServiceResponseHandler, config.CentrePlayerMethodRepliedHandlerDirectory, config.PlayerRepliedServiceName)
 
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("instance", IsNoOpHandler, config.GateNodePlayerMethodHandlerDirectory, config.PlayerServiceName)
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("repliedInstance", IsNoOpHandler, config.GateNodePlayerMethodRepliedHandlerDirectory, config.PlayerRepliedServiceName)
 }

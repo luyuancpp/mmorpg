@@ -9,7 +9,7 @@ import (
 	"path"
 	"pbgen/config"
 	"pbgen/internal"
-	"pbgen/utils"
+	utils2 "pbgen/internal/utils"
 	"sort"
 	"strings"
 	"text/template"
@@ -91,9 +91,9 @@ func CppGrpcCallClient() {
 	internal.FileServiceMap.Range(func(k, v interface{}) bool {
 		protoFile := k.(string)
 		serviceList := v.([]*internal.RPCServiceInfo)
-		utils.Wg.Add(1)
+		utils2.Wg.Add(1)
 		go func(protoFile string, serviceInfo []*internal.RPCServiceInfo) {
-			defer utils.Wg.Done()
+			defer utils2.Wg.Done()
 
 			if len(serviceInfo) <= 0 {
 				return
@@ -103,7 +103,7 @@ func CppGrpcCallClient() {
 			protoPath := firstService.Path()
 
 			// 如果既不是gRPC服务也不是etcd服务，则返回（不继续处理）
-			if !utils.HasGrpcService(strings.ToLower(protoPath)) && !utils.HasEtcdService(strings.ToLower(protoPath)) {
+			if !utils2.HasGrpcService(strings.ToLower(protoPath)) && !utils2.HasEtcdService(strings.ToLower(protoPath)) {
 				return
 			}
 
@@ -139,10 +139,10 @@ func CppGrpcCallClient() {
 	})
 
 	{
-		utils.Wg.Add(1)
+		utils2.Wg.Add(1)
 
 		go func() {
-			defer utils.Wg.Done()
+			defer utils2.Wg.Done()
 			m := map[string]*internal.RPCServiceInfo{}
 			serviceInfoList := make([]*internal.RPCServiceInfo, 0)
 			for _, service := range internal.GlobalRPCServiceList {
@@ -169,11 +169,11 @@ func CppGrpcCallClient() {
 				ServiceInfo: serviceInfoList,
 			}
 
-			if err := utils.RenderTemplateToFile("internal/template/grpc_init_total.cpp.tmpl", config.GrpcInitFileCppPath, cppData); err != nil {
+			if err := utils2.RenderTemplateToFile("internal/template/grpc_init_total.cpp.tmpl", config.GrpcInitFileCppPath, cppData); err != nil {
 				log.Fatal(err)
 			}
 
-			if err := utils.RenderTemplateToFile("internal/template/grpc_init_total.h.tmpl", config.GrpcInitFileHeadPath, cppData); err != nil {
+			if err := utils2.RenderTemplateToFile("internal/template/grpc_init_total.h.tmpl", config.GrpcInitFileHeadPath, cppData); err != nil {
 				log.Fatal(err)
 			}
 		}()

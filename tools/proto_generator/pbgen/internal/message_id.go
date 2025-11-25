@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 	"pbgen/config"
-	"pbgen/utils"
+	"pbgen/internal/utils"
 	"strings"
 	"sync"
 )

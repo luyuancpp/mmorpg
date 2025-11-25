@@ -3,7 +3,7 @@ package cpp
 import (
 	"pbgen/config"
 	"pbgen/internal"
-	"pbgen/utils"
+	"pbgen/internal/utils"
 )
 
 // ---------------- Game Node ----------------

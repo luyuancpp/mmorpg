@@ -8,16 +8,16 @@ import (
 	"os/exec"
 	"path/filepath"
 	"pbgen/config"
-	"pbgen/utils"
+	utils2 "pbgen/internal/utils"
 	"strings"
 )
 
 // GenerateAllInOneDescriptor 生成合并的Protobuf描述符文件
 func GenerateAllInOneDescriptor() {
-	utils.Wg.Add(1)
+	utils2.Wg.Add(1)
 
 	go func() {
-		defer utils.Wg.Done()
+		defer utils2.Wg.Done()
 		if err := generateAllInOneDesc(); err != nil {
 			log.Printf("描述符生成: 失败: %v", err)
 		}
@@ -70,7 +70,7 @@ func collectUniqueProtoFiles() ([]string, error) {
 		}
 
 		for _, entry := range fileEntries {
-			if utils.IsProtoFile(entry) {
+			if utils2.IsProtoFile(entry) {
 				absPath, err := filepath.Abs(filepath.Join(dir, entry.Name()))
 				if err != nil {
 					log.Printf("描述符生成: 获取文件[%s]绝对路径失败，跳过: %v", entry.Name(), err)
@@ -110,7 +110,7 @@ func buildDescriptorArgs(protoFiles []string) ([]string, error) {
 			continue // 跳过空路径
 		}
 
-		absIP, err := utils.ResolveAbsPath(ip, "描述符生成导入路径")
+		absIP, err := utils2.ResolveAbsPath(ip, "描述符生成导入路径")
 		if err != nil {
 			log.Printf("描述符生成: 导入路径[%s]无效，跳过: %v", ip, err)
 			continue

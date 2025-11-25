@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"pbgen/config"
 	"pbgen/internal"
-	"pbgen/utils"
+	"pbgen/internal/utils"
 	"strings"
 	"text/template"
 )
