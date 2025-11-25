@@ -7,6 +7,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"pbgen/config"
+	"pbgen/generator/cpp"
 	"pbgen/internal"
 	"pbgen/internal/database"
 	"pbgen/utils"
@@ -66,7 +67,7 @@ func main() {
 	internal.BuildGrpcServiceProto()
 	utils.Wg.Wait()
 
-	internal.GenNodeUtil()
+	cpp.GenNodeUtil()
 	utils.Wg.Wait()
 
 	internal.GenerateAllEventHandlers()
@@ -95,9 +96,9 @@ func main() {
 	utils.Wg.Wait()
 	internal.GoRobotTotalHandlerGenerator()
 	utils.Wg.Wait()
-	internal.CppPlayerDataLoadGenerator()
+	cpp.CppPlayerDataLoadGenerator()
 	utils.Wg.Wait()
-	internal.CppGrpcCallClient()
+	cpp.CppGrpcCallClient()
 	utils.Wg.Wait()
 
 	// 打印总耗时
