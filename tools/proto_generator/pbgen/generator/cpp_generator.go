@@ -5,7 +5,6 @@ import (
 	"log"
 	"path/filepath"
 	"pbgen/config"
-	"pbgen/internal"
 	"pbgen/utils"
 	"runtime"
 	"strings"
@@ -14,7 +13,7 @@ import (
 // BuildProtoCpp 批量生成指定目录下Proto文件的C++序列化代码
 func BuildProtoCpp(protoDir string) error {
 	// 1. 收集Proto文件
-	protoFiles, err := internal.collectProtoFiles(protoDir)
+	protoFiles, err := utils.CollectProtoFiles(protoDir)
 	if err != nil {
 		return fmt.Errorf("C++批量生成: 收集Proto失败: %w", err)
 	}
@@ -24,48 +23,48 @@ func BuildProtoCpp(protoDir string) error {
 	}
 
 	// 2. 解析目录路径
-	cppOutputDir, err := internal.resolveAbsPath(config.PbcProtoOutputDirectory, "C++批量输出目录")
+	cppOutputDir, err := utils.ResolveAbsPath(config.PbcProtoOutputDirectory, "C++批量输出目录")
 	if err != nil {
 		return err
 	}
-	if err := internal.ensureDir(cppOutputDir); err != nil {
+	if err := utils.EnsureDir(cppOutputDir); err != nil {
 		return fmt.Errorf("C++批量生成: 创建输出目录失败: %w", err)
 	}
 
-	cppTempDir, err := internal.resolveAbsPath(config.PbcTempDirectory, "C++批量临时目录")
+	cppTempDir, err := utils.ResolveAbsPath(config.PbcTempDirectory, "C++批量临时目录")
 	if err != nil {
 		return err
 	}
 
 	// 3. 生成并拷贝C++代码
-	if err := generateCpp(protoFiles, cppTempDir); err != nil {
+	if err := GenerateCpp(protoFiles, cppTempDir); err != nil {
 		return fmt.Errorf("C++批量生成: 代码生成失败: %w", err)
 	}
-	if err := copyCppOutputs(protoFiles, cppTempDir, cppOutputDir); err != nil {
+	if err := CopyCppOutputs(protoFiles, cppTempDir, cppOutputDir); err != nil {
 		return fmt.Errorf("C++批量生成: 代码拷贝失败: %w", err)
 	}
 
 	return nil
 }
 
-// generateCpp 调用protoc生成C++序列化代码
-func generateCpp(protoFiles []string, outputDir string) error {
-	if err := internal.ensureDir(outputDir); err != nil {
+// GenerateCpp 调用protoc生成C++序列化代码
+func GenerateCpp(protoFiles []string, outputDir string) error {
+	if err := utils.EnsureDir(outputDir); err != nil {
 		return fmt.Errorf("C++生成: 创建输出目录失败: %w", err)
 	}
 
 	// 解析所有必要路径
-	cppOutputDir, err := internal.resolveAbsPath(outputDir, "C++生成输出目录")
+	cppOutputDir, err := utils.ResolveAbsPath(outputDir, "C++生成输出目录")
 	if err != nil {
 		return err
 	}
 
-	protoRootDir, err := internal.resolveAbsPath(config.OutputRoot, "Proto根目录")
+	protoRootDir, err := utils.ResolveAbsPath(config.OutputRoot, "Proto根目录")
 	if err != nil {
 		return err
 	}
 
-	protoBufferDir, err := internal.resolveAbsPath(config.ProtoBufferDirectory, "ProtoBuffer目录")
+	protoBufferDir, err := utils.ResolveAbsPath(config.ProtoBufferDirectory, "ProtoBuffer目录")
 	if err != nil {
 		return err
 	}
@@ -79,7 +78,7 @@ func generateCpp(protoFiles []string, outputDir string) error {
 
 	// 补充Proto文件路径（确保绝对路径）
 	for _, file := range protoFiles {
-		absFile, err := internal.resolveAbsPath(file, "Proto源文件")
+		absFile, err := utils.ResolveAbsPath(file, "Proto源文件")
 		if err != nil {
 			log.Printf("C++生成: 跳过无效文件[%s]: %v", file, err)
 			continue
@@ -87,31 +86,31 @@ func generateCpp(protoFiles []string, outputDir string) error {
 		args = append(args, absFile)
 	}
 
-	return internal.runProtoc(args, "生成C++序列化代码")
+	return utils.RunProtoc(args, "生成C++序列化代码")
 }
 
-// copyCppOutputs 将临时目录的C++生成文件拷贝到目标目录
-func copyCppOutputs(protoFiles []string, tempDir, destDir string) error {
+// CopyCppOutputs 将临时目录的C++生成文件拷贝到目标目录
+func CopyCppOutputs(protoFiles []string, tempDir, destDir string) error {
 	// 解析临时目录和目标目录
-	cppTempDir, err := internal.resolveAbsPath(tempDir, "C++拷贝临时目录")
+	cppTempDir, err := utils.ResolveAbsPath(tempDir, "C++拷贝临时目录")
 	if err != nil {
 		return err
 	}
 
-	cppDestDir, err := internal.resolveAbsPath(destDir, "C++拷贝目标目录")
+	cppDestDir, err := utils.ResolveAbsPath(destDir, "C++拷贝目标目录")
 	if err != nil {
 		return err
 	}
 
 	// 解析Proto根目录（用于计算相对路径）
-	protoRootDir, err := internal.resolveAbsPath(config.OutputRoot, "Proto根目录")
+	protoRootDir, err := utils.ResolveAbsPath(config.OutputRoot, "Proto根目录")
 	if err != nil {
 		return err
 	}
 
 	for _, protoFile := range protoFiles {
 		// 确保Proto文件是绝对路径
-		absProtoFile, err := internal.resolveAbsPath(protoFile, "Proto源文件")
+		absProtoFile, err := utils.ResolveAbsPath(protoFile, "Proto源文件")
 		if err != nil {
 			log.Printf("C++拷贝: 跳过无效文件[%s]: %v", protoFile, err)
 			continue
@@ -137,17 +136,17 @@ func copyCppOutputs(protoFiles []string, tempDir, destDir string) error {
 		destCppPath := filepath.Join(cppDestDir, protoRelDir, cppFile)
 
 		// 确保目标目录存在
-		if err := internal.ensureDir(filepath.Dir(destHeaderPath)); err != nil {
+		if err := utils.EnsureDir(filepath.Dir(destHeaderPath)); err != nil {
 			log.Printf("C++拷贝: 创建目标目录[%s]失败: %v，跳过", filepath.Dir(destHeaderPath), err)
 			continue
 		}
 
 		// 拷贝文件
-		if err := internal.CopyFileIfChanged(tempHeaderPath, destHeaderPath); err != nil {
+		if err := utils.CopyFileIfChanged(tempHeaderPath, destHeaderPath); err != nil {
 			log.Printf("C++拷贝: 头文件[%s]失败: %v，跳过", protoFile, err)
 			continue
 		}
-		if err := internal.CopyFileIfChanged(tempCppPath, destCppPath); err != nil {
+		if err := utils.CopyFileIfChanged(tempCppPath, destCppPath); err != nil {
 			log.Printf("C++拷贝: 实现文件[%s]失败: %v，跳过", protoFile, err)
 			continue
 		}
@@ -164,7 +163,7 @@ func BuildProtoGrpcCpp(protoDir string) error {
 	}
 
 	// 2. 收集Proto文件
-	protoFiles, err := internal.collectProtoFiles(protoDir)
+	protoFiles, err := utils.CollectProtoFiles(protoDir)
 	if err != nil {
 		return fmt.Errorf("GRPC C++生成: 收集Proto失败: %w", err)
 	}
@@ -174,15 +173,15 @@ func BuildProtoGrpcCpp(protoDir string) error {
 	}
 
 	// 3. 确保目录存在
-	if err := internal.ensureDir(config.GrpcTempDirectory); err != nil {
+	if err := utils.EnsureDir(config.GrpcTempDirectory); err != nil {
 		return fmt.Errorf("GRPC C++生成: 创建临时目录失败: %w", err)
 	}
-	if err := internal.ensureDir(config.GrpcOutputDirectory); err != nil {
+	if err := utils.EnsureDir(config.GrpcOutputDirectory); err != nil {
 		return fmt.Errorf("GRPC C++生成: 创建输出目录失败: %w", err)
 	}
 
 	// 4. 生成并拷贝GRPC代码
-	if err := generateCppGrpc(protoFiles); err != nil {
+	if err := GenerateCppGrpc(protoFiles); err != nil {
 		return fmt.Errorf("GRPC C++生成: 代码生成失败: %w", err)
 	}
 	if err := copyCppGrpcOutputs(protoFiles); err != nil {
@@ -192,8 +191,8 @@ func BuildProtoGrpcCpp(protoDir string) error {
 	return nil
 }
 
-// generateCppGrpc 调用protoc生成C++ GRPC服务代码（区分操作系统插件）
-func generateCppGrpc(protoFiles []string) error {
+// GenerateCppGrpc 调用protoc生成C++ GRPC服务代码（区分操作系统插件）
+func GenerateCppGrpc(protoFiles []string) error {
 	// 选择GRPC插件（Linux用无后缀，Windows用.exe）
 	grpcPlugin := "grpc_cpp_plugin"
 	if runtime.GOOS != "linux" {
@@ -201,17 +200,17 @@ func generateCppGrpc(protoFiles []string) error {
 	}
 
 	// 将所有路径转换为绝对路径
-	grpcTempDir, err := internal.resolveAbsPath(config.GrpcTempDirectory, "GRPC临时目录")
+	grpcTempDir, err := utils.ResolveAbsPath(config.GrpcTempDirectory, "GRPC临时目录")
 	if err != nil {
 		return fmt.Errorf("GRPC C++生成: 解析临时目录失败: %w", err)
 	}
 
-	protoParentDir, err := internal.resolveAbsPath(config.ProtoParentIncludePathDir, "Proto父目录")
+	protoParentDir, err := utils.ResolveAbsPath(config.ProtoParentIncludePathDir, "Proto父目录")
 	if err != nil {
 		return fmt.Errorf("GRPC C++生成: 解析父目录失败: %w", err)
 	}
 
-	protoBufferDir, err := internal.resolveAbsPath(config.ProtoBufferDirectory, "ProtoBuffer目录")
+	protoBufferDir, err := utils.ResolveAbsPath(config.ProtoBufferDirectory, "ProtoBuffer目录")
 	if err != nil {
 		return fmt.Errorf("GRPC C++生成: 解析ProtoBuffer目录失败: %w", err)
 	}
@@ -226,7 +225,7 @@ func generateCppGrpc(protoFiles []string) error {
 
 	// 补充Proto文件路径
 	for _, file := range protoFiles {
-		absFile, err := internal.resolveAbsPath(file, "GRPC Proto源文件")
+		absFile, err := utils.ResolveAbsPath(file, "GRPC Proto源文件")
 		if err != nil {
 			log.Printf("GRPC C++生成: 跳过无效文件[%s]: %v", file, err)
 			continue
@@ -234,25 +233,25 @@ func generateCppGrpc(protoFiles []string) error {
 		args = append(args, absFile)
 	}
 
-	return internal.runProtoc(args, "生成C++ GRPC服务代码")
+	return utils.RunProtoc(args, "生成C++ GRPC服务代码")
 }
 
 // copyCppGrpcOutputs 拷贝C++ GRPC生成文件到目标目录
 func copyCppGrpcOutputs(protoFiles []string) error {
 	// 解析所有必要路径
-	protoDir, err := internal.resolveAbsPath(config.ProtoDir, "Proto基础目录")
+	protoDir, err := utils.ResolveAbsPath(config.ProtoDir, "Proto基础目录")
 	if err != nil {
 		return err
 	}
 	protoDirSlash := filepath.ToSlash(protoDir)
 
-	grpcTempDir, err := internal.resolveAbsPath(config.GrpcTempDirectory, "GRPC临时目录")
+	grpcTempDir, err := utils.ResolveAbsPath(config.GrpcTempDirectory, "GRPC临时目录")
 	if err != nil {
 		return err
 	}
 	grpcTempWithProtoDir := filepath.ToSlash(filepath.Join(grpcTempDir, config.ProtoDirName))
 
-	grpcOutputDir, err := internal.resolveAbsPath(config.GrpcProtoOutputDirectory, "GRPC输出目录")
+	grpcOutputDir, err := utils.ResolveAbsPath(config.GrpcProtoOutputDirectory, "GRPC输出目录")
 	if err != nil {
 		return err
 	}
@@ -260,7 +259,7 @@ func copyCppGrpcOutputs(protoFiles []string) error {
 
 	for _, protoFile := range protoFiles {
 		// 确保Proto文件是绝对路径
-		absProtoFile, err := internal.resolveAbsPath(protoFile, "GRPC Proto源文件")
+		absProtoFile, err := utils.ResolveAbsPath(protoFile, "GRPC Proto源文件")
 		if err != nil {
 			log.Printf("GRPC C++拷贝: 跳过无效文件[%s]: %v", protoFile, err)
 			continue
@@ -294,17 +293,17 @@ func copyCppGrpcOutputs(protoFiles []string) error {
 		destGrpcHeaderPathNative := filepath.FromSlash(destGrpcHeaderPath)
 
 		// 确保目标目录存在
-		if err := internal.ensureDir(filepath.Dir(destGrpcCppPathNative)); err != nil {
+		if err := utils.EnsureDir(filepath.Dir(destGrpcCppPathNative)); err != nil {
 			log.Printf("GRPC C++拷贝: 创建目录[%s]失败: %v，跳过", filepath.Dir(destGrpcCppPathNative), err)
 			continue
 		}
 
 		// 拷贝文件
-		if err := internal.CopyFileIfChanged(tempGrpcCppPathNative, destGrpcCppPathNative); err != nil {
+		if err := utils.CopyFileIfChanged(tempGrpcCppPathNative, destGrpcCppPathNative); err != nil {
 			log.Printf("GRPC C++拷贝: C++文件[%s]失败: %v，跳过", protoFile, err)
 			continue
 		}
-		if err := internal.CopyFileIfChanged(tempGrpcHeaderPathNative, destGrpcHeaderPathNative); err != nil {
+		if err := utils.CopyFileIfChanged(tempGrpcHeaderPathNative, destGrpcHeaderPathNative); err != nil {
 			log.Printf("GRPC C++拷贝: 头文件[%s]失败: %v，跳过", protoFile, err)
 			continue
 		}

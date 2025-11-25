@@ -46,7 +46,7 @@ func generateGameGrpcImpl() error {
 
 // resolveGameProtoPath 解析游戏核心Proto文件路径
 func resolveGameProtoPath() (string, error) {
-	gameProtoRoot, err := resolveAbsPath(config.GameRpcProtoPath, "游戏Proto根目录")
+	gameProtoRoot, err := utils.ResolveAbsPath(config.GameRpcProtoPath, "游戏Proto根目录")
 	if err != nil {
 		return "", err
 	}
@@ -61,31 +61,31 @@ func resolveGameProtoPath() (string, error) {
 // generateGameGrpcCpp 生成游戏GRPC C++代码
 func generateGameGrpcCpp(protoFiles []string) error {
 	// 解析输出目录
-	cppOutputDir, err := resolveAbsPath(config.PbcProtoOutputDirectory, "游戏C++输出目录")
+	cppOutputDir, err := utils.ResolveAbsPath(config.PbcProtoOutputDirectory, "游戏C++输出目录")
 	if err != nil {
 		return err
 	}
-	if err := ensureDir(cppOutputDir); err != nil {
+	if err := utils.EnsureDir(cppOutputDir); err != nil {
 		return fmt.Errorf("创建C++输出目录失败: %w", err)
 	}
 
 	// 解析临时目录
-	cppTempDir, err := resolveAbsPath(config.PbcTempDirectory, "游戏C++临时目录")
+	cppTempDir, err := utils.ResolveAbsPath(config.PbcTempDirectory, "游戏C++临时目录")
 	if err != nil {
 		return err
 	}
 
 	// 生成C++代码
-	if err := generator.generateCpp(protoFiles, cppTempDir); err != nil {
+	if err := generator.GenerateCpp(protoFiles, cppTempDir); err != nil {
 		return fmt.Errorf("生成C++代码失败: %w", err)
 	}
 
 	// 拷贝C++代码到目标目录
-	cppDestDir, err := resolveAbsPath(config.PbcProtoOutputNoProtoSuffixPath, "游戏C++最终目录")
+	cppDestDir, err := utils.ResolveAbsPath(config.PbcProtoOutputNoProtoSuffixPath, "游戏C++最终目录")
 	if err != nil {
 		return err
 	}
-	if err := generator.copyCppOutputs(protoFiles, cppTempDir, cppDestDir); err != nil {
+	if err := generator.CopyCppOutputs(protoFiles, cppTempDir, cppDestDir); err != nil {
 		return fmt.Errorf("拷贝C++代码失败: %w", err)
 	}
 
@@ -104,17 +104,17 @@ func generateGameGrpcGo(protoFiles []string) error {
 	// 2. 为每个节点生成专属代码
 	for _, nodeName := range grpcNodes {
 		nodeOutputDir := filepath.Join(config.NodeGoDirectory, nodeName)
-		nodeOutputDir, err := resolveAbsPath(nodeOutputDir, "节点game_rpc代码目录")
+		nodeOutputDir, err := utils.ResolveAbsPath(nodeOutputDir, "节点game_rpc代码目录")
 		if err != nil {
 			return fmt.Errorf("解析节点game_rpc代码目录: %w", err)
 		}
-		if err := ensureDir(nodeOutputDir); err != nil {
+		if err := utils.EnsureDir(nodeOutputDir); err != nil {
 			log.Printf("Go生成: 创建节点[%s]目录失败: %v，跳过", nodeName, err)
 			continue
 		}
 
 		// 生成节点Go GRPC代码
-		if err := generator.generateGoGrpc(protoFiles, nodeOutputDir, config.GameRpcProtoPath); err != nil {
+		if err := generator.GenerateGoGrpc(protoFiles, nodeOutputDir, config.GameRpcProtoPath); err != nil {
 			log.Printf("Go生成: 节点[%s]代码生成失败: %v，跳过", nodeName, err)
 			continue
 		}
@@ -122,15 +122,15 @@ func generateGameGrpcGo(protoFiles []string) error {
 	}
 
 	// 3. 确保机器人代码目录存在
-	robotDir, err := resolveAbsPath(config.RobotGoOutputGeneratedDirectory, "机器人代码目录")
+	robotDir, err := utils.ResolveAbsPath(config.RobotGoOutputGeneratedDirectory, "机器人代码目录")
 	if err != nil {
 		return fmt.Errorf("解析机器人目录失败: %w", err)
 	}
-	if err := ensureDir(robotDir); err != nil {
+	if err := utils.EnsureDir(robotDir); err != nil {
 		return fmt.Errorf("创建机器人目录失败: %w", err)
 	}
 
-	if err := generator.generateGoGrpc(protoFiles, robotDir, config.GameRpcProtoPath); err != nil {
+	if err := generator.GenerateGoGrpc(protoFiles, robotDir, config.GameRpcProtoPath); err != nil {
 		log.Printf("Go生成: 节点[%s]代码生成失败: %v，跳过", robotDir, err)
 		return err
 	}

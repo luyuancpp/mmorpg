@@ -23,7 +23,7 @@ func writeServiceIdHeadFile(serviceInfo []*RPCServiceInfo) {
 	}
 
 	fileName := serviceInfo[0].ServiceInfoHeadInclude()
-	WriteFileIfChanged(config.ServiceInfoDirectory+fileName, []byte(GenServiceIdHeader(serviceInfo)))
+	utils.WriteFileIfChanged(config.ServiceInfoDirectory+fileName, []byte(GenServiceIdHeader(serviceInfo)))
 }
 
 // GenServiceIdHeader 使用模板生成服务 ID 头文件内容
@@ -871,7 +871,7 @@ void InitServiceHandler()
 		panic(err)
 	}
 
-	WriteFileIfChanged(dst, output.Bytes())
+	utils.WriteFileIfChanged(dst, output.Bytes())
 }
 
 func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
@@ -915,7 +915,7 @@ void InitReply()
 		panic(err)
 	}
 
-	WriteFileIfChanged(dst, output.Bytes())
+	utils.WriteFileIfChanged(dst, output.Bytes())
 }
 
 func GenerateServiceConstants() {
