@@ -9,7 +9,7 @@ import (
 // ---------------- Game Node ----------------
 
 var RoomHandler = HandlerConfig{
-	IsValidFunc:         internal.IsRoomNodeHostedProtocolHandler,
+	IsValidFunc:         IsRoomNodeHostedProtocolHandler,
 	GenerateDataFunc:    internal.GetServiceHandlerHeadStr,
 	GenerateCppDataFunc: internal.GetServiceHandlerCppStr,
 	Dir:                 config.RoomNodeMethodHandlerDirectory,
@@ -20,7 +20,7 @@ var RoomHandler = HandlerConfig{
 }
 
 var RoomPlayerHandler = HandlerConfig{
-	IsValidFunc:         internal.IsRoomNodeHostedPlayerProtocolHandler,
+	IsValidFunc:         IsRoomNodeHostedPlayerProtocolHandler,
 	GenerateDataFunc:    internal.GetPlayerServiceHeadStr,
 	GenerateCppDataFunc: internal.GetPlayerServiceHandlerCppStr,
 	Dir:                 config.RoomNodePlayerMethodHandlerDirectory,
@@ -31,7 +31,7 @@ var RoomPlayerHandler = HandlerConfig{
 }
 
 var RoomRepliedHandler = HandlerConfig{
-	IsValidFunc:         internal.IsRoomNodeReceivedProtocolResponseHandler,
+	IsValidFunc:         IsRoomNodeReceivedProtocolResponseHandler,
 	GenerateDataFunc:    internal.GetServiceRepliedHandlerHeadStr,
 	GenerateCppDataFunc: internal.GetServiceRepliedHandlerCppStr,
 	Dir:                 config.RoomNodeMethodRepliedHandlerDirectory,
@@ -42,7 +42,7 @@ var RoomRepliedHandler = HandlerConfig{
 }
 
 var GsPlayerRepliedHandler = HandlerConfig{
-	IsValidFunc:         internal.IsRoomNodeReceivedPlayerResponseHandler,
+	IsValidFunc:         IsRoomNodeReceivedPlayerResponseHandler,
 	GenerateDataFunc:    internal.GetPlayerMethodRepliedHeadStr,
 	GenerateCppDataFunc: internal.GetPlayerServiceHandlerCppStr,
 	Dir:                 config.RoomNodePlayerMethodRepliedHandlerDirectory,
@@ -55,7 +55,7 @@ var GsPlayerRepliedHandler = HandlerConfig{
 // ---------------- Centre Node ----------------
 
 var CentreHandler = HandlerConfig{
-	IsValidFunc:         internal.IsCentreHostedServiceHandler,
+	IsValidFunc:         IsCentreHostedServiceHandler,
 	GenerateDataFunc:    internal.GetServiceHandlerHeadStr,
 	GenerateCppDataFunc: internal.GetServiceHandlerCppStr,
 	Dir:                 config.CentreNodeMethodHandlerDirectory,
@@ -66,7 +66,7 @@ var CentreHandler = HandlerConfig{
 }
 
 var CentrePlayerHandler = HandlerConfig{
-	IsValidFunc:         internal.IsCentreHostedPlayerServiceHandler,
+	IsValidFunc:         IsCentreHostedPlayerServiceHandler,
 	GenerateDataFunc:    internal.GetPlayerServiceHeadStr,
 	GenerateCppDataFunc: internal.GetPlayerServiceHandlerCppStr,
 	Dir:                 config.CentreNodePlayerMethodHandlerDirectory,
@@ -77,7 +77,7 @@ var CentrePlayerHandler = HandlerConfig{
 }
 
 var CentreRepliedHandler = HandlerConfig{
-	IsValidFunc:         internal.IsCentreReceivedServiceResponseHandler,
+	IsValidFunc:         IsCentreReceivedServiceResponseHandler,
 	GenerateDataFunc:    internal.GetServiceRepliedHandlerHeadStr,
 	GenerateCppDataFunc: internal.GetServiceRepliedHandlerCppStr,
 	Dir:                 config.CentreMethodRepliedHandleDir,
@@ -88,7 +88,7 @@ var CentreRepliedHandler = HandlerConfig{
 }
 
 var CentrePlayerRepliedHandler = HandlerConfig{
-	IsValidFunc:         internal.IsCentreReceivedPlayerServiceResponseHandler,
+	IsValidFunc:         IsCentreReceivedPlayerServiceResponseHandler,
 	GenerateDataFunc:    internal.GetPlayerMethodRepliedHeadStr,
 	GenerateCppDataFunc: internal.GetPlayerServiceHandlerCppStr,
 	Dir:                 config.CentrePlayerMethodRepliedHandlerDirectory,
@@ -101,7 +101,7 @@ var CentrePlayerRepliedHandler = HandlerConfig{
 // ---------------- Gate	 Node ----------------
 
 var GateHandler = HandlerConfig{
-	IsValidFunc:         internal.IsGateNodeHostedServiceHandler,
+	IsValidFunc:         IsGateNodeHostedServiceHandler,
 	GenerateDataFunc:    internal.GetServiceHandlerHeadStr,
 	GenerateCppDataFunc: internal.GetServiceHandlerCppStr,
 	Dir:                 config.GateMethodHandlerDirectory,
@@ -112,7 +112,7 @@ var GateHandler = HandlerConfig{
 }
 
 var GateRepliedHandler = HandlerConfig{
-	IsValidFunc:         internal.IsGateNodeReceivedResponseHandler,
+	IsValidFunc:         IsGateNodeReceivedResponseHandler,
 	GenerateDataFunc:    internal.GetServiceRepliedHandlerHeadStr,
 	GenerateCppDataFunc: internal.GetServiceRepliedHandlerCppStr,
 	Dir:                 config.GateMethodRepliedHandlerDirectory,

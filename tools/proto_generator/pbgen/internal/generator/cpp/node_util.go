@@ -23,7 +23,7 @@ func GenNodeUtil() {
 				if enumDesc.GetName() == config.NodeEnumName {
 					for _, val := range enumDesc.Value {
 						nodeName := strings.ReplaceAll(strings.ToLower(val.GetName()), config.NodeServiceSuffix, "")
-						if !internal.IsTcpNodeByEnum(nodeName) {
+						if !IsTcpNodeByEnum(nodeName) {
 							continue
 						}
 						nodeList = append(nodeList, val.GetName())

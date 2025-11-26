@@ -874,7 +874,7 @@ void InitServiceHandler()
 	utils2.WriteFileIfChanged(dst, output.Bytes())
 }
 
-func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
+func WriteRepliedRegisterFile(dst string, cb checkRepliedCb) {
 	const repliedRegisterTemplate = `
 void InitReply()
 {
@@ -940,22 +940,4 @@ func GenerateServiceConstants() {
 
 		return true
 	})
-}
-
-func WriteMethodFile() {
-	// Concurrent operations for game, centre, and gate registers
-	utils2.Wg.Add(1)
-	go GenRegisterFile(config.RoomNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsRoomNodeHostedProtocolHandler)
-	utils2.Wg.Add(1)
-	go writeRepliedRegisterFile(config.RoomNodeMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsRoomNodeReceivedProtocolResponseHandler)
-
-	utils2.Wg.Add(1)
-	go GenRegisterFile(config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsCentreHostedServiceHandler)
-	utils2.Wg.Add(1)
-	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, IsCentreReceivedServiceResponseHandler)
-
-	utils2.Wg.Add(1)
-	go GenRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterHandlerCppExtension, IsNoOpHandler)
-	utils2.Wg.Add(1)
-	go writeRepliedRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsGateNodeReceivedResponseHandler)
 }

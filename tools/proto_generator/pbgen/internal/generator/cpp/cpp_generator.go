@@ -404,3 +404,21 @@ func GeneratorHandler() {
 		ProcessAllHandlers(service.MethodInfo)
 	}
 }
+
+func WriteMethodFile() {
+	// Concurrent operations for game, centre, and gate registers
+	utils2.Wg.Add(1)
+	go internal.GenRegisterFile(config.RoomNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsRoomNodeHostedProtocolHandler)
+	utils2.Wg.Add(1)
+	go internal.WriteRepliedRegisterFile(config.RoomNodeMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsRoomNodeReceivedProtocolResponseHandler)
+
+	utils2.Wg.Add(1)
+	go internal.GenRegisterFile(config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsCentreHostedServiceHandler)
+	utils2.Wg.Add(1)
+	go internal.WriteRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, IsCentreReceivedServiceResponseHandler)
+
+	utils2.Wg.Add(1)
+	go internal.GenRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterHandlerCppExtension, IsNoOpHandler)
+	utils2.Wg.Add(1)
+	go internal.WriteRepliedRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsGateNodeReceivedResponseHandler)
+}
