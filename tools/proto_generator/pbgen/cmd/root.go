@@ -63,7 +63,7 @@ func main() {
 	proto.CopyProtoToGenDir()
 
 	// 开始读所有的proto文件
-	internal.ReadServiceIdFile()
+	cpp2.ReadServiceIdFile()
 	utils.Wg.Wait()
 
 	_go2.AddGoPackageToProtoDir()
@@ -71,7 +71,7 @@ func main() {
 
 	proto.GenerateAllInOneDescriptor()
 	utils.Wg.Wait()
-	internal.ReadAllProtoFileServices()
+	cpp2.ReadAllProtoFileServices()
 	utils.Wg.Wait()
 	cpp2.BuildProtocCpp()
 	_go2.BuildGrpcServiceProto()
@@ -83,13 +83,13 @@ func main() {
 	cpp2.GenerateAllEventHandlers()
 	utils.Wg.Wait()
 	// 所有文件的proto读完以后
-	internal.InitServiceId()
+	cpp2.InitServiceId()
 	utils.Wg.Wait()
 
-	internal.WriteServiceIdFile()
+	cpp2.WriteServiceIdFile()
 	utils.Wg.Wait()
 
-	internal.WriteMethodFile()
+	cpp2.WriteMethodFile()
 	cpp2.GeneratorHandler()
 	utils.Wg.Wait()
 
@@ -99,7 +99,7 @@ func main() {
 	internal.WriteGoMessageId()
 	utils.Wg.Wait()
 
-	internal.WriteServiceRegisterInfoFile()
+	cpp2.WriteServiceRegisterInfoFile()
 	_go2.GenerateDBResource()
 	utils.Wg.Wait()
 

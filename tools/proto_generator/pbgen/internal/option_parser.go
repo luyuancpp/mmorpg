@@ -21,7 +21,7 @@ func IsClientProtocolService(serviceDesc *descriptorpb.ServiceDescriptorProto) b
 	return ok && isClientProtocolSvc
 }
 
-func isPlayerService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
+func IsPlayerService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
 	opts := serviceDesc.GetOptions()
 	if opts == nil {
 		return false

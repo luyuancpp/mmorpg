@@ -1,10 +1,11 @@
-package internal
+package lua
 
 import (
 	"bufio"
 	"os"
 	"path/filepath"
 	"pbgen/config"
+	"pbgen/internal"
 	utils2 "pbgen/internal/utils"
 	"reflect"
 	"strconv"
@@ -246,7 +247,7 @@ func WriteSol2LuaFile() {
 
 }
 
-func writeLuaServiceMethodCppFile(methodList RPCMethods) {
+func writeLuaServiceMethodCppFile(methodList internal.RPCMethods) {
 	defer utils2.Wg.Done()
 
 	if len(methodList) <= 0 {
@@ -274,7 +275,7 @@ func writeLuaServiceMethodCppFile(methodList RPCMethods) {
 func writeInitLuaServiceFile() {
 	defer utils2.Wg.Done()
 	data := "void InitServiceLua()\n{\n"
-	for _, service := range GlobalRPCServiceList {
+	for _, service := range internal.GlobalRPCServiceList {
 		if len(service.MethodInfo) <= 0 {
 			continue
 		}
@@ -286,7 +287,7 @@ func writeInitLuaServiceFile() {
 }
 
 func WriteLuaServiceHeadHandlerFile() {
-	for _, service := range GlobalRPCServiceList {
+	for _, service := range internal.GlobalRPCServiceList {
 		utils2.Wg.Add(1)
 		go writeLuaServiceMethodCppFile(service.MethodInfo)
 	}

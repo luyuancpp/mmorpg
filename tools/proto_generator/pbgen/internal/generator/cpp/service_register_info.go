@@ -1,4 +1,4 @@
-package internal
+package cpp
 
 import (
 	"bufio"
@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"pbgen/config"
+	"pbgen/internal"
 	utils2 "pbgen/internal/utils"
 	"sort"
 	"strconv"
@@ -25,10 +26,10 @@ func ReadProtoFileService() error {
 	serviceIndex := uint32(0)
 
 	// Iterate through each file in the descriptor set
-	for _, file := range FdSet.File {
+	for _, file := range internal.FdSet.File {
 		for _, service := range file.Service {
 			// Create an RPCServiceInfo object for each service
-			rpcServiceInfo := RPCServiceInfo{
+			rpcServiceInfo := internal.RPCServiceInfo{
 				Fd:                     file,
 				ServiceIndex:           serviceIndex,
 				ServiceDescriptorProto: service,
@@ -37,7 +38,7 @@ func ReadProtoFileService() error {
 			// Iterate through each method in the service
 			for index, method := range service.Method {
 				// Create an MethodInfo object for each method
-				rpcMethodInfo := MethodInfo{
+				rpcMethodInfo := internal.MethodInfo{
 					Id:                     math.MaxUint64,
 					Index:                  uint64(index),
 					Fd:                     file,
@@ -49,20 +50,20 @@ func ReadProtoFileService() error {
 				rpcServiceInfo.MethodInfo = append(rpcServiceInfo.MethodInfo, &rpcMethodInfo)
 
 				// Increment the global message ID counter
-				atomic.AddUint64(&MaxMessageId, 1)
+				atomic.AddUint64(&internal.MaxMessageId, 1)
 			}
 
-			GlobalRPCServiceList = append(GlobalRPCServiceList, &rpcServiceInfo)
+			internal.GlobalRPCServiceList = append(internal.GlobalRPCServiceList, &rpcServiceInfo)
 
-			result, ok := FileServiceMap.Load(file.GetName())
+			result, ok := internal.FileServiceMap.Load(file.GetName())
 			if ok {
-				serviceList := result.([]*RPCServiceInfo)
+				serviceList := result.([]*internal.RPCServiceInfo)
 				serviceList = append(serviceList, &rpcServiceInfo)
-				FileServiceMap.Store(file.GetName(), serviceList)
+				internal.FileServiceMap.Store(file.GetName(), serviceList)
 			} else {
-				var serviceList []*RPCServiceInfo
+				var serviceList []*internal.RPCServiceInfo
 				serviceList = append(serviceList, &rpcServiceInfo)
-				FileServiceMap.Store(file.GetName(), serviceList)
+				internal.FileServiceMap.Store(file.GetName(), serviceList)
 			}
 			serviceIndex++
 		}
@@ -103,7 +104,7 @@ func ReadServiceIdFile() {
 				fmt.Errorf("failed to parse ID from line %s: %w", line, err)
 				log.Fatalf("error reading service ID file: %v", err)
 			}
-			ServiceIdMap[splitList[1]] = id
+			internal.ServiceIdMap[splitList[1]] = id
 		}
 
 		if err := scanner.Err(); err != nil {
@@ -121,12 +122,12 @@ func WriteServiceIdFile() {
 
 		var data string
 		var idList []uint64
-		for k, _ := range RpcIdMethodMap {
+		for k, _ := range internal.RpcIdMethodMap {
 			idList = append(idList, k)
 		}
 		sort.Slice(idList, func(i, j int) bool { return idList[i] < idList[j] })
 		for i := 0; i < len(idList); i++ {
-			rpcMethodInfo, ok := RpcIdMethodMap[idList[i]]
+			rpcMethodInfo, ok := internal.RpcIdMethodMap[idList[i]]
 			if !ok {
 				fmt.Println("msg id=", strconv.Itoa(i), " not use ")
 				continue
@@ -139,48 +140,48 @@ func WriteServiceIdFile() {
 
 // InitServiceId initializes service IDs based on the loaded service methods and ID mappings.
 func InitServiceId() {
-	var unUseServiceId = make(map[uint64]EmptyStruct)
-	var useServiceId = make(map[uint64]EmptyStruct)
+	var unUseServiceId = make(map[uint64]internal.EmptyStruct)
+	var useServiceId = make(map[uint64]internal.EmptyStruct)
 
-	for _, service := range GlobalRPCServiceList {
+	for _, service := range internal.GlobalRPCServiceList {
 		for _, mv := range service.MethodInfo {
-			id, ok := ServiceIdMap[mv.KeyName()]
+			id, ok := internal.ServiceIdMap[mv.KeyName()]
 			if !ok {
 				//Id文件未找到则是新消息,或者已经改名，新消息后面处理，这里不处理
 				continue
 			}
-			if MessageIdFileMaxId < id {
-				MessageIdFileMaxId = id
+			if internal.MessageIdFileMaxId < id {
+				internal.MessageIdFileMaxId = id
 			}
-			useServiceId[id] = EmptyStruct{}
+			useServiceId[id] = internal.EmptyStruct{}
 			mv.Id = id
 		}
 	}
 
-	for i := uint64(0); i < MaxMessageId; i++ {
+	for i := uint64(0); i < internal.MaxMessageId; i++ {
 		if _, ok := useServiceId[i]; !ok {
-			unUseServiceId[i] = EmptyStruct{}
+			unUseServiceId[i] = internal.EmptyStruct{}
 		}
 	}
 
-	for _, service := range GlobalRPCServiceList {
+	for _, service := range internal.GlobalRPCServiceList {
 		for _, mv := range service.MethodInfo {
 			if len(unUseServiceId) > 0 && mv.Id == math.MaxUint64 {
 				for uk := range unUseServiceId {
 					mv.Id = uk
-					RpcIdMethodMap[mv.Id] = mv
+					internal.RpcIdMethodMap[mv.Id] = mv
 					delete(unUseServiceId, uk)
 					break
 				}
 				continue
 			}
 			if mv.Id == math.MaxUint64 {
-				MessageIdFileMaxId++
-				mv.Id = MessageIdFileMaxId
+				internal.MessageIdFileMaxId++
+				mv.Id = internal.MessageIdFileMaxId
 			}
-			RpcIdMethodMap[mv.Id] = mv
-			if FileMaxMessageId < mv.Id && mv.Id != math.MaxUint64 {
-				FileMaxMessageId = mv.Id
+			internal.RpcIdMethodMap[mv.Id] = mv
+			if internal.FileMaxMessageId < mv.Id && mv.Id != math.MaxUint64 {
+				internal.FileMaxMessageId = mv.Id
 			}
 		}
 	}
@@ -264,12 +265,12 @@ void InitMessageInfo()
 	)
 
 	// Step 1: Collect headers and handler classes
-	for _, service := range GlobalRPCServiceList {
+	for _, service := range internal.GlobalRPCServiceList {
 		if len(service.MethodInfo) == 0 {
 			continue
 		}
 
-		if IsFileBelongToNode(service.Fd, messageoption.NodeType_NODE_DB) {
+		if internal.IsFileBelongToNode(service.Fd, messageoption.NodeType_NODE_DB) {
 			continue
 		}
 
@@ -288,12 +289,12 @@ void InitMessageInfo()
 	}
 
 	// Step 2: Generate init lines for RpcService and allowed client message IDs
-	for _, service := range GlobalRPCServiceList {
+	for _, service := range internal.GlobalRPCServiceList {
 		if len(service.MethodInfo) == 0 {
 			continue
 		}
 
-		if IsFileBelongToNode(service.Fd, messageoption.NodeType_NODE_DB) {
+		if internal.IsFileBelongToNode(service.Fd, messageoption.NodeType_NODE_DB) {
 			continue
 		}
 
@@ -301,7 +302,7 @@ void InitMessageInfo()
 			basePath := strings.ToLower(path.Base(method.Path()))
 			messageId := method.KeyName() + config.MessageIdName
 
-			isClientMessage := IsClientProtocolService(service.ServiceDescriptorProto)
+			isClientMessage := internal.IsClientProtocolService(service.ServiceDescriptorProto)
 			nodeType := fmt.Sprintf("eNodeType::%sNodeService", strcase.ToCamel(basePath))
 
 			initLine := ""
@@ -351,7 +352,7 @@ void InitMessageInfo()
 		HandlerClasses:       handlerClasses,
 		InitLines:            initLines,
 		ClientMessageIdLines: clientIdLines,
-		MessageIdArraySize:   int(MessageIdLen()),
+		MessageIdArraySize:   int(internal.MessageIdLen()),
 		SenderFunctions:      senderFunction,
 	}
 
@@ -376,7 +377,7 @@ func writeServiceInfoHeadFile() {
 	}
 
 	data := HeaderTemplateData{
-		MaxMessageLen: MessageIdLen(),
+		MaxMessageLen: internal.MessageIdLen(),
 	}
 
 	err := utils2.RenderTemplateToFile("internal/template/service_header.tmpl", config.ServiceHeaderFilePath, data)
@@ -387,7 +388,7 @@ func writeServiceInfoHeadFile() {
 }
 
 // Helper function to generate instance data for player services.
-func generateInstanceData(serviceList []string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir string, serviceName string) string {
+func generateInstanceData(serviceList []string, isPlayerHandlerFunc func(*internal.RPCMethods) bool, handlerDir string, serviceName string) string {
 	const playerInstanceTemplate = `#include <memory>
 #include <string>
 #include <unordered_map>
@@ -420,7 +421,7 @@ void InitPlayerService()
 
 	var includes, handlerClasses, initLines []string
 
-	for _, service := range GlobalRPCServiceList {
+	for _, service := range internal.GlobalRPCServiceList {
 		if !isPlayerHandlerFunc(&service.MethodInfo) {
 			continue
 		}
@@ -455,7 +456,7 @@ void InitPlayerService()
 }
 
 // Helper function to generate instance data for player services.
-func generateRepliedInstanceData(serviceList []string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir string, serviceName string) string {
+func generateRepliedInstanceData(serviceList []string, isPlayerHandlerFunc func(*internal.RPCMethods) bool, handlerDir string, serviceName string) string {
 	const repliedInstanceTemplate = `#include <memory>
 #include <unordered_map>
 #include "{{ .SelfHeader }}"
@@ -487,7 +488,7 @@ void InitPlayerServiceReplied()
 
 	var includes, handlerClasses, initLines []string
 
-	for _, service := range GlobalRPCServiceList {
+	for _, service := range internal.GlobalRPCServiceList {
 		if !isPlayerHandlerFunc(&service.MethodInfo) {
 			continue
 		}
@@ -522,15 +523,15 @@ void InitPlayerServiceReplied()
 	return output.String()
 }
 
-func writePlayerServiceInstanceFiles(serviceType string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir, serviceName string) {
+func writePlayerServiceInstanceFiles(serviceType string, isPlayerHandlerFunc func(*internal.RPCMethods) bool, handlerDir, serviceName string) {
 	defer utils2.Wg.Done()
-	ServiceList := make([]string, 0, len(GlobalRPCServiceList))
+	ServiceList := make([]string, 0, len(internal.GlobalRPCServiceList))
 
-	for _, service := range GlobalRPCServiceList {
+	for _, service := range internal.GlobalRPCServiceList {
 		ServiceList = append(ServiceList, service.GetServiceName())
 	}
 
-	var generatorFunc func([]string, func(*RPCMethods) bool, string, string) string
+	var generatorFunc func([]string, func(*internal.RPCMethods) bool, string, string) string
 
 	if serviceType == "instance" {
 		generatorFunc = generateInstanceData
@@ -556,7 +557,6 @@ func WriteServiceRegisterInfoFile() {
 	go writePlayerServiceInstanceFiles("repliedInstance", IsRoomNodeReceivedPlayerResponseHandler, config.RoomNodePlayerMethodRepliedHandlerDirectory, config.PlayerRepliedServiceName)
 	utils2.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("repliedInstance", IsCentreReceivedPlayerServiceResponseHandler, config.CentrePlayerMethodRepliedHandlerDirectory, config.PlayerRepliedServiceName)
-
 	utils2.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("instance", IsNoOpHandler, config.GateNodePlayerMethodHandlerDirectory, config.PlayerServiceName)
 	utils2.Wg.Add(1)
