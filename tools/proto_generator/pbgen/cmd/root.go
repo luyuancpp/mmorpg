@@ -8,6 +8,7 @@ import (
 	"os"
 	"pbgen/config"
 	"pbgen/internal"
+	_config "pbgen/internal/config"
 	cpp2 "pbgen/internal/generator/cpp"
 	_go2 "pbgen/internal/generator/go"
 	"pbgen/internal/proto"
@@ -36,6 +37,20 @@ func MakeProjectDir() {
 }
 
 func main() {
+
+	// 加载配置（支持从命令行参数指定配置文件路径，默认etc/pbgen.yaml）
+	configPath := "etc/config.yaml"
+	if len(os.Args) > 1 {
+		configPath = os.Args[1]
+	}
+
+	if err := _config.Load(configPath); err != nil {
+		log.Fatalf("配置初始化失败: %v", err)
+	}
+
+	// 后续使用 config.Global 访问配置
+	log.Printf("配置加载成功，proto根目录: %s", _config.Global.Paths.ProtoRoot)
+
 	start := time.Now() // 记录开始时间
 
 	go func() {
