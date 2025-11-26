@@ -1,8 +1,51 @@
+# proto_generator 代码生成器配置
+# 文档: 用于定义proto文件解析、代码生成的路径、模板及工具参数
+
+# 基础路径配置（支持相对路径或绝对路径，相对路径基于执行目录）
+paths:
+  proto_root: "../../proto"                # 源proto文件根目录
+  output_root: "../../generated"           # 生成代码根目录
+  template_dir: "./templates"              # 模板文件目录
+  temp_dir: "./tmp"                        # 临时文件目录（如descriptor文件）
+  protoc_path: "protoc"                    # protoc编译器路径（默认从环境变量找）
+  grpc_plugins:                            # 各语言grpc插件路径
+    cpp: "grpc_cpp_plugin"
+    go: "protoc-gen-go-grpc"
+
+# 生成器开关（按需启用不同语言/类型的代码生成）
+generators:
+  enable_cpp: true
+  enable_go: true
+  enable_handler: true       # 对应原handler模板
+  enable_rpc_response: true  # 对应原rpc_response模板
+
+# 模板映射配置（扩展原config.yaml的mappings）
 mappings:
   handler:
-    path: handlers/{{proto_dir}}/{{proto_file}}_handler.cpp
-    template: templates/handler.tmpl
-
+    path: "handlers/{{proto_dir}}/{{proto_file}}_handler.cpp"  # 生成路径模板
+    template: "templates/handler.tmpl"                         # 模板文件路径
+    lang: "cpp"                                                 # 目标语言
   rpc_response:
-    path: rpc_response/{{proto_dir}}/{{proto_file}}_response.cpp
-    template: templates/rpc_response.tmpl
+    path: "rpc_response/{{proto_dir}}/{{proto_file}}_response.cpp"
+    template: "templates/rpc_response.tmpl"
+    lang: "cpp"
+  go_grpc:
+    path: "go/{{proto_dir}}/{{proto_file}}_grpc.pb.go"
+    template: "templates/go_grpc.tmpl"
+    lang: "go"
+
+# 解析器配置
+parser:
+  include_paths:                           # protoc解析时的-include路径
+    - "../../proto/common"
+    - "../../proto/service"
+  all_in_one_desc: "all_in_one.desc"       # 合并的descriptor文件名
+  ignore_files:                            # 忽略的proto文件（支持通配符）
+    - "test_*.proto"
+    - "deprecated_*.proto"
+
+# 日志配置
+log:
+  level: "info"  # debug/info/warn/error
+  output: "stdout"  # stdout/file
+  file_path: "pbgen.log"  # 日志文件路径（仅output=file时生效）
