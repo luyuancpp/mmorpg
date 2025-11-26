@@ -60,7 +60,17 @@ type LogConfig struct {
 var Global Config
 
 // Load 加载配置文件
-func Load(filePath string) error {
+func Load() error {
+	filePath := os.Getenv("PROTO_GEN_CONFIG_PATH")
+	if filePath == "" {
+		// 优先尝试当前目录，再尝试上级etc目录
+		if _, err := os.Stat(".yaml"); err == nil {
+			filePath = "proto_gen.yaml"
+		} else {
+			filePath = "etc/proto_gen.yaml"
+		}
+	}
+
 	// 读取文件
 	data, err := os.ReadFile(filePath)
 	if err != nil {

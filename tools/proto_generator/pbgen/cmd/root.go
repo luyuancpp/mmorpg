@@ -37,14 +37,7 @@ func MakeProjectDir() {
 }
 
 func main() {
-
-	// 加载配置（支持从命令行参数指定配置文件路径，默认etc/pbgen.yaml）
-	configPath := "etc/config.yaml"
-	if len(os.Args) > 1 {
-		configPath = os.Args[1]
-	}
-
-	if err := _config.Load(configPath); err != nil {
+	if err := _config.Load(); err != nil {
 		log.Fatalf("配置初始化失败: %v", err)
 	}
 
