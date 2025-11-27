@@ -1,7 +1,6 @@
 package proto
 
 import (
-	"fmt"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"log"
@@ -16,7 +15,7 @@ func parseDescriptorFile() error {
 	// 读取文件内容
 	data, err := os.ReadFile(config.AllInOneProtoDescFile)
 	if err != nil {
-		return fmt.Errorf("读取文件失败: %w", err)
+		log.Fatalf("读取文件失败: %w", err)
 	}
 	log.Printf("描述符生成: 读取文件成功，大小=%d字节", len(data))
 
@@ -25,7 +24,7 @@ func parseDescriptorFile() error {
 		internal.FdSet = &descriptorpb.FileDescriptorSet{}
 	}
 	if err := proto.Unmarshal(data, internal.FdSet); err != nil {
-		return fmt.Errorf("反序列化失败: %w，可能是文件损坏或版本不兼容", err)
+		log.Fatalf("反序列化失败: %w，可能是文件损坏或版本不兼容", err)
 	}
 
 	// 验证解析结果
