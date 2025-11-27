@@ -60,7 +60,6 @@ const (
 	RobotDirectory                 = "tools/robot/"
 	GeneratedDirectory             = "cpp/generated/"
 
-	ServiceIdFilePath           = ProtoDir + "service_id.txt"
 	RpcHandlerSourceDirectory   = "handler/rpc/"
 	RpcResponseSourceDirectory  = "rpc_replies/"
 	EventHandlerSourceDirectory = "handler/event/"
@@ -146,10 +145,7 @@ const (
 	GeneratedPath           = "generated/"
 	ProjectGeneratedPath    = OutputRoot + GeneratedPath
 	TableGeneratorPath      = ProjectGeneratedPath + "generated_data/"
-
-	GameRpcProtoPath = ProtoDir + "common/"
-
-	ToolsDir = OutputRoot + ToolDir
+	ToolsDir                = OutputRoot + ToolDir
 
 	GrpcName = "grpc"
 )
