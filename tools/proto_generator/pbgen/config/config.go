@@ -140,7 +140,6 @@ const (
 	MysqlName                = "mysql"
 	PlayerServiceName        = "player_service_interface.cpp"
 	PlayerRepliedServiceName = "player_rpc_response_handler.cpp"
-	CompleteQueueName        = "CompleteQueue"
 )
 
 // ----------- 项目源目录相关 -----------
@@ -195,7 +194,6 @@ const (
 	PlayerServiceIncludeName        = "#include \"rpc/player_service_interface.h\"\n"
 	PlayerServiceRepliedIncludeName = "#include \"rpc/player_rpc_response_handler.h\"\n"
 	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
-	ClassNameSuffix                 = "Handler"
 	NodeEnumName                    = "eNodeType"
 	NodeServiceSuffix               = "nodeservice"
 )
