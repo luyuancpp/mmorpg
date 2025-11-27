@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"pbgen/config"
+	_config "pbgen/internal/config"
 	"pbgen/internal/utils"
 	"strings"
 	"sync"
@@ -128,7 +129,7 @@ func WriteToFiles(constants []string, filePaths []string) {
 
 func WriteGoMessageId() {
 	// Initialize the ConstantsGenerator
-	g := NewConstantsGenerator(config.ServiceIdFilePath)
+	g := NewConstantsGenerator(_config.Global.Paths.ServiceIdFile)
 	consts, err := g.Generate()
 	if err != nil {
 		log.Fatal(err)
