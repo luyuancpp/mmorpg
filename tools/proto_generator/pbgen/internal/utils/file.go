@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
+	_config "pbgen/internal/config"
 	"strings"
 	"text/template"
 )
@@ -185,5 +186,5 @@ func IsProtoFile(fd os.DirEntry) bool {
 
 func IncludeName(path string, protoName string) string {
 	pbcHeadName := strings.Replace(protoName, config.ProtoExt, config.ProtoPbhEx, 1)
-	return config.IncludeBegin + strings.Replace(path, config.ProtoDir, "", 1) + pbcHeadName + "\"\n"
+	return config.IncludeBegin + strings.Replace(path, _config.Global.Paths.ProtoDir, "", 1) + pbcHeadName + "\"\n"
 }

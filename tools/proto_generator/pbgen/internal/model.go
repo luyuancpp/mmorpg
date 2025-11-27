@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"pbgen/config"
+	_config "pbgen/internal/config"
 	"strings"
 	"sync"
 )
@@ -93,7 +94,7 @@ func (info *MethodInfo) KeyName() string {
 
 // IncludeName 返回包含头文件名
 func (info *RPCServiceInfo) IncludeName() string {
-	return "#include \"" + strings.Replace(info.Path(), config.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
+	return "#include \"" + strings.Replace(info.Path(), _config.Global.Paths.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
 }
 
 func (info *RPCServiceInfo) FileName() string {
@@ -264,7 +265,7 @@ func (info *MethodInfo) GrpcIncludeHeadName() string {
 // IncludeName 返回包含头文件名
 func (info *MethodInfo) IncludeName() string {
 	if info.CcGenericServices() {
-		return config.IncludeBegin + strings.Replace(info.Path(), config.ProtoDir, config.ProtoDirName, 1) + info.PbcHeadName() + "\"\n"
+		return config.IncludeBegin + strings.Replace(info.Path(), _config.Global.Paths.ProtoDir, config.ProtoDirName, 1) + info.PbcHeadName() + "\"\n"
 	}
 	return info.GrpcIncludeHeadName()
 }

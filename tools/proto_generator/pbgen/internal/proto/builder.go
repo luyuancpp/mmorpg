@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
+	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 )
 
@@ -77,8 +78,8 @@ func copyProtoToDir(srcDir, destDir string) error {
 		return fmt.Errorf("创建目录[%s]失败: %w", destDir, err)
 	}
 
-	if err := utils2.CopyLocalDir(config.ProtoDir, destDir); err != nil {
-		return fmt.Errorf("拷贝失败: %s -> %s: %w", config.ProtoDir, destDir, err)
+	if err := utils2.CopyLocalDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
+		return fmt.Errorf("拷贝失败: %s -> %s: %w", _config.Global.Paths.ProtoDir, destDir, err)
 	}
 	return nil
 }

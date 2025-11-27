@@ -32,7 +32,7 @@ func MakeProjectDir() {
 	os.MkdirAll(config.ProtoNormalPackageDirectory, os.FileMode(0777))
 
 	for i := 0; i < len(config.ProtoDirectoryNames); i++ {
-		config.ProtoDirs = append(config.ProtoDirs, config.ProtoDir+config.ProtoDirectoryNames[i])
+		config.ProtoDirs = append(config.ProtoDirs, _config.Global.Paths.ProtoDir+config.ProtoDirectoryNames[i])
 	}
 }
 
