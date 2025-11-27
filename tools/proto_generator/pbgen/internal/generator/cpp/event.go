@@ -182,7 +182,7 @@ func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 	tmplData := EventTemplateData{
 		ClassName:           className,
 		HeaderFile:          headerFileBase,
-		ProtoInclude:        config.ProtoDirName + config.ProtoDirectoryNames[config.LogicEventProtoDirIndex] + strings.Replace(file.Name(), config.ProtoExt, _config.Global.FileExtensions.PbH, 1),
+		ProtoInclude:        _config.Global.FileExtensions.ProtoDirName + config.ProtoDirectoryNames[config.LogicEventProtoDirIndex] + strings.Replace(file.Name(), config.ProtoExt, _config.Global.FileExtensions.PbH, 1),
 		EventMessages:       eventMessages,
 		ForwardDeclarations: eventMessages,
 		GlobalUserCode:      globalCode,

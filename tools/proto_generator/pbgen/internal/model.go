@@ -169,7 +169,7 @@ func (info *RPCServiceInfo) LogicalPath() string {
 }
 
 func (info *RPCServiceInfo) GrpcIncludeHeadName() string {
-	return config.IncludeBegin + strings.Replace(info.Path(), _config.Global.Paths.ProtoDir, config.ProtoDirName, 1) + info.GrpcHeadName() + config.GrpcPbhEx + "\"\n"
+	return config.IncludeBegin + strings.Replace(info.Path(), _config.Global.Paths.ProtoDir, _config.Global.FileExtensions.ProtoDirName, 1) + info.GrpcHeadName() + _config.Global.FileExtensions.GrpcPbH + "\"\n"
 }
 
 func (info *RPCServiceInfo) GrpcHeadName() string {
@@ -259,13 +259,13 @@ func (info *MethodInfo) GrpcHeadName() string {
 }
 
 func (info *MethodInfo) GrpcIncludeHeadName() string {
-	return config.IncludeBegin + strings.Replace(info.Path(), _config.Global.Paths.ProtoDir, config.ProtoDirName, 1) + info.GrpcHeadName() + "\"\n"
+	return config.IncludeBegin + strings.Replace(info.Path(), _config.Global.Paths.ProtoDir, _config.Global.FileExtensions.ProtoDirName, 1) + info.GrpcHeadName() + "\"\n"
 }
 
 // IncludeName 返回包含头文件名
 func (info *MethodInfo) IncludeName() string {
 	if info.CcGenericServices() {
-		return config.IncludeBegin + strings.Replace(info.Path(), _config.Global.Paths.ProtoDir, config.ProtoDirName, 1) + info.PbcHeadName() + "\"\n"
+		return config.IncludeBegin + strings.Replace(info.Path(), _config.Global.Paths.ProtoDir, _config.Global.FileExtensions.ProtoDirName, 1) + info.PbcHeadName() + "\"\n"
 	}
 	return info.GrpcIncludeHeadName()
 }
