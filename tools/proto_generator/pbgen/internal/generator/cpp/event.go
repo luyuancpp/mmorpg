@@ -162,7 +162,7 @@ func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 	baseName := strings.ToLower(strings.TrimSuffix(file.Name(), config.ProtoExt))
 	filePrefix := outputDir + baseName
 
-	headerFilePath := filePrefix + config.HandlerHeaderExtension
+	headerFilePath := filePrefix + _config.Global.FileExtensions.HandlerH
 	cppFilePath := filePrefix + config.HandlerCppExtension
 	headerFileBase := filepath.Base(headerFilePath)
 
@@ -256,7 +256,7 @@ public:
 		}
 
 		// Include header file name with the right extension
-		cppIncludeData += config.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), config.ProtoExt, config.HandlerHeaderExtension, 1) + config.IncludeEndLine
+		cppIncludeData += config.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), config.ProtoExt, _config.Global.FileExtensions.HandlerH, 1) + config.IncludeEndLine
 
 		// Register and UnRegister data
 		className := generateClassNameFromFile(protoFile, config.ClassNameSuffix)
