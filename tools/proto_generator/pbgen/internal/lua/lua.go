@@ -262,7 +262,7 @@ func writeLuaServiceMethodCppFile(methodList internal.RPCMethods) {
 	for i := 0; i < len(methodList); i++ {
 		data += "tls_lua_state[\"" + methodList[i].KeyName() + _config.Global.Naming.MessageId + "\"] = " +
 			strconv.FormatUint(methodList[i].Id, 10) + ";\n"
-		data += "tls_lua_state[\"" + methodList[i].KeyName() + config.MethodIndexName + "\"] = " +
+		data += "tls_lua_state[\"" + methodList[i].KeyName() + _config.Global.Naming.MethodIndex + "\"] = " +
 			strconv.FormatUint(methodList[i].Index, 10) + ";\n"
 		data += "tls_lua_state[\"" + methodList[i].KeyName() +
 			"\"] = []()-> const ::google::protobuf::MethodDescriptor* {\n" +
