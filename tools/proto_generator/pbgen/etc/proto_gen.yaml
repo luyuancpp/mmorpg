@@ -1,30 +1,182 @@
-# proto_generator 代码生成器配置
-# 文档: 用于定义proto文件解析、代码生成的路径、模板及工具参数
-
-# 基础路径配置（支持相对路径或绝对路径，相对路径基于执行目录）
+# Proto代码生成器配置文件
+# 所有路径支持相对路径（基于执行目录）或绝对路径
 paths:
-  proto_root: "../../../proto"                # 源proto文件根目录
-  output_root: "../../../generated"           # 生成代码根目录
-  template_dir: "./templates"              # 模板文件目录
-  temp_dir: "./tmp"                        # 临时文件目录（如descriptor文件）
-  protoc_path: "protoc"                    # protoc编译器路径（默认从环境变量找）
-  grpc_plugins:                            # 各语言grpc插件路径
-    cpp: "grpc_cpp_plugin"
-    go: "protoc-gen-go-grpc"
+  # 项目根目录及基础路径
+  output_root: "../../../"                   # 项目根目录
+  proto_dir: "{{output_root}}proto/"         # proto文件根目录
+  proto_parent_include_path: "{{output_root}}" # proto父级包含路径
+  third_party_dir: "third_party/"            # 第三方库目录
+  grpc_dir: "{{output_root}}{{third_party_dir}}grpc/" # gRPC目录
+  protobuf_dir: "{{grpc_dir}}third_party/protobuf/src/" # Protobuf源码目录
 
-# 生成器开关（按需启用不同语言/类型的代码生成）
+  # 节点与生成目录
+  node_go_dir: "{{output_root}}go/"          # Go节点代码目录
+  node_cpp_dir: "{{output_root}}cpp/"        # C++节点代码目录
+  node_pkg_dir: "cpp/libs/"                  # C++库目录
+  node_libs_engine_dir: "{{node_pkg_dir}}engine/" # 引擎库目录
+  node_lib_game_dir: "{{node_pkg_dir}}services/"  # 游戏服务库目录
+  node_pkg_logic_scene_node_dir: "{{node_lib_game_dir}}scene/" # 场景逻辑目录
+  room_node_dir: "{{node_cpp_dir}}nodes/scene/"   # 房间节点目录
+  centre_node_dir: "{{node_cpp_dir}}nodes/centre/" # 中心节点目录
+  gate_node_dir: "{{node_cpp_dir}}nodes/gate/"     # 网关节点目录
+  robot_dir: "tools/robot/"                  # 机器人工具目录
+  generated_dir: "cpp/generated/"            # 生成文件根目录
+
+  # 工具与临时目录
+  tool_dir: "tools/"                         # 工具目录
+  temp_file_gen_dir: "{{output_root}}{{tool_dir}}generated/temp/files/" # 临时文件目录
+  pb_desc_dir: "{{temp_file_gen_dir}}proto_desc/" # Proto描述文件目录
+  all_in_one_desc: "{{pb_desc_dir}}all_in_one.desc" # 合并的描述文件路径
+  grpc_temp_dir: "{{temp_file_gen_dir}}grpc/"     # gRPC临时目录
+  pbc_temp_dir: "{{temp_file_gen_dir}}"           # PBC临时目录
+  player_storage_temp_dir: "{{temp_file_gen_dir}}/node/game/storage/" # 玩家存储临时目录
+
+  # 输出目录
+  pbc_proto_output_dir: "{{output_root}}{{generated_dir}}" # PBC生成目录
+  pbc_proto_output_no_suffix_dir: "{{output_root}}{{generated_dir}}" # 无后缀PBC输出目录
+  generated_output_dir: "{{output_root}}{{generated_dir}}"  # 生成文件输出根目录
+  grpc_output_dir: "{{output_root}}{{generated_dir}}"       # gRPC生成目录
+  grpc_proto_output_dir: "{{output_root}}{{generated_dir}}proto/" # gRPC Proto输出目录
+  robot_go_output_dir: "{{output_root}}{{robot_dir}}"       # 机器人Go代码目录
+  robot_go_game_pb_dir: "{{robot_go_output_dir}}generated/pb/game" # 机器人PB目录
+  robot_go_gen_dir: "{{output_root}}{{robot_dir}}"          # 机器人生成目录
+  go_generator_dir: "{{node_go_dir}}"                       # Go代码生成器目录
+  generated_rpc_dir: "{{generated_output_dir}}rpc/"         # RPC生成目录
+  service_info_dir: "{{generated_rpc_dir}}service_metadata/" # 服务元信息目录
+  pbc_lua_dir: "{{generated_output_dir}}lua/"               # Lua PBC目录
+  client_lua_dir: "{{output_root}}bin/script/lua/service/"  # 客户端Lua目录
+  cpp_gen_grpc_dir: "{{output_root}}{{generated_dir}}grpc_client/" # C++ gRPC客户端目录
+  util_generator_dir: "{{output_root}}{{generated_dir}}proto_helpers/" # 工具生成目录
+  generator_dir: "generated/"                              # 生成器根目录
+  generator_proto_dir: "{{output_root}}{{generator_dir}}generated_proto/" # 生成器Proto目录
+  project_generated_dir: "{{output_root}}generated/"        # 项目生成目录
+  table_generator_dir: "{{project_generated_dir}}generated_data/" # 表数据生成目录
+  game_rpc_proto_path: "{{proto_dir}}common/"               # 游戏RPC Proto路径
+  tools_dir: "{{output_root}}{{tool_dir}}"                  # 工具绝对路径
+
+  # 特定文件路径
+  service_id_file: "{{proto_dir}}service_id.txt"            # 服务ID文件
+  robot_message_id_file: "{{robot_go_game_pb_dir}}/message_id.go" # 机器人消息ID文件
+  service_cpp_file: "{{service_info_dir}}service_metadata.cpp" # 服务元信息CPP
+  service_header_file: "{{service_info_dir}}service_metadata.h" # 服务元信息头文件
+  lua_service_file: "{{pbc_lua_dir}}lua_service.cpp"         # Lua服务文件
+  client_lua_service_file: "{{output_root}}client/src/handler/service_lua.cpp" # 客户端Lua服务
+  grpc_init_cpp_file: "{{cpp_gen_grpc_dir}}grpc_init_client.cpp" # gRPC初始化CPP
+  grpc_init_head_file: "{{cpp_gen_grpc_dir}}grpc_init_client.h" # gRPC初始化头文件
+  gen_util_cpp_file: "{{util_generator_dir}}proto_util.cpp"   # 工具生成CPP
+  gen_util_head_file: "{{util_generator_dir}}proto_util.h"    # 工具生成头文件
+  robot_message_body_handler_file: "{{robot_method_handler_dir}}message_body_handler.go" # 机器人消息处理器
+  player_storage_system_dir: "{{output_root}}{{node_pkg_logic_scene_node_dir}}player/system/" # 玩家存储系统目录
+  player_data_loader_file: "{{output_root}}{{node_pkg_logic_scene_node_dir}}player_data_loader.h" # 玩家数据加载器
+
+  # 工具路径
+  protoc_path: "protoc"                     # protoc编译器路径
+
+# 文件扩展名配置
+file_extensions:
+  proto: ".proto"                           # Proto文件扩展名
+  pb_cc: ".pb.cc"                           # PB CPP扩展名
+  pb_h: ".pb.h"                             # PB头文件扩展名
+  grpc_pb_cc: ".grpc.pb.cc"                 # gRPC PB CPP扩展名
+  grpc_pb_h: ".grpc.pb.h"                   # gRPC PB头文件扩展名
+  proto_dir_name: "proto/"                  # Proto目录名
+  go_zero_proto_dir_name: "go-zero_proto/"  # GoZero Proto目录名
+  header: ".h"                              # 头文件通用扩展名
+  cpp: ".cpp"                               # CPP文件通用扩展名
+  lua_cpp: "_lua.cpp"                       # Lua CPP扩展名
+  handler_h: "_handler.h"                   # 处理器头文件扩展名
+  handler_cpp: "_handler.cpp"               # 处理器CPP扩展名
+  replied_handler_h: "_response_handler.h"  # 响应处理器头文件扩展名
+  replied_handler_cpp: "_response_handler.cpp" # 响应处理器CPP扩展名
+  cpp_sol2: "_sol2.cpp"                     # Sol2 CPP扩展名
+  grpc_client: "_grpc_client"               # gRPC客户端前缀
+  grpc_client_h: "_grpc_client.h"           # gRPC客户端头文件
+  grpc_client_cpp: "_grpc_client.cpp"       # gRPC客户端CPP
+  model_sql: "mysql_database_table.sql"     # 模型SQL文件名
+  loader_cpp: "_loader.cpp"                 # 加载器CPP扩展名
+
+# 命名规则配置
+naming:
+  message_id: "MessageId"                   # 消息ID名称
+  method_index: "Index"                     # 方法索引名称
+  handler_file: "Handler"                   # 处理器文件名
+  replied_handler_file: "Reply"             # 响应处理器文件名
+  event_handler_base: "event_handler"       # 事件处理器基础名
+  empty_response: "Empty"                   # 空响应名称
+  mysql_name: "mysql"                       # MySQL名称
+  player_service: "player_service_interface.cpp" # 玩家服务接口名
+  player_replied_service: "player_rpc_response_handler.cpp" # 玩家响应服务名
+  complete_queue: "CompleteQueue"           # 完成队列名称
+  database_prefix: "db"                     # 数据库前缀
+  db_proto_file: "db_base.proto"            # DB Proto文件名
+  db_table_file: "mysql_database_table.proto" # DB表Proto文件名
+  db_table_list_json: "mysql_database_table_list.json" # DB表列表JSON
+  game_rpc_proto: "game_rpc.proto"          # 游戏RPC Proto文件名
+  grpc_name: "grpc"                         # gRPC名称
+
+# 路径列表配置
+path_lists:
+  # Proto目录列表（按原顺序保留）
+  proto_directories:
+    - "common/"
+    - "logic/component/"
+    - "logic/event/"
+    - "logic/"
+    - "logic/"
+    - "service/go/grpc/player_locator/"
+    - "logic/constants/"
+    - "middleware/etcd/"
+    - "service/go/grpc/login/"
+    - "service/go/grpc/db/"
+    - "service/cpp/rpc/centre/"
+    - "service/cpp/rpc/scene/"
+    - "service/cpp/rpc/gate/"
+    - "service/go/grpc/chat/"
+    - "service/go/grpc/team/"
+    - "service/go/grpc/mail/"
+    - "logic/database/"
+
+  # 方法处理器目录列表
+  method_handler_directories:
+    robot: "{{output_root}}{{robot_dir}}logic/handler/"
+    room_node: "{{room_node_dir}}handler/rpc/"
+    room_node_player: "{{room_node_dir}}handler/rpc/player/"
+    room_node_replied: "{{room_node_dir}}rpc_replies/"
+    room_node_player_replied: "{{room_node_dir}}rpc_replies/player/"
+    centre_node: "{{centre_node_dir}}handler/rpc/"
+    centre_node_player: "{{centre_node_dir}}handler/rpc/player/"
+    centre_replied: "{{centre_node_dir}}rpc_replies/"
+    centre_player_replied: "{{centre_node_dir}}rpc_replies/player/"
+    gate_node: "{{gate_node_dir}}handler/rpc/"
+    gate_node_replied: "{{gate_node_dir}}rpc_replies/"
+    gate_node_player: "{{gate_node_dir}}handler/rpc/player/"
+    gate_node_player_replied: "{{gate_node_dir}}rpc_replies/player/"
+
+  # gRPC支持的语言列表
+  grpc_languages:
+    - "go"
+    - "python"
+    - "java"
+    - "csharp"
+    - "ruby"
+    - "node"
+    - "php"
+    - "objc"
+    - "swift"
+
+# 生成器开关配置
 generators:
   enable_cpp: true
   enable_go: true
-  enable_handler: true       # 对应原handler模板
-  enable_rpc_response: true  # 对应原rpc_response模板
+  enable_handler: true
+  enable_rpc_response: true
 
-# 模板映射配置（扩展原config.yaml的mappings）
+# 模板映射配置
 mappings:
   handler:
-    path: "handlers/{{proto_dir}}/{{proto_file}}_handler.cpp"  # 生成路径模板
-    template: "templates/handler.tmpl"                         # 模板文件路径
-    lang: "cpp"                                                 # 目标语言
+    path: "handlers/{{proto_dir}}/{{proto_file}}_handler.cpp"
+    template: "templates/handler.tmpl"
+    lang: "cpp"
   rpc_response:
     path: "rpc_response/{{proto_dir}}/{{proto_file}}_response.cpp"
     template: "templates/rpc_response.tmpl"
@@ -34,18 +186,17 @@ mappings:
     template: "templates/go_grpc.tmpl"
     lang: "go"
 
-# 解析器配置
+# Proto解析器配置
 parser:
-  include_paths:                           # protoc解析时的-include路径
+  include_paths:
     - "../../proto/common"
     - "../../proto/service"
-  all_in_one_desc: "all_in_one.desc"       # 合并的descriptor文件名
-  ignore_files:                            # 忽略的proto文件（支持通配符）
+  ignore_files:
     - "test_*.proto"
     - "deprecated_*.proto"
 
 # 日志配置
 log:
-  level: "info"  # debug/info/warn/error
-  output: "stdout"  # stdout/file
-  file_path: "proto_generator_config.log"  # 日志文件路径（仅output=file时生效）
+  level: "info"
+  output: "stdout"
+  file_path: "pbgen.log"
