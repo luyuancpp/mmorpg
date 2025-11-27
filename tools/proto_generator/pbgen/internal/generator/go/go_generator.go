@@ -66,7 +66,7 @@ func GenerateRobotGoProto(rootDir string) error {
 	}
 
 	// 2. 解析输出目录
-	nodeGoDir, err := utils2.ResolveAbsPath(config.ToolsDir, "Go节点输出目录")
+	nodeGoDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ToolsDir, "Go节点输出目录")
 	if err != nil {
 		return err
 	}
