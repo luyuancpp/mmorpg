@@ -104,7 +104,7 @@ func buildDescriptorArgs(protoFiles []string) ([]string, error) {
 	// 添加导入路径
 	importPaths := []string{
 		_config.Global.Paths.OutputRoot,
-		config.ProtoBufferDirectory,
+		_config.Global.Paths.ProtobufDir,
 	}
 	for _, ip := range importPaths {
 		if ip == "" {
