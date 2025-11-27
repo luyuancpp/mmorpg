@@ -190,13 +190,11 @@ var (
 
 // ----------- 其他业务相关常量 -----------
 const (
-	DatabasePrefixName              = "db"
 	TypePlayer                      = "player"
 	ServiceIncludeName              = "rpc/"
 	PlayerServiceIncludeName        = "#include \"rpc/player_service_interface.h\"\n"
 	PlayerServiceRepliedIncludeName = "#include \"rpc/player_rpc_response_handler.h\"\n"
 	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
-	ClientLuaProjectRelative        = "script/lua/rpc/"
 	ClassNameSuffix                 = "Handler"
 	NodeEnumName                    = "eNodeType"
 	NodeServiceSuffix               = "nodeservice"
