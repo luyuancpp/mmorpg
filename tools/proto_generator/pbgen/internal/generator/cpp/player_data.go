@@ -9,6 +9,7 @@ import (
 	"os"
 	"pbgen/config"
 	"pbgen/internal"
+	_config "pbgen/internal/config"
 	"pbgen/internal/utils"
 	"strings"
 	"text/template"
@@ -150,7 +151,7 @@ func CppPlayerDataLoadGenerator() {
 
 			messageDescName := strings.ToLower(*messageDesc.Name)
 			handleName := strcase.ToCamel(*messageDesc.Name)
-			md5FilePath := config.PlayerStorageTempDirectory + messageDescName + config.LoaderCppExtension
+			md5FilePath := config.PlayerStorageTempDirectory + messageDescName + _config.Global.FileExtensions.LoaderCpp
 			filedList := generateDatabaseFiles(messageDesc)
 			messageType := *messageDesc.Name
 
@@ -166,7 +167,7 @@ func CppPlayerDataLoadGenerator() {
 				return
 			}
 
-			destFilePath := config.PlayerStorageSystemDirectory + messageDescName + config.LoaderCppExtension
+			destFilePath := config.PlayerStorageSystemDirectory + messageDescName + _config.Global.FileExtensions.LoaderCpp
 			err = utils.CopyFileIfChanged(md5FilePath, destFilePath)
 			if err != nil {
 				log.Fatal(err)

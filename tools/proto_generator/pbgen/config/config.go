@@ -19,12 +19,10 @@ const (
 	RepliedHandlerHeaderExtension = "_response_handler.h"
 	CppRepliedHandlerEx           = "_response_handler.cpp"
 	ModelSqlExtension             = "mysql_database_table.sql"
-	LoaderCppExtension            = "_loader.cpp"
 )
 
 // ----------- 消息与方法相关名字 -----------
 const (
-	MessageIdName   = "MessageId"
 	MethodIndexName = "Index"
 )
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"pbgen/config"
+	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"sort"
 	"strings"
@@ -60,7 +61,7 @@ constexpr uint32_t {{.KeyName}}Index = {{.Index}};
 	}{
 		IncludeName:   serviceInfo[0].IncludeName(),
 		ServiceInfo:   serviceInfo,
-		MessageIdName: config.MessageIdName,
+		MessageIdName: _config.Global.Naming.MessageId,
 	}
 
 	// 执行模板并写入 buffer
@@ -723,7 +724,7 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 		InitFuncName:             firstMethodInfo.Service(),
 		RepliedHandlerFileName:   config.RepliedHandlerFileName,
 		Methods:                  methodsData,
-		MessageIdName:            config.MessageIdName,
+		MessageIdName:            _config.Global.Naming.MessageId,
 		ServiceInfoHeadInclude:   firstMethodInfo.ServiceInfoHeadInclude(),
 		ServiceInfoName:          config.ServiceInfoName,
 	}

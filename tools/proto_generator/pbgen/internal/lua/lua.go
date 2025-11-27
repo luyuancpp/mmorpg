@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"pbgen/config"
 	"pbgen/internal"
+	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"reflect"
 	"strconv"
@@ -259,7 +260,7 @@ func writeLuaServiceMethodCppFile(methodList internal.RPCMethods) {
 
 	data += "void Init" + methodList[0].Service() + "Lua()\n{\n"
 	for i := 0; i < len(methodList); i++ {
-		data += "tls_lua_state[\"" + methodList[i].KeyName() + config.MessageIdName + "\"] = " +
+		data += "tls_lua_state[\"" + methodList[i].KeyName() + _config.Global.Naming.MessageId + "\"] = " +
 			strconv.FormatUint(methodList[i].Id, 10) + ";\n"
 		data += "tls_lua_state[\"" + methodList[i].KeyName() + config.MethodIndexName + "\"] = " +
 			strconv.FormatUint(methodList[i].Index, 10) + ";\n"

@@ -301,7 +301,7 @@ void InitMessageInfo()
 
 		for _, method := range service.MethodInfo {
 			basePath := strings.ToLower(path.Base(method.Path()))
-			messageId := method.KeyName() + config.MessageIdName
+			messageId := method.KeyName() + _config.Global.Naming.MessageId
 
 			isClientMessage := internal.IsClientProtocolService(service.ServiceDescriptorProto)
 			nodeType := fmt.Sprintf("eNodeType::%sNodeService", strcase.ToCamel(basePath))
