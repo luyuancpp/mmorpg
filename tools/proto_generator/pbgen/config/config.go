@@ -14,8 +14,6 @@ const (
 
 // ----------- 通用文件扩展名 -----------
 const (
-	HeaderExtension               = ".h"
-	CppExtension                  = ".cpp"
 	HandlerHeaderExtension        = "_handler.h"
 	HandlerCppExtension           = "_handler.cpp"
 	RepliedHandlerHeaderExtension = "_response_handler.h"
@@ -138,9 +136,6 @@ const (
 const (
 	HandlerFileName                    = "Handler"
 	RepliedHandlerFileName             = "Reply"
-	EventHandlerFileNameBase           = "event_handler"
-	EventHandlerHeaderFileName         = EventHandlerFileNameBase + HeaderExtension
-	EventHandlerCppFileName            = EventHandlerFileNameBase + CppExtension
 	RegisterRepliedHandlerCppExtension = "register" + CppRepliedHandlerEx
 	RegisterHandlerCppExtension        = "register" + HandlerCppExtension
 	DbProtoFileName                    = "db_base.proto"

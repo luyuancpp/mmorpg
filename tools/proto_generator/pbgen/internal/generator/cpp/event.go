@@ -277,7 +277,7 @@ public:
 		UnRegisterData             string
 	}{
 		IncludeBegin:               config.IncludeBegin,
-		EventHandlerHeaderFileName: config.EventHandlerHeaderFileName,
+		EventHandlerHeaderFileName: _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Header,
 		IncludeEndLine:             config.IncludeEndLine,
 		CppIncludeData:             cppIncludeData,
 		RegisterData:               registerData,
@@ -285,7 +285,7 @@ public:
 	}
 
 	headerFilePath := config.RoomNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Header
-	cppFilePath := config.RoomNodeEventHandlerDirectory + config.EventHandlerCppFileName
+	cppFilePath := config.RoomNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Cpp
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
 		log.Printf("failed to generate header file: %v\n", err)
 	}
@@ -294,7 +294,7 @@ public:
 	}
 
 	headerFilePath = config.CentreNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Header
-	cppFilePath = config.CentreNodeEventHandlerDirectory + config.EventHandlerCppFileName
+	cppFilePath = config.CentreNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Cpp
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
 		log.Printf("failed to generate header file: %v\n", err)
 	}
