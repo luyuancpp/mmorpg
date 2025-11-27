@@ -152,8 +152,8 @@ func CopyCppOutputs(protoFiles []string, tempDir, destDir string) error {
 
 		// 构建生成文件名（.proto → .pb.h/.pb.cc）
 		protoFileName := filepath.Base(absProtoFile)
-		headerFile := strings.Replace(protoFileName, config.ProtoExt, config.ProtoPbhEx, 1)
-		cppFile := strings.Replace(protoFileName, config.ProtoExt, config.ProtoPbcEx, 1)
+		headerFile := strings.Replace(protoFileName, config.ProtoExt, _config.Global.FileExtensions.PbH, 1)
+		cppFile := strings.Replace(protoFileName, config.ProtoExt, _config.Global.FileExtensions.PbCc, 1)
 
 		// 构建临时文件和目标文件路径
 		tempHeaderPath := filepath.Join(cppTempDir, protoRelDir, headerFile)
@@ -299,8 +299,8 @@ func copyCppGrpcOutputs(protoFiles []string) error {
 			grpcTempWithProtoDir,
 			1,
 		)
-		tempGrpcCppPath = strings.Replace(tempGrpcCppPath, config.ProtoExt, config.GrpcPbcEx, 1)
-		tempGrpcHeaderPath := strings.Replace(tempGrpcCppPath, config.GrpcPbcEx, config.GrpcPbhEx, 1)
+		tempGrpcCppPath = strings.Replace(tempGrpcCppPath, config.ProtoExt, _config.Global.FileExtensions.GrpcPbCc, 1)
+		tempGrpcHeaderPath := strings.Replace(tempGrpcCppPath, _config.Global.FileExtensions.GrpcPbCc, _config.Global.FileExtensions.GrpcPbH, 1)
 
 		// 构建目标文件路径
 		destGrpcCppPath := strings.Replace(
@@ -309,8 +309,8 @@ func copyCppGrpcOutputs(protoFiles []string) error {
 			grpcOutputDirSlash,
 			1,
 		)
-		destGrpcCppPath = strings.Replace(destGrpcCppPath, config.ProtoExt, config.GrpcPbcEx, 1)
-		destGrpcHeaderPath := strings.Replace(destGrpcCppPath, config.GrpcPbcEx, config.GrpcPbhEx, 1)
+		destGrpcCppPath = strings.Replace(destGrpcCppPath, config.ProtoExt, _config.Global.FileExtensions.GrpcPbCc, 1)
+		destGrpcHeaderPath := strings.Replace(destGrpcCppPath, _config.Global.FileExtensions.GrpcPbCc, _config.Global.FileExtensions.GrpcPbH, 1)
 
 		// 转换为系统原生路径
 		tempGrpcCppPathNative := filepath.FromSlash(tempGrpcCppPath)

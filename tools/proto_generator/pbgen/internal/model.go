@@ -115,7 +115,7 @@ func (info *RPCServiceInfo) BasePathForCpp() string {
 
 // PbcHeadName 返回Proto文件头文件名
 func (info *RPCServiceInfo) PbcHeadName() string {
-	return strings.Replace(info.FileBaseName(), config.ProtoExt, config.ProtoPbhEx, 1)
+	return strings.Replace(info.FileBaseName(), config.ProtoExt, _config.Global.FileExtensions.PbH, 1)
 }
 
 // HeadName 返回头文件名
@@ -216,7 +216,7 @@ func (info *MethodInfo) GeneratorGrpcFileName() string {
 }
 
 func (info *MethodInfo) PbcHeadName() string {
-	return strings.Replace(info.FileBaseName(), config.ProtoExt, config.ProtoPbhEx, 1)
+	return strings.Replace(info.FileBaseName(), config.ProtoExt, _config.Global.FileExtensions.PbH, 1)
 }
 
 func (info *MethodInfo) MethodName() string {

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
+	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"strings"
 )
@@ -181,7 +182,7 @@ func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 	tmplData := EventTemplateData{
 		ClassName:           className,
 		HeaderFile:          headerFileBase,
-		ProtoInclude:        config.ProtoDirName + config.ProtoDirectoryNames[config.LogicEventProtoDirIndex] + strings.Replace(file.Name(), config.ProtoExt, config.ProtoPbhEx, 1),
+		ProtoInclude:        config.ProtoDirName + config.ProtoDirectoryNames[config.LogicEventProtoDirIndex] + strings.Replace(file.Name(), config.ProtoExt, _config.Global.FileExtensions.PbH, 1),
 		EventMessages:       eventMessages,
 		ForwardDeclarations: eventMessages,
 		GlobalUserCode:      globalCode,
