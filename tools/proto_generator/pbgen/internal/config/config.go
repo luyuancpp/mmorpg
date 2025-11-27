@@ -1,7 +1,7 @@
 package _config
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -200,22 +200,22 @@ func Load() error {
 	// 读取配置文件
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return fmt.Errorf("读取配置文件失败: %w", err)
+		log.Fatalf("读取配置文件失败: %w", err)
 	}
 
 	// 解析YAML
 	if err := yaml.Unmarshal(data, &Global); err != nil {
-		return fmt.Errorf("解析配置文件失败: %w", err)
+		log.Fatalf("解析配置文件失败: %w", err)
 	}
 
 	// 处理路径中的变量替换（支持嵌套变量）
 	if err := resolvePathVariables(); err != nil {
-		return fmt.Errorf("路径变量替换失败: %w", err)
+		log.Fatalf("路径变量替换失败: %w", err)
 	}
 
 	// 转换为绝对路径
 	if err := resolveAbsolutePaths(); err != nil {
-		return fmt.Errorf("绝对路径转换失败: %w", err)
+		log.Fatalf("绝对路径转换失败: %w", err)
 	}
 
 	// 设置默认值
@@ -223,7 +223,7 @@ func Load() error {
 
 	// 验证配置
 	if err := validateConfig(); err != nil {
-		return fmt.Errorf("配置验证失败: %w", err)
+		log.Fatalf("配置验证失败: %w", err)
 	}
 
 	return nil
@@ -283,7 +283,7 @@ func resolvePathVariables() error {
 	}
 
 	if iterations >= maxIterations && changed {
-		return fmt.Errorf("变量替换超过最大迭代次数，可能存在循环引用")
+		log.Fatalf("变量替换超过最大迭代次数，可能存在循环引用")
 	}
 
 	// 对MethodHandlerDirectories执行同样的循环替换
@@ -320,7 +320,7 @@ func resolvePathVariables() error {
 	}
 
 	if iterations >= maxIterations && changed {
-		return fmt.Errorf("处理器目录变量替换超过最大迭代次数")
+		log.Fatalf("处理器目录变量替换超过最大迭代次数")
 	}
 
 	return nil
@@ -343,7 +343,7 @@ func resolveAbsolutePaths() error {
 		}
 		absPath, err := filepath.Abs(path)
 		if err != nil {
-			return fmt.Errorf("路径 '%s' 转换失败: %w", path, err)
+			log.Fatalf("路径 '%s' 转换失败: %w", path, err)
 		}
 		// 统一替换为/并保留末尾斜杠
 		absPath = formatPathWithSlash(absPath, path)
@@ -364,7 +364,7 @@ func resolveAbsolutePaths() error {
 		}
 		absPath, err := filepath.Abs(path)
 		if err != nil {
-			return fmt.Errorf("处理器目录 '%s' 转换失败: %w", path, err)
+			log.Fatalf("处理器目录 '%s' 转换失败: %w", path, err)
 		}
 		// 统一替换为/并保留末尾斜杠
 		absPath = formatPathWithSlash(absPath, path)
@@ -426,16 +426,16 @@ func validateConfig() error {
 
 	// 检查必要的目录是否配置
 	if Global.Paths.OutputRoot == "" {
-		return fmt.Errorf("output_root 未配置")
+		log.Fatalf("output_root 未配置")
 	}
 
 	if Global.Paths.ProtoDir == "" {
-		return fmt.Errorf("proto_dir 未配置")
+		log.Fatalf("proto_dir 未配置")
 	}
 
 	// 检查日志配置
 	if Global.Log.Output == "file" && Global.Log.FilePath == "" {
-		return fmt.Errorf("日志输出为file时，file_path不能为空")
+		log.Fatalf("日志输出为file时，file_path不能为空")
 	}
 
 	return nil
@@ -451,7 +451,7 @@ func validatePaths() error {
 		value := pathsVal.Field(i).String()
 
 		if strings.Contains(value, "{{") || strings.Contains(value, "}}") {
-			return fmt.Errorf("路径字段 '%s' 包含未替换的变量: %s", field.Name, value)
+			log.Fatalf("路径字段 '%s' 包含未替换的变量: %s", field.Name, value)
 		}
 	}
 
@@ -464,7 +464,7 @@ func validatePaths() error {
 		value := handlerDirsVal.Field(i).String()
 
 		if strings.Contains(value, "{{") || strings.Contains(value, "}}") {
-			return fmt.Errorf("处理器目录字段 '%s' 包含未替换的变量: %s", field.Name, value)
+			log.Fatalf("处理器目录字段 '%s' 包含未替换的变量: %s", field.Name, value)
 		}
 	}
 
