@@ -360,7 +360,7 @@ func generateGameGrpcCpp(protoFiles []string) error {
 	}
 
 	// 拷贝C++代码到目标目录
-	cppDestDir, err := utils2.ResolveAbsPath(config.PbcProtoOutputNoProtoSuffixPath, "游戏C++最终目录")
+	cppDestDir, err := utils2.ResolveAbsPath(_config.Global.Paths.GrpcOutputDir, "游戏C++最终目录")
 	if err != nil {
 		return err
 	}
