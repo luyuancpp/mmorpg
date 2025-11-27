@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
+	_config "pbgen/internal/config"
 	"pbgen/internal/proto"
 	utils2 "pbgen/internal/utils"
 	"sync"
@@ -375,7 +376,7 @@ func generateGameGrpcGo(protoFiles []string) error {
 		}
 
 		// 生成节点Go GRPC代码
-		if err := GenerateGoGrpc(protoFiles, nodeOutputDir, config.GameRpcProtoPath); err != nil {
+		if err := GenerateGoGrpc(protoFiles, nodeOutputDir, _config.Global.Paths.GameRpcProtoPath); err != nil {
 			log.Printf("Go生成: 节点[%s]代码生成失败: %v，跳过", nodeName, err)
 			continue
 		}
@@ -391,7 +392,7 @@ func generateGameGrpcGo(protoFiles []string) error {
 		return fmt.Errorf("创建机器人目录失败: %w", err)
 	}
 
-	if err := GenerateGoGrpc(protoFiles, robotDir, config.GameRpcProtoPath); err != nil {
+	if err := GenerateGoGrpc(protoFiles, robotDir, _config.Global.Paths.GameRpcProtoPath); err != nil {
 		log.Printf("Go生成: 节点[%s]代码生成失败: %v，跳过", robotDir, err)
 		return err
 	}
