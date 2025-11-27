@@ -9,7 +9,6 @@ const (
 // ----------- Proto 文件扩展名 -----------
 const (
 	ProtoExt           = ".proto"
-	GrpcPbcEx          = ".grpc.pb.cc"
 	GrpcPbhEx          = ".grpc.pb.h"
 	ProtoDirName       = "proto/"
 	GoZeroProtoDirName = "go-zero_proto/"
