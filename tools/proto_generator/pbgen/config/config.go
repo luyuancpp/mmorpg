@@ -111,9 +111,6 @@ const (
 	GeneratedPath           = "generated/"
 	ProjectGeneratedPath    = OutputRoot + GeneratedPath
 	TableGeneratorPath      = ProjectGeneratedPath + "generated_data/"
-	ToolsDir                = OutputRoot + ToolDir
-
-	GrpcName = "grpc"
 )
 
 // ----------- 文件名 -----------
