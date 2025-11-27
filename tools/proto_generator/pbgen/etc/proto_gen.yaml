@@ -3,8 +3,8 @@
 
 # 基础路径配置（支持相对路径或绝对路径，相对路径基于执行目录）
 paths:
-  proto_root: "../../proto"                # 源proto文件根目录
-  output_root: "../../generated"           # 生成代码根目录
+  proto_root: "../../../proto"                # 源proto文件根目录
+  output_root: "../../../generated"           # 生成代码根目录
   template_dir: "./templates"              # 模板文件目录
   temp_dir: "./tmp"                        # 临时文件目录（如descriptor文件）
   protoc_path: "protoc"                    # protoc编译器路径（默认从环境变量找）
@@ -48,4 +48,4 @@ parser:
 log:
   level: "info"  # debug/info/warn/error
   output: "stdout"  # stdout/file
-  file_path: "pbgen.log"  # 日志文件路径（仅output=file时生效）
+  file_path: "proto_generator_config.log"  # 日志文件路径（仅output=file时生效）

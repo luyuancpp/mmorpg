@@ -96,7 +96,7 @@ const (
 	ToolDir               = "tools/"
 	TempFileGenerationDir = OutputRoot + ToolDir + "generated/temp/files/"
 	PbDescDirectory       = TempFileGenerationDir + "proto_desc/"
-	AllInOneProtoDescFile = PbDescDirectory + "all_in_one.pb.desc"
+	AllInOneProtoDescFile = PbDescDirectory + "all_in_one.desc"
 
 	GoNodeDirectory = OutputRoot + "go/"
 
