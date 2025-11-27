@@ -3,12 +3,10 @@ package config
 // ----------- 项目根目录及相关路径 -----------
 // 根路径保持不变
 const (
-	OutputRoot                = "../../../"
-	ProtoDir                  = OutputRoot + "proto/"
-	ProtoParentIncludePathDir = OutputRoot
-	ThirdPartyDirectory       = "third_party/"
-	GrpcDirectory             = OutputRoot + ThirdPartyDirectory + "grpc/"
-	ProtoBufferDirectory      = GrpcDirectory + "third_party/protobuf/src/"
+	OutputRoot           = "../../../"
+	ThirdPartyDirectory  = "third_party/"
+	GrpcDirectory        = OutputRoot + ThirdPartyDirectory + "grpc/"
+	ProtoBufferDirectory = GrpcDirectory + "third_party/protobuf/src/"
 )
 
 // ----------- Proto 文件扩展名 -----------

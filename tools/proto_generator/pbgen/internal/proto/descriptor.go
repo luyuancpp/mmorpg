@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"pbgen/config"
+	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"strings"
 )
@@ -102,7 +103,7 @@ func buildDescriptorArgs(protoFiles []string) ([]string, error) {
 
 	// 添加导入路径
 	importPaths := []string{
-		config.ProtoParentIncludePathDir,
+		_config.Global.Paths.OutputRoot,
 		config.ProtoBufferDirectory,
 	}
 	for _, ip := range importPaths {
