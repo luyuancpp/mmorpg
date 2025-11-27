@@ -30,7 +30,7 @@ func generateAllInOneDesc() error {
 	// 步骤1：收集目标proto文件（去重）
 	protoFiles, err := collectUniqueProtoFiles()
 	if err != nil {
-		return fmt.Errorf("收集Proto文件失败: %w", err)
+		log.Fatalf("收集Proto文件失败: %w", err)
 	}
 	if len(protoFiles) == 0 {
 		log.Println("描述符生成: 未找到任何Proto文件")
@@ -41,17 +41,17 @@ func generateAllInOneDesc() error {
 	// 步骤2：构建protoc命令参数
 	args, err := buildDescriptorArgs(protoFiles)
 	if err != nil {
-		return fmt.Errorf("构建命令参数失败: %w", err)
+		log.Fatalf("构建命令参数失败: %w", err)
 	}
 
 	// 步骤3：执行protoc命令
 	if err := executeDescriptorCommand(args); err != nil {
-		return fmt.Errorf("执行protoc失败: %w", err)
+		log.Fatalf("执行protoc失败: %w", err)
 	}
 
 	// 步骤4：读取并解析描述符文件
 	if err := parseDescriptorFile(); err != nil {
-		return fmt.Errorf("解析描述符文件失败: %w", err)
+		log.Fatalf("解析描述符文件失败: %w", err)
 	}
 
 	log.Printf("描述符生成: 成功，输出路径=%s", config.AllInOneProtoDescFile)

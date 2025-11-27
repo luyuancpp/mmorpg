@@ -41,7 +41,7 @@ func BuildProtoCpp(protoDir string) error {
 	// 1. 收集Proto文件
 	protoFiles, err := utils2.CollectProtoFiles(protoDir)
 	if err != nil {
-		return fmt.Errorf("C++批量生成: 收集Proto失败: %w", err)
+		log.Fatalf("解析描述符文件失败: %w", err)("C++批量生成: 收集Proto失败: %w", err)
 	}
 	if len(protoFiles) == 0 {
 		log.Printf("C++批量生成: 目录[%s]无Proto文件，跳过", protoDir)
@@ -54,7 +54,7 @@ func BuildProtoCpp(protoDir string) error {
 		return err
 	}
 	if err := utils2.EnsureDir(cppOutputDir); err != nil {
-		return fmt.Errorf("C++批量生成: 创建输出目录失败: %w", err)
+		log.Fatalf("C++批量生成: 创建输出目录失败: %w", err)
 	}
 
 	cppTempDir, err := utils2.ResolveAbsPath(config.PbcTempDirectory, "C++批量临时目录")
@@ -64,10 +64,10 @@ func BuildProtoCpp(protoDir string) error {
 
 	// 3. 生成并拷贝C++代码
 	if err := GenerateCpp(protoFiles, cppTempDir); err != nil {
-		return fmt.Errorf("C++批量生成: 代码生成失败: %w", err)
+		log.Fatalf("C++批量生成: 代码生成失败: %w", err)
 	}
 	if err := CopyCppOutputs(protoFiles, cppTempDir, cppOutputDir); err != nil {
-		return fmt.Errorf("C++批量生成: 代码拷贝失败: %w", err)
+		log.Fatalf("C++批量生成: 代码拷贝失败: %w", err)
 	}
 
 	return nil
