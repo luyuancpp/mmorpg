@@ -279,7 +279,7 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 		if isGoZero {
 			goPackagePath = baseGoPackage
 		} else {
-			goPackagePath = filepath.Join(baseGoPackage, config.ProtoDirName)
+			goPackagePath = filepath.Join(baseGoPackage, _config.Global.FileExtensions.ProtoDirName)
 		}
 	} else {
 		// 拼接基础路径和相对目录
@@ -288,7 +288,7 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 		} else {
 			goPackagePath = filepath.Join(
 				baseGoPackage,
-				config.ProtoDirName,
+				_config.Global.FileExtensions.ProtoDirName,
 				filepath.ToSlash(relativePath),
 			)
 		}

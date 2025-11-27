@@ -29,7 +29,7 @@ func BuildGeneratorGoZeroProtoPath(dir string) string {
 	return filepath.Join(
 		config.GeneratorProtoDirectory,
 		dir,
-		config.GoZeroProtoDirName,
+		_config.Global.FileExtensions.GoZeroProtoDirName,
 	)
 }
 
@@ -38,7 +38,7 @@ func BuildGeneratorProtoPath(dir string) string {
 	return filepath.Join(
 		config.GeneratorProtoDirectory,
 		dir,
-		config.ProtoDirName,
+		_config.Global.FileExtensions.ProtoDirName,
 	)
 }
 
