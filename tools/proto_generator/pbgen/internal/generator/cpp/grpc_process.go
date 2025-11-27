@@ -9,6 +9,7 @@ import (
 	"path"
 	"pbgen/config"
 	"pbgen/internal"
+	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"sort"
 	"strings"
@@ -123,13 +124,13 @@ func CppGrpcCallClient() {
 			cppFileBaseName := firstService.LogicalPath()
 
 			// 生成 .h 文件
-			filePath := config.CppGenGrpcDirectory + cppFileBaseName + config.GrpcClientHeaderExtension
+			filePath := config.CppGenGrpcDirectory + cppFileBaseName + _config.Global.FileExtensions.GrpcClientH
 			if err := generateGrpcFile(filePath, serviceInfo, AsyncClientHeaderTemplate); err != nil {
 				log.Fatal(err)
 			}
 
 			// 生成 .cpp 文件
-			filePathCpp := config.CppGenGrpcDirectory + cppFileBaseName + config.GrpcClientCppExtension
+			filePathCpp := config.CppGenGrpcDirectory + cppFileBaseName + _config.Global.FileExtensions.GrpcClientCpp
 			if err := generateGrpcFile(filePathCpp, serviceInfo, AsyncClientCppHandleTemplate); err != nil {
 				log.Fatal(err)
 			}
