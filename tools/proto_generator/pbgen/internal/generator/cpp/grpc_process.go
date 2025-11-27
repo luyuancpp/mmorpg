@@ -45,7 +45,7 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 		GrpcIncludeHeadName:   grpcServices[0].GrpcIncludeHeadName(),
 		GeneratorGrpcFileName: grpcServices[0].GeneratorGrpcFileName(),
 		Package:               grpcServices[0].Package(),
-		GrpcCompleteQueueName: grpcServices[0].FileBaseNameCamel() + config.CompleteQueueName,
+		GrpcCompleteQueueName: grpcServices[0].FileBaseNameCamel() + _config.Global.Naming.CompleteQueue,
 		FileBaseNameCamel:     grpcServices[0].FileBaseNameCamel(),
 	}
 
