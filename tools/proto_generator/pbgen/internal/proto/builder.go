@@ -65,9 +65,9 @@ func CopyProtoToGenDir() {
 			}
 		}
 
-		destDir := BuildGeneratorProtoPath(config.RobotDirectory)
-		if err := copyProtoToDir(config.RobotDirectory, destDir); err != nil {
-			log.Printf("GoZero Proto拷贝: 目录[%s]拷贝失败: %v", config.RobotDirectory, err)
+		destDir := BuildGeneratorProtoPath(_config.Global.Paths.RobotDir)
+		if err := copyProtoToDir(_config.Global.Paths.RobotDir, destDir); err != nil {
+			log.Printf("GoZero Proto拷贝: 目录[%s]拷贝失败: %v", _config.Global.Paths.RobotDir, err)
 		}
 	}()
 }
