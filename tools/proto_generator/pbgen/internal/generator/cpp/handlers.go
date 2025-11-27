@@ -3,6 +3,7 @@ package cpp
 import (
 	"pbgen/config"
 	"pbgen/internal"
+	_config "pbgen/internal/config"
 	"pbgen/internal/utils"
 )
 
@@ -14,7 +15,7 @@ var RoomHandler = HandlerConfig{
 	GenerateCppDataFunc: internal.GetServiceHandlerCppStr,
 	Dir:                 config.RoomNodeMethodHandlerDirectory,
 	CppDir:              config.RoomNodeMethodHandlerDirectory,
-	HeaderExt:           config.HandlerHeaderExtension,
+	HeaderExt:           _config.Global.FileExtensions.HandlerH,
 	CppExt:              config.HandlerCppExtension,
 	IsRepliedHandler:    false,
 }
