@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"pbgen/config"
 	"pbgen/internal"
+	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"sort"
 	"strconv"
@@ -88,9 +89,9 @@ func ReadServiceIdFile() {
 	go func() {
 		defer utils2.Wg.Done()
 
-		f, err := os.Open(config.ServiceIdFilePath)
+		f, err := os.Open(_config.Global.Paths.ServiceIdFile)
 		if err != nil {
-			fmt.Errorf("failed to open file %s: %w", config.ServiceIdFilePath, err)
+			fmt.Errorf("failed to open file %s: %w", _config.Global.Paths.ServiceIdFile, err)
 			log.Fatalf("error reading service ID file: %v", err)
 		}
 		defer f.Close()
@@ -108,7 +109,7 @@ func ReadServiceIdFile() {
 		}
 
 		if err := scanner.Err(); err != nil {
-			fmt.Errorf("error reading file %s: %w", config.ServiceIdFilePath, err)
+			fmt.Errorf("error reading file %s: %w", _config.Global.Paths.ServiceIdFile, err)
 			log.Fatalf("error reading service ID file: %v", err)
 		}
 
@@ -134,7 +135,7 @@ func WriteServiceIdFile() {
 			}
 			data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
 		}
-		utils2.WriteFileIfChanged(config.ServiceIdFilePath, []byte(data))
+		utils2.WriteFileIfChanged(_config.Global.Paths.ServiceIdFile, []byte(data))
 	}()
 }
 
