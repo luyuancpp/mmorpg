@@ -37,8 +37,6 @@ const (
 	RpcHandlerSourceDirectory   = "handler/rpc/"
 	RpcResponseSourceDirectory  = "rpc_replies/"
 	EventHandlerSourceDirectory = "handler/event/"
-	PbcLuaDirectory             = GeneratedOutputDirectory + "lua/"
-	ProtoNormalPackageDirectory = GeneratorProtoDirectory + "normal/proto/"
 )
 
 // ----------- 方法处理目录 -----------

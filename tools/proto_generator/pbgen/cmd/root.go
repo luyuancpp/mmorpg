@@ -18,7 +18,6 @@ import (
 
 func MakeProjectDir() {
 	os.MkdirAll(_config.Global.Paths.GeneratedDir, os.FileMode(0777))
-	os.MkdirAll(config.PbcLuaDirectory, os.FileMode(0777))
 	os.MkdirAll(config.ServiceInfoDirectory, os.FileMode(0777))
 	os.MkdirAll(config.CppGenGrpcDirectory, os.FileMode(0777))
 	os.MkdirAll(config.PbDescDirectory, os.FileMode(0777))
@@ -29,7 +28,6 @@ func MakeProjectDir() {
 	os.MkdirAll(config.ProjectGeneratedPath, os.FileMode(0777))
 	os.MkdirAll(config.TableGeneratorPath, os.FileMode(0777))
 	os.RemoveAll(config.GeneratorProtoDirectory)
-	os.MkdirAll(config.ProtoNormalPackageDirectory, os.FileMode(0777))
 
 	for i := 0; i < len(config.ProtoDirectoryNames); i++ {
 		config.ProtoDirs = append(config.ProtoDirs, _config.Global.Paths.ProtoDir+config.ProtoDirectoryNames[i])
