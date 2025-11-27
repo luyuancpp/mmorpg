@@ -208,7 +208,7 @@ func Load() error {
 		return fmt.Errorf("解析配置文件失败: %w", err)
 	}
 
-	// 处理路径中的变量替换（如{{output_root}}）
+	// 处理路径中的变量替换（支持嵌套变量）
 	if err := resolvePathVariables(); err != nil {
 		return fmt.Errorf("路径变量替换失败: %w", err)
 	}
@@ -221,10 +221,15 @@ func Load() error {
 	// 设置默认值
 	setDefaults()
 
+	// 验证配置
+	if err := validateConfig(); err != nil {
+		return fmt.Errorf("配置验证失败: %w", err)
+	}
+
 	return nil
 }
 
-// resolvePathVariables 处理路径中的变量替换（如{{output_root}} -> 实际值）
+// resolvePathVariables 处理路径中的变量替换（支持嵌套变量）
 func resolvePathVariables() error {
 	// 反射获取Paths结构体的所有字段，用于变量替换
 	pathsVal := reflect.ValueOf(&Global.Paths).Elem()
@@ -241,34 +246,81 @@ func resolvePathVariables() error {
 		vars["{{"+yamlTag+"}}"] = pathsVal.Field(i).String()
 	}
 
-	// 替换Paths结构体中的所有路径变量
-	for i := 0; i < pathsType.NumField(); i++ {
-		field := pathsVal.Field(i)
-		if field.Kind() != reflect.String {
-			continue
+	// 循环替换Paths结构体中的变量，直到没有变量可替换
+	changed := true
+	maxIterations := 10 // 防止无限循环
+	iterations := 0
+
+	for changed && iterations < maxIterations {
+		changed = false
+		iterations++
+
+		for i := 0; i < pathsType.NumField(); i++ {
+			field := pathsVal.Field(i)
+			if field.Kind() != reflect.String {
+				continue
+			}
+
+			original := field.String()
+			resolved := original
+
+			for k, v := range vars {
+				if strings.Contains(resolved, k) {
+					resolved = strings.ReplaceAll(resolved, k, v)
+					changed = true
+				}
+			}
+
+			if resolved != original {
+				field.SetString(resolved)
+				// 更新vars中的值，用于后续嵌套变量替换
+				yamlTag := pathsType.Field(i).Tag.Get("yaml")
+				if yamlTag != "" {
+					vars["{{"+yamlTag+"}}"] = resolved
+				}
+			}
 		}
-		original := field.String()
-		resolved := original
-		for k, v := range vars {
-			resolved = strings.ReplaceAll(resolved, k, v)
-		}
-		field.SetString(resolved)
 	}
 
-	// 替换MethodHandlerDirectories中的变量
+	if iterations >= maxIterations && changed {
+		return fmt.Errorf("变量替换超过最大迭代次数，可能存在循环引用")
+	}
+
+	// 对MethodHandlerDirectories执行同样的循环替换
 	handlerDirsVal := reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()
 	handlerDirsType := handlerDirsVal.Type()
-	for i := 0; i < handlerDirsType.NumField(); i++ {
-		field := handlerDirsVal.Field(i)
-		if field.Kind() != reflect.String {
-			continue
+
+	changed = true
+	iterations = 0
+
+	for changed && iterations < maxIterations {
+		changed = false
+		iterations++
+
+		for i := 0; i < handlerDirsType.NumField(); i++ {
+			field := handlerDirsVal.Field(i)
+			if field.Kind() != reflect.String {
+				continue
+			}
+
+			original := field.String()
+			resolved := original
+
+			for k, v := range vars {
+				if strings.Contains(resolved, k) {
+					resolved = strings.ReplaceAll(resolved, k, v)
+					changed = true
+				}
+			}
+
+			if resolved != original {
+				field.SetString(resolved)
+			}
 		}
-		original := field.String()
-		resolved := original
-		for k, v := range vars {
-			resolved = strings.ReplaceAll(resolved, k, v)
-		}
-		field.SetString(resolved)
+	}
+
+	if iterations >= maxIterations && changed {
+		return fmt.Errorf("处理器目录变量替换超过最大迭代次数")
 	}
 
 	return nil
@@ -363,4 +415,105 @@ func setDefaults() {
 	if Global.Paths.AllInOneDesc == "" {
 		Global.Paths.AllInOneDesc = filepath.Join(Global.Paths.PbDescDir, "all_in_one.desc")
 	}
+}
+
+// validateConfig 验证配置的完整性和正确性
+func validateConfig() error {
+	// 检查关键路径是否存在未替换的变量
+	if err := validatePaths(); err != nil {
+		return err
+	}
+
+	// 检查必要的目录是否配置
+	if Global.Paths.OutputRoot == "" {
+		return fmt.Errorf("output_root 未配置")
+	}
+
+	if Global.Paths.ProtoDir == "" {
+		return fmt.Errorf("proto_dir 未配置")
+	}
+
+	// 检查日志配置
+	if Global.Log.Output == "file" && Global.Log.FilePath == "" {
+		return fmt.Errorf("日志输出为file时，file_path不能为空")
+	}
+
+	return nil
+}
+
+// validatePaths 验证路径中是否包含未替换的变量
+func validatePaths() error {
+	pathsVal := reflect.ValueOf(&Global.Paths).Elem()
+	pathsType := pathsVal.Type()
+
+	for i := 0; i < pathsType.NumField(); i++ {
+		field := pathsType.Field(i)
+		value := pathsVal.Field(i).String()
+
+		if strings.Contains(value, "{{") || strings.Contains(value, "}}") {
+			return fmt.Errorf("路径字段 '%s' 包含未替换的变量: %s", field.Name, value)
+		}
+	}
+
+	// 检查处理器目录
+	handlerDirsVal := reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()
+	handlerDirsType := handlerDirsVal.Type()
+
+	for i := 0; i < handlerDirsType.NumField(); i++ {
+		field := handlerDirsType.Field(i)
+		value := handlerDirsVal.Field(i).String()
+
+		if strings.Contains(value, "{{") || strings.Contains(value, "}}") {
+			return fmt.Errorf("处理器目录字段 '%s' 包含未替换的变量: %s", field.Name, value)
+		}
+	}
+
+	return nil
+}
+
+// GetProtoFullPaths 获取完整的Proto文件目录路径
+func (c *Config) GetProtoFullPaths() []string {
+	var fullPaths []string
+	for _, dir := range c.PathLists.ProtoDirectories {
+		fullPath := filepath.Join(c.Paths.ProtoDir, dir)
+		fullPath = formatPathWithSlash(fullPath, fullPath)
+		fullPaths = append(fullPaths, fullPath)
+	}
+	return fullPaths
+}
+
+// GetIncludePaths 获取完整的Include路径
+func (c *Config) GetIncludePaths() []string {
+	var includePaths []string
+
+	// 添加配置中的include paths
+	for _, path := range c.Parser.IncludePaths {
+		if strings.Contains(path, "{{") {
+			// 如果还有变量，尝试替换
+			for k, v := range map[string]string{
+				"{{output_root}}": c.Paths.OutputRoot,
+				"{{proto_dir}}":   c.Paths.ProtoDir,
+			} {
+				path = strings.ReplaceAll(path, k, v)
+			}
+		}
+
+		absPath, err := filepath.Abs(path)
+		if err == nil {
+			includePaths = append(includePaths, absPath)
+		} else {
+			includePaths = append(includePaths, path)
+		}
+	}
+
+	// 添加默认的include路径
+	if c.Paths.ProtoParentIncludePath != "" {
+		includePaths = append(includePaths, c.Paths.ProtoParentIncludePath)
+	}
+
+	if c.Paths.ProtoDir != "" {
+		includePaths = append(includePaths, c.Paths.ProtoDir)
+	}
+
+	return includePaths
 }
