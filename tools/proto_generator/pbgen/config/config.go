@@ -18,7 +18,6 @@ const (
 	HandlerCppExtension           = "_handler.cpp"
 	RepliedHandlerHeaderExtension = "_response_handler.h"
 	CppRepliedHandlerEx           = "_response_handler.cpp"
-	GrpcClientExtension           = "_grpc_client"
 	ModelSqlExtension             = "mysql_database_table.sql"
 	LoaderCppExtension            = "_loader.cpp"
 )
