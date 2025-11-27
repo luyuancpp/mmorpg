@@ -5,6 +5,7 @@ import (
 	"os"
 	"pbgen/config"
 	"pbgen/internal"
+	_config "pbgen/internal/config"
 	"strings"
 	"text/template"
 )
@@ -98,7 +99,7 @@ func GoRobotTotalHandlerGenerator() {
 // generateHandlerCases creates the cases for the switch statement based on the method.
 func generateHandlerCases(method *internal.MethodInfo, cases []HandlerCase) []HandlerCase {
 	handlerCases := HandlerCase{
-		MessageID:       method.Service() + method.Method() + config.MessageIdName,
+		MessageID:       method.Service() + method.Method() + _config.Global.Naming.MessageId,
 		HandlerFunction: "handle" + method.Service() + method.Method(),
 		MessageType:     determineResponseType(method),
 		FunctionCall:    method.Service() + method.Method() + "Handler",

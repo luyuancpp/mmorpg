@@ -44,7 +44,7 @@ func (cg *ConstantsGenerator) Generate() ([]string, error) {
 		name := strings.TrimSpace(parts[1])
 
 		constName := convertToValidIdentifier(name)
-		consts = append(consts, fmt.Sprintf("const %s%s = %s", constName, config.MessageIdName, number))
+		consts = append(consts, fmt.Sprintf("const %s%s = %s", constName, _config.Global.Naming.MessageId, number))
 	}
 
 	if err := scanner.Err(); err != nil {
