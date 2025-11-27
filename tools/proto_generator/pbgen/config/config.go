@@ -21,11 +21,6 @@ const (
 	ModelSqlExtension             = "mysql_database_table.sql"
 )
 
-// ----------- 消息与方法相关名字 -----------
-const (
-	MethodIndexName = "Index"
-)
-
 // ----------- 项目目录路径 -----------
 const (
 	ModelPath                      = "model/"
