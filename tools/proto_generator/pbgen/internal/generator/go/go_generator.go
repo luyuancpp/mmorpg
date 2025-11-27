@@ -132,7 +132,7 @@ func GenerateGoGrpc(protoFiles []string, outputDir string, protoRootPath string)
 		return err
 	}
 
-	protoBufferDir, err := utils2.ResolveAbsPath(config.ProtoBufferDirectory, "ProtoBuffer目录")
+	protoBufferDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtobufDir, "ProtoBuffer目录")
 	if err != nil {
 		return err
 	}

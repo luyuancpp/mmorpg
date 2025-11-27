@@ -90,7 +90,7 @@ func GenerateCpp(protoFiles []string, outputDir string) error {
 		return err
 	}
 
-	protoBufferDir, err := utils2.ResolveAbsPath(config.ProtoBufferDirectory, "ProtoBuffer目录")
+	protoBufferDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtobufDir, "ProtoBuffer目录")
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func GenerateCppGrpc(protoFiles []string) error {
 		return fmt.Errorf("GRPC C++生成: 解析父目录失败: %w", err)
 	}
 
-	protoBufferDir, err := utils2.ResolveAbsPath(config.ProtoBufferDirectory, "ProtoBuffer目录")
+	protoBufferDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtobufDir, "ProtoBuffer目录")
 	if err != nil {
 		return fmt.Errorf("GRPC C++生成: 解析ProtoBuffer目录失败: %w", err)
 	}
