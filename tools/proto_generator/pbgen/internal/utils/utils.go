@@ -12,7 +12,7 @@ import (
 // EnsureDir 确保目录存在，不存在则创建（权限默认0755）
 func EnsureDir(dirPath string) error {
 	if err := os.MkdirAll(dirPath, 0755); err != nil {
-		return fmt.Errorf("创建目录[%s]失败: %w", dirPath, err)
+		log.Fatalf("创建目录[%s]失败: %w", dirPath, err)
 	}
 	return nil
 }
@@ -67,7 +67,7 @@ func ExecuteProtocCmd(cmd *exec.Cmd, actionDesc string) error {
 
 	log.Printf("protoc执行: %s, 命令=%s", actionDesc, cmd.String())
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("protoc执行失败: 动作=%s, 错误=%v, 错误输出=%s", actionDesc, err, stderr.String())
+		log.Fatalf("protoc执行失败: 动作=%s, 错误=%v, 错误输出=%s", actionDesc, err, stderr.String())
 	}
 
 	if stdout.Len() > 0 {
@@ -82,7 +82,7 @@ func CopyProtoDir(srcDir, destDir string) error {
 		return err
 	}
 	if err := CopyLocalDir(srcDir, destDir); err != nil {
-		return fmt.Errorf("拷贝Proto目录: 源=%s -> 目标=%s, 错误=%w", srcDir, destDir, err)
+		log.Fatalf("拷贝Proto目录: 源=%s -> 目标=%s, 错误=%w", srcDir, destDir, err)
 	}
 	log.Printf("拷贝Proto目录成功: 源=%s -> 目标=%s", srcDir, destDir)
 	return nil

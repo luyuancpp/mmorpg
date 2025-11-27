@@ -41,7 +41,7 @@ func BuildProtoCpp(protoDir string) error {
 	// 1. 收集Proto文件
 	protoFiles, err := utils2.CollectProtoFiles(protoDir)
 	if err != nil {
-		log.Fatalf("解析描述符文件失败: %w", err)("C++批量生成: 收集Proto失败: %w", err)
+		log.Fatalf("C++批量生成: 收集Proto失败: %w", err)
 	}
 	if len(protoFiles) == 0 {
 		log.Printf("C++批量生成: 目录[%s]无Proto文件，跳过", protoDir)
@@ -76,22 +76,25 @@ func BuildProtoCpp(protoDir string) error {
 // GenerateCpp 调用protoc生成C++序列化代码
 func GenerateCpp(protoFiles []string, outputDir string) error {
 	if err := utils2.EnsureDir(outputDir); err != nil {
-		return fmt.Errorf("C++生成: 创建输出目录失败: %w", err)
+		log.Fatalf("C++生成: 创建输出目录失败: %w", err)
 	}
 
 	// 解析所有必要路径
 	cppOutputDir, err := utils2.ResolveAbsPath(outputDir, "C++生成输出目录")
 	if err != nil {
+		log.Fatal(err)
 		return err
 	}
 
 	protoRootDir, err := utils2.ResolveAbsPath(_config.Global.Paths.OutputRoot, "Proto根目录")
 	if err != nil {
+		log.Fatal(err)
 		return err
 	}
 
 	protoBufferDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtobufDir, "ProtoBuffer目录")
 	if err != nil {
+		log.Fatal(err)
 		return err
 	}
 
@@ -191,7 +194,7 @@ func BuildProtoGrpcCpp(protoDir string) error {
 	// 2. 收集Proto文件
 	protoFiles, err := utils2.CollectProtoFiles(protoDir)
 	if err != nil {
-		return fmt.Errorf("GRPC C++生成: 收集Proto失败: %w", err)
+		log.Fatalf("GRPC C++生成: 收集Proto失败: %w", err)
 	}
 	if len(protoFiles) == 0 {
 		log.Printf("GRPC C++生成: 目录[%s]无Proto文件，跳过", protoDir)
@@ -200,18 +203,18 @@ func BuildProtoGrpcCpp(protoDir string) error {
 
 	// 3. 确保目录存在
 	if err := utils2.EnsureDir(_config.Global.Paths.GrpcTempDir); err != nil {
-		return fmt.Errorf("GRPC C++生成: 创建临时目录失败: %w", err)
+		log.Fatalf("GRPC C++生成: 创建临时目录失败: %w", err)
 	}
 	if err := utils2.EnsureDir(_config.Global.Paths.GrpcOutputDir); err != nil {
-		return fmt.Errorf("GRPC C++生成: 创建输出目录失败: %w", err)
+		log.Fatalf("GRPC C++生成: 创建输出目录失败: %w", err)
 	}
 
 	// 4. 生成并拷贝GRPC代码
 	if err := GenerateCppGrpc(protoFiles); err != nil {
-		return fmt.Errorf("GRPC C++生成: 代码生成失败: %w", err)
+		log.Fatalf("GRPC C++生成: 代码生成失败: %w", err)
 	}
 	if err := copyCppGrpcOutputs(protoFiles); err != nil {
-		return fmt.Errorf("GRPC C++生成: 代码拷贝失败: %w", err)
+		log.Fatalf("GRPC C++生成: 代码拷贝失败: %w", err)
 	}
 
 	return nil
@@ -228,17 +231,17 @@ func GenerateCppGrpc(protoFiles []string) error {
 	// 将所有路径转换为绝对路径
 	grpcTempDir, err := utils2.ResolveAbsPath(config.GrpcTempDirectory, "GRPC临时目录")
 	if err != nil {
-		return fmt.Errorf("GRPC C++生成: 解析临时目录失败: %w", err)
+		log.Fatalf("GRPC C++生成: 解析临时目录失败: %w", err)
 	}
 
 	protoParentDir, err := utils2.ResolveAbsPath(_config.Global.Paths.OutputRoot, "Proto父目录")
 	if err != nil {
-		return fmt.Errorf("GRPC C++生成: 解析父目录失败: %w", err)
+		log.Fatalf("GRPC C++生成: 解析父目录失败: %w", err)
 	}
 
 	protoBufferDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtobufDir, "ProtoBuffer目录")
 	if err != nil {
-		return fmt.Errorf("GRPC C++生成: 解析ProtoBuffer目录失败: %w", err)
+		log.Fatalf("GRPC C++生成: 解析ProtoBuffer目录失败: %w", err)
 	}
 
 	// 构建protoc参数
@@ -345,7 +348,7 @@ func generateGameGrpcCpp(protoFiles []string) error {
 		return err
 	}
 	if err := utils2.EnsureDir(cppOutputDir); err != nil {
-		return fmt.Errorf("创建C++输出目录失败: %w", err)
+		log.Fatalf("创建C++输出目录失败: %w", err)
 	}
 
 	// 解析临时目录
@@ -356,7 +359,7 @@ func generateGameGrpcCpp(protoFiles []string) error {
 
 	// 生成C++代码
 	if err := GenerateCpp(protoFiles, cppTempDir); err != nil {
-		return fmt.Errorf("生成C++代码失败: %w", err)
+		log.Fatalf("生成C++代码失败: %w", err)
 	}
 
 	// 拷贝C++代码到目标目录
@@ -365,7 +368,7 @@ func generateGameGrpcCpp(protoFiles []string) error {
 		return err
 	}
 	if err := CopyCppOutputs(protoFiles, cppTempDir, cppDestDir); err != nil {
-		return fmt.Errorf("拷贝C++代码失败: %w", err)
+		log.Fatalf("拷贝C++代码失败: %w", err)
 	}
 
 	return nil
@@ -376,13 +379,13 @@ func generateGameGrpcImpl() error {
 	// 1. 解析游戏Proto文件路径
 	gameProtoPath, err := proto.ResolveGameProtoPath()
 	if err != nil {
-		return fmt.Errorf("解析Proto路径失败: %w", err)
+		log.Fatalf("解析Proto路径失败: %w", err)
 	}
 	protoFiles := []string{gameProtoPath}
 
 	// 2. 生成C++序列化代码
 	if err := generateGameGrpcCpp(protoFiles); err != nil {
-		return fmt.Errorf("C++代码生成失败: %w", err)
+		log.Fatalf("C++代码生成失败: %w", err)
 	}
 
 	return nil
