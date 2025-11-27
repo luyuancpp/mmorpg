@@ -173,7 +173,7 @@ func (info *RPCServiceInfo) GrpcIncludeHeadName() string {
 }
 
 func (info *RPCServiceInfo) GrpcHeadName() string {
-	return strings.Replace(info.FileBaseNameNoEx(), config.ProtoExt, config.GrpcPbhEx, 1)
+	return strings.Replace(info.FileBaseNameNoEx(), config.ProtoExt, _config.Global.FileExtensions.GrpcPbH, 1)
 }
 
 func (info *RPCServiceInfo) GetServiceFullNameWithNoColon() string {
@@ -255,7 +255,7 @@ func (info *MethodInfo) Package() string {
 }
 
 func (info *MethodInfo) GrpcHeadName() string {
-	return strings.Replace(info.FileBaseName(), config.ProtoExt, config.GrpcPbhEx, 1)
+	return strings.Replace(info.FileBaseName(), config.ProtoExt, _config.Global.FileExtensions.GrpcPbH, 1)
 }
 
 func (info *MethodInfo) GrpcIncludeHeadName() string {
