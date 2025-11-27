@@ -199,10 +199,10 @@ func BuildProtoGrpcCpp(protoDir string) error {
 	}
 
 	// 3. 确保目录存在
-	if err := utils2.EnsureDir(config.GrpcTempDirectory); err != nil {
+	if err := utils2.EnsureDir(_config.Global.Paths.GrpcTempDir); err != nil {
 		return fmt.Errorf("GRPC C++生成: 创建临时目录失败: %w", err)
 	}
-	if err := utils2.EnsureDir(config.GrpcOutputDirectory); err != nil {
+	if err := utils2.EnsureDir(_config.Global.Paths.GrpcOutputDir); err != nil {
 		return fmt.Errorf("GRPC C++生成: 创建输出目录失败: %w", err)
 	}
 
