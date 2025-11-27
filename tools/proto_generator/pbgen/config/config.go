@@ -71,11 +71,9 @@ const (
 
 	GoNodeDirectory = OutputRoot + "go/"
 
-	PbcProtoOutputDirectory         = OutputRoot + GeneratedDirectory
-	PbcProtoOutputNoProtoSuffixPath = OutputRoot + GeneratedDirectory
+	PbcProtoOutputDirectory = OutputRoot + GeneratedDirectory
 
 	GeneratedOutputDirectory = OutputRoot + GeneratedDirectory
-	GrpcOutputDirectory      = OutputRoot + GeneratedDirectory
 	GrpcTempDirectory        = TempFileGenerationDir + "grpc/"
 	PbcTempDirectory         = TempFileGenerationDir
 	GrpcProtoOutputDirectory = OutputRoot + GeneratedDirectory + ProtoDirName
@@ -95,10 +93,6 @@ const (
 	ServiceInfoExtension  = "_service_metadata"
 	ServiceCppFilePath    = ServiceInfoDirectory + "service_metadata.cpp"
 	ServiceHeaderFilePath = ServiceInfoDirectory + "service_metadata.h"
-
-	LuaServiceFilePath       = PbcLuaDirectory + "lua_service.cpp"
-	ClientLuaDirectory       = OutputRoot + "bin/script/lua/service/"
-	ClientLuaServiceFilePath = OutputRoot + "client/src/handler/service_lua.cpp"
 
 	GrpcGeneratorDirectory = "grpc_client/"
 
