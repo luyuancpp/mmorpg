@@ -24,7 +24,6 @@ const (
 	CppSol2Extension              = "_sol2.cpp"
 	GrpcClientExtension           = "_grpc_client"
 	GrpcClientHeaderExtension     = GrpcClientExtension + HeaderExtension
-	GrpcClientCppExtension        = GrpcClientExtension + CppExtension
 	ModelSqlExtension             = "mysql_database_table.sql"
 	LoaderCppExtension            = "_loader.cpp"
 )
