@@ -231,7 +231,7 @@ func GenerateCppGrpc(protoFiles []string) error {
 		return fmt.Errorf("GRPC C++生成: 解析临时目录失败: %w", err)
 	}
 
-	protoParentDir, err := utils2.ResolveAbsPath(config.ProtoParentIncludePathDir, "Proto父目录")
+	protoParentDir, err := utils2.ResolveAbsPath(_config.Global.Paths.OutputRoot, "Proto父目录")
 	if err != nil {
 		return fmt.Errorf("GRPC C++生成: 解析父目录失败: %w", err)
 	}
