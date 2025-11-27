@@ -31,7 +31,7 @@ func GenerateGoProto(rootDir string) error {
 	}
 
 	// 2. 解析输出目录
-	nodeGoDir, err := utils2.ResolveAbsPath(config.NodeGoDirectory, "Go节点输出目录")
+	nodeGoDir, err := utils2.ResolveAbsPath(_config.Global.Paths.NodeGoDir, "Go节点输出目录")
 	if err != nil {
 		return err
 	}
@@ -197,7 +197,7 @@ func AddGoPackageToProtoDir() {
 			}
 		}
 
-		destDir := proto.BuildGeneratorProtoPath(config.RobotDirectory)
+		destDir := proto.BuildGeneratorProtoPath(_config.Global.Paths.RobotDir)
 		baseGoPackage := filepath.ToSlash(config.GoRobotPackage)
 
 		if err := addDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
@@ -348,7 +348,7 @@ func BuildGrpcServiceProto() {
 		} else {
 			log.Printf("GRPC服务构建: 目录[%s]处理完成", currentDir)
 		}
-	}(proto.BuildGeneratorProtoPath(config.RobotDirectory))
+	}(proto.BuildGeneratorProtoPath(_config.Global.Paths.RobotDir))
 
 	wg.Wait()
 	log.Println("GRPC服务构建: 所有目录处理完成")
@@ -365,7 +365,7 @@ func generateGameGrpcGo(protoFiles []string) error {
 
 	// 2. 为每个节点生成专属代码
 	for _, nodeName := range grpcNodes {
-		nodeOutputDir := filepath.Join(config.NodeGoDirectory, nodeName)
+		nodeOutputDir := filepath.Join(_config.Global.Paths.NodeGoDir, nodeName)
 		nodeOutputDir, err := utils2.ResolveAbsPath(nodeOutputDir, "节点game_rpc代码目录")
 		if err != nil {
 			return fmt.Errorf("解析节点game_rpc代码目录: %w", err)

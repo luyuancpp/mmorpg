@@ -24,10 +24,8 @@ const (
 // ----------- 项目目录路径 -----------
 const (
 	ModelPath                      = "model/"
-	NodeGoDirectory                = OutputRoot + "go/"
 	NodeCppDirectory               = OutputRoot + "cpp/"
 	NodePkgDirectory               = "cpp/libs/"
-	NodeLibsEngineDirectory        = NodePkgDirectory + "engine/"
 	NodeLibGameDirectory           = NodePkgDirectory + "services/"
 	NodePkgLogicSceneNodeDirectory = NodeLibGameDirectory + "scene/"
 	RoomNodeDirectory              = NodeCppDirectory + "nodes/scene/"

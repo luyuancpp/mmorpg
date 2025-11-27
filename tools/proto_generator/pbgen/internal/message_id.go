@@ -145,7 +145,7 @@ func WriteGoMessageId() {
 			continue
 		}
 		basePath := strings.ToLower(path.Base(config.ProtoDirs[i]))
-		outputDir := config.NodeGoDirectory + basePath + "/" + config.GoPackage
+		outputDir := _config.Global.Paths.NodeGoDir + basePath + "/" + config.GoPackage
 		filePaths = append(filePaths, outputDir+"/"+config.MessageIdGoFile)
 	}
 	// Write constants to files concurrently

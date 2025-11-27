@@ -22,7 +22,7 @@ func MakeProjectDir() {
 	os.MkdirAll(config.ServiceInfoDirectory, os.FileMode(0777))
 	os.MkdirAll(config.CppGenGrpcDirectory, os.FileMode(0777))
 	os.MkdirAll(config.PbDescDirectory, os.FileMode(0777))
-	os.MkdirAll(config.TempFileGenerationDir, os.FileMode(0777))
+	os.MkdirAll(_config.Global.Paths.TempFileGenDir, os.FileMode(0775))
 	os.MkdirAll(config.PbcTempDirectory, os.FileMode(0777))
 	os.MkdirAll(config.GrpcTempDirectory, os.FileMode(0777))
 	os.MkdirAll(config.GoGeneratorDirectory, os.FileMode(0777))
