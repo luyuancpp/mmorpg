@@ -265,7 +265,7 @@ func GenerateCppGrpc(protoFiles []string) error {
 // copyCppGrpcOutputs 拷贝C++ GRPC生成文件到目标目录
 func copyCppGrpcOutputs(protoFiles []string) error {
 	// 解析所有必要路径
-	protoDir, err := utils2.ResolveAbsPath(config.ProtoDir, "Proto基础目录")
+	protoDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtoDir, "Proto基础目录")
 	if err != nil {
 		return err
 	}
