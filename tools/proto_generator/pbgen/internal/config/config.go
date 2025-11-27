@@ -274,7 +274,7 @@ func resolvePathVariables() error {
 	return nil
 }
 
-// resolveAbsolutePaths 将所有路径转换为绝对路径
+// resolveAbsolutePaths 将所有路径转换为绝对路径，统一使用/并保留末尾斜杠
 func resolveAbsolutePaths() error {
 	pathsVal := reflect.ValueOf(&Global.Paths).Elem()
 	pathsType := pathsVal.Type()
@@ -293,6 +293,8 @@ func resolveAbsolutePaths() error {
 		if err != nil {
 			return fmt.Errorf("路径 '%s' 转换失败: %w", path, err)
 		}
+		// 统一替换为/并保留末尾斜杠
+		absPath = formatPathWithSlash(absPath, path)
 		field.SetString(absPath)
 	}
 
@@ -312,10 +314,26 @@ func resolveAbsolutePaths() error {
 		if err != nil {
 			return fmt.Errorf("处理器目录 '%s' 转换失败: %w", path, err)
 		}
+		// 统一替换为/并保留末尾斜杠
+		absPath = formatPathWithSlash(absPath, path)
 		field.SetString(absPath)
 	}
 
 	return nil
+}
+
+// formatPathWithSlash 统一路径分隔符为/，并根据原始路径保留末尾斜杠
+func formatPathWithSlash(absPath, originalPath string) string {
+	// 将系统分隔符替换为/
+	absPath = strings.ReplaceAll(absPath, string(filepath.Separator), "/")
+	// 检查原始路径是否以/或系统分隔符结尾
+	hasTrailingSlash := strings.HasSuffix(originalPath, "/") ||
+		strings.HasSuffix(originalPath, string(filepath.Separator))
+	// 若原始路径有末尾斜杠且当前路径没有，则补充
+	if hasTrailingSlash && !strings.HasSuffix(absPath, "/") {
+		absPath += "/"
+	}
+	return absPath
 }
 
 // setDefaults 设置默认值（处理未配置的字段）
