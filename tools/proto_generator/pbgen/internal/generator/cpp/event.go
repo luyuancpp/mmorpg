@@ -158,7 +158,7 @@ func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 		return
 	}
 
-	className := generateClassNameFromFile(file, config.ClassNameSuffix)
+	className := generateClassNameFromFile(file, _config.Global.Naming.HandlerFile)
 	baseName := strings.ToLower(strings.TrimSuffix(file.Name(), config.ProtoExt))
 	filePrefix := outputDir + baseName
 
@@ -259,7 +259,7 @@ public:
 		cppIncludeData += config.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), config.ProtoExt, _config.Global.FileExtensions.HandlerH, 1) + config.IncludeEndLine
 
 		// Register and UnRegister data
-		className := generateClassNameFromFile(protoFile, config.ClassNameSuffix)
+		className := generateClassNameFromFile(protoFile, _config.Global.Naming.HandlerFile)
 		registerData += className + "::Register();\n"
 		unRegisterData += className + "::UnRegister();\n"
 	}
