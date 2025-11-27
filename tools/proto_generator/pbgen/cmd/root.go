@@ -42,7 +42,7 @@ func main() {
 	}
 
 	// 后续使用 config.Global 访问配置
-	log.Printf("配置加载成功，proto根目录: %s", _config.Global.Paths.ProtoRoot)
+	log.Printf("配置加载成功，proto根目录: %s", _config.Global.Paths.OutputRoot)
 
 	start := time.Now() // 记录开始时间
 
