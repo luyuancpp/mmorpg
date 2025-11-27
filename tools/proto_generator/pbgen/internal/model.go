@@ -120,11 +120,11 @@ func (info *RPCServiceInfo) PbcHeadName() string {
 
 // HeadName 返回头文件名
 func (info *RPCServiceInfo) HeadName() string {
-	return strings.Replace(info.FileBaseName(), config.ProtoExt, config.HeaderExtension, 1)
+	return strings.Replace(info.FileBaseName(), config.ProtoExt, _config.Global.FileExtensions.Header, 1)
 }
 
 func (info *RPCServiceInfo) ServiceInfoIncludeName() string {
-	return config.IncludeBegin + config.GeneratedRpcName + config.ServiceInfoName + info.FileBaseNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
+	return config.IncludeBegin + config.GeneratedRpcName + config.ServiceInfoName + info.FileBaseNameNoEx() + config.ServiceInfoExtension + _config.Global.FileExtensions.Header + "\"\n"
 }
 
 // FileBaseNameNoEx 返回文件基本名
@@ -199,7 +199,7 @@ func (info *RPCServiceInfo) Package() string {
 }
 
 func (info *RPCServiceInfo) ServiceInfoHeadInclude() string {
-	return info.FileBaseNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension
+	return info.FileBaseNameNoEx() + config.ServiceInfoExtension + _config.Global.FileExtensions.Header
 }
 
 // FileBaseNameNoEx 返回文件基本名
@@ -208,7 +208,7 @@ func (info *MethodInfo) FileBaseNameNoEx() string {
 }
 
 func (info *MethodInfo) ServiceInfoHeadInclude() string {
-	return info.FileBaseNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension
+	return info.FileBaseNameNoEx() + config.ServiceInfoExtension + _config.Global.FileExtensions.Header
 }
 
 func (info *MethodInfo) GeneratorGrpcFileName() string {
@@ -279,7 +279,7 @@ func (info *MethodInfo) GoPackagePrefix() string {
 }
 
 func (info *MethodInfo) ServiceInfoIncludeName() string {
-	return config.IncludeBegin + config.GeneratedRpcName + config.ServiceInfoName + info.FileBaseNameNoEx() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
+	return config.IncludeBegin + config.GeneratedRpcName + config.ServiceInfoName + info.FileBaseNameNoEx() + config.ServiceInfoExtension + _config.Global.FileExtensions.Header + "\"\n"
 }
 
 // CppHandlerIncludeName 返回Cpp处理器包含文件名
