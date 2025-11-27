@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"pbgen/config"
 	"pbgen/internal"
+	_config "pbgen/internal/config"
 	"pbgen/internal/proto"
 	utils2 "pbgen/internal/utils"
 	"runtime"
@@ -84,7 +85,7 @@ func GenerateCpp(protoFiles []string, outputDir string) error {
 		return err
 	}
 
-	protoRootDir, err := utils2.ResolveAbsPath(config.OutputRoot, "Proto根目录")
+	protoRootDir, err := utils2.ResolveAbsPath(_config.Global.Paths.OutputRoot, "Proto根目录")
 	if err != nil {
 		return err
 	}
@@ -128,7 +129,7 @@ func CopyCppOutputs(protoFiles []string, tempDir, destDir string) error {
 	}
 
 	// 解析Proto根目录（用于计算相对路径）
-	protoRootDir, err := utils2.ResolveAbsPath(config.OutputRoot, "Proto根目录")
+	protoRootDir, err := utils2.ResolveAbsPath(_config.Global.Paths.OutputRoot, "Proto根目录")
 	if err != nil {
 		return err
 	}
