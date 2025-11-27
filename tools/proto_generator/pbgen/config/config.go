@@ -16,14 +16,11 @@ const (
 const (
 	HeaderExtension               = ".h"
 	CppExtension                  = ".cpp"
-	LuaCppExtension               = "_lua.cpp"
 	HandlerHeaderExtension        = "_handler.h"
 	HandlerCppExtension           = "_handler.cpp"
 	RepliedHandlerHeaderExtension = "_response_handler.h"
 	CppRepliedHandlerEx           = "_response_handler.cpp"
-	CppSol2Extension              = "_sol2.cpp"
 	GrpcClientExtension           = "_grpc_client"
-	GrpcClientHeaderExtension     = GrpcClientExtension + HeaderExtension
 	ModelSqlExtension             = "mysql_database_table.sql"
 	LoaderCppExtension            = "_loader.cpp"
 )
@@ -76,8 +73,6 @@ const (
 // ----------- 输出目录 -----------
 // 更新后的路径
 const (
-	ProtocPath            = "protoc"
-	ProtoName             = "proto"
 	ProtoGoPackageSuffix  = "_proto"
 	GoPackage             = "generated/pb/game"
 	GoRobotPackage        = "robot"
