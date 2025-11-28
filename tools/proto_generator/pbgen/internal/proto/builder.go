@@ -1,7 +1,6 @@
 package proto
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -19,7 +18,7 @@ func ResolveGameProtoPath() (string, error) {
 
 	gameProtoPath := filepath.Join(gameProtoRoot, config.GameRpcProtoName)
 	if _, err := os.Stat(gameProtoPath); err != nil {
-		return "", fmt.Errorf("游戏Proto文件不存在: 路径=%s, 错误=%w", gameProtoPath, err)
+		log.Fatalf("游戏Proto文件不存在: 路径=%s, 错误=%w", gameProtoPath, err)
 	}
 	return gameProtoPath, nil
 }
@@ -75,11 +74,11 @@ func CopyProtoToGenDir() {
 // copyProtoToDir 拷贝单个目录的Proto文件
 func copyProtoToDir(srcDir, destDir string) error {
 	if err := os.MkdirAll(destDir, 0755); err != nil {
-		return fmt.Errorf("创建目录[%s]失败: %w", destDir, err)
+		log.Fatalf("创建目录[%s]失败: %w", destDir, err)
 	}
 
 	if err := utils2.CopyLocalDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
-		return fmt.Errorf("拷贝失败: %s -> %s: %w", _config.Global.Paths.ProtoDir, destDir, err)
+		log.Fatalf("拷贝失败: %s -> %s: %w", _config.Global.Paths.ProtoDir, destDir, err)
 	}
 	return nil
 }

@@ -27,7 +27,7 @@ func NewConstantsGenerator(fileName string) *ConstantsGenerator {
 func (cg *ConstantsGenerator) Generate() ([]string, error) {
 	file, err := os.Open(cg.FileName)
 	if err != nil {
-		return nil, fmt.Errorf("error opening file: %w", err)
+		log.Fatal("error opening file: %w", err)
 	}
 	defer file.Close()
 
@@ -48,7 +48,7 @@ func (cg *ConstantsGenerator) Generate() ([]string, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading file: %w", err)
+		log.Fatalf("error reading file: %w", err)
 	}
 
 	return consts, nil
@@ -83,7 +83,7 @@ func NewConstantsWriter(constants []string, filePath string) *ConstantsWriter {
 func (cw *ConstantsWriter) Write() error {
 	file, err := os.Create(cw.FilePath)
 	if err != nil {
-		return fmt.Errorf("error creating file: %w", err)
+		log.Fatal("error creating file: %w", err)
 	}
 	defer file.Close()
 
@@ -91,19 +91,19 @@ func (cw *ConstantsWriter) Write() error {
 
 	_, err = writer.WriteString("package game\n\n")
 	if err != nil {
-		return fmt.Errorf("error writing to file: %w", err)
+		log.Fatal("error writing to file: %w", err)
 	}
 
 	for _, c := range cw.Constants {
 		_, err := writer.WriteString(c + "\n")
 		if err != nil {
-			return fmt.Errorf("error writing to file: %w", err)
+			log.Fatal("error writing to file: %w", err)
 		}
 	}
 
 	err = writer.Flush()
 	if err != nil {
-		return fmt.Errorf("error flushing to file: %w", err)
+		log.Fatal("error flushing to file: %w", err)
 	}
 
 	return nil

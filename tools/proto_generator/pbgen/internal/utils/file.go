@@ -2,7 +2,6 @@ package utils
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -72,13 +71,13 @@ func CopyFileIfChanged(inputPath, outputPath string) error {
 	// 读取源文件内容
 	srcContent, err := os.ReadFile(inputPath)
 	if err != nil {
-		return fmt.Errorf("读取源文件失败: %w", err)
+		log.Fatalf("读取源文件失败: %w", err)
 	}
 
 	// 读取目标文件内容（如果存在）
 	dstContent, err := os.ReadFile(outputPath)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("读取目标文件失败: %w", err)
+		log.Fatalf("读取目标文件失败: %w", err)
 	}
 
 	// 如果文件存在且内容相同，跳过写入
@@ -89,7 +88,7 @@ func CopyFileIfChanged(inputPath, outputPath string) error {
 
 	// 写入目标文件
 	if err := os.WriteFile(outputPath, srcContent, 0644); err != nil {
-		return fmt.Errorf("写入目标文件失败: %w", err)
+		log.Fatalf("写入目标文件失败: %w", err)
 	}
 
 	log.Println("文件已复制/更新:", outputPath)

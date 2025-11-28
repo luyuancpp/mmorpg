@@ -1,7 +1,7 @@
 package _go
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"pbgen/config"
 	"pbgen/internal"
@@ -112,13 +112,13 @@ func generateHandlerCases(method *internal.MethodInfo, cases []HandlerCase) []Ha
 func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 	file, err := os.Create(fileName)
 	if err != nil {
-		return fmt.Errorf("could not create file %s: %w", fileName, err)
+		log.Fatal("could not create file %s: %w", fileName, err)
 	}
 	defer file.Close()
 
 	tmpl, err := template.New("handler").Parse(handlerTotalTemplate)
 	if err != nil {
-		return fmt.Errorf("could not parse template: %w", err)
+		log.Fatal("could not parse template: %w", err)
 	}
 
 	data := CasesData{
@@ -126,7 +126,7 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 	}
 
 	if err := tmpl.Execute(file, data); err != nil {
-		return fmt.Errorf("could not execute template: %w", err)
+		log.Fatal("could not execute template: %w", err)
 	}
 
 	return nil
