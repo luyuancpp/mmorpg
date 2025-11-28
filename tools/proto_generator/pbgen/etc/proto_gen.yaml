@@ -21,8 +21,8 @@ paths:
   centre_node_dir: "{{node_cpp_dir}}nodes/centre/"
   gate_node_dir: "{{node_cpp_dir}}nodes/gate/"
   robot_dir: "tools/robot/"
-  robot_generated_dir: "{{robot_dir}}generated/"
-  robot_proto_dir: "{{robot_dir}}proto/"  # robot专用proto源目录
+  robot_generated_dir: "{{output_root}}generated/robot/"
+  robot_proto_dir: "{{robot_generated_dir}}proto/"  # robot专用proto源目录
   robot_generated_proto_dir: "{{robot_generated_dir}}proto/"  # robot生成的proto目录
   robot_go_zero_proto_dir: "{{robot_generated_proto_dir}}go-zero_proto/"  # robot的go-zero proto目录
   generated_dir: "cpp/generated/"
