@@ -2,6 +2,7 @@ package _go
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"pbgen/config"
@@ -80,14 +81,14 @@ func generateHandlerFile(fileName, handlerName, responseType string) error {
 	// Create the file
 	file, err := os.Create(fileName)
 	if err != nil {
-		return fmt.Errorf("could not create file: %w", err)
+		log.Fatalf("could not create file: %w", err)
 	}
 	defer file.Close()
 
 	// Template for the Go file content
 	tmpl, err := template.New("handler").Parse(handlerTemplate)
 	if err != nil {
-		return fmt.Errorf("could not parse template: %w", err)
+		log.Fatalf("could not parse template: %w", err)
 	}
 
 	// Fill the template with handler name and response type

@@ -30,13 +30,13 @@ type GrpcServiceTemplateData struct {
 func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, text string) error {
 	// 检查输入数据是否为空
 	if len(grpcServices) == 0 {
-		return fmt.Errorf("grpcServices cannot be empty")
+		log.Fatal("grpcServices cannot be empty")
 	}
 
 	// 渲染模板内容
 	tmpl, err := template.New(fileName).Parse(text)
 	if err != nil {
-		return fmt.Errorf("could not parse template: %w", err)
+		log.Fatal("could not parse template: %w", err)
 	}
 
 	// 填充模板数据
@@ -52,13 +52,13 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 	var generatedContent bytes.Buffer
 	// 渲染模板到缓冲区
 	if err := tmpl.Execute(&generatedContent, data); err != nil {
-		return fmt.Errorf("could not execute template: %w", err)
+		log.Fatal("could not execute template: %w", err)
 	}
 
 	// 读取现有文件的内容（如果文件存在）
 	existingContent, err := os.ReadFile(fileName)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("could not read existing file: %w", err)
+		log.Fatal("could not read existing file: %w", err)
 	}
 
 	// 如果文件内容相同，则跳过写入
@@ -75,13 +75,13 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 	// 创建文件并写入渲染后的内容
 	file, err := os.Create(fileName)
 	if err != nil {
-		return fmt.Errorf("could not create file: %w", err)
+		log.Fatal("could not create file: %w", err)
 	}
 	defer file.Close()
 
 	// 写入生成的内容到文件
 	if _, err := file.Write(generatedContent.Bytes()); err != nil {
-		return fmt.Errorf("could not write to file: %w", err)
+		log.Fatal("could not write to file: %w", err)
 	}
 
 	fmt.Println("文件已更新:", fileName)

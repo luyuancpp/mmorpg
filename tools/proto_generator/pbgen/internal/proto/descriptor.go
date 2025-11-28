@@ -2,7 +2,6 @@ package proto
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -135,7 +134,7 @@ func executeDescriptorCommand(args []string) error {
 
 	log.Printf("描述符生成: 执行命令: %s %s", cmd.Path, strings.Join(cmd.Args[1:], " "))
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("命令执行失败: 错误=%v,  stderr=%s", err, stderr.String())
+		log.Fatalf("命令执行失败: 错误=%v,  stderr=%s", err, stderr.String())
 	}
 
 	if stdout.Len() > 0 {

@@ -3,6 +3,7 @@ package _go
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"pbgen/config"
@@ -81,7 +82,7 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 	// 读取文件内容
 	file, err := os.Open(protoFile)
 	if err != nil {
-		return false, fmt.Errorf("打开文件失败: %v", err)
+		log.Fatal("打开文件失败: %v", err)
 	}
 	defer file.Close()
 
@@ -91,7 +92,7 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 		lines = append(lines, scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
-		return false, fmt.Errorf("读取文件失败: %v", err)
+		log.Fatal("读取文件失败: %v", err)
 	}
 
 	// 检查是否已存在go_package
@@ -151,18 +152,18 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 	// 写回文件
 	output, err := os.Create(protoFile)
 	if err != nil {
-		return false, fmt.Errorf("创建文件失败: %v", err)
+		log.Fatal("创建文件失败: %v", err)
 	}
 	defer output.Close()
 
 	writer := bufio.NewWriter(output)
 	for _, line := range newLines {
 		if _, err := writer.WriteString(line + "\n"); err != nil {
-			return false, fmt.Errorf("写入文件失败: %v", err)
+			log.Fatal("写入文件失败: %v", err)
 		}
 	}
 	if err := writer.Flush(); err != nil {
-		return false, fmt.Errorf("刷新缓存失败: %v", err)
+		log.Fatal("刷新缓存失败: %v", err)
 	}
 
 	return true, nil

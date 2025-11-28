@@ -91,7 +91,6 @@ func ReadServiceIdFile() {
 
 		f, err := os.Open(_config.Global.Paths.ServiceIdFile)
 		if err != nil {
-			fmt.Errorf("failed to open file %s: %w", _config.Global.Paths.ServiceIdFile, err)
 			log.Fatalf("error reading service ID file: %v", err)
 		}
 		defer f.Close()
@@ -102,14 +101,12 @@ func ReadServiceIdFile() {
 			splitList := strings.Split(line, "=")
 			id, err := strconv.ParseUint(splitList[0], 10, 64)
 			if err != nil {
-				fmt.Errorf("failed to parse ID from line %s: %w", line, err)
 				log.Fatalf("error reading service ID file: %v", err)
 			}
 			internal.ServiceIdMap[splitList[1]] = id
 		}
 
 		if err := scanner.Err(); err != nil {
-			fmt.Errorf("error reading file %s: %w", _config.Global.Paths.ServiceIdFile, err)
 			log.Fatalf("error reading service ID file: %v", err)
 		}
 

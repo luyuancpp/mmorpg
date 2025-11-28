@@ -2,7 +2,6 @@ package utils
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -21,7 +20,7 @@ func EnsureDir(dirPath string) error {
 func CollectProtoFiles(dirPath string) ([]string, error) {
 	fileEntries, err := os.ReadDir(dirPath)
 	if err != nil {
-		return nil, fmt.Errorf("读取目录[%s]失败: %w", dirPath, err)
+		log.Fatalf("读取目录[%s]失败: %w", dirPath, err)
 	}
 
 	var protoFiles []string
@@ -42,7 +41,7 @@ func CollectProtoFiles(dirPath string) ([]string, error) {
 func ResolveAbsPath(path string, desc string) (string, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return "", fmt.Errorf("解析[%s]路径失败: 路径=%s, 错误=%w", desc, path, err)
+		log.Fatalf("解析[%s]路径失败: 路径=%s, 错误=%w", desc, path, err)
 	}
 	return absPath, nil
 }

@@ -59,6 +59,7 @@ func BuildProtoCpp(protoDir string) error {
 
 	cppTempDir, err := utils2.ResolveAbsPath(config.PbcTempDirectory, "C++批量临时目录")
 	if err != nil {
+		log.Fatal(err)
 		return err
 	}
 

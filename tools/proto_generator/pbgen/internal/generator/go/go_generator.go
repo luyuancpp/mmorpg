@@ -23,7 +23,7 @@ func GenerateGoProto(rootDir string) error {
 	// 1. 收集非数据库Proto文件
 	protoFiles, err := collectGoGrpcProtoFiles(rootDir)
 	if err != nil {
-		return fmt.Errorf("Go GRPC生成: 收集Proto失败: %w", err)
+		log.Fatal("Go GRPC生成: 收集Proto失败: %w", err)
 	}
 	if len(protoFiles) == 0 {
 		log.Printf("Go GRPC生成: 目录[%s]无需要处理的Proto文件，跳过", rootDir)
@@ -36,7 +36,7 @@ func GenerateGoProto(rootDir string) error {
 		return err
 	}
 	if err := utils2.EnsureDir(nodeGoDir); err != nil {
-		return fmt.Errorf("Go GRPC生成: 创建输出目录失败: %w", err)
+		log.Fatal("Go GRPC生成: 创建输出目录失败: %w", err)
 	}
 
 	// 3. 解析Proto根路径
@@ -47,7 +47,7 @@ func GenerateGoProto(rootDir string) error {
 
 	// 4. 生成Go GRPC代码
 	if err := GenerateGoGrpc(protoFiles, nodeGoDir, protoRootPath); err != nil {
-		return fmt.Errorf("Go GRPC生成: 代码生成失败: %w", err)
+		log.Fatal("Go GRPC生成: 代码生成失败: %w", err)
 	}
 
 	return nil
@@ -58,7 +58,7 @@ func GenerateRobotGoProto(rootDir string) error {
 	// 1. 收集非数据库Proto文件
 	protoFiles, err := collectGoGrpcProtoFiles(rootDir)
 	if err != nil {
-		return fmt.Errorf("Go GRPC生成: 收集Proto失败: %w", err)
+		log.Fatal("Go GRPC生成: 收集Proto失败: %w", err)
 	}
 	if len(protoFiles) == 0 {
 		log.Printf("Go GRPC生成: 目录[%s]无需要处理的Proto文件，跳过", rootDir)
@@ -71,7 +71,7 @@ func GenerateRobotGoProto(rootDir string) error {
 		return err
 	}
 	if err := utils2.EnsureDir(nodeGoDir); err != nil {
-		return fmt.Errorf("Go GRPC生成: 创建输出目录失败: %w", err)
+		log.Fatal("Go GRPC生成: 创建输出目录失败: %w", err)
 	}
 
 	// 3. 解析Proto根路径
@@ -82,7 +82,7 @@ func GenerateRobotGoProto(rootDir string) error {
 
 	// 4. 生成Go GRPC代码
 	if err := GenerateGoGrpc(protoFiles, nodeGoDir, protoRootPath); err != nil {
-		return fmt.Errorf("Go GRPC生成: 代码生成失败: %w", err)
+		log.Fatal("Go GRPC生成: 代码生成失败: %w", err)
 	}
 
 	return nil
@@ -93,7 +93,7 @@ func collectGoGrpcProtoFiles(rootDir string) ([]string, error) {
 	var protoFiles []string
 	err := filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			return fmt.Errorf("访问路径[%s]失败: %w", path, err)
+			log.Fatal("访问路径[%s]失败: %w", path, err)
 		}
 
 		// 跳过目录、非Proto文件和数据库专用Proto文件
@@ -118,7 +118,7 @@ func collectGoGrpcProtoFiles(rootDir string) ([]string, error) {
 func GenerateGoGrpc(protoFiles []string, outputDir string, protoRootPath string) error {
 	// 提前校验空输入
 	if len(protoFiles) == 0 {
-		return fmt.Errorf("Go GRPC生成: 没有需要处理的Proto文件")
+		log.Fatal("Go GRPC生成: 没有需要处理的Proto文件")
 	}
 
 	// 1. 解析路径
@@ -140,7 +140,7 @@ func GenerateGoGrpc(protoFiles []string, outputDir string, protoRootPath string)
 	// 2. 验证protoc路径
 	protocPath, err := resolveProtocPath()
 	if err != nil {
-		return fmt.Errorf("Go GRPC生成: 解析protoc路径失败: %w", err)
+		log.Fatal("Go GRPC生成: 解析protoc路径失败: %w", err)
 	}
 
 	// 3. 构建protoc参数
@@ -210,14 +210,14 @@ func AddGoPackageToProtoDir() {
 func addDynamicGoPackage(rootDir, baseGoPackage, currentDir string, isMulti bool) error {
 	entries, err := os.ReadDir(currentDir)
 	if err != nil {
-		return fmt.Errorf("读取目录[%s]失败: %w", currentDir, err)
+		log.Fatal("读取目录[%s]失败: %w", currentDir, err)
 	}
 
 	for _, entry := range entries {
 		fullPath := filepath.Join(currentDir, entry.Name())
 		info, err := entry.Info()
 		if err != nil {
-			return fmt.Errorf("获取文件信息[%s]失败: %w", fullPath, err)
+			log.Fatal("获取文件信息[%s]失败: %w", fullPath, err)
 		}
 
 		if info.IsDir() {
@@ -239,14 +239,14 @@ func addDynamicGoPackage(rootDir, baseGoPackage, currentDir string, isMulti bool
 func AddGoZeroPackageToProtos(rootDir, baseGoPackage, currentDir string, isMulti bool) error {
 	entries, err := os.ReadDir(currentDir)
 	if err != nil {
-		return fmt.Errorf("读取目录[%s]失败: %w", currentDir, err)
+		log.Fatal("读取目录[%s]失败: %w", currentDir, err)
 	}
 
 	for _, entry := range entries {
 		fullPath := filepath.Join(currentDir, entry.Name())
 		info, err := entry.Info()
 		if err != nil {
-			return fmt.Errorf("获取文件信息[%s]失败: %w", fullPath, err)
+			log.Fatal("获取文件信息[%s]失败: %w", fullPath, err)
 		}
 
 		if info.IsDir() {
@@ -269,7 +269,7 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 	// 计算相对路径
 	relativePath, err := filepath.Rel(rootDir, filepath.Dir(filePath))
 	if err != nil {
-		return fmt.Errorf("计算相对路径失败: %w", err)
+		log.Fatal("计算相对路径失败: %w", err)
 	}
 
 	// 生成go_package路径
@@ -298,7 +298,7 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 	// 添加go_package到文件
 	added, err := AddGoPackage(filePath, goPackagePath, isMulti)
 	if err != nil {
-		return fmt.Errorf("设置go_package失败: %w", err)
+		log.Fatal("设置go_package失败: %w", err)
 	}
 
 	if added {
@@ -313,7 +313,7 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 func processGrpcDir(dirName string) error {
 	destDir := proto.BuildGeneratorProtoPath(dirName)
 	if _, err := os.Stat(destDir); errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("目录[%s]不存在", destDir)
+		log.Fatal("目录[%s]不存在", destDir)
 	}
 
 	return GenerateGoProto(destDir)
@@ -368,7 +368,7 @@ func generateGameGrpcGo(protoFiles []string) error {
 		nodeOutputDir := filepath.Join(_config.Global.Paths.NodeGoDir, nodeName)
 		nodeOutputDir, err := utils2.ResolveAbsPath(nodeOutputDir, "节点game_rpc代码目录")
 		if err != nil {
-			return fmt.Errorf("解析节点game_rpc代码目录: %w", err)
+			log.Fatal("解析节点game_rpc代码目录: %w", err)
 		}
 		if err := utils2.EnsureDir(nodeOutputDir); err != nil {
 			log.Printf("Go生成: 创建节点[%s]目录失败: %v，跳过", nodeName, err)
@@ -386,10 +386,10 @@ func generateGameGrpcGo(protoFiles []string) error {
 	// 3. 确保机器人代码目录存在
 	robotDir, err := utils2.ResolveAbsPath(config.RobotGoOutputGeneratedDirectory, "机器人代码目录")
 	if err != nil {
-		return fmt.Errorf("解析机器人目录失败: %w", err)
+		log.Fatal("解析机器人目录失败: %w", err)
 	}
 	if err := utils2.EnsureDir(robotDir); err != nil {
-		return fmt.Errorf("创建机器人目录失败: %w", err)
+		log.Fatal("创建机器人目录失败: %w", err)
 	}
 
 	if err := GenerateGoGrpc(protoFiles, robotDir, _config.Global.Paths.GameRpcProtoPath); err != nil {
@@ -406,13 +406,13 @@ func generateGameGrpcImpl() error {
 	// 1. 解析游戏Proto文件路径
 	gameProtoPath, err := proto.ResolveGameProtoPath()
 	if err != nil {
-		return fmt.Errorf("解析Proto路径失败: %w", err)
+		log.Fatal("解析Proto路径失败: %w", err)
 	}
 	protoFiles := []string{gameProtoPath}
 
 	// 2. 生成Go节点代码
 	if err := generateGameGrpcGo(protoFiles); err != nil {
-		return fmt.Errorf("Go代码生成失败: %w", err)
+		log.Fatal("Go代码生成失败: %w", err)
 	}
 
 	return nil

@@ -86,18 +86,18 @@ type HeaderTemplateInput struct {
 func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error {
 	tmpl, err := template.New("loader").Parse(playerHeaderTemplate)
 	if err != nil {
-		return fmt.Errorf("template parse failed: %w", err)
+		log.Fatalf("template parse failed: %w", err)
 	}
 
 	f, err := os.Create(outputPath)
 	if err != nil {
-		return fmt.Errorf("failed to create header file: %w", err)
+		log.Fatalf("failed to create header file: %w", err)
 	}
 	defer f.Close()
 
 	data := HeaderTemplateInput{Entries: entries}
 	if err := tmpl.Execute(f, data); err != nil {
-		return fmt.Errorf("template execute failed: %w", err)
+		log.Fatalf("template execute failed: %w", err)
 	}
 
 	return nil
@@ -219,7 +219,7 @@ func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBP
 func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData, messageType string, entries []HeaderEntry) error {
 	file, err := os.Create(fileName)
 	if err != nil {
-		return fmt.Errorf("could not create file %s: %w", fileName, err)
+		log.Fatalf("could not create file %s: %w", fileName, err)
 	}
 	defer func(file *os.File) {
 		err := file.Close()
@@ -231,7 +231,7 @@ func generateCppDeserializeFromDatabase(fileName string, handlerName string, fie
 
 	tmpl, err := template.New("handler").Parse(playerLoaderTemplate)
 	if err != nil {
-		return fmt.Errorf("could not parse template: %w", err)
+		log.Fatalf("could not parse template: %w", err)
 	}
 
 	data := DescData{
@@ -242,7 +242,7 @@ func generateCppDeserializeFromDatabase(fileName string, handlerName string, fie
 	}
 
 	if err := tmpl.Execute(file, data); err != nil {
-		return fmt.Errorf("could not execute template: %w", err)
+		log.Fatalf("could not execute template: %w", err)
 	}
 
 	return nil

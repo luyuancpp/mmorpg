@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"pbgen/config"
 	_config "pbgen/internal/config"
@@ -465,7 +466,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 	// 打开文件
 	fd, err := os.Open(cppFileName)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to open file %s: %v", cppFileName, err)
+		log.Fatalf("failed to open file %s: %v", cppFileName, err)
 	}
 	defer fd.Close()
 
