@@ -54,8 +54,8 @@ func CopyProtoToGenDir() {
 			utils2.Wg.Add(1)
 			go func(d, desc string, builder func(string) string) {
 				defer utils2.Wg.Done()
-				destDir := builder(d)
-				if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
+				destDir := _config.Global.Paths.GeneratorProtoDir + builder(d)
+				if err := copyProtoToDir(_config.Global.Paths.GeneratorProtoDir, destDir); err != nil {
 					log.Printf("%s Proto拷贝: 目录[%s]拷贝失败: %v", desc, d, err)
 				}
 			}(dir, item.desc, item.dirBuilder)
@@ -66,7 +66,7 @@ func CopyProtoToGenDir() {
 	utils2.Wg.Add(1)
 	go func() {
 		defer utils2.Wg.Done()
-		destDir := BuildGeneratorProtoPath(_config.Global.Paths.RobotDir)
+		destDir := _config.Global.Paths.GeneratorProtoDir + _config.Global.Paths.RobotDir
 		if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
 			log.Printf("Robot Proto拷贝: 目录[%s]拷贝失败: %v", _config.Global.Paths.RobotDir, err)
 		}
