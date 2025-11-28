@@ -13,6 +13,7 @@ import (
 	_go2 "pbgen/internal/generator/go"
 	"pbgen/internal/proto"
 	"pbgen/internal/utils"
+	"sync"
 	"time"
 )
 
@@ -55,21 +56,17 @@ func main() {
 	fmt.Println("Current working directory:", dir)
 
 	MakeProjectDir()
-	err = cpp2.GenerateGameGrpc()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	err = _go2.GenerateGameGrpc()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	proto.CopyProtoToGenDir()
+
+	var wg sync.WaitGroup
+
+	cpp2.GenerateGameGrpc(&wg)
+	_go2.GenerateGameGrpc(&wg)
+
+	proto.CopyProtoToGenDir(&wg)
 
 	// 开始读所有的proto文件
-	cpp2.ReadServiceIdFile()
-	utils.Wg.Wait()
+	cpp2.ReadServiceIdFile(&wg)
+	wg.Wait()
 
 	_go2.AddGoPackageToProtoDir()
 	utils.Wg.Wait()

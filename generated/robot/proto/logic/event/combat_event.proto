@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+
+
+message BeKillEvent 
+{
+  uint64 caster = 1;
+  uint64 target = 2;
+}

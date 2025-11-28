@@ -419,13 +419,16 @@ func generateGameGrpcImpl() error {
 }
 
 // GenerateGameGrpc 生成游戏GRPC代码（C++序列化+Go节点代码）
-func GenerateGameGrpc() error {
-	utils2.Wg.Add(1)
+func GenerateGameGrpc(wg *sync.WaitGroup) {
+	if wg == nil {
+		wg = &sync.WaitGroup{}
+	}
+	wg.Add(1)
+
 	go func() {
-		defer utils2.Wg.Done()
+		defer wg.Done()
 		if err := generateGameGrpcImpl(); err != nil {
 			log.Printf("游戏GRPC生成: 整体失败: %v", err)
 		}
 	}()
-	return nil
 }
