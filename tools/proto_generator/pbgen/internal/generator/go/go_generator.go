@@ -183,7 +183,7 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 
 		// 处理普通生成目录
 		for _, dirName := range grpcDirs {
-			destDir := proto.BuildGeneratorProtoPath(dirName)
+			destDir := _config.Global.Paths.GeneratorProtoDir + proto.BuildGeneratorProtoPath(dirName)
 			baseGoPackage := filepath.ToSlash(dirName)
 
 			if err := addDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
