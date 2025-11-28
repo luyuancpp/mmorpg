@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+
+
+message InitializeNpcComponentsEvent
+{
+  uint64 actor_entity = 1;
+}

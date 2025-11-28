@@ -18,6 +18,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"text/template"
 )
@@ -84,10 +85,14 @@ func ReadAllProtoFileServices() {
 }
 
 // ReadServiceIdFile reads service IDs from a file asynchronously.
-func ReadServiceIdFile() {
-	utils2.Wg.Add(1)
+func ReadServiceIdFile(wg *sync.WaitGroup) {
+	if wg == nil {
+		wg = &sync.WaitGroup{}
+	}
+	wg.Add(1)
+
 	go func() {
-		defer utils2.Wg.Done()
+		wg.Done()
 
 		f, err := os.Open(_config.Global.Paths.ServiceIdFile)
 		if err != nil {

@@ -8,6 +8,7 @@ import (
 	"pbgen/config"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
+	"sync"
 )
 
 // resolveGameProtoPath 解析游戏核心Proto文件路径
@@ -37,7 +38,12 @@ func BuildGeneratorProtoPath(dir string) string {
 }
 
 // CopyProtoToGenDir 拷贝Proto文件到生成目录
-func CopyProtoToGenDir() {
+func CopyProtoToGenDir(wg *sync.WaitGroup) {
+	if wg == nil {
+		wg = &sync.WaitGroup{}
+	}
+	wg.Add(1)
+
 	grpcDirs := utils2.GetGRPCSubdirectoryNames()
 
 	// 拷贝到不同生成目录
@@ -49,23 +55,27 @@ func CopyProtoToGenDir() {
 		{BuildGeneratorGoZeroProtoPath, "GoZero生成目录"},
 	}
 
-	for _, item := range copyToDirs {
-		for _, dir := range grpcDirs {
-			utils2.Wg.Add(1)
-			go func(d, desc string, builder func(string) string) {
-				defer utils2.Wg.Done()
-				destDir := _config.Global.Paths.GeneratorProtoDir + builder(d)
-				if err := copyProtoToDir(_config.Global.Paths.GeneratorProtoDir, destDir); err != nil {
-					log.Printf("%s Proto拷贝: 目录[%s]拷贝失败: %v", desc, d, err)
-				}
-			}(dir, item.desc, item.dirBuilder)
+	// 拷贝Robot目录（RobotDir若为绝对路径则直接使用）
+	go func() {
+		defer wg.Done()
+		for _, item := range copyToDirs {
+			for _, dir := range grpcDirs {
+				utils2.Wg.Add(1)
+				go func(d, desc string, builder func(string) string) {
+					defer utils2.Wg.Done()
+					destDir := _config.Global.Paths.GeneratorProtoDir + builder(d)
+					if err := copyProtoToDir(_config.Global.Paths.GeneratorProtoDir, destDir); err != nil {
+						log.Printf("%s Proto拷贝: 目录[%s]拷贝失败: %v", desc, d, err)
+					}
+				}(dir, item.desc, item.dirBuilder)
+			}
 		}
-	}
+	}()
 
 	// 拷贝Robot目录（RobotDir若为绝对路径则直接使用）
-	utils2.Wg.Add(1)
+	wg.Add(1)
 	go func() {
-		defer utils2.Wg.Done()
+		defer wg.Done()
 		destDir := _config.Global.Paths.RobotGeneratedProtoDir
 		if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
 			log.Printf("Robot Proto拷贝: 目录[%s]拷贝失败: %v", _config.Global.Paths.RobotDir, err)
