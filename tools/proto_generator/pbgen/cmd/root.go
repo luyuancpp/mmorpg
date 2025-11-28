@@ -58,13 +58,9 @@ func main() {
 	MakeProjectDir()
 
 	var wg sync.WaitGroup
-
 	cpp2.GenerateGameGrpc(&wg)
 	_go2.GenerateGameGrpc(&wg)
-
 	proto.CopyProtoToGenDir(&wg)
-
-	// 开始读所有的proto文件
 	cpp2.ReadServiceIdFile(&wg)
 	wg.Wait()
 
