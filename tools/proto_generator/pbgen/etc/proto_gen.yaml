@@ -21,6 +21,10 @@ paths:
   centre_node_dir: "{{node_cpp_dir}}nodes/centre/"
   gate_node_dir: "{{node_cpp_dir}}nodes/gate/"
   robot_dir: "tools/robot/"
+  robot_generated_dir: "{{robot_dir}}generated/"
+  robot_proto_dir: "{{robot_dir}}proto/"  # robot专用proto源目录
+  robot_generated_proto_dir: "{{robot_generated_dir}}proto/"  # robot生成的proto目录
+  robot_go_zero_proto_dir: "{{robot_generated_proto_dir}}go-zero_proto/"  # robot的go-zero proto目录
   generated_dir: "cpp/generated/"
 
   # 工具与临时目录
@@ -39,8 +43,9 @@ paths:
   grpc_output_dir: "{{output_root}}{{generated_dir}}"
   grpc_proto_output_dir: "{{output_root}}{{generated_dir}}proto/"
   robot_go_output_dir: "{{output_root}}{{robot_dir}}"
-  robot_go_game_pb_dir: "{{robot_go_output_dir}}generated/pb/game"
-  robot_go_gen_dir: "{{output_root}}{{robot_dir}}"
+  robot_generated_output_dir: "{{output_root}}{{robot_generated_dir}}"
+  robot_go_game_pb_dir: "{{robot_generated_output_dir}}pb/game"
+  robot_go_gen_dir: "{{output_root}}{{robot_generated_dir}}"
   go_generator_dir: "{{node_go_dir}}"
   generated_rpc_dir: "{{generated_output_dir}}rpc/"
   service_info_dir: "{{generated_rpc_dir}}service_metadata/"
@@ -58,6 +63,7 @@ paths:
   # 特定文件路径
   service_id_file: "{{proto_dir}}service_id.txt"
   robot_message_id_file: "{{robot_go_game_pb_dir}}/message_id.go"
+  robot_proto_import_path: "{{output_root}}{{robot_proto_dir}}"  # robot proto导入路径
   service_cpp_file: "{{service_info_dir}}service_metadata.cpp"
   service_header_file: "{{service_info_dir}}service_metadata.h"
   lua_service_file: "{{pbc_lua_dir}}lua_service.cpp"
@@ -66,7 +72,7 @@ paths:
   grpc_init_head_file: "{{cpp_gen_grpc_dir}}grpc_init_client.h"
   gen_util_cpp_file: "{{util_generator_dir}}proto_util.cpp"
   gen_util_head_file: "{{util_generator_dir}}proto_util.h"
-  robot_message_body_handler_file: "{{output_root}}{{robot_dir}}logic/handler/message_body_handler.go"
+  robot_message_body_handler_file: "{{output_root}}{{robot_generated_dir}}logic/handler/message_body_handler.go"
   player_storage_system_dir: "{{output_root}}{{node_pkg_logic_scene_node_dir}}player/system/"
   player_data_loader_file: "{{output_root}}{{node_pkg_logic_scene_node_dir}}player_data_loader.h"
   protoc_path: "protoc"
@@ -80,6 +86,8 @@ file_extensions:
   grpc_pb_h: ".grpc.pb.h"
   proto_dir_name: "proto/"
   go_zero_proto_dir_name: "go-zero_proto/"
+  robot_proto_dir_name: "{{robot_proto_dir}}"  # robot proto目录名常量
+  robot_go_zero_proto_dir_name: "{{robot_go_zero_proto_dir}}"  # robot go-zero proto目录名常量
   header: ".h"
   cpp: ".cpp"
   lua_cpp: "_lua.cpp"
@@ -111,6 +119,7 @@ naming:
   db_table_file: "mysql_database_table.proto"
   db_table_list_json: "mysql_database_table_list.json"
   game_rpc_proto: "game_rpc.proto"
+  robot_rpc_proto: "robot_rpc.proto"  # robot专用rpc proto文件名
   grpc_name: "grpc"
 
 # 路径列表配置
@@ -134,10 +143,17 @@ path_lists:
     - "service/go/grpc/team/"
     - "service/go/grpc/mail/"
     - "logic/database/"
+    - "{{robot_proto_dir}}"  # 添加robot proto目录到扫描列表
+
+  # robot专用Proto目录列表
+  robot_proto_directories:
+    - "{{robot_proto_dir}}common/"
+    - "{{robot_proto_dir}}rpc/"
+    - "{{robot_proto_dir}}message/"
 
   # 方法处理器目录列表
   method_handler_directories:
-    robot: "{{output_root}}{{robot_dir}}logic/handler/"
+    robot: "{{output_root}}{{robot_generated_dir}}logic/handler/"
     room_node: "{{room_node_dir}}handler/rpc/"
     room_node_player: "{{room_node_dir}}handler/rpc/player/"
     room_node_replied: "{{room_node_dir}}rpc_replies/"
@@ -169,6 +185,8 @@ generators:
   enable_go: true
   enable_handler: true
   enable_rpc_response: true
+  enable_robot_proto: true  # 启用robot proto生成
+  enable_robot_go_zero: true  # 启用robot go-zero proto生成
 
 # 模板映射配置
 mappings:
@@ -184,15 +202,21 @@ mappings:
     path: "go/{{proto_dir}}/{{proto_file}}_grpc.pb.go"
     template: "templates/go_grpc.tmpl"
     lang: "go"
+  robot_go_grpc:
+    path: "{{robot_go_gen_dir}}/{{proto_dir}}/{{proto_file}}_grpc.pb.go"
+    template: "templates/robot_go_grpc.tmpl"
+    lang: "go"
 
 # Proto解析器配置
 parser:
   include_paths:
     - "../../proto/common"
     - "../../proto/service"
+    - "../../{{robot_proto_dir}}"  # 添加robot proto到include路径
   ignore_files:
     - "test_*.proto"
     - "deprecated_*.proto"
+    - "{{robot_proto_dir}}test_*.proto"  # 忽略robot测试proto
 
 # 日志配置
 log:
