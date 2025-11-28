@@ -40,6 +40,10 @@ type Paths struct {
 	CentreNodeDir               string `yaml:"centre_node_dir"`
 	GateNodeDir                 string `yaml:"gate_node_dir"`
 	RobotDir                    string `yaml:"robot_dir"`
+	RobotGeneratedDir           string `yaml:"robot_generated_dir"`
+	RobotProtoDir               string `yaml:"robot_proto_dir"`
+	RobotGeneratedProtoDir      string `yaml:"robot_generated_proto_dir"`
+	RobotGoZeroProtoDir         string `yaml:"robot_go_zero_proto_dir"`
 	GeneratedDir                string `yaml:"generated_dir"`
 	ToolDir                     string `yaml:"tool_dir"`
 	TempFileGenDir              string `yaml:"temp_file_gen_dir"`
@@ -54,6 +58,7 @@ type Paths struct {
 	GrpcOutputDir               string `yaml:"grpc_output_dir"`
 	GrpcProtoOutputDir          string `yaml:"grpc_proto_output_dir"`
 	RobotGoOutputDir            string `yaml:"robot_go_output_dir"`
+	RobotGeneratedOutputDir     string `yaml:"robot_generated_output_dir"`
 	RobotGoGamePbDir            string `yaml:"robot_go_game_pb_dir"`
 	RobotGoGenDir               string `yaml:"robot_go_gen_dir"`
 	GoGeneratorDir              string `yaml:"go_generator_dir"`
@@ -71,6 +76,7 @@ type Paths struct {
 	ToolsDir                    string `yaml:"tools_dir"`
 	ServiceIdFile               string `yaml:"service_id_file"`
 	RobotMessageIdFile          string `yaml:"robot_message_id_file"`
+	RobotProtoImportPath        string `yaml:"robot_proto_import_path"`
 	ServiceCppFile              string `yaml:"service_cpp_file"`
 	ServiceHeaderFile           string `yaml:"service_header_file"`
 	LuaServiceFile              string `yaml:"lua_service_file"`
@@ -87,26 +93,28 @@ type Paths struct {
 
 // FileExtensions 文件扩展名配置
 type FileExtensions struct {
-	Proto              string `yaml:"proto"`
-	PbCc               string `yaml:"pb_cc"`
-	PbH                string `yaml:"pb_h"`
-	GrpcPbCc           string `yaml:"grpc_pb_cc"`
-	GrpcPbH            string `yaml:"grpc_pb_h"`
-	ProtoDirName       string `yaml:"proto_dir_name"`
-	GoZeroProtoDirName string `yaml:"go_zero_proto_dir_name"`
-	Header             string `yaml:"header"`
-	Cpp                string `yaml:"cpp"`
-	LuaCpp             string `yaml:"lua_cpp"`
-	HandlerH           string `yaml:"handler_h"`
-	HandlerCpp         string `yaml:"handler_cpp"`
-	RepliedHandlerH    string `yaml:"replied_handler_h"`
-	RepliedHandlerCpp  string `yaml:"replied_handler_cpp"`
-	CppSol2            string `yaml:"cpp_sol2"`
-	GrpcClient         string `yaml:"grpc_client"`
-	GrpcClientH        string `yaml:"grpc_client_h"`
-	GrpcClientCpp      string `yaml:"grpc_client_cpp"`
-	ModelSql           string `yaml:"model_sql"`
-	LoaderCpp          string `yaml:"loader_cpp"`
+	Proto                   string `yaml:"proto"`
+	PbCc                    string `yaml:"pb_cc"`
+	PbH                     string `yaml:"pb_h"`
+	GrpcPbCc                string `yaml:"grpc_pb_cc"`
+	GrpcPbH                 string `yaml:"grpc_pb_h"`
+	ProtoDirName            string `yaml:"proto_dir_name"`
+	GoZeroProtoDirName      string `yaml:"go_zero_proto_dir_name"`
+	RobotProtoDirName       string `yaml:"robot_proto_dir_name"`
+	RobotGoZeroProtoDirName string `yaml:"robot_go_zero_proto_dir_name"`
+	Header                  string `yaml:"header"`
+	Cpp                     string `yaml:"cpp"`
+	LuaCpp                  string `yaml:"lua_cpp"`
+	HandlerH                string `yaml:"handler_h"`
+	HandlerCpp              string `yaml:"handler_cpp"`
+	RepliedHandlerH         string `yaml:"replied_handler_h"`
+	RepliedHandlerCpp       string `yaml:"replied_handler_cpp"`
+	CppSol2                 string `yaml:"cpp_sol2"`
+	GrpcClient              string `yaml:"grpc_client"`
+	GrpcClientH             string `yaml:"grpc_client_h"`
+	GrpcClientCpp           string `yaml:"grpc_client_cpp"`
+	ModelSql                string `yaml:"model_sql"`
+	LoaderCpp               string `yaml:"loader_cpp"`
 }
 
 // Naming 命名规则配置
@@ -126,12 +134,14 @@ type Naming struct {
 	DbTableFile          string `yaml:"db_table_file"`
 	DbTableListJson      string `yaml:"db_table_list_json"`
 	GameRpcProto         string `yaml:"game_rpc_proto"`
+	RobotRpcProto        string `yaml:"robot_rpc_proto"`
 	GrpcName             string `yaml:"grpc_name"`
 }
 
 // PathLists 路径列表配置
 type PathLists struct {
 	ProtoDirectories         []string          `yaml:"proto_directories"`
+	RobotProtoDirectories    []string          `yaml:"robot_proto_directories"`
 	MethodHandlerDirectories MethodHandlerDirs `yaml:"method_handler_directories"`
 	GrpcLanguages            []string          `yaml:"grpc_languages"`
 }
@@ -159,6 +169,8 @@ type Generators struct {
 	EnableGo          bool `yaml:"enable_go"`
 	EnableHandler     bool `yaml:"enable_handler"`
 	EnableRpcResponse bool `yaml:"enable_rpc_response"`
+	EnableRobotProto  bool `yaml:"enable_robot_proto"`
+	EnableRobotGoZero bool `yaml:"enable_robot_go_zero"`
 }
 
 // Mapping 模板映射配置
@@ -323,6 +335,30 @@ func resolvePathVariables() error {
 		log.Fatalf("处理器目录变量替换超过最大迭代次数")
 	}
 
+	// 处理RobotProtoDirectories中的变量替换
+	if Global.PathLists.RobotProtoDirectories != nil {
+		robotProtoDirs := reflect.ValueOf(&Global.PathLists.RobotProtoDirectories).Elem()
+		for i := 0; i < robotProtoDirs.Len(); i++ {
+			dir := robotProtoDirs.Index(i)
+			if dir.Kind() != reflect.String {
+				continue
+			}
+
+			original := dir.String()
+			resolved := original
+
+			for k, v := range vars {
+				if strings.Contains(resolved, k) {
+					resolved = strings.ReplaceAll(resolved, k, v)
+				}
+			}
+
+			if resolved != original {
+				dir.SetString(resolved)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -371,6 +407,26 @@ func resolveAbsolutePaths() error {
 		field.SetString(absPath)
 	}
 
+	// 转换RobotProtoDirectories中的路径为绝对路径
+	if Global.PathLists.RobotProtoDirectories != nil {
+		robotProtoDirs := reflect.ValueOf(&Global.PathLists.RobotProtoDirectories).Elem()
+		for i := 0; i < robotProtoDirs.Len(); i++ {
+			dir := robotProtoDirs.Index(i)
+			if dir.Kind() != reflect.String {
+				continue
+			}
+			path := dir.String()
+			if path == "" {
+				continue
+			}
+			absPath, err := filepath.Abs(path)
+			if err == nil {
+				absPath = formatPathWithSlash(absPath, path)
+				dir.SetString(absPath)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -415,6 +471,37 @@ func setDefaults() {
 	if Global.Paths.AllInOneDesc == "" {
 		Global.Paths.AllInOneDesc = filepath.Join(Global.Paths.PbDescDir, "all_in_one.desc")
 	}
+
+	// Robot相关默认值
+	if Global.Paths.RobotGeneratedDir == "" {
+		Global.Paths.RobotGeneratedDir = filepath.Join(Global.Paths.RobotDir, "generated/")
+	}
+	if Global.Paths.RobotProtoDir == "" {
+		Global.Paths.RobotProtoDir = filepath.Join(Global.Paths.RobotDir, "proto/")
+	}
+	if Global.Paths.RobotGeneratedProtoDir == "" {
+		Global.Paths.RobotGeneratedProtoDir = filepath.Join(Global.Paths.RobotGeneratedDir, "proto/")
+	}
+	if Global.Paths.RobotGoZeroProtoDir == "" {
+		Global.Paths.RobotGoZeroProtoDir = filepath.Join(Global.Paths.RobotGeneratedProtoDir, "go-zero_proto/")
+	}
+	if Global.Paths.RobotGeneratedOutputDir == "" {
+		Global.Paths.RobotGeneratedOutputDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotGeneratedDir)
+	}
+	if Global.Paths.RobotGoGenDir == "" {
+		Global.Paths.RobotGoGenDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotGeneratedDir)
+	}
+	if Global.Paths.RobotProtoImportPath == "" {
+		Global.Paths.RobotProtoImportPath = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotProtoDir)
+	}
+
+	// 生成器开关默认值
+	if !Global.Generators.EnableRobotProto {
+		Global.Generators.EnableRobotProto = true
+	}
+	if !Global.Generators.EnableRobotGoZero {
+		Global.Generators.EnableRobotGoZero = true
+	}
 }
 
 // validateConfig 验证配置的完整性和正确性
@@ -431,6 +518,16 @@ func validateConfig() error {
 
 	if Global.Paths.ProtoDir == "" {
 		log.Fatalf("proto_dir 未配置")
+	}
+
+	// Robot相关配置检查
+	if Global.Paths.RobotDir != "" {
+		if Global.Paths.RobotGeneratedDir == "" {
+			log.Fatalf("robot_generated_dir 未配置")
+		}
+		if Global.Paths.RobotProtoDir == "" {
+			log.Fatalf("robot_proto_dir 未配置")
+		}
 	}
 
 	// 检查日志配置
@@ -468,6 +565,17 @@ func validatePaths() error {
 		}
 	}
 
+	// 检查RobotProtoDirectories
+	if Global.PathLists.RobotProtoDirectories != nil {
+		robotProtoDirs := reflect.ValueOf(&Global.PathLists.RobotProtoDirectories).Elem()
+		for i := 0; i < robotProtoDirs.Len(); i++ {
+			value := robotProtoDirs.Index(i).String()
+			if strings.Contains(value, "{{") || strings.Contains(value, "}}") {
+				log.Fatalf("RobotProtoDirectories[%d] 包含未替换的变量: %s", i, value)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -482,6 +590,27 @@ func (c *Config) GetProtoFullPaths() []string {
 	return fullPaths
 }
 
+// GetRobotProtoFullPaths 获取完整的Robot Proto文件目录路径
+func (c *Config) GetRobotProtoFullPaths() []string {
+	var fullPaths []string
+	for _, dir := range c.PathLists.RobotProtoDirectories {
+		fullPath := dir
+		if !filepath.IsAbs(dir) {
+			fullPath = filepath.Join(c.Paths.RobotProtoDir, dir)
+		}
+		fullPath = formatPathWithSlash(fullPath, fullPath)
+		fullPaths = append(fullPaths, fullPath)
+	}
+	return fullPaths
+}
+
+// GetAllProtoFullPaths 获取所有Proto文件目录路径（包括全局和Robot）
+func (c *Config) GetAllProtoFullPaths() []string {
+	fullPaths := c.GetProtoFullPaths()
+	robotPaths := c.GetRobotProtoFullPaths()
+	return append(fullPaths, robotPaths...)
+}
+
 // GetIncludePaths 获取完整的Include路径
 func (c *Config) GetIncludePaths() []string {
 	var includePaths []string
@@ -491,8 +620,10 @@ func (c *Config) GetIncludePaths() []string {
 		if strings.Contains(path, "{{") {
 			// 如果还有变量，尝试替换
 			for k, v := range map[string]string{
-				"{{output_root}}": c.Paths.OutputRoot,
-				"{{proto_dir}}":   c.Paths.ProtoDir,
+				"{{output_root}}":     c.Paths.OutputRoot,
+				"{{proto_dir}}":       c.Paths.ProtoDir,
+				"{{robot_proto_dir}}": c.Paths.RobotProtoDir,
+				"{{robot_dir}}":       c.Paths.RobotDir,
 			} {
 				path = strings.ReplaceAll(path, k, v)
 			}
@@ -515,5 +646,25 @@ func (c *Config) GetIncludePaths() []string {
 		includePaths = append(includePaths, c.Paths.ProtoDir)
 	}
 
+	// 添加Robot相关的include路径
+	if c.Paths.RobotProtoDir != "" {
+		includePaths = append(includePaths, c.Paths.RobotProtoDir)
+	}
+	if c.Paths.RobotProtoImportPath != "" {
+		includePaths = append(includePaths, c.Paths.RobotProtoImportPath)
+	}
+
 	return includePaths
+}
+
+// GetRobotOutputDirs 获取Robot相关的输出目录映射
+func (c *Config) GetRobotOutputDirs() map[string]string {
+	return map[string]string{
+		"generated":       c.Paths.RobotGeneratedDir,
+		"proto":           c.Paths.RobotProtoDir,
+		"generated_proto": c.Paths.RobotGeneratedProtoDir,
+		"go_zero_proto":   c.Paths.RobotGoZeroProtoDir,
+		"go_gen":          c.Paths.RobotGoGenDir,
+		"game_pb":         c.Paths.RobotGoGamePbDir,
+	}
 }
