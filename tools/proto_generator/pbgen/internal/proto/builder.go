@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -18,55 +19,56 @@ func ResolveGameProtoPath() (string, error) {
 
 	gameProtoPath := filepath.Join(gameProtoRoot, config.GameRpcProtoName)
 	if _, err := os.Stat(gameProtoPath); err != nil {
-		log.Fatalf("游戏Proto文件不存在: 路径=%s, 错误=%w", gameProtoPath, err)
+		return "", errors.Join(errors.New("游戏Proto文件不存在"), err)
 	}
 	return gameProtoPath, nil
 }
 
-// BuildGeneratorGoZeroProtoPath 构建GoZero生成器的Proto路径
+// BuildGeneratorGoZeroProtoPath 构建GoZero生成器的Proto路径（dir为绝对路径）
 func BuildGeneratorGoZeroProtoPath(dir string) string {
-	return filepath.Join(
-		config.GeneratorProtoDirectory,
-		dir,
-		_config.Global.FileExtensions.GoZeroProtoDirName,
-	)
+	// dir是绝对路径，直接拼接Proto子目录名
+	return filepath.Join(dir, _config.Global.FileExtensions.GoZeroProtoDirName)
 }
 
-// buildGeneratorProtoPath 构建生成器的Proto路径
+// BuildGeneratorProtoPath 构建生成器的Proto路径（dir为绝对路径）
 func BuildGeneratorProtoPath(dir string) string {
-	return filepath.Join(
-		config.GeneratorProtoDirectory,
-		dir,
-		_config.Global.FileExtensions.ProtoDirName,
-	)
+	// dir是绝对路径，直接拼接Proto子目录名
+	return filepath.Join(dir, _config.Global.FileExtensions.ProtoDirName)
 }
 
 // CopyProtoToGenDir 拷贝Proto文件到生成目录
 func CopyProtoToGenDir() {
+	grpcDirs := utils2.GetGRPCSubdirectoryNames()
+
+	// 拷贝到不同生成目录
+	copyToDirs := []struct {
+		dirBuilder func(string) string
+		desc       string
+	}{
+		{BuildGeneratorProtoPath, "普通生成目录"},
+		{BuildGeneratorGoZeroProtoPath, "GoZero生成目录"},
+	}
+
+	for _, item := range copyToDirs {
+		for _, dir := range grpcDirs {
+			utils2.Wg.Add(1)
+			go func(d, desc string, builder func(string) string) {
+				defer utils2.Wg.Done()
+				destDir := builder(d)
+				if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
+					log.Printf("%s Proto拷贝: 目录[%s]拷贝失败: %v", desc, d, err)
+				}
+			}(dir, item.desc, item.dirBuilder)
+		}
+	}
+
+	// 拷贝Robot目录（RobotDir若为绝对路径则直接使用）
 	utils2.Wg.Add(1)
 	go func() {
 		defer utils2.Wg.Done()
-		grpcDirs := utils2.GetGRPCSubdirectoryNames()
-
-		// 拷贝到普通生成目录
-		for _, dir := range grpcDirs {
-			destDir := BuildGeneratorProtoPath(dir)
-			if err := copyProtoToDir(dir, destDir); err != nil {
-				log.Printf("Proto拷贝: 目录[%s]拷贝失败: %v", dir, err)
-			}
-		}
-
-		// 拷贝到GoZero生成目录
-		for _, dir := range grpcDirs {
-			destDir := BuildGeneratorGoZeroProtoPath(dir)
-			if err := copyProtoToDir(dir, destDir); err != nil {
-				log.Printf("GoZero Proto拷贝: 目录[%s]拷贝失败: %v", dir, err)
-			}
-		}
-
 		destDir := BuildGeneratorProtoPath(_config.Global.Paths.RobotDir)
-		if err := copyProtoToDir(_config.Global.Paths.RobotDir, destDir); err != nil {
-			log.Printf("GoZero Proto拷贝: 目录[%s]拷贝失败: %v", _config.Global.Paths.RobotDir, err)
+		if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
+			log.Printf("Robot Proto拷贝: 目录[%s]拷贝失败: %v", _config.Global.Paths.RobotDir, err)
 		}
 	}()
 }
@@ -74,11 +76,11 @@ func CopyProtoToGenDir() {
 // copyProtoToDir 拷贝单个目录的Proto文件
 func copyProtoToDir(srcDir, destDir string) error {
 	if err := os.MkdirAll(destDir, 0755); err != nil {
-		log.Fatalf("创建目录[%s]失败: %w", destDir, err)
+		return errors.Join(errors.New("创建目录失败"), err)
 	}
 
-	if err := utils2.CopyLocalDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
-		log.Fatalf("拷贝失败: %s -> %s: %w", _config.Global.Paths.ProtoDir, destDir, err)
+	if err := utils2.CopyLocalDir(srcDir, destDir); err != nil {
+		return errors.Join(errors.New("拷贝失败"), err)
 	}
 	return nil
 }
