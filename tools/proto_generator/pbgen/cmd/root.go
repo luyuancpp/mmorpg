@@ -68,8 +68,8 @@ func main() {
 	cpp2.ReadServiceIdFile(&wg)
 	wg.Wait()
 
-	_go2.AddGoPackageToProtoDir()
-	utils.Wg.Wait()
+	_go2.AddGoPackageToProtoDir(&wg)
+	wg.Wait()
 
 	proto.GenerateAllInOneDescriptor()
 	utils.Wg.Wait()
