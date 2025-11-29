@@ -108,8 +108,6 @@ const (
 	DbProtoFileName                    = "db_base.proto"
 	PlayerDataLoaderName               = "player_data_loader.h"
 	DbTableName                        = "mysql_database_table.proto"
-	DBTableMessageListJson             = "mysql_database_table_list.json"
-	GameRpcProtoName                   = "game_rpc.proto"
 )
 
 // ----------- 代码相关字符串常量 -----------

@@ -213,7 +213,7 @@ func writeMessageNamesToJSON(messages []string) error {
 		return err
 	}
 
-	outputPath := _config.Global.Paths.TableGeneratorDir + config.DBTableMessageListJson
+	outputPath := _config.Global.Paths.TableGeneratorDir + _config.Global.Naming.DbTableListJson
 	if err := os.WriteFile(outputPath, data, 0644); err != nil {
 		return err
 	}
@@ -234,7 +234,7 @@ func GenerateDBResource(wg *sync.WaitGroup) {
 	go func() {
 		defer wg.Done()
 
-		protoFile := config.DbTableName
+		protoFile := _config.Global.Naming.DbTableFile
 		log.Printf("开始处理目标文件: %s", protoFile)
 
 		messageNames, err := extractMessageNamesFromProto(protoFile)
