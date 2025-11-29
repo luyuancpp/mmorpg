@@ -78,8 +78,9 @@ func isClientMethodRepliedHandler(methodList *internal.RPCMethods) bool {
 
 func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 	wg.Add(1)
-
 	go func() {
+		defer wg.Done()
+
 		handlerCases := make([]HandlerCase, 0)
 		for _, service := range internal.GlobalRPCServiceList {
 			if !isClientMethodRepliedHandler(&service.MethodInfo) {
