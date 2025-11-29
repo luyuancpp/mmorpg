@@ -178,32 +178,46 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 		defer wg.Done()
 		grpcDirs := utils2.GetGRPCSubdirectoryNames()
 
+		var innerWg sync.WaitGroup
+
 		// 处理普通生成目录
 		for _, dirName := range grpcDirs {
-			destDir := _config.Global.Paths.GeneratorProtoDir + proto.BuildGeneratorProtoPath(dirName)
-			baseGoPackage := filepath.ToSlash(dirName)
+			innerWg.Add(1)
+			go func(dirName string) {
+				defer innerWg.Done()
+				destDir := _config.Global.Paths.GeneratorProtoDir + proto.BuildGeneratorProtoPath(dirName)
+				baseGoPackage := filepath.ToSlash(dirName)
 
-			if err := addDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
-				log.Printf("GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
-			}
+				if err := addDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
+					log.Printf("GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
+				}
+			}(dirName)
 		}
 
 		// 处理GoZero生成目录
 		for _, dirName := range grpcDirs {
-			destDir := _config.Global.Paths.GeneratorProtoDir + proto.BuildGeneratorGoZeroProtoPath(dirName)
-			baseGoPackage := filepath.ToSlash(dirName)
+			innerWg.Add(1)
+			go func(dirName string) {
+				defer innerWg.Done()
+				destDir := _config.Global.Paths.GeneratorProtoDir + proto.BuildGeneratorGoZeroProtoPath(dirName)
+				baseGoPackage := filepath.ToSlash(dirName)
 
-			if err := AddGoZeroPackageToProtos(destDir, baseGoPackage, destDir, true); err != nil {
-				log.Printf("GoZero GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
-			}
+				if err := AddGoZeroPackageToProtos(destDir, baseGoPackage, destDir, true); err != nil {
+					log.Printf("GoZero GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
+				}
+			}(dirName)
 		}
 
+		// 处理RobotGeneratedProtoDir
 		destDir := _config.Global.Paths.RobotGeneratedProtoDir
 		baseGoPackage := filepath.ToSlash(config.GoRobotPackage)
 
 		if err := addDynamicGoPackage(_config.Global.Paths.RobotGeneratedProtoDir, baseGoPackage, destDir, false); err != nil {
 			log.Printf("GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
 		}
+
+		// 等待所有内部协程完成
+		innerWg.Wait()
 	}()
 }
 
