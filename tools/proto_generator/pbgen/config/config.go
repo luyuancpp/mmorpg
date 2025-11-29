@@ -101,7 +101,6 @@ const (
 	GrpcInitFileHeadPath             = OutputRoot + GeneratedDirectory + GrpcGeneratorDirectory + "grpc_init_client.h"
 
 	UtilGeneratorDirectory = OutputRoot + GeneratedDirectory + "proto_helpers/"
-	GenUtilFileCppPath     = UtilGeneratorDirectory + "proto_util.cpp"
 	GenUtilFileHeadPath    = UtilGeneratorDirectory + "proto_util.h"
 )
 

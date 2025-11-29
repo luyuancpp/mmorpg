@@ -17,7 +17,11 @@ func GenNodeUtil(wg *sync.WaitGroup) {
 	go func() {
 		defer wg.Done()
 
-		os.MkdirAll(path.Dir(config.GenUtilFileHeadPath), os.FileMode(0777))
+		err := os.MkdirAll(path.Dir(_config.Global.Paths.GenUtilHeadFile), os.FileMode(0777))
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
 
 		nodeList := make([]string, 0, len(config.ProtoDirectoryNames))
 		for _, file := range internal.FdSet.File {
