@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
+	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"strings"
 	"sync"
@@ -212,7 +213,7 @@ func writeMessageNamesToJSON(messages []string) error {
 		return err
 	}
 
-	outputPath := config.TableGeneratorPath + config.DBTableMessageListJson
+	outputPath := _config.Global.Paths.TableGeneratorDir + config.DBTableMessageListJson
 	if err := os.WriteFile(outputPath, data, 0644); err != nil {
 		return err
 	}
