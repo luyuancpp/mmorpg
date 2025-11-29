@@ -67,9 +67,9 @@ func main() {
 	_go2.AddGoPackageToProtoDir(&wg)
 	wg.Wait()
 
-	proto.GenerateAllInOneDescriptor()
-	utils.Wg.Wait()
-	cpp2.ReadAllProtoFileServices()
+	proto.GenerateAllInOneDescriptor(&wg)
+	wg.Wait()
+	cpp2.ReadAllProtoFileServices(&wg)
 	utils.Wg.Wait()
 	cpp2.BuildProtocCpp()
 	_go2.BuildGrpcServiceProto()

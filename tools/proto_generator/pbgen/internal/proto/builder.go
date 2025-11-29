@@ -39,9 +39,6 @@ func BuildGeneratorProtoPath(dir string) string {
 
 // CopyProtoToGenDir 拷贝Proto文件到生成目录
 func CopyProtoToGenDir(wg *sync.WaitGroup) {
-	if wg == nil {
-		wg = &sync.WaitGroup{}
-	}
 	wg.Add(1)
 
 	grpcDirs := utils2.GetGRPCSubdirectoryNames()

@@ -10,14 +10,15 @@ import (
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"strings"
+	"sync"
 )
 
 // GenerateAllInOneDescriptor 生成合并的Protobuf描述符文件
-func GenerateAllInOneDescriptor() {
-	utils2.Wg.Add(1)
+func GenerateAllInOneDescriptor(wg *sync.WaitGroup) {
+	wg.Add(1)
 
 	go func() {
-		defer utils2.Wg.Done()
+		defer wg.Done()
 		if err := generateAllInOneDesc(); err != nil {
 			log.Printf("描述符生成: 失败: %v", err)
 		}
