@@ -5,7 +5,6 @@ import "proto/middleware/etcd/kv.proto";
 import "proto/middleware/etcd/version.proto";
 
 
-option go_package = "robot/proto/middleware/etcd;etcd";
 package etcdserverpb;
 
 service KV {
