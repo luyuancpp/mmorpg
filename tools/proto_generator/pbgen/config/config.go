@@ -23,16 +23,15 @@ const (
 
 // ----------- 项目目录路径 -----------
 const (
-	ModelPath                      = "model/"
-	NodeCppDirectory               = OutputRoot + "cpp/"
-	NodePkgDirectory               = "cpp/libs/"
-	NodeLibGameDirectory           = NodePkgDirectory + "services/"
-	NodePkgLogicSceneNodeDirectory = NodeLibGameDirectory + "scene/"
-	RoomNodeDirectory              = NodeCppDirectory + "nodes/scene/"
-	CentreNodeDirectory            = NodeCppDirectory + "nodes/centre/"
-	GateNodeDirectory              = NodeCppDirectory + "nodes/gate/"
-	RobotDirectory                 = "tools/robot/"
-	GeneratedDirectory             = "cpp/generated/"
+	ModelPath            = "model/"
+	NodeCppDirectory     = OutputRoot + "cpp/"
+	NodePkgDirectory     = "cpp/libs/"
+	NodeLibGameDirectory = NodePkgDirectory + "services/"
+	RoomNodeDirectory    = NodeCppDirectory + "nodes/scene/"
+	CentreNodeDirectory  = NodeCppDirectory + "nodes/centre/"
+	GateNodeDirectory    = NodeCppDirectory + "nodes/gate/"
+	RobotDirectory       = "tools/robot/"
+	GeneratedDirectory   = "cpp/generated/"
 
 	RpcHandlerSourceDirectory   = "handler/rpc/"
 	RpcResponseSourceDirectory  = "rpc_replies/"
@@ -66,10 +65,7 @@ const (
 	TempFileGenerationDir = OutputRoot + ToolDir + "generated/temp/files/"
 	PbDescDirectory       = TempFileGenerationDir + "proto_desc/"
 
-	PbcProtoOutputDirectory = OutputRoot + GeneratedDirectory
-
 	GeneratedOutputDirectory = OutputRoot + GeneratedDirectory
-	GrpcTempDirectory        = TempFileGenerationDir + "grpc/"
 
 	MessageIdGoFile = "message_id.go"
 
