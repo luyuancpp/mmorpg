@@ -258,7 +258,7 @@ func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
 			Method:          method.Method(),
 			CppRequest:      method.CppRequest(),
 			CppResponse:     method.CppResponse(),
-			IsEmptyResponse: strings.Contains(method.CppResponse(), config.EmptyResponseName),
+			IsEmptyResponse: strings.Contains(method.CppResponse(), _config.Global.Naming.EmptyResponse),
 		})
 	}
 

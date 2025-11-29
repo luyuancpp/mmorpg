@@ -146,7 +146,7 @@ func isRelevantService(method *internal.MethodInfo) bool {
 
 // determineResponseType returns the response type or request type based on configuration.
 func determineResponseType(method *internal.MethodInfo) string {
-	if strings.Contains(method.GoResponse(), config.EmptyResponseName) {
+	if strings.Contains(method.GoResponse(), _config.Global.Naming.EmptyResponse) {
 		return method.GoRequest()
 	}
 	return method.GoResponse()
