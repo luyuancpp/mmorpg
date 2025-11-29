@@ -73,13 +73,11 @@ const (
 	GeneratedOutputDirectory = OutputRoot + GeneratedDirectory
 	GrpcTempDirectory        = TempFileGenerationDir + "grpc/"
 	PbcTempDirectory         = TempFileGenerationDir
-	GrpcProtoOutputDirectory = OutputRoot + GeneratedDirectory + ProtoDirName
 
-	RobotGoOutputDirectory          = OutputRoot + RobotDirectory
-	RobotGoGamePbDirectory          = RobotGoOutputDirectory + GoPackage
-	RobotGoOutputGeneratedDirectory = OutputRoot + RobotDirectory
-	MessageIdGoFile                 = "message_id.go"
-	RobotMessageIdFilePath          = RobotGoGamePbDirectory + "/" + MessageIdGoFile
+	RobotGoOutputDirectory = OutputRoot + RobotDirectory
+	RobotGoGamePbDirectory = RobotGoOutputDirectory + GoPackage
+	MessageIdGoFile        = "message_id.go"
+	RobotMessageIdFilePath = RobotGoGamePbDirectory + "/" + MessageIdGoFile
 
 	GeneratedRpcName      = "rpc/"
 	GeneratedRpcDirectory = GeneratedOutputDirectory + GeneratedRpcName
