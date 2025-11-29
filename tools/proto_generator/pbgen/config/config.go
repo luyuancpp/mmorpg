@@ -66,8 +66,6 @@ const (
 	TempFileGenerationDir = OutputRoot + ToolDir + "generated/temp/files/"
 	PbDescDirectory       = TempFileGenerationDir + "proto_desc/"
 
-	GoNodeDirectory = OutputRoot + "go/"
-
 	PbcProtoOutputDirectory = OutputRoot + GeneratedDirectory
 
 	GeneratedOutputDirectory = OutputRoot + GeneratedDirectory

@@ -137,7 +137,7 @@ func WriteGoMessageId(wg *sync.WaitGroup) {
 
 	// Define file paths where constants will be written
 	filePaths := []string{
-		config.RobotMessageIdFilePath,
+		_config.Global.Paths.RobotMessageIdFile,
 	}
 
 	for i := 0; i < len(config.ProtoDirs); i++ {
