@@ -75,13 +75,20 @@ func main() {
 	utils.Wg.Wait()
 
 	cpp2.GenerateAllEventHandlers(&wg)
+	wg.Wait()
 	// 所有文件的proto读完以后
 	cpp2.InitServiceId()
+	wg.Wait()
 	cpp2.WriteServiceIdFile()
+	wg.Wait()
 
 	cpp2.WriteMethodFile(&wg)
 	cpp2.GeneratorHandler(&wg)
+	wg.Wait()
+
 	internal.GenerateServiceConstants(&wg)
+	wg.Wait()
+
 	internal.WriteGoMessageId(&wg)
 	wg.Wait()
 
