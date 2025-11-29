@@ -15,20 +15,20 @@ import (
 )
 
 // BuildProtocCpp 并发处理所有目录的C++代码生成
-func BuildProtocCpp() {
+func BuildProtocCpp(wg *sync.WaitGroup) {
 	for i := 0; i < len(config.ProtoDirs); i++ {
-		utils2.Wg.Add(1)
+		wg.Add(1)
 		go func(dirIndex int) {
-			defer utils2.Wg.Done()
+			defer wg.Done()
 			dir := config.ProtoDirs[dirIndex]
 			if err := BuildProtoCpp(dir); err != nil {
 				log.Printf("C++批量构建: 目录[%s]处理失败: %v", dir, err)
 			}
 		}(i)
 
-		utils2.Wg.Add(1)
+		wg.Add(1)
 		go func(dirIndex int) {
-			defer utils2.Wg.Done()
+			defer wg.Done()
 			dir := config.ProtoDirs[dirIndex]
 			if err := BuildProtoGrpcCpp(dir); err != nil {
 				log.Printf("GRPC C++批量构建: 目录[%s]处理失败: %v", dir, err)
