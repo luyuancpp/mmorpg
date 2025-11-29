@@ -96,7 +96,6 @@ const (
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
 	PlayerStorageSystemDirectory     = OutputRoot + NodePkgLogicSceneNodeDirectory + "player/system/"
 	CppGenGrpcDirectory              = OutputRoot + GeneratedDirectory + GrpcGeneratorDirectory
-	PlayerStorageTempDirectory       = TempFileGenerationDir + "/node/game/storage/"
 )
 
 // ----------- 文件名 -----------

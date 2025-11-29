@@ -127,7 +127,7 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 	go func() {
 		defer wg.Done()
 
-		os.MkdirAll(config.PlayerStorageTempDirectory, os.FileMode(0777))
+		os.MkdirAll(_config.Global.Paths.PlayerStorageTempDir, os.FileMode(0777))
 
 		var headerEntries []HeaderEntry
 
@@ -158,7 +158,7 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 
 				messageDescName := strings.ToLower(*messageDesc.Name)
 				handleName := strcase.ToCamel(*messageDesc.Name)
-				md5FilePath := config.PlayerStorageTempDirectory + messageDescName + _config.Global.FileExtensions.LoaderCpp
+				md5FilePath := _config.Global.Paths.PlayerStorageTempDir + messageDescName + _config.Global.FileExtensions.LoaderCpp
 				filedList := generateDatabaseFiles(messageDesc)
 				messageType := *messageDesc.Name
 
@@ -174,7 +174,7 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 					return
 				}
 
-				destFilePath := config.PlayerStorageSystemDirectory + messageDescName + _config.Global.FileExtensions.LoaderCpp
+				destFilePath := _config.Global.Paths.PlayerStorageTempDir + messageDescName + _config.Global.FileExtensions.LoaderCpp
 				err = utils.CopyFileIfChanged(md5FilePath, destFilePath)
 				if err != nil {
 					log.Fatal(err)
@@ -184,7 +184,7 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 		}
 
 		// 生成头部文件
-		md5FilePath := config.PlayerStorageTempDirectory + config.PlayerDataLoaderName
+		md5FilePath := _config.Global.Paths.PlayerStorageTempDir + config.PlayerDataLoaderName
 		err := GenerateCppPlayerHeaderFile(md5FilePath, headerEntries)
 		if err != nil {
 			log.Fatalf("failed to generate header file: %v", err)
