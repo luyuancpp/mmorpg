@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"pbgen/config"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"sync"
@@ -18,7 +17,7 @@ func ResolveGameProtoPath() (string, error) {
 		return "", err
 	}
 
-	gameProtoPath := filepath.Join(gameProtoRoot, config.GameRpcProtoName)
+	gameProtoPath := filepath.Join(gameProtoRoot, _config.Global.Naming.GameRpcProto)
 	if _, err := os.Stat(gameProtoPath); err != nil {
 		return "", errors.Join(errors.New("游戏Proto文件不存在"), err)
 	}
