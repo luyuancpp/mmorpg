@@ -88,7 +88,6 @@ const (
 	ServiceInfoName       = "service_metadata/"
 	ServiceInfoDirectory  = GeneratedRpcDirectory + ServiceInfoName
 	ServiceInfoExtension  = "_service_metadata"
-	ServiceCppFilePath    = ServiceInfoDirectory + "service_metadata.cpp"
 )
 
 // ----------- 文件名 -----------
