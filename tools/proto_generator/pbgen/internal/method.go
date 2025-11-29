@@ -11,6 +11,7 @@ import (
 	utils2 "pbgen/internal/utils"
 	"sort"
 	"strings"
+	"sync"
 	"text/template"
 )
 
@@ -819,7 +820,7 @@ void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* re
 	return output.String()
 }
 
-func GenRegisterFile(dst string, cb checkRepliedCb) {
+func GenRegisterFile(wg *sync.WaitGroup, dst string, cb checkRepliedCb) {
 
 	const registerFileTemplate = `
 #include <unordered_map>
@@ -843,7 +844,7 @@ void InitServiceHandler()
 		InitLines []string
 	}
 
-	defer utils2.Wg.Done()
+	defer wg.Done()
 
 	var includes []string
 	var initLines []string
@@ -876,7 +877,7 @@ void InitServiceHandler()
 	utils2.WriteFileIfChanged(dst, output.Bytes())
 }
 
-func WriteRepliedRegisterFile(dst string, cb checkRepliedCb) {
+func WriteRepliedRegisterFile(wg *sync.WaitGroup, dst string, cb checkRepliedCb) {
 	const repliedRegisterTemplate = `
 void InitReply()
 {
@@ -891,7 +892,7 @@ void InitReply()
 		InitFuncs []string
 	}
 
-	defer utils2.Wg.Done()
+	defer wg.Done()
 
 	var initFuncList []string
 
@@ -920,13 +921,13 @@ void InitReply()
 	utils2.WriteFileIfChanged(dst, output.Bytes())
 }
 
-func GenerateServiceConstants() {
+func GenerateServiceConstants(wg *sync.WaitGroup) {
 	FileServiceMap.Range(func(k, v interface{}) bool {
 		protoFile := k.(string)
 		serviceList := v.([]*RPCServiceInfo)
-		utils2.Wg.Add(1)
+		wg.Add(1)
 		go func(protoFile string, serviceInfo []*RPCServiceInfo) {
-			defer utils2.Wg.Done()
+			defer wg.Done()
 
 			if len(serviceInfo) <= 0 {
 				return

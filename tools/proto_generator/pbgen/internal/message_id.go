@@ -127,7 +127,7 @@ func WriteToFiles(constants []string, filePaths []string) {
 	wg.Wait()
 }
 
-func WriteGoMessageId() {
+func WriteGoMessageId(wg *sync.WaitGroup) {
 	// Initialize the ConstantsGenerator
 	g := NewConstantsGenerator(_config.Global.Paths.ServiceIdFile)
 	consts, err := g.Generate()

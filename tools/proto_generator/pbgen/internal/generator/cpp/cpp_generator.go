@@ -404,26 +404,26 @@ func GenerateGameGrpc(wg *sync.WaitGroup) {
 	}()
 }
 
-func GeneratorHandler() {
+func GeneratorHandler(wg *sync.WaitGroup) {
 	for _, service := range internal.GlobalRPCServiceList {
-		ProcessAllHandlers(service.MethodInfo)
+		ProcessAllHandlers(wg, service.MethodInfo)
 	}
 }
 
-func WriteMethodFile() {
+func WriteMethodFile(wg *sync.WaitGroup) {
 	// Concurrent operations for game, centre, and gate registers
-	utils2.Wg.Add(1)
-	go internal.GenRegisterFile(config.RoomNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsRoomNodeHostedProtocolHandler)
-	utils2.Wg.Add(1)
-	go internal.WriteRepliedRegisterFile(config.RoomNodeMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsRoomNodeReceivedProtocolResponseHandler)
+	wg.Add(1)
+	go internal.GenRegisterFile(wg, config.RoomNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsRoomNodeHostedProtocolHandler)
+	wg.Add(1)
+	go internal.WriteRepliedRegisterFile(wg, config.RoomNodeMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsRoomNodeReceivedProtocolResponseHandler)
 
-	utils2.Wg.Add(1)
-	go internal.GenRegisterFile(config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsCentreHostedServiceHandler)
-	utils2.Wg.Add(1)
-	go internal.WriteRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, IsCentreReceivedServiceResponseHandler)
+	wg.Add(1)
+	go internal.GenRegisterFile(wg, config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsCentreHostedServiceHandler)
+	wg.Add(1)
+	go internal.WriteRepliedRegisterFile(wg, config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, IsCentreReceivedServiceResponseHandler)
 
-	utils2.Wg.Add(1)
-	go internal.GenRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterHandlerCppExtension, IsNoOpHandler)
-	utils2.Wg.Add(1)
-	go internal.WriteRepliedRegisterFile(config.GateMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsGateNodeReceivedResponseHandler)
+	wg.Add(1)
+	go internal.GenRegisterFile(wg, config.GateMethodRepliedHandlerDirectory+config.RegisterHandlerCppExtension, IsNoOpHandler)
+	wg.Add(1)
+	go internal.WriteRepliedRegisterFile(wg, config.GateMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsGateNodeReceivedResponseHandler)
 }

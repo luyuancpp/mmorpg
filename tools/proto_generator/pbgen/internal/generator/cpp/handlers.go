@@ -3,7 +3,7 @@ package cpp
 import (
 	"pbgen/config"
 	"pbgen/internal"
-	"pbgen/internal/utils"
+	"sync"
 )
 
 // ---------------- Game Node ----------------
@@ -122,7 +122,7 @@ var GateRepliedHandler = HandlerConfig{
 	IsRepliedHandler:    true,
 }
 
-func ProcessAllHandlers(methodList internal.RPCMethods) {
+func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 
 	handlerConfigs := []HandlerConfig{
 		RoomHandler,
@@ -138,10 +138,10 @@ func ProcessAllHandlers(methodList internal.RPCMethods) {
 	}
 
 	for _, cfg := range handlerConfigs {
-		utils.Wg.Add(1)
-		writeHandlerHeadFile(methodList, cfg)
-		utils.Wg.Add(1)
-		writeHandlerCppFile(methodList, cfg)
+		wg.Add(1)
+		writeHandlerHeadFile(wg, methodList, cfg)
+		wg.Add(1)
+		writeHandlerCppFile(wg, methodList, cfg)
 	}
 
 }

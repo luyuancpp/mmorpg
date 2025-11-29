@@ -71,27 +71,19 @@ func main() {
 	_go2.BuildGrpcServiceProto(&wg)
 	wg.Wait()
 
-	cpp2.GenNodeUtil()
+	cpp2.GenNodeUtil(&wg)
 	utils.Wg.Wait()
 
-	cpp2.GenerateAllEventHandlers()
-	utils.Wg.Wait()
+	cpp2.GenerateAllEventHandlers(&wg)
 	// 所有文件的proto读完以后
 	cpp2.InitServiceId()
-	utils.Wg.Wait()
-
 	cpp2.WriteServiceIdFile()
-	utils.Wg.Wait()
 
-	cpp2.WriteMethodFile()
-	cpp2.GeneratorHandler()
-	utils.Wg.Wait()
-
-	internal.GenerateServiceConstants()
-	utils.Wg.Wait()
-	// 所有service初始化完以后
-	internal.WriteGoMessageId()
-	utils.Wg.Wait()
+	cpp2.WriteMethodFile(&wg)
+	cpp2.GeneratorHandler(&wg)
+	internal.GenerateServiceConstants(&wg)
+	internal.WriteGoMessageId(&wg)
+	wg.Wait()
 
 	cpp2.WriteServiceRegisterInfoFile()
 	_go2.GenerateDBResource()
