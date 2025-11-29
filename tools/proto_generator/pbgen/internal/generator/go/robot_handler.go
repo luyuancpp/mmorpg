@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"pbgen/config"
 	"pbgen/internal"
+	_config "pbgen/internal/config"
 	"strings"
 	"sync"
 	"text/template"
@@ -48,7 +49,7 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 				handlerName := fmt.Sprintf("%sHandler", serviceName+method.Method())
 				responseType := method.GoResponse()
 
-				if strings.Contains(responseType, config.EmptyResponseName) {
+				if strings.Contains(responseType, _config.Global.Naming.EmptyResponse) {
 					responseType = method.GoRequest()
 				}
 
