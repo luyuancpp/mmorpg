@@ -113,7 +113,7 @@ func main() {
 	_go2.GoRobotTotalHandlerGenerator(&wg)
 	cpp2.CppPlayerDataLoadGenerator(&wg)
 	cpp2.CppGrpcCallClient(&wg)
-	wg.Wait()                            // 这里又使用了 utils.Wg，单独记录
+	wg.Wait()                            // 这里又使用了 wg，单独记录
 	utilsWgElapsed2 := time.Since(start) // 同样需要单独记录 start
 	log.Printf("Wait [wg 2] took: %s", utilsWgElapsed2)
 
