@@ -81,8 +81,6 @@ const (
 	MessageIdGoFile                 = "message_id.go"
 	RobotMessageIdFilePath          = RobotGoGamePbDirectory + "/" + MessageIdGoFile
 
-	GoGeneratorDirectory = GoNodeDirectory
-
 	GeneratedRpcName      = "rpc/"
 	GeneratedRpcDirectory = GeneratedOutputDirectory + GeneratedRpcName
 	ServiceInfoName       = "service_metadata/"
