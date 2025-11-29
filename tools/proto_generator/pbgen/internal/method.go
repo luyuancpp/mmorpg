@@ -550,7 +550,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 }
 
 func GenerateMethodHandlerNameWrapper(info *MethodInfo, _ string) string {
-	return info.Service() + config.HandlerFileName + "::" + info.Method() + "("
+	return info.Service() + _config.Global.Naming.HandlerFile + "::" + info.Method() + "("
 }
 
 func GenerateMethodHandlerNameWithClassPrefixWrapper(info *MethodInfo, classPrefix string) string {
@@ -856,7 +856,7 @@ void InitServiceHandler()
 		first := service.MethodInfo[0]
 		includes = append(includes, first.CppHandlerIncludeName())
 		initLines = append(initLines, fmt.Sprintf(" gNodeService.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());",
-			first.Service(), first.Service(), config.HandlerFileName))
+			first.Service(), first.Service(), _config.Global.Naming.HandlerFile))
 	}
 
 	templateData := RegisterFileData{

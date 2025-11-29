@@ -294,7 +294,7 @@ func (info *MethodInfo) CppRepliedHandlerIncludeName() string {
 
 // CppHandlerClassName 返回Cpp处理器类名
 func (info *MethodInfo) CppHandlerClassName() string {
-	return info.Service() + config.HandlerFileName
+	return info.Service() + _config.Global.Naming.HandlerFile
 }
 
 // CppRepliedHandlerClassName 返回Cpp已响应处理器类名

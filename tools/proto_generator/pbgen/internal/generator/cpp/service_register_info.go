@@ -426,7 +426,7 @@ void InitPlayerService()
 		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileBaseNameNoEx(), _config.Global.FileExtensions.HandlerH))
 		handlerClasses = append(handlerClasses, fmt.Sprintf("class %s : public %s {};", className, method.Service()))
 		initLines = append(initLines, fmt.Sprintf(`gPlayerService.emplace("%s", std::make_unique<%s%s>(std::make_unique<%s>()));`,
-			method.Service(), method.Service(), config.HandlerFileName, className))
+			method.Service(), method.Service(), _config.Global.Naming.HandlerFile, className))
 	}
 
 	data := PlayerServiceInstanceData{
