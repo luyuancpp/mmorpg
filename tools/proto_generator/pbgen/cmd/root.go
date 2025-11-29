@@ -12,7 +12,6 @@ import (
 	cpp2 "pbgen/internal/generator/cpp"
 	_go2 "pbgen/internal/generator/go"
 	"pbgen/internal/proto"
-	"pbgen/internal/utils"
 	"sync"
 	"time"
 )
@@ -32,6 +31,14 @@ func MakeProjectDir() {
 	for i := 0; i < len(config.ProtoDirectoryNames); i++ {
 		config.ProtoDirs = append(config.ProtoDirs, _config.Global.Paths.ProtoDir+config.ProtoDirectoryNames[i])
 	}
+}
+
+// 记录等待耗时的工具函数
+func waitWithTiming(wg *sync.WaitGroup, name string) {
+	start := time.Now()
+	wg.Wait()
+	elapsed := time.Since(start)
+	log.Printf("Wait [%s] took: %s", name, elapsed)
 }
 
 func main() {
@@ -62,36 +69,43 @@ func main() {
 	_go2.GenerateGameGrpc(&wg)
 	proto.CopyProtoToGenDir(&wg)
 	cpp2.ReadServiceIdFile(&wg)
-	wg.Wait()
+	waitWithTiming(&wg, "First wait (GenerateGameGrpc/CopyProto/ReadServiceIdFile)")
+
 	proto.GenerateAllInOneDescriptor(&wg)
-	wg.Wait()
+	waitWithTiming(&wg, "Second wait (GenerateAllInOneDescriptor)")
+
 	_go2.AddGoPackageToProtoDir(&wg)
 	cpp2.ReadAllProtoFileServices(&wg)
-	wg.Wait()
+	waitWithTiming(&wg, "Third wait (AddGoPackageToProtoDir/ReadAllProtoFileServices)")
+
 	cpp2.BuildProtocCpp(&wg)
 	_go2.BuildGrpcServiceProto(&wg)
-	wg.Wait()
+	waitWithTiming(&wg, "Fourth wait (BuildProtocCpp/BuildGrpcServiceProto)")
 
 	cpp2.GenNodeUtil(&wg)
-	utils.Wg.Wait()
+	wg.Wait()                           // 这里使用的是 wg，单独记录
+	utilsWgElapsed := time.Since(start) // 注意：这里如果前面有其他操作，需要单独记录 start
+	log.Printf("Wait [wg] took: %s", utilsWgElapsed)
 
 	cpp2.GenerateAllEventHandlers(&wg)
-	wg.Wait()
+	waitWithTiming(&wg, "Fifth wait (GenerateAllEventHandlers)")
+
 	// 所有文件的proto读完以后
 	cpp2.InitServiceId()
-	wg.Wait()
+	waitWithTiming(&wg, "Sixth wait (InitServiceId)")
+
 	cpp2.WriteServiceIdFile()
-	wg.Wait()
+	waitWithTiming(&wg, "Seventh wait (WriteServiceIdFile)")
 
 	cpp2.WriteMethodFile(&wg)
 	cpp2.GeneratorHandler(&wg)
-	wg.Wait()
+	waitWithTiming(&wg, "Eighth wait (WriteMethodFile/GeneratorHandler)")
 
 	internal.GenerateServiceConstants(&wg)
-	wg.Wait()
+	waitWithTiming(&wg, "Ninth wait (GenerateServiceConstants)")
 
 	internal.WriteGoMessageId(&wg)
-	wg.Wait()
+	waitWithTiming(&wg, "Tenth wait (WriteGoMessageId)")
 
 	cpp2.WriteServiceRegisterInfoFile(&wg)
 	_go2.GenerateDBResource(&wg)
@@ -99,9 +113,10 @@ func main() {
 	_go2.GoRobotTotalHandlerGenerator(&wg)
 	cpp2.CppPlayerDataLoadGenerator(&wg)
 	cpp2.CppGrpcCallClient(&wg)
-	utils.Wg.Wait()
+	wg.Wait()                            // 这里又使用了 utils.Wg，单独记录
+	utilsWgElapsed2 := time.Since(start) // 同样需要单独记录 start
+	log.Printf("Wait [wg 2] took: %s", utilsWgElapsed2)
 
 	// 打印总耗时
 	log.Printf("Total execution time: %s\n", time.Since(start))
-
 }
