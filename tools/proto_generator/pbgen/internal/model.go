@@ -299,7 +299,7 @@ func (info *MethodInfo) CppHandlerClassName() string {
 
 // CppRepliedHandlerClassName 返回Cpp已响应处理器类名
 func (info *MethodInfo) CppRepliedHandlerClassName() string {
-	return info.Service() + config.RepliedHandlerFileName
+	return info.Service() + _config.Global.Naming.RepliedHandlerFile
 }
 
 func (info *MethodInfo) CcGenericServices() bool {
