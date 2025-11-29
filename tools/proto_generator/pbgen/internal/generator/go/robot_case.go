@@ -7,6 +7,7 @@ import (
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	"strings"
+	"sync"
 	"text/template"
 )
 
@@ -75,25 +76,30 @@ func isClientMethodRepliedHandler(methodList *internal.RPCMethods) bool {
 	return internal.IsClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
 }
 
-func GoRobotTotalHandlerGenerator() {
-	handlerCases := make([]HandlerCase, 0)
-	for _, service := range internal.GlobalRPCServiceList {
-		if !isClientMethodRepliedHandler(&service.MethodInfo) {
-			continue
-		}
+func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
+	wg.Add(1)
 
-		for _, method := range service.MethodInfo {
-			if !isRelevantService(method) {
+	go func() {
+		handlerCases := make([]HandlerCase, 0)
+		for _, service := range internal.GlobalRPCServiceList {
+			if !isClientMethodRepliedHandler(&service.MethodInfo) {
 				continue
 			}
-			handlerCases = generateHandlerCases(method, handlerCases)
-		}
-	}
 
-	err := generateTotalHandlerFile(config.RobotMessageBodyHandlerDirectory, handlerCases)
-	if err != nil {
-		return
-	}
+			for _, method := range service.MethodInfo {
+				if !isRelevantService(method) {
+					continue
+				}
+				handlerCases = generateHandlerCases(method, handlerCases)
+			}
+		}
+
+		err := generateTotalHandlerFile(config.RobotMessageBodyHandlerDirectory, handlerCases)
+		if err != nil {
+			return
+		}
+	}()
+
 }
 
 // generateHandlerCases creates the cases for the switch statement based on the method.

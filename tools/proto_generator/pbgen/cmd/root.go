@@ -93,17 +93,12 @@ func main() {
 	internal.WriteGoMessageId(&wg)
 	wg.Wait()
 
-	cpp2.WriteServiceRegisterInfoFile()
-	_go2.GenerateDBResource()
-	utils.Wg.Wait()
-
-	_go2.GoRobotHandlerGenerator()
-	utils.Wg.Wait()
-	_go2.GoRobotTotalHandlerGenerator()
-	utils.Wg.Wait()
-	cpp2.CppPlayerDataLoadGenerator()
-	utils.Wg.Wait()
-	cpp2.CppGrpcCallClient()
+	cpp2.WriteServiceRegisterInfoFile(&wg)
+	_go2.GenerateDBResource(&wg)
+	_go2.GoRobotHandlerGenerator(&wg)
+	_go2.GoRobotTotalHandlerGenerator(&wg)
+	cpp2.CppPlayerDataLoadGenerator(&wg)
+	cpp2.CppGrpcCallClient(&wg)
 	utils.Wg.Wait()
 
 	// 打印总耗时

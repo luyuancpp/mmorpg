@@ -10,6 +10,7 @@ import (
 	"pbgen/config"
 	utils2 "pbgen/internal/utils"
 	"strings"
+	"sync"
 
 	pbmysql "github.com/luyuancpp/proto2mysql"
 	"google.golang.org/protobuf/proto"
@@ -227,10 +228,10 @@ func getFullMessageName(pkgName, msgName string) string {
 	return pkgName + "." + msgName
 }
 
-func GenerateDBResource() {
-	utils2.Wg.Add(1)
+func GenerateDBResource(wg *sync.WaitGroup) {
+	wg.Add(1)
 	go func() {
-		defer utils2.Wg.Done()
+		defer wg.Done()
 
 		protoFile := config.DbTableName
 		log.Printf("开始处理目标文件: %s", protoFile)
@@ -244,18 +245,18 @@ func GenerateDBResource() {
 		}
 
 		// 并发生成 JSON 配置
-		utils2.Wg.Add(1)
+		wg.Add(1)
 		go func() {
-			defer utils2.Wg.Done()
+			defer wg.Done()
 			if err := writeMessageNamesToJSON(messageNames); err != nil {
 				log.Fatalf("生成JSON配置失败: %v", err)
 			}
 		}()
 
 		// 并发生成 SQL
-		utils2.Wg.Add(1)
+		wg.Add(1)
 		go func() {
-			defer utils2.Wg.Done()
+			defer wg.Done()
 			if err := GenerateMergedTableSQL(messageNames); err != nil {
 				log.Fatalf("生成SQL失败: %v", err)
 			}
