@@ -43,7 +43,7 @@ paths:
   grpc_output_dir: "{{output_root}}{{generated_dir}}"
   grpc_proto_output_dir: "{{output_root}}{{generated_dir}}proto/"
   robot_go_output_dir: "{{output_root}}{{robot_dir}}"
-  robot_generated_output_dir: "{{output_root}}{{robot_generated_dir}}"
+  robot_generated_output_dir: "{{output_root}}{{robot_dir}}generated/"
   robot_go_game_pb_dir: "{{robot_generated_output_dir}}pb/game"
   robot_go_gen_dir: "{{output_root}}{{robot_generated_dir}}"
   go_generator_dir: "{{node_go_dir}}"
