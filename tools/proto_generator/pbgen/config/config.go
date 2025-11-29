@@ -97,11 +97,6 @@ const (
 	PlayerStorageSystemDirectory     = OutputRoot + NodePkgLogicSceneNodeDirectory + "player/system/"
 	CppGenGrpcDirectory              = OutputRoot + GeneratedDirectory + GrpcGeneratorDirectory
 	PlayerStorageTempDirectory       = TempFileGenerationDir + "/node/game/storage/"
-	GrpcInitFileCppPath              = OutputRoot + GeneratedDirectory + GrpcGeneratorDirectory + "grpc_init_client.cpp"
-	GrpcInitFileHeadPath             = OutputRoot + GeneratedDirectory + GrpcGeneratorDirectory + "grpc_init_client.h"
-
-	UtilGeneratorDirectory = OutputRoot + GeneratedDirectory + "proto_helpers/"
-	GenUtilFileHeadPath    = UtilGeneratorDirectory + "proto_util.h"
 )
 
 // ----------- 文件名 -----------
@@ -128,7 +123,6 @@ const (
 	YourCodeEnd              = "///<<< END WRITING YOUR CODE"
 	YourCodePair             = YourCodeBegin + "\n" + YourCodeEnd + "\n"
 	EmptyResponseName        = "Empty"
-	MysqlName                = "mysql"
 	PlayerServiceName        = "player_service_interface.cpp"
 	PlayerRepliedServiceName = "player_rpc_response_handler.cpp"
 )

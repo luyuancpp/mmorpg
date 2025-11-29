@@ -163,7 +163,7 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 				serviceInfoList = append(serviceInfoList, service)
 			}
 
-			os.MkdirAll(path.Dir(config.GrpcInitFileCppPath), os.FileMode(0777))
+			os.MkdirAll(path.Dir(_config.Global.Paths.GrpcInitCppFile), os.FileMode(0777))
 
 			cppData := struct {
 				ServiceInfo []*internal.RPCServiceInfo
@@ -171,11 +171,11 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 				ServiceInfo: serviceInfoList,
 			}
 
-			if err := utils2.RenderTemplateToFile("internal/template/grpc_init_total.cpp.tmpl", config.GrpcInitFileCppPath, cppData); err != nil {
+			if err := utils2.RenderTemplateToFile("internal/template/grpc_init_total.cpp.tmpl", _config.Global.Paths.GrpcInitCppFile, cppData); err != nil {
 				log.Fatal(err)
 			}
 
-			if err := utils2.RenderTemplateToFile("internal/template/grpc_init_total.h.tmpl", config.GrpcInitFileHeadPath, cppData); err != nil {
+			if err := utils2.RenderTemplateToFile("internal/template/grpc_init_total.h.tmpl", _config.Global.Paths.GrpcInitHeadFile, cppData); err != nil {
 				log.Fatal(err)
 			}
 		}()
