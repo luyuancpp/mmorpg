@@ -60,14 +60,10 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 		defer wg.Done()
 		for _, item := range copyToDirs {
 			for _, dir := range grpcDirs {
-				utils2.Wg.Add(1)
-				go func(d, desc string, builder func(string) string) {
-					defer utils2.Wg.Done()
-					destDir := _config.Global.Paths.GeneratorProtoDir + builder(d)
-					if err := copyProtoToDir(_config.Global.Paths.GeneratorProtoDir, destDir); err != nil {
-						log.Printf("%s Proto拷贝: 目录[%s]拷贝失败: %v", desc, d, err)
-					}
-				}(dir, item.desc, item.dirBuilder)
+				destDir := _config.Global.Paths.GeneratorProtoDir + item.dirBuilder(dir)
+				if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
+					log.Printf("%s Proto拷贝: 目录[%s]拷贝失败: %v", item.desc, dir, err)
+				}
 			}
 		}
 	}()
@@ -85,6 +81,11 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 
 // copyProtoToDir 拷贝单个目录的Proto文件
 func copyProtoToDir(srcDir, destDir string) error {
+	// 清空目标目录
+	if err := os.RemoveAll(destDir); err != nil {
+		return errors.Join(errors.New("清空目标目录失败"), err)
+	}
+
 	if err := os.MkdirAll(destDir, 0755); err != nil {
 		return errors.Join(errors.New("创建目录失败"), err)
 	}
