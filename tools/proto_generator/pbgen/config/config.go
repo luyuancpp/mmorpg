@@ -91,11 +91,7 @@ const (
 	ServiceCppFilePath    = ServiceInfoDirectory + "service_metadata.cpp"
 	ServiceHeaderFilePath = ServiceInfoDirectory + "service_metadata.h"
 
-	GrpcGeneratorDirectory = "grpc_client/"
-
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
-	PlayerStorageSystemDirectory     = OutputRoot + NodePkgLogicSceneNodeDirectory + "player/system/"
-	CppGenGrpcDirectory              = OutputRoot + GeneratedDirectory + GrpcGeneratorDirectory
 )
 
 // ----------- 文件名 -----------

@@ -190,7 +190,7 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 			log.Fatalf("failed to generate header file: %v", err)
 		}
 
-		destFilePath := config.PlayerStorageSystemDirectory + config.PlayerDataLoaderName
+		destFilePath := _config.Global.Paths.PlayerStorageSystemDir + config.PlayerDataLoaderName
 		err = utils.CopyFileIfChanged(md5FilePath, destFilePath)
 		if err != nil {
 			log.Fatalf("failed to generate header file: %v", err)
