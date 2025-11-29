@@ -8,12 +8,13 @@ import (
 	"pbgen/internal"
 	utils2 "pbgen/internal/utils"
 	"strings"
+	"sync"
 )
 
-func GenNodeUtil() {
-	utils2.Wg.Add(1)
+func GenNodeUtil(wg *sync.WaitGroup) {
+	wg.Add(1)
 	go func() {
-		defer utils2.Wg.Done()
+		defer wg.Done()
 
 		os.MkdirAll(path.Dir(config.GenUtilFileHeadPath), os.FileMode(0777))
 

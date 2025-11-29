@@ -5,6 +5,7 @@ import (
 	"pbgen/internal"
 	utils2 "pbgen/internal/utils"
 	"strings"
+	"sync"
 )
 
 type HandlerConfig struct {
@@ -18,8 +19,8 @@ type HandlerConfig struct {
 	IsRepliedHandler    bool
 }
 
-func writeHandlerHeadFile(methodList internal.RPCMethods, cfg HandlerConfig) {
-	defer utils2.Wg.Done()
+func writeHandlerHeadFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cfg HandlerConfig) {
+	defer wg.Done()
 
 	if !cfg.IsValidFunc(&methodList) {
 		return
@@ -40,8 +41,8 @@ func writeHandlerHeadFile(methodList internal.RPCMethods, cfg HandlerConfig) {
 	utils2.WriteFileIfChanged(fullPath, []byte(data))
 }
 
-func writeHandlerCppFile(methodList internal.RPCMethods, cfg HandlerConfig) {
-	defer utils2.Wg.Done()
+func writeHandlerCppFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cfg HandlerConfig) {
+	defer wg.Done()
 
 	if !cfg.IsValidFunc(&methodList) {
 		return

@@ -116,26 +116,21 @@ func ReadServiceIdFile(wg *sync.WaitGroup) {
 }
 
 func WriteServiceIdFile() {
-	utils2.Wg.Add(1)
-	go func() {
-		defer utils2.Wg.Done()
-
-		var data string
-		var idList []uint64
-		for k, _ := range internal.RpcIdMethodMap {
-			idList = append(idList, k)
+	var data string
+	var idList []uint64
+	for k, _ := range internal.RpcIdMethodMap {
+		idList = append(idList, k)
+	}
+	sort.Slice(idList, func(i, j int) bool { return idList[i] < idList[j] })
+	for i := 0; i < len(idList); i++ {
+		rpcMethodInfo, ok := internal.RpcIdMethodMap[idList[i]]
+		if !ok {
+			fmt.Println("msg id=", strconv.Itoa(i), " not use ")
+			continue
 		}
-		sort.Slice(idList, func(i, j int) bool { return idList[i] < idList[j] })
-		for i := 0; i < len(idList); i++ {
-			rpcMethodInfo, ok := internal.RpcIdMethodMap[idList[i]]
-			if !ok {
-				fmt.Println("msg id=", strconv.Itoa(i), " not use ")
-				continue
-			}
-			data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
-		}
-		utils2.WriteFileIfChanged(_config.Global.Paths.ServiceIdFile, []byte(data))
-	}()
+		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
+	}
+	utils2.WriteFileIfChanged(_config.Global.Paths.ServiceIdFile, []byte(data))
 }
 
 // InitServiceId initializes service IDs based on the loaded service methods and ID mappings.

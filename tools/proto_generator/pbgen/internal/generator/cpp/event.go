@@ -12,6 +12,7 @@ import (
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"strings"
+	"sync"
 )
 
 // generateClassNameFromFile 从 proto 文件名生成 C++ 类名（下划线转为大写驼峰），加后缀
@@ -148,8 +149,8 @@ type EventTemplateData struct {
 }
 
 // generateEventHandlerFiles 使用模板生成每个 proto 对应的 .h 和 .cpp 文件
-func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
-	defer utils2.Wg.Done()
+func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir string) {
+	defer wg.Done()
 
 	protoFilePath := config.ProtoDirs[config.LogicEventProtoDirIndex] + file.Name()
 	eventMessages, err := parseProtoMessages(protoFilePath)
@@ -199,7 +200,7 @@ func generateEventHandlerFiles(file os.DirEntry, outputDir string) {
 }
 
 // generateAllEventHandlers 生成所有事件处理器
-func GenerateAllEventHandlers() {
+func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 	files, err := os.ReadDir(config.ProtoDirs[config.LogicEventProtoDirIndex])
 	if err != nil {
 		log.Fatal(err)
@@ -209,16 +210,21 @@ func GenerateAllEventHandlers() {
 		if !utils2.IsProtoFile(file) {
 			continue
 		}
-		utils2.Wg.Add(2)
-		go generateEventHandlerFiles(file, config.RoomNodeEventHandlerDirectory)
-		go generateEventHandlerFiles(file, config.CentreNodeEventHandlerDirectory)
+		wg.Add(2)
+		go generateEventHandlerFiles(wg, file, config.RoomNodeEventHandlerDirectory)
+		go generateEventHandlerFiles(wg, file, config.CentreNodeEventHandlerDirectory)
 	}
 
-	err = GenerateAllEventHandlersTemplate(files)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err = GenerateAllEventHandlersTemplate(files)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+	}()
+
 }
 
 type Config struct {
