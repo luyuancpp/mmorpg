@@ -34,11 +34,12 @@ func MakeProjectDir() {
 }
 
 // 记录等待耗时的工具函数
-func waitWithTiming(wg *sync.WaitGroup, name string) {
+func waitWithTiming(wg *sync.WaitGroup, name string) time.Duration {
 	start := time.Now()
 	wg.Wait()
 	elapsed := time.Since(start)
 	log.Printf("Wait [%s] took: %s", name, elapsed)
+	return elapsed
 }
 
 func main() {
@@ -50,6 +51,10 @@ func main() {
 	log.Printf("配置加载成功，proto根目录: %s", _config.Global.Paths.OutputRoot)
 
 	start := time.Now() // 记录开始时间
+
+	// 用于跟踪最长耗时的等待
+	var maxDuration time.Duration
+	var maxName string
 
 	go func() {
 		log.Println(http.ListenAndServe("localhost:11111", nil)) // 启动 pprof HTTP 服务
@@ -69,43 +74,88 @@ func main() {
 	_go2.GenerateGameGrpc(&wg)
 	proto.CopyProtoToGenDir(&wg)
 	cpp2.ReadServiceIdFile(&wg)
-	waitWithTiming(&wg, "First wait (GenerateGameGrpc/CopyProto/ReadServiceIdFile)")
+	elapsed := waitWithTiming(&wg, "First wait (GenerateGameGrpc/CopyProto/ReadServiceIdFile)")
+	if elapsed > maxDuration {
+		maxDuration = elapsed
+		maxName = "First wait"
+	}
 
 	proto.GenerateAllInOneDescriptor(&wg)
-	waitWithTiming(&wg, "Second wait (GenerateAllInOneDescriptor)")
+	elapsed = waitWithTiming(&wg, "Second wait (GenerateAllInOneDescriptor)")
+	if elapsed > maxDuration {
+		maxDuration = elapsed
+		maxName = "Second wait"
+	}
 
 	_go2.AddGoPackageToProtoDir(&wg)
 	cpp2.ReadAllProtoFileServices(&wg)
-	waitWithTiming(&wg, "Third wait (AddGoPackageToProtoDir/ReadAllProtoFileServices)")
+	elapsed = waitWithTiming(&wg, "Third wait (AddGoPackageToProtoDir/ReadAllProtoFileServices)")
+	if elapsed > maxDuration {
+		maxDuration = elapsed
+		maxName = "Third wait"
+	}
 
 	cpp2.BuildProtocCpp(&wg)
 	_go2.BuildGrpcServiceProto(&wg)
-	waitWithTiming(&wg, "Fourth wait (BuildProtocCpp/BuildGrpcServiceProto)")
+	elapsed = waitWithTiming(&wg, "Fourth wait (BuildProtocCpp/BuildGrpcServiceProto)")
+	if elapsed > maxDuration {
+		maxDuration = elapsed
+		maxName = "Fourth wait"
+	}
 
 	cpp2.GenNodeUtil(&wg)
-	wg.Wait()                           // 这里使用的是 wg，单独记录
-	utilsWgElapsed := time.Since(start) // 注意：这里如果前面有其他操作，需要单独记录 start
-	log.Printf("Wait [wg] took: %s", utilsWgElapsed)
+	startWg := time.Now()
+	wg.Wait()
+	elapsed = time.Since(startWg)
+	log.Printf("Wait [Fifth wait (GenNodeUtil)] took: %s", elapsed)
+	if elapsed > maxDuration {
+		maxDuration = elapsed
+		maxName = "Fifth wait (GenNodeUtil)"
+	}
 
 	cpp2.GenerateAllEventHandlers(&wg)
-	waitWithTiming(&wg, "Fifth wait (GenerateAllEventHandlers)")
+	elapsed = waitWithTiming(&wg, "Sixth wait (GenerateAllEventHandlers)")
+	if elapsed > maxDuration {
+		maxDuration = elapsed
+		maxName = "Sixth wait"
+	}
 
 	// 所有文件的proto读完以后
 	cpp2.InitServiceId()
-	waitWithTiming(&wg, "Sixth wait (InitServiceId)")
+	elapsed = waitWithTiming(&wg, "Seventh wait (InitServiceId)")
+	if elapsed > maxDuration {
+		maxDuration = elapsed
+		maxName = "Seventh wait"
+	}
 
 	cpp2.WriteServiceIdFile()
-	waitWithTiming(&wg, "Seventh wait (WriteServiceIdFile)")
+	elapsed = waitWithTiming(&wg, "Eighth wait (WriteServiceIdFile)")
+	if elapsed > maxDuration {
+		maxDuration = elapsed
+		maxName = "Eighth wait"
+	}
 
 	cpp2.WriteMethodFile(&wg)
 	cpp2.GeneratorHandler(&wg)
-	waitWithTiming(&wg, "Eighth wait (WriteMethodFile/GeneratorHandler)")
+	elapsed = waitWithTiming(&wg, "Ninth wait (WriteMethodFile/GeneratorHandler)")
+	if elapsed > maxDuration {
+		maxDuration = elapsed
+		maxName = "Ninth wait"
+	}
 
 	internal.GenerateServiceConstants(&wg)
-	waitWithTiming(&wg, "Ninth wait (GenerateServiceConstants)")
+	elapsed = waitWithTiming(&wg, "Tenth wait (GenerateServiceConstants)")
+	if elapsed > maxDuration {
+		maxDuration = elapsed
+		maxName = "Tenth wait"
+	}
 
 	internal.WriteGoMessageId(&wg)
-	waitWithTiming(&wg, "Tenth wait (WriteGoMessageId)")
+	elapsed = waitWithTiming(&wg, "Eleventh wait (WriteGoMessageId)")
+	if elapsed > maxDuration {
+		maxDuration = elapsed
+		maxName = "Eleventh wait"
+	}
 
 	cpp2.WriteServiceRegisterInfoFile(&wg)
 	_go2.GenerateDBResource(&wg)
@@ -113,10 +163,16 @@ func main() {
 	_go2.GoRobotTotalHandlerGenerator(&wg)
 	cpp2.CppPlayerDataLoadGenerator(&wg)
 	cpp2.CppGrpcCallClient(&wg)
-	wg.Wait()                            // 这里又使用了 wg，单独记录
-	utilsWgElapsed2 := time.Since(start) // 同样需要单独记录 start
-	log.Printf("Wait [wg 2] took: %s", utilsWgElapsed2)
+	startWg = time.Now()
+	wg.Wait()
+	elapsed = time.Since(startWg)
+	log.Printf("Wait [Twelfth wait (Final tasks)] took: %s", elapsed)
+	if elapsed > maxDuration {
+		maxDuration = elapsed
+		maxName = "Twelfth wait (Final tasks)"
+	}
 
-	// 打印总耗时
+	// 打印总耗时和最长耗时的等待
 	log.Printf("Total execution time: %s\n", time.Since(start))
+	log.Printf("LONGEST WAIT: [%s] with %s", maxName, maxDuration)
 }
