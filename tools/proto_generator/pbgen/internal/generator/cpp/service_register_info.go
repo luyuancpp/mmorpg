@@ -361,7 +361,7 @@ void InitMessageInfo()
 		panic(err)
 	}
 
-	utils2.WriteFileIfChanged(config.ServiceCppFilePath, output.Bytes())
+	utils2.WriteFileIfChanged(_config.Global.Paths.ServiceCppFile, output.Bytes())
 }
 
 // writeServiceInfoHeadFile writes service information to a header file.
@@ -375,7 +375,7 @@ func writeServiceInfoHeadFile(wg *sync.WaitGroup) {
 		MaxMessageLen: internal.MessageIdLen(),
 	}
 
-	err := utils2.RenderTemplateToFile("internal/template/service_header.tmpl", config.ServiceHeaderFilePath, data)
+	err := utils2.RenderTemplateToFile("internal/template/service_header.tmpl", _config.Global.Paths.ServiceHeaderFile, data)
 	if err != nil {
 		panic(err)
 		return

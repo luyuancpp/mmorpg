@@ -89,9 +89,6 @@ const (
 	ServiceInfoDirectory  = GeneratedRpcDirectory + ServiceInfoName
 	ServiceInfoExtension  = "_service_metadata"
 	ServiceCppFilePath    = ServiceInfoDirectory + "service_metadata.cpp"
-	ServiceHeaderFilePath = ServiceInfoDirectory + "service_metadata.h"
-
-	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
 )
 
 // ----------- 文件名 -----------
