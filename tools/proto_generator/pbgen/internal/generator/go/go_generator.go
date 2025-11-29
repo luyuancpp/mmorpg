@@ -201,10 +201,10 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 			}
 		}
 
-		destDir := proto.BuildGeneratorProtoPath(_config.Global.Paths.RobotDir)
+		destDir := _config.Global.Paths.RobotGeneratedProtoDir
 		baseGoPackage := filepath.ToSlash(config.GoRobotPackage)
 
-		if err := addDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
+		if err := addDynamicGoPackage(_config.Global.Paths.RobotGeneratedProtoDir, baseGoPackage, destDir, false); err != nil {
 			log.Printf("GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
 		}
 	}()
