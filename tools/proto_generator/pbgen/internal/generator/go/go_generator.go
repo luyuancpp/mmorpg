@@ -178,13 +178,11 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 		defer wg.Done()
 		grpcDirs := utils2.GetGRPCSubdirectoryNames()
 
-		var innerWg sync.WaitGroup
-
 		// 处理普通生成目录
 		for _, dirName := range grpcDirs {
-			innerWg.Add(1)
+			wg.Add(1)
 			go func(dirName string) {
-				defer innerWg.Done()
+				defer wg.Done()
 				destDir := _config.Global.Paths.GeneratorProtoDir + proto.BuildGeneratorProtoPath(dirName)
 				baseGoPackage := filepath.ToSlash(dirName)
 
@@ -196,9 +194,9 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 
 		// 处理GoZero生成目录
 		for _, dirName := range grpcDirs {
-			innerWg.Add(1)
+			wg.Add(1)
 			go func(dirName string) {
-				defer innerWg.Done()
+				defer wg.Done()
 				destDir := _config.Global.Paths.GeneratorProtoDir + proto.BuildGeneratorGoZeroProtoPath(dirName)
 				baseGoPackage := filepath.ToSlash(dirName)
 
@@ -216,8 +214,6 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 			log.Printf("GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
 		}
 
-		// 等待所有内部协程完成
-		innerWg.Wait()
 	}()
 }
 
@@ -335,10 +331,8 @@ func processGrpcDir(dirName string) error {
 }
 
 // BuildGrpcServiceProto 并发处理所有GRPC目录
-func BuildGrpcServiceProto() {
+func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 	grpcDirs := utils2.GetGRPCSubdirectoryNames()
-	var wg sync.WaitGroup
-
 	for _, dirName := range grpcDirs {
 		wg.Add(1)
 

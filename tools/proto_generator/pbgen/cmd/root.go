@@ -63,17 +63,13 @@ func main() {
 	proto.CopyProtoToGenDir(&wg)
 	cpp2.ReadServiceIdFile(&wg)
 	wg.Wait()
-
 	_go2.AddGoPackageToProtoDir(&wg)
-	wg.Wait()
-
 	proto.GenerateAllInOneDescriptor(&wg)
-	wg.Wait()
 	cpp2.ReadAllProtoFileServices(&wg)
-	utils.Wg.Wait()
-	cpp2.BuildProtocCpp()
-	_go2.BuildGrpcServiceProto()
-	utils.Wg.Wait()
+	wg.Wait()
+	cpp2.BuildProtocCpp(&wg)
+	_go2.BuildGrpcServiceProto(&wg)
+	wg.Wait()
 
 	cpp2.GenNodeUtil()
 	utils.Wg.Wait()
