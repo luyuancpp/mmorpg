@@ -72,7 +72,7 @@ paths:
   grpc_init_head_file: "{{cpp_gen_grpc_dir}}grpc_init_client.h"
   gen_util_cpp_file: "{{util_generator_dir}}proto_util.cpp"
   gen_util_head_file: "{{util_generator_dir}}proto_util.h"
-  robot_message_body_handler_file: "{{output_root}}{{robot_generated_dir}}logic/handler/message_body_handler.go"
+  robot_message_body_handler_file: "{{output_root}}{{robot_dir}}logic/handler/message_body_handler.go"
   player_storage_system_dir: "{{output_root}}{{node_pkg_logic_scene_node_dir}}player/system/"
   player_data_loader_file: "{{output_root}}{{node_pkg_logic_scene_node_dir}}player_data_loader.h"
   protoc_path: "protoc"

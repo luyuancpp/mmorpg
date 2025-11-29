@@ -3,7 +3,6 @@ package _go
 import (
 	"log"
 	"os"
-	"pbgen/config"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	"strings"
@@ -95,7 +94,7 @@ func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 			}
 		}
 
-		err := generateTotalHandlerFile(config.RobotMessageBodyHandlerDirectory, handlerCases)
+		err := generateTotalHandlerFile(_config.Global.Paths.RobotMessageBodyHandlerFile, handlerCases)
 		if err != nil {
 			return
 		}
