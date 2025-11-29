@@ -359,15 +359,13 @@ func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 }
 
 // generateGameGrpcGo 为游戏GRPC生成多节点Go代码
-func generateGameGrpcGo(protoFiles []string) {
+func generateGameGrpcGo(wg *sync.WaitGroup, protoFiles []string) {
 	// 1. 获取所有GRPC节点目录
 	grpcNodes := utils2.GetGRPCSubdirectoryNames()
 	if len(grpcNodes) == 0 {
 		log.Println("Go生成: 未找到GRPC节点目录，跳过")
 		return
 	}
-
-	var wg sync.WaitGroup
 
 	// 2. 为每个节点生成专属代码
 	for _, nodeName := range grpcNodes {
@@ -415,11 +413,10 @@ func generateGameGrpcGo(protoFiles []string) {
 		log.Println("Go生成: 所有游戏GRPC节点代码生成完成")
 	}()
 
-	wg.Wait()
 }
 
 // generateGameGrpcImpl 游戏GRPC生成核心逻辑
-func generateGameGrpcImpl() error {
+func generateGameGrpcImpl(wg *sync.WaitGroup) error {
 	// 1. 解析游戏Proto文件路径
 	gameProtoPath, err := proto.ResolveGameProtoPath()
 	if err != nil {
@@ -427,7 +424,7 @@ func generateGameGrpcImpl() error {
 	}
 
 	protoFiles := []string{gameProtoPath}
-	generateGameGrpcGo(protoFiles)
+	generateGameGrpcGo(wg, protoFiles)
 	return nil
 }
 
@@ -436,7 +433,7 @@ func GenerateGameGrpc(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := generateGameGrpcImpl(); err != nil {
+		if err := generateGameGrpcImpl(wg); err != nil {
 			log.Printf("游戏GRPC生成: 整体失败: %v", err)
 		}
 	}()

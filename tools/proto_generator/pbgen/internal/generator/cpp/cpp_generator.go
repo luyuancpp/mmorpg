@@ -343,41 +343,47 @@ func copyCppGrpcOutputs(protoFiles []string) error {
 }
 
 // generateGameGrpcCpp 生成游戏GRPC C++代码
-func generateGameGrpcCpp(protoFiles []string) error {
-	// 解析输出目录
-	cppOutputDir, err := utils2.ResolveAbsPath(config.PbcProtoOutputDirectory, "游戏C++输出目录")
-	if err != nil {
-		return err
-	}
-	if err := utils2.EnsureDir(cppOutputDir); err != nil {
-		log.Fatalf("创建C++输出目录失败: %w", err)
-	}
+func generateGameGrpcCpp(wg *sync.WaitGroup, protoFiles []string) error {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
 
-	// 解析临时目录
-	cppTempDir, err := utils2.ResolveAbsPath(config.PbcTempDirectory, "游戏C++临时目录")
-	if err != nil {
-		return err
-	}
+		// 解析输出目录
+		cppOutputDir, err := utils2.ResolveAbsPath(config.PbcProtoOutputDirectory, "游戏C++输出目录")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := utils2.EnsureDir(cppOutputDir); err != nil {
+			log.Fatalf("创建C++输出目录失败: %w", err)
+		}
 
-	// 生成C++代码
-	if err := GenerateCpp(protoFiles, cppTempDir); err != nil {
-		log.Fatalf("生成C++代码失败: %w", err)
-	}
+		// 解析临时目录
+		cppTempDir, err := utils2.ResolveAbsPath(config.PbcTempDirectory, "游戏C++临时目录")
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	// 拷贝C++代码到目标目录
-	cppDestDir, err := utils2.ResolveAbsPath(_config.Global.Paths.GrpcOutputDir, "游戏C++最终目录")
-	if err != nil {
-		return err
-	}
-	if err := CopyCppOutputs(protoFiles, cppTempDir, cppDestDir); err != nil {
-		log.Fatalf("拷贝C++代码失败: %w", err)
-	}
+		// 生成C++代码
+		if err := GenerateCpp(protoFiles, cppTempDir); err != nil {
+			log.Fatalf("生成C++代码失败: %w", err)
+		}
+
+		// 拷贝C++代码到目标目录
+		cppDestDir, err := utils2.ResolveAbsPath(_config.Global.Paths.GrpcOutputDir, "游戏C++最终目录")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := CopyCppOutputs(protoFiles, cppTempDir, cppDestDir); err != nil {
+			log.Fatalf("拷贝C++代码失败: %w", err)
+		}
+
+	}()
 
 	return nil
 }
 
 // generateGameGrpcImpl 游戏GRPC生成核心逻辑
-func generateGameGrpcImpl() error {
+func generateGameGrpcImpl(wg *sync.WaitGroup) error {
 	// 1. 解析游戏Proto文件路径
 	gameProtoPath, err := proto.ResolveGameProtoPath()
 	if err != nil {
@@ -386,7 +392,7 @@ func generateGameGrpcImpl() error {
 	protoFiles := []string{gameProtoPath}
 
 	// 2. 生成C++序列化代码
-	if err := generateGameGrpcCpp(protoFiles); err != nil {
+	if err := generateGameGrpcCpp(wg, protoFiles); err != nil {
 		log.Fatalf("C++代码生成失败: %w", err)
 	}
 
@@ -398,7 +404,7 @@ func GenerateGameGrpc(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
 		wg.Done()
-		if err := generateGameGrpcImpl(); err != nil {
+		if err := generateGameGrpcImpl(wg); err != nil {
 			log.Printf("游戏GRPC生成: 整体失败: %v", err)
 		}
 	}()
