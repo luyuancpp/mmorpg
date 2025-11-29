@@ -339,7 +339,8 @@ func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 		// 传递当前目录名副本到goroutine，避免循环变量捕获问题
 		go func(currentDir string) {
 			defer wg.Done()
-			if err := processGrpcDir(currentDir); err != nil {
+			destDir := _config.Global.Paths.GeneratorProtoDir + currentDir
+			if err := processGrpcDir(destDir); err != nil {
 				log.Printf("GRPC服务构建: 目录[%s]处理失败: %v", currentDir, err)
 			} else {
 				log.Printf("GRPC服务构建: 目录[%s]处理完成", currentDir)
@@ -357,7 +358,7 @@ func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 		} else {
 			log.Printf("GRPC服务构建: 目录[%s]处理完成", currentDir)
 		}
-	}(proto.BuildGeneratorProtoPath(_config.Global.Paths.RobotDir))
+	}(_config.Global.Paths.RobotGeneratedProtoDir)
 
 	wg.Wait()
 	log.Println("GRPC服务构建: 所有目录处理完成")
