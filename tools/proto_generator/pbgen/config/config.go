@@ -119,7 +119,6 @@ const (
 	YourCodeBegin            = "///<<< BEGIN WRITING YOUR CODE"
 	YourCodeEnd              = "///<<< END WRITING YOUR CODE"
 	YourCodePair             = YourCodeBegin + "\n" + YourCodeEnd + "\n"
-	EmptyResponseName        = "Empty"
 	PlayerServiceName        = "player_service_interface.cpp"
 	PlayerRepliedServiceName = "player_rpc_response_handler.cpp"
 )

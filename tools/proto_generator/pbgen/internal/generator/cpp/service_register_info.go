@@ -494,7 +494,7 @@ void InitPlayerServiceReplied()
 		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileBaseNameNoEx(), _config.Global.FileExtensions.RepliedHandlerH))
 		handlerClasses = append(handlerClasses, fmt.Sprintf("class %s : public %s {};", className, method.Service()))
 		initLines = append(initLines, fmt.Sprintf(`gPlayerServiceReplied.emplace("%s", std::make_unique<%s%s>(std::make_unique<%s>()));`,
-			method.Service(), method.Service(), config.RepliedHandlerFileName, className))
+			method.Service(), method.Service(), _config.Global.Naming.RepliedHandlerFile, className))
 	}
 
 	templateData := PlayerServiceRepliedInstanceData{

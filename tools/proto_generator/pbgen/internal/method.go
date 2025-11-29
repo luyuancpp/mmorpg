@@ -442,7 +442,7 @@ void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn
 	data := MethodRepliedHandlerData{
 		FirstMethodInfo:        (methods)[0],
 		Methods:                methods,
-		RepliedHandlerFileName: config.RepliedHandlerFileName,
+		RepliedHandlerFileName: _config.Global.Naming.RepliedHandlerFile,
 	}
 
 	// Parse and execute the template
@@ -558,7 +558,7 @@ func GenerateMethodHandlerNameWithClassPrefixWrapper(info *MethodInfo, classPref
 }
 
 func GenerateMethodHandlerKeyNameWrapper(info *MethodInfo, _ string) string {
-	return "On" + info.KeyName() + config.RepliedHandlerFileName
+	return "On" + info.KeyName() + _config.Global.Naming.RepliedHandlerFile
 }
 
 func GetServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
@@ -724,7 +724,7 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 		CppRepliedHandlerInclude: firstMethodInfo.CppRepliedHandlerIncludeName(),
 		FirstCode:                firstCode,
 		InitFuncName:             firstMethodInfo.Service(),
-		RepliedHandlerFileName:   config.RepliedHandlerFileName,
+		RepliedHandlerFileName:   _config.Global.Naming.RepliedHandlerFile,
 		Methods:                  methodsData,
 		MessageIdName:            _config.Global.Naming.MessageId,
 		ServiceInfoHeadInclude:   firstMethodInfo.ServiceInfoHeadInclude(),
@@ -901,7 +901,7 @@ void InitReply()
 			continue
 		}
 		first := service.MethodInfo[0]
-		initFuncList = append(initFuncList, "Init"+first.Service()+config.RepliedHandlerFileName)
+		initFuncList = append(initFuncList, "Init"+first.Service()+_config.Global.Naming.RepliedHandlerFile)
 	}
 
 	templateData := RepliedRegisterData{
