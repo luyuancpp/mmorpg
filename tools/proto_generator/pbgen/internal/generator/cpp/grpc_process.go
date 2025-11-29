@@ -13,6 +13,7 @@ import (
 	utils2 "pbgen/internal/utils"
 	"sort"
 	"strings"
+	"sync"
 	"text/template"
 )
 
@@ -88,13 +89,13 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 	return nil
 }
 
-func CppGrpcCallClient() {
+func CppGrpcCallClient(wg *sync.WaitGroup) {
 	internal.FileServiceMap.Range(func(k, v interface{}) bool {
 		protoFile := k.(string)
 		serviceList := v.([]*internal.RPCServiceInfo)
-		utils2.Wg.Add(1)
+		wg.Add(1)
 		go func(protoFile string, serviceInfo []*internal.RPCServiceInfo) {
-			defer utils2.Wg.Done()
+			defer wg.Done()
 
 			if len(serviceInfo) <= 0 {
 				return
@@ -140,10 +141,10 @@ func CppGrpcCallClient() {
 	})
 
 	{
-		utils2.Wg.Add(1)
+		wg.Add(1)
 
 		go func() {
-			defer utils2.Wg.Done()
+			defer wg.Done()
 			m := map[string]*internal.RPCServiceInfo{}
 			serviceInfoList := make([]*internal.RPCServiceInfo, 0)
 			for _, service := range internal.GlobalRPCServiceList {

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"pbgen/config"
 	"pbgen/internal"
-	"pbgen/internal/utils"
 	"strings"
+	"sync"
 	"text/template"
 )
 
@@ -29,13 +29,13 @@ type ServiceData struct {
 }
 
 // GoRobotHandlerGenerator generates Go handler files and removes obsolete ones.
-func GoRobotHandlerGenerator() {
+func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 	// Track the handlers that should exist based on the current service mappings
 
 	for _, service := range internal.GlobalRPCServiceList {
-		utils.Wg.Add(1)
+		wg.Add(1)
 		go func(methods internal.RPCMethods) {
-			defer utils.Wg.Done()
+			defer wg.Done()
 			if !isClientMethodRepliedHandler(&methods) {
 				return
 			}

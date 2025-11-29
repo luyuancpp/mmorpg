@@ -12,6 +12,7 @@ import (
 	_config "pbgen/internal/config"
 	"pbgen/internal/utils"
 	"strings"
+	"sync"
 	"text/template"
 
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -119,75 +120,83 @@ func isPlayerDatabase(messageDesc *descriptorpb.DescriptorProto) bool {
 }
 
 // 从 Descriptor Set 文件中读取消息结构（核心逻辑修改）
-func CppPlayerDataLoadGenerator() {
-	os.MkdirAll(config.PlayerStorageTempDirectory, os.FileMode(0777))
+func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 
-	var headerEntries []HeaderEntry
+	wg.Add(1)
 
-	// 收集所有标记为玩家数据库的消息
-	for _, fileDesc := range internal.FdSet.GetFile() {
-		for _, messageDesc := range fileDesc.GetMessageType() {
-			// 替换判断条件：使用 isPlayerDatabase 替代 hasValidOptionTableName
-			if !isPlayerDatabase(messageDesc) {
-				continue
-			}
+	go func() {
+		defer wg.Done()
 
-			handleName := strcase.ToCamel(*messageDesc.Name)
-			messageType := *messageDesc.Name
-			headerEntries = append(headerEntries, HeaderEntry{
-				HandlerName: handleName,
-				MessageType: messageType,
-			})
-		}
-	}
+		os.MkdirAll(config.PlayerStorageTempDirectory, os.FileMode(0777))
 
-	// 为每个玩家数据库消息生成处理代码
-	for _, fileDesc := range internal.FdSet.GetFile() {
-		for _, messageDesc := range fileDesc.GetMessageType() {
-			// 替换判断条件：仅处理标记为玩家数据库的消息
-			if !isPlayerDatabase(messageDesc) {
-				continue
-			}
+		var headerEntries []HeaderEntry
 
-			messageDescName := strings.ToLower(*messageDesc.Name)
-			handleName := strcase.ToCamel(*messageDesc.Name)
-			md5FilePath := config.PlayerStorageTempDirectory + messageDescName + _config.Global.FileExtensions.LoaderCpp
-			filedList := generateDatabaseFiles(messageDesc)
-			messageType := *messageDesc.Name
+		// 收集所有标记为玩家数据库的消息
+		for _, fileDesc := range internal.FdSet.GetFile() {
+			for _, messageDesc := range fileDesc.GetMessageType() {
+				// 替换判断条件：使用 isPlayerDatabase 替代 hasValidOptionTableName
+				if !isPlayerDatabase(messageDesc) {
+					continue
+				}
 
-			err := generateCppDeserializeFromDatabase(
-				md5FilePath,
-				handleName,
-				filedList,
-				messageType,
-				headerEntries)
-
-			if err != nil {
-				log.Fatal(err)
-				return
-			}
-
-			destFilePath := config.PlayerStorageSystemDirectory + messageDescName + _config.Global.FileExtensions.LoaderCpp
-			err = utils.CopyFileIfChanged(md5FilePath, destFilePath)
-			if err != nil {
-				log.Fatal(err)
-				return
+				handleName := strcase.ToCamel(*messageDesc.Name)
+				messageType := *messageDesc.Name
+				headerEntries = append(headerEntries, HeaderEntry{
+					HandlerName: handleName,
+					MessageType: messageType,
+				})
 			}
 		}
-	}
 
-	// 生成头部文件
-	md5FilePath := config.PlayerStorageTempDirectory + config.PlayerDataLoaderName
-	err := GenerateCppPlayerHeaderFile(md5FilePath, headerEntries)
-	if err != nil {
-		log.Fatalf("failed to generate header file: %v", err)
-	}
+		// 为每个玩家数据库消息生成处理代码
+		for _, fileDesc := range internal.FdSet.GetFile() {
+			for _, messageDesc := range fileDesc.GetMessageType() {
+				// 替换判断条件：仅处理标记为玩家数据库的消息
+				if !isPlayerDatabase(messageDesc) {
+					continue
+				}
 
-	destFilePath := config.PlayerStorageSystemDirectory + config.PlayerDataLoaderName
-	err = utils.CopyFileIfChanged(md5FilePath, destFilePath)
-	if err != nil {
-		log.Fatalf("failed to generate header file: %v", err)
-	}
+				messageDescName := strings.ToLower(*messageDesc.Name)
+				handleName := strcase.ToCamel(*messageDesc.Name)
+				md5FilePath := config.PlayerStorageTempDirectory + messageDescName + _config.Global.FileExtensions.LoaderCpp
+				filedList := generateDatabaseFiles(messageDesc)
+				messageType := *messageDesc.Name
+
+				err := generateCppDeserializeFromDatabase(
+					md5FilePath,
+					handleName,
+					filedList,
+					messageType,
+					headerEntries)
+
+				if err != nil {
+					log.Fatal(err)
+					return
+				}
+
+				destFilePath := config.PlayerStorageSystemDirectory + messageDescName + _config.Global.FileExtensions.LoaderCpp
+				err = utils.CopyFileIfChanged(md5FilePath, destFilePath)
+				if err != nil {
+					log.Fatal(err)
+					return
+				}
+			}
+		}
+
+		// 生成头部文件
+		md5FilePath := config.PlayerStorageTempDirectory + config.PlayerDataLoaderName
+		err := GenerateCppPlayerHeaderFile(md5FilePath, headerEntries)
+		if err != nil {
+			log.Fatalf("failed to generate header file: %v", err)
+		}
+
+		destFilePath := config.PlayerStorageSystemDirectory + config.PlayerDataLoaderName
+		err = utils.CopyFileIfChanged(md5FilePath, destFilePath)
+		if err != nil {
+			log.Fatalf("failed to generate header file: %v", err)
+		}
+	}()
+
 }
 
 // 打印消息字段信息
