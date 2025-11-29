@@ -193,7 +193,7 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 
 		// 处理GoZero生成目录
 		for _, dirName := range grpcDirs {
-			destDir := proto.BuildGeneratorGoZeroProtoPath(dirName)
+			destDir := _config.Global.Paths.GeneratorProtoDir + proto.BuildGeneratorGoZeroProtoPath(dirName)
 			baseGoPackage := filepath.ToSlash(dirName)
 
 			if err := AddGoZeroPackageToProtos(destDir, baseGoPackage, destDir, true); err != nil {
