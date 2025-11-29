@@ -30,8 +30,6 @@ type ServiceData struct {
 
 // GoRobotHandlerGenerator generates Go handler files and removes obsolete ones.
 func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
-	// Track the handlers that should exist based on the current service mappings
-
 	for _, service := range internal.GlobalRPCServiceList {
 		wg.Add(1)
 		go func(methods internal.RPCMethods) {
