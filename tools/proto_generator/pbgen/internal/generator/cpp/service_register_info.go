@@ -76,19 +76,16 @@ func ReadProtoFileService() error {
 }
 
 // ReadAllProtoFileServices reads all service information from protobuf files in configured directories.
-func ReadAllProtoFileServices() {
-	utils2.Wg.Add(1)
+func ReadAllProtoFileServices(wg *sync.WaitGroup) {
+	wg.Add(1)
 	go func() {
-		defer utils2.Wg.Done()
+		defer wg.Done()
 		_ = ReadProtoFileService()
 	}()
 }
 
 // ReadServiceIdFile reads service IDs from a file asynchronously.
 func ReadServiceIdFile(wg *sync.WaitGroup) {
-	if wg == nil {
-		wg = &sync.WaitGroup{}
-	}
 	wg.Add(1)
 
 	go func() {

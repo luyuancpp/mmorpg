@@ -395,11 +395,7 @@ func generateGameGrpcImpl() error {
 
 // GenerateGameGrpc 生成游戏GRPC代码（C++序列化+Go节点代码）
 func GenerateGameGrpc(wg *sync.WaitGroup) {
-	if wg == nil {
-		wg = &sync.WaitGroup{}
-	}
 	wg.Add(1)
-
 	go func() {
 		wg.Done()
 		if err := generateGameGrpcImpl(); err != nil {
