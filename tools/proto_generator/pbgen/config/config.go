@@ -101,10 +101,8 @@ const (
 
 // ----------- 文件名 -----------
 const (
-	HandlerFileName                    = "Handler"
 	RegisterRepliedHandlerCppExtension = "register" + CppRepliedHandlerEx
 	RegisterHandlerCppExtension        = "register" + HandlerCppExtension
-	DbProtoFileName                    = "db_base.proto"
 	PlayerDataLoaderName               = "player_data_loader.h"
 )
 

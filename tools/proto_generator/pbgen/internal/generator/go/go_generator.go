@@ -91,7 +91,7 @@ func collectGoGrpcProtoFiles(rootDir string) ([]string, error) {
 		}
 
 		// 跳过目录、非Proto文件和数据库专用Proto文件
-		if d.IsDir() || !utils2.IsProtoFile(d) || d.Name() == config.DbProtoFileName {
+		if d.IsDir() || !utils2.IsProtoFile(d) || d.Name() == _config.Global.Naming.DbProtoFile {
 			return nil
 		}
 
