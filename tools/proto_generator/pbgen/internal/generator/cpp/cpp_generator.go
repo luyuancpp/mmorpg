@@ -231,7 +231,7 @@ func GenerateCppGrpc(protoFiles []string) error {
 	}
 
 	// 将所有路径转换为绝对路径
-	grpcTempDir, err := utils2.ResolveAbsPath(config.GrpcTempDirectory, "GRPC临时目录")
+	grpcTempDir, err := utils2.ResolveAbsPath(_config.Global.Paths.GrpcTempDir, "GRPC临时目录")
 	if err != nil {
 		log.Fatalf("GRPC C++生成: 解析临时目录失败: %w", err)
 	}
@@ -276,7 +276,7 @@ func copyCppGrpcOutputs(protoFiles []string) error {
 	}
 	protoDirSlash := filepath.ToSlash(protoDir)
 
-	grpcTempDir, err := utils2.ResolveAbsPath(config.GrpcTempDirectory, "GRPC临时目录")
+	grpcTempDir, err := utils2.ResolveAbsPath(_config.Global.Paths.GrpcTempDir, "GRPC临时目录")
 	if err != nil {
 		return err
 	}
