@@ -397,10 +397,7 @@ func generateGameGrpcGo(wg *sync.WaitGroup, protoFiles []string) {
 	go func() {
 		defer wg.Done()
 		// 3. 确保机器人代码目录存在
-		robotDir, err := utils2.ResolveAbsPath(config.RobotGoOutputGeneratedDirectory, "机器人代码目录")
-		if err != nil {
-			log.Fatalf("解析机器人目录失败: %w", err)
-		}
+		robotDir := _config.Global.Paths.RobotGoOutputDir
 		if err := utils2.EnsureDir(robotDir); err != nil {
 			log.Fatalf("创建机器人目录失败: %w", err)
 		}
