@@ -6,6 +6,7 @@ import (
 	"path"
 	"pbgen/config"
 	"pbgen/internal"
+	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"strings"
 	"sync"
@@ -39,11 +40,11 @@ func GenNodeUtil(wg *sync.WaitGroup) {
 			NodeList: nodeList,
 		}
 
-		if err := utils2.RenderTemplateToFile("internal/template/node_util.h.tmpl", config.GenUtilFileHeadPath, cppData); err != nil {
+		if err := utils2.RenderTemplateToFile("internal/template/node_util.h.tmpl", _config.Global.Paths.GenUtilHeadFile, cppData); err != nil {
 			log.Fatal(err)
 		}
 
-		if err := utils2.RenderTemplateToFile("internal/template/node_util.cpp.tmpl", config.GenUtilFileCppPath, cppData); err != nil {
+		if err := utils2.RenderTemplateToFile("internal/template/node_util.cpp.tmpl", _config.Global.Paths.GenUtilCppFile, cppData); err != nil {
 			log.Fatal(err)
 		}
 	}()
