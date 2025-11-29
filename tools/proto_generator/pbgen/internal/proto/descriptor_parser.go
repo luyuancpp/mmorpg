@@ -5,15 +5,15 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"log"
 	"os"
-	"pbgen/config"
 	"pbgen/internal"
+	_config "pbgen/internal/config"
 	"strings"
 )
 
 // parseDescriptorFile 解析生成的描述符文件
 func parseDescriptorFile() error {
 	// 读取文件内容
-	data, err := os.ReadFile(config.AllInOneProtoDescFile)
+	data, err := os.ReadFile(_config.Global.Paths.AllInOneDesc)
 	if err != nil {
 		log.Fatalf("读取文件失败: %w", err)
 	}

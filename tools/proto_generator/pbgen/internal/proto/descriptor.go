@@ -54,7 +54,7 @@ func generateAllInOneDesc() error {
 		log.Fatalf("解析描述符文件失败: %w", err)
 	}
 
-	log.Printf("描述符生成: 成功，输出路径=%s", config.AllInOneProtoDescFile)
+	log.Printf("描述符生成: 成功，输出路径=%s", _config.Global.Paths.AllInOneDesc)
 	return nil
 }
 
@@ -92,7 +92,7 @@ func collectUniqueProtoFiles() ([]string, error) {
 
 // buildDescriptorArgs 构建生成描述符的protoc参数
 func buildDescriptorArgs(protoFiles []string) ([]string, error) {
-	descOutput := filepath.ToSlash(config.AllInOneProtoDescFile)
+	descOutput := filepath.ToSlash(_config.Global.Paths.AllInOneDesc)
 
 	// 基础选项
 	args := []string{
