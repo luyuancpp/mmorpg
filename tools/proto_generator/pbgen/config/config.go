@@ -102,7 +102,6 @@ const (
 // ----------- 文件名 -----------
 const (
 	HandlerFileName                    = "Handler"
-	RepliedHandlerFileName             = "Reply"
 	RegisterRepliedHandlerCppExtension = "register" + CppRepliedHandlerEx
 	RegisterHandlerCppExtension        = "register" + HandlerCppExtension
 	DbProtoFileName                    = "db_base.proto"
