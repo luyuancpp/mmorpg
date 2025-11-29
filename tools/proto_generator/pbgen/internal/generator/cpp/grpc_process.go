@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"pbgen/config"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
@@ -116,7 +115,7 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 			})
 
 			// 确保目录存在
-			err := os.MkdirAll(path.Dir(config.CppGenGrpcDirectory+firstService.LogicalPath()), os.FileMode(0777))
+			err := os.MkdirAll(path.Dir(_config.Global.Paths.CppGenGrpcDir+firstService.LogicalPath()), os.FileMode(0777))
 			if err != nil {
 				log.Fatal(err)
 				return
@@ -125,13 +124,13 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 			cppFileBaseName := firstService.LogicalPath()
 
 			// 生成 .h 文件
-			filePath := config.CppGenGrpcDirectory + cppFileBaseName + _config.Global.FileExtensions.GrpcClientH
+			filePath := _config.Global.Paths.CppGenGrpcDir + cppFileBaseName + _config.Global.FileExtensions.GrpcClientH
 			if err := generateGrpcFile(filePath, serviceInfo, AsyncClientHeaderTemplate); err != nil {
 				log.Fatal(err)
 			}
 
 			// 生成 .cpp 文件
-			filePathCpp := config.CppGenGrpcDirectory + cppFileBaseName + _config.Global.FileExtensions.GrpcClientCpp
+			filePathCpp := _config.Global.Paths.CppGenGrpcDir + cppFileBaseName + _config.Global.FileExtensions.GrpcClientCpp
 			if err := generateGrpcFile(filePathCpp, serviceInfo, AsyncClientCppHandleTemplate); err != nil {
 				log.Fatal(err)
 			}
