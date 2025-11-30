@@ -210,9 +210,9 @@ type ProtoDirIndexes struct {
 
 // NodeTypes 节点类型配置
 type NodeTypes struct {
-	TcpNode  int `yaml:"tcp_node"`
-	GrpcNode int `yaml:"grpc_node"`
-	HttpNode int `yaml:"http_node"`
+	TcpNode  uint32 `yaml:"tcp_node"`
+	GrpcNode uint32 `yaml:"grpc_node"`
+	HttpNode uint32 `yaml:"http_node"`
 }
 
 // MethodHandlerDirs 方法处理器目录映射
@@ -1018,7 +1018,7 @@ func (c *Config) GetProtoDirIndex(name string) int {
 }
 
 // GetNodeType 获取节点类型值
-func (c *Config) GetNodeType(name string) int {
+func (c *Config) GetNodeType(name string) uint32 {
 	switch name {
 	case "tcp":
 		return c.PathLists.NodeTypes.TcpNode
@@ -1027,6 +1027,6 @@ func (c *Config) GetNodeType(name string) int {
 	case "http":
 		return c.PathLists.NodeTypes.HttpNode
 	default:
-		return -1
+		return uint32(0)
 	}
 }
