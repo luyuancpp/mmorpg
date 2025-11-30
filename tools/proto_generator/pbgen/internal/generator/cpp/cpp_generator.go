@@ -419,7 +419,7 @@ func WriteMethodFile(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go internal.GenRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.RoomNode+config.RegisterHandlerCppExtension, IsRoomNodeHostedProtocolHandler)
 	wg.Add(1)
-	go internal.WriteRepliedRegisterFile(wg, config.RoomNodeMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsRoomNodeReceivedProtocolResponseHandler)
+	go internal.WriteRepliedRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.RoomNodeReplied+config.RegisterRepliedHandlerCppExtension, IsRoomNodeReceivedProtocolResponseHandler)
 
 	wg.Add(1)
 	go internal.GenRegisterFile(wg, config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsCentreHostedServiceHandler)

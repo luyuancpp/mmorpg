@@ -30,7 +30,6 @@ const (
 
 // ----------- 方法处理目录 -----------
 const (
-	RoomNodeMethodHandlerDirectory              = RoomNodeDirectory + RpcHandlerSourceDirectory
 	RoomNodePlayerMethodHandlerDirectory        = RoomNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
 	RoomNodeMethodRepliedHandlerDirectory       = RoomNodeDirectory + RpcResponseSourceDirectory
 	RoomNodePlayerMethodRepliedHandlerDirectory = RoomNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
