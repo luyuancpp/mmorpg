@@ -28,7 +28,7 @@ var taskRecords []WaitTimeRecord // 单独存储任务耗时
 
 func MakeProjectDir() {
 	os.MkdirAll(_config.Global.Paths.GeneratedDir, os.FileMode(0777))
-	os.MkdirAll(config.ServiceInfoDirectory, os.FileMode(0777))
+	os.MkdirAll(_config.Global.Paths.ServiceInfoDir, os.FileMode(0777))
 	os.MkdirAll(_config.Global.Paths.CppGenGrpcDir, os.FileMode(0777))
 	os.MkdirAll(config.PbDescDirectory, os.FileMode(0777))
 	os.MkdirAll(_config.Global.Paths.TempFileGenDir, os.FileMode(0775))
