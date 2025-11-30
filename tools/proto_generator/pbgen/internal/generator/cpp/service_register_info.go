@@ -190,7 +190,7 @@ func GetProtocol(dirName string) uint32 {
 }
 
 func GetProtocolByEnum(enumName string) uint32 {
-	nodeName := strings.ReplaceAll(strings.ToLower(enumName), config.NodeServiceSuffix, "")
+	nodeName := strings.ReplaceAll(strings.ToLower(enumName), _config.Global.Naming.NodeServiceSuffix, "")
 	for _, v := range config.ProtoDirectoryNames {
 		if !strings.Contains(v, nodeName) || !strings.Contains(v, _config.Global.Naming.GrpcName) {
 			continue
