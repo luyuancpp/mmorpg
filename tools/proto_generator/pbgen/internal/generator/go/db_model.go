@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"pbgen/config"
+	"pbgen/global_value"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"strings"
@@ -164,7 +164,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 		return nil
 	}
 
-	for _, protoDir := range config.ProtoDirs {
+	for _, protoDir := range global_value.ProtoDirs {
 		if !utils2.HasGrpcService(protoDir) {
 			continue
 		}

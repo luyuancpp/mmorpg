@@ -6,7 +6,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"pbgen/config"
+	"pbgen/global_value"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	cpp2 "pbgen/internal/generator/cpp"
@@ -36,7 +36,7 @@ func MakeProjectDir() {
 	os.MkdirAll(_config.Global.Paths.TableGeneratorDir, os.FileMode(0777))
 
 	for i := 0; i < len(_config.Global.PathLists.ProtoDirectories); i++ {
-		config.ProtoDirs = append(config.ProtoDirs, _config.Global.Paths.ProtoDir+_config.Global.PathLists.ProtoDirectories[i])
+		global_value.ProtoDirs = append(global_value.ProtoDirs, _config.Global.Paths.ProtoDir+_config.Global.PathLists.ProtoDirectories[i])
 	}
 }
 

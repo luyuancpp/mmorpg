@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"pbgen/config"
+	"pbgen/global_value"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"strings"
@@ -152,7 +152,7 @@ type EventTemplateData struct {
 func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir string) {
 	defer wg.Done()
 
-	protoFilePath := config.ProtoDirs[_config.Global.PathLists.ProtoDirIndexes.LogicEventProtoDirIndex] + file.Name()
+	protoFilePath := global_value.ProtoDirs[_config.Global.PathLists.ProtoDirIndexes.LogicEventProtoDirIndex] + file.Name()
 	eventMessages, err := parseProtoMessages(protoFilePath)
 	if err != nil {
 		log.Printf("failed to parse proto: %v\n", err)
@@ -201,7 +201,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 
 // generateAllEventHandlers 生成所有事件处理器
 func GenerateAllEventHandlers(wg *sync.WaitGroup) {
-	files, err := os.ReadDir(config.ProtoDirs[_config.Global.PathLists.ProtoDirIndexes.LogicEventProtoDirIndex])
+	files, err := os.ReadDir(global_value.ProtoDirs[_config.Global.PathLists.ProtoDirIndexes.LogicEventProtoDirIndex])
 	if err != nil {
 		log.Fatal(err)
 	}

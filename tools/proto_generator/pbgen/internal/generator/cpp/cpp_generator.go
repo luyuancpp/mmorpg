@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
-	"pbgen/config"
+	"pbgen/global_value"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	"pbgen/internal/proto"
@@ -16,11 +16,11 @@ import (
 
 // BuildProtocCpp 并发处理所有目录的C++代码生成
 func BuildProtocCpp(wg *sync.WaitGroup) {
-	for i := 0; i < len(config.ProtoDirs); i++ {
+	for i := 0; i < len(global_value.ProtoDirs); i++ {
 		wg.Add(1)
 		go func(dirIndex int) {
 			defer wg.Done()
-			dir := config.ProtoDirs[dirIndex]
+			dir := global_value.ProtoDirs[dirIndex]
 			if err := BuildProtoCpp(dir); err != nil {
 				log.Printf("C++批量构建: 目录[%s]处理失败: %v", dir, err)
 			}
@@ -29,7 +29,7 @@ func BuildProtocCpp(wg *sync.WaitGroup) {
 		wg.Add(1)
 		go func(dirIndex int) {
 			defer wg.Done()
-			dir := config.ProtoDirs[dirIndex]
+			dir := global_value.ProtoDirs[dirIndex]
 			if err := BuildProtoGrpcCpp(dir); err != nil {
 				log.Printf("GRPC C++批量构建: 目录[%s]处理失败: %v", dir, err)
 			}
