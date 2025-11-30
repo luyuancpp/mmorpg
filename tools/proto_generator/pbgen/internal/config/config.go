@@ -26,71 +26,71 @@ type Config struct {
 
 // Paths 路径配置（对应YAML中的paths节点）
 type Paths struct {
-	OutputRoot                  string `yaml:"output_root"`
-	ProtoDir                    string `yaml:"proto_dir"`
-	ProtoParentIncludePath      string `yaml:"proto_parent_include_path"`
-	ThirdPartyDir               string `yaml:"third_party_dir"`
-	GrpcDir                     string `yaml:"grpc_dir"`
-	ProtobufDir                 string `yaml:"protobuf_dir"`
-	NodeGoDir                   string `yaml:"node_go_dir"`
-	NodeCppDir                  string `yaml:"node_cpp_dir"`
-	NodePkgDir                  string `yaml:"node_pkg_dir"`
-	NodeLibsEngine              string `yaml:"node_libs_engine"`
-	NodeLibGame                 string `yaml:"node_lib_game"`
-	NodePkgLogicSceneNodeDir    string `yaml:"node_pkg_logic_scene_node_dir"`
-	RoomNodeDir                 string `yaml:"room_node_dir"`
-	CentreNodeDir               string `yaml:"centre_node_dir"`
-	GateNodeDir                 string `yaml:"gate_node_dir"`
-	Robot                       string `yaml:"robot"`
-	RobotGenerated              string `yaml:"robot_generated"`
-	RobotProtoDir               string `yaml:"robot_proto_dir"`
-	RobotGeneratedProtoDir      string `yaml:"robot_generated_proto_dir"`
-	RobotGoZeroProtoDir         string `yaml:"robot_go_zero_proto_dir"`
-	GeneratedDir                string `yaml:"generated_dir"`
-	ToolDir                     string `yaml:"tool_dir"`
-	TempFileGenDir              string `yaml:"temp_file_gen_dir"`
-	ProtoBufDescDir             string `yaml:"proto_buf_desc_dir"`
-	AllInOneDesc                string `yaml:"all_in_one_desc"`
-	GrpcTempDir                 string `yaml:"grpc_temp_dir"`
-	ProtoBufCTempDir            string `yaml:"proto_buf_c_temp_dir"`
-	PlayerStorageTempDir        string `yaml:"player_storage_temp_dir"`
-	ProtoBufCProtoOutputDir     string `yaml:"proto_buf_c_proto_output_dir"`
-	PbcProtoOutputNoSuffixDir   string `yaml:"pbc_proto_output_no_suffix_dir"`
-	GeneratedOutputDir          string `yaml:"generated_output_dir"`
-	GrpcOutputDir               string `yaml:"grpc_output_dir"`
-	GrpcProtoOutputDir          string `yaml:"grpc_proto_output_dir"`
-	RobotGoOutputDir            string `yaml:"robot_go_output_dir"`
-	RobotGeneratedOutputDir     string `yaml:"robot_generated_output_dir"`
-	RobotGoGamePbDir            string `yaml:"robot_go_game_pb_dir"`
-	RobotGoGenDir               string `yaml:"robot_go_gen_dir"`
-	GoGeneratorDir              string `yaml:"go_generator_dir"`
-	GeneratedRpcDir             string `yaml:"generated_rpc_dir"`
-	ServiceInfoDir              string `yaml:"service_info_dir"`
-	PbcLuaDir                   string `yaml:"pbc_lua_dir"`
-	ClientLuaDir                string `yaml:"client_lua_dir"`
-	CppGenGrpcDir               string `yaml:"cpp_gen_grpc_dir"`
-	UtilGeneratorDir            string `yaml:"util_generator_dir"`
-	GeneratorDir                string `yaml:"generator_dir"`
-	GeneratorProtoDir           string `yaml:"generator_proto_dir"`
-	ProjectGeneratedDir         string `yaml:"project_generated_dir"`
-	TableGeneratorDir           string `yaml:"table_generator_dir"`
-	GameRpcProtoPath            string `yaml:"game_rpc_proto_path"`
-	ToolsDir                    string `yaml:"tools_dir"`
-	ServiceIdFile               string `yaml:"service_id_file"`
-	RobotMessageIdFile          string `yaml:"robot_message_id_file"`
-	RobotProtoImportPath        string `yaml:"robot_proto_import_path"`
-	ServiceCppFile              string `yaml:"service_cpp_file"`
-	ServiceHeaderFile           string `yaml:"service_header_file"`
-	LuaServiceFile              string `yaml:"lua_service_file"`
-	ClientLuaServiceFile        string `yaml:"client_lua_service_file"`
-	GrpcInitCppFile             string `yaml:"grpc_init_cpp_file"`
-	GrpcInitHeadFile            string `yaml:"grpc_init_head_file"`
-	GenUtilCppFile              string `yaml:"gen_util_cpp_file"`
-	GenUtilHeadFile             string `yaml:"gen_util_head_file"`
-	RobotMessageBodyHandlerFile string `yaml:"robot_message_body_handler_file"`
-	PlayerStorageSystemDir      string `yaml:"player_storage_system_dir"`
-	PlayerDataLoaderFile        string `yaml:"player_data_loader_file"`
-	ProtocPath                  string `yaml:"protoc_path"`
+	OutputRoot                      string `yaml:"output_root"`
+	ProtoDir                        string `yaml:"proto_dir"`
+	ProtoParentIncludePath          string `yaml:"proto_parent_include_path"`
+	ThirdPartyDir                   string `yaml:"third_party_dir"`
+	GrpcDir                         string `yaml:"grpc_dir"`
+	ProtobufDir                     string `yaml:"protobuf_dir"`
+	NodeGoDir                       string `yaml:"node_go_dir"`
+	NodeCppDir                      string `yaml:"node_cpp_dir"`
+	NodePkgDir                      string `yaml:"node_pkg_dir"`
+	NodeLibsEngine                  string `yaml:"node_libs_engine"`
+	NodeLibGame                     string `yaml:"node_lib_game"`
+	NodePkgLogicSceneNodeDir        string `yaml:"node_pkg_logic_scene_node_dir"`
+	RoomNodeDir                     string `yaml:"room_node_dir"`
+	CentreNodeDir                   string `yaml:"centre_node_dir"`
+	GateNodeDir                     string `yaml:"gate_node_dir"`
+	Robot                           string `yaml:"robot"`
+	RobotGenerated                  string `yaml:"robot_generated"`
+	RobotProtoDir                   string `yaml:"robot_proto_dir"`
+	RobotGeneratedProtoDir          string `yaml:"robot_generated_proto_dir"`
+	RobotGoZeroProtoDir             string `yaml:"robot_go_zero_proto_dir"`
+	GeneratedDir                    string `yaml:"generated_dir"`
+	ToolDir                         string `yaml:"tool_dir"`
+	TempFileGenDir                  string `yaml:"temp_file_gen_dir"`
+	ProtoBufDescDir                 string `yaml:"proto_buf_desc_dir"`
+	AllInOneDesc                    string `yaml:"all_in_one_desc"`
+	GrpcTempDir                     string `yaml:"grpc_temp_dir"`
+	ProtoBufCTempDir                string `yaml:"proto_buf_c_temp_dir"`
+	PlayerStorageTempDir            string `yaml:"player_storage_temp_dir"`
+	ProtoBufCProtoOutputDir         string `yaml:"proto_buf_c_proto_output_dir"`
+	ProtoBufCProtoOutputNoSuffixDir string `yaml:"proto_buf_c_proto_output_no_suffix_dir"`
+	GeneratedOutputDir              string `yaml:"generated_output_dir"`
+	GrpcOutputDir                   string `yaml:"grpc_output_dir"`
+	GrpcProtoOutputDir              string `yaml:"grpc_proto_output_dir"`
+	RobotGoOutputDir                string `yaml:"robot_go_output_dir"`
+	RobotGeneratedOutputDir         string `yaml:"robot_generated_output_dir"`
+	RobotGoGamePbDir                string `yaml:"robot_go_game_pb_dir"`
+	RobotGoGenDir                   string `yaml:"robot_go_gen_dir"`
+	GoGeneratorDir                  string `yaml:"go_generator_dir"`
+	GeneratedRpcDir                 string `yaml:"generated_rpc_dir"`
+	ServiceInfoDir                  string `yaml:"service_info_dir"`
+	ProtoBufCLuaDir                 string `yaml:"proto_buf_c_lua_dir"`
+	ClientLuaDir                    string `yaml:"client_lua_dir"`
+	CppGenGrpcDir                   string `yaml:"cpp_gen_grpc_dir"`
+	UtilGeneratorDir                string `yaml:"util_generator_dir"`
+	GeneratorDir                    string `yaml:"generator_dir"`
+	GeneratorProtoDir               string `yaml:"generator_proto_dir"`
+	ProjectGeneratedDir             string `yaml:"project_generated_dir"`
+	TableGeneratorDir               string `yaml:"table_generator_dir"`
+	GameRpcProtoPath                string `yaml:"game_rpc_proto_path"`
+	ToolsDir                        string `yaml:"tools_dir"`
+	ServiceIdFile                   string `yaml:"service_id_file"`
+	RobotMessageIdFile              string `yaml:"robot_message_id_file"`
+	RobotProtoImportPath            string `yaml:"robot_proto_import_path"`
+	ServiceCppFile                  string `yaml:"service_cpp_file"`
+	ServiceHeaderFile               string `yaml:"service_header_file"`
+	LuaServiceFile                  string `yaml:"lua_service_file"`
+	ClientLuaServiceFile            string `yaml:"client_lua_service_file"`
+	GrpcInitCppFile                 string `yaml:"grpc_init_cpp_file"`
+	GrpcInitHeadFile                string `yaml:"grpc_init_head_file"`
+	GenUtilCppFile                  string `yaml:"gen_util_cpp_file"`
+	GenUtilHeadFile                 string `yaml:"gen_util_head_file"`
+	RobotMessageBodyHandlerFile     string `yaml:"robot_message_body_handler_file"`
+	PlayerStorageSystemDir          string `yaml:"player_storage_system_dir"`
+	PlayerDataLoaderFile            string `yaml:"player_data_loader_file"`
+	ProtocPath                      string `yaml:"protoc_path"`
 
 	// 原有配置中的路径
 	EventHandlerSourceDirectory     string `yaml:"event_handler_source_directory"`
@@ -781,7 +781,7 @@ func createRequiredDirs() error {
 	dirs := []string{
 		Global.Paths.GeneratedOutputDir,
 		Global.Paths.GrpcOutputDir,
-		Global.Paths.PbcLuaDir,
+		Global.Paths.ProtoBufCLuaDir,
 		Global.Paths.TempFileGenDir,
 		Global.Paths.ProtoBufDescDir,
 		Global.Paths.RoomNodeEventHandlerDirectory,

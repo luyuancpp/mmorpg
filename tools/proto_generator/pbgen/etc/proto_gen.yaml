@@ -38,7 +38,7 @@ paths:
 
   # 输出目录
   proto_buf_c_proto_output_dir: "{{output_root}}{{generated_dir}}"
-  pbc_proto_output_no_suffix_dir: "{{output_root}}{{generated_dir}}"
+  proto_buf_c_proto_output_no_suffix_dir: "{{output_root}}{{generated_dir}}"
   generated_output_dir: "{{output_root}}{{generated_dir}}"
   grpc_output_dir: "{{output_root}}{{generated_dir}}"
   grpc_proto_output_dir: "{{output_root}}{{generated_dir}}proto/"
@@ -49,7 +49,7 @@ paths:
   go_generator_dir: "{{node_go_dir}}"
   generated_rpc_dir: "{{generated_output_dir}}rpc/"
   service_info_dir: "{{generated_rpc_dir}}service_metadata/"
-  pbc_lua_dir: "{{generated_output_dir}}lua/"
+  proto_buf_c_lua_dir: "{{generated_output_dir}}lua/"
   client_lua_dir: "{{output_root}}bin/script/lua/service/"
   cpp_gen_grpc_dir: "{{output_root}}{{generated_dir}}grpc_client/"
   util_generator_dir: "{{output_root}}{{generated_dir}}proto_helpers/"
@@ -66,7 +66,7 @@ paths:
   robot_proto_import_path: "{{output_root}}{{robot_proto_dir}}"  # robot proto导入路径
   service_cpp_file: "{{service_info_dir}}service_metadata.cpp"
   service_header_file: "{{service_info_dir}}service_metadata.h"
-  lua_service_file: "{{pbc_lua_dir}}lua_service.cpp"
+  lua_service_file: "{{proto_buf_c_lua_dir}}lua_service.cpp"
   client_lua_service_file: "{{output_root}}client/src/handler/service_lua.cpp"
   grpc_init_cpp_file: "{{cpp_gen_grpc_dir}}grpc_init_client.cpp"
   grpc_init_head_file: "{{cpp_gen_grpc_dir}}grpc_init_client.h"
