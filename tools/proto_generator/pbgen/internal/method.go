@@ -135,7 +135,7 @@ func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
 	// 填充模板所需的数据
 	data := MethodData{
 		Method:                 method.Method(),
-		GoogleMethodController: config.GoogleMethodController,
+		GoogleMethodController: _config.Global.Naming.GoogleMethodController,
 		CppRequest:             method.CppRequest(),
 		CppResponse:            method.CppResponse(),
 	}
@@ -263,7 +263,7 @@ func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
 	}
 
 	data := PlayerMethodFunctionsData{
-		PlayerMethodController: config.PlayerMethodController,
+		PlayerMethodController: _config.Global.Naming.PlayerMethodController,
 		Methods:                methodList,
 	}
 
@@ -378,7 +378,7 @@ func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
 	}
 
 	data := PlayerRepliedFunctionsData{
-		PlayerMethodController: config.PlayerMethodController,
+		PlayerMethodController: _config.Global.Naming.PlayerMethodController,
 		Methods:                methodList,
 	}
 
@@ -627,7 +627,7 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 	// 填充模板数据
 	data := HandlerCppData{
 		CppHandlerInclude:      firstMethodInfo.CppHandlerIncludeName(),
-		GoogleMethodController: config.GoogleMethodController,
+		GoogleMethodController: _config.Global.Naming.GoogleMethodController,
 		FirstCode:              firstCode,
 		YourCodePair:           config.YourCodePair,
 		Methods:                methodList,
@@ -728,7 +728,7 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 		Methods:                  methodsData,
 		MessageIdName:            _config.Global.Naming.MessageId,
 		ServiceInfoHeadInclude:   firstMethodInfo.ServiceInfoHeadInclude(),
-		ServiceInfoName:          config.ServiceInfoName,
+		ServiceInfoName:          _config.Global.FileExtensions.ServiceInfoName,
 	}
 
 	tmpl, err := template.New("methodRepliedHandlerCpp").Parse(methodRepliedHandlerCppTemplate)
@@ -802,7 +802,7 @@ void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* re
 	data := PlayerHandlerCppData{
 		IncludeName:            includeName,
 		FirstCode:              firstCode,
-		PlayerMethodController: config.PlayerMethodController,
+		PlayerMethodController: _config.Global.Naming.PlayerMethodController,
 		YourCodePair:           config.YourCodePair,
 		Methods:                methodList,
 	}

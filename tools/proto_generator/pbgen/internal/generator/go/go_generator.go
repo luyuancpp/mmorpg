@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"pbgen/config"
 	_config "pbgen/internal/config"
 	"pbgen/internal/proto"
 	utils2 "pbgen/internal/utils"
@@ -202,7 +201,7 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 
 		// 处理RobotGeneratedProtoDir
 		destDir := _config.Global.Paths.RobotGeneratedProtoDir
-		baseGoPackage := filepath.ToSlash(config.GoRobotPackage)
+		baseGoPackage := filepath.ToSlash(_config.Global.Naming.GoRobotPackage)
 
 		if err := addDynamicGoPackage(_config.Global.Paths.RobotGeneratedProtoDir, baseGoPackage, destDir, false); err != nil {
 			log.Printf("GoPackage设置: 目录[%s]处理失败: %v", destDir, err)

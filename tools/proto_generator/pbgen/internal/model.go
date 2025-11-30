@@ -124,7 +124,7 @@ func (info *RPCServiceInfo) HeadName() string {
 }
 
 func (info *RPCServiceInfo) ServiceInfoIncludeName() string {
-	return config.IncludeBegin + config.GeneratedRpcName + config.ServiceInfoName + info.FileBaseNameNoEx() + config.ServiceInfoExtension + _config.Global.FileExtensions.Header + "\"\n"
+	return config.IncludeBegin + _config.Global.FileExtensions.GeneratedRpcName + _config.Global.FileExtensions.ServiceInfoName + info.FileBaseNameNoEx() + _config.Global.FileExtensions.ServiceInfoExtension + _config.Global.FileExtensions.Header + "\"\n"
 }
 
 // FileBaseNameNoEx 返回文件基本名
@@ -199,7 +199,7 @@ func (info *RPCServiceInfo) Package() string {
 }
 
 func (info *RPCServiceInfo) ServiceInfoHeadInclude() string {
-	return info.FileBaseNameNoEx() + config.ServiceInfoExtension + _config.Global.FileExtensions.Header
+	return info.FileBaseNameNoEx() + _config.Global.FileExtensions.ServiceInfoExtension + _config.Global.FileExtensions.Header
 }
 
 // FileBaseNameNoEx 返回文件基本名
@@ -208,7 +208,7 @@ func (info *MethodInfo) FileBaseNameNoEx() string {
 }
 
 func (info *MethodInfo) ServiceInfoHeadInclude() string {
-	return info.FileBaseNameNoEx() + config.ServiceInfoExtension + _config.Global.FileExtensions.Header
+	return info.FileBaseNameNoEx() + _config.Global.FileExtensions.ServiceInfoExtension + _config.Global.FileExtensions.Header
 }
 
 func (info *MethodInfo) GeneratorGrpcFileName() string {
@@ -279,17 +279,17 @@ func (info *MethodInfo) GoPackagePrefix() string {
 }
 
 func (info *MethodInfo) ServiceInfoIncludeName() string {
-	return config.IncludeBegin + config.GeneratedRpcName + config.ServiceInfoName + info.FileBaseNameNoEx() + config.ServiceInfoExtension + _config.Global.FileExtensions.Header + "\"\n"
+	return _config.Global.Naming.IncludeBegin + _config.Global.FileExtensions.GeneratedRpcName + _config.Global.FileExtensions.ServiceInfoName + info.FileBaseNameNoEx() + _config.Global.FileExtensions.ServiceInfoExtension + _config.Global.FileExtensions.Header + "\"\n"
 }
 
 // CppHandlerIncludeName 返回Cpp处理器包含文件名
 func (info *MethodInfo) CppHandlerIncludeName() string {
-	return config.IncludeBegin + info.FileBaseNameNoEx() + _config.Global.FileExtensions.HandlerH + config.IncludeEndLine
+	return _config.Global.Naming.IncludeBegin + info.FileBaseNameNoEx() + _config.Global.FileExtensions.HandlerH + _config.Global.Naming.IncludeEndLine
 }
 
 // CppRepliedHandlerIncludeName 返回Cpp已响应处理器包含文件名
 func (info *MethodInfo) CppRepliedHandlerIncludeName() string {
-	return config.IncludeBegin + info.FileBaseNameNoEx() + config.RepliedHandlerHeaderExtension + config.IncludeEndLine
+	return _config.Global.Naming.IncludeBegin + info.FileBaseNameNoEx() + _config.Global.FileExtensions.RepliedHandlerHeaderExtension + _config.Global.Naming.IncludeEndLine
 }
 
 // CppHandlerClassName 返回Cpp处理器类名

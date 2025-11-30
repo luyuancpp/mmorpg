@@ -8,47 +8,14 @@ const (
 
 // ----------- Proto 文件扩展名 -----------
 
-// ----------- 通用文件扩展名 -----------
-const (
-	HandlerCppExtension           = "_handler.cpp"
-	RepliedHandlerHeaderExtension = "_response_handler.h"
-	CppRepliedHandlerEx           = "_response_handler.cpp"
-	ModelSqlExtension             = "mysql_database_table.sql"
-)
-
 // ----------- 项目目录路径 -----------
 const (
-	ModelPath                   = "model/"
-	NodeCppDirectory            = OutputRoot + "cpp/"
-	RoomNodeDirectory           = NodeCppDirectory + "nodes/scene/"
-	CentreNodeDirectory         = NodeCppDirectory + "nodes/centre/"
-	EventHandlerSourceDirectory = "handler/event/"
-)
-
-// ----------- 输出目录 -----------
-// 更新后的路径
-const (
-	ProtoGoPackageSuffix = "_proto"
-	GoPackage            = "generated/pb/game"
-	GoRobotPackage       = "robot"
-	MessageIdGoFile      = "message_id.go"
-	GeneratedRpcName     = "rpc/"
-	ServiceInfoName      = "service_metadata/"
-	ServiceInfoExtension = "_service_metadata"
-)
-
-// ----------- 文件名 -----------
-const (
-	RegisterRepliedHandlerCppExtension = "register" + CppRepliedHandlerEx
-	RegisterHandlerCppExtension        = "register" + HandlerCppExtension
+	ModelPath = "model/"
 )
 
 // ----------- 代码相关字符串常量 -----------
 // 这些字符串常量保持不变
 const (
-	GoogleMethodController   = "::google::protobuf::RpcController* controller, "
-	PlayerMethodController   = "entt::entity player,"
-	IncludeEndLine           = "\"\n"
 	IncludeBegin             = "#include \""
 	YourCodeBegin            = "///<<< BEGIN WRITING YOUR CODE"
 	YourCodeEnd              = "///<<< END WRITING YOUR CODE"
@@ -104,19 +71,12 @@ var (
 
 // ----------- 其他业务相关常量 -----------
 const (
-	TypePlayer                      = "player"
 	ServiceIncludeName              = "rpc/"
 	PlayerServiceIncludeName        = "#include \"rpc/player_service_interface.h\"\n"
 	PlayerServiceRepliedIncludeName = "#include \"rpc/player_rpc_response_handler.h\"\n"
 	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
 	NodeEnumName                    = "eNodeType"
 	NodeServiceSuffix               = "nodeservice"
-)
-
-// ----------- 事件处理目录 -----------
-const (
-	RoomNodeEventHandlerDirectory   = RoomNodeDirectory + EventHandlerSourceDirectory
-	CentreNodeEventHandlerDirectory = CentreNodeDirectory + EventHandlerSourceDirectory
 )
 
 const (
