@@ -422,12 +422,12 @@ func WriteMethodFile(wg *sync.WaitGroup) {
 	go internal.WriteRepliedRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.RoomNodeReplied+config.RegisterRepliedHandlerCppExtension, IsRoomNodeReceivedProtocolResponseHandler)
 
 	wg.Add(1)
-	go internal.GenRegisterFile(wg, config.CentreNodeMethodHandlerDirectory+config.RegisterHandlerCppExtension, IsCentreHostedServiceHandler)
+	go internal.GenRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.CentreNode+config.RegisterHandlerCppExtension, IsCentreHostedServiceHandler)
 	wg.Add(1)
-	go internal.WriteRepliedRegisterFile(wg, config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, IsCentreReceivedServiceResponseHandler)
+	go internal.WriteRepliedRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.CentreReplied+config.RegisterRepliedHandlerCppExtension, IsCentreReceivedServiceResponseHandler)
 
 	wg.Add(1)
-	go internal.GenRegisterFile(wg, config.GateMethodRepliedHandlerDirectory+config.RegisterHandlerCppExtension, IsNoOpHandler)
+	go internal.GenRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.GateNodeReplied+config.RegisterHandlerCppExtension, IsNoOpHandler)
 	wg.Add(1)
-	go internal.WriteRepliedRegisterFile(wg, config.GateMethodRepliedHandlerDirectory+config.RegisterRepliedHandlerCppExtension, IsGateNodeReceivedResponseHandler)
+	go internal.WriteRepliedRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.GateNodeReplied+config.RegisterRepliedHandlerCppExtension, IsGateNodeReceivedResponseHandler)
 }
