@@ -45,7 +45,7 @@ func HasGrpcService(protoPath string) bool {
 
 func HasEtcdService(protoPath string) bool {
 	// 利用提取语言的函数来判断是否存在gRPC服务
-	return strings.Contains(protoPath, _config.Global.PathLists.ProtoDirectories[_config.Global.PathLists.ProtoDirIndexes.EtcdProtoDirIndex])
+	return strings.Contains(protoPath, _config.Global.PathLists.ProtoDirectories[_config.Global.PathLists.ProtoDirectoryIndexes.EtcdProtoDirIndex])
 }
 
 func CheckEtcdServiceExistence(protoPath string) bool {
