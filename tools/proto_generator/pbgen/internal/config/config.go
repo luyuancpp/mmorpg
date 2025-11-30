@@ -354,66 +354,73 @@ func calculateDerivedConstants() {
 
 // resolvePathVariables 处理路径中的变量替换（支持嵌套变量）
 func resolvePathVariables() error {
-	// 反射获取Paths结构体的所有字段，用于变量替换
-	pathsVal := reflect.ValueOf(&Global.Paths).Elem()
-	pathsType := pathsVal.Type()
-
-	// 收集所有可替换的变量（{{yaml_tag}} -> 字段值）
+	// 收集所有可替换的变量
 	vars := make(map[string]string)
-	for i := 0; i < pathsType.NumField(); i++ {
-		field := pathsType.Field(i)
+
+	// 收集Paths的变量
+	collectStructVariables(reflect.ValueOf(&Global.Paths).Elem(), vars)
+
+	// 收集FileExtensions的变量
+	collectStructVariables(reflect.ValueOf(&Global.FileExtensions).Elem(), vars)
+
+	// 收集Naming的变量
+	collectStructVariables(reflect.ValueOf(&Global.Naming).Elem(), vars)
+
+	// 替换所有结构体中的变量
+	if err := replaceVariablesInAllStructs(vars); err != nil {
+		return err
+	}
+
+	// 替换切片中的变量
+	if err := replaceVariablesInAllSlices(vars); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// collectStructVariables 收集结构体中的变量
+func collectStructVariables(val reflect.Value, vars map[string]string) {
+	valType := val.Type()
+	for i := 0; i < valType.NumField(); i++ {
+		field := valType.Field(i)
 		yamlTag := field.Tag.Get("yaml")
 		if yamlTag == "" {
 			continue
 		}
-		vars["{{"+yamlTag+"}}"] = pathsVal.Field(i).String()
-	}
-
-	// 添加FileExtensions的变量
-	extensionsVal := reflect.ValueOf(&Global.FileExtensions).Elem()
-	extensionsType := extensionsVal.Type()
-	for i := 0; i < extensionsType.NumField(); i++ {
-		field := extensionsType.Field(i)
-		yamlTag := field.Tag.Get("yaml")
-		if yamlTag == "" {
-			continue
+		if val.Field(i).Kind() == reflect.String {
+			vars["{{"+yamlTag+"}}"] = val.Field(i).String()
 		}
-		vars["{{"+yamlTag+"}}"] = extensionsVal.Field(i).String()
 	}
+}
 
-	// 添加Naming的变量
-	namingVal := reflect.ValueOf(&Global.Naming).Elem()
-	namingType := namingVal.Type()
-	for i := 0; i < namingType.NumField(); i++ {
-		field := namingType.Field(i)
-		yamlTag := field.Tag.Get("yaml")
-		if yamlTag == "" {
-			continue
-		}
-		vars["{{"+yamlTag+"}}"] = namingVal.Field(i).String()
-	}
-
-	// 循环替换Paths结构体中的变量，直到没有变量可替换
-	if err := replaceVariablesInStruct(pathsVal, vars); err != nil {
+// replaceVariablesInAllStructs 替换所有结构体中的变量
+func replaceVariablesInAllStructs(vars map[string]string) error {
+	// 替换Paths中的变量
+	if err := replaceVariablesInStruct(reflect.ValueOf(&Global.Paths).Elem(), vars); err != nil {
 		return err
 	}
 
-	// 对FileExtensions执行变量替换
-	if err := replaceVariablesInStruct(extensionsVal, vars); err != nil {
+	// 替换FileExtensions中的变量
+	if err := replaceVariablesInStruct(reflect.ValueOf(&Global.FileExtensions).Elem(), vars); err != nil {
 		return err
 	}
 
-	// 对Naming执行变量替换
-	if err := replaceVariablesInStruct(namingVal, vars); err != nil {
+	// 替换Naming中的变量
+	if err := replaceVariablesInStruct(reflect.ValueOf(&Global.Naming).Elem(), vars); err != nil {
 		return err
 	}
 
-	// 对MethodHandlerDirectories执行同样的循环替换
-	handlerDirsVal := reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()
-	if err := replaceVariablesInStruct(handlerDirsVal, vars); err != nil {
+	// 替换MethodHandlerDirectories中的变量
+	if err := replaceVariablesInStruct(reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem(), vars); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// replaceVariablesInAllSlices 替换所有切片中的变量
+func replaceVariablesInAllSlices(vars map[string]string) error {
 	if err := replaceVariablesInSlice(reflect.ValueOf(&Global.PathLists.RobotProtoDirectories), vars); err != nil {
 		return err
 	}
@@ -505,17 +512,16 @@ func replaceVariables(s string, vars map[string]string) string {
 // resolveAbsolutePaths 将所有路径转换为绝对路径，统一使用/并保留末尾斜杠
 func resolveAbsolutePaths() error {
 	// 转换Paths中的所有路径为绝对路径
-	pathsVal := reflect.ValueOf(&Global.Paths).Elem()
-	if err := resolveAbsolutePathsInStruct(pathsVal); err != nil {
+	if err := resolveAbsolutePathsInStruct(reflect.ValueOf(&Global.Paths).Elem()); err != nil {
 		return err
 	}
 
 	// 转换MethodHandlerDirectories中的路径为绝对路径
-	handlerDirsVal := reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()
-	if err := resolveAbsolutePathsInStruct(handlerDirsVal); err != nil {
+	if err := resolveAbsolutePathsInStruct(reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()); err != nil {
 		return err
 	}
 
+	// 转换切片中的路径为绝对路径
 	if err := resolveAbsolutePathsInSlice(reflect.ValueOf(&Global.PathLists.RobotProtoDirectories)); err != nil {
 		return err
 	}
@@ -630,17 +636,28 @@ func setDefaults() {
 
 	// Robot相关默认值
 	if Global.Paths.Robot != "" {
+		// 使用FileExtensions中的目录名配置
+		protoDirName := "proto"
+		if Global.FileExtensions.ProtoDirName != "" {
+			protoDirName = Global.FileExtensions.ProtoDirName
+		}
+
+		goZeroProtoDirName := "go-zero_proto"
+		if Global.FileExtensions.GoZeroProtoDirName != "" {
+			goZeroProtoDirName = Global.FileExtensions.GoZeroProtoDirName
+		}
+
 		if Global.Paths.RobotGenerated == "" {
 			Global.Paths.RobotGenerated = filepath.Join(Global.Paths.OutputRoot, Global.Paths.Robot, "generated/")
 		}
 		if Global.Paths.RobotProto == "" {
-			Global.Paths.RobotProto = filepath.Join(Global.Paths.RobotGenerated, "proto/")
+			Global.Paths.RobotProto = filepath.Join(Global.Paths.RobotGenerated, protoDirName+"/")
 		}
 		if Global.Paths.RobotGeneratedProto == "" {
-			Global.Paths.RobotGeneratedProto = filepath.Join(Global.Paths.RobotGenerated, "proto/")
+			Global.Paths.RobotGeneratedProto = filepath.Join(Global.Paths.RobotGenerated, protoDirName+"/")
 		}
 		if Global.Paths.RobotGoZeroProto == "" {
-			Global.Paths.RobotGoZeroProto = filepath.Join(Global.Paths.RobotGeneratedProto, "go-zero_proto/")
+			Global.Paths.RobotGoZeroProto = filepath.Join(Global.Paths.RobotGeneratedProto, goZeroProtoDirName+"/")
 		}
 		if Global.Paths.RobotGeneratedOutputDir == "" {
 			Global.Paths.RobotGeneratedOutputDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.Robot, "generated/")
@@ -704,26 +721,22 @@ func validateConfig() error {
 // validatePaths 验证路径中是否包含未替换的变量
 func validatePaths() error {
 	// 检查Paths结构体
-	pathsVal := reflect.ValueOf(&Global.Paths).Elem()
-	if err := validateStructPaths(pathsVal); err != nil {
+	if err := validateStructPaths(reflect.ValueOf(&Global.Paths).Elem()); err != nil {
 		return err
 	}
 
 	// 检查FileExtensions结构体
-	extensionsVal := reflect.ValueOf(&Global.FileExtensions).Elem()
-	if err := validateStructPaths(extensionsVal); err != nil {
+	if err := validateStructPaths(reflect.ValueOf(&Global.FileExtensions).Elem()); err != nil {
 		return err
 	}
 
 	// 检查Naming结构体
-	namingVal := reflect.ValueOf(&Global.Naming).Elem()
-	if err := validateStructPaths(namingVal); err != nil {
+	if err := validateStructPaths(reflect.ValueOf(&Global.Naming).Elem()); err != nil {
 		return err
 	}
 
 	// 检查处理器目录
-	handlerDirsVal := reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()
-	if err := validateStructPaths(handlerDirsVal); err != nil {
+	if err := validateStructPaths(reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()); err != nil {
 		return err
 	}
 
@@ -861,10 +874,12 @@ func (c *Config) GetIncludePaths() []string {
 		if strings.Contains(path, "{{") {
 			// 如果还有变量，尝试替换
 			path = replaceVariables(path, map[string]string{
-				"{{output_root}}":     c.Paths.OutputRoot,
-				"{{proto_dir}}":       c.Paths.ProtoDir,
-				"{{robot_proto_dir}}": c.Paths.RobotProto,
-				"{{robot_dir}}":       c.Paths.Robot,
+				"{{output_root}}":          c.Paths.OutputRoot,
+				"{{proto_dir}}":            c.Paths.ProtoDir,
+				"{{robot_proto}}":          c.Paths.RobotProto,
+				"{{robot}}":                c.Paths.Robot,
+				"{{proto_dir_name}}":       c.FileExtensions.ProtoDirName,
+				"{{robot_proto_dir_name}}": c.FileExtensions.RobotProtoDirName,
 			})
 		}
 
@@ -926,8 +941,9 @@ func (c *Config) GetOutputPath(mappingName, protoDir, protoFile string) (string,
 	}
 
 	path := replaceVariables(mapping.Path, map[string]string{
-		"{{proto_dir}}":  protoDir,
-		"{{proto_file}}": protoFile,
+		"{{proto_dir}}":      protoDir,
+		"{{proto_file}}":     protoFile,
+		"{{proto_dir_name}}": c.FileExtensions.ProtoDirName,
 	})
 
 	return path, nil
@@ -961,6 +977,24 @@ func (c *Config) ShouldIgnoreFile(filename string) bool {
 		}
 	}
 	return false
+}
+
+// ========== 辅助方法 ==========
+
+// GetDirName 获取目录名配置
+func (c *Config) GetDirName(name string) string {
+	switch name {
+	case "proto":
+		return c.FileExtensions.ProtoDirName
+	case "go_zero_proto":
+		return c.FileExtensions.GoZeroProtoDirName
+	case "robot_proto":
+		return c.FileExtensions.RobotProtoDirName
+	case "robot_go_zero_proto":
+		return c.FileExtensions.RobotGoZeroProtoDirName
+	default:
+		return ""
+	}
 }
 
 // ========== 原有配置的兼容方法 ==========
