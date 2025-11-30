@@ -7,7 +7,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"log"
 	"os"
-	"pbgen/config"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	"pbgen/internal/utils"
@@ -184,13 +183,13 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 		}
 
 		// 生成头部文件
-		md5FilePath := _config.Global.Paths.PlayerStorageTempDir + config.PlayerDataLoaderName
+		md5FilePath := _config.Global.Paths.PlayerDataLoaderFile
 		err := GenerateCppPlayerHeaderFile(md5FilePath, headerEntries)
 		if err != nil {
 			log.Fatalf("failed to generate header file: %v", err)
 		}
 
-		destFilePath := _config.Global.Paths.PlayerStorageSystemDir + config.PlayerDataLoaderName
+		destFilePath := _config.Global.Paths.PlayerDataLoaderFile
 		err = utils.CopyFileIfChanged(md5FilePath, destFilePath)
 		if err != nil {
 			log.Fatalf("failed to generate header file: %v", err)
