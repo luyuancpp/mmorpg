@@ -50,7 +50,7 @@ func BuildProtoCpp(protoDir string) error {
 	}
 
 	// 2. 解析目录路径
-	cppOutputDir, err := utils2.ResolveAbsPath(_config.Global.Paths.PbcProtoOutputDir, "C++批量输出目录")
+	cppOutputDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtoBufCProtoOutputDir, "C++批量输出目录")
 	if err != nil {
 		return err
 	}
@@ -347,7 +347,7 @@ func generateGameGrpcCpp(wg *sync.WaitGroup, protoFiles []string) error {
 		defer wg.Done()
 
 		// 解析输出目录
-		cppOutputDir, err := utils2.ResolveAbsPath(_config.Global.Paths.PbcProtoOutputDir, "游戏C++输出目录")
+		cppOutputDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtoBufCProtoOutputDir, "游戏C++输出目录")
 		if err != nil {
 			log.Fatal(err)
 		}

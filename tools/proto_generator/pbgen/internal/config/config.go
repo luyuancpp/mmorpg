@@ -54,7 +54,7 @@ type Paths struct {
 	GrpcTempDir                 string `yaml:"grpc_temp_dir"`
 	ProtoBufCTempDir            string `yaml:"proto_buf_c_temp_dir"`
 	PlayerStorageTempDir        string `yaml:"player_storage_temp_dir"`
-	PbcProtoOutputDir           string `yaml:"pbc_proto_output_dir"`
+	ProtoBufCProtoOutputDir     string `yaml:"proto_buf_c_proto_output_dir"`
 	PbcProtoOutputNoSuffixDir   string `yaml:"pbc_proto_output_no_suffix_dir"`
 	GeneratedOutputDir          string `yaml:"generated_output_dir"`
 	GrpcOutputDir               string `yaml:"grpc_output_dir"`
