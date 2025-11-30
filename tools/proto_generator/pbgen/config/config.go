@@ -30,7 +30,6 @@ const (
 
 // ----------- 方法处理目录 -----------
 const (
-	RoomNodePlayerMethodHandlerDirectory        = RoomNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
 	RoomNodePlayerMethodRepliedHandlerDirectory = RoomNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
 	CentreNodeMethodHandlerDirectory            = CentreNodeDirectory + RpcHandlerSourceDirectory
 	CentreNodePlayerMethodHandlerDirectory      = CentreNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
@@ -38,8 +37,6 @@ const (
 	CentrePlayerMethodRepliedHandlerDirectory   = CentreNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
 	GateMethodHandlerDirectory                  = GateNodeDirectory + RpcHandlerSourceDirectory
 	GateMethodRepliedHandlerDirectory           = GateNodeDirectory + RpcResponseSourceDirectory
-	GateNodePlayerMethodHandlerDirectory        = GateNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
-	GateNodePlayerMethodRepliedHandlerDirectory = GateNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
 )
 
 // ----------- 输出目录 -----------
