@@ -8,8 +8,7 @@ const (
 
 // ----------- Proto 文件扩展名 -----------
 const (
-	ProtoExt     = ".proto"
-	ProtoDirName = "proto/"
+	ProtoExt = ".proto"
 )
 
 // ----------- 通用文件扩展名 -----------
