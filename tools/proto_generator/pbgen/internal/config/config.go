@@ -37,7 +37,7 @@ type Paths struct {
 	NodePkgDir                      string `yaml:"node_pkg_dir"`
 	NodeLibsEngine                  string `yaml:"node_libs_engine"`
 	NodeLibGame                     string `yaml:"node_lib_game"`
-	NodePkgLogicScene               string `yaml:"node_pkg_logic_scene"`
+	NodePkgLogicRoom                string `yaml:"node_pkg_logic_room"`
 	RoomNodeDir                     string `yaml:"room_node_dir"`
 	CentreNodeDir                   string `yaml:"centre_node_dir"`
 	GateNodeDir                     string `yaml:"gate_node_dir"`
