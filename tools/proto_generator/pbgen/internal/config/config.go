@@ -217,19 +217,19 @@ type NodeTypes struct {
 
 // MethodHandlerDirs 方法处理器目录映射
 type MethodHandlerDirs struct {
-	Robot                 string `yaml:"robot"`
-	RoomNode              string `yaml:"room_node"`
-	RoomNodePlayer        string `yaml:"room_node_player"`
-	RoomNodeReplied       string `yaml:"room_node_replied"`
-	RoomNodePlayerReplied string `yaml:"room_node_player_replied"`
-	CentreNode            string `yaml:"centre_node"`
-	CentreNodePlayer      string `yaml:"centre_node_player"`
-	CentreReplied         string `yaml:"centre_replied"`
-	CentrePlayerReplied   string `yaml:"centre_player_replied"`
-	GateNode              string `yaml:"gate_node"`
-	GateNodeReplied       string `yaml:"gate_node_replied"`
-	GateNodePlayer        string `yaml:"gate_node_player"`
-	GateNodePlayerReplied string `yaml:"gate_node_player_replied"`
+	Robot                   string `yaml:"robot"`
+	RoomNode                string `yaml:"room_node"`
+	RoomNodePlayer          string `yaml:"room_node_player"`
+	RoomNodeReplied         string `yaml:"room_node_replied"`
+	RoomNodePlayerReplied   string `yaml:"room_node_player_replied"`
+	CentreNode              string `yaml:"centre_node"`
+	CentreNodePlayer        string `yaml:"centre_node_player"`
+	CentreNodeReplied       string `yaml:"centre_node_replied"`
+	CentreNodePlayerReplied string `yaml:"centre_node_player_replied"`
+	GateNode                string `yaml:"gate_node"`
+	GateNodeReplied         string `yaml:"gate_node_replied"`
+	GateNodePlayer          string `yaml:"gate_node_player"`
+	GateNodePlayerReplied   string `yaml:"gate_node_player_replied"`
 }
 
 // Generators 生成器开关配置

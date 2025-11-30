@@ -550,7 +550,7 @@ func WriteServiceRegisterInfoFile(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go writePlayerServiceInstanceFiles(wg, "repliedInstance", IsRoomNodeReceivedPlayerResponseHandler, _config.Global.PathLists.MethodHandlerDirectories.RoomNodePlayerReplied, _config.Global.Naming.PlayerRepliedService)
 	wg.Add(1)
-	go writePlayerServiceInstanceFiles(wg, "repliedInstance", IsCentreReceivedPlayerServiceResponseHandler, _config.Global.PathLists.MethodHandlerDirectories.CentrePlayerReplied, _config.Global.Naming.PlayerRepliedService)
+	go writePlayerServiceInstanceFiles(wg, "repliedInstance", IsCentreReceivedPlayerServiceResponseHandler, _config.Global.PathLists.MethodHandlerDirectories.CentreNodePlayerReplied, _config.Global.Naming.PlayerRepliedService)
 	wg.Add(1)
 	go writePlayerServiceInstanceFiles(wg, "instance", IsNoOpHandler, _config.Global.PathLists.MethodHandlerDirectories.GateNodePlayer, _config.Global.Naming.PlayerService)
 	wg.Add(1)

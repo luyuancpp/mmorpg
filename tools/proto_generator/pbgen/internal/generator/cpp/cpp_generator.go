@@ -424,7 +424,7 @@ func WriteMethodFile(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go internal.GenRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.CentreNode+_config.Global.FileExtensions.RegisterHandlerCppExtension, IsCentreHostedServiceHandler)
 	wg.Add(1)
-	go internal.WriteRepliedRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.CentreReplied+_config.Global.FileExtensions.RegisterRepliedHandlerCppExtension, IsCentreReceivedServiceResponseHandler)
+	go internal.WriteRepliedRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.CentreNodeReplied+_config.Global.FileExtensions.RegisterRepliedHandlerCppExtension, IsCentreReceivedServiceResponseHandler)
 
 	wg.Add(1)
 	go internal.GenRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.GateNodeReplied+_config.Global.FileExtensions.RegisterHandlerCppExtension, IsNoOpHandler)
