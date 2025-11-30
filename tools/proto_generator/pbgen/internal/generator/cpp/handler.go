@@ -20,8 +20,6 @@ type HandlerConfig struct {
 }
 
 func writeHandlerHeadFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cfg HandlerConfig) {
-	defer wg.Done()
-
 	if !cfg.IsValidFunc(&methodList) {
 		return
 	}
@@ -42,8 +40,6 @@ func writeHandlerHeadFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cf
 }
 
 func writeHandlerCppFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cfg HandlerConfig) {
-	defer wg.Done()
-
 	if !cfg.IsValidFunc(&methodList) {
 		return
 	}
