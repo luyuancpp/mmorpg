@@ -414,11 +414,6 @@ func resolvePathVariables() error {
 		return err
 	}
 
-	// 处理字符串切片中的变量替换
-	if err := replaceVariablesInSlice(reflect.ValueOf(&Global.PathLists.ProtoDirectories), vars); err != nil {
-		return err
-	}
-
 	if err := replaceVariablesInSlice(reflect.ValueOf(&Global.PathLists.RobotProtoDirectories), vars); err != nil {
 		return err
 	}
@@ -518,11 +513,6 @@ func resolveAbsolutePaths() error {
 	// 转换MethodHandlerDirectories中的路径为绝对路径
 	handlerDirsVal := reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()
 	if err := resolveAbsolutePathsInStruct(handlerDirsVal); err != nil {
-		return err
-	}
-
-	// 转换字符串切片中的路径
-	if err := resolveAbsolutePathsInSlice(reflect.ValueOf(&Global.PathLists.ProtoDirectories)); err != nil {
 		return err
 	}
 

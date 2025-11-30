@@ -2,26 +2,6 @@ package config
 
 // ----------- 项目源目录相关 -----------
 var (
-	ProtoDirectoryNames = [...]string{
-		"common/",
-		"logic/component/",
-		"logic/event/",
-		"logic/",
-		"logic/",
-		"service/go/grpc/player_locator/",
-		"logic/constants/",
-		"middleware/etcd/",
-		"service/go/grpc/login/",
-		"service/go/grpc/db/",
-		"service/cpp/rpc/centre/",
-		"service/cpp/rpc/scene/",
-		"service/cpp/rpc/gate/",
-		"service/go/grpc/chat/",
-		"service/go/grpc/team/",
-		"service/go/grpc/mail/",
-		"logic/database/",
-	}
-
 	ProtoDirs []string
 
 	CommonProtoDirIndex         = 0
