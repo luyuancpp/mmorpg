@@ -115,12 +115,12 @@ func (info *RPCServiceInfo) BasePathForCpp() string {
 
 // PbcHeadName 返回Proto文件头文件名
 func (info *RPCServiceInfo) PbcHeadName() string {
-	return strings.Replace(info.FileBaseName(), config.ProtoExt, _config.Global.FileExtensions.PbH, 1)
+	return strings.Replace(info.FileBaseName(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1)
 }
 
 // HeadName 返回头文件名
 func (info *RPCServiceInfo) HeadName() string {
-	return strings.Replace(info.FileBaseName(), config.ProtoExt, _config.Global.FileExtensions.Header, 1)
+	return strings.Replace(info.FileBaseName(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.Header, 1)
 }
 
 func (info *RPCServiceInfo) ServiceInfoIncludeName() string {
@@ -129,7 +129,7 @@ func (info *RPCServiceInfo) ServiceInfoIncludeName() string {
 
 // FileBaseNameNoEx 返回文件基本名
 func (info *RPCServiceInfo) FileBaseNameNoEx() string {
-	return strings.Replace(info.FileBaseName(), config.ProtoExt, "", 1)
+	return strings.Replace(info.FileBaseName(), _config.Global.FileExtensions.Proto, "", 1)
 }
 
 // FileBaseNameNoEx 返回文件基本名
@@ -139,7 +139,7 @@ func (info *RPCServiceInfo) FileBaseName() string {
 
 func (info *RPCServiceInfo) FileBaseNameCamel() string {
 	// 1. 去掉扩展名
-	base := strings.Replace(info.FileBaseName(), config.ProtoExt, "", 1)
+	base := strings.Replace(info.FileBaseName(), _config.Global.FileExtensions.Proto, "", 1)
 	// 2. 把下划线替换成空格，方便 Title() 把每个单词首字母大写
 	base = strings.ReplaceAll(base, "_", " ")
 	// 3. 首字母大写处理
@@ -173,7 +173,7 @@ func (info *RPCServiceInfo) GrpcIncludeHeadName() string {
 }
 
 func (info *RPCServiceInfo) GrpcHeadName() string {
-	return strings.Replace(info.FileBaseNameNoEx(), config.ProtoExt, _config.Global.FileExtensions.GrpcPbH, 1)
+	return strings.Replace(info.FileBaseNameNoEx(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.GrpcPbH, 1)
 }
 
 func (info *RPCServiceInfo) GetServiceFullNameWithNoColon() string {
@@ -204,7 +204,7 @@ func (info *RPCServiceInfo) ServiceInfoHeadInclude() string {
 
 // FileBaseNameNoEx 返回文件基本名
 func (info *MethodInfo) FileBaseNameNoEx() string {
-	return strings.Replace(info.FileBaseName(), config.ProtoExt, "", 1)
+	return strings.Replace(info.FileBaseName(), _config.Global.FileExtensions.Proto, "", 1)
 }
 
 func (info *MethodInfo) ServiceInfoHeadInclude() string {
@@ -216,7 +216,7 @@ func (info *MethodInfo) GeneratorGrpcFileName() string {
 }
 
 func (info *MethodInfo) PbcHeadName() string {
-	return strings.Replace(info.FileBaseName(), config.ProtoExt, _config.Global.FileExtensions.PbH, 1)
+	return strings.Replace(info.FileBaseName(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1)
 }
 
 func (info *MethodInfo) MethodName() string {
@@ -232,12 +232,12 @@ func (info *MethodInfo) FileName() string {
 }
 
 func (info *MethodInfo) FileNameNoEx() string {
-	return strings.Replace(info.FileName(), config.ProtoExt, "", 1)
+	return strings.Replace(info.FileName(), _config.Global.FileExtensions.Proto, "", 1)
 }
 
 func (info *MethodInfo) FileBaseNameCamel() string {
 	// 1. 去掉扩展名
-	base := strings.Replace(info.FileBaseName(), config.ProtoExt, "", 1)
+	base := strings.Replace(info.FileBaseName(), _config.Global.FileExtensions.Proto, "", 1)
 	// 2. 把下划线替换成空格，方便 Title() 把每个单词首字母大写
 	base = strings.ReplaceAll(base, "_", " ")
 	// 3. 首字母大写处理
@@ -255,7 +255,7 @@ func (info *MethodInfo) Package() string {
 }
 
 func (info *MethodInfo) GrpcHeadName() string {
-	return strings.Replace(info.FileBaseName(), config.ProtoExt, _config.Global.FileExtensions.GrpcPbH, 1)
+	return strings.Replace(info.FileBaseName(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.GrpcPbH, 1)
 }
 
 func (info *MethodInfo) GrpcIncludeHeadName() string {

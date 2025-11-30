@@ -160,7 +160,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 	}
 
 	className := generateClassNameFromFile(file, _config.Global.Naming.HandlerFile)
-	baseName := strings.ToLower(strings.TrimSuffix(file.Name(), config.ProtoExt))
+	baseName := strings.ToLower(strings.TrimSuffix(file.Name(), _config.Global.FileExtensions.Proto))
 	filePrefix := outputDir + baseName
 
 	headerFilePath := filePrefix + _config.Global.FileExtensions.HandlerH
@@ -183,7 +183,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 	tmplData := EventTemplateData{
 		ClassName:           className,
 		HeaderFile:          headerFileBase,
-		ProtoInclude:        _config.Global.FileExtensions.ProtoDirName + config.ProtoDirectoryNames[config.LogicEventProtoDirIndex] + strings.Replace(file.Name(), config.ProtoExt, _config.Global.FileExtensions.PbH, 1),
+		ProtoInclude:        _config.Global.FileExtensions.ProtoDirName + config.ProtoDirectoryNames[config.LogicEventProtoDirIndex] + strings.Replace(file.Name(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1),
 		EventMessages:       eventMessages,
 		ForwardDeclarations: eventMessages,
 		GlobalUserCode:      globalCode,
@@ -257,12 +257,12 @@ public:
 	var cppIncludeData, registerData, unRegisterData string
 	for _, protoFile := range protoFiles {
 		// Only process valid proto files
-		if !strings.HasSuffix(protoFile.Name(), config.ProtoExt) {
+		if !strings.HasSuffix(protoFile.Name(), _config.Global.FileExtensions.Proto) {
 			continue
 		}
 
 		// Include header file name with the right extension
-		cppIncludeData += config.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), config.ProtoExt, _config.Global.FileExtensions.HandlerH, 1) + config.IncludeEndLine
+		cppIncludeData += config.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.HandlerH, 1) + config.IncludeEndLine
 
 		// Register and UnRegister data
 		className := generateClassNameFromFile(protoFile, _config.Global.Naming.HandlerFile)
