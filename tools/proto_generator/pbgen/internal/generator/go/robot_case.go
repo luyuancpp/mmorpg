@@ -94,7 +94,7 @@ func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 			}
 		}
 
-		err := generateTotalHandlerFile(_config.Global.Paths.RobotMessageBodyHandlerFile, handlerCases)
+		err := generateTotalHandlerFile(_config.Global.Paths.RobotMsgBodyHandlerFile, handlerCases)
 		if err != nil {
 			return
 		}
