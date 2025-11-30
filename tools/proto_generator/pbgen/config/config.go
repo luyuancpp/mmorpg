@@ -69,11 +69,9 @@ const (
 
 	MessageIdGoFile = "message_id.go"
 
-	GeneratedRpcName      = "rpc/"
-	GeneratedRpcDirectory = GeneratedOutputDirectory + GeneratedRpcName
-	ServiceInfoName       = "service_metadata/"
-	ServiceInfoDirectory  = GeneratedRpcDirectory + ServiceInfoName
-	ServiceInfoExtension  = "_service_metadata"
+	GeneratedRpcName     = "rpc/"
+	ServiceInfoName      = "service_metadata/"
+	ServiceInfoExtension = "_service_metadata"
 )
 
 // ----------- 文件名 -----------
