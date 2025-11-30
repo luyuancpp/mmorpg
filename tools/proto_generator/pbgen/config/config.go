@@ -58,17 +58,10 @@ const (
 // ----------- 输出目录 -----------
 // 更新后的路径
 const (
-	ProtoGoPackageSuffix  = "_proto"
-	GoPackage             = "generated/pb/game"
-	GoRobotPackage        = "robot"
-	ToolDir               = "tools/"
-	TempFileGenerationDir = OutputRoot + ToolDir + "generated/temp/files/"
-	PbDescDirectory       = TempFileGenerationDir + "proto_desc/"
-
-	GeneratedOutputDirectory = OutputRoot + GeneratedDirectory
-
-	MessageIdGoFile = "message_id.go"
-
+	ProtoGoPackageSuffix = "_proto"
+	GoPackage            = "generated/pb/game"
+	GoRobotPackage       = "robot"
+	MessageIdGoFile      = "message_id.go"
 	GeneratedRpcName     = "rpc/"
 	ServiceInfoName      = "service_metadata/"
 	ServiceInfoExtension = "_service_metadata"
