@@ -58,7 +58,7 @@ func BuildProtoCpp(protoDir string) error {
 		log.Fatalf("C++批量生成: 创建输出目录失败: %w", err)
 	}
 
-	cppTempDir, err := utils2.ResolveAbsPath(_config.Global.Paths.PbcTempDir, "C++批量临时目录")
+	cppTempDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtoBufCTempDir, "C++批量临时目录")
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -356,7 +356,7 @@ func generateGameGrpcCpp(wg *sync.WaitGroup, protoFiles []string) error {
 		}
 
 		// 解析临时目录
-		cppTempDir, err := utils2.ResolveAbsPath(_config.Global.Paths.PbcTempDir, "游戏C++临时目录")
+		cppTempDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtoBufCTempDir, "游戏C++临时目录")
 		if err != nil {
 			log.Fatal(err)
 		}

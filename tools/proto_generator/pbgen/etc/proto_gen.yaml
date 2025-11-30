@@ -30,10 +30,10 @@ paths:
   # 工具与临时目录
   tool_dir: "tools/"
   temp_file_gen_dir: "{{output_root}}{{tool_dir}}generated/temp/files/"
-  pb_desc_dir: "{{temp_file_gen_dir}}proto_desc/"
-  all_in_one_desc: "{{pb_desc_dir}}all_in_one.desc"
+  proto_buf_desc_dir: "{{temp_file_gen_dir}}proto_desc/"
+  all_in_one_desc: "{{proto_buf_desc_dir}}all_in_one.desc"
   grpc_temp_dir: "{{temp_file_gen_dir}}grpc/"
-  pbc_temp_dir: "{{temp_file_gen_dir}}"
+  proto_buf_c_temp_dir: "{{temp_file_gen_dir}}"
   player_storage_temp_dir: "{{temp_file_gen_dir}}/node/game/storage/"
 
   # 输出目录

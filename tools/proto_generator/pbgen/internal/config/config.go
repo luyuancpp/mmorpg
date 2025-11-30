@@ -49,10 +49,10 @@ type Paths struct {
 	GeneratedDir                string `yaml:"generated_dir"`
 	ToolDir                     string `yaml:"tool_dir"`
 	TempFileGenDir              string `yaml:"temp_file_gen_dir"`
-	PbDescDir                   string `yaml:"pb_desc_dir"`
+	ProtoBufDescDir             string `yaml:"proto_buf_desc_dir"`
 	AllInOneDesc                string `yaml:"all_in_one_desc"`
 	GrpcTempDir                 string `yaml:"grpc_temp_dir"`
-	PbcTempDir                  string `yaml:"pbc_temp_dir"`
+	ProtoBufCTempDir            string `yaml:"proto_buf_c_temp_dir"`
 	PlayerStorageTempDir        string `yaml:"player_storage_temp_dir"`
 	PbcProtoOutputDir           string `yaml:"pbc_proto_output_dir"`
 	PbcProtoOutputNoSuffixDir   string `yaml:"pbc_proto_output_no_suffix_dir"`
@@ -624,8 +624,8 @@ func setDefaults() {
 	}
 
 	// 解析器默认值
-	if Global.Paths.AllInOneDesc == "" && Global.Paths.PbDescDir != "" {
-		Global.Paths.AllInOneDesc = filepath.Join(Global.Paths.PbDescDir, "all_in_one.desc")
+	if Global.Paths.AllInOneDesc == "" && Global.Paths.ProtoBufDescDir != "" {
+		Global.Paths.AllInOneDesc = filepath.Join(Global.Paths.ProtoBufDescDir, "all_in_one.desc")
 	}
 
 	// Robot相关默认值
@@ -783,7 +783,7 @@ func createRequiredDirs() error {
 		Global.Paths.GrpcOutputDir,
 		Global.Paths.PbcLuaDir,
 		Global.Paths.TempFileGenDir,
-		Global.Paths.PbDescDir,
+		Global.Paths.ProtoBufDescDir,
 		Global.Paths.RoomNodeEventHandlerDirectory,
 		Global.Paths.CentreNodeEventHandlerDirectory,
 	}
