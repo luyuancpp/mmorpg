@@ -183,7 +183,7 @@ type PathLists struct {
 	RobotProtoDirectories    []string          `yaml:"robot_proto_directories"`
 	MethodHandlerDirectories MethodHandlerDirs `yaml:"method_handler_directories"`
 	GrpcLanguages            []string          `yaml:"grpc_languages"`
-	ProtoDirIndexes          ProtoDirIndexes   `yaml:"proto_dir_indexes"`
+	ProtoDirectoryIndexes    ProtoDirIndexes   `yaml:"proto_directory_indexes"`
 	NodeTypes                NodeTypes         `yaml:"node_types"`
 }
 
@@ -969,39 +969,39 @@ func (c *Config) ShouldIgnoreFile(filename string) bool {
 func (c *Config) GetProtoDirIndex(name string) int {
 	switch name {
 	case "common":
-		return c.PathLists.ProtoDirIndexes.CommonProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.CommonProtoDirIndex
 	case "logic_component":
-		return c.PathLists.ProtoDirIndexes.LogicComponentProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.LogicComponentProtoDirIndex
 	case "logic_event":
-		return c.PathLists.ProtoDirIndexes.LogicEventProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex
 	case "logic_shared":
-		return c.PathLists.ProtoDirIndexes.LogicSharedProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.LogicSharedProtoDirIndex
 	case "logic":
-		return c.PathLists.ProtoDirIndexes.LogicProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.LogicProtoDirIndex
 	case "player_locator":
-		return c.PathLists.ProtoDirIndexes.PlayerLocatorDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.PlayerLocatorDirIndex
 	case "constants":
-		return c.PathLists.ProtoDirIndexes.ConstantsDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.ConstantsDirIndex
 	case "etcd":
-		return c.PathLists.ProtoDirIndexes.EtcdProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.EtcdProtoDirIndex
 	case "login":
-		return c.PathLists.ProtoDirIndexes.LoginProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.LoginProtoDirIndex
 	case "db":
-		return c.PathLists.ProtoDirIndexes.DbProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.DbProtoDirIndex
 	case "center":
-		return c.PathLists.ProtoDirIndexes.CenterProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.CenterProtoDirIndex
 	case "room":
-		return c.PathLists.ProtoDirIndexes.RoomProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.RoomProtoDirIndex
 	case "gate":
-		return c.PathLists.ProtoDirIndexes.GateProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.GateProtoDirIndex
 	case "chat":
-		return c.PathLists.ProtoDirIndexes.ChatProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.ChatProtoDirIndex
 	case "team":
-		return c.PathLists.ProtoDirIndexes.TeamProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.TeamProtoDirIndex
 	case "mail":
-		return c.PathLists.ProtoDirIndexes.MailProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.MailProtoDirIndex
 	case "robot":
-		return c.PathLists.ProtoDirIndexes.RobotProtoDirIndex
+		return c.PathLists.ProtoDirectoryIndexes.RobotProtoDirIndex
 	default:
 		return -1
 	}

@@ -217,7 +217,7 @@ path_lists:
     - "swift"
 
   # Proto目录索引配置
-  proto_dir_indexes:
+  proto_directory_indexes:
     common_proto_dir_index: 0
     logic_component_proto_dir_index: 1
     logic_event_proto_dir_index: 2

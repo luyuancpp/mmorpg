@@ -152,7 +152,7 @@ type EventTemplateData struct {
 func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir string) {
 	defer wg.Done()
 
-	protoFilePath := global_value.ProtoDirs[_config.Global.PathLists.ProtoDirIndexes.LogicEventProtoDirIndex] + file.Name()
+	protoFilePath := global_value.ProtoDirs[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex] + file.Name()
 	eventMessages, err := parseProtoMessages(protoFilePath)
 	if err != nil {
 		log.Printf("failed to parse proto: %v\n", err)
@@ -183,7 +183,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 	tmplData := EventTemplateData{
 		ClassName:           className,
 		HeaderFile:          headerFileBase,
-		ProtoInclude:        _config.Global.FileExtensions.ProtoDirName + _config.Global.PathLists.ProtoDirectories[_config.Global.PathLists.ProtoDirIndexes.LogicEventProtoDirIndex] + strings.Replace(file.Name(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1),
+		ProtoInclude:        _config.Global.FileExtensions.ProtoDirName + _config.Global.PathLists.ProtoDirectories[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex] + strings.Replace(file.Name(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1),
 		EventMessages:       eventMessages,
 		ForwardDeclarations: eventMessages,
 		GlobalUserCode:      globalCode,
@@ -201,7 +201,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 
 // generateAllEventHandlers 生成所有事件处理器
 func GenerateAllEventHandlers(wg *sync.WaitGroup) {
-	files, err := os.ReadDir(global_value.ProtoDirs[_config.Global.PathLists.ProtoDirIndexes.LogicEventProtoDirIndex])
+	files, err := os.ReadDir(global_value.ProtoDirs[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex])
 	if err != nil {
 		log.Fatal(err)
 	}
