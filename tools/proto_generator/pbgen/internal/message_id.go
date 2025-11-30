@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
-	"pbgen/config"
+	"pbgen/global_value"
 	_config "pbgen/internal/config"
 	"pbgen/internal/utils"
 	"strings"
@@ -140,11 +140,11 @@ func WriteGoMessageId(wg *sync.WaitGroup) {
 		_config.Global.Paths.RobotMessageIdFile,
 	}
 
-	for i := 0; i < len(config.ProtoDirs); i++ {
-		if !utils.HasGrpcService(config.ProtoDirs[i]) {
+	for i := 0; i < len(global_value.ProtoDirs); i++ {
+		if !utils.HasGrpcService(global_value.ProtoDirs[i]) {
 			continue
 		}
-		basePath := strings.ToLower(path.Base(config.ProtoDirs[i]))
+		basePath := strings.ToLower(path.Base(global_value.ProtoDirs[i]))
 		outputDir := _config.Global.Paths.NodeGoDir + basePath + "/" + _config.Global.Naming.GoPackage
 		filePaths = append(filePaths, outputDir+"/"+_config.Global.FileExtensions.MessageIdGoFile)
 	}

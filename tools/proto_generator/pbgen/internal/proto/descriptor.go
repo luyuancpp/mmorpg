@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"pbgen/config"
+	"pbgen/global_value"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"strings"
@@ -63,7 +63,7 @@ func collectUniqueProtoFiles() ([]string, error) {
 	protoFileSet := make(map[string]struct{}) // 用于去重
 	var allProtoFiles []string
 
-	for _, dir := range config.ProtoDirs {
+	for _, dir := range global_value.ProtoDirs {
 		fileEntries, err := os.ReadDir(dir)
 		if err != nil {
 			log.Printf("描述符生成: 读取目录[%s]失败，跳过: %v", dir, err)

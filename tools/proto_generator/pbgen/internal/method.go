@@ -532,7 +532,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 		}
 	}
 
-	// 如果没有找到第一个 yourCode，使用默认的 config.YourCodePair
+	// 如果没有找到第一个 yourCode，使用默认的 global_value.YourCodePair
 	if firstCode == "" {
 		firstCode = _config.Global.Naming.YourCodePair
 	}

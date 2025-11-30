@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
-	"pbgen/config"
+	"pbgen/global_value"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
@@ -215,8 +215,8 @@ func WriteSol2LuaFile() {
 		declarationData := ""
 		callData := ""
 
-		for i := 0; i < len(config.ProtoDirs); i++ {
-			fds, err := os.ReadDir(config.ProtoDirs[i])
+		for i := 0; i < len(global_value.ProtoDirs); i++ {
+			fds, err := os.ReadDir(global_value.ProtoDirs[i])
 			if err != nil {
 				continue
 			}
@@ -231,7 +231,7 @@ func WriteSol2LuaFile() {
 					continue
 				}
 				utils2.Wg.Add(1)
-				writeSol2LuaFileByProtoFile(fd, config.ProtoDirs[i])
+				writeSol2LuaFileByProtoFile(fd, global_value.ProtoDirs[i])
 
 				fileBaseName := filepath.Base(strings.ToLower(strings.ReplaceAll(fd.Name(), _config.Global.FileExtensions.Proto, "")))
 				declarationData += "void Pb2sol2" + fileBaseName + "();\n"
