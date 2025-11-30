@@ -16,7 +16,7 @@ paths:
   node_pkg_dir: "cpp/libs/"
   node_libs_engine: "{{node_pkg_dir}}engine/"
   node_lib_game: "{{node_pkg_dir}}services/"
-  node_pkg_logic_scene: "{{node_lib_game}}scene/"
+  node_pkg_logic_room: "{{node_lib_game}}scene/"
   room_node_dir: "{{node_cpp_dir}}nodes/scene/"
   centre_node_dir: "{{node_cpp_dir}}nodes/centre/"
   gate_node_dir: "{{node_cpp_dir}}nodes/gate/"
@@ -73,7 +73,7 @@ paths:
   gen_util_cpp_file: "{{util_generator_dir}}proto_util.cpp"
   gen_util_head_file: "{{util_generator_dir}}proto_util.h"
   robot_msg_body_handler_file: "{{output_root}}{{robot}}logic/handler/message_body_handler.go"
-  player_storage_system_dir: "{{output_root}}{{node_pkg_logic_scene}}player/system/"
+  player_storage_system_dir: "{{output_root}}{{node_pkg_logic_room}}player/system/"
   player_data_loader_file: "{{player_storage_system_dir}}player_data_loader.h"
   protoc_path: "protoc"
 
