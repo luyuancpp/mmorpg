@@ -18,13 +18,11 @@ const (
 
 // ----------- 项目目录路径 -----------
 const (
-	ModelPath           = "model/"
-	NodeCppDirectory    = OutputRoot + "cpp/"
-	RoomNodeDirectory   = NodeCppDirectory + "nodes/scene/"
-	CentreNodeDirectory = NodeCppDirectory + "nodes/centre/"
-	GateNodeDirectory   = NodeCppDirectory + "nodes/gate/"
-	RobotDirectory      = "tools/robot/"
-
+	ModelPath                   = "model/"
+	NodeCppDirectory            = OutputRoot + "cpp/"
+	RoomNodeDirectory           = NodeCppDirectory + "nodes/scene/"
+	CentreNodeDirectory         = NodeCppDirectory + "nodes/centre/"
+	GateNodeDirectory           = NodeCppDirectory + "nodes/gate/"
 	RpcHandlerSourceDirectory   = "handler/rpc/"
 	RpcResponseSourceDirectory  = "rpc_replies/"
 	EventHandlerSourceDirectory = "handler/event/"
@@ -32,7 +30,6 @@ const (
 
 // ----------- 方法处理目录 -----------
 const (
-	RobotMethodHandlerDirectory                 = OutputRoot + RobotDirectory + "logic/handler/"
 	RoomNodeMethodHandlerDirectory              = RoomNodeDirectory + RpcHandlerSourceDirectory
 	RoomNodePlayerMethodHandlerDirectory        = RoomNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
 	RoomNodeMethodRepliedHandlerDirectory       = RoomNodeDirectory + RpcResponseSourceDirectory
