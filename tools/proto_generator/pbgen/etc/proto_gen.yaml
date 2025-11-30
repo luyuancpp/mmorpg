@@ -77,6 +77,12 @@ paths:
   player_data_loader_file: "{{player_storage_system_dir}}player_data_loader.h"
   protoc_path: "protoc"
 
+  # 原有配置中的目录路径
+  model_path: "model/"
+  event_handler_source_directory: "handler/event/"
+  room_node_event_handler_directory: "{{room_node_dir}}{{event_handler_source_directory}}"
+  centre_node_event_handler_directory: "{{centre_node_dir}}{{event_handler_source_directory}}"
+
 # 文件扩展名配置
 file_extensions:
   proto: ".proto"
@@ -102,6 +108,19 @@ file_extensions:
   model_sql: "mysql_database_table.sql"
   loader_cpp: "_loader.cpp"
 
+  # 原有配置中的扩展名
+  handler_cpp_extension: "_handler.cpp"
+  replied_handler_header_extension: "_response_handler.h"
+  cpp_replied_handler_ex: "_response_handler.cpp"
+  model_sql_extension: "mysql_database_table.sql"
+  proto_go_package_suffix: "_proto"
+  message_id_go_file: "message_id.go"
+  generated_rpc_name: "rpc/"
+  service_info_name: "service_metadata/"
+  service_info_extension: "_service_metadata"
+  register_replied_handler_cpp_extension: "register{{cpp_replied_handler_ex}}"
+  register_handler_cpp_extension: "register{{handler_cpp_extension}}"
+
 # 命名规则配置
 naming:
   message_id: "MessageId"
@@ -121,6 +140,24 @@ naming:
   game_rpc_proto: "game_rpc.proto"
   robot_rpc_proto: "robot_rpc.proto"  # robot专用rpc proto文件名
   grpc_name: "grpc"
+
+  # 原有配置中的命名常量
+  type_player: "player"
+  service_include_name: "rpc/"
+  player_service_include_name: "#include \"rpc/player_service_interface.h\"\n"
+  player_service_replied_include_name: "#include \"rpc/player_rpc_response_handler.h\"\n"
+  macro_return_include_name: "#include \"macros/return_define.h\""
+  node_enum_name: "eNodeType"
+  node_service_suffix: "nodeservice"
+  go_package: "generated/pb/game"
+  go_robot_package: "robot"
+  google_method_controller: "::google::protobuf::RpcController* controller, "
+  player_method_controller: "entt::entity player,"
+  include_end_line: "\"\n"
+  include_begin: "#include \""
+  your_code_begin: "///<<< BEGIN WRITING YOUR CODE"
+  your_code_end: "///<<< END WRITING YOUR CODE"
+  your_code_pair: "{{your_code_begin}}\n{{your_code_end}}\n"
 
 # 路径列表配置
 path_lists:
@@ -178,6 +215,32 @@ path_lists:
     - "php"
     - "objc"
     - "swift"
+
+  # Proto目录索引配置
+  proto_dir_indexes:
+    common_proto_dir_index: 0
+    logic_component_proto_dir_index: 1
+    logic_event_proto_dir_index: 2
+    logic_shared_proto_dir_index: 3
+    logic_proto_dir_index: 4
+    player_locator_dir_index: 5
+    constants_dir_index: 6
+    etcd_proto_dir_index: 7
+    login_proto_dir_index: 8
+    db_proto_dir_index: 9
+    center_proto_dir_index: 10
+    room_proto_dir_index: 11
+    gate_proto_dir_index: 12
+    chat_proto_dir_index: 13
+    team_proto_dir_index: 14
+    mail_proto_dir_index: 15
+    robot_proto_dir_index: 17
+
+  # 节点类型配置
+  node_types:
+    tcp_node: 0
+    grpc_node: 1
+    http_node: 2
 
 # 生成器开关配置
 generators:
