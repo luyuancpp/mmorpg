@@ -44,9 +44,3 @@ var (
 	// gRPC 支持的语言列表
 	GrpcLanguages = [...]string{"go", "python", "java", "csharp", "ruby", "node", "php", "objc", "swift"}
 )
-
-const (
-	TcpNode  = 0
-	GrpcNode = 1
-	HttpNode = 2
-)
