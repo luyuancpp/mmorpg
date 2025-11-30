@@ -1,11 +1,13 @@
 package _config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
@@ -89,6 +91,12 @@ type Paths struct {
 	PlayerStorageSystemDir      string `yaml:"player_storage_system_dir"`
 	PlayerDataLoaderFile        string `yaml:"player_data_loader_file"`
 	ProtocPath                  string `yaml:"protoc_path"`
+
+	// 原有配置中的路径
+	ModelPath                       string `yaml:"model_path"`
+	EventHandlerSourceDirectory     string `yaml:"event_handler_source_directory"`
+	RoomNodeEventHandlerDirectory   string `yaml:"room_node_event_handler_directory"`
+	CentreNodeEventHandlerDirectory string `yaml:"centre_node_event_handler_directory"`
 }
 
 // FileExtensions 文件扩展名配置
@@ -115,6 +123,19 @@ type FileExtensions struct {
 	GrpcClientCpp           string `yaml:"grpc_client_cpp"`
 	ModelSql                string `yaml:"model_sql"`
 	LoaderCpp               string `yaml:"loader_cpp"`
+
+	// 原有配置中的扩展名
+	HandlerCppExtension                string `yaml:"handler_cpp_extension"`
+	RepliedHandlerHeaderExtension      string `yaml:"replied_handler_header_extension"`
+	CppRepliedHandlerEx                string `yaml:"cpp_replied_handler_ex"`
+	ModelSqlExtension                  string `yaml:"model_sql_extension"`
+	ProtoGoPackageSuffix               string `yaml:"proto_go_package_suffix"`
+	MessageIdGoFile                    string `yaml:"message_id_go_file"`
+	GeneratedRpcName                   string `yaml:"generated_rpc_name"`
+	ServiceInfoName                    string `yaml:"service_info_name"`
+	ServiceInfoExtension               string `yaml:"service_info_extension"`
+	RegisterRepliedHandlerCppExtension string `yaml:"register_replied_handler_cpp_extension"`
+	RegisterHandlerCppExtension        string `yaml:"register_handler_cpp_extension"`
 }
 
 // Naming 命名规则配置
@@ -136,6 +157,24 @@ type Naming struct {
 	GameRpcProto         string `yaml:"game_rpc_proto"`
 	RobotRpcProto        string `yaml:"robot_rpc_proto"`
 	GrpcName             string `yaml:"grpc_name"`
+
+	// 原有配置中的命名常量
+	TypePlayer                      string `yaml:"type_player"`
+	ServiceIncludeName              string `yaml:"service_include_name"`
+	PlayerServiceIncludeName        string `yaml:"player_service_include_name"`
+	PlayerServiceRepliedIncludeName string `yaml:"player_service_replied_include_name"`
+	MacroReturnIncludeName          string `yaml:"macro_return_include_name"`
+	NodeEnumName                    string `yaml:"node_enum_name"`
+	NodeServiceSuffix               string `yaml:"node_service_suffix"`
+	GoPackage                       string `yaml:"go_package"`
+	GoRobotPackage                  string `yaml:"go_robot_package"`
+	GoogleMethodController          string `yaml:"google_method_controller"`
+	PlayerMethodController          string `yaml:"player_method_controller"`
+	IncludeEndLine                  string `yaml:"include_end_line"`
+	IncludeBegin                    string `yaml:"include_begin"`
+	YourCodeBegin                   string `yaml:"your_code_begin"`
+	YourCodeEnd                     string `yaml:"your_code_end"`
+	YourCodePair                    string `yaml:"your_code_pair"`
 }
 
 // PathLists 路径列表配置
@@ -144,6 +183,36 @@ type PathLists struct {
 	RobotProtoDirectories    []string          `yaml:"robot_proto_directories"`
 	MethodHandlerDirectories MethodHandlerDirs `yaml:"method_handler_directories"`
 	GrpcLanguages            []string          `yaml:"grpc_languages"`
+	ProtoDirIndexes          ProtoDirIndexes   `yaml:"proto_dir_indexes"`
+	NodeTypes                NodeTypes         `yaml:"node_types"`
+}
+
+// ProtoDirIndexes Proto目录索引配置
+type ProtoDirIndexes struct {
+	CommonProtoDirIndex         int `yaml:"common_proto_dir_index"`
+	LogicComponentProtoDirIndex int `yaml:"logic_component_proto_dir_index"`
+	LogicEventProtoDirIndex     int `yaml:"logic_event_proto_dir_index"`
+	LogicSharedProtoDirIndex    int `yaml:"logic_shared_proto_dir_index"`
+	LogicProtoDirIndex          int `yaml:"logic_proto_dir_index"`
+	PlayerLocatorDirIndex       int `yaml:"player_locator_dir_index"`
+	ConstantsDirIndex           int `yaml:"constants_dir_index"`
+	EtcdProtoDirIndex           int `yaml:"etcd_proto_dir_index"`
+	LoginProtoDirIndex          int `yaml:"login_proto_dir_index"`
+	DbProtoDirIndex             int `yaml:"db_proto_dir_index"`
+	CenterProtoDirIndex         int `yaml:"center_proto_dir_index"`
+	RoomProtoDirIndex           int `yaml:"room_proto_dir_index"`
+	GateProtoDirIndex           int `yaml:"gate_proto_dir_index"`
+	ChatProtoDirIndex           int `yaml:"chat_proto_dir_index"`
+	TeamProtoDirIndex           int `yaml:"team_proto_dir_index"`
+	MailProtoDirIndex           int `yaml:"mail_proto_dir_index"`
+	RobotProtoDirIndex          int `yaml:"robot_proto_dir_index"`
+}
+
+// NodeTypes 节点类型配置
+type NodeTypes struct {
+	TcpNode  int `yaml:"tcp_node"`
+	GrpcNode int `yaml:"grpc_node"`
+	HttpNode int `yaml:"http_node"`
 }
 
 // MethodHandlerDirs 方法处理器目录映射
@@ -193,52 +262,94 @@ type LogConfig struct {
 	FilePath string `yaml:"file_path"`
 }
 
-// 全局配置实例
-var Global Config
+var (
+	// 全局配置实例
+	Global Config
 
-// Load 加载配置文件
+	// 初始化锁
+	initOnce sync.Once
+
+	// 错误存储
+	initError error
+)
+
+// Load 加载配置文件（线程安全）
 func Load() error {
+	initOnce.Do(func() {
+		initError = loadConfig()
+	})
+	return initError
+}
+
+// loadConfig 实际的配置加载逻辑
+func loadConfig() error {
 	// 确定配置文件路径
 	filePath := os.Getenv("PROTO_GEN_CONFIG_PATH")
 	if filePath == "" {
 		// 优先尝试当前目录，再尝试etc目录
 		if _, err := os.Stat("proto_gen.yaml"); err == nil {
 			filePath = "proto_gen.yaml"
-		} else {
+		} else if _, err := os.Stat("etc/proto_gen.yaml"); err == nil {
 			filePath = "etc/proto_gen.yaml"
+		} else {
+			return fmt.Errorf("配置文件未找到，当前目录和etc目录下均无proto_gen.yaml")
 		}
 	}
 
 	// 读取配置文件
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Fatalf("读取配置文件失败: %w", err)
+		return fmt.Errorf("读取配置文件失败: %w", err)
 	}
 
 	// 解析YAML
 	if err := yaml.Unmarshal(data, &Global); err != nil {
-		log.Fatalf("解析配置文件失败: %w", err)
+		return fmt.Errorf("解析配置文件失败: %w", err)
 	}
 
 	// 处理路径中的变量替换（支持嵌套变量）
 	if err := resolvePathVariables(); err != nil {
-		log.Fatalf("路径变量替换失败: %w", err)
+		return fmt.Errorf("路径变量替换失败: %w", err)
 	}
 
 	// 转换为绝对路径
 	if err := resolveAbsolutePaths(); err != nil {
-		log.Fatalf("绝对路径转换失败: %w", err)
+		return fmt.Errorf("绝对路径转换失败: %w", err)
 	}
 
 	// 设置默认值
 	setDefaults()
 
+	// 补充原有配置中的常量计算
+	calculateDerivedConstants()
+
 	// 验证配置
 	if err := validateConfig(); err != nil {
-		log.Fatalf("配置验证失败: %w", err)
+		return fmt.Errorf("配置验证失败: %w", err)
+	}
+
+	// 创建必要的目录
+	if err := createRequiredDirs(); err != nil {
+		log.Printf("警告: 创建必要目录失败: %v", err)
 	}
 
 	return nil
+}
+
+// calculateDerivedConstants 计算派生的常量值
+func calculateDerivedConstants() {
+	// 计算YourCodePair
+	if Global.Naming.YourCodePair == "" && Global.Naming.YourCodeBegin != "" && Global.Naming.YourCodeEnd != "" {
+		Global.Naming.YourCodePair = Global.Naming.YourCodeBegin + "\n" + Global.Naming.YourCodeEnd + "\n"
+	}
+
+	// 计算注册处理器扩展名
+	if Global.FileExtensions.RegisterRepliedHandlerCppExtension == "" {
+		Global.FileExtensions.RegisterRepliedHandlerCppExtension = "register" + Global.FileExtensions.CppRepliedHandlerEx
+	}
+	if Global.FileExtensions.RegisterHandlerCppExtension == "" {
+		Global.FileExtensions.RegisterHandlerCppExtension = "register" + Global.FileExtensions.HandlerCppExtension
+	}
 }
 
 // resolvePathVariables 处理路径中的变量替换（支持嵌套变量）
@@ -247,7 +358,7 @@ func resolvePathVariables() error {
 	pathsVal := reflect.ValueOf(&Global.Paths).Elem()
 	pathsType := pathsVal.Type()
 
-	// 收集所有可替换的变量（字段名 -> 字段值）
+	// 收集所有可替换的变量（{{yaml_tag}} -> 字段值）
 	vars := make(map[string]string)
 	for i := 0; i < pathsType.NumField(); i++ {
 		field := pathsType.Field(i)
@@ -258,172 +369,224 @@ func resolvePathVariables() error {
 		vars["{{"+yamlTag+"}}"] = pathsVal.Field(i).String()
 	}
 
+	// 添加FileExtensions的变量
+	extensionsVal := reflect.ValueOf(&Global.FileExtensions).Elem()
+	extensionsType := extensionsVal.Type()
+	for i := 0; i < extensionsType.NumField(); i++ {
+		field := extensionsType.Field(i)
+		yamlTag := field.Tag.Get("yaml")
+		if yamlTag == "" {
+			continue
+		}
+		vars["{{"+yamlTag+"}}"] = extensionsVal.Field(i).String()
+	}
+
+	// 添加Naming的变量
+	namingVal := reflect.ValueOf(&Global.Naming).Elem()
+	namingType := namingVal.Type()
+	for i := 0; i < namingType.NumField(); i++ {
+		field := namingType.Field(i)
+		yamlTag := field.Tag.Get("yaml")
+		if yamlTag == "" {
+			continue
+		}
+		vars["{{"+yamlTag+"}}"] = namingVal.Field(i).String()
+	}
+
 	// 循环替换Paths结构体中的变量，直到没有变量可替换
-	changed := true
+	if err := replaceVariablesInStruct(pathsVal, vars); err != nil {
+		return err
+	}
+
+	// 对FileExtensions执行变量替换
+	if err := replaceVariablesInStruct(extensionsVal, vars); err != nil {
+		return err
+	}
+
+	// 对Naming执行变量替换
+	if err := replaceVariablesInStruct(namingVal, vars); err != nil {
+		return err
+	}
+
+	// 对MethodHandlerDirectories执行同样的循环替换
+	handlerDirsVal := reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()
+	if err := replaceVariablesInStruct(handlerDirsVal, vars); err != nil {
+		return err
+	}
+
+	// 处理字符串切片中的变量替换
+	if err := replaceVariablesInSlice(reflect.ValueOf(&Global.PathLists.ProtoDirectories), vars); err != nil {
+		return err
+	}
+
+	if err := replaceVariablesInSlice(reflect.ValueOf(&Global.PathLists.RobotProtoDirectories), vars); err != nil {
+		return err
+	}
+
+	if err := replaceVariablesInSlice(reflect.ValueOf(&Global.Parser.IncludePaths), vars); err != nil {
+		return err
+	}
+
+	if err := replaceVariablesInSlice(reflect.ValueOf(&Global.Parser.IgnoreFiles), vars); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// replaceVariablesInStruct 替换结构体中的变量
+func replaceVariablesInStruct(val reflect.Value, vars map[string]string) error {
+	valType := val.Type()
 	maxIterations := 10 // 防止无限循环
-	iterations := 0
 
-	for changed && iterations < maxIterations {
-		changed = false
-		iterations++
+	for iter := 0; iter < maxIterations; iter++ {
+		changed := false
 
-		for i := 0; i < pathsType.NumField(); i++ {
-			field := pathsVal.Field(i)
+		for i := 0; i < valType.NumField(); i++ {
+			field := val.Field(i)
 			if field.Kind() != reflect.String {
 				continue
 			}
 
 			original := field.String()
-			resolved := original
-
-			for k, v := range vars {
-				if strings.Contains(resolved, k) {
-					resolved = strings.ReplaceAll(resolved, k, v)
-					changed = true
-				}
-			}
+			resolved := replaceVariables(original, vars)
 
 			if resolved != original {
 				field.SetString(resolved)
+				changed = true
+
 				// 更新vars中的值，用于后续嵌套变量替换
-				yamlTag := pathsType.Field(i).Tag.Get("yaml")
+				yamlTag := valType.Field(i).Tag.Get("yaml")
 				if yamlTag != "" {
 					vars["{{"+yamlTag+"}}"] = resolved
 				}
 			}
 		}
-	}
 
-	if iterations >= maxIterations && changed {
-		log.Fatalf("变量替换超过最大迭代次数，可能存在循环引用")
-	}
-
-	// 对MethodHandlerDirectories执行同样的循环替换
-	handlerDirsVal := reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()
-	handlerDirsType := handlerDirsVal.Type()
-
-	changed = true
-	iterations = 0
-
-	for changed && iterations < maxIterations {
-		changed = false
-		iterations++
-
-		for i := 0; i < handlerDirsType.NumField(); i++ {
-			field := handlerDirsVal.Field(i)
-			if field.Kind() != reflect.String {
-				continue
-			}
-
-			original := field.String()
-			resolved := original
-
-			for k, v := range vars {
-				if strings.Contains(resolved, k) {
-					resolved = strings.ReplaceAll(resolved, k, v)
-					changed = true
-				}
-			}
-
-			if resolved != original {
-				field.SetString(resolved)
-			}
+		if !changed {
+			break
 		}
-	}
 
-	if iterations >= maxIterations && changed {
-		log.Fatalf("处理器目录变量替换超过最大迭代次数")
-	}
-
-	// 处理RobotProtoDirectories中的变量替换
-	if Global.PathLists.RobotProtoDirectories != nil {
-		robotProtoDirs := reflect.ValueOf(&Global.PathLists.RobotProtoDirectories).Elem()
-		for i := 0; i < robotProtoDirs.Len(); i++ {
-			dir := robotProtoDirs.Index(i)
-			if dir.Kind() != reflect.String {
-				continue
-			}
-
-			original := dir.String()
-			resolved := original
-
-			for k, v := range vars {
-				if strings.Contains(resolved, k) {
-					resolved = strings.ReplaceAll(resolved, k, v)
-				}
-			}
-
-			if resolved != original {
-				dir.SetString(resolved)
-			}
+		if iter == maxIterations-1 {
+			return fmt.Errorf("变量替换超过最大迭代次数，可能存在循环引用")
 		}
 	}
 
 	return nil
 }
 
+// replaceVariablesInSlice 替换字符串切片中的变量
+func replaceVariablesInSlice(val reflect.Value, vars map[string]string) error {
+	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Slice {
+		return nil
+	}
+
+	slice := val.Elem()
+	for i := 0; i < slice.Len(); i++ {
+		elem := slice.Index(i)
+		if elem.Kind() != reflect.String {
+			continue
+		}
+
+		original := elem.String()
+		resolved := replaceVariables(original, vars)
+
+		if resolved != original {
+			elem.SetString(resolved)
+		}
+	}
+
+	return nil
+}
+
+// replaceVariables 替换字符串中的变量
+func replaceVariables(s string, vars map[string]string) string {
+	for k, v := range vars {
+		s = strings.ReplaceAll(s, k, v)
+	}
+	return s
+}
+
 // resolveAbsolutePaths 将所有路径转换为绝对路径，统一使用/并保留末尾斜杠
 func resolveAbsolutePaths() error {
-	pathsVal := reflect.ValueOf(&Global.Paths).Elem()
-	pathsType := pathsVal.Type()
-
 	// 转换Paths中的所有路径为绝对路径
-	for i := 0; i < pathsType.NumField(); i++ {
-		field := pathsVal.Field(i)
-		if field.Kind() != reflect.String {
-			continue
-		}
-		path := field.String()
-		if path == "" {
-			continue
-		}
-		absPath, err := filepath.Abs(path)
-		if err != nil {
-			log.Fatalf("路径 '%s' 转换失败: %w", path, err)
-		}
-		// 统一替换为/并保留末尾斜杠
-		absPath = formatPathWithSlash(absPath, path)
-		field.SetString(absPath)
+	pathsVal := reflect.ValueOf(&Global.Paths).Elem()
+	if err := resolveAbsolutePathsInStruct(pathsVal); err != nil {
+		return err
 	}
 
 	// 转换MethodHandlerDirectories中的路径为绝对路径
 	handlerDirsVal := reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()
-	handlerDirsType := handlerDirsVal.Type()
-	for i := 0; i < handlerDirsType.NumField(); i++ {
-		field := handlerDirsVal.Field(i)
+	if err := resolveAbsolutePathsInStruct(handlerDirsVal); err != nil {
+		return err
+	}
+
+	// 转换字符串切片中的路径
+	if err := resolveAbsolutePathsInSlice(reflect.ValueOf(&Global.PathLists.ProtoDirectories)); err != nil {
+		return err
+	}
+
+	if err := resolveAbsolutePathsInSlice(reflect.ValueOf(&Global.PathLists.RobotProtoDirectories)); err != nil {
+		return err
+	}
+
+	if err := resolveAbsolutePathsInSlice(reflect.ValueOf(&Global.Parser.IncludePaths)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// resolveAbsolutePathsInStruct 转换结构体中的路径为绝对路径
+func resolveAbsolutePathsInStruct(val reflect.Value) error {
+	valType := val.Type()
+
+	for i := 0; i < valType.NumField(); i++ {
+		field := val.Field(i)
 		if field.Kind() != reflect.String {
 			continue
 		}
+
 		path := field.String()
 		if path == "" {
 			continue
 		}
+
 		absPath, err := filepath.Abs(path)
 		if err != nil {
-			log.Fatalf("处理器目录 '%s' 转换失败: %w", path, err)
+			return fmt.Errorf("路径 '%s' 转换失败: %w", path, err)
 		}
+
 		// 统一替换为/并保留末尾斜杠
 		absPath = formatPathWithSlash(absPath, path)
 		field.SetString(absPath)
 	}
 
-	// 转换RobotProtoDirectories中的路径为绝对路径
-	if Global.PathLists.RobotProtoDirectories != nil {
-		robotProtoDirs := reflect.ValueOf(&Global.PathLists.RobotProtoDirectories).Elem()
-		for i := 0; i < robotProtoDirs.Len(); i++ {
-			dir := robotProtoDirs.Index(i)
-			if dir.Kind() != reflect.String {
-				continue
-			}
-			path := dir.String()
-			if path == "" {
-				continue
-			}
-			absPath, err := filepath.Abs(path)
-			if err == nil {
-				absPath = formatPathWithSlash(absPath, path)
-				dir.SetString(absPath)
-			}
+	return nil
+}
+
+// resolveAbsolutePathsInSlice 转换字符串切片中的路径为绝对路径
+func resolveAbsolutePathsInSlice(val reflect.Value) error {
+	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Slice {
+		return nil
+	}
+
+	slice := val.Elem()
+	for i := 0; i < slice.Len(); i++ {
+		elem := slice.Index(i)
+		if elem.Kind() != reflect.String {
+			continue
+		}
+
+		path := elem.String()
+		if path == "" {
+			continue
+		}
+
+		absPath, err := filepath.Abs(path)
+		if err == nil {
+			absPath = formatPathWithSlash(absPath, path)
+			elem.SetString(absPath)
 		}
 	}
 
@@ -434,13 +597,16 @@ func resolveAbsolutePaths() error {
 func formatPathWithSlash(absPath, originalPath string) string {
 	// 将系统分隔符替换为/
 	absPath = strings.ReplaceAll(absPath, string(filepath.Separator), "/")
+
 	// 检查原始路径是否以/或系统分隔符结尾
 	hasTrailingSlash := strings.HasSuffix(originalPath, "/") ||
 		strings.HasSuffix(originalPath, string(filepath.Separator))
+
 	// 若原始路径有末尾斜杠且当前路径没有，则补充
 	if hasTrailingSlash && !strings.HasSuffix(absPath, "/") {
 		absPath += "/"
 	}
+
 	return absPath
 }
 
@@ -468,39 +634,55 @@ func setDefaults() {
 	}
 
 	// 解析器默认值
-	if Global.Paths.AllInOneDesc == "" {
+	if Global.Paths.AllInOneDesc == "" && Global.Paths.PbDescDir != "" {
 		Global.Paths.AllInOneDesc = filepath.Join(Global.Paths.PbDescDir, "all_in_one.desc")
 	}
 
 	// Robot相关默认值
-	if Global.Paths.RobotGeneratedDir == "" {
-		Global.Paths.RobotGeneratedDir = filepath.Join(Global.Paths.RobotDir, "generated/")
-	}
-	if Global.Paths.RobotProtoDir == "" {
-		Global.Paths.RobotProtoDir = filepath.Join(Global.Paths.RobotDir, "proto/")
-	}
-	if Global.Paths.RobotGeneratedProtoDir == "" {
-		Global.Paths.RobotGeneratedProtoDir = filepath.Join(Global.Paths.RobotGeneratedDir, "proto/")
-	}
-	if Global.Paths.RobotGoZeroProtoDir == "" {
-		Global.Paths.RobotGoZeroProtoDir = filepath.Join(Global.Paths.RobotGeneratedProtoDir, "go-zero_proto/")
-	}
-	if Global.Paths.RobotGeneratedOutputDir == "" {
-		Global.Paths.RobotGeneratedOutputDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotGeneratedDir)
-	}
-	if Global.Paths.RobotGoGenDir == "" {
-		Global.Paths.RobotGoGenDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotGeneratedDir)
-	}
-	if Global.Paths.RobotProtoImportPath == "" {
-		Global.Paths.RobotProtoImportPath = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotProtoDir)
+	if Global.Paths.RobotDir != "" {
+		if Global.Paths.RobotGeneratedDir == "" {
+			Global.Paths.RobotGeneratedDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotDir, "generated/")
+		}
+		if Global.Paths.RobotProtoDir == "" {
+			Global.Paths.RobotProtoDir = filepath.Join(Global.Paths.RobotGeneratedDir, "proto/")
+		}
+		if Global.Paths.RobotGeneratedProtoDir == "" {
+			Global.Paths.RobotGeneratedProtoDir = filepath.Join(Global.Paths.RobotGeneratedDir, "proto/")
+		}
+		if Global.Paths.RobotGoZeroProtoDir == "" {
+			Global.Paths.RobotGoZeroProtoDir = filepath.Join(Global.Paths.RobotGeneratedProtoDir, "go-zero_proto/")
+		}
+		if Global.Paths.RobotGeneratedOutputDir == "" {
+			Global.Paths.RobotGeneratedOutputDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotDir, "generated/")
+		}
+		if Global.Paths.RobotGoGenDir == "" {
+			Global.Paths.RobotGoGenDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotGeneratedDir)
+		}
+		if Global.Paths.RobotProtoImportPath == "" {
+			Global.Paths.RobotProtoImportPath = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotProtoDir)
+		}
 	}
 
 	// 生成器开关默认值
-	if !Global.Generators.EnableRobotProto {
+	if !Global.Generators.EnableRobotProto && Global.Paths.RobotDir != "" {
 		Global.Generators.EnableRobotProto = true
 	}
-	if !Global.Generators.EnableRobotGoZero {
+	if !Global.Generators.EnableRobotGoZero && Global.Paths.RobotDir != "" {
 		Global.Generators.EnableRobotGoZero = true
+	}
+
+	// 原有配置的默认值
+	if Global.Paths.ModelPath == "" {
+		Global.Paths.ModelPath = "model/"
+	}
+	if Global.Paths.EventHandlerSourceDirectory == "" {
+		Global.Paths.EventHandlerSourceDirectory = "handler/event/"
+	}
+	if Global.Paths.RoomNodeEventHandlerDirectory == "" && Global.Paths.RoomNodeDir != "" {
+		Global.Paths.RoomNodeEventHandlerDirectory = filepath.Join(Global.Paths.RoomNodeDir, Global.Paths.EventHandlerSourceDirectory)
+	}
+	if Global.Paths.CentreNodeEventHandlerDirectory == "" && Global.Paths.CentreNodeDir != "" {
+		Global.Paths.CentreNodeEventHandlerDirectory = filepath.Join(Global.Paths.CentreNodeDir, Global.Paths.EventHandlerSourceDirectory)
 	}
 }
 
@@ -513,26 +695,21 @@ func validateConfig() error {
 
 	// 检查必要的目录是否配置
 	if Global.Paths.OutputRoot == "" {
-		log.Fatalf("output_root 未配置")
+		return fmt.Errorf("output_root 未配置")
 	}
 
 	if Global.Paths.ProtoDir == "" {
-		log.Fatalf("proto_dir 未配置")
+		return fmt.Errorf("proto_dir 未配置")
 	}
 
 	// Robot相关配置检查
-	if Global.Paths.RobotDir != "" {
-		if Global.Paths.RobotGeneratedDir == "" {
-			log.Fatalf("robot_generated_dir 未配置")
-		}
-		if Global.Paths.RobotProtoDir == "" {
-			log.Fatalf("robot_proto_dir 未配置")
-		}
+	if Global.Generators.EnableRobotProto && Global.Paths.RobotDir == "" {
+		return fmt.Errorf("启用了robot proto生成，但robot_dir未配置")
 	}
 
 	// 检查日志配置
 	if Global.Log.Output == "file" && Global.Log.FilePath == "" {
-		log.Fatalf("日志输出为file时，file_path不能为空")
+		return fmt.Errorf("日志输出为file时，file_path不能为空")
 	}
 
 	return nil
@@ -540,39 +717,109 @@ func validateConfig() error {
 
 // validatePaths 验证路径中是否包含未替换的变量
 func validatePaths() error {
+	// 检查Paths结构体
 	pathsVal := reflect.ValueOf(&Global.Paths).Elem()
-	pathsType := pathsVal.Type()
+	if err := validateStructPaths(pathsVal); err != nil {
+		return err
+	}
 
-	for i := 0; i < pathsType.NumField(); i++ {
-		field := pathsType.Field(i)
-		value := pathsVal.Field(i).String()
+	// 检查FileExtensions结构体
+	extensionsVal := reflect.ValueOf(&Global.FileExtensions).Elem()
+	if err := validateStructPaths(extensionsVal); err != nil {
+		return err
+	}
 
-		if strings.Contains(value, "{{") || strings.Contains(value, "}}") {
-			log.Fatalf("路径字段 '%s' 包含未替换的变量: %s", field.Name, value)
-		}
+	// 检查Naming结构体
+	namingVal := reflect.ValueOf(&Global.Naming).Elem()
+	if err := validateStructPaths(namingVal); err != nil {
+		return err
 	}
 
 	// 检查处理器目录
 	handlerDirsVal := reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()
-	handlerDirsType := handlerDirsVal.Type()
+	if err := validateStructPaths(handlerDirsVal); err != nil {
+		return err
+	}
 
-	for i := 0; i < handlerDirsType.NumField(); i++ {
-		field := handlerDirsType.Field(i)
-		value := handlerDirsVal.Field(i).String()
+	// 检查字符串切片
+	if err := validateSlicePaths(reflect.ValueOf(&Global.PathLists.ProtoDirectories), "ProtoDirectories"); err != nil {
+		return err
+	}
+
+	if err := validateSlicePaths(reflect.ValueOf(&Global.PathLists.RobotProtoDirectories), "RobotProtoDirectories"); err != nil {
+		return err
+	}
+
+	if err := validateSlicePaths(reflect.ValueOf(&Global.Parser.IncludePaths), "Parser.IncludePaths"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateStructPaths 验证结构体中的路径
+func validateStructPaths(val reflect.Value) error {
+	valType := val.Type()
+
+	for i := 0; i < valType.NumField(); i++ {
+		field := valType.Field(i)
+		value := val.Field(i).String()
 
 		if strings.Contains(value, "{{") || strings.Contains(value, "}}") {
-			log.Fatalf("处理器目录字段 '%s' 包含未替换的变量: %s", field.Name, value)
+			return fmt.Errorf("路径字段 '%s' 包含未替换的变量: %s", field.Name, value)
 		}
 	}
 
-	// 检查RobotProtoDirectories
-	if Global.PathLists.RobotProtoDirectories != nil {
-		robotProtoDirs := reflect.ValueOf(&Global.PathLists.RobotProtoDirectories).Elem()
-		for i := 0; i < robotProtoDirs.Len(); i++ {
-			value := robotProtoDirs.Index(i).String()
-			if strings.Contains(value, "{{") || strings.Contains(value, "}}") {
-				log.Fatalf("RobotProtoDirectories[%d] 包含未替换的变量: %s", i, value)
-			}
+	return nil
+}
+
+// validateSlicePaths 验证字符串切片中的路径
+func validateSlicePaths(val reflect.Value, name string) error {
+	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Slice {
+		return nil
+	}
+
+	slice := val.Elem()
+	for i := 0; i < slice.Len(); i++ {
+		value := slice.Index(i).String()
+		if strings.Contains(value, "{{") || strings.Contains(value, "}}") {
+			return fmt.Errorf("%s[%d] 包含未替换的变量: %s", name, i, value)
+		}
+	}
+
+	return nil
+}
+
+// createRequiredDirs 创建必要的目录
+func createRequiredDirs() error {
+	dirs := []string{
+		Global.Paths.GeneratedOutputDir,
+		Global.Paths.GrpcOutputDir,
+		Global.Paths.PbcLuaDir,
+		Global.Paths.TempFileGenDir,
+		Global.Paths.PbDescDir,
+		Global.Paths.RoomNodeEventHandlerDirectory,
+		Global.Paths.CentreNodeEventHandlerDirectory,
+	}
+
+	// 添加robot相关目录
+	if Global.Generators.EnableRobotProto {
+		dirs = append(dirs,
+			Global.Paths.RobotGeneratedDir,
+			Global.Paths.RobotProtoDir,
+			Global.Paths.RobotGeneratedProtoDir,
+			Global.Paths.RobotGoZeroProtoDir,
+			Global.Paths.RobotGeneratedOutputDir,
+			Global.Paths.RobotGoGamePbDir,
+		)
+	}
+
+	for _, dir := range dirs {
+		if dir == "" {
+			continue
+		}
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("创建目录 %s 失败: %w", dir, err)
 		}
 	}
 
@@ -583,7 +830,10 @@ func validatePaths() error {
 func (c *Config) GetProtoFullPaths() []string {
 	var fullPaths []string
 	for _, dir := range c.PathLists.ProtoDirectories {
-		fullPath := filepath.Join(c.Paths.ProtoDir, dir)
+		fullPath := dir
+		if !filepath.IsAbs(dir) {
+			fullPath = filepath.Join(c.Paths.ProtoDir, dir)
+		}
 		fullPath = formatPathWithSlash(fullPath, fullPath)
 		fullPaths = append(fullPaths, fullPath)
 	}
@@ -593,6 +843,10 @@ func (c *Config) GetProtoFullPaths() []string {
 // GetRobotProtoFullPaths 获取完整的Robot Proto文件目录路径
 func (c *Config) GetRobotProtoFullPaths() []string {
 	var fullPaths []string
+	if !c.Generators.EnableRobotProto {
+		return fullPaths
+	}
+
 	for _, dir := range c.PathLists.RobotProtoDirectories {
 		fullPath := dir
 		if !filepath.IsAbs(dir) {
@@ -614,44 +868,44 @@ func (c *Config) GetAllProtoFullPaths() []string {
 // GetIncludePaths 获取完整的Include路径
 func (c *Config) GetIncludePaths() []string {
 	var includePaths []string
+	seen := make(map[string]bool) // 去重
 
 	// 添加配置中的include paths
 	for _, path := range c.Parser.IncludePaths {
 		if strings.Contains(path, "{{") {
 			// 如果还有变量，尝试替换
-			for k, v := range map[string]string{
+			path = replaceVariables(path, map[string]string{
 				"{{output_root}}":     c.Paths.OutputRoot,
 				"{{proto_dir}}":       c.Paths.ProtoDir,
 				"{{robot_proto_dir}}": c.Paths.RobotProtoDir,
 				"{{robot_dir}}":       c.Paths.RobotDir,
-			} {
-				path = strings.ReplaceAll(path, k, v)
-			}
+			})
 		}
 
 		absPath, err := filepath.Abs(path)
 		if err == nil {
-			includePaths = append(includePaths, absPath)
-		} else {
+			path = absPath
+		}
+
+		if !seen[path] {
 			includePaths = append(includePaths, path)
+			seen[path] = true
 		}
 	}
 
 	// 添加默认的include路径
-	if c.Paths.ProtoParentIncludePath != "" {
-		includePaths = append(includePaths, c.Paths.ProtoParentIncludePath)
+	defaultPaths := []string{
+		c.Paths.ProtoParentIncludePath,
+		c.Paths.ProtoDir,
+		c.Paths.RobotProtoDir,
+		c.Paths.RobotProtoImportPath,
 	}
 
-	if c.Paths.ProtoDir != "" {
-		includePaths = append(includePaths, c.Paths.ProtoDir)
-	}
-
-	// 添加Robot相关的include路径
-	if c.Paths.RobotProtoDir != "" {
-		includePaths = append(includePaths, c.Paths.RobotProtoDir)
-	}
-	if c.Paths.RobotProtoImportPath != "" {
-		includePaths = append(includePaths, c.Paths.RobotProtoImportPath)
+	for _, path := range defaultPaths {
+		if path != "" && !seen[path] {
+			includePaths = append(includePaths, path)
+			seen[path] = true
+		}
 	}
 
 	return includePaths
@@ -666,5 +920,117 @@ func (c *Config) GetRobotOutputDirs() map[string]string {
 		"go_zero_proto":   c.Paths.RobotGoZeroProtoDir,
 		"go_gen":          c.Paths.RobotGoGenDir,
 		"game_pb":         c.Paths.RobotGoGamePbDir,
+	}
+}
+
+// GetTemplatePath 获取模板的完整路径
+func (c *Config) GetTemplatePath(mappingName string) (string, error) {
+	mapping, ok := c.Mappings[mappingName]
+	if !ok {
+		return "", fmt.Errorf("模板映射 '%s' 不存在", mappingName)
+	}
+	return mapping.Template, nil
+}
+
+// GetOutputPath 获取生成文件的输出路径
+func (c *Config) GetOutputPath(mappingName, protoDir, protoFile string) (string, error) {
+	mapping, ok := c.Mappings[mappingName]
+	if !ok {
+		return "", fmt.Errorf("模板映射 '%s' 不存在", mappingName)
+	}
+
+	path := replaceVariables(mapping.Path, map[string]string{
+		"{{proto_dir}}":  protoDir,
+		"{{proto_file}}": protoFile,
+	})
+
+	return path, nil
+}
+
+// IsGeneratorEnabled 检查生成器是否启用
+func (c *Config) IsGeneratorEnabled(generator string) bool {
+	switch generator {
+	case "cpp":
+		return c.Generators.EnableCpp
+	case "go":
+		return c.Generators.EnableGo
+	case "handler":
+		return c.Generators.EnableHandler
+	case "rpc_response":
+		return c.Generators.EnableRpcResponse
+	case "robot_proto":
+		return c.Generators.EnableRobotProto
+	case "robot_go_zero":
+		return c.Generators.EnableRobotGoZero
+	default:
+		return false
+	}
+}
+
+// ShouldIgnoreFile 检查文件是否应该被忽略
+func (c *Config) ShouldIgnoreFile(filename string) bool {
+	for _, pattern := range c.Parser.IgnoreFiles {
+		if matched, _ := filepath.Match(pattern, filename); matched {
+			return true
+		}
+	}
+	return false
+}
+
+// ========== 原有配置的兼容方法 ==========
+
+// GetProtoDirIndex 获取Proto目录索引
+func (c *Config) GetProtoDirIndex(name string) int {
+	switch name {
+	case "common":
+		return c.PathLists.ProtoDirIndexes.CommonProtoDirIndex
+	case "logic_component":
+		return c.PathLists.ProtoDirIndexes.LogicComponentProtoDirIndex
+	case "logic_event":
+		return c.PathLists.ProtoDirIndexes.LogicEventProtoDirIndex
+	case "logic_shared":
+		return c.PathLists.ProtoDirIndexes.LogicSharedProtoDirIndex
+	case "logic":
+		return c.PathLists.ProtoDirIndexes.LogicProtoDirIndex
+	case "player_locator":
+		return c.PathLists.ProtoDirIndexes.PlayerLocatorDirIndex
+	case "constants":
+		return c.PathLists.ProtoDirIndexes.ConstantsDirIndex
+	case "etcd":
+		return c.PathLists.ProtoDirIndexes.EtcdProtoDirIndex
+	case "login":
+		return c.PathLists.ProtoDirIndexes.LoginProtoDirIndex
+	case "db":
+		return c.PathLists.ProtoDirIndexes.DbProtoDirIndex
+	case "center":
+		return c.PathLists.ProtoDirIndexes.CenterProtoDirIndex
+	case "room":
+		return c.PathLists.ProtoDirIndexes.RoomProtoDirIndex
+	case "gate":
+		return c.PathLists.ProtoDirIndexes.GateProtoDirIndex
+	case "chat":
+		return c.PathLists.ProtoDirIndexes.ChatProtoDirIndex
+	case "team":
+		return c.PathLists.ProtoDirIndexes.TeamProtoDirIndex
+	case "mail":
+		return c.PathLists.ProtoDirIndexes.MailProtoDirIndex
+	case "robot":
+		return c.PathLists.ProtoDirIndexes.RobotProtoDirIndex
+	default:
+		return -1
+	}
+}
+
+// GetNodeType 获取节点类型值
+func (c *Config) GetNodeType(name string) int {
+	switch name {
+	case "tcp":
+		return c.PathLists.NodeTypes.TcpNode
+	case "grpc":
+		return c.PathLists.NodeTypes.GrpcNode
+	case "http":
+		return c.PathLists.NodeTypes.HttpNode
+	default:
+		return -1
 	}
 }
