@@ -3,6 +3,7 @@ package cpp
 import (
 	"pbgen/config"
 	"pbgen/internal"
+	_config "pbgen/internal/config"
 	"sync"
 )
 
@@ -14,8 +15,8 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 			IsValidFunc:         IsRoomNodeHostedProtocolHandler,
 			GenerateDataFunc:    internal.GetServiceHandlerHeadStr,
 			GenerateCppDataFunc: internal.GetServiceHandlerCppStr,
-			Dir:                 config.RoomNodeMethodHandlerDirectory,
-			CppDir:              config.RoomNodeMethodHandlerDirectory,
+			Dir:                 _config.Global.PathLists.MethodHandlerDirectories.RoomNode,
+			CppDir:              _config.Global.PathLists.MethodHandlerDirectories.RoomNode,
 			HeaderExt:           config.HandlerHeaderExtension,
 			CppExt:              config.HandlerCppExtension,
 			IsRepliedHandler:    false,
