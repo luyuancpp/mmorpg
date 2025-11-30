@@ -93,7 +93,6 @@ type Paths struct {
 	ProtocPath                  string `yaml:"protoc_path"`
 
 	// 原有配置中的路径
-	ModelPath                       string `yaml:"model_path"`
 	EventHandlerSourceDirectory     string `yaml:"event_handler_source_directory"`
 	RoomNodeEventHandlerDirectory   string `yaml:"room_node_event_handler_directory"`
 	CentreNodeEventHandlerDirectory string `yaml:"centre_node_event_handler_directory"`
@@ -175,6 +174,7 @@ type Naming struct {
 	YourCodeBegin                   string `yaml:"your_code_begin"`
 	YourCodeEnd                     string `yaml:"your_code_end"`
 	YourCodePair                    string `yaml:"your_code_pair"`
+	Model                           string `yaml:"model"`
 }
 
 // PathLists 路径列表配置
@@ -671,10 +671,6 @@ func setDefaults() {
 		Global.Generators.EnableRobotGoZero = true
 	}
 
-	// 原有配置的默认值
-	if Global.Paths.ModelPath == "" {
-		Global.Paths.ModelPath = "model/"
-	}
 	if Global.Paths.EventHandlerSourceDirectory == "" {
 		Global.Paths.EventHandlerSourceDirectory = "handler/event/"
 	}

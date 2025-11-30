@@ -77,8 +77,7 @@ paths:
   player_data_loader_file: "{{player_storage_system_dir}}player_data_loader.h"
   protoc_path: "protoc"
 
-  # 原有配置中的目录路径
-  model_path: "model/"
+
   event_handler_source_directory: "handler/event/"
   room_node_event_handler_directory: "{{room_node_dir}}{{event_handler_source_directory}}"
   centre_node_event_handler_directory: "{{centre_node_dir}}{{event_handler_source_directory}}"
@@ -158,6 +157,8 @@ naming:
   your_code_begin: "///<<< BEGIN WRITING YOUR CODE"
   your_code_end: "///<<< END WRITING YOUR CODE"
   your_code_pair: "{{your_code_begin}}\n{{your_code_end}}\n"
+  # 原有配置中的目录路径
+  model: "model/"
 
 # 路径列表配置
 path_lists:

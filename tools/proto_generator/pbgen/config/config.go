@@ -1,22 +1,10 @@
 package config
 
-// ----------- 项目根目录及相关路径 -----------
-// 根路径保持不变
-const (
-	OutputRoot = "../../../"
-)
-
-// ----------- Proto 文件扩展名 -----------
-
 // ----------- 项目目录路径 -----------
-const (
-	ModelPath = "model/"
-)
 
 // ----------- 代码相关字符串常量 -----------
 // 这些字符串常量保持不变
 const (
-	IncludeBegin             = "#include \""
 	YourCodeBegin            = "///<<< BEGIN WRITING YOUR CODE"
 	YourCodeEnd              = "///<<< END WRITING YOUR CODE"
 	YourCodePair             = YourCodeBegin + "\n" + YourCodeEnd + "\n"
