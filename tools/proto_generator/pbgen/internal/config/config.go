@@ -37,15 +37,15 @@ type Paths struct {
 	NodePkgDir                      string `yaml:"node_pkg_dir"`
 	NodeLibsEngine                  string `yaml:"node_libs_engine"`
 	NodeLibGame                     string `yaml:"node_lib_game"`
-	NodePkgLogicSceneNodeDir        string `yaml:"node_pkg_logic_scene_node_dir"`
+	NodePkgLogicScene               string `yaml:"node_pkg_logic_scene"`
 	RoomNodeDir                     string `yaml:"room_node_dir"`
 	CentreNodeDir                   string `yaml:"centre_node_dir"`
 	GateNodeDir                     string `yaml:"gate_node_dir"`
 	Robot                           string `yaml:"robot"`
 	RobotGenerated                  string `yaml:"robot_generated"`
-	RobotProtoDir                   string `yaml:"robot_proto_dir"`
-	RobotGeneratedProtoDir          string `yaml:"robot_generated_proto_dir"`
-	RobotGoZeroProtoDir             string `yaml:"robot_go_zero_proto_dir"`
+	RobotProto                      string `yaml:"robot_proto"`
+	RobotGeneratedProto             string `yaml:"robot_generated_proto"`
+	RobotGoZeroProto                string `yaml:"robot_go_zero_proto"`
 	GeneratedDir                    string `yaml:"generated_dir"`
 	ToolDir                         string `yaml:"tool_dir"`
 	TempFileGenDir                  string `yaml:"temp_file_gen_dir"`
@@ -87,7 +87,7 @@ type Paths struct {
 	GrpcInitHeadFile                string `yaml:"grpc_init_head_file"`
 	GenUtilCppFile                  string `yaml:"gen_util_cpp_file"`
 	GenUtilHeadFile                 string `yaml:"gen_util_head_file"`
-	RobotMessageBodyHandlerFile     string `yaml:"robot_message_body_handler_file"`
+	RobotMsgBodyHandlerFile         string `yaml:"robot_msg_body_handler_file"`
 	PlayerStorageSystemDir          string `yaml:"player_storage_system_dir"`
 	PlayerDataLoaderFile            string `yaml:"player_data_loader_file"`
 	ProtocPath                      string `yaml:"protoc_path"`
@@ -633,14 +633,14 @@ func setDefaults() {
 		if Global.Paths.RobotGenerated == "" {
 			Global.Paths.RobotGenerated = filepath.Join(Global.Paths.OutputRoot, Global.Paths.Robot, "generated/")
 		}
-		if Global.Paths.RobotProtoDir == "" {
-			Global.Paths.RobotProtoDir = filepath.Join(Global.Paths.RobotGenerated, "proto/")
+		if Global.Paths.RobotProto == "" {
+			Global.Paths.RobotProto = filepath.Join(Global.Paths.RobotGenerated, "proto/")
 		}
-		if Global.Paths.RobotGeneratedProtoDir == "" {
-			Global.Paths.RobotGeneratedProtoDir = filepath.Join(Global.Paths.RobotGenerated, "proto/")
+		if Global.Paths.RobotGeneratedProto == "" {
+			Global.Paths.RobotGeneratedProto = filepath.Join(Global.Paths.RobotGenerated, "proto/")
 		}
-		if Global.Paths.RobotGoZeroProtoDir == "" {
-			Global.Paths.RobotGoZeroProtoDir = filepath.Join(Global.Paths.RobotGeneratedProtoDir, "go-zero_proto/")
+		if Global.Paths.RobotGoZeroProto == "" {
+			Global.Paths.RobotGoZeroProto = filepath.Join(Global.Paths.RobotGeneratedProto, "go-zero_proto/")
 		}
 		if Global.Paths.RobotGeneratedOutputDir == "" {
 			Global.Paths.RobotGeneratedOutputDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.Robot, "generated/")
@@ -649,7 +649,7 @@ func setDefaults() {
 			Global.Paths.RobotGoGenDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotGenerated)
 		}
 		if Global.Paths.RobotProtoImportPath == "" {
-			Global.Paths.RobotProtoImportPath = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotProtoDir)
+			Global.Paths.RobotProtoImportPath = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotProto)
 		}
 	}
 
@@ -792,9 +792,9 @@ func createRequiredDirs() error {
 	if Global.Generators.EnableRobotProto {
 		dirs = append(dirs,
 			Global.Paths.RobotGenerated,
-			Global.Paths.RobotProtoDir,
-			Global.Paths.RobotGeneratedProtoDir,
-			Global.Paths.RobotGoZeroProtoDir,
+			Global.Paths.RobotProto,
+			Global.Paths.RobotGeneratedProto,
+			Global.Paths.RobotGoZeroProto,
 			Global.Paths.RobotGeneratedOutputDir,
 			Global.Paths.RobotGoGamePbDir,
 		)
@@ -836,7 +836,7 @@ func (c *Config) GetRobotProtoFullPaths() []string {
 	for _, dir := range c.PathLists.RobotProtoDirectories {
 		fullPath := dir
 		if !filepath.IsAbs(dir) {
-			fullPath = filepath.Join(c.Paths.RobotProtoDir, dir)
+			fullPath = filepath.Join(c.Paths.RobotProto, dir)
 		}
 		fullPath = formatPathWithSlash(fullPath, fullPath)
 		fullPaths = append(fullPaths, fullPath)
@@ -863,7 +863,7 @@ func (c *Config) GetIncludePaths() []string {
 			path = replaceVariables(path, map[string]string{
 				"{{output_root}}":     c.Paths.OutputRoot,
 				"{{proto_dir}}":       c.Paths.ProtoDir,
-				"{{robot_proto_dir}}": c.Paths.RobotProtoDir,
+				"{{robot_proto_dir}}": c.Paths.RobotProto,
 				"{{robot_dir}}":       c.Paths.Robot,
 			})
 		}
@@ -883,7 +883,7 @@ func (c *Config) GetIncludePaths() []string {
 	defaultPaths := []string{
 		c.Paths.ProtoParentIncludePath,
 		c.Paths.ProtoDir,
-		c.Paths.RobotProtoDir,
+		c.Paths.RobotProto,
 		c.Paths.RobotProtoImportPath,
 	}
 
@@ -901,9 +901,9 @@ func (c *Config) GetIncludePaths() []string {
 func (c *Config) GetRobotOutputDirs() map[string]string {
 	return map[string]string{
 		"generated":       c.Paths.RobotGenerated,
-		"proto":           c.Paths.RobotProtoDir,
-		"generated_proto": c.Paths.RobotGeneratedProtoDir,
-		"go_zero_proto":   c.Paths.RobotGoZeroProtoDir,
+		"proto":           c.Paths.RobotProto,
+		"generated_proto": c.Paths.RobotGeneratedProto,
+		"go_zero_proto":   c.Paths.RobotGoZeroProto,
 		"go_gen":          c.Paths.RobotGoGenDir,
 		"game_pb":         c.Paths.RobotGoGamePbDir,
 	}

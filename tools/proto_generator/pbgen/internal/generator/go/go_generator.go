@@ -200,10 +200,10 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 		}
 
 		// 处理RobotGeneratedProtoDir
-		destDir := _config.Global.Paths.RobotGeneratedProtoDir
+		destDir := _config.Global.Paths.RobotGeneratedProto
 		baseGoPackage := filepath.ToSlash(_config.Global.Naming.GoRobotPackage)
 
-		if err := addDynamicGoPackage(_config.Global.Paths.RobotGeneratedProtoDir, baseGoPackage, destDir, false); err != nil {
+		if err := addDynamicGoPackage(_config.Global.Paths.RobotGeneratedProto, baseGoPackage, destDir, false); err != nil {
 			log.Printf("GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
 		}
 
@@ -346,10 +346,10 @@ func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 	// 传递当前目录名副本到goroutine，避免循环变量捕获问题
 	go func() {
 		defer wg.Done()
-		if err := GenerateRobotGoProto(_config.Global.Paths.RobotGeneratedProtoDir, _config.Global.Paths.RobotGenerated); err != nil {
-			log.Printf("GRPC服务构建: 目录[%s]处理失败: %v", _config.Global.Paths.RobotGeneratedProtoDir, err)
+		if err := GenerateRobotGoProto(_config.Global.Paths.RobotGeneratedProto, _config.Global.Paths.RobotGenerated); err != nil {
+			log.Printf("GRPC服务构建: 目录[%s]处理失败: %v", _config.Global.Paths.RobotGeneratedProto, err)
 		} else {
-			log.Printf("GRPC服务构建: 目录[%s]处理完成", _config.Global.Paths.RobotGeneratedProtoDir)
+			log.Printf("GRPC服务构建: 目录[%s]处理完成", _config.Global.Paths.RobotGeneratedProto)
 		}
 	}()
 
