@@ -41,7 +41,6 @@ const (
 const (
 	RegisterRepliedHandlerCppExtension = "register" + CppRepliedHandlerEx
 	RegisterHandlerCppExtension        = "register" + HandlerCppExtension
-	PlayerDataLoaderName               = "player_data_loader.h"
 )
 
 // ----------- 代码相关字符串常量 -----------
