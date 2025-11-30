@@ -153,7 +153,7 @@ path_lists:
 
   # 方法处理器目录列表
   method_handler_directories:
-    robot: "{{output_root}}{{robot_generated_dir}}logic/handler/"
+    robot: "{{output_root}}{{robot_dir}}logic/handler/"
     room_node: "{{room_node_dir}}handler/rpc/"
     room_node_player: "{{room_node_dir}}handler/rpc/player/"
     room_node_replied: "{{room_node_dir}}rpc_replies/"
