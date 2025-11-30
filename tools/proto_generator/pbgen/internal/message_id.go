@@ -145,8 +145,8 @@ func WriteGoMessageId(wg *sync.WaitGroup) {
 			continue
 		}
 		basePath := strings.ToLower(path.Base(config.ProtoDirs[i]))
-		outputDir := _config.Global.Paths.NodeGoDir + basePath + "/" + config.GoPackage
-		filePaths = append(filePaths, outputDir+"/"+config.MessageIdGoFile)
+		outputDir := _config.Global.Paths.NodeGoDir + basePath + "/" + _config.Global.Naming.GoPackage
+		filePaths = append(filePaths, outputDir+"/"+_config.Global.FileExtensions.MessageIdGoFile)
 	}
 	// Write constants to files concurrently
 	WriteToFiles(consts, filePaths)

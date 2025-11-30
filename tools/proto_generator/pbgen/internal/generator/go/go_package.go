@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"pbgen/config"
+	_config "pbgen/internal/config"
 	"strings"
 )
 
@@ -68,7 +68,7 @@ func GenGoPackageOptWithProtoPkg(goPackagePath string) string {
 	if len(parts) > 0 {
 		fmt.Println("方法1第一个目录:", parts[0]) // 输出: go
 	}
-	pkgName := parts[0] + config.ProtoGoPackageSuffix
+	pkgName := parts[0] + _config.Global.FileExtensions.ProtoGoPackageSuffix
 
 	// 生成包含路径和包名的完整语句
 	return fmt.Sprintf("option go_package = \"%s;%s\";", goPackagePath, pkgName)

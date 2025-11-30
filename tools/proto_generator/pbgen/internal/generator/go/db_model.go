@@ -174,7 +174,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 			return err
 		}
 
-		sqlFileName := config.ModelSqlExtension
+		sqlFileName := _config.Global.FileExtensions.ModelSqlExtension
 
 		sqlPath := filepath.Join(sqlDir, sqlFileName)
 

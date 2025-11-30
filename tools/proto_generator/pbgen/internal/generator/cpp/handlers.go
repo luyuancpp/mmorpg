@@ -1,7 +1,6 @@
 package cpp
 
 import (
-	"pbgen/config"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	"sync"
@@ -37,8 +36,8 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 			GenerateCppDataFunc: internal.GetServiceRepliedHandlerCppStr,
 			Dir:                 _config.Global.PathLists.MethodHandlerDirectories.RoomNodeReplied,
 			CppDir:              _config.Global.PathLists.MethodHandlerDirectories.RoomNodeReplied,
-			HeaderExt:           config.RepliedHandlerHeaderExtension,
-			CppExt:              config.CppRepliedHandlerEx,
+			HeaderExt:           _config.Global.FileExtensions.RepliedHandlerHeaderExtension,
+			CppExt:              _config.Global.FileExtensions.CppRepliedHandlerEx,
 			IsRepliedHandler:    true,
 		},
 		{
@@ -47,8 +46,8 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 			GenerateCppDataFunc: internal.GetPlayerServiceHandlerCppStr,
 			Dir:                 _config.Global.PathLists.MethodHandlerDirectories.RoomNodePlayerReplied,
 			CppDir:              _config.Global.PathLists.MethodHandlerDirectories.RoomNodePlayerReplied,
-			HeaderExt:           config.RepliedHandlerHeaderExtension,
-			CppExt:              config.CppRepliedHandlerEx,
+			HeaderExt:           _config.Global.FileExtensions.RepliedHandlerHeaderExtension,
+			CppExt:              _config.Global.FileExtensions.CppRepliedHandlerEx,
 			IsRepliedHandler:    true,
 		},
 		// ---------------- Centre Node ----------------
@@ -78,8 +77,8 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 			GenerateCppDataFunc: internal.GetServiceRepliedHandlerCppStr,
 			Dir:                 _config.Global.PathLists.MethodHandlerDirectories.CentreReplied,
 			CppDir:              _config.Global.PathLists.MethodHandlerDirectories.CentreReplied,
-			HeaderExt:           config.RepliedHandlerHeaderExtension,
-			CppExt:              config.CppRepliedHandlerEx,
+			HeaderExt:           _config.Global.FileExtensions.RepliedHandlerHeaderExtension,
+			CppExt:              _config.Global.FileExtensions.CppRepliedHandlerEx,
 			IsRepliedHandler:    true,
 		},
 		{
@@ -88,8 +87,8 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 			GenerateCppDataFunc: internal.GetPlayerServiceHandlerCppStr,
 			Dir:                 _config.Global.PathLists.MethodHandlerDirectories.CentrePlayerReplied,
 			CppDir:              _config.Global.PathLists.MethodHandlerDirectories.CentrePlayerReplied,
-			HeaderExt:           config.RepliedHandlerHeaderExtension,
-			CppExt:              config.CppRepliedHandlerEx,
+			HeaderExt:           _config.Global.FileExtensions.RepliedHandlerHeaderExtension,
+			CppExt:              _config.Global.FileExtensions.CppRepliedHandlerEx,
 			IsRepliedHandler:    true,
 		},
 		// ---------------- Gate Node ----------------
@@ -109,8 +108,8 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 			GenerateCppDataFunc: internal.GetServiceRepliedHandlerCppStr,
 			Dir:                 _config.Global.PathLists.MethodHandlerDirectories.GateNodeReplied,
 			CppDir:              _config.Global.PathLists.MethodHandlerDirectories.GateNodeReplied,
-			HeaderExt:           config.RepliedHandlerHeaderExtension,
-			CppExt:              config.CppRepliedHandlerEx,
+			HeaderExt:           _config.Global.FileExtensions.RepliedHandlerHeaderExtension,
+			CppExt:              _config.Global.FileExtensions.CppRepliedHandlerEx,
 			IsRepliedHandler:    true,
 		},
 	}
