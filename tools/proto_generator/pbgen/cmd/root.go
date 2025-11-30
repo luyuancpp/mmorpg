@@ -31,7 +31,7 @@ func MakeProjectDir() {
 	os.MkdirAll(_config.Global.Paths.ServiceInfoDir, os.FileMode(0777))
 	os.MkdirAll(_config.Global.Paths.CppGenGrpcDir, os.FileMode(0777))
 	os.MkdirAll(_config.Global.Paths.TempFileGenDir, os.FileMode(0775))
-	os.MkdirAll(_config.Global.Paths.PbcTempDir, os.FileMode(0777))
+	os.MkdirAll(_config.Global.Paths.ProtoBufCTempDir, os.FileMode(0777))
 	os.MkdirAll(_config.Global.Paths.GrpcTempDir, os.FileMode(0777))
 	os.MkdirAll(_config.Global.Paths.TableGeneratorDir, os.FileMode(0777))
 
