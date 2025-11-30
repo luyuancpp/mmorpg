@@ -37,7 +37,7 @@ paths:
   player_storage_temp_dir: "{{temp_file_gen_dir}}/node/game/storage/"
 
   # 输出目录
-  pbc_proto_output_dir: "{{output_root}}{{generated_dir}}"
+  proto_buf_c_proto_output_dir: "{{output_root}}{{generated_dir}}"
   pbc_proto_output_no_suffix_dir: "{{output_root}}{{generated_dir}}"
   generated_output_dir: "{{output_root}}{{generated_dir}}"
   grpc_output_dir: "{{output_root}}{{generated_dir}}"
