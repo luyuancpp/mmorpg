@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"pbgen/config"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	"strings"
@@ -55,7 +54,7 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 
 				// Generate a valid file name for the Go file
 				fileName := sanitizeFileName(serviceName + method.Method())
-				filePath := filepath.Join(config.RobotMethodHandlerDirectory, fileName+".go")
+				filePath := filepath.Join(_config.Global.PathLists.MethodHandlerDirectories.Robot, fileName+".go")
 
 				// Check if the file already exists
 				if fileExists(filePath) {

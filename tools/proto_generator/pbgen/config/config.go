@@ -10,7 +10,6 @@ const (
 
 // ----------- 通用文件扩展名 -----------
 const (
-	HandlerHeaderExtension        = "_handler.h"
 	HandlerCppExtension           = "_handler.cpp"
 	RepliedHandlerHeaderExtension = "_response_handler.h"
 	CppRepliedHandlerEx           = "_response_handler.cpp"
