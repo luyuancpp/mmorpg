@@ -3,6 +3,7 @@ package utils
 import (
 	"path"
 	"pbgen/config"
+	_config "pbgen/internal/config"
 	"strings"
 )
 
@@ -60,7 +61,7 @@ func CheckEtcdServiceExistence(protoPath string) bool {
 func BuildModelPath(protoPath string) string {
 	basePath := strings.ToLower(path.Base(protoPath))
 	language := GetGrpcLanguageFromPath(protoPath)
-	return config.OutputRoot + "/" + language + "/" + basePath + "/" + config.ModelPath
+	return _config.Global.Paths.OutputRoot + "/" + language + "/" + basePath + "/" + _config.Global.Naming.Model
 }
 
 // GetGRPCSubdirectories 从ProtoDirectoryNames中筛选出service/go/grpc下的子目录

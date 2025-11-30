@@ -262,7 +262,7 @@ public:
 		}
 
 		// Include header file name with the right extension
-		cppIncludeData += config.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.HandlerH, 1) + _config.Global.Naming.IncludeEndLine
+		cppIncludeData += _config.Global.Naming.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.HandlerH, 1) + _config.Global.Naming.IncludeEndLine
 
 		// Register and UnRegister data
 		className := generateClassNameFromFile(protoFile, _config.Global.Naming.HandlerFile)
