@@ -1,7 +1,5 @@
 package config
 
-// ----------- 项目目录路径 -----------
-
 // ----------- 项目源目录相关 -----------
 var (
 	ProtoDirectoryNames = [...]string{
@@ -45,16 +43,6 @@ var (
 
 	// gRPC 支持的语言列表
 	GrpcLanguages = [...]string{"go", "python", "java", "csharp", "ruby", "node", "php", "objc", "swift"}
-)
-
-// ----------- 其他业务相关常量 -----------
-const (
-	ServiceIncludeName              = "rpc/"
-	PlayerServiceIncludeName        = "#include \"rpc/player_service_interface.h\"\n"
-	PlayerServiceRepliedIncludeName = "#include \"rpc/player_rpc_response_handler.h\"\n"
-	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
-	NodeEnumName                    = "eNodeType"
-	NodeServiceSuffix               = "nodeservice"
 )
 
 const (

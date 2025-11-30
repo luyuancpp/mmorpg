@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"pbgen/config"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"sort"
@@ -185,8 +184,8 @@ public:
 	// 填充模板所需的数据
 	data := PlayerMethodData{
 		IncludeName:              methods[0].IncludeName(),
-		PlayerServiceIncludeName: config.PlayerServiceIncludeName,
-		MacroReturnIncludeName:   config.MacroReturnIncludeName,
+		PlayerServiceIncludeName: _config.Global.Naming.PlayerServiceIncludeName,
+		MacroReturnIncludeName:   _config.Global.Naming.MacroReturnIncludeName,
 		Service:                  methods[0].Service(),
 		MethodHandlerFunctions:   getPlayerMethodHandlerFunctions(methods),
 	}
@@ -306,7 +305,7 @@ func GetPlayerMethodRepliedHeadStr(methods RPCMethods) (string, error) {
 	// 填充模板所需的数据
 	data := PlayerMethodRepliedData{
 		IncludeName:                     methods[0].IncludeName(),
-		PlayerServiceRepliedIncludeName: config.PlayerServiceRepliedIncludeName,
+		PlayerServiceRepliedIncludeName: _config.Global.Naming.PlayerServiceRepliedIncludeName,
 		Service:                         methods[0].Service(),
 		MethodHandlerFunctions:          getPlayerMethodRepliedHandlerFunctions(methods),
 	}

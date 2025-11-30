@@ -26,9 +26,9 @@ func GenNodeUtil(wg *sync.WaitGroup) {
 		nodeList := make([]string, 0, len(config.ProtoDirectoryNames))
 		for _, file := range internal.FdSet.File {
 			for _, enumDesc := range file.EnumType {
-				if enumDesc.GetName() == config.NodeEnumName {
+				if enumDesc.GetName() == _config.Global.Naming.NodeEnumName {
 					for _, val := range enumDesc.Value {
-						nodeName := strings.ReplaceAll(strings.ToLower(val.GetName()), config.NodeServiceSuffix, "")
+						nodeName := strings.ReplaceAll(strings.ToLower(val.GetName()), _config.Global.Naming.NodeServiceSuffix, "")
 						if !IsTcpNodeByEnum(nodeName) {
 							continue
 						}
