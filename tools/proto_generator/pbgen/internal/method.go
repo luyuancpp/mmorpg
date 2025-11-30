@@ -535,14 +535,14 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 
 	// 如果没有找到第一个 yourCode，使用默认的 config.YourCodePair
 	if firstCode == "" {
-		firstCode = config.YourCodePair
+		firstCode = _config.Global.Naming.YourCodePair
 	}
 
 	// 检查是否有方法没有找到对应的 yourCode，如果没有找到，则添加默认值
 	for _, method := range *methods {
 		handlerName := methodFunc(method, funcParam)
 		if _, exists := codeMap[handlerName]; !exists {
-			codeMap[handlerName] = config.YourCodePair
+			codeMap[handlerName] = _config.Global.Naming.YourCodePair
 		}
 	}
 
@@ -629,7 +629,7 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 		CppHandlerInclude:      firstMethodInfo.CppHandlerIncludeName(),
 		GoogleMethodController: _config.Global.Naming.GoogleMethodController,
 		FirstCode:              firstCode,
-		YourCodePair:           config.YourCodePair,
+		YourCodePair:           _config.Global.Naming.YourCodePair,
 		Methods:                methodList,
 	}
 
@@ -803,7 +803,7 @@ void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* re
 		IncludeName:            includeName,
 		FirstCode:              firstCode,
 		PlayerMethodController: _config.Global.Naming.PlayerMethodController,
-		YourCodePair:           config.YourCodePair,
+		YourCodePair:           _config.Global.Naming.YourCodePair,
 		Methods:                methodList,
 	}
 

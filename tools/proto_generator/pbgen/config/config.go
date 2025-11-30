@@ -5,11 +5,9 @@ package config
 // ----------- 代码相关字符串常量 -----------
 // 这些字符串常量保持不变
 const (
-	YourCodeBegin            = "///<<< BEGIN WRITING YOUR CODE"
-	YourCodeEnd              = "///<<< END WRITING YOUR CODE"
-	YourCodePair             = YourCodeBegin + "\n" + YourCodeEnd + "\n"
-	PlayerServiceName        = "player_service_interface.cpp"
-	PlayerRepliedServiceName = "player_rpc_response_handler.cpp"
+	YourCodeBegin = "///<<< BEGIN WRITING YOUR CODE"
+	YourCodeEnd   = "///<<< END WRITING YOUR CODE"
+	YourCodePair  = YourCodeBegin + "\n" + YourCodeEnd + "\n"
 )
 
 // ----------- 项目源目录相关 -----------
