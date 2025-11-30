@@ -184,7 +184,7 @@ func InitServiceId() {
 
 func GetProtocol(dirName string) uint32 {
 	if utils2.HasGrpcService(dirName) {
-		return config.GrpcNode
+		return _config.Global.PathLists.NodeTypes.GrpcNode
 	}
 	return _config.Global.PathLists.NodeTypes.TcpNode
 }
@@ -201,7 +201,7 @@ func GetProtocolByEnum(enumName string) uint32 {
 }
 
 func IsTcpNodeByEnum(dirName string) bool {
-	return GetProtocolByEnum(dirName) == config.TcpNode
+	return GetProtocolByEnum(dirName) == _config.Global.PathLists.NodeTypes.TcpNode
 }
 
 // writeServiceInfoCppFile generates C++ code that initializes gRPC service metadata.
