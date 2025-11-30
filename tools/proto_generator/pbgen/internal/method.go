@@ -487,7 +487,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 		line := scanner.Text() + "\n"
 
 		// 如果正在处理第一个 yourCode，并且发现 YourCodeEnd
-		if inFirstCode && strings.Contains(line, config.YourCodeEnd) {
+		if inFirstCode && strings.Contains(line, _config.Global.Naming.YourCodeEnd) {
 			firstCode += line
 			inFirstCode = false
 			continue // 跳过其他处理，继续后续的代码处理
@@ -496,7 +496,7 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 		}
 
 		// 如果是第一个特殊的 yourCode块
-		if !isFirstCode && strings.Contains(line, config.YourCodeBegin) {
+		if !isFirstCode && strings.Contains(line, _config.Global.Naming.YourCodeBegin) {
 			firstCode = line
 			inFirstCode = true
 			isFirstCode = true
@@ -516,10 +516,10 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 
 		// 如果找到了当前方法的开始，接着读取直到找到结束
 		if currentMethod != nil {
-			if strings.Contains(line, config.YourCodeBegin) {
+			if strings.Contains(line, _config.Global.Naming.YourCodeBegin) {
 				inMethodCode = true
 				currentCode += line
-			} else if strings.Contains(line, config.YourCodeEnd) {
+			} else if strings.Contains(line, _config.Global.Naming.YourCodeEnd) {
 				currentCode += line
 				// 使用 methodFunc currentMethod
 				handlerName := methodFunc(currentMethod, funcParam)
