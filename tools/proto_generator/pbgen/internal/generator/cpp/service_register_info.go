@@ -186,7 +186,7 @@ func GetProtocol(dirName string) uint32 {
 	if utils2.HasGrpcService(dirName) {
 		return config.GrpcNode
 	}
-	return config.TcpNode
+	return _config.Global.PathLists.NodeTypes.TcpNode
 }
 
 func GetProtocolByEnum(enumName string) uint32 {
@@ -195,9 +195,9 @@ func GetProtocolByEnum(enumName string) uint32 {
 		if !strings.Contains(v, nodeName) || !strings.Contains(v, _config.Global.Naming.GrpcName) {
 			continue
 		}
-		return config.GrpcNode
+		return _config.Global.PathLists.NodeTypes.GrpcNode
 	}
-	return config.TcpNode
+	return _config.Global.PathLists.NodeTypes.TcpNode
 }
 
 func IsTcpNodeByEnum(dirName string) bool {
