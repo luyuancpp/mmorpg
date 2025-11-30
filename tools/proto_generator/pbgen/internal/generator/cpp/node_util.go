@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"pbgen/config"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
@@ -23,7 +22,7 @@ func GenNodeUtil(wg *sync.WaitGroup) {
 			return
 		}
 
-		nodeList := make([]string, 0, len(config.ProtoDirectoryNames))
+		nodeList := make([]string, 0, len(_config.Global.PathLists.ProtoDirectories))
 		for _, file := range internal.FdSet.File {
 			for _, enumDesc := range file.EnumType {
 				if enumDesc.GetName() == _config.Global.Naming.NodeEnumName {

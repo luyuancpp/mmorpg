@@ -181,7 +181,6 @@ path_lists:
     - "service/go/grpc/team/"
     - "service/go/grpc/mail/"
     - "logic/database/"
-    - "{{robot_proto_dir}}"  # 添加robot proto目录到扫描列表
 
   # robot专用Proto目录列表
   robot_proto_directories:

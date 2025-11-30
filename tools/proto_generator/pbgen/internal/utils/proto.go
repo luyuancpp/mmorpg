@@ -8,7 +8,7 @@ import (
 )
 
 func IsPathInOtherProtoDirs(path string, selfIndex int) bool {
-	for i, dirName := range config.ProtoDirectoryNames {
+	for i, dirName := range _config.Global.PathLists.ProtoDirectories {
 		if i == selfIndex {
 			// 跳过自己目录
 			continue
@@ -18,10 +18,6 @@ func IsPathInOtherProtoDirs(path string, selfIndex int) bool {
 		}
 	}
 	return false
-}
-
-func IsPathInProtoDirs(path string, selfIndex int) bool {
-	return strings.Contains(config.ProtoDirectoryNames[selfIndex], path) || strings.Contains(path, config.ProtoDirectoryNames[selfIndex])
 }
 
 // GetGrpcLanguageFromPath 从给定路径中提取gRPC语言名称
@@ -50,7 +46,7 @@ func HasGrpcService(protoPath string) bool {
 
 func HasEtcdService(protoPath string) bool {
 	// 利用提取语言的函数来判断是否存在gRPC服务
-	return strings.Contains(protoPath, config.ProtoDirectoryNames[config.EtcdProtoDirIndex])
+	return strings.Contains(protoPath, _config.Global.PathLists.ProtoDirectories[_config.Global.PathLists.ProtoDirIndexes.EtcdProtoDirIndex])
 }
 
 func CheckEtcdServiceExistence(protoPath string) bool {
@@ -70,7 +66,7 @@ func GetGRPCSubdirectories() []string {
 	var grpcDirs []string
 	grpcBase := "service/go/grpc/" // 基础路径前缀
 
-	for _, dir := range config.ProtoDirectoryNames {
+	for _, dir := range _config.Global.PathLists.ProtoDirectories {
 		// 检查目录是否以service/go/grpc/开头，且不是基础路径本身
 		if strings.HasPrefix(dir, grpcBase) && dir != grpcBase {
 			// 确保路径格式统一（以/结尾）
