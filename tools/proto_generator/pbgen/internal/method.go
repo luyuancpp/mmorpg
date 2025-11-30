@@ -26,7 +26,7 @@ func writeServiceIdHeadFile(serviceInfo []*RPCServiceInfo) {
 	}
 
 	fileName := serviceInfo[0].ServiceInfoHeadInclude()
-	utils2.WriteFileIfChanged(config.ServiceInfoDirectory+fileName, []byte(GenServiceIdHeader(serviceInfo)))
+	utils2.WriteFileIfChanged(_config.Global.Paths.ServiceInfoDir+fileName, []byte(GenServiceIdHeader(serviceInfo)))
 }
 
 // GenServiceIdHeader 使用模板生成服务 ID 头文件内容
