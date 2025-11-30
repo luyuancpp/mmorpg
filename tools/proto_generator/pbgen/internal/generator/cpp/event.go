@@ -164,7 +164,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 	filePrefix := outputDir + baseName
 
 	headerFilePath := filePrefix + _config.Global.FileExtensions.HandlerH
-	cppFilePath := filePrefix + config.HandlerCppExtension
+	cppFilePath := filePrefix + _config.Global.FileExtensions.HandlerCpp
 	headerFileBase := filepath.Base(headerFilePath)
 
 	// 构建 handler 签名
