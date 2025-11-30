@@ -86,12 +86,12 @@ func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[strin
 		// 全局 yourCode 逻辑
 		if inGlobalCode {
 			globalCode += line
-			if strings.Contains(line, config.YourCodeEnd) {
+			if strings.Contains(line, _config.Global.Naming.YourCodeEnd) {
 				inGlobalCode = false
 			}
 			continue
 		}
-		if !globalHandled && strings.Contains(line, config.YourCodeBegin) {
+		if !globalHandled && strings.Contains(line, _config.Global.Naming.YourCodeBegin) {
 			globalCode = line
 			inGlobalCode = true
 			globalHandled = true
@@ -109,10 +109,10 @@ func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[strin
 		}
 
 		if currentMethod != "" {
-			if strings.Contains(line, config.YourCodeBegin) {
+			if strings.Contains(line, _config.Global.Naming.YourCodeBegin) {
 				inMethodCode = true
 				currentCode += line
-			} else if strings.Contains(line, config.YourCodeEnd) {
+			} else if strings.Contains(line, _config.Global.Naming.YourCodeEnd) {
 				currentCode += line
 				codeMap[currentMethod] = currentCode
 				currentMethod = ""

@@ -430,7 +430,7 @@ void InitPlayerService()
 	}
 
 	data := PlayerServiceInstanceData{
-		SelfHeader:     config.ServiceIncludeName + fileNameWithoutExt + ".h",
+		SelfHeader:     _config.Global.Naming.ServiceIncludeName + fileNameWithoutExt + ".h",
 		Includes:       includes,
 		HandlerClasses: handlerClasses,
 		InitLines:      initLines,
@@ -498,7 +498,7 @@ void InitPlayerServiceReplied()
 	}
 
 	templateData := PlayerServiceRepliedInstanceData{
-		SelfHeader:     config.ServiceIncludeName + fileNameWithoutExt + ".h",
+		SelfHeader:     _config.Global.Naming.ServiceIncludeName + fileNameWithoutExt + ".h",
 		Includes:       includes,
 		HandlerClasses: handlerClasses,
 		InitLines:      initLines,
