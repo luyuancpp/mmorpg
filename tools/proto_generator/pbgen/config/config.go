@@ -22,21 +22,7 @@ const (
 	NodeCppDirectory            = OutputRoot + "cpp/"
 	RoomNodeDirectory           = NodeCppDirectory + "nodes/scene/"
 	CentreNodeDirectory         = NodeCppDirectory + "nodes/centre/"
-	GateNodeDirectory           = NodeCppDirectory + "nodes/gate/"
-	RpcHandlerSourceDirectory   = "handler/rpc/"
-	RpcResponseSourceDirectory  = "rpc_replies/"
 	EventHandlerSourceDirectory = "handler/event/"
-)
-
-// ----------- 方法处理目录 -----------
-const (
-	RoomNodePlayerMethodRepliedHandlerDirectory = RoomNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
-	CentreNodeMethodHandlerDirectory            = CentreNodeDirectory + RpcHandlerSourceDirectory
-	CentreNodePlayerMethodHandlerDirectory      = CentreNodeDirectory + RpcHandlerSourceDirectory + TypePlayer + "/"
-	CentreMethodRepliedHandleDir                = CentreNodeDirectory + RpcResponseSourceDirectory
-	CentrePlayerMethodRepliedHandlerDirectory   = CentreNodeDirectory + RpcResponseSourceDirectory + TypePlayer + "/"
-	GateMethodHandlerDirectory                  = GateNodeDirectory + RpcHandlerSourceDirectory
-	GateMethodRepliedHandlerDirectory           = GateNodeDirectory + RpcResponseSourceDirectory
 )
 
 // ----------- 输出目录 -----------
