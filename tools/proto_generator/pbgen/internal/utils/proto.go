@@ -2,7 +2,6 @@ package utils
 
 import (
 	"path"
-	"pbgen/config"
 	_config "pbgen/internal/config"
 	"strings"
 )
@@ -26,7 +25,7 @@ func GetGrpcLanguageFromPath(protoPath string) string {
 	basePath := strings.ToLower(protoPath)
 
 	// 遍历所有支持的gRPC语言
-	for _, language := range config.GrpcLanguages {
+	for _, language := range _config.Global.PathLists.GrpcLanguages {
 		lowerLang := strings.ToLower(language)
 		// 检查路径中是否包含 "service/语言名/grpc" 模式
 		if strings.Contains(basePath, "service/"+lowerLang+"/grpc") {
