@@ -125,13 +125,13 @@ func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[strin
 	}
 
 	if globalCode == "" {
-		globalCode = config.YourCodePair
+		globalCode = _config.Global.Naming.YourCodePair
 	}
 
 	// 补充未找到的函数
 	for _, signature := range methodSignatures {
 		if _, exists := codeMap[signature]; !exists {
-			codeMap[signature] = config.YourCodePair
+			codeMap[signature] = _config.Global.Naming.YourCodePair
 		}
 	}
 	return codeMap, globalCode, scanner.Err()
