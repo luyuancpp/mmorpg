@@ -284,7 +284,7 @@ func (info *MethodInfo) ServiceInfoIncludeName() string {
 
 // CppHandlerIncludeName 返回Cpp处理器包含文件名
 func (info *MethodInfo) CppHandlerIncludeName() string {
-	return config.IncludeBegin + info.FileBaseNameNoEx() + config.HandlerHeaderExtension + config.IncludeEndLine
+	return config.IncludeBegin + info.FileBaseNameNoEx() + _config.Global.FileExtensions.HandlerH + config.IncludeEndLine
 }
 
 // CppRepliedHandlerIncludeName 返回Cpp已响应处理器包含文件名

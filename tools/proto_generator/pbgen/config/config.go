@@ -7,9 +7,6 @@ const (
 )
 
 // ----------- Proto 文件扩展名 -----------
-const (
-	ProtoExt = ".proto"
-)
 
 // ----------- 通用文件扩展名 -----------
 const (
@@ -22,15 +19,12 @@ const (
 
 // ----------- 项目目录路径 -----------
 const (
-	ModelPath            = "model/"
-	NodeCppDirectory     = OutputRoot + "cpp/"
-	NodePkgDirectory     = "cpp/libs/"
-	NodeLibGameDirectory = NodePkgDirectory + "services/"
-	RoomNodeDirectory    = NodeCppDirectory + "nodes/scene/"
-	CentreNodeDirectory  = NodeCppDirectory + "nodes/centre/"
-	GateNodeDirectory    = NodeCppDirectory + "nodes/gate/"
-	RobotDirectory       = "tools/robot/"
-	GeneratedDirectory   = "cpp/generated/"
+	ModelPath           = "model/"
+	NodeCppDirectory    = OutputRoot + "cpp/"
+	RoomNodeDirectory   = NodeCppDirectory + "nodes/scene/"
+	CentreNodeDirectory = NodeCppDirectory + "nodes/centre/"
+	GateNodeDirectory   = NodeCppDirectory + "nodes/gate/"
+	RobotDirectory      = "tools/robot/"
 
 	RpcHandlerSourceDirectory   = "handler/rpc/"
 	RpcResponseSourceDirectory  = "rpc_replies/"
