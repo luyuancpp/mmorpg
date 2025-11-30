@@ -14,16 +14,16 @@ paths:
   node_go_dir: "{{output_root}}go/"
   node_cpp_dir: "{{output_root}}cpp/"
   node_pkg_dir: "cpp/libs/"
-  node_libs_engine_dir: "{{node_pkg_dir}}engine/"
-  node_lib_game_dir: "{{node_pkg_dir}}services/"
-  node_pkg_logic_scene_node_dir: "{{node_lib_game_dir}}scene/"
+  node_libs_engine: "{{node_pkg_dir}}engine/"
+  node_lib_game: "{{node_pkg_dir}}services/"
+  node_pkg_logic_scene_node_dir: "{{node_lib_game}}scene/"
   room_node_dir: "{{node_cpp_dir}}nodes/scene/"
   centre_node_dir: "{{node_cpp_dir}}nodes/centre/"
   gate_node_dir: "{{node_cpp_dir}}nodes/gate/"
-  robot_dir: "tools/robot/"
-  robot_generated_dir: "{{output_root}}generated/robot/"
-  robot_proto_dir: "{{robot_generated_dir}}proto/"  # robot专用proto源目录
-  robot_generated_proto_dir: "{{robot_generated_dir}}proto/"  # robot生成的proto目录
+  robot: "tools/robot/"
+  robot_generated: "{{output_root}}generated/robot/"
+  robot_proto_dir: "{{robot_generated}}proto/"  # robot专用proto源目录
+  robot_generated_proto_dir: "{{robot_generated}}proto/"  # robot生成的proto目录
   robot_go_zero_proto_dir: "{{robot_generated_proto_dir}}go-zero_proto/"  # robot的go-zero proto目录
   generated_dir: "cpp/generated/"
 
@@ -42,10 +42,10 @@ paths:
   generated_output_dir: "{{output_root}}{{generated_dir}}"
   grpc_output_dir: "{{output_root}}{{generated_dir}}"
   grpc_proto_output_dir: "{{output_root}}{{generated_dir}}proto/"
-  robot_go_output_dir: "{{output_root}}{{robot_dir}}"
-  robot_generated_output_dir: "{{output_root}}{{robot_dir}}generated/"
+  robot_go_output_dir: "{{output_root}}{{robot}}"
+  robot_generated_output_dir: "{{output_root}}{{robot}}generated/"
   robot_go_game_pb_dir: "{{robot_generated_output_dir}}pb/game"
-  robot_go_gen_dir: "{{output_root}}{{robot_generated_dir}}"
+  robot_go_gen_dir: "{{output_root}}{{robot_generated}}"
   go_generator_dir: "{{node_go_dir}}"
   generated_rpc_dir: "{{generated_output_dir}}rpc/"
   service_info_dir: "{{generated_rpc_dir}}service_metadata/"
@@ -72,7 +72,7 @@ paths:
   grpc_init_head_file: "{{cpp_gen_grpc_dir}}grpc_init_client.h"
   gen_util_cpp_file: "{{util_generator_dir}}proto_util.cpp"
   gen_util_head_file: "{{util_generator_dir}}proto_util.h"
-  robot_message_body_handler_file: "{{output_root}}{{robot_dir}}logic/handler/message_body_handler.go"
+  robot_message_body_handler_file: "{{output_root}}{{robot}}logic/handler/message_body_handler.go"
   player_storage_system_dir: "{{output_root}}{{node_pkg_logic_scene_node_dir}}player/system/"
   player_data_loader_file: "{{player_storage_system_dir}}player_data_loader.h"
   protoc_path: "protoc"
@@ -190,7 +190,7 @@ path_lists:
 
   # 方法处理器目录列表
   method_handler_directories:
-    robot: "{{output_root}}{{robot_dir}}logic/handler/"
+    robot: "{{output_root}}{{robot}}logic/handler/"
     room_node: "{{room_node_dir}}handler/rpc/"
     room_node_player: "{{room_node_dir}}handler/rpc/player/"
     room_node_replied: "{{room_node_dir}}rpc_replies/"

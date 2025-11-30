@@ -35,14 +35,14 @@ type Paths struct {
 	NodeGoDir                   string `yaml:"node_go_dir"`
 	NodeCppDir                  string `yaml:"node_cpp_dir"`
 	NodePkgDir                  string `yaml:"node_pkg_dir"`
-	NodeLibsEngineDir           string `yaml:"node_libs_engine_dir"`
-	NodeLibGameDir              string `yaml:"node_lib_game_dir"`
+	NodeLibsEngine              string `yaml:"node_libs_engine"`
+	NodeLibGame                 string `yaml:"node_lib_game"`
 	NodePkgLogicSceneNodeDir    string `yaml:"node_pkg_logic_scene_node_dir"`
 	RoomNodeDir                 string `yaml:"room_node_dir"`
 	CentreNodeDir               string `yaml:"centre_node_dir"`
 	GateNodeDir                 string `yaml:"gate_node_dir"`
-	RobotDir                    string `yaml:"robot_dir"`
-	RobotGeneratedDir           string `yaml:"robot_generated_dir"`
+	Robot                       string `yaml:"robot"`
+	RobotGenerated              string `yaml:"robot_generated"`
 	RobotProtoDir               string `yaml:"robot_proto_dir"`
 	RobotGeneratedProtoDir      string `yaml:"robot_generated_proto_dir"`
 	RobotGoZeroProtoDir         string `yaml:"robot_go_zero_proto_dir"`
@@ -604,7 +604,7 @@ func formatPathWithSlash(absPath, originalPath string) string {
 func setDefaults() {
 	// 处理器路径默认值补充
 	if Global.PathLists.MethodHandlerDirectories.Robot == "" {
-		Global.PathLists.MethodHandlerDirectories.Robot = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotDir, "logic/handler/")
+		Global.PathLists.MethodHandlerDirectories.Robot = filepath.Join(Global.Paths.OutputRoot, Global.Paths.Robot, "logic/handler/")
 	}
 
 	// protoc路径默认值
@@ -629,24 +629,24 @@ func setDefaults() {
 	}
 
 	// Robot相关默认值
-	if Global.Paths.RobotDir != "" {
-		if Global.Paths.RobotGeneratedDir == "" {
-			Global.Paths.RobotGeneratedDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotDir, "generated/")
+	if Global.Paths.Robot != "" {
+		if Global.Paths.RobotGenerated == "" {
+			Global.Paths.RobotGenerated = filepath.Join(Global.Paths.OutputRoot, Global.Paths.Robot, "generated/")
 		}
 		if Global.Paths.RobotProtoDir == "" {
-			Global.Paths.RobotProtoDir = filepath.Join(Global.Paths.RobotGeneratedDir, "proto/")
+			Global.Paths.RobotProtoDir = filepath.Join(Global.Paths.RobotGenerated, "proto/")
 		}
 		if Global.Paths.RobotGeneratedProtoDir == "" {
-			Global.Paths.RobotGeneratedProtoDir = filepath.Join(Global.Paths.RobotGeneratedDir, "proto/")
+			Global.Paths.RobotGeneratedProtoDir = filepath.Join(Global.Paths.RobotGenerated, "proto/")
 		}
 		if Global.Paths.RobotGoZeroProtoDir == "" {
 			Global.Paths.RobotGoZeroProtoDir = filepath.Join(Global.Paths.RobotGeneratedProtoDir, "go-zero_proto/")
 		}
 		if Global.Paths.RobotGeneratedOutputDir == "" {
-			Global.Paths.RobotGeneratedOutputDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotDir, "generated/")
+			Global.Paths.RobotGeneratedOutputDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.Robot, "generated/")
 		}
 		if Global.Paths.RobotGoGenDir == "" {
-			Global.Paths.RobotGoGenDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotGeneratedDir)
+			Global.Paths.RobotGoGenDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotGenerated)
 		}
 		if Global.Paths.RobotProtoImportPath == "" {
 			Global.Paths.RobotProtoImportPath = filepath.Join(Global.Paths.OutputRoot, Global.Paths.RobotProtoDir)
@@ -654,10 +654,10 @@ func setDefaults() {
 	}
 
 	// 生成器开关默认值
-	if !Global.Generators.EnableRobotProto && Global.Paths.RobotDir != "" {
+	if !Global.Generators.EnableRobotProto && Global.Paths.Robot != "" {
 		Global.Generators.EnableRobotProto = true
 	}
-	if !Global.Generators.EnableRobotGoZero && Global.Paths.RobotDir != "" {
+	if !Global.Generators.EnableRobotGoZero && Global.Paths.Robot != "" {
 		Global.Generators.EnableRobotGoZero = true
 	}
 
@@ -689,7 +689,7 @@ func validateConfig() error {
 	}
 
 	// Robot相关配置检查
-	if Global.Generators.EnableRobotProto && Global.Paths.RobotDir == "" {
+	if Global.Generators.EnableRobotProto && Global.Paths.Robot == "" {
 		return fmt.Errorf("启用了robot proto生成，但robot_dir未配置")
 	}
 
@@ -791,7 +791,7 @@ func createRequiredDirs() error {
 	// 添加robot相关目录
 	if Global.Generators.EnableRobotProto {
 		dirs = append(dirs,
-			Global.Paths.RobotGeneratedDir,
+			Global.Paths.RobotGenerated,
 			Global.Paths.RobotProtoDir,
 			Global.Paths.RobotGeneratedProtoDir,
 			Global.Paths.RobotGoZeroProtoDir,
@@ -864,7 +864,7 @@ func (c *Config) GetIncludePaths() []string {
 				"{{output_root}}":     c.Paths.OutputRoot,
 				"{{proto_dir}}":       c.Paths.ProtoDir,
 				"{{robot_proto_dir}}": c.Paths.RobotProtoDir,
-				"{{robot_dir}}":       c.Paths.RobotDir,
+				"{{robot_dir}}":       c.Paths.Robot,
 			})
 		}
 
@@ -900,7 +900,7 @@ func (c *Config) GetIncludePaths() []string {
 // GetRobotOutputDirs 获取Robot相关的输出目录映射
 func (c *Config) GetRobotOutputDirs() map[string]string {
 	return map[string]string{
-		"generated":       c.Paths.RobotGeneratedDir,
+		"generated":       c.Paths.RobotGenerated,
 		"proto":           c.Paths.RobotProtoDir,
 		"generated_proto": c.Paths.RobotGeneratedProtoDir,
 		"go_zero_proto":   c.Paths.RobotGoZeroProtoDir,

@@ -70,7 +70,7 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 		defer wg.Done()
 		destDir := _config.Global.Paths.RobotGeneratedProtoDir
 		if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
-			log.Printf("Robot Proto拷贝: 目录[%s]拷贝失败: %v", _config.Global.Paths.RobotDir, err)
+			log.Printf("Robot Proto拷贝: 目录[%s]拷贝失败: %v", _config.Global.Paths.Robot, err)
 		}
 	}()
 }
