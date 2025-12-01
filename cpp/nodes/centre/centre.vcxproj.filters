@@ -99,7 +99,7 @@
     <ClCompile Include="handler\rpc\player\player_service_interface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\player\player_rpc_replied_handler.cpp">
+    <ClCompile Include="rpc_replies\player\player_rpc_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
