@@ -280,7 +280,7 @@ func copyCppGrpcOutputs(protoFiles []string) error {
 	if err != nil {
 		return err
 	}
-	grpcTempWithProtoDir := filepath.ToSlash(filepath.Join(grpcTempDir, _config.Global.FileExtensions.ProtoDirName))
+	grpcTempWithProtoDir := filepath.ToSlash(filepath.Join(grpcTempDir, _config.Global.DirectoryNames.ProtoDirName))
 
 	grpcOutputDir := _config.Global.Paths.GrpcProtoOutputDir
 

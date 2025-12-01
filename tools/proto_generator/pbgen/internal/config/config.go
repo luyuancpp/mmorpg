@@ -15,6 +15,7 @@ import (
 // Config 代码生成器全局配置
 type Config struct {
 	Paths          Paths              `yaml:"paths"`
+	DirectoryNames DirectoryNames     `yaml:"directory_names"` // 新增：目录命名常量
 	FileExtensions FileExtensions     `yaml:"file_extensions"`
 	Naming         Naming             `yaml:"naming"`
 	PathLists      PathLists          `yaml:"path_lists"`
@@ -22,6 +23,18 @@ type Config struct {
 	Mappings       map[string]Mapping `yaml:"mappings"`
 	Parser         Parser             `yaml:"parser"`
 	Log            LogConfig          `yaml:"log"`
+}
+
+// DirectoryNames 目录命名常量（对应YAML中的directory_names节点）
+type DirectoryNames struct {
+	GeneratedRpcName     string `yaml:"generated_rpc_name"`       // RPC生成目录名
+	ServiceInfoName      string `yaml:"service_info_name"`        // 服务元数据目录名
+	ProtoDirName         string `yaml:"proto_dir_name"`           // Proto目录名
+	GoZeroProtoDirName   string `yaml:"go_zero_proto_dir_name"`   // Go-zero Proto目录名
+	RobotProtoName       string `yaml:"robot_proto_name"`         // Robot Proto目录名常量
+	RobotGoZeroProtoName string `yaml:"robot_go_zero_proto_name"` // Robot Go-zero Proto目录名常量
+	ModelDirName         string `yaml:"model_dir_name"`           // 模型目录名
+	ServiceIncludeDir    string `yaml:"service_include_dir"`      // 服务导入目录名
 }
 
 // Paths 路径配置（对应YAML中的paths节点）
@@ -98,30 +111,26 @@ type Paths struct {
 	CentreNodeEventHandlerDirectory string `yaml:"centre_node_event_handler_directory"`
 }
 
-// FileExtensions 文件扩展名配置
+// FileExtensions 文件扩展名配置（仅存放文件后缀/扩展名）
 type FileExtensions struct {
-	Proto                   string `yaml:"proto"`
-	PbCc                    string `yaml:"pb_cc"`
-	PbH                     string `yaml:"pb_h"`
-	GrpcPbCc                string `yaml:"grpc_pb_cc"`
-	GrpcPbH                 string `yaml:"grpc_pb_h"`
-	ProtoDirName            string `yaml:"proto_dir_name"`
-	GoZeroProtoDirName      string `yaml:"go_zero_proto_dir_name"`
-	RobotProtoDirName       string `yaml:"robot_proto_dir_name"`
-	RobotGoZeroProtoDirName string `yaml:"robot_go_zero_proto_dir_name"`
-	Header                  string `yaml:"header"`
-	Cpp                     string `yaml:"cpp"`
-	LuaCpp                  string `yaml:"lua_cpp"`
-	HandlerH                string `yaml:"handler_h"`
-	HandlerCpp              string `yaml:"handler_cpp"`
-	RepliedHandlerH         string `yaml:"replied_handler_h"`
-	RepliedHandlerCpp       string `yaml:"replied_handler_cpp"`
-	CppSol2                 string `yaml:"cpp_sol2"`
-	GrpcClient              string `yaml:"grpc_client"`
-	GrpcClientH             string `yaml:"grpc_client_h"`
-	GrpcClientCpp           string `yaml:"grpc_client_cpp"`
-	ModelSql                string `yaml:"model_sql"`
-	LoaderCpp               string `yaml:"loader_cpp"`
+	Proto             string `yaml:"proto"`
+	PbCc              string `yaml:"pb_cc"`
+	PbH               string `yaml:"pb_h"`
+	GrpcPbCc          string `yaml:"grpc_pb_cc"`
+	GrpcPbH           string `yaml:"grpc_pb_h"`
+	Header            string `yaml:"header"`
+	Cpp               string `yaml:"cpp"`
+	LuaCpp            string `yaml:"lua_cpp"`
+	HandlerH          string `yaml:"handler_h"`
+	HandlerCpp        string `yaml:"handler_cpp"`
+	RepliedHandlerH   string `yaml:"replied_handler_h"`
+	RepliedHandlerCpp string `yaml:"replied_handler_cpp"`
+	CppSol2           string `yaml:"cpp_sol2"`
+	GrpcClient        string `yaml:"grpc_client"`
+	GrpcClientH       string `yaml:"grpc_client_h"`
+	GrpcClientCpp     string `yaml:"grpc_client_cpp"`
+	ModelSql          string `yaml:"model_sql"`
+	LoaderCpp         string `yaml:"loader_cpp"`
 
 	// 原有配置中的扩展名
 	HandlerCppExtension                string `yaml:"handler_cpp_extension"`
@@ -130,14 +139,12 @@ type FileExtensions struct {
 	ModelSqlExtension                  string `yaml:"model_sql_extension"`
 	ProtoGoPackageSuffix               string `yaml:"proto_go_package_suffix"`
 	MessageIdGoFile                    string `yaml:"message_id_go_file"`
-	GeneratedRpcName                   string `yaml:"generated_rpc_name"`
-	ServiceInfoName                    string `yaml:"service_info_name"`
 	ServiceInfoExtension               string `yaml:"service_info_extension"`
 	RegisterRepliedHandlerCppExtension string `yaml:"register_replied_handler_cpp_extension"`
 	RegisterHandlerCppExtension        string `yaml:"register_handler_cpp_extension"`
 }
 
-// Naming 命名规则配置
+// Naming 命名规则配置（业务逻辑命名常量）
 type Naming struct {
 	MessageId            string `yaml:"message_id"`
 	MethodIndex          string `yaml:"method_index"`
@@ -401,6 +408,11 @@ func replaceVariablesInAllStructs(vars map[string]string) error {
 		return err
 	}
 
+	// 替换DirectoryNames中的变量（新增）
+	if err := replaceVariablesInStruct(reflect.ValueOf(&Global.DirectoryNames).Elem(), vars); err != nil {
+		return err
+	}
+
 	// 替换FileExtensions中的变量
 	if err := replaceVariablesInStruct(reflect.ValueOf(&Global.FileExtensions).Elem(), vars); err != nil {
 		return err
@@ -513,6 +525,11 @@ func replaceVariables(s string, vars map[string]string) string {
 func resolveAbsolutePaths() error {
 	// 转换Paths中的所有路径为绝对路径
 	if err := resolveAbsolutePathsInStruct(reflect.ValueOf(&Global.Paths).Elem()); err != nil {
+		return err
+	}
+
+	// 转换DirectoryNames中的路径为绝对路径（新增）
+	if err := resolveAbsolutePathsInStruct(reflect.ValueOf(&Global.DirectoryNames).Elem()); err != nil {
 		return err
 	}
 
@@ -634,30 +651,57 @@ func setDefaults() {
 		Global.Paths.AllInOneDesc = filepath.Join(Global.Paths.ProtoBufDescDir, "all_in_one.desc")
 	}
 
+	// 设置DirectoryNames默认值（新增）
+	if Global.DirectoryNames.GeneratedRpcName == "" {
+		Global.DirectoryNames.GeneratedRpcName = "rpc/"
+	}
+	if Global.DirectoryNames.ServiceInfoName == "" {
+		Global.DirectoryNames.ServiceInfoName = "service_metadata/"
+	}
+	if Global.DirectoryNames.ProtoDirName == "" {
+		Global.DirectoryNames.ProtoDirName = "proto/"
+	}
+	if Global.DirectoryNames.GoZeroProtoDirName == "" {
+		Global.DirectoryNames.GoZeroProtoDirName = "go-zero_proto/"
+	}
+	if Global.DirectoryNames.ModelDirName == "" {
+		Global.DirectoryNames.ModelDirName = "model/"
+	}
+	if Global.DirectoryNames.ServiceIncludeDir == "" {
+		Global.DirectoryNames.ServiceIncludeDir = "rpc/"
+	}
+
 	// Robot相关默认值
 	if Global.Paths.Robot != "" {
-		// 使用FileExtensions中的目录名配置
-		protoDirName := "proto"
-		if Global.FileExtensions.ProtoDirName != "" {
-			protoDirName = Global.FileExtensions.ProtoDirName
+		// 使用DirectoryNames中的目录名配置（修改）
+		protoDirName := Global.DirectoryNames.ProtoDirName
+		if protoDirName == "" {
+			protoDirName = "proto/"
 		}
 
-		goZeroProtoDirName := "go-zero_proto"
-		if Global.FileExtensions.GoZeroProtoDirName != "" {
-			goZeroProtoDirName = Global.FileExtensions.GoZeroProtoDirName
+		goZeroProtoDirName := Global.DirectoryNames.GoZeroProtoDirName
+		if goZeroProtoDirName == "" {
+			goZeroProtoDirName = "go-zero_proto/"
+		}
+
+		if Global.DirectoryNames.RobotProtoName == "" {
+			Global.DirectoryNames.RobotProtoName = filepath.Join(Global.Paths.RobotGenerated, protoDirName)
+		}
+		if Global.DirectoryNames.RobotGoZeroProtoName == "" {
+			Global.DirectoryNames.RobotGoZeroProtoName = filepath.Join(Global.DirectoryNames.RobotProtoName, goZeroProtoDirName)
 		}
 
 		if Global.Paths.RobotGenerated == "" {
 			Global.Paths.RobotGenerated = filepath.Join(Global.Paths.OutputRoot, Global.Paths.Robot, "generated/")
 		}
 		if Global.Paths.RobotProto == "" {
-			Global.Paths.RobotProto = filepath.Join(Global.Paths.RobotGenerated, protoDirName+"/")
+			Global.Paths.RobotProto = Global.DirectoryNames.RobotProtoName
 		}
 		if Global.Paths.RobotGeneratedProto == "" {
-			Global.Paths.RobotGeneratedProto = filepath.Join(Global.Paths.RobotGenerated, protoDirName+"/")
+			Global.Paths.RobotGeneratedProto = Global.DirectoryNames.RobotProtoName
 		}
 		if Global.Paths.RobotGoZeroProto == "" {
-			Global.Paths.RobotGoZeroProto = filepath.Join(Global.Paths.RobotGeneratedProto, goZeroProtoDirName+"/")
+			Global.Paths.RobotGoZeroProto = Global.DirectoryNames.RobotGoZeroProtoName
 		}
 		if Global.Paths.RobotGeneratedOutputDir == "" {
 			Global.Paths.RobotGeneratedOutputDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.Robot, "generated/")
@@ -722,6 +766,11 @@ func validateConfig() error {
 func validatePaths() error {
 	// 检查Paths结构体
 	if err := validateStructPaths(reflect.ValueOf(&Global.Paths).Elem()); err != nil {
+		return err
+	}
+
+	// 检查DirectoryNames结构体（新增）
+	if err := validateStructPaths(reflect.ValueOf(&Global.DirectoryNames).Elem()); err != nil {
 		return err
 	}
 
@@ -801,6 +850,14 @@ func createRequiredDirs() error {
 		Global.Paths.CentreNodeEventHandlerDirectory,
 	}
 
+	// 添加DirectoryNames中的目录（新增）
+	if Global.DirectoryNames.RobotProtoName != "" {
+		dirs = append(dirs, Global.DirectoryNames.RobotProtoName)
+	}
+	if Global.DirectoryNames.RobotGoZeroProtoName != "" {
+		dirs = append(dirs, Global.DirectoryNames.RobotGoZeroProtoName)
+	}
+
 	// 添加robot相关目录
 	if Global.Generators.EnableRobotProto {
 		dirs = append(dirs,
@@ -874,12 +931,13 @@ func (c *Config) GetIncludePaths() []string {
 		if strings.Contains(path, "{{") {
 			// 如果还有变量，尝试替换
 			path = replaceVariables(path, map[string]string{
-				"{{output_root}}":          c.Paths.OutputRoot,
-				"{{proto_dir}}":            c.Paths.ProtoDir,
-				"{{robot_proto}}":          c.Paths.RobotProto,
-				"{{robot}}":                c.Paths.Robot,
-				"{{proto_dir_name}}":       c.FileExtensions.ProtoDirName,
-				"{{robot_proto_dir_name}}": c.FileExtensions.RobotProtoDirName,
+				"{{output_root}}":              c.Paths.OutputRoot,
+				"{{proto_dir}}":                c.Paths.ProtoDir,
+				"{{robot_proto}}":              c.Paths.RobotProto,
+				"{{robot}}":                    c.Paths.Robot,
+				"{{proto_dir_name}}":           c.DirectoryNames.ProtoDirName,         // 修改：从DirectoryNames获取
+				"{{robot_proto_name}}":         c.DirectoryNames.RobotProtoName,       // 修改：从DirectoryNames获取
+				"{{robot_go_zero_proto_name}}": c.DirectoryNames.RobotGoZeroProtoName, // 修改：从DirectoryNames获取
 			})
 		}
 
@@ -900,6 +958,7 @@ func (c *Config) GetIncludePaths() []string {
 		c.Paths.ProtoDir,
 		c.Paths.RobotProto,
 		c.Paths.RobotProtoImportPath,
+		c.DirectoryNames.RobotProtoName, // 新增：添加DirectoryNames中的路径
 	}
 
 	for _, path := range defaultPaths {
@@ -915,12 +974,13 @@ func (c *Config) GetIncludePaths() []string {
 // GetRobotOutputDirs 获取Robot相关的输出目录映射
 func (c *Config) GetRobotOutputDirs() map[string]string {
 	return map[string]string{
-		"generated":       c.Paths.RobotGenerated,
-		"proto":           c.Paths.RobotProto,
-		"generated_proto": c.Paths.RobotGeneratedProto,
-		"go_zero_proto":   c.Paths.RobotGoZeroProto,
-		"go_gen":          c.Paths.RobotGoGenDir,
-		"game_pb":         c.Paths.RobotGoGamePbDir,
+		"generated":        c.Paths.RobotGenerated,
+		"proto":            c.Paths.RobotProto,
+		"generated_proto":  c.Paths.RobotGeneratedProto,
+		"go_zero_proto":    c.Paths.RobotGoZeroProto,
+		"go_gen":           c.Paths.RobotGoGenDir,
+		"game_pb":          c.Paths.RobotGoGamePbDir,
+		"robot_proto_name": c.DirectoryNames.RobotProtoName, // 新增：添加DirectoryNames中的目录
 	}
 }
 
@@ -943,7 +1003,7 @@ func (c *Config) GetOutputPath(mappingName, protoDir, protoFile string) (string,
 	path := replaceVariables(mapping.Path, map[string]string{
 		"{{proto_dir}}":      protoDir,
 		"{{proto_file}}":     protoFile,
-		"{{proto_dir_name}}": c.FileExtensions.ProtoDirName,
+		"{{proto_dir_name}}": c.DirectoryNames.ProtoDirName, // 修改：从DirectoryNames获取
 	})
 
 	return path, nil
@@ -981,17 +1041,25 @@ func (c *Config) ShouldIgnoreFile(filename string) bool {
 
 // ========== 辅助方法 ==========
 
-// GetDirName 获取目录名配置
+// GetDirName 获取目录名配置（修改：从DirectoryNames获取）
 func (c *Config) GetDirName(name string) string {
 	switch name {
 	case "proto":
-		return c.FileExtensions.ProtoDirName
+		return c.DirectoryNames.ProtoDirName
 	case "go_zero_proto":
-		return c.FileExtensions.GoZeroProtoDirName
+		return c.DirectoryNames.GoZeroProtoDirName
 	case "robot_proto":
-		return c.FileExtensions.RobotProtoDirName
+		return c.DirectoryNames.RobotProtoName
 	case "robot_go_zero_proto":
-		return c.FileExtensions.RobotGoZeroProtoDirName
+		return c.DirectoryNames.RobotGoZeroProtoName
+	case "generated_rpc":
+		return c.DirectoryNames.GeneratedRpcName
+	case "service_info":
+		return c.DirectoryNames.ServiceInfoName
+	case "model":
+		return c.DirectoryNames.ModelDirName
+	case "service_include":
+		return c.DirectoryNames.ServiceIncludeDir
 	default:
 		return ""
 	}
