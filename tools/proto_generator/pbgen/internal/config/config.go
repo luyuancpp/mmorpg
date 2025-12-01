@@ -1031,32 +1031,6 @@ func (c *Config) ShouldIgnoreFile(filename string) bool {
 	return false
 }
 
-// ========== 辅助方法 ==========
-
-// GetDirName 获取目录名配置（修改：从DirectoryNames获取）
-func (c *Config) GetDirName(name string) string {
-	switch name {
-	case "proto":
-		return c.DirectoryNames.ProtoDirName
-	case "go_zero_proto":
-		return c.DirectoryNames.GoZeroProtoDirName
-	case "robot_proto":
-		return c.DirectoryNames.RobotProtoName
-	case "robot_go_zero_proto":
-		return c.DirectoryNames.RobotGoZeroProtoName
-	case "generated_rpc":
-		return c.DirectoryNames.GeneratedRpcName
-	case "service_info":
-		return c.DirectoryNames.ServiceInfoName
-	case "model":
-		return c.DirectoryNames.ModelDirName
-	case "service_include":
-		return c.DirectoryNames.ServiceIncludeDir
-	default:
-		return ""
-	}
-}
-
 // ========== 原有配置的兼容方法 ==========
 
 // GetProtoDirIndex 获取Proto目录索引
