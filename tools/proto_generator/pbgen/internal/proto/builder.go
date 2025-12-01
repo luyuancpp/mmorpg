@@ -31,7 +31,7 @@ func BuildGeneratorGoZeroProtoPath(dir string) string {
 
 func BuildGeneratorProtoPath(dir string) string {
 	// dir是绝对路径，直接拼接Proto子目录名
-	return filepath.Join(dir, _config.Global.DirectoryNames.ProtoDirName)
+	return filepath.Join(dir, filepath.ToSlash(_config.Global.DirectoryNames.NormalGoProto))
 }
 
 // CopyProtoToGenDir 拷贝Proto文件到生成目录
