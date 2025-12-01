@@ -528,11 +528,6 @@ func resolveAbsolutePaths() error {
 		return err
 	}
 
-	// 转换DirectoryNames中的路径为绝对路径（新增）
-	if err := resolveAbsolutePathsInStruct(reflect.ValueOf(&Global.DirectoryNames).Elem()); err != nil {
-		return err
-	}
-
 	// 转换MethodHandlerDirectories中的路径为绝对路径
 	if err := resolveAbsolutePathsInStruct(reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()); err != nil {
 		return err

@@ -276,11 +276,7 @@ func copyCppGrpcOutputs(protoFiles []string) error {
 	}
 	protoDirSlash := filepath.ToSlash(protoDir)
 
-	grpcTempDir, err := utils2.ResolveAbsPath(_config.Global.Paths.GrpcTempDir, "GRPC临时目录")
-	if err != nil {
-		return err
-	}
-	grpcTempWithProtoDir := filepath.ToSlash(filepath.Join(grpcTempDir, _config.Global.DirectoryNames.ProtoDirName))
+	grpcTempWithProtoDir := filepath.ToSlash(_config.Global.Paths.GrpcTempDir + _config.Global.DirectoryNames.ProtoDirName)
 
 	grpcOutputDir := _config.Global.Paths.GrpcProtoOutputDir
 
