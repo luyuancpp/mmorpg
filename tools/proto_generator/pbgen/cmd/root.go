@@ -135,11 +135,13 @@ func main() {
 	MakeProjectDir()
 
 	var wg sync.WaitGroup
+	proto.CopyProtoToGenDir(&wg)
+	waitWithTiming(&wg, "First wait (CopyProto)")
+
 	cpp2.GenerateGameGrpc(&wg)
 	_go2.GenerateGameGrpc(&wg)
-	proto.CopyProtoToGenDir(&wg)
 	cpp2.ReadServiceIdFile(&wg)
-	waitWithTiming(&wg, "First wait (GenerateGameGrpc/CopyProto/ReadServiceIdFile)")
+	waitWithTiming(&wg, "First wait (GenerateGameGrpc/ReadServiceIdFile)")
 
 	proto.GenerateAllInOneDescriptor(&wg)
 	waitWithTiming(&wg, "Second wait (GenerateAllInOneDescriptor)")

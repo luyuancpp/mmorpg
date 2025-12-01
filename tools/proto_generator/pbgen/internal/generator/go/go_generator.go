@@ -39,11 +39,8 @@ func GenerateGoProto(rootDir string) error {
 	}
 
 	// 3. 解析Proto根路径
-	protoRootPath, err := utils2.ResolveAbsPath(filepath.Dir(rootDir), "Proto根目录")
-	if err != nil {
-		return err
-	}
-
+	protoRootPath := filepath.Dir(rootDir)
+	
 	// 4. 生成Go GRPC代码
 	if err := GenerateGoGrpc(protoFiles, nodeGoDir, protoRootPath); err != nil {
 		log.Fatal("Go GRPC生成: 代码生成失败: %w", err)

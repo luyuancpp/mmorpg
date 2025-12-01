@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	_config "pbgen/internal/config"
 	"strings"
 )
 
@@ -58,20 +57,6 @@ func GenGoPackageOptWithAdjustedPath(goPackagePath string) string {
 	newPath := strings.Join(fullParts, "/")
 
 	return fmt.Sprintf("option go_package = \"%s\";", newPath)
-}
-
-// 生成正确格式的 option go_package（包含路径和包名）
-// goPackagePath: 完整的Go包路径（如 "db/service/cpp/rpc/centre"）
-// 返回格式: option go_package = "db/service/cpp/rpc/centre;centre";
-func GenGoPackageOptWithProtoPkg(goPackagePath string) string {
-	parts := strings.Split(strings.Trim(goPackagePath, "/"), "/")
-	if len(parts) > 0 {
-		fmt.Println("方法1第一个目录:", parts[0]) // 输出: go
-	}
-	pkgName := parts[0] + _config.Global.FileExtensions.ProtoGoPackageSuffix
-
-	// 生成包含路径和包名的完整语句
-	return fmt.Sprintf("option go_package = \"%s;%s\";", goPackagePath, pkgName)
 }
 
 // AddGoPackage 为指定proto文件添加option go_package
