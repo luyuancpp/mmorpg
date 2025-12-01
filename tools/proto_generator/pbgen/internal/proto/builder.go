@@ -24,13 +24,11 @@ func ResolveGameProtoPath() (string, error) {
 	return gameProtoPath, nil
 }
 
-// BuildGeneratorGoZeroProtoPath 构建GoZero生成器的Proto路径（dir为绝对路径）
 func BuildGeneratorGoZeroProtoPath(dir string) string {
 	// dir是绝对路径，直接拼接Proto子目录名
 	return filepath.Join(dir, _config.Global.DirectoryNames.GoZeroProtoDirName)
 }
 
-// BuildGeneratorProtoPath 构建生成器的Proto路径（dir为绝对路径）
 func BuildGeneratorProtoPath(dir string) string {
 	// dir是绝对路径，直接拼接Proto子目录名
 	return filepath.Join(dir, _config.Global.DirectoryNames.ProtoDirName)
