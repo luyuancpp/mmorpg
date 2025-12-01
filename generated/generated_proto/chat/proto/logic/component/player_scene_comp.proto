@@ -1,0 +1,17 @@
+syntax = "proto3";
+option go_package = "chat/proto/proto/logic/component;component";
+
+
+
+message PlayerRoomInfoPBComponent
+{
+  uint32 scene_confid = 1;
+  uint32 guid = 2;
+}
+
+message PlayerSceneContextPBComponent
+{
+	PlayerRoomInfoPBComponent scene_info = 1;
+	PlayerRoomInfoPBComponent scene_info_last_time = 2;
+}
+

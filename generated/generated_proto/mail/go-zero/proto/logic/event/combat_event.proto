@@ -1,0 +1,10 @@
+syntax = "proto3";
+option go_package = "mail/proto/go-zero/proto/logic/event;event";
+
+
+
+message BeKillEvent 
+{
+  uint64 caster = 1;
+  uint64 target = 2;
+}

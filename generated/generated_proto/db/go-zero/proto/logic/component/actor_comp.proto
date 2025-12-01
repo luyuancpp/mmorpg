@@ -1,0 +1,75 @@
+syntax = "proto3";
+option go_package = "db/proto/go-zero/proto/logic/component;component";
+
+
+import "proto/logic/component/comp.proto";
+
+message Location
+{
+	double x = 1;
+	double y = 2;
+	double z = 3;
+}
+
+message Rotation
+{
+	double x = 1;
+	double y = 2;
+	double z = 3;
+}
+
+message Scale
+{
+	double x = 1;
+	double y = 2;
+	double z = 3;
+}
+
+message Transform
+{
+	Vector3 location = 1;
+	Rotation rotation = 2;
+	Scale scale = 3;
+}
+
+message Velocity
+{
+	double x = 1;
+	double y = 2;
+	double z = 3;
+}
+
+
+message Acceleration 
+{
+	double x = 1;
+	double y = 2;
+	double z = 3;
+}
+
+//https://blog.codingnow.com/2008/11/aoi_server.html
+//视野半径
+message ViewRadius
+{
+	double radius = 1;
+}
+
+// 玩家基础属性组件，仅存储与战斗相关的基础属性
+message BaseAttributesPbComponent {
+    uint64 strength = 1;    // 力量，影响物理攻击
+    uint64 stamina = 2;     // 耐力，影响生命值等
+    uint64 health = 3;      // 当前生命值
+    uint64 mana = 4;        // 当前法力值
+    uint64 critchance = 5;  // 暴击几率
+    uint64 armor = 6;       // 护甲
+    uint64 resistance = 7;  // 抗性
+}
+
+// 玩家等级组件，专注于管理等级及与等级相关的功能
+message LevelPbComponent {
+    uint32 level = 1;  // 玩家等级
+}
+
+message ActorStatePbComponent {
+    map<uint32, bool> state_list = 1; 
+}

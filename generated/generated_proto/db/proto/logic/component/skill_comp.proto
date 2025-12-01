@@ -1,0 +1,22 @@
+syntax = "proto3";
+option go_package = "db/proto/proto/logic/component;component";
+
+
+import "proto/logic/component/actor_comp.proto";
+
+
+message SkillPBComponent
+{
+  uint64 skill_table_id = 1;
+}
+
+message SkillContextPBComponent {
+    uint64 caster = 1; // 施法者
+    uint64 target = 2; // 目标（如果有）
+    uint64 SkillId = 3; // 技能唯一id
+    uint32 skillTableId = 4; // 技能表id
+    Transform castPosition = 5; // 施法位置
+    uint64 castTime = 6; // 施法时间
+    string state = 7; // 当前状态
+    map<string, uint32> additionalData = 8; // 附加数据
+}

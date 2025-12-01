@@ -1,0 +1,30 @@
+syntax = "proto3";
+option go_package = "db/proto/go-zero/proto/logic/event;event";
+
+
+
+message AcceptMissionEvent
+{
+  uint64 entity = 1;
+  uint32 mission_id = 2;
+}
+
+message MissionConditionEvent
+{
+  uint64 entity = 1;
+  uint32 condition_type = 2;
+  repeated uint32 condtion_ids = 3;
+  uint32 amount = 4;
+}
+
+message OnAcceptedMissionEvent
+{
+  uint64 entity = 1;
+  uint32 mission_id = 2;
+}
+
+message OnMissionAwardEvent
+{
+  uint64 entity = 1;
+  uint32 mission_id = 2;
+}

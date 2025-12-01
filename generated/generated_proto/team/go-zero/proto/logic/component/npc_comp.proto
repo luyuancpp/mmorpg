@@ -1,0 +1,9 @@
+syntax = "proto3";
+option go_package = "team/proto/go-zero/proto/logic/component;component";
+
+
+
+message Npc
+{
+}
+

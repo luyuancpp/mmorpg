@@ -1,0 +1,11 @@
+syntax = "proto3";
+option go_package = "db/proto/go-zero/proto/logic/constants;constants";
+
+// 定义 gRPC 操作的枚举类型
+enum GrpcOperation {
+    READ = 0;         // 读取操作
+    INIT = 1;         // 初始化操作
+    WRITE = 2;        // 写入操作
+    WRITES_DONE = 3;  // 写入完成
+    FINISH = 4;       // 操作结束
+}

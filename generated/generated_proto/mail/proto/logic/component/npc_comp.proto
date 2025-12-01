@@ -1,0 +1,9 @@
+syntax = "proto3";
+option go_package = "mail/proto/proto/logic/component;component";
+
+
+
+message Npc
+{
+}
+

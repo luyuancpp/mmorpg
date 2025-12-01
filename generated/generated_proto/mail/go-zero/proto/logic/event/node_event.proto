@@ -1,0 +1,25 @@
+syntax = "proto3";
+option go_package = "mail/proto/go-zero/proto/logic/event;event";
+
+
+
+message OnNodeAddPbEvent {
+  uint64 entity = 1;
+  uint32 node_type = 2;
+  uint32 scenenode_type = 3;
+}
+
+message OnNodeRemovePbEvent {
+  uint64 entity = 1;
+  uint32 node_type = 2;
+  uint32 scene_node_type = 3;
+}
+
+message ConnectToNodePbEvent {
+  uint32 entity = 1;
+  uint32 node_type = 2;
+}
+
+message OnNodeConnectedPbEvent {
+
+}

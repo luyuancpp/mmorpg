@@ -1,0 +1,38 @@
+syntax = "proto3";
+option go_package = "chat/proto/proto/logic/component;component";
+
+
+
+//普通登录
+message NormalLogin
+{
+}
+
+//顶号登录
+message CoverLogin
+{
+}
+
+message Player
+{
+}
+
+message Account
+{
+	string account = 1;
+}
+
+message UnregisterPlayer
+{
+}
+
+message PlayerUint64PBComponent
+{
+	uint64 registration_timestamp  = 1;
+}
+
+message PlayerUint32PbComponent
+{
+	uint32 class  = 1;
+}
+

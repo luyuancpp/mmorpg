@@ -1,0 +1,48 @@
+syntax = "proto3";
+option go_package = "player_locator/proto/proto/common;common";
+
+// 服务配置，避免与 protobuf 的 Service 冲突
+message ServiceConfig {
+    string name = 1;  // 服务名称
+    string url = 2;   // 服务的健康检查或访问URL
+}
+
+message KafkaConfig {
+    repeated string brokers = 1;            // Kafka broker 列表
+    repeated string topics = 2;             // 可配置多个 topic
+    string group_id = 3;                    // consumer group ID
+    bool enable_auto_commit = 4;            // 是否开启自动提交
+    string auto_offset_reset = 5;           // earliest / latest
+}
+
+// 部署基础配置
+message BaseDeployConfig {
+    repeated string etcd_hosts = 1;
+    uint32 log_level = 2;
+    repeated ServiceConfig services = 3;
+    repeated string service_discovery_prefixes = 4;
+    uint32 keep_alive_interval = 5;
+    string deployservice_prefix = 6;
+    uint32 node_ttl_seconds = 7;
+    uint32 health_check_interval = 8;
+
+    KafkaConfig kafka = 9;  // ✅ 新增 Kafka 配置
+
+    // 新增配置表目录字段
+    string table_data_directory = 10; // 配置表的目录路径
+}
+
+// 游戏配置
+message GameConfig {
+    uint32 scene_node_type = 1;  // 场景节点类型，使用 uint32
+    uint32 zone_id = 2;          // 区域ID，使用 uint32
+    // Zoneredis 配置
+    message ZoneRedisConfig {
+        string host = 3;           // Redis 服务器地址
+        uint32 port = 4;           // Redis 服务器端口
+        string password = 5;       // Redis 密码（可选）
+        uint32 db = 6;             // 使用的 Redis 数据库编号
+    }
+
+    ZoneRedisConfig zone_redis = 7; // 添加一个 ZoneRedisConfig 配置
+}

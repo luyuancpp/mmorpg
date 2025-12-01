@@ -1,0 +1,8 @@
+syntax = "proto3";
+option go_package = "team/proto/proto/common;common";
+
+message TipInfoMessage
+{
+  uint32 id = 1;
+  repeated string parameters = 2;
+}
