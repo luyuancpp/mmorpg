@@ -138,6 +138,9 @@ func main() {
 	proto.CopyProtoToGenDir(&wg)
 	waitWithTiming(&wg, "First wait (CopyProto)")
 
+	_go2.AddGoPackageToProtoDir(&wg)
+	waitWithTiming(&wg, "Third wait (AddGoPackageToProtoDir)")
+
 	cpp2.GenerateGameGrpc(&wg)
 	_go2.GenerateGameGrpc(&wg)
 	cpp2.ReadServiceIdFile(&wg)
@@ -146,9 +149,8 @@ func main() {
 	proto.GenerateAllInOneDescriptor(&wg)
 	waitWithTiming(&wg, "Second wait (GenerateAllInOneDescriptor)")
 
-	_go2.AddGoPackageToProtoDir(&wg)
 	cpp2.ReadAllProtoFileServices(&wg)
-	waitWithTiming(&wg, "Third wait (AddGoPackageToProtoDir/ReadAllProtoFileServices)")
+	waitWithTiming(&wg, "Third wait (AddGoPackageToProtoDir)")
 
 	cpp2.BuildProtocCpp(&wg)
 	_go2.BuildGrpcServiceProto(&wg)

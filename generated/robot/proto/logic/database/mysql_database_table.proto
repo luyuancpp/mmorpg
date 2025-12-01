@@ -1,4 +1,5 @@
 syntax = "proto3";
+option go_package = "robot/proto/logic/database;database";
 
 import "proto/service/go/grpc/db/proto_option.proto";
 import "proto/common/user_accounts.proto";
