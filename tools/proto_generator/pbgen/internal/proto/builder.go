@@ -77,11 +77,6 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 
 // copyProtoToDir 拷贝单个目录的Proto文件
 func copyProtoToDir(srcDir, destDir string) error {
-	// 清空目标目录
-	if err := os.RemoveAll(destDir); err != nil {
-		return errors.Join(errors.New("清空目标目录失败"), err)
-	}
-
 	if err := os.MkdirAll(destDir, 0755); err != nil {
 		return errors.Join(errors.New("创建目录失败"), err)
 	}
