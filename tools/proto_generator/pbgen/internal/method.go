@@ -727,7 +727,7 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 		Methods:                  methodsData,
 		MessageIdName:            _config.Global.Naming.MessageId,
 		ServiceInfoHeadInclude:   firstMethodInfo.ServiceInfoHeadInclude(),
-		ServiceInfoName:          _config.Global.FileExtensions.ServiceInfoName,
+		ServiceInfoName:          _config.Global.DirectoryNames.ServiceInfoName,
 	}
 
 	tmpl, err := template.New("methodRepliedHandlerCpp").Parse(methodRepliedHandlerCppTemplate)

@@ -176,7 +176,7 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 			wg.Add(1)
 			go func(dirName string) {
 				defer wg.Done()
-				destDir := _config.Global.Paths.GeneratorProtoDir + proto.BuildGeneratorProtoPath(dirName)
+				destDir := _config.Global.Paths.GeneratorProtoDir + dirName
 				baseGoPackage := filepath.ToSlash(dirName)
 
 				if err := addDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
@@ -190,7 +190,7 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 			wg.Add(1)
 			go func(dirName string) {
 				defer wg.Done()
-				destDir := _config.Global.Paths.GeneratorProtoDir + proto.BuildGeneratorGoZeroProtoPath(dirName)
+				destDir := _config.Global.Paths.GeneratorProtoDir + dirName
 				baseGoPackage := filepath.ToSlash(dirName)
 
 				if err := AddGoZeroPackageToProtos(destDir, baseGoPackage, destDir, true); err != nil {
@@ -283,7 +283,7 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 		if isGoZero {
 			goPackagePath = baseGoPackage
 		} else {
-			goPackagePath = filepath.Join(baseGoPackage, _config.Global.FileExtensions.ProtoDirName)
+			goPackagePath = filepath.Join(baseGoPackage, _config.Global.DirectoryNames.ProtoDirName)
 		}
 	} else {
 		// 拼接基础路径和相对目录
@@ -292,7 +292,7 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 		} else {
 			goPackagePath = filepath.Join(
 				baseGoPackage,
-				_config.Global.FileExtensions.ProtoDirName,
+				_config.Global.DirectoryNames.ProtoDirName,
 				filepath.ToSlash(relativePath),
 			)
 		}
@@ -315,7 +315,7 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 
 // processGrpcDir 处理单个GRPC目录
 func processGrpcDir(dirName string) error {
-	destDir := proto.BuildGeneratorProtoPath(dirName)
+	destDir := dirName
 	if _, err := os.Stat(destDir); errors.Is(err, os.ErrNotExist) {
 		log.Fatalf("目录[%s]不存在", destDir)
 	}

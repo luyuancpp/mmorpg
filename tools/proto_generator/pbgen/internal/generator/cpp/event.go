@@ -183,7 +183,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 	tmplData := EventTemplateData{
 		ClassName:           className,
 		HeaderFile:          headerFileBase,
-		ProtoInclude:        _config.Global.FileExtensions.ProtoDirName + _config.Global.PathLists.ProtoDirectories[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex] + strings.Replace(file.Name(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1),
+		ProtoInclude:        _config.Global.DirectoryNames.ProtoDirName + _config.Global.PathLists.ProtoDirectories[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex] + strings.Replace(file.Name(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1),
 		EventMessages:       eventMessages,
 		ForwardDeclarations: eventMessages,
 		GlobalUserCode:      globalCode,

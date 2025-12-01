@@ -77,22 +77,28 @@ paths:
   player_data_loader_file: "{{player_storage_system_dir}}player_data_loader.h"
   protoc_path: "protoc"
 
-
   event_handler_source_directory: "handler/event/"
   room_node_event_handler_directory: "{{room_node_dir}}{{event_handler_source_directory}}"
   centre_node_event_handler_directory: "{{centre_node_dir}}{{event_handler_source_directory}}"
 
-# 文件扩展名配置
+# 目录命名常量（专门存放目录名/路径片段常量）
+directory_names:
+  generated_rpc_name: "rpc/"               # RPC生成目录名
+  service_info_name: "service_metadata/"   # 服务元数据目录名
+  proto_dir_name: "proto/"                 # Proto目录名
+  go_zero_proto_dir_name: "go-zero_proto/" # Go-zero Proto目录名
+  robot_proto_name: "{{robot_proto}}"      # Robot Proto目录名常量
+  robot_go_zero_proto_name: "{{robot_go_zero_proto}}" # Robot Go-zero Proto目录名常量
+  model_dir_name: "model/"                 # 模型目录名
+  service_include_dir: "rpc/"              # 服务导入目录名
+
+# 文件扩展名配置（仅存放文件后缀/扩展名）
 file_extensions:
   proto: ".proto"
   pb_cc: ".pb.cc"
   pb_h: ".pb.h"
   grpc_pb_cc: ".grpc.pb.cc"
   grpc_pb_h: ".grpc.pb.h"
-  proto_dir_name: "proto/"
-  go_zero_proto_dir_name: "go-zero_proto/"
-  robot_proto_name: "{{robot_proto}}"  # robot proto目录名常量
-  robot_go_zero_proto_name: "{{robot_go_zero_proto}}"  # robot go-zero proto目录名常量
   header: ".h"
   cpp: ".cpp"
   lua_cpp: "_lua.cpp"
@@ -114,13 +120,11 @@ file_extensions:
   model_sql_extension: "mysql_database_table.sql"
   proto_go_package_suffix: "_proto"
   message_id_go_file: "message_id.go"
-  generated_rpc_name: "rpc/"
-  service_info_name: "service_metadata/"
   service_info_extension: "_service_metadata"
   register_replied_handler_cpp_extension: "register{{cpp_replied_handler_ex}}"
   register_handler_cpp_extension: "register{{handler_cpp_extension}}"
 
-# 命名规则配置
+# 命名规则配置（业务逻辑命名常量）
 naming:
   message_id: "MessageId"
   method_index: "Index"
@@ -142,7 +146,6 @@ naming:
 
   # 原有配置中的命名常量
   type_player: "player"
-  service_include_name: "rpc/"
   player_service_include_name: "#include \"rpc/player_service_interface.h\"\n"
   player_service_replied_include_name: "#include \"rpc/player_rpc_response_handler.h\"\n"
   macro_return_include_name: "#include \"macros/return_define.h\""
@@ -157,8 +160,6 @@ naming:
   your_code_begin: "///<<< BEGIN WRITING YOUR CODE"
   your_code_end: "///<<< END WRITING YOUR CODE"
   your_code_pair: "{{your_code_begin}}\n{{your_code_end}}\n"
-  # 原有配置中的目录路径
-  model: "model/"
 
 # 路径列表配置
 path_lists:
