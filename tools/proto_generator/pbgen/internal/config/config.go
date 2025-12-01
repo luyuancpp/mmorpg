@@ -26,11 +26,13 @@ type Config struct {
 }
 
 // DirectoryNames 目录命名常量（对应YAML中的directory_names节点）
+// DirectoryNames 目录命名常量（对应YAML中的directory_names节点）
 type DirectoryNames struct {
 	GeneratedRpcName     string `yaml:"generated_rpc_name"`       // RPC生成目录名
 	ServiceInfoName      string `yaml:"service_info_name"`        // 服务元数据目录名
 	ProtoDirName         string `yaml:"proto_dir_name"`           // Proto目录名
 	GoZeroProtoDirName   string `yaml:"go_zero_proto_dir_name"`   // Go-zero Proto目录名
+	NormalGoProto        string `yaml:"normal_go_proto"`          // 新增：普通Go代码目录名（对应YAML中的normal_go_dir_name）
 	RobotProtoName       string `yaml:"robot_proto_name"`         // Robot Proto目录名常量
 	RobotGoZeroProtoName string `yaml:"robot_go_zero_proto_name"` // Robot Go-zero Proto目录名常量
 	ModelDirName         string `yaml:"model_dir_name"`           // 模型目录名

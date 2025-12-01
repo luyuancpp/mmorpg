@@ -12,7 +12,6 @@ import (
 	"sync"
 )
 
-// GenerateGoProto 递归处理目录下Proto文件，生成Go GRPC代码
 func GenerateGoProto(rootDir string) error {
 	// 跳过Etcd服务相关目录
 	if utils2.CheckEtcdServiceExistence(rootDir) {
@@ -39,7 +38,7 @@ func GenerateGoProto(rootDir string) error {
 	}
 
 	// 3. 解析Proto根路径
-	protoRootPath := filepath.Dir(rootDir)
+	protoRootPath := filepath.Dir(filepath.Clean(rootDir))
 
 	// 4. 生成Go GRPC代码
 	if err := GenerateGoGrpc(protoFiles, nodeGoDir, protoRootPath); err != nil {
@@ -318,7 +317,7 @@ func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 		// 传递当前目录名副本到goroutine，避免循环变量捕获问题
 		go func(currentDir string) {
 			defer wg.Done()
-			destDir := _config.Global.Paths.GeneratorProtoDir + currentDir
+			destDir := _config.Global.Paths.GeneratorProtoDir + currentDir + "/" + _config.Global.DirectoryNames.NormalGoProto
 			if err := processGrpcDir(destDir); err != nil {
 				log.Printf("GRPC服务构建: 目录[%s]处理失败: %v", currentDir, err)
 			} else {

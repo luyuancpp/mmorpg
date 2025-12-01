@@ -90,6 +90,7 @@ directory_names:
   robot_go_zero_proto_name: "{{robot_go_zero_proto}}" # Robot Go-zero Proto目录名常量
   model_dir_name: "model/"                 # 模型目录名
   service_include_dir: "rpc/"              # 服务导入目录名
+  normal_go_proto: "normal-go/proto/"                 # 新增：普通Go代码目录名（不含斜杠，路径拼接时统一添加）
 
 # 文件扩展名配置（仅存放文件后缀/扩展名）
 file_extensions:
