@@ -142,12 +142,7 @@ func GenerateGoGrpc(protoFiles []string, outputDir string, protoRootPath string)
 
 	// 4. 补充Proto文件路径
 	for _, file := range protoFiles {
-		absFile, err := utils2.ResolveAbsPath(file, "Go GRPC Proto源文件")
-		if err != nil {
-			log.Printf("Go GRPC生成: 跳过无效文件[%s]: %v", file, err)
-			continue
-		}
-		args = append(args, absFile)
+		args = append(args, file)
 	}
 
 	// 5. 执行命令

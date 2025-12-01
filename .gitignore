@@ -69,4 +69,3 @@ bin/vsout/
 *md5
 tools/generated/
 tools/proto/pbgen/bin/
-generated/generated_proto/
