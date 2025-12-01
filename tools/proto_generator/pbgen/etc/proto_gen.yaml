@@ -23,8 +23,7 @@ paths:
   robot: "tools/robot/"
   robot_generated: "{{output_root}}generated/robot/"
   robot_proto: "{{robot_generated}}proto/"  # robot专用proto源目录
-  robot_generated_proto: "{{robot_generated}}proto/"  # robot生成的proto目录
-  robot_go_zero_proto: "{{robot_generated_proto}}go-zero_proto/"  # robot的go-zero proto目录
+  robot_generated_proto: "{{robot_generated}}/proto/"  # robot生成的proto目录
   generated_dir: "cpp/generated/"
 
   # 工具与临时目录
@@ -86,7 +85,7 @@ directory_names:
   generated_rpc_name: "rpc/"               # RPC生成目录名
   service_info_name: "service_metadata/"   # 服务元数据目录名
   proto_dir_name: "proto/"                 # Proto目录名
-  go_zero_proto_dir_name: "go-zero_proto/" # Go-zero Proto目录名
+  go_zero_proto_dir_name: "go-zero/proto/" # Go-zero Proto目录名
   robot_proto_name: "{{robot_proto}}"      # Robot Proto目录名常量
   robot_go_zero_proto_name: "{{robot_go_zero_proto}}" # Robot Go-zero Proto目录名常量
   model_dir_name: "model/"                 # 模型目录名

@@ -695,9 +695,6 @@ func setDefaults() {
 		if Global.Paths.RobotGeneratedProto == "" {
 			Global.Paths.RobotGeneratedProto = Global.DirectoryNames.RobotProtoName
 		}
-		if Global.Paths.RobotGoZeroProto == "" {
-			Global.Paths.RobotGoZeroProto = Global.DirectoryNames.RobotGoZeroProtoName
-		}
 		if Global.Paths.RobotGeneratedOutputDir == "" {
 			Global.Paths.RobotGeneratedOutputDir = filepath.Join(Global.Paths.OutputRoot, Global.Paths.Robot, "generated/")
 		}
@@ -859,7 +856,6 @@ func createRequiredDirs() error {
 			Global.Paths.RobotGenerated,
 			Global.Paths.RobotProto,
 			Global.Paths.RobotGeneratedProto,
-			Global.Paths.RobotGoZeroProto,
 			Global.Paths.RobotGeneratedOutputDir,
 			Global.Paths.RobotGoGamePbDir,
 		)
@@ -972,7 +968,6 @@ func (c *Config) GetRobotOutputDirs() map[string]string {
 		"generated":        c.Paths.RobotGenerated,
 		"proto":            c.Paths.RobotProto,
 		"generated_proto":  c.Paths.RobotGeneratedProto,
-		"go_zero_proto":    c.Paths.RobotGoZeroProto,
 		"go_gen":           c.Paths.RobotGoGenDir,
 		"game_pb":          c.Paths.RobotGoGamePbDir,
 		"robot_proto_name": c.DirectoryNames.RobotProtoName, // 新增：添加DirectoryNames中的目录
