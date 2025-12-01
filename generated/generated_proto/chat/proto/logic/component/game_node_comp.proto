@@ -1,0 +1,9 @@
+syntax = "proto3";
+option go_package = "chat/proto/proto/logic/component;component";
+
+
+
+message GameNodePlayerInfoPBComponent
+{
+  uint32 player_size = 1;
+}

@@ -1,0 +1,9 @@
+syntax = "proto3";
+option go_package = "player_locator/proto/go-zero/proto/logic/component;component";
+
+
+
+message GameNodePlayerInfoPBComponent
+{
+  uint32 player_size = 1;
+}

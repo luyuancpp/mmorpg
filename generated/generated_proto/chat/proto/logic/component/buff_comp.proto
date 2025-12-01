@@ -1,0 +1,45 @@
+syntax = "proto3";
+option go_package = "chat/proto/proto/logic/component;component";
+
+
+
+message BuffContextPBComponent
+{
+  float damage_value = 1;
+}
+
+message BuffPeriodicBuffPbComponent
+{
+  double periodic_timer = 1;
+  uint32 ticks_done = 2;
+}
+
+message BuffPbComponent
+{
+  uint64 buff_id = 1;
+  uint32 buff_table_id = 2;
+  uint32 ability_id = 3;
+  uint64 parent_entity = 4;
+  uint32 layer = 5;
+  uint64 caster = 6;
+  bool triggerdamage = 7;
+  uint64 processed_caster = 8; // 根据表处理后的施法者
+  bytes data = 9; // 各种类型buff的各种数据
+  BuffPeriodicBuffPbComponent  periodic = 10;
+  map<uint64, bool> sub_buff_list_id = 11;
+  bool has_added_sub_buff = 12;
+}
+
+message DamageEventPbComponent
+{
+  uint64 skill_id = 1;
+  uint64 attacker_id = 2;
+  uint64 target = 3;
+  double damage = 4;
+  uint32 damage_type = 5;
+}
+
+message BuffNoDamageOrSkillHitInLastSecondsPbComp
+{
+  uint64 last_time = 1;
+}

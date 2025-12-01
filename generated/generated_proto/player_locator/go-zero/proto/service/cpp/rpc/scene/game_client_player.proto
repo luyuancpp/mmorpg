@@ -1,0 +1,24 @@
+syntax = "proto3";
+option go_package = "player_locator/proto/go-zero/proto/service/cpp/rpc/scene;scene";
+
+import "proto/service/go/grpc/db/proto_option.proto";
+import "proto/common/tip.proto";
+import "proto/common/empty.proto";
+
+option cc_generic_services = true;
+option (OptionFileDefaultNode) = NODE_ROOM;
+
+
+message GameKickPlayerRequest {
+  TipInfoMessage reason = 1;
+  string operator = 2;
+}
+
+service SceneClientPlayerCommon 
+{
+  option (OptionIsPlayerService) = true;
+  option (OptionIsClientProtocolService) = true;
+  
+  rpc SendTipToClient (TipInfoMessage) returns (Empty);
+  rpc KickPlayer (GameKickPlayerRequest) returns (Empty);
+}

@@ -1,0 +1,16 @@
+syntax = "proto3";
+option go_package = "login/proto/go-zero/proto/logic/event;event";
+
+
+
+message InitializeActorComponentsEvent
+{
+  uint64 actor_entity = 1;
+}
+
+message InterruptCurrentStatePbEvent
+{
+  uint64 actor_entity = 1;
+  uint32 actor_action = 2;
+  uint32 actor_state = 3;
+}

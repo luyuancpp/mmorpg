@@ -1,0 +1,16 @@
+syntax = "proto3";
+option go_package = "login/proto/proto/logic/event;event";
+
+import "proto/logic/component/scene_comp.proto";
+
+message PlayerMigrationPbEvent {
+  uint64 player_id = 1;
+  uint64 source_scene_id = 2;
+  uint64 target_scene_id = 3;
+  bytes serialized_player_data = 4;
+  uint32 from_zone = 5;
+  uint32 to_zone = 6;
+  int64 timestamp = 7;  // 事件生成时间
+  uint32 centre_node_id = 8;
+  ChangeRoomInfoPBComponent scene_info = 9;
+}

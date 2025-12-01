@@ -1,0 +1,21 @@
+syntax = "proto3";
+option go_package = "db/proto/proto/service/go/grpc/db;db";
+
+import "proto/service/go/grpc/db/proto_option.proto";
+
+import "proto/common/empty.proto";
+
+option (OptionFileDefaultNode) = NODE_DB;
+
+service db {
+  rpc Test (TestRequest) returns (TestResponse);
+}
+
+message TestRequest {
+  // 可以嵌套导入的message，但外层必须是当前proto的message
+  Empty empty = 1;
+}
+
+message TestResponse {
+  Empty empty = 1;
+}

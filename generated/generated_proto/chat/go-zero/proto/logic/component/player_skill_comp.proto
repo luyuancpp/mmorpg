@@ -1,0 +1,13 @@
+syntax = "proto3";
+option go_package = "chat/proto/go-zero/proto/logic/component;component";
+
+
+
+message PlayerSkillPBComponent {
+  uint64 id = 1; 
+  uint32 skill_table_id = 2; 
+}
+
+message PlayerSkillListPBComponent {
+  repeated PlayerSkillPBComponent skill_list = 1;
+}

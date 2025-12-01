@@ -1,0 +1,215 @@
+syntax = "proto3";
+option go_package = "team/proto/proto/common;common";
+
+
+
+import "proto/common/common.proto";
+import "proto/common/session.proto";
+import "proto/common/tip.proto";
+
+// 路由节点信息
+message RoutingNodeInfo
+{
+  NodeInfo node_info = 1;  // 节点信息
+  uint32 message_id = 2;   // 消息 ID
+}
+
+// 消息主体
+message MessageContent
+{
+  bytes serialized_message = 1;          // 消息内容
+  uint32 message_id = 2;   // 消息 ID
+  uint64 id = 3;           // 消息的唯一 ID
+  TipInfoMessage error_message = 4;  // 错误消息（可选）
+}
+
+// 节点消息头部
+message NodeMessageHeader
+{
+  uint32 node_id = 1;      // 节点 ID
+  uint64 session_id = 2;   // 会话 ID
+}
+
+// 节点路由消息请求
+message NodeRouteMessageRequest
+{
+  MessageContent message_content = 1;      // 消息内容
+  NodeMessageHeader header = 2; // 节点消息头
+}
+
+// 节点路由消息响应
+message NodeRouteMessageResponse
+{
+  MessageContent message_content = 1;      // 消息内容
+  NodeMessageHeader header = 2; // 节点消息头
+}
+
+// 玩家信息（外部）
+message PlayerInfoExternal
+{
+  uint64 player_id = 1;  // 玩家 ID
+}
+
+// 玩家节点服务请求
+message PlayerNodeServiceRequest
+{
+  MessageContent message_content = 1;          // 消息内容
+  PlayerInfoExternal header = 2;    // 玩家信息
+}
+
+// 玩家消息响应
+message PlayerMessageResponse
+{
+  MessageContent message_content = 1;          // 消息内容
+  PlayerInfoExternal header = 2;    // 玩家信息
+}
+
+// 节点路由消息体
+message NodeRoutingMessageBody
+{
+  NodeInfo node_info = 2;  // 节点信息
+}
+
+// 注册游戏节点会话请求
+message RegisterGameNodeSessionRequest
+{
+  SessionDetails session_info = 1;  // 会话详情
+  uint32 scene_node_id = 2;          // 游戏节点 ID
+}
+
+// 注册游戏节点会话响应
+message RegisterGameNodeSessionResponse
+{
+  SessionDetails session_info = 1;  // 会话详情
+}
+
+// 注册网关节点会话响应
+message RegisterGateNodeSessionResponse
+{
+  SessionDetails session_info = 1;  // 会话详情
+}
+
+// 注册中心节点会话请求
+message RegisterCentreSessionNodeRequest
+{
+  SessionDetails session_info = 1;  // 会话详情
+  uint32 centre_node_id = 2;        // 中心节点 ID
+}
+
+// 注册中心节点会话响应
+message RegisterSessionCentreNodeResponse
+{
+  SessionDetails session_info = 1;  // 会话详情
+}
+
+// 网关会话断开请求
+message GateSessionDisconnectRequest
+{
+  SessionDetails session_info = 1;  // 会话详情
+}
+
+// 路由消息请求（字符串形式）
+message RouteMessageRequest
+{
+  bytes body = 1;                               // 消息内容（字符串）
+  repeated RoutingNodeInfo route_nodes = 2;     // 路由节点信息列表
+  uint64 session_id = 3;                        // 会话 ID
+  uint64 id = 4;                                // 消息唯一 ID
+  bool is_client = 5;                           // 是否为客户端消息
+}
+
+// 路由消息响应（字符串形式）
+message RouteMessageResponse
+{
+  bytes body = 1;                               // 消息内容（字符串）
+  repeated RoutingNodeInfo route_nodes = 2;     // 路由节点信息列表
+  uint64 session_id = 3;                        // 会话 ID
+  uint64 id = 4;                                // 消息唯一 ID
+  bool is_client = 5;                           // 是否为客户端消息
+}
+
+// 路由玩家消息请求（字符串形式）
+message RoutePlayerMessageRequest
+{
+  bytes body = 1;              // 消息内容（字符串）
+  repeated NodeInfo node_list = 2; // 节点列表
+  PlayerInfoExternal player_info = 3;  // 玩家信息
+}
+
+// 路由玩家消息响应（字符串形式）
+message RoutePlayerMessageResponse
+{
+  bytes body = 1;              // 消息内容（字符串）
+  repeated NodeInfo node_list = 2; // 节点列表
+  PlayerInfoExternal player_info = 3;  // 玩家信息
+}
+
+// 注册游戏节点请求
+message RegisterGameNodeRequest
+{
+  NetworkAddress rpc_client = 1;  // 客户端 RPC 地址
+  NetworkAddress rpc_server = 2;  // 服务器 RPC 地址
+  uint32 scene_node_id = 3;        // 游戏节点 ID
+  uint32 server_type = 4;         // 服务器类型
+  uint32 scene_node_type = 5;         // 服务器类型
+}
+
+// 注册网关节点请求
+message RegisterGateNodeRequest
+{
+  NetworkAddress rpc_client = 1;  // 客户端 RPC 地址
+  uint32 gate_node_id = 2;        // 网关节点 ID
+}
+
+// 注销游戏节点请求
+message UnregisterGameNodeRequest
+{
+  uint32 scene_node_id = 1;  // 游戏节点 ID
+}
+
+message ProtoFieldCheckerTestSubPB
+{
+  repeated string items = 1;
+}
+
+message ProtoFieldCheckerTestPB
+{
+	ProtoFieldCheckerTestSubPB sub_message = 1;
+}
+
+// 主消息类型
+message MyProtoMessage 
+{
+  int32 single_int32_field = 1;          // 单个 int32 字段
+  int64 single_int64_field = 2;          // 单个 int64 字段
+  repeated int32 repeated_int32_field = 3; // repeated int32 字段
+  repeated int64 repeated_int64_field = 4; // repeated int64 字段
+  MyNestedMessage nested_message = 5;    // 嵌套消息字段
+}
+
+// 嵌套消息类型
+message MyNestedMessage 
+{
+  int32 nested_int32_field = 1;          // 单个 int32 字段
+  int64 nested_int64_field = 2;          // 单个 int64 字段
+}
+
+message ClientRequest
+{
+  uint64 id = 1;
+  string service = 2;
+  string method = 3;
+  bytes body = 4;
+  uint32 message_id = 5;
+}
+
+message NodeHandshakeRequest {
+    string version = 1;
+    string token = 2;
+	NodeInfo self_node = 3;
+}
+
+message NodeHandshakeResponse {
+    TipInfoMessage error_message = 1;  // 错误消息（可选）
+	NodeInfo peer_node = 2;              // 对方的节点信息（返回的是对方）
+}
