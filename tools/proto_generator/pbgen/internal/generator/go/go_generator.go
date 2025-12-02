@@ -161,7 +161,7 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 
 		// 处理普通生成目录
 		for _, dirName := range grpcDirs {
-			destDir := _config.Global.Paths.GeneratorProtoDir + dirName
+			destDir := filepath.ToSlash(_config.Global.Paths.GeneratorProtoDir + dirName + "/" + _config.Global.DirectoryNames.ProtoDirName)
 			baseGoPackage := filepath.ToSlash(dirName)
 
 			if err := addDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
@@ -171,7 +171,7 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 
 		// 处理GoZero生成目录
 		for _, dirName := range grpcDirs {
-			destDir := _config.Global.Paths.GeneratorProtoDir + dirName
+			destDir := filepath.ToSlash(_config.Global.Paths.GeneratorProtoDir + dirName + "/" + _config.Global.DirectoryNames.GoZeroProtoDirName)
 			baseGoPackage := filepath.ToSlash(dirName)
 
 			if err := AddGoZeroPackageToProtos(destDir, baseGoPackage, destDir, true); err != nil {
@@ -263,7 +263,7 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 		if isGoZero {
 			goPackagePath = baseGoPackage
 		} else {
-			goPackagePath = filepath.Join(baseGoPackage)
+			goPackagePath = filepath.Join(baseGoPackage, _config.Global.DirectoryNames.ProtoDirName)
 		}
 	} else {
 		// 拼接基础路径和相对目录
@@ -272,6 +272,7 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 		} else {
 			goPackagePath = filepath.Join(
 				baseGoPackage,
+				_config.Global.DirectoryNames.ProtoDirName,
 				filepath.ToSlash(relativePath),
 			)
 		}
