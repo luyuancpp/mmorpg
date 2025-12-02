@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "mail/go-zero/proto/logic/component;component";
+option go_package = "logic/component/mail";
 
 
 import "proto/logic/component/actor_comp.proto";
