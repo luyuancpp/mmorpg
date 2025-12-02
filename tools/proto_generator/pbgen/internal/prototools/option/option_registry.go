@@ -48,7 +48,7 @@ func dispatchOption(t OptionType, desc interface{}, opts interface{}, wg *sync.W
 
 			defer func() {
 				if r := recover(); r != nil {
-					log.Fatal("panic in option callback: %v", r)
+					log.Printf("panic in option callback: %v", r)
 				}
 			}()
 
