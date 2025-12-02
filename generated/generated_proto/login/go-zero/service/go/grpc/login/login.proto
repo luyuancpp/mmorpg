@@ -5,7 +5,7 @@ import "proto/common/empty.proto";
 import "proto/common/tip.proto";
 import "proto/common/user_accounts.proto";
 
-option go_package = "service/go/grpc/login/login";
+option go_package = "service/go/grpc/login";
 package loginpb;
 
 message LoginSessionInfo {

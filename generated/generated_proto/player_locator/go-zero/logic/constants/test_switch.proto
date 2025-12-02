@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "logic/constants/player_locator";
+option go_package = "logic/constants";
 
 
 // 定义一个枚举类型来标识测试标志
