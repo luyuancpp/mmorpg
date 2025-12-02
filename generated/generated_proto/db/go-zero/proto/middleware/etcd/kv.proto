@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "db/proto/go-zero/proto/middleware/etcd;etcd";
+option go_package = "db/go-zero/proto/middleware/etcd;etcd";
 package mvccpb;
 
 

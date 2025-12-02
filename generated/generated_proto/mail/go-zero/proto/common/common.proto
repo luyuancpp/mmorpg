@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "mail/proto/go-zero/proto/common;common";
+option go_package = "mail/go-zero/proto/common;common";
 
 
 

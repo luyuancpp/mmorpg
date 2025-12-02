@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "db/proto/proto/middleware/etcd;etcd";
+option go_package = "db/proto/middleware/etcd;etcd";
 package versionpb;
 
 import "google/protobuf/descriptor.proto";

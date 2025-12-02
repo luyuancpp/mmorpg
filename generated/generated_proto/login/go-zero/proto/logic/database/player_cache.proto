@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "login/proto/go-zero/proto/logic/database;database";
+option go_package = "login/go-zero/proto/logic/database;database";
 
 import "proto/logic/database/mysql_database_table.proto";
 

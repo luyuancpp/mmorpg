@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "login/proto/proto/logic/constants;constants";
+option go_package = "login/proto/logic/constants;constants";
 
 // 定义 gRPC 操作的枚举类型
 enum GrpcOperation {

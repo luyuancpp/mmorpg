@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "player_locator/proto/proto/common;common";
+option go_package = "player_locator/proto/common;common";
 
 
 

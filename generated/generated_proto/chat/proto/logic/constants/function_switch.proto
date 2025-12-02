@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "chat/proto/proto/logic/constants;constants";
+option go_package = "chat/proto/logic/constants;constants";
 
 
 enum eFunctionSwitchBitType

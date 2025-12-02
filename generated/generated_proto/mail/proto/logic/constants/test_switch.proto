@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "mail/proto/proto/logic/constants;constants";
+option go_package = "mail/proto/logic/constants;constants";
 
 
 // 定义一个枚举类型来标识测试标志

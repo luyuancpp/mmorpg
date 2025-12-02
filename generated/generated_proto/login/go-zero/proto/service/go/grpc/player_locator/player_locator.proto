@@ -2,7 +2,7 @@ syntax = "proto3";
 
 
 
-option go_package = "login/proto/go-zero/proto/service/go/grpc/player_locator;player_locator";
+option go_package = "login/go-zero/proto/service/go/grpc/player_locator;player_locator";
 package playerlocator;
 
 import "proto/common/empty.proto";

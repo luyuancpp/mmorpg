@@ -4,7 +4,7 @@ syntax = "proto3";
 
 import "proto/common/tip.proto";
 
-option go_package = "login/proto/proto/service/go/grpc/instance;instance";
+option go_package = "login/proto/service/go/grpc/instance;instance";
 package instance;
 
 service Instance {

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "mail/proto/go-zero/proto/service/go/grpc/db;db";
+option go_package = "mail/go-zero/proto/service/go/grpc/db;db";
 package taskpb;
 
 
