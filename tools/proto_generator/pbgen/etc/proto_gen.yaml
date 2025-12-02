@@ -85,7 +85,7 @@ directory_names:
   generated_rpc_name: "rpc/"               # RPC生成目录名
   service_info_name: "service_metadata/"   # 服务元数据目录名
   proto_dir_name: "proto/"                 # Proto目录名
-  go_zero_proto_dir_name: "go-zero/proto/" # Go-zero Proto目录名
+  go_zero_proto_dir_name: "go-zero/" # Go-zero Proto目录名
   robot_proto_name: "{{robot_proto}}"      # Robot Proto目录名常量
   robot_go_zero_proto_name: "{{robot_go_zero_proto}}" # Robot Go-zero Proto目录名常量
   model_dir_name: "model/"                 # 模型目录名
