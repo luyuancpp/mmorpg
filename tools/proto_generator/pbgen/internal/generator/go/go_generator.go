@@ -209,7 +209,7 @@ func addDynamicGoPackage(rootDir, baseGoPackage, currentDir string, isMulti bool
 			if err := addDynamicGoPackage(rootDir, baseGoPackage, fullPath, isMulti); err != nil {
 				return err
 			}
-		} else if filepath.Ext(fullPath) == ".prototools" {
+		} else if filepath.Ext(fullPath) == ".proto" {
 			// 处理Proto文件
 			if err := processProtoFileForGoPackage(rootDir, baseGoPackage, fullPath, isMulti, false); err != nil {
 				return err
