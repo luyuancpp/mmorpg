@@ -31,8 +31,8 @@ func parseDescriptorFile() error {
 	log.Printf("描述符生成: 成功解析，包含%d个文件描述符", len(internal.FdSet.GetFile()))
 	for _, fileDesc := range internal.FdSet.GetFile() {
 		// 打印关键文件信息
-		if strings.Contains(fileDesc.GetName(), "prototools/service/go/grpc") ||
-			strings.Contains(fileDesc.GetName(), "prototools/common") {
+		if strings.Contains(fileDesc.GetName(), "proto/service/go/grpc") ||
+			strings.Contains(fileDesc.GetName(), "proto/common") {
 			log.Printf("  描述符文件: %s，包含%d个消息类型",
 				fileDesc.GetName(), len(fileDesc.GetMessageType()))
 		}

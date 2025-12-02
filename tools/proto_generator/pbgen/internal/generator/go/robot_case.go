@@ -14,9 +14,9 @@ const handlerTotalTemplate = `package handler
 
 import (
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/prototools"
+	"google.golang.org/protobuf/proto"
 	"robot/generated/pb/game"
-	"robot/prototools/common"
+	"robot/proto/common"
 
 	"robot/logic/gameobject"
 	"robot/pkg"
@@ -48,7 +48,7 @@ func MessageBodyHandler(client *pkg.GameClient, response *common.MessageContent)
 {{- range .Cases }}
 func {{.HandlerFunction}}(player *gameobject.Player, body []byte) {
 	message := &{{.MessageType}}{}
-	if err := prototools.Unmarshal(body, message); err != nil {
+	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal {{.MessageType}}", zap.Error(err))
 		return
 	}
