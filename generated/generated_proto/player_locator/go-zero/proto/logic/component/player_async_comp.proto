@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "player_locator/proto/go-zero/proto/logic/component;component";
+option go_package = "player_locator/go-zero/proto/logic/component;component";
 
 
 

@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "chat/proto/proto/service/cpp/rpc/scene;scene";
+option go_package = "chat/proto/service/cpp/rpc/scene;scene";
 
 import "proto/service/go/grpc/db/proto_option.proto";
 import "google/protobuf/empty.proto";

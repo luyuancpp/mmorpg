@@ -1,4 +1,4 @@
 syntax = "proto3";
-option go_package = "chat/proto/go-zero/proto/logic/constants;constants";
+option go_package = "chat/go-zero/proto/logic/constants;constants";
 
 

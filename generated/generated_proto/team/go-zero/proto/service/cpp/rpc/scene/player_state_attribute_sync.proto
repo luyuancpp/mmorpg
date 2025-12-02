@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "team/proto/go-zero/proto/service/cpp/rpc/scene;scene";
+option go_package = "team/go-zero/proto/service/cpp/rpc/scene;scene";
 
 import "proto/service/go/grpc/db/proto_option.proto";
 import "proto/logic/component/actor_comp.proto";

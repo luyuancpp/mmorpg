@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "player_locator/proto/proto/service/go/grpc/db;db";
+option go_package = "player_locator/proto/service/go/grpc/db;db";
 package taskpb;
 
 

@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "login/proto/go-zero/proto/logic/component;component";
+option go_package = "login/go-zero/proto/logic/component;component";
 
 
 import "proto/logic/component/actor_comp.proto";

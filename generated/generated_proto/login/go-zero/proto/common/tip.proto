@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "login/proto/go-zero/proto/common;common";
+option go_package = "login/go-zero/proto/common;common";
 
 message TipInfoMessage
 {

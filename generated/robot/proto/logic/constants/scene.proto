@@ -1,4 +1,4 @@
 syntax = "proto3";
-option go_package = "robot/proto/logic/constants;constants";
+option go_package = "robot/logic/constants;constants";
 
 

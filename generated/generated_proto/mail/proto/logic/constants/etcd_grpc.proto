@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "mail/proto/proto/logic/constants;constants";
+option go_package = "mail/proto/logic/constants;constants";
 
 // 定义 gRPC 操作的枚举类型
 enum GrpcOperation {

@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "chat/proto/proto/common;common";
+option go_package = "chat/proto/common;common";
 
 message TipInfoMessage
 {
