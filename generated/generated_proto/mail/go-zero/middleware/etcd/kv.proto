@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "middleware/etcd/mail";
+option go_package = "middleware/etcd";
 package mvccpb;
 
 

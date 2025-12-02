@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "service/cpp/rpc/centre/team";
+option go_package = "service/cpp/rpc/centre";
 
 import "proto/service/go/grpc/db/proto_option.proto";
 import "proto/common/common.proto";

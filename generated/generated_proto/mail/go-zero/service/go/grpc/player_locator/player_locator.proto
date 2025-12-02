@@ -2,7 +2,7 @@ syntax = "proto3";
 
 
 
-option go_package = "service/go/grpc/player_locator/mail";
+option go_package = "service/go/grpc/player_locator";
 package playerlocator;
 
 import "proto/common/empty.proto";

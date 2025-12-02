@@ -1,4 +1,4 @@
 syntax = "proto3";
-option go_package = "logic/constants/mail";
+option go_package = "logic/constants";
 
 

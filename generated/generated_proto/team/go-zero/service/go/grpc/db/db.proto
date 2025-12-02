@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "service/go/grpc/db/team";
+option go_package = "service/go/grpc/db";
 
 import "proto/service/go/grpc/db/proto_option.proto";
 

@@ -5,7 +5,7 @@ import "proto/middleware/etcd/kv.proto";
 import "proto/middleware/etcd/version.proto";
 
 
-option go_package = "middleware/etcd/player_locator";
+option go_package = "middleware/etcd";
 package etcdserverpb;
 
 service KV {

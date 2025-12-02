@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "logic/component/chat";
+option go_package = "logic/component";
 
 
 import "proto/logic/component/actor_comp.proto";

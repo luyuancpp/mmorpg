@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "logic/database/mail";
+option go_package = "logic/database";
 
 import "proto/logic/database/mysql_database_table.proto";
 
