@@ -1,4 +1,4 @@
-package proto
+package prototools
 
 import (
 	"errors"

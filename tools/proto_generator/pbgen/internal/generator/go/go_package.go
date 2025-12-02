@@ -56,7 +56,7 @@ func GenGoPackageOptWithAdjustedPath(goPackagePath string) string {
 
 // AddGoPackage 为指定proto文件添加option go_package
 // protoFile: proto文件路径
-// goPackagePath: 要添加的go_package路径（例如："example/proto/db"）
+// goPackagePath: 要添加的go_package路径（例如："example/prototools/db"）
 // 返回值: 是否实际添加了（true=添加，false=已存在）
 func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 	// 读取文件内容

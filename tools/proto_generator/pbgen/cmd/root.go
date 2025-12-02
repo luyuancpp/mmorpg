@@ -11,7 +11,7 @@ import (
 	_config "pbgen/internal/config"
 	cpp2 "pbgen/internal/generator/cpp"
 	_go2 "pbgen/internal/generator/go"
-	"pbgen/internal/proto"
+	"pbgen/internal/prototools"
 	"sort"
 	"sync"
 	"time"
@@ -135,7 +135,7 @@ func main() {
 	MakeProjectDir()
 
 	var wg sync.WaitGroup
-	proto.CopyProtoToGenDir(&wg)
+	prototools.CopyProtoToGenDir(&wg)
 	waitWithTiming(&wg, "First wait (CopyProto)")
 
 	_go2.AddGoPackageToProtoDir(&wg)
@@ -146,7 +146,7 @@ func main() {
 	cpp2.ReadServiceIdFile(&wg)
 	waitWithTiming(&wg, "First wait (GenerateGameGrpc/ReadServiceIdFile)")
 
-	proto.GenerateAllInOneDescriptor(&wg)
+	prototools.GenerateAllInOneDescriptor(&wg)
 	waitWithTiming(&wg, "Second wait (GenerateAllInOneDescriptor)")
 
 	cpp2.ReadAllProtoFileServices(&wg)
