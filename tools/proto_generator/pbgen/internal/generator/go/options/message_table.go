@@ -2,6 +2,8 @@ package options
 
 import (
 	"fmt"
+	messageoption "github.com/luyuancpp/protooption"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"pbgen/internal/prototools"
@@ -13,9 +15,9 @@ func init() {
 
 			msg := desc.(protoreflect.MessageDescriptor)
 
-			value := prototools.GetExtension(
+			value := proto.GetExtension(
 				opts.(*descriptorpb.MessageOptions),
-				pb.E_OptionTableName,
+				messageoption.E_OptionTableName,
 			)
 
 			if value != nil {
