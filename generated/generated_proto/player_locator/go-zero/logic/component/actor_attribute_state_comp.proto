@@ -1,0 +1,22 @@
+syntax = "proto3";
+option go_package = "logic/component/player_locator";
+
+
+
+message CombatStateFlagsPbComponent {
+    map<uint32, bool> state_flags = 1; // 单独的属性同步映射
+}
+
+// 计算属性，服务器端计算
+message CalculatedAttributesPbComponent {
+    uint64 attack_power = 1;   // 攻击力
+    uint64 defense_power = 2;  // 防御力
+	bool isDead = 3; // 独立的生死状态
+}
+
+// 衍生属性，服务器端计算
+message DerivedAttributesPbComponent {
+    uint64 max_health = 1;     // 最大生命值
+}
+
+

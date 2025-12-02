@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+
+
+option go_package = "service/go/grpc/player_locator/login";
+package playerlocator;
+
+import "proto/common/empty.proto";
+
+// 玩家位置结构
+message PlayerLocation {
+  int64 uid = 1;
+  string server_id = 2;
+  bool online = 3;
+  bool migrating = 4;
+  int32 scene_id = 5;
+  string token = 6;
+  int64 ts = 7;
+}
+
+message PlayerId {
+  int64 uid = 1;
+}
+
+service PlayerLocator {
+  rpc SetLocation(PlayerLocation) returns (Empty);
+  rpc GetLocation(PlayerId) returns (PlayerLocation);
+  rpc MarkOffline(PlayerId) returns (Empty);
+}

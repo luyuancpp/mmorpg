@@ -1,0 +1,9 @@
+syntax = "proto3";
+option go_package = "logic/component/player_locator";
+
+
+
+message TeamId
+{
+  uint64 team_id = 1;
+}

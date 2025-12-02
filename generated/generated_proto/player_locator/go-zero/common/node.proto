@@ -1,0 +1,47 @@
+syntax = "proto3";
+option go_package = "common/player_locator";
+
+
+
+enum eNodeType {
+    DeployNodeService      = 0;  // 部署节点服务
+    DbNodeService          = 1;  // 数据库节点服务
+    CentreNodeService      = 2;  // 场景切换中心服务器服务
+    SceneNodeService       = 3;  // 场景服务器服务
+    GateNodeService        = 4;  // 网关节点服务
+    LoginNodeService       = 5;  // 登录服务器节点服务
+    RedisNodeService       = 6;  // Redis 节点服务
+    EtcdNodeService        = 7;  // etcd节点
+    MailNodeService        = 8;  // 邮件节点服务
+    ChatNodeService        = 9;  // 聊天节点服务
+    TeamNodeService        = 10; // 组队节点服务
+    ActivityNodeService    = 11; // 活动节点服务
+    TradeNodeService       = 12; // 玩家交易或拍卖行服务
+    RankNodeService        = 13; // 排行榜服务
+    TaskNodeService        = 14; // 任务系统服务
+    GuildNodeService       = 15; // 公会系统服务
+    MatchNodeService       = 16; // 匹配系统服务（如组队副本、PVP等）
+    AiNodeService          = 17; // AI/NPC 控制服务
+    LogNodeService         = 18; // 日志处理/收集服务
+    PaymentNodeService     = 19; // 支付或充值服务
+    SecurityNodeService    = 20; // 反作弊/安全验证服务
+    CrossServerNodeService = 21; // 跨服服务处理（如跨服战场）
+    AnalyticsNodeService   = 22; // 数据统计与分析服务
+    GmNodeService          = 23; // GM工具服务（客服/管理员指令）
+	PlayerLocatorNodeService		   = 24; // 跨服玩家定位服务
+};
+
+enum eSceneNodeType
+{
+	kMainSceneNode = 0;//主世界场景
+	kRoomNode = 1;//副本场景
+	kMainSceneCrossNode = 2;//跨服主世界场景
+	kRoomSceneCrossNode = 3;//跨服副本场景
+};
+
+// 定义节点协议类型的枚举
+enum eNodeProtocolType {
+  PROTOCOL_TCP = 0;
+  PROTOCOL_GRPC = 1;
+  PROTOCOL_HTTP = 2;
+}

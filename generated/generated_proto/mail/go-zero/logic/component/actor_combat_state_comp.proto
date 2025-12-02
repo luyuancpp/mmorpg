@@ -1,0 +1,19 @@
+syntax = "proto3";
+option go_package = "logic/component/mail";
+
+
+
+enum eCombatState
+{
+	kSilence = 0;
+}
+
+message CombatStateDetailsPbComponent 
+{
+    map<uint64, bool> sources = 1;
+}
+
+message CombatStateCollectionPbComponent 
+{
+    map<uint32, CombatStateDetailsPbComponent> states = 1;
+}
