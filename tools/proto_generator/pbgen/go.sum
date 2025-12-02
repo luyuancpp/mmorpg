@@ -12,6 +12,8 @@ github.com/luyuancpp/protooption v0.0.0-20251124032113-93477014abb4 h1:I+ZOClADw
 github.com/luyuancpp/protooption v0.0.0-20251124032113-93477014abb4/go.mod h1:uNz9kXwuEqmgeloQ96j+J0RNMLsDIKNN6sVNaxBZuWk=
 github.com/luyuancpp/protooption v0.0.0-20251124112450-56404e82b7ea h1:bJkkgFmk/8dmb29L1OLuIeL/nqB7bRJhlHVXC7OdfaE=
 github.com/luyuancpp/protooption v0.0.0-20251124112450-56404e82b7ea/go.mod h1:uNz9kXwuEqmgeloQ96j+J0RNMLsDIKNN6sVNaxBZuWk=
+github.com/luyuancpp/protooption v0.0.20 h1:lD94Vu/7RYVstjQSaIWVf99vrkYUCMwbcKP/FCjNDHs=
+github.com/luyuancpp/protooption v0.0.20/go.mod h1:uNz9kXwuEqmgeloQ96j+J0RNMLsDIKNN6sVNaxBZuWk=
 golang.org/x/text v0.31.0 h1:aC8ghyu4JhP8VojJ2lEHBnochRno1sgL6nEi9WGFGMM=
 golang.org/x/text v0.31.0/go.mod h1:tKRAlv61yKIjGGHX/4tP1LTbc13YSec1pxVEWXzfoeM=
 google.golang.org/protobuf v1.36.10 h1:AYd7cD/uASjIL6Q9LiTjz8JLcrh/88q5UObnmY3aOOE=
