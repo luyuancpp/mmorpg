@@ -155,7 +155,7 @@ func CopyCppOutputs(protoFiles []string, tempDir, destDir string) error {
 		}
 		protoRelDir := filepath.Dir(protoRelPath)
 
-		// 构建生成文件名（.prototools → .pb.h/.pb.cc）
+		// 构建生成文件名（.proto → .pb.h/.pb.cc）
 		protoFileName := filepath.Base(absProtoFile)
 		headerFile := strings.Replace(protoFileName, _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1)
 		cppFile := strings.Replace(protoFileName, _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbCc, 1)
