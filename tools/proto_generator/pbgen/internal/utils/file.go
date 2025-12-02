@@ -186,3 +186,39 @@ func IncludeName(path string, protoName string) string {
 	pbcHeadName := strings.Replace(protoName, _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1)
 	return _config.Global.Naming.IncludeBegin + strings.Replace(path, _config.Global.Paths.ProtoDir, "", 1) + pbcHeadName + "\"\n"
 }
+
+// GetBaseName 从文件路径中提取基础文件名（不含路径部分）
+// 例如：
+// - 输入 "/a/b/c.txt" → 返回 "c.txt"
+// - 输入 "d:/x/y/z.proto" → 返回 "z.proto"
+// - 输入 "/" → 返回 "/"
+// - 输入 "" 或 nil → 返回 "."
+func GetBaseName(fullPath string) string {
+	if fullPath == "" {
+		return "."
+	}
+
+	// 处理路径分隔符（同时兼容 / 和 \）
+	// 先将 \ 统一替换为 /，便于后续处理
+	path := strings.ReplaceAll(fullPath, "\\", "/")
+
+	// 按 / 分割路径
+	parts := strings.Split(path, "/")
+	var base string
+
+	// 从后往前找最后一个非空部分（处理 trailing / 的情况，如 "a/b/c/" → "c"）
+	for i := len(parts) - 1; i >= 0; i-- {
+		if parts[i] != "" {
+			base = parts[i]
+			break
+		}
+	}
+
+	// 边界情况处理
+	if base == "" {
+		// 全路径都是分隔符（如 "/" 或 "//"）
+		return "/"
+	}
+
+	return base
+}
