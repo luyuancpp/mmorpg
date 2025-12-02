@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "login/go-zero/proto/logic/event;event";
+option go_package = "logic/event/login";
 
 
 

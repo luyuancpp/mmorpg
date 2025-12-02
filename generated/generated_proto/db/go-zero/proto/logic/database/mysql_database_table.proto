@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "db/go-zero/proto/logic/database;database";
+option go_package = "logic/database/db";
 
 import "proto/service/go/grpc/db/proto_option.proto";
 import "proto/common/user_accounts.proto";

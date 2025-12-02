@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "robot/logic/component;component";
+option go_package = "robot/proto/logic/component;component";
 
 message PlayerSessionSnapshotPBComp {
     uint64 player_id = 1;

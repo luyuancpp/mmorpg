@@ -5,7 +5,7 @@ import "proto/middleware/etcd/kv.proto";
 import "proto/middleware/etcd/version.proto";
 
 
-option go_package = "chat/go-zero/proto/middleware/etcd;etcd";
+option go_package = "middleware/etcd/chat";
 package etcdserverpb;
 
 service KV {

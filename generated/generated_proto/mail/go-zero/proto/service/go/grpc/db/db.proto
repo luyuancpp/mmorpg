@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "mail/go-zero/proto/service/go/grpc/db;db";
+option go_package = "service/go/grpc/db/mail";
 
 import "proto/service/go/grpc/db/proto_option.proto";
 
