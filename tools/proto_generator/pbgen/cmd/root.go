@@ -184,46 +184,20 @@ func main() {
 	_cpp_option.BuildOption()
 	// 单独跟踪每个耗时任务
 
-	// 逐个跟踪任务
-	trackTaskTime("WriteServiceRegisterInfoFile", func(wg *sync.WaitGroup) {
-		cpp2.WriteServiceRegisterInfoFile(wg)
-	})
-
-	trackTaskTime("GenerateDBResource", func(wg *sync.WaitGroup) {
-		_go2.GenerateDBResource(wg)
-	})
-
-	trackTaskTime("GoRobotHandlerGenerator", func(wg *sync.WaitGroup) {
-		_go2.GoRobotHandlerGenerator(wg)
-	})
-
-	trackTaskTime("GoRobotTotalHandlerGenerator", func(wg *sync.WaitGroup) {
-		_go2.GoRobotTotalHandlerGenerator(wg)
-	})
-
-	trackTaskTime("CppPlayerDataLoadGenerator", func(wg *sync.WaitGroup) {
-		cpp2.CppPlayerDataLoadGenerator(wg)
-	})
-
-	trackTaskTime("CppGrpcCallClient", func(wg *sync.WaitGroup) {
-		cpp2.CppGrpcCallClient(wg)
-	})
-
 	// 或者如果你想并行执行这些任务并整体等待：
-	/*
-		cpp2.WriteServiceRegisterInfoFile(&finalWg)
-		_go2.GenerateDBResource(&finalWg)
-		_go2.GoRobotHandlerGenerator(&finalWg)
-		_go2.GoRobotTotalHandlerGenerator(&finalWg)
-		cpp2.CppPlayerDataLoadGenerator(&finalWg)
-		cpp2.CppGrpcCallClient(&finalWg)
 
-		// 跟踪整体等待时间
-		startFinal := time.Now()
-		finalWg.Wait()
-		elapsedFinal := time.Since(startFinal)
-		log.Printf("Final tasks total wait time: %s", elapsedFinal)
-	*/
+	cpp2.WriteServiceRegisterInfoFile(&wg)
+	_go2.GenerateDBResource(&wg)
+	_go2.GoRobotHandlerGenerator(&wg)
+	_go2.GoRobotTotalHandlerGenerator(&wg)
+	cpp2.CppPlayerDataLoadGenerator(&wg)
+	cpp2.CppGrpcCallClient(&wg)
+
+	// 跟踪整体等待时间
+	startFinal := time.Now()
+	wg.Wait()
+	elapsedFinal := time.Since(startFinal)
+	log.Printf("Final tasks total wait time: %s", elapsedFinal)
 
 	// 打印所有统计信息
 	printStats()
