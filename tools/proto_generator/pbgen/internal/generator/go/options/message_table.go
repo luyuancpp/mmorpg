@@ -4,7 +4,6 @@ import (
 	"fmt"
 	messageoption "github.com/luyuancpp/protooption"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"pbgen/internal/prototools/option"
 )
@@ -13,7 +12,8 @@ func BuildOption() {
 	prototools.RegisterOptionCallback(prototools.OptionTypeMessage,
 		func(desc interface{}, opts interface{}) error {
 
-			msg := desc.(protoreflect.MessageDescriptor)
+			// 这里 desc 是 *descriptorpb.DescriptorProto
+			msg := desc.(*descriptorpb.DescriptorProto)
 
 			value := proto.GetExtension(
 				opts.(*descriptorpb.MessageOptions),
@@ -21,7 +21,7 @@ func BuildOption() {
 			)
 
 			if value != nil {
-				fmt.Println("[CPP] Message:", msg.Name(), "TableName:", value)
+				fmt.Println("[CPP] Message:", msg.GetName(), "TableName:", value)
 			}
 
 			return nil
