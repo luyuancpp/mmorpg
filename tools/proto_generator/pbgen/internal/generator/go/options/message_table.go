@@ -6,10 +6,10 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
-	"pbgen/internal/prototools"
+	"pbgen/internal/prototools/option"
 )
 
-func init() {
+func BuildOption() {
 	prototools.RegisterOptionCallback(prototools.OptionTypeMessage,
 		func(desc interface{}, opts interface{}) error {
 

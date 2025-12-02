@@ -10,7 +10,9 @@ import (
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	cpp2 "pbgen/internal/generator/cpp"
+	_go_option "pbgen/internal/generator/cpp/options"
 	_go2 "pbgen/internal/generator/go"
+	_cpp_option "pbgen/internal/generator/go/options"
 	"pbgen/internal/prototools"
 	"sort"
 	"sync"
@@ -178,6 +180,8 @@ func main() {
 	internal.WriteGoMessageId(&wg)
 	waitWithTiming(&wg, "Eleventh wait (WriteGoMessageId)")
 
+	_go_option.BuildOption()
+	_cpp_option.BuildOption()
 	// 单独跟踪每个耗时任务
 
 	// 逐个跟踪任务
