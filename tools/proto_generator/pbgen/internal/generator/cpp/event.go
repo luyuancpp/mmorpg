@@ -15,7 +15,7 @@ import (
 	"sync"
 )
 
-// generateClassNameFromFile 从 prototools 文件名生成 C++ 类名（下划线转为大写驼峰），加后缀
+// generateClassNameFromFile 从 proto 文件名生成 C++ 类名（下划线转为大写驼峰），加后缀
 func generateClassNameFromFile(file os.DirEntry, suffix string) string {
 	baseName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 	parts := strings.Split(baseName, "_")
@@ -33,7 +33,7 @@ func generateClassNameFromFile(file os.DirEntry, suffix string) string {
 	return strings.Join(classParts, "") + suffix
 }
 
-// parseProtoMessages 提取 prototools 文件中的所有 message 名称
+// parseProtoMessages 提取 proto 文件中的所有 message 名称
 func parseProtoMessages(protoFilePath string) ([]string, error) {
 	file, err := os.Open(protoFilePath)
 	if err != nil {
@@ -148,14 +148,14 @@ type EventTemplateData struct {
 	UserCodeBlocks      map[string]string
 }
 
-// generateEventHandlerFiles 使用模板生成每个 prototools 对应的 .h 和 .cpp 文件
+// generateEventHandlerFiles 使用模板生成每个 proto 对应的 .h 和 .cpp 文件
 func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir string) {
 	defer wg.Done()
 
 	protoFilePath := global_value.ProtoDirs[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex] + file.Name()
 	eventMessages, err := parseProtoMessages(protoFilePath)
 	if err != nil {
-		log.Printf("failed to parse prototools: %v\n", err)
+		log.Printf("failed to parse proto: %v\n", err)
 		return
 	}
 
@@ -256,7 +256,7 @@ public:
 	// Prepare the dynamic data
 	var cppIncludeData, registerData, unRegisterData string
 	for _, protoFile := range protoFiles {
-		// Only process valid prototools files
+		// Only process valid proto files
 		if !strings.HasSuffix(protoFile.Name(), _config.Global.FileExtensions.Proto) {
 			continue
 		}

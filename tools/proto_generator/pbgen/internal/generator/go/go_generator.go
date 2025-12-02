@@ -238,7 +238,7 @@ func AddGoZeroPackageToProtos(rootDir, baseGoPackage, currentDir string, isMulti
 			if err := AddGoZeroPackageToProtos(rootDir, baseGoPackage, fullPath, isMulti); err != nil {
 				return err
 			}
-		} else if filepath.Ext(fullPath) == ".prototools" {
+		} else if filepath.Ext(fullPath) == ".proto" {
 			// 处理Proto文件
 			if err := processProtoFileForGoPackage(rootDir, baseGoPackage, fullPath, isMulti, true); err != nil {
 				return err

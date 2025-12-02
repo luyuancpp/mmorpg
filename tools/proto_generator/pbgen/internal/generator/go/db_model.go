@@ -32,7 +32,7 @@ func extractMessageNamesFromProto(protoFile string) ([]string, error) {
 
 	for _, fileDesc := range internal.FdSet.GetFile() {
 		// 修复：用 strings.HasSuffix 可能匹配到同名文件，建议用绝对路径或精确匹配
-		// 例如：若 protoFile 是 "mysql_database_table.prototools"，精确匹配文件名
+		// 例如：若 protoFile 是 "mysql_database_table.proto"，精确匹配文件名
 		fileName := filepath.Base(fileDesc.GetName())
 		if fileName != protoFile {
 			continue
