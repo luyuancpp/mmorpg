@@ -353,7 +353,7 @@ func generateGameGrpcGo(wg *sync.WaitGroup, protoFiles []string) {
 		go func(nodeName string) {
 			defer wg.Done()
 
-			nodeOutputDir := filepath.Join(_config.Global.Paths.NodeGoDir, nodeName)
+			nodeOutputDir := filepath.Join(_config.Global.Paths.NodeGoDir, nodeName, _config.Global.DirectoryNames.ProtoDirName)
 			nodeOutputDir, err := utils2.ResolveAbsPath(nodeOutputDir, "节点game_rpc代码目录")
 			if err != nil {
 				log.Fatalf("解析节点game_rpc代码目录: %w", err)
