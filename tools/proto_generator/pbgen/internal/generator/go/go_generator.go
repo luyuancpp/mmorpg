@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	_config "pbgen/internal/config"
-	"pbgen/internal/proto"
+	"pbgen/internal/prototools"
 	utils2 "pbgen/internal/utils"
 	"sync"
 )
@@ -209,7 +209,7 @@ func addDynamicGoPackage(rootDir, baseGoPackage, currentDir string, isMulti bool
 			if err := addDynamicGoPackage(rootDir, baseGoPackage, fullPath, isMulti); err != nil {
 				return err
 			}
-		} else if filepath.Ext(fullPath) == ".proto" {
+		} else if filepath.Ext(fullPath) == ".prototools" {
 			// 处理Proto文件
 			if err := processProtoFileForGoPackage(rootDir, baseGoPackage, fullPath, isMulti, false); err != nil {
 				return err
@@ -238,7 +238,7 @@ func AddGoZeroPackageToProtos(rootDir, baseGoPackage, currentDir string, isMulti
 			if err := AddGoZeroPackageToProtos(rootDir, baseGoPackage, fullPath, isMulti); err != nil {
 				return err
 			}
-		} else if filepath.Ext(fullPath) == ".proto" {
+		} else if filepath.Ext(fullPath) == ".prototools" {
 			// 处理Proto文件
 			if err := processProtoFileForGoPackage(rootDir, baseGoPackage, fullPath, isMulti, true); err != nil {
 				return err
@@ -394,7 +394,7 @@ func generateGameGrpcGo(wg *sync.WaitGroup, protoFiles []string) {
 // generateGameGrpcImpl 游戏GRPC生成核心逻辑
 func generateGameGrpcImpl(wg *sync.WaitGroup) error {
 	// 1. 解析游戏Proto文件路径
-	gameProtoPath, err := proto.ResolveGameProtoPath()
+	gameProtoPath, err := prototools.ResolveGameProtoPath()
 	if err != nil {
 		log.Fatalf("解析Proto路径失败: %w", err)
 	}
