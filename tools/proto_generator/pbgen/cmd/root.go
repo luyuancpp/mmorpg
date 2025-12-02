@@ -200,11 +200,8 @@ func main() {
 	elapsedFinal := time.Since(startFinal)
 	log.Printf("Final tasks total wait time: %s", elapsedFinal)
 
-	err = proto_tools_option.ProcessAllOptions(&wg, internal.FdSet)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	proto_tools_option.ProcessAllOptions(&wg, internal.FdSet)
+	wg.Wait()
 
 	// 打印所有统计信息
 	printStats()

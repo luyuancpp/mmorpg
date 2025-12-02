@@ -1,7 +1,7 @@
 package prototools
 
 import (
-	"fmt"
+	"log"
 	"sync"
 )
 
@@ -35,7 +35,7 @@ func RegisterOptionCallback(t OptionType, cb OptionCallback) {
 }
 
 // dispatchOption 执行所有回调（并发）
-func dispatchOption(t OptionType, desc interface{}, opts interface{}, wg *sync.WaitGroup, errCh chan error) {
+func dispatchOption(t OptionType, desc interface{}, opts interface{}, wg *sync.WaitGroup) {
 
 	regMu.RLock()
 	cbs := registry[t]
@@ -48,12 +48,12 @@ func dispatchOption(t OptionType, desc interface{}, opts interface{}, wg *sync.W
 
 			defer func() {
 				if r := recover(); r != nil {
-					errCh <- fmt.Errorf("panic in option callback: %v", r)
+					log.Fatal("panic in option callback: %v", r)
 				}
 			}()
 
 			if err := fn(desc, opts); err != nil {
-				errCh <- err
+				log.Fatal(err)
 			}
 
 		}(cb)
