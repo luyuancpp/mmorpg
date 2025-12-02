@@ -47,13 +47,8 @@ func GenGoPackageOptWithAdjustedPath(goPackagePath string) string {
 		return fmt.Sprintf("option go_package = \"%s\";", goPackagePath)
 	}
 
-	newLastPart := parts[0]
-	// 规范化新的最后一段
-	newLastPart = strings.ReplaceAll(newLastPart, "-", "_")
-	newLastPart = strings.ReplaceAll(newLastPart, ".", "_")
-
 	// 拼接新路径（remainingParts + 新的最后一段）
-	fullParts := append(remainingParts, newLastPart)
+	fullParts := remainingParts
 	newPath := strings.Join(fullParts, "/")
 
 	return fmt.Sprintf("option go_package = \"%s\";", newPath)
