@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -14,6 +16,7 @@ import (
 	_go2 "pbgen/internal/generator/go"
 	_cpp_option "pbgen/internal/generator/go/options"
 	"pbgen/internal/prototools"
+	proto_tools_option "pbgen/internal/prototools/option"
 	"sort"
 	"sync"
 	"time"
@@ -198,6 +201,12 @@ func main() {
 	wg.Wait()
 	elapsedFinal := time.Since(startFinal)
 	log.Printf("Final tasks total wait time: %s", elapsedFinal)
+
+	err = proto_tools_option.ProcessAllOptions(&wg, protoFiles)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 
 	// 打印所有统计信息
 	printStats()

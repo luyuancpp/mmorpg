@@ -2,17 +2,13 @@ package prototools
 
 import (
 	"fmt"
-	messageoption "github.com/luyuancpp/protooption"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"sync"
 )
 
 // ProcessAllOptions 开始处理所有 option
-func ProcessAllOptions(files []protoreflect.FileDescriptor) error {
+func ProcessAllOptions(wg *sync.WaitGroup, files []protoreflect.FileDescriptor) error {
 
-	var wg sync.WaitGroup
 	errCh := make(chan error, 64)
 
 	for _, f := range files {
@@ -21,7 +17,7 @@ func ProcessAllOptions(files []protoreflect.FileDescriptor) error {
 		// File Options
 		// ----------------------
 		if opts := f.Options(); opts != nil {
-			dispatchOption(OptionTypeFile, f, opts, &wg, errCh)
+			dispatchOption(OptionTypeFile, f, opts, wg, errCh)
 		}
 
 		// ----------------------
@@ -30,14 +26,14 @@ func ProcessAllOptions(files []protoreflect.FileDescriptor) error {
 		for i := 0; i < f.Services().Len(); i++ {
 			s := f.Services().Get(i)
 			if opts := s.Options(); opts != nil {
-				dispatchOption(OptionTypeService, s, opts, &wg, errCh)
+				dispatchOption(OptionTypeService, s, opts, wg, errCh)
 			}
 
 			// Method
 			for j := 0; j < s.Methods().Len(); j++ {
 				m := s.Methods().Get(j)
 				if opts := m.Options(); opts != nil {
-					dispatchOption(OptionTypeMethod, m, opts, &wg, errCh)
+					dispatchOption(OptionTypeMethod, m, opts, wg, errCh)
 				}
 			}
 		}
@@ -47,7 +43,7 @@ func ProcessAllOptions(files []protoreflect.FileDescriptor) error {
 		// ----------------------
 		for i := 0; i < f.Messages().Len(); i++ {
 			msg := f.Messages().Get(i)
-			processMessageRecursive(msg, &wg, errCh)
+			processMessageRecursive(msg, wg, errCh)
 		}
 	}
 
@@ -82,32 +78,4 @@ func processMessageRecursive(msg protoreflect.MessageDescriptor, wg *sync.WaitGr
 	for i := 0; i < msg.Messages().Len(); i++ {
 		processMessageRecursive(msg.Messages().Get(i), wg, errCh)
 	}
-}
-
-func init() {
-	RegisterOptionCallback(OptionTypeMessage, func(desc interface{}, opts interface{}) error {
-		msg := desc.(protoreflect.MessageDescriptor)
-
-		ext := proto.GetExtension(opts.(*descriptorpb.MessageOptions),
-			messageoption.E_OptionTableName)
-
-		if ext != nil {
-			fmt.Println("Message", msg.Name(), "TableName=", ext.(string))
-		}
-
-		return nil
-	})
-
-	RegisterOptionCallback(OptionTypeField, func(desc interface{}, opts interface{}) error {
-		fd := desc.(protoreflect.FieldDescriptor)
-
-		ext := proto.GetExtension(opts.(*descriptorpb.FieldOptions),
-			messageoption.E_OptionPrimaryKey)
-
-		if ext != nil {
-			fmt.Println("Field", fd.Name(), "PrimaryKey=", ext.(string))
-		}
-
-		return nil
-	})
 }
