@@ -115,7 +115,7 @@ type Paths struct {
 
 // FileExtensions 文件扩展名配置（仅存放文件后缀/扩展名）
 type FileExtensions struct {
-	Proto             string `yaml:"prototools"`
+	Proto             string `yaml:"proto"`
 	PbCc              string `yaml:"pb_cc"`
 	PbH               string `yaml:"pb_h"`
 	GrpcPbCc          string `yaml:"grpc_pb_cc"`
@@ -656,7 +656,7 @@ func setDefaults() {
 		Global.DirectoryNames.ServiceInfoName = "service_metadata/"
 	}
 	if Global.DirectoryNames.ProtoDirName == "" {
-		Global.DirectoryNames.ProtoDirName = "prototools/"
+		Global.DirectoryNames.ProtoDirName = "proto/"
 	}
 	if Global.DirectoryNames.GoZeroProtoDirName == "" {
 		Global.DirectoryNames.GoZeroProtoDirName = "go-zero_proto/"
@@ -673,7 +673,7 @@ func setDefaults() {
 		// 使用DirectoryNames中的目录名配置（修改）
 		protoDirName := Global.DirectoryNames.ProtoDirName
 		if protoDirName == "" {
-			protoDirName = "prototools/"
+			protoDirName = "proto/"
 		}
 
 		goZeroProtoDirName := Global.DirectoryNames.GoZeroProtoDirName
@@ -968,7 +968,7 @@ func (c *Config) GetIncludePaths() []string {
 func (c *Config) GetRobotOutputDirs() map[string]string {
 	return map[string]string{
 		"generated":        c.Paths.RobotGenerated,
-		"prototools":       c.Paths.RobotProto,
+		"proto":            c.Paths.RobotProto,
 		"generated_proto":  c.Paths.RobotGeneratedProto,
 		"go_gen":           c.Paths.RobotGoGenDir,
 		"game_pb":          c.Paths.RobotGoGamePbDir,

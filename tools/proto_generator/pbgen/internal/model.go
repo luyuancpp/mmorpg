@@ -164,7 +164,7 @@ func (info *RPCServiceInfo) ProtoPathWithFileBaseName() string {
 
 func (info *RPCServiceInfo) LogicalPath() string {
 	fullPath := info.ProtoPathWithFileBaseName()
-	return strings.TrimPrefix(fullPath, "prototools/")
+	return strings.TrimPrefix(fullPath, "proto/")
 }
 
 func (info *RPCServiceInfo) GrpcIncludeHeadName() string {

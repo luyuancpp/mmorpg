@@ -4,7 +4,7 @@
 paths:
   # 项目根目录及基础路径
   output_root: "../../../"
-  proto_dir: "{{output_root}}prototools/"
+  proto_dir: "{{output_root}}proto/"
   proto_parent_include_path: "{{output_root}}"
   third_party_dir: "third_party/"
   grpc_dir: "{{output_root}}{{third_party_dir}}grpc/"
@@ -22,8 +22,8 @@ paths:
   gate_node_dir: "{{node_cpp_dir}}nodes/gate/"
   robot: "tools/robot/"
   robot_generated: "{{output_root}}generated/robot/"
-  robot_proto: "{{robot_generated}}prototools/"  # robot专用proto源目录
-  robot_generated_proto: "{{robot_generated}}/prototools/"  # robot生成的proto目录
+  robot_proto: "{{robot_generated}}proto/"  # robot专用proto源目录
+  robot_generated_proto: "{{robot_generated}}/proto/"  # robot生成的proto目录
   generated_dir: "cpp/generated/"
 
   # 工具与临时目录
@@ -40,7 +40,7 @@ paths:
   proto_buf_c_proto_output_no_suffix_dir: "{{output_root}}{{generated_dir}}"
   generated_output_dir: "{{output_root}}{{generated_dir}}"
   grpc_output_dir: "{{output_root}}{{generated_dir}}"
-  grpc_proto_output_dir: "{{output_root}}{{generated_dir}}prototools/"
+  grpc_proto_output_dir: "{{output_root}}{{generated_dir}}proto/"
   robot_go_output_dir: "{{output_root}}{{robot}}"
   robot_generated_output_dir: "{{output_root}}{{robot}}generated/"
   robot_go_game_pb_dir: "{{robot_generated_output_dir}}pb/game"
@@ -84,17 +84,17 @@ paths:
 directory_names:
   generated_rpc_name: "rpc/"               # RPC生成目录名
   service_info_name: "service_metadata/"   # 服务元数据目录名
-  proto_dir_name: "prototools/"                 # Proto目录名
+  proto_dir_name: "proto/"                 # Proto目录名
   go_zero_proto_dir_name: "go-zero/" # Go-zero Proto目录名
   robot_proto_name: "{{robot_proto}}"      # Robot Proto目录名常量
   robot_go_zero_proto_name: "{{robot_go_zero_proto}}" # Robot Go-zero Proto目录名常量
   model_dir_name: "model/"                 # 模型目录名
   service_include_dir: "rpc/"              # 服务导入目录名
-  normal_go_proto: "prototools/"                 # 新增：普通Go代码目录名（不含斜杠，路径拼接时统一添加）
+  normal_go_proto: "proto/"                 # 新增：普通Go代码目录名（不含斜杠，路径拼接时统一添加）
 
 # 文件扩展名配置（仅存放文件后缀/扩展名）
 file_extensions:
-  proto: ".prototools"
+  proto: ".proto"
   pb_cc: ".pb.cc"
   pb_h: ".pb.h"
   grpc_pb_cc: ".grpc.pb.cc"
@@ -137,11 +137,11 @@ naming:
   player_replied_service: "player_rpc_response_handler.cpp"
   complete_queue: "CompleteQueue"
   database_prefix: "db"
-  db_proto_file: "db_base.prototools"
-  db_table_file: "mysql_database_table.prototools"
+  db_proto_file: "db_base.proto"
+  db_table_file: "mysql_database_table.proto"
   db_table_list_json: "mysql_database_table_list.json"
-  game_rpc_proto: "game_rpc.prototools"
-  robot_rpc_proto: "robot_rpc.prototools"  # robot专用rpc proto文件名
+  game_rpc_proto: "game_rpc.proto"
+  robot_rpc_proto: "robot_rpc.proto"  # robot专用rpc proto文件名
   grpc_name: "grpc"
 
   # 原有配置中的命名常量
@@ -274,13 +274,13 @@ mappings:
 # Proto解析器配置
 parser:
   include_paths:
-    - "../../prototools/common"
-    - "../../prototools/service"
+    - "../../proto/common"
+    - "../../proto/service"
     - "../../{{robot_proto}}"  # 添加robot proto到include路径
   ignore_files:
-    - "test_*.prototools"
-    - "deprecated_*.prototools"
-    - "{{robot_proto}}test_*.prototools"  # 忽略robot测试proto
+    - "test_*.proto"
+    - "deprecated_*.proto"
+    - "{{robot_proto}}test_*.proto"  # 忽略robot测试proto
 
 # 日志配置
 log:

@@ -176,7 +176,7 @@ func GetLastTwoDirs(path string) string {
 }
 
 func IsProtoFile(fd os.DirEntry) bool {
-	if fd.IsDir() || filepath.Ext(fd.Name()) != ".prototools" {
+	if fd.IsDir() || filepath.Ext(fd.Name()) != ".proto" {
 		return false
 	}
 	return true
@@ -190,7 +190,7 @@ func IncludeName(path string, protoName string) string {
 // GetBaseName 从文件路径中提取基础文件名（不含路径部分）
 // 例如：
 // - 输入 "/a/b/c.txt" → 返回 "c.txt"
-// - 输入 "d:/x/y/z.prototools" → 返回 "z.prototools"
+// - 输入 "d:/x/y/z.proto" → 返回 "z.proto"
 // - 输入 "/" → 返回 "/"
 // - 输入 "" 或 nil → 返回 "."
 func GetBaseName(fullPath string) string {

@@ -82,7 +82,7 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 {{ $root := . }}
 
 #include "{{.GeneratorGrpcFileName}}.h"
-#include "prototools/logic/constants/etcd_grpc.pb.h"
+#include "proto/logic/constants/etcd_grpc.pb.h"
 #include "core/utils/encode/base64.h"
 #include <boost/pool/object_pool.hpp>
 #include "grpc_call_tag.h"
