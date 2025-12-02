@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"google.golang.org/protobuf/reflect/protodesc"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -202,7 +200,7 @@ func main() {
 	elapsedFinal := time.Since(startFinal)
 	log.Printf("Final tasks total wait time: %s", elapsedFinal)
 
-	err = proto_tools_option.ProcessAllOptions(&wg, protoFiles)
+	err = proto_tools_option.ProcessAllOptions(&wg, internal.FdSet)
 	if err != nil {
 		log.Fatal(err)
 		return
