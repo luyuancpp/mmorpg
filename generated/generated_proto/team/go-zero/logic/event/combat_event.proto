@@ -1,0 +1,10 @@
+syntax = "proto3";
+option go_package = "logic/event/team";
+
+
+
+message BeKillEvent 
+{
+  uint64 caster = 1;
+  uint64 target = 2;
+}

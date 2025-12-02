@@ -1,0 +1,14 @@
+syntax = "proto3";
+option go_package = "common/player_locator";
+
+
+
+message AccountSimplePlayer
+{
+  uint64 player_id = 1;
+}
+
+message AccountSimplePlayerList
+{
+  repeated AccountSimplePlayer players = 1;
+}
