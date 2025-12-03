@@ -6,19 +6,6 @@ import (
 	"strings"
 )
 
-func IsPathInOtherProtoDirs(path string, selfIndex int) bool {
-	for i, dirName := range _config.Global.PathLists.ProtoDirectories {
-		if i == selfIndex {
-			// 跳过自己目录
-			continue
-		}
-		if strings.Contains(path, dirName) {
-			return true
-		}
-	}
-	return false
-}
-
 // GetGrpcLanguageFromPath 从给定路径中提取gRPC语言名称
 // 如果路径中不包含任何支持的gRPC语言，则返回空字符串
 func GetGrpcLanguageFromPath(protoPath string) string {
@@ -46,11 +33,6 @@ func HasGrpcService(protoPath string) bool {
 func HasEtcdService(protoPath string) bool {
 	// 利用提取语言的函数来判断是否存在gRPC服务
 	return strings.Contains(protoPath, _config.Global.PathLists.ProtoDirectories[_config.Global.PathLists.ProtoDirectoryIndexes.EtcdProtoDirIndex])
-}
-
-func CheckEtcdServiceExistence(protoPath string) bool {
-	basePath := strings.ToLower(protoPath)
-	return strings.Contains(basePath, "middleware/etcd/")
 }
 
 func BuildModelPath(protoPath string) string {

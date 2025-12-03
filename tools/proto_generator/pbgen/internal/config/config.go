@@ -406,27 +406,27 @@ func collectStructVariables(val reflect.Value, vars map[string]string) {
 // replaceVariablesInAllStructs 替换所有结构体中的变量
 func replaceVariablesInAllStructs(vars map[string]string) error {
 	// 替换Paths中的变量
-	if err := replaceVariablesInStruct(reflect.ValueOf(&Global.Paths).Elem(), vars); err != nil {
+	if err := replacePlaceholderInStruct(reflect.ValueOf(&Global.Paths).Elem(), vars); err != nil {
 		return err
 	}
 
 	// 替换DirectoryNames中的变量（新增）
-	if err := replaceVariablesInStruct(reflect.ValueOf(&Global.DirectoryNames).Elem(), vars); err != nil {
+	if err := replacePlaceholderInStruct(reflect.ValueOf(&Global.DirectoryNames).Elem(), vars); err != nil {
 		return err
 	}
 
 	// 替换FileExtensions中的变量
-	if err := replaceVariablesInStruct(reflect.ValueOf(&Global.FileExtensions).Elem(), vars); err != nil {
+	if err := replacePlaceholderInStruct(reflect.ValueOf(&Global.FileExtensions).Elem(), vars); err != nil {
 		return err
 	}
 
 	// 替换Naming中的变量
-	if err := replaceVariablesInStruct(reflect.ValueOf(&Global.Naming).Elem(), vars); err != nil {
+	if err := replacePlaceholderInStruct(reflect.ValueOf(&Global.Naming).Elem(), vars); err != nil {
 		return err
 	}
 
 	// 替换MethodHandlerDirectories中的变量
-	if err := replaceVariablesInStruct(reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem(), vars); err != nil {
+	if err := replacePlaceholderInStruct(reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem(), vars); err != nil {
 		return err
 	}
 
@@ -450,8 +450,8 @@ func replaceVariablesInAllSlices(vars map[string]string) error {
 	return nil
 }
 
-// replaceVariablesInStruct 替换结构体中的变量
-func replaceVariablesInStruct(val reflect.Value, vars map[string]string) error {
+// replacePlaceholderInStruct 替换结构体中的变量
+func replacePlaceholderInStruct(val reflect.Value, vars map[string]string) error {
 	valType := val.Type()
 	maxIterations := 10 // 防止无限循环
 
