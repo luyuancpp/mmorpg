@@ -162,17 +162,18 @@ func printStats() {
 }
 
 func main() {
-	if err := _config.Load(); err != nil {
-		log.Fatalf("配置初始化失败: %v", err)
-	}
-
-	log.Printf("配置加载成功，proto根目录: %s", _config.Global.Paths.OutputRoot)
 
 	start := time.Now()
 
 	go func() {
 		log.Println(http.ListenAndServe("localhost:11111", nil))
 	}()
+
+	if err := _config.Load(); err != nil {
+		log.Fatalf("配置初始化失败: %v", err)
+	}
+
+	log.Printf("配置加载成功，proto根目录: %s", _config.Global.Paths.OutputRoot)
 
 	dir, err := os.Getwd()
 	if err != nil {
@@ -280,4 +281,6 @@ func main() {
 
 	// 打印总耗时
 	log.Printf("\nTotal execution time: %s\n", time.Since(start))
+
+	select {} // 无case的select会一直阻塞
 }
