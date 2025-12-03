@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+enum entity_error {
+
+  kEntity_errorOK = 0;
+
+  kEntityTransformNotFound = 124;
+
+};

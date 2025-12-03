@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+message ItemTable {
+	uint32 id = 1;
+	uint32 max_statck_size = 2;
+}
+
+message ItemTableData {
+	repeated ItemTable data = 1;
+}

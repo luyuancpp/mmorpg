@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+enum login_error {
+
+  kLogin_errorOK = 0;
+
+  kLoginAccountNotFound = 20;
+
+  kLoginAccountPlayerFull = 21;
+
+  kLoginCreatePlayerUnLoadAccount = 22;
+
+  kLoginCreatePlayerConnectionHasNotAccount = 23;
+
+  kLoginUnLogin = 24;
+
+  kLoginInProgress = 25;
+
+  kLoginPlayerGuidError = 26;
+
+  kLoginEnteringGame = 27;
+
+  kLoginPlaying = 28;
+
+  kLoginCreatingPlayer = 29;
+
+  kLoginWaitingEnterGame = 30;
+
+  kLoginEnterGameGuid = 31;
+
+  kLoginAccountNameEmpty = 32;
+
+  kLoginCreateConnectionAccountEmpty = 33;
+
+  kLoginEnterGameConnectionAccountEmpty = 34;
+
+  kLoginUnknownError = 35;
+
+  kLoginSessionDisconnect = 36;
+
+  kLoginBeKickByAnOtherAccount = 37;
+
+  kLoginSessionIdNotFound = 38;
+
+  kLoginFsmFailed = 39;
+
+  kLoginDataSerializeFailed = 40;
+
+  kLoginRedisError = 41;
+
+  kLoginDataParseFailed = 42;
+
+  kLoginRedisSetFailed = 43;
+
+  kTooManyDevices = 44;
+
+  kLoginFSMLoadFailed = 45;
+
+  kLoginFSMEventFailed = 46;
+
+  kLoginAccountDataLoadFaile = 47;
+
+  kLoginSessionNotFound = 48;
+
+  kLoginAccountDataLoadFailed = 49;
+
+  kLoginFsmInvalidEvent = 50;
+
+  kLoginTimeout = 129;
+
+};

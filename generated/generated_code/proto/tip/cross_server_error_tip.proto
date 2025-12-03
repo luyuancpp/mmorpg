@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+enum cross_server_error {
+
+  kCross_server_errorOK = 0;
+
+  kSceneTransferInProgress = 128;
+
+};

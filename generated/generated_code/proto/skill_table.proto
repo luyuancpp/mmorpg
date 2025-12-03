@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+message Skillrequireditem {
+	uint32 requireditem_type = 1;
+	uint64 requireditem_value = 2;
+}
+
+message Skillrequiredresource {
+	uint32 requiredresource_type = 1;
+	uint32 requiredresource_value = 2;
+}
+
+message Skillrequestresource {
+	uint32 requestresource_id = 1;
+	uint32 requestresource_cost = 2;
+}
+
+message SkillTable {
+	uint32 id = 1;
+	repeated uint32 skill_type = 2;
+	repeated uint32 targeting_mode = 3;
+	uint32 rquest_target = 4;
+	uint32 target_status = 5;
+	double castpoint = 6;
+	double recoverytime = 7;
+	uint32 immediately = 8;
+	repeated Skillrequireditem requireditem = 9;
+	repeated Skillrequiredresource requiredresource = 10;
+	repeated uint32 effect = 11;
+	uint32 channelthink = 12;
+	uint32 channelfinish = 13;
+	uint32 thinkinterval = 14;
+	uint32 channeltime = 15;
+	repeated Skillrequestresource requestresource = 16;
+	double range = 17;
+	double max_range = 18;
+	double min_range = 19;
+	uint32 self_status = 20;
+	uint32 required_status = 21;
+	uint32 cooldown_id = 22;
+	string damage = 23;
+}
+
+message SkillTableData {
+	repeated SkillTable data = 1;
+}

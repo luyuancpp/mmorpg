@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+message MessageLimiterTable {
+	uint32 id = 1;
+	uint32 MaxRequests = 2;
+	uint32 TimeWindow = 3;
+	uint32 TipMessage = 4;
+}
+
+message MessageLimiterTableData {
+	repeated MessageLimiterTable data = 1;
+}

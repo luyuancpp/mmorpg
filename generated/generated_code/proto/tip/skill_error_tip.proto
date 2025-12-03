@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+enum skill_error {
+
+  kSkill_errorOK = 0;
+
+  kSkillUnInterruptible = 115;
+
+  kSkillInvalidTargetId = 116;
+
+  kSkillInvalidTarget = 117;
+
+  kSkillCooldownNotReady = 118;
+
+  kSkillCannotBeCastInCurrentState = 119;
+
+  kSkillCannotBeCastSilenceRestriction = 120;
+
+  kSkillCannotBeCastStunRestriction = 121;
+
+};
