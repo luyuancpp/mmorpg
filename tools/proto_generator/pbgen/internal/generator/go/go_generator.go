@@ -333,8 +333,6 @@ func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 		}
 	}()
 
-	wg.Wait()
-	log.Println("GRPC服务构建: 所有目录处理完成")
 }
 
 // generateGameGrpcGo 为游戏GRPC生成多节点Go代码
