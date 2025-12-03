@@ -13,6 +13,7 @@
 #include "frame/manager/frame_time.h"
 #include "network/player_message_utils.h"
 #include <threading/registry_manager.h>
+#include <actor/attribute/comp/actor_attribute.h>
 
 // 定义帧同步频率的配置数组大小
 constexpr uint32_t kSyncFrequencyArraySize = 5;
@@ -140,21 +141,60 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel3Entities(const entt::entity e
 
 // 同步基础属性到附近的实体
 void ActorStateAttributeSyncSystem::SyncBasicAttributes(entt::entity entity) {
+	// 获取实体的 AOI 列表组件
 	const auto aoiListComp = tlsRegistryManager.actorRegistry.try_get<AoiListComp>(entity);
-	if (aoiListComp == nullptr) {
+	if (!aoiListComp) {
 		return;
 	}
 
-	// 获取当前实体的增量同步消息
+	auto& registry = tlsRegistryManager.actorRegistry;
+	auto& dirtyComp = registry.get_or_emplace<BaseAttributeDirtyMaskComp>(entity);
+
+	// 构造同步消息
 	ActorBaseAttributesS2C syncMessage;
+
+	const google::protobuf::Reflection* reflection = syncMessage.GetReflection();
+	const google::protobuf::Descriptor* descriptor = syncMessage.GetDescriptor();
+
+	// 遍历所有字段
+	for (int i = 0; i < descriptor->field_count(); ++i) {
+		const auto* field = descriptor->field(i);
+		int fieldNumber = field->number();
+
+		// 检查 dirty bit 是否设置
+		if (!dirtyComp.dirtyMask.test(fieldNumber)) {
+			continue;
+		}
+
+		// 根据字段号设置对应值
+		switch (fieldNumber) {
+		case ActorBaseAttributesS2C::kVelocityFieldNumber: {
+			auto& velocity = registry.get_or_emplace<Velocity>(entity);
+			syncMessage.mutable_velocity()->CopyFrom(velocity);
+			break;
+		}
+		case ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber: {
+			auto& combatStateFlagsPbComponent = registry.get_or_emplace<CombatStateFlagsPbComponent>(entity);
+			syncMessage.mutable_combat_state_flags()->CopyFrom(combatStateFlagsPbComponent);
+			break;
+		}
+		default:
+			break;
+		}
+	}
+
+	// 如果消息为空，则不发送
 	if (syncMessage.ByteSizeLong() <= 0) {
 		return;
 	}
+
+	// 广播增量同步消息
 	BroadcastMessageToPlayers(ScenePlayerSyncSyncBaseAttributeMessageId, syncMessage, aoiListComp->aoiList);
 
-	// 发送后清空消息，准备下一次增量数据
+	// 清空消息，为下次同步准备
 	syncMessage.Clear();
 }
+
 
 // 同步属性，根据频率决定同步内容
 void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const EntityVector& nearbyEntities, uint32_t syncFrequency) {
