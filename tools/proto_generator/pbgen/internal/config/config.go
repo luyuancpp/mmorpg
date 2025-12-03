@@ -37,6 +37,7 @@ type DirectoryNames struct {
 	RobotGoZeroProtoName string `yaml:"robot_go_zero_proto_name"` // Robot Go-zero Proto目录名常量
 	ModelDirName         string `yaml:"model_dir_name"`           // 模型目录名
 	ServiceIncludeDir    string `yaml:"service_include_dir"`      // 服务导入目录名
+	GoGrpcBaseDirName    string `yaml:"go_grpc_base_dir_name"`    // Go GRPC服务根目录路径片段
 }
 
 // Paths 路径配置（对应YAML中的paths节点）

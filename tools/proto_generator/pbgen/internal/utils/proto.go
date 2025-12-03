@@ -45,7 +45,7 @@ func BuildModelPath(protoPath string) string {
 // 返回相对路径列表（如：["service/go/grpc/player_locator/", "service/go/grpc/login/"]）
 func GetGRPCSubdirectories() []string {
 	var grpcDirs []string
-	grpcBase := "service/go/grpc/" // 基础路径前缀
+	grpcBase := _config.Global.DirectoryNames.GoGrpcBaseDirName // 基础路径前缀
 
 	for _, dir := range _config.Global.PathLists.ProtoDirectories {
 		// 检查目录是否以service/go/grpc/开头，且不是基础路径本身
@@ -65,7 +65,7 @@ func GetGRPCSubdirectories() []string {
 // 返回示例：["player_locator", "login", "db", "chat", "team", "mail"]
 func GetGRPCSubdirectoryNames() []string {
 	var names []string
-	grpcBase := "service/go/grpc/"
+	grpcBase := _config.Global.DirectoryNames.GoGrpcBaseDirName
 
 	for _, dir := range GetGRPCSubdirectories() {
 		// 去除基础路径前缀
