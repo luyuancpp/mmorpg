@@ -27,16 +27,23 @@ func dispatchExtensions(desc interface{}, opts interface{}, wg *sync.WaitGroup) 
 	}
 
 	extMu.RLock()
-	defer extMu.RUnlock()
-
 	for ext, callbacks := range extRegistry {
 
+		// 1. 检查 opts 类型是否是 extension 的 containing type
+		// -----------------------------------------------------------------
+		if ext.TypeDescriptor().ContainingMessage().FullName() !=
+			msgOpts.ProtoReflect().Descriptor().FullName() {
+			continue
+		}
+		// -----------------------------------------------------------------
+
+		// 2. 安全 GetExtension（不会 panic）
 		val := proto.GetExtension(msgOpts, ext)
 		if val == nil {
 			continue
 		}
 
-		// 触发回调
+		// 3. 调用回调
 		for _, cb := range callbacks {
 			wg.Add(1)
 			go func(fn ExtensionCallback, desc interface{}, value interface{}) {
@@ -47,4 +54,5 @@ func dispatchExtensions(desc interface{}, opts interface{}, wg *sync.WaitGroup) 
 			}(cb, desc, val)
 		}
 	}
+	extMu.RUnlock()
 }
