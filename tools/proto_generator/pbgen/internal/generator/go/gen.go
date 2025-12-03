@@ -1,7 +1,6 @@
 package _go
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -277,16 +276,6 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 	return nil
 }
 
-// processGrpcDir 处理单个GRPC目录
-func processGrpcDir(dirName string) error {
-	destDir := dirName
-	if _, err := os.Stat(destDir); errors.Is(err, os.ErrNotExist) {
-		log.Fatalf("目录[%s]不存在", destDir)
-	}
-
-	return GenerateGoProto(destDir)
-}
-
 // BuildGrpcServiceProto 并发处理所有GRPC目录
 func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 	grpcDirs := utils2.GetGRPCSubdirectoryNames()
@@ -297,7 +286,7 @@ func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 		go func(currentDir string) {
 			defer wg.Done()
 			destDir := _config.Global.Paths.GeneratorProtoDir + currentDir + "/" + _config.Global.DirectoryNames.NormalGoProto
-			if err := processGrpcDir(destDir); err != nil {
+			if err := GenerateGoProto(destDir); err != nil {
 				log.Printf("GRPC服务构建: 目录[%s]处理失败: %v", currentDir, err)
 			} else {
 				log.Printf("GRPC服务构建: 目录[%s]处理完成", currentDir)
