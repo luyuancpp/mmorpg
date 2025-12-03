@@ -209,7 +209,6 @@ func main() {
 	// 分组3：GRPC生成与ServiceId读取（并行）- 现在会正确统计每个任务耗时
 	trackGroupTime("GRPCGeneration", map[string]func(*sync.WaitGroup){
 		"cpp2.GenerateGameGrpc":  cpp2.GenerateGameGrpc,
-		"_go2.GenerateGameGrpc":  _go2.GenerateGameGrpc,
 		"cpp2.ReadServiceIdFile": cpp2.ReadServiceIdFile,
 	})
 
