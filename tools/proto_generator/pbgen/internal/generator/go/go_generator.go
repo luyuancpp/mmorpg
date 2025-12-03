@@ -14,7 +14,7 @@ import (
 
 func GenerateGoProto(rootDir string) error {
 	// 跳过Etcd服务相关目录
-	if utils2.CheckEtcdServiceExistence(rootDir) {
+	if utils2.HasEtcdService(rootDir) {
 		return nil
 	}
 

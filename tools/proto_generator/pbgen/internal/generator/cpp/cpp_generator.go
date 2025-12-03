@@ -123,7 +123,7 @@ func GenerateCpp(protoFiles []string, outputDir string) error {
 // CopyCppOutputs 将临时目录的C++生成文件拷贝到目标目录
 func CopyCppOutputs(protoFiles []string, tempDir, destDir string) error {
 	// 解析临时目录和目标目录
-	cppTempDir, err := utils2.ResolveAbsPath(tempDir, "C++拷贝临时目录")
+	cppGenTempDir, err := utils2.ResolveAbsPath(tempDir, "C++拷贝临时目录")
 	if err != nil {
 		return err
 	}
@@ -161,8 +161,8 @@ func CopyCppOutputs(protoFiles []string, tempDir, destDir string) error {
 		cppFile := strings.Replace(protoFileName, _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbCc, 1)
 
 		// 构建临时文件和目标文件路径
-		tempHeaderPath := filepath.Join(cppTempDir, protoRelDir, headerFile)
-		tempCppPath := filepath.Join(cppTempDir, protoRelDir, cppFile)
+		tempHeaderPath := filepath.Join(cppGenTempDir, protoRelDir, headerFile)
+		tempCppPath := filepath.Join(cppGenTempDir, protoRelDir, cppFile)
 		destHeaderPath := filepath.Join(cppDestDir, protoRelDir, headerFile)
 		destCppPath := filepath.Join(cppDestDir, protoRelDir, cppFile)
 
