@@ -50,19 +50,12 @@ func BuildProtoCpp(protoDir string) error {
 	}
 
 	// 2. 解析目录路径
-	cppOutputDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtoBufCProtoOutputDir, "C++批量输出目录")
-	if err != nil {
-		return err
-	}
+	cppOutputDir := _config.Global.Paths.ProtoBufCProtoOutputDir
 	if err := utils2.EnsureDir(cppOutputDir); err != nil {
 		log.Fatalf("C++批量生成: 创建输出目录失败: %w", err)
 	}
 
-	cppTempDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtoBufCTempDir, "C++批量临时目录")
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
+	cppTempDir := _config.Global.Paths.ProtoBufCTempDir
 
 	// 3. 生成并拷贝C++代码
 	if err := GenerateCpp(protoFiles, cppTempDir); err != nil {
@@ -82,23 +75,9 @@ func GenerateCpp(protoFiles []string, outputDir string) error {
 	}
 
 	// 解析所有必要路径
-	cppOutputDir, err := utils2.ResolveAbsPath(outputDir, "C++生成输出目录")
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-
-	protoRootDir, err := utils2.ResolveAbsPath(_config.Global.Paths.OutputRoot, "Proto根目录")
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-
-	protoBufferDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtobufDir, "ProtoBuffer目录")
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
+	cppOutputDir := outputDir
+	protoRootDir := _config.Global.Paths.OutputRoot
+	protoBufferDir := _config.Global.Paths.ProtobufDir
 
 	// 构建protoc参数
 	args := []string{
@@ -109,12 +88,7 @@ func GenerateCpp(protoFiles []string, outputDir string) error {
 
 	// 补充Proto文件路径（确保绝对路径）
 	for _, file := range protoFiles {
-		absFile, err := utils2.ResolveAbsPath(file, "Proto源文件")
-		if err != nil {
-			log.Printf("C++生成: 跳过无效文件[%s]: %v", file, err)
-			continue
-		}
-		args = append(args, absFile)
+		args = append(args, file)
 	}
 
 	return utils2.RunProtoc(args, "生成C++序列化代码")
@@ -123,40 +97,22 @@ func GenerateCpp(protoFiles []string, outputDir string) error {
 // CopyCppOutputs 将临时目录的C++生成文件拷贝到目标目录
 func CopyCppOutputs(protoFiles []string, tempDir, destDir string) error {
 	// 解析临时目录和目标目录
-	cppGenTempDir, err := utils2.ResolveAbsPath(tempDir, "C++拷贝临时目录")
-	if err != nil {
-		return err
-	}
-
-	cppDestDir, err := utils2.ResolveAbsPath(destDir, "C++拷贝目标目录")
-	if err != nil {
-		return err
-	}
-
+	cppGenTempDir := tempDir
+	cppDestDir := destDir
 	// 解析Proto根目录（用于计算相对路径）
-	protoRootDir, err := utils2.ResolveAbsPath(_config.Global.Paths.OutputRoot, "Proto根目录")
-	if err != nil {
-		return err
-	}
+	protoRootDir := _config.Global.Paths.OutputRoot
 
 	for _, protoFile := range protoFiles {
-		// 确保Proto文件是绝对路径
-		absProtoFile, err := utils2.ResolveAbsPath(protoFile, "Proto源文件")
-		if err != nil {
-			log.Printf("C++拷贝: 跳过无效文件[%s]: %v", protoFile, err)
-			continue
-		}
-
 		// 计算Proto文件相对根目录的路径（保持目录结构）
-		protoRelPath, err := filepath.Rel(protoRootDir, absProtoFile)
+		protoRelPath, err := filepath.Rel(protoRootDir, protoFile)
 		if err != nil {
-			log.Printf("C++拷贝: 计算[%s]相对路径失败: %v，跳过", absProtoFile, err)
+			log.Printf("C++拷贝: 计算[%s]相对路径失败: %v，跳过", protoFile, err)
 			continue
 		}
 		protoRelDir := filepath.Dir(protoRelPath)
 
 		// 构建生成文件名（.proto → .pb.h/.pb.cc）
-		protoFileName := filepath.Base(absProtoFile)
+		protoFileName := filepath.Base(protoFile)
 		headerFile := strings.Replace(protoFileName, _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1)
 		cppFile := strings.Replace(protoFileName, _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbCc, 1)
 
@@ -231,20 +187,11 @@ func GenerateCppGrpc(protoFiles []string) error {
 	}
 
 	// 将所有路径转换为绝对路径
-	grpcTempDir, err := utils2.ResolveAbsPath(_config.Global.Paths.GrpcTempDir, "GRPC临时目录")
-	if err != nil {
-		log.Fatalf("GRPC C++生成: 解析临时目录失败: %w", err)
-	}
+	grpcTempDir := _config.Global.Paths.GrpcTempDir
 
-	protoParentDir, err := utils2.ResolveAbsPath(_config.Global.Paths.OutputRoot, "Proto父目录")
-	if err != nil {
-		log.Fatalf("GRPC C++生成: 解析父目录失败: %w", err)
-	}
+	protoParentDir := _config.Global.Paths.OutputRoot
 
-	protoBufferDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtobufDir, "ProtoBuffer目录")
-	if err != nil {
-		log.Fatalf("GRPC C++生成: 解析ProtoBuffer目录失败: %w", err)
-	}
+	protoBufferDir := _config.Global.Paths.ProtobufDir
 
 	// 构建protoc参数
 	args := []string{
@@ -256,12 +203,7 @@ func GenerateCppGrpc(protoFiles []string) error {
 
 	// 补充Proto文件路径
 	for _, file := range protoFiles {
-		absFile, err := utils2.ResolveAbsPath(file, "GRPC Proto源文件")
-		if err != nil {
-			log.Printf("GRPC C++生成: 跳过无效文件[%s]: %v", file, err)
-			continue
-		}
-		args = append(args, absFile)
+		args = append(args, file)
 	}
 
 	return utils2.RunProtoc(args, "生成C++ GRPC服务代码")
@@ -270,10 +212,7 @@ func GenerateCppGrpc(protoFiles []string) error {
 // copyCppGrpcOutputs 拷贝C++ GRPC生成文件到目标目录
 func copyCppGrpcOutputs(protoFiles []string) error {
 	// 解析所有必要路径
-	protoDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtoDir, "Proto基础目录")
-	if err != nil {
-		return err
-	}
+	protoDir := _config.Global.Paths.ProtoDir
 	protoDirSlash := filepath.ToSlash(protoDir)
 
 	grpcTempWithProtoDir := filepath.ToSlash(_config.Global.Paths.GrpcTempDir + _config.Global.DirectoryNames.ProtoDirName)
@@ -284,12 +223,7 @@ func copyCppGrpcOutputs(protoFiles []string) error {
 
 	for _, protoFile := range protoFiles {
 		// 确保Proto文件是绝对路径
-		absProtoFile, err := utils2.ResolveAbsPath(protoFile, "GRPC Proto源文件")
-		if err != nil {
-			log.Printf("GRPC C++拷贝: 跳过无效文件[%s]: %v", protoFile, err)
-			continue
-		}
-		protoFileSlash := filepath.ToSlash(absProtoFile)
+		protoFileSlash := filepath.ToSlash(protoFile)
 
 		// 构建临时文件路径
 		tempGrpcCppPath := strings.Replace(
@@ -343,19 +277,13 @@ func generateGameGrpcCpp(wg *sync.WaitGroup, protoFiles []string) error {
 		defer wg.Done()
 
 		// 解析输出目录
-		cppOutputDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtoBufCProtoOutputDir, "游戏C++输出目录")
-		if err != nil {
-			log.Fatal(err)
-		}
+		cppOutputDir := _config.Global.Paths.ProtoBufCProtoOutputDir
 		if err := utils2.EnsureDir(cppOutputDir); err != nil {
 			log.Fatalf("创建C++输出目录失败: %w", err)
 		}
 
 		// 解析临时目录
-		cppTempDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtoBufCTempDir, "游戏C++临时目录")
-		if err != nil {
-			log.Fatal(err)
-		}
+		cppTempDir := _config.Global.Paths.ProtoBufCTempDir
 
 		// 生成C++代码
 		if err := GenerateCpp(protoFiles, cppTempDir); err != nil {
@@ -363,10 +291,8 @@ func generateGameGrpcCpp(wg *sync.WaitGroup, protoFiles []string) error {
 		}
 
 		// 拷贝C++代码到目标目录
-		cppDestDir, err := utils2.ResolveAbsPath(_config.Global.Paths.GrpcOutputDir, "游戏C++最终目录")
-		if err != nil {
-			log.Fatal(err)
-		}
+		cppDestDir := _config.Global.Paths.GrpcOutputDir
+
 		if err := CopyCppOutputs(protoFiles, cppTempDir, cppDestDir); err != nil {
 			log.Fatalf("拷贝C++代码失败: %w", err)
 		}
