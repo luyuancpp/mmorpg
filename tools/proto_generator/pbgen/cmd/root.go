@@ -192,6 +192,12 @@ func main() {
 		Func     func(*sync.WaitGroup)
 	}{
 		{FuncName: "prototools.CopyProtoToGenDir", Func: prototools.CopyProtoToGenDir},
+	})
+
+	trackSerialGroupTime("ProtoFilePreparation", []struct {
+		FuncName string
+		Func     func(*sync.WaitGroup)
+	}{
 		{FuncName: "_go2.AddGoPackageToProtoDir", Func: _go2.AddGoPackageToProtoDir},
 	})
 
