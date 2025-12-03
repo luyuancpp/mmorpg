@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	_config "pbgen/internal/config"
-	"pbgen/internal/prototools"
 	utils2 "pbgen/internal/utils"
 	"sync"
 )
@@ -306,78 +305,4 @@ func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 		}
 	}()
 
-}
-
-// generateGameGrpcGo 为游戏GRPC生成多节点Go代码
-func generateGameGrpcGo(wg *sync.WaitGroup, protoFiles []string) {
-	// 1. 获取所有GRPC节点目录
-	grpcNodes := utils2.GetGRPCSubdirectoryNames()
-	if len(grpcNodes) == 0 {
-		log.Println("Go生成: 未找到GRPC节点目录，跳过")
-		return
-	}
-
-	// 2. 为每个节点生成专属代码
-	for _, nodeName := range grpcNodes {
-		wg.Add(1)
-
-		go func(nodeName string) {
-			defer wg.Done()
-
-			nodeOutputDir := filepath.Join(_config.Global.Paths.NodeGoDir, nodeName, _config.Global.DirectoryNames.ProtoDirName)
-			if err := utils2.EnsureDir(nodeOutputDir); err != nil {
-				log.Fatalf("Go生成: 创建节点[%s]目录失败: %v，跳过", nodeName, err)
-				return
-			}
-
-			// 生成节点Go GRPC代码
-			if err := GenerateGoGrpc(protoFiles, nodeOutputDir, _config.Global.Paths.GameRpcProtoPath); err != nil {
-				log.Fatalf("Go生成: 节点[%s]代码生成失败: %v，跳过", nodeName, err)
-				return
-			}
-			log.Printf("Go生成: 节点[%s]代码生成成功", nodeName)
-		}(nodeName)
-	}
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		// 3. 确保机器人代码目录存在
-		robotDir := _config.Global.Paths.RobotGoOutputDir
-		if err := utils2.EnsureDir(robotDir); err != nil {
-			log.Fatalf("创建机器人目录失败: %w", err)
-		}
-
-		if err := GenerateGoGrpc(protoFiles, robotDir, _config.Global.Paths.OutputRoot); err != nil {
-			log.Printf("Go生成: 节点[%s]代码生成失败: %v，跳过", robotDir, err)
-			return
-		}
-
-		log.Println("Go生成: 所有游戏GRPC节点代码生成完成")
-	}()
-
-}
-
-// generateGameGrpcImpl 游戏GRPC生成核心逻辑
-func generateGameGrpcImpl(wg *sync.WaitGroup) error {
-	// 1. 解析游戏Proto文件路径
-	gameProtoPath, err := prototools.ResolveGameProtoPath()
-	if err != nil {
-		log.Fatalf("解析Proto路径失败: %w", err)
-	}
-
-	protoFiles := []string{gameProtoPath}
-	generateGameGrpcGo(wg, protoFiles)
-	return nil
-}
-
-// GenerateGameGrpc 生成游戏GRPC代码（C++序列化+Go节点代码）
-func GenerateGameGrpc(wg *sync.WaitGroup) {
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := generateGameGrpcImpl(wg); err != nil {
-			log.Printf("游戏GRPC生成: 整体失败: %v", err)
-		}
-	}()
 }
