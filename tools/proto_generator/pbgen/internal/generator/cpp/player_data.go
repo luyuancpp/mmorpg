@@ -174,11 +174,7 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 				}
 
 				destFilePath := _config.Global.Paths.PlayerStorageTempDir + messageDescName + _config.Global.FileExtensions.LoaderCpp
-				err = utils.CopyFileIfChanged(md5FilePath, destFilePath)
-				if err != nil {
-					log.Fatal(err)
-					return
-				}
+				utils.CopyFileIfChangedAsync(wg, md5FilePath, destFilePath)
 			}
 		}
 
@@ -190,10 +186,7 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 		}
 
 		destFilePath := _config.Global.Paths.PlayerDataLoaderFile
-		err = utils.CopyFileIfChanged(md5FilePath, destFilePath)
-		if err != nil {
-			log.Fatalf("failed to generate header file: %v", err)
-		}
+		utils.CopyFileIfChangedAsync(wg, md5FilePath, destFilePath)
 	}()
 
 }

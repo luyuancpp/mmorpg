@@ -21,7 +21,7 @@ func BuildProtocCpp(wg *sync.WaitGroup) {
 		go func(dirIndex int) {
 			defer wg.Done()
 			dir := global_value.ProtoDirs[dirIndex]
-			if err := BuildProtoCpp(dir); err != nil {
+			if err := BuildProtoCpp(wg, dir); err != nil {
 				log.Printf("C++批量构建: 目录[%s]处理失败: %v", dir, err)
 			}
 		}(i)
@@ -30,7 +30,7 @@ func BuildProtocCpp(wg *sync.WaitGroup) {
 		go func(dirIndex int) {
 			defer wg.Done()
 			dir := global_value.ProtoDirs[dirIndex]
-			if err := BuildProtoGrpcCpp(dir); err != nil {
+			if err := BuildProtoGrpcCpp(wg, dir); err != nil {
 				log.Printf("GRPC C++批量构建: 目录[%s]处理失败: %v", dir, err)
 			}
 		}(i)
@@ -38,7 +38,7 @@ func BuildProtocCpp(wg *sync.WaitGroup) {
 }
 
 // BuildProtoCpp 批量生成指定目录下Proto文件的C++序列化代码
-func BuildProtoCpp(protoDir string) error {
+func BuildProtoCpp(wg *sync.WaitGroup, protoDir string) error {
 	// 1. 收集Proto文件
 	protoFiles, err := utils2.CollectProtoFiles(protoDir)
 	if err != nil {
@@ -61,7 +61,7 @@ func BuildProtoCpp(protoDir string) error {
 	if err := GenerateCpp(protoFiles, cppTempDir); err != nil {
 		log.Fatalf("C++批量生成: 代码生成失败: %w", err)
 	}
-	if err := CopyCppOutputs(protoFiles, cppTempDir, cppOutputDir); err != nil {
+	if err := CopyCppOutputs(wg, protoFiles, cppTempDir, cppOutputDir); err != nil {
 		log.Fatalf("C++批量生成: 代码拷贝失败: %w", err)
 	}
 
@@ -95,7 +95,7 @@ func GenerateCpp(protoFiles []string, outputDir string) error {
 }
 
 // CopyCppOutputs 将临时目录的C++生成文件拷贝到目标目录
-func CopyCppOutputs(protoFiles []string, tempDir, destDir string) error {
+func CopyCppOutputs(wg *sync.WaitGroup, protoFiles []string, tempDir, destDir string) error {
 	// 解析临时目录和目标目录
 	cppGenTempDir := tempDir
 	cppDestDir := destDir
@@ -129,20 +129,14 @@ func CopyCppOutputs(protoFiles []string, tempDir, destDir string) error {
 		}
 
 		// 拷贝文件
-		if err := utils2.CopyFileIfChanged(tempHeaderPath, destHeaderPath); err != nil {
-			log.Printf("C++拷贝: 头文件[%s]失败: %v，跳过", protoFile, err)
-			continue
-		}
-		if err := utils2.CopyFileIfChanged(tempCppPath, destCppPath); err != nil {
-			log.Printf("C++拷贝: 实现文件[%s]失败: %v，跳过", protoFile, err)
-			continue
-		}
+		utils2.CopyFileIfChangedAsync(wg, tempHeaderPath, destHeaderPath)
+		utils2.CopyFileIfChangedAsync(wg, tempCppPath, destCppPath)
 	}
 	return nil
 }
 
 // BuildProtoGrpcCpp 生成指定目录下Proto文件的C++ GRPC服务代码
-func BuildProtoGrpcCpp(protoDir string) error {
+func BuildProtoGrpcCpp(wg *sync.WaitGroup, protoDir string) error {
 	// 1. 检查是否包含GRPC服务定义
 	if !utils2.HasGrpcService(strings.ToLower(protoDir)) {
 		log.Printf("GRPC C++生成: 目录[%s]无GRPC服务定义，跳过", protoDir)
@@ -171,7 +165,7 @@ func BuildProtoGrpcCpp(protoDir string) error {
 	if err := GenerateCppGrpc(protoFiles); err != nil {
 		log.Fatalf("GRPC C++生成: 代码生成失败: %w", err)
 	}
-	if err := copyCppGrpcOutputs(protoFiles); err != nil {
+	if err := copyCppGrpcOutputs(wg, protoFiles); err != nil {
 		log.Fatalf("GRPC C++生成: 代码拷贝失败: %w", err)
 	}
 
@@ -210,7 +204,7 @@ func GenerateCppGrpc(protoFiles []string) error {
 }
 
 // copyCppGrpcOutputs 拷贝C++ GRPC生成文件到目标目录
-func copyCppGrpcOutputs(protoFiles []string) error {
+func copyCppGrpcOutputs(wg *sync.WaitGroup, protoFiles []string) error {
 	// 解析所有必要路径
 	protoDir := _config.Global.Paths.ProtoDir
 	protoDirSlash := filepath.ToSlash(protoDir)
@@ -258,14 +252,8 @@ func copyCppGrpcOutputs(protoFiles []string) error {
 		}
 
 		// 拷贝文件
-		if err := utils2.CopyFileIfChanged(tempGrpcCppPathNative, destGrpcCppPathNative); err != nil {
-			log.Printf("GRPC C++拷贝: C++文件[%s]失败: %v，跳过", protoFile, err)
-			continue
-		}
-		if err := utils2.CopyFileIfChanged(tempGrpcHeaderPathNative, destGrpcHeaderPathNative); err != nil {
-			log.Printf("GRPC C++拷贝: 头文件[%s]失败: %v，跳过", protoFile, err)
-			continue
-		}
+		utils2.CopyFileIfChangedAsync(wg, tempGrpcCppPathNative, destGrpcCppPathNative)
+		utils2.CopyFileIfChangedAsync(wg, tempGrpcHeaderPathNative, destGrpcHeaderPathNative)
 	}
 	return nil
 }
@@ -293,7 +281,7 @@ func generateGameGrpcCpp(wg *sync.WaitGroup, protoFiles []string) error {
 		// 拷贝C++代码到目标目录
 		cppDestDir := _config.Global.Paths.GrpcOutputDir
 
-		if err := CopyCppOutputs(protoFiles, cppTempDir, cppDestDir); err != nil {
+		if err := CopyCppOutputs(wg, protoFiles, cppTempDir, cppDestDir); err != nil {
 			log.Fatalf("拷贝C++代码失败: %w", err)
 		}
 
