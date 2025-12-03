@@ -6,7 +6,7 @@ import (
 	"github.com/luyuancpp/muduoclient-new/muduo"
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
-	"login/generated/pb/game"
+	"login/proto/common"
 )
 
 type Client struct {
@@ -20,7 +20,7 @@ func NewCentreClient(ip string, port uint32, uuidStr string) (*Client, error) {
 		return nil, fmt.Errorf("invalid UUID string: %w", err)
 	}
 	addr := fmt.Sprintf("%s:%d", ip, port)
-	client := muduo.NewTcpClient(addr, &muduo.RpcCodec{MsgType: &game.GameRpcMessage{}})
+	client := muduo.NewTcpClient(addr, &muduo.RpcCodec{MsgType: &common.GameRpcMessage{}})
 
 	return &Client{
 		CentreClient: client,
@@ -34,7 +34,7 @@ func (c *Client) Close() {
 
 func (c *Client) Send(m proto.Message, messageId uint32) {
 	var err error
-	rpcMsg := &game.GameRpcMessage{}
+	rpcMsg := &common.GameRpcMessage{}
 	rpcMsg.MessageId = messageId
 	rpcMsg.Request, err = proto.Marshal(m)
 	if err != nil {
