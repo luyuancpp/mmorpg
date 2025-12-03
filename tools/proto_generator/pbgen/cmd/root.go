@@ -65,7 +65,7 @@ func trackGroupTime(groupName string, wg *sync.WaitGroup, tasks map[string]func(
 		Duration: elapsed,
 	})
 	log.Printf("Group [%s] total took: %s", groupName, elapsed)
-	// 重置wg，避免累计计数影响后续分组
+	// 重置wg，避免累计计数影响后续分组（当前是最后一个分组，重置仅为规范）
 	*wg = sync.WaitGroup{}
 }
 
@@ -242,7 +242,6 @@ func main() {
 	})
 
 	// 合并分组2：常量、消息ID生成 + 选项构建（所有任务并行执行）
-	// 分组名称：ConstantsMessageIdsAndOptionBuilding
 	trackGroupTime("ConstantsMessageIdsAndOptionBuilding", &wg, map[string]func(*sync.WaitGroup){
 		// 原分组8：常量与消息ID生成任务
 		"internal.GenerateServiceConstants": internal.GenerateServiceConstants,
@@ -262,21 +261,21 @@ func main() {
 		},
 	})
 
-	// 分组8：最终任务（并行）
-	trackGroupTime("FinalTasks", &wg, map[string]func(*sync.WaitGroup){
+	// 合并分组3：最终任务 + 最后处理选项（所有任务并行执行）
+	// 分组名称：FinalTasksAndOptionProcessing
+	trackGroupTime("FinalTasksAndOptionProcessing", &wg, map[string]func(*sync.WaitGroup){
+		// 原分组8：最终任务
 		"cpp2.WriteServiceRegisterInfoFile": cpp2.WriteServiceRegisterInfoFile,
 		"_go2.GenerateDBResource":           _go2.GenerateDBResource,
 		"_go2.GoRobotHandlerGenerator":      _go2.GoRobotHandlerGenerator,
 		"_go2.GoRobotTotalHandlerGenerator": _go2.GoRobotTotalHandlerGenerator,
 		"cpp2.CppPlayerDataLoadGenerator":   cpp2.CppPlayerDataLoadGenerator,
 		"cpp2.CppGrpcCallClient":            cpp2.CppGrpcCallClient,
-	})
-
-	// 最后处理选项
-	trackFuncTime("proto_tools_option.ProcessAllOptions", &wg, func(w *sync.WaitGroup) {
-		proto_tools_option.ProcessAllOptions(w, internal.FdSet)
-		w.Wait()
-		*w = sync.WaitGroup{}
+		// 原"最后处理选项"任务
+		"proto_tools_option.ProcessAllOptions": func(w *sync.WaitGroup) {
+			proto_tools_option.ProcessAllOptions(w, internal.FdSet)
+			// 内部已通过wg控制并发，此处无需额外Wait（分组会统一Wait所有任务）
+		},
 	})
 
 	// 打印所有统计信息
