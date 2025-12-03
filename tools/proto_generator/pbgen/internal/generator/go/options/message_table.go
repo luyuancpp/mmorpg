@@ -26,4 +26,12 @@ func BuildOption() {
 
 			return nil
 		})
+
+	prototools.RegisterExtensionCallback(
+		messageoption.E_OptionTableName,
+		func(desc interface{}, value interface{}) error {
+			msg := desc.(*descriptorpb.DescriptorProto)
+			fmt.Println("[Ext] Message:", msg.GetName(), "TableName:", value)
+			return nil
+		})
 }
