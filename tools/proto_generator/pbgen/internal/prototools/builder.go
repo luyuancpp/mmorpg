@@ -12,12 +12,7 @@ import (
 
 // resolveGameProtoPath 解析游戏核心Proto文件路径
 func ResolveGameProtoPath() (string, error) {
-	gameProtoRoot, err := utils2.ResolveAbsPath(_config.Global.Paths.GameRpcProtoPath, "游戏Proto根目录")
-	if err != nil {
-		return "", err
-	}
-
-	gameProtoPath := filepath.Join(gameProtoRoot, _config.Global.Naming.GameRpcProto)
+	gameProtoPath := filepath.Join(_config.Global.Paths.GameRpcProtoPath, _config.Global.Naming.GameRpcProto)
 	if _, err := os.Stat(gameProtoPath); err != nil {
 		return "", errors.Join(errors.New("游戏Proto文件不存在"), err)
 	}

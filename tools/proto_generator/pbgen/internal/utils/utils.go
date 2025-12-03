@@ -37,11 +37,6 @@ func CollectProtoFiles(dirPath string) ([]string, error) {
 	return protoFiles, nil
 }
 
-// ResolveAbsPath 将路径转换为绝对路径，并返回带描述的错误
-func ResolveAbsPath(path string, desc string) (string, error) {
-	return path, nil
-}
-
 // RunProtoc 执行protoc命令（默认使用系统PATH中的protoc）
 func RunProtoc(args []string, actionDesc string) error {
 	cmd := exec.Command("protoc", args...)

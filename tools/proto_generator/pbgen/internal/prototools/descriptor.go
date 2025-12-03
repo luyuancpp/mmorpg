@@ -110,13 +110,7 @@ func buildDescriptorArgs(protoFiles []string) ([]string, error) {
 		if ip == "" {
 			continue // 跳过空路径
 		}
-
-		absIP, err := utils2.ResolveAbsPath(ip, "描述符生成导入路径")
-		if err != nil {
-			log.Printf("描述符生成: 导入路径[%s]无效，跳过: %v", ip, err)
-			continue
-		}
-		args = append(args, "--proto_path="+filepath.ToSlash(absIP))
+		args = append(args, "--proto_path="+filepath.ToSlash(ip))
 	}
 
 	// 添加目标proto文件

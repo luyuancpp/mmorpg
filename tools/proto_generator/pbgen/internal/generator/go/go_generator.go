@@ -29,10 +29,7 @@ func GenerateGoProto(rootDir string) error {
 	}
 
 	// 2. 解析输出目录
-	nodeGoDir, err := utils2.ResolveAbsPath(_config.Global.Paths.NodeGoDir, "Go节点输出目录")
-	if err != nil {
-		return err
-	}
+	nodeGoDir := _config.Global.Paths.NodeGoDir
 	if err := utils2.EnsureDir(nodeGoDir); err != nil {
 		log.Fatal("Go GRPC生成: 创建输出目录失败: %w", err)
 	}
@@ -61,10 +58,8 @@ func GenerateRobotGoProto(rootDir string, protoRootPath string) error {
 	}
 
 	// 2. 解析输出目录
-	nodeGoDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ToolsDir, "Go节点输出目录")
-	if err != nil {
-		return err
-	}
+	nodeGoDir := _config.Global.Paths.ToolsDir
+
 	if err := utils2.EnsureDir(nodeGoDir); err != nil {
 		log.Fatal("Go GRPC生成: 创建输出目录失败: %w", err)
 	}
@@ -111,20 +106,9 @@ func GenerateGoGrpc(protoFiles []string, outputDir string, protoRootPath string)
 	}
 
 	// 1. 解析路径
-	goOutputDir, err := utils2.ResolveAbsPath(outputDir, "Go GRPC输出目录")
-	if err != nil {
-		return err
-	}
-
-	protoRootDir, err := utils2.ResolveAbsPath(protoRootPath, "Proto根目录")
-	if err != nil {
-		return err
-	}
-
-	protoBufferDir, err := utils2.ResolveAbsPath(_config.Global.Paths.ProtobufDir, "ProtoBuffer目录")
-	if err != nil {
-		return err
-	}
+	goOutputDir := outputDir
+	protoRootDir := protoRootPath
+	protoBufferDir := _config.Global.Paths.ProtobufDir
 
 	// 2. 验证protoc路径
 	protocPath, err := resolveProtocPath()
@@ -352,10 +336,6 @@ func generateGameGrpcGo(wg *sync.WaitGroup, protoFiles []string) {
 			defer wg.Done()
 
 			nodeOutputDir := filepath.Join(_config.Global.Paths.NodeGoDir, nodeName, _config.Global.DirectoryNames.ProtoDirName)
-			nodeOutputDir, err := utils2.ResolveAbsPath(nodeOutputDir, "节点game_rpc代码目录")
-			if err != nil {
-				log.Fatalf("解析节点game_rpc代码目录: %w", err)
-			}
 			if err := utils2.EnsureDir(nodeOutputDir); err != nil {
 				log.Fatalf("Go生成: 创建节点[%s]目录失败: %v，跳过", nodeName, err)
 				return
