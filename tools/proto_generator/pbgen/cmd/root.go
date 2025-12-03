@@ -142,50 +142,47 @@ func main() {
 	waitWithTiming(&wg, "First wait (CopyProto)")
 
 	_go2.AddGoPackageToProtoDir(&wg)
-	waitWithTiming(&wg, "Third wait (AddGoPackageToProtoDir)")
+	waitWithTiming(&wg, "Second wait (AddGoPackageToProtoDir)")
 
 	cpp2.GenerateGameGrpc(&wg)
 	_go2.GenerateGameGrpc(&wg)
 	cpp2.ReadServiceIdFile(&wg)
-	waitWithTiming(&wg, "First wait (GenerateGameGrpc/ReadServiceIdFile)")
+	waitWithTiming(&wg, "Third wait (GenerateGameGrpc/ReadServiceIdFile)")
 
 	prototools.GenerateAllInOneDescriptor(&wg)
-	waitWithTiming(&wg, "Second wait (GenerateAllInOneDescriptor)")
+	waitWithTiming(&wg, "Fourth wait (GenerateAllInOneDescriptor)")
 
 	cpp2.ReadAllProtoFileServices(&wg)
-	waitWithTiming(&wg, "Third wait (AddGoPackageToProtoDir)")
+	waitWithTiming(&wg, "Fifth wait (ReadAllProtoFileServices)")
 
 	cpp2.BuildProtocCpp(&wg)
 	_go2.BuildGrpcServiceProto(&wg)
-	waitWithTiming(&wg, "Fourth wait (BuildProtocCpp/BuildGrpcServiceProto)")
+	waitWithTiming(&wg, "Sixth wait (BuildProtocCpp/BuildGrpcServiceProto)")
 
 	cpp2.GenNodeUtil(&wg)
-	waitWithTiming(&wg, "Fifth wait (GenNodeUtil)")
+	waitWithTiming(&wg, "Seventh wait (GenNodeUtil)")
 
 	cpp2.GenerateAllEventHandlers(&wg)
-	waitWithTiming(&wg, "Sixth wait (GenerateAllEventHandlers)")
+	waitWithTiming(&wg, "Eighth wait (GenerateAllEventHandlers)")
 
 	cpp2.InitServiceId()
-	waitWithTiming(&wg, "Seventh wait (InitServiceId)")
+	waitWithTiming(&wg, "Ninth wait (InitServiceId)")
 
 	cpp2.WriteServiceIdFile()
-	waitWithTiming(&wg, "Eighth wait (WriteServiceIdFile)")
+	waitWithTiming(&wg, "Tenth wait (WriteServiceIdFile)")
 
 	cpp2.WriteMethodFile(&wg)
 	cpp2.GeneratorHandler(&wg)
-	waitWithTiming(&wg, "Ninth wait (WriteMethodFile/GeneratorHandler)")
+	waitWithTiming(&wg, "Eleventh wait (WriteMethodFile/GeneratorHandler)")
 
 	internal.GenerateServiceConstants(&wg)
-	waitWithTiming(&wg, "Tenth wait (GenerateServiceConstants)")
+	waitWithTiming(&wg, "Twelfth wait (GenerateServiceConstants)")
 
 	internal.WriteGoMessageId(&wg)
-	waitWithTiming(&wg, "Eleventh wait (WriteGoMessageId)")
+	waitWithTiming(&wg, "Thirteenth wait (WriteGoMessageId)")
 
 	_go_option.BuildOption()
 	_cpp_option.BuildOption()
-	// 单独跟踪每个耗时任务
-
-	// 或者如果你想并行执行这些任务并整体等待：
 
 	cpp2.WriteServiceRegisterInfoFile(&wg)
 	_go2.GenerateDBResource(&wg)
