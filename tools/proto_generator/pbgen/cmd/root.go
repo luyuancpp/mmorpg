@@ -6,6 +6,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
 	"pbgen/global_value"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
@@ -17,6 +18,7 @@ import (
 	proto_tools_option "pbgen/internal/prototools/option"
 	"sort"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -165,6 +167,8 @@ func main() {
 
 	start := time.Now()
 
+	log.Printf("\nTotal execution time: %s\n", time.Since(start))
+
 	go func() {
 		log.Println(http.ListenAndServe("localhost:11111", nil))
 	}()
@@ -282,5 +286,11 @@ func main() {
 	// 打印总耗时
 	log.Printf("\nTotal execution time: %s\n", time.Since(start))
 
-	select {} // 无case的select会一直阻塞
+	// 替换select{}，添加信号监听
+	log.Println("程序已进入等待状态，可访问localhost:11111/debug/pprof分析，按Ctrl+C退出")
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
+
+	log.Println("程序开始优雅退出...")
 }
