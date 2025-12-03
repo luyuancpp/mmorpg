@@ -65,15 +65,3 @@ func ExecuteProtocCmd(cmd *exec.Cmd, actionDesc string) error {
 	}
 	return nil
 }
-
-// CopyProtoDir 拷贝Proto目录到目标目录（保持目录结构）
-func CopyProtoDir(srcDir, destDir string) error {
-	if err := EnsureDir(destDir); err != nil {
-		return err
-	}
-	if err := CopyLocalDir(srcDir, destDir); err != nil {
-		log.Fatalf("拷贝Proto目录: 源=%s -> 目标=%s, 错误=%w", srcDir, destDir, err)
-	}
-	log.Printf("拷贝Proto目录成功: 源=%s -> 目标=%s", srcDir, destDir)
-	return nil
-}
