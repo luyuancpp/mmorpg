@@ -217,8 +217,7 @@ func main() {
 		*w = sync.WaitGroup{} // 重置wg
 	})
 
-	// 合并分组：编译+工具类+事件处理器生成（所有任务并行执行）
-	// 分组名称改为"CompilationAndUtilGeneration"，包含原6、7分组的所有任务
+	// 合并分组1：编译+工具类+事件处理器生成（所有任务并行执行）
 	trackGroupTime("CompilationAndUtilGeneration", &wg, map[string]func(*sync.WaitGroup){
 		// 原分组6的任务
 		"cpp2.BuildProtocCpp":        cpp2.BuildProtocCpp,
@@ -242,16 +241,14 @@ func main() {
 		"cpp2.GeneratorHandler": cpp2.GeneratorHandler,
 	})
 
-	// 分组8：常量与消息ID生成（并行）
-	trackGroupTime("ConstantsAndMessageIds", &wg, map[string]func(*sync.WaitGroup){
+	// 合并分组2：常量、消息ID生成 + 选项构建（所有任务并行执行）
+	// 分组名称：ConstantsMessageIdsAndOptionBuilding
+	trackGroupTime("ConstantsMessageIdsAndOptionBuilding", &wg, map[string]func(*sync.WaitGroup){
+		// 原分组8：常量与消息ID生成任务
 		"internal.GenerateServiceConstants": internal.GenerateServiceConstants,
 		"internal.WriteGoMessageId":         internal.WriteGoMessageId,
-	})
-
-	// 分组9：选项构建（并行）
-	trackGroupTime("OptionBuilding", &wg, map[string]func(*sync.WaitGroup){
+		// 原分组9：选项构建任务
 		"_go_option.BuildOption": func(w *sync.WaitGroup) {
-			// 内部goroutine使用局部wg，避免干扰全局计数
 			localWg := sync.WaitGroup{}
 			localWg.Add(1)
 			go func() { defer localWg.Done(); _go_option.BuildOption() }()
@@ -265,7 +262,7 @@ func main() {
 		},
 	})
 
-	// 分组10：最终任务（并行）
+	// 分组8：最终任务（并行）
 	trackGroupTime("FinalTasks", &wg, map[string]func(*sync.WaitGroup){
 		"cpp2.WriteServiceRegisterInfoFile": cpp2.WriteServiceRegisterInfoFile,
 		"_go2.GenerateDBResource":           _go2.GenerateDBResource,
