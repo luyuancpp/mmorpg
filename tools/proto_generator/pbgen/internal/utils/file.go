@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	_config "pbgen/internal/config"
 	"strings"
+	"sync"
 	"text/template"
 )
 
@@ -66,32 +67,39 @@ func RenderTemplateToFile(tmplPath string, outputPath string, data any) error {
 }
 
 // CopyFileIfChanged 如果源文件内容与目标文件不同，则复制源文件到目标文件
-func CopyFileIfChanged(inputPath, outputPath string) error {
-	// 读取源文件内容
-	srcContent, err := os.ReadFile(inputPath)
-	if err != nil {
-		log.Fatalf("读取源文件失败: %w", err)
-	}
+func CopyFileIfChangedAsync(wg *sync.WaitGroup, inputPath, outputPath string) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
 
-	// 读取目标文件内容（如果存在）
-	dstContent, err := os.ReadFile(outputPath)
-	if err != nil && !os.IsNotExist(err) {
-		log.Fatalf("读取目标文件失败: %w", err)
-	}
+		// 读取源文件内容
+		srcContent, err := os.ReadFile(inputPath)
+		if err != nil {
+			log.Fatal("读取源文件失败 [%s]: %v", inputPath, err)
+			return
+		}
 
-	// 如果文件存在且内容相同，跳过写入
-	if err == nil && bytes.Equal(srcContent, dstContent) {
-		//log.Println("文件内容未变化，跳过写入:", outputPath)
-		return nil
-	}
+		// 读取目标文件内容（如果存在）
+		dstContent, err := os.ReadFile(outputPath)
+		if err != nil && !os.IsNotExist(err) {
+			log.Fatal("读取目标文件失败 [%s]: %v", outputPath, err)
+			return
+		}
 
-	// 写入目标文件
-	if err := os.WriteFile(outputPath, srcContent, 0644); err != nil {
-		log.Fatalf("写入目标文件失败: %w", err)
-	}
+		// 如果文件存在且内容相同，跳过写入
+		if err == nil && bytes.Equal(srcContent, dstContent) {
+			// 文件未变化，跳过
+			return
+		}
 
-	log.Println("文件已复制/更新:", outputPath)
-	return nil
+		// 写入目标文件
+		if err := os.WriteFile(outputPath, srcContent, 0644); err != nil {
+			log.Fatal("写入目标文件失败 [%s]: %v", outputPath, err)
+			return
+		}
+
+		log.Println("文件已复制/更新:", outputPath)
+	}()
 }
 
 // CopyFS 将fs.FS中的所有内容拷贝到目标目录
