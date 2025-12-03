@@ -29,7 +29,7 @@ type WaitTimeRecord struct {
 var waitRecords []WaitTimeRecord
 var taskRecords []WaitTimeRecord // 单独存储任务耗时
 
-// 新增：跟踪单个函数耗时的工具
+// 跟踪单个函数耗时的工具（保持不变）
 func trackFuncTime(funcName string, f func()) {
 	start := time.Now()
 	f()
@@ -41,28 +41,51 @@ func trackFuncTime(funcName string, f func()) {
 	log.Printf("Function [%s] took: %s", funcName, elapsed)
 }
 
-// 新增：跟踪分组内并行任务的耗时
-func trackGroupTime(groupName string, tasks map[string]func(*sync.WaitGroup)) {
-	var groupWg sync.WaitGroup
+// 修改：使用全局传递的wg，不再创建分组内部wg
+func trackGroupTime(groupName string, wg *sync.WaitGroup, tasks map[string]func(*sync.WaitGroup)) {
 	start := time.Now()
 
-	// 启动所有并行任务
+	// 启动所有并行任务（使用全局传递的wg）
 	for name, task := range tasks {
-		groupWg.Add(1)
+		wg.Add(1)
 		go func(n string, t func(*sync.WaitGroup)) {
-			defer groupWg.Done()
-			trackFuncTime(n, func() { t(&sync.WaitGroup{}) }) // 每个任务独立Wg避免干扰
+			defer wg.Done()
+			trackFuncTime(n, func() { t(wg) }) // 传递全局wg
 		}(name, task)
 	}
 
-	// 等待分组完成
-	groupWg.Wait()
+	// 等待当前分组所有并行任务完成
+	wg.Wait()
 	elapsed := time.Since(start)
 	waitRecords = append(waitRecords, WaitTimeRecord{
 		Name:     "Group: " + groupName,
 		Duration: elapsed,
 	})
 	log.Printf("Group [%s] total took: %s", groupName, elapsed)
+}
+
+// 修改：串行分组也使用全局传递的wg
+func trackSerialGroupTime(groupName string, wg *sync.WaitGroup, tasks []struct {
+	FuncName string
+	Func     func(*sync.WaitGroup)
+}) {
+	start := time.Now()
+
+	// 串行执行所有任务（使用全局wg）
+	for _, task := range tasks {
+		trackFuncTime(task.FuncName, func() {
+			task.Func(wg)
+			wg.Wait() // 等待当前任务完成
+		})
+	}
+
+	// 记录分组总耗时
+	elapsed := time.Since(start)
+	waitRecords = append(waitRecords, WaitTimeRecord{
+		Name:     "Group: " + groupName,
+		Duration: elapsed,
+	})
+	log.Printf("Serial Group [%s] total took: %s", groupName, elapsed)
 }
 
 func MakeProjectDir() {
@@ -79,7 +102,7 @@ func MakeProjectDir() {
 	}
 }
 
-// 记录等待耗时的工具函数（保持不变）
+// 保留原有工具函数（如需单独使用等待耗时统计）
 func waitWithTiming(wg *sync.WaitGroup, name string) time.Duration {
 	start := time.Now()
 	wg.Wait()
@@ -151,72 +174,89 @@ func main() {
 
 	fmt.Println("Current working directory:", dir)
 
+	// 仅声明一个全局WaitGroup，所有分组共用
+	var wg sync.WaitGroup
+
 	// 分组1：初始化项目目录（串行，无依赖）
 	trackFuncTime("MakeProjectDir", MakeProjectDir)
 
-	// 分组2：Proto文件处理（复制和Go包处理，可并行）
-	trackGroupTime("ProtoFilePreparation", map[string]func(*sync.WaitGroup){
-		"prototools.CopyProtoToGenDir": _go2.AddGoPackageToProtoDir,
-		"_go2.AddGoPackageToProtoDir":  prototools.CopyProtoToGenDir,
+	// 分组2：Proto文件处理（串行：先拷贝，再AddGoPackage）
+	// 传递全局wg给串行分组函数
+	trackSerialGroupTime("ProtoFilePreparation", &wg, []struct {
+		FuncName string
+		Func     func(*sync.WaitGroup)
+	}{
+		{FuncName: "prototools.CopyProtoToGenDir", Func: prototools.CopyProtoToGenDir},
+		{FuncName: "_go2.AddGoPackageToProtoDir", Func: _go2.AddGoPackageToProtoDir},
 	})
 
-	// 分组3：GRPC生成与ServiceId读取（可并行）
-	trackGroupTime("GRPCGeneration", map[string]func(*sync.WaitGroup){
+	// 分组3：GRPC生成与ServiceId读取（并行）
+	// 传递全局wg给并行分组函数
+	trackGroupTime("GRPCGeneration", &wg, map[string]func(*sync.WaitGroup){
 		"cpp2.GenerateGameGrpc":  cpp2.GenerateGameGrpc,
 		"_go2.GenerateGameGrpc":  _go2.GenerateGameGrpc,
 		"cpp2.ReadServiceIdFile": cpp2.ReadServiceIdFile,
 	})
 
-	// 分组4：描述符生成（依赖分组2和3的结果）
-	var wg4 sync.WaitGroup
+	// 分组4：描述符生成（依赖分组2和3，使用全局wg）
 	trackFuncTime("prototools.GenerateAllInOneDescriptor", func() {
-		prototools.GenerateAllInOneDescriptor(&wg4)
-		wg4.Wait()
+		prototools.GenerateAllInOneDescriptor(&wg)
+		wg.Wait()
 	})
 
-	// 分组5：服务信息读取（依赖分组4）
-	var wg5 sync.WaitGroup
+	// 分组5：服务信息读取（依赖分组4，使用全局wg）
 	trackFuncTime("cpp2.ReadAllProtoFileServices", func() {
-		cpp2.ReadAllProtoFileServices(&wg5)
-		wg5.Wait()
+		cpp2.ReadAllProtoFileServices(&wg)
+		wg.Wait()
 	})
 
 	// 分组6：编译相关（C++和Go并行处理）
-	trackGroupTime("ProtobufCompilation", map[string]func(*sync.WaitGroup){
+	trackGroupTime("ProtobufCompilation", &wg, map[string]func(*sync.WaitGroup){
 		"cpp2.BuildProtocCpp":        cpp2.BuildProtocCpp,
 		"_go2.BuildGrpcServiceProto": _go2.BuildGrpcServiceProto,
 	})
 
 	// 分组7：工具类与事件处理器生成（可并行）
-	trackGroupTime("UtilsAndEventHandlers", map[string]func(*sync.WaitGroup){
+	trackGroupTime("UtilsAndEventHandlers", &wg, map[string]func(*sync.WaitGroup){
 		"cpp2.GenNodeUtil":              cpp2.GenNodeUtil,
 		"cpp2.GenerateAllEventHandlers": cpp2.GenerateAllEventHandlers,
 	})
 
-	// 分组8：ServiceId初始化与写入（串行依赖）
+	// 分组8：ServiceId初始化与写入（串行依赖，无wg操作）
 	trackFuncTime("cpp2.InitServiceId", cpp2.InitServiceId)
 	trackFuncTime("cpp2.WriteServiceIdFile", cpp2.WriteServiceIdFile)
 
 	// 分组9：方法文件与处理器生成（并行）
-	trackGroupTime("MethodFilesGeneration", map[string]func(*sync.WaitGroup){
+	trackGroupTime("MethodFilesGeneration", &wg, map[string]func(*sync.WaitGroup){
 		"cpp2.WriteMethodFile":  cpp2.WriteMethodFile,
 		"cpp2.GeneratorHandler": cpp2.GeneratorHandler,
 	})
 
 	// 分组10：常量与消息ID生成（并行）
-	trackGroupTime("ConstantsAndMessageIds", map[string]func(*sync.WaitGroup){
+	trackGroupTime("ConstantsAndMessageIds", &wg, map[string]func(*sync.WaitGroup){
 		"internal.GenerateServiceConstants": internal.GenerateServiceConstants,
 		"internal.WriteGoMessageId":         internal.WriteGoMessageId,
 	})
 
 	// 分组11：选项构建（并行）
-	trackGroupTime("OptionBuilding", map[string]func(*sync.WaitGroup){
-		"_go_option.BuildOption":  func(wg *sync.WaitGroup) { wg.Add(1); go func() { defer wg.Done(); _go_option.BuildOption() }() },
-		"_cpp_option.BuildOption": func(wg *sync.WaitGroup) { wg.Add(1); go func() { defer wg.Done(); _cpp_option.BuildOption() }() },
+	trackGroupTime("OptionBuilding", &wg, map[string]func(*sync.WaitGroup){
+		"_go_option.BuildOption": func(wg *sync.WaitGroup) {
+			// 内部启动goroutine时，使用局部计数避免干扰全局wg
+			localWg := sync.WaitGroup{}
+			localWg.Add(1)
+			go func() { defer localWg.Done(); _go_option.BuildOption() }()
+			localWg.Wait()
+		},
+		"_cpp_option.BuildOption": func(wg *sync.WaitGroup) {
+			localWg := sync.WaitGroup{}
+			localWg.Add(1)
+			go func() { defer localWg.Done(); _cpp_option.BuildOption() }()
+			localWg.Wait()
+		},
 	})
 
 	// 分组12：最终任务（并行）
-	trackGroupTime("FinalTasks", map[string]func(*sync.WaitGroup){
+	trackGroupTime("FinalTasks", &wg, map[string]func(*sync.WaitGroup){
 		"cpp2.WriteServiceRegisterInfoFile": cpp2.WriteServiceRegisterInfoFile,
 		"_go2.GenerateDBResource":           _go2.GenerateDBResource,
 		"_go2.GoRobotHandlerGenerator":      _go2.GoRobotHandlerGenerator,
@@ -225,11 +265,10 @@ func main() {
 		"cpp2.CppGrpcCallClient":            cpp2.CppGrpcCallClient,
 	})
 
-	// 最后处理选项
-	var wgFinal sync.WaitGroup
+	// 最后处理选项（使用全局wg）
 	trackFuncTime("proto_tools_option.ProcessAllOptions", func() {
-		proto_tools_option.ProcessAllOptions(&wgFinal, internal.FdSet)
-		wgFinal.Wait()
+		proto_tools_option.ProcessAllOptions(&wg, internal.FdSet)
+		wg.Wait()
 	})
 
 	// 打印所有统计信息
