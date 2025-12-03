@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+enum team_error {
+
+  kTeam_errorOK = 0;
+
+  kTeamNotInApplicants = 75;
+
+  kTeamPlayerId = 76;
+
+  kTeamMembersFull = 77;
+
+  kTeamMemberInTeam = 78;
+
+  kTeamMemberNotInTeam = 79;
+
+  kTeamKickSelf = 80;
+
+  kTeamKickNotLeader = 81;
+
+  kTeamAppointSelf = 82;
+
+  kTeamAppointLeaderNotLeader = 83;
+
+  kTeamFull = 84;
+
+  kTeamInApplicantList = 85;
+
+  kTeamNotInApplicantList = 86;
+
+  kTeamListMaxSize = 87;
+
+  kTeamHasNotTeamId = 88;
+
+  kTeamDismissNotLeader = 89;
+
+  kTeamMemberListFull = 90;
+
+  kTeamCreateTeamMaxMemberSize = 91;
+
+  kTeamPlayerNotFound = 92;
+
+};

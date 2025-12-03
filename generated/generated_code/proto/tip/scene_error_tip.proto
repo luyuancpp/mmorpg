@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+enum scene_error {
+
+  kScene_errorOK = 0;
+
+  kEnterSceneNotFound = 51;
+
+  kEnterSceneNotFull = 52;
+
+  kEnterSceneMainFull = 53;
+
+  kEnterGameNodeCrash = 54;
+
+  kEnterSceneServerType = 55;
+
+  kEnterSceneParamError = 56;
+
+  kEnterSceneSceneFull = 57;
+
+  kEnterSceneSceneNotFound = 58;
+
+  kEnterSceneYouInCurrentScene = 59;
+
+  kEnterSceneEnterCrossRoomScene = 60;
+
+  kEnterSceneGsInfoNull = 61;
+
+  kEnterSceneGsFull = 62;
+
+  kEnterSceneYourSceneIsNull = 63;
+
+  kEnterSceneChangeSceneOffLine = 64;
+
+  kEnterSceneChangingScene = 65;
+
+  kEnterSceneChangingGs = 66;
+
+  kChangeScenePlayerQueueNotFound = 67;
+
+  kChangeScenePlayerQueueFull = 68;
+
+  kChangeScenePlayerQueueComponentGsNull = 69;
+
+  kChangeScenePlayerQueueComponentEmpty = 70;
+
+  kChangeSceneEnQueueNotSameGs = 71;
+
+  kInvalidEnterSceneParameters = 72;
+
+  kCheckEnterSceneCreator = 73;
+
+  kEnterSceneFailed = 74;
+
+};

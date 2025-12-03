@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+message MonsterBaseTable {
+	uint32 id = 1;
+}
+
+message MonsterBaseTableData {
+	repeated MonsterBaseTable data = 1;
+}

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+enum actor_action_error {
+
+  kActor_action_errorOK = 0;
+
+  kActorActionStateActionCannotBePerformedWhileInTeamFollowMode = 125;
+
+};

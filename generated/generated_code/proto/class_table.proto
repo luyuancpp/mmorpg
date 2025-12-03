@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+message ClassTable {
+	uint32 id = 1;
+	repeated uint32 skill = 2;
+}
+
+message ClassTableData {
+	repeated ClassTable data = 1;
+}

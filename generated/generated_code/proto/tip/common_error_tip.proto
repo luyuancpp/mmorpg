@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+enum common_error {
+
+  kCommon_errorOK = 0;
+
+  kSuccess = 1;
+
+  kInvalidTableId = 2;
+
+  kInvalidTableData = 3;
+
+  kServiceUnavailable = 4;
+
+  kEntityIsNull = 5;
+
+  kInvalidParameter = 6;
+
+  kServerCrashed = 7;
+
+  kIndexOutOfRange = 8;
+
+  kRateLimitExceeded = 9;
+
+  kThisEntityIsInvalid = 10;
+
+  kMessageSizeExceeded = 11;
+
+  kSessionNotFound = 12;
+
+  kPlayerNotFoundInSession = 13;
+
+  kMessageIdNotFound = 14;
+
+  kRequestMessageParseError = 15;
+
+  kArraySizeTooLargeInMessage = 16;
+
+  kResponseMessageParseError = 17;
+
+  kNegativeValueInMessage = 18;
+
+  kFailedToRegisterTheNode = 19;
+
+};

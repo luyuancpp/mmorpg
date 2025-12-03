@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+enum reward_error {
+
+  kReward_errorOK = 0;
+
+  kRewardAlreadyClaimed = 127;
+
+};

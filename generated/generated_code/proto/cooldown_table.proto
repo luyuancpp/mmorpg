@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+message CooldownTable {
+	uint32 id = 1;
+	uint32 duration = 2;
+}
+
+message CooldownTableData {
+	repeated CooldownTable data = 1;
+}
