@@ -635,7 +635,7 @@ var File_proto_service_go_grpc_login_login_proto protoreflect.FileDescriptor
 
 const file_proto_service_go_grpc_login_login_proto_rawDesc = "" +
 	"\n" +
-	"'proto/service/go/grpc/login/login.proto\x12\aloginpb\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x18proto/common/empty.proto\x1a\x16proto/common/tip.proto\x1a proto/common/user_accounts.proto\"\xcb\x01\n" +
+	"'proto/service/go/grpc/login/login.proto\x12\aloginpb\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a proto/common/user_accounts.proto\"\xcb\x01\n" +
 	"\x10LoginSessionInfo\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x17\n" +
 	"\arole_id\x18\x02 \x01(\x04R\x06roleId\x12\x1d\n" +

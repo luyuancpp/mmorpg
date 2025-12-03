@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.9
 // 	protoc        v6.31.1
-// source: game_rpc.proto
+// source: proto/common/game_rpc.proto
 
-package game
+package common
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -60,11 +60,11 @@ func (x GameMessageType) String() string {
 }
 
 func (GameMessageType) Descriptor() protoreflect.EnumDescriptor {
-	return file_game_rpc_proto_enumTypes[0].Descriptor()
+	return file_proto_common_game_rpc_proto_enumTypes[0].Descriptor()
 }
 
 func (GameMessageType) Type() protoreflect.EnumType {
-	return &file_game_rpc_proto_enumTypes[0]
+	return &file_proto_common_game_rpc_proto_enumTypes[0]
 }
 
 func (x GameMessageType) Number() protoreflect.EnumNumber {
@@ -73,7 +73,7 @@ func (x GameMessageType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GameMessageType.Descriptor instead.
 func (GameMessageType) EnumDescriptor() ([]byte, []int) {
-	return file_game_rpc_proto_rawDescGZIP(), []int{0}
+	return file_proto_common_game_rpc_proto_rawDescGZIP(), []int{0}
 }
 
 type GameErrorCode int32
@@ -121,11 +121,11 @@ func (x GameErrorCode) String() string {
 }
 
 func (GameErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_game_rpc_proto_enumTypes[1].Descriptor()
+	return file_proto_common_game_rpc_proto_enumTypes[1].Descriptor()
 }
 
 func (GameErrorCode) Type() protoreflect.EnumType {
-	return &file_game_rpc_proto_enumTypes[1]
+	return &file_proto_common_game_rpc_proto_enumTypes[1]
 }
 
 func (x GameErrorCode) Number() protoreflect.EnumNumber {
@@ -134,7 +134,7 @@ func (x GameErrorCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GameErrorCode.Descriptor instead.
 func (GameErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_game_rpc_proto_rawDescGZIP(), []int{1}
+	return file_proto_common_game_rpc_proto_rawDescGZIP(), []int{1}
 }
 
 type GameRpcMessage struct {
@@ -150,7 +150,7 @@ type GameRpcMessage struct {
 
 func (x *GameRpcMessage) Reset() {
 	*x = GameRpcMessage{}
-	mi := &file_game_rpc_proto_msgTypes[0]
+	mi := &file_proto_common_game_rpc_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -162,7 +162,7 @@ func (x *GameRpcMessage) String() string {
 func (*GameRpcMessage) ProtoMessage() {}
 
 func (x *GameRpcMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_game_rpc_proto_msgTypes[0]
+	mi := &file_proto_common_game_rpc_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -175,7 +175,7 @@ func (x *GameRpcMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameRpcMessage.ProtoReflect.Descriptor instead.
 func (*GameRpcMessage) Descriptor() ([]byte, []int) {
-	return file_game_rpc_proto_rawDescGZIP(), []int{0}
+	return file_proto_common_game_rpc_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GameRpcMessage) GetType() GameMessageType {
@@ -213,11 +213,11 @@ func (x *GameRpcMessage) GetMessageId() uint32 {
 	return 0
 }
 
-var File_game_rpc_proto protoreflect.FileDescriptor
+var File_proto_common_game_rpc_proto protoreflect.FileDescriptor
 
-const file_game_rpc_proto_rawDesc = "" +
+const file_proto_common_game_rpc_proto_rawDesc = "" +
 	"\n" +
-	"\x0egame_rpc.proto\"\xb1\x01\n" +
+	"\x1bproto/common/game_rpc.proto\"\xb1\x01\n" +
 	"\x0eGameRpcMessage\x12$\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x10.GameMessageTypeR\x04type\x12\x18\n" +
 	"\arequest\x18\x02 \x01(\fR\arequest\x12\x1a\n" +
@@ -240,28 +240,28 @@ const file_game_rpc_proto_rawDesc = "" +
 	"\tNO_METHOD\x10\x03\x12\x13\n" +
 	"\x0fINVALID_REQUEST\x10\x04\x12\x14\n" +
 	"\x10INVALID_RESPONSE\x10\x05\x12\v\n" +
-	"\aTIMEOUT\x10\x06B\x13Z\x11generated/pb/gameb\x06proto3"
+	"\aTIMEOUT\x10\x06B\x1aZ\x18chat/proto/common;commonb\x06proto3"
 
 var (
-	file_game_rpc_proto_rawDescOnce sync.Once
-	file_game_rpc_proto_rawDescData []byte
+	file_proto_common_game_rpc_proto_rawDescOnce sync.Once
+	file_proto_common_game_rpc_proto_rawDescData []byte
 )
 
-func file_game_rpc_proto_rawDescGZIP() []byte {
-	file_game_rpc_proto_rawDescOnce.Do(func() {
-		file_game_rpc_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_game_rpc_proto_rawDesc), len(file_game_rpc_proto_rawDesc)))
+func file_proto_common_game_rpc_proto_rawDescGZIP() []byte {
+	file_proto_common_game_rpc_proto_rawDescOnce.Do(func() {
+		file_proto_common_game_rpc_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_common_game_rpc_proto_rawDesc), len(file_proto_common_game_rpc_proto_rawDesc)))
 	})
-	return file_game_rpc_proto_rawDescData
+	return file_proto_common_game_rpc_proto_rawDescData
 }
 
-var file_game_rpc_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_game_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_game_rpc_proto_goTypes = []any{
+var file_proto_common_game_rpc_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_proto_common_game_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_common_game_rpc_proto_goTypes = []any{
 	(GameMessageType)(0),   // 0: GameMessageType
 	(GameErrorCode)(0),     // 1: GameErrorCode
 	(*GameRpcMessage)(nil), // 2: GameRpcMessage
 }
-var file_game_rpc_proto_depIdxs = []int32{
+var file_proto_common_game_rpc_proto_depIdxs = []int32{
 	0, // 0: GameRpcMessage.type:type_name -> GameMessageType
 	1, // 1: GameRpcMessage.error:type_name -> GameErrorCode
 	2, // [2:2] is the sub-list for method output_type
@@ -271,27 +271,27 @@ var file_game_rpc_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_game_rpc_proto_init() }
-func file_game_rpc_proto_init() {
-	if File_game_rpc_proto != nil {
+func init() { file_proto_common_game_rpc_proto_init() }
+func file_proto_common_game_rpc_proto_init() {
+	if File_proto_common_game_rpc_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_game_rpc_proto_rawDesc), len(file_game_rpc_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_game_rpc_proto_rawDesc), len(file_proto_common_game_rpc_proto_rawDesc)),
 			NumEnums:      2,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_game_rpc_proto_goTypes,
-		DependencyIndexes: file_game_rpc_proto_depIdxs,
-		EnumInfos:         file_game_rpc_proto_enumTypes,
-		MessageInfos:      file_game_rpc_proto_msgTypes,
+		GoTypes:           file_proto_common_game_rpc_proto_goTypes,
+		DependencyIndexes: file_proto_common_game_rpc_proto_depIdxs,
+		EnumInfos:         file_proto_common_game_rpc_proto_enumTypes,
+		MessageInfos:      file_proto_common_game_rpc_proto_msgTypes,
 	}.Build()
-	File_game_rpc_proto = out.File
-	file_game_rpc_proto_goTypes = nil
-	file_game_rpc_proto_depIdxs = nil
+	File_proto_common_game_rpc_proto = out.File
+	file_proto_common_game_rpc_proto_goTypes = nil
+	file_proto_common_game_rpc_proto_depIdxs = nil
 }
