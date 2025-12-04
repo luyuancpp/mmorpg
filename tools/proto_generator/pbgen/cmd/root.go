@@ -110,9 +110,6 @@ func trackSerialGroupTime(groupName string, tasks []struct {
 }
 
 func MakeProjectDir(_ *sync.WaitGroup) {
-	os.RemoveAll(_config.Global.Paths.ProjectGeneratedDir)
-	os.MkdirAll(_config.Global.Paths.ProjectGeneratedDir, os.FileMode(0777))
-
 	// 无并发操作，WG参数仅为统一函数签名
 	os.MkdirAll(_config.Global.Paths.GeneratedDir, os.FileMode(0777))
 	os.MkdirAll(_config.Global.Paths.ServiceInfoDir, os.FileMode(0777))
