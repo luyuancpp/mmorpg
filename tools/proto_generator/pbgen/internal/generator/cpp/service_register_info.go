@@ -6,20 +6,23 @@ import (
 	"fmt"
 	"github.com/iancoleman/strcase"
 	messageoption "github.com/luyuancpp/protooption"
-	"log"
 	"math"
 	"os"
 	"path"
 	"path/filepath"
-	"pbgen/internal"
-	_config "pbgen/internal/config"
-	utils2 "pbgen/internal/utils"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"text/template"
+
+	"go.uber.org/zap" // 引入zap用于结构化日志字段
+
+	"pbgen/internal"
+	_config "pbgen/internal/config"
+	utils2 "pbgen/internal/utils"
+	"pbgen/logger" // 引入全局logger包
 )
 
 // ReadProtoFileService reads service information from a protobuf descriptor file.
@@ -88,11 +91,14 @@ func ReadServiceIdFile(wg *sync.WaitGroup) {
 	wg.Add(1)
 
 	go func() {
-		wg.Done()
+		defer wg.Done() // 修正：将wg.Done()移到defer，确保无论是否出错都会执行
 
 		f, err := os.Open(_config.Global.Paths.ServiceIdFile)
 		if err != nil {
-			log.Fatalf("error reading service ID file: %v", err)
+			logger.Global.Fatal("读取服务ID文件失败",
+				zap.String("file_path", _config.Global.Paths.ServiceIdFile),
+				zap.Error(err),
+			)
 		}
 		defer f.Close()
 
@@ -100,31 +106,47 @@ func ReadServiceIdFile(wg *sync.WaitGroup) {
 		for scanner.Scan() {
 			line := scanner.Text()
 			splitList := strings.Split(line, "=")
+			if len(splitList) != 2 {
+				logger.Global.Warn("服务ID文件格式错误，跳过无效行",
+					zap.String("line", line),
+					zap.String("file_path", _config.Global.Paths.ServiceIdFile),
+				)
+				continue
+			}
 			id, err := strconv.ParseUint(splitList[0], 10, 64)
 			if err != nil {
-				log.Fatalf("error reading service ID file: %v", err)
+				logger.Global.Fatal("解析服务ID失败",
+					zap.String("line", line),
+					zap.String("file_path", _config.Global.Paths.ServiceIdFile),
+					zap.Error(err),
+				)
 			}
 			internal.ServiceIdMap[splitList[1]] = id
 		}
 
 		if err := scanner.Err(); err != nil {
-			log.Fatalf("error reading service ID file: %v", err)
+			logger.Global.Fatal("扫描服务ID文件失败",
+				zap.String("file_path", _config.Global.Paths.ServiceIdFile),
+				zap.Error(err),
+			)
 		}
-
 	}()
 }
 
 func WriteServiceIdFile() {
 	var data string
 	var idList []uint64
-	for k, _ := range internal.RpcIdMethodMap {
+	for k := range internal.RpcIdMethodMap {
 		idList = append(idList, k)
 	}
 	sort.Slice(idList, func(i, j int) bool { return idList[i] < idList[j] })
 	for i := 0; i < len(idList); i++ {
 		rpcMethodInfo, ok := internal.RpcIdMethodMap[idList[i]]
 		if !ok {
-			fmt.Println("msg id=", strconv.Itoa(i), " not use ")
+			logger.Global.Warn("消息ID未使用",
+				zap.Int("index", i),
+				zap.Uint64("msg_id", idList[i]),
+			)
 			continue
 		}
 		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
@@ -352,12 +374,18 @@ void InitMessageInfo()
 
 	tmpl, err := template.New("serviceInfoCpp").Parse(serviceInfoCppTemplate)
 	if err != nil {
-		panic(err)
+		logger.Global.Fatal("生成服务信息CPP文件失败: 解析模板失败",
+			zap.String("template_name", "serviceInfoCpp"),
+			zap.Error(err),
+		)
 	}
 
 	var output bytes.Buffer
 	if err := tmpl.Execute(&output, tmplData); err != nil {
-		panic(err)
+		logger.Global.Fatal("生成服务信息CPP文件失败: 执行模板失败",
+			zap.String("template_name", "serviceInfoCpp"),
+			zap.Error(err),
+		)
 	}
 
 	utils2.WriteFileIfChanged(_config.Global.Paths.ServiceCppFile, output.Bytes())
@@ -376,7 +404,11 @@ func writeServiceInfoHeadFile(wg *sync.WaitGroup) {
 
 	err := utils2.RenderTemplateToFile("internal/template/service_header.tmpl", _config.Global.Paths.ServiceHeaderFile, data)
 	if err != nil {
-		panic(err)
+		logger.Global.Fatal("生成服务信息头文件失败",
+			zap.String("template_path", "internal/template/service_header.tmpl"),
+			zap.String("output_path", _config.Global.Paths.ServiceHeaderFile),
+			zap.Error(err),
+		)
 		return
 	}
 }
@@ -437,12 +469,20 @@ void InitPlayerService()
 
 	tmpl, err := template.New("playerInstance").Parse(playerInstanceTemplate)
 	if err != nil {
-		panic(err)
+		logger.Global.Fatal("生成玩家服务实例代码失败: 解析模板失败",
+			zap.String("template_name", "playerInstance"),
+			zap.String("service_name", serviceName),
+			zap.Error(err),
+		)
 	}
 
 	var output bytes.Buffer
 	if err := tmpl.Execute(&output, data); err != nil {
-		panic(err)
+		logger.Global.Fatal("生成玩家服务实例代码失败: 执行模板失败",
+			zap.String("template_name", "playerInstance"),
+			zap.String("service_name", serviceName),
+			zap.Error(err),
+		)
 	}
 
 	utils2.WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
@@ -505,12 +545,20 @@ void InitPlayerServiceReplied()
 
 	tmpl, err := template.New("repliedInstance").Parse(repliedInstanceTemplate)
 	if err != nil {
-		panic(err)
+		logger.Global.Fatal("生成玩家回复服务实例代码失败: 解析模板失败",
+			zap.String("template_name", "repliedInstance"),
+			zap.String("service_name", serviceName),
+			zap.Error(err),
+		)
 	}
 
 	var output bytes.Buffer
 	if err := tmpl.Execute(&output, templateData); err != nil {
-		panic(err)
+		logger.Global.Fatal("生成玩家回复服务实例代码失败: 执行模板失败",
+			zap.String("template_name", "repliedInstance"),
+			zap.String("service_name", serviceName),
+			zap.Error(err),
+		)
 	}
 
 	utils2.WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
@@ -532,6 +580,10 @@ func writePlayerServiceInstanceFiles(wg *sync.WaitGroup, serviceType string, isP
 	} else if serviceType == "repliedInstance" {
 		generatorFunc = generateRepliedInstanceData
 	} else {
+		logger.Global.Warn("未知的服务实例类型，跳过生成",
+			zap.String("service_type", serviceType),
+			zap.String("service_name", serviceName),
+		)
 		return // Handle error or unknown type
 	}
 
