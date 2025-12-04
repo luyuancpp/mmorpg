@@ -2,15 +2,23 @@ package _config
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
 
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
+
+// 全局zap logger实例（如果主程序已初始化，可直接使用；否则需要初始化）
+var logger *zap.Logger
+
+// 初始化logger（供外部调用或内部初始化）
+func InitLogger(zapLogger *zap.Logger) {
+	logger = zapLogger
+}
 
 // Config 代码生成器全局配置
 type Config struct {
@@ -293,6 +301,15 @@ func Load() error {
 
 // loadConfig 实际的配置加载逻辑
 func loadConfig() error {
+	// 如果logger未初始化，创建一个默认的logger
+	if logger == nil {
+		var err error
+		logger, err = zap.NewProduction()
+		if err != nil {
+			return fmt.Errorf("初始化默认logger失败: %w", err)
+		}
+	}
+
 	// 确定配置文件路径
 	filePath := os.Getenv("PROTO_GEN_CONFIG_PATH")
 	if filePath == "" {
@@ -340,7 +357,9 @@ func loadConfig() error {
 
 	// 创建必要的目录
 	if err := createRequiredDirs(); err != nil {
-		log.Printf("警告: 创建必要目录失败: %v", err)
+		logger.Warn("创建必要目录失败",
+			zap.Error(err),
+		)
 	}
 
 	return nil
