@@ -3,15 +3,16 @@ package internal
 import (
 	"bufio"
 	"bytes"
-	"fmt"
-	"log"
 	"os"
-	_config "pbgen/internal/config"
-	utils2 "pbgen/internal/utils"
 	"sort"
 	"strings"
 	"sync"
 	"text/template"
+
+	"go.uber.org/zap" // 引入zap结构化日志字段
+	_config "pbgen/internal/config"
+	utils2 "pbgen/internal/utils"
+	"pbgen/logger" // 引入全局logger包
 )
 
 // Type definitions for callback functions
@@ -19,13 +20,18 @@ type checkRepliedCb func(methods *RPCMethods) bool
 
 // Function to write the header file for service ID
 func writeServiceIdHeadFile(serviceInfo []*RPCServiceInfo) {
-
 	if len(serviceInfo) <= 0 {
 		return
 	}
 
 	fileName := serviceInfo[0].ServiceInfoHeadInclude()
-	utils2.WriteFileIfChanged(_config.Global.Paths.ServiceInfoDir+fileName, []byte(GenServiceIdHeader(serviceInfo)))
+	outputPath := _config.Global.Paths.ServiceInfoDir + fileName
+	utils2.WriteFileIfChanged(outputPath, []byte(GenServiceIdHeader(serviceInfo)))
+
+	logger.Global.Info("服务ID头文件生成完成",
+		zap.String("file_path", outputPath),
+		zap.Int("service_count", len(serviceInfo)),
+	)
 }
 
 // GenServiceIdHeader 使用模板生成服务 ID 头文件内容
@@ -50,7 +56,8 @@ constexpr uint32_t {{.KeyName}}Index = {{.Index}};
 	// 创建模板并解析
 	t, err := template.New("serviceIdHeader").Parse(tmpl)
 	if err != nil {
-		panic(err) // 可以根据需求调整错误处理
+		logger.Global.Fatal("解析服务ID头文件模板失败", zap.Error(err))
+		panic(err)
 	}
 
 	// 使用模板填充数据
@@ -68,6 +75,7 @@ constexpr uint32_t {{.KeyName}}Index = {{.Index}};
 	// 执行模板并写入 buffer
 	err = t.Execute(&buf, data)
 	if err != nil {
+		logger.Global.Fatal("执行服务ID头文件模板失败", zap.Error(err))
 		panic(err)
 	}
 
@@ -93,6 +101,7 @@ public:
 		"getServiceHandlerMethodStr": getServiceHandlerMethodStr,
 	}).Parse(tmplStr)
 	if err != nil {
+		logger.Global.Error("解析服务处理类头文件模板失败", zap.Error(err))
 		return "", err
 	}
 
@@ -111,6 +120,7 @@ public:
 	var result strings.Builder
 	err = tmpl.Execute(&result, data)
 	if err != nil {
+		logger.Global.Error("执行服务处理类头文件模板失败", zap.Error(err))
 		return "", err
 	}
 
@@ -120,7 +130,6 @@ public:
 
 // Helper function to generate method strings for service handlers
 func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
-
 	const methodTemplate = `
 	void {{.Method}}({{.GoogleMethodController}} const {{.CppRequest}}* request, {{.CppResponse}}* response, ::google::protobuf::Closure* done) override;
 `
@@ -142,6 +151,7 @@ func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
 	// 创建模板
 	tmpl, err := template.New("methodTemplate").Parse(methodTemplate)
 	if err != nil {
+		logger.Global.Error("解析方法模板失败", zap.Error(err))
 		return "", err
 	}
 
@@ -149,6 +159,7 @@ func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
 	var output bytes.Buffer
 	err = tmpl.Execute(&output, data)
 	if err != nil {
+		logger.Global.Error("执行方法模板失败", zap.Error(err))
 		return "", err
 	}
 
@@ -157,7 +168,6 @@ func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
 
 // Function to get the header string for player method handlers
 func GetPlayerServiceHeadStr(methods RPCMethods) (string, error) {
-
 	const playerMethodHeadTemplate = `#pragma once
 
 {{.IncludeName}}
@@ -193,6 +203,7 @@ public:
 	// 创建模板
 	tmpl, err := template.New("playerMethodHeadTemplate").Parse(playerMethodHeadTemplate)
 	if err != nil {
+		logger.Global.Error("解析玩家服务头文件模板失败", zap.Error(err))
 		return "", err
 	}
 
@@ -200,6 +211,7 @@ public:
 	var output bytes.Buffer
 	err = tmpl.Execute(&output, data)
 	if err != nil {
+		logger.Global.Error("执行玩家服务头文件模板失败", zap.Error(err))
 		return "", err
 	}
 
@@ -268,12 +280,14 @@ func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
 
 	tmpl, err := template.New("playerMethodFunctions").Parse(playerMethodFunctionsTemplate)
 	if err != nil {
-		panic(err) // 可以改为返回 error
+		logger.Global.Fatal("解析玩家方法函数模板失败", zap.Error(err))
+		panic(err)
 	}
 
 	var output bytes.Buffer
 	err = tmpl.Execute(&output, data)
 	if err != nil {
+		logger.Global.Fatal("执行玩家方法函数模板失败", zap.Error(err))
 		panic(err)
 	}
 
@@ -313,6 +327,7 @@ func GetPlayerMethodRepliedHeadStr(methods RPCMethods) (string, error) {
 	// 创建模板
 	tmpl, err := template.New("playerMethodRepliedHeadTemplate").Parse(playerMethodRepliedHeadTemplate)
 	if err != nil {
+		logger.Global.Error("解析玩家回复服务头文件模板失败", zap.Error(err))
 		return "", err
 	}
 
@@ -320,6 +335,7 @@ func GetPlayerMethodRepliedHeadStr(methods RPCMethods) (string, error) {
 	var output bytes.Buffer
 	err = tmpl.Execute(&output, data)
 	if err != nil {
+		logger.Global.Error("执行玩家回复服务头文件模板失败", zap.Error(err))
 		return "", err
 	}
 
@@ -383,11 +399,13 @@ func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
 
 	tmpl, err := template.New("playerMethodRepliedFunctions").Parse(playerMethodRepliedFunctionsTemplate)
 	if err != nil {
+		logger.Global.Fatal("解析玩家回复方法函数模板失败", zap.Error(err))
 		panic(err)
 	}
 
 	var output bytes.Buffer
 	if err := tmpl.Execute(&output, data); err != nil {
+		logger.Global.Fatal("执行玩家回复方法函数模板失败", zap.Error(err))
 		panic(err)
 	}
 
@@ -447,11 +465,13 @@ void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn
 	// Parse and execute the template
 	tmpl, err := template.New("methodRepliedHandlerHead").Parse(methodRepliedHandlerHeadTemplate)
 	if err != nil {
+		logger.Global.Fatal("解析回复处理类头文件模板失败", zap.Error(err))
 		panic(err)
 	}
 
 	var output bytes.Buffer
 	if err := tmpl.Execute(&output, data); err != nil {
+		logger.Global.Fatal("执行回复处理类头文件模板失败", zap.Error(err))
 		panic(err)
 	}
 
@@ -466,7 +486,10 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 	// 打开文件
 	fd, err := os.Open(cppFileName)
 	if err != nil {
-		log.Fatalf("failed to open file %s: %v", cppFileName, err)
+		logger.Global.Fatal("打开C++文件失败",
+			zap.String("file_name", cppFileName),
+			zap.Error(err),
+		)
 	}
 	defer fd.Close()
 
@@ -480,6 +503,11 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 	var isFirstCode bool // 标记是否处理了第一个特殊的 yourCode
 	var inFirstCode bool // 标记是否在处理第一个特殊的 yourCode
 	var inMethodCode bool
+
+	logger.Global.Debug("开始读取C++文件中的代码段",
+		zap.String("file_name", cppFileName),
+		zap.Int("method_count", len(*methods)),
+	)
 
 	// 遍历文件的每一行
 	for scanner.Scan() {
@@ -508,6 +536,10 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 				handlerName := methodFunc(method, funcParam)
 				if strings.Contains(line, handlerName) {
 					currentMethod = method
+					logger.Global.Debug("匹配到方法代码段开始",
+						zap.String("handler_name", handlerName),
+						zap.String("method", method.Method()),
+					)
 					break
 				}
 			}
@@ -523,6 +555,10 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 				// 使用 methodFunc currentMethod
 				handlerName := methodFunc(currentMethod, funcParam)
 				codeMap[handlerName] = currentCode
+				logger.Global.Debug("方法代码段读取完成",
+					zap.String("handler_name", handlerName),
+					zap.Int("code_length", len(currentCode)),
+				)
 				currentMethod = nil
 				currentCode = ""
 				inMethodCode = false
@@ -532,18 +568,38 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 		}
 	}
 
+	// 检查扫描器错误
+	if err := scanner.Err(); err != nil {
+		logger.Global.Error("读取C++文件时出错",
+			zap.String("file_name", cppFileName),
+			zap.Error(err),
+		)
+		return codeMap, firstCode, err
+	}
+
 	// 如果没有找到第一个 yourCode，使用默认的 global_value.YourCodePair
 	if firstCode == "" {
 		firstCode = _config.Global.Naming.YourCodePair
+		logger.Global.Debug("未找到第一个代码段，使用默认值",
+			zap.String("default_code", firstCode),
+		)
 	}
 
 	// 检查是否有方法没有找到对应的 yourCode，如果没有找到，则添加默认值
+	missingCount := 0
 	for _, method := range *methods {
 		handlerName := methodFunc(method, funcParam)
 		if _, exists := codeMap[handlerName]; !exists {
 			codeMap[handlerName] = _config.Global.Naming.YourCodePair
+			missingCount++
 		}
 	}
+
+	logger.Global.Info("C++文件代码段读取完成",
+		zap.String("file_name", cppFileName),
+		zap.Int("code_map_size", len(codeMap)),
+		zap.Int("missing_method_count", missingCount),
+	)
 
 	return codeMap, firstCode, nil
 }
@@ -561,7 +617,6 @@ func GenerateMethodHandlerKeyNameWrapper(info *MethodInfo, _ string) string {
 }
 
 func GetServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
-
 	const methodHandlerCppTemplate = `
 {{ .CppHandlerInclude }}
 
@@ -635,11 +690,13 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 	// 执行模板
 	tmpl, err := template.New("methodHandlerCpp").Parse(methodHandlerCppTemplate)
 	if err != nil {
+		logger.Global.Fatal("解析服务处理类CPP模板失败", zap.Error(err))
 		panic(err)
 	}
 
 	var output bytes.Buffer
 	if err := tmpl.Execute(&output, data); err != nil {
+		logger.Global.Fatal("执行服务处理类CPP模板失败", zap.Error(err))
 		panic(err)
 	}
 
@@ -732,11 +789,13 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 
 	tmpl, err := template.New("methodRepliedHandlerCpp").Parse(methodRepliedHandlerCppTemplate)
 	if err != nil {
+		logger.Global.Fatal("解析回复处理类CPP模板失败", zap.Error(err))
 		panic(err)
 	}
 
 	var output bytes.Buffer
 	if err := tmpl.Execute(&output, templateData); err != nil {
+		logger.Global.Fatal("执行回复处理类CPP模板失败", zap.Error(err))
 		panic(err)
 	}
 
@@ -808,11 +867,13 @@ void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* re
 
 	tmpl, err := template.New("playerHandlerCpp").Parse(playerHandlerCppTemplate)
 	if err != nil {
+		logger.Global.Fatal("解析玩家服务处理类CPP模板失败", zap.Error(err))
 		panic(err)
 	}
 
 	var output bytes.Buffer
 	if err := tmpl.Execute(&output, data); err != nil {
+		logger.Global.Fatal("执行玩家服务处理类CPP模板失败", zap.Error(err))
 		panic(err)
 	}
 
@@ -820,7 +881,6 @@ void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* re
 }
 
 func GenRegisterFile(wg *sync.WaitGroup, dst string, cb checkRepliedCb) {
-
 	const registerFileTemplate = `
 #include <unordered_map>
 #include <memory>
@@ -848,14 +908,26 @@ void InitServiceHandler()
 	var includes []string
 	var initLines []string
 
+	logger.Global.Info("开始生成服务注册文件",
+		zap.String("output_path", dst),
+	)
+
 	for _, service := range GlobalRPCServiceList {
 		if !cb(&service.MethodInfo) {
+			logger.Global.Debug("服务不满足回调条件，跳过注册",
+				zap.String("service_name", service.Service()),
+			)
 			continue
 		}
 		first := service.MethodInfo[0]
 		includes = append(includes, first.CppHandlerIncludeName())
-		initLines = append(initLines, fmt.Sprintf(" gNodeService.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());",
-			first.Service(), first.Service(), _config.Global.Naming.HandlerFile))
+		initLine := " gNodeService.emplace(\"" + first.Service() + "\", std::make_unique_for_overwrite<" + first.Service() + _config.Global.Naming.HandlerFile + ">());"
+		initLines = append(initLines, initLine)
+
+		logger.Global.Debug("添加服务注册行",
+			zap.String("service_name", first.Service()),
+			zap.String("init_line", initLine),
+		)
 	}
 
 	templateData := RegisterFileData{
@@ -865,15 +937,22 @@ void InitServiceHandler()
 
 	tmpl, err := template.New("registerFile").Parse(registerFileTemplate)
 	if err != nil {
+		logger.Global.Fatal("解析服务注册文件模板失败", zap.Error(err))
 		panic(err)
 	}
 
 	var output bytes.Buffer
 	if err := tmpl.Execute(&output, templateData); err != nil {
+		logger.Global.Fatal("执行服务注册文件模板失败", zap.Error(err))
 		panic(err)
 	}
 
 	utils2.WriteFileIfChanged(dst, output.Bytes())
+	logger.Global.Info("服务注册文件生成完成",
+		zap.String("output_path", dst),
+		zap.Int("include_count", len(includes)),
+		zap.Int("init_line_count", len(initLines)),
+	)
 }
 
 func WriteRepliedRegisterFile(wg *sync.WaitGroup, dst string, cb checkRepliedCb) {
@@ -895,12 +974,25 @@ void InitReply()
 
 	var initFuncList []string
 
+	logger.Global.Info("开始生成回复注册文件",
+		zap.String("output_path", dst),
+	)
+
 	for _, service := range GlobalRPCServiceList {
 		if !cb(&service.MethodInfo) {
+			logger.Global.Debug("服务不满足回调条件，跳过回复注册",
+				zap.String("service_name", service.Service()),
+			)
 			continue
 		}
 		first := service.MethodInfo[0]
-		initFuncList = append(initFuncList, "Init"+first.Service()+_config.Global.Naming.RepliedHandlerFile)
+		initFunc := "Init" + first.Service() + _config.Global.Naming.RepliedHandlerFile
+		initFuncList = append(initFuncList, initFunc)
+
+		logger.Global.Debug("添加回复注册函数",
+			zap.String("service_name", first.Service()),
+			zap.String("init_func", initFunc),
+		)
 	}
 
 	templateData := RepliedRegisterData{
@@ -909,18 +1001,28 @@ void InitReply()
 
 	tmpl, err := template.New("repliedRegister").Parse(repliedRegisterTemplate)
 	if err != nil {
+		logger.Global.Fatal("解析回复注册文件模板失败", zap.Error(err))
 		panic(err)
 	}
 
 	var output bytes.Buffer
 	if err := tmpl.Execute(&output, templateData); err != nil {
+		logger.Global.Fatal("执行回复注册文件模板失败", zap.Error(err))
 		panic(err)
 	}
 
 	utils2.WriteFileIfChanged(dst, output.Bytes())
+	logger.Global.Info("回复注册文件生成完成",
+		zap.String("output_path", dst),
+		zap.Int("init_func_count", len(initFuncList)),
+	)
 }
 
 func GenerateServiceConstants(wg *sync.WaitGroup) {
+	logger.Global.Info("开始生成服务常量文件",
+		zap.String("service_info_dir", _config.Global.Paths.ServiceInfoDir),
+	)
+
 	FileServiceMap.Range(func(k, v interface{}) bool {
 		protoFile := k.(string)
 		serviceList := v.([]*RPCServiceInfo)
@@ -929,8 +1031,16 @@ func GenerateServiceConstants(wg *sync.WaitGroup) {
 			defer wg.Done()
 
 			if len(serviceInfo) <= 0 {
+				logger.Global.Debug("服务信息为空，跳过常量生成",
+					zap.String("proto_file", protoFile),
+				)
 				return
 			}
+
+			logger.Global.Debug("开始生成服务常量",
+				zap.String("proto_file", protoFile),
+				zap.Int("service_count", len(serviceInfo)),
+			)
 
 			sort.Slice(serviceInfo, func(i, j int) bool {
 				return serviceInfo[i].ServiceIndex < serviceInfo[j].ServiceIndex
@@ -942,4 +1052,8 @@ func GenerateServiceConstants(wg *sync.WaitGroup) {
 
 		return true
 	})
+
+	logger.Global.Info("服务常量文件生成任务已提交",
+		zap.String("service_info_dir", _config.Global.Paths.ServiceInfoDir),
+	)
 }
