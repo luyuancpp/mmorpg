@@ -2,18 +2,20 @@ package cpp
 
 import (
 	"bytes"
-	"fmt"
-	messageoption "github.com/luyuancpp/protooption"
-	"log"
 	"os"
 	"path"
-	"pbgen/internal"
-	_config "pbgen/internal/config"
-	utils2 "pbgen/internal/utils"
 	"sort"
 	"strings"
 	"sync"
 	"text/template"
+
+	"go.uber.org/zap" // 引入zap用于结构化日志字段
+
+	messageoption "github.com/luyuancpp/protooption"
+	"pbgen/internal"
+	_config "pbgen/internal/config"
+	utils2 "pbgen/internal/utils"
+	"pbgen/logger" // 引入全局logger包
 )
 
 // GrpcServiceTemplateData 用于传递给模板的数据结构
@@ -30,13 +32,18 @@ type GrpcServiceTemplateData struct {
 func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, text string) error {
 	// 检查输入数据是否为空
 	if len(grpcServices) == 0 {
-		log.Fatal("grpcServices cannot be empty")
+		logger.Global.Fatal("生成gRPC文件失败: 服务信息不能为空",
+			zap.String("target_file", fileName),
+		)
 	}
 
 	// 渲染模板内容
 	tmpl, err := template.New(fileName).Parse(text)
 	if err != nil {
-		log.Fatal("could not parse template: %w", err)
+		logger.Global.Fatal("生成gRPC文件失败: 解析模板失败",
+			zap.String("template_name", fileName),
+			zap.Error(err),
+		)
 	}
 
 	// 填充模板数据
@@ -52,39 +59,59 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 	var generatedContent bytes.Buffer
 	// 渲染模板到缓冲区
 	if err := tmpl.Execute(&generatedContent, data); err != nil {
-		log.Fatal("could not execute template: %w", err)
+		logger.Global.Fatal("生成gRPC文件失败: 执行模板失败",
+			zap.String("target_file", fileName),
+			zap.Error(err),
+		)
 	}
 
 	// 读取现有文件的内容（如果文件存在）
 	existingContent, err := os.ReadFile(fileName)
 	if err != nil && !os.IsNotExist(err) {
-		log.Fatal("could not read existing file: %w", err)
+		logger.Global.Fatal("生成gRPC文件失败: 读取现有文件失败",
+			zap.String("file_path", fileName),
+			zap.Error(err),
+		)
 	}
 
 	// 如果文件内容相同，则跳过写入
 	if err == nil && bytes.Equal(existingContent, generatedContent.Bytes()) {
-		fmt.Println("文件内容没有变化，跳过写入:", fileName)
+		logger.Global.Info("gRPC文件内容无变化，跳过写入",
+			zap.String("file_path", fileName),
+		)
 		return nil
 	}
 
 	err = os.MkdirAll(path.Dir(fileName), os.FileMode(0777))
 	if err != nil {
+		logger.Global.Error("生成gRPC文件失败: 创建目录失败",
+			zap.String("directory", path.Dir(fileName)),
+			zap.Error(err),
+		)
 		return err
 	}
 
 	// 创建文件并写入渲染后的内容
 	file, err := os.Create(fileName)
 	if err != nil {
-		log.Fatal("could not create file: %w", err)
+		logger.Global.Fatal("生成gRPC文件失败: 创建文件失败",
+			zap.String("file_path", fileName),
+			zap.Error(err),
+		)
 	}
 	defer file.Close()
 
 	// 写入生成的内容到文件
 	if _, err := file.Write(generatedContent.Bytes()); err != nil {
-		log.Fatal("could not write to file: %w", err)
+		logger.Global.Fatal("生成gRPC文件失败: 写入文件失败",
+			zap.String("file_path", fileName),
+			zap.Error(err),
+		)
 	}
 
-	fmt.Println("文件已更新:", fileName)
+	logger.Global.Info("gRPC文件已更新",
+		zap.String("file_path", fileName),
+	)
 	return nil
 }
 
@@ -115,9 +142,14 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 			})
 
 			// 确保目录存在
-			err := os.MkdirAll(path.Dir(_config.Global.Paths.CppGenGrpcDir+firstService.LogicalPath()), os.FileMode(0777))
+			targetDir := path.Dir(_config.Global.Paths.CppGenGrpcDir + firstService.LogicalPath())
+			err := os.MkdirAll(targetDir, os.FileMode(0777))
 			if err != nil {
-				log.Fatal(err)
+				logger.Global.Fatal("生成gRPC客户端代码失败: 创建目录失败",
+					zap.String("directory", targetDir),
+					zap.String("proto_file", protoFile),
+					zap.Error(err),
+				)
 				return
 			}
 
@@ -126,13 +158,21 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 			// 生成 .h 文件
 			filePath := _config.Global.Paths.CppGenGrpcDir + cppFileBaseName + _config.Global.FileExtensions.GrpcClientH
 			if err := generateGrpcFile(filePath, serviceInfo, AsyncClientHeaderTemplate); err != nil {
-				log.Fatal(err)
+				logger.Global.Fatal("生成gRPC客户端头文件失败",
+					zap.String("file_path", filePath),
+					zap.String("proto_file", protoFile),
+					zap.Error(err),
+				)
 			}
 
 			// 生成 .cpp 文件
 			filePathCpp := _config.Global.Paths.CppGenGrpcDir + cppFileBaseName + _config.Global.FileExtensions.GrpcClientCpp
 			if err := generateGrpcFile(filePathCpp, serviceInfo, AsyncClientCppHandleTemplate); err != nil {
-				log.Fatal(err)
+				logger.Global.Fatal("生成gRPC客户端cpp文件失败",
+					zap.String("file_path", filePathCpp),
+					zap.String("proto_file", protoFile),
+					zap.Error(err),
+				)
 			}
 		}(protoFile, serviceList)
 
@@ -162,7 +202,14 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 				serviceInfoList = append(serviceInfoList, service)
 			}
 
-			os.MkdirAll(path.Dir(_config.Global.Paths.GrpcInitCppFile), os.FileMode(0777))
+			err := os.MkdirAll(path.Dir(_config.Global.Paths.GrpcInitCppFile), os.FileMode(0777))
+			if err != nil {
+				logger.Global.Error("生成gRPC初始化文件失败: 创建目录失败",
+					zap.String("directory", path.Dir(_config.Global.Paths.GrpcInitCppFile)),
+					zap.Error(err),
+				)
+				return
+			}
 
 			cppData := struct {
 				ServiceInfo []*internal.RPCServiceInfo
@@ -171,13 +218,18 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 			}
 
 			if err := utils2.RenderTemplateToFile("internal/template/grpc_init_total.cpp.tmpl", _config.Global.Paths.GrpcInitCppFile, cppData); err != nil {
-				log.Fatal(err)
+				logger.Global.Fatal("生成gRPC初始化cpp文件失败",
+					zap.String("file_path", _config.Global.Paths.GrpcInitCppFile),
+					zap.Error(err),
+				)
 			}
 
 			if err := utils2.RenderTemplateToFile("internal/template/grpc_init_total.h.tmpl", _config.Global.Paths.GrpcInitHeadFile, cppData); err != nil {
-				log.Fatal(err)
+				logger.Global.Fatal("生成gRPC初始化头文件失败",
+					zap.String("file_path", _config.Global.Paths.GrpcInitHeadFile),
+					zap.Error(err),
+				)
 			}
 		}()
 	}
-
 }
