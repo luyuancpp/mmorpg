@@ -2,15 +2,16 @@ package internal
 
 import (
 	"bufio"
-	"fmt"
-	"log"
 	"os"
 	"path"
+	"strings"
+	"sync"
+
+	"go.uber.org/zap" // 引入zap结构化日志字段
 	"pbgen/global_value"
 	_config "pbgen/internal/config"
 	"pbgen/internal/utils"
-	"strings"
-	"sync"
+	"pbgen/logger" // 引入全局logger包
 )
 
 // ConstantsGenerator is responsible for generating Go constants from a file.
@@ -27,7 +28,10 @@ func NewConstantsGenerator(fileName string) *ConstantsGenerator {
 func (cg *ConstantsGenerator) Generate() ([]string, error) {
 	file, err := os.Open(cg.FileName)
 	if err != nil {
-		log.Fatal("error opening file: %w", err)
+		logger.Global.Fatal("打开常量生成源文件失败",
+			zap.String("file_name", cg.FileName),
+			zap.Error(err),
+		)
 	}
 	defer file.Close()
 
@@ -44,12 +48,20 @@ func (cg *ConstantsGenerator) Generate() ([]string, error) {
 		name := strings.TrimSpace(parts[1])
 
 		constName := convertToValidIdentifier(name)
-		consts = append(consts, fmt.Sprintf("const %s%s = %s", constName, _config.Global.Naming.MessageId, number))
+		consts = append(consts, "const "+constName+_config.Global.Naming.MessageId+" = "+number)
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Fatalf("error reading file: %w", err)
+		logger.Global.Fatal("读取常量生成源文件失败",
+			zap.String("file_name", cg.FileName),
+			zap.Error(err),
+		)
 	}
+
+	logger.Global.Info("常量生成完成",
+		zap.String("file_name", cg.FileName),
+		zap.Int("const_count", len(consts)),
+	)
 
 	return consts, nil
 }
@@ -83,7 +95,10 @@ func NewConstantsWriter(constants []string, filePath string) *ConstantsWriter {
 func (cw *ConstantsWriter) Write() error {
 	file, err := os.Create(cw.FilePath)
 	if err != nil {
-		log.Fatal("error creating file: %w", err)
+		logger.Global.Fatal("创建常量文件失败",
+			zap.String("file_path", cw.FilePath),
+			zap.Error(err),
+		)
 	}
 	defer file.Close()
 
@@ -91,20 +106,35 @@ func (cw *ConstantsWriter) Write() error {
 
 	_, err = writer.WriteString("package game\n\n")
 	if err != nil {
-		log.Fatal("error writing to file: %w", err)
+		logger.Global.Fatal("写入常量文件包名失败",
+			zap.String("file_path", cw.FilePath),
+			zap.Error(err),
+		)
 	}
 
 	for _, c := range cw.Constants {
 		_, err := writer.WriteString(c + "\n")
 		if err != nil {
-			log.Fatal("error writing to file: %w", err)
+			logger.Global.Fatal("写入常量到文件失败",
+				zap.String("file_path", cw.FilePath),
+				zap.String("constant", c),
+				zap.Error(err),
+			)
 		}
 	}
 
 	err = writer.Flush()
 	if err != nil {
-		log.Fatal("error flushing to file: %w", err)
+		logger.Global.Fatal("刷写常量文件缓冲区失败",
+			zap.String("file_path", cw.FilePath),
+			zap.Error(err),
+		)
 	}
+
+	logger.Global.Info("常量文件写入成功",
+		zap.String("file_path", cw.FilePath),
+		zap.Int("const_count", len(cw.Constants)),
+	)
 
 	return nil
 }
@@ -113,41 +143,74 @@ func (cw *ConstantsWriter) Write() error {
 func WriteToFiles(constants []string, filePaths []string) {
 	var wg sync.WaitGroup
 
+	logger.Global.Info("开始并发写入常量文件",
+		zap.Int("file_count", len(filePaths)),
+		zap.Int("const_count", len(constants)),
+	)
+
 	for _, path := range filePaths {
 		wg.Add(1)
 		go func(path string) {
 			defer wg.Done()
 			writer := NewConstantsWriter(constants, path)
 			if err := writer.Write(); err != nil {
-				log.Printf("error writing to file %s: %v", path, err)
+				logger.Global.Warn("写入常量文件失败",
+					zap.String("file_path", path),
+					zap.Error(err),
+				)
 			}
 		}(path)
 	}
 
 	wg.Wait()
+
+	logger.Global.Info("所有常量文件写入完成",
+		zap.Int("file_count", len(filePaths)),
+	)
 }
 
 func WriteGoMessageId(wg *sync.WaitGroup) {
-	// Initialize the ConstantsGenerator
-	g := NewConstantsGenerator(_config.Global.Paths.ServiceIdFile)
-	consts, err := g.Generate()
-	if err != nil {
-		log.Fatal(err)
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
 
-	// Define file paths where constants will be written
-	filePaths := []string{
-		_config.Global.Paths.RobotMessageIdFile,
-	}
+		// Initialize the ConstantsGenerator
+		g := NewConstantsGenerator(_config.Global.Paths.ServiceIdFile)
+		logger.Global.Info("开始生成Go MessageId常量",
+			zap.String("source_file", _config.Global.Paths.ServiceIdFile),
+		)
 
-	for i := 0; i < len(global_value.ProtoDirs); i++ {
-		if !utils.HasGrpcService(global_value.ProtoDirs[i]) {
-			continue
+		consts, err := g.Generate()
+		if err != nil {
+			logger.Global.Fatal("生成MessageId常量失败",
+				zap.Error(err),
+			)
 		}
-		basePath := strings.ToLower(path.Base(global_value.ProtoDirs[i]))
-		outputDir := _config.Global.Paths.NodeGoDir + basePath + "/" + _config.Global.Naming.GoPackage
-		filePaths = append(filePaths, outputDir+"/"+_config.Global.FileExtensions.MessageIdGoFile)
-	}
-	// Write constants to files concurrently
-	WriteToFiles(consts, filePaths)
+
+		// Define file paths where constants will be written
+		filePaths := []string{
+			_config.Global.Paths.RobotMessageIdFile,
+		}
+
+		for i := 0; i < len(global_value.ProtoDirs); i++ {
+			if !utils.HasGrpcService(global_value.ProtoDirs[i]) {
+				logger.Global.Debug("目录无GRPC服务，跳过MessageId文件生成",
+					zap.String("dir", global_value.ProtoDirs[i]),
+				)
+				continue
+			}
+			basePath := strings.ToLower(path.Base(global_value.ProtoDirs[i]))
+			outputDir := _config.Global.Paths.NodeGoDir + basePath + "/" + _config.Global.Naming.GoPackage
+			filePath := outputDir + "/" + _config.Global.FileExtensions.MessageIdGoFile
+			filePaths = append(filePaths, filePath)
+
+			logger.Global.Debug("添加MessageId文件输出路径",
+				zap.String("dir", global_value.ProtoDirs[i]),
+				zap.String("output_path", filePath),
+			)
+		}
+
+		// Write constants to files concurrently
+		WriteToFiles(consts, filePaths)
+	}()
 }
