@@ -245,7 +245,7 @@ func verifyMessageValidity(msgName string, msg proto.Message) {
 			zap.String("message_name", msgName),
 			zap.String("field_name", string(fd.Name())),
 			zap.String("field_kind", string(fd.Kind())),
-			zap.Int32("field_number", fd.Number()),
+			zap.Int32("field_number", int32(fd.Number())),
 		)
 	}
 
