@@ -47,6 +47,26 @@ func registerCallbacks(log *zap.Logger) {
 			return nil
 		})
 
+	prototools.RegisterOptionCallback(prototools.OptionTypeMessage,
+		func(desc interface{}, opts interface{}) error {
+			// 这里 desc 是 *descriptorpb.DescriptorProto
+			msg := desc.(*descriptorpb.DescriptorProto)
+
+			value := proto.GetExtension(
+				opts.(*descriptorpb.MessageOptions),
+				messageoption.E_OptionAttributeSync,
+			)
+
+			if value != nil {
+				log.Info("[CPP] Message table name",
+					zap.String("message_name", msg.GetName()),
+					zap.Any("table_name", value),
+				)
+			}
+
+			return nil
+		})
+
 	prototools.RegisterExtensionCallback(
 		messageoption.E_OptionTableName,
 		func(desc interface{}, value interface{}) error {

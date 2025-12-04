@@ -16,6 +16,8 @@ github.com/luyuancpp/protooption v0.0.0-20251124112450-56404e82b7ea h1:bJkkgFmk/
 github.com/luyuancpp/protooption v0.0.0-20251124112450-56404e82b7ea/go.mod h1:uNz9kXwuEqmgeloQ96j+J0RNMLsDIKNN6sVNaxBZuWk=
 github.com/luyuancpp/protooption v0.0.20 h1:lD94Vu/7RYVstjQSaIWVf99vrkYUCMwbcKP/FCjNDHs=
 github.com/luyuancpp/protooption v0.0.20/go.mod h1:uNz9kXwuEqmgeloQ96j+J0RNMLsDIKNN6sVNaxBZuWk=
+github.com/luyuancpp/protooption v0.0.21 h1:QdkreYCG2FMZhBrfxmBKz5bxSDnneUkCzYDZalqp8rg=
+github.com/luyuancpp/protooption v0.0.21/go.mod h1:uNz9kXwuEqmgeloQ96j+J0RNMLsDIKNN6sVNaxBZuWk=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
