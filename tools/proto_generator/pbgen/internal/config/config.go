@@ -10,15 +10,11 @@ import (
 
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
+	"pbgen/logger" // 引入全局logger包
 )
 
-// 全局zap logger实例（如果主程序已初始化，可直接使用；否则需要初始化）
-var logger *zap.Logger
-
-// 初始化logger（供外部调用或内部初始化）
-func InitLogger(zapLogger *zap.Logger) {
-	logger = zapLogger
-}
+// 移除原有局部logger变量和InitLogger方法
+// 直接使用 pbgen/logger 包中的 Global 实例
 
 // Config 代码生成器全局配置
 type Config struct {
@@ -33,7 +29,6 @@ type Config struct {
 	Log            LogConfig          `yaml:"log"`
 }
 
-// DirectoryNames 目录命名常量（对应YAML中的directory_names节点）
 // DirectoryNames 目录命名常量（对应YAML中的directory_names节点）
 type DirectoryNames struct {
 	GeneratedRpcName     string `yaml:"generated_rpc_name"`       // RPC生成目录名
@@ -301,15 +296,26 @@ func Load() error {
 
 // loadConfig 实际的配置加载逻辑
 func loadConfig() error {
-	// 如果logger未初始化，创建一个默认的logger
-	if logger == nil {
-		var err error
-		logger, err = zap.NewProduction()
+	// 检查全局logger是否已初始化
+	if logger.Global == nil {
+		// 防御性创建临时logger（避免主程序未初始化的情况）
+		tempLogger, err := zap.NewProduction()
 		if err != nil {
-			return fmt.Errorf("初始化默认logger失败: %w", err)
+			return fmt.Errorf("全局logger未初始化，创建临时logger失败: %w", err)
 		}
+		tempLogger.Warn("全局logger未初始化，配置加载使用临时logger")
+		defer tempLogger.Sync()
+
+		// 使用临时logger完成配置加载
+		return loadConfigWithLogger(tempLogger)
 	}
 
+	// 使用全局logger加载配置
+	return loadConfigWithLogger(logger.Global)
+}
+
+// loadConfigWithLogger 带logger的配置加载逻辑（抽离便于复用）
+func loadConfigWithLogger(log *zap.Logger) error {
 	// 确定配置文件路径
 	filePath := os.Getenv("PROTO_GEN_CONFIG_PATH")
 	if filePath == "" {
@@ -322,6 +328,8 @@ func loadConfig() error {
 			return fmt.Errorf("配置文件未找到，当前目录和etc目录下均无proto_gen.yaml")
 		}
 	}
+
+	log.Info("开始加载配置文件", zap.String("file_path", filePath))
 
 	// 读取配置文件
 	data, err := os.ReadFile(filePath)
@@ -357,11 +365,12 @@ func loadConfig() error {
 
 	// 创建必要的目录
 	if err := createRequiredDirs(); err != nil {
-		logger.Warn("创建必要目录失败",
+		log.Warn("创建必要目录失败",
 			zap.Error(err),
 		)
 	}
 
+	log.Info("配置文件加载成功", zap.String("output_root", Global.Paths.OutputRoot))
 	return nil
 }
 
