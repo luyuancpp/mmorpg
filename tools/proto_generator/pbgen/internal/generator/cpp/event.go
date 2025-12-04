@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"log"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
+
+	"go.uber.org/zap" // 引入zap，用于日志字段
+
 	"pbgen/global_value"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
-	"strings"
-	"sync"
+	"pbgen/logger" // 引入全局logger包
 )
 
 // generateClassNameFromFile 从 proto 文件名生成 C++ 类名（下划线转为大写驼峰），加后缀
@@ -155,7 +158,10 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 	protoFilePath := global_value.ProtoDirs[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex] + file.Name()
 	eventMessages, err := parseProtoMessages(protoFilePath)
 	if err != nil {
-		log.Printf("failed to parse proto: %v\n", err)
+		logger.Global.Error("解析proto文件失败",
+			zap.String("proto_file", protoFilePath),
+			zap.Error(err),
+		)
 		return
 	}
 
@@ -176,7 +182,10 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 	// 提取自定义用户代码块
 	userCodeBlocks, globalCode, err := extractUserCodeBlocks(cppFilePath, handlerSignatures)
 	if err != nil {
-		log.Printf("warning: failed to read user code from %s: %v\n", cppFilePath, err)
+		logger.Global.Warn("读取用户代码失败",
+			zap.String("cpp_file", cppFilePath),
+			zap.Error(err),
+		)
 	}
 
 	// 构建模板数据
@@ -192,10 +201,16 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 
 	// 渲染模板并写入文件
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler.h.tmpl", headerFilePath, tmplData); err != nil {
-		log.Printf("failed to generate header file: %v\n", err)
+		logger.Global.Error("生成头文件失败",
+			zap.String("header_file", headerFilePath),
+			zap.Error(err),
+		)
 	}
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler.cpp.tmpl", cppFilePath, tmplData); err != nil {
-		log.Printf("failed to generate cpp file: %v\n", err)
+		logger.Global.Error("生成cpp文件失败",
+			zap.String("cpp_file", cppFilePath),
+			zap.Error(err),
+		)
 	}
 }
 
@@ -203,7 +218,10 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 	files, err := os.ReadDir(global_value.ProtoDirs[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex])
 	if err != nil {
-		log.Fatal(err)
+		logger.Global.Fatal("读取proto目录失败",
+			zap.String("dir", global_value.ProtoDirs[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex]),
+			zap.Error(err),
+		)
 	}
 
 	for _, file := range files {
@@ -220,11 +238,12 @@ func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 		defer wg.Done()
 		err = GenerateAllEventHandlersTemplate(files)
 		if err != nil {
-			log.Fatal(err)
+			logger.Global.Fatal("生成事件处理器模板失败",
+				zap.Error(err),
+			)
 			return
 		}
 	}()
-
 }
 
 type Config struct {
@@ -293,19 +312,31 @@ public:
 	headerFilePath := _config.Global.Paths.RoomNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Header
 	cppFilePath := _config.Global.Paths.RoomNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Cpp
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
-		log.Printf("failed to generate header file: %v\n", err)
+		logger.Global.Error("生成总头文件失败",
+			zap.String("header_file", headerFilePath),
+			zap.Error(err),
+		)
 	}
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
-		log.Printf("failed to generate cpp file: %v\n", err)
+		logger.Global.Error("生成总cpp文件失败",
+			zap.String("cpp_file", cppFilePath),
+			zap.Error(err),
+		)
 	}
 
 	headerFilePath = _config.Global.Paths.CentreNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Header
 	cppFilePath = _config.Global.Paths.CentreNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Cpp
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
-		log.Printf("failed to generate header file: %v\n", err)
+		logger.Global.Error("生成中心节点总头文件失败",
+			zap.String("header_file", headerFilePath),
+			zap.Error(err),
+		)
 	}
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
-		log.Printf("failed to generate cpp file: %v\n", err)
+		logger.Global.Error("生成中心节点总cpp文件失败",
+			zap.String("cpp_file", cppFilePath),
+			zap.Error(err),
+		)
 	}
 	return nil
 }
