@@ -1,35 +1,47 @@
 package _go
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"path/filepath"
+	"sync"
+
+	"go.uber.org/zap" // 引入zap结构化日志字段
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
-	"sync"
+	"pbgen/logger" // 引入全局logger包
 )
 
 func GenerateGoProto(rootDir string) error {
 	// 跳过Etcd服务相关目录
 	if utils2.HasEtcdService(rootDir) {
+		logger.Global.Debug("跳过Etcd服务相关目录",
+			zap.String("root_dir", rootDir),
+		)
 		return nil
 	}
 
 	// 1. 收集非数据库Proto文件
 	protoFiles, err := collectGoGrpcProtoFiles(rootDir)
 	if err != nil {
-		log.Fatal("Go GRPC生成: 收集Proto失败: %w", err)
+		logger.Global.Fatal("Go GRPC生成: 收集Proto文件失败",
+			zap.String("root_dir", rootDir),
+			zap.Error(err),
+		)
 	}
 	if len(protoFiles) == 0 {
-		log.Printf("Go GRPC生成: 目录[%s]无需要处理的Proto文件，跳过", rootDir)
+		logger.Global.Info("Go GRPC生成: 无需要处理的Proto文件，跳过目录",
+			zap.String("root_dir", rootDir),
+		)
 		return nil
 	}
 
 	// 2. 解析输出目录
 	nodeGoDir := _config.Global.Paths.NodeGoDir
 	if err := utils2.EnsureDir(nodeGoDir); err != nil {
-		log.Fatal("Go GRPC生成: 创建输出目录失败: %w", err)
+		logger.Global.Fatal("Go GRPC生成: 创建输出目录失败",
+			zap.String("output_dir", nodeGoDir),
+			zap.Error(err),
+		)
 	}
 
 	// 3. 解析Proto根路径
@@ -37,9 +49,17 @@ func GenerateGoProto(rootDir string) error {
 
 	// 4. 生成Go GRPC代码
 	if err := GenerateGoGrpc(protoFiles, nodeGoDir, protoRootPath); err != nil {
-		log.Fatal("Go GRPC生成: 代码生成失败: %w", err)
+		logger.Global.Fatal("Go GRPC生成: 代码生成失败",
+			zap.String("root_dir", rootDir),
+			zap.String("output_dir", nodeGoDir),
+			zap.Error(err),
+		)
 	}
 
+	logger.Global.Info("Go GRPC生成: 目录处理完成",
+		zap.String("root_dir", rootDir),
+		zap.Int("proto_file_count", len(protoFiles)),
+	)
 	return nil
 }
 
@@ -48,25 +68,40 @@ func GenerateRobotGoProto(rootDir string, protoRootPath string) error {
 	// 1. 收集非数据库Proto文件
 	protoFiles, err := collectGoGrpcProtoFiles(rootDir)
 	if err != nil {
-		log.Fatal("Go GRPC生成: 收集Proto失败: %w", err)
+		logger.Global.Fatal("Go GRPC生成: 收集Proto文件失败",
+			zap.String("root_dir", rootDir),
+			zap.Error(err),
+		)
 	}
 	if len(protoFiles) == 0 {
-		log.Printf("Go GRPC生成: 目录[%s]无需要处理的Proto文件，跳过", rootDir)
+		logger.Global.Info("Go GRPC生成: 无需要处理的Proto文件，跳过目录",
+			zap.String("root_dir", rootDir),
+		)
 		return nil
 	}
 
 	// 2. 解析输出目录
 	nodeGoDir := _config.Global.Paths.ToolsDir
-
 	if err := utils2.EnsureDir(nodeGoDir); err != nil {
-		log.Fatal("Go GRPC生成: 创建输出目录失败: %w", err)
+		logger.Global.Fatal("Go GRPC生成: 创建输出目录失败",
+			zap.String("output_dir", nodeGoDir),
+			zap.Error(err),
+		)
 	}
 
 	// 4. 生成Go GRPC代码
 	if err := GenerateGoGrpc(protoFiles, nodeGoDir, protoRootPath); err != nil {
-		log.Fatal("Go GRPC生成: 代码生成失败: %w", err)
+		logger.Global.Fatal("Go GRPC生成: 代码生成失败",
+			zap.String("root_dir", rootDir),
+			zap.String("output_dir", nodeGoDir),
+			zap.Error(err),
+		)
 	}
 
+	logger.Global.Info("Robot Go GRPC生成: 目录处理完成",
+		zap.String("root_dir", rootDir),
+		zap.Int("proto_file_count", len(protoFiles)),
+	)
 	return nil
 }
 
@@ -75,7 +110,10 @@ func collectGoGrpcProtoFiles(rootDir string) ([]string, error) {
 	var protoFiles []string
 	err := filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			log.Fatal("访问路径[%s]失败: %w", path, err)
+			logger.Global.Fatal("Go GRPC收集: 访问路径失败",
+				zap.String("path", path),
+				zap.Error(err),
+			)
 		}
 
 		// 跳过目录、非Proto文件和数据库专用Proto文件
@@ -86,13 +124,20 @@ func collectGoGrpcProtoFiles(rootDir string) ([]string, error) {
 		// 收集符合条件的Proto文件
 		absPath, err := filepath.Abs(path)
 		if err != nil {
-			log.Printf("Go GRPC收集: 获取文件[%s]绝对路径失败: %v，跳过", path, err)
+			logger.Global.Warn("Go GRPC收集: 获取绝对路径失败，跳过文件",
+				zap.String("path", path),
+				zap.Error(err),
+			)
 			return nil
 		}
 		protoFiles = append(protoFiles, filepath.ToSlash(absPath))
 		return nil
 	})
 
+	logger.Global.Debug("Go GRPC收集: 完成文件扫描",
+		zap.String("root_dir", rootDir),
+		zap.Int("collected_count", len(protoFiles)),
+	)
 	return protoFiles, err
 }
 
@@ -100,7 +145,9 @@ func collectGoGrpcProtoFiles(rootDir string) ([]string, error) {
 func GenerateGoGrpc(protoFiles []string, outputDir string, protoRootPath string) error {
 	// 提前校验空输入
 	if len(protoFiles) == 0 {
-		log.Fatal("Go GRPC生成: 没有需要处理的Proto文件")
+		logger.Global.Fatal("Go GRPC生成: 无需要处理的Proto文件",
+			zap.String("output_dir", outputDir),
+		)
 	}
 
 	// 1. 解析路径
@@ -111,21 +158,29 @@ func GenerateGoGrpc(protoFiles []string, outputDir string, protoRootPath string)
 	// 2. 验证protoc路径
 	protocPath, err := resolveProtocPath()
 	if err != nil {
-		log.Fatal("Go GRPC生成: 解析protoc路径失败: %w", err)
+		logger.Global.Fatal("Go GRPC生成: 解析protoc路径失败",
+			zap.Error(err),
+		)
 	}
 
 	// 3. 构建protoc参数
 	args := []string{
-		fmt.Sprintf("--go_out=%s", goOutputDir),
-		fmt.Sprintf("--go-grpc_out=%s", goOutputDir),
-		fmt.Sprintf("--proto_path=%s", protoRootDir),
-		fmt.Sprintf("--proto_path=%s", protoBufferDir),
+		"--go_out=" + goOutputDir,
+		"--go-grpc_out=" + goOutputDir,
+		"--proto_path=" + protoRootDir,
+		"--proto_path=" + protoBufferDir,
 	}
 
 	// 4. 补充Proto文件路径
 	for _, file := range protoFiles {
 		args = append(args, file)
 	}
+
+	logger.Global.Debug("Go GRPC生成: 执行protoc命令",
+		zap.String("protoc_path", protocPath),
+		zap.Strings("args", args),
+		zap.Int("proto_count", len(protoFiles)),
+	)
 
 	// 5. 执行命令
 	return utils2.RunProtocWithPath(protocPath, args, "生成Go GRPC代码")
@@ -138,7 +193,9 @@ func resolveProtocPath() (string, error) {
 
 // AddGoPackageToProtoDir 为Proto文件添加go_package声明
 func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
+	wg.Add(1) // 补充wg计数，确保主流程等待该goroutine完成
 	go func() {
+		defer wg.Done()
 		grpcDirs := utils2.GetGRPCSubdirectoryNames()
 
 		// 处理普通生成目录
@@ -147,7 +204,16 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 			baseGoPackage := filepath.ToSlash(dirName)
 
 			if err := addDynamicGoPackage(destDir, baseGoPackage, destDir, false); err != nil {
-				log.Printf("GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
+				logger.Global.Warn("GoPackage设置: 目录处理失败",
+					zap.String("dest_dir", destDir),
+					zap.String("base_go_package", baseGoPackage),
+					zap.Error(err),
+				)
+			} else {
+				logger.Global.Info("GoPackage设置: 目录处理完成",
+					zap.String("dest_dir", destDir),
+					zap.String("base_go_package", baseGoPackage),
+				)
 			}
 		}
 
@@ -157,7 +223,16 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 			baseGoPackage := filepath.ToSlash(dirName)
 
 			if err := AddGoZeroPackageToProtos(destDir, baseGoPackage, destDir, true); err != nil {
-				log.Printf("GoZero GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
+				logger.Global.Warn("GoZero GoPackage设置: 目录处理失败",
+					zap.String("dest_dir", destDir),
+					zap.String("base_go_package", baseGoPackage),
+					zap.Error(err),
+				)
+			} else {
+				logger.Global.Info("GoZero GoPackage设置: 目录处理完成",
+					zap.String("dest_dir", destDir),
+					zap.String("base_go_package", baseGoPackage),
+				)
 			}
 		}
 
@@ -166,9 +241,17 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 		baseGoPackage := filepath.ToSlash(_config.Global.Naming.GoRobotPackage)
 
 		if err := addDynamicGoPackage(_config.Global.Paths.RobotGeneratedProto, baseGoPackage, destDir, false); err != nil {
-			log.Printf("GoPackage设置: 目录[%s]处理失败: %v", destDir, err)
+			logger.Global.Warn("GoPackage设置: 目录处理失败",
+				zap.String("dest_dir", destDir),
+				zap.String("base_go_package", baseGoPackage),
+				zap.Error(err),
+			)
+		} else {
+			logger.Global.Info("GoPackage设置: 目录处理完成",
+				zap.String("dest_dir", destDir),
+				zap.String("base_go_package", baseGoPackage),
+			)
 		}
-
 	}()
 }
 
@@ -176,14 +259,20 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 func addDynamicGoPackage(rootDir, baseGoPackage, currentDir string, isMulti bool) error {
 	entries, err := os.ReadDir(currentDir)
 	if err != nil {
-		log.Fatalf("读取目录[%s]失败: %w", currentDir, err)
+		logger.Global.Fatal("GoPackage设置: 读取目录失败",
+			zap.String("current_dir", currentDir),
+			zap.Error(err),
+		)
 	}
 
 	for _, entry := range entries {
 		fullPath := filepath.Join(currentDir, entry.Name())
 		info, err := entry.Info()
 		if err != nil {
-			log.Fatalf("获取文件信息[%s]失败: %w", fullPath, err)
+			logger.Global.Fatal("GoPackage设置: 获取文件信息失败",
+				zap.String("file_path", fullPath),
+				zap.Error(err),
+			)
 		}
 
 		if info.IsDir() {
@@ -205,14 +294,20 @@ func addDynamicGoPackage(rootDir, baseGoPackage, currentDir string, isMulti bool
 func AddGoZeroPackageToProtos(rootDir, baseGoPackage, currentDir string, isMulti bool) error {
 	entries, err := os.ReadDir(currentDir)
 	if err != nil {
-		log.Fatalf("读取目录[%s]失败: %w", currentDir, err)
+		logger.Global.Fatal("GoZero GoPackage设置: 读取目录失败",
+			zap.String("current_dir", currentDir),
+			zap.Error(err),
+		)
 	}
 
 	for _, entry := range entries {
 		fullPath := filepath.Join(currentDir, entry.Name())
 		info, err := entry.Info()
 		if err != nil {
-			log.Fatalf("获取文件信息[%s]失败: %w", fullPath, err)
+			logger.Global.Fatal("GoZero GoPackage设置: 获取文件信息失败",
+				zap.String("file_path", fullPath),
+				zap.Error(err),
+			)
 		}
 
 		if info.IsDir() {
@@ -235,7 +330,11 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 	// 计算相对路径
 	relativePath, err := filepath.Rel(rootDir, filepath.Dir(filePath))
 	if err != nil {
-		log.Fatalf("计算相对路径失败: %w", err)
+		logger.Global.Fatal("GoPackage设置: 计算相对路径失败",
+			zap.String("root_dir", rootDir),
+			zap.String("file_path", filePath),
+			zap.Error(err),
+		)
 	}
 
 	// 生成go_package路径
@@ -264,13 +363,23 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 	// 添加go_package到文件
 	added, err := AddGoPackage(filePath, goPackagePath, isMulti)
 	if err != nil {
-		log.Fatalf("设置go_package失败: %w", err)
+		logger.Global.Fatal("GoPackage设置: 设置go_package失败",
+			zap.String("file_path", filePath),
+			zap.String("go_package", goPackagePath),
+			zap.Error(err),
+		)
 	}
 
 	if added {
-		log.Printf("GoPackage设置: 文件[%s]设置为[%s]", filePath, goPackagePath)
+		logger.Global.Info("GoPackage设置: 成功添加go_package",
+			zap.String("file_path", filePath),
+			zap.String("go_package", goPackagePath),
+		)
 	} else {
-		log.Printf("GoPackage设置: 文件[%s]已存在，跳过", filePath)
+		logger.Global.Debug("GoPackage设置: 文件已存在go_package，跳过",
+			zap.String("file_path", filePath),
+			zap.String("go_package", goPackagePath),
+		)
 	}
 	return nil
 }
@@ -286,9 +395,16 @@ func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 			defer wg.Done()
 			destDir := _config.Global.Paths.GeneratorProtoDir + currentDir + "/" + _config.Global.DirectoryNames.NormalGoProto
 			if err := GenerateGoProto(destDir); err != nil {
-				log.Printf("GRPC服务构建: 目录[%s]处理失败: %v", currentDir, err)
+				logger.Global.Warn("GRPC服务构建: 目录处理失败",
+					zap.String("current_dir", currentDir),
+					zap.String("dest_dir", destDir),
+					zap.Error(err),
+				)
 			} else {
-				log.Printf("GRPC服务构建: 目录[%s]处理完成", currentDir)
+				logger.Global.Info("GRPC服务构建: 目录处理完成",
+					zap.String("current_dir", currentDir),
+					zap.String("dest_dir", destDir),
+				)
 			}
 		}(dirName)
 	}
@@ -298,11 +414,19 @@ func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 	// 传递当前目录名副本到goroutine，避免循环变量捕获问题
 	go func() {
 		defer wg.Done()
-		if err := GenerateRobotGoProto(_config.Global.Paths.RobotGeneratedProto, _config.Global.Paths.RobotGenerated); err != nil {
-			log.Printf("GRPC服务构建: 目录[%s]处理失败: %v", _config.Global.Paths.RobotGeneratedProto, err)
+		robotProtoDir := _config.Global.Paths.RobotGeneratedProto
+		robotRootDir := _config.Global.Paths.RobotGenerated
+		if err := GenerateRobotGoProto(robotProtoDir, robotRootDir); err != nil {
+			logger.Global.Warn("GRPC服务构建: Robot目录处理失败",
+				zap.String("robot_proto_dir", robotProtoDir),
+				zap.String("robot_root_dir", robotRootDir),
+				zap.Error(err),
+			)
 		} else {
-			log.Printf("GRPC服务构建: 目录[%s]处理完成", _config.Global.Paths.RobotGeneratedProto)
+			logger.Global.Info("GRPC服务构建: Robot目录处理完成",
+				zap.String("robot_proto_dir", robotProtoDir),
+				zap.String("robot_root_dir", robotRootDir),
+			)
 		}
 	}()
-
 }
