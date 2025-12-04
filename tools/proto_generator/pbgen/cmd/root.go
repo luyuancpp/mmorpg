@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // 全局zap logger实例
@@ -180,21 +179,14 @@ func printStats() {
 	}
 }
 
+// 主程序中
 func init() {
 	// 初始化zap logger
-	config := zap.NewProductionConfig()
-	// 可以根据需要调整日志级别，默认是Info
-	config.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
-	// 自定义时间格式
-	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-
-	var err error
-	logger, err = config.Build()
-	if err != nil {
-		panic(fmt.Sprintf("Failed to initialize zap logger: %v", err))
-	}
-	// 确保logger在程序退出时被同步
+	logger, _ = zap.NewProduction()
 	defer logger.Sync()
+
+	// 初始化配置包的logger
+	_config.InitLogger(logger)
 }
 
 func main() {
