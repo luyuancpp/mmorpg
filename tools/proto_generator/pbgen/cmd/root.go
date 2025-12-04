@@ -15,6 +15,7 @@ import (
 	_cpp_option "pbgen/internal/generator/go/options"
 	"pbgen/internal/prototools"
 	proto_tools_option "pbgen/internal/prototools/option"
+	"pbgen/logger" // 引入全局logger包
 	"sort"
 	"sync"
 	"syscall"
@@ -23,8 +24,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// 全局zap logger实例
-var logger *zap.Logger
+// 移除原有局部logger变量，直接使用全局logger.Global
 
 // WaitTimeRecord 存储等待耗时记录
 type WaitTimeRecord struct {
@@ -44,7 +44,7 @@ func trackFuncTime(funcName string, f func()) {
 		Name:     funcName,
 		Duration: elapsed,
 	})
-	logger.Info("Function execution time",
+	logger.Global.Info("Function execution time",
 		zap.String("funcName", funcName),
 		zap.Duration("elapsed", elapsed),
 	)
@@ -74,7 +74,7 @@ func trackGroupTime(groupName string, tasks map[string]func(*sync.WaitGroup)) {
 		Name:     "Group: " + groupName,
 		Duration: elapsed,
 	})
-	logger.Info("Group total execution time",
+	logger.Global.Info("Group total execution time",
 		zap.String("groupName", groupName),
 		zap.Duration("elapsed", elapsed),
 	)
@@ -103,7 +103,7 @@ func trackSerialGroupTime(groupName string, tasks []struct {
 		Name:     "Group: " + groupName,
 		Duration: elapsed,
 	})
-	logger.Info("Serial Group total execution time",
+	logger.Global.Info("Serial Group total execution time",
 		zap.String("groupName", groupName),
 		zap.Duration("elapsed", elapsed),
 	)
@@ -135,7 +135,7 @@ func waitWithTiming(wg *sync.WaitGroup, name string) time.Duration {
 		Duration: elapsed,
 	})
 
-	logger.Info("Wait time",
+	logger.Global.Info("Wait time",
 		zap.String("name", name),
 		zap.Duration("elapsed", elapsed),
 	)
@@ -179,37 +179,41 @@ func printStats() {
 	}
 }
 
-// 主程序中
+// 初始化全局logger（项目启动时只执行一次）
 func init() {
-	// 初始化zap logger
-	logger, _ = zap.NewProduction()
-	defer logger.Sync()
+	// 初始化全局logger
+	if err := logger.Init(); err != nil {
+		panic(fmt.Sprintf("初始化全局logger失败: %v", err))
+	}
 
-	// 初始化配置包的logger
-	_config.InitLogger(logger)
+	// 移除原有局部logger初始化，改为使用全局logger
+	// 配置包不再需要单独注入logger，直接使用全局logger.Global
+	// _config.InitLogger(logger.Global) // 这行可以删除，因为_config包已改为直接使用全局logger
 }
 
 func main() {
+	defer logger.Sync() // 程序退出时同步日志到磁盘
+
 	start := time.Now()
 
-	logger.Info("Total execution time", zap.Duration("elapsed", time.Since(start)))
+	logger.Global.Info("Program started", zap.Duration("elapsed", time.Since(start)))
 
 	go func() {
-		logger.Info("Starting pprof server", zap.String("address", "localhost:11111"))
+		logger.Global.Info("Starting pprof server", zap.String("address", "localhost:11111"))
 		if err := http.ListenAndServe("localhost:11111", nil); err != nil {
-			logger.Error("pprof server exited with error", zap.Error(err))
+			logger.Global.Error("pprof server exited with error", zap.Error(err))
 		}
 	}()
 
 	if err := _config.Load(); err != nil {
-		logger.Fatal("配置初始化失败", zap.Error(err))
+		logger.Global.Fatal("配置初始化失败", zap.Error(err))
 	}
 
-	logger.Info("配置加载成功", zap.String("proto根目录", _config.Global.Paths.OutputRoot))
+	logger.Global.Info("配置加载成功", zap.String("proto根目录", _config.Global.Paths.OutputRoot))
 
 	dir, err := os.Getwd()
 	if err != nil {
-		logger.Fatal("Failed to get current working directory", zap.Error(err))
+		logger.Global.Fatal("Failed to get current working directory", zap.Error(err))
 	}
 
 	fmt.Println("Current working directory:", dir)
@@ -311,16 +315,13 @@ func main() {
 	printStats()
 
 	// 打印总耗时
-	logger.Info("Total execution time", zap.Duration("elapsed", time.Since(start)))
+	logger.Global.Info("Total execution time", zap.Duration("elapsed", time.Since(start)))
 
 	// 替换select{}，添加信号监听
-	logger.Info("程序已进入等待状态，可访问localhost:11111/debug/pprof分析，按Ctrl+C退出")
+	logger.Global.Info("程序已进入等待状态，可访问localhost:11111/debug/pprof分析，按Ctrl+C退出")
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 
-	logger.Info("程序开始优雅退出...")
-
-	// 确保日志被刷新
-	_ = logger.Sync()
+	logger.Global.Info("程序开始优雅退出...")
 }
