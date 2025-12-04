@@ -14,6 +14,8 @@
 #include "proto/logic/event/mission_event.pb.h"
 #include <threading/registry_manager.h>
 #include <threading/dispatcher_manager.h>
+#include <config.h>
+#include <node_config_manager.h>
 
 decltype(auto) CreatePlayerEntityWithMissionComponent()
 {
@@ -617,6 +619,8 @@ class C
 
 int main(int argc, char** argv)
 {
+	readBaseDeployConfig("etc/base_deploy_config.yaml", tlsNodeConfigManager.GetBaseDeployConfig());
+	readGameConfig("etc/game_config.yaml", tlsNodeConfigManager.GetGameConfig());
     ConditionTableManager::Instance().Load();
     MissionTableManager::Instance().Load();
     testing::InitGoogleTest(&argc, argv);
