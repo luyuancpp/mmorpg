@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -20,7 +19,13 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
+
+// 全局zap logger实例
+var logger *zap.Logger
 
 // WaitTimeRecord 存储等待耗时记录
 type WaitTimeRecord struct {
@@ -40,7 +45,10 @@ func trackFuncTime(funcName string, f func()) {
 		Name:     funcName,
 		Duration: elapsed,
 	})
-	log.Printf("Function [%s] took: %s", funcName, elapsed)
+	logger.Info("Function execution time",
+		zap.String("funcName", funcName),
+		zap.Duration("elapsed", elapsed),
+	)
 }
 
 // 关键修改1：trackGroupTime 使用「分组局部WG」控制并发，避免全局WG干扰统计
@@ -67,7 +75,10 @@ func trackGroupTime(groupName string, tasks map[string]func(*sync.WaitGroup)) {
 		Name:     "Group: " + groupName,
 		Duration: elapsed,
 	})
-	log.Printf("Group [%s] total took: %s", groupName, elapsed)
+	logger.Info("Group total execution time",
+		zap.String("groupName", groupName),
+		zap.Duration("elapsed", elapsed),
+	)
 }
 
 // 关键修改2：trackSerialGroupTime 也使用「分组局部WG」，保持一致性
@@ -93,7 +104,10 @@ func trackSerialGroupTime(groupName string, tasks []struct {
 		Name:     "Group: " + groupName,
 		Duration: elapsed,
 	})
-	log.Printf("Serial Group [%s] total took: %s", groupName, elapsed)
+	logger.Info("Serial Group total execution time",
+		zap.String("groupName", groupName),
+		zap.Duration("elapsed", elapsed),
+	)
 }
 
 func MakeProjectDir(_ *sync.WaitGroup) {
@@ -122,7 +136,10 @@ func waitWithTiming(wg *sync.WaitGroup, name string) time.Duration {
 		Duration: elapsed,
 	})
 
-	log.Printf("Wait [%s] took: %s", name, elapsed)
+	logger.Info("Wait time",
+		zap.String("name", name),
+		zap.Duration("elapsed", elapsed),
+	)
 	return elapsed
 }
 
@@ -163,25 +180,44 @@ func printStats() {
 	}
 }
 
-func main() {
+func init() {
+	// 初始化zap logger
+	config := zap.NewProductionConfig()
+	// 可以根据需要调整日志级别，默认是Info
+	config.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
+	// 自定义时间格式
+	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
+	var err error
+	logger, err = config.Build()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to initialize zap logger: %v", err))
+	}
+	// 确保logger在程序退出时被同步
+	defer logger.Sync()
+}
+
+func main() {
 	start := time.Now()
 
-	log.Printf("\nTotal execution time: %s\n", time.Since(start))
+	logger.Info("Total execution time", zap.Duration("elapsed", time.Since(start)))
 
 	go func() {
-		log.Println(http.ListenAndServe("localhost:11111", nil))
+		logger.Info("Starting pprof server", zap.String("address", "localhost:11111"))
+		if err := http.ListenAndServe("localhost:11111", nil); err != nil {
+			logger.Error("pprof server exited with error", zap.Error(err))
+		}
 	}()
 
 	if err := _config.Load(); err != nil {
-		log.Fatalf("配置初始化失败: %v", err)
+		logger.Fatal("配置初始化失败", zap.Error(err))
 	}
 
-	log.Printf("配置加载成功，proto根目录: %s", _config.Global.Paths.OutputRoot)
+	logger.Info("配置加载成功", zap.String("proto根目录", _config.Global.Paths.OutputRoot))
 
 	dir, err := os.Getwd()
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal("Failed to get current working directory", zap.Error(err))
 	}
 
 	fmt.Println("Current working directory:", dir)
@@ -283,13 +319,16 @@ func main() {
 	printStats()
 
 	// 打印总耗时
-	log.Printf("\nTotal execution time: %s\n", time.Since(start))
+	logger.Info("Total execution time", zap.Duration("elapsed", time.Since(start)))
 
 	// 替换select{}，添加信号监听
-	log.Println("程序已进入等待状态，可访问localhost:11111/debug/pprof分析，按Ctrl+C退出")
+	logger.Info("程序已进入等待状态，可访问localhost:11111/debug/pprof分析，按Ctrl+C退出")
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 
-	log.Println("程序开始优雅退出...")
+	logger.Info("程序开始优雅退出...")
+
+	// 确保日志被刷新
+	_ = logger.Sync()
 }
