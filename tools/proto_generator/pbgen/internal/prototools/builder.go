@@ -2,18 +2,24 @@ package prototools
 
 import (
 	"errors"
-	"log"
 	"os"
 	"path/filepath"
+	"sync"
+
+	"go.uber.org/zap" // 引入zap结构化日志字段
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
-	"sync"
+	"pbgen/logger" // 引入全局logger包
 )
 
 // resolveGameProtoPath 解析游戏核心Proto文件路径
 func ResolveGameProtoPath() (string, error) {
 	gameProtoPath := filepath.Join(_config.Global.Paths.GameRpcProtoPath, _config.Global.Naming.GameRpcProto)
 	if _, err := os.Stat(gameProtoPath); err != nil {
+		logger.Global.Error("游戏Proto文件不存在",
+			zap.String("path", gameProtoPath),
+			zap.Error(err),
+		)
 		return "", errors.Join(errors.New("游戏Proto文件不存在"), err)
 	}
 	return gameProtoPath, nil
@@ -44,14 +50,18 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 		{BuildGeneratorGoZeroProtoPath, "GoZero生成目录"},
 	}
 
-	// 拷贝Robot目录（RobotDir若为绝对路径则直接使用）
+	// 拷贝到普通/GoZero生成目录
 	go func() {
 		defer wg.Done()
 		for _, item := range copyToDirs {
 			for _, dir := range grpcDirs {
 				destDir := _config.Global.Paths.GeneratorProtoDir + item.dirBuilder(dir)
 				if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
-					log.Printf("%s Proto拷贝: 目录[%s]拷贝失败: %v", item.desc, dir, err)
+					logger.Global.Warn("Proto拷贝失败",
+						zap.String("拷贝类型", item.desc),
+						zap.String("目录", dir),
+						zap.Error(err),
+					)
 				}
 			}
 		}
@@ -63,7 +73,10 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 		defer wg.Done()
 		destDir := _config.Global.Paths.RobotGeneratedProto
 		if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
-			log.Printf("Robot Proto拷贝: 目录[%s]拷贝失败: %v", _config.Global.Paths.Robot, err)
+			logger.Global.Warn("Robot Proto拷贝失败",
+				zap.String("目录", _config.Global.Paths.Robot),
+				zap.Error(err),
+			)
 		}
 	}()
 }

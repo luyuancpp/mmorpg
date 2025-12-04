@@ -2,15 +2,16 @@ package prototools
 
 import (
 	"bytes"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
+
+	"go.uber.org/zap" // 引入zap结构化日志字段
 	"pbgen/global_value"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
-	"strings"
-	"sync"
+	"pbgen/logger" // 引入全局logger包
 )
 
 // GenerateAllInOneDescriptor 生成合并的Protobuf描述符文件
@@ -20,7 +21,9 @@ func GenerateAllInOneDescriptor(wg *sync.WaitGroup) {
 	go func() {
 		defer wg.Done()
 		if err := generateAllInOneDesc(); err != nil {
-			log.Printf("描述符生成: 失败: %v", err)
+			logger.Global.Warn("描述符生成失败",
+				zap.Error(err),
+			)
 		}
 	}()
 }
@@ -30,31 +33,43 @@ func generateAllInOneDesc() error {
 	// 步骤1：收集目标proto文件（去重）
 	protoFiles, err := collectUniqueProtoFiles()
 	if err != nil {
-		log.Fatalf("收集Proto文件失败: %w", err)
+		logger.Global.Fatal("收集Proto文件失败",
+			zap.Error(err),
+		)
 	}
 	if len(protoFiles) == 0 {
-		log.Println("描述符生成: 未找到任何Proto文件")
+		logger.Global.Info("描述符生成: 未找到任何Proto文件")
 		return nil
 	}
-	log.Printf("描述符生成: 共收集到%d个唯一Proto文件", len(protoFiles))
+	logger.Global.Info("描述符生成: 收集到唯一Proto文件",
+		zap.Int("count", len(protoFiles)),
+	)
 
 	// 步骤2：构建protoc命令参数
 	args, err := buildDescriptorArgs(protoFiles)
 	if err != nil {
-		log.Fatalf("构建命令参数失败: %w", err)
+		logger.Global.Fatal("构建命令参数失败",
+			zap.Error(err),
+		)
 	}
 
 	// 步骤3：执行protoc命令
 	if err := executeDescriptorCommand(args); err != nil {
-		log.Fatalf("执行protoc失败: %w", err)
+		logger.Global.Fatal("执行protoc失败",
+			zap.Error(err),
+		)
 	}
 
 	// 步骤4：读取并解析描述符文件
 	if err := parseDescriptorFile(); err != nil {
-		log.Fatalf("解析描述符文件失败: %w", err)
+		logger.Global.Fatal("解析描述符文件失败",
+			zap.Error(err),
+		)
 	}
 
-	log.Printf("描述符生成: 成功，输出路径=%s", _config.Global.Paths.AllInOneDesc)
+	logger.Global.Info("描述符生成成功",
+		zap.String("output_path", _config.Global.Paths.AllInOneDesc),
+	)
 	return nil
 }
 
@@ -66,7 +81,10 @@ func collectUniqueProtoFiles() ([]string, error) {
 	for _, dir := range global_value.ProtoDirs {
 		fileEntries, err := os.ReadDir(dir)
 		if err != nil {
-			log.Printf("描述符生成: 读取目录[%s]失败，跳过: %v", dir, err)
+			logger.Global.Warn("描述符生成: 读取目录失败，跳过",
+				zap.String("dir", dir),
+				zap.Error(err),
+			)
 			continue
 		}
 
@@ -74,7 +92,11 @@ func collectUniqueProtoFiles() ([]string, error) {
 			if utils2.IsProtoFile(entry) {
 				absPath, err := filepath.Abs(filepath.Join(dir, entry.Name()))
 				if err != nil {
-					log.Printf("描述符生成: 获取文件[%s]绝对路径失败，跳过: %v", entry.Name(), err)
+					logger.Global.Warn("描述符生成: 获取文件绝对路径失败，跳过",
+						zap.String("file_name", entry.Name()),
+						zap.String("dir", dir),
+						zap.Error(err),
+					)
 					continue
 				}
 				absPath = filepath.ToSlash(absPath)
@@ -127,13 +149,21 @@ func executeDescriptorCommand(args []string) error {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	log.Printf("描述符生成: 执行命令: %s %s", cmd.Path, strings.Join(cmd.Args[1:], " "))
+	logger.Global.Debug("描述符生成: 执行protoc命令",
+		zap.String("protoc_path", protocPath),
+		zap.Strings("args", args),
+	)
 	if err := cmd.Run(); err != nil {
-		log.Fatalf("命令执行失败: 错误=%v,  stderr=%s", err, stderr.String())
+		logger.Global.Fatal("命令执行失败",
+			zap.Error(err),
+			zap.String("stderr", stderr.String()),
+		)
 	}
 
 	if stdout.Len() > 0 {
-		log.Printf("描述符生成: 命令输出: %s", stdout.String())
+		logger.Global.Info("描述符生成: 命令输出",
+			zap.String("stdout", stdout.String()),
+		)
 	}
 	return nil
 }
