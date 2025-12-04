@@ -13,8 +13,6 @@
 #include "proto/logic/event/mission_event.pb.h"
 
 MissionsComponent::MissionsComponent()
-	: missionConfig(&MissionConfig::GetSingleton()),
-	missionTypeNotRepeated(missionConfig->CheckTypeRepeated())
 {
 	// Initialize event-related mission classification containers
 	for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionTypeMax); ++i)

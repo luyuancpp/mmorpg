@@ -29,18 +29,6 @@ public:
     [[nodiscard]] std::size_t CanGetRewardSize() const;
     MissionsBits& GetCompleteMissions() { return completedMissions; }
 
-    [[nodiscard]] const IMissionConfig* GetMissionConfig() const
-    {
-        return missionConfig;
-    }
-
-    void SetMissionConfig(const IMissionConfig* const mission_config)
-    {
-        if (mission_config != nullptr) {
-            missionConfig = mission_config;
-        }
-    }
-
     [[nodiscard]] MissionListPBComponent& GetMissionsComp()
     {
         return missionsComp;
@@ -87,7 +75,6 @@ public:
 
 
 private:
-    const IMissionConfig* missionConfig{ nullptr };
     MissionListPBComponent missionsComp;
     EventMissionClassifyMap eventMissionsClassify; // key: classify mission by event type, value: mission list
     UInt32PairSet typeFilter;
