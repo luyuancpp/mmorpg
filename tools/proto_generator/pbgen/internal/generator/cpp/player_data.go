@@ -2,19 +2,21 @@ package cpp
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
-	"github.com/luyuancpp/protooption"
-	"google.golang.org/protobuf/proto"
-	"log"
 	"os"
-	"pbgen/internal"
-	_config "pbgen/internal/config"
-	"pbgen/internal/utils"
 	"strings"
 	"sync"
 	"text/template"
 
+	"github.com/iancoleman/strcase"
+	"github.com/luyuancpp/protooption"
+	"go.uber.org/zap" // 引入zap用于结构化日志字段
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
+
+	"pbgen/internal"
+	_config "pbgen/internal/config"
+	"pbgen/internal/utils"
+	"pbgen/logger" // 引入全局logger包
 )
 
 const playerLoaderTemplate = `
@@ -86,18 +88,28 @@ type HeaderTemplateInput struct {
 func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error {
 	tmpl, err := template.New("loader").Parse(playerHeaderTemplate)
 	if err != nil {
-		log.Fatalf("template parse failed: %w", err)
+		logger.Global.Fatal("生成玩家头文件失败: 解析模板失败",
+			zap.String("template_name", "loader"),
+			zap.String("output_path", outputPath),
+			zap.Error(err),
+		)
 	}
 
 	f, err := os.Create(outputPath)
 	if err != nil {
-		log.Fatalf("failed to create header file: %w", err)
+		logger.Global.Fatal("生成玩家头文件失败: 创建文件失败",
+			zap.String("file_path", outputPath),
+			zap.Error(err),
+		)
 	}
 	defer f.Close()
 
 	data := HeaderTemplateInput{Entries: entries}
 	if err := tmpl.Execute(f, data); err != nil {
-		log.Fatalf("template execute failed: %w", err)
+		logger.Global.Fatal("生成玩家头文件失败: 执行模板失败",
+			zap.String("file_path", outputPath),
+			zap.Error(err),
+		)
 	}
 
 	return nil
@@ -120,13 +132,19 @@ func isPlayerDatabase(messageDesc *descriptorpb.DescriptorProto) bool {
 
 // 从 Descriptor Set 文件中读取消息结构（核心逻辑修改）
 func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
-
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
 
-		os.MkdirAll(_config.Global.Paths.PlayerStorageTempDir, os.FileMode(0777))
+		err := os.MkdirAll(_config.Global.Paths.PlayerStorageTempDir, os.FileMode(0777))
+		if err != nil {
+			logger.Global.Error("生成玩家数据加载器失败: 创建临时目录失败",
+				zap.String("directory", _config.Global.Paths.PlayerStorageTempDir),
+				zap.Error(err),
+			)
+			return
+		}
 
 		var headerEntries []HeaderEntry
 
@@ -169,7 +187,11 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 					headerEntries)
 
 				if err != nil {
-					log.Fatal(err)
+					logger.Global.Fatal("生成玩家数据反序列化代码失败",
+						zap.String("message_type", messageType),
+						zap.String("file_path", md5FilePath),
+						zap.Error(err),
+					)
 					return
 				}
 
@@ -180,18 +202,20 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 
 		// 生成头部文件
 		md5FilePath := _config.Global.Paths.PlayerDataLoaderFile
-		err := GenerateCppPlayerHeaderFile(md5FilePath, headerEntries)
+		err = GenerateCppPlayerHeaderFile(md5FilePath, headerEntries)
 		if err != nil {
-			log.Fatalf("failed to generate header file: %v", err)
+			logger.Global.Fatal("生成玩家数据加载器头文件失败",
+				zap.String("file_path", md5FilePath),
+				zap.Error(err),
+			)
 		}
 
 		destFilePath := _config.Global.Paths.PlayerDataLoaderFile
 		utils.CopyFileIfChangedAsync(wg, md5FilePath, destFilePath)
 	}()
-
 }
 
-// 打印消息字段信息
+// 打印消息字段信息（保留fmt，用于调试输出）
 func printMessageFields(descriptor *descriptorpb.DescriptorProto) {
 	fmt.Printf("Message Type: %s\n", descriptor.GetName())
 	for _, field := range descriptor.GetField() {
@@ -220,19 +244,30 @@ func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBP
 func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData, messageType string, entries []HeaderEntry) error {
 	file, err := os.Create(fileName)
 	if err != nil {
-		log.Fatalf("could not create file %s: %w", fileName, err)
+		logger.Global.Fatal("生成反序列化代码失败: 创建文件失败",
+			zap.String("file_name", fileName),
+			zap.String("message_type", messageType),
+			zap.Error(err),
+		)
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			log.Fatal(err)
+			logger.Global.Error("关闭文件失败",
+				zap.String("file_name", fileName),
+				zap.Error(err),
+			)
 			return
 		}
 	}(file)
 
 	tmpl, err := template.New("handler").Parse(playerLoaderTemplate)
 	if err != nil {
-		log.Fatalf("could not parse template: %w", err)
+		logger.Global.Fatal("生成反序列化代码失败: 解析模板失败",
+			zap.String("template_name", "handler"),
+			zap.String("file_name", fileName),
+			zap.Error(err),
+		)
 	}
 
 	data := DescData{
@@ -243,7 +278,11 @@ func generateCppDeserializeFromDatabase(fileName string, handlerName string, fie
 	}
 
 	if err := tmpl.Execute(file, data); err != nil {
-		log.Fatalf("could not execute template: %w", err)
+		logger.Global.Fatal("生成反序列化代码失败: 执行模板失败",
+			zap.String("file_name", fileName),
+			zap.String("message_type", messageType),
+			zap.Error(err),
+		)
 	}
 
 	return nil

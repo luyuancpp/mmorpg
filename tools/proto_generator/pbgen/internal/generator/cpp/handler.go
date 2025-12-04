@@ -1,11 +1,14 @@
 package cpp
 
 import (
-	"log"
-	"pbgen/internal"
-	utils2 "pbgen/internal/utils"
 	"strings"
 	"sync"
+
+	"go.uber.org/zap" // 引入zap用于结构化日志字段
+
+	"pbgen/internal"
+	utils2 "pbgen/internal/utils"
+	"pbgen/logger" // 引入全局logger包
 )
 
 type HandlerConfig struct {
@@ -33,7 +36,10 @@ func writeHandlerHeadFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cf
 
 	data, err := cfg.GenerateDataFunc(methodList)
 	if err != nil {
-		log.Fatal(err)
+		logger.Global.Fatal("生成处理器头文件失败",
+			zap.String("file_path", fullPath),
+			zap.Error(err),
+		)
 	}
 
 	utils2.WriteFileIfChanged(fullPath, []byte(data))
