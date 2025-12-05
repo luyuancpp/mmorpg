@@ -45,45 +45,61 @@ public:
         switch (method->index())
         {
         case 0:
+			{
             EnterScene(player,
                 static_cast<const ::EnterSceneC2SRequest*>(request),
                 static_cast<::EnterSceneC2SResponse*>(response));
             TRANSFER_ERROR_MESSAGE(static_cast<::EnterSceneC2SResponse*>(response));
+			}
             break;
         case 1:
+			{
             NotifyEnterScene(player,
                 static_cast<const ::EnterSceneS2C*>(request),
                 static_cast<::Empty*>(response));
+			}
             break;
         case 2:
+			{
             SceneInfoC2S(player,
                 static_cast<const ::SceneInfoRequest*>(request),
                 static_cast<::Empty*>(response));
+			}
             break;
         case 3:
+			{
             NotifySceneInfo(player,
                 static_cast<const ::SceneInfoS2C*>(request),
                 static_cast<::Empty*>(response));
+			}
             break;
         case 4:
+			{
             NotifyActorCreate(player,
                 static_cast<const ::ActorCreateS2C*>(request),
                 static_cast<::Empty*>(response));
+			}
             break;
         case 5:
+			{
             NotifyActorDestroy(player,
                 static_cast<const ::ActorDestroyS2C*>(request),
                 static_cast<::Empty*>(response));
+			}
             break;
         case 6:
+			{
             NotifyActorListCreate(player,
                 static_cast<const ::ActorListCreateS2C*>(request),
                 static_cast<::Empty*>(response));
+			}
             break;
         case 7:
+			{
             NotifyActorListDestroy(player,
                 static_cast<const ::ActorListDestroyS2C*>(request),
                 static_cast<::Empty*>(response));
+			}
             break;
         default:
             break;
