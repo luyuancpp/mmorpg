@@ -312,12 +312,9 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
         return;
     }
 
-	if (const auto tipInfoMessage = tlsRegistryManager.globalRegistry.try_get<TipInfoMessage>(GlobalEntity());
-		nullptr != tipInfoMessage)
-	{
-		response->mutable_message_content()->mutable_error_message()->CopyFrom(*tipInfoMessage);
-		tipInfoMessage->Clear();
-	}
+	auto& tipInfoMessage = tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity());
+	response->mutable_message_content()->mutable_error_message()->CopyFrom(tipInfoMessage);
+	tipInfoMessage.Clear();
 	
 	const auto byte_size = playerResponse->ByteSizeLong();
 	response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
