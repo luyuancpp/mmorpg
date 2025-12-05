@@ -28,12 +28,12 @@ return tip_code; \
 }
 
 #define TRANSFER_ERROR_MESSAGE(response) \
-if (auto* tipInfoMessage = tlsRegistryManager.globalRegistry.try_get<TipInfoMessage>(GlobalEntity())) { \
-if (response) { \
-*(response)->mutable_error_message() = std::move(*tipInfoMessage); \
-tlsRegistryManager.globalRegistry.remove<TipInfoMessage>(GlobalEntity()); \
-} \
-}
+auto resp = response;\
+if (resp) { \
+	auto& tipInfoMessage = tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity()); \
+	*(resp->mutable_error_message()) = std::move(tipInfoMessage); \
+	tipInfoMessage.Clear(); \
+} 
 
 #define CHECK_REQUEST_PRECONDITIONS(request, fn) \
 { \

@@ -33,24 +33,32 @@ public:
         switch (method->index())
         {
         case 0:
+			{
             EnterScene(player,
                 static_cast<const ::CentreEnterSceneRequest*>(request),
                 static_cast<::google::protobuf::Empty*>(response));
+			}
             break;
         case 1:
+			{
             LeaveScene(player,
                 static_cast<const ::CentreLeaveSceneRequest*>(request),
                 static_cast<::google::protobuf::Empty*>(response));
+			}
             break;
         case 2:
+			{
             LeaveSceneAsyncSavePlayerComplete(player,
                 static_cast<const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest*>(request),
                 static_cast<::google::protobuf::Empty*>(response));
+			}
             break;
         case 3:
+			{
             SceneInfoC2S(player,
                 static_cast<const ::CentreSceneInfoRequest*>(request),
                 static_cast<::google::protobuf::Empty*>(response));
+			}
             break;
         default:
             break;

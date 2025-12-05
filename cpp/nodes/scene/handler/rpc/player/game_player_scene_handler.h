@@ -30,20 +30,26 @@ public:
         switch (method->index())
         {
         case 0:
+			{
             EnterScene(player,
                 static_cast<const ::GsEnterSceneRequest*>(request),
                 static_cast<::google::protobuf::Empty*>(response));
+			}
             break;
         case 1:
+			{
             LeaveScene(player,
                 static_cast<const ::GsLeaveSceneRequest*>(request),
                 static_cast<::google::protobuf::Empty*>(response));
+			}
             break;
         case 2:
+			{
             EnterSceneS2C(player,
                 static_cast<const ::EnterSceneS2CRequest*>(request),
                 static_cast<::EnterScenerS2CResponse*>(response));
             TRANSFER_ERROR_MESSAGE(static_cast<::EnterScenerS2CResponse*>(response));
+			}
             break;
         default:
             break;

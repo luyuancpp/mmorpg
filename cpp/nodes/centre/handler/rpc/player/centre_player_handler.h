@@ -27,14 +27,18 @@ public:
         switch (method->index())
         {
         case 0:
+			{
             SendTipToClient(player,
                 static_cast<const ::TipInfoMessage*>(request),
                 static_cast<::Empty*>(response));
+			}
             break;
         case 1:
+			{
             KickPlayer(player,
                 static_cast<const ::CentreKickPlayerRequest*>(request),
                 static_cast<::Empty*>(response));
+			}
             break;
         default:
             break;

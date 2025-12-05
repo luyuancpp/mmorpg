@@ -235,12 +235,14 @@ const playerMethodFunctionsTemplate = `
         {
 {{- range $index, $method := .Methods }}
         case {{ $index }}:
+			{
             {{ $method.Method }}(player,
                 static_cast<const {{ $method.CppRequest }}*>(request),
                 static_cast<{{ $method.CppResponse }}*>(response));
 {{- if not $method.IsEmptyResponse }}
             TRANSFER_ERROR_MESSAGE(static_cast<{{ $method.CppResponse }}*>(response));
 {{- end }}
+			}
             break;
 {{- end }}
         default:
