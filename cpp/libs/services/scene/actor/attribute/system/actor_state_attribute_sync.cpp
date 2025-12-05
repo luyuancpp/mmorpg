@@ -142,10 +142,7 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel3Entities(const entt::entity e
 // 同步基础属性到附近的实体
 void ActorStateAttributeSyncSystem::SyncBasicAttributes(entt::entity entity) {
 	// 获取实体的 AOI 列表组件
-	const auto aoiListComp = tlsRegistryManager.actorRegistry.try_get<AoiListComp>(entity);
-	if (!aoiListComp) {
-		return;
-	}
+	const auto aoiListComp = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity);
 
 	auto& registry = tlsRegistryManager.actorRegistry;
 	auto& dirtyComp = registry.get_or_emplace<BaseAttributeDirtyMaskComp>(entity);
@@ -189,7 +186,7 @@ void ActorStateAttributeSyncSystem::SyncBasicAttributes(entt::entity entity) {
 	}
 
 	// 广播增量同步消息
-	BroadcastMessageToPlayers(ScenePlayerSyncSyncBaseAttributeMessageId, syncMessage, aoiListComp->aoiList);
+	BroadcastMessageToPlayers(ScenePlayerSyncSyncBaseAttributeMessageId, syncMessage, aoiListComp.aoiList);
 
 	// 清空消息，为下次同步准备
 	syncMessage.Clear();
@@ -202,47 +199,42 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
 
     switch (syncFrequency) {
     case eAttributeSyncFrequency::kSyncEvery2Frames: {
-        auto* comp = tlsRegistryManager.actorRegistry.try_get<AttributeDelta2FramesS2C>(entity);
-        if (!comp) return;
-        if (comp->ByteSizeLong() > 0) {
-            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute2FramesMessageId, *comp, nearbyEntities);
-            comp->Clear();
+        auto& comp = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDelta2FramesS2C>(entity);
+        if (comp.ByteSizeLong() > 0) {
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute2FramesMessageId, comp, nearbyEntities);
+            comp.Clear();
         }
         break;
     }
     case eAttributeSyncFrequency::kSyncEvery5Frames: {
-        auto* comp = tlsRegistryManager.actorRegistry.try_get<AttributeDelta5FramesS2C>(entity);
-        if (!comp) return;
-        if (comp->ByteSizeLong() > 0) {
-            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute5FramesMessageId, *comp, nearbyEntities);
-            comp->Clear();
+		auto& comp = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDelta5FramesS2C>(entity);
+        if (comp.ByteSizeLong() > 0) {
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute5FramesMessageId, comp, nearbyEntities);
+            comp.Clear();
         }
         break;
     }
     case eAttributeSyncFrequency::kSyncEvery10Frames: {
-        auto* comp = tlsRegistryManager.actorRegistry.try_get<AttributeDelta10FramesS2C>(entity);
-        if (!comp) return;
-        if (comp->ByteSizeLong() > 0) {
-            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute10FramesMessageId, *comp, nearbyEntities);
-            comp->Clear();
+        auto& comp = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDelta10FramesS2C>(entity);
+        if (comp.ByteSizeLong() > 0) {
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute10FramesMessageId, comp, nearbyEntities);
+            comp.Clear();
         }
         break;
     }
     case eAttributeSyncFrequency::kSyncEvery30Frames: {
-        auto* comp = tlsRegistryManager.actorRegistry.try_get<AttributeDelta30FramesS2C>(entity);
-        if (!comp) return;
-        if (comp->ByteSizeLong() > 0) {
-            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute30FramesMessageId, *comp, nearbyEntities);
-            comp->Clear();
+        auto& comp = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDelta30FramesS2C>(entity);
+        if (comp.ByteSizeLong() > 0) {
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute30FramesMessageId, comp, nearbyEntities);
+            comp.Clear();
         }
         break;
     }
     case eAttributeSyncFrequency::kSyncEvery60Frames: {
-        auto* comp = tlsRegistryManager.actorRegistry.try_get<AttributeDelta60FramesS2C>(entity);
-        if (!comp) return;
-        if (comp->ByteSizeLong() > 0) {
-            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute60FramesMessageId, *comp, nearbyEntities);
-            comp->Clear();
+        auto& comp = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDelta60FramesS2C>(entity);
+        if (comp.ByteSizeLong() > 0) {
+            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute60FramesMessageId, comp, nearbyEntities);
+            comp.Clear();
         }
         break;
     }
