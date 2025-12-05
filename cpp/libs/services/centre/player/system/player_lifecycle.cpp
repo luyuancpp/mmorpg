@@ -70,37 +70,29 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, player_centre_
 
 void PlayerLifecycleSystem::ProcessPlayerSessionState(entt::entity player)
 {
-	if (const auto* const enterGameFlag = tlsRegistryManager.actorRegistry.try_get<PlayerEnterGameStatePbComp>(player))
+	const auto& enterGameFlag = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player);
+	LOG_DEBUG << "EnterGameNodeInfoPBComponent found with type: " << enterGameFlag.enter_gs_type();
+
+	if (enterGameFlag.enter_gs_type() != LOGIN_NONE && enterGameFlag.enter_gs_type() != LOGIN_RECONNECT)
 	{
-		LOG_DEBUG << "EnterGameNodeInfoPBComponent found with type: " << enterGameFlag->enter_gs_type();
-
-		if (enterGameFlag->enter_gs_type() != LOGIN_NONE && enterGameFlag->enter_gs_type() != LOGIN_RECONNECT)
-		{
-			PlayerLifecycleSystem::HandlePlayerLogin(player);
-		}
-		else
-		{
-			PlayerLifecycleSystem::HandlePlayerReconnection(player);
-		}
-
-		tlsRegistryManager.actorRegistry.remove<PlayerEnterGameStatePbComp>(player);
-		LOG_DEBUG << "Removed EnterGameNodeInfoPBComponent from player";
+		PlayerLifecycleSystem::HandlePlayerLogin(player);
 	}
+	else
+	{
+		PlayerLifecycleSystem::HandlePlayerReconnection(player);
+	}
+
+	tlsRegistryManager.actorRegistry.remove<PlayerEnterGameStatePbComp>(player);
+	LOG_DEBUG << "Removed EnterGameNodeInfoPBComponent from player";
 }
 
 void PlayerLifecycleSystem::HandlePlayerLogin(entt::entity playerEntity)
 {
-	const auto enterGameFlag = tlsRegistryManager.actorRegistry.try_get<PlayerEnterGameStatePbComp>(playerEntity);
-	if (!enterGameFlag)
-	{
-		LOG_WARN << "HandlePlayerLogin called but EnterGameNodeInfoPBComponent not found";
-		return;
-	}
-
+	const auto& enterGameFlag = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(playerEntity);
 	LOG_INFO << "Handling player login for entity: " << static_cast<uint32_t>(playerEntity);
 
 	Centre2GsLoginRequest message;
-	message.set_enter_gs_type(enterGameFlag->enter_gs_type());
+	message.set_enter_gs_type(enterGameFlag.enter_gs_type());
 
 	SendMessageToPlayerOnSceneNode(ScenePlayerCentre2GsLoginMessageId, message, playerEntity);
 	LOG_DEBUG << "Sent Centre2GsLoginRequest to game scene";
