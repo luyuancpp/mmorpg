@@ -56,15 +56,14 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 		//todo异步加载完场景已经不在了scene了
 		//todo 场景崩溃了要去新的场景
 
-	auto* const changeSceneQueue = tlsRegistryManager.actorRegistry.try_get<ChangeSceneQueuePBComponent>(player);
-	if (!changeSceneQueue || changeSceneQueue->empty()) {
+	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	if (changeSceneQueue.empty()) {
 		LOG_WARN << " Change scene queue is empty, player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 		// 可选：通知客户端或重试
 		return;
 	}
 
-
-	const auto& changeSceneInfo = *changeSceneQueue->front();
+	const auto& changeSceneInfo = *changeSceneQueue.front();
 	const auto toScene = entt::to_entity(changeSceneInfo.guid());
 	if (entt::null == toScene)
 	{

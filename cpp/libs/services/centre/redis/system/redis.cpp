@@ -14,7 +14,7 @@ using namespace muduo::net;
 
 void RedisSystem::Initialize()
 {
-    auto& playerRedis = tlsRegistryManager.globalRegistry.emplace<PlayerCentreDataRedis>(GlobalEntity());
+    auto& playerRedis = tlsRegistryManager.globalRegistry.get_or_emplace<PlayerCentreDataRedis>(GlobalEntity());
     playerRedis = std::make_unique<PlayerCentreDataRedis::element_type>(*tlsReids.GetZoneRedis());
     playerRedis->SetLoadCallbackWithExtra(PlayerLifecycleSystem::HandlePlayerAsyncLoaded);
     playerRedis->SetSaveCallback(PlayerLifecycleSystem::HandlePlayerAsyncSaved);

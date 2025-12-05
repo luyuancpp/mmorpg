@@ -14,12 +14,9 @@ void SendErrorToClient(const Request& request, Response& response, uint32_t err)
 
     response.mutable_message_content()->set_message_id(request.message_content().message_id());
 
-    if (const auto* tip = tlsRegistryManager.globalRegistry.try_get<TipInfoMessage>(GlobalEntity()); tip != nullptr) {
-        response.mutable_message_content()->mutable_error_message()->CopyFrom(*tip);
-        response.mutable_message_content()->mutable_error_message()->set_id(err);
-        // 根据语义决定是否 clear（不建议无条件清全局)
-        // tip->Clear();
-    } else {
-        response.mutable_message_content()->mutable_error_message()->set_id(err);
-    }
+    auto& tip = tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity());
+    response.mutable_message_content()->mutable_error_message()->CopyFrom(tip);
+    response.mutable_message_content()->mutable_error_message()->set_id(err);
+    // 根据语义决定是否 clear（不建议无条件清全局)
+    // tip->Clear();
 }

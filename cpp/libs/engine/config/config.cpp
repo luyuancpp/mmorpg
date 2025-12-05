@@ -32,9 +32,9 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 	// 服务列表
 	if (root["services"]) {
 		for (const auto& service : root["services"]) {
-			auto* s = baseConfig.add_services();
-			s->set_name(service["name"].as<std::string>());
-			s->set_url(service["url"].as<std::string>());
+			auto& s = *baseConfig.add_services();
+			s.set_name(service["name"].as<std::string>());
+			s.set_url(service["url"].as<std::string>());
 		}
 	}
 
@@ -58,26 +58,26 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 	// ✅ Kafka 配置读取
 	if (root["Kafka"]) {
 		const YAML::Node& kafkaNode = root["Kafka"];
-		KafkaConfig* kafkaConfig = baseConfig.mutable_kafka();
+		KafkaConfig& kafkaConfig = *baseConfig.mutable_kafka();
 
 		if (kafkaNode["Brokers"]) {
 			for (const auto& broker : kafkaNode["Brokers"]) {
-				kafkaConfig->add_brokers(broker.as<std::string>());
+				kafkaConfig.add_brokers(broker.as<std::string>());
 			}
 		}
 		if (kafkaNode["Topics"]) {
 			for (const auto& topic : kafkaNode["Topics"]) {
-				kafkaConfig->add_topics(topic.as<std::string>());
+				kafkaConfig.add_topics(topic.as<std::string>());
 			}
 		}
 		if (kafkaNode["GroupID"]) {
-			kafkaConfig->set_group_id(kafkaNode["GroupID"].as<std::string>());
+			kafkaConfig.set_group_id(kafkaNode["GroupID"].as<std::string>());
 		}
 		if (kafkaNode["EnableAutoCommit"]) {
-			kafkaConfig->set_enable_auto_commit(kafkaNode["EnableAutoCommit"].as<bool>());
+			kafkaConfig.set_enable_auto_commit(kafkaNode["EnableAutoCommit"].as<bool>());
 		}
 		if (kafkaNode["AutoOffsetReset"]) {
-			kafkaConfig->set_auto_offset_reset(kafkaNode["AutoOffsetReset"].as<std::string>());
+			kafkaConfig.set_auto_offset_reset(kafkaNode["AutoOffsetReset"].as<std::string>());
 		}
 	}
 

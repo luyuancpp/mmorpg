@@ -71,24 +71,19 @@ double ViewSystem::GetMaxViewRadius(entt::entity observer)
 
 bool ViewSystem::IsWithinViewRadius(entt::entity viewer, entt::entity targetEntity, double visionRadius)
 {
-	const auto viewerTransform = tlsRegistryManager.actorRegistry.try_get<Transform>(viewer);
-	const auto targetTransform = tlsRegistryManager.actorRegistry.try_get<Transform>(targetEntity);
-
-	// 如果缺少位置数据，返回 false，表示不在视野内
-	if (!viewerTransform || !targetTransform) {
-		return false;
-	}
+	const auto& viewerTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(viewer);
+	const auto& targetTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(targetEntity);
 
 	// 获取观察者和目标实体的位置
 	const dtReal viewerLocation[] = {
-		viewerTransform->location().x(),
-		viewerTransform->location().y(),
-		viewerTransform->location().z()
+		viewerTransform.location().x(),
+		viewerTransform.location().y(),
+		viewerTransform.location().z()
 	};
 	const dtReal targetLocation[] = {
-		targetTransform->location().x(),
-		targetTransform->location().y(),
-		targetTransform->location().z()
+		targetTransform.location().x(),
+		targetTransform.location().y(),
+		targetTransform.location().z()
 	};
 
 	// 计算实体间的距离，并检查是否在视野范围内
@@ -104,24 +99,19 @@ bool ViewSystem::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
 
 double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2)
 {
-	const auto transform1 = tlsRegistryManager.actorRegistry.try_get<Transform>(entity1);
-	const auto transform2 = tlsRegistryManager.actorRegistry.try_get<Transform>(entity2);
-
-	// 如果任一实体缺少位置数据，返回 -1 表示距离不可计算
-	if (!transform1 || !transform2) {
-		return -1.0;
-	}
+	auto& transform1 = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity1);
+	auto& transform2 = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity2);
 
 	// 获取两个实体的位置
 	const dtReal location1[] = {
-		transform1->location().x(),
-		transform1->location().y(),
-		transform1->location().z()
+		transform1.location().x(),
+		transform1.location().y(),
+		transform1.location().z()
 	};
 	const dtReal location2[] = {
-		transform2->location().x(),
-		transform2->location().y(),
-		transform2->location().z()
+		transform2.location().x(),
+		transform2.location().y(),
+		transform2.location().z()
 	};
 
 	// 计算并返回两者之间的距离
@@ -164,15 +154,11 @@ void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uin
 }
 
 void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
-    auto transform = tlsRegistryManager.actorRegistry.try_get<Transform>(entity);
-	if (nullptr == transform)
-	{
-		return;
-	}
+    auto& transform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity);
 
     // 计算目标方向
     dtReal targetLocation[] = { pos.x(), pos.y(), pos.z() };
-    dtReal location[] = { transform->location().x(), transform->location().y(), transform->location().z() };
+    dtReal location[] = { transform.location().x(), transform.location().y(), transform.location().z() };
     dtReal direction[3] = { 0, 0, 0 };
     dtVsub(direction, targetLocation, location);
 
@@ -189,7 +175,7 @@ void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
     float pitch = asin(direction[1]); // 计算绕X轴的旋转
 
     // 更新 rotation 为欧拉角（以弧度为单位）
-    transform->mutable_rotation()->set_x(pitch);
-    transform->mutable_rotation()->set_y(yaw);
-    transform->mutable_rotation()->set_z(0); // Z轴旋转保持为0
+    transform.mutable_rotation()->set_x(pitch);
+    transform.mutable_rotation()->set_y(yaw);
+    transform.mutable_rotation()->set_z(0); // Z轴旋转保持为0
 }
