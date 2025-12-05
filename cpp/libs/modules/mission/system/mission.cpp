@@ -40,14 +40,10 @@ uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 	}
 
 	// Retrieve mission reward component for the player
-	auto* const missionRewardComp = tlsRegistryManager.actorRegistry.try_get<RewardListPBComponent>(param.playerEntity);
-	if (nullptr == missionRewardComp) {
-		LOG_ERROR << "Mission reward component not found: playerId = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.playerEntity);
-		return PrintStackAndReturnError(kPlayerMissionComponentNotFound);
-	}
+	auto& missionRewardComp = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(param.playerEntity);
 
 	// Check if the mission ID is valid for reward
-	auto rewardMissionIdMap = missionRewardComp->mutable_can_reward_mission_id();
+	auto rewardMissionIdMap = missionRewardComp.mutable_can_reward_mission_id();
 	if (rewardMissionIdMap->find(param.missionId) == rewardMissionIdMap->end()) {
 		LOG_ERROR << "Mission ID not found in reward list: missionId = " << param.missionId << ", playerId = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.playerEntity);
 		return PrintStackAndReturnError(kMissionIdNotInRewardList);
