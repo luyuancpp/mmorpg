@@ -56,8 +56,8 @@ private:
 	static void UpdateMissionStatus(MissionPBComponent& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions);
 	static void OnMissionCompletion(entt::entity player, const UInt32Set& completedMissions);
 	static uint32_t CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComponent& missionComp);
-	static void RemoveMissionClassification(MissionsComponent* missionComp, uint32_t missionId);
-	static bool AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComponent* missionComp);
+	static void RemoveMissionClassification(MissionsComponent& missionComp, uint32_t missionId);
+	static bool AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComponent& missionComp);
 	static bool UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, int index, const ConditionTable* conditionRow);
 };
 
