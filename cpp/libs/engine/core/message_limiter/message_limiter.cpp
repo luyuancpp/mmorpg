@@ -16,8 +16,8 @@ uint32_t MessageLimiter::CanSend(uint32_t messageId) {
     auto& messageTimestamps = requestRecords[messageId];
 
     // 默认限流规则
-    uint8_t maxAllowedRequests = this->defaultMaxRequests;
-    uint64_t timeWindowDuration = this->defaultTimeWindow;
+    uint8_t maxAllowedRequests = defaultMaxRequests;
+    uint64_t timeWindowDuration = defaultTimeWindow;
 
     // 检查是否有针对该消息ID的特殊配置
     if (const auto [configEntry, fetchSuccess] = MessageLimiterTableManager::Instance().GetTableWithoutErrorLogging(messageId);

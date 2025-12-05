@@ -80,7 +80,7 @@ TEST_F(AoiSystemTest, TestScanNeighborGridIds) {
 TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
     // Mock data setup
     auto scene_entity = tlsRegistryManager.roomRegistry.create();
-    auto& scene_grid_list = tlsRegistryManager.roomRegistry.emplace<SceneGridListComp>(scene_entity);
+    auto& scene_grid_list = tlsRegistryManager.roomRegistry.get_or_emplace<SceneGridListComp>(scene_entity);
 
     RoomEntityComp scene_entity_comp{ scene_entity };
 
@@ -89,7 +89,7 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
     for (uint32_t i = 0; i < 10; ++i) {
         auto player_entity = tlsRegistryManager.actorRegistry.create();
 
-        Transform& transform = tlsRegistryManager.actorRegistry.emplace<Transform>(player_entity);
+        Transform& transform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(player_entity);
         transform.mutable_location()->set_x(tlsRandom.RandReal<double>(0, 1000));
         transform.mutable_location()->set_y(tlsRandom.RandReal<double>(0, 1000));
 

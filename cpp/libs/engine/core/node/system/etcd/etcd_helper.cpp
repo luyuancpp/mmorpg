@@ -70,17 +70,17 @@ void EtcdHelper::PutIfAbsent(const std::string& key, const std::string& newValue
 	etcdserverpb::TxnRequest txn;
 
 	// Compare：version == 0 → key 不存在
-	auto* compare = txn.add_compare();
-	compare->set_key(key);
-	compare->set_target(etcdserverpb::Compare::VERSION);
-	compare->set_result(etcdserverpb::Compare::EQUAL);
-	compare->set_version(currentVersion);
+	auto& compare = *txn.add_compare();
+	compare.set_key(key);
+	compare.set_target(etcdserverpb::Compare::VERSION);
+	compare.set_result(etcdserverpb::Compare::EQUAL);
+	compare.set_version(currentVersion);
 
 	// Success：put(key, value)
-	auto* successOp = txn.add_success()->mutable_request_put();
-	successOp->set_key(key);
-	successOp->set_value(newValue);
-	successOp->set_lease(lease);
+	auto& successOp = *txn.add_success()->mutable_request_put();
+	successOp.set_key(key);
+	successOp.set_value(newValue);
+	successOp.set_lease(lease);
 
 	SendKVTxn(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), txn);
 }

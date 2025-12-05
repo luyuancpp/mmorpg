@@ -24,12 +24,8 @@ MissionsComponent::MissionsComponent()
 std::size_t MissionsComponent::CanGetRewardSize() const
 {
 	// Retrieve mission reward component
-	const auto* const missionReward = tlsRegistryManager.actorRegistry.try_get<RewardListPBComponent>(EventOwner());
-	if (nullptr == missionReward)
-	{
-		return 0; 
-	}
-	return static_cast<std::size_t>(missionReward->can_reward_mission_id_size()); // Return the number of missions eligible for reward
+	auto& missionReward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(EventOwner());
+	return static_cast<std::size_t>(missionReward.can_reward_mission_id_size()); // Return the number of missions eligible for reward
 }
 
 

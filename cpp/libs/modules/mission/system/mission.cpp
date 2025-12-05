@@ -56,10 +56,10 @@ uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 }
 
 // Function to check conditions before accepting a mission
-uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComponent* missionComp) {
+uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComponent& missionComp) {
 	// Check if mission is unaccepted and uncompleted
-	RETURN_ON_ERROR(missionComp->IsMissionUnaccepted(acceptEvent.mission_id()));
-	RETURN_ON_ERROR(missionComp->IsMissionUncompleted(acceptEvent.mission_id()));
+	RETURN_ON_ERROR(missionComp.IsMissionUnaccepted(acceptEvent.mission_id()));
+	RETURN_ON_ERROR(missionComp.IsMissionUncompleted(acceptEvent.mission_id()));
 
 	// Ensure mission configuration is valid
 	RETURN_IF_TRUE(!MissionConfig::GetSingleton().HasKey(acceptEvent.mission_id()), kInvalidTableId);
@@ -69,9 +69,9 @@ uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptE
 	auto missionType = MissionConfig::GetSingleton().GetMissionType(acceptEvent.mission_id());
 
 	// If mission type should not repeat, check type filter
-	if (missionComp->IsMissionTypeNotRepeated()) {
+	if (missionComp.IsMissionTypeNotRepeated()) {
 		auto missionTypeSubTypePair = std::make_pair(missionType, missionSubType);
-		RETURN_IF_TRUE(missionComp->GetTypeFilter().find(missionTypeSubTypePair) != missionComp->GetTypeFilter().end(), kMissionTypeAlreadyExists);
+		RETURN_IF_TRUE(missionComp.GetTypeFilter().find(missionTypeSubTypePair) != missionComp.GetTypeFilter().end(), kMissionTypeAlreadyExists);
 	}
 
 	return kSuccess;
@@ -83,11 +83,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 	const entt::entity playerEntity = entt::to_entity(acceptEvent.entity());
 
 	// Retrieve mission component for the player
-	auto* const missionComp = tlsRegistryManager.actorRegistry.try_get<MissionsComponent>(playerEntity);
-	if (nullptr == missionComp) {
-		LOG_ERROR << "Missions component not found for playerEntity = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
-		return kPlayerMissionComponentNotFound;
-	}
+	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
 
 	// Check acceptance conditions
 	auto ret = CheckMissionAcceptance(acceptEvent, missionComp);
@@ -102,9 +98,9 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 	auto missionType = MissionConfig::GetSingleton().GetMissionType(acceptEvent.mission_id());
 
 	// Add mission type filter if type should not repeat
-	if (missionComp->IsMissionTypeNotRepeated()) {
+	if (missionComp.IsMissionTypeNotRepeated()) {
 		auto missionTypeSubTypePair = std::make_pair(missionType, missionSubType);
-		missionComp->GetTypeFilter().emplace(missionTypeSubTypePair);
+		missionComp.GetTypeFilter().emplace(missionTypeSubTypePair);
 	}
 
 	// Create mission protobuf component
@@ -116,11 +112,11 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 		FetchConditionTableOrContinue(conditionId);
 		
 		missionPb.add_progress(0);
-		missionComp->GetEventMissionsClassify()[conditionTable->condition_type()].emplace(acceptEvent.mission_id());
+		missionComp.GetEventMissionsClassify()[conditionTable->condition_type()].emplace(acceptEvent.mission_id());
 	}
 
 	// Insert mission into missions component
-	missionComp->GetMissionsComp().mutable_missions()->insert({ acceptEvent.mission_id(), std::move(missionPb) });
+	missionComp.GetMissionsComp().mutable_missions()->insert({ acceptEvent.mission_id(), std::move(missionPb) });
 
 	// Dispatch event for mission acceptance
 	{
@@ -137,14 +133,10 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 // Function to abandon a mission
 uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
 	// Retrieve mission component for the player
-	auto* const missionComp = tlsRegistryManager.actorRegistry.try_get<MissionsComponent>(param.playerEntity);
-	if (nullptr == missionComp) {
-		LOG_ERROR << "Missions component not found for playerId = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.playerEntity);
-		return kPlayerMissionComponentNotFound;
-	}
+	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(param.playerEntity);
 
 	// Check if mission is uncompleted
-	if (kMissionAlreadyCompleted == missionComp->IsMissionUncompleted(param.missionId)) {
+	if (kMissionAlreadyCompleted == missionComp.IsMissionUncompleted(param.missionId)) {
 		LOG_ERROR << "Mission is already completed for playerId = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.playerEntity) << ", missionId = " << param.missionId;
 		return kMissionAlreadyCompleted;
 	}
@@ -156,9 +148,9 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
 	}
 
 	// Remove mission from missions component
-	missionComp->GetMissionsComp().mutable_missions()->erase(param.missionId);
-	missionComp->AbandonMission(param.missionId);
-	missionComp->GetMissionsComp().mutable_mission_begin_time()->erase(param.missionId);
+	missionComp.GetMissionsComp().mutable_missions()->erase(param.missionId);
+	missionComp.AbandonMission(param.missionId);
+	missionComp.GetMissionsComp().mutable_mission_begin_time()->erase(param.missionId);
 
 	// Delete mission classification
 	DeleteMissionClassification(param.playerEntity, param.missionId);
