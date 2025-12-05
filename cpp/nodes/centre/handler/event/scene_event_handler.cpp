@@ -69,13 +69,13 @@ void SceneEventHandler::BeforeLeaveRoomHandler(const BeforeLeaveRoom& event)
 	///<<< BEGIN WRITING YOUR CODE
 		const auto player = entt::to_entity(event.entity());
 
-	auto* const changeSceneQueue = tlsRegistryManager.actorRegistry.try_get<ChangeSceneQueuePBComponent>(player);
+	const auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 
 	GsLeaveSceneRequest leaveSceneRequest;
 
-	if (changeSceneQueue && !changeSceneQueue->empty())
+	if (!changeSceneQueue.empty())
 	{
-		const auto& changeSceneInfo = *changeSceneQueue->front();
+		const auto& changeSceneInfo = *changeSceneQueue.front();
 		*leaveSceneRequest.mutable_change_scene_info() = changeSceneInfo;
 	}
 	
