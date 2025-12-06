@@ -1,0 +1,5 @@
+Checks: >
+  -*,
+  myproject-no-member-raw-pointer
+
+WarningsAsErrors: '*'

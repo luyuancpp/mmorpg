@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.20)
+
+project(NoMemberPointerPlugin)
+
+# 生成 DLL
+add_library(NoMemberPointerPlugin MODULE
+    NoMemberRawPointerCheck.cpp
+    NoMemberRawPointerCheck.h
+)
+
+# 链接 clang-tidy/llvm 库
+# 你本机 clang/llvm 路径需要修改
+target_include_directories(NoMemberPointerPlugin PRIVATE 
+    "C:/LLVM/include"
+)
+target_link_libraries(NoMemberPointerPlugin PRIVATE
+    clangTidy
+    clangASTMatchers
+    clangAST
+    clangBasic
+    clangTooling
+)
