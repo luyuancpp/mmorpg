@@ -184,9 +184,6 @@
     <ClCompile Include="node\system\node\node_util.cpp" />
     <ClCompile Include="node\system\registration\registration_manager.cpp" />
     <ClCompile Include="node\system\discovery\service_discovery_manager.cpp" />
-    <ClCompile Include="time\comp\duration_funtion.cpp" />
-    <ClCompile Include="time\comp\duration_manager.cpp" />
-    <ClCompile Include="time\comp\timer_duration.cpp" />
     <ClCompile Include="time\comp\timer_task_boost_comp.cpp" />
     <ClCompile Include="time\comp\timer_task_comp.cpp" />
     <ClCompile Include="time\system\time.cpp" />
@@ -473,10 +470,6 @@
     <ClInclude Include="node\system\node\node_util.h" />
     <ClInclude Include="node\system\registration\registration_manager.h" />
     <ClInclude Include="node\system\discovery\service_discovery_manager.h" />
-    <ClInclude Include="time\comp\duration_funtion.h" />
-    <ClInclude Include="time\comp\duration_manager.h" />
-    <ClInclude Include="time\comp\timer_duration.h" />
-    <ClInclude Include="time\comp\timer_list.h" />
     <ClInclude Include="time\comp\timer_task_comp.h" />
     <ClInclude Include="time\constants\time_constants.h" />
     <ClInclude Include="time\system\time_cooldown.h" />

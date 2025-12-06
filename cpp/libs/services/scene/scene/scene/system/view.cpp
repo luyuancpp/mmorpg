@@ -122,9 +122,8 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
 {
 	createMessage.set_entity(entt::to_integral(entrant));
 
-	if (const auto entrantTransform = tlsRegistryManager.actorRegistry.try_get<Transform>(entrant)) {
-		createMessage.mutable_transform()->CopyFrom(*entrantTransform);
-	}
+	auto& entrantTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entrant);
+	createMessage.mutable_transform()->CopyFrom(entrantTransform);
 
 	/*if (const auto guid = tlsThreadLocalEntityContainer.registry.try_get<Guid>(entrant)) {
 		createMessage.set_guid(*guid);
