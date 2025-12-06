@@ -1,5 +1,4 @@
-Checks: >
-  -*,
-  myproject-no-member-raw-pointer
-
-WarningsAsErrors: '*'
+Checks: '-*,myplugin-no-member-pointer'
+CheckOptions:
+  - key: myplugin-no-member-pointer.SomeOption
+    value: true
