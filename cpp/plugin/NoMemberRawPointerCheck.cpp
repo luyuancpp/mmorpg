@@ -1,4 +1,4 @@
-#include "NoMemberRawPointerCheck.h"
+﻿#include "NoMemberRawPointerCheck.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 
