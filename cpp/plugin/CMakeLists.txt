@@ -1,22 +1,36 @@
 cmake_minimum_required(VERSION 3.20)
+project(NoMemberPointerPlugin LANGUAGES CXX)
 
-project(NoMemberPointerPlugin)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-# 生成 DLL
-add_library(NoMemberPointerPlugin MODULE
+# 修改这个路径为你实际解压路径
+set(LLVM_ROOT "D:/game/llvm")
+
+set(LLVM_DIR  "${LLVM_ROOT}/lib/cmake/llvm")
+set(Clang_DIR "${LLVM_ROOT}/lib/cmake/clang")
+
+find_package(LLVM REQUIRED CONFIG)
+find_package(Clang REQUIRED CONFIG)
+
+include_directories(
+    ${LLVM_INCLUDE_DIRS}
+    ${CLANG_INCLUDE_DIRS}
+)
+
+add_library(NoMemberPointerPlugin SHARED
     NoMemberRawPointerCheck.cpp
     NoMemberRawPointerCheck.h
 )
 
-# 链接 clang-tidy/llvm 库
-# 你本机 clang/llvm 路径需要修改
-target_include_directories(NoMemberPointerPlugin PRIVATE 
-    "C:/LLVM/include"
-)
 target_link_libraries(NoMemberPointerPlugin PRIVATE
     clangTidy
-    clangASTMatchers
+    clangTidyPlugin
     clangAST
+    clangASTMatchers
     clangBasic
+    clangFrontend
     clangTooling
+    clangRewrite
+    clangLex
 )
