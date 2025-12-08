@@ -1,0 +1,59 @@
+#include "{{ .MessageName | ToLower }}_attribute_sync.h"
+#include "scene/actor/components.h"
+#include "scene/actor/attribute/dirt_mask_component.h"
+
+// ============================================================================
+// {{ .MessageName }} Attribute Sync
+// ============================================================================
+void {{ .MessageName }}SyncAttributes(entt::entity entity, uint32 message_id)
+{
+    auto& registry = tlsRegistryManager.actorRegistry;
+
+    // Fetch AOI and dirty mask
+    const auto& aoi_list      = registry.get_or_emplace<AoiListComp>(entity);
+    auto&       dirty_mask    = registry.get_or_emplace<BaseAttributeDirtyMaskComp>(entity);
+
+    {{ .CppClass }} sync_msg;
+    const auto* msg_desc = sync_msg.GetDescriptor();
+
+    // Iterate protobuf fields
+    for (int idx = 0; idx < msg_desc->field_count(); ++idx)
+    {
+        const auto* field     = msg_desc->field(idx);
+        int         field_num = field->number();
+
+        // Skip clean fields
+        if (!dirty_mask.dirtyMask.test(field_num))
+            continue;
+
+        // Switch each attribute field
+        switch (field_num)
+        {
+        {{- range .Fields }}
+        case {{ $.CppClass }}::k{{ .CamelFieldName }}FieldNumber:
+        {
+            // Sync {{ .FieldName }}
+            auto& comp = registry.get_or_emplace<{{ .CamelFieldName }}>(entity);
+            sync_msg.mutable_{{ .FieldName }}()->CopyFrom(comp);
+            break;
+        }
+        {{- end }}
+        default:
+            break;
+        }
+    }
+
+    // No changes → no broadcast
+    if (sync_msg.ByteSizeLong() == 0)
+        return;
+
+    // Broadcast to AOI players
+    BroadcastMessageToPlayers(
+        message_id,
+        sync_msg,
+        aoi_list.aoiList
+    );
+
+    // Cleanup
+    sync_msg.Clear();
+}

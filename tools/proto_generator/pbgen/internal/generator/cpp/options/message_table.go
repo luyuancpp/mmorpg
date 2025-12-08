@@ -62,7 +62,6 @@ func registerCallbacks(log *zap.Logger) {
 				FieldName      string
 				CamelFieldName string
 				Number         int32
-				CppComponent   string
 			}
 
 			type AttributeSyncMessage struct {
@@ -113,12 +112,25 @@ func registerCallbacks(log *zap.Logger) {
 				logger.Global.Fatal("创建目录失败", zap.String("dir", outDir), zap.Error(err))
 			}
 
-			cppFile := filepath.Join(outDir, asm.MessageName+"_attribute_sync.cpp")
-			hFile := filepath.Join(outDir, asm.MessageName+"_attribute_sync.h")
+			base := strings.ToLower(asm.MessageName)
 
-			cppTemplatePath, err := _config.Global.GetTemplatePath("attribute_sync")
+			cppFile := filepath.Join(outDir, base+"_attribute_sync.cpp")
+			hFile := filepath.Join(outDir, base+"_attribute_sync.h")
+
+			// 获取 cpp 模板
+			cppTemplatePath, err := _config.Global.GetTemplatePath("attribute_sync_cpp")
 			if err != nil {
-				logger.Global.Fatal("读取 template 文件失败", zap.String("template_name", "attribute_sync"), zap.Error(err))
+				logger.Global.Fatal("读取 template 文件失败",
+					zap.String("template_name", "attribute_sync_cpp"),
+					zap.Error(err))
+			}
+
+			// 获取 header 模板
+			hTemplatePath, err := _config.Global.GetTemplatePath("attribute_sync_h")
+			if err != nil {
+				logger.Global.Fatal("读取 template 文件失败",
+					zap.String("template_name", "attribute_sync_h"),
+					zap.Error(err))
 			}
 
 			funcMap := template.FuncMap{
@@ -126,12 +138,18 @@ func registerCallbacks(log *zap.Logger) {
 				"ToCamel": strcase.ToCamel,
 			}
 
-			if err := utils.RenderTemplateToFileWithFuncs(cppTemplatePath, cppFile, asm, funcMap); err != nil {
-				logger.Global.Fatal("生成 CPP 文件失败", zap.String("file", cppFile), zap.Error(err))
+			// 生成 cpp
+			if err := utils.RenderTemplateToFileWithFuncs(
+				cppTemplatePath, cppFile, asm, funcMap); err != nil {
+				logger.Global.Fatal("生成 CPP 文件失败",
+					zap.String("file", cppFile), zap.Error(err))
 			}
 
-			if err := utils.RenderTemplateToFileWithFuncs(cppTemplatePath, cppFile, asm, funcMap); err != nil {
-				logger.Global.Fatal("生成 H 文件失败", zap.String("file", hFile), zap.Error(err))
+			// 生成 h
+			if err := utils.RenderTemplateToFileWithFuncs(
+				hTemplatePath, hFile, asm, funcMap); err != nil {
+				logger.Global.Fatal("生成 H 文件失败",
+					zap.String("file", hFile), zap.Error(err))
 			}
 
 			logger.Global.Info("Attribute sync files generated",

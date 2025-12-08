@@ -276,10 +276,15 @@ mappings:
     path: "{{robot_go_gen_dir}}/{{proto_dir}}/{{proto_file}}_grpc.pb.go"
     template: "templates/robot_go_grpc.tmpl"
     lang: "go"
-  attribute_sync:
+  attribute_sync_cpp:
     path: "{{temp_file_gen_dir}}{{proto_file}}_attribute_sync.cpp"
-    template: "internal/template/attribute_sync.tmpl"
+    template: "internal/template/attribute_sync.cpp.tmpl"
     lang: "cpp"
+  attribute_sync_h:
+    path: "{{temp_file_gen_dir}}{{proto_file}}_attribute_sync.h"
+    template: "internal/template/attribute_sync.h.tmpl"
+    lang: "cpp"
+
 
 # Proto解析器配置
 parser:
