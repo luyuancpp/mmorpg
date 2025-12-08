@@ -125,14 +125,6 @@ func registerCallbacks(log *zap.Logger) {
 					zap.Error(err))
 			}
 
-			// 获取 header 模板
-			hTemplatePath, err := _config.Global.GetTemplatePath("attribute_sync_h")
-			if err != nil {
-				logger.Global.Fatal("读取 template 文件失败",
-					zap.String("template_name", "attribute_sync_h"),
-					zap.Error(err))
-			}
-
 			funcMap := template.FuncMap{
 				"ToLower": strings.ToLower,
 				"ToCamel": strcase.ToCamel,
@@ -143,13 +135,6 @@ func registerCallbacks(log *zap.Logger) {
 				cppTemplatePath, cppFile, asm, funcMap); err != nil {
 				logger.Global.Fatal("生成 CPP 文件失败",
 					zap.String("file", cppFile), zap.Error(err))
-			}
-
-			// 生成 h
-			if err := utils.RenderTemplateToFileWithFuncs(
-				hTemplatePath, hFile, asm, funcMap); err != nil {
-				logger.Global.Fatal("生成 H 文件失败",
-					zap.String("file", hFile), zap.Error(err))
 			}
 
 			logger.Global.Info("Attribute sync files generated",
