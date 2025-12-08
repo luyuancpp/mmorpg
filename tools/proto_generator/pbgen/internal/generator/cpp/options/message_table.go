@@ -11,9 +11,10 @@ import (
 	"path/filepath"
 	_config "pbgen/internal/config"
 	"pbgen/internal/prototools/option"
-	"pbgen/internal/tpl"
+	"pbgen/internal/utils"
 	"pbgen/logger" // 引入全局logger包
 	"strings"
+	"text/template"
 )
 
 // BuildOption 注册消息选项和扩展字段的回调函数
@@ -57,7 +58,6 @@ func registerCallbacks(log *zap.Logger) {
 	prototools.RegisterOptionCallback(prototools.OptionTypeMessage,
 		func(desc interface{}, opts interface{}) error {
 
-			// ==== 定义字段结构 ====
 			type AttributeField struct {
 				FieldName      string
 				CamelFieldName string
@@ -71,37 +71,29 @@ func registerCallbacks(log *zap.Logger) {
 				Fields      []AttributeField
 			}
 
-			// ==== 获取 message 描述符 ====
 			msg, ok := desc.(*descriptorpb.DescriptorProto)
 			if !ok {
 				return fmt.Errorf("desc 类型断言失败")
 			}
 
-			// ==== 读取 option ====
 			rawValue := proto.GetExtension(
 				opts.(*descriptorpb.MessageOptions),
 				messageoption.E_OptionAttributeSync,
 			)
-
-			// 未设置 option → 不处理
 			if rawValue == nil {
 				return nil
 			}
-
-			// option_attribute_sync = false → 不处理
 			enabled, ok := rawValue.(bool)
 			if !ok || !enabled {
 				return nil
 			}
 
-			// ==== 构造 AttributeSyncMessage ====
 			asm := AttributeSyncMessage{
 				MessageName: msg.GetName(),
 				CppClass:    msg.GetName(),
-				Fields:      []AttributeField{},
+				Fields:      make([]AttributeField, 0, len(msg.GetField())),
 			}
 
-			// ==== 收集字段 ====
 			for _, field := range msg.GetField() {
 				asm.Fields = append(asm.Fields, AttributeField{
 					FieldName:      field.GetName(),
@@ -110,34 +102,39 @@ func registerCallbacks(log *zap.Logger) {
 				})
 			}
 
-			// ==== 打印日志 ====
-			log.Info("Generating attribute sync",
+			logger.Global.Info("Generating attribute sync",
 				zap.String("message_name", asm.MessageName),
 				zap.Int("field_count", len(asm.Fields)),
 			)
 
-			// ============================
-			// 🔥🔥 直接生成文件
-			// ============================
-
-			// 生成路径：scene/<xxx>/attribute_sync/
-			outDir := filepath.Join(_config.Global.Paths.SceneAttributeSyncDir, "attribute_sync", strings.ToLower(asm.MessageName))
-
+			outDir := filepath.Join(_config.Global.Paths.RoomAttributeSyncDir,
+				"attribute_sync", strings.ToLower(asm.MessageName))
 			if err := os.MkdirAll(outDir, 0755); err != nil {
-				return fmt.Errorf("创建目录失败: %w", err)
+				logger.Global.Fatal("创建目录失败", zap.String("dir", outDir), zap.Error(err))
 			}
 
 			cppFile := filepath.Join(outDir, asm.MessageName+"_attribute_sync.cpp")
 			hFile := filepath.Join(outDir, asm.MessageName+"_attribute_sync.h")
 
-			if err := tpl.ExecuteTemplateToFile("attribute_sync.cpp.tmpl", cppFile, asm); err != nil {
-				return fmt.Errorf("生成 CPP 文件失败: %w", err)
-			}
-			if err := tpl.ExecuteTemplateToFile("attribute_sync.h.tmpl", hFile, asm); err != nil {
-				return fmt.Errorf("生成 H 文件失败: %w", err)
+			cppTemplatePath, err := _config.Global.GetTemplatePath("attribute_sync")
+			if err != nil {
+				logger.Global.Fatal("读取 template 文件失败", zap.String("template_name", "attribute_sync"), zap.Error(err))
 			}
 
-			log.Info("Attribute sync files generated",
+			funcMap := template.FuncMap{
+				"ToLower": strings.ToLower,
+				"ToCamel": strcase.ToCamel,
+			}
+
+			if err := utils.RenderTemplateToFileWithFuncs(cppTemplatePath, cppFile, asm, funcMap); err != nil {
+				logger.Global.Fatal("生成 CPP 文件失败", zap.String("file", cppFile), zap.Error(err))
+			}
+
+			if err := utils.RenderTemplateToFileWithFuncs(cppTemplatePath, cppFile, asm, funcMap); err != nil {
+				logger.Global.Fatal("生成 H 文件失败", zap.String("file", hFile), zap.Error(err))
+			}
+
+			logger.Global.Info("Attribute sync files generated",
 				zap.String("cpp_file", cppFile),
 				zap.String("h_file", hFile),
 			)

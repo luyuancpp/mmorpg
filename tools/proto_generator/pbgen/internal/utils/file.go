@@ -48,7 +48,9 @@ func WriteFileIfChanged(outputPath string, content []byte) error {
 	return nil
 }
 
+// ===================== 原有函数（保持不变，兼容旧调用） =====================
 // RenderTemplateToFile 渲染模板并写入文件，如果文件内容未改变则不写入
+// （原版本，无自定义函数参数）
 func RenderTemplateToFile(tmplPath string, outputPath string, data any) error {
 	// 解析模板
 	tmpl, err := template.ParseFiles(tmplPath)
@@ -63,6 +65,31 @@ func RenderTemplateToFile(tmplPath string, outputPath string, data any) error {
 	}
 
 	// 使用统一写入逻辑
+	return WriteFileIfChanged(outputPath, buf.Bytes())
+}
+
+func RenderTemplateToFileWithFuncs(tmplPath string, outputPath string, data any, funcMap template.FuncMap) error {
+	// 1. 创建模板对象
+	tmpl := template.New(filepath.Base(tmplPath))
+
+	// 2. 注册自定义函数（如果有）
+	if funcMap != nil {
+		tmpl = tmpl.Funcs(funcMap)
+	}
+
+	// 3. 解析模板文件
+	tmpl, err := tmpl.ParseFiles(tmplPath)
+	if err != nil {
+		return err
+	}
+
+	// 4. 渲染模板到缓冲区
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return err
+	}
+
+	// 5. 统一写入逻辑（内容未变则不写入）
 	return WriteFileIfChanged(outputPath, buf.Bytes())
 }
 
