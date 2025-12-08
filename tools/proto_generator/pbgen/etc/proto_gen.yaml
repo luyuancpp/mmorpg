@@ -81,7 +81,7 @@ paths:
   centre_node_event_handler_directory: "{{centre_node_dir}}{{event_handler_source_directory}}"
 
   # Scene 属性同步生成目录
-  scene_attribute_sync_dir: "{{node_pkg_logic_room}}generated/attribute/"
+  room_attribute_sync_dir: "{{node_pkg_logic_room}}generated/attribute/"
 
 
 # 目录命名常量（专门存放目录名/路径片段常量）
@@ -277,8 +277,8 @@ mappings:
     template: "templates/robot_go_grpc.tmpl"
     lang: "go"
   attribute_sync:
-    path: "{{scene_attribute_sync_dir}}{{proto_file}}_attribute_sync.cpp"
-    template: "templates/attribute_sync.tmpl"
+    path: "{{temp_file_gen_dir}}{{proto_file}}_attribute_sync.cpp"
+    template: "internal/template/attribute_sync.tmpl"
     lang: "cpp"
 
 # Proto解析器配置

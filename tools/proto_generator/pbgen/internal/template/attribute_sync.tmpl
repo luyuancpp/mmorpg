@@ -6,12 +6,11 @@ void {{ .MessageName }}AttributeSyncSystem::Sync(entt::entity entity)
 {
     auto& registry = tlsRegistryManager.actorRegistry;
 
-    const auto& aoi = registry.get_or_emplace<AoiListComp>(entity);
-    auto& dirty = registry.get_or_emplace<BaseAttributeDirtyMaskComp>(entity);
+    const auto& aoi   = registry.get_or_emplace<AoiListComp>(entity);
+    auto&       dirty = registry.get_or_emplace<BaseAttributeDirtyMaskComp>(entity);
 
     {{ .CppClass }} syncMessage;
 
-    const auto* reflection = syncMessage.GetReflection();
     const auto* descriptor = syncMessage.GetDescriptor();
 
     for (int i = 0; i < descriptor->field_count(); ++i)
@@ -24,14 +23,14 @@ void {{ .MessageName }}AttributeSyncSystem::Sync(entt::entity entity)
 
         switch (fieldNumber)
         {
-            {{- range .Fields }}
-            case {{ $.CppClass }}::k{{ .CamelFieldName }}FieldNumber:
-            {
-                auto& comp = registry.get_or_emplace<{{ .CppComponent }}>(entity);
-                syncMessage.mutable_{{ .FieldName }}()->CopyFrom(comp);
-                break;
-            }
-            {{- end }}
+        {{- range .Fields }}
+        case {{ $.CppClass }}::k{{ .CamelFieldName }}FieldNumber:
+        {
+            auto& comp = registry.get_or_emplace<{{ .CppComponent }}>(entity);
+            syncMessage.mutable_{{ .FieldName }}()->CopyFrom(comp);
+            break;
+        }
+        {{- end }}
         }
     }
 

@@ -115,7 +115,7 @@ type Paths struct {
 	EventHandlerSourceDirectory     string `yaml:"event_handler_source_directory"`
 	RoomNodeEventHandlerDirectory   string `yaml:"room_node_event_handler_directory"`
 	CentreNodeEventHandlerDirectory string `yaml:"centre_node_event_handler_directory"`
-	SceneAttributeSyncDir           string `yaml:"scene_attribute_sync_dir"`
+	RoomAttributeSyncDir            string `yaml:"room_attribute_sync_dir"`
 }
 
 // FileExtensions 文件扩展名配置（仅存放文件后缀/扩展名）
@@ -759,9 +759,9 @@ func setDefaults() {
 	if Global.Paths.CentreNodeEventHandlerDirectory == "" && Global.Paths.CentreNodeDir != "" {
 		Global.Paths.CentreNodeEventHandlerDirectory = filepath.Join(Global.Paths.CentreNodeDir, Global.Paths.EventHandlerSourceDirectory)
 	}
-	if Global.Paths.SceneAttributeSyncDir == "" {
+	if Global.Paths.RoomAttributeSyncDir == "" {
 		// 和 YAML 中一致：cpp/libs/services/scene/generated/attribute/
-		Global.Paths.SceneAttributeSyncDir = filepath.Join(
+		Global.Paths.RoomAttributeSyncDir = filepath.Join(
 			Global.Paths.NodeLibGame,
 			"scene/generated/attribute/",
 		)
