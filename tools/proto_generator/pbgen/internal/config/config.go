@@ -115,6 +115,7 @@ type Paths struct {
 	EventHandlerSourceDirectory     string `yaml:"event_handler_source_directory"`
 	RoomNodeEventHandlerDirectory   string `yaml:"room_node_event_handler_directory"`
 	CentreNodeEventHandlerDirectory string `yaml:"centre_node_event_handler_directory"`
+	SceneAttributeSyncDir           string `yaml:"scene_attribute_sync_dir"`
 }
 
 // FileExtensions 文件扩展名配置（仅存放文件后缀/扩展名）
@@ -247,12 +248,13 @@ type MethodHandlerDirs struct {
 
 // Generators 生成器开关配置
 type Generators struct {
-	EnableCpp         bool `yaml:"enable_cpp"`
-	EnableGo          bool `yaml:"enable_go"`
-	EnableHandler     bool `yaml:"enable_handler"`
-	EnableRpcResponse bool `yaml:"enable_rpc_response"`
-	EnableRobotProto  bool `yaml:"enable_robot_proto"`
-	EnableRobotGoZero bool `yaml:"enable_robot_go_zero"`
+	EnableCpp           bool `yaml:"enable_cpp"`
+	EnableGo            bool `yaml:"enable_go"`
+	EnableHandler       bool `yaml:"enable_handler"`
+	EnableRpcResponse   bool `yaml:"enable_rpc_response"`
+	EnableRobotProto    bool `yaml:"enable_robot_proto"`
+	EnableRobotGoZero   bool `yaml:"enable_robot_go_zero"`
+	EnableAttributeSync bool `yaml:"enable_attribute_sync"`
 }
 
 // Mapping 模板映射配置
@@ -744,6 +746,9 @@ func setDefaults() {
 	if !Global.Generators.EnableRobotGoZero && Global.Paths.Robot != "" {
 		Global.Generators.EnableRobotGoZero = true
 	}
+	if !Global.Generators.EnableAttributeSync {
+		Global.Generators.EnableAttributeSync = true
+	}
 
 	if Global.Paths.EventHandlerSourceDirectory == "" {
 		Global.Paths.EventHandlerSourceDirectory = "handler/event/"
@@ -754,6 +759,14 @@ func setDefaults() {
 	if Global.Paths.CentreNodeEventHandlerDirectory == "" && Global.Paths.CentreNodeDir != "" {
 		Global.Paths.CentreNodeEventHandlerDirectory = filepath.Join(Global.Paths.CentreNodeDir, Global.Paths.EventHandlerSourceDirectory)
 	}
+	if Global.Paths.SceneAttributeSyncDir == "" {
+		// 和 YAML 中一致：cpp/libs/services/scene/generated/attribute/
+		Global.Paths.SceneAttributeSyncDir = filepath.Join(
+			Global.Paths.NodeLibGame,
+			"scene/generated/attribute/",
+		)
+	}
+
 }
 
 // validateConfig 验证配置的完整性和正确性

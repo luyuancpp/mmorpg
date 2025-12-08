@@ -80,10 +80,10 @@ extend google.protobuf.MessageOptions {
 	optional string	OptionIndex				= 500011	;	//建立索引
 	optional string OptionUniqueKey			= 500012	;   //唯一键
 	optional bool OptionIsPlayerDatabase = 500013;  // 标识是否是玩家数据库
+	optional OPERATE_TYPE OptionOperateType = 500014;
 
 	// ---------- 属性同步相关 ----------
-	optional bool OptionBaseAttributeSync   = 700000;  // 基础属性同步
-	optional bool OptionDeltaAttributeSync  = 700001;  // 增量属性同步
+	optional bool OptionAttributeSync   = 700000;  // 基础属性同步
 }
 
 // 字段级选项（数据库相关）

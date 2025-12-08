@@ -408,18 +408,18 @@ var file_proto_service_go_grpc_db_proto_option_proto_extTypes = []protoimpl.Exte
 	},
 	{
 		ExtendedType:  (*descriptorpb.MessageOptions)(nil),
-		ExtensionType: (*bool)(nil),
-		Field:         700000,
-		Name:          "OptionBaseAttributeSync",
-		Tag:           "varint,700000,opt,name=OptionBaseAttributeSync",
+		ExtensionType: (*OPERATE_TYPE)(nil),
+		Field:         500014,
+		Name:          "OptionOperateType",
+		Tag:           "varint,500014,opt,name=OptionOperateType,enum=OPERATE_TYPE",
 		Filename:      "proto/service/go/grpc/db/proto_option.proto",
 	},
 	{
 		ExtendedType:  (*descriptorpb.MessageOptions)(nil),
 		ExtensionType: (*bool)(nil),
-		Field:         700001,
-		Name:          "OptionDeltaAttributeSync",
-		Tag:           "varint,700001,opt,name=OptionDeltaAttributeSync",
+		Field:         700000,
+		Name:          "OptionAttributeSync",
+		Tag:           "varint,700000,opt,name=OptionAttributeSync",
 		Filename:      "proto/service/go/grpc/db/proto_option.proto",
 	},
 	{
@@ -550,12 +550,12 @@ var (
 	E_OptionUniqueKey = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[14] //唯一键
 	// optional bool OptionIsPlayerDatabase = 500013;
 	E_OptionIsPlayerDatabase = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[15] // 标识是否是玩家数据库
+	// optional OPERATE_TYPE OptionOperateType = 500014;
+	E_OptionOperateType = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[16]
 	// ---------- 属性同步相关 ----------
 	//
-	// optional bool OptionBaseAttributeSync = 700000;
-	E_OptionBaseAttributeSync = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[16] // 基础属性同步
-	// optional bool OptionDeltaAttributeSync = 700001;
-	E_OptionDeltaAttributeSync = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[17] // 增量属性同步
+	// optional bool OptionAttributeSync = 700000;
+	E_OptionAttributeSync = &file_proto_service_go_grpc_db_proto_option_proto_extTypes[17] // 基础属性同步
 )
 
 // Extension fields to descriptorpb.FieldOptions.
@@ -654,9 +654,9 @@ const file_proto_service_go_grpc_db_proto_option_proto_rawDesc = "" +
 	"\x15OptionProcedureResult\x12\x1f.google.protobuf.MessageOptions\x18\xaa\xc2\x1e \x01(\tR\x15OptionProcedureResult\x88\x01\x01:F\n" +
 	"\vOptionIndex\x12\x1f.google.protobuf.MessageOptions\x18\xab\xc2\x1e \x01(\tR\vOptionIndex\x88\x01\x01:N\n" +
 	"\x0fOptionUniqueKey\x12\x1f.google.protobuf.MessageOptions\x18\xac\xc2\x1e \x01(\tR\x0fOptionUniqueKey\x88\x01\x01:\\\n" +
-	"\x16OptionIsPlayerDatabase\x12\x1f.google.protobuf.MessageOptions\x18\xad\xc2\x1e \x01(\bR\x16OptionIsPlayerDatabase\x88\x01\x01:^\n" +
-	"\x17OptionBaseAttributeSync\x12\x1f.google.protobuf.MessageOptions\x18\xe0\xdc* \x01(\bR\x17OptionBaseAttributeSync\x88\x01\x01:`\n" +
-	"\x18OptionDeltaAttributeSync\x12\x1f.google.protobuf.MessageOptions\x18\xe1\xdc* \x01(\bR\x18OptionDeltaAttributeSync\x88\x01\x01:P\n" +
+	"\x16OptionIsPlayerDatabase\x12\x1f.google.protobuf.MessageOptions\x18\xad\xc2\x1e \x01(\bR\x16OptionIsPlayerDatabase\x88\x01\x01:a\n" +
+	"\x11OptionOperateType\x12\x1f.google.protobuf.MessageOptions\x18\xae\xc2\x1e \x01(\x0e2\r.OPERATE_TYPER\x11OptionOperateType\x88\x01\x01:V\n" +
+	"\x13OptionAttributeSync\x12\x1f.google.protobuf.MessageOptions\x18\xe0\xdc* \x01(\bR\x13OptionAttributeSync\x88\x01\x01:P\n" +
 	"\x11OptionRepeatLimit\x12\x1d.google.protobuf.FieldOptions\x18\xc0\xcf$ \x01(\rR\x11OptionRepeatLimit\x88\x01\x01:R\n" +
 	"\x12OptionDBFieldExtra\x12\x1d.google.protobuf.FieldOptions\x18\xc1\xcf$ \x01(\tR\x12OptionDBFieldExtra\x88\x01\x01:N\n" +
 	"\x10OptionDBReadOnly\x12\x1d.google.protobuf.FieldOptions\x18\xc2\xcf$ \x01(\bR\x10OptionDBReadOnly\x88\x01\x01:R\n" +
@@ -707,8 +707,8 @@ var file_proto_service_go_grpc_db_proto_option_proto_depIdxs = []int32{
 	5,  // 13: OptionIndex:extendee -> google.protobuf.MessageOptions
 	5,  // 14: OptionUniqueKey:extendee -> google.protobuf.MessageOptions
 	5,  // 15: OptionIsPlayerDatabase:extendee -> google.protobuf.MessageOptions
-	5,  // 16: OptionBaseAttributeSync:extendee -> google.protobuf.MessageOptions
-	5,  // 17: OptionDeltaAttributeSync:extendee -> google.protobuf.MessageOptions
+	5,  // 16: OptionOperateType:extendee -> google.protobuf.MessageOptions
+	5,  // 17: OptionAttributeSync:extendee -> google.protobuf.MessageOptions
 	6,  // 18: OptionRepeatLimit:extendee -> google.protobuf.FieldOptions
 	6,  // 19: OptionDBFieldExtra:extendee -> google.protobuf.FieldOptions
 	6,  // 20: OptionDBReadOnly:extendee -> google.protobuf.FieldOptions
@@ -720,9 +720,10 @@ var file_proto_service_go_grpc_db_proto_option_proto_depIdxs = []int32{
 	6,  // 26: OptionTable:extendee -> google.protobuf.FieldOptions
 	6,  // 27: OptionBackUpTabel:extendee -> google.protobuf.FieldOptions
 	0,  // 28: OptionFileDefaultNode:type_name -> NodeType
-	29, // [29:29] is the sub-list for method output_type
-	29, // [29:29] is the sub-list for method input_type
-	28, // [28:29] is the sub-list for extension type_name
+	1,  // 29: OptionOperateType:type_name -> OPERATE_TYPE
+	30, // [30:30] is the sub-list for method output_type
+	30, // [30:30] is the sub-list for method input_type
+	28, // [28:30] is the sub-list for extension type_name
 	0,  // [0:28] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
 }

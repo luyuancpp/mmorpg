@@ -13,6 +13,8 @@ option (OptionFileDefaultNode) = NODE_ROOM;
 // 消息定义，用于同步实体的基础属性增量
 message ActorBaseAttributesS2C   
 {
+  option (OptionAttributeSync) = true;
+
   uint64 entity_id = 1;  // 实体的唯一ID
   Transform transform = 2;  // 速度信息
   Velocity velocity = 3;
