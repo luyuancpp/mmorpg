@@ -106,13 +106,18 @@ func registerCallbacks(log *zap.Logger) {
 				zap.Int("field_count", len(asm.Fields)),
 			)
 
-			outDir := filepath.Join(_config.Global.Paths.RoomAttributeSyncDir,
+			base := strings.ToLower(asm.MessageName)
+
+			cppPath, err := _config.Global.GetOutputPath("attribute_sync_cpp", _config.Global.Paths.RoomAttributeSyncDir, base)
+			if err != nil {
+				logger.Global.Fatal("创建目录失败", zap.Error(err))
+			}
+
+			outDir := filepath.Join(cppPath,
 				"attribute_sync", strings.ToLower(asm.MessageName))
 			if err := os.MkdirAll(outDir, 0755); err != nil {
 				logger.Global.Fatal("创建目录失败", zap.String("dir", outDir), zap.Error(err))
 			}
-
-			base := strings.ToLower(asm.MessageName)
 
 			cppFile := filepath.Join(outDir, base+"_attribute_sync.cpp")
 			hFile := filepath.Join(outDir, base+"_attribute_sync.h")
