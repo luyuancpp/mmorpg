@@ -22,6 +22,6 @@ void NoMemberRawPointerCheck::check(const clang::ast_matchers::MatchFinder::Matc
 	if (!Field) return;
 
 	diag(Field->getLocation(),
-		"Declaring raw pointer member variables in classes/structs is prohibited (including static members) '%0'")
-		<< Field->getName();
+		"Declaring raw pointer member variables in classes/structs is prohibited (including static members): '%0' of type '%1'")
+		<< Field->getName() << Field->getType().getAsString();
 }

@@ -318,13 +318,13 @@ var File_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto protorefl
 
 const file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDesc = "" +
 	"\n" +
-	"=proto/service/cpp/rpc/scene/player_state_attribute_sync.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a&proto/logic/component/actor_comp.proto\x1a\x18proto/common/empty.proto\x1a6proto/logic/component/actor_attribute_state_comp.proto\"\xd2\x01\n" +
+	"=proto/service/cpp/rpc/scene/player_state_attribute_sync.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a&proto/logic/component/actor_comp.proto\x1a\x18proto/common/empty.proto\x1a6proto/logic/component/actor_attribute_state_comp.proto\"\xd9\x01\n" +
 	"\x16ActorBaseAttributesS2C\x12\x1b\n" +
 	"\tentity_id\x18\x01 \x01(\x04R\bentityId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
 	".TransformR\ttransform\x12%\n" +
 	"\bvelocity\x18\x03 \x01(\v2\t.VelocityR\bvelocity\x12J\n" +
-	"\x12combat_state_flags\x18\x04 \x01(\v2\x1c.CombatStateFlagsPbComponentR\x10combatStateFlags\"7\n" +
+	"\x12combat_state_flags\x18\x04 \x01(\v2\x1c.CombatStateFlagsPbComponentR\x10combatStateFlags:\x05\x80\xe6\xd5\x02\x01\"7\n" +
 	"\x18AttributeDelta2FramesS2C\x12\x1b\n" +
 	"\tentity_id\x18\x01 \x01(\x04R\bentityId\"7\n" +
 	"\x18AttributeDelta5FramesS2C\x12\x1b\n" +

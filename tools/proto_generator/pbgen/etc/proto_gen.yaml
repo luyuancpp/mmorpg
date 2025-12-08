@@ -80,6 +80,10 @@ paths:
   room_node_event_handler_directory: "{{room_node_dir}}{{event_handler_source_directory}}"
   centre_node_event_handler_directory: "{{centre_node_dir}}{{event_handler_source_directory}}"
 
+  # Scene 属性同步生成目录
+  scene_attribute_sync_dir: "{{node_pkg_logic_room}}generated/attribute/"
+
+
 # 目录命名常量（专门存放目录名/路径片段常量）
 directory_names:
   generated_rpc_name: "rpc/"               # RPC生成目录名
@@ -252,6 +256,7 @@ generators:
   enable_rpc_response: true
   enable_robot_proto: true  # 启用robot proto生成
   enable_robot_go_zero: true  # 启用robot go-zero proto生成
+  enable_attribute_sync: true
 
 # 模板映射配置
 mappings:
@@ -271,6 +276,10 @@ mappings:
     path: "{{robot_go_gen_dir}}/{{proto_dir}}/{{proto_file}}_grpc.pb.go"
     template: "templates/robot_go_grpc.tmpl"
     lang: "go"
+  attribute_sync:
+    path: "{{scene_attribute_sync_dir}}{{proto_file}}_attribute_sync.cpp"
+    template: "templates/attribute_sync.tmpl"
+    lang: "cpp"
 
 # Proto解析器配置
 parser:

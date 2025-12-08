@@ -83,27 +83,27 @@ const char descriptor_table_protodef_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5f
     "iqueKey\022\037.google.protobuf.MessageOptions"
     "\030\254\302\036 \001(\t\210\001\001:D\n\026OptionIsPlayerDatabase\022\037."
     "google.protobuf.MessageOptions\030\255\302\036 \001(\010\210\001"
-    "\001:E\n\027OptionBaseAttributeSync\022\037.google.pr"
-    "otobuf.MessageOptions\030\340\334* \001(\010\210\001\001:F\n\030Opti"
-    "onDeltaAttributeSync\022\037.google.protobuf.M"
-    "essageOptions\030\341\334* \001(\010\210\001\001:=\n\021OptionRepeat"
-    "Limit\022\035.google.protobuf.FieldOptions\030\300\317$"
-    " \001(\r\210\001\001:>\n\022OptionDBFieldExtra\022\035.google.p"
-    "rotobuf.FieldOptions\030\301\317$ \001(\t\210\001\001:<\n\020Optio"
-    "nDBReadOnly\022\035.google.protobuf.FieldOptio"
-    "ns\030\302\317$ \001(\010\210\001\001:>\n\022OptionDBNamePrefix\022\035.go"
-    "ogle.protobuf.FieldOptions\030\303\317$ \001(\t\210\001\001:;\n"
-    "\017OptionDBLoadSql\022\035.google.protobuf.Field"
-    "Options\030\304\317$ \001(\t\210\001\001:>\n\022OptionDBNeedEscape"
-    "\022\035.google.protobuf.FieldOptions\030\305\317$ \001(\010\210"
-    "\001\001:=\n\021OptionDBProcParam\022\035.google.protobu"
-    "f.FieldOptions\030\306\317$ \001(\010\210\001\001:9\n\rOptionOldNa"
-    "me\022\035.google.protobuf.FieldOptions\030\307\317$ \001("
-    "\t\210\001\001:7\n\013OptionTable\022\035.google.protobuf.Fi"
-    "eldOptions\030\310\317$ \001(\t\210\001\001:=\n\021OptionBackUpTab"
-    "el\022\035.google.protobuf.FieldOptions\030\311\317$ \001("
-    "\t\210\001\001B2H\001Z.github.com/luyuancpp/protoopti"
-    "on;messageoptionb\006proto3"
+    "\001:N\n\021OptionOperateType\022\037.google.protobuf"
+    ".MessageOptions\030\256\302\036 \001(\0162\r.OPERATE_TYPE\210\001"
+    "\001:A\n\023OptionAttributeSync\022\037.google.protob"
+    "uf.MessageOptions\030\340\334* \001(\010\210\001\001:=\n\021OptionRe"
+    "peatLimit\022\035.google.protobuf.FieldOptions"
+    "\030\300\317$ \001(\r\210\001\001:>\n\022OptionDBFieldExtra\022\035.goog"
+    "le.protobuf.FieldOptions\030\301\317$ \001(\t\210\001\001:<\n\020O"
+    "ptionDBReadOnly\022\035.google.protobuf.FieldO"
+    "ptions\030\302\317$ \001(\010\210\001\001:>\n\022OptionDBNamePrefix\022"
+    "\035.google.protobuf.FieldOptions\030\303\317$ \001(\t\210\001"
+    "\001:;\n\017OptionDBLoadSql\022\035.google.protobuf.F"
+    "ieldOptions\030\304\317$ \001(\t\210\001\001:>\n\022OptionDBNeedEs"
+    "cape\022\035.google.protobuf.FieldOptions\030\305\317$ "
+    "\001(\010\210\001\001:=\n\021OptionDBProcParam\022\035.google.pro"
+    "tobuf.FieldOptions\030\306\317$ \001(\010\210\001\001:9\n\rOptionO"
+    "ldName\022\035.google.protobuf.FieldOptions\030\307\317"
+    "$ \001(\t\210\001\001:7\n\013OptionTable\022\035.google.protobu"
+    "f.FieldOptions\030\310\317$ \001(\t\210\001\001:=\n\021OptionBackU"
+    "pTabel\022\035.google.protobuf.FieldOptions\030\311\317"
+    "$ \001(\t\210\001\001B2H\001Z.github.com/luyuancpp/proto"
+    "option;messageoptionb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto_deps[1] = {
@@ -113,7 +113,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fpro
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto = {
     false,
     false,
-    2784,
+    2788,
     descriptor_table_protodef_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
     "proto/service/go/grpc/db/proto_option.proto",
     &descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto_once,
@@ -220,12 +220,12 @@ PROTOBUF_CONSTINIT
         OptionIsPlayerDatabase(kOptionIsPlayerDatabaseFieldNumber, false);
 PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 ::_pbi::ExtensionIdentifier<
-        ::google::protobuf::MessageOptions, ::_pbi::PrimitiveTypeTraits< bool >, 8, false>
-        OptionBaseAttributeSync(kOptionBaseAttributeSyncFieldNumber, false);
+        ::google::protobuf::MessageOptions, ::_pbi::EnumTypeTraits< ::OPERATE_TYPE>, 14, false>
+        OptionOperateType(kOptionOperateTypeFieldNumber, static_cast< ::OPERATE_TYPE >(0));
 PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 ::_pbi::ExtensionIdentifier<
         ::google::protobuf::MessageOptions, ::_pbi::PrimitiveTypeTraits< bool >, 8, false>
-        OptionDeltaAttributeSync(kOptionDeltaAttributeSyncFieldNumber, false);
+        OptionAttributeSync(kOptionAttributeSyncFieldNumber, false);
 PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 ::_pbi::ExtensionIdentifier<
         ::google::protobuf::FieldOptions, ::_pbi::PrimitiveTypeTraits< ::uint32_t >, 13, false>
@@ -329,11 +329,11 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 static ::std::false_type
         ::_pbi::ExtensionSet::RegisterExtension(
             &::google::protobuf::MessageOptions::default_instance(), 500013, 8,
             false, false),
+        ::_pbi::ExtensionSet::RegisterEnumExtension(
+            &::google::protobuf::MessageOptions::default_instance(), 500014, 14,
+            false, false, ::OPERATE_TYPE_internal_data_),
         ::_pbi::ExtensionSet::RegisterExtension(
             &::google::protobuf::MessageOptions::default_instance(), 700000, 8,
-            false, false),
-        ::_pbi::ExtensionSet::RegisterExtension(
-            &::google::protobuf::MessageOptions::default_instance(), 700001, 8,
             false, false),
         ::_pbi::ExtensionSet::RegisterExtension(
             &::google::protobuf::FieldOptions::default_instance(), 600000, 13,

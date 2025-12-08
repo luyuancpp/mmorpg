@@ -288,14 +288,14 @@ inline constexpr int kOptionIsPlayerDatabaseFieldNumber = 500013;
 extern ::google::protobuf::internal::ExtensionIdentifier<
     ::google::protobuf::MessageOptions, ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false>
     OptionIsPlayerDatabase;
-inline constexpr int kOptionBaseAttributeSyncFieldNumber = 700000;
+inline constexpr int kOptionOperateTypeFieldNumber = 500014;
+extern ::google::protobuf::internal::ExtensionIdentifier<
+    ::google::protobuf::MessageOptions, ::google::protobuf::internal::EnumTypeTraits< ::OPERATE_TYPE>, 14, false>
+    OptionOperateType;
+inline constexpr int kOptionAttributeSyncFieldNumber = 700000;
 extern ::google::protobuf::internal::ExtensionIdentifier<
     ::google::protobuf::MessageOptions, ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false>
-    OptionBaseAttributeSync;
-inline constexpr int kOptionDeltaAttributeSyncFieldNumber = 700001;
-extern ::google::protobuf::internal::ExtensionIdentifier<
-    ::google::protobuf::MessageOptions, ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false>
-    OptionDeltaAttributeSync;
+    OptionAttributeSync;
 inline constexpr int kOptionRepeatLimitFieldNumber = 600000;
 extern ::google::protobuf::internal::ExtensionIdentifier<
     ::google::protobuf::FieldOptions, ::google::protobuf::internal::PrimitiveTypeTraits< ::uint32_t >, 13, false>
