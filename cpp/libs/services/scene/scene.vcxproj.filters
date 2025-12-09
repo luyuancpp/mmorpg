@@ -59,6 +59,7 @@
     <ClInclude Include="scene\combat\buff\system\modifier_buff_impl.h" />
     <ClInclude Include="scene\combat\buff\system\motion_modifier_impl.h" />
     <ClInclude Include="player\system\player_data_loader.h" />
+    <ClInclude Include="generated\attribute\actorbaseattributess2c_attribute_sync.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="actor\action_state\system\actor_action_state.cpp" />
@@ -99,5 +100,6 @@
     <ClCompile Include="scene\combat\buff\system\motion_modifier_impl.cpp" />
     <ClCompile Include="player\system\player_database_1_loader.cpp" />
     <ClCompile Include="player\system\player_database_loader.cpp" />
+    <ClCompile Include="generated\attribute\actorbaseattributess2c_attribute_sync.cpp" />
   </ItemGroup>
 </Project>

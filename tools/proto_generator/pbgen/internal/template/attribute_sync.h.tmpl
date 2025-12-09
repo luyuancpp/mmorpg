@@ -1,5 +1,6 @@
 #pragma once
 #include <bitset>
+#include <cstdint>
 #include <boost/dynamic_bitset.hpp>
 #include "entt/src/entt/entity/entity.hpp"
 
