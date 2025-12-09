@@ -12,6 +12,7 @@
 #include "proto/logic/component/actor_combat_state_comp.pb.h"
 #include <threading/registry_manager.h>
 #include <boost/dynamic_bitset.hpp>
+#include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
 
 // 初始化属性计算工具，不执行任何操作，但为将来可能的初始化逻辑预留
 void ActorAttributeCalculatorSystem::Initialize() {}
@@ -24,7 +25,7 @@ void ActorAttributeCalculatorSystem::InitializeActorComponents(entt::entity enti
 // 新增：设置 BaseAttribute 的运行时脏位（会自动扩容 bitset）
 void ActorAttributeCalculatorSystem::SetBaseAttributeDirty(entt::entity entity, std::size_t bit) {
     auto &registry = tlsRegistryManager.actorRegistry;
-    auto &dirtyComp = registry.get_or_emplace<BaseAttributeDirtyMaskComp>(entity);
+    auto &dirtyComp = registry.get_or_emplace<ActorBaseAttributesS2CDirtyMaskComp>(entity);
     // dynamic_bitset::resize 接受 size_t
     if (dirtyComp.dirtyMask.size() <= bit) {
         dirtyComp.dirtyMask.resize(bit + 1);

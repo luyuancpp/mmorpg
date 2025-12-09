@@ -79,8 +79,6 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 	for (auto [entity, transform] : tlsRegistryManager.actorRegistry.view<Transform>().each())
 	{
 		ActorBaseAttributesS2CSyncAttributes(entity, ScenePlayerSyncSyncBaseAttributeMessageId);
-		// 始终同步基础属性
-		ActorStateAttributeSyncSystem::SyncBasicAttributes(entity);
 
 		// 处理各距离级别的同步，迭代 kDistanceSyncConfigs 数组，动态处理距离级别
 		for (const auto& distanceSyncConfig : kDistanceSyncConfigs) {
@@ -140,60 +138,6 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel3Entities(const entt::entity e
 		nearbyEntities.emplace_back(nearbyEntity);
 	}
 }
-
-// 同步基础属性到附近的实体
-void ActorStateAttributeSyncSystem::SyncBasicAttributes(entt::entity entity) {
-	// 获取实体的 AOI 列表组件
-	const auto aoiListComp = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity);
-
-	auto& registry = tlsRegistryManager.actorRegistry;
-	auto& dirtyComp = registry.get_or_emplace<BaseAttributeDirtyMaskComp>(entity);
-
-	// 构造同步消息
-	ActorBaseAttributesS2C syncMessage;
-
-	const google::protobuf::Reflection* reflection = syncMessage.GetReflection();
-	const google::protobuf::Descriptor* descriptor = syncMessage.GetDescriptor();
-
-	// 遍历所有字段
-	for (int i = 0; i < descriptor->field_count(); ++i) {
-		const auto* field = descriptor->field(i);
-		int fieldNumber = field->number();
-
-		// 检查 dirty bit 是否设置
-		if (!dirtyComp.dirtyMask.test(fieldNumber)) {
-			continue;
-		}
-
-		// 根据字段号设置对应值
-		switch (fieldNumber) {
-		case ActorBaseAttributesS2C::kVelocityFieldNumber: {
-			auto& velocity = registry.get_or_emplace<Velocity>(entity);
-			syncMessage.mutable_velocity()->CopyFrom(velocity);
-			break;
-		}
-		case ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber: {
-			auto& combatStateFlagsPbComponent = registry.get_or_emplace<CombatStateFlagsPbComponent>(entity);
-			syncMessage.mutable_combat_state_flags()->CopyFrom(combatStateFlagsPbComponent);
-			break;
-		}
-		default:
-			break;
-		}
-	}
-
-	// 如果消息为空，则不发送
-	if (syncMessage.ByteSizeLong() <= 0) {
-		return;
-	}
-
-	// 广播增量同步消息
-	BroadcastMessageToPlayers(ScenePlayerSyncSyncBaseAttributeMessageId, syncMessage, aoiListComp.aoiList);
-
-	// 清空消息，为下次同步准备
-	syncMessage.Clear();
-}
-
 
 // 同步属性，根据频率决定同步内容
 void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const EntityVector& nearbyEntities, uint32_t syncFrequency) {
