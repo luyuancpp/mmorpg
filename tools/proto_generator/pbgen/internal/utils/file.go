@@ -10,9 +10,9 @@ import (
 	"sync"
 	"text/template"
 
-	"pbgen/logger" // 引入封装的logger包
-	_config "pbgen/internal/config"
 	"go.uber.org/zap" // 引入zap用于结构化日志字段
+	_config "pbgen/internal/config"
+	"pbgen/logger" // 引入封装的logger包
 )
 
 func AreFileSizesEqual(file1, file2 string) bool {
