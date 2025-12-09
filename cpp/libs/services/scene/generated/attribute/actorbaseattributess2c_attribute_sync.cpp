@@ -1,7 +1,5 @@
 #include "actorbaseattributess2c_attribute_sync.h"
-#include "entt/src/entt/entity/entity.hpp"
-#include "engine/threading/registry_manager.h"
-#include "entt/src/entt/entity/entity.hpp"
+
 #include "engine/threading/registry_manager.h"
 #include "scene/scene/comp/scene_node_scene.h"
 
@@ -14,7 +12,7 @@ void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_
 
     // Fetch AOI and dirty mask
     const auto& aoi_list      = registry.get_or_emplace<AoiListComp>(entity);
-    auto&       dirty_mask    = registry.get_or_emplace<BaseAttributeDirtyMaskComp>(entity);
+    auto&       dirty_mask    = registry.get_or_emplace<ActorBaseAttributesS2CDirtyMaskComp>(entity);
 
     ActorBaseAttributesS2C sync_msg;
     const auto* msg_desc = sync_msg.GetDescriptor();
