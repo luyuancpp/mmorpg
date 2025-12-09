@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
-	_config "pbgen/internal/config"
 	"strings"
 	"sync"
 	"text/template"
+
+	"pbgen/logger" // 引入封装的logger包
+	_config "pbgen/internal/config"
+	"go.uber.org/zap" // 引入zap用于结构化日志字段
 )
 
 func AreFileSizesEqual(file1, file2 string) bool {
@@ -34,7 +36,9 @@ func WriteFileIfChanged(outputPath string, content []byte) error {
 
 	// 若内容相同，跳过写入
 	if err == nil && bytes.Equal(existingContent, content) {
-		log.Println("文件内容没有变化，跳过写入:", outputPath)
+		logger.Global.Info("文件内容无变化，跳过写入",
+			zap.String("文件路径", outputPath),
+		)
 		return nil
 	}
 
@@ -44,7 +48,9 @@ func WriteFileIfChanged(outputPath string, content []byte) error {
 		return err
 	}
 
-	log.Println("文件已更新:", outputPath)
+	logger.Global.Info("文件已更新",
+		zap.String("文件路径", outputPath),
+	)
 	return nil
 }
 
@@ -56,37 +62,54 @@ func WriteFileIfChangedSafe(filePath string, content []byte) {
 	// 仅处理“非文件不存在”的读取错误
 	// 场景2：文件不存在（读取失败且是“文件不存在”错误）
 	if os.IsNotExist(err) {
-		log.Printf("文件不存在，开始创建: %s\n", filePath)
+		logger.Global.Info("文件不存在，开始创建",
+			zap.String("文件路径", filePath),
+		)
 
 		// 先创建文件所在的多级目录
 		dir := filepath.Dir(filePath)
 		if mkdirErr := os.MkdirAll(dir, 0755); mkdirErr != nil {
-			log.Fatal("创建目录失败: %s, 错误: %v\n", dir, mkdirErr)
+			logger.Global.Fatal("创建目录失败",
+				zap.String("目录路径", dir),
+				zap.Error(mkdirErr),
+			)
 		}
 
 		// 写入内容创建文件
 		if writeErr := os.WriteFile(filePath, content, 0644); writeErr != nil {
-			log.Fatal("创建文件失败: %s, 错误: %v\n", filePath, writeErr)
+			logger.Global.Fatal("创建文件失败",
+				zap.String("文件路径", filePath),
+				zap.Error(writeErr),
+			)
 		}
 
-		log.Println("文件创建成功，返回写入的内容: %s\n", filePath)
+		logger.Global.Info("文件创建成功",
+			zap.String("文件路径", filePath),
+		)
 		return // 返回刚写入的内容
 	}
 
 	// 内容相同则跳过写入
 	if err == nil && bytes.Equal(existingContent, content) {
-		log.Println("文件内容没有变化，跳过写入:", filePath)
+		logger.Global.Info("文件内容无变化，跳过写入",
+			zap.String("文件路径", filePath),
+		)
 		return
 	}
 
 	// 写入新内容（文件不存在时自动创建）
 	err = os.WriteFile(filePath, content, 0644)
 	if err != nil {
-		log.Printf("写入文件失败: %s, 错误: %v\n", filePath, err)
+		logger.Global.Warn("写入文件失败",
+			zap.String("文件路径", filePath),
+			zap.Error(err),
+		)
 		return
 	}
 
-	log.Println("文件已更新/创建:", filePath)
+	logger.Global.Info("文件已更新/创建",
+		zap.String("文件路径", filePath),
+	)
 }
 
 // ===================== 原有函数（保持不变，兼容旧调用） =====================
@@ -145,14 +168,20 @@ func CopyFileIfChangedAsync(wg *sync.WaitGroup, inputPath, outputPath string) {
 		// 读取源文件内容
 		srcContent, err := os.ReadFile(inputPath)
 		if err != nil {
-			log.Fatal("读取源文件失败 [%s]: %v", inputPath, err)
+			logger.Global.Fatal("读取源文件失败",
+				zap.String("源文件路径", inputPath),
+				zap.Error(err),
+			)
 			return
 		}
 
 		// 读取目标文件内容（如果存在）
 		dstContent, err := os.ReadFile(outputPath)
 		if err != nil && !os.IsNotExist(err) {
-			log.Fatal("读取目标文件失败 [%s]: %v", outputPath, err)
+			logger.Global.Fatal("读取目标文件失败",
+				zap.String("目标文件路径", outputPath),
+				zap.Error(err),
+			)
 			return
 		}
 
@@ -164,11 +193,16 @@ func CopyFileIfChangedAsync(wg *sync.WaitGroup, inputPath, outputPath string) {
 
 		// 写入目标文件
 		if err := os.WriteFile(outputPath, srcContent, 0644); err != nil {
-			log.Fatal("写入目标文件失败 [%s]: %v", outputPath, err)
+			logger.Global.Fatal("写入目标文件失败",
+				zap.String("目标文件路径", outputPath),
+				zap.Error(err),
+			)
 			return
 		}
 
-		log.Println("文件已复制/更新:", outputPath)
+		logger.Global.Info("文件已复制/更新",
+			zap.String("目标文件路径", outputPath),
+		)
 	}()
 }
 
