@@ -331,7 +331,7 @@ func loadConfigWithLogger(log *zap.Logger) error {
 		}
 	}
 
-	log.Info("开始加载配置文件", zap.String("file_path", filePath))
+	logger.Global.Info("开始加载配置文件", zap.String("file_path", filePath))
 
 	// 读取配置文件
 	data, err := os.ReadFile(filePath)
@@ -367,12 +367,12 @@ func loadConfigWithLogger(log *zap.Logger) error {
 
 	// 创建必要的目录
 	if err := createRequiredDirs(); err != nil {
-		log.Warn("创建必要目录失败",
+		logger.Global.Warn("创建必要目录失败",
 			zap.Error(err),
 		)
 	}
 
-	log.Info("配置文件加载成功", zap.String("output_root", Global.Paths.OutputRoot))
+	logger.Global.Info("配置文件加载成功", zap.String("output_root", Global.Paths.OutputRoot))
 	return nil
 }
 
