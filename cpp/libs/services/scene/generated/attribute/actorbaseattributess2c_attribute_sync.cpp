@@ -1,79 +1,127 @@
+#include "proto/service/cpp/rpc/scene/player_state_attribute_sync.pb.h"
 #include "actorbaseattributess2c_attribute_sync.h"
 
 #include "engine/threading/registry_manager.h"
 #include "scene/scene/comp/scene_node_scene.h"
+#include "network/player_message_utils.h"
+
+namespace scene {
+namespace attribute_sync {
 
 // ============================================================================
 // ActorBaseAttributesS2C Attribute Sync
+// 功能：同步 ActorBaseAttributesS2C 消息对应的实体属性到AOI范围内的玩家
+// 参数：
+//   entity: entt 实体ID
+//   message_id: 广播使用的消息ID
+// 返回值：void
 // ============================================================================
 void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_id)
 {
+    // 空实体校验
+    if (entity == entt::null) {
+        return;
+    }
+
     auto& registry = tlsRegistryManager.actorRegistry;
 
-    // Fetch AOI and dirty mask
+    // 获取/创建AOI列表组件和脏掩码组件
     const auto& aoi_list      = registry.get_or_emplace<AoiListComp>(entity);
     auto&       dirty_mask    = registry.get_or_emplace<ActorBaseAttributesS2CDirtyMaskComp>(entity);
 
+    // 空AOI列表直接返回，无需广播
+    if (aoi_list.aoiList.empty()) {
+        return;
+    }
+
+    // 创建同步用的Proto消息对象
     ActorBaseAttributesS2C sync_msg;
     const auto* msg_desc = sync_msg.GetDescriptor();
+    if (msg_desc == nullptr) { // 防御性校验：确保消息描述符有效
+        return;
+    }
 
-    // Iterate protobuf fields
+    // 遍历Proto消息的所有字段，仅同步脏字段
     for (int idx = 0; idx < msg_desc->field_count(); ++idx)
     {
         const auto* field     = msg_desc->field(idx);
+        if (field == nullptr) { // 跳过无效字段
+            continue;
+        }
+        
         int         field_num = field->number();
 
-        // Skip clean fields
+        // 跳过未标记为脏的字段
         if (!dirty_mask.dirtyMask.test(field_num))
             continue;
 
-        // Switch each attribute field
+        // 根据字段编号匹配并同步对应属性
         switch (field_num)
         {
         case ActorBaseAttributesS2C::kEntityIdFieldNumber:
         {
-            // Sync entity_id
+            // 同步 entity_id 属性（字段编号：1）
             auto& comp = registry.get_or_emplace<EntityId>(entity);
-            sync_msg.mutable_entity_id()->CopyFrom(comp);
+            if (sync_msg.mutable_entity_id() != nullptr) {
+                sync_msg.mutable_entity_id()->CopyFrom(comp);
+                // 同步后清除该字段的脏标记
+                dirty_mask.dirtyMask.reset(field_num);
+            }
             break;
         }
         case ActorBaseAttributesS2C::kTransformFieldNumber:
         {
-            // Sync transform
+            // 同步 transform 属性（字段编号：2）
             auto& comp = registry.get_or_emplace<Transform>(entity);
-            sync_msg.mutable_transform()->CopyFrom(comp);
+            if (sync_msg.mutable_transform() != nullptr) {
+                sync_msg.mutable_transform()->CopyFrom(comp);
+                // 同步后清除该字段的脏标记
+                dirty_mask.dirtyMask.reset(field_num);
+            }
             break;
         }
         case ActorBaseAttributesS2C::kVelocityFieldNumber:
         {
-            // Sync velocity
+            // 同步 velocity 属性（字段编号：3）
             auto& comp = registry.get_or_emplace<Velocity>(entity);
-            sync_msg.mutable_velocity()->CopyFrom(comp);
+            if (sync_msg.mutable_velocity() != nullptr) {
+                sync_msg.mutable_velocity()->CopyFrom(comp);
+                // 同步后清除该字段的脏标记
+                dirty_mask.dirtyMask.reset(field_num);
+            }
             break;
         }
         case ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber:
         {
-            // Sync combat_state_flags
+            // 同步 combat_state_flags 属性（字段编号：4）
             auto& comp = registry.get_or_emplace<CombatStateFlags>(entity);
-            sync_msg.mutable_combat_state_flags()->CopyFrom(comp);
+            if (sync_msg.mutable_combat_state_flags() != nullptr) {
+                sync_msg.mutable_combat_state_flags()->CopyFrom(comp);
+                // 同步后清除该字段的脏标记
+                dirty_mask.dirtyMask.reset(field_num);
+            }
             break;
         }
         default:
+            // 未知字段编号，跳过
             break;
         }
     }
 
-    // No changes → no broadcast
+    // 消息无内容时，无需广播
     if (sync_msg.ByteSizeLong() == 0)
         return;
 
-    // Broadcast to AOI players
+    // 广播同步消息到AOI范围内的所有玩家
     BroadcastMessageToPlayers(
         message_id,
         sync_msg,
         aoi_list.aoiList
     );
 
-    // Cleanup
+    // 清理消息对象（可选，RAII会自动处理，此处为显式说明）
     sync_msg.Clear();
 }
+
+} // namespace attribute_sync
+} // namespace scene
