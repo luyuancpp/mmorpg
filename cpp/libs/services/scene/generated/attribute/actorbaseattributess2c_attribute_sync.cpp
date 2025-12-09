@@ -61,7 +61,7 @@ void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_
         case ActorBaseAttributesS2C::kEntityIdFieldNumber:
         {
             // 同步 entity_id 属性（字段编号：1）
-            // 特殊处理：entity_id字段固定为uint64_t类型
+            // 特殊处理：entity_id 字段固定为uint64_t类型
             auto& comp = registry.get_or_emplace<uint64_t>(entity);
             sync_msg.set_entity_id(comp);
             dirty_mask.dirtyMask.reset(field_num);
