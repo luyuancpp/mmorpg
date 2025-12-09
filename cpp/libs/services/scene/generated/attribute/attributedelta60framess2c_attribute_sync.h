@@ -20,13 +20,6 @@ struct AttributeDelta60FramesS2CDirtyMaskComp {
 };
 
 /**
- * @brief 同步AttributeDelta60FramesS2C消息对应的实体属性到AOI范围内的玩家
- * @param entity entt实体ID，标识要同步的实体
- * @param message_id 广播使用的消息ID，用于网络层识别消息类型
- */
-void AttributeDelta60FramesS2CSyncAttributes(entt::entity entity, uint32_t message_id);
-
-/**
  * @brief 同步AttributeDelta60FramesS2C消息对应的实体属性到指定的无序玩家集合
  * @param entity entt实体ID，标识要同步的实体
  * @param message_id 广播使用的消息ID，用于网络层识别消息类型

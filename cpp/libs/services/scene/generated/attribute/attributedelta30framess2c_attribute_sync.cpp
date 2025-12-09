@@ -89,27 +89,6 @@ void AttributeDelta30FramesS2CSyncAttributesCore(entt::entity entity, uint32_t m
 }
 
 // ============================================================================
-// AttributeDelta30FramesS2C Attribute Sync (原始版本：使用AOI列表)
-// 功能：同步 AttributeDelta30FramesS2C 消息对应的实体属性到AOI范围内的所有玩家
-// 参数：
-//   entity: entt 实体ID，标识需要同步属性的目标实体
-//   message_id: 网络广播使用的消息ID，用于客户端识别消息类型
-// 返回值：void
-// ============================================================================
-void AttributeDelta30FramesS2CSyncAttributes(entt::entity entity, uint32_t message_id)
-{
-    if (entity == entt::null) {
-        return;
-    }
-
-    auto& actorRegistry = tlsRegistryManager.actorRegistry;
-    const auto& aoiListComp = actorRegistry.get_or_emplace<AoiListComp>(entity);
-
-    // 调用模板核心函数，传入AOI列表（自动推导容器类型）
-    AttributeDelta30FramesS2CSyncAttributesCore(entity, message_id, aoiListComp.aoiList);
-}
-
-// ============================================================================
 // AttributeDelta30FramesS2C Attribute Sync (重载版本：EntityUnorderedSet)
 // 功能：同步 AttributeDelta30FramesS2C 消息对应的实体属性到指定的无序玩家集合
 // 参数：
