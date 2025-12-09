@@ -1,11 +1,14 @@
 #include "{{ .MessageName | ToLower }}_attribute_sync.h"
-#include "scene/actor/components.h"
-#include "scene/actor/attribute/dirt_mask_component.h"
+#include "entt/src/entt/entity/entity.hpp"
+#include "engine/threading/registry_manager.h"
+#include "entt/src/entt/entity/entity.hpp"
+#include "engine/threading/registry_manager.h"
+#include "scene/scene/comp/scene_node_scene.h"
 
 // ============================================================================
 // {{ .MessageName }} Attribute Sync
 // ============================================================================
-void {{ .MessageName }}SyncAttributes(entt::entity entity, uint32 message_id)
+void {{ .MessageName }}SyncAttributes(entt::entity entity, uint32_t message_id)
 {
     auto& registry = tlsRegistryManager.actorRegistry;
 
