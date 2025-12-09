@@ -83,7 +83,10 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 
 	for (auto [entity, transform] : tlsRegistryManager.actorRegistry.view<Transform>().each())
 	{
-		ActorBaseAttributesS2CSyncAttributes(entity, ScenePlayerSyncSyncBaseAttributeMessageId);
+		auto& actorRegistry = tlsRegistryManager.actorRegistry;
+		const auto& aoiListComp = actorRegistry.get_or_emplace<AoiListComp>(entity);
+
+		ActorBaseAttributesS2CSyncAttributes(entity, ScenePlayerSyncSyncBaseAttributeMessageId, aoiListComp.aoiList);
 
 		// 处理各距离级别的同步，迭代 kDistanceSyncConfigs 数组，动态处理距离级别
 		for (const auto& distanceSyncConfig : kDistanceSyncConfigs) {
