@@ -14,6 +14,7 @@
 #include "network/player_message_utils.h"
 #include <threading/registry_manager.h>
 #include <actor/attribute/comp/actor_attribute.h>
+#include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
 
 // 定义帧同步频率的配置数组大小
 constexpr uint32_t kSyncFrequencyArraySize = 5;
@@ -77,6 +78,7 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 
 	for (auto [entity, transform] : tlsRegistryManager.actorRegistry.view<Transform>().each())
 	{
+		ActorBaseAttributesS2CSyncAttributes(entity, ScenePlayerSyncSyncBaseAttributeMessageId);
 		// 始终同步基础属性
 		ActorStateAttributeSyncSystem::SyncBasicAttributes(entity);
 

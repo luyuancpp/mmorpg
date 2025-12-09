@@ -5,9 +5,6 @@
 #include "scene/scene/comp/scene_node_scene.h"
 #include "network/player_message_utils.h"
 
-namespace scene {
-namespace attribute_sync {
-
 // ============================================================================
 // {{ .MessageName }} Attribute Sync
 // 功能：同步 {{ .MessageName }} 消息对应的实体属性到AOI范围内的玩家
@@ -103,5 +100,3 @@ void {{ .MessageName }}SyncAttributes(entt::entity entity, uint32_t message_id)
     sync_msg.Clear();
 }
 
-} // namespace attribute_sync
-} // namespace scene
