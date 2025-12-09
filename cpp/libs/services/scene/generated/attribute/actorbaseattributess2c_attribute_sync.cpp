@@ -5,9 +5,6 @@
 #include "scene/scene/comp/scene_node_scene.h"
 #include "network/player_message_utils.h"
 
-namespace scene {
-namespace attribute_sync {
-
 // ============================================================================
 // ActorBaseAttributesS2C Attribute Sync
 // 功能：同步 ActorBaseAttributesS2C 消息对应的实体属性到AOI范围内的玩家
@@ -121,5 +118,3 @@ void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_
     sync_msg.Clear();
 }
 
-} // namespace attribute_sync
-} // namespace scene
