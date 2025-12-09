@@ -2,16 +2,21 @@ package utils
 
 import (
 	"bytes"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"go.uber.org/zap" // 引入zap用于结构化日志字段
+	"pbgen/logger"    // 引入封装的logger包
 )
 
 // EnsureDir 确保目录存在，不存在则创建（权限默认0755）
 func EnsureDir(dirPath string) error {
 	if err := os.MkdirAll(dirPath, 0755); err != nil {
-		log.Fatalf("创建目录[%s]失败: %w", dirPath, err)
+		logger.Global.Fatal("创建目录失败",
+			zap.String("目录路径", dirPath),
+			zap.Error(err),
+		)
 	}
 	return nil
 }
@@ -20,7 +25,10 @@ func EnsureDir(dirPath string) error {
 func CollectProtoFiles(dirPath string) ([]string, error) {
 	fileEntries, err := os.ReadDir(dirPath)
 	if err != nil {
-		log.Fatalf("读取目录[%s]失败: %w", dirPath, err)
+		logger.Global.Fatal("读取目录失败",
+			zap.String("目录路径", dirPath),
+			zap.Error(err),
+		)
 	}
 
 	var protoFiles []string
@@ -28,7 +36,11 @@ func CollectProtoFiles(dirPath string) ([]string, error) {
 		if IsProtoFile(entry) {
 			absPath, err := filepath.Abs(filepath.Join(dirPath, entry.Name()))
 			if err != nil {
-				log.Printf("Proto收集: 获取文件[%s]绝对路径失败: %v，跳过", entry.Name(), err)
+				logger.Global.Warn("Proto收集: 获取绝对路径失败，跳过",
+					zap.String("文件名", entry.Name()),
+					zap.String("目录", dirPath),
+					zap.Error(err),
+				)
 				continue
 			}
 			protoFiles = append(protoFiles, absPath)
@@ -55,13 +67,25 @@ func ExecuteProtocCmd(cmd *exec.Cmd, actionDesc string) error {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	log.Printf("protoc执行: %s, 命令=%s", actionDesc, cmd.String())
+	logger.Global.Info("protoc执行",
+		zap.String("动作描述", actionDesc),
+		zap.String("命令", cmd.String()),
+	)
+
 	if err := cmd.Run(); err != nil {
-		log.Fatalf("protoc执行失败: 动作=%s, 错误=%v, 错误输出=%s", actionDesc, err, stderr.String())
+		logger.Global.Fatal("protoc执行失败",
+			zap.String("动作描述", actionDesc),
+			zap.Error(err),
+			zap.String("错误输出", stderr.String()),
+			zap.String("命令", cmd.String()),
+		)
 	}
 
 	if stdout.Len() > 0 {
-		log.Printf("protoc成功: %s, 输出=%s", actionDesc, stdout.String())
+		logger.Global.Info("protoc执行成功",
+			zap.String("动作描述", actionDesc),
+			zap.String("标准输出", stdout.String()),
+		)
 	}
 	return nil
 }
