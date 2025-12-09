@@ -128,9 +128,7 @@ namespace {
 
 	// 修改：DecideEnterGame 增加 oldTokenValid 参数
 	EnterGameDecision DecideEnterGame(bool hasOldSession,
-		uint64_t /*oldSessionId*/,
 		const std::string& oldLoginToken,
-		uint64_t /*newSessionId*/,
 		const std::string& newLoginToken,
 		bool oldTokenValid)
 	{
@@ -384,7 +382,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	std::string incomingTokenId = Sha256Hex(loginToken);
 
 	// 决策：只有旧 token 未过期且 token_id 相等才判为重连
-	EnterGameDecision decision = DecideEnterGame(hasOldSession, oldSessionId, oldTokenId, sessionId, incomingTokenId, oldTokenValid);
+	EnterGameDecision decision = DecideEnterGame(hasOldSession, oldTokenId, incomingTokenId, oldTokenValid);
 
 	// 根据决策决定是否更新 snapshot 并是否踢人
 	if (decision == EnterGameDecision::ReplaceLogin) {
