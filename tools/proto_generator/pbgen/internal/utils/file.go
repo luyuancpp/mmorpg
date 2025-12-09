@@ -48,6 +48,47 @@ func WriteFileIfChanged(outputPath string, content []byte) error {
 	return nil
 }
 
+// WriteFileIfChangedSafe 新函数
+// 写入内容到文件，内容未变化则不写入；文件不存在则创建；内部处理错误，不返回错误码
+func WriteFileIfChangedSafe(filePath string, content []byte) {
+	// 读取现有文件内容
+	existingContent, err := os.ReadFile(filePath)
+	// 仅处理“非文件不存在”的读取错误
+	// 场景2：文件不存在（读取失败且是“文件不存在”错误）
+	if os.IsNotExist(err) {
+		log.Printf("文件不存在，开始创建: %s\n", filePath)
+
+		// 先创建文件所在的多级目录
+		dir := filepath.Dir(filePath)
+		if mkdirErr := os.MkdirAll(dir, 0755); mkdirErr != nil {
+			log.Fatal("创建目录失败: %s, 错误: %v\n", dir, mkdirErr)
+		}
+
+		// 写入内容创建文件
+		if writeErr := os.WriteFile(filePath, content, 0644); writeErr != nil {
+			log.Fatal("创建文件失败: %s, 错误: %v\n", filePath, writeErr)
+		}
+
+		log.Println("文件创建成功，返回写入的内容: %s\n", filePath)
+		return // 返回刚写入的内容
+	}
+
+	// 内容相同则跳过写入
+	if err == nil && bytes.Equal(existingContent, content) {
+		log.Println("文件内容没有变化，跳过写入:", filePath)
+		return
+	}
+
+	// 写入新内容（文件不存在时自动创建）
+	err = os.WriteFile(filePath, content, 0644)
+	if err != nil {
+		log.Printf("写入文件失败: %s, 错误: %v\n", filePath, err)
+		return
+	}
+
+	log.Println("文件已更新/创建:", filePath)
+}
+
 // ===================== 原有函数（保持不变，兼容旧调用） =====================
 // RenderTemplateToFile 渲染模板并写入文件，如果文件内容未改变则不写入
 // （原版本，无自定义函数参数）
@@ -90,7 +131,9 @@ func RenderTemplateToFileWithFuncs(tmplPath string, outputPath string, data any,
 	}
 
 	// 5. 统一写入逻辑（内容未变则不写入）
-	return WriteFileIfChanged(outputPath, buf.Bytes())
+	WriteFileIfChangedSafe(outputPath, buf.Bytes())
+
+	return nil
 }
 
 // CopyFileIfChanged 如果源文件内容与目标文件不同，则复制源文件到目标文件

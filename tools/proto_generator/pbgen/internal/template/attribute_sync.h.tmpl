@@ -1,2 +1,8 @@
+#pragma once
+#include <bitset>
+#include <boost/dynamic_bitset.hpp>
 
+struct {{ .MessageName }}DirtyMaskComp {
+	boost::dynamic_bitset<> dirtyMask; // 全 0
+};
 void {{ .MessageName }}SyncAttributes(entt::entity entity, uint32 message_id);

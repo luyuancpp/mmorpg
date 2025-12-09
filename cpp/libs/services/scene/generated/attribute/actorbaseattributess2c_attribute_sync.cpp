@@ -1,4 +1,4 @@
-#include "{{ .MessageName | ToLower }}_attribute_sync.h"
+#include "actorbaseattributess2c_attribute_sync.h"
 #include "entt/src/entt/entity/entity.hpp"
 #include "engine/threading/registry_manager.h"
 #include "entt/src/entt/entity/entity.hpp"
@@ -6,9 +6,9 @@
 #include "scene/scene/comp/scene_node_scene.h"
 
 // ============================================================================
-// {{ .MessageName }} Attribute Sync
+// ActorBaseAttributesS2C Attribute Sync
 // ============================================================================
-void {{ .MessageName }}SyncAttributes(entt::entity entity, uint32_t message_id)
+void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_id)
 {
     auto& registry = tlsRegistryManager.actorRegistry;
 
@@ -16,7 +16,7 @@ void {{ .MessageName }}SyncAttributes(entt::entity entity, uint32_t message_id)
     const auto& aoi_list      = registry.get_or_emplace<AoiListComp>(entity);
     auto&       dirty_mask    = registry.get_or_emplace<BaseAttributeDirtyMaskComp>(entity);
 
-    {{ .CppClass }} sync_msg;
+    ActorBaseAttributesS2C sync_msg;
     const auto* msg_desc = sync_msg.GetDescriptor();
 
     // Iterate protobuf fields
@@ -32,15 +32,34 @@ void {{ .MessageName }}SyncAttributes(entt::entity entity, uint32_t message_id)
         // Switch each attribute field
         switch (field_num)
         {
-        {{- range .Fields }}
-        case {{ $.CppClass }}::k{{ .CamelFieldName }}FieldNumber:
+        case ActorBaseAttributesS2C::kEntityIdFieldNumber:
         {
-            // Sync {{ .FieldName }}
-            auto& comp = registry.get_or_emplace<{{ .CamelFieldName }}>(entity);
-            sync_msg.mutable_{{ .FieldName }}()->CopyFrom(comp);
+            // Sync entity_id
+            auto& comp = registry.get_or_emplace<EntityId>(entity);
+            sync_msg.mutable_entity_id()->CopyFrom(comp);
             break;
         }
-        {{- end }}
+        case ActorBaseAttributesS2C::kTransformFieldNumber:
+        {
+            // Sync transform
+            auto& comp = registry.get_or_emplace<Transform>(entity);
+            sync_msg.mutable_transform()->CopyFrom(comp);
+            break;
+        }
+        case ActorBaseAttributesS2C::kVelocityFieldNumber:
+        {
+            // Sync velocity
+            auto& comp = registry.get_or_emplace<Velocity>(entity);
+            sync_msg.mutable_velocity()->CopyFrom(comp);
+            break;
+        }
+        case ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber:
+        {
+            // Sync combat_state_flags
+            auto& comp = registry.get_or_emplace<CombatStateFlags>(entity);
+            sync_msg.mutable_combat_state_flags()->CopyFrom(comp);
+            break;
+        }
         default:
             break;
         }
