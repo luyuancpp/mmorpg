@@ -60,6 +60,11 @@
     <ClInclude Include="scene\combat\buff\system\motion_modifier_impl.h" />
     <ClInclude Include="player\system\player_data_loader.h" />
     <ClInclude Include="generated\attribute\actorbaseattributess2c_attribute_sync.h" />
+    <ClInclude Include="generated\attribute\attributedelta2framess2c_attribute_sync.h" />
+    <ClInclude Include="generated\attribute\attributedelta5framess2c_attribute_sync.h" />
+    <ClInclude Include="generated\attribute\attributedelta10framess2c_attribute_sync.h" />
+    <ClInclude Include="generated\attribute\attributedelta30framess2c_attribute_sync.h" />
+    <ClInclude Include="generated\attribute\attributedelta60framess2c_attribute_sync.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="actor\action_state\system\actor_action_state.cpp" />
@@ -101,5 +106,10 @@
     <ClCompile Include="player\system\player_database_1_loader.cpp" />
     <ClCompile Include="player\system\player_database_loader.cpp" />
     <ClCompile Include="generated\attribute\actorbaseattributess2c_attribute_sync.cpp" />
+    <ClCompile Include="generated\attribute\attributedelta2framess2c_attribute_sync.cpp" />
+    <ClCompile Include="generated\attribute\attributedelta5framess2c_attribute_sync.cpp" />
+    <ClCompile Include="generated\attribute\attributedelta10framess2c_attribute_sync.cpp" />
+    <ClCompile Include="generated\attribute\attributedelta30framess2c_attribute_sync.cpp" />
+    <ClCompile Include="generated\attribute\attributedelta60framess2c_attribute_sync.cpp" />
   </ItemGroup>
 </Project>

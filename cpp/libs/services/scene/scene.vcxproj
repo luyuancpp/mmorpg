@@ -35,6 +35,11 @@
     <ClInclude Include="entity\system\entity.h" />
     <ClInclude Include="frame\manager\frame_time.h" />
     <ClInclude Include="generated\attribute\actorbaseattributess2c_attribute_sync.h" />
+    <ClInclude Include="generated\attribute\attributedelta10framess2c_attribute_sync.h" />
+    <ClInclude Include="generated\attribute\attributedelta2framess2c_attribute_sync.h" />
+    <ClInclude Include="generated\attribute\attributedelta30framess2c_attribute_sync.h" />
+    <ClInclude Include="generated\attribute\attributedelta5framess2c_attribute_sync.h" />
+    <ClInclude Include="generated\attribute\attributedelta60framess2c_attribute_sync.h" />
     <ClInclude Include="kafka\system\kafka.h" />
     <ClInclude Include="mount\system\mount.h" />
     <ClInclude Include="npc\system\npc.h" />
@@ -91,6 +96,11 @@
     <ClCompile Include="entity\system\entity.cpp" />
     <ClCompile Include="frame\manager\frame_time.cpp" />
     <ClCompile Include="generated\attribute\actorbaseattributess2c_attribute_sync.cpp" />
+    <ClCompile Include="generated\attribute\attributedelta10framess2c_attribute_sync.cpp" />
+    <ClCompile Include="generated\attribute\attributedelta2framess2c_attribute_sync.cpp" />
+    <ClCompile Include="generated\attribute\attributedelta30framess2c_attribute_sync.cpp" />
+    <ClCompile Include="generated\attribute\attributedelta5framess2c_attribute_sync.cpp" />
+    <ClCompile Include="generated\attribute\attributedelta60framess2c_attribute_sync.cpp" />
     <ClCompile Include="kafka\system\kafka.cpp" />
     <ClCompile Include="mount\system\mount.cpp" />
     <ClCompile Include="npc\system\npc.cpp" />

@@ -8,6 +8,7 @@
 // 第三方库依赖
 #include <boost/dynamic_bitset.hpp>
 #include "entt/src/entt/entity/entity.hpp"
+#include "engine/core/type_define/type_define.h"
 
 /**
  * @brief 脏掩码组件：用于标记AttributeDelta2FramesS2C消息对应的实体属性是否需要同步
@@ -24,6 +25,22 @@ struct AttributeDelta2FramesS2CDirtyMaskComp {
  * @param message_id 广播使用的消息ID，用于网络层识别消息类型
  */
 void AttributeDelta2FramesS2CSyncAttributes(entt::entity entity, uint32_t message_id);
+
+/**
+ * @brief 同步AttributeDelta2FramesS2C消息对应的实体属性到指定的无序玩家集合
+ * @param entity entt实体ID，标识要同步的实体
+ * @param message_id 广播使用的消息ID，用于网络层识别消息类型
+ * @param targetPlayers 需要同步的玩家实体无序集合
+ */
+void AttributeDelta2FramesS2CSyncAttributes(entt::entity entity, uint32_t message_id, const EntityUnorderedSet& targetPlayers);
+
+/**
+ * @brief 同步AttributeDelta2FramesS2C消息对应的实体属性到指定的有序玩家列表
+ * @param entity entt实体ID，标识要同步的实体
+ * @param message_id 广播使用的消息ID，用于网络层识别消息类型
+ * @param targetPlayers 需要同步的玩家实体有序列表
+ */
+void AttributeDelta2FramesS2CSyncAttributes(entt::entity entity, uint32_t message_id, const EntityVector& targetPlayers);
 
 /**
  * @brief 设置AttributeDelta2FramesS2C消息对应属性的脏位（自动扩容bitset）
