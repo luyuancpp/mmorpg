@@ -38,16 +38,17 @@ func registerCallbacks(log *zap.Logger) {
 		func(desc interface{}, opts interface{}, context *prototools.OptionContext) error {
 			// 定义模板渲染所需的结构体
 			type AttributeField struct {
-				FieldName      string // 原始字段名（如 user_name）
-				CamelFieldName string // 大驼峰字段名（如 UserName）
+				FieldName      string // 原始字段名（如 entity_id）
+				CamelFieldName string // 大驼峰字段名（如 EntityId）
 				Number         int32  // 字段编号
+				FieldType      string // 字段类型名称（如 uint64、Transform、CombatStateFlagsPbComponent）
 			}
 
 			type AttributeSyncMessage struct {
-				MessageName     string           // 消息名称（如 RoomAttrInfo）
+				MessageName     string           // 消息名称（如 ActorBaseAttributesS2C）
 				CppClass        string           // C++类名（与消息名一致）
-				ProtoHeaderFile string           // proto文件对应的头文件（如 room_attr.pb.h）
-				ProtoFileName   string           // 原始proto文件名（如 room_attr.proto）
+				ProtoHeaderFile string           // proto文件对应的头文件
+				ProtoFileName   string           // 原始proto文件名
 				Fields          []AttributeField // 消息所有字段
 			}
 
@@ -57,26 +58,18 @@ func registerCallbacks(log *zap.Logger) {
 				return fmt.Errorf("desc类型断言失败，期望*descriptorpb.DescriptorProto，实际为%T", desc)
 			}
 
-			// 第二步：从上下文获取准确的FileDescriptorProto（核心改进点）
-			// 不再需要推导，直接从context中获取所属的proto文件信息
+			// 第二步：从上下文获取准确的FileDescriptorProto
 			if context == nil || context.File == nil {
 				return fmt.Errorf("获取消息[%s]的文件上下文失败", msgDesc.GetName())
 			}
 			fileDesc := context.File
 
-			// 第三步：生成正确的proto头文件路径（准确无误差）
-			// 从FileDescriptor获取原始proto文件名（如 "proto/room/room_attr.proto"）
+			// 第三步：生成正确的proto头文件路径
 			protoFileName := fileDesc.GetName()
 			if protoFileName == "" {
 				return fmt.Errorf("消息[%s]所属的proto文件名为空", msgDesc.GetName())
 			}
-
-			// 生成对应的pb.h头文件名：
-			// 示例1: room_attr.proto → room_attr.pb.h
-			// 示例2: proto/room/room_attr.proto → proto/room/room_attr.pb.h
 			protoHeaderFile := strings.TrimSuffix(protoFileName, ".proto") + ".pb.h"
-			// 如果只需要文件名（去掉路径），启用下面这行：
-			// protoHeaderFile = filepath.Base(protoHeaderFile)
 
 			// 获取自定义Option：是否启用属性同步生成
 			rawValue := proto.GetExtension(
@@ -88,7 +81,7 @@ func registerCallbacks(log *zap.Logger) {
 					zap.String("message_name", msgDesc.GetName()),
 					zap.String("proto_file", protoFileName),
 				)
-				return nil // 未配置该Option，跳过生成
+				return nil
 			}
 
 			// 验证Option值为true才执行生成
@@ -109,17 +102,21 @@ func registerCallbacks(log *zap.Logger) {
 			asm := AttributeSyncMessage{
 				MessageName:     msgDesc.GetName(),
 				CppClass:        msgDesc.GetName(),
-				ProtoFileName:   protoFileName,   // 原始proto文件名
-				ProtoHeaderFile: protoHeaderFile, // 最终生成的pb.h头文件路径
+				ProtoFileName:   protoFileName,
+				ProtoHeaderFile: protoHeaderFile,
 				Fields:          make([]AttributeField, 0, len(msgDesc.GetField())),
 			}
 
-			// 遍历消息字段，填充字段信息
+			// 遍历消息字段，填充字段信息（核心：解析自定义类型短名称）
 			for _, field := range msgDesc.GetField() {
+				// 解析字段类型名称（重点：提取短名称）
+				fieldType := getShortFieldTypeName(fileDesc, msgDesc, field)
+
 				asm.Fields = append(asm.Fields, AttributeField{
 					FieldName:      field.GetName(),
-					CamelFieldName: strcase.ToCamel(field.GetName()), // 转大驼峰（如 user_name → UserName）
+					CamelFieldName: strcase.ToCamel(field.GetName()),
 					Number:         field.GetNumber(),
+					FieldType:      fieldType, // 现在能拿到CombatStateFlagsPbComponent这类短名称
 				})
 			}
 
@@ -179,15 +176,33 @@ func registerCallbacks(log *zap.Logger) {
 
 			return nil
 		})
+}
 
-	prototools.RegisterExtensionCallback(
-		messageoption.E_OptionTableName,
-		func(desc interface{}, value interface{}) error {
-			msg := desc.(*descriptorpb.DescriptorProto)
-			log.Info("[Ext] Message table name",
-				zap.String("message_name", msg.GetName()),
-				zap.Any("table_name", value),
-			)
-			return nil
-		})
+// getShortFieldTypeName 解析Protobuf字段的**短类型名**（核心优化）
+// 输出示例：
+// - 基础类型：uint64、string、bool
+// - 自定义消息：Transform、Velocity、CombatStateFlagsPbComponent
+// - 官方消息：Timestamp（而非google.protobuf.Timestamp）
+func getShortFieldTypeName(fileDesc *descriptorpb.FileDescriptorProto, msgDesc *descriptorpb.DescriptorProto, field *descriptorpb.FieldDescriptorProto) string {
+	// 1. 处理基础类型（如 uint64、string、bool 等）
+	fieldType := field.GetType()
+	if fieldType != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE &&
+		fieldType != descriptorpb.FieldDescriptorProto_TYPE_ENUM {
+		// 直接返回基础类型短名称（TYPE_UINT64 → uint64）
+		return strings.ToLower(fieldType.String()[len("TYPE_"):])
+	}
+
+	// 2. 处理消息/枚举类型（提取短名称）
+	typeName := field.GetTypeName()
+	// 第一步：去掉前缀的 "."（如 .com.game.CombatStateFlagsPbComponent → com.game.CombatStateFlagsPbComponent）
+	if strings.HasPrefix(typeName, ".") {
+		typeName = typeName[1:]
+	}
+	// 第二步：按 "." 分割，取最后一段（即短名称）
+	parts := strings.Split(typeName, ".")
+	shortName := parts[len(parts)-1]
+
+	// 3. 特殊处理：如果是当前文件内的类型，直接返回短名称
+	// （可选：确保自定义类型名100%准确）
+	return shortName
 }

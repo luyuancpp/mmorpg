@@ -61,12 +61,10 @@ void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_
         case ActorBaseAttributesS2C::kEntityIdFieldNumber:
         {
             // 同步 entity_id 属性（字段编号：1）
-            auto& comp = registry.get_or_emplace<EntityId>(entity);
-            if (sync_msg.mutable_entity_id() != nullptr) {
-                sync_msg.mutable_entity_id()->CopyFrom(comp);
-                // 同步后清除该字段的脏标记
-                dirty_mask.dirtyMask.reset(field_num);
-            }
+            // 特殊处理：entity_id字段固定为uint64_t类型
+            auto& comp = registry.get_or_emplace<uint64_t>(entity);
+            sync_msg.set_entity_id(comp);
+            dirty_mask.dirtyMask.reset(field_num);
             break;
         }
         case ActorBaseAttributesS2C::kTransformFieldNumber:
@@ -94,7 +92,7 @@ void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_
         case ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber:
         {
             // 同步 combat_state_flags 属性（字段编号：4）
-            auto& comp = registry.get_or_emplace<CombatStateFlags>(entity);
+            auto& comp = registry.get_or_emplace<CombatStateFlagsPbComponent>(entity);
             if (sync_msg.mutable_combat_state_flags() != nullptr) {
                 sync_msg.mutable_combat_state_flags()->CopyFrom(comp);
                 // 同步后清除该字段的脏标记
