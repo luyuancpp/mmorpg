@@ -3,10 +3,12 @@ package _go
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"go.uber.org/zap" // 引入zap用于结构化日志字段
+	"pbgen/logger"    // 引入封装的logger包
 )
 
 // 生成正确格式的 option go_package（包含路径和包名）
@@ -62,7 +64,10 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 	// 读取文件内容
 	file, err := os.Open(protoFile)
 	if err != nil {
-		log.Fatal("打开文件失败: %v", err)
+		logger.Global.Fatal("打开Proto文件失败",
+			zap.String("文件路径", protoFile),
+			zap.Error(err),
+		)
 	}
 	defer file.Close()
 
@@ -72,7 +77,10 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 		lines = append(lines, scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
-		log.Fatal("读取文件失败: %v", err)
+		logger.Global.Fatal("读取Proto文件内容失败",
+			zap.String("文件路径", protoFile),
+			zap.Error(err),
+		)
 	}
 
 	// 检查是否已存在go_package
@@ -132,18 +140,27 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 	// 写回文件
 	output, err := os.Create(protoFile)
 	if err != nil {
-		log.Fatal("创建文件失败: %v", err)
+		logger.Global.Fatal("创建Proto文件写入句柄失败",
+			zap.String("文件路径", protoFile),
+			zap.Error(err),
+		)
 	}
 	defer output.Close()
 
 	writer := bufio.NewWriter(output)
 	for _, line := range newLines {
 		if _, err := writer.WriteString(line + "\n"); err != nil {
-			log.Fatal("写入文件失败: %v", err)
+			logger.Global.Fatal("写入Proto文件内容失败",
+				zap.String("文件路径", protoFile),
+				zap.Error(err),
+			)
 		}
 	}
 	if err := writer.Flush(); err != nil {
-		log.Fatal("刷新缓存失败: %v", err)
+		logger.Global.Fatal("刷新Proto文件写入缓存失败",
+			zap.String("文件路径", protoFile),
+			zap.Error(err),
+		)
 	}
 
 	return true, nil
