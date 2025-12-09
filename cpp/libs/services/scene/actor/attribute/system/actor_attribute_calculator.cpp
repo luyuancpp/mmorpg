@@ -22,17 +22,6 @@ void ActorAttributeCalculatorSystem::InitializeActorComponents(entt::entity enti
     tlsRegistryManager.actorRegistry.emplace<AttributeDirtyFlagsComp>(entity);
 }
 
-// 新增：设置 BaseAttribute 的运行时脏位（会自动扩容 bitset）
-void ActorAttributeCalculatorSystem::SetBaseAttributeDirty(entt::entity entity, std::size_t bit) {
-    auto &registry = tlsRegistryManager.actorRegistry;
-    auto &dirtyComp = registry.get_or_emplace<ActorBaseAttributesS2CDirtyMaskComp>(entity);
-    // dynamic_bitset::resize 接受 size_t
-    if (dirtyComp.dirtyMask.size() <= bit) {
-        dirtyComp.dirtyMask.resize(bit + 1);
-    }
-    dirtyComp.dirtyMask.set(bit);
-}
-
 // 更新速度属性
 void UpdateVelocity(entt::entity entity) {
     return;
@@ -52,7 +41,7 @@ void UpdateVelocity(entt::entity entity) {
     }
 
     // 使用封装函数设置运行时脏位（不要把脏位写回会被持久化的 proto）
-    ActorAttributeCalculatorSystem::SetBaseAttributeDirty(entity, static_cast<std::size_t>(ActorBaseAttributesS2C::kVelocityFieldNumber));
+    SetActorBaseAttributesS2CAttrDirtyBit(entity, static_cast<std::size_t>(ActorBaseAttributesS2C::kVelocityFieldNumber));
 }
 
 // 更新生命值属性
