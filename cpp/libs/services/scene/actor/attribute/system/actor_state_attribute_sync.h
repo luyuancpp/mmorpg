@@ -20,7 +20,5 @@ public:
 
     static void GetNearbyLevel3Entities(const entt::entity entity, EntityVector& nearbyEntities);
 
-    static void SyncBasicAttributes(entt::entity entity);
-
     static void SyncAttributes(entt::entity entity, const EntityVector& nearbyEntities, uint32_t syncFrequency);
 };

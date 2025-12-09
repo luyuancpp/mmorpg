@@ -10,6 +10,3 @@ struct AttributeDirtyFlagsComp
     std::bitset<kAttributeCalculatorMax> attributeBits;
 };
 
-struct BaseAttributeDirtyMaskComp {
-	boost::dynamic_bitset<> dirtyMask; // 全 0
-};
