@@ -155,7 +155,7 @@ func registerCallbacks(log *zap.Logger) {
 			}
 
 			// ========== 2. 生成C++头文件 (.h) ==========
-			hFile, err := _config.Global.GetOutputPath("attribute_sync_h", outputDir, base+"_attribute_sync")
+			hFile, err := _config.Global.GetOutputPath("attribute_sync_h", outputDir, base)
 			if err != nil {
 				return fmt.Errorf("获取头文件路径失败: %w", err)
 			}
