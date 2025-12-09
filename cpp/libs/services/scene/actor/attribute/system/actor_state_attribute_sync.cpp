@@ -15,6 +15,11 @@
 #include <threading/registry_manager.h>
 #include <actor/attribute/comp/actor_attribute.h>
 #include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
+#include <generated/attribute/attributedelta60framess2c_attribute_sync.h>
+#include <generated/attribute/attributedelta30framess2c_attribute_sync.h>
+#include <generated/attribute/attributedelta10framess2c_attribute_sync.h>
+#include <generated/attribute/attributedelta5framess2c_attribute_sync.h>
+#include <generated/attribute/attributedelta2framess2c_attribute_sync.h>
 
 // 定义帧同步频率的配置数组大小
 constexpr uint32_t kSyncFrequencyArraySize = 5;
@@ -145,43 +150,23 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
 
     switch (syncFrequency) {
     case eAttributeSyncFrequency::kSyncEvery2Frames: {
-        auto& comp = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDelta2FramesS2C>(entity);
-        if (comp.ByteSizeLong() > 0) {
-            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute2FramesMessageId, comp, nearbyEntities);
-            comp.Clear();
-        }
+		AttributeDelta2FramesS2CSyncAttributes(entity, ScenePlayerSyncSyncAttribute2FramesMessageId, nearbyEntities);
         break;
     }
     case eAttributeSyncFrequency::kSyncEvery5Frames: {
-		auto& comp = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDelta5FramesS2C>(entity);
-        if (comp.ByteSizeLong() > 0) {
-            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute5FramesMessageId, comp, nearbyEntities);
-            comp.Clear();
-        }
+		AttributeDelta5FramesS2CSyncAttributes(entity, ScenePlayerSyncSyncAttribute5FramesMessageId, nearbyEntities);
         break;
     }
     case eAttributeSyncFrequency::kSyncEvery10Frames: {
-        auto& comp = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDelta10FramesS2C>(entity);
-        if (comp.ByteSizeLong() > 0) {
-            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute10FramesMessageId, comp, nearbyEntities);
-            comp.Clear();
-        }
+		AttributeDelta10FramesS2CSyncAttributes(entity, ScenePlayerSyncSyncAttribute10FramesMessageId, nearbyEntities);
         break;
     }
     case eAttributeSyncFrequency::kSyncEvery30Frames: {
-        auto& comp = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDelta30FramesS2C>(entity);
-        if (comp.ByteSizeLong() > 0) {
-            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute30FramesMessageId, comp, nearbyEntities);
-            comp.Clear();
-        }
+		AttributeDelta30FramesS2CSyncAttributes(entity, ScenePlayerSyncSyncAttribute30FramesMessageId, nearbyEntities);
         break;
     }
     case eAttributeSyncFrequency::kSyncEvery60Frames: {
-        auto& comp = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDelta60FramesS2C>(entity);
-        if (comp.ByteSizeLong() > 0) {
-            BroadcastMessageToPlayers(ScenePlayerSyncSyncAttribute60FramesMessageId, comp, nearbyEntities);
-            comp.Clear();
-        }
+		AttributeDelta60FramesS2CSyncAttributes(entity, ScenePlayerSyncSyncAttribute60FramesMessageId, nearbyEntities);
         break;
     }
     default:

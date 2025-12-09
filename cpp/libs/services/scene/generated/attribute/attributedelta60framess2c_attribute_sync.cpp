@@ -11,34 +11,23 @@
 #include "network/player_message_utils.h"
 
 // ============================================================================
-// AttributeDelta60FramesS2C Attribute Sync
-// 功能：同步 AttributeDelta60FramesS2C 消息对应的实体属性到AOI范围内的所有玩家
-// 参数：
-//   entity: entt 实体ID，标识需要同步属性的目标实体
-//   message_id: 网络广播使用的消息ID，用于客户端识别消息类型
-// 返回值：void
-// 注意：仅同步标记为"脏"的字段，空消息/空AOI列表会直接返回
+// 模板核心函数：处理不同类型玩家列表的属性同步
+// 模板参数：PlayerContainer - 玩家列表容器类型（支持vector/unordered_set等）
+// 功能：通用属性同步逻辑，适配任意可迭代的玩家容器类型
 // ============================================================================
-void AttributeDelta60FramesS2CSyncAttributes(entt::entity entity, uint32_t message_id)
+template <typename PlayerContainer>
+void AttributeDelta60FramesS2CSyncAttributesCore(entt::entity entity, uint32_t message_id, const PlayerContainer& targetPlayers)
 {
-    // 1. 前置校验：空实体直接返回
-    if (entity == entt::null) {
+    // 1. 前置校验：空实体或空玩家列表直接返回
+    if (entity == entt::null || targetPlayers.empty()) {
         return;
     }
 
     // 获取线程局部的Actor注册表（核心数据容器）
     auto& actorRegistry = tlsRegistryManager.actorRegistry;
 
-    // 2. 获取/创建核心组件
-    // AOI列表组件：存储需要同步的玩家列表
-    const auto& aoiListComp = actorRegistry.get_or_emplace<AoiListComp>(entity);
-    // 脏掩码组件：标记哪些字段需要同步
+    // 2. 获取脏掩码组件
     auto& dirtyMaskComp = actorRegistry.get_or_emplace<AttributeDelta60FramesS2CDirtyMaskComp>(entity);
-
-    // 前置校验：AOI列表为空，无需广播
-    if (aoiListComp.aoiList.empty()) {
-        return;
-    }
 
     // 3. 初始化Proto消息对象
     AttributeDelta60FramesS2C syncMsg;
@@ -88,15 +77,66 @@ void AttributeDelta60FramesS2CSyncAttributes(entt::entity entity, uint32_t messa
         return;
     }
 
-    // 6. 广播消息到AOI范围内的所有玩家
+    // 6. 广播消息到指定的玩家列表（模板适配任意可迭代容器）
     BroadcastMessageToPlayers(
         message_id,
         syncMsg,
-        aoiListComp.aoiList
+        targetPlayers
     );
 
     // 显式清理消息对象（RAII自动处理，此处仅为语义说明）
     syncMsg.Clear();
+}
+
+// ============================================================================
+// AttributeDelta60FramesS2C Attribute Sync (原始版本：使用AOI列表)
+// 功能：同步 AttributeDelta60FramesS2C 消息对应的实体属性到AOI范围内的所有玩家
+// 参数：
+//   entity: entt 实体ID，标识需要同步属性的目标实体
+//   message_id: 网络广播使用的消息ID，用于客户端识别消息类型
+// 返回值：void
+// ============================================================================
+void AttributeDelta60FramesS2CSyncAttributes(entt::entity entity, uint32_t message_id)
+{
+    if (entity == entt::null) {
+        return;
+    }
+
+    auto& actorRegistry = tlsRegistryManager.actorRegistry;
+    const auto& aoiListComp = actorRegistry.get_or_emplace<AoiListComp>(entity);
+
+    // 调用模板核心函数，传入AOI列表（自动推导容器类型）
+    AttributeDelta60FramesS2CSyncAttributesCore(entity, message_id, aoiListComp.aoiList);
+}
+
+// ============================================================================
+// AttributeDelta60FramesS2C Attribute Sync (重载版本：EntityUnorderedSet)
+// 功能：同步 AttributeDelta60FramesS2C 消息对应的实体属性到指定的无序玩家集合
+// 参数：
+//   entity: entt 实体ID，标识需要同步属性的目标实体
+//   message_id: 网络广播使用的消息ID，用于客户端识别消息类型
+//   targetPlayers: 需要同步的玩家实体集合（无序）
+// 返回值：void
+// ============================================================================
+void AttributeDelta60FramesS2CSyncAttributes(entt::entity entity, uint32_t message_id, const EntityUnorderedSet& targetPlayers)
+{
+    // 调用模板核心函数，传入无序集合
+    AttributeDelta60FramesS2CSyncAttributesCore(entity, message_id, targetPlayers);
+}
+
+// ============================================================================
+// AttributeDelta60FramesS2C Attribute Sync (重载版本：EntityVector)
+// 功能：同步 AttributeDelta60FramesS2C 消息对应的实体属性到指定的有序玩家列表
+// 参数：
+//   entity: entt 实体ID，标识需要同步属性的目标实体
+//   message_id: 网络广播使用的消息ID，用于客户端识别消息类型
+//   targetPlayers: 需要同步的玩家实体列表（有序）
+// 返回值：void
+// ============================================================================
+void AttributeDelta60FramesS2CSyncAttributes(entt::entity entity, uint32_t message_id, const EntityVector& targetPlayers)
+{
+    // 调用模板核心函数，传入有序列表
+    AttributeDelta60FramesS2CSyncAttributesCore(entity, message_id, targetPlayers);
 }
 
 // ============================================================================
@@ -106,7 +146,6 @@ void AttributeDelta60FramesS2CSyncAttributes(entt::entity entity, uint32_t messa
 //   entity: entt 实体ID，标识需要操作的目标实体
 //   bitIdx: 脏位索引，对应Proto消息中字段的编号
 // 返回值：void
-// 注意：如果脏位索引超出当前bitset长度，会自动扩容以容纳新索引
 // ============================================================================
 void SetAttributeDelta60FramesS2CAttrDirtyBit(entt::entity entity, std::size_t bitIdx)
 {
