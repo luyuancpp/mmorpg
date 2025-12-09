@@ -63,12 +63,19 @@ void {{ .MessageName }}SyncAttributes(entt::entity entity, uint32_t message_id)
         case {{ $.CppClass }}::k{{ .CamelFieldName }}FieldNumber:
         {
             // 同步 {{ .FieldName }} 属性（字段编号：{{ .Number }}）
-            auto& comp = registry.get_or_emplace<{{ .CamelFieldName }}>(entity);
+            {{- if eq .FieldName "entity_id" }}
+            // 特殊处理：entity_id字段固定为uint64_t类型
+            auto& comp = registry.get_or_emplace<uint64_t>(entity);
+            sync_msg.set_entity_id(comp);
+            dirty_mask.dirtyMask.reset(field_num);
+            {{- else }}
+            auto& comp = registry.get_or_emplace<{{ .FieldType }}>(entity);
             if (sync_msg.mutable_{{ .FieldName }}() != nullptr) {
                 sync_msg.mutable_{{ .FieldName }}()->CopyFrom(comp);
                 // 同步后清除该字段的脏标记
                 dirty_mask.dirtyMask.reset(field_num);
             }
+            {{- end }}
             break;
         }
         {{- end }}
