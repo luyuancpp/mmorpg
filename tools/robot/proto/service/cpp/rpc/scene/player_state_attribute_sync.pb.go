@@ -324,17 +324,17 @@ const file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDesc
 	"\ttransform\x18\x02 \x01(\v2\n" +
 	".TransformR\ttransform\x12%\n" +
 	"\bvelocity\x18\x03 \x01(\v2\t.VelocityR\bvelocity\x12J\n" +
-	"\x12combat_state_flags\x18\x04 \x01(\v2\x1c.CombatStateFlagsPbComponentR\x10combatStateFlags:\x05\x80\xe6\xd5\x02\x01\"7\n" +
+	"\x12combat_state_flags\x18\x04 \x01(\v2\x1c.CombatStateFlagsPbComponentR\x10combatStateFlags:\x05\x80\xe6\xd5\x02\x01\">\n" +
 	"\x18AttributeDelta2FramesS2C\x12\x1b\n" +
-	"\tentity_id\x18\x01 \x01(\x04R\bentityId\"7\n" +
+	"\tentity_id\x18\x01 \x01(\x04R\bentityId:\x05\x80\xe6\xd5\x02\x01\">\n" +
 	"\x18AttributeDelta5FramesS2C\x12\x1b\n" +
-	"\tentity_id\x18\x01 \x01(\x04R\bentityId\"8\n" +
+	"\tentity_id\x18\x01 \x01(\x04R\bentityId:\x05\x80\xe6\xd5\x02\x01\"?\n" +
 	"\x19AttributeDelta10FramesS2C\x12\x1b\n" +
-	"\tentity_id\x18\x01 \x01(\x04R\bentityId\"8\n" +
+	"\tentity_id\x18\x01 \x01(\x04R\bentityId:\x05\x80\xe6\xd5\x02\x01\"?\n" +
 	"\x19AttributeDelta30FramesS2C\x12\x1b\n" +
-	"\tentity_id\x18\x01 \x01(\x04R\bentityId\"8\n" +
+	"\tentity_id\x18\x01 \x01(\x04R\bentityId:\x05\x80\xe6\xd5\x02\x01\"?\n" +
 	"\x19AttributeDelta60FramesS2C\x12\x1b\n" +
-	"\tentity_id\x18\x01 \x01(\x04R\bentityId2\xfb\x02\n" +
+	"\tentity_id\x18\x01 \x01(\x04R\bentityId:\x05\x80\xe6\xd5\x02\x012\xfb\x02\n" +
 	"\x0fScenePlayerSync\x124\n" +
 	"\x11SyncBaseAttribute\x12\x17.ActorBaseAttributesS2C\x1a\x06.Empty\x129\n" +
 	"\x14SyncAttribute2Frames\x12\x19.AttributeDelta2FramesS2C\x1a\x06.Empty\x129\n" +
